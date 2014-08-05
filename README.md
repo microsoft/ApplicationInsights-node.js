@@ -1,4 +1,4 @@
-﻿# AppInsights for Node.js
+﻿# Application Insights for Node.js
 
 [Node](http://nodejs.org/) is a popular, lightweight platform for building fast and scalable network applications. Our mission was to extend our Application Insights (AI) API surface to Node.js to support users developing on a different platform. [Application Insights](http://msdn.microsoft.com/en-us/library/dn481095.aspx) is a service that allows developers to keep their application available, performing and succeeding. This node module will automatically send request telemetry and exceptions and logs for requests to the Application Insights service where they can be visualized in the [Azure Portal](https://portal.azure.com/). 
 
