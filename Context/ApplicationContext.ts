@@ -19,7 +19,7 @@ class ApplicationContext {
         id: false,
     };
 
-    constructor(config: Object) {
+    constructor(config) {
         if (config.application && config.application){
             if (config.application.id) {
                 this.id = config.applicaiton.id;
