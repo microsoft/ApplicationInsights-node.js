@@ -34,10 +34,8 @@ module AppInsights {
     var filteredRequests = [];
 
     //config file
+    var config = require("../../ai.config");
     var iKey = ai.iKey;
-    if (iKey == "") {
-        console.warn("Application Insights not instrumented; add iKey to ai.config");
-    }
 
     //set up request monitoring and logging
     function setup() {
@@ -94,7 +92,7 @@ module AppInsights {
         //device
         traceTelemetryObject.device = new DeviceContext(null);
         //application
-        traceTelemetryObject.application = new ApplicationContext(iKey);
+        traceTelemetryObject.application = new ApplicationContext(config);
 
         context.track(traceTelemetryObject);
     }
@@ -124,7 +122,7 @@ module AppInsights {
         requestTelemetryObject.device = new DeviceContext(request);
 
         //application
-        requestTelemetryObject.application = new ApplicationContext(iKey);
+        requestTelemetryObject.application = new ApplicationContext(config);
 
         //user
         requestTelemetryObject.user = new UserContext(request, response);
@@ -177,7 +175,7 @@ module AppInsights {
         exceptionTelemetryObject.data.item.measurements = measurements;
 
         exceptionTelemetryObject.device = new DeviceContext(request);
-        exceptionTelemetryObject.application = new ApplicationContext(iKey);
+        exceptionTelemetryObject.application = new ApplicationContext(config);
         exceptionTelemetryObject.user = new UserContext(request);
         exceptionTelemetryObject.session = new SessionContext(request, response);
         exceptionTelemetryObject.location = new LocationContext(request, response);
