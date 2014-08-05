@@ -1,5 +1,5 @@
 {
-  "name": "appInsights",
+  "name": "appinsights",
   "version": "0.10.0",
   "description": "Visual Studio Application Insights module for node js",
   "main": "appInsights",
