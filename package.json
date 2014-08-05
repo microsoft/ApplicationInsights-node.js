@@ -2,7 +2,9 @@
   "name": "appinsights",
   "version": "0.10.0",
   "description": "Visual Studio Application Insights module for node js",
+  "license": "MIT",
   "main": "appInsights",
+  "bugs": "https://github.com/Microsoft/AppInsights-node.js/issues",
   "contributors": [
       { "name": "t-hajohn", "email": "t-hajohn@microsoft.com" },
       { "name": "t-andrea", "email": "t-andrea@microsoft.com" },
