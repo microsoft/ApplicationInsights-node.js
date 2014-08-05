@@ -19,9 +19,14 @@ class ApplicationContext {
         id: false,
     };
 
-    constructor(cid: string) {
-        if (cid && cid != "") {
-            this.id = cid;
+    constructor(config: Object) {
+        if (config.application && config.application){
+            if (config.application.id) {
+                this.id = config.applicaiton.id;
+            }
+            if (config.application.ver) {
+                this.ver = config.applicaiton.ver;
+            }
         }
     }
 }

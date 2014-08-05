@@ -14,7 +14,10 @@ var file = fs.createWriteStream("ai.js");
 
 var instrumentation = "var config = require('../../ai.config.json'); \r\n\
 var iKey = config && config.profiles && config.profiles.defaults && config.profiles.defaults.iKey; \r\n\
-appInsights = { iKey: iKey };\r\n\r\n";
+appInsights = { iKey: iKey };\r\n\r\n\
+if (!iKey || iKey == '') {\r\n\
+    throw new Error('Application Insights not instrumented; add iKey to ai.config.json');\r\n\
+}\r\n\r\n";
 file.write(instrumentation, function (err) { });
 
 http.get("http://az639152.vo.msecnd.net/cdntest/a/ai.0.10.0.js", function (response) {

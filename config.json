@@ -2,7 +2,11 @@
         "activeProfile": "defaults",
         "profiles": {
             "defaults": {
-                "iKey": ""
+                "iKey": "",
+                "application":{
+                    "id": "",
+                    "ver": ""
+                }
             }
         }
  }
