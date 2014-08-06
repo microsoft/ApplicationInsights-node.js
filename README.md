@@ -38,7 +38,7 @@ Coming soon
 <img src="https://cloud.githubusercontent.com/assets/8000269/3832828/3b6864da-1da1-11e4-9a1d-6f41324bd775.png" width="600">
 
 4. Copy and paste your iKey into the iKey variable in your `ai.config.json` file. <br/>
-<img src="https://cloud.githubusercontent.com/assets/8000269/3832827/3b681cf0-1da1-11e4-9cdc-e8e7eb7f5496.png" width="600">
+<img src="https://cloud.githubusercontent.com/assets/8000269/3833430/706d3a60-1da7-11e4-85f1-430240d823fa.png" width="600">
 
 5. Run your application and generate a request. <br/>
 6. Return to your project tile in the Azure Portal and you can view your requests in the Requests tile in your application's blade. (In my example, you can see that I have generate 10 requests and it took 1 ms to process them). <br/>
