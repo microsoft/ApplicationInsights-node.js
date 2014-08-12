@@ -1,0 +1,14 @@
+# Ignore ts source
+*.ts
+
+# Ignore map files
+*.js.map
+
+# Ignore built files
+obj
+*.tgz
+
+# Ignore Visual Studio files
+*.suo
+*.sln
+*.njsproj

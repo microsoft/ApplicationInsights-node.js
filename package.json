@@ -11,20 +11,6 @@
       { "name": "t-andrea", "email": "t-andrea@microsoft.com" },
       { "name": "scsouthw", "email": "scsouthw@microsoft.com" }
   ],
-  "files": [
-      "config.json",
-      "README.md",
-      "License.txt",
-      "install.js",
-      "appInsights.js",
-      "Util.js",
-      "NodeSender.js",
-      "Context/ApplicationContext.js",
-      "Context/DeviceContext.js",
-      "Context/LocationContext.js",
-      "Context/UserContext.js",
-      "Context/SessionContext.js"
-  ],
   "scripts": {
       "postinstall": "node install.js"
   },
