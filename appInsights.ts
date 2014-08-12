@@ -4,7 +4,7 @@
 /// <reference path="Context/LocationContext.ts" />
 /// <reference path="Context/ApplicationContext.ts" />
 /// <reference path="Util.ts" />
-/// <reference path="NodeSender.ts" />
+/// <reference path="Sender.ts" />
 
 module AppInsights {
 

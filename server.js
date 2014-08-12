@@ -1,7 +1,7 @@
 ﻿var http = require("http");
 var url = require("url");
 
-var appInsights = require("./appInsights");
+var appInsights = require("appInsights");
 
 appInsights.filter("favicon");
 start();

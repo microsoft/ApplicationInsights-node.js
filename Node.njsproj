@@ -24,6 +24,7 @@
     <NodejsPort>1337</NodejsPort>
     <TypeScriptSourceMap>true</TypeScriptSourceMap>
     <TypeScriptModuleKind>CommonJS</TypeScriptModuleKind>
+    <!-- <TypeScriptGeneratesDeclarations>true</TypeScriptGeneratesDeclarations> -->
     <EnableTypeScript>true</EnableTypeScript>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -39,10 +40,11 @@
     <TypeScriptCompile Include="Context\LocationContext.ts" />
     <TypeScriptCompile Include="Context\SessionContext.ts" />
     <TypeScriptCompile Include="Context\UserContext.ts" />
-    <TypeScriptCompile Include="NodeSender.ts" />
+    <TypeScriptCompile Include="Sender.ts" />
     <TypeScriptCompile Include="Util.ts" />
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
     <Content Include=".gitignore" />
+    <Content Include=".npmignore" />
     <Content Include="config.json" />
     <Content Include="License.txt" />
     <Content Include="package.json" />
@@ -59,6 +61,12 @@
     <Compile Include="install.js" />
   </ItemGroup>
   <Import Project="$(VSToolsPath)\Node.js Tools\Microsoft.NodejsTools.targets" />
+  <Target Name="AfterBuild">
+    <Exec Command="npm uninstall appInsights" />
+    <Exec Command="rm $(TarGZipFilesPre) -f" />
+    <Exec Command="npm pack" />
+    <Exec Command="npm install" />
+  </Target>
   <ProjectExtensions>
     <VisualStudio>
       <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
