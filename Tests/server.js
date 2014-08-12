@@ -7,7 +7,7 @@ var appInsights = require("applicationInsights");
 appInsights.filter("favicon");
 
 // run tests
-var unitTests = require('./Tests/UnitTests');
+var unitTests = require('./UnitTests');
 unitTests.run();
 
 // start browser and listen for requests
