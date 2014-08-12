@@ -1,6 +1,4 @@
-﻿/// <reference path="../Scripts/typings/node/node.d.ts" />
-
-class LocationContext {
+﻿class LocationContext {
 
     /**
     * GPS latitude

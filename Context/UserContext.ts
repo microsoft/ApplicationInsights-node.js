@@ -1,6 +1,4 @@
-﻿/// <reference path="../Scripts/typings/node/node.d.ts" />
-
-var util = require('../Util');
+﻿var util = require('../Util');
 class UserContext{
     /**
     * The user ID.

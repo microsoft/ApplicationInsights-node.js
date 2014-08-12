@@ -1,6 +1,4 @@
-﻿/// <reference path="../Scripts/typings/node/node.d.ts" />
-
-class ApplicationContext {
+﻿class ApplicationContext {
     /**
     * The application version.
     */

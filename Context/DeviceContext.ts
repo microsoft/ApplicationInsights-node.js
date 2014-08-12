@@ -1,6 +1,4 @@
-﻿/// <reference path="../Scripts/typings/node/node.d.ts" />
-
-var os = require("os");
+﻿var os = require("os");
 
 class DeviceContext {
 
