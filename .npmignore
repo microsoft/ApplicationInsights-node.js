@@ -1,9 +1,3 @@
-# Ignore ts source
-*.ts
-
-# Ignore map files
-*.js.map
-
 # Ignore built files
 obj
 *.tgz
@@ -12,3 +6,6 @@ obj
 *.suo
 *.sln
 *.njsproj
+
+# Ignore test files
+server.js

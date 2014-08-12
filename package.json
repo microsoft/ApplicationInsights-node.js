@@ -8,7 +8,7 @@
       "type" : "git", 
       "url" : "https://github.com/Microsoft/AppInsights-node.js"
   },
-  "main": "appInsights",
+  "main": "applicationInsights",
   "keywords": ["request", "request monitoring", "monitoring", "application insights", "microsoft", "azure"],
   "contributors": [
       { "name": "t-hajohn", "email": "t-hajohn@microsoft.com" },

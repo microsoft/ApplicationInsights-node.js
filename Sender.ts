@@ -5,7 +5,7 @@ var url = require("url");
 * uses the batching logic in Javascript Sender.send
 * replaces Sender.sender with http requests to the endpoint
 */
-class NodeSender {
+class Sender {
     public static sender(payload: string, config) {
         var headers = {
             'Content-Type': 'application/json',
@@ -42,4 +42,4 @@ class NodeSender {
     }
 }
 
-module.exports = NodeSender;
+module.exports = Sender;

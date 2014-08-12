@@ -20,30 +20,28 @@ if (!iKey || iKey == '') {\r\n\
 }\r\n\r\n";
 file.write(instrumentation, function (err) { });
 
+// Download the core browser JS
 http.get("http://az639152.vo.msecnd.net/cdntest/a/ai.0.10.0.js", function (response) {
     var r = response.pipe(file);
     r.on('finish', addExports);
 });
 
-//append node required exports to ai.js
+// Append required exports to ai.js to convert the core browser JS into a CommonJS module
 function addExports() {
     var exportString = "\r\nmodule.exports = {\r\niKey: appInsights.iKey, context: appInsights.context,\r\nTraceTelemetry: Microsoft.ApplicationInsights.TraceTelemetry,\r\nExceptionTelemetry: Microsoft.ApplicationInsights.ExceptionTelemetry,\r\nRequestTelemetry: Microsoft.ApplicationInsights.RequestTelemetry,\r\nRequestData: Microsoft.ApplicationInsights.RequestData,\r\nExceptionData: Microsoft.ApplicationInsights.ExceptionData,\r\n}";
     fs.appendFile("ai.js", exportString, function(err) {});
 }
 
-//create full ai.d.ts file locally from cdn
-var dfile = fs.createWriteStream("ai.d.ts");
-http.get("http://az639152.vo.msecnd.net/cdntest/ai.d.ts", function (response) {
-    var r = response.pipe(dfile);
-});
-
-//create ai.config.json file in user's project file
+// Create ai.config.json file in user's project file if one does not already existt
 var outputFilename = '../../ai.config.json';
-fs.writeFile(outputFilename, JSON.stringify(config, null, 4), function (err) {
-    if (err) {
-        console.log(err);
-    } else {
-        console.log("ai.config.json created");
-    }
-});
+if (!fs.existsSync(outputFilename)) {
+    fs.writeFile(outputFilename, JSON.stringify(config, null, 4), function(err) {
+        if (err) {
+            console.log(err);
+        } else {
+            console.log("ai.config.json created");
+        }
+    });
+}
+
 console.log("installed!");

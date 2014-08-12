@@ -13,15 +13,15 @@
     <ProjectGuid>7010e869-ca2b-4cc7-9004-85310b0b9ec9</ProjectGuid>
     <ProjectHome>.</ProjectHome>
     <StartupFile>server.js</StartupFile>
-    <StartWebBrowser>false</StartWebBrowser>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <ProjectTypeGuids>{3AF33F2E-1136-4D97-BBB7-1795711AC8B8};{349c5851-65df-11da-9384-00065b846f21};{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}</ProjectTypeGuids>
-    <ProjectView>ProjectFiles</ProjectView>
+    <ProjectView>ShowAllFiles</ProjectView>
     <NodejsPort>1337</NodejsPort>
+    <StartWebBrowser>true</StartWebBrowser>
     <TypeScriptSourceMap>true</TypeScriptSourceMap>
     <TypeScriptModuleKind>CommonJS</TypeScriptModuleKind>
     <!-- <TypeScriptGeneratesDeclarations>true</TypeScriptGeneratesDeclarations> -->
@@ -34,7 +34,7 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
-    <TypeScriptCompile Include="appInsights.ts" />
+    <TypeScriptCompile Include="applicationInsights.ts" />
     <TypeScriptCompile Include="Context\ApplicationContext.ts" />
     <TypeScriptCompile Include="Context\DeviceContext.ts" />
     <TypeScriptCompile Include="Context\LocationContext.ts" />
@@ -48,6 +48,7 @@
     <Content Include="config.json" />
     <Content Include="License.txt" />
     <Content Include="package.json" />
+    <Content Include="package.cmd" />
     <Content Include="server.js" />
     <Content Include="README.md" />
   </ItemGroup>
@@ -62,10 +63,10 @@
   </ItemGroup>
   <Import Project="$(VSToolsPath)\Node.js Tools\Microsoft.NodejsTools.targets" />
   <Target Name="AfterBuild">
-    <Exec Command="npm uninstall appInsights" />
-    <Exec Command="rm $(TarGZipFilesPre) -f" />
-    <Exec Command="npm pack" />
-    <Exec Command="npm install" />
+    <Exec Command="npm uninstall applicationInsights" />
+    <Exec Command="npm pack &gt; temp.txt" />
+    <Exec Command="$(ProjectDir)\package.cmd" />
+    <Exec Command="rm temp.txt -f" />
   </Target>
   <ProjectExtensions>
     <VisualStudio>

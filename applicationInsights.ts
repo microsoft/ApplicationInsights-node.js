@@ -6,7 +6,7 @@
 /// <reference path="Util.ts" />
 /// <reference path="Sender.ts" />
 
-module AppInsights {
+module Applicationinsights {
 
     var http = require("http");
     var url = require("url");
@@ -18,7 +18,7 @@ module AppInsights {
     var DeviceContext = require("./context/DeviceContext");
     var LocationContext = require("./context/LocationContext");
     var ApplicationContext = require("./context/ApplicationContext");
-    var NodeSender = require("./NodeSender");
+    var NodeSender = require("./Sender");
     var util = require('./Util');
 
     //import javascript sdk
