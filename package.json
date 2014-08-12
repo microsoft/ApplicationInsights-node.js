@@ -1,10 +1,14 @@
 {
-  "name": "appinsights",
-  "version": "0.10.0",
-  "description": "Visual Studio Application Insights module for node js",
+  "name": "applicationinsights",
   "license": "MIT",
-  "main": "appInsights",
   "bugs": "https://github.com/Microsoft/AppInsights-node.js/issues",
+  "version": "0.10.0",
+  "description": "Microsoft Application Insights module for Node.JS",
+  "repository" : {
+      "type" : "git", 
+      "url" : "https://github.com/Microsoft/AppInsights-node.js"
+  },
+  "main": "appInsights",
   "keywords": ["request", "request monitoring", "monitoring", "application insights", "microsoft", "azure"],
   "contributors": [
       { "name": "t-hajohn", "email": "t-hajohn@microsoft.com" },
