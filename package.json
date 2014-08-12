@@ -2,24 +2,40 @@
   "name": "applicationinsights",
   "license": "MIT",
   "bugs": "https://github.com/Microsoft/AppInsights-node.js/issues",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "Microsoft Application Insights module for Node.JS",
-  "repository" : {
-      "type" : "git", 
-      "url" : "https://github.com/Microsoft/AppInsights-node.js"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Microsoft/AppInsights-node.js"
   },
   "main": "applicationInsights",
-  "keywords": ["request", "request monitoring", "monitoring", "application insights", "microsoft", "azure"],
+  "keywords": [
+    "request",
+    "request monitoring",
+    "monitoring",
+    "application insights",
+    "microsoft",
+    "azure"
+  ],
   "contributors": [
-      { "name": "t-hajohn", "email": "t-hajohn@microsoft.com" },
-      { "name": "t-andrea", "email": "t-andrea@microsoft.com" },
-      { "name": "scsouthw", "email": "scsouthw@microsoft.com" }
+    {
+      "name": "t-hajohn",
+      "email": "t-hajohn@microsoft.com"
+    },
+    {
+      "name": "t-andrea",
+      "email": "t-andrea@microsoft.com"
+    },
+    {
+      "name": "scsouthw",
+      "email": "scsouthw@microsoft.com"
+    }
   ],
   "scripts": {
-      "postinstall": "node install.js"
+    "postinstall": "node install.js"
   },
   "dependencies": {
-      "node-uuid": "",
-      "cookies": ""
+    "node-uuid": "",
+    "cookies": ""
   }
 }
