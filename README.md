@@ -30,11 +30,11 @@ require('applicationinsights');
  
 3. Next, scroll to the top and in the Summary tile, click on the section that says Application Insights. Find your Node website in the list and click on it. Then click on the Properties tile and copy your instrumentation key. <br/> <img src="https://cloud.githubusercontent.com/assets/8000269/3898721/334b228c-2270-11e4-82a7-1bb158c3a843.png" width="600"> <br/> <img src="https://cloud.githubusercontent.com/assets/8000269/3898722/334c0e04-2270-11e4-81c9-2f6101ae12a9.png" width="600"> 
 
-4. Go back to your Extensions tile and click on Visual Studio Online to open up the VSO blade. Click the Browse button to open VSO to edit your files. <br/> <img src="https://cloud.githubusercontent.com/assets/8000269/3898729/3361b43e-2270-11e4-9c07-0904f632e514.png" width="600">
+4. From the website blade click "site settings". Under the "App settings" section, enter a new key "APPINSIGHTS\_INSTRUMENTATION\_KEY" and paste your instrumentation key into the value field.
 
-5. Once you open VSO, click on the `ai.config.json` file and paste the instrumentation key into the iKey field. <br/> <img src="https://cloud.githubusercontent.com/assets/8000269/3898726/335aa798-2270-11e4-970c-d81754cadeb6.png" width="600">
+5. Go back to your Extensions tile and click on Visual Studio Online to open up the VSO blade. Click the Browse button to open VSO to edit your files. <br/> <img src="https://cloud.githubusercontent.com/assets/8000269/3898729/3361b43e-2270-11e4-9c07-0904f632e514.png" width="600">
 
-6. Next, in the `server.js` file, enter the require statement as stated above. <br/> <img src="https://cloud.githubusercontent.com/assets/8000269/3898728/335aea0a-2270-11e4-9545-27e5d0baac57.png" width="600"> 
+6. Once you open VSO, click on the `server.js` file and enter the require statement as stated above. <br/> <img src="https://cloud.githubusercontent.com/assets/8000269/3898728/335aea0a-2270-11e4-9545-27e5d0baac57.png" width="600"> 
 
 7. Open your website and click on a link to generate a request. <br/>
 
@@ -51,10 +51,10 @@ require('applicationinsights');
 3. Expand your app by clicking on the tile on your dashboard, then click on the Properties tile to open your application's Properties blade to obtain the instrumentation key (iKey). Click on the clipboard next to the iKey to copy it. <br/> 
 <img src="https://cloud.githubusercontent.com/assets/8000269/3832828/3b6864da-1da1-11e4-9a1d-6f41324bd775.png" width="600">
 
-4. Copy and paste your iKey into the iKey variable in your `ai.config.json` file. <br/>
-<img src="https://cloud.githubusercontent.com/assets/8000269/3832827/3b681cf0-1da1-11e4-9cdc-e8e7eb7f5496.png" width="600">
+4. Set an environment variable named "APPINSIGHTS\_INSTRUMENTATION\_KEY" to the value of your instrumentation key. <br/>
 
 5. Open your `server.js` file that was generated when you installed the module, and entire the require statement as stated above. <br/> <img src="https://cloud.githubusercontent.com/assets/8000269/3899210/209207fc-2278-11e4-960b-1b5144d73718.png" width="600">
+
 6. Run your application and generate a request. <br/>
 
 7. Return to your project tile in the Azure Portal and you can view your requests in the Requests tile in your application's blade. (In my example, you can see that I have generate 10 requests and it took 1 ms to process them). <br/>

@@ -4,44 +4,31 @@
 * pulls javascript sdk from CDN, writes the content to a js file called ai.js and appends list of exports to be used by appInsights
 */
 
-config = require('./config.json');
 var fs = require('fs');
 var http = require('http');
 
+fs.readFile("ai_stub.js", function (error, instrumentationData) {
+    if (error) {
+        throw "Could not load instrumentation snippet. " + error;
+    }
 
-//create full ai.js file locally from cdn
-var file = fs.createWriteStream("ai.js");
+    var instrumentation = instrumentationData.toString();
 
-var instrumentation = "var config = require('../../ai.config.json'); \r\n\
-var iKey = config && config.profiles && config.profiles.defaults && config.profiles.defaults.iKey; \r\n\
-appInsights = { iKey: iKey };\r\n\r\n\
-if (!iKey || iKey == '') {\r\n\
-    throw new Error('Application Insights not instrumented; add iKey to ai.config.json');\r\n\
-}\r\n\r\n";
-file.write(instrumentation, function (err) { });
+    http.get("http://az639152.vo.msecnd.net/cdntest/a/ai.0.10.0.js", function (response) {
 
-// Download the core browser JS
-http.get("http://az639152.vo.msecnd.net/cdntest/a/ai.0.10.0.js", function (response) {
-    var r = response.pipe(file);
-    r.on('finish', addExports);
-});
+        var browserAppInsights = "";
+        response.on('data', function(data) {
+            browserAppInsights += data;
+        });
 
-// Append required exports to ai.js to convert the core browser JS into a CommonJS module
-function addExports() {
-    var exportString = "\r\nmodule.exports = {\r\niKey: appInsights.iKey, context: appInsights.context,\r\nTraceTelemetry: Microsoft.ApplicationInsights.TraceTelemetry,\r\nExceptionTelemetry: Microsoft.ApplicationInsights.ExceptionTelemetry,\r\nRequestTelemetry: Microsoft.ApplicationInsights.RequestTelemetry,\r\nRequestData: Microsoft.ApplicationInsights.RequestData,\r\nExceptionData: Microsoft.ApplicationInsights.ExceptionData,\r\n}";
-    fs.appendFile("ai.js", exportString, function(err) {});
-}
+        response.on('end', function () {
+            var nodeAppInsights = instrumentation.replace("@DIVIDER@", browserAppInsights);
 
-// Create ai.config.json file in user's project file if one does not already existt
-var outputFilename = '../../ai.config.json';
-if (!fs.existsSync(outputFilename)) {
-    fs.writeFile(outputFilename, JSON.stringify(config, null, 4), function(err) {
-        if (err) {
-            console.log(err);
-        } else {
-            console.log("ai.config.json created");
-        }
+            //create a local node version of ai.js from cdn
+            var file = fs.createWriteStream("ai.js");
+            file.write(nodeAppInsights);
+
+            console.log("installed!");
+        });
     });
-}
-
-console.log("installed!");
+});

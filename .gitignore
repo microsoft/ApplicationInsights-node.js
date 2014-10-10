@@ -10,9 +10,6 @@ obj
 !server.js
 !Scripts/typings/node/node.d.ts
 
-# Ignore installed files
-ai.config.json
-
 # Ignore Node files
 node_modules/**
 

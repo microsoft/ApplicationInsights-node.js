@@ -33,17 +33,12 @@ module Applicationinsights {
     //list of request types tp ignore
     var filteredRequests = [];
 
-    //config file
-    var config = require("../../ai.config");
-    var iKey = ai.iKey;
-
     //set up request monitoring and logging
     function setup() {
         wrapCreateServer();
         wrapLog();
         wrapSender();
     }
-
 
     /**
     * Wrap http.createServer to automatically track requests
@@ -92,7 +87,7 @@ module Applicationinsights {
         //device
         traceTelemetryObject.device = new DeviceContext(null);
         //application
-        traceTelemetryObject.application = new ApplicationContext(config);
+        traceTelemetryObject.application = new ApplicationContext();
 
         context.track(traceTelemetryObject);
     }
@@ -122,7 +117,7 @@ module Applicationinsights {
         requestTelemetryObject.device = new DeviceContext(request);
 
         //application
-        requestTelemetryObject.application = new ApplicationContext(config);
+        requestTelemetryObject.application = new ApplicationContext();
 
         //user
         requestTelemetryObject.user = new UserContext(request, response);
@@ -175,7 +170,7 @@ module Applicationinsights {
         exceptionTelemetryObject.data.item.measurements = measurements;
 
         exceptionTelemetryObject.device = new DeviceContext(request);
-        exceptionTelemetryObject.application = new ApplicationContext(config);
+        exceptionTelemetryObject.application = new ApplicationContext();
         exceptionTelemetryObject.user = new UserContext(request);
         exceptionTelemetryObject.session = new SessionContext(request, response);
         exceptionTelemetryObject.location = new LocationContext(request, response);
