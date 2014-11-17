@@ -6,29 +6,31 @@
 
 var fs = require('fs');
 var http = require('http');
+var divider = "//BROWSER_APPINSIGHTS_SCRIPT_PLACEHOLDER";
 
 fs.readFile("ai_stub.js", function (error, instrumentationData) {
     if (error) {
         throw "Could not load instrumentation snippet. " + error;
     }
-
+    
     var instrumentation = instrumentationData.toString();
-
-    http.get("http://az639152.vo.msecnd.net/cdntest/a/ai.0.10.0.js", function (response) {
-
-        var browserAppInsights = "";
-        response.on('data', function(data) {
-            browserAppInsights += data;
+    if (instrumentation.indexOf(divider) >= 0) {
+        http.get("http://dstest.blob.core.windows.net/cdntest/ai.0.12.0.js", function (response) {
+            
+            var browserAppInsights = "";
+            response.on('data', function (data) {
+                browserAppInsights += data;
+            });
+            
+            response.on('end', function () {
+                var nodeAppInsights = instrumentation.replace(divider, browserAppInsights);
+                
+                //create a local node version of ai.js from cdn
+                var file = fs.createWriteStream("ai.js");
+                file.write(nodeAppInsights);
+                
+                console.log("installed!");
+            });
         });
-
-        response.on('end', function () {
-            var nodeAppInsights = instrumentation.replace("@DIVIDER@", browserAppInsights);
-
-            //create a local node version of ai.js from cdn
-            var file = fs.createWriteStream("ai.js");
-            file.write(nodeAppInsights);
-
-            console.log("installed!");
-        });
-    });
+    }
 });

@@ -40,9 +40,9 @@
     <TypeScriptCompile Include="Context\LocationContext.ts" />
     <TypeScriptCompile Include="Context\SessionContext.ts" />
     <TypeScriptCompile Include="Context\UserContext.ts" />
+    <TypeScriptCompile Include="Scripts\typings\applicationInsights\ai.d.ts" />
     <TypeScriptCompile Include="Sender.ts" />
     <TypeScriptCompile Include="Tests\TestRunner.ts" />
-    <TypeScriptCompile Include="Tests\TestSerializer.ts" />
     <TypeScriptCompile Include="Tests\UnitTests.ts" />
     <TypeScriptCompile Include="Util.ts" />
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
@@ -52,25 +52,30 @@
     <Content Include="package.json" />
     <Content Include="Tests\package.cmd" />
     <Content Include="Tests\server.js" />
-    <Content Include="ai_stub.js" />
     <Content Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Context\" />
+    <Folder Include="Scripts\typings\applicationInsights\" />
     <Folder Include="Tests\" />
     <Folder Include="Scripts\" />
     <Folder Include="Scripts\typings\" />
     <Folder Include="Scripts\typings\node\" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="install.js" />
+    <Content Include="ai_stub.js" />
+    <Content Include="ai.js">
+      <DependentUpon>ai_stub.js</DependentUpon>
+    </Content>
+    <Content Include="install.js" />
   </ItemGroup>
   <Import Project="$(VSToolsPath)\Node.js Tools\Microsoft.NodejsTools.targets" />
   <Target Name="AfterBuild">
-    <Exec Command="npm uninstall applicationInsights" />
+    <Exec Command="node install.js" />
+    <!-- <Exec Command="npm uninstall applicationInsights" />
     <Exec Command="npm pack &gt; temp.txt" />
     <Exec Command="$(ProjectDir)\Tests\package.cmd" />
-    <Exec Command="rm temp.txt -f" />
+    <Exec Command="rm temp.txt -f" /> -->
   </Target>
   <ProjectExtensions>
     <VisualStudio>
