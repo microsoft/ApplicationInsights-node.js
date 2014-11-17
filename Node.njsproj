@@ -12,7 +12,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>7010e869-ca2b-4cc7-9004-85310b0b9ec9</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Tests\server.js</StartupFile>
+    <StartupFile>Tests\TestServer.js</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -43,6 +43,7 @@
     <TypeScriptCompile Include="Scripts\typings\applicationInsights\ai.d.ts" />
     <TypeScriptCompile Include="Sender.ts" />
     <TypeScriptCompile Include="Tests\TestHelper.ts" />
+    <TypeScriptCompile Include="Tests\TestServer.ts" />
     <TypeScriptCompile Include="Tests\UnitTests.ts" />
     <TypeScriptCompile Include="Util.ts" />
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
@@ -51,7 +52,6 @@
     <Content Include="License.txt" />
     <Content Include="package.json" />
     <Content Include="Tests\package.cmd" />
-    <Content Include="Tests\server.js" />
     <Content Include="README.md" />
   </ItemGroup>
   <ItemGroup>
