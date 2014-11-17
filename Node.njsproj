@@ -42,7 +42,7 @@
     <TypeScriptCompile Include="Context\UserContext.ts" />
     <TypeScriptCompile Include="Scripts\typings\applicationInsights\ai.d.ts" />
     <TypeScriptCompile Include="Sender.ts" />
-    <TypeScriptCompile Include="Tests\TestRunner.ts" />
+    <TypeScriptCompile Include="Tests\TestHelper.ts" />
     <TypeScriptCompile Include="Tests\UnitTests.ts" />
     <TypeScriptCompile Include="Util.ts" />
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
