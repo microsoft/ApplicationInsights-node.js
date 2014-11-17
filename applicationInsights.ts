@@ -85,7 +85,7 @@ class AppInsights extends Microsoft.ApplicationInsights.AppInsights {
 
         // set up auto-collection of requests/traces/exceptions
         this._wrapCreateServer();
-        this._wrapConsoleLog();
+        //this._wrapConsoleLog();
         this._wrapUncaughtException();
     }
 

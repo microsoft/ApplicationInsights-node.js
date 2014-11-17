@@ -1,12 +1,13 @@
-﻿var http = require("http");
-var url = require("url");
+﻿import http = require("http");
+import url = require("url");
+
 /**
 * Replacement for Javascripts Sender class
 * uses the batching logic in Javascript Sender.send
 * replaces Sender.sender with http requests to the endpoint
 */
 class Sender {
-    public static sender(payload: string, config) {
+    public static sender(payload: string, config: Microsoft.ApplicationInsights.ISenderConfig) {
         var headers = {
             'Content-Type': 'application/json',
             'Content-Length': payload.length,
@@ -25,7 +26,7 @@ class Sender {
             headers: headers
         };
 
-        var req = http.request(options, (res) => {
+        var req: http.ClientRequest = http.request(options, (res: http.ClientResponse) => {
             res.setEncoding('utf-8');
 
             //returns empty if the data is accepted
@@ -35,6 +36,10 @@ class Sender {
             });
             res.on('end', () => {
             });
+        });
+
+        req.on('error', function (error) {
+            console.log('Failed to send telemetry: ' + error.message);
         });
 
         req.write(payload);
