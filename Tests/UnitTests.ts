@@ -1,9 +1,8 @@
-﻿/// <reference path="TestHelper.ts" />
-/// <reference path="../applicationInsights.ts" />
+﻿/// <reference path="../applicationInsights.ts" />
+/// <reference path="../NodeAppInsights.ts" />
 
 var mock = require("node-mocks-http");
 var util = require('../Util');
-
 var ai = require("../ai");
 
 class UnitTests {
@@ -12,8 +11,10 @@ class UnitTests {
     private testHelper: TestHelper;
 
     constructor(testHelper: TestHelper, appInsights) {
+        // load and configure application insights
+        var aiModule = require("../NodeAppInsights");
+        this.appInsights = new aiModule.NodeAppInsights({ instrumentationKey: "fakeTestKey" });
         this.testHelper = testHelper;
-        this.appInsights = appInsights;
     }
 
     public run() {
@@ -27,6 +28,11 @@ class UnitTests {
     private _baseTests() {
         var type = "baseTests";
         this.testHelper.test(type, "appInsights exists", () => !!this.appInsights);
+        this.testHelper.test(type, "appInsights api - trackEvent", () => typeof this.appInsights.trackEvent === "function");
+        this.testHelper.test(type, "appInsights api - trackTrace", () => typeof this.appInsights.trackTrace === "function");
+        this.testHelper.test(type, "appInsights api - trackRequest", () => typeof this.appInsights.trackRequest === "function");
+        this.testHelper.test(type, "appInsights api - trackException", () => typeof this.appInsights.trackException === "function");
+        this.testHelper.test(type, "appInsights api - trackMetric", () => typeof this.appInsights.trackMetric === "function");
     }
 
     /**
@@ -66,7 +72,7 @@ class UnitTests {
      */
     private _telemetryTests() {
         var type = "telemetryTests";
-        this.testHelper.test(type, "Contexts are initiliazed in node, not by TelelmetryContext constructor", () => {
+        this.testHelper.test(type, "Contexts are initiliazed", () => {
             if (!this.appInsights.context) {
                 throw ("Telemetry context is not defined");
             }
@@ -329,43 +335,42 @@ class UnitTests {
         });
 
         this.testHelper.test(type, "Test getSessionId", () => {
-            // todo: fix sessions between server/client
             //setup
-            //var headers = {
-            //    'host': 'tempuri.org',
-            //    'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.13) Gecko/20080311 Firefox/2.0.0.13',
-            //}
-            //var request = mock.createRequest({
-            //    method: 'GET',
-            //    url: '/test',
-            //    headers: headers,
-            //});
-            //request.connection = {
-            //    encrypted: false,
-            //};
-            //var response = mock.createResponse();
+            var headers = {
+                'host': 'tempuri.org',
+                'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.13) Gecko/20080311 Firefox/2.0.0.13',
+            }
+            var request = mock.createRequest({
+                method: 'GET',
+                url: '/test',
+                headers: headers,
+            });
+            request.connection = {
+                encrypted: false,
+            };
+            var response = mock.createResponse();
 
-            //var firstId = util.getSessionId(request, response);
-            //if (!firstId) {
-            //    throw ("Util does not generate sessionId");
-            //}
+            var firstId = util.getSessionId(request, response);
+            if (!firstId) {
+                throw ("Util does not generate sessionId");
+            }
 
-            //var cookieValue = response._headers["set-cookie"][0];
-            //request.headers["cookie"] = cookieValue;
-            //var secondId = util.getSessionId(request, response).substring(1);
-            //if (firstId != secondId) {
-            //    throw ("SessionId is not kept constant for single user");
-            //}
-            ////"ai_session=id:3133fb7a-b92f-4bae-917f-f7d435669edf|acq:2014-07-31T17:15:01.622-07:00|acq:1406852101622; path=/; httponly"
-            //var accessDate = cookieValue.substring(cookieValue.indexOf('|acq:') + 5, cookieValue.indexOf(';'));
-            //accessDate = accessDate.substring(accessDate.indexOf('|acq:') + 5, accessDate.length);
-            //var newDate = parseFloat(accessDate) + 1800000;
-            //var newValue = cookieValue.substring(0, cookieValue.indexOf(accessDate) - 5);
-            //request.headers["cookie"] = newValue + '|acq:' + newDate;
-            //var thirdId = util.getUserId(request, response);
-            //if (firstId == thirdId) {
-            //    throw ("UserId does not change for different users");
-            //}
+            var cookieValue = response._headers["set-cookie"][0];
+            request.headers["cookie"] = cookieValue;
+            var secondId = util.getSessionId(request, response).substring(1);
+            if (firstId != secondId) {
+                throw ("SessionId is not kept constant for single user");
+            }
+            //"ai_session=id:3133fb7a-b92f-4bae-917f-f7d435669edf|acq:2014-07-31T17:15:01.622-07:00|acq:1406852101622; path=/; httponly"
+            var accessDate = cookieValue.substring(cookieValue.indexOf('|acq:') + 5, cookieValue.indexOf(';'));
+            accessDate = accessDate.substring(accessDate.indexOf('|acq:') + 5, accessDate.length);
+            var newDate = parseFloat(accessDate) + 1800000;
+            var newValue = cookieValue.substring(0, cookieValue.indexOf(accessDate) - 5);
+            request.headers["cookie"] = newValue + '|acq:' + newDate;
+            var thirdId = util.getUserId(request, response);
+            if (firstId == thirdId) {
+                throw ("UserId does not change for different users");
+            }
 
             return true;
         });

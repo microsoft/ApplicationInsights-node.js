@@ -4,15 +4,11 @@
 var http = require("http");
 var url = require("url");
 
-// load and configure application insights
-var aiModule = require("../applicationInsights");
-var appInsights = new aiModule({ instrumentationKey: "fakeTestKey" });
-
 function runTests() {
     var UnitTests = require('./UnitTests');
     var TestHelper = require("./TestHelper");
     var testHelper = new TestHelper();
-    var unitTests: UnitTests = new UnitTests(testHelper, appInsights);
+    var unitTests: UnitTests = new UnitTests(testHelper);
     unitTests.run();
 
     return testHelper;

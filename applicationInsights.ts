@@ -1,26 +1,9 @@
-﻿/// <reference path="Context/UserContext.ts" />
-/// <reference path="Context/SessionContext.ts" />
-/// <reference path="Context/DeviceContext.ts" />
-/// <reference path="Context/LocationContext.ts" />
-/// <reference path="Context/ApplicationContext.ts" />
-/// <reference path="Util.ts" />
-/// <reference path="Sender.ts" />
-/// <reference path="Scripts/typings/node/node.d.ts" />
-/// <reference path="Scripts/typings/applicationInsights/ai.d.ts" />
+﻿import http = require('http');
 
-import http = require("http");
-import url = require("url");
-
-// this is the "Microsoft" module from the browser JS SDK
+// this tricks typescript into letting us extend the browser types without compiling against their typescript source
 var Microsoft = {
     ApplicationInsights: require("./ai")
 };
-
-var UserContext = require("./context/UserContext");
-var SessionContext = require("./context/SessionContext");
-var DeviceContext = require("./context/DeviceContext");
-var LocationContext = require("./context/LocationContext");
-var ApplicationContext = require("./context/ApplicationContext");
 
 interface IConfig extends Microsoft.ApplicationInsights.IConfig {
     disableRequests?: boolean;
@@ -28,12 +11,17 @@ interface IConfig extends Microsoft.ApplicationInsights.IConfig {
     disableExceptions?: boolean;
 }
 
-class AppInsights extends Microsoft.ApplicationInsights.AppInsights {
+export class applicationInsights extends Microsoft.ApplicationInsights.AppInsights {
     public config: IConfig;
     public context: Microsoft.ApplicationInsights.TelemetryContext;
 
     private _util;
     private _filteredRequests;
+    private _UserContext;
+    private _SessionContext;
+    private _DeviceContext;
+    private _LocationContext;
+    private _ApplicationContext;
 
     constructor(config?: IConfig) {
         // ensure we have an instrumentationKey
@@ -48,6 +36,14 @@ class AppInsights extends Microsoft.ApplicationInsights.AppInsights {
             config = config || <IConfig>{};
             config.instrumentationKey = iKey;
         }
+
+        // load contexts/dependencies
+        this._util = require('./Util');
+        this._UserContext = require("./context/UserContext");
+        this._SessionContext = require("./context/SessionContext");
+        this._DeviceContext = require("./context/DeviceContext");
+        this._LocationContext = require("./context/LocationContext");
+        this._ApplicationContext = require("./context/ApplicationContext");
 
         // set default values
         config.endpointUrl = config.endpointUrl || "//dc.services.visualstudio.com/v2/track";
@@ -69,8 +65,8 @@ class AppInsights extends Microsoft.ApplicationInsights.AppInsights {
         super(this.config);
 
         // override default contexts
-        this.context.device = new DeviceContext();
-        this.context.application = new ApplicationContext();
+        this.context.device = new this._DeviceContext();
+        this.context.application = new this._ApplicationContext();
 
         // list of request types to ignore
         this._filteredRequests = [];
@@ -80,25 +76,21 @@ class AppInsights extends Microsoft.ApplicationInsights.AppInsights {
         var browserSender = this.context._sender;
         browserSender._sender = (payload: string) => NodeSender.sender(payload, browserSender._config);
 
-        // load other dependencies
-        this._util = require('./Util');
-
         // set up auto-collection of requests/traces/exceptions
         this._wrapCreateServer();
-        //this._wrapConsoleLog();
         this._wrapUncaughtException();
     }
 
     /**
-     * Adds items to an array of request strings which will not be tracked
-     */
+        * Adds items to an array of request strings which will not be tracked
+        */
     public filter(types: string[]) {
         this._filteredRequests = this._filteredRequests.concat(types);
     }
 
     /**
-     * Tracks a request/response
-     */
+        * Tracks a request/response
+        */
     public trackRequest(request: http.ServerRequest, response: http.ServerResponse) {
         if (!request) {
             return;
@@ -107,9 +99,11 @@ class AppInsights extends Microsoft.ApplicationInsights.AppInsights {
         var startTime = +new Date;
 
         // response listeners
-        response.once('finish', () => {
-            this._trackResponse.apply(this, [request, response, startTime]);
-        });
+        if (response && response.once) {
+            response.once('finish', () => {
+                this._trackResponse.apply(this, [request, response, startTime]);
+            });
+        }
 
         // track an exception if the request throws an error
         request.on('error', (e) => {
@@ -118,12 +112,12 @@ class AppInsights extends Microsoft.ApplicationInsights.AppInsights {
             var measurements = { "FailedAfter[ms]": +new Date - startTime };
 
             var exception: Microsoft.ApplicationInsights.Telemetry.Exception;
-            exception = new Microsoft.ApplicationInsights.Telemetry.Exception(error, properties, measurements);
-            exception.device = new DeviceContext(request);
-            exception.application = new ApplicationContext();
-            exception.user = new UserContext(request);
-            exception.session = new SessionContext(request, response);
-            exception.location = new LocationContext(request, response);
+            exception = new ai.Telemetry.Exception(error, "request.on('error')", properties, measurements);
+            exception.device = new this._DeviceContext(request);
+            exception.application = new this._ApplicationContext();
+            exception.user = new this._UserContext(request);
+            exception.session = new this._SessionContext(request, response);
+            exception.location = new this._LocationContext(request, response);
             this.context.track(exception);
         });
     }
@@ -149,16 +143,16 @@ class AppInsights extends Microsoft.ApplicationInsights.AppInsights {
 
         // create telemetry object
         var requestTelemetry: Microsoft.ApplicationInsights.Telemetry.Request;
-        requestTelemetry = new Microsoft.ApplicationInsights.Telemetry.Request(name, startTime, duration, responseCode, success, properties);
+        requestTelemetry = new ai.Telemetry.Request(name, startTime, duration, responseCode, success, properties);
         //requestTelemetry.data.item.id = this._uuid.v4();
         requestTelemetry.time = this._util.localDate(new Date());
 
         // add context
-        requestTelemetry.device = new DeviceContext(request);
-        requestTelemetry.application = new ApplicationContext();
-        //requestTelemetry.user = new UserContext(request, response);
-        //requestTelemetry.session = new SessionContext(request, response);
-        requestTelemetry.location = new LocationContext(request);
+        requestTelemetry.device = new this._DeviceContext(request);
+        requestTelemetry.application = new this._ApplicationContext();
+        //requestTelemetry.user = new this._UserContext(request, response);
+        //requestTelemetry.session = new this._SessionContext(request, response);
+        requestTelemetry.location = new this._LocationContext(request);
 
         // track
         this.context.track(requestTelemetry);
@@ -172,7 +166,7 @@ class AppInsights extends Microsoft.ApplicationInsights.AppInsights {
         var originalCreateServer = http.createServer;
         http.createServer = (onRequest) => {
             var lambda = (request, response) => {
-                if (!self.config.disableRequests) {
+                if (!self.config.disableRequests && self._shouldTrack(request)) {
                     self.trackRequest(request, response);
                 }
 
@@ -213,16 +207,17 @@ class AppInsights extends Microsoft.ApplicationInsights.AppInsights {
     /**
      * filters requests specified in the filteredRequests array
      */
-    private _shouldFilter(request: http.ServerRequest) {
-        var path = "" + url.parse(request.url).pathname;
-        for (var i = 0; i < this._filteredRequests.length; i++) {
-            var x = "" + this._filteredRequests[i];
-            if (path.indexOf(x) > -1) {
-                return false;
+    private _shouldTrack(request) {
+        if (request) {
+            var path = "" + url.parse(request.url).pathname;
+            for (var i = 0; i < this._filteredRequests.length; i++) {
+                var x = "" + this._filteredRequests[i];
+                if (path.indexOf(x) > -1) {
+                    return false;
+                }
             }
         }
+
         return true;
     }
 }
-
-module.exports = AppInsights;
