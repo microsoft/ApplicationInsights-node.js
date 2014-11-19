@@ -1,14 +1,4 @@
-﻿
-/*
- * To run these tests:
- *  1) npm install node-mocks-http
- *  2) npm install cookies
- *  3) npm install node-uuid
- *  4) set APPINSIGHTS_INSTRUMENTATION_KEY=<insert_your_instrumentation_key_here>
- *  5) node tests\server.js
- */
-
-class TestHelper {
+﻿class TestHelper {
     private results;
     private tests: Array<() => boolean>;
     public isSuccessfulTestRun;

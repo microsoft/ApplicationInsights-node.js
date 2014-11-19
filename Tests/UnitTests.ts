@@ -1,5 +1,4 @@
 ﻿/// <reference path="../applicationInsights.ts" />
-/// <reference path="../NodeAppInsights.ts" />
 
 var mock = require("node-mocks-http");
 var util = require('../Util');
@@ -12,8 +11,8 @@ class UnitTests {
 
     constructor(testHelper: TestHelper, appInsights) {
         // load and configure application insights
-        var aiModule = require("../NodeAppInsights");
-        this.appInsights = new aiModule.NodeAppInsights({ instrumentationKey: "fakeTestKey" });
+        var aiModule = require("../applicationInsights");
+        this.appInsights = new aiModule.applicationInsights({ instrumentationKey: "fakeTestKey" });
         this.testHelper = testHelper;
     }
 
