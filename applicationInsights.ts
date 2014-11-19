@@ -16,6 +16,7 @@ export class applicationInsights extends Microsoft.ApplicationInsights.AppInsigh
     public context: Microsoft.ApplicationInsights.TelemetryContext;
 
     private _util;
+    private _url;
     private _filteredRequests;
     private _UserContext;
     private _SessionContext;
@@ -38,6 +39,7 @@ export class applicationInsights extends Microsoft.ApplicationInsights.AppInsigh
         }
 
         // load contexts/dependencies
+        this._url = require("url");
         this._util = require('./Util');
         this._UserContext = require("./context/UserContext");
         this._SessionContext = require("./context/SessionContext");
@@ -209,7 +211,7 @@ export class applicationInsights extends Microsoft.ApplicationInsights.AppInsigh
      */
     private _shouldTrack(request) {
         if (request) {
-            var path = "" + url.parse(request.url).pathname;
+            var path = "" + this._url.parse(request.url).pathname;
             for (var i = 0; i < this._filteredRequests.length; i++) {
                 var x = "" + this._filteredRequests[i];
                 if (path.indexOf(x) > -1) {
