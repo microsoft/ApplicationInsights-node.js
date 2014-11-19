@@ -1,9 +1,10 @@
-# Ignore built files
+# Ignore build files
 obj
 *.js
 *.js.map
 *.d.ts
 *.tgz
+package-version
 
 # Except install.js, server.js and typings
 !install.js
@@ -16,3 +17,4 @@ node_modules/**
 # Ignore Visual Studio files
 *.suo
 *.sln
+*.dat

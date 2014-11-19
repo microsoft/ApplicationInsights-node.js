@@ -75,7 +75,7 @@
   <Target Name="AfterBuild">
     <Exec Command="node install.js" />
     <Exec Command="npm uninstall applicationInsights" />
-    <Exec Command="npm pack &gt; temp.txt" />
+    <Exec Command="npm pack &gt; package-version" />
     <Exec Command="$(ProjectDir)\Tests\package.cmd" />
     <Exec Command="rm temp.txt -f" />
   </Target>
