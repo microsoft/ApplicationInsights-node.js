@@ -1,5 +1,11 @@
 ﻿import http = require('http');
 
+// environment variables
+var ENV_azurePrefix = "APPSETTING_";
+var ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
+var ENV_appId = "APPINSIGHTS_APPLICATION_ID";
+var ENV_appVer = "APPINSIGHTS_APPLICATION_VERSION";
+
 // this tricks typescript into letting us extend the browser types without compiling against the source
 var Microsoft = {
     ApplicationInsights: require("./ai")
@@ -29,24 +35,18 @@ interface IConfig {
 }
 
 export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
+
     public config: _IConfig;
     public context: Microsoft.ApplicationInsights.TelemetryContext;
 
-    private _util;
     private _url;
+    private _os;
     private _ignoredRequests;
-    private _UserContext;
-    private _SessionContext;
-    private _DeviceContext;
-    private _LocationContext;
-    private _ApplicationContext;
 
     constructor(config?: IConfig) {
         // ensure we have an instrumentationKey
         if (!config || !config.instrumentationKey) {
-            var iKeyEnvVariableName = "APPINSIGHTS_INSTRUMENTATION_KEY";
-            var azureAppSettingPrefix = "APPSETTING_";
-            var iKey = process.env[iKeyEnvVariableName] || process.env[azureAppSettingPrefix + iKeyEnvVariableName];
+            var iKey = process.env[ENV_iKey] || process.env[ENV_azurePrefix + ENV_iKey];
             if (!iKey || iKey == "") {
                 throw new Error("Instrumentation key not found, pass the key in the config to this method or set the key in the environment variable APPINSIGHTS_INSTRUMENTATION_KEY before starting the server");
             }
@@ -57,12 +57,7 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
 
         // load contexts/dependencies
         this._url = require("url");
-        this._util = require('./Util');
-        this._UserContext = require("./context/UserContext");
-        this._SessionContext = require("./context/SessionContext");
-        this._DeviceContext = require("./context/DeviceContext");
-        this._LocationContext = require("./context/LocationContext");
-        this._ApplicationContext = require("./context/ApplicationContext");
+        this._os = require("os");
 
         // set default values
         config.endpointUrl = config.endpointUrl || "//dc.services.visualstudio.com/v2/track";
@@ -83,9 +78,17 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
         // initialize base class
         super(this.config);
 
-        // override default contexts
-        this.context.device = new this._DeviceContext();
-        this.context.application = new this._ApplicationContext();
+        // load contexts
+        this.context.application = new Microsoft.ApplicationInsights.Context.Application();
+        this.context.device = new Microsoft.ApplicationInsights.Context.Device();
+        this.context.location = new Microsoft.ApplicationInsights.Context.Location();
+
+        this.context.application.id = process.env[ENV_appId] || process.env[ENV_azurePrefix + ENV_appId];
+        this.context.application.ver = process.env[ENV_appVer] || process.env[ENV_azurePrefix + ENV_appVer];
+        this.context.device.id = this._os.hostname();
+        this.context.device.os = this._os.type() + " " + this._os.release();
+        this.context.device.osVersion = this._os.release();
+        this.context.device.type = "server";
 
         // list of request types to ignore
         this._ignoredRequests = [];
@@ -180,11 +183,10 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
 
             var exception: Microsoft.ApplicationInsights.Telemetry.Exception;
             exception = new Microsoft.ApplicationInsights.Telemetry.Exception(error, "request.on('error')", properties, measurements);
-            exception.device = new this._DeviceContext(request);
-            exception.application = new this._ApplicationContext();
-            exception.user = new this._UserContext(request);
-            exception.session = new this._SessionContext(request, response);
-            exception.location = new this._LocationContext(request, response);
+            exception.location = new Microsoft.ApplicationInsights.Context.Location();
+            exception.location.IP = this._getClientIp(request);
+            //exception.user = new this._UserContext(request);
+            //exception.session = new this._SessionContext(request, response);
             this.context.track(exception);
         });
     }
@@ -197,7 +199,7 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
             return;
         }
 
-        // extract information from request/response
+        // gather information about the request/response
         var pathname = url.parse(request.url).pathname;
         var name = request.method + " " + pathname;
         var endTime = +new Date;
@@ -211,15 +213,14 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
         // create telemetry object
         var requestTelemetry: Microsoft.ApplicationInsights.Telemetry.Request;
         requestTelemetry = new Microsoft.ApplicationInsights.Telemetry.Request(name, startTime, duration, responseCode, success, properties);
-        //requestTelemetry.data.item.id = this._uuid.v4();
-        requestTelemetry.time = this._util.localDate(new Date());
+        requestTelemetry.location = new Microsoft.ApplicationInsights.Context.Location();
+        requestTelemetry.location.IP = this._getClientIp(request);
 
         // add context
-        requestTelemetry.device = new this._DeviceContext(request);
-        requestTelemetry.application = new this._ApplicationContext();
         //requestTelemetry.user = new this._UserContext(request, response);
         //requestTelemetry.session = new this._SessionContext(request, response);
-        requestTelemetry.location = new this._LocationContext(request);
+
+        this._handleCookies(request, response);
 
         // track
         this.context.track(requestTelemetry);
@@ -240,5 +241,35 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
         }
 
         return true;
+    }
+
+    private _getClientIp(request) {
+        if (request) {
+            // attempt to get IP from headers in case there is a proxy
+            if (request.headers && request.headers['x-forwarded-for']) {
+                var forwardedFor = request.headers['x-forwarded-for'];
+                if (typeof forwardedFor.split === "function") {
+                    forwardedFor.split(",")[0];
+                    return forwardedFor.split(",")[0];
+                }
+            }
+
+            // attempt to get IP from request
+            if (request.connection && request.connection.remoteAddress) {
+                return request.connection.remoteAddress;
+            } else if (request.socket && request.socket.remoteAddress) {
+                return request.socket.remoteAddress;
+            } else if (request.connection && request.connection.socket && request.connection.socket.remoteAddress) {
+                return request.connection.socket.remoteAddress;
+            }
+        }
+
+        return "";
+    }
+
+    private _handleCookies(request: http.ServerRequest, response: http.ServerResponse) {
+
+        // override browser cookie handling
+        console.log(request, response);
     }
 }

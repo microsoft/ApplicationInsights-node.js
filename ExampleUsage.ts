@@ -1,12 +1,10 @@
 ﻿/*
  * To run this example F5 in visual studio, or:
- *  1) set APPINSIGHTS_INSTRUMENTATION_KEY=<insert_instrumentation_key_here>
- *  2) npm install cookies
- *  3) npm install node-uuid
- *  4) npm pack > package-version
- *  5) set /p package-version=<package-version
- *  6) npm install %package-version%
- *  7) node ExampleUsage.js
+ *  - set APPINSIGHTS_INSTRUMENTATION_KEY=<insert_instrumentation_key_here>
+ *  - npm pack > package-version
+ *  - set /p package-version=<package-version
+ *  - npm install %package-version%
+ *  - node ExampleUsage.js
  */
 
 import http = require('http');

@@ -3,7 +3,6 @@
 import aiModule = require("../applicationInsights");
 
 var mock = require("node-mocks-http");
-var util = require('../Util');
 var ai = require("../ai");
 var prefix = "E2E tests - ";
 

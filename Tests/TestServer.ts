@@ -4,11 +4,9 @@
 
 /*
  * To run these tests:
- *  1) npm install node-mocks-http
- *  2) npm install cookies
- *  3) npm install node-uuid
- *  4) set APPINSIGHTS_INSTRUMENTATION_KEY=<insert_your_instrumentation_key_here>
- *  5) node Tests\TestServer.js
+ *  - npm install node-mocks-http
+ *  - set APPINSIGHTS_INSTRUMENTATION_KEY=<insert_your_instrumentation_key_here>
+ *  - node Tests\TestServer.js
  */
 
 var http = require("http");
@@ -19,11 +17,11 @@ function runTests() {
     var testHelper: TestHelper = new TestHelper();
 
     var UnitTests = require('./UnitTests');
-    var unitTests: UnitTests = new UnitTests(testHelper);
+    var unitTests = new UnitTests(testHelper);
     unitTests.run();
 
     var E2ETests = require('./E2ETests');
-    var e2eTests: E2ETests = new E2ETests(testHelper);
+    var e2eTests = new E2ETests(testHelper);
 
     try {
         e2eTests.run();
