@@ -18,13 +18,10 @@ var appInsights = new aiModule.NodeAppInsights(
     }*/    );
 
 // collect all server requests except favicon('monkey patch' http.createServer to inject request tracking)
-appInsights.trackHttpServerRequests("favicon");
-
-// send all console.log events as traces
-appInsights.trackConsoleLogs();
+appInsights.trackAllHttpServerRequests("favicon");
 
 // log unhandled exceptions by adding a handler to process.on("uncaughtException")
-appInsights.trackUncaughtExceptions();
+appInsights.trackAllUncaughtExceptions();
 
 // manually collect telemetry
 appInsights.trackTrace("example usage trace");

@@ -1,6 +1,7 @@
 ﻿/// <reference path="../applicationInsights.ts" />
 
 import aiModule = require("../applicationInsights");
+import http = require("http");
 
 var mock = require("node-mocks-http");
 var ai = require("../ai");
@@ -61,7 +62,27 @@ class E2ETests {
      */
     private _autoCollectionTests() {
         var type = prefix + "_autoCollectionTests";
-        // todo:
+
+        var ai = this._getAi();
+        //ai.trackAllHttpServerRequests();
+        //ai.trackAllUncaughtExceptions();
+
+        //// create mock server
+        //var server = http.createServer(function (req, res) {
+        //    console.log(req, res);
+        //    res.end("done");
+        //});
+
+        //server.listen(0, '127.0.0.1');
+
+        //// send GET to mock server
+        //http.get(server.address().address + ":" + server.address().port, (response) => {
+
+        //    var data = "";
+        //    response.on('data', (d) => data += d);
+        //    response.on('end', () => console.log(data));
+        //});
+        //// todo:
     }
 }
 

@@ -42,6 +42,8 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
     private _url;
     private _os;
     private _ignoredRequests;
+    private _originalServer;
+    private _exceptionListenerHandle;
 
     constructor(config?: IConfig) {
         // ensure we have an instrumentationKey
@@ -80,15 +82,14 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
 
         // load contexts
         this.context.application = new Microsoft.ApplicationInsights.Context.Application();
-        this.context.device = new Microsoft.ApplicationInsights.Context.Device();
-        this.context.location = new Microsoft.ApplicationInsights.Context.Location();
-
         this.context.application.id = process.env[ENV_appId] || process.env[ENV_azurePrefix + ENV_appId];
         this.context.application.ver = process.env[ENV_appVer] || process.env[ENV_azurePrefix + ENV_appVer];
+        this.context.device = new Microsoft.ApplicationInsights.Context.Device();
         this.context.device.id = this._os.hostname();
         this.context.device.os = this._os.type() + " " + this._os.release();
         this.context.device.osVersion = this._os.release();
         this.context.device.type = "server";
+        this.context.location = new Microsoft.ApplicationInsights.Context.Location();
 
         // list of request types to ignore
         this._ignoredRequests = [];
@@ -102,60 +103,73 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
     /**
      * Wrap http.createServer to automatically track requests
      */
-    public trackHttpServerRequests(ignoredRequests: string);
-    public trackHttpServerRequests(ignoredRequests: string[]);
-    public trackHttpServerRequests(ignoredRequests?: any) {
-        var self = this;
+    public trackAllHttpServerRequests(ignoredRequests?: string);
+    public trackAllHttpServerRequests(ignoredRequests?: string[]);
+    public trackAllHttpServerRequests(ignoredRequests?: any) {
+        if (!this._originalServer) {
+            var self = this;
 
-        if (ignoredRequests) {
-            this._ignoredRequests = this._ignoredRequests.concat(ignoredRequests);
-        }
-
-        var originalCreateServer = http.createServer;
-        http.createServer = (onRequest) => {
-            var lambda = (request, response) => {
-                if (!self.config.disableRequests && self._shouldTrack(request)) {
-                    self.trackRequest(request, response);
-                }
-
-                onRequest(request, response);
+            if (ignoredRequests) {
+                this._ignoredRequests = this._ignoredRequests.concat(ignoredRequests);
             }
 
-            return originalCreateServer(lambda);
+            this._originalServer = http.createServer;
+            http.createServer = (onRequest) => {
+                var lambda = (request, response) => {
+                    if (!self.config.disableRequests && self._shouldTrack(request)) {
+                        self.trackRequest(request, response);
+                    }
+
+                    onRequest(request, response);
+                }
+
+                return this._originalServer(lambda);
+            }
         }
 
         return this;
     }
 
     /**
-     * Wrap console.log to automatically track logging
+     * Restore original http.createServer (disable auto-collection of requests)
      */
-    public trackConsoleLogs() {
-        var self = this;
-        var original = console.log;
-        console.log = (message: string) => {
-            if (!self.config.disableTraces) {
-                self.trackTrace(message, { autoCollected: true });
-            }
-
-            original(message);
+    public restoreHttpServerRequests() {
+        if (this._originalServer) {
+            http.createServer = this._originalServer;
+            this._originalServer = undefined;
+            delete this._originalServer;
         }
-
-        return this;
     }
 
     /**
      * Wrap process.on('uncaughtException') to automatically track exceptions
      */
-    public trackUncaughtExceptions() {
+    public trackAllUncaughtExceptions() {
         var self = this;
-        process.on("uncaughtException", (error: Error) => {
-            if (!self.config.disableExceptions) {
-                self.trackException(error, "uncaughtException", { autoCollected: true });
-            }
-        });
+        if (!this._exceptionListenerHandle) {
+            this._exceptionListenerHandle = (error: Error) => {
+                if (!self.config.disableExceptions) {
+                    self.trackException(error, "uncaughtException", { autoCollected: true });
+                }
+
+                throw error;
+            };
+
+            process.on("uncaughtException", this._exceptionListenerHandle);
+        }
 
         return this;
+    }
+
+    /**
+     * Restore original http.createServer (disable auto-collection of requests)
+     */
+    public restoreUncaughtExceptions() {
+        if (this._exceptionListenerHandle) {
+            process.removeListener("uncaughtException", this._exceptionListenerHandle);
+            this._exceptionListenerHandle = undefined;
+            delete this._exceptionListenerHandle;
+        }
     }
 
     /**
