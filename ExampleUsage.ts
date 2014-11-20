@@ -10,19 +10,25 @@
  */
 
 import http = require('http');
-var port = process.env.port || 1337
+import aiModule = require("applicationInsights");
 
-// before creating the server, load app-insights so we can wrap the server prototype to track requests
-var aiModule = require("applicationInsights");
-var appInsights = new aiModule.applicationInsights(
+// instantiate an instance of NodeAppInsights
+var appInsights = new aiModule.NodeAppInsights(
     /* configuration can optionally be passed here instead of the environment variable, example:
     {
         instrumentationKey: "<guid>"
-    }*/);
+    }*/    );
 
-appInsights.filter("favicon"); // this will ignore requests for favicon
+// collect all server requests except favicon('monkey patch' http.createServer to inject request tracking)
+appInsights.trackHttpServerRequests("favicon");
 
-// example telemetry
+// send all console.log events as traces
+appInsights.trackConsoleLogs();
+
+// log unhandled exceptions by adding a handler to process.on("uncaughtException")
+appInsights.trackUncaughtExceptions();
+
+// manually collect telemetry
 appInsights.trackTrace("example usage trace");
 appInsights.trackEvent("example usage event name", { custom: "properties" });
 appInsights.trackException(new Error("example usage error message"), "handledHere");
@@ -33,6 +39,7 @@ var exampleUsageServerStartEvent = "example usage server start";
 appInsights.startTrackEvent(exampleUsageServerStartEvent);
 
 // create server
+var port = process.env.port || 1337
 http.createServer(function (req, res) {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Hello World\n');

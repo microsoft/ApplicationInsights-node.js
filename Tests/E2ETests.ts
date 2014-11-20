@@ -1,5 +1,7 @@
 ﻿/// <reference path="../applicationInsights.ts" />
 
+import aiModule = require("../applicationInsights");
+
 var mock = require("node-mocks-http");
 var util = require('../Util');
 var ai = require("../ai");
@@ -22,8 +24,7 @@ class E2ETests {
 
     private _getAi(key?: string) {
         // load and configure application insights
-        var aiModule = require("../applicationInsights");
-        var ai = new aiModule.applicationInsights({ instrumentationKey: key });
+        var ai = new aiModule.NodeAppInsights({ instrumentationKey: key });
         return ai;
     }
 

@@ -1,5 +1,7 @@
 ﻿/// <reference path="../applicationInsights.ts" />
 
+import aiModule = require("../applicationInsights");
+
 var mock = require("node-mocks-http");
 var util = require('../Util');
 var ai = require("../ai");
@@ -11,8 +13,8 @@ class UnitTests {
 
     constructor(testHelper: TestHelper, appInsights) {
         // load and configure application insights
-        var aiModule = require("../applicationInsights");
-        this.appInsights = new aiModule.applicationInsights({ instrumentationKey: "fakeTestKey" });
+        
+        this.appInsights = new aiModule.NodeAppInsights({ instrumentationKey: "fakeTestKey" });
         this.testHelper = testHelper;
     }
 
@@ -38,14 +40,10 @@ class UnitTests {
      * Pulic API tests
      */
     private _apiTests() {
+        // todo: add tests for all public API methods
         var type = "apiTests";
         this.testHelper.test(type, "trackRequest can be invoked", () => {
             this.appInsights.trackRequest(null, null);
-            return true;
-        });
-
-        this.testHelper.test(type, "filter can be invoked", () => {
-            this.appInsights.filter(["test"]);
             return true;
         });
 

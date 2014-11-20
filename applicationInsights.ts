@@ -1,23 +1,40 @@
 ﻿import http = require('http');
 
-// this tricks typescript into letting us extend the browser types without compiling against their typescript source
+// this tricks typescript into letting us extend the browser types without compiling against the source
 var Microsoft = {
     ApplicationInsights: require("./ai")
 };
 
-interface IConfig extends Microsoft.ApplicationInsights.IConfig {
+interface _IConfig extends Microsoft.ApplicationInsights.IConfig {
     disableRequests?: boolean;
     disableTraces?: boolean;
     disableExceptions?: boolean;
 }
 
-export class applicationInsights extends Microsoft.ApplicationInsights.AppInsights {
-    public config: IConfig;
+interface IConfig {
+    instrumentationKey: string;
+    endpointUrl?: string;
+    accountId?: string;
+    appUserId?: string;
+    sessionRenewalMs?: number;
+    sessionExpirationMs?: number;
+    maxPayloadSizeInBytes?: number;
+    bufferMinInterval?: number;
+    bufferMaxInterval?: number;
+    enableDebug?: boolean;
+    disableTelemetry?: boolean;
+    disableRequests?: boolean;
+    disableTraces?: boolean;
+    disableExceptions?: boolean;
+}
+
+export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
+    public config: _IConfig;
     public context: Microsoft.ApplicationInsights.TelemetryContext;
 
     private _util;
     private _url;
-    private _filteredRequests;
+    private _ignoredRequests;
     private _UserContext;
     private _SessionContext;
     private _DeviceContext;
@@ -61,7 +78,7 @@ export class applicationInsights extends Microsoft.ApplicationInsights.AppInsigh
         config.disableRequests = !!config.disableRequests;
         config.disableTraces = !!config.disableTraces;
         config.disableExceptions = !!config.disableExceptions;
-        this.config = config;
+        this.config = <any>config;
 
         // initialize base class
         super(this.config);
@@ -71,28 +88,76 @@ export class applicationInsights extends Microsoft.ApplicationInsights.AppInsigh
         this.context.application = new this._ApplicationContext();
 
         // list of request types to ignore
-        this._filteredRequests = [];
+        this._ignoredRequests = [];
 
         // wrap Javascript SDK sender to send data via HTTP requests
         var NodeSender = require("./Sender");
         var browserSender = this.context._sender;
         browserSender._sender = (payload: string) => NodeSender.sender(payload, browserSender._config);
-
-        // set up auto-collection of requests/traces/exceptions
-        this._wrapCreateServer();
-        this._wrapUncaughtException();
     }
 
     /**
-        * Adds items to an array of request strings which will not be tracked
-        */
-    public filter(types: string[]) {
-        this._filteredRequests = this._filteredRequests.concat(types);
+     * Wrap http.createServer to automatically track requests
+     */
+    public trackHttpServerRequests(ignoredRequests: string);
+    public trackHttpServerRequests(ignoredRequests: string[]);
+    public trackHttpServerRequests(ignoredRequests?: any) {
+        var self = this;
+
+        if (ignoredRequests) {
+            this._ignoredRequests = this._ignoredRequests.concat(ignoredRequests);
+        }
+
+        var originalCreateServer = http.createServer;
+        http.createServer = (onRequest) => {
+            var lambda = (request, response) => {
+                if (!self.config.disableRequests && self._shouldTrack(request)) {
+                    self.trackRequest(request, response);
+                }
+
+                onRequest(request, response);
+            }
+
+            return originalCreateServer(lambda);
+        }
+
+        return this;
     }
 
     /**
-        * Tracks a request/response
-        */
+     * Wrap console.log to automatically track logging
+     */
+    public trackConsoleLogs() {
+        var self = this;
+        var original = console.log;
+        console.log = (message: string) => {
+            if (!self.config.disableTraces) {
+                self.trackTrace(message, { autoCollected: true });
+            }
+
+            original(message);
+        }
+
+        return this;
+    }
+
+    /**
+     * Wrap process.on('uncaughtException') to automatically track exceptions
+     */
+    public trackUncaughtExceptions() {
+        var self = this;
+        process.on("uncaughtException", (error: Error) => {
+            if (!self.config.disableExceptions) {
+                self.trackException(error, "uncaughtException", { autoCollected: true });
+            }
+        });
+
+        return this;
+    }
+
+    /**
+     * Tracks a request/response
+     */
     public trackRequest(request: http.ServerRequest, response: http.ServerResponse) {
         if (!request) {
             return;
@@ -114,7 +179,7 @@ export class applicationInsights extends Microsoft.ApplicationInsights.AppInsigh
             var measurements = { "FailedAfter[ms]": +new Date - startTime };
 
             var exception: Microsoft.ApplicationInsights.Telemetry.Exception;
-            exception = new ai.Telemetry.Exception(error, "request.on('error')", properties, measurements);
+            exception = new Microsoft.ApplicationInsights.Telemetry.Exception(error, "request.on('error')", properties, measurements);
             exception.device = new this._DeviceContext(request);
             exception.application = new this._ApplicationContext();
             exception.user = new this._UserContext(request);
@@ -145,7 +210,7 @@ export class applicationInsights extends Microsoft.ApplicationInsights.AppInsigh
 
         // create telemetry object
         var requestTelemetry: Microsoft.ApplicationInsights.Telemetry.Request;
-        requestTelemetry = new ai.Telemetry.Request(name, startTime, duration, responseCode, success, properties);
+        requestTelemetry = new Microsoft.ApplicationInsights.Telemetry.Request(name, startTime, duration, responseCode, success, properties);
         //requestTelemetry.data.item.id = this._uuid.v4();
         requestTelemetry.time = this._util.localDate(new Date());
 
@@ -161,59 +226,13 @@ export class applicationInsights extends Microsoft.ApplicationInsights.AppInsigh
     }
 
     /**
-     * Wrap http.createServer to automatically track requests
-     */
-    private _wrapCreateServer() {
-        var self = this;
-        var originalCreateServer = http.createServer;
-        http.createServer = (onRequest) => {
-            var lambda = (request, response) => {
-                if (!self.config.disableRequests && self._shouldTrack(request)) {
-                    self.trackRequest(request, response);
-                }
-
-                onRequest(request, response);
-            }
-
-            return originalCreateServer(lambda);
-        }
-    }
-
-    /**
-     * Wrap console.log to automatically track logging
-     */
-    private _wrapConsoleLog() {
-        var self = this;
-        var original = console.log;
-        console.log = (message: string) => {
-            if (!self.config.disableTraces) {
-                self.trackTrace(message, { autoCollected: true });
-            }
-
-            original(message);
-        }
-    }
-
-    /**
-     * Wrap process.on('uncaughtException') to automatically track exceptions
-     */
-    private _wrapUncaughtException() {
-        var self = this;
-        process.on("uncaughtException", (error: Error) => {
-            if (!self.config.disableExceptions) {
-                self.trackException(error, "uncaughtException", { autoCollected: true });
-            }
-        });
-    }
-
-    /**
      * filters requests specified in the filteredRequests array
      */
     private _shouldTrack(request) {
-        if (request) {
+        if (request && this._ignoredRequests.length > 0) {
             var path = "" + this._url.parse(request.url).pathname;
-            for (var i = 0; i < this._filteredRequests.length; i++) {
-                var x = "" + this._filteredRequests[i];
+            for (var i = 0; i < this._ignoredRequests.length; i++) {
+                var x = "" + this._ignoredRequests[i];
                 if (path.indexOf(x) > -1) {
                     return false;
                 }
