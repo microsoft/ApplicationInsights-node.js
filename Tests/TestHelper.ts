@@ -1,7 +1,7 @@
 ﻿class TestHelper {
-    private results;
-    private tests: Array<() => boolean>;
+    public results;
     public isSuccessfulTestRun;
+    private tests: Array<() => boolean>;
 
     //todo: find a good test package for node
     constructor() {

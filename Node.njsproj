@@ -12,8 +12,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>7010e869-ca2b-4cc7-9004-85310b0b9ec9</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <!-- <StartupFile>Tests\TestServer.js</StartupFile> -->
-    <StartupFile>ExampleUsage.js</StartupFile>
+    <StartupFile>Tests\TestServer.js</StartupFile>
+    <!-- <StartupFile>ExampleUsage.js</StartupFile> -->
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -44,6 +44,7 @@
     <TypeScriptCompile Include="ExampleUsage.ts" />
     <TypeScriptCompile Include="Scripts\typings\applicationInsights\ai.d.ts" />
     <TypeScriptCompile Include="Sender.ts" />
+    <TypeScriptCompile Include="Tests\E2ETests.ts" />
     <TypeScriptCompile Include="Tests\TestHelper.ts" />
     <TypeScriptCompile Include="Tests\TestServer.ts" />
     <TypeScriptCompile Include="Tests\UnitTests.ts" />

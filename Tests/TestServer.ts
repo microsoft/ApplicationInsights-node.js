@@ -1,4 +1,5 @@
 ﻿/// <reference path="UnitTests.ts" />
+/// <reference path="E2ETests.ts" />
 /// <reference path="../applicationInsights.ts" />
 
 /*
@@ -14,11 +15,22 @@ var http = require("http");
 var url = require("url");
 
 function runTests() {
-    var UnitTests = require('./UnitTests');
     var TestHelper = require("./TestHelper");
-    var testHelper = new TestHelper();
+    var testHelper: TestHelper = new TestHelper();
+
+    var UnitTests = require('./UnitTests');
     var unitTests: UnitTests = new UnitTests(testHelper);
     unitTests.run();
+
+    var E2ETests = require('./E2ETests');
+    var e2eTests: E2ETests = new E2ETests(testHelper);
+
+    try {
+        e2eTests.run();
+    } catch (e) {
+        // catch error if environment variable APPINSIGHTS_INSTRUMENTATION_KEY is not set to a valid key
+        testHelper.test("test server error", "running E2E tests", () => false);
+    }
 
     return testHelper;
 }
@@ -35,7 +47,7 @@ if (process.env.port) {
     // exit if this was called by the build script with no port set
     console.log("running tests:");
     var testPass = runTests();
-    if (testPass.isSuccess) {
+    if (testPass.isSuccessfulTestRun) {
         console.log("test pass succeeded.");
         process.exit(0);
     } else {
