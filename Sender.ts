@@ -2,9 +2,8 @@
 import url = require("url");
 
 /**
-* Replacement for Javascripts Sender class
-* uses the batching logic in Javascript Sender.send
-* replaces Sender.sender with http requests to the endpoint
+* Replacement for the browser Sender class
+* uses the batching logic in Javascript Sender.send but sends with node http.request
 */
 class Sender {
     public static sender(payload: string, config: Microsoft.ApplicationInsights.ISenderConfig) {
@@ -15,8 +14,8 @@ class Sender {
 
         var endpointUrl = config.endpointUrl();
         if (endpointUrl && endpointUrl.indexOf("//") === 0) {
-            // add http protocol if the config did not specify https
-            endpointUrl = "http:" + endpointUrl;
+            // use https if the config did not specify a protocol
+            endpointUrl = "https:" + endpointUrl;
         }
 
         var options = {
