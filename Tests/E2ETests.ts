@@ -5,7 +5,7 @@ import http = require("http");
 
 var mock = require("node-mocks-http");
 var ai = require("../ai");
-var prefix = "E2E tests - ";
+var prefix = "E2ETests_";
 
 class E2ETests {
     private _testHelper: TestHelper;
@@ -21,26 +21,17 @@ class E2ETests {
     public run() {
         this._baseTests();
         this._apiTests();
-        this._autoCollectionTests();
-    }
-
-    private _getAi(key?: string) {
-        // load and configure application insights
-        var ai = new aiModule.NodeAppInsights({
-            instrumentationKey: key,
-            bufferMaxInterval: 0 // disables batching
-        });
-
-        return ai;
+        this._requestAutoCollection();
+        this._exceptionAutoCollection();
     }
 
     /**
      * BVTs
      */
     private _baseTests() {
-        var type = prefix + "_baseTests";
+        var type = prefix + "baseTests";
 
-        this._testHelper.test(type, "can instantiate", () => {
+        this._testHelper.test(type, "canInstantiate", () => {
             var ai = this._getAi();
             return !!ai;
         });
@@ -50,10 +41,14 @@ class E2ETests {
      * Pulic API tests
      */
     private _apiTests() {
-        var type = prefix + "_apiTests";
+        var type = prefix + "apiTests";
         var ai = this._getAi();
+
+        // expect 4 items to be accepted by the backend
+        this._validateSender(ai, 4, () => null);
+
         var test = (name, arg1, arg2?) => {
-            this._testHelper.test(type, "appInsights api - " + name, () => ai[name](arg1, arg2) || true);
+            this._testHelper.test(type, "appInsights API - " + name, () => ai[name](arg1, arg2) || true);
         };
 
         test("trackEvent", "e2e test event");
@@ -65,30 +60,14 @@ class E2ETests {
     /**
      * Telemetry Object tests
      */
-    private _autoCollectionTests() {
-        var type = prefix + "_autoCollectionTests";
+    private _requestAutoCollection() {
+        var type = prefix + "autoCollectionTests";
 
+        // expect 1 item to be accepted by the backend
         var ai = this._getAi();
-        // validate success in sender
-        var Sender = require("../Sender");
-        var browserSender = ai.context._sender;
-        var onSuccess = (response: string) => this._testHelper.test("sender response - ", response, () => {
-            this._testHelper.test(type, "request was accepted", () => JSON.parse(response).itemsAccepted === 1);
-            this._onComplete();
-            return true;
-        });
-
-        // check for errors in sender
-        var onError = (error: Error) => this._testHelper.test("sender error - ", error.name + error.message, () => {
-            return false
-        });
-
-        var sender: Sender = new Sender(browserSender._config, onSuccess, onError);
-        browserSender._sender = (payload: string) => sender.send(payload);
-
+        this._validateSender(ai, 1, this._onComplete);
 
         ai.trackAllRequests(this._server);
-        //ai.trackAllUncaughtExceptions();
 
         // add listener to server after adding our handler
         this._server.addListener("request", (req: http.ServerRequest, res: http.ServerResponse) => {
@@ -104,7 +83,43 @@ class E2ETests {
             response.on('data', (d) => data += d);
             response.on('end', () => console.log(data));
         });
+    }
+
+    private _exceptionAutoCollection() {
         // todo:
+    }
+
+    private _getAi(key?: string) {
+        // load and configure application insights
+        var ai = new aiModule.NodeAppInsights({
+            instrumentationKey: key,
+            bufferMaxInterval: 0 // disables batching
+        });
+
+        return ai;
+    }
+
+    private _validateSender(ai: aiModule.NodeAppInsights, expectedAcceptedItemCount: number, onComplete: () => void) {
+        // validate success in sender
+        var Sender = require("../Sender");
+        var browserSender = ai.context._sender;
+        var onSuccess = (response: string) => this._testHelper.test(prefix + "senderResponse:", response, () => {
+            this._testHelper.test(prefix + "sender validation", expectedAcceptedItemCount + "request(s) were accepted", () => {
+                return JSON.parse(response).itemsAccepted === expectedAcceptedItemCount
+            });
+            
+            onComplete();
+            return true;
+        });
+
+        // check for errors in sender
+        var onError = (error: Error) => this._testHelper.test(prefix + "senderError:", error.name + error.message, () => {
+            onComplete();
+            return false;
+        });
+
+        var sender: Sender = new Sender(browserSender._config, onSuccess, onError);
+        browserSender._sender = (payload: string) => sender.send(payload);
     }
 }
 

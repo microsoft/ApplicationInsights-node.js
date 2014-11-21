@@ -19,26 +19,26 @@ class UnitTests {
 
     public run() {
         this._baseTests();
-        this._apiTests();
+        this._APITests();
         this._telemetryTests();
     }
 
     private _baseTests() {
         var type = "baseTests";
         this.testHelper.test(type, "appInsights exists", () => !!this.appInsights);
-        this.testHelper.test(type, "appInsights api - trackEvent", () => typeof this.appInsights.trackEvent === "function");
-        this.testHelper.test(type, "appInsights api - trackTrace", () => typeof this.appInsights.trackTrace === "function");
-        this.testHelper.test(type, "appInsights api - trackRequest", () => typeof this.appInsights.trackRequest === "function");
-        this.testHelper.test(type, "appInsights api - trackException", () => typeof this.appInsights.trackException === "function");
-        this.testHelper.test(type, "appInsights api - trackMetric", () => typeof this.appInsights.trackMetric === "function");
+        this.testHelper.test(type, "appInsights API - trackEvent", () => typeof this.appInsights.trackEvent === "function");
+        this.testHelper.test(type, "appInsights API - trackTrace", () => typeof this.appInsights.trackTrace === "function");
+        this.testHelper.test(type, "appInsights API - trackRequest", () => typeof this.appInsights.trackRequest === "function");
+        this.testHelper.test(type, "appInsights API - trackException", () => typeof this.appInsights.trackException === "function");
+        this.testHelper.test(type, "appInsights API - trackMetric", () => typeof this.appInsights.trackMetric === "function");
     }
 
     /**
      * Pulic API tests
      */
-    private _apiTests() {
+    private _APITests() {
         // todo: add tests for all public API methods
-        var type = "apiTests";
+        var type = "APITests";
         this.testHelper.test(type, "trackRequest can be invoked", () => {
             this.appInsights.trackRequest(null, null);
             return true;

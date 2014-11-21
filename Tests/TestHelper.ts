@@ -27,7 +27,7 @@
     }
 
     private log(type: string, name: string, result: string) {
-        console.log(type + "_" + name);
+        console.log(type + ": " + name);
         var color;
         if (result === "pass") {
             console.log(" - success: " + result);
@@ -37,7 +37,7 @@
             color = "#cc0000";
         }
 
-        this.results += "<li>" + type + "_" + name + " - <span style = 'background: " + color + ";'>" + result + "</span></li>";
+        this.results += "<li>" + type + ": " + name + " - <span style = 'background: " + color + ";'>" + result + "</span></li>";
     }
 }
 
