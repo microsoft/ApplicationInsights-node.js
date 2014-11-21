@@ -238,15 +238,6 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
     }
 
     /**
-     * event handler for server requests
-     */
-    private _onRequest(request: http.ServerRequest, response: http.ServerResponse) {
-        if (!this.config.disableRequests && this._shouldTrack(request)) {
-            this.trackRequest(request, response);
-        }
-    }
-
-    /**
      * filters requests specified in the filteredRequests array
      */
     private _shouldTrack(request) {
