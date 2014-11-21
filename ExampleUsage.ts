@@ -17,12 +17,6 @@ var appInsights = new aiModule.NodeAppInsights(
         instrumentationKey: "<guid>"
     }*/    );
 
-// collect all server requests except favicon('monkey patch' http.createServer to inject request tracking)
-appInsights.trackAllHttpServerRequests("favicon");
-
-// log unhandled exceptions by adding a handler to process.on("uncaughtException")
-appInsights.trackAllUncaughtExceptions();
-
 // manually collect telemetry
 appInsights.trackTrace("example usage trace");
 appInsights.trackEvent("example usage event name", { custom: "properties" });
@@ -35,10 +29,16 @@ appInsights.startTrackEvent(exampleUsageServerStartEvent);
 
 // create server
 var port = process.env.port || 1337
-http.createServer(function (req, res) {
+var server = http.createServer(function (req, res) {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Hello World\n');
 
     // stop tracking server startup (this will send a timed telemetry event)
     appInsights.stopTrackEvent(exampleUsageServerStartEvent);
 }).listen(port);
+
+// collect all server requests except favicon('monkey patch' http.createServer to inject request tracking)
+appInsights.trackAllRequests(server, "favicon");
+
+// log unhandled exceptions by adding a handler to process.on("uncaughtException")
+appInsights.trackAllUncaughtExceptions();

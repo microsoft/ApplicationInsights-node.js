@@ -1,4 +1,5 @@
-﻿import http = require('http');
+﻿import http = require("http");
+import url = require("url");
 
 // environment variables
 var ENV_azurePrefix = "APPSETTING_";
@@ -42,7 +43,7 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
     private _url;
     private _os;
     private _ignoredRequests;
-    private _originalServer;
+    private _requestListener;
     private _exceptionListenerHandle;
 
     constructor(config?: IConfig) {
@@ -95,36 +96,34 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
         this._ignoredRequests = [];
 
         // wrap Javascript SDK sender to send data via HTTP requests
-        var NodeSender = require("./Sender");
+        var Sender = require("./Sender");
         var browserSender = this.context._sender;
-        browserSender._sender = (payload: string) => NodeSender.sender(payload, browserSender._config);
+        var sender: Sender = new Sender(browserSender._config);
+        browserSender._sender = (payload: string) => sender.send(payload);
     }
 
     /**
      * Wrap http.createServer to automatically track requests
      */
-    public trackAllHttpServerRequests(ignoredRequests?: string);
-    public trackAllHttpServerRequests(ignoredRequests?: string[]);
-    public trackAllHttpServerRequests(ignoredRequests?: any) {
-        if (!this._originalServer) {
+    public trackAllRequests(server: http.Server, ignoredRequests?: string);
+    public trackAllRequests(server: http.Server, ignoredRequests?: string[]);
+    public trackAllRequests(server: http.Server, ignoredRequests?: any) {
+        if (!this._requestListener) {
             var self = this;
-
-            if (ignoredRequests) {
-                this._ignoredRequests = this._ignoredRequests.concat(ignoredRequests);
-            }
-
-            this._originalServer = http.createServer;
-            http.createServer = (onRequest) => {
-                var lambda = (request, response) => {
-                    if (!self.config.disableRequests && self._shouldTrack(request)) {
-                        self.trackRequest(request, response);
-                    }
-
-                    onRequest(request, response);
+            this._requestListener = (request: http.ServerRequest, response: http.ServerResponse) => {
+                if (!self.config.disableRequests && self._shouldTrack(request)) {
+                    self.trackRequest(request, response);
                 }
-
-                return this._originalServer(lambda);
             }
+        }
+
+        if (ignoredRequests) {
+            this._ignoredRequests = this._ignoredRequests.concat(ignoredRequests);
+        }
+
+        var self = this;
+        if (server && typeof server.addListener === "function") {
+            server.addListener("request", this._requestListener);
         }
 
         return this;
@@ -133,11 +132,9 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
     /**
      * Restore original http.createServer (disable auto-collection of requests)
      */
-    public restoreHttpServerRequests() {
-        if (this._originalServer) {
-            http.createServer = this._originalServer;
-            this._originalServer = undefined;
-            delete this._originalServer;
+    public removeRequestListenr(server: http.Server) {
+        if (server && typeof server.removeListener === "function") {
+            server.removeListener("request", this._requestListener);
         }
     }
 
@@ -241,6 +238,15 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
     }
 
     /**
+     * event handler for server requests
+     */
+    private _onRequest(request: http.ServerRequest, response: http.ServerResponse) {
+        if (!this.config.disableRequests && this._shouldTrack(request)) {
+            this.trackRequest(request, response);
+        }
+    }
+
+    /**
      * filters requests specified in the filteredRequests array
      */
     private _shouldTrack(request) {
@@ -283,7 +289,6 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
 
     private _handleCookies(request: http.ServerRequest, response: http.ServerResponse) {
 
-        // override browser cookie handling
-        console.log(request, response);
+        // todo: override browser cookie handling
     }
 }
