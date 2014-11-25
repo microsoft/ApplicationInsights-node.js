@@ -7,22 +7,20 @@ var mock = require("node-mocks-http");
 var ai = require("../ai");
 var prefix = "E2ETests_";
 
-class E2ETests {
+class E2ETests implements Tests {
     private _testHelper: TestHelper;
-    private _server: http.Server;
-    private _onComplete: () => void;
+    //private _server: http.Server;
 
-    constructor(testHelper: TestHelper, server: http.Server, onComplete: () => void) {
+    constructor(testHelper: TestHelper, server: http.Server) {
         this._testHelper = testHelper;
-        this._server = server;
-        this._onComplete = onComplete;
+        //this._server = server;
     }
 
-    public run() {
+    public register() {
         this._baseTests();
         this._apiTests();
         this._requestAutoCollection();
-        this._exceptionAutoCollection();
+        //this._exceptionAutoCollection();
     }
 
     /**
@@ -30,10 +28,9 @@ class E2ETests {
      */
     private _baseTests() {
         var type = prefix + "baseTests";
-
-        this._testHelper.test(type, "canInstantiate", () => {
-            var ai = this._getAi();
-            return !!ai;
+        var name = "canInstantiate";
+        this._testHelper.registerTest(type, name, () => {
+            return !!this._getAi();
         });
     }
 
@@ -44,17 +41,29 @@ class E2ETests {
         var type = prefix + "apiTests";
         var ai = this._getAi();
 
-        // expect 4 items to be accepted by the backend
-        this._validateSender(ai, 4, () => null);
+        var test = (method, arg1, arg2?) => {
+            name = "appInsights API - " + method;
+            var action = (name, arg1, arg2, callback: (any, TestResult) => void) => {
+                return (callback: (any, TestResult) => void) => {
+                    ai[method](arg1, arg2);
+                    callback(null, {
+                        type: type,
+                        name: name,
+                        result: true
+                    });
+                }
+            };
 
-        var test = (name, arg1, arg2?) => {
-            this._testHelper.test(type, "appInsights API - " + name, () => ai[name](arg1, arg2) || true);
+            this._testHelper.registerTestAsync(type, name, action.apply(this, [name, arg1, arg2]));
         };
 
         test("trackEvent", "e2e test event");
         test("trackTrace", "e2e test trace");
         test("trackException", new Error("e2e test error"));
         test("trackMetric", "e2e test metric", 1);
+
+        // expect 4 items to be accepted by the backend
+        this._validateSender(ai, "checkApi", 4);
     }
 
     /**
@@ -65,23 +74,37 @@ class E2ETests {
 
         // expect 1 item to be accepted by the backend
         var ai = this._getAi();
-        this._validateSender(ai, 1, this._onComplete);
+        ai.trackAllHttpServerRequests();
 
-        ai.trackAllRequests(this._server);
+        var test = (name: string, expectedCount: number, serverF: () => http.Server) => {
+            this._validateSender(ai, name, expectedCount, () => {
+                var server = serverF();
 
-        // add listener to server after adding our handler
-        this._server.addListener("request", (req: http.ServerRequest, res: http.ServerResponse) => {
-            if (req.url === "/" + encodeURIComponent(type)) {
-                res.end(type);
-            }
-        });
+                // add listener to server after adding our handler
+                server.addListener("request", (req: http.ServerRequest, res: http.ServerResponse) => {
+                    if (req.url === "/" + encodeURIComponent(name + type)) {
+                        res.end(type);
+                    }
+                });
 
-        // send GET to mock server
-        http.get("http://" + this._server.address().address + ":" + this._server.address().port + "/" + type, (response) => {
+                // send GET to mock server
+                server.on("listening", () => {
+                    http.get("http://" + server.address().address + ":" + server.address().port + "/" + name + type, (response) => {
 
-            var data = "";
-            response.on('data', (d) => data += d);
-            response.on('end', () => console.log(data));
+                        var data = "";
+                        response.on('data', (d) => data += d);
+                        response.on('end', () => console.log(data));
+                    });
+                });
+            });
+        }
+
+        test("simpleServerNoLambda", 1, () => http.createServer().listen(0, "localhost"));
+        test("simpleServerWithLambda", 1, () => http.createServer(() => null).listen(0, "localhost"));
+        test("simpleServerPreRestoreShowsTwo", 2, () => http.createServer(() => ai.trackEvent("requestTestEvent")).listen(0, "localhost"));
+        test("testServerRestore", 1, () => {
+            ai.restoreHttpServerRequests(); // restore and send an event (then check that only 1 item was sent)
+            return http.createServer(() => ai.trackEvent("requestTestEvent")).listen(0, "localhost");
         });
     }
 
@@ -99,27 +122,38 @@ class E2ETests {
         return ai;
     }
 
-    private _validateSender(ai: aiModule.NodeAppInsights, expectedAcceptedItemCount: number, onComplete: () => void) {
-        // validate success in sender
-        var Sender = require("../Sender");
-        var browserSender = ai.context._sender;
-        var onSuccess = (response: string) => this._testHelper.test(prefix + "senderResponse:", response, () => {
-            this._testHelper.test(prefix + "sender validation", expectedAcceptedItemCount + "request(s) were accepted", () => {
-                return JSON.parse(response).itemsAccepted === expectedAcceptedItemCount
-            });
-            
-            onComplete();
-            return true;
-        });
+    private _validateSender(ai: aiModule.NodeAppInsights, testName: string, expectedAcceptedItemCount: number, action?: () => void) {
 
-        // check for errors in sender
-        var onError = (error: Error) => this._testHelper.test(prefix + "senderError:", error.name + error.message, () => {
-            onComplete();
-            return false;
-        });
+        var type = prefix + "sender validation";
+        var name = testName + expectedAcceptedItemCount + " request(s) were accepted";
+        this._testHelper.registerTestAsync(type, name, (callback: (any, TestResults) => void) => {
+            if (action) {
+                action();
+            }
 
-        var sender: Sender = new Sender(browserSender._config, onSuccess, onError);
-        browserSender._sender = (payload: string) => sender.send(payload);
+            // validate success in sender
+            var Sender = require("../Sender");
+            var browserSender = ai.context._sender;
+            var onSuccess = (response: string) => {
+                callback(null, {
+                    type: type,
+                    name: name,
+                    result: JSON.parse(response).itemsAccepted === expectedAcceptedItemCount
+                });
+            };
+
+            // check for errors in sender
+            var onError = (error: Error) => {
+                callback(null, {
+                    type: type,
+                    name: name + " " + error.name + " " + error.message,
+                    result: false
+                });
+            };
+
+            var sender: Sender = new Sender(browserSender._config, onSuccess, onError);
+            browserSender._sender = (payload: string) => sender.send(payload);
+        });
     }
 }
 

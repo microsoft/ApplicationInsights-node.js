@@ -38,6 +38,7 @@
     <TypeScriptCompile Include="applicationInsights.ts" />
     <TypeScriptCompile Include="ExampleUsage.ts" />
     <TypeScriptCompile Include="Scripts\typings\applicationInsights\ai.d.ts" />
+    <TypeScriptCompile Include="Scripts\typings\async\async.d.ts" />
     <TypeScriptCompile Include="Sender.ts" />
     <TypeScriptCompile Include="Tests\E2ETests.ts" />
     <TypeScriptCompile Include="Tests\TestHelper.ts" />
@@ -53,6 +54,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Scripts\typings\applicationInsights\" />
+    <Folder Include="Scripts\typings\async\" />
     <Folder Include="Tests\" />
     <Folder Include="Scripts\" />
     <Folder Include="Scripts\typings\" />

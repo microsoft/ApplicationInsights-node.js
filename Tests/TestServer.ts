@@ -5,6 +5,7 @@
 /*
  * To run these tests:
  *  - npm install node-mocks-http
+ *  - npm install async
  *  - set APPINSIGHTS_INSTRUMENTATION_KEY=<insert_your_instrumentation_key_here>
  *  - node Tests\TestServer.js
  */
@@ -12,38 +13,34 @@
 import http = require("http");
 import url = require("url");
 
-function runTests(server: http.Server, onComplete: () => void) {
+function runTests(server: http.Server, onComplete: (TestHelper) => void) {
     // create test helper
     var TestHelper = require("./TestHelper");
     var testHelper: TestHelper = new TestHelper();
 
     // catch unhandled exceptions and make sure they show up in test results
     var onError = (error: Error) => {
-        testHelper.test("unhandled exception - ", error.name + error.message, () => false);
-        onComplete();
-        throw error;
+        var type = "unhandled exception - ";
+        var name = error.name + error.message;
+        onComplete({
+            getResults: () => error.name + error.message + "</br>" +
+                "<textarea style='width:100%; height:500px;'>" + error["stack"] + " </textarea > "
+        });
     };
 
     process.on("uncaughtException", onError);
 
     // run unit tests
     var UnitTests = require('./UnitTests');
-    var unitTests = new UnitTests(testHelper);
-    unitTests.run();
+    var unitTests: Tests = new UnitTests(testHelper);
+    unitTests.register();
 
     // run e2e tests
     var E2ETests = require('./E2ETests');
-    var e2eTests = new E2ETests(testHelper, server, onComplete);
+    var e2eTests: Tests = new E2ETests(testHelper, server, onComplete);
+    e2eTests.register();
 
-    try {
-        e2eTests.run();
-    } catch (e) {
-        // catch error if environment variable APPINSIGHTS_INSTRUMENTATION_KEY is not set to a valid key
-        testHelper.test("error running E2E tests", e.name + e.message, () => false);
-        onComplete();
-    }
-
-    return testHelper;
+    testHelper.run(onComplete);
 }
 
 // create server
@@ -51,9 +48,9 @@ var server = http.createServer();
 
 function browserTestRunner(req: http.ServerRequest, res: http.ServerResponse) {
     if (req.url === "/") {
-        var testPass = runTests(server, () => {
+        runTests(server, (results: TestHelper) => {
             res.writeHead(200, { 'Content-Type': 'text/html' });
-            res.end(testPass.results);
+            res.end(results.getResults());
         });
     }
 }
@@ -69,8 +66,8 @@ if (process.env.port) {
     server.listen(0, '127.0.0.1');
     server.on("listening", () => {
         console.log("running tests:");
-        var testPass = runTests(server, () => {
-            if (testPass.isSuccessfulTestRun) {
+        runTests(server, (results: TestHelper) => {
+            if (results.isSuccessfulTestRun) {
                 console.log("test pass succeeded.");
                 process.exit(0);
             } else {

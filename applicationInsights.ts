@@ -44,6 +44,7 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
     private _os;
     private _ignoredRequests;
     private _requestListener;
+    private _originalServer;
     private _exceptionListenerHandle;
 
     constructor(config?: IConfig) {
@@ -105,25 +106,30 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
     /**
      * Wrap http.createServer to automatically track requests
      */
-    public trackAllRequests(server: http.Server, ignoredRequests?: string);
-    public trackAllRequests(server: http.Server, ignoredRequests?: string[]);
-    public trackAllRequests(server: http.Server, ignoredRequests?: any) {
-        if (!this._requestListener) {
+    public trackAllHttpServerRequests(ignoredRequests?: string);
+    public trackAllHttpServerRequests(ignoredRequests?: string[]);
+    public trackAllHttpServerRequests(ignoredRequests?: any) {
+        if (!this._originalServer) {
             var self = this;
-            this._requestListener = (request: http.ServerRequest, response: http.ServerResponse) => {
-                if (!self.config.disableRequests && self._shouldTrack(request)) {
-                    self.trackRequest(request, response);
-                }
+
+            if (ignoredRequests) {
+                this._ignoredRequests = this._ignoredRequests.concat(ignoredRequests);
             }
-        }
 
-        if (ignoredRequests) {
-            this._ignoredRequests = this._ignoredRequests.concat(ignoredRequests);
-        }
+            this._originalServer = http.createServer;
+            http.createServer = (onRequest) => {
+                var lambda = (request, response) => {
+                    if (!self.config.disableRequests && self._shouldTrack(request)) {
+                        self.trackRequest(request, response);
+                    }
 
-        var self = this;
-        if (server && typeof server.addListener === "function") {
-            server.addListener("request", this._requestListener);
+                    if (typeof onRequest === "function") {
+                        onRequest(request, response);
+                    }
+                }
+
+                return self._originalServer(lambda);
+            }
         }
 
         return this;
@@ -132,9 +138,11 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
     /**
      * Restore original http.createServer (disable auto-collection of requests)
      */
-    public removeRequestListenr(server: http.Server) {
-        if (server && typeof server.removeListener === "function") {
-            server.removeListener("request", this._requestListener);
+    public restoreHttpServerRequests() {
+        if (this._originalServer) {
+            http.createServer = this._originalServer;
+            this._originalServer = undefined;
+            delete this._originalServer;
         }
     }
 

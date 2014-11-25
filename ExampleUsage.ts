@@ -17,6 +17,13 @@ var appInsights = new aiModule.NodeAppInsights(
         instrumentationKey: "<guid>"
     }*/    );
 
+// must be done before creating the http server ('monkey patch' http.createServer to inject request tracking)
+// this example tracks all requests except requests for "favicon" 
+appInsights.trackAllHttpServerRequests("favicon");
+
+// log unhandled exceptions by adding a handler to process.on("uncaughtException")
+appInsights.trackAllUncaughtExceptions();
+
 // manually collect telemetry
 appInsights.trackTrace("example usage trace");
 appInsights.trackEvent("example usage event name", { custom: "properties" });
@@ -36,9 +43,3 @@ var server = http.createServer(function (req, res) {
     // stop tracking server startup (this will send a timed telemetry event)
     appInsights.stopTrackEvent(exampleUsageServerStartEvent);
 }).listen(port);
-
-// collect all server requests except favicon('monkey patch' http.createServer to inject request tracking)
-appInsights.trackAllRequests(server, "favicon");
-
-// log unhandled exceptions by adding a handler to process.on("uncaughtException")
-appInsights.trackAllUncaughtExceptions();
