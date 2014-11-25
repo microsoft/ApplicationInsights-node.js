@@ -99,12 +99,18 @@ class E2ETests implements Tests {
             });
         }
 
-        test("simpleServerNoLambda", 1, () => http.createServer().listen(0, "localhost"));
-        test("simpleServerWithLambda", 1, () => http.createServer(() => null).listen(0, "localhost"));
-        test("simpleServerPreRestoreShowsTwo", 2, () => http.createServer(() => ai.trackEvent("requestTestEvent")).listen(0, "localhost"));
-        test("testServerRestore", 1, () => {
+        test("httpServerNoLambda", 1, () => http.createServer().listen(0, "localhost"));
+        test("httpServerWithLambda", 1, () => http.createServer(() => null).listen(0, "localhost"));
+        test("httpServerPreRestoreShowsTwo", 2, () => http.createServer(() => ai.trackEvent("requestTestEvent")).listen(0, "localhost"));
+
+        test("httpServerRestore", 1, () => {
             ai.restoreHttpServerRequests(); // restore and send an event (then check that only 1 item was sent)
             return http.createServer(() => ai.trackEvent("requestTestEvent")).listen(0, "localhost");
+        });
+
+        test("httpServerRestoreResume", 1, () => {
+            ai.trackAllHttpServerRequests();
+            return http.createServer(() => null).listen(0, "localhost")
         });
     }
 

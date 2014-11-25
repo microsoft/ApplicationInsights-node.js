@@ -15,7 +15,9 @@ var appInsights = new aiModule.NodeAppInsights(
     /* configuration can optionally be passed here instead of the environment variable, example:
     {
         instrumentationKey: "<guid>"
-    }*/    );
+    }
+    */
+);
 
 // must be done before creating the http server ('monkey patch' http.createServer to inject request tracking)
 // this example tracks all requests except requests for "favicon" 
