@@ -13,7 +13,6 @@ class TestHelper {
     public isSuccessfulTestRun;
     private tests: Array<(any, TestResult) => void>;
 
-    //todo: find a good test package for node
     constructor() {
         this.isSuccessfulTestRun = true;
         this.tests = [];

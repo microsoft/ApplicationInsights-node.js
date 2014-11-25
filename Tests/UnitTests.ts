@@ -7,7 +7,7 @@ var ai = require("../ai");
 
 class UnitTests implements Tests  {
 
-    public appInsights;
+    public appInsights: aiModule.NodeAppInsights;
     private testHelper: TestHelper;
 
     constructor(testHelper: TestHelper, appInsights) {
@@ -38,28 +38,24 @@ class UnitTests implements Tests  {
      * Pulic API tests
      */
     private _APITests() {
-        // todo: add tests for all public API methods
         var type = "APITests";
         var self = this;
-        this.testHelper.registerTest(type, "trackRequest can be invoked", () => {
-            self.appInsights.trackRequest(null, null);
-            return true;
-        });
 
-        this.testHelper.registerTest(type, "trackException can be invoked", () => {
-            self.appInsights.trackException(new Error());
-            return true;
-        });
+        var test = (name, action: () => void) => {
+            this.testHelper.registerTest(type, name, () => {
+                action();
+                return true;
+            });
+        };
 
-        this.testHelper.registerTest(type, "trackException can be invoked", () => {
-            self.appInsights.trackException(new Error());
-            return true;
-        });
-
-        // todo: add more tests to verify things were pulled in from browser version
-        this.testHelper.registerTest(type, "trackTrace can be invoked", () => {
-            self.appInsights.trackTrace("trace");
-            return true;
+        test("trackRequest can be invoked", () => self.appInsights.trackRequest(null, null));
+        test("trackException can be invoked", () => self.appInsights.trackException(new Error()));
+        test("trackEvent can be invoked", () => self.appInsights.trackEvent("event"));
+        test("trackMetric can be invoked", () => self.appInsights.trackMetric("metric", 0));
+        test("trackTrace can be invoked", () => self.appInsights.trackTrace("trace"));
+        test("startStopTrackEvent can be invoked", () => {
+            self.appInsights.startTrackEvent("startStopTrackEvent");
+            self.appInsights.stopTrackEvent("startStopTrackEvent");
         });
     }
 
