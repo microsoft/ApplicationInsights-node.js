@@ -12,8 +12,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>7010e869-ca2b-4cc7-9004-85310b0b9ec9</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Tests\TestServer.js</StartupFile>
-    <!-- <StartupFile>ExampleUsage.js</StartupFile> -->
+    <!-- <StartupFile>Tests\TestServer.js</StartupFile> -->
+    <StartupFile>ExampleUsage.js</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -62,9 +62,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="ai_stub.js" />
-    <Content Include="ai.js">
+    <!-- <Content Include="ai.js">
       <DependentUpon>ai_stub.js</DependentUpon>
-    </Content>
+    </Content> -->
     <Content Include="install.js" />
   </ItemGroup>
   <Import Project="$(VSToolsPath)\Node.js Tools\Microsoft.NodejsTools.targets" />

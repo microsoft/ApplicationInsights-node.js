@@ -21,6 +21,7 @@ class UnitTests implements Tests  {
         this._baseTests();
         this._APITests();
         this._telemetryTests();
+        this._exceptionTests();
     }
 
     private _baseTests() {

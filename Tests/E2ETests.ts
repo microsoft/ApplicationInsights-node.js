@@ -72,7 +72,6 @@ class E2ETests implements Tests {
     private _requestAutoCollection() {
         var type = prefix + "autoCollectionTests";
 
-        // expect 1 item to be accepted by the backend
         var ai = this._getAi();
         ai.trackAllHttpServerRequests();
 

@@ -178,19 +178,49 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
     }
 
     /**
-     * Tracks a request/response
+     * Tracks a request
      */
     public trackRequest(request: http.ServerRequest, response: http.ServerResponse) {
         if (!request) {
             return;
         }
 
+        // gather information about the request
         var startTime = +new Date;
+        var pathname = url.parse(request.url).pathname;
+        var name = request.method + " " + pathname;
+        var properties = {
+            rawURL: request.url.toString()
+        };
+
+        // set user/session context (this must be done before the response finish event fires)
+        this._configureCookieHandlers(request, response);
+        var user = new Microsoft.ApplicationInsights.Context.User();
+        var session = new Microsoft.ApplicationInsights.Context.Session();
+        session.update();
+        session.update = undefined; // don't let the track method auto-update
 
         // response listeners
         if (response && response.once) {
             response.once('finish', () => {
-                this._trackResponse.apply(this, [request, response, startTime]);
+                // gather information about the response
+                var endTime = +new Date;
+                var duration = endTime - startTime;
+                var responseCode = response.statusCode;
+                var success = (response.statusCode < 400);
+
+                // create telemetry object
+                var requestTelemetry: Microsoft.ApplicationInsights.Telemetry.Request;
+                requestTelemetry = new Microsoft.ApplicationInsights.Telemetry.Request(name, startTime, duration, responseCode, success, properties);
+                requestTelemetry.location = new Microsoft.ApplicationInsights.Context.Location();
+                requestTelemetry.location.IP = this._getClientIp(request);
+
+                // add user/session context
+                requestTelemetry.user = user;
+                requestTelemetry.session = session;
+
+                // track
+                this.context.track(requestTelemetry);
             });
         }
 
@@ -204,45 +234,10 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
             exception = new Microsoft.ApplicationInsights.Telemetry.Exception(error, "request.on('error')", properties, measurements);
             exception.location = new Microsoft.ApplicationInsights.Context.Location();
             exception.location.IP = this._getClientIp(request);
-            //exception.user = new this._UserContext(request);
-            //exception.session = new this._SessionContext(request, response);
+            exception.user = user;
+            exception.session = session;
             this.context.track(exception);
         });
-    }
-
-    /**
-     * Called when response finishes; initializes remaining context on the RequestTelemetry object
-     */
-    private _trackResponse(request: http.ServerRequest, response: http.ServerResponse, startTime: number) {
-        if (!response) {
-            return;
-        }
-
-        // gather information about the request/response
-        var pathname = url.parse(request.url).pathname;
-        var name = request.method + " " + pathname;
-        var endTime = +new Date;
-        var duration = endTime - startTime;
-        var responseCode = response.statusCode;
-        var success = (response.statusCode < 400);
-        var properties = {
-            rawURL: request.url.toString()
-        };
-
-        // create telemetry object
-        var requestTelemetry: Microsoft.ApplicationInsights.Telemetry.Request;
-        requestTelemetry = new Microsoft.ApplicationInsights.Telemetry.Request(name, startTime, duration, responseCode, success, properties);
-        requestTelemetry.location = new Microsoft.ApplicationInsights.Context.Location();
-        requestTelemetry.location.IP = this._getClientIp(request);
-
-        // add context
-        //requestTelemetry.user = new this._UserContext(request, response);
-        //requestTelemetry.session = new this._SessionContext(request, response);
-
-        this._handleCookies(request, response);
-
-        // track
-        this.context.track(requestTelemetry);
     }
 
     /**
@@ -286,8 +281,35 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
         return "";
     }
 
-    private _handleCookies(request: http.ServerRequest, response: http.ServerResponse) {
+    private _configureCookieHandlers(request: http.ServerRequest, response: http.ServerResponse) {
+        Microsoft.ApplicationInsights.Util["document"] = {
+            cookie: request.headers.cookie || ""
+        };
 
-        // todo: override browser cookie handling
+        var cookieIndex = {};
+        Microsoft.ApplicationInsights.Util.setCookie = (name, value) => {
+            var headers: Array<string> = <any>response.getHeader("Set-Cookie") || [];
+            if (typeof headers == "string") {
+                headers = [<any>headers];
+            }
+
+            // overwrite existing cookies
+            var data = name + "=" + value;
+            if (cookieIndex[name]) {
+                var index = cookieIndex[name];
+                headers[index] = data
+            } else {
+                cookieIndex[name] = headers.length;
+                headers.push(data);
+            }
+
+            if (response && response["set"] && http["OutgoingMessage"] && http["OutgoingMessage"].prototype) {
+                // use prototype if express is in use
+                http["OutgoingMessage"].prototype.call(response, 'Set-Cookie', headers)
+            } else {
+                // otherwise use http.server default
+                response.setHeader("Set-Cookie", <any>headers);
+            }
+        }
     }
 }

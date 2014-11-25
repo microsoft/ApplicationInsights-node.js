@@ -33,7 +33,7 @@ appInsights.trackException(new Error("example usage error message"), "handledHer
 appInsights.trackMetric("example usage metric name", 42);
 
 // start tracking server startup
-var exampleUsageServerStartEvent = "example usage server start";
+var exampleUsageServerStartEvent = "exampleUsageServerStart";
 appInsights.startTrackEvent(exampleUsageServerStartEvent);
 
 // create server
@@ -41,7 +41,9 @@ var port = process.env.port || 1337
 var server = http.createServer(function (req, res) {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Hello World\n');
-
-    // stop tracking server startup (this will send a timed telemetry event)
-    appInsights.stopTrackEvent(exampleUsageServerStartEvent);
 }).listen(port);
+
+// stop tracking server startup (this will send a timed telemetry event)
+server.on("listening", () => {
+    appInsights.stopTrackEvent(exampleUsageServerStartEvent);
+});
