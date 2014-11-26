@@ -1,29 +1,90 @@
 ﻿# Application Insights for Node.js
 
-[Node](http://nodejs.org/) is a popular, lightweight platform for building fast and scalable network applications. This project extends Application Insights API surface to support Node.js. [Application Insights](http://msdn.microsoft.com/en-us/library/dn481095.aspx) is a service that allows developers to keep their application available, performing and succeeding. This node module will automatically send request telemetry, exceptions and logs for requests to the Application Insights service where they can be visualized in the [Azure Portal](https://portal.azure.com/). 
+>Node.js® is a platform built on Chrome's JavaScript runtime for easily building fast, scalable network applications. Node.js uses an event-driven, non-blocking I/O model that makes it lightweight and efficient, perfect for data-intensive real-time applications that run across distributed devices.
 
-## Set-Up
-Access to the source code is available from [GitHub](https://github.com/Microsoft/AppInsights-node.js). 
+>-- <cite>[nodejs.org](http://nodejs.org/)</cite>
 
-To use the Node Request Monitoring Module, you need an Application Insights Resource. The Application Insights Resource has an instrumentation key (iKey) that is unique to your application for monitoring. 
+This project extends the Application Insights API surface to support Node.js. [Application Insights](http://azure.microsoft.com/en-us/services/application-insights/) is a service that allows developers to keep their application available, performing and succeeding. This Python module will allow you to send telemetry of various kinds (event, trace, exception, etc.) to the Application Insights service where they can be visualized in the Azure Portal. 
 
-If your Node site is running as an Azure Website, an Application Insights resource already exists for your application. See part one if your Node site is an Azure website, or part two if your Node site is not an Azure website.
 
-### Installing From Node Package Manager
 
-Navigate to the folder where you want to install the module then open a command window and type: 
 
-    npm install applicationinsights
+## Requirements ##
+**Install**
+```
+npm install applicationinsights
+```
+**Get an instrumentation key**
+>**Note**: an instrumentation key is required before any data can be sent. Please see the "[Getting an Application Insights Instrumentation Key](https://github.com/Microsoft/AppInsights-Home/wiki#getting-an-application-insights-instrumentation-key)" section of the wiki for more information. To try the SDK without an instrumentation key, set the instrumentationKey config value to a non-empty string.
 
-After you install the node package, it will create new folder called `node_modules` and a new folder called `applicationinsights` within that folder. 
-It will also create an `ai.config.json` file where you will manually insert your instrumentation key or iKey (detailed in steps 3 and 4 below).
-Depending on what you want to track, you need to specify that you want to use the module in your project using a require statement:
 
+
+
+## Usage ##
+**Configuration**
 ```javascript
-require('applicationinsights');
+import aiModule = require("applicationInsights");
+
+var appInsights = new aiModule.NodeAppInsights({
+	instrumentationKey: "<guid>" // see "Requirements" section to get a key
+});
+```
+**Track events/metrics/traces/exceptions**
+```javascript
+appInsights.trackTrace("example trace");
+appInsights.trackEvent("example event");
+appInsights.trackException(new Error("example error"), "handledAt");
+appInsights.trackMetric("example metric", 1);
+```
+**Track all http.Server requests**
+```javascript
+// wraps http.Server to inject request tracking
+appInsights.trackAllHttpServerRequests();
+
+var port = process.env.port || 0;
+var server = http.createServer(function (req, res) {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Hello World\n');
+}).listen(port);
+```
+**Track uncaught exceptions**
+```javascript
+// listens for process.on("uncaughtException", ...);
+// when an exception is thrown, calls trackException and re-throws the Error.
+appInsights.trackAllUncaughtExceptions();
 ```
 
-### Part One (Node site running as an Azure website)
+
+
+## Contributing ##
+**Development environment**
+
+* Install [Visual Studio](http://www.visualstudio.com/)
+* Install [Node.js tools for Visual Studio](http://nodejstools.codeplex.com/)
+* Install [git tools for windows](http://git-scm.com/download/win)
+* Install [Node.js](http://nodejs.org/)
+* Install test dependencies
+```
+npm install node-mocks-http
+npm install async
+```
+* (optional) Set an environment variable to your instrumentation key
+```
+set APPINSIGHTS_INSTRUMENTATION_KEY=<insert_your_instrumentation_key_here>
+```
+* Run tests
+```
+node Tests\TestServer.js
+```
+> **Note**: the startup file can also be changed to TestServer.js in the *.njsproj so that the IDE runs tests instead of the example server.
+```xml
+    <StartupFile>Tests\TestServer.js</StartupFile>
+    <!-- <StartupFile>ExampleUsage.js</StartupFile> -->
+```
+
+
+
+## How to integrate with Azure ##
 1. Click on your website tile and scroll down to the Console tile. Type the command (as shown above) to install the module from the Node Package Manager. <br/> <img src="https://cloud.githubusercontent.com/assets/8000269/3898723/334d80b8-2270-11e4-9265-fea64fa8c4d9.png" width="600">
 
 2. Scroll to the bottom of your website blade to the Extensions tile. Click the Add button and select Visual Studio Online and add the extension. You may need to refresh the current blade for it to appear on your list of extensions. <br/> <img src="https://cloud.githubusercontent.com/assets/8000269/3898727/335acae8-2270-11e4-9294-a53f68e2bb77.png" width="600">
@@ -39,23 +100,3 @@ require('applicationinsights');
 7. Open your website and click on a link to generate a request. <br/>
 
 8. Return to your project tile in the Azure Portal. You can view your requests in the Monitoring tile.
-
-### Part Two (Node site running as a NON-Azure website)
-#### Creating an Application Insights resource in the Azure Portal
-1. First, create a new Application Insights resource in the Azure portal by clicking `New --> Application Insights`. <br/>
-<img src="https://cloud.githubusercontent.com/assets/8000269/3830258/71146e8a-1d88-11e4-90c1-06a7bd89673f.png" width="300">
-
-2. Enter a name for your new Application Insights resource and click create. A new tile will appear on your dashboard. <br/>
-<img src="https://cloud.githubusercontent.com/assets/8000269/3832826/3b671972-1da1-11e4-869c-49b36ad7c194.png" width="600">
-
-3. Expand your app by clicking on the tile on your dashboard, then click on the Properties tile to open your application's Properties blade to obtain the instrumentation key (iKey). Click on the clipboard next to the iKey to copy it. <br/> 
-<img src="https://cloud.githubusercontent.com/assets/8000269/3832828/3b6864da-1da1-11e4-9a1d-6f41324bd775.png" width="600">
-
-4. Set an environment variable named "APPINSIGHTS\_INSTRUMENTATION\_KEY" to the value of your instrumentation key. <br/>
-
-5. Open your `server.js` file that was generated when you installed the module, and entire the require statement as stated above. <br/> <img src="https://cloud.githubusercontent.com/assets/8000269/3899210/209207fc-2278-11e4-960b-1b5144d73718.png" width="600">
-
-6. Run your application and generate a request. <br/>
-
-7. Return to your project tile in the Azure Portal and you can view your requests in the Requests tile in your application's blade. (In my example, you can see that I have generate 10 requests and it took 1 ms to process them). <br/>
-<img src="https://cloud.githubusercontent.com/assets/8000269/3832825/3b66974a-1da1-11e4-87f2-774cb2746c30.png" width="600">
