@@ -1,6 +1,8 @@
-﻿# Application Insights for Node.js
+# Application Insights for Node.js
 
->Node.js® is a platform built on Chrome's JavaScript runtime for easily building fast, scalable network applications. Node.js uses an event-driven, non-blocking I/O model that makes it lightweight and efficient, perfect for data-intensive real-time applications that run across distributed devices.
+[![NPM version](https://badge.fury.io/js/applicationinsights.svg)](http://badge.fury.io/js/applicationinsights)
+
+>Node.js� is a platform built on Chrome's JavaScript runtime for easily building fast, scalable network applications. Node.js uses an event-driven, non-blocking I/O model that makes it lightweight and efficient, perfect for data-intensive real-time applications that run across distributed devices.
 
 >-- <cite>[nodejs.org](http://nodejs.org/)</cite>
 
@@ -12,7 +14,7 @@ This project extends the Application Insights API surface to support Node.js. [A
 ## Requirements ##
 **Install**
 ```
-npm install applicationinsights
+    npm install applicationinsights
 ```
 **Get an instrumentation key**
 >**Note**: an instrumentation key is required before any data can be sent. Please see the "[Getting an Application Insights Instrumentation Key](https://github.com/Microsoft/AppInsights-Home/wiki#getting-an-application-insights-instrumentation-key)" section of the wiki for more information. To try the SDK without an instrumentation key, set the instrumentationKey config value to a non-empty string.
