@@ -12,13 +12,7 @@ var Microsoft = {
     ApplicationInsights: require("./ai")
 };
 
-interface _IConfig extends Microsoft.ApplicationInsights.IConfig {
-    disableRequests?: boolean;
-    disableTraces?: boolean;
-    disableExceptions?: boolean;
-}
-
-interface IConfig {
+export interface IConfig {
     instrumentationKey: string;
     endpointUrl?: string;
     accountId?: string;
@@ -26,18 +20,18 @@ interface IConfig {
     sessionRenewalMs?: number;
     sessionExpirationMs?: number;
     maxPayloadSizeInBytes?: number;
-    bufferMinInterval?: number;
-    bufferMaxInterval?: number;
+    maxBatchSizeInBytes?: number;
+    maxBatchInterval?: number;
     enableDebug?: boolean;
+    autoCollectErrors?: boolean;
     disableTelemetry?: boolean;
-    disableRequests?: boolean;
-    disableTraces?: boolean;
-    disableExceptions?: boolean;
+    verboseLogging?: boolean;
+    diagnosticLogInterval?: number;
 }
 
 export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
 
-    public config: _IConfig;
+    public config: Microsoft.ApplicationInsights.IConfig;
     public context: Microsoft.ApplicationInsights.TelemetryContext;
 
     private _url;
@@ -64,20 +58,22 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
         this._os = require("os");
 
         // set default values
-        config.endpointUrl = config.endpointUrl || "//dc.services.visualstudio.com/v2/track";
-        config.accountId = config.accountId;
-        config.appUserId = config.appUserId;
-        config.sessionRenewalMs = 30 * 60 * 1000;
-        config.sessionExpirationMs = 24 * 60 * 60 * 1000;
-        config.maxPayloadSizeInBytes = config.maxPayloadSizeInBytes > 0 ? config.maxPayloadSizeInBytes : 900000;
-        config.bufferMinInterval = !isNaN(config.bufferMinInterval) ? config.bufferMinInterval : 0;
-        config.bufferMaxInterval = !isNaN(config.bufferMaxInterval) ? config.bufferMaxInterval : 5000;
-        config.enableDebug = !!config.enableDebug;
-        config.disableTelemetry = !!config.disableTelemetry;
-        config.disableRequests = !!config.disableRequests;
-        config.disableTraces = !!config.disableTraces;
-        config.disableExceptions = !!config.disableExceptions;
-        this.config = <any>config;
+        this.config = {
+            instrumentationKey: config.instrumentationKey,
+            endpointUrl: config.endpointUrl || "//dc.services.visualstudio.com/v2/track",
+            accountId: config.accountId,
+            appUserId: config.appUserId,
+            sessionRenewalMs: 30 * 60 * 1000,
+            sessionExpirationMs: 24 * 60 * 60 * 1000,
+            maxPayloadSizeInBytes: config.maxPayloadSizeInBytes > 0 ? config.maxPayloadSizeInBytes : 200000,
+            maxBatchSizeInBytes: config.maxBatchSizeInBytes > 0 ? config.maxBatchSizeInBytes : 1000000,
+            maxBatchInterval: !isNaN(config.maxBatchInterval) ? config.maxBatchInterval : 15000,
+            enableDebug: !!config.enableDebug,
+            disableTelemetry: !!config.disableTelemetry,
+            verboseLogging: !!config.verboseLogging,
+            diagnosticLogInterval: config.diagnosticLogInterval || 10000,
+            autoCollectErrors: false
+        };
 
         // initialize base class
         super(this.config);
@@ -119,7 +115,7 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
             this._originalServer = http.createServer;
             http.createServer = (onRequest) => {
                 var lambda = (request, response) => {
-                    if (!self.config.disableRequests && self._shouldTrack(request)) {
+                    if (self._shouldTrack(request)) {
                         self.trackRequest(request, response);
                     }
 
@@ -153,9 +149,7 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
         var self = this;
         if (!this._exceptionListenerHandle) {
             this._exceptionListenerHandle = (error: Error) => {
-                if (!self.config.disableExceptions) {
-                    self.trackException(error, "uncaughtException", { autoCollected: true });
-                }
+                self.trackException(error, "uncaughtException", { autoCollected: true });
 
                 throw error;
             };
