@@ -37,7 +37,7 @@ function runTests(server: http.Server, onComplete: (TestHelper) => void) {
 
     // run e2e tests
     var E2ETests = require('./E2ETests');
-    var e2eTests: Tests = new E2ETests(testHelper, server, onComplete);
+    var e2eTests: Tests = new E2ETests(testHelper);
     e2eTests.register();
 
     testHelper.run(onComplete);

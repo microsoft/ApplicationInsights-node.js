@@ -9,18 +9,15 @@ var prefix = "E2ETests_";
 
 class E2ETests implements Tests {
     private _testHelper: TestHelper;
-    //private _server: http.Server;
 
-    constructor(testHelper: TestHelper, server: http.Server) {
+    constructor(testHelper: TestHelper) {
         this._testHelper = testHelper;
-        //this._server = server;
     }
 
     public register() {
         this._baseTests();
         this._apiTests();
         this._requestAutoCollection();
-        //this._exceptionAutoCollection();
     }
 
     /**
@@ -113,15 +110,11 @@ class E2ETests implements Tests {
         });
     }
 
-    private _exceptionAutoCollection() {
-        // todo:
-    }
-
     private _getAi(key?: string) {
         // load and configure application insights
-        var ai = new aiModule.NodeAppInsights({
+        var ai = new aiModule.NodeAppInsights(<aiModule.IConfig>{
             instrumentationKey: key,
-            bufferMaxInterval: 0 // disables batching
+            maxBatchInterval: 0 // disables batching
         });
 
         return ai;
