@@ -151,6 +151,9 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
             this._exceptionListenerHandle = (error: Error) => {
                 self.trackException(error, "uncaughtException", { autoCollected: true });
 
+                // Ensure i/o to transmit queued telemetry is initiated before re-throwing
+                self.context._sender.triggerSend();
+
                 throw error;
             };
 
