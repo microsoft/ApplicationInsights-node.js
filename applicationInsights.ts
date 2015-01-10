@@ -11,24 +11,7 @@ var ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
 var ENV_appId = "APPINSIGHTS_APPLICATION_ID";
 var ENV_appVer = "APPINSIGHTS_APPLICATION_VERSION";
 
-export interface IConfig {
-    instrumentationKey: string;
-    endpointUrl?: string;
-    accountId?: string;
-    appUserId?: string;
-    sessionRenewalMs?: number;
-    sessionExpirationMs?: number;
-    maxPayloadSizeInBytes?: number;
-    maxBatchSizeInBytes?: number;
-    maxBatchInterval?: number;
-    enableDebug?: boolean;
-    autoCollectErrors?: boolean;
-    disableTelemetry?: boolean;
-    verboseLogging?: boolean;
-    diagnosticLogInterval?: number;
-}
-
-export class NodeAppInsights extends ai.AppInsights {
+class AppInsights extends ai.AppInsights {
 
     public config: ai.IConfig;
     public context: ai.TelemetryContext;
@@ -40,7 +23,7 @@ export class NodeAppInsights extends ai.AppInsights {
     private _originalServer;
     private _exceptionListenerHandle;
 
-    constructor(config?: IConfig) {
+    constructor(config?: AppInsights.IConfig) {
         // ensure we have an instrumentationKey
         if (!config || !config.instrumentationKey) {
             var iKey = process.env[ENV_iKey] || process.env[ENV_azurePrefix + ENV_iKey];
@@ -48,7 +31,7 @@ export class NodeAppInsights extends ai.AppInsights {
                 throw new Error("Instrumentation key not found, pass the key in the config to this method or set the key in the environment variable APPINSIGHTS_INSTRUMENTATION_KEY before starting the server");
             }
 
-            config = config || <IConfig>{};
+            config = config || <AppInsights.IConfig>{};
             config.instrumentationKey = iKey;
         }
 
@@ -308,3 +291,29 @@ export class NodeAppInsights extends ai.AppInsights {
         }
     }
 }
+
+module AppInsights {
+    
+   export interface IConfig {
+        instrumentationKey: string;
+        endpointUrl?: string;
+        accountId?: string;
+        appUserId?: string;
+        sessionRenewalMs?: number;
+        sessionExpirationMs?: number;
+        maxPayloadSizeInBytes?: number;
+        maxBatchSizeInBytes?: number;
+        maxBatchInterval?: number;
+        enableDebug?: boolean;
+        autoCollectErrors?: boolean;
+        disableTelemetry?: boolean;
+        verboseLogging?: boolean;
+        diagnosticLogInterval?: number;
+    }
+    
+    // For compatibility with existing code, continue to
+    // publish the class as a member of the imported module
+    export var NodeAppInsights = AppInsights
+}
+
+export = AppInsights

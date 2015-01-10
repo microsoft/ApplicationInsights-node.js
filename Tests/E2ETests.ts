@@ -1,5 +1,5 @@
-﻿import aiModule = require("../applicationInsights");
-import http = require("http");
+﻿import http = require("http");
+import AppInsights = require("../applicationInsights");
 import Sender = require("../Sender")
 import TestHelper = require("./TestHelper")
 
@@ -112,15 +112,15 @@ class E2ETests implements TestHelper.Tests {
 
     private _getAi(key?: string) {
         // load and configure application insights
-        var ai = new aiModule.NodeAppInsights(<aiModule.IConfig>{
+        var ai = new AppInsights({
             instrumentationKey: key,
             maxBatchInterval: 0 // disables batching
         });
 
         return ai;
     }
-
-    private _validateSender(ai: aiModule.NodeAppInsights, testName: string, expectedAcceptedItemCount: number, action?: () => void) {
+    
+    private _validateSender(ai: AppInsights, testName: string, expectedAcceptedItemCount: number, action?: () => void) {
 
         var type = prefix + "sender validation";
         var name = testName + expectedAcceptedItemCount + " request(s) were accepted";

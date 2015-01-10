@@ -25,10 +25,10 @@ This project extends the Application Insights API surface to support Node.js. [A
 ## Usage ##
 
 ```javascript
-var ai = require('applicationinsights');
+var AppInsights = require('applicationinsights');
 
 // instantiate an instance of NodeAppInsights
-var appInsights = new ai.NodeAppInsights(
+var appInsights = new AppInsights(
     /* configuration can optionally be passed here instead of the environment variable, example:
     {
         instrumentationKey: "<guid>"

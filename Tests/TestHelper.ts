@@ -50,6 +50,9 @@ class TestHelper {
         async.series(this.tests, (error, results: TestHelper.TestResult[]) => {
             for (var i = 0; i < results.length; i++) {
                 var result = results[i];
+                if(!result.result) {
+                    this.isSuccessfulTestRun = false;
+                }
                 this.log(result);
             }
 
