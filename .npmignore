@@ -9,4 +9,8 @@ obj
 
 # Ignore test files
 Tests
-Server.js
+
+# Don't publish .ts files
+*.ts
+!*.d.ts
+

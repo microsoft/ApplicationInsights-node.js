@@ -32,6 +32,10 @@
     }
   ],
   "scripts": {
+    "prepublish": "tsc --module commonjs --declaration applicationInsights.ts",
     "postinstall": "node install.js"
+  },
+  "devDependencies": {
+    "typescript": "^1.0.1"
   }
 }

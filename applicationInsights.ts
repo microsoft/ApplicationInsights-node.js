@@ -1,5 +1,9 @@
-﻿import http = require("http");
+﻿///<reference path='.\Scripts\typings\node\node.d.ts' />
+///<reference path='.\Scripts\typings\applicationInsights\ai.d.ts' />
+
+import http = require("http");
 import url = require("url");
+import Sender = require("./Sender");
 
 // environment variables
 var ENV_azurePrefix = "APPSETTING_";
