@@ -71,6 +71,7 @@ if (process.env.port) {
                 console.log("test pass succeeded.");
                 process.exit(0);
             } else {
+                console.error(results.getResults())
                 throw ("test pass failed.");
                 process.exit(-1);
             }
