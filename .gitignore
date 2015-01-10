@@ -7,6 +7,7 @@ obj
 package-version
 
 # Except install.js, server.js and typings
+!ai.d.ts
 !install.js
 !server.js
 !Scripts/typings/node/node.d.ts

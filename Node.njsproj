@@ -36,6 +36,7 @@
   </PropertyGroup>
   <ItemGroup>
     <TypeScriptCompile Include="applicationInsights.ts" />
+    <TypeScriptCompile Include="ai.d.ts" />
     <TypeScriptCompile Include="ExampleUsage.ts" />
     <TypeScriptCompile Include="Scripts\typings\applicationInsights\ai.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\async\async.d.ts" />
