@@ -15,4 +15,5 @@ Tests
 !*.d.ts
 ai_stub.js
 install.js
+.travis.yml
 
