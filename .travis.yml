@@ -7,3 +7,4 @@ before_install:
   - npm install -g npm
 before_script:
   - npm install
+env: APPINSIGHTS_INSTRUMENTATION_KEY=dcf0a10e-4ebb-4842-81af-ab4c5376a7f7
