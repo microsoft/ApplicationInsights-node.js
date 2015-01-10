@@ -23,37 +23,47 @@ This project extends the Application Insights API surface to support Node.js. [A
 
 
 ## Usage ##
-**Configuration**
-```javascript
-var aiModule = require("applicationInsights");
 
-var appInsights = new aiModule.NodeAppInsights({
-	instrumentationKey: "<guid>" // see "Requirements" section to get a key
-});
-```
-**Track events/metrics/traces/exceptions**
 ```javascript
-appInsights.trackTrace("example trace");
-appInsights.trackEvent("example event");
-appInsights.trackException(new Error("example error"), "handledAt");
-appInsights.trackMetric("example metric", 1);
-```
-**Track all http.Server requests**
-```javascript
-// wraps http.Server to inject request tracking
-appInsights.trackAllHttpServerRequests();
+var ai = require('applicationinsights');
 
-var port = process.env.port || 0;
+// instantiate an instance of NodeAppInsights
+var appInsights = new ai.NodeAppInsights(
+    /* configuration can optionally be passed here instead of the environment variable, example:
+    {
+        instrumentationKey: "<guid>"
+    }
+    */
+);
+
+// must be done before creating the http server ('monkey patch' http.createServer to inject request tracking)
+// this example tracks all requests except requests for "favicon" 
+appInsights.trackAllHttpServerRequests("favicon");
+
+// log unhandled exceptions by adding a handler to process.on("uncaughtException")
+appInsights.trackAllUncaughtExceptions();
+
+// manually collect telemetry
+appInsights.trackTrace("example usage trace");
+appInsights.trackEvent("example usage event name", { custom: "properties" });
+appInsights.trackException(new Error("example usage error message"), "handledHere");
+appInsights.trackMetric("example usage metric name", 42);
+
+// start tracking server startup
+var exampleUsageServerStartEvent = "exampleUsageServerStart";
+appInsights.startTrackEvent(exampleUsageServerStartEvent);
+
+// create server
+var port = process.env.port || 1337
 var server = http.createServer(function (req, res) {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Hello World\n');
 }).listen(port);
-```
-**Track uncaught exceptions**
-```javascript
-// listens for process.on("uncaughtException", ...);
-// when an exception is thrown, calls trackException and re-throws the Error.
-appInsights.trackAllUncaughtExceptions();
+
+// stop tracking server startup (this will send a timed telemetry event)
+server.on("listening", () => {
+    appInsights.stopTrackEvent(exampleUsageServerStartEvent);
+});
 ```
 
 
