@@ -1,12 +1,6 @@
-﻿interface TestResult {
-    type: string;
-    name: string;
-    result: boolean;
-}
+﻿///<reference path="../Scripts/typings/async/async.d.ts" />
 
-interface Tests {
-    register: () => void;
-}
+import async = require("async");
 
 class TestHelper {
     public results;
@@ -52,9 +46,8 @@ class TestHelper {
     }
 
     public run(callback: (TestHelper) => void) {
-        var async = require("async");
         var self = this;
-        async.series(this.tests, (error, results: [TestResult]) => {
+        async.series(this.tests, (error, results: TestHelper.TestResult[]) => {
             for (var i = 0; i < results.length; i++) {
                 var result = results[i];
                 this.log(result);
@@ -68,7 +61,7 @@ class TestHelper {
         return "<html><head></head><body><ol>" + this.results + "</ol></body>";
     }
 
-    private log(result: TestResult) {
+    private log(result: TestHelper.TestResult) {
         console.log(result.type + ": " + result.name);
         var color;
         if (result.result) {
@@ -84,4 +77,16 @@ class TestHelper {
     }
 }
 
-module.exports = TestHelper;
+module TestHelper {
+    export interface TestResult {
+        type: string;
+        name: string;
+        result: boolean;
+    }
+    
+    export interface Tests {
+        register: () => void;
+    }
+}
+
+export = TestHelper

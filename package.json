@@ -33,9 +33,12 @@
   ],
   "scripts": {
     "prepublish": "tsc --module commonjs --declaration applicationInsights.ts",
+    "test": "tsc --module commonjs Tests/TestServer.ts && node Tests/TestServer",
     "postinstall": "node install.js"
   },
   "devDependencies": {
+    "async": "^0.9.0",
+    "node-mocks-http": "^1.2.3",
     "typescript": "^1.0.1"
   }
 }

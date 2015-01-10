@@ -2,7 +2,7 @@
 
 [![NPM version](https://badge.fury.io/js/applicationinsights.svg)](http://badge.fury.io/js/applicationinsights)
 
->Node.js® is a platform built on Chrome's JavaScript runtime for easily building fast, scalable network applications. Node.js uses an event-driven, non-blocking I/O model that makes it lightweight and efficient, perfect for data-intensive real-time applications that run across distributed devices.
+>Node.js is a platform built on Chrome's JavaScript runtime for easily building fast, scalable network applications. Node.js uses an event-driven, non-blocking I/O model that makes it lightweight and efficient, perfect for data-intensive real-time applications that run across distributed devices.
 
 >-- <cite>[nodejs.org](http://nodejs.org/)</cite>
 
@@ -25,7 +25,7 @@ This project extends the Application Insights API surface to support Node.js. [A
 ## Usage ##
 **Configuration**
 ```javascript
-import aiModule = require("applicationInsights");
+var aiModule = require("applicationInsights");
 
 var appInsights = new aiModule.NodeAppInsights({
 	instrumentationKey: "<guid>" // see "Requirements" section to get a key
@@ -61,14 +61,9 @@ appInsights.trackAllUncaughtExceptions();
 ## Contributing ##
 **Development environment**
 
-* Install [Visual Studio](http://www.visualstudio.com/)
-* Install [Node.js tools for Visual Studio](http://nodejstools.codeplex.com/)
-* Install [git tools for windows](http://git-scm.com/download/win)
-* Install [Node.js](http://nodejs.org/)
-* Install test dependencies
+* Install dev dependencies
 ```
-npm install node-mocks-http
-npm install async
+npm install 
 ```
 * (optional) Set an environment variable to your instrumentation key
 ```
@@ -76,12 +71,7 @@ set APPINSIGHTS_INSTRUMENTATION_KEY=<insert_your_instrumentation_key_here>
 ```
 * Run tests
 ```
-node Tests\TestServer.js
-```
-> **Note**: the startup file can also be changed to TestServer.js in the *.njsproj so that the IDE runs tests instead of the example server.
-```xml
-    <StartupFile>Tests\TestServer.js</StartupFile>
-    <!-- <StartupFile>ExampleUsage.js</StartupFile> -->
+npm test
 ```
 
 

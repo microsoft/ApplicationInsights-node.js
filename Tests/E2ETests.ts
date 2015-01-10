@@ -1,13 +1,13 @@
-﻿/// <reference path="../applicationInsights.ts" />
-
-import aiModule = require("../applicationInsights");
+﻿import aiModule = require("../applicationInsights");
 import http = require("http");
+import Sender = require("../Sender")
+import TestHelper = require("./TestHelper")
 
 var mock = require("node-mocks-http");
-var ai = require("../ai");
+
 var prefix = "E2ETests_";
 
-class E2ETests implements Tests {
+class E2ETests implements TestHelper.Tests {
     private _testHelper: TestHelper;
 
     constructor(testHelper: TestHelper) {
@@ -155,4 +155,4 @@ class E2ETests implements Tests {
     }
 }
 
-module.exports = E2ETests;
+export = E2ETests;

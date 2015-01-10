@@ -1,16 +1,15 @@
-﻿/// <reference path="../applicationInsights.ts" />
-
-import aiModule = require("../applicationInsights");
+﻿import aiModule = require("../applicationInsights");
+import ai = require("../ai");
+import TestHelper = require("./TestHelper")
 
 var mock = require("node-mocks-http");
-var ai = require("../ai");
 
-class UnitTests implements Tests  {
+class UnitTests implements TestHelper.Tests  {
 
     public appInsights: aiModule.NodeAppInsights;
     private testHelper: TestHelper;
 
-    constructor(testHelper: TestHelper, appInsights) {
+    constructor(testHelper: TestHelper) {
         // load and configure application insights
         
         this.appInsights = new aiModule.NodeAppInsights({ instrumentationKey: "fakeTestKey" });
@@ -135,4 +134,4 @@ class UnitTests implements Tests  {
     }
 }
 
-module.exports = UnitTests;
+export = UnitTests;

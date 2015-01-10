@@ -4,8 +4,7 @@
 
 /*
  * To run these tests:
- *  - npm install node-mocks-http
- *  - npm install async
+ *  - npm install
  *  - set APPINSIGHTS_INSTRUMENTATION_KEY=<insert_your_instrumentation_key_here>
  *  - node Tests\TestServer.js
  */
@@ -13,9 +12,12 @@
 import http = require("http");
 import url = require("url");
 
+import UnitTests = require("./UnitTests")
+import E2ETests = require("./E2ETests")
+import TestHelper = require("./TestHelper")
+
 function runTests(server: http.Server, onComplete: (TestHelper) => void) {
     // create test helper
-    var TestHelper = require("./TestHelper");
     var testHelper: TestHelper = new TestHelper();
 
     // catch unhandled exceptions and make sure they show up in test results
@@ -31,13 +33,11 @@ function runTests(server: http.Server, onComplete: (TestHelper) => void) {
     process.on("uncaughtException", onError);
 
     // run unit tests
-    var UnitTests = require('./UnitTests');
-    var unitTests: Tests = new UnitTests(testHelper);
+    var unitTests: TestHelper.Tests = new UnitTests(testHelper);
     unitTests.register();
 
     // run e2e tests
-    var E2ETests = require('./E2ETests');
-    var e2eTests: Tests = new E2ETests(testHelper);
+    var e2eTests: TestHelper.Tests = new E2ETests(testHelper);
     e2eTests.register();
 
     testHelper.run(onComplete);
