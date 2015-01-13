@@ -1,5 +1,9 @@
-﻿import http = require("http");
+﻿///<reference path='Scripts\typings\node\node.d.ts' />
+
+import http = require("http");
 import url = require("url");
+import Sender = require("./Sender");
+import ai = require("./ai")
 
 // environment variables
 var ENV_azurePrefix = "APPSETTING_";
@@ -7,32 +11,10 @@ var ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
 var ENV_appId = "APPINSIGHTS_APPLICATION_ID";
 var ENV_appVer = "APPINSIGHTS_APPLICATION_VERSION";
 
-// this tricks typescript into letting us extend the browser types without compiling against the source
-var Microsoft = {
-    ApplicationInsights: require("./ai")
-};
+class AppInsights extends ai.AppInsights {
 
-export interface IConfig {
-    instrumentationKey: string;
-    endpointUrl?: string;
-    accountId?: string;
-    appUserId?: string;
-    sessionRenewalMs?: number;
-    sessionExpirationMs?: number;
-    maxPayloadSizeInBytes?: number;
-    maxBatchSizeInBytes?: number;
-    maxBatchInterval?: number;
-    enableDebug?: boolean;
-    autoCollectErrors?: boolean;
-    disableTelemetry?: boolean;
-    verboseLogging?: boolean;
-    diagnosticLogInterval?: number;
-}
-
-export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
-
-    public config: Microsoft.ApplicationInsights.IConfig;
-    public context: Microsoft.ApplicationInsights.TelemetryContext;
+    public config: ai.IConfig;
+    public context: ai.TelemetryContext;
 
     private _url;
     private _os;
@@ -41,7 +23,7 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
     private _originalServer;
     private _exceptionListenerHandle;
 
-    constructor(config?: IConfig) {
+    constructor(config?: AppInsights.IConfig) {
         // ensure we have an instrumentationKey
         if (!config || !config.instrumentationKey) {
             var iKey = process.env[ENV_iKey] || process.env[ENV_azurePrefix + ENV_iKey];
@@ -49,7 +31,7 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
                 throw new Error("Instrumentation key not found, pass the key in the config to this method or set the key in the environment variable APPINSIGHTS_INSTRUMENTATION_KEY before starting the server");
             }
 
-            config = config || <IConfig>{};
+            config = config || <AppInsights.IConfig>{};
             config.instrumentationKey = iKey;
         }
 
@@ -79,15 +61,14 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
         super(this.config);
 
         // load contexts
-        this.context.application = new Microsoft.ApplicationInsights.Context.Application();
-        this.context.application.id = process.env[ENV_appId] || process.env[ENV_azurePrefix + ENV_appId];
+        this.context.application = new ai.Context.Application(process.env[ENV_appId] || process.env[ENV_azurePrefix + ENV_appId]);
         this.context.application.ver = process.env[ENV_appVer] || process.env[ENV_azurePrefix + ENV_appVer];
-        this.context.device = new Microsoft.ApplicationInsights.Context.Device();
+        this.context.device = new ai.Context.Device();
         this.context.device.id = this._os.hostname();
         this.context.device.os = this._os.type() + " " + this._os.release();
         this.context.device.osVersion = this._os.release();
         this.context.device.type = "server";
-        this.context.location = new Microsoft.ApplicationInsights.Context.Location();
+        this.context.location = new ai.Context.Location();
 
         // list of request types to ignore
         this._ignoredRequests = [];
@@ -192,8 +173,8 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
 
         // set user/session context (this must be done before the response finish event fires)
         this._configureCookieHandlers(request, response);
-        var user = new Microsoft.ApplicationInsights.Context.User();
-        var session = new Microsoft.ApplicationInsights.Context.Session();
+        var user = new ai.Context.User(this.config.accountId);
+        var session = new ai.Context.Session();
         session.update();
         session.update = undefined; // don't let the track method auto-update
 
@@ -207,9 +188,9 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
                 var success = (response.statusCode < 400);
 
                 // create telemetry object
-                var requestTelemetry: Microsoft.ApplicationInsights.Telemetry.Request;
-                requestTelemetry = new Microsoft.ApplicationInsights.Telemetry.Request(name, startTime, duration, responseCode, success, properties);
-                requestTelemetry.location = new Microsoft.ApplicationInsights.Context.Location();
+                var requestTelemetry: ai.Telemetry.Request;
+                requestTelemetry = new ai.Telemetry.Request(name, startTime, duration, responseCode, success, properties);
+                requestTelemetry.location = new ai.Context.Location();
                 requestTelemetry.location.IP = this._getClientIp(request);
 
                 // add user/session context
@@ -227,9 +208,9 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
             var properties = { rawURL: request.url.toString() };
             var measurements = { "FailedAfter[ms]": +new Date - startTime };
 
-            var exception: Microsoft.ApplicationInsights.Telemetry.Exception;
-            exception = new Microsoft.ApplicationInsights.Telemetry.Exception(error, "request.on('error')", properties, measurements);
-            exception.location = new Microsoft.ApplicationInsights.Context.Location();
+            var exception: ai.Telemetry.Exception;
+            exception = new ai.Telemetry.Exception(error, "request.on('error')", properties, measurements);
+            exception.location = new ai.Context.Location();
             exception.location.IP = this._getClientIp(request);
             exception.user = user;
             exception.session = session;
@@ -279,12 +260,12 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
     }
 
     private _configureCookieHandlers(request: http.ServerRequest, response: http.ServerResponse) {
-        Microsoft.ApplicationInsights.Util["document"] = {
+        ai.Util["document"] = {
             cookie: request.headers.cookie || ""
         };
 
         var cookieIndex = {};
-        Microsoft.ApplicationInsights.Util.setCookie = (name, value) => {
+        ai.Util.setCookie = (name, value) => {
             var headers: Array<string> = <any>response.getHeader("Set-Cookie") || [];
             if (typeof headers == "string") {
                 headers = [<any>headers];
@@ -310,3 +291,29 @@ export class NodeAppInsights extends Microsoft.ApplicationInsights.AppInsights {
         }
     }
 }
+
+module AppInsights {
+    
+   export interface IConfig {
+        instrumentationKey: string;
+        endpointUrl?: string;
+        accountId?: string;
+        appUserId?: string;
+        sessionRenewalMs?: number;
+        sessionExpirationMs?: number;
+        maxPayloadSizeInBytes?: number;
+        maxBatchSizeInBytes?: number;
+        maxBatchInterval?: number;
+        enableDebug?: boolean;
+        autoCollectErrors?: boolean;
+        disableTelemetry?: boolean;
+        verboseLogging?: boolean;
+        diagnosticLogInterval?: number;
+    }
+    
+    // For compatibility with existing code, continue to
+    // publish the class as a member of the imported module
+    export var NodeAppInsights = AppInsights
+}
+
+export = AppInsights

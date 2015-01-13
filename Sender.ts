@@ -62,4 +62,4 @@ class Sender {
     }
 }
 
-module.exports = Sender;
+export = Sender;

@@ -9,4 +9,9 @@ obj
 
 # Ignore test files
 Tests
-Server.js
+
+# Don't publish source files that aren't needed in package
+*.ts
+!*.d.ts
+.travis.yml
+

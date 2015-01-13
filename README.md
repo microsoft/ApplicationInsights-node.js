@@ -1,12 +1,9 @@
 # Application Insights for Node.js
 
 [![NPM version](https://badge.fury.io/js/applicationinsights.svg)](http://badge.fury.io/js/applicationinsights)
+[![Build Status](https://travis-ci.org/lukehoban/AppInsights-node.js.svg?branch=master)](https://travis-ci.org/lukehoban/AppInsights-node.js)
 
->Node.js® is a platform built on Chrome's JavaScript runtime for easily building fast, scalable network applications. Node.js uses an event-driven, non-blocking I/O model that makes it lightweight and efficient, perfect for data-intensive real-time applications that run across distributed devices.
-
->-- <cite>[nodejs.org](http://nodejs.org/)</cite>
-
-This project extends the Application Insights API surface to support Node.js. [Application Insights](http://azure.microsoft.com/en-us/services/application-insights/) is a service that allows developers to keep their application available, performing and succeeding. This node module will allow you to send telemetry of various kinds (event, trace, exception, etc.) to the Application Insights service where they can be visualized in the Azure Portal. 
+This project provides a Node.js SDK for Application Insights. [Application Insights](http://azure.microsoft.com/en-us/services/application-insights/) is a service that allows developers to keep their application available, performing and succeeding. This node module will allow you to send telemetry of various kinds (event, trace, exception, etc.) to the Application Insights service where they can be visualized in the Azure Portal. 
 
 
 
@@ -23,37 +20,47 @@ This project extends the Application Insights API surface to support Node.js. [A
 
 
 ## Usage ##
-**Configuration**
-```javascript
-import aiModule = require("applicationInsights");
 
-var appInsights = new aiModule.NodeAppInsights({
-	instrumentationKey: "<guid>" // see "Requirements" section to get a key
-});
-```
-**Track events/metrics/traces/exceptions**
 ```javascript
-appInsights.trackTrace("example trace");
-appInsights.trackEvent("example event");
-appInsights.trackException(new Error("example error"), "handledAt");
-appInsights.trackMetric("example metric", 1);
-```
-**Track all http.Server requests**
-```javascript
-// wraps http.Server to inject request tracking
-appInsights.trackAllHttpServerRequests();
+var AppInsights = require('applicationinsights');
 
-var port = process.env.port || 0;
+// instantiate an instance of NodeAppInsights
+var appInsights = new AppInsights(
+    /* configuration can optionally be passed here instead of the environment variable, example:
+    {
+        instrumentationKey: "<guid>"
+    }
+    */
+);
+
+// must be done before creating the http server ('monkey patch' http.createServer to inject request tracking)
+// this example tracks all requests except requests for "favicon" 
+appInsights.trackAllHttpServerRequests("favicon");
+
+// log unhandled exceptions by adding a handler to process.on("uncaughtException")
+appInsights.trackAllUncaughtExceptions();
+
+// manually collect telemetry
+appInsights.trackTrace("example usage trace");
+appInsights.trackEvent("example usage event name", { custom: "properties" });
+appInsights.trackException(new Error("example usage error message"), "handledHere");
+appInsights.trackMetric("example usage metric name", 42);
+
+// start tracking server startup
+var exampleUsageServerStartEvent = "exampleUsageServerStart";
+appInsights.startTrackEvent(exampleUsageServerStartEvent);
+
+// create server
+var port = process.env.port || 1337
 var server = http.createServer(function (req, res) {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Hello World\n');
 }).listen(port);
-```
-**Track uncaught exceptions**
-```javascript
-// listens for process.on("uncaughtException", ...);
-// when an exception is thrown, calls trackException and re-throws the Error.
-appInsights.trackAllUncaughtExceptions();
+
+// stop tracking server startup (this will send a timed telemetry event)
+server.on("listening", () => {
+    appInsights.stopTrackEvent(exampleUsageServerStartEvent);
+});
 ```
 
 
@@ -61,14 +68,9 @@ appInsights.trackAllUncaughtExceptions();
 ## Contributing ##
 **Development environment**
 
-* Install [Visual Studio](http://www.visualstudio.com/)
-* Install [Node.js tools for Visual Studio](http://nodejstools.codeplex.com/)
-* Install [git tools for windows](http://git-scm.com/download/win)
-* Install [Node.js](http://nodejs.org/)
-* Install test dependencies
+* Install dev dependencies
 ```
-npm install node-mocks-http
-npm install async
+npm install 
 ```
 * (optional) Set an environment variable to your instrumentation key
 ```
@@ -76,12 +78,7 @@ set APPINSIGHTS_INSTRUMENTATION_KEY=<insert_your_instrumentation_key_here>
 ```
 * Run tests
 ```
-node Tests\TestServer.js
-```
-> **Note**: the startup file can also be changed to TestServer.js in the *.njsproj so that the IDE runs tests instead of the example server.
-```xml
-    <StartupFile>Tests\TestServer.js</StartupFile>
-    <!-- <StartupFile>ExampleUsage.js</StartupFile> -->
+npm test
 ```
 
 

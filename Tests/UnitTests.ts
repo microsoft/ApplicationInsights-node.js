@@ -1,19 +1,18 @@
-﻿/// <reference path="../applicationInsights.ts" />
-
-import aiModule = require("../applicationInsights");
+﻿import AppInsights = require("../applicationInsights");
+import ai = require("../ai");
+import TestHelper = require("./TestHelper")
 
 var mock = require("node-mocks-http");
-var ai = require("../ai");
 
-class UnitTests implements Tests  {
+class UnitTests implements TestHelper.Tests  {
 
-    public appInsights: aiModule.NodeAppInsights;
+    public appInsights: AppInsights;
     private testHelper: TestHelper;
 
-    constructor(testHelper: TestHelper, appInsights) {
+    constructor(testHelper: TestHelper) {
         // load and configure application insights
         
-        this.appInsights = new aiModule.NodeAppInsights({ instrumentationKey: "fakeTestKey" });
+        this.appInsights = new AppInsights({ instrumentationKey: "fakeTestKey" });
         this.testHelper = testHelper;
     }
 
@@ -28,6 +27,7 @@ class UnitTests implements Tests  {
         var type = "baseTests";
         var self = this;
         this.testHelper.registerTest(type, "appInsights exists", () => !!self.appInsights);
+        this.testHelper.registerTest(type, "appInsights API - NodeAppInsights", () => typeof AppInsights.NodeAppInsights === "function");
         this.testHelper.registerTest(type, "appInsights API - trackEvent", () => typeof self.appInsights.trackEvent === "function");
         this.testHelper.registerTest(type, "appInsights API - trackTrace", () => typeof self.appInsights.trackTrace === "function");
         this.testHelper.registerTest(type, "appInsights API - trackRequest", () => typeof self.appInsights.trackRequest === "function");
@@ -135,4 +135,4 @@ class UnitTests implements Tests  {
     }
 }
 
-module.exports = UnitTests;
+export = UnitTests;

@@ -12,8 +12,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>7010e869-ca2b-4cc7-9004-85310b0b9ec9</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <!-- <StartupFile>Tests\TestServer.js</StartupFile> -->
-    <StartupFile>ExampleUsage.js</StartupFile>
+    <StartupFile>Tests\TestServer.js</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -36,7 +35,7 @@
   </PropertyGroup>
   <ItemGroup>
     <TypeScriptCompile Include="applicationInsights.ts" />
-    <TypeScriptCompile Include="ExampleUsage.ts" />
+    <TypeScriptCompile Include="ai.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\applicationInsights\ai.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\async\async.d.ts" />
     <TypeScriptCompile Include="Sender.ts" />
@@ -49,7 +48,6 @@
     <Content Include=".npmignore" />
     <Content Include="License.txt" />
     <Content Include="package.json" />
-    <Content Include="Tests\package.cmd" />
     <Content Include="README.md" />
   </ItemGroup>
   <ItemGroup>
@@ -70,10 +68,6 @@
   <Import Project="$(VSToolsPath)\Node.js Tools\Microsoft.NodejsTools.targets" />
   <Target Name="AfterBuild">
     <Exec Command="node install.js" />
-    <Exec Command="npm uninstall applicationInsights" />
-    <Exec Command="npm pack &gt; package-version" />
-    <Exec Command="$(ProjectDir)\Tests\package.cmd" />
-    <Exec Command="rm temp.txt -f" />
   </Target>
   <ProjectExtensions>
     <VisualStudio>
