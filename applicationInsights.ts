@@ -22,6 +22,7 @@ class AppInsights extends ai.AppInsights {
     private _requestListener;
     private _originalServer;
     private _exceptionListenerHandle;
+    private _enableCacheOnError: boolean; 
 
     constructor(config?: AppInsights.IConfig) {
         // ensure we have an instrumentationKey
@@ -56,6 +57,8 @@ class AppInsights extends ai.AppInsights {
             diagnosticLogInterval: config.diagnosticLogInterval || 10000,
             autoCollectErrors: false
         };
+        
+        this._enableCacheOnError = !!config.enableCacheOnError;  
 
         // initialize base class
         super(this.config);
@@ -77,6 +80,9 @@ class AppInsights extends ai.AppInsights {
         var Sender = require("./Sender");
         var browserSender = this.context._sender;
         var sender: Sender = new Sender(browserSender._config);
+        if (this._enableCacheOnError) {
+            sender.enableCacheOnError(); 
+        }
         browserSender._sender = (payload: string) => sender.send(payload);
     }
 
@@ -309,6 +315,7 @@ module AppInsights {
         disableTelemetry?: boolean;
         verboseLogging?: boolean;
         diagnosticLogInterval?: number;
+        enableCacheOnError?: boolean;
     }
     
     // For compatibility with existing code, continue to
