@@ -3,6 +3,7 @@
 // Definitions by: Boris Yankov <https://github.com/borisyankov/>
 // Definitions: https://github.com/borisyankov/DefinitelyTyped
 
+interface AsyncAction<T> { (callback:AsyncSingleResultCallback<T>):void }
 interface AsyncMultipleResultsCallback<T> { (err: Error, results: T[]): any; }
 interface AsyncSingleResultCallback<T> { (err: Error, result: T): void; }
 interface AsyncTimesCallback<T> { (n: number, callback: AsyncMultipleResultsCallback<T>): void; }
@@ -78,6 +79,7 @@ interface Async {
     concatSeries<T, R>(arr: T[], iterator: AsyncIterator<T, R[]>, callback: AsyncMultipleResultsCallback<R>): any;
 
     // Control Flow
+    series<T>(tasks: AsyncAction<T>[], callback?: AsyncMultipleResultsCallback<T>): void;
     series<T>(tasks: T[], callback?: AsyncMultipleResultsCallback<T>): void;
     series<T>(tasks: T, callback?: AsyncMultipleResultsCallback<T>): void;
     parallel<T>(tasks: T[], callback?: AsyncMultipleResultsCallback<T>): void;
