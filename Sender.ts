@@ -117,7 +117,7 @@ class Sender {
         
         //create file - file name for now is the timestamp, a better approach would be a UUID but that
         //would require an external dependency 
-        var fileName = new Date().getTime() + '.json';
+        var fileName = new Date().getTime() + '.ai.json';
         var fileFullPath = this._path.join(direcotry, fileName);
         
         // if the file already exist, replace the content
@@ -137,7 +137,8 @@ class Sender {
         
         this._fs.readdir(tempDir,(error, files) => {
             if (!error) {
-                if (files.length > 0) {
+                files = files.filter(f => this._path.basename(f).indexOf('.ai.json') > -1);
+                if (files.length > 0) {    
                     var firstFile = files[0];
                     var filePath = this._path.join(tempDir, firstFile);
                     this._fs.readFile(filePath,(error, payload) => {
