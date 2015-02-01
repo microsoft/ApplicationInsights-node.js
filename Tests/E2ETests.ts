@@ -1,7 +1,10 @@
 ﻿import http = require("http");
+import fs = require("fs");
+import path = require("path");
+import os = require("os");
 import AppInsights = require("../applicationInsights");
-import Sender = require("../Sender")
-import TestHelper = require("./TestHelper")
+import Sender = require("../Sender");
+import TestHelper = require("./TestHelper");
 
 var mock = require("node-mocks-http");
 
@@ -18,6 +21,7 @@ class E2ETests implements TestHelper.Tests {
         this._baseTests();
         this._apiTests();
         this._requestAutoCollection();
+        this._cacheOnError();
     }
 
     /**
@@ -109,13 +113,108 @@ class E2ETests implements TestHelper.Tests {
             return http.createServer(() => null).listen(0, "localhost")
         });
     }
-
-    private _getAi(key?: string) {
-        // load and configure application insights
-        var ai = new AppInsights({
-            instrumentationKey: key,
-            maxBatchInterval: 0 // disables batching
+    
+    /**
+     * Test cache on error option
+     */
+    private _cacheOnError() {
+        var type = prefix + "cacheOnError";
+        var tmpDir = path.join(os.tmpDir(), Sender.TEMPDIR);
+        
+        //configure App Insights with unreachable endpointUrl
+        var faulty_ai = this._getAi({
+            instrumentationKey: "",
+            endpointUrl: "not a valid url",
+            enableCacheOnError: true,
         });
+        
+        this._testHelper.registerTestAsync(type, "Test caching on disk",(callback) => {
+            fs.readdir(tmpDir,(error, files_before) => {
+                if (error) {
+                    // direcotry might not exist
+                    files_before = []; 
+                }
+
+                faulty_ai.trackEvent("event should be written to disk");
+                
+                setTimeout(() => {
+                    fs.readdir(tmpDir,(error, files_after) => {
+                        if (error) {
+                            callback(null, {
+                                type: type,
+                                name: "Test caching on disk",
+                                result: false
+                            });
+                        } else {
+                            callback(null, {
+                                type: type,
+                                name: "Test caching on disk",
+                                result: files_before.length < files_after.length
+                            });
+                        }
+                    });
+                }, 1500);
+            });
+        });
+        
+        //configure App Insights
+        var ai = this._getAi({
+            instrumentationKey: "",
+            enableCacheOnError: true,
+        });
+        this._testHelper.registerTestAsync(type, "Test sending cached events on disk",(callback) => {
+            fs.readdir(tmpDir,(error, files_before) => {
+                if (error) {
+                    callback(null, {
+                        type: type,
+                        name: "Test sending cahced events on disk",
+                        result: false
+                    });
+                }
+                
+                // this test runs after the first test where file should exist on disk 
+                if (files_before.length === 0) {
+                    callback(null, {
+                        type: type,
+                        name: "Test sending cached events on disk",
+                        result: true
+                    });
+                }
+                
+                // a sucessful post should trigger sending cached events 
+                ai.trackEvent("test");
+
+                setTimeout(() => {
+                    fs.readdir(tmpDir,(error, files_after) => {
+                        if (error) {
+                            callback(null, {
+                                type: type,
+                                name: "Test sending cached events on disk",
+                                result: false
+                            });
+                        } else {
+                            callback(null, {
+                                type: type,
+                                name: "Test sending cached events on disk",
+                                result: files_before.length > files_after.length
+                            });
+                        }
+                    });
+                }, 1500);
+            });
+        });
+    }
+    
+    
+    private _getAi(config?: AppInsights.IConfig) {
+        config = config || {
+            instrumentationKey: ""
+        };
+        
+        config.maxBatchInterval = 0; // disables batching
+        
+        // load and configure application insights
+        var ai = new AppInsights(config);
 
         return ai;
     }
