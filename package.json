@@ -2,7 +2,7 @@
   "name": "applicationinsights",
   "license": "MIT",
   "bugs": "https://github.com/Microsoft/AppInsights-node.js/issues",
-  "version": "0.12.2",
+  "version": "0.12.3",
   "description": "Microsoft Application Insights module for Node.JS",
   "repository": {
     "type": "git",
@@ -10,22 +10,13 @@
   },
   "main": "applicationInsights",
   "keywords": [
-    "request",
+    "exception monitoring",
     "request monitoring",
-    "monitoring",
     "application insights",
     "microsoft",
     "azure"
   ],
   "contributors": [
-    {
-      "name": "t-hajohn",
-      "email": "t-hajohn@microsoft.com"
-    },
-    {
-      "name": "t-andrea",
-      "email": "t-andrea@microsoft.com"
-    },
     {
       "name": "scsouthw",
       "email": "scsouthw@microsoft.com"
