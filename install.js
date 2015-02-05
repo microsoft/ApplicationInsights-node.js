@@ -15,7 +15,7 @@ fs.readFile("ai_stub.js", function (error, instrumentationData) {
     
     var instrumentation = instrumentationData.toString();
     if (instrumentation.indexOf(divider) >= 0) {
-        http.get("http://dstest.blob.core.windows.net/cdntest/ai.0.12.0.js", function (response) {
+        http.get("http://dstest.blob.core.windows.net/cdntest/ai-node.0.12.4.js", function (response) {
             
             var browserAppInsights = "";
             response.on('data', function (data) {
