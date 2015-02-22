@@ -3,8 +3,8 @@
 import async = require("async");
 
 class TestHelper {
-    public results;
-    public isSuccessfulTestRun;
+    public results: string;
+    public isSuccessfulTestRun: boolean;
     private tests: AsyncFunction<TestHelper.TestResult>[];
 
     constructor() {
@@ -13,8 +13,8 @@ class TestHelper {
         this.results = "";
     }
 
-    public registerTestAsync(type: string, name: string, action: (callback: (any, TestResult) => void) => void) {
-        this.tests.push((callback: (any, TestResult) => void) => {
+    public registerTestAsync(type: string, name: string, action: AsyncFunction<TestHelper.TestResult>) {
+        this.tests.push(callback => {
             try {
                 action(callback);
             } catch (exception) {
@@ -28,13 +28,12 @@ class TestHelper {
     }
 
     public registerTest(type: string, name: string, action: () => boolean) {
-        this.tests.push((callback: (any, TestResult) => void) => {
-            var result;
+        this.tests.push(callback => {
+            var result = false;
             try {
                 result = action();
             } catch (exception) {
                 name += " -- " + exception.name + " " + exception.message;
-                result = false;
             }
 
             callback(null, {
@@ -45,18 +44,16 @@ class TestHelper {
         });
     }
 
-    public run(callback: (TestHelper) => void) {
-        var self = this;
-        async.series(this.tests, (error, results: TestHelper.TestResult[]) => {
+    public run(callback: (helper: TestHelper) => void) {
+        async.series(this.tests, (error, results) => {
             for (var i = 0; i < results.length; i++) {
                 var result = results[i];
-                if(!result.result) {
+                if (!result.result) {
                     this.isSuccessfulTestRun = false;
                 }
                 this.log(result);
             }
-
-            callback(self);
+            callback(this);
         });
     }
 
@@ -66,7 +63,7 @@ class TestHelper {
 
     private log(result: TestHelper.TestResult) {
         console.log(result.type + ": " + result.name);
-        var color;
+        var color: string;
         if (result.result) {
             console.log(" - success: " + result);
             color = "#00cc00";

@@ -2,6 +2,8 @@
 
 import http = require("http");
 import url = require("url");
+import os = require("os");
+
 import Sender = require("./Sender");
 import ai = require("./ai")
 
@@ -16,12 +18,9 @@ class AppInsights extends ai.AppInsights {
     public config: ai.IConfig;
     public context: ai.TelemetryContext;
 
-    private _url;
-    private _os;
-    private _ignoredRequests;
-    private _requestListener;
-    private _originalServer;
-    private _exceptionListenerHandle;
+    private _ignoredRequests: string[];
+    private _originalServer: typeof http.createServer;
+    private _exceptionListenerHandle: (error: Error) => void;
     private _enableCacheOnError: boolean; 
 
     constructor(config?: AppInsights.IConfig) {
@@ -35,10 +34,6 @@ class AppInsights extends ai.AppInsights {
             config = config || <AppInsights.IConfig>{};
             config.instrumentationKey = iKey;
         }
-
-        // load contexts/dependencies
-        this._url = require("url");
-        this._os = require("os");
 
         // set default values
         this.config = {
@@ -67,9 +62,9 @@ class AppInsights extends ai.AppInsights {
         this.context.application = new ai.Context.Application(process.env[ENV_appId] || process.env[ENV_azurePrefix + ENV_appId]);
         this.context.application.ver = process.env[ENV_appVer] || process.env[ENV_azurePrefix + ENV_appVer];
         this.context.device = new ai.Context.Device();
-        this.context.device.id = this._os.hostname();
-        this.context.device.os = this._os.type() + " " + this._os.release();
-        this.context.device.osVersion = this._os.release();
+        this.context.device.id = os.hostname();
+        this.context.device.os = os.type() + " " + os.release();
+        this.context.device.osVersion = os.release();
         this.context.device.type = "server";
         this.context.location = new ai.Context.Location();
 
@@ -89,11 +84,10 @@ class AppInsights extends ai.AppInsights {
     /**
      * Wrap http.createServer to automatically track requests
      */
-    public trackAllHttpServerRequests(ignoredRequests?: string);
-    public trackAllHttpServerRequests(ignoredRequests?: string[]);
-    public trackAllHttpServerRequests(ignoredRequests?: any) {
+    public trackAllHttpServerRequests(ignoredRequests?: string): AppInsights;
+    public trackAllHttpServerRequests(ignoredRequests?: string[]): AppInsights;
+    public trackAllHttpServerRequests(ignoredRequests?: any): AppInsights {
         if (!this._originalServer) {
-            var self = this;
 
             if (ignoredRequests) {
                 this._ignoredRequests = this._ignoredRequests.concat(ignoredRequests);
@@ -101,17 +95,15 @@ class AppInsights extends ai.AppInsights {
 
             this._originalServer = http.createServer;
             http.createServer = (onRequest) => {
-                var lambda = (request, response) => {
-                    if (self._shouldTrack(request)) {
-                        self.trackRequest(request, response);
+                return this._originalServer((request, response) => {
+                    if (this._shouldTrack(request)) {
+                        this.trackRequest(request, response);
                     }
 
                     if (typeof onRequest === "function") {
                         onRequest(request, response);
                     }
-                }
-
-                return self._originalServer(lambda);
+                });
             }
         }
 
@@ -209,7 +201,7 @@ class AppInsights extends ai.AppInsights {
         }
 
         // track an exception if the request throws an error
-        request.on('error', (e) => {
+        request.on('error', (e: any) => {
             var error = new Error(e);
             var properties = { rawURL: request.url.toString() };
             var measurements = { "FailedAfter[ms]": +new Date - startTime };
@@ -227,9 +219,9 @@ class AppInsights extends ai.AppInsights {
     /**
      * filters requests specified in the filteredRequests array
      */
-    private _shouldTrack(request) {
+    private _shouldTrack(request: http.ServerRequest) {
         if (request && this._ignoredRequests.length > 0) {
-            var path = "" + this._url.parse(request.url).pathname;
+            var path = "" + url.parse(request.url).pathname;
             for (var i = 0; i < this._ignoredRequests.length; i++) {
                 var x = "" + this._ignoredRequests[i];
                 if (path.indexOf(x) > -1) {
@@ -241,7 +233,7 @@ class AppInsights extends ai.AppInsights {
         return true;
     }
 
-    private _getClientIp(request) {
+    private _getClientIp(request: any) {
         if (request) {
             // attempt to get IP from headers in case there is a proxy
             if (request.headers && request.headers['x-forwarded-for']) {
@@ -270,9 +262,9 @@ class AppInsights extends ai.AppInsights {
             cookie: request.headers.cookie || ""
         };
 
-        var cookieIndex = {};
+        var cookieIndex: { [key: string]: number; } = {};
         ai.Util.setCookie = (name, value) => {
-            var headers: Array<string> = <any>response.getHeader("Set-Cookie") || [];
+            var headers: string[] = <any>response.getHeader("Set-Cookie") || [];
             if (typeof headers == "string") {
                 headers = [<any>headers];
             }
@@ -287,9 +279,9 @@ class AppInsights extends ai.AppInsights {
                 headers.push(data);
             }
 
-            if (response && response["set"] && http["OutgoingMessage"] && http["OutgoingMessage"].prototype) {
+            if (response && (<any>response)["set"] && (<any>http)["OutgoingMessage"] && (<any>http)["OutgoingMessage"].prototype) {
                 // use prototype if express is in use
-                http["OutgoingMessage"].prototype.call(response, 'Set-Cookie', headers)
+                (<any>http)["OutgoingMessage"].prototype.call(response, 'Set-Cookie', headers)
             } else {
                 // otherwise use http.server default
                 response.setHeader("Set-Cookie", <any>headers);

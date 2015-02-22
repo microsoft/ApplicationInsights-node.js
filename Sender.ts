@@ -2,6 +2,13 @@
 * Replacement for the browser Sender class
 * uses the batching logic in Javascript Sender.send but sends with node http.request
 */
+
+import http = require("http");
+import url = require("url");
+import os = require('os'); 
+import path = require('path');
+import fs = require('fs'); 
+
 class Sender {
     
     public static TEMPDIR: string = 'appInsights-node'; 
@@ -10,25 +17,17 @@ class Sender {
     private _onSuccess: (response: string) => void;
     private _onError: (error: Error) => void;
     private _enableCacheOnError: boolean; 
-    private _http;
-    private _url;
-    private _os; 
-    private _path; 
-    private _fs; 
 
     constructor(config: Microsoft.ApplicationInsights.ISenderConfig, onSuccess?: (response: string) => void, onError?: (error: Error) => void) {
         this._config = config;
         this._onSuccess = onSuccess;
         this._onError = onError;
         this._enableCacheOnError = false;
-        this._http = require("http");
-        this._url = require("url");
-        this._os = require('os'); 
-        this._path = require('path');
-        this._fs = require('fs'); 
     }
 
-    public send(payload: string) {
+    public send(payload: Buffer): void
+    public send(payload: string): void
+    public send(payload: {length: number}) {
         var headers = {
             'Content-Type': 'application/json',
             'Content-Length': payload.length,
@@ -41,18 +40,18 @@ class Sender {
         }
 
         var options = {
-            host: this._url.parse(endpointUrl).hostname,
-            path: this._url.parse(endpointUrl).pathname,
+            host: url.parse(endpointUrl).hostname,
+            path: url.parse(endpointUrl).pathname,
             method: 'POST',
             headers: headers
         };
 
-        var req = this._http.request(options, (res) => {
+        var req = http.request(options, (res: http.ClientResponse) => {
             res.setEncoding('utf-8');
 
             //returns empty if the data is accepted
             var responseString = '';
-            res.on('data', (data) => {
+            res.on('data', (data: string) => {
                 responseString += data;
             });
             res.on('end', () => {
@@ -72,7 +71,7 @@ class Sender {
             });
         });
 
-        req.on('error', (error) => {
+        req.on('error', (error: Error) => {
             this._onErrorHelper(error); 
 
             if (this._enableCacheOnError){
@@ -101,13 +100,13 @@ class Sender {
     /**
      * Stores the payload as a json file on disk in the temp direcotry
      */
-    private _storeToDisk(payload: string) {
+    private _storeToDisk(payload: any) {
         
         //ensure directory is created
-        var direcotry = this._path.join(this._os.tmpDir(), Sender.TEMPDIR);
-        if (!this._fs.existsSync(direcotry)) {
+        var direcotry = path.join(os.tmpDir(), Sender.TEMPDIR);
+        if (!fs.existsSync(direcotry)) {
             try {
-                this._fs.mkdirSync(direcotry);
+                fs.mkdirSync(direcotry);
             } catch (error) {
                 // failing to create the temp direcotry 
                 this._onErrorHelper(error);
@@ -118,10 +117,10 @@ class Sender {
         //create file - file name for now is the timestamp, a better approach would be a UUID but that
         //would require an external dependency 
         var fileName = new Date().getTime() + '.ai.json';
-        var fileFullPath = this._path.join(direcotry, fileName);
+        var fileFullPath = path.join(direcotry, fileName);
         
         // if the file already exist, replace the content
-        this._fs.writeFile(fileFullPath, payload,(error) => this._onErrorHelper(error));
+        fs.writeFile(fileFullPath, payload,(error) => this._onErrorHelper(error));
     }
     
     /**
@@ -129,22 +128,22 @@ class Sender {
      * reads the first file if exist, deletes it and tries to send its load
      */
     private _sendFirstFileOnDisk(): void {
-        var tempDir = this._path.join(this._os.tmpDir(), Sender.TEMPDIR);
+        var tempDir = path.join(os.tmpDir(), Sender.TEMPDIR);
         
-        if (!this._fs.existsSync(tempDir)) {
+        if (!fs.existsSync(tempDir)) {
             return; 
         }
         
-        this._fs.readdir(tempDir,(error, files) => {
+        fs.readdir(tempDir,(error, files) => {
             if (!error) {
-                files = files.filter(f => this._path.basename(f).indexOf('.ai.json') > -1);
+                files = files.filter(f => path.basename(f).indexOf('.ai.json') > -1);
                 if (files.length > 0) {    
                     var firstFile = files[0];
-                    var filePath = this._path.join(tempDir, firstFile);
-                    this._fs.readFile(filePath,(error, payload) => {
+                    var filePath = path.join(tempDir, firstFile);
+                    fs.readFile(filePath,(error, payload) => {
                         if (!error) {
                             // delete the file first to prevent double sending
-                            this._fs.unlink(filePath,(error) => {
+                            fs.unlink(filePath,(error) => {
                                 if (!error) {
                                     this.send(payload);
                                 } else {

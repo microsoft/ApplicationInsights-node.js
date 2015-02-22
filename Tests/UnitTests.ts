@@ -42,7 +42,7 @@ class UnitTests implements TestHelper.Tests  {
         var type = "APITests";
         var self = this;
 
-        var test = (name, action: () => void) => {
+        var test = (name: string, action: () => void) => {
             this.testHelper.registerTest(type, name, () => {
                 action();
                 return true;

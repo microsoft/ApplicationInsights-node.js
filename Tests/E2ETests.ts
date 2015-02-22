@@ -42,11 +42,11 @@ class E2ETests implements TestHelper.Tests {
         var type = prefix + "apiTests";
         var ai = this._getAi();
 
-        var test = (method, arg1, arg2?) => {
+        var test = (method: string, ...args: any[]) => {
             name = "appInsights API - " + method;
-            var action = (name, arg1, arg2, callback: (any, TestResult) => void) => {
-                return (callback: (any, TestResult) => void) => {
-                    ai[method](arg1, arg2);
+            var action = (name: string, arg1: any, arg2: any, callback: (error: any, result: TestHelper.TestResult) => void) => {
+                return (callback: (error: any, result: TestHelper.TestResult) => void) => {
+                    (<any>ai)[method](arg1, arg2);
                     callback(null, {
                         type: type,
                         name: name,
@@ -55,7 +55,7 @@ class E2ETests implements TestHelper.Tests {
                 }
             };
 
-            this._testHelper.registerTestAsync(type, name, action.apply(this, [name, arg1, arg2]));
+            this._testHelper.registerTestAsync(type, name, action.apply(this, [name].concat(args)));
         };
 
         test("trackEvent", "e2e test event");
@@ -89,10 +89,10 @@ class E2ETests implements TestHelper.Tests {
 
                 // send GET to mock server
                 server.on("listening", () => {
-                    http.get("http://" + server.address().address + ":" + server.address().port + "/" + name + type, (response) => {
+                    http.get("http://" + server.address().address + ":" + server.address().port + "/" + name + type, (response: http.ClientResponse) => {
 
                         var data = "";
-                        response.on('data', (d) => data += d);
+                        response.on('data', (d: string) => data += d);
                         response.on('end', () => console.log(data));
                     });
                 });
@@ -100,7 +100,7 @@ class E2ETests implements TestHelper.Tests {
         }
 
         test("httpServerNoLambda", 1, () => http.createServer().listen(0, "localhost"));
-        test("httpServerWithLambda", 1, () => http.createServer(() => null).listen(0, "localhost"));
+        test("httpServerWithLambda", 1,() => http.createServer(() => { }).listen(0, "localhost"));
         test("httpServerPreRestoreShowsTwo", 2, () => http.createServer(() => ai.trackEvent("requestTestEvent")).listen(0, "localhost"));
 
         test("httpServerRestore", 1, () => {
@@ -110,7 +110,7 @@ class E2ETests implements TestHelper.Tests {
 
         test("httpServerRestoreResume", 1, () => {
             ai.trackAllHttpServerRequests();
-            return http.createServer(() => null).listen(0, "localhost")
+            return http.createServer(() => { }).listen(0, "localhost")
         });
     }
     
@@ -223,7 +223,7 @@ class E2ETests implements TestHelper.Tests {
 
         var type = prefix + "sender validation";
         var name = testName + expectedAcceptedItemCount + " request(s) were accepted";
-        this._testHelper.registerTestAsync(type, name, (callback: (any, TestResults) => void) => {
+        this._testHelper.registerTestAsync(type, name, callback => {
             if (action) {
                 action();
             }
