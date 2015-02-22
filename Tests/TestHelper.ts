@@ -5,7 +5,7 @@ import async = require("async");
 class TestHelper {
     public results;
     public isSuccessfulTestRun;
-    private tests: Array<AsyncAction<TestHelper.TestResult>>;
+    private tests: AsyncFunction<TestHelper.TestResult>[];
 
     constructor() {
         this.isSuccessfulTestRun = true;
