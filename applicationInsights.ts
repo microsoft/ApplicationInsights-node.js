@@ -234,27 +234,34 @@ class AppInsights extends ai.AppInsights {
     }
 
     private _getClientIp(request: any) {
-        if (request) {
-            // attempt to get IP from headers in case there is a proxy
-            if (request.headers && request.headers['x-forwarded-for']) {
-                var forwardedFor = request.headers['x-forwarded-for'];
-                if (typeof forwardedFor.split === "function") {
-                    forwardedFor.split(",")[0];
-                    return forwardedFor.split(",")[0];
-                }
-            }
+        var ip:string = "";
 
-            // attempt to get IP from request
-            if (request.connection && request.connection.remoteAddress) {
-                return request.connection.remoteAddress;
-            } else if (request.socket && request.socket.remoteAddress) {
-                return request.socket.remoteAddress;
-            } else if (request.connection && request.connection.socket && request.connection.socket.remoteAddress) {
-                return request.connection.socket.remoteAddress;
+        // regex to match ipv4 without port
+        // Note: including the port would cause the payload to be rejected by the data collector
+        var ipMatch = /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/;
+
+        var check = (str:string):string => {
+            var results = ipMatch.exec(str);
+            if (results) {
+                return results[0];
             }
+        };
+
+        if (request) {
+            ip = check(request.headers['x-forwarded-for'])
+            || check(request.headers['x-client-ip'])
+            || check(request.headers['x-real-ip'])
+            || check(request.connection && request.connection.remoteAddress)
+            || check(request.socket && request.socket.remoteAddress)
+            || check(request.connection && request.connection.socket && request.connection.socket.remoteAddress);
         }
 
-        return "";
+        // node v12 returns this if the address is 'localhost'
+        if (!ip && request.connection.remoteAddress === "::1") {
+            ip = "127.0.0.1";
+        }
+
+        return ip;
     }
 
     private _configureCookieHandlers(request: http.ServerRequest, response: http.ServerResponse) {
