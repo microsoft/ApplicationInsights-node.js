@@ -42,7 +42,7 @@ class UnitTests implements TestHelper.Tests  {
         var type = "APITests";
         var self = this;
 
-        var test = (name, action: () => void) => {
+        var test = (name: string, action: () => void) => {
             this.testHelper.registerTest(type, name, () => {
                 action();
                 return true;
@@ -77,6 +77,7 @@ class UnitTests implements TestHelper.Tests  {
         this.testHelper.registerTest(type, "Empty contexts not included in serialization of RequestTelemetry", () => {
             var request: Microsoft.ApplicationInsights.Telemetry.Request;
             request = new ai.Telemetry.Request("name", +new Date, 10, 200, true);
+            request.iKey = "testKey";
 
             //act
             var serializedComponent = ai.Serializer.serialize(request);

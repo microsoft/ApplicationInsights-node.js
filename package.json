@@ -24,7 +24,7 @@
   ],
   "scripts": {
     "prepublish": "tsc --module commonjs --declaration applicationInsights.ts",
-    "test": "tsc --module commonjs Tests/TestServer.ts && node Tests/TestServer",
+    "test": "tsc --noimplicitany --module commonjs Tests/TestServer.ts && node Tests/TestServer",
     "postinstall": "node install.js"
   },
   "devDependencies": {

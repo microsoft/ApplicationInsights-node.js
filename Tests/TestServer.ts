@@ -16,17 +16,26 @@ import UnitTests = require("./UnitTests")
 import E2ETests = require("./E2ETests")
 import TestHelper = require("./TestHelper")
 
-function runTests(server: http.Server, onComplete: (TestHelper) => void) {
+interface ProvidesResults {
+    getResults(): string;
+    isSuccessfulTestRun?: boolean;
+}
+
+interface ErrorWithStack extends Error {
+    stack: string;
+}
+
+function runTests(server: http.Server, onComplete: (helper: ProvidesResults) => void) {
     // create test helper
     var testHelper: TestHelper = new TestHelper();
 
     // catch unhandled exceptions and make sure they show up in test results
-    var onError = (error: Error) => {
+    var onError = (error: ErrorWithStack) => {
         var type = "unhandled exception - ";
         var name = error.name + error.message;
         onComplete({
             getResults: () => error.name + error.message + "</br>" +
-                "<textarea style='width:100%; height:500px;'>" + error["stack"] + " </textarea > "
+                "<textarea style='width:100%; height:500px;'>" + error.stack + " </textarea > "
         });
     };
 
@@ -48,7 +57,7 @@ var server = http.createServer();
 
 function browserTestRunner(req: http.ServerRequest, res: http.ServerResponse) {
     if (req.url === "/") {
-        runTests(server, (results: TestHelper) => {
+        runTests(server, results => {
             res.writeHead(200, { 'Content-Type': 'text/html' });
             res.end(results.getResults());
         });
@@ -66,7 +75,7 @@ if (process.env.port) {
     server.listen(0, '127.0.0.1');
     server.on("listening", () => {
         console.log("running tests:");
-        runTests(server, (results: TestHelper) => {
+        runTests(server, results => {
             if (results.isSuccessfulTestRun) {
                 console.log("test pass succeeded.");
                 process.exit(0);
