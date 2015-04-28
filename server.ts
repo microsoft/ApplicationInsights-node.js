@@ -1,10 +1,10 @@
 ///<reference path=".\Declarations\node\node.d.ts" />
 
 import http = require("http");
-import AppInsights = require("./ApplicationInsights");
+import AppInsights = require("./applicationInsights");
 AppInsights.setup("b7040ad8-a016-4057-903f-35edb58a6007")
     .setAutoCollectRequestsEnabled(true) // default is true
-    .setAutoCollectPerformanceEnabled(true) // default is true
+    .setAutoCollectPerformanceEnabled(false) // default is true
     .setAutoCollectExceptionsEnabled(true) // default is true
     .enableVerboseLogging()
     .start(); // no telemetry will be sent until .start is called allowing auto-collection initialization to be prevented if necessary

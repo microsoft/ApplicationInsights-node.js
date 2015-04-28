@@ -3,7 +3,7 @@ class Logging {
     public static enableDebug = false;
     public static disableWarnings = false;
 
-    private static TAG = "ApplicationInsights:";
+    private static TAG = "applicationInsights:";
 
     public static info(message?: any, ...optionalParams: any[]) {
         if(Logging.enableDebug && !Logging._isInternalCallActive) {

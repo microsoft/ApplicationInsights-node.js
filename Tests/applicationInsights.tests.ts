@@ -16,7 +16,7 @@ describe("AppInsights", () => {
 
         beforeEach(() => {
             warnSpy.reset();
-            AppInsights = require("../ApplicationInsights");
+            AppInsights = require("../applicationInsights");
         });
         
         afterEach(() => AppInsights.instance = undefined);
@@ -48,7 +48,7 @@ describe("AppInsights", () => {
 
         beforeEach(() => {
             warnSpy.reset();
-            AppInsights = require("../ApplicationInsights");
+            AppInsights = require("../applicationInsights");
         });
 
         it("should warn if start is called before setup", () => {

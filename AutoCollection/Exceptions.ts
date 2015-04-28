@@ -2,7 +2,7 @@
 
 import http = require("http");
 
-import AppInsights = require("../ApplicationInsights");
+import AppInsights = require("../applicationInsights");
 import ContractsModule = require("../Library/Contracts");
 import Client = require("../Library/Client");
 import Sender = require("../Library/Sender");
@@ -18,7 +18,7 @@ class AutoCollectExceptions {
 
     constructor(client: Client) {
         if(AutoCollectExceptions._INSTANCE !== null) {
-            throw new Error("Exception tracking should be configured from the ApplicationInsights object");
+            throw new Error("Exception tracking should be configured from the applicationInsights object");
         }
 
         this._client = client;

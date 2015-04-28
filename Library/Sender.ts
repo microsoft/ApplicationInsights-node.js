@@ -10,7 +10,7 @@ import zlib = require("zlib");
 import Logging = require("./Logging");
 
 class Sender {
-    private static TAG = "ApplicationInsights";
+    private static TAG = "applicationInsights";
     public static TEMPDIR: string = "appInsights-node";
 
     private _getUrl: () => string;

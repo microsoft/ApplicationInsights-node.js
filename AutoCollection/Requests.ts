@@ -18,7 +18,7 @@ class AutoCollectRequests {
 
     constructor(client:Client) {
         if (AutoCollectRequests._INSTANCE !== null) {
-            throw new Error("Request tracking should be configured from the ApplicationInsights object");
+            throw new Error("Request tracking should be configured from the applicationInsights object");
         }
 
         this._client = client;
