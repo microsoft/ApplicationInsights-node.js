@@ -111,6 +111,7 @@ class RequestDataHelper {
     private socketRemoteAddress:string;
     private connectionRemoteAddress:string;
     private legacySocketRemoteAddress:string;
+    private userAgent: string;
 
     private endTime:number;
     private statusCode:number;
@@ -123,6 +124,7 @@ class RequestDataHelper {
             this.startTime = +new Date();
             this.rawHeaders = request.headers || (<any>request).rawHeaders;
             this.socketRemoteAddress = (<any>request).socket && (<any>request).socket.remoteAddress;
+            this.userAgent = request.headers && request.headers["user-agent"];
             if (request.connection) {
                 this.connectionRemoteAddress = request.connection.remoteAddress;
                 this.legacySocketRemoteAddress = request.connection["socket"] && request.connection["socket"].remoteAddress;
@@ -165,6 +167,7 @@ class RequestDataHelper {
 
         newTags[RequestDataHelper.keys.locationIp] = this._getIp();
         newTags[RequestDataHelper.keys.sessionId] = this._getSessionId();
+        newTags[RequestDataHelper.keys.userAgent] = this.userAgent;
         return newTags;
     }
 
