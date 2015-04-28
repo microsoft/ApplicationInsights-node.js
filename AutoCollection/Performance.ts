@@ -1,4 +1,4 @@
-///<reference path='..\Declarations\node\node.d.ts' />
+///<reference path="..\Declarations\node\node.d.ts" />
 
 import http = require("http");
 import os = require("os");
@@ -76,7 +76,7 @@ class AutoCollectPerformance {
 
         // response listeners
         if (typeof response.once === "function") {
-            response.once('finish', () => {
+            response.once("finish", () => {
                 AutoCollectPerformance._totalRequestCount++;
                 if(response.statusCode >= 400) {
                     AutoCollectPerformance._totalFailedRequestCount++;
@@ -131,7 +131,7 @@ class AutoCollectPerformance {
                 var irq = (times.irq - lastTimes.irq) || 0;
                 totalIrq += irq;
 
-                var total = (user + sys + nice + idle + irq) || 1; // don't let this be 0 since it is a divisor
+                var total = (user + sys + nice + idle + irq) || 1; // don"t let this be 0 since it is a divisor
 
                 //this._client.trackMetric(name + "user", user / total);
                 //this._client.trackMetric(name + "sys", sys / total);

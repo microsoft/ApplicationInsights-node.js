@@ -1,4 +1,4 @@
-///<reference path='.\Declarations\node\node.d.ts' />
+///<reference path=".\Declarations\node\node.d.ts" />
 
 import AutoCollectConsole = require("./AutoCollection/Console");
 import AutoCollectExceptions = require("./AutoCollection/Exceptions");

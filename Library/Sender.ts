@@ -1,17 +1,17 @@
-﻿///<reference path='..\Declarations\node\node.d.ts' />
+﻿///<reference path="..\Declarations\node\node.d.ts" />
 
-import fs = require('fs');
+import fs = require("fs");
 import http = require("http");
-import os = require('os');
-import path = require('path');
+import os = require("os");
+import path = require("path");
 import url = require("url");
-import zlib = require('zlib');
+import zlib = require("zlib");
 
 import Logging = require("./Logging");
 
 class Sender {
     private static TAG = "ApplicationInsights";
-    public static TEMPDIR: string = 'appInsights-node';
+    public static TEMPDIR: string = "appInsights-node";
 
     private _getUrl: () => string;
     private _onSuccess: (response: string) => void;
@@ -39,9 +39,9 @@ class Sender {
         var options = {
             host: url.parse(endpointUrl).hostname,
             path: url.parse(endpointUrl).pathname,
-            method: 'POST',
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json'
+                "Content-Type": "application/json"
             }
         };
 
@@ -50,24 +50,24 @@ class Sender {
             if (err) {
                 Logging.warn(err);
                 dataToSend = payload; // something went wrong so send without gzip
-                options.headers['Content-Length'] = payload.length;
+                options.headers["Content-Length"] = payload.length;
             } else {
-                options.headers['Content-Encoding'] = "gzip";
-                options.headers['Content-Length'] = buffer.length;
+                options.headers["Content-Encoding"] = "gzip";
+                options.headers["Content-Length"] = buffer.length;
             }
 
             Logging.info(Sender.TAG, options);
 
             var req = http.request(options, (res:http.ClientResponse) => {
-                res.setEncoding('utf-8');
+                res.setEncoding("utf-8");
 
                 //returns empty if the data is accepted
-                var responseString = '';
-                res.on('data', (data:string) => {
+                var responseString = "";
+                res.on("data", (data:string) => {
                     responseString += data;
                 });
 
-                res.on('end', () => {
+                res.on("end", () => {
                     Logging.info(Sender.TAG, responseString);
                     if (typeof this._onSuccess === "function") {
                         this._onSuccess(responseString);
@@ -85,7 +85,7 @@ class Sender {
                 });
             });
 
-            req.on('error', (error:Error) => {
+            req.on("error", (error:Error) => {
                 // todo: handle error codes better (group to recoverable/non-recoverable and persist)
                 Logging.warn(Sender.TAG, error);
                 this._onErrorHelper(error);
@@ -137,7 +137,7 @@ class Sender {
 
         //create file - file name for now is the timestamp, a better approach would be a UUID but that
         //would require an external dependency 
-        var fileName = new Date().getTime() + '.ai.json';
+        var fileName = new Date().getTime() + ".ai.json";
         var fileFullPath = path.join(direcotry, fileName);
 
         // if the file already exist, replace the content
@@ -163,7 +163,7 @@ class Sender {
         
         fs.readdir(tempDir,(error, files) => {
             if (!error) {
-                files = files.filter(f => path.basename(f).indexOf('.ai.json') > -1);
+                files = files.filter(f => path.basename(f).indexOf(".ai.json") > -1);
                 if (files.length > 0) {    
                     var firstFile = files[0];
                     var filePath = path.join(tempDir, firstFile);

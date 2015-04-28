@@ -1,4 +1,4 @@
-﻿///<reference path='..\Declarations\node\node.d.ts' />
+﻿///<reference path="..\Declarations\node\node.d.ts" />
 
 import os = require("os");
 import http = require("http");
@@ -26,7 +26,7 @@ class Context {
 
         try {
             // note: this should return the host package.json
-            var packageJson = require('../../../package.json');
+            var packageJson = require("../../../package.json");
             if(packageJson) {
                 if (typeof packageJson.version === "string") {
                     version = packageJson.version;
@@ -60,7 +60,7 @@ class Context {
 
         try {
             // note: this should return the appInsights package.json
-            var packageJson = require('../package.json');
+            var packageJson = require("../package.json");
             if(packageJson && typeof packageJson.version === "string") {
                 version = packageJson.version;
             }

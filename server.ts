@@ -1,13 +1,13 @@
-///<reference path='.\Declarations\node\node.d.ts' />
+///<reference path=".\Declarations\node\node.d.ts" />
 
 import http = require("http");
 import AppInsights = require("./ApplicationInsights");
-
 AppInsights.setup("b7040ad8-a016-4057-903f-35edb58a6007")
-    .setAutoCollectRequestsEnabled(true)
-    .setAutoCollectPerformanceEnabled(true)
+    .setAutoCollectRequestsEnabled(true) // default is true
+    .setAutoCollectPerformanceEnabled(true) // default is true
+    .setAutoCollectExceptionsEnabled(true) // default is true
     .enableVerboseLogging()
-    .start();
+    .start(); // no telemetry will be sent until .start is called allowing auto-collection initialization to be prevented if necessary
 
 AppInsights.instance.trackEvent("test event");
 AppInsights.instance.trackException(new Error());
@@ -27,8 +27,8 @@ var server = http.createServer((req: http.ServerRequest, res: http.ServerRespons
     }
 
     if (req.url == "/") {
-        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-        res.end('server is up');
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        res.end("server is up");
     }
 });
 

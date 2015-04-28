@@ -1,4 +1,4 @@
-///<reference path='..\Declarations\node\node.d.ts' />
+///<reference path="..\Declarations\node\node.d.ts" />
 
 import http = require("http");
 
@@ -79,7 +79,7 @@ class AutoCollectExceptions {
     private static parseStack(stack): _StackFrame[] {
         var parsedStack: _StackFrame[] = undefined;
         if (typeof stack === "string") {
-            var frames = stack.split('\n');
+            var frames = stack.split("\n");
             parsedStack = [];
             var level = 0;
 

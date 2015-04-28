@@ -1,4 +1,4 @@
-///<reference path='..\Declarations\node\node.d.ts' />
+///<reference path="..\Declarations\node\node.d.ts" />
 
 import http = require("http");
 import url = require("url");
@@ -71,12 +71,12 @@ class AutoCollectRequests {
 
         // response listeners
         if (response && response.once) {
-            response.once('finish', () => processRequest());
+            response.once("finish", () => processRequest());
         }
 
         // track a failed request if an error is emitted
         if (request && request.on) {
-            request.on('error', (error:any) => {
+            request.on("error", (error:any) => {
 
                 if(!properties) {
                     properties = <{[key: string]: string}>{};
@@ -185,14 +185,14 @@ class RequestDataHelper {
             }
         };
 
-        var ip = check(this.rawHeaders['x-forwarded-for'])
-            || check(this.rawHeaders['x-client-ip'])
-            || check(this.rawHeaders['x-real-ip'])
+        var ip = check(this.rawHeaders["x-forwarded-for"])
+            || check(this.rawHeaders["x-client-ip"])
+            || check(this.rawHeaders["x-real-ip"])
             || check(this.connectionRemoteAddress)
             || check(this.socketRemoteAddress)
             || check(this.legacySocketRemoteAddress);
 
-        // node v12 returns this if the address is 'localhost'
+        // node v12 returns this if the address is "localhost"
         if (!ip && this.connectionRemoteAddress === "::1") {
             ip = "127.0.0.1";
         }
