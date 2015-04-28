@@ -18,7 +18,7 @@ class AutoCollectPerformance {
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _lastCpus: { model: string; speed: number; times: { user: number; nice: number; sys: number; idle: number; irq: number; }; }[];
-    private _lastRequests: { totalRequestCount: number; totalFailedRequestCount: number };
+    private _lastRequests: { totalRequestCount: number; totalFailedRequestCount: number; time: number };
 
     constructor(client: Client) {
         if(AutoCollectPerformance._INSTANCE !== null) {
@@ -39,7 +39,8 @@ class AutoCollectPerformance {
                 this._lastCpus = os.cpus();
                 this._lastRequests = {
                     totalRequestCount: AutoCollectPerformance._totalRequestCount,
-                    totalFailedRequestCount: AutoCollectPerformance._totalFailedRequestCount
+                    totalFailedRequestCount: AutoCollectPerformance._totalFailedRequestCount,
+                    time: +new Date
                 };
 
                 this._handle = setInterval(() => this.trackPerformance(), 10000);
@@ -141,7 +142,7 @@ class AutoCollectPerformance {
                 this._client.trackMetric(name + "user", user / total);
             }
 
-            var combinedName = "total cpu ";
+            var combinedName = "% total cpu ";
             var combinedTotal = (totalUser + totalSys + totalNice + totalIdle + totalIrq) || 1;
 
             this._client.trackMetric(combinedName + "user", totalUser / combinedTotal);
@@ -149,12 +150,6 @@ class AutoCollectPerformance {
             this._client.trackMetric(combinedName + "nice", totalNice / combinedTotal);
             this._client.trackMetric(combinedName + "idle", totalIdle / combinedTotal);
             this._client.trackMetric(combinedName + "irq", totalIrq/ combinedTotal);
-
-            // non-idle time
-            this._client.trackMetric("_APM_CPU", (combinedTotal - totalIdle / combinedTotal));
-
-            // consider user CPU to be the process CPU - todo: is there a way to see just the node.js CPU time?
-            this._client.trackMetric("Process CPU", totalUser / combinedTotal);
         }
         
         this._lastCpus = cpus;
@@ -171,10 +166,6 @@ class AutoCollectPerformance {
         this._client.trackMetric("Memory Total", totalMem);
         this._client.trackMetric("% Memory Used", percentUsedMem);
         this._client.trackMetric("% Memory Free", percentAvailableMem);
-
-        this._client.trackMetric("Available memory", freeMem);
-        this._client.trackMetric("private bytes", usedMem);
-        this._client.trackMetric("_APM_MemoryInB", freeMem);
     }
 
     private _trackNetwork() {
@@ -182,17 +173,24 @@ class AutoCollectPerformance {
         var lastRequests = this._lastRequests;
         var requests = {
             totalRequestCount: AutoCollectPerformance._totalRequestCount,
-            totalFailedRequestCount: AutoCollectPerformance._totalFailedRequestCount
+            totalFailedRequestCount: AutoCollectPerformance._totalFailedRequestCount,
+            time: +new Date
         };
 
-        // todo: adjust for actual time delta before reporting per sec, setInterval has variance
-        var requestsPerSec = (requests.totalRequestCount - lastRequests.totalRequestCount) || 0;
-        var failedRequestsPerSec = (requests.totalFailedRequestCount - lastRequests.totalFailedRequestCount) || 0;
+        var intervalRequests = (requests.totalRequestCount - lastRequests.totalRequestCount) || 0;
+        var intervalFailedRequests = (requests.totalFailedRequestCount - lastRequests.totalFailedRequestCount) || 0;
+        var elapsedMs = requests.time - lastRequests.time;
+        var elapsedSeconds = elapsedMs / 1000;
 
-        this._client.trackMetric("TotalRequests", requests.totalRequestCount);
-        this._client.trackMetric("TotalFailedRequests", requests.totalFailedRequestCount);
-        this._client.trackMetric("TotalRequestsPerSec", requestsPerSec);
-        this._client.trackMetric("TotalFailedRequestsPerSec", failedRequestsPerSec);
+        if(elapsedMs > 0) {
+            var requestsPerSec = intervalRequests / elapsedSeconds;
+            var failedRequestsPerSec = intervalFailedRequests / elapsedSeconds;
+
+            this._client.trackMetric("Total Requests", requests.totalRequestCount);
+            this._client.trackMetric("Total Failed Requests", requests.totalFailedRequestCount);
+            this._client.trackMetric("Requests per Second", requestsPerSec);
+            this._client.trackMetric("Failed Requests per Second", failedRequestsPerSec);
+        }
 
         this._lastRequests = requests;
     }
