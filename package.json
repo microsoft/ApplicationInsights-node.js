@@ -25,7 +25,8 @@
   ],
   "scripts": {
     "prepublish": "tsc --module commonjs --declaration applicationInsights.ts",
-    "test": "./node_modules/mocha/bin/mocha Tests"
+    "pretest": "tsc --module commonjs Tests/applicationInsights.tests.ts",
+    "test": "./node_modules/mocha/bin/mocha ./Tests"
   },
   "devDependencies": {
     "async": "^0.9.0",
