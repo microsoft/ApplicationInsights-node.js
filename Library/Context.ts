@@ -37,7 +37,7 @@ class Context {
                 }
             }
         } catch (exception) {
-            console.log("unable to read version: " + exception);
+            console.log("unable to read app version: " + exception);
         }
 
         this.tags[this.keys.applicationVersion] = version;
@@ -65,7 +65,7 @@ class Context {
                 version = packageJson.version;
             }
         } catch (exception) {
-            Logging.info("unable to read version: " + exception);
+            Logging.info("unable to read SDK version: " + exception);
         }
 
         this.tags[this.keys.internalSdkVersion] = version;
