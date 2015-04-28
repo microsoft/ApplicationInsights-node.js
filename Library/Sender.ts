@@ -124,7 +124,7 @@ class Sender {
     private _storeToDisk(payload: any, isCrash?: boolean) {
 
         //ensure directory is created
-        var direcotry = path.join(os.tmpdir(), Sender.TEMPDIR);
+        var direcotry = path.join(os.tmpDir(), Sender.TEMPDIR);
         if (!fs.existsSync(direcotry)) {
             try {
                 fs.mkdirSync(direcotry);
@@ -155,7 +155,7 @@ class Sender {
      * reads the first file if exist, deletes it and tries to send its load
      */
     private _sendFirstFileOnDisk(): void {
-        var tempDir = path.join(os.tmpdir(), Sender.TEMPDIR);
+        var tempDir = path.join(os.tmpDir(), Sender.TEMPDIR);
         
         if (!fs.existsSync(tempDir)) {
             return; 

@@ -1,4 +1,4 @@
-﻿import ContractsModule = require("../Contracts/Contracts");
+﻿import ContractsModule = require("./Contracts");
 import Logging = require("./Logging");
 import Sender = require("./Sender");
 

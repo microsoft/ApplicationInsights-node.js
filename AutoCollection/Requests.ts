@@ -121,8 +121,8 @@ class RequestDataHelper {
             this.method = request.method;
             this.url = request.url;
             this.startTime = +new Date();
-            this.rawHeaders = request.rawHeaders;
-            this.socketRemoteAddress = request.socket && request.socket.remoteAddress;
+            this.rawHeaders = request.headers || (<any>request).rawHeaders;
+            this.socketRemoteAddress = (<any>request).socket && (<any>request).socket.remoteAddress;
             if (request.connection) {
                 this.connectionRemoteAddress = request.connection.remoteAddress;
                 this.legacySocketRemoteAddress = request.connection["socket"] && request.connection["socket"].remoteAddress;

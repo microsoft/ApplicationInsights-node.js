@@ -1,11 +1,13 @@
 # Ignore build files
 obj
 *.js
+*.d.ts
 *.js.map
 *.tgz
 package-version
 
 # Except imported Declarations and browser js SDK
+!/Declarations/**
 
 # Ignore Node files
 node_modules/**
