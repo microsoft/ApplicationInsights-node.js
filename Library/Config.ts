@@ -27,7 +27,11 @@ class Config {
     }
 
     private _getInstrumentationKey() {
-        var iKey = process.env[Config.ENV_iKey] || process.env[Config.ENV_azurePrefix + Config.ENV_iKey] || "";
+        var iKey = process.env[Config.ENV_iKey] || process.env[Config.ENV_azurePrefix + Config.ENV_iKey];
+        if (!iKey || iKey == "") {
+            throw new Error("Instrumentation key not found, pass the key in the config to this method or set the key in the environment variable APPINSIGHTS_INSTRUMENTATION_KEY before starting the server");
+        }
+
         return iKey;
     }
 

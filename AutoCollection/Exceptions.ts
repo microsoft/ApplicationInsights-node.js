@@ -18,7 +18,7 @@ class AutoCollectExceptions {
 
     constructor(client: Client) {
         if(AutoCollectExceptions._INSTANCE !== null) {
-            throw new Error("Exception tracking should be configured from the AppInsights object");
+            throw new Error("Exception tracking should be configured from the ApplicationInsights object");
         }
 
         this._client = client;

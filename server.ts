@@ -3,7 +3,7 @@
 import http = require("http");
 import AppInsights = require("./ApplicationInsights");
 
-AppInsights.setup("b7040ad8-a016-4057-903f-35edb58a6007")
+var appInsights = new AppInsights("b7040ad8-a016-4057-903f-35edb58a6007")
     .setAutoCollectRequestsEnabled(true)
     .setAutoCollectPerformanceEnabled(true) // needs client metric batching..
     .enableVerboseLogging()

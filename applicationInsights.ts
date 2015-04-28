@@ -14,123 +14,120 @@ import Util = require("./Library/Util");
  * The singleton meta class for the default instance of the client. This class is used to setup/start and configure
  * the auto-collection behavior of the application insights module.
  */
-class ApplicationInsights extends Client {
+class ApplicationInsights {
 
-    private _isConsole = true;
-    private _isExceptions = true;
-    private _isPerformance = true;
-    private _isRequests = true;
+    public static instance: Client;
 
-    private _console: AutoCollectConsole;
-    private _exceptions: AutoCollectExceptions;
-    private _performance: AutoCollectPerformance;
-    private _requests: AutoCollectRequests;
+    private static _isConsole = true;
+    private static _isExceptions = true;
+    private static _isPerformance = true;
+    private static _isRequests = true;
 
-    private _isStarted = false;
+    private static _console: AutoCollectConsole;
+    private static _exceptions: AutoCollectExceptions;
+    private static _performance: AutoCollectPerformance;
+    private static _requests: AutoCollectRequests;
 
-    constructor() {
-        super();
-    }
+    private static _isStarted = false;
 
     /**
      * Initializes the default instance of the client and sets the default configuration
      * @param instrumentationKey the instrumentation key to use. Optional, if this is not specified, the value will be
      * read from the environment variable APPINSIGHTS_INSTRUMENTATION_KEY
-     * @returns {AppInsights} this class
+     * @returns {ApplicationInsights} this class
      */
-    public setup(instrumentationKey?: string) {
-        if(this._isStarted) {
-            Logging.warn("The default instance is already setup, this could cause unexpected behavior");
+    public static setup(instrumentationKey?: string) {
+        if(!ApplicationInsights.instance) {
+            ApplicationInsights.instance = new Client(instrumentationKey);
+            ApplicationInsights._console = new AutoCollectConsole(ApplicationInsights.instance);
+            ApplicationInsights._exceptions = new AutoCollectExceptions(ApplicationInsights.instance);
+            ApplicationInsights._performance = new AutoCollectPerformance(ApplicationInsights.instance);
+            ApplicationInsights._requests = new AutoCollectRequests(ApplicationInsights.instance);
+        } else {
+            Logging.warn("The default instance is already setup");
         }
 
-        this.config.instrumentationKey = instrumentationKey;
-        this._console = new AutoCollectConsole(this);
-        this._exceptions = new AutoCollectExceptions(this);
-        this._performance = new AutoCollectPerformance(this);
-        this._requests = new AutoCollectRequests(this);
-
-        return this;
+        return ApplicationInsights;
     }
 
     /**
      * Starts automatic collection of telemetry. Prior to calling start no telemetry will be collected
-     * @returns {AppInsights} this class
+     * @returns {ApplicationInsights} this class
      */
-    public start() {
-        this._isStarted = true;
-        this._console.enable(this._isConsole);
-        this._exceptions.enable(this._isExceptions);
-        this._performance.enable(this._isPerformance);
-        this._requests.enable(this._isRequests);
+    public static start() {
+        ApplicationInsights._isStarted = true;
+        ApplicationInsights._console.enable(ApplicationInsights._isConsole);
+        ApplicationInsights._exceptions.enable(ApplicationInsights._isExceptions);
+        ApplicationInsights._performance.enable(ApplicationInsights._isPerformance);
+        ApplicationInsights._requests.enable(ApplicationInsights._isRequests);
 
-        return this;
+        return ApplicationInsights;
     }
 
     /**
      * Sets the state of console tracking (enabled by default)
      * @param value if true console activity will be sent to Application Insights
-     * @returns {AppInsights} this class
+     * @returns {ApplicationInsights} this class
      */
-    public setAutoCollectConsoleEnabled(value: boolean) {
-        this._isConsole = value;
-        if (this._isStarted){
-            this._console.enable(value);
+    public static setAutoCollectConsoleEnabled(value: boolean) {
+        ApplicationInsights._isConsole = value;
+        if (ApplicationInsights._isStarted){
+            ApplicationInsights._console.enable(value);
         }
 
-        return this;
+        return ApplicationInsights;
     }
 
     /**
      * Sets the state of exception tracking (enabled by default)
      * @param value if true uncaught exceptions will be sent to Application Insights
-     * @returns {AppInsights} this class
+     * @returns {ApplicationInsights} this class
      */
-    public setAutoCollectExceptionsEnabled(value: boolean) {
-        this._isExceptions = value;
-        if (this._isStarted){
-            this._exceptions.enable(value);
+    public static setAutoCollectExceptionsEnabled(value: boolean) {
+        ApplicationInsights._isExceptions = value;
+        if (ApplicationInsights._isStarted){
+            ApplicationInsights._exceptions.enable(value);
         }
 
-        return this;
+        return ApplicationInsights;
     }
 
     /**
      * Sets the state of performance tracking (enabled by default)
      * @param value if true performance counters will be collected every second and sent to Application Insights
-     * @returns {AppInsights} this class
+     * @returns {ApplicationInsights} this class
      */
-    public setAutoCollectPerformanceEnabled(value: boolean) {
-        this._isPerformance = value;
-        if (this._isStarted){
-            this._performance.enable(value);
+    public static setAutoCollectPerformanceEnabled(value: boolean) {
+        ApplicationInsights._isPerformance = value;
+        if (ApplicationInsights._isStarted){
+            ApplicationInsights._performance.enable(value);
         }
 
-        return this;
+        return ApplicationInsights;
     }
 
     /**
      * Sets the state of request tracking (enabled by default)
      * @param value if true requests will be sent to Application Insights
-     * @returns {AppInsights} this class
+     * @returns {ApplicationInsights} this class
      */
-    public setAutoCollectRequestsEnabled(value: boolean) {
-        this._isRequests = value;
-        if (this._isStarted){
-            this._requests.enable(value);
+    public static setAutoCollectRequestsEnabled(value: boolean) {
+        ApplicationInsights._isRequests = value;
+        if (ApplicationInsights._isStarted){
+            ApplicationInsights._requests.enable(value);
         }
 
-        return this;
+        return ApplicationInsights;
     }
 
     /**
      * Enables verbose debug logging
-     * @returns {AppInsights} this class
+     * @returns {ApplicationInsights} this class
      */
-    public enableVerboseLogging() {
+    public static enableVerboseLogging() {
         Logging.enableDebug = true;
-        return this;
+        return ApplicationInsights;
     }
 }
 
-var ai = new ApplicationInsights();
-export = ai;
+export = ApplicationInsights;
