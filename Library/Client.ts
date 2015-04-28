@@ -1,0 +1,167 @@
+///<reference path='..\typings\node\node.d.ts' />
+
+import http = require("http");
+
+import Config = require("./Config");
+import Context = require("./Context");
+import ExceptionTracking = require("../AutoCollection/Exceptions");
+import Generated = require("../Generated/Contracts");
+import Channel = require("./Channel");
+import RequestTracking = require("../AutoCollection/Requests");
+import Sender = require("./Sender");
+import Util = require("./Util");
+
+class Client {
+
+    private static _sequenceNumber = 0;
+
+    public config:Config;
+    public context:Context;
+    public commonProperties:{ [key: string]: string; };
+    public channel:Channel;
+
+    /**
+     * Constructs a new instance of the client
+     * @param iKey the instrumentation key to use (read from environment variable if not specified)
+     */
+    constructor(iKey?:string) {
+        var config = new Config(iKey);
+        this.config = config;
+        this.context = new Context();
+        this.commonProperties = {};
+
+        var sender = new Sender(() => config.endpointUrl);
+        this.channel = new Channel(() => config.disableAppInsights, () => config.maxBatchSize, () => config.maxBatchIntervalMs, sender);
+    }
+
+    /**
+     * Log a user action or other occurrence.
+     * @param   name    A string to identify this event in the portal.
+     * @param   properties  map[string, string] - additional data used to filter events and metrics in the portal. Defaults to empty.
+     * @param   measurements    map[string, number] - metrics associated with this event, displayed in Metrics Explorer on the portal. Defaults to empty.
+     */
+    public trackEvent(name:string, properties?:{ [key: string]: string; }, measurements?:{ [key: string]: number; }) {
+        var event = new Generated.Contracts.EventData();
+        event.name = name;
+        event.properties = properties;
+        event.measurements = measurements;
+
+        var data = new Generated.Contracts.Data<Generated.Contracts.EventData>();
+        data.baseType = "Microsoft.ApplicationInsights.EventData";
+        data.baseData = event;
+        this.track(data);
+    }
+
+    /**
+     * Log a trace message
+     * @param   message    A string to identify this event in the portal.
+     * @param   properties  map[string, string] - additional data used to filter events and metrics in the portal. Defaults to empty.
+     */
+    public trackTrace(message:string, severityLevel?: Generated.Contracts.SeverityLevel, properties?:{ [key: string]: string; }) {
+        var trace = new Generated.Contracts.MessageData();
+        trace.message = message;
+        trace.properties = properties;
+        trace.severityLevel = severityLevel || Generated.Contracts.SeverityLevel.Information;
+
+        var data = new Generated.Contracts.Data<Generated.Contracts.MessageData>();
+        data.baseType = "Microsoft.ApplicationInsights.MessageData";
+        data.baseData = trace;
+        this.track(data);
+    }
+
+    /**
+     * Log an exception you have caught.
+     * @param   exception   An Error from a catch clause, or the string error message.
+     * @param   properties  map[string, string] - additional data used to filter events and metrics in the portal. Defaults to empty.
+     * @param   measurements    map[string, number] - metrics associated with this event, displayed in Metrics Explorer on the portal. Defaults to empty.
+     */
+    public trackException(exception:Error, properties?:{ [key: string]: string; }) {
+        var data = ExceptionTracking.getExceptionData(exception, true, properties)
+        this.track(data);
+    }
+
+    /**
+     * Log a numeric value that is not associated with a specific event. Typically used to send regular reports of performance indicators.
+     * To send a single measurement, use just the first two parameters. If you take measurements very frequently, you can reduce the
+     * telemetry bandwidth by aggregating multiple measurements and sending the resulting average at intervals.
+     * @param   name    A string that identifies the metric.
+     * @param   value The value of the metric
+     */
+    public trackMetric(name:string, value:number) {
+        var metrics = new Generated.Contracts.MetricData(); // todo: enable client-batching of these
+        metrics.metrics = [];
+
+        var metric = new Generated.Contracts.DataPoint();
+        metric.count = 1;
+        metric.kind = Generated.Contracts.DataPointType.Measurement;
+        metric.max = value;
+        metric.min = value;
+        metric.name = name;
+        metric.stdDev = 0;
+        metric.value = value;
+
+        metrics.metrics.push(metric);
+
+        var data = new Generated.Contracts.Data<Generated.Contracts.MetricData>();
+        data.baseType = "Microsoft.ApplicationInsights.MetricData";
+        data.baseData = metrics;
+        this.track(data);
+    }
+
+    public trackRequest(request: http.ServerRequest, response: http.ServerResponse, properties?:{ [key: string]: string; }) {
+        RequestTracking.trackRequest(this, request, response, properties);
+    }
+
+    /**
+     * Immediately send all queued telemetry.
+     */
+    public sendPendingData() {
+        this.channel.triggerSend();
+    }
+    
+    public getEnvelope(data:Generated.Contracts.Data<Generated.Contracts.Domain>, tagOverrides?:{ [key: string]: string; }) {
+        if (data && data.baseData) {
+            data.baseData.ver = 2;
+
+            // if no properties are specified just add the common ones
+            if (!data.baseData.properties) {
+                data.baseData.properties = this.commonProperties;
+            } else {
+                // otherwise, check each of the common ones
+                for (var name in this.commonProperties) {
+                    // only override if the property `name` has not been set on this item
+                    if (!data.baseData.properties[name]) {
+                        data.baseData.properties[name] = this.commonProperties[name];
+                    }
+                }
+            }
+        }
+
+        var envelope = new Generated.Contracts.Envelope();
+        envelope.data = data;
+        envelope.appVer = this.context.tags[this.context.keys.applicationVersion];
+        envelope.iKey = this.config.instrumentationKey;
+
+        // this is kind of a hack, but the envelope name is always the same as the data name sans the chars "data"
+        envelope.name = data.baseType.substr(0, data.baseType.length - 4);
+        envelope.os = this.context.tags[this.context.keys.deviceOS];
+        envelope.osVer = this.context.tags[this.context.keys.deviceOSVersion];
+        envelope.seq = (Client._sequenceNumber++).toString();
+        envelope.tags = tagOverrides || this.context.tags;
+        envelope.time = Util.toISOStringForIE8(new Date());
+        envelope.ver = 1;
+        return envelope;
+    }
+
+    /**
+     * Generic track method for all telemetry types
+     * @param data the telemetry to send
+     * @param tagOverrides the context tags to use for this telemetry which overwrite default context values
+     */
+    public track(data:Generated.Contracts.Data<Generated.Contracts.Domain>, tagOverrides?:{ [key: string]: string; }) {
+        var envelope = this.getEnvelope(data, tagOverrides);
+        this.channel.send(envelope);
+    }
+}
+
+export = Client;

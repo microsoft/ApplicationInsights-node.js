@@ -6,11 +6,9 @@ obj
 *.tgz
 package-version
 
-# Except install.js, server.js and typings
-!ai.d.ts
-!install.js
-!server.js
+# Except imported typings and browser js SDK
 !Scripts/typings/node/node.d.ts
+!ai.js
 
 # Ignore Node files
 node_modules/**
