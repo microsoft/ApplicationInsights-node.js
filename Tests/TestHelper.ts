@@ -1,4 +1,4 @@
-﻿///<reference path="../Scripts/typings/async/async.d.ts" />
+﻿///<reference path="../Scripts/Declarations/async/async.d.ts" />
 
 import async = require("async");
 

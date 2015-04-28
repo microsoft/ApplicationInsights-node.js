@@ -1,4 +1,4 @@
-﻿///<reference path='..\typings\node\node.d.ts' />
+﻿///<reference path='..\Declarations\node\node.d.ts' />
 
 import fs = require('fs');
 import http = require("http");

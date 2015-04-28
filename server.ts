@@ -1,18 +1,18 @@
-///<reference path='\typings\node\node.d.ts' />
+///<reference path='.\Declarations\node\node.d.ts' />
 
 import http = require("http");
 import AppInsights = require("./ApplicationInsights");
 
-var appInsights = new AppInsights("b7040ad8-a016-4057-903f-35edb58a6007")
+AppInsights.setup("b7040ad8-a016-4057-903f-35edb58a6007")
     .setAutoCollectRequestsEnabled(true)
-    .setAutoCollectPerformanceEnabled(true) // needs client metric batching..
+    .setAutoCollectPerformanceEnabled(true)
     .enableVerboseLogging()
     .start();
 
-AppInsights.trackEvent("test event");
-AppInsights.trackException(new Error());
-AppInsights.trackMetric("test metric", 3);
-AppInsights.trackTrace("test trace");
+AppInsights.instance.trackEvent("test event");
+AppInsights.instance.trackException(new Error());
+AppInsights.instance.trackMetric("test metric", 3);
+AppInsights.instance.trackTrace("test trace");
 
 var count = 0;
 var last = 0;
@@ -22,7 +22,7 @@ var server = http.createServer((req: http.ServerRequest, res: http.ServerRespons
     if(now - last > 1000) {
         last = now;
         console.log(count + " requests processed");
-        AppInsights.trackEvent("Requests Processed", {port: process.env.PORT}, {count: count});
+        AppInsights.instance.trackEvent("Requests Processed", {port: process.env.PORT}, {count: count});
         count = 0;
     }
 

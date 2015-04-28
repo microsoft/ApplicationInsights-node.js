@@ -2,13 +2,10 @@
 obj
 *.js
 *.js.map
-*.d.ts
 *.tgz
 package-version
 
-# Except imported typings and browser js SDK
-!Scripts/typings/node/node.d.ts
-!ai.js
+# Except imported Declarations and browser js SDK
 
 # Ignore Node files
 node_modules/**
