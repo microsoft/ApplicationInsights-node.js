@@ -1,4 +1,38 @@
 export module Contracts {
+    export enum DataPointType
+    {
+        Measurement = 0,
+        Aggregation = 1,
+    }
+
+    export enum DependencyKind
+    {
+        SQL = 0,
+        Http = 1,
+        Other = 2,
+    }
+
+    export enum DependencySourceType
+    {
+        Undefined = 0,
+        Aic = 1,
+        Apmc = 2,
+    }
+
+    export enum SessionState
+    {
+        Start = 0,
+        End = 1,
+    }
+    export enum SeverityLevel
+    {
+        Verbose = 0,
+        Information = 1,
+        Warning = 2,
+        Error = 3,
+        Critical = 4,
+    }
+
     export class ContextTagKeys {
         public applicationVersion:string;
         public applicationBuild:string;
@@ -72,46 +106,6 @@ export module Contracts {
             this.internalAgentVersion = "ai.internal.agentVersion";
         }
     }
-    export class Data<TDomain extends Contracts.Domain> {
-        public baseType:string;
-        public baseData:TDomain;
-
-        constructor() {
-        }
-    }
-    export class DataPoint {
-        public name:string;
-        public kind:Contracts.DataPointType;
-        public value:number;
-        public count:number;
-        public min:number;
-        public max:number;
-        public stdDev:number;
-
-        constructor() {
-            this.kind = Contracts.DataPointType.Measurement;
-        }
-    }
-
-    export enum DataPointType
-    {
-        Measurement = 0,
-        Aggregation = 1,
-    }
-
-    export enum DependencyKind
-    {
-        SQL = 0,
-        Http = 1,
-        Other = 2,
-    }
-
-    export enum DependencySourceType
-    {
-        Undefined = 0,
-        Aic = 1,
-        Apmc = 2,
-    }
 
     export class Domain {
         public ver:number;
@@ -121,26 +115,9 @@ export module Contracts {
         }
     }
 
-    export enum SessionState
-    {
-        Start = 0,
-        End = 1,
-    }
-    export enum SeverityLevel
-    {
-        Verbose = 0,
-        Information = 1,
-        Warning = 2,
-        Error = 3,
-        Critical = 4,
-    }
-
-    export class StackFrame {
-        public level:number;
-        public method:string;
-        public assembly:string;
-        public fileName:string;
-        public line:number;
+    export class Data<TDomain extends Contracts.Domain> {
+        public baseType:string;
+        public baseData:TDomain;
 
         constructor() {
         }
@@ -169,6 +146,7 @@ export module Contracts {
             this.tags = {};
         }
     }
+
     export class EventData extends Contracts.Domain {
         public ver:number;
         public name:string;
@@ -183,6 +161,21 @@ export module Contracts {
             super();
         }
     }
+
+    export class MessageData extends Contracts.Domain {
+        public ver:number;
+        public message:string;
+        public severityLevel:Contracts.SeverityLevel;
+        public properties:any;
+
+        constructor() {
+            this.ver = 2;
+            this.properties = {};
+
+            super();
+        }
+    }
+
     export class ExceptionData extends Contracts.Domain {
         public ver:number;
         public handledAt:string;
@@ -203,6 +196,17 @@ export module Contracts {
         }
     }
 
+    export class StackFrame {
+        public level:number;
+        public method:string;
+        public assembly:string;
+        public fileName:string;
+        public line:number;
+
+        constructor() {
+        }
+    }
+
     export class ExceptionDetails {
         public id:number;
         public outerId:number;
@@ -217,19 +221,21 @@ export module Contracts {
             this.parsedStack = [];
         }
     }
-    export class MessageData extends Contracts.Domain {
-        public ver:number;
-        public message:string;
-        public severityLevel:Contracts.SeverityLevel;
-        public properties:any;
+
+    export class DataPoint {
+        public name:string;
+        public kind:Contracts.DataPointType;
+        public value:number;
+        public count:number;
+        public min:number;
+        public max:number;
+        public stdDev:number;
 
         constructor() {
-            this.ver = 2;
-            this.properties = {};
-
-            super();
+            this.kind = Contracts.DataPointType.Measurement;
         }
     }
+
     export class MetricData extends Contracts.Domain {
         public ver:number;
         public metrics:DataPoint[];
@@ -243,6 +249,7 @@ export module Contracts {
             super();
         }
     }
+
     export class PageViewData extends Contracts.EventData {
         public ver:number;
         public url:string;
@@ -259,6 +266,7 @@ export module Contracts {
             super();
         }
     }
+
     export class PageViewPerfData extends Contracts.PageViewData {
         public ver:number;
         public url:string;
@@ -280,6 +288,7 @@ export module Contracts {
             super();
         }
     }
+
     export class RemoteDependencyData extends Contracts.Domain {
         public ver:number;
         public name:string;

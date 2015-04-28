@@ -5,7 +5,7 @@ import http = require("http");
 import Config = require("./Config");
 import Context = require("./Context");
 import ExceptionTracking = require("../AutoCollection/Exceptions");
-import Generated = require("../Generated/Contracts");
+import ContractsModule = require("../Library/Contracts");
 import Channel = require("./Channel");
 import RequestTracking = require("../AutoCollection/Requests");
 import Sender = require("./Sender");
@@ -41,12 +41,12 @@ class Client {
      * @param   measurements    map[string, number] - metrics associated with this event, displayed in Metrics Explorer on the portal. Defaults to empty.
      */
     public trackEvent(name:string, properties?:{ [key: string]: string; }, measurements?:{ [key: string]: number; }) {
-        var event = new Generated.Contracts.EventData();
+        var event = new ContractsModule.Contracts.EventData();
         event.name = name;
         event.properties = properties;
         event.measurements = measurements;
 
-        var data = new Generated.Contracts.Data<Generated.Contracts.EventData>();
+        var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.EventData>();
         data.baseType = "Microsoft.ApplicationInsights.EventData";
         data.baseData = event;
         this.track(data);
@@ -57,13 +57,13 @@ class Client {
      * @param   message    A string to identify this event in the portal.
      * @param   properties  map[string, string] - additional data used to filter events and metrics in the portal. Defaults to empty.
      */
-    public trackTrace(message:string, severityLevel?: Generated.Contracts.SeverityLevel, properties?:{ [key: string]: string; }) {
-        var trace = new Generated.Contracts.MessageData();
+    public trackTrace(message:string, severityLevel?: ContractsModule.Contracts.SeverityLevel, properties?:{ [key: string]: string; }) {
+        var trace = new ContractsModule.Contracts.MessageData();
         trace.message = message;
         trace.properties = properties;
-        trace.severityLevel = severityLevel || Generated.Contracts.SeverityLevel.Information;
+        trace.severityLevel = severityLevel || ContractsModule.Contracts.SeverityLevel.Information;
 
-        var data = new Generated.Contracts.Data<Generated.Contracts.MessageData>();
+        var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.MessageData>();
         data.baseType = "Microsoft.ApplicationInsights.MessageData";
         data.baseData = trace;
         this.track(data);
@@ -88,12 +88,12 @@ class Client {
      * @param   value The value of the metric
      */
     public trackMetric(name:string, value:number) {
-        var metrics = new Generated.Contracts.MetricData(); // todo: enable client-batching of these
+        var metrics = new ContractsModule.Contracts.MetricData(); // todo: enable client-batching of these
         metrics.metrics = [];
 
-        var metric = new Generated.Contracts.DataPoint();
+        var metric = new ContractsModule.Contracts.DataPoint();
         metric.count = 1;
-        metric.kind = Generated.Contracts.DataPointType.Measurement;
+        metric.kind = ContractsModule.Contracts.DataPointType.Measurement;
         metric.max = value;
         metric.min = value;
         metric.name = name;
@@ -102,7 +102,7 @@ class Client {
 
         metrics.metrics.push(metric);
 
-        var data = new Generated.Contracts.Data<Generated.Contracts.MetricData>();
+        var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.MetricData>();
         data.baseType = "Microsoft.ApplicationInsights.MetricData";
         data.baseData = metrics;
         this.track(data);
@@ -119,7 +119,7 @@ class Client {
         this.channel.triggerSend();
     }
     
-    public getEnvelope(data:Generated.Contracts.Data<Generated.Contracts.Domain>, tagOverrides?:{ [key: string]: string; }) {
+    public getEnvelope(data:ContractsModule.Contracts.Data<ContractsModule.Contracts.Domain>, tagOverrides?:{ [key: string]: string; }) {
         if (data && data.baseData) {
             data.baseData.ver = 2;
 
@@ -137,7 +137,7 @@ class Client {
             }
         }
 
-        var envelope = new Generated.Contracts.Envelope();
+        var envelope = new ContractsModule.Contracts.Envelope();
         envelope.data = data;
         envelope.appVer = this.context.tags[this.context.keys.applicationVersion];
         envelope.iKey = this.config.instrumentationKey;
@@ -158,7 +158,7 @@ class Client {
      * @param data the telemetry to send
      * @param tagOverrides the context tags to use for this telemetry which overwrite default context values
      */
-    public track(data:Generated.Contracts.Data<Generated.Contracts.Domain>, tagOverrides?:{ [key: string]: string; }) {
+    public track(data:ContractsModule.Contracts.Data<ContractsModule.Contracts.Domain>, tagOverrides?:{ [key: string]: string; }) {
         var envelope = this.getEnvelope(data, tagOverrides);
         this.channel.send(envelope);
     }

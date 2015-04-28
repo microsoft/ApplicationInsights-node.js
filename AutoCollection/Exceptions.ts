@@ -3,7 +3,7 @@
 import http = require("http");
 
 import AppInsights = require("../ApplicationInsights");
-import Generated = require("../Generated/Contracts");
+import ContractsModule = require("../Library/Contracts");
 import Client = require("../Library/Client");
 import Sender = require("../Library/Sender");
 import Queue = require("../Library/Channel");
@@ -55,22 +55,22 @@ class AutoCollectExceptions {
      */
     public static getExceptionData(error: Error, isHandled: boolean, properties?:{ [key: string]: string; }) {
 
-        var exception = new Generated.Contracts.ExceptionData();
+        var exception = new ContractsModule.Contracts.ExceptionData();
         exception.handledAt = isHandled ? "User" : "Unhandled";
         exception.properties = properties;
-        exception.severityLevel = Generated.Contracts.SeverityLevel.Error;
+        exception.severityLevel = ContractsModule.Contracts.SeverityLevel.Error;
         exception.properties = properties;
         exception.exceptions = [];
 
         var stack = error["stack"];
-        var exceptionDetails = new Generated.Contracts.ExceptionDetails();
+        var exceptionDetails = new ContractsModule.Contracts.ExceptionDetails();
         exceptionDetails.message = error.message;
         exceptionDetails.typeName = error.name;
         exceptionDetails.parsedStack = this.parseStack(stack);
         exceptionDetails.hasFullStack = Util.isArray(exceptionDetails.parsedStack) && exceptionDetails.parsedStack.length > 0;
         exception.exceptions.push(exceptionDetails);
 
-        var data = new Generated.Contracts.Data<Generated.Contracts.ExceptionData>();
+        var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.ExceptionData>();
         data.baseType = "Microsoft.ApplicationInsights.ExceptionData";
         data.baseData = exception;
         return data;

@@ -3,16 +3,16 @@
 import os = require("os");
 import http = require("http");
 
-import Generated = require("../Generated/Contracts");
+import ContractsModule = require("../Library/Contracts");
 import Logging = require("./Logging");
 
 class Context {
 
-    public keys: Generated.Contracts.ContextTagKeys;
+    public keys: ContractsModule.Contracts.ContextTagKeys;
     public tags: { [key: string]: string};
 
     constructor(server?: http.Server) {
-        this.keys = new Generated.Contracts.ContextTagKeys();
+        this.keys = new ContractsModule.Contracts.ContextTagKeys();
         this.tags = <{ [key: string]: string}>{};
 
         this._loadApplicationContext();

@@ -3,7 +3,7 @@
 import http = require("http");
 import url = require("url");
 
-import Generated = require("../Generated/Contracts");
+import ContractsModule = require("../Library/Contracts");
 import Client = require("../Library/Client");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
@@ -102,7 +102,7 @@ class AutoCollectRequests {
  * Helper class to read data from the requst/response objects and convert them into the telemetry contract
  */
 class RequestDataHelper {
-    private static keys = new Generated.Contracts.ContextTagKeys();
+    private static keys = new ContractsModule.Contracts.ContextTagKeys();
 
     private method:string;
     private url:string;
@@ -136,9 +136,9 @@ class RequestDataHelper {
         this.errorProperties = errorProperties;
     }
 
-    public getRequestData():Generated.Contracts.Data<Generated.Contracts.RequestData> {
+    public getRequestData():ContractsModule.Contracts.Data<ContractsModule.Contracts.RequestData> {
         var duration = this.endTime - this.startTime;
-        var requestData = new Generated.Contracts.RequestData();
+        var requestData = new ContractsModule.Contracts.RequestData();
         requestData.httpMethod = this.method;
         requestData.id = Util.newGuid();
         requestData.name = this.method + " " + url.parse(this.url).pathname;
@@ -149,7 +149,7 @@ class RequestDataHelper {
         requestData.success = this._isSuccess(this.statusCode);
         requestData.properties = this.errorProperties;
 
-        var data = new Generated.Contracts.Data<Generated.Contracts.RequestData>();
+        var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.RequestData>();
         data.baseType = "Microsoft.ApplicationInsights.RequestData";
         data.baseData = requestData;
 
