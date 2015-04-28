@@ -55,11 +55,15 @@ class ApplicationInsights {
      * @returns {ApplicationInsights} this class
      */
     public static start() {
-        ApplicationInsights._isStarted = true;
-        ApplicationInsights._console.enable(ApplicationInsights._isConsole);
-        ApplicationInsights._exceptions.enable(ApplicationInsights._isExceptions);
-        ApplicationInsights._performance.enable(ApplicationInsights._isPerformance);
-        ApplicationInsights._requests.enable(ApplicationInsights._isRequests);
+        if(!!this.instance) {
+            ApplicationInsights._isStarted = true;
+            ApplicationInsights._console.enable(ApplicationInsights._isConsole);
+            ApplicationInsights._exceptions.enable(ApplicationInsights._isExceptions);
+            ApplicationInsights._performance.enable(ApplicationInsights._isPerformance);
+            ApplicationInsights._requests.enable(ApplicationInsights._isRequests);
+        } else {
+            Logging.warn("Start cannot be called before setup");
+        }
 
         return ApplicationInsights;
     }
