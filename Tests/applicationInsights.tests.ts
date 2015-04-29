@@ -5,60 +5,114 @@
 import assert = require("assert");
 import sinon = require("sinon");
 
-describe("AppInsights", () => {
+describe("ApplicationInsights", () => {
 
-    var warnSpy;
-    before(() => warnSpy = sinon.spy(console, "warn"));
-    after(() => warnSpy.restore());
+    var warnStub;
+    before(() => warnStub = sinon.stub(console, "warn"));
+    after(() => warnStub.restore());
 
     describe("#setup()", () => {
-        var AppInsights;
-
+        var AppInsights = require("../applicationInsights");
+        var Console = require("../AutoCollection/Console");
+        var Exceptions = require("../AutoCollection/Exceptions");
+        var Performance = require("../AutoCollection/Performance");
+        var Requests = require("../AutoCollection/Requests");
         beforeEach(() => {
-            warnSpy.reset();
-            AppInsights = require("../applicationInsights");
+            warnStub.reset();
+            Console.INSTANCE = undefined;
+            Exceptions.INSTANCE = undefined;
+            Performance.INSTANCE = undefined;
+            Requests.INSTANCE = undefined;
         });
-        
-        afterEach(() => AppInsights.instance = undefined);
-        after(() => warnSpy.restore());
+
+        afterEach(() => AppInsights.client = undefined);
+        after(() => warnStub.restore());
 
         it("should not warn if setup is called once", () => {
             AppInsights.setup("key");
-            assert.ok(warnSpy.notCalled, "warning was not raised");
+            assert.ok(warnStub.notCalled, "warning was not raised");
         });
 
         it("should warn if setup is called twice", () => {
             AppInsights.setup("key");
             AppInsights.setup("key");
-            assert.ok(warnSpy.calledOn, "warning was raised");
+            assert.ok(warnStub.calledOn, "warning was raised");
         });
 
-        it("should not overwrite default instance if called more than once", () => {
+        it("should not overwrite default client if called more than once", () => {
             AppInsights.setup("key");
-            var instance = AppInsights.instance;
+            var client = AppInsights.client;
             AppInsights.setup("key");
             AppInsights.setup("key");
             AppInsights.setup("key");
-            assert.ok(instance === AppInsights.instance, "instance is not overwritten");
+            assert.ok(client === AppInsights.client, "client is not overwritten");
         });
     });
 
     describe("#start()", () => {
-        var AppInsights;
+        var AppInsights = require("../applicationInsights");
+        var Console = require("../AutoCollection/Console");
+        var Exceptions = require("../AutoCollection/Exceptions");
+        var Performance = require("../AutoCollection/Performance");
+        var Requests = require("../AutoCollection/Requests");
 
         beforeEach(() => {
-            warnSpy.reset();
-            AppInsights = require("../applicationInsights");
+            warnStub.reset();
+            Console.INSTANCE = undefined;
+            Exceptions.INSTANCE = undefined;
+            Performance.INSTANCE = undefined;
+            Requests.INSTANCE = undefined;
         });
+
+        afterEach(() => AppInsights.client = undefined);
 
         it("should warn if start is called before setup", () => {
             AppInsights.start();
-            assert.ok(warnSpy.calledOn, "warning was raised");
+            assert.ok(warnStub.calledOn, "warning was raised");
         });
 
         it("should not warn if start is called after setup", () => {
             AppInsights.setup("key").start();
-            assert.ok(warnSpy.notCalled, "warning was not raised");
+            assert.ok(warnStub.notCalled, "warning was not raised");
+        });
+    });
+
+    describe("#setAutoCollect", () => {
+        var AppInsights = require("../applicationInsights");
+        var Console = require("../AutoCollection/Console");
+        var Exceptions = require("../AutoCollection/Exceptions");
+        var Performance = require("../AutoCollection/Performance");
+        var Requests = require("../AutoCollection/Requests");
+
+        beforeEach(() => {
+            AppInsights.client = undefined;
+            Console.INSTANCE = undefined;
+            Exceptions.INSTANCE = undefined;
+            Performance.INSTANCE = undefined;
+            Requests.INSTANCE = undefined;
+        });
+
+        it("auto-collection is initialized by default", () => {
+            AppInsights.setup("key").start();
+
+            //assert.ok(Console.INSTANCE.isInitialized());
+            assert.ok(Exceptions.INSTANCE.isInitialized());
+            assert.ok(Performance.INSTANCE.isInitialized());
+            assert.ok(Requests.INSTANCE.isInitialized());
+        });
+
+        it("auto-collection is not initialized if disabled before 'start'", () => {
+            AppInsights.setup("key")
+                .setAutoCollectConsole(false)
+                .setAutoCollectExceptions(false)
+                .setAutoCollectPerformance(false)
+                .setAutoCollectRequests(false)
+                .start();
+
+            assert.ok(!Console.INSTANCE.isInitialized());
+            assert.ok(!Exceptions.INSTANCE.isInitialized());
+            assert.ok(!Performance.INSTANCE.isInitialized());
+            assert.ok(!Requests.INSTANCE.isInitialized());
         });
     });
 });

@@ -21,7 +21,7 @@ class Client {
     public channel:Channel;
 
     /**
-     * Constructs a new instance of the client
+     * Constructs a new client of the client
      * @param iKey the instrumentation key to use (read from environment variable if not specified)
      */
     constructor(iKey?:string) {

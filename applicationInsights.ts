@@ -9,12 +9,12 @@ import Logging = require("./Library/Logging");
 import Util = require("./Library/Util");
 
 /**
- * The singleton meta class for the default instance of the client. This class is used to setup/start and configure
+ * The singleton meta class for the default client of the client. This class is used to setup/start and configure
  * the auto-collection behavior of the application insights module.
  */
 class applicationInsights {
 
-    public static instance: Client;
+    public static client: Client;
 
     private static _isConsole = true;
     private static _isExceptions = true;
@@ -29,20 +29,20 @@ class applicationInsights {
     private static _isStarted = false;
 
     /**
-     * Initializes the default instance of the client and sets the default configuration
+     * Initializes the default client of the client and sets the default configuration
      * @param instrumentationKey the instrumentation key to use. Optional, if this is not specified, the value will be
      * read from the environment variable APPINSIGHTS_INSTRUMENTATION_KEY
      * @returns {applicationInsights} this class
      */
     public static setup(instrumentationKey?: string) {
-        if(!applicationInsights.instance) {
-            applicationInsights.instance = new Client(instrumentationKey);
-            applicationInsights._console = new AutoCollectConsole(applicationInsights.instance);
-            applicationInsights._exceptions = new AutoCollectExceptions(applicationInsights.instance);
-            applicationInsights._performance = new AutoCollectPerformance(applicationInsights.instance);
-            applicationInsights._requests = new AutoCollectRequests(applicationInsights.instance);
+        if(!applicationInsights.client) {
+            applicationInsights.client = new Client(instrumentationKey);
+            applicationInsights._console = new AutoCollectConsole(applicationInsights.client);
+            applicationInsights._exceptions = new AutoCollectExceptions(applicationInsights.client);
+            applicationInsights._performance = new AutoCollectPerformance(applicationInsights.client);
+            applicationInsights._requests = new AutoCollectRequests(applicationInsights.client);
         } else {
-            Logging.warn("The default instance is already setup");
+            Logging.warn("The default client is already setup");
         }
 
         return applicationInsights;
@@ -53,7 +53,7 @@ class applicationInsights {
      * @returns {applicationInsights} this class
      */
     public static start() {
-        if(!!this.instance) {
+        if(!!this.client) {
             applicationInsights._isStarted = true;
             applicationInsights._console.enable(applicationInsights._isConsole);
             applicationInsights._exceptions.enable(applicationInsights._isExceptions);
@@ -71,7 +71,7 @@ class applicationInsights {
      * @param value if true console activity will be sent to Application Insights
      * @returns {applicationInsights} this class
      */
-    public static setAutoCollectConsoleEnabled(value: boolean) {
+    public static setAutoCollectConsole(value: boolean) {
         applicationInsights._isConsole = value;
         if (applicationInsights._isStarted){
             applicationInsights._console.enable(value);
@@ -85,7 +85,7 @@ class applicationInsights {
      * @param value if true uncaught exceptions will be sent to Application Insights
      * @returns {applicationInsights} this class
      */
-    public static setAutoCollectExceptionsEnabled(value: boolean) {
+    public static setAutoCollectExceptions(value: boolean) {
         applicationInsights._isExceptions = value;
         if (applicationInsights._isStarted){
             applicationInsights._exceptions.enable(value);
@@ -99,7 +99,7 @@ class applicationInsights {
      * @param value if true performance counters will be collected every second and sent to Application Insights
      * @returns {applicationInsights} this class
      */
-    public static setAutoCollectPerformanceEnabled(value: boolean) {
+    public static setAutoCollectPerformance(value: boolean) {
         applicationInsights._isPerformance = value;
         if (applicationInsights._isStarted){
             applicationInsights._performance.enable(value);
@@ -113,7 +113,7 @@ class applicationInsights {
      * @param value if true requests will be sent to Application Insights
      * @returns {applicationInsights} this class
      */
-    public static setAutoCollectRequestsEnabled(value: boolean) {
+    public static setAutoCollectRequests(value: boolean) {
         applicationInsights._isRequests = value;
         if (applicationInsights._isStarted){
             applicationInsights._requests.enable(value);

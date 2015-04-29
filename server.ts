@@ -2,17 +2,17 @@
 
 import http = require("http");
 import AppInsights = require("./applicationInsights");
-AppInsights.setup("b7040ad8-a016-4057-903f-35edb58a6007")
+AppInsights.setup("f75c55f7-a8ef-46f2-80c2-3b02c53d381f")
     .setAutoCollectRequestsEnabled(true) // default is true
-    .setAutoCollectPerformanceEnabled(false) // default is true
+    .setAutoCollectPerformanceEnabled(true) // default is true
     .setAutoCollectExceptionsEnabled(true) // default is true
     .enableVerboseLogging()
     .start(); // no telemetry will be sent until .start is called allowing auto-collection initialization to be prevented if necessary
 
-AppInsights.instance.trackEvent("test event");
-AppInsights.instance.trackException(new Error());
-AppInsights.instance.trackMetric("test metric", 3);
-AppInsights.instance.trackTrace("test trace");
+AppInsights.client.trackEvent("test event");
+AppInsights.client.trackException(new Error());
+AppInsights.client.trackMetric("test metric", 3);
+AppInsights.client.trackTrace("test trace");
 
 var count = 0;
 var last = 0;
@@ -22,7 +22,7 @@ var server = http.createServer((req: http.ServerRequest, res: http.ServerRespons
     if(now - last > 1000) {
         last = now;
         console.log(count + " requests processed");
-        AppInsights.instance.trackEvent("Requests Processed", {port: process.env.PORT}, {count: count});
+        AppInsights.client.trackEvent("Requests Processed", {port: process.env.PORT}, {count: count});
         count = 0;
     }
 

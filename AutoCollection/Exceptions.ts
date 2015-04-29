@@ -11,21 +11,28 @@ import Util = require("../Library/Util");
 
 class AutoCollectExceptions {
 
-    private static _INSTANCE: AutoCollectExceptions = null;
+    public static INSTANCE: AutoCollectExceptions = null;
 
     private _exceptionListenerHandle;
     private _client: Client;
+    private _isInitialized: boolean;
 
     constructor(client: Client) {
-        if(AutoCollectExceptions._INSTANCE !== null) {
+        if(!!AutoCollectExceptions.INSTANCE) {
             throw new Error("Exception tracking should be configured from the applicationInsights object");
         }
 
+        AutoCollectExceptions.INSTANCE = this;
         this._client = client;
+    }
+
+    public isInitialized() {
+        return this._isInitialized;
     }
 
     public enable(isEnabled: boolean) {
         if(isEnabled) {
+            this._isInitialized = true;
             var self = this;
             if (!this._exceptionListenerHandle) {
                 this._exceptionListenerHandle = (error:Error) => {

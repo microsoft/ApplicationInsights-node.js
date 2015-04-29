@@ -33,7 +33,7 @@ interface MochaSetupOptions {
     //array of accepted globals
     globals?: any[];
 
-    // reporter instance (function or string), defaults to `mocha.reporters.Dot`
+    // reporter client (function or string), defaults to `mocha.reporters.Dot`
     reporter?: any;
 
     // bail on the first test failure

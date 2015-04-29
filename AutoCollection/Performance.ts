@@ -19,11 +19,11 @@ enum PerfCounterType
 
 class AutoCollectPerformance {
 
+    public static INSTANCE: AutoCollectPerformance;
+
     private static _totalRequestCount: number = 0;
     private static _totalFailedRequestCount: number = 0;
     private static _lastRequestExecutionTime: number = 0;
-
-    private static _INSTANCE: AutoCollectPerformance = null;
 
     private _client: Client;
     private _handle: NodeJS.Timer;
@@ -33,10 +33,12 @@ class AutoCollectPerformance {
     private _lastRequests: { totalRequestCount: number; totalFailedRequestCount: number; time: number };
 
     constructor(client: Client) {
-        if(AutoCollectPerformance._INSTANCE !== null) {
+        if(!!AutoCollectPerformance._INSTANCE) {
             throw new Error("Exception tracking should be configured from the applicationInsights object");
         }
 
+        AutoCollectPerformance.INSTANCE = this;
+        this._isInitialized = false;
         this._client = client;
     }
 
@@ -65,7 +67,12 @@ class AutoCollectPerformance {
         }
     }
 
+    public isInitialized() {
+        return this._isInitialized;
+    }
+
     private _initialize() {
+        this._isInitialized = true;
         var originalServer = http.createServer;
         http.createServer = (onRequest) => {
             return originalServer((request:http.ServerRequest, response:http.ServerResponse) => {

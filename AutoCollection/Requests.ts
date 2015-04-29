@@ -10,17 +10,18 @@ import Util = require("../Library/Util");
 
 class AutoCollectRequests {
 
-    private static _INSTANCE:AutoCollectRequests = null;
+    public static INSTANCE:AutoCollectRequests;
 
     private _client:Client;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
 
     constructor(client:Client) {
-        if (AutoCollectRequests._INSTANCE !== null) {
+        if (!!AutoCollectRequests.INSTANCE) {
             throw new Error("Request tracking should be configured from the applicationInsights object");
         }
 
+        AutoCollectRequests.INSTANCE = this;
         this._client = client;
     }
 
@@ -31,7 +32,12 @@ class AutoCollectRequests {
         }
     }
 
+    public isInitialized() {
+        return this._isInitialized;
+    }
+
     private _initialize() {
+        this._isInitialized = true;
         var originalServer = http.createServer;
         http.createServer = (onRequest) => {
             // todo: get a pointer to the server so the IP address can be read from server.address
