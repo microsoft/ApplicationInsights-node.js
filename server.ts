@@ -3,9 +3,9 @@
 import http = require("http");
 import AppInsights = require("./applicationInsights");
 AppInsights.setup("f75c55f7-a8ef-46f2-80c2-3b02c53d381f")
-    .setAutoCollectRequestsEnabled(true) // default is true
-    .setAutoCollectPerformanceEnabled(true) // default is true
-    .setAutoCollectExceptionsEnabled(true) // default is true
+    .setAutoCollectRequests(true) // default is true
+    .setAutoCollectPerformance(true) // default is true
+    .setAutoCollectExceptions(true) // default is true
     .enableVerboseLogging()
     .start(); // no telemetry will be sent until .start is called allowing auto-collection initialization to be prevented if necessary
 
