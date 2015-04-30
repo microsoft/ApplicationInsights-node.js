@@ -33,7 +33,7 @@ class AutoCollectPerformance {
     private _lastRequests: { totalRequestCount: number; totalFailedRequestCount: number; time: number };
 
     constructor(client: Client) {
-        if(!!AutoCollectPerformance._INSTANCE) {
+        if(!!AutoCollectPerformance.INSTANCE) {
             throw new Error("Exception tracking should be configured from the applicationInsights object");
         }
 

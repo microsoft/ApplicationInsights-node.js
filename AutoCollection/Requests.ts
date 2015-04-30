@@ -150,7 +150,7 @@ class RequestDataHelper {
         requestData.httpMethod = this.method;
         requestData.id = Util.newGuid();
         requestData.name = this.method + " " + url.parse(this.url).pathname;
-        requestData.startTime = Util.toISOStringForIE8(new Date(this.startTime));
+        requestData.startTime = (new Date(this.startTime)).toISOString();
         requestData.url = this.url;
         requestData.duration = Util.msToTimeSpan(duration);
         requestData.responseCode = this.statusCode.toString();
