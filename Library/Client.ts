@@ -148,7 +148,7 @@ class Client {
         envelope.osVer = this.context.tags[this.context.keys.deviceOSVersion];
         envelope.seq = (Client._sequenceNumber++).toString();
         envelope.tags = tagOverrides || this.context.tags;
-        envelope.time = Util.toISOStringForIE8(new Date());
+        envelope.time = (new Date()).toISOString();
         envelope.ver = 1;
         return envelope;
     }

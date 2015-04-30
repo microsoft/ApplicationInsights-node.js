@@ -7,10 +7,6 @@ import sinon = require("sinon");
 
 describe("ApplicationInsights", () => {
 
-    var warnStub;
-    before(() => warnStub = sinon.stub(console, "warn"));
-    after(() => warnStub.restore());
-
     describe("#setup()", () => {
         var AppInsights = require("../applicationInsights");
         var Console = require("../AutoCollection/Console");
@@ -18,34 +14,39 @@ describe("ApplicationInsights", () => {
         var Performance = require("../AutoCollection/Performance");
         var Requests = require("../AutoCollection/Requests");
         beforeEach(() => {
-            warnStub.reset();
             Console.INSTANCE = undefined;
             Exceptions.INSTANCE = undefined;
             Performance.INSTANCE = undefined;
             Requests.INSTANCE = undefined;
         });
 
-        afterEach(() => AppInsights.client = undefined);
-        after(() => warnStub.restore());
-
         it("should not warn if setup is called once", () => {
+            var warnStub = sinon.stub(console, "warn");
+            AppInsights.client = undefined;
             AppInsights.setup("key");
             assert.ok(warnStub.notCalled, "warning was not raised");
+            warnStub.restore();
         });
 
         it("should warn if setup is called twice", () => {
+            var warnStub = sinon.stub(console, "warn");
+            AppInsights.client = undefined;
             AppInsights.setup("key");
             AppInsights.setup("key");
             assert.ok(warnStub.calledOn, "warning was raised");
+            warnStub.restore();
         });
 
         it("should not overwrite default client if called more than once", () => {
+            var warnStub = sinon.stub(console, "warn");
+            AppInsights.client = undefined;
             AppInsights.setup("key");
             var client = AppInsights.client;
             AppInsights.setup("key");
             AppInsights.setup("key");
             AppInsights.setup("key");
             assert.ok(client === AppInsights.client, "client is not overwritten");
+            warnStub.restore();
         });
     });
 
@@ -57,7 +58,6 @@ describe("ApplicationInsights", () => {
         var Requests = require("../AutoCollection/Requests");
 
         beforeEach(() => {
-            warnStub.reset();
             Console.INSTANCE = undefined;
             Exceptions.INSTANCE = undefined;
             Performance.INSTANCE = undefined;
@@ -67,13 +67,17 @@ describe("ApplicationInsights", () => {
         afterEach(() => AppInsights.client = undefined);
 
         it("should warn if start is called before setup", () => {
+            var warnStub = sinon.stub(console, "warn");
             AppInsights.start();
             assert.ok(warnStub.calledOn, "warning was raised");
+            warnStub.restore();
         });
 
         it("should not warn if start is called after setup", () => {
+            var warnStub = sinon.stub(console, "warn");
             AppInsights.setup("key").start();
             assert.ok(warnStub.notCalled, "warning was not raised");
+            warnStub.restore();
         });
     });
 
