@@ -2,20 +2,13 @@
     private static document:any = typeof document !== "undefined" ? document : {};
 
     /**
-     * helper method to set userId and sessionId cookie
-     */
-    public static setCookie(name, value) {
-        Util.document.cookie = name + "=" + value + ";path=/";
-    }
-
-    /**
      * helper method to access userId and sessionId cookie
      */
-    public static getCookie(name) {
+    public static getCookie(name, cookie) {
         var value = "";
-        if (name && name.length) {
+        if (name && name.length && typeof cookie === "string") {
             var cookieName = name + "=";
-            var cookies = Util.document.cookie.split(";");
+            var cookies = cookie.split(";");
             for (var i = 0; i < cookies.length; i++) {
                 var cookie = cookies[i];
                 cookie = Util.trim(cookie);
@@ -33,7 +26,11 @@
      * helper method to trim strings (IE8 does not implement String.prototype.trim)
      */
     public static trim(str:string):string {
-        return str.replace(/^\s+|\s+$/g, "");
+        if(typeof str === "string") {
+            return str.replace(/^\s+|\s+$/g, "");
+        } else {
+            return "";
+        }
     }
 
     /**
@@ -73,35 +70,6 @@
      */
     public static isDate(obj:any):boolean {
         return Object.prototype.toString.call(obj) === "[object Date]";
-    }
-
-    /**
-     * Convert a date to I.S.O. format in IE8
-     */
-    public static toISOStringForIE8(date:Date) {
-        if (Util.isDate(date)) {
-            if (Date.prototype.toISOString) {
-                return date.toISOString();
-            } else {
-                function pad(number) {
-                    var r = String(number);
-                    if (r.length === 1) {
-                        r = "0" + r;
-                    }
-
-                    return r;
-                }
-
-                return date.getUTCFullYear()
-                    + "-" + pad(date.getUTCMonth() + 1)
-                    + "-" + pad(date.getUTCDate())
-                    + "T" + pad(date.getUTCHours())
-                    + ":" + pad(date.getUTCMinutes())
-                    + ":" + pad(date.getUTCSeconds())
-                    + "." + String((date.getUTCMilliseconds() / 1000).toFixed(3)).slice(2, 5)
-                    + "Z";
-            }
-        }
     }
 
     /**

@@ -210,20 +210,9 @@ class RequestDataHelper {
     }
 
     private _getSessionId() {
-        var name = "ai_session=";
-        var value = "";
-        if (this.rawHeaders && this.rawHeaders["cookie"] && typeof this.rawHeaders["cookie"].split === "function") {
-            var cookies = this.rawHeaders["cookie"].split(";");
-            for (var i = 0; i < cookies.length; i++) {
-                var cookie = cookies[i];
-                cookie = Util.trim(cookie);
-                if (cookie && cookie.indexOf(name) === 0) {
-                    value = cookie.substring(name.length, cookies[i].length);
-                    break;
-                }
-            }
-        }
-
+        var name = "ai_session";
+        var cookie = (this.rawHeaders && this.rawHeaders["cookie"] && typeof this.rawHeaders["cookie"]) || "";
+        var value = Util.getCookie(name, cookie);
         return value;
     }
 }
