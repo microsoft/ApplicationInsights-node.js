@@ -12,7 +12,7 @@ describe("Library/Config", () => {
     var iKey = "iKey";
     var appVer = "appVer";
 
-    describe("constructor(iKey)", () => {
+    describe("#constructor(iKey)", () => {
         it("should throw if no iKey is available", () => {
             var env = {};
             var originalEnv = process.env;

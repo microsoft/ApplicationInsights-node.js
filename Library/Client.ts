@@ -61,7 +61,11 @@ class Client {
         var trace = new ContractsModule.Contracts.MessageData();
         trace.message = message;
         trace.properties = properties;
-        trace.severityLevel = severityLevel || ContractsModule.Contracts.SeverityLevel.Information;
+        if(!isNaN(severityLevel)) {
+            trace.severityLevel = severityLevel;
+        } else {
+            trace.severityLevel = ContractsModule.Contracts.SeverityLevel.Information;
+        }
 
         var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.MessageData>();
         data.baseType = "Microsoft.ApplicationInsights.MessageData";
@@ -76,6 +80,10 @@ class Client {
      * @param   measurements    map[string, number] - metrics associated with this event, displayed in Metrics Explorer on the portal. Defaults to empty.
      */
     public trackException(exception:Error, properties?:{ [key: string]: string; }) {
+        if(!Util.isError(exception)) {
+            exception = new Error(<any>exception);
+        }
+
         var data = ExceptionTracking.getExceptionData(exception, true, properties)
         this.track(data);
     }
