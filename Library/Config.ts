@@ -2,12 +2,13 @@
 
 class Config {
 
-    private static ENV_azurePrefix = "APPSETTING_";
-    private static ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
-    private static ENV_appVer = "APPINSIGHTS_APPLICATION_VERSION";
+    // Azure adds this prefix to all environment variables
+    public static ENV_azurePrefix = "APPSETTING_";
+
+    // This key is provided in the readme
+    public static ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
 
     public instrumentationKey: string;
-    public appVersion: string;
     public sessionRenewalMs: number;
     public sessionExpirationMs: number;
     public endpointUrl: string;
@@ -17,7 +18,6 @@ class Config {
 
     constructor(instrumentationKey?: string) {
         this.instrumentationKey = instrumentationKey || this._getInstrumentationKey();
-        this.appVersion = this._getAppVersion();
         this.endpointUrl = "http://dc.services.visualstudio.com/v2/track";
         this.sessionRenewalMs = 30 * 60 * 1000;
         this.sessionExpirationMs = 24 * 60 * 60 * 1000;
@@ -27,16 +27,13 @@ class Config {
     }
 
     private _getInstrumentationKey() {
+        // check for both the documented env variable and the azure-prefixed variable
         var iKey = process.env[Config.ENV_iKey] || process.env[Config.ENV_azurePrefix + Config.ENV_iKey];
         if (!iKey || iKey == "") {
             throw new Error("Instrumentation key not found, pass the key in the config to this method or set the key in the environment variable APPINSIGHTS_INSTRUMENTATION_KEY before starting the server");
         }
 
         return iKey;
-    }
-
-    private _getAppVersion() {
-        return process.env[Config.ENV_appVer] || process.env[Config.ENV_azurePrefix + Config.ENV_appVer];
     }
 }
 
