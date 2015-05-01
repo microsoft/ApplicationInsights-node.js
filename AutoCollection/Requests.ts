@@ -58,7 +58,7 @@ class AutoCollectRequests {
      */
     public static trackRequest(client:Client, request:http.ServerRequest, response:http.ServerResponse, properties?:{ [key: string]: string; }) {
         if (!request || !response || !client) {
-            Logging.warn("AutoCollectRequests.trackRequest was called with invalid parameters: ", !request, !response, !client);
+            Logging.info("AutoCollectRequests.trackRequest was called with invalid parameters: ", !request, !response, !client);
             return;
         }
 
