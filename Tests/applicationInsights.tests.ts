@@ -8,7 +8,7 @@ import sinon = require("sinon");
 describe("ApplicationInsights", () => {
 
     describe("#setup()", () => {
-        var AppInsights = require("../applicationInsights");
+        var AppInsights = require("../applicationinsights");
         var Console = require("../AutoCollection/Console");
         var Exceptions = require("../AutoCollection/Exceptions");
         var Performance = require("../AutoCollection/Performance");
@@ -51,7 +51,7 @@ describe("ApplicationInsights", () => {
     });
 
     describe("#start()", () => {
-        var AppInsights = require("../applicationInsights");
+        var AppInsights = require("../applicationinsights");
         var Console = require("../AutoCollection/Console");
         var Exceptions = require("../AutoCollection/Exceptions");
         var Performance = require("../AutoCollection/Performance");
@@ -82,7 +82,7 @@ describe("ApplicationInsights", () => {
     });
 
     describe("#setAutoCollect", () => {
-        var AppInsights = require("../applicationInsights");
+        var AppInsights = require("../applicationinsights");
         var Console = require("../AutoCollection/Console");
         var Exceptions = require("../AutoCollection/Exceptions");
         var Performance = require("../AutoCollection/Performance");

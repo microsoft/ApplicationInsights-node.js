@@ -1,7 +1,7 @@
 ///<reference path=".\Declarations\node\node.d.ts" />
 
 import http = require("http");
-import AppInsights = require("./applicationInsights");
+import AppInsights = require("./applicationinsights");
 AppInsights.setup("f75c55f7-a8ef-46f2-80c2-3b02c53d381f")
     .setAutoCollectRequests(true) // default is true
     .setAutoCollectPerformance(true) // default is true

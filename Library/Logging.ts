@@ -2,7 +2,7 @@ class Logging {
     public static enableDebug = false;
     public static disableWarnings = false;
 
-    private static TAG = "applicationInsights:";
+    private static TAG = "ApplicationInsights:";
 
     public static info(message?: any, ...optionalParams: any[]) {
         if(Logging.enableDebug) {
