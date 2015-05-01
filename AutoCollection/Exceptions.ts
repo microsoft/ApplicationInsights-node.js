@@ -2,7 +2,6 @@
 
 import http = require("http");
 
-import AppInsights = require("../applicationInsights");
 import ContractsModule = require("../Library/Contracts");
 import Client = require("../Library/Client");
 import Sender = require("../Library/Sender");
