@@ -9,7 +9,7 @@ import Logging = require("../../Library/Logging");
 
 describe("Library/Logging", () => {
 
-    describe("info(message, ...optionalParams: any)", () => {
+    describe("#info(message, ...optionalParams: any)", () => {
         it("should do nothing if disabled", () => {
             var originalSetting = Logging.enableDebug;
             Logging.enableDebug = false;
@@ -31,7 +31,7 @@ describe("Library/Logging", () => {
         });
     });
 
-    describe("warn(message, ...optionalParams: any)", () => {
+    describe("#warn(message, ...optionalParams: any)", () => {
         it("should do nothing if disabled", () => {
             var originalSetting = Logging.enableDebug;
             Logging.enableDebug = false;

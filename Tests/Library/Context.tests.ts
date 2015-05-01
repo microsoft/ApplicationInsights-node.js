@@ -9,7 +9,7 @@ import http = require("http");
 import Context = require("../../Library/Context");
 
 describe("Library/Context", () => {
-    describe("constructor()", () => {
+    describe("#constructor()", () => {
         it("should initialize default context", () => {
             var context = new Context();
             var defaultkeys = [

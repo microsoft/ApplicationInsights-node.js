@@ -37,7 +37,7 @@ class Context {
                 }
             }
         } catch (exception) {
-            console.log("unable to read app version: ", exception);
+            Logging.info("unable to read app version: ", exception);
         }
 
         this.tags[this.keys.applicationVersion] = version;
