@@ -9,10 +9,6 @@ import Util = require("../../Library/Util");
 
 describe("Library/Util", () => {
 
-    var warnStub;
-    before(() => warnStub = sinon.stub(console, "warn"));
-    after(() => warnStub.restore());
-
     describe("#getCookie(name, cookie)", () => {
 
         var test = (cookie, query, expected) => {

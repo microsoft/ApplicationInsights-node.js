@@ -5,13 +5,9 @@
 import http = require("http");
 import assert = require("assert");
 import sinon = require("sinon");
-import AppInsights = require("../applicationInsights");
+import AppInsights = require("../applicationinsights");
 
 describe("EndToEnd", () => {
-
-    var warnStub;
-    before(() => warnStub = sinon.stub(console, "warn"));
-    after(() => warnStub.restore());
 
     describe("Basic usage", () => {
         it("should send telemetry", () => {

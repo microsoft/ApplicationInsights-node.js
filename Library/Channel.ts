@@ -3,14 +3,14 @@ import Logging = require("./Logging");
 import Sender = require("./Sender");
 
 class Channel {
-    private _buffer:string[];
-    private _lastSend:number;
-    private _timeoutHandle:any;
+    protected _buffer:string[];
+    protected _lastSend:number;
+    protected _timeoutHandle:any;
 
-    private _isDisabled: () => boolean;
-    private _getBatchSize: () => number;
-    private _getBatchIntervalMs: () => number;
-    private _sender: Sender;
+    protected _isDisabled: () => boolean;
+    protected _getBatchSize: () => number;
+    protected _getBatchIntervalMs: () => number;
+    protected _sender: Sender;
 
     constructor(isDisabled: () => boolean, getBatchSize: () => number, getBatchIntervalMs: () => number, sender: Sender) {
         this._buffer = [];
@@ -39,18 +39,22 @@ class Channel {
         }
 
         // check if the incoming payload is too large, truncate if necessary
-        var payload:string = JSON.stringify(envelope);
-
-        // flush if we would exceet the max-size limit by adding this item
-        if (this._buffer.length >= this._getBatchSize()) {
-            this.triggerSend();
+        var payload:string = this._stringify(envelope);
+        if (typeof payload !== "string"){
+            return;
         }
 
         // enqueue the payload
         this._buffer.push(payload);
 
-        // ensure an invocation timeout is set
-        if (!this._timeoutHandle) {
+        // flush if we would exceed the max-size limit by adding this item
+        if (this._buffer.length >= this._getBatchSize()) {
+            this.triggerSend();
+            return;
+        }
+
+        // ensure an invocation timeout is set if anything is in the buffer
+        if (!this._timeoutHandle && this._buffer.length > 0) {
             this._timeoutHandle = setTimeout(() => {
                 this._timeoutHandle = null;
                 this.triggerSend();
@@ -59,9 +63,17 @@ class Channel {
     }
 
     public handleCrash(envelope: ContractsModule.Contracts.Envelope) {
-        var payload = JSON.stringify(envelope);
-        this._buffer.push(payload);
-        this.triggerSend(true);
+        if(envelope) {
+            var payload = this._stringify(envelope);
+            if (typeof payload === "string") {
+                this._buffer.push(payload);
+                this.triggerSend(true);
+            } else {
+                Logging.warn("Could not send crash", envelope);
+            }
+        } else {
+            Logging.warn("handleCrash was called with empty payload", envelope);
+        }
     }
 
     /**
@@ -90,18 +102,12 @@ class Channel {
         this._timeoutHandle = null;
     }
 
-    private static _getSizeInBytes(list:string[]) {
-        var size = 0;
-        if (list && list.length) {
-            for (var i = 0; i < list.length; i++) {
-                var item = list[i];
-                if (item && item.length) {
-                    size += item.length;
-                }
-            }
+    private _stringify(envelope) {
+        try {
+            return JSON.stringify(envelope);
+        } catch (error) {
+            Logging.warn("Failed to serialize payload", error, envelope);
         }
-
-        return size;
     }
 }
 
