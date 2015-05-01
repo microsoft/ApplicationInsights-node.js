@@ -11,22 +11,22 @@ class Context {
     public keys: ContractsModule.Contracts.ContextTagKeys;
     public tags: { [key: string]: string};
 
-    constructor(server?: http.Server) {
+    constructor(packageJsonPath?: string) {
         this.keys = new ContractsModule.Contracts.ContextTagKeys();
         this.tags = <{ [key: string]: string}>{};
 
         this._loadApplicationContext();
-        this._loadDeviceContext(server);
+        this._loadDeviceContext();
         this._loadInternalContext();
     }
 
-    private _loadApplicationContext() {
+    private _loadApplicationContext(packageJsonPath?: string) {
         var version = "unknown";
         var description = undefined;
 
         try {
             // note: this should return the host package.json
-            var packageJson = require("../../../package.json");
+            var packageJson = require(packageJsonPath || "../../../package.json");
             if(packageJson) {
                 if (typeof packageJson.version === "string") {
                     version = packageJson.version;
@@ -37,7 +37,7 @@ class Context {
                 }
             }
         } catch (exception) {
-            console.log("unable to read app version: " + exception);
+            console.log("unable to read app version: ", exception);
         }
 
         this.tags[this.keys.applicationVersion] = version;
@@ -46,9 +46,8 @@ class Context {
         }
     }
 
-    private _loadDeviceContext(server: http.Server) {
+    private _loadDeviceContext() {
         this.tags[this.keys.deviceId] = "node";
-        this.tags[this.keys.deviceIp] = server && server.address() && server.address().address;
         this.tags[this.keys.deviceMachineName] = os && os.hostname();
         this.tags[this.keys.deviceOS] = os && os.type();
         this.tags[this.keys.deviceOSVersion] = os && (os.arch() + ":" + os.platform());
@@ -68,7 +67,7 @@ class Context {
             Logging.info("unable to read SDK version: " + exception);
         }
 
-        this.tags[this.keys.internalSdkVersion] = version;
+        this.tags[this.keys.internalSdkVersion] = "node:" + version || "unknown";
     }
 }
 

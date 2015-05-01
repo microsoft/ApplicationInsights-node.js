@@ -202,7 +202,10 @@ class RequestDataHelper {
             || check(this.legacySocketRemoteAddress);
 
         // node v12 returns this if the address is "localhost"
-        if (!ip && this.connectionRemoteAddress === "::1") {
+        if (!ip
+            && this.connectionRemoteAddress
+            && this.connectionRemoteAddress.substr
+            && this.connectionRemoteAddress.substr(0, 2) === "::") {
             ip = "127.0.0.1";
         }
 

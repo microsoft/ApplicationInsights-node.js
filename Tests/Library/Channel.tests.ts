@@ -28,7 +28,7 @@ describe("Library/Channel", () => {
     var sendSpy = sinon.spy(sender, "send");
     var saveSpy = sinon.spy(sender, "saveOnCrash");
 
-    var channel: ChannelMock;
+    var channel:ChannelMock;
     var config;
     var clock;
     before(() => clock = sinon.useFakeTimers());
@@ -78,7 +78,7 @@ describe("Library/Channel", () => {
         });
 
         it("should not crash JSON.stringify", () => {
-            var a = <any>{b:null};
+            var a = <any>{b: null};
             a.b = a;
 
             var warnStub = sinon.stub(console, "warn");
@@ -88,7 +88,7 @@ describe("Library/Channel", () => {
         });
 
         it("should flush the buffer when full", () => {
-            for(var i = 0; i < config.batchSize; i++) {
+            for (var i = 0; i < config.batchSize; i++) {
                 channel.send(testEnvelope);
             }
 
@@ -109,7 +109,7 @@ describe("Library/Channel", () => {
         });
 
         it("should clear timeout handle after flushing", () => {
-            for(var i = 0; i < config.batchSize; i++) {
+            for (var i = 0; i < config.batchSize; i++) {
                 channel.send(testEnvelope);
             }
 
@@ -133,7 +133,7 @@ describe("Library/Channel", () => {
 
         it("should warn if envelope cannot be serialized", () => {
             var warnStub = sinon.stub(console, "warn");
-            var a = <any>{b:null};
+            var a = <any>{b: null};
             a.b = a;
 
             channel.handleCrash(a);
