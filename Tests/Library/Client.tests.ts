@@ -12,13 +12,24 @@ describe("Library/Client", () => {
 
     var name = "name";
     var value = 3;
-    var properties:{ [key: string]: string; } = {p1: "p1", p2: "p2"};
+    var mockData = <any>{baseData: {properties: {}}, baseType: "BaseTestData"};
+    var properties:{ [key: string]: string; } = {p1: "p1", p2: "p2", common: "commonArg"};
     var measurements:{ [key: string]: number; } = {m1: 1, m2: 2};
     var client = new Client("key");
     var trackStub:SinonStub;
+    var triggerStub:SinonStub;
+    var sendStub:SinonStub;
 
-    before(() => trackStub = sinon.stub(client, "track"));
-    after(() => trackStub.restore());
+    before(() => {
+        trackStub = sinon.stub(client, "track");
+        triggerStub = sinon.stub(client.channel, "triggerSend");
+        sendStub = sinon.stub(client.channel, "send");
+    });
+    after(() => {
+        trackStub.restore();
+        triggerStub.restore();
+        sendStub.restore();
+    });
 
     var invalidInputHelper = (name:string) => {
         assert.doesNotThrow(() => client[name](null, null));
@@ -55,7 +66,7 @@ describe("Library/Client", () => {
     });
 
     describe("#trackEvent()", () => {
-        it("should call trackEvent with event data", () => {
+        it("should track Event with correct data", () => {
             trackStub.reset();
             client.trackEvent(name);
             client.trackEvent(name, properties);
@@ -78,7 +89,7 @@ describe("Library/Client", () => {
     });
 
     describe("#trackTrace()", () => {
-        it("should call trackTrace with message data", () => {
+        it("should track Trace with correct data", () => {
             trackStub.reset();
             client.trackTrace(name);
             client.trackTrace(name, 0);
@@ -101,7 +112,7 @@ describe("Library/Client", () => {
     });
 
     describe("#trackException()", () => {
-        it("should call trackException with name/value data", () => {
+        it("should track Exception with correct data", () => {
             trackStub.reset();
             client.trackException(new Error(name));
             client.trackException(new Error(name), properties);
@@ -120,7 +131,7 @@ describe("Library/Client", () => {
     });
 
     describe("#trackMetric()", () => {
-        it("should call trackMetric with name/value data", () => {
+        it("should track Metric with correct data", () => {
             trackStub.reset();
             client.trackMetric(name, value);
 
@@ -144,34 +155,76 @@ describe("Library/Client", () => {
 
     describe("#sendPendingData()", () => {
         it("should invoke the sender", () => {
-            var sendStub = sinon.stub(client.channel, "triggerSend");
+            triggerStub.reset();
             client.sendPendingData();
-            assert.ok(sendStub.calledOnce);
-            sendStub.restore();
+            assert.ok(triggerStub.calledOnce);
         });
     });
 
     describe("#getEnvelope()", () => {
+        var commonproperties:{[key: string]: string} = {common1: "common1", common2: "common2", common: "common"};
         it("should assign common properties to the data", () => {
+            var client1 = new Client("key");
+            client1.commonProperties = commonproperties;
+            mockData.baseData.properties = JSON.parse(JSON.stringify(properties));
+            var env = client1.getEnvelope(mockData);
 
+            // check common properties
+            assert.equal(env.data.baseData.properties.common1, (<any>commonproperties).common1);
+            assert.equal(env.data.baseData.properties.common2, (<any>commonproperties).common2);
+
+            // check argument properties
+            assert.equal(env.data.baseData.properties.p1, (<any>properties).p1);
+            assert.equal(env.data.baseData.properties.p2, (<any>properties).p2);
+
+            // check that argument properties overwrite common properties1
+            assert.equal(env.data.baseData.properties.common, (<any>properties).common);
         });
 
         it("should allow tags to be overwritten", () => {
-
+            mockData.properties = {};
+            var env = client.getEnvelope(mockData);
+            assert.deepEqual(env.tags, client.context.tags, "tags are set by default");
+            var customTag = {custom: "tag"};
+            env = client.getEnvelope(mockData, <any>customTag);
+            assert.deepEqual(env.tags, customTag)
         });
 
         it("should set sequence numbers correctly", () => {
-
+            var env1 = client.getEnvelope(mockData);
+            var env2 = client.getEnvelope(mockData);
+            var seq1 = parseInt(env1.seq);
+            var seq2 = parseInt(env2.seq);
+            assert.ok(seq1 < seq2);
+            assert.equal(seq1 + 1, seq2);
         });
     });
 
     describe("#track()", () => {
-        it("should wrap the data in an envelope", () => {
+        it("should pass data to the channel", () => {
+            sendStub.reset();
 
+            trackStub.restore();
+            client.track(mockData);
+            trackStub = sinon.stub(client, "track");
+
+            assert.ok(sendStub.calledOnce);
         });
 
-        it("should pass data to the channel", () => {
+        it("should wrap the data in an envelope", () => {
+            sendStub.reset();
+            var expected = client.getEnvelope(mockData);
 
+            trackStub.restore();
+            client.track(mockData);
+            trackStub = sinon.stub(client, "track");
+
+            var actual = sendStub.firstCall.args[0];
+
+            // make sequence numbers equal to leverage deepEqual
+            expected.seq = (parseInt(expected.seq) + 1).toString();
+
+            assert.deepEqual(actual, expected);
         });
     });
 });
