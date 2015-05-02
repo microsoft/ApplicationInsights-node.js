@@ -48,7 +48,7 @@ AppInsights.client.trackTrace("trace message");
 ```
 
 Example with manual request tracking of all "GET" requests
-```
+```javascript
 var http = require("http");
 var appInsights = require('applicationinsights');
 appInsights.setup("<instrumentation_key>")
