@@ -1,7 +1,7 @@
 # Application Insights for Node.js
 
 [![NPM version](https://badge.fury.io/js/applicationinsights.svg)](http://badge.fury.io/js/applicationinsights)
-[![Build Status](https://travis-ci.org/Microsoft/AppInsights-node.js.svg?branch=master)](https://travis-ci.org/Microsoft/AppInsights-node.js)
+[![Build Status](https://travis-ci.org/Microsoft/ApplicationInsights-node.js.svg?branch=master)](https://travis-ci.org/Microsoft/ApplicationInsights-node.js)
 
 This project provides a Node.js SDK for Application Insights. [Application Insights](http://azure.microsoft.com/en-us/services/application-insights/) is a service that allows developers to keep their applications available, performant, and successful. This node module will allow you to send telemetry of various kinds (event, trace, exception, etc.) to the Application Insights service where they can be visualized in the Azure Portal. 
 
@@ -21,45 +21,66 @@ This project provides a Node.js SDK for Application Insights. [Application Insig
 
 ## Usage ##
 
+This will enable request monitoring, unhandled exception tracking, and system performance monitoring (CPU/Memory/RPS)
 ```javascript
-var AppInsights = require('applicationinsights');
+import AppInsights = require("./applicationinsights");
+AppInsights.setup("<instrumentation_key>").start();
+```
 
-// instantiate an instance of NodeAppInsights
-var appInsights = new AppInsights(
-    /* configuration can optionally be passed here instead of the environment variable, example:
-    {
-        instrumentationKey: "<guid>"
-    }
-    */
-);
+## Customized Usage ##
+Disabling auto-collection
+```javascript
+AppInsights.setup("<instrumentation_key>")
+    .setAutoCollectRequests(false)
+    .setAutoCollectPerformance(false)
+    .setAutoCollectExceptions(false)
+    // no telemetry will be sent until .start() is called
+    // this prevents any of the auto-collectors from initializing
+    .start();
+```
 
-// must be done before creating the http server ('monkey patch' http.createServer to inject request tracking)
-// this example tracks all requests except requests for "favicon" 
-appInsights.trackAllHttpServerRequests("favicon");
+Custom monitoring
+```javascript
+AppInsights.client.trackEvent("custom event", {customProperty: "custom property value"});
+AppInsights.client.trackException(new Error("handled exceptions can be logged with this method"));
+AppInsights.client.trackMetric("custom metric", 3);
+AppInsights.client.trackTrace("trace message");
+```
 
-// log unhandled exceptions by adding a handler to process.on("uncaughtException")
-appInsights.trackAllUncaughtExceptions();
+Example with manual request tracking of all "GET" requests
+```
+var http = require("http");
+var appInsights = require('applicationinsights');
+appInsights.setup("<instrumentation_key>")
+    .setAutoCollectRequests(false) // disabling auto-collection for this example
+    .start();
 
-// manually collect telemetry
-appInsights.trackTrace("example usage trace");
-appInsights.trackEvent("example usage event name", { custom: "properties" });
-appInsights.trackException(new Error("example usage error message"), "handledHere");
-appInsights.trackMetric("example usage metric name", 42);
+// assign common properties to all telemetry
+appInsights.client.commonProperties = {
+    environment: process.env.SOME_ENV_VARIABLE
+};
 
-// start tracking server startup
-var exampleUsageServerStartEvent = "exampleUsageServerStart";
-appInsights.startTrackEvent(exampleUsageServerStartEvent);
+// track a system startup event
+appInsights.client.trackEvent("server start");
 
 // create server
 var port = process.env.port || 1337
 var server = http.createServer(function (req, res) {
+    // track all "GET" requests
+    if(req.method === "GET") {
+        appInsights.client.trackRequest(req, res);
+    }
+
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Hello World\n');
 }).listen(port);
 
-// stop tracking server startup (this will send a timed telemetry event)
+// track startup time of the server as a custom metric
+var start = +new Date;
 server.on("listening", () => {
-    appInsights.stopTrackEvent(exampleUsageServerStartEvent);
+    var end = +new Date;
+    var duration = end - start;
+    appInsights.client.trackMetric("StartupTime", duration);
 });
 ```
 
@@ -80,22 +101,3 @@ set APPINSIGHTS_INSTRUMENTATION_KEY=<insert_your_instrumentation_key_here>
 ```
 npm test
 ```
-
-
-
-## How to integrate with Azure ##
-1. Click on your website tile and scroll down to the Console tile. Type the command (as shown above) to install the module from the Node Package Manager. <br/> <img src="https://cloud.githubusercontent.com/assets/8000269/3898723/334d80b8-2270-11e4-9265-fea64fa8c4d9.png" width="600">
-
-2. Scroll to the bottom of your website blade to the Extensions tile. Click the Add button and select Visual Studio Online and add the extension. You may need to refresh the current blade for it to appear on your list of extensions. <br/> <img src="https://cloud.githubusercontent.com/assets/8000269/3898727/335acae8-2270-11e4-9294-a53f68e2bb77.png" width="600">
- 
-3. Next, scroll to the top and in the Summary tile, click on the section that says Application Insights. Find your Node website in the list and click on it. Then click on the Properties tile and copy your instrumentation key. <br/> <img src="https://cloud.githubusercontent.com/assets/8000269/3898721/334b228c-2270-11e4-82a7-1bb158c3a843.png" width="600"> <br/> <img src="https://cloud.githubusercontent.com/assets/8000269/3898722/334c0e04-2270-11e4-81c9-2f6101ae12a9.png" width="600"> 
-
-4. From the website blade click "site settings". Under the "App settings" section, enter a new key "APPINSIGHTS\_INSTRUMENTATION\_KEY" and paste your instrumentation key into the value field.
-
-5. Go back to your Extensions tile and click on Visual Studio Online to open up the VSO blade. Click the Browse button to open VSO to edit your files. <br/> <img src="https://cloud.githubusercontent.com/assets/8000269/3898729/3361b43e-2270-11e4-9c07-0904f632e514.png" width="600">
-
-6. Once you open VSO, click on the `server.js` file and enter the require statement as stated above. <br/> <img src="https://cloud.githubusercontent.com/assets/8000269/3898728/335aea0a-2270-11e4-9545-27e5d0baac57.png" width="600"> 
-
-7. Open your website and click on a link to generate a request. <br/>
-
-8. Return to your project tile in the Azure Portal. You can view your requests in the Monitoring tile.
