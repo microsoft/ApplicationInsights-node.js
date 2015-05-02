@@ -145,6 +145,9 @@ class Client {
             }
         }
 
+        // sanitize properties
+        data.baseData.properties = Util.validateStringMap(data.baseData.properties);
+
         var envelope = new ContractsModule.Contracts.Envelope();
         envelope.data = data;
         envelope.appVer = this.context.tags[this.context.keys.applicationVersion];

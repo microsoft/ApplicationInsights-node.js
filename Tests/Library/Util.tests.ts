@@ -107,4 +107,16 @@ describe("Library/Util", () => {
             test(-1, "00:00:00.000", "invalid input");
         });
     });
+
+    describe("#enforceStringMap", () => {
+        it("should only allow string:string", () => {
+            assert.equal(Util.validateStringMap(undefined), undefined);
+            assert.equal(Util.validateStringMap(1), undefined);
+            assert.equal(Util.validateStringMap(true), undefined);
+            assert.equal(Util.validateStringMap("test"), undefined);
+            assert.equal(Util.validateStringMap(() => null), undefined);
+            assert.deepEqual(Util.validateStringMap({a:{}}), {a: "[object Object]"});
+            assert.deepEqual(Util.validateStringMap({a:3, b: "test"}), {a: "3", b: "test"});
+        });
+    });
 });

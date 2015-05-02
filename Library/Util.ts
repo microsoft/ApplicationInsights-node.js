@@ -1,4 +1,7 @@
-﻿class Util {
+﻿import Logging = require("./Logging");
+
+class Util {
+    public static MAX_PROPERTY_LENGTH = 1024;
     private static document:any = typeof document !== "undefined" ? document : {};
 
     /**
@@ -91,6 +94,33 @@
         hour = hour.length < 2 ? "0" + hour : hour;
 
         return hour + ":" + min + ":" + sec + "." + ms;
+    }
+
+    /**
+     * Validate that an object is of type { [key: string]: string }
+     */
+    public static validateStringMap(obj: any): { [key: string]: string } {
+        var map: { [key: string]: string };
+        if(typeof obj === "object") {
+            map = <{ [key: string]: string }>{};
+            for (var field in obj) {
+                var property = obj[field];
+                var propertyType = typeof property;
+                if (propertyType !== "string") {
+                    if (property && typeof property.toString === "function") {
+                        property = property.toString();
+                    } else {
+                        property = "invalid property type: " + propertyType;
+                    }
+                }
+
+                map[field] = property.trim(0, Util.MAX_PROPERTY_LENGTH);
+            }
+        } else {
+            Logging.info("Invalid properties dropped from payload");
+        }
+
+        return map;
     }
 }
 export = Util;
