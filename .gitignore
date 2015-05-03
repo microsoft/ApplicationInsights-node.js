@@ -1,16 +1,13 @@
 # Ignore build files
 obj
 *.js
-*.js.map
 *.d.ts
+*.js.map
 *.tgz
 package-version
 
-# Except install.js, server.js and typings
-!ai.d.ts
-!install.js
-!server.js
-!Scripts/typings/node/node.d.ts
+# Except imported Declarations and browser js SDK
+!/Declarations/**
 
 # Ignore Node files
 node_modules/**
@@ -22,3 +19,6 @@ node_modules/**
 
 # Ignore webstorm files
 .idea
+
+# Ignore OS X files
+*.DS_Store

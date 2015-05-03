@@ -1,17 +1,18 @@
 {
   "name": "applicationinsights",
   "license": "MIT",
-  "bugs": "https://github.com/Microsoft/AppInsights-node.js/issues",
-  "version": "0.12.5",
+  "bugs": "https://github.com/Microsoft/ApplicationInsights-node.js/issues",
+  "version": "0.15.0",
   "description": "Microsoft Application Insights module for Node.JS",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Microsoft/AppInsights-node.js"
+    "url": "https://github.com/Microsoft/ApplicationInsights-node.js"
   },
-  "main": "applicationInsights",
+  "main": "applicationinsights",
   "keywords": [
     "exception monitoring",
     "request monitoring",
+    "performance monitoring",
     "application insights",
     "microsoft",
     "azure"
@@ -23,13 +24,16 @@
     }
   ],
   "scripts": {
-    "prepublish": "tsc --module commonjs --declaration applicationInsights.ts",
-    "test": "tsc --noimplicitany --module commonjs Tests/TestServer.ts && node Tests/TestServer",
-    "postinstall": "node install.js"
+    "prepublish": "tsc --module commonjs --declaration applicationinsights.ts",
+    "pretest": "find Tests -type f -name \"*.ts\" | xargs tsc --module commonjs",
+    "test": "./node_modules/mocha/bin/mocha ./Tests --recursive"
   },
   "devDependencies": {
     "async": "^0.9.0",
+    "chai": "^2.3.0",
+    "mocha": "^2.2.4",
     "node-mocks-http": "^1.2.3",
+    "sinon": "^1.14.1",
     "typescript": "^1.0.1"
   }
 }
