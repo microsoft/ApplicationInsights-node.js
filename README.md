@@ -23,14 +23,14 @@ This project provides a Node.js SDK for Application Insights. [Application Insig
 
 This will enable request monitoring, unhandled exception tracking, and system performance monitoring (CPU/Memory/RPS)
 ```javascript
-import AppInsights = require("./applicationinsights");
-AppInsights.setup("<instrumentation_key>").start();
+import appInsights = require("applicationinsights");
+appInsights.setup("<instrumentation_key>").start();
 ```
 
 ## Customized Usage ##
 Disabling auto-collection
 ```javascript
-AppInsights.setup("<instrumentation_key>")
+appInsights.setup("<instrumentation_key>")
     .setAutoCollectRequests(false)
     .setAutoCollectPerformance(false)
     .setAutoCollectExceptions(false)
@@ -41,10 +41,10 @@ AppInsights.setup("<instrumentation_key>")
 
 Custom monitoring
 ```javascript
-AppInsights.client.trackEvent("custom event", {customProperty: "custom property value"});
-AppInsights.client.trackException(new Error("handled exceptions can be logged with this method"));
-AppInsights.client.trackMetric("custom metric", 3);
-AppInsights.client.trackTrace("trace message");
+appInsights.client.trackEvent("custom event", {customProperty: "custom property value"});
+appInsights.client.trackException(new Error("handled exceptions can be logged with this method"));
+appInsights.client.trackMetric("custom metric", 3);
+appInsights.client.trackTrace("trace message");
 ```
 
 Example with manual request tracking of all "GET" requests
