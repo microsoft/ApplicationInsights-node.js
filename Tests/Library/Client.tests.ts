@@ -221,8 +221,9 @@ describe("Library/Client", () => {
 
             var actual = sendStub.firstCall.args[0];
 
-            // make sequence numbers equal to leverage deepEqual
+            // make sequence numbers and timestamp equal to leverage deepEqual
             expected.seq = (parseInt(expected.seq) + 1).toString();
+            expected.time = actual.time;
 
             assert.deepEqual(actual, expected);
         });
