@@ -38,6 +38,7 @@ class Sender {
         // todo: investigate specifying an agent here: https://nodejs.org/api/http.html#http_class_http_agent
         var options = {
             host: url.parse(endpointUrl).hostname,
+            port: url.parse(endpointUrl).port,
             path: url.parse(endpointUrl).pathname,
             method: "POST",
             headers: {
