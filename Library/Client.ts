@@ -47,7 +47,7 @@ class Client {
         event.measurements = measurements;
 
         var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.EventData>();
-        data.baseType = "Microsoft.ApplicationInsights.EventData";
+        data.baseType = "EventData";
         data.baseData = event;
         this.track(data);
     }
@@ -68,7 +68,7 @@ class Client {
         }
 
         var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.MessageData>();
-        data.baseType = "Microsoft.ApplicationInsights.MessageData";
+        data.baseType = "MessageData";
         data.baseData = trace;
         this.track(data);
     }
@@ -111,7 +111,7 @@ class Client {
         metrics.metrics.push(metric);
 
         var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.MetricData>();
-        data.baseType = "Microsoft.ApplicationInsights.MetricData";
+        data.baseType = "MetricData";
         data.baseData = metrics;
         this.track(data);
     }
@@ -154,7 +154,7 @@ class Client {
         envelope.iKey = this.config.instrumentationKey;
 
         // this is kind of a hack, but the envelope name is always the same as the data name sans the chars "data"
-        envelope.name = data.baseType.substr(0, data.baseType.length - 4);
+        envelope.name = "Microsoft.ApplicationInsights." + data.baseType.substr(0, data.baseType.length - 4);
         envelope.os = this.context.tags[this.context.keys.deviceOS];
         envelope.osVer = this.context.tags[this.context.keys.deviceOSVersion];
         envelope.seq = (Client._sequenceNumber++).toString();
