@@ -36,10 +36,11 @@ class Sender {
         }
 
         // todo: investigate specifying an agent here: https://nodejs.org/api/http.html#http_class_http_agent
+        var parsedUrl = url.parse(endpointUrl);
         var options = {
-            host: url.parse(endpointUrl).hostname,
-            port: url.parse(endpointUrl).port,
-            path: url.parse(endpointUrl).pathname,
+            host: parsedUrl.hostname,
+            port: parsedUrl.port,
+            path: parsedUrl.pathname,
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
