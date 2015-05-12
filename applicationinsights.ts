@@ -42,7 +42,7 @@ class ApplicationInsights {
             ApplicationInsights._performance = new AutoCollectPerformance(ApplicationInsights.client);
             ApplicationInsights._requests = new AutoCollectRequests(ApplicationInsights.client);
         } else {
-            Logging.warn("The default client is already setup");
+            Logging.info("The default client is already setup");
         }
 
         return ApplicationInsights;
