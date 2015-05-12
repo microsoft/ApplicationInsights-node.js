@@ -29,6 +29,15 @@ class ApplicationInsights {
     private static _isStarted = false;
 
     /**
+     * Initializes a client with the given instrumentation key, if this is not specified, the value will be
+     * read from the environment variable APPINSIGHTS_INSTRUMENTATION_KEY
+     * @returns {ApplicationInsights/Client} a new client
+     */
+    public static getClient(instrumentationKey?: string) {
+        return new Client(instrumentationKey);
+    }
+
+    /**
      * Initializes the default client of the client and sets the default configuration
      * @param instrumentationKey the instrumentation key to use. Optional, if this is not specified, the value will be
      * read from the environment variable APPINSIGHTS_INSTRUMENTATION_KEY
@@ -36,7 +45,7 @@ class ApplicationInsights {
      */
     public static setup(instrumentationKey?: string) {
         if(!ApplicationInsights.client) {
-            ApplicationInsights.client = new Client(instrumentationKey);
+            ApplicationInsights.client = ApplicationInsights.getClient(instrumentationKey);
             ApplicationInsights._console = new AutoCollectConsole(ApplicationInsights.client);
             ApplicationInsights._exceptions = new AutoCollectExceptions(ApplicationInsights.client);
             ApplicationInsights._performance = new AutoCollectPerformance(ApplicationInsights.client);
