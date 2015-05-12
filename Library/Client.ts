@@ -89,23 +89,28 @@ class Client {
     }
 
     /**
-     * Log a numeric value that is not associated with a specific event. Typically used to send regular reports of performance indicators.
+     * * Log a numeric value that is not associated with a specific event. Typically used to send regular reports of performance indicators.
      * To send a single measurement, use just the first two parameters. If you take measurements very frequently, you can reduce the
      * telemetry bandwidth by aggregating multiple measurements and sending the resulting average at intervals.
-     * @param   name    A string that identifies the metric.
-     * @param   value The value of the metric
+     *
+     * @param name   A string that identifies the metric.
+     * @param value  The value of the metric
+     * @param count  the number of samples used to get this value
+     * @param min    the min sample for this set
+     * @param max    the max sample for this set
+     * @param stdDev the standard deviation of the set
      */
-    public trackMetric(name:string, value:number) {
+    public trackMetric(name:string, value:number, count?:number, min?: number, max?: number, stdDev?: number) {
         var metrics = new ContractsModule.Contracts.MetricData(); // todo: enable client-batching of these
         metrics.metrics = [];
 
         var metric = new ContractsModule.Contracts.DataPoint();
-        metric.count = 1;
-        metric.kind = ContractsModule.Contracts.DataPointType.Measurement;
-        metric.max = value;
-        metric.min = value;
+        metric.count = !isNaN(count) ? count : 1;
+        metric.kind = ContractsModule.Contracts.DataPointType.Aggregation;
+        metric.max = !isNaN(max) ? max : value;
+        metric.min = !isNaN(min) ? min : value;
         metric.name = name;
-        metric.stdDev = 0;
+        metric.stdDev = !isNaN(stdDev) ? stdDev : 0;
         metric.value = value;
 
         metrics.metrics.push(metric);
