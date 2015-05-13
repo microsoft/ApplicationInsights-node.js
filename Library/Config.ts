@@ -6,7 +6,8 @@ class Config {
     public static ENV_azurePrefix = "APPSETTING_";
 
     // This key is provided in the readme
-    public static ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
+    public static ENV_iKey = "APPINSIGHTS_INSTRUMENTATIONKEY";
+    public static legacy_ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
 
     public instrumentationKey: string;
     public sessionRenewalMs: number;
@@ -28,9 +29,12 @@ class Config {
 
     private _getInstrumentationKey() {
         // check for both the documented env variable and the azure-prefixed variable
-        var iKey = process.env[Config.ENV_iKey] || process.env[Config.ENV_azurePrefix + Config.ENV_iKey];
+        var iKey = process.env[Config.ENV_iKey]
+            || process.env[Config.ENV_azurePrefix + Config.ENV_iKey]
+            || process.env[Config.legacy_ENV_iKey]
+            || process.env[Config.ENV_azurePrefix + Config.legacy_ENV_iKey];
         if (!iKey || iKey == "") {
-            throw new Error("Instrumentation key not found, pass the key in the config to this method or set the key in the environment variable APPINSIGHTS_INSTRUMENTATION_KEY before starting the server");
+            throw new Error("Instrumentation key not found, pass the key in the config to this method or set the key in the environment variable APPINSIGHTS_INSTRUMENTATIONKEY before starting the server");
         }
 
         return iKey;
