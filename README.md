@@ -23,7 +23,7 @@ This project provides a Node.js SDK for Application Insights. [Application Insig
 
 This will enable request monitoring, unhandled exception tracking, and system performance monitoring (CPU/Memory/RPS)
 ```javascript
-import AppInsights = require("./applicationinsights");
+import AppInsights = require("applicationinsights");
 AppInsights.setup("<instrumentation_key>").start();
 ```
 
