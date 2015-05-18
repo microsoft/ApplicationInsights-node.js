@@ -37,11 +37,15 @@ AppInsights.setup("<instrumentation_key>")
     // no telemetry will be sent until .start() is called
     // this prevents any of the auto-collectors from initializing
     .start();
+
+// get a client for another iKey (or if setup is never called)
+var otherClient = AppInsights.getClient("<instrumentation_key>");
+otherClient.trackEvent("custom event");
 ```
 
 Custom monitoring
 ```javascript
-AppInsights.client.trackEvent("custom event", {customProperty: "custom property value"});
+AppInsights.trackEvent("custom event", {customProperty: "custom property value"});
 AppInsights.client.trackException(new Error("handled exceptions can be logged with this method"));
 AppInsights.client.trackMetric("custom metric", 3);
 AppInsights.client.trackTrace("trace message");
