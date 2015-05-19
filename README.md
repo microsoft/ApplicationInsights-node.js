@@ -94,14 +94,17 @@ server.on("listening", () => {
 **Development environment**
 
 * Install dev dependencies
-```
-npm install 
-```
+    
+    ```
+    npm install 
+    ```
 * (optional) Set an environment variable to your instrumentation key
-```
-set APPINSIGHTS_INSTRUMENTATIONKEY=<insert_your_instrumentation_key_here>
-```
+    
+    ```
+    set APPINSIGHTS_INSTRUMENTATION_KEY=<insert_your_instrumentation_key_here>
+    ```
 * Run tests
-```
-npm test
-```
+    
+    ```
+    npm test
+    ```
