@@ -214,7 +214,8 @@ class RequestDataHelper {
 
     private _getSessionId() {
         var name = "ai_session";
-        var cookie = (this.rawHeaders && this.rawHeaders["cookie"] && typeof this.rawHeaders["cookie"]) || "";
+        var cookie = (this.rawHeaders && this.rawHeaders["cookie"] && 
+            typeof this.rawHeaders["cookie"] === 'string' && this.rawHeaders["cookie"]) || "";
         var value = Util.getCookie(name, cookie);
         return value;
     }
