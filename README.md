@@ -3,6 +3,8 @@
 [![NPM version](https://badge.fury.io/js/applicationinsights.svg)](http://badge.fury.io/js/applicationinsights)
 [![Build Status](https://travis-ci.org/Microsoft/ApplicationInsights-node.js.svg?branch=master)](https://travis-ci.org/Microsoft/ApplicationInsights-node.js)
 
+
+
 This project provides a Node.js SDK for Application Insights. [Application Insights](http://azure.microsoft.com/en-us/services/application-insights/) is a service that allows developers to keep their applications available, performant, and successful. This node module will allow you to send telemetry of various kinds (event, trace, exception, etc.) to the Application Insights service where they can be visualized in the Azure Portal. 
 
 
@@ -11,7 +13,7 @@ This project provides a Node.js SDK for Application Insights. [Application Insig
 ## Requirements ##
 **Install**
 ```
-    npm install applicationinsights
+npm install applicationinsights
 ```
 **Get an instrumentation key**
 >**Note**: an instrumentation key is required before any data can be sent. Please see the "[Getting an Application Insights Instrumentation Key](https://github.com/Microsoft/AppInsights-Home/wiki#getting-an-application-insights-instrumentation-key)" section of the wiki for more information. To try the SDK without an instrumentation key, set the instrumentationKey config value to a non-empty string.
@@ -27,39 +29,60 @@ import appInsights = require("applicationinsights");
 appInsights.setup("<instrumentation_key>").start();
 ```
 
+>The instrumentation key can also be set in the environment variable APPINSIGHTS_INSTRUMENTATIONKEY. If this is done, no argument is required when calling `appInsights.setup()` or `appInsights.getClient()`.
+
+
+
 ## Customized Usage ##
-Disabling auto-collection
+#####Disabling auto-collection#####
 ```javascript
+import appInsights = require("applicationinsights");
 appInsights.setup("<instrumentation_key>")
     .setAutoCollectRequests(false)
     .setAutoCollectPerformance(false)
     .setAutoCollectExceptions(false)
     // no telemetry will be sent until .start() is called
-    // this prevents any of the auto-collectors from initializing
     .start();
+```
 
-// get a client for another iKey (or if setup is never called)
-var otherClient = AppInsights.getClient("<instrumentation_key>");
+
+
+#####Using multiple instrumentaion keys#####
+```javascript
+import appInsights = require("applicationinsights");
+
+// configure auto-collection with one instrumentation key
+appInsights.setup("<instrumentation_key>").start();
+
+// get a client for another instrumentation key
+var otherClient = appInsights.getClient("<other_instrumentation_key>");
 otherClient.trackEvent("custom event");
 ```
 
-Custom monitoring
+
+
+#####Custom monitoring#####
 ```javascript
-appInsights.client.trackEvent("custom event", {customProperty: "custom property value"});
-appInsights.client.trackException(new Error("handled exceptions can be logged with this method"));
-appInsights.client.trackMetric("custom metric", 3);
-appInsights.client.trackTrace("trace message");
+import appInsights = require("applicationinsights");
+var client = appInsights.getClient();
+
+client.trackEvent("custom event", {customProperty: "custom property value"});
+client.trackException(new Error("handled exceptions can be logged with this method"));
+client.trackMetric("custom metric", 3);
+client.trackTrace("trace message");
 ```
 
-Example with manual request tracking of all "GET" requests
+
+
+#####Example with manual request tracking of all "GET" requests#####
 ```javascript
 var http = require("http");
-var appInsights = require('applicationinsights');
+var appInsights = require("applicationinsights");
 appInsights.setup("<instrumentation_key>")
-    .setAutoCollectRequests(false) // disabling auto-collection for this example
+    .setAutoCollectRequests(false) // disable auto-collection of requests for this example
     .start();
 
-// assign common properties to all telemetry
+// assign common properties to all telemetry sent from the default client
 appInsights.client.commonProperties = {
     environment: process.env.SOME_ENV_VARIABLE
 };
@@ -75,8 +98,8 @@ var server = http.createServer(function (req, res) {
         appInsights.client.trackRequest(req, res);
     }
 
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Hello World\n');
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("Hello World\n");
 }).listen(port);
 
 // track startup time of the server as a custom metric
@@ -87,6 +110,7 @@ server.on("listening", () => {
     appInsights.client.trackMetric("StartupTime", duration);
 });
 ```
+
 
 
 
@@ -101,7 +125,7 @@ server.on("listening", () => {
 * (optional) Set an environment variable to your instrumentation key
     
     ```
-    set APPINSIGHTS_INSTRUMENTATION_KEY=<insert_your_instrumentation_key_here>
+    set APPINSIGHTS_INSTRUMENTATIONKEY=<insert_your_instrumentation_key_here>
     ```
 * Run tests
     
