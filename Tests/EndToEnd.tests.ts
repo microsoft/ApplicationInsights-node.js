@@ -22,7 +22,7 @@ describe("EndToEnd", () => {
             });
         });
 
-        it("should send telemetry", (done) => {
+        it("should collect request telemetry", (done) => {
             AppInsights
                 .setup("ikey")
                 .start();
