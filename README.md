@@ -37,6 +37,10 @@ appInsights.setup("<instrumentation_key>")
     // no telemetry will be sent until .start() is called
     // this prevents any of the auto-collectors from initializing
     .start();
+
+// get a client for another iKey (or if setup is never called)
+var otherClient = AppInsights.getClient("<instrumentation_key>");
+otherClient.trackEvent("custom event");
 ```
 
 Custom monitoring
@@ -90,14 +94,17 @@ server.on("listening", () => {
 **Development environment**
 
 * Install dev dependencies
-```
-npm install 
-```
+    
+    ```
+    npm install 
+    ```
 * (optional) Set an environment variable to your instrumentation key
-```
-set APPINSIGHTS_INSTRUMENTATION_KEY=<insert_your_instrumentation_key_here>
-```
+    
+    ```
+    set APPINSIGHTS_INSTRUMENTATION_KEY=<insert_your_instrumentation_key_here>
+    ```
 * Run tests
-```
-npm test
-```
+    
+    ```
+    npm test
+    ```

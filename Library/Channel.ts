@@ -49,7 +49,7 @@ class Channel {
 
         // flush if we would exceed the max-size limit by adding this item
         if (this._buffer.length >= this._getBatchSize()) {
-            this.triggerSend();
+            this.triggerSend(false);
             return;
         }
 
@@ -57,7 +57,7 @@ class Channel {
         if (!this._timeoutHandle && this._buffer.length > 0) {
             this._timeoutHandle = setTimeout(() => {
                 this._timeoutHandle = null;
-                this.triggerSend();
+                this.triggerSend(false);
             }, this._getBatchIntervalMs());
         }
     }
@@ -79,7 +79,7 @@ class Channel {
     /**
      * Immediately send buffered data
      */
-    public triggerSend(isNodeCrashing?: boolean) {
+    public triggerSend(isNodeCrashing: boolean, callback?: (string) => void) {
 
         if (this._buffer.length) {
             // compose an array of payloads
@@ -89,7 +89,7 @@ class Channel {
             if(isNodeCrashing) {
                 this._sender.saveOnCrash(batch);
             } else {
-                this._sender.send(new Buffer(batch));
+                this._sender.send(new Buffer(batch), callback);
             }
         }
 

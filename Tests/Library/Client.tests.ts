@@ -159,6 +159,14 @@ describe("Library/Client", () => {
             client.sendPendingData();
             assert.ok(triggerStub.calledOnce);
         });
+
+        it("should accept a callback", () => {
+            triggerStub.reset();
+            var callback = sinon.spy();
+            client.sendPendingData(callback);
+            assert.strictEqual(triggerStub.firstCall.args[0], false);
+            assert.strictEqual(triggerStub.firstCall.args[1], callback);
+        });
     });
 
     describe("#getEnvelope()", () => {
