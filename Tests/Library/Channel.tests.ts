@@ -152,7 +152,7 @@ describe("Library/Channel", () => {
     describe("#triggerSend(isCrash)", () => {
         it("should clear timeout handle", () => {
             channel.send(testEnvelope);
-            channel.triggerSend();
+            channel.triggerSend(false);
             assert.ok(sendSpy.calledOnce);
             assert.ok(saveSpy.notCalled);
             assert.ok(channel.getBuffer().length === 0);
@@ -169,7 +169,7 @@ describe("Library/Channel", () => {
         });
 
         it("should not send if empty", () => {
-            channel.triggerSend();
+            channel.triggerSend(false);
             assert.ok(sendSpy.notCalled);
             assert.ok(saveSpy.notCalled);
         });
