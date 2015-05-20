@@ -28,7 +28,7 @@ class Sender {
         setTimeout(() => this._sendFirstFileOnDisk());
     }
 
-    public send(payload: Buffer) {
+    public send(payload: Buffer, callback?: (string) => void) {
         var endpointUrl = this._getUrl();
         if (endpointUrl && endpointUrl.indexOf("//") === 0) {
             // use https if the config did not specify a protocol
@@ -75,6 +75,10 @@ class Sender {
                         this._onSuccess(responseString);
                     }
 
+                    if (typeof callback === "function") {
+                        callback(responseString);
+                    }
+
                     if (this._enableCacheOnError) {
                         // try to send any cached events if the user is back online
                         if (res.statusCode === 200) {
@@ -91,6 +95,15 @@ class Sender {
                 // todo: handle error codes better (group to recoverable/non-recoverable and persist)
                 Logging.warn(Sender.TAG, error);
                 this._onErrorHelper(error);
+
+                if (typeof callback === "function") {
+                    var errorMessage = "error sending telemetry";
+                    if (error && (typeof error.toString === "function")) {
+                        errorMessage = error.toString();
+                    }
+
+                    callback(errorMessage);
+                }
 
                 if (this._enableCacheOnError) {
                     this._storeToDisk(payload);

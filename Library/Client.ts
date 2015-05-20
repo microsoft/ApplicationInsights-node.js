@@ -128,8 +128,8 @@ class Client {
     /**
      * Immediately send all queued telemetry.
      */
-    public sendPendingData() {
-        this.channel.triggerSend();
+    public sendPendingData(callback?: (string) => void) {
+        this.channel.triggerSend(false, callback);
     }
     
     public getEnvelope(data:ContractsModule.Contracts.Data<ContractsModule.Contracts.Domain>, tagOverrides?:{ [key: string]: string; }) {
