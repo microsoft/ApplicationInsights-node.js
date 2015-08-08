@@ -11,21 +11,27 @@ import Logging = require("./Logging");
 
 class Sender {
     private static TAG = "Sender";
+    // the amount of time the SDK will wait between resending cached data, this buffer is to avoid any throtelling from the service side
+    private static WAIT_BETWEEN_RESEND = 60 * 1000; 
     public static TEMPDIR: string = "appInsights-node";
-
+    
     private _getUrl: () => string;
     private _onSuccess: (response: string) => void;
     private _onError: (error: Error) => void;
-    private _enableCacheOnError: boolean; 
+    private _enableOfflineMode: boolean; 
 
     constructor(getUrl: () => string, onSuccess?: (response: string) => void, onError?: (error: Error) => void) {
         this._getUrl = getUrl;
         this._onSuccess = onSuccess;
         this._onError = onError;
-        this._enableCacheOnError = false;
-
-        // always begin by trying to send saved data when initialized
-        setTimeout(() => this._sendFirstFileOnDisk());
+        this._enableOfflineMode = false;
+    }
+    
+    /**
+    * Enable or disable offline mode
+    */
+    public setOfflineMode(value: boolean) {
+        this._enableOfflineMode = value;
     }
 
     public send(payload: Buffer, callback?: (string) => void) {
@@ -79,10 +85,10 @@ class Sender {
                         callback(responseString);
                     }
 
-                    if (this._enableCacheOnError) {
+                    if (this._enableOfflineMode) {
                         // try to send any cached events if the user is back online
                         if (res.statusCode === 200) {
-                            this._sendFirstFileOnDisk();
+                            setTimeout(() => this._sendFirstFileOnDisk(), Sender.WAIT_BETWEEN_RESEND); 
                         } else {
                             // cache the payload to send it later
                             this._storeToDisk(payload);
@@ -105,7 +111,7 @@ class Sender {
                     callback(errorMessage);
                 }
 
-                if (this._enableCacheOnError) {
+                if (this._enableOfflineMode) {
                     this._storeToDisk(payload);
                 }
             });
@@ -119,18 +125,16 @@ class Sender {
         this._storeToDisk(payload, true);
     }
     
-    /**
-     * enable caching events locally on error
-     */
-    public enableCacheOnError(): void {
-        this._enableCacheOnError = true;
-    }
-    
-    /**
-    * disable caching events locally on error
-    */
-    public disableCacheOnError(): void {
-        this._enableCacheOnError = false;
+    private _confirmDirExists(direcotry: string, callback: (err) => void): void {
+        fs.exists(direcotry, (exists) => {
+            if (!exists) {
+               fs.mkdir(direcotry, (err) => {
+                   callback(err);
+               });
+            } else {
+                callback(null);
+            }
+        });
     }
     
     /**
@@ -140,29 +144,27 @@ class Sender {
 
         //ensure directory is created
         var direcotry = path.join(os.tmpDir(), Sender.TEMPDIR);
-        if (!fs.existsSync(direcotry)) {
-            try {
-                fs.mkdirSync(direcotry);
-            } catch (error) {
-                // failing to create the temp directory
+        
+        this._confirmDirExists(direcotry, (error) => {
+            if (error) {
                 this._onErrorHelper(error);
                 return;
             }
-        }
-
-        //create file - file name for now is the timestamp, a better approach would be a UUID but that
-        //would require an external dependency 
-        var fileName = new Date().getTime() + ".ai.json";
-        var fileFullPath = path.join(direcotry, fileName);
-
-        // if the file already exist, replace the content
-        if (isCrash) {
-            Logging.info(Sender.TAG, "saving crash to disk at: " + fileFullPath);
-            fs.writeFileSync(fileFullPath, payload);
-        } else {
-            Logging.info(Sender.TAG, "saving data to disk at: " + fileFullPath);
-            fs.writeFile(fileFullPath, payload, (error) => this._onErrorHelper(error));
-        }
+            
+            //create file - file name for now is the timestamp, a better approach would be a UUID but that
+            //would require an external dependency 
+            var fileName = new Date().getTime() + ".ai.json";
+            var fileFullPath = path.join(direcotry, fileName);
+    
+            // if the file already exist, replace the content
+            if (isCrash) {
+                Logging.info(Sender.TAG, "saving crash to disk at: " + fileFullPath);
+                fs.writeFile(fileFullPath, payload, (error) => this._onErrorHelper(error));
+            } else {
+                Logging.info(Sender.TAG, "saving data to disk at: " + fileFullPath);
+                fs.writeFile(fileFullPath, payload, (error) => this._onErrorHelper(error));
+            }
+        }); 
     }
     
     /**
@@ -172,33 +174,33 @@ class Sender {
     private _sendFirstFileOnDisk(): void {
         var tempDir = path.join(os.tmpDir(), Sender.TEMPDIR);
         
-        if (!fs.existsSync(tempDir)) {
-            return; 
-        }
-        
-        fs.readdir(tempDir,(error, files) => {
-            if (!error) {
-                files = files.filter(f => path.basename(f).indexOf(".ai.json") > -1);
-                if (files.length > 0) {    
-                    var firstFile = files[0];
-                    var filePath = path.join(tempDir, firstFile);
-                    fs.readFile(filePath,(error, payload) => {
-                        if (!error) {
-                            // delete the file first to prevent double sending
-                            fs.unlink(filePath,(error) => {
+        fs.exists(tempDir, (exists: boolean)=> {
+            if (exists) {
+                    fs.readdir(tempDir,(error, files) => {
+                    if (!error) {
+                        files = files.filter(f => path.basename(f).indexOf(".ai.json") > -1);
+                        if (files.length > 0) {    
+                            var firstFile = files[0];
+                            var filePath = path.join(tempDir, firstFile);
+                            fs.readFile(filePath,(error, payload) => {
                                 if (!error) {
-                                    this.send(payload);
+                                    // delete the file first to prevent double sending
+                                    fs.unlink(filePath,(error) => {
+                                        if (!error) {
+                                            this.send(payload);
+                                        } else {
+                                            this._onErrorHelper(error);
+                                        }
+                                    });
                                 } else {
                                     this._onErrorHelper(error);
                                 }
                             });
-                        } else {
-                            this._onErrorHelper(error);
                         }
-                    });
-                }
-            } else {
-                this._onErrorHelper(error);
+                    } else {
+                        this._onErrorHelper(error);
+                    }
+                });
             }
         });
     }

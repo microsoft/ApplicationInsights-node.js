@@ -20,6 +20,13 @@ class Channel {
         this._getBatchIntervalMs = getBatchIntervalMs;
         this._sender = sender;
     }
+    
+    /**
+     * Enable or disable offline mode
+     */
+    public setOfflineMode(value: boolean) {
+        this._sender.setOfflineMode(value);
+    }
 
     /**
      * Add a telemetry item to the send buffer
