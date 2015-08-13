@@ -20,6 +20,7 @@ class ApplicationInsights {
     private static _isExceptions = true;
     private static _isPerformance = true;
     private static _isRequests = true;
+    private static _isOfflineMode = false;
 
     private static _console: AutoCollectConsole;
     private static _exceptions: AutoCollectExceptions;
@@ -53,7 +54,11 @@ class ApplicationInsights {
         } else {
             Logging.info("The default client is already setup");
         }
-
+        
+        if (ApplicationInsights.client && ApplicationInsights.client.channel) {
+            ApplicationInsights.client.channel.setOfflineMode(ApplicationInsights._isOfflineMode);
+        }
+        
         return ApplicationInsights;
     }
 
@@ -71,7 +76,7 @@ class ApplicationInsights {
         } else {
             Logging.warn("Start cannot be called before setup");
         }
-
+        
         return ApplicationInsights;
     }
 
@@ -126,6 +131,20 @@ class ApplicationInsights {
         ApplicationInsights._isRequests = value;
         if (ApplicationInsights._isStarted){
             ApplicationInsights._requests.enable(value);
+        }
+
+        return ApplicationInsights;
+    }
+    
+     /**
+     * Enable or disable offline mode to cache events when client is offline (disabled by default)
+     * @param value if true events that occured while client is offline will be cahced on disk
+     * @returns {ApplicationInsights} this class
+     */
+    public static setOfflineMode(value: boolean) {
+        ApplicationInsights._isOfflineMode = value;
+        if (ApplicationInsights.client && ApplicationInsights.client.channel){
+            ApplicationInsights.client.channel.setOfflineMode(value);
         }
 
         return ApplicationInsights;
