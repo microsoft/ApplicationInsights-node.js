@@ -110,7 +110,7 @@ describe("EndToEnd", () => {
         });
         
         afterEach(()=> {
-    		this.request.restore();
+            this.request.restore();
             this.writeFile.restore();
             this.exists.restore();
             this.readdir.restore();
