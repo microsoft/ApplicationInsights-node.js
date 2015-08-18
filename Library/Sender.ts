@@ -12,7 +12,7 @@ import Logging = require("./Logging");
 class Sender {
     private static TAG = "Sender";
     // the amount of time the SDK will wait between resending cached data, this buffer is to avoid any throtelling from the service side
-    private static WAIT_BETWEEN_RESEND = 60 * 1000; 
+    public static WAIT_BETWEEN_RESEND = 60 * 1000; 
     public static TEMPDIR: string = "appInsights-node";
     
     private _getUrl: () => string;

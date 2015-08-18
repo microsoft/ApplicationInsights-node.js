@@ -4,8 +4,55 @@
 
 import http = require("http");
 import assert = require("assert");
+import fs = require('fs'); 
 import sinon = require("sinon");
 import AppInsights = require("../applicationinsights");
+import Sender = require("../Library/Sender");
+
+/**
+ * A fake response class that passes by default
+ */
+class fakeResponse {
+    private callbacks: {[event:string]: ()=>void} = Object.create(null);
+    public setEncoding(): void {}; 
+    public statusCode: number; 
+    
+    constructor(private passImmediatly: boolean = true) {}
+    
+    public on(event: string, callback: ()=> void) {
+        this.callbacks[event] = callback;
+        if (event == "end" && this.passImmediatly) {
+            this.pass();
+        }
+    }
+    
+    public pass(): void {
+        this.statusCode = 200; 
+        this.callbacks["end"] ? this.callbacks["end"](): null; 
+    }
+} 
+
+/**
+ * A fake request class that fails by default 
+ */
+class fakeReuqest {
+    private callbacks: {[event:string]: ()=>void} = Object.create(null);
+    public write(): void {}
+    public end(): void {}
+
+    constructor(private failImmediatly: boolean = true) {}
+    
+    public on(event: string, callback) {
+        this.callbacks[event] = callback;
+        if (event === "error" && this.failImmediatly) {
+            setImmediate(() => this.fail()); 
+        }
+    }
+    
+    public fail(): void {
+        this.callbacks["error"] ? this.callbacks["error"](): null; 
+    }
+}
 
 describe("EndToEnd", () => {
 
@@ -48,4 +95,89 @@ describe("EndToEnd", () => {
             });
         });
     });
+    
+    describe("Offline mode", () => {
+        var AppInsights = require("../applicationinsights");
+     
+        
+        beforeEach(() => {
+            AppInsights.client = undefined;
+            this.request = sinon.stub(http, 'request');
+            this.writeFile = sinon.stub(fs, 'writeFile');
+            this.exists = sinon.stub(fs, 'exists').yields(true);
+            this.readdir = sinon.stub(fs, 'readdir').yields(null, ['1.ai.json']);
+            this.readFile = sinon.stub(fs, 'readFile').yields(null, '');
+        });
+        
+        afterEach(()=> {
+    		this.request.restore();
+            this.writeFile.restore();
+            this.exists.restore();
+            this.readdir.restore();
+            this.readFile.restore();
+    	});
+
+        it("disabled by default", (done) => {
+            var req = new fakeReuqest();
+
+            var client = AppInsights.getClient("key"); 
+            
+            client.trackEvent("test event");
+            
+            this.request.returns(req); 
+  
+            client.sendPendingData((response) => {
+                // yield for the caching behavior
+                setImmediate(() => {
+                    assert(this.writeFile.callCount === 0);
+                    done();
+                });
+            });
+        }); 
+        
+        it("stores data to disk when enabled", (done) => {
+            var req = new fakeReuqest();
+
+            var client = AppInsights.getClient("key"); 
+            client.channel.setOfflineMode(true);
+            
+            client.trackEvent("test event");
+            
+            this.request.returns(req); 
+  
+            client.sendPendingData((response) => {
+                // yield for the caching behavior
+                setImmediate(() => {
+                    assert(this.writeFile.callCount === 1);
+                    done();
+                });
+            });
+        }); 
+        
+         it("checks for files when connection is back online", (done) => {
+            var req = new fakeReuqest(false);
+            var res = new fakeResponse();
+            res.statusCode = 200; 
+            Sender.WAIT_BETWEEN_RESEND =0; 
+
+            var client = AppInsights.getClient("key"); 
+            client.channel.setOfflineMode(true);
+            
+            client.trackEvent("test event");
+            
+            this.request.returns(req); 
+            this.request.yields(res);
+            
+            client.sendPendingData((response) => {
+                // wait until sdk looks for offline files
+                setTimeout(() => {
+                    assert(this.readdir.callCount === 1);
+                    assert(this.readFile.callCount === 1);
+                    done();
+                }, 10);
+            });
+        }); 
+            
+        
+     }); 
 });
