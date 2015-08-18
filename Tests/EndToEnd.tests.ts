@@ -104,7 +104,9 @@ describe("EndToEnd", () => {
             AppInsights.client = undefined;
             this.request = sinon.stub(http, 'request');
             this.writeFile = sinon.stub(fs, 'writeFile');
+            this.writeFileSync = sinon.stub(fs, 'writeFileSync');
             this.exists = sinon.stub(fs, 'exists').yields(true);
+            this.existsSync = sinon.stub(fs, 'existsSync').returns(true);
             this.readdir = sinon.stub(fs, 'readdir').yields(null, ['1.ai.json']);
             this.readFile = sinon.stub(fs, 'readFile').yields(null, '');
         });
@@ -115,6 +117,8 @@ describe("EndToEnd", () => {
             this.exists.restore();
             this.readdir.restore();
             this.readFile.restore();
+            this.writeFileSync.restore();
+            this.existsSync.restore();
     	});
 
         it("disabled by default", (done) => {
@@ -177,6 +181,23 @@ describe("EndToEnd", () => {
                 }, 10);
             });
         }); 
+        
+        it("cache payload synchronously when process crashes", () => {
+            var req = new fakeReuqest(true);
+
+            var client = AppInsights.getClient("key"); 
+            client.channel.setOfflineMode(true);
+            
+            client.trackEvent("test event");
+            
+            this.request.returns(req); 
+            
+            client.channel.triggerSend(true);
+            
+            assert(this.existsSync.callCount === 1);
+            assert(this.writeFileSync.callCount === 1);
+        }); 
+        
             
         
      }); 

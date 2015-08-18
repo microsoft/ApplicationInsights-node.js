@@ -122,7 +122,7 @@ class Sender {
     }
 
     public saveOnCrash(payload: string) {
-        this._storeToDisk(payload, true);
+        this._storeToDiskSync(payload);
     }
     
     private _confirmDirExists(direcotry: string, callback: (err) => void): void {
@@ -140,7 +140,7 @@ class Sender {
     /**
      * Stores the payload as a json file on disk in the temp direcotry
      */
-    private _storeToDisk(payload: any, isCrash?: boolean) {
+    private _storeToDisk(payload: any) {
 
         //ensure directory is created
         var direcotry = path.join(os.tmpDir(), Sender.TEMPDIR);
@@ -155,16 +155,35 @@ class Sender {
             //would require an external dependency 
             var fileName = new Date().getTime() + ".ai.json";
             var fileFullPath = path.join(direcotry, fileName);
-    
-            // if the file already exist, replace the content
-            if (isCrash) {
-                Logging.info(Sender.TAG, "saving crash to disk at: " + fileFullPath);
-                fs.writeFile(fileFullPath, payload, (error) => this._onErrorHelper(error));
-            } else {
-                Logging.info(Sender.TAG, "saving data to disk at: " + fileFullPath);
-                fs.writeFile(fileFullPath, payload, (error) => this._onErrorHelper(error));
-            }
+            
+            Logging.info(Sender.TAG, "saving data to disk at: " + fileFullPath);
+            fs.writeFile(fileFullPath, payload, (error) => this._onErrorHelper(error));
         }); 
+    }
+    
+    /**
+     * Stores the payload as a json file on disk using sync file operations 
+     * this is used when storing data before crashes
+     */
+    private _storeToDiskSync(payload: any) {
+        var direcotry = path.join(os.tmpDir(), Sender.TEMPDIR);
+
+        try {
+            if (!fs.existsSync(direcotry)) {
+                fs.mkdirSync(direcotry);
+            }
+            
+            //create file - file name for now is the timestamp, a better approach would be a UUID but that
+            //would require an external dependency 
+            var fileName = new Date().getTime() + ".ai.json";
+            var fileFullPath = path.join(direcotry, fileName);
+
+            Logging.info(Sender.TAG, "saving data before crash to disk at: " + fileFullPath);
+            fs.writeFileSync(fileFullPath, payload);
+
+        } catch (error) {
+            this._onErrorHelper(error);
+        }
     }
     
     /**
