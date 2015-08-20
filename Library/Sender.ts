@@ -49,7 +49,7 @@ class Sender {
             path: parsedUrl.pathname,
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/x-json-stream"
             }
         };
 

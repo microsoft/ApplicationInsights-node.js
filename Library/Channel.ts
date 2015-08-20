@@ -90,7 +90,7 @@ class Channel {
 
         if (this._buffer.length) {
             // compose an array of payloads
-            var batch = "[" + this._buffer.join(",") + "]";
+            var batch = this._buffer.join("\n");
 
             // invoke send
             if(isNodeCrashing) {
