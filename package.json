@@ -2,7 +2,7 @@
   "name": "applicationinsights",
   "license": "MIT",
   "bugs": "https://github.com/Microsoft/ApplicationInsights-node.js/issues",
-  "version": "0.15.2",
+  "version": "0.15.3",
   "description": "Microsoft Application Insights module for Node.JS",
   "repository": {
     "type": "git",
@@ -21,7 +21,11 @@
     {
       "name": "scsouthw",
       "email": "scsouthw@microsoft.com"
-    }
+    },
+    {
+      "name": "bogdanbe",
+      "email": "bogdanbe@microsoft.com"
+    }    
   ],
   "scripts": {
     "prepublish": "tsc --module commonjs --declaration applicationinsights.ts",
