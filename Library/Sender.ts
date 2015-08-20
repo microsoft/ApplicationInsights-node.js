@@ -89,9 +89,6 @@ class Sender {
                         // try to send any cached events if the user is back online
                         if (res.statusCode === 200) {
                             setTimeout(() => this._sendFirstFileOnDisk(), Sender.WAIT_BETWEEN_RESEND); 
-                        } else {
-                            // cache the payload to send it later
-                            this._storeToDisk(payload);
                         }
                     }
                 });
