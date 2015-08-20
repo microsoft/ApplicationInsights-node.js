@@ -12,6 +12,9 @@ package-version
 # Ignore Node files
 node_modules/**
 
+# Ignore Visual Studio Code files
+.settings/**
+
 # Ignore Visual Studio files
 *.suo
 *.sln
