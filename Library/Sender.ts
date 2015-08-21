@@ -88,8 +88,13 @@ class Sender {
                     if (this._enableOfflineMode) {
                         // try to send any cached events if the user is back online
                         if (res.statusCode === 200) {
-                            setTimeout(() => this._sendFirstFileOnDisk(), Sender.WAIT_BETWEEN_RESEND); 
-                        }
+                            setTimeout(() => this._sendFirstFileOnDisk(), Sender.WAIT_BETWEEN_RESEND);
+                        // store to disk in case of burst throttling  
+                        } else if (res.statusCode === 206 ||  
+                                   res.statusCode === 429 || 
+                                   res.statusCode === 439) {
+                                       this._storeToDisk(payload);
+                                   }
                     }
                 });
             });
