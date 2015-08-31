@@ -91,7 +91,7 @@ class AutoCollectRequests {
 
                 if (error) {
                     if (typeof error === "string") {
-                        properties["erorr"] = error;
+                        properties["error"] = error;
                     } else if (typeof error === "object") {
                         for (var key in error) {
                             properties[key] = error[key] && error[key].toString && error[key].toString();
