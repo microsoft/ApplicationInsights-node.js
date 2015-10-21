@@ -74,6 +74,22 @@ client.trackTrace("trace message");
 
 
 
+#####Example with tracking dependency#####
+```javascript
+import appInsights = require("applicationinsights");
+var client = appInsights.getClient();
+
+var startTime = Date.now();
+// execute dependency call
+var endTime = Date.now();
+
+var elapsedTime = endTime - startTime;
+var success = true;
+client.trackDependency("dependency name", "command name", elapsedTime, success);
+```
+
+
+
 #####Example with manual request tracking of all "GET" requests#####
 ```javascript
 var http = require("http");

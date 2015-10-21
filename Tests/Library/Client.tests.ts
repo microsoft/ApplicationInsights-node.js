@@ -7,6 +7,7 @@ import sinon = require("sinon");
 import http = require("http");
 
 import Client = require("../../Library/Client");
+import ContractsModule = require("../../Library/Contracts");
 
 describe("Library/Client", () => {
 
@@ -150,6 +151,32 @@ describe("Library/Client", () => {
     describe("#trackRequest()", () => {
         it("should not crash with invalid input", () => {
             invalidInputHelper("trackRequest");
+        });
+    });
+
+    describe("#trackDependency()", () => {
+        it("should track RemoteDependency with correct data", () => {
+            trackStub.reset();
+            var commandName = "commandName";
+            var dependencyTypeName = "dependencyTypeName";
+            client.trackDependency(name, commandName, value, true, dependencyTypeName, properties);
+
+            assert.ok(trackStub.calledOnce);
+
+            var args = trackStub.args;
+            console.log(JSON.stringify(args));
+            assert.equal(args[0][0].baseType, "RemoteDependencyData");
+            assert.equal(args[0][0].baseData.name, name);
+	        assert.equal(args[0][0].baseData.commandName, commandName);
+            assert.equal(args[0][0].baseData.value, value);
+            assert.equal(args[0][0].baseData.success, true);
+            assert.equal(args[0][0].baseData.dependencyTypeName, dependencyTypeName);
+            assert.deepEqual(args[0][0].baseData.properties, properties);
+            
+            // default values
+            assert.deepEqual(args[0][0].baseData.dependencyKind, ContractsModule.Contracts.DependencyKind.Other); 
+            assert.equal(args[0][0].baseData.async, false);
+            assert.deepEqual(args[0][0].baseData.dependencySource, ContractsModule.Contracts.DependencySourceType.Undefined);
         });
     });
 
