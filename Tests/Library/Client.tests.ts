@@ -164,7 +164,6 @@ describe("Library/Client", () => {
             assert.ok(trackStub.calledOnce);
 
             var args = trackStub.args;
-            console.log(JSON.stringify(args));
             assert.equal(args[0][0].baseType, "RemoteDependencyData");
             assert.equal(args[0][0].baseData.name, name);
 	        assert.equal(args[0][0].baseData.commandName, commandName);
