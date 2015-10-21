@@ -26,6 +26,10 @@ class AutoCollectConsole {
     public isInitialized() {
         return this._isInitialized;
     }
+
+    public dispose() {
+        AutoCollectConsole.INSTANCE = null;
+    }
 }
 
 export = AutoCollectConsole;

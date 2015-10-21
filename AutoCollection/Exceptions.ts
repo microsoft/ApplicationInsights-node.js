@@ -135,6 +135,11 @@ class AutoCollectExceptions {
 
         return parsedStack;
     }
+
+    public dispose() {
+        AutoCollectExceptions.INSTANCE = null;
+        this._isInitialized = false;
+    }
 }
 
 class _StackFrame {
