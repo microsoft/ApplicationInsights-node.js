@@ -36,18 +36,21 @@ class Channel {
         // if master off switch is set, don't send any data
         if (this._isDisabled()) {
             // Do not send/save data
+            console.log("error sending data, channel is disabled");
             return;
         }
 
         // validate input
         if (!envelope) {
             Logging.warn("Cannot send null/undefined telemetry");
+            console.log("error sending data, null/undefined telemetry");
             return;
         }
 
         // check if the incoming payload is too large, truncate if necessary
         var payload:string = this._stringify(envelope);
         if (typeof payload !== "string"){
+            console.log("error sending data, type is not string");
             return;
         }
 
@@ -56,12 +59,14 @@ class Channel {
 
         // flush if we would exceed the max-size limit by adding this item
         if (this._buffer.length >= this._getBatchSize()) {
+            console.log("triggering send because buffer is max size " + this._buffer.length);
             this.triggerSend(false);
             return;
         }
 
         // ensure an invocation timeout is set if anything is in the buffer
         if (!this._timeoutHandle && this._buffer.length > 0) {
+            console.log("triggering send because timeout");
             this._timeoutHandle = setTimeout(() => {
                 this._timeoutHandle = null;
                 this.triggerSend(false);
