@@ -69,6 +69,8 @@ class Sender {
                 options.headers["Content-Length"] = buffer.length;
             }
 
+            options.headers["Connection"] = "close";
+
             Logging.info(Sender.TAG, options);
 
             var req = protocol.request(<any> options, (res:http.ClientResponse) => {
