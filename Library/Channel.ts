@@ -66,9 +66,9 @@ class Channel {
 
         // ensure an invocation timeout is set if anything is in the buffer
         if (!this._timeoutHandle && this._buffer.length > 0) {
-            console.log("triggering send because timeout");
             this._timeoutHandle = setTimeout(() => {
                 this._timeoutHandle = null;
+                console.log("triggering send because timeout");
                 this.triggerSend(false);
             }, this._getBatchIntervalMs());
         }
@@ -92,7 +92,7 @@ class Channel {
      * Immediately send buffered data
      */
     public triggerSend(isNodeCrashing: boolean, callback?: (string) => void) {
-
+        console.log("triggerSend Is node crashing = " + isNodeCrashing);
         if (this._buffer.length) {
             // compose an array of payloads
             var batch = this._buffer.join("\n");
