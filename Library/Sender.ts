@@ -77,11 +77,41 @@ class Sender {
                 //returns empty if the data is accepted
                 var responseString = "";
                 res.on("data", (data:string) => {
+                    console.log("got some reponse data");
                     responseString += data;
                 });
 
                 res.on("end", () => {
-                    console.log("got response " + responseString);
+                    console.log("got end event " + responseString);
+                    Logging.info(Sender.TAG, responseString);
+                    if (typeof this._onSuccess === "function") {
+                        console.log("calling onSuccess callback");
+                        this._onSuccess(responseString);
+                    }
+
+                    if (typeof callback === "function") {
+                        console.log("calling send callback with success");
+                        callback(responseString);
+                    }
+
+                    if (this._enableOfflineMode) {
+                        console.log("off line mode");
+                        // try to send any cached events if the user is back online
+                        if (res.statusCode === 200) {
+                            console.log("sending cached data");
+                            setTimeout(() => this._sendFirstFileOnDisk(), Sender.WAIT_BETWEEN_RESEND);
+                        // store to disk in case of burst throttling  
+                        } else if (res.statusCode === 206 ||  
+                                   res.statusCode === 429 || 
+                                   res.statusCode === 439) {
+                                       console.log("storing data to disk");
+                                       this._storeToDisk(payload);
+                                   }
+                    }
+                });
+                
+                res.on("close", () => {
+                    console.log("got close event " + responseString);
                     Logging.info(Sender.TAG, responseString);
                     if (typeof this._onSuccess === "function") {
                         console.log("calling onSuccess callback");
