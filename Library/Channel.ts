@@ -94,17 +94,19 @@ class Channel {
     public triggerSend(isNodeCrashing: boolean, callback?: (string) => void) {
         console.log("triggerSend Is node crashing = " + isNodeCrashing);
         if (this._buffer.length) {
+            console.log("buffer is not empty");
             // compose an array of payloads
             var batch = this._buffer.join("\n");
-
+            console.log("batch created");
             // invoke send
             if(isNodeCrashing) {
                 this._sender.saveOnCrash(batch);
             } else {
+                console.log("calling send");
                 this._sender.send(new Buffer(batch), callback);
             }
         }
-
+        console.log("updating last send and clearing buffer");
         // update lastSend time to enable throttling
         this._lastSend = +new Date;
 
@@ -112,6 +114,7 @@ class Channel {
         this._buffer.length = 0;
         clearTimeout(this._timeoutHandle);
         this._timeoutHandle = null;
+        console.log("done triggering send");
     }
 
     private _stringify(envelope) {
