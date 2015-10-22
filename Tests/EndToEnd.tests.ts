@@ -58,6 +58,26 @@ describe("EndToEnd", () => {
 
     describe("Basic usage", function() {
         this.timeout(10000);
+
+	before(() => {
+            var originalHttpRequest = http.request;
+            this.request = sinon.stub(http, "request", (options: any, callback: any) => {
+                if(options.headers) {
+                    options.headers["Connection"] = "close";
+                } else {
+                    options.headers = {
+                        "Connection": "close"
+                    }
+                }
+                console.log(JSON.stringify(options));
+                return originalHttpRequest(options, callback);
+            });
+        });
+
+        after(() => {
+            this.request.restore();
+        });
+
         it("should send telemetry", (done) => {
             var client =AppInsights.getClient();
             client.trackEvent("test event");
@@ -86,7 +106,6 @@ describe("EndToEnd", () => {
                 }, 10);
             });
 
-            server.listen(0, "::"); // "::" causes node to listen on both ipv4 and ipv6
             server.on("listening", () => {
                 http.get("http://localhost:" + server.address().port +"/test", (response: http.ServerResponse) => {
                     response.on("end", () => {
@@ -94,6 +113,7 @@ describe("EndToEnd", () => {
                     });
                 });
             });
+            server.listen(0, "::"); // "::" causes node to listen on both ipv4 and ipv6
         });
     });
     

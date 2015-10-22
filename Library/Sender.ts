@@ -68,6 +68,7 @@ class Sender {
 
             Logging.info(Sender.TAG, options);
 
+            console.log("creating request");
             var req = protocol.request(<any> options, (res:http.ClientResponse) => {
                 console.log('STATUS: ' + res.statusCode);
                 console.log('HEADERS: ' + JSON.stringify(res.headers));
