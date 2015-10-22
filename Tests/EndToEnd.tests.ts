@@ -115,7 +115,7 @@ describe("EndToEnd", () => {
             });
             server.listen(0, "::"); // "::" causes node to listen on both ipv4 and ipv6
         });
-    });
+    }); 
      
     describe("Offline mode", () => {
         var AppInsights = require("../applicationinsights"); 
