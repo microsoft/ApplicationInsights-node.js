@@ -56,7 +56,8 @@ class fakeReuqest {
 
 describe("EndToEnd", () => {
 
-    describe("Basic usage", () => {
+    describe("Basic usage", function() {
+        this.timeout(10000);
         it("should send telemetry", (done) => {
             var client =AppInsights.getClient("iKey");
             client.trackEvent("test event");
