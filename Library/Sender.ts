@@ -68,7 +68,10 @@ class Sender {
 
             Logging.info(Sender.TAG, options);
 
+            console.log("creating request");
             var req = protocol.request(<any> options, (res:http.ClientResponse) => {
+                console.log('STATUS: ' + res.statusCode);
+                console.log('HEADERS: ' + JSON.stringify(res.headers));
                 res.setEncoding("utf-8");
 
                 //returns empty if the data is accepted
@@ -78,6 +81,7 @@ class Sender {
                 });
 
                 res.on("end", () => {
+                    console.log(responseString);
                     Logging.info(Sender.TAG, responseString);
                     if (typeof this._onSuccess === "function") {
                         this._onSuccess(responseString);
