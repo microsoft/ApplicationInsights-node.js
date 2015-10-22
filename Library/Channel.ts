@@ -36,21 +36,18 @@ class Channel {
         // if master off switch is set, don't send any data
         if (this._isDisabled()) {
             // Do not send/save data
-            console.log("error sending data, channel is disabled");
             return;
         }
 
         // validate input
         if (!envelope) {
             Logging.warn("Cannot send null/undefined telemetry");
-            console.log("error sending data, null/undefined telemetry");
             return;
         }
 
         // check if the incoming payload is too large, truncate if necessary
         var payload:string = this._stringify(envelope);
         if (typeof payload !== "string"){
-            console.log("error sending data, type is not string");
             return;
         }
 
@@ -59,7 +56,6 @@ class Channel {
 
         // flush if we would exceed the max-size limit by adding this item
         if (this._buffer.length >= this._getBatchSize()) {
-            console.log("triggering send because buffer is max size " + this._buffer.length);
             this.triggerSend(false);
             return;
         }
@@ -68,7 +64,6 @@ class Channel {
         if (!this._timeoutHandle && this._buffer.length > 0) {
             this._timeoutHandle = setTimeout(() => {
                 this._timeoutHandle = null;
-                console.log("triggering send because timeout");
                 this.triggerSend(false);
             }, this._getBatchIntervalMs());
         }
@@ -92,21 +87,16 @@ class Channel {
      * Immediately send buffered data
      */
     public triggerSend(isNodeCrashing: boolean, callback?: (string) => void) {
-        console.log("triggerSend Is node crashing = " + isNodeCrashing);
         if (this._buffer.length) {
-            console.log("buffer is not empty");
             // compose an array of payloads
             var batch = this._buffer.join("\n");
-            console.log("batch created");
             // invoke send
             if(isNodeCrashing) {
                 this._sender.saveOnCrash(batch);
             } else {
-                console.log("calling send");
                 this._sender.send(new Buffer(batch), callback);
             }
         }
-        console.log("updating last send and clearing buffer");
         // update lastSend time to enable throttling
         this._lastSend = +new Date;
 
@@ -114,7 +104,6 @@ class Channel {
         this._buffer.length = 0;
         clearTimeout(this._timeoutHandle);
         this._timeoutHandle = null;
-        console.log("done triggering send");
     }
 
     private _stringify(envelope) {
@@ -127,3 +116,4 @@ class Channel {
 }
 
 export = Channel;
+

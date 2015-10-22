@@ -65,7 +65,6 @@ describe("EndToEnd", () => {
             client.trackMetric("test metric", 3);
             client.trackTrace("test trace");
             client.sendPendingData((response) => {
-                console.log("in sendPendingData callback, response = " + response);
                 assert.ok(response, "response should not be empty");
                 done();
             });
