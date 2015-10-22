@@ -104,7 +104,7 @@ describe("EndToEnd", () => {
                         done();
                     });
                 }, 10);
-            });
+            }); 
 
             server.on("listening", () => {
                 http.get("http://localhost:" + server.address().port +"/test", (response: http.ServerResponse) => {
