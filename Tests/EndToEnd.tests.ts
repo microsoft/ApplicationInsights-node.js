@@ -98,7 +98,7 @@ describe("EndToEnd", () => {
     });
     
     describe("Offline mode", () => {
-        var AppInsights = require("../applicationinsights");
+        var AppInsights = require("../applicationinsights"); 
      
         
         beforeEach(() => {
