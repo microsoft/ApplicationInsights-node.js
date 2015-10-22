@@ -59,7 +59,7 @@ describe("EndToEnd", () => {
     describe("Basic usage", function() {
         this.timeout(10000);
         it("should send telemetry", (done) => {
-            var client =AppInsights.getClient("iKey");
+            var client =AppInsights.getClient();
             client.trackEvent("test event");
             client.trackException(new Error("test error"));
             client.trackMetric("test metric", 3);
@@ -72,7 +72,7 @@ describe("EndToEnd", () => {
 
         it("should collect request telemetry", (done) => {
             AppInsights
-                .setup("ikey")
+                .setup()
                 .start();
 
             var server = http.createServer((req: http.ServerRequest, res: http.ServerResponse) => {
