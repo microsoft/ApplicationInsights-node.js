@@ -110,7 +110,7 @@ class Sender {
                     }
                 });
                 
-                res.on("close", () => {
+                res.on("close", () => {  
                     console.log("got close event " + responseString);
                     Logging.info(Sender.TAG, responseString);
                     if (typeof this._onSuccess === "function") {
