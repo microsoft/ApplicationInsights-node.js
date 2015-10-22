@@ -87,11 +87,9 @@ class Channel {
      * Immediately send buffered data
      */
     public triggerSend(isNodeCrashing: boolean, callback?: (string) => void) {
-
         if (this._buffer.length) {
             // compose an array of payloads
             var batch = this._buffer.join("\n");
-
             // invoke send
             if(isNodeCrashing) {
                 this._sender.saveOnCrash(batch);
@@ -99,7 +97,6 @@ class Channel {
                 this._sender.send(new Buffer(batch), callback);
             }
         }
-
         // update lastSend time to enable throttling
         this._lastSend = +new Date;
 
@@ -119,3 +116,4 @@ class Channel {
 }
 
 export = Channel;
+

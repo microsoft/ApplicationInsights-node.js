@@ -66,7 +66,7 @@ class Sender {
                 options.headers["Content-Length"] = buffer.length;
             }
 
-            Logging.info(Sender.TAG, options);
+            Logging.info(Sender.TAG, options); 
 
             var req = protocol.request(<any> options, (res:http.ClientResponse) => {
                 res.setEncoding("utf-8");
@@ -111,7 +111,6 @@ class Sender {
                     if (error && (typeof error.toString === "function")) {
                         errorMessage = error.toString();
                     }
-
                     callback(errorMessage);
                 }
 
