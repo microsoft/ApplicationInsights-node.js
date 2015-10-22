@@ -140,7 +140,7 @@ describe("EndToEnd", () => {
             });
         }); 
         
-        it("stores data to disk when enabled", (done) => {
+        it("stores data to disk when enabled", (done) => { 
             var req = new fakeReuqest();
 
             var client = AppInsights.getClient("key"); 
