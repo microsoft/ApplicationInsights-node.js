@@ -71,7 +71,7 @@ class Sender {
 
             options.headers["Connection"] = "close";
 
-            Logging.info(Sender.TAG, options);
+            Logging.info(Sender.TAG, options); 
 
             var req = protocol.request(<any> options, (res:http.ClientResponse) => {
                 res.setEncoding("utf-8");
