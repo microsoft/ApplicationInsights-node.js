@@ -56,12 +56,15 @@ class Sender {
         var protocol = parsedUrl.protocol == "https:" ? https : http;
         
         zlib.gzip(payload, (err, buffer) => {
+            console.log("sender zlib callback");
             var dataToSend = buffer;
             if (err) {
+                console.log("zlib err " + err);
                 Logging.warn(err);
                 dataToSend = payload; // something went wrong so send without gzip
                 options.headers["Content-Length"] = payload.length;
             } else {
+                console.log("zlib success");
                 options.headers["Content-Encoding"] = "gzip";
                 options.headers["Content-Length"] = buffer.length;
             }
@@ -78,23 +81,29 @@ class Sender {
                 });
 
                 res.on("end", () => {
+                    console.log("got response " + responseString);
                     Logging.info(Sender.TAG, responseString);
                     if (typeof this._onSuccess === "function") {
+                        console.log("calling onSuccess callback");
                         this._onSuccess(responseString);
                     }
 
                     if (typeof callback === "function") {
+                        console.log("calling send callback with success");
                         callback(responseString);
                     }
 
                     if (this._enableOfflineMode) {
+                        console.log("off line mode");
                         // try to send any cached events if the user is back online
                         if (res.statusCode === 200) {
+                            console.log("sending cached data");
                             setTimeout(() => this._sendFirstFileOnDisk(), Sender.WAIT_BETWEEN_RESEND);
                         // store to disk in case of burst throttling  
                         } else if (res.statusCode === 206 ||  
                                    res.statusCode === 429 || 
                                    res.statusCode === 439) {
+                                       console.log("storing data to disk");
                                        this._storeToDisk(payload);
                                    }
                     }
@@ -103,6 +112,7 @@ class Sender {
 
             req.on("error", (error:Error) => {
                 // todo: handle error codes better (group to recoverable/non-recoverable and persist)
+                console.log("dc response is an error " + error);
                 Logging.warn(Sender.TAG, error);
                 this._onErrorHelper(error);
 
@@ -111,11 +121,12 @@ class Sender {
                     if (error && (typeof error.toString === "function")) {
                         errorMessage = error.toString();
                     }
-
+                    console.log("calling send callback with error");
                     callback(errorMessage);
                 }
 
                 if (this._enableOfflineMode) {
+                    console.log("storing data to disk after error response");
                     this._storeToDisk(payload);
                 }
             });
