@@ -95,6 +95,21 @@ describe("EndToEnd", () => {
     describe("Basic usage", () => {
         var sandbox;
 
+        before(() => {
+            var originalHttpRequest = http.request;
+            this.request = sinon.stub(http, "request", (options: any, callback: any) => {
+                if(options.headers) {
+                    options.headers["Connection"] = "close";
+                } else {
+                    options.headers = {
+                        "Connection": "close"
+                    }
+                }
+                console.log(JSON.stringify(options));
+                return originalHttpRequest(options, callback);
+            });
+        });
+
         beforeEach(() => {
             sandbox = sinon.sandbox.create();
 	});
@@ -104,6 +119,10 @@ describe("EndToEnd", () => {
             // cleanly for each test
             AppInsights.dispose();
             sandbox.restore();
+        });
+
+        after(() => {
+            this.request.restore();
         });
 
         it("should send telemetry", (done) => {

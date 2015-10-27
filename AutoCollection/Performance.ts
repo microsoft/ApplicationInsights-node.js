@@ -172,7 +172,7 @@ class AutoCollectPerformance {
                 var cpu = cpus[i];
                 var lastCpu = this._lastCpus[i];
 
-                var name = "% cpu[" + i + "] ";
+                var name = "% cpu(" + i + ") ";
                 var model = cpu.model;
                 var speed = cpu.speed;
                 var times = cpu.times;
