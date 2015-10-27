@@ -57,6 +57,26 @@ class fakeReuqest {
 describe("EndToEnd", () => {
 
     describe("Basic usage", () => {
+
+        before(() => {
+            var originalHttpRequest = http.request;
+            this.request = sinon.stub(http, "request", (options: any, callback: any) => {
+                if(options.headers) {
+                    options.headers["Connection"] = "close";
+                } else {
+                    options.headers = {
+                        "Connection": "close"
+                    }
+                }
+                console.log(JSON.stringify(options));
+                return originalHttpRequest(options, callback);
+            });
+        });
+
+        after(() => {
+            this.request.restore();
+        });
+
         it("should send telemetry", (done) => {
             var client =AppInsights.getClient("iKey");
             client.trackEvent("test event");
