@@ -166,7 +166,7 @@ describe("Library/Client", () => {
             var args = trackStub.args;
             assert.equal(args[0][0].baseType, "RemoteDependencyData");
             assert.equal(args[0][0].baseData.name, name);
-	        assert.equal(args[0][0].baseData.commandName, commandName);
+	    assert.equal(args[0][0].baseData.commandName, commandName);
             assert.equal(args[0][0].baseData.value, value);
             assert.equal(args[0][0].baseData.success, true);
             assert.equal(args[0][0].baseData.dependencyTypeName, dependencyTypeName);
