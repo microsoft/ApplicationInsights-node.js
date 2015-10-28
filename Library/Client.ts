@@ -136,21 +136,21 @@ class Client {
         async = false, 
         dependencySource = ContractsModule.Contracts.DependencySourceType.Undefined) 
     {
-	    var remoteDependency = new ContractsModule.Contracts.RemoteDependencyData(); 
+        var remoteDependency = new ContractsModule.Contracts.RemoteDependencyData(); 
         remoteDependency.name = name;
         remoteDependency.commandName = commandName;
         remoteDependency.value = elapsedTimeMs; 
         remoteDependency.success = success;
         remoteDependency.dependencyTypeName = dependencyTypeName;
         remoteDependency.properties = properties;
-	    remoteDependency.dependencyKind = dependencyKind;
+	remoteDependency.dependencyKind = dependencyKind;
         remoteDependency.async = async;
         remoteDependency.dependencySource = dependencySource;
 
         var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.RemoteDependencyData>();
     	data.baseType = "RemoteDependencyData";
         data.baseData = remoteDependency;
-	    this.track(data);
+	this.track(data);
     }
 
     /**
