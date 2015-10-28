@@ -15,7 +15,7 @@ import Sender = require("../Library/Sender");
  * A fake response class that passes by default
  */
 class fakeResponse {
-    private callbacks: {[event:string]: ()=>void} = Object.create(null);
+    private callbacks: {[event:string]: (data?: any)=>void} = Object.create(null);
     public setEncoding(): void {}; 
     public statusCode: number; 
     
@@ -37,6 +37,7 @@ class fakeResponse {
     
     public pass(): void {
         this.statusCode = 200; 
+        this.callbacks["data"] ? this.callbacks["data"]("data") : null;
         this.callbacks["end"] ? this.callbacks["end"](): null; 
         this.callbacks["finish"] ? this.callbacks["finish"]() : null;
     }
@@ -46,7 +47,7 @@ class fakeResponse {
  * A fake request class that fails by default 
  */
 class fakeRequest {
-    private callbacks: {[event:string]: ()=>void} = Object.create(null);
+    private callbacks: {[event:string]: Function} = Object.create(null);
     public write(): void {}
     public headers = [];
 
@@ -64,7 +65,28 @@ class fakeRequest {
     }
 
     public end(): void {
-        this.callbacks["end"] ? this.callbacks["end"]() : null;
+        this.callbacks["end"] ? this.callbacks["end"](new fakeResponse(true)) : null;
+    }
+}
+
+/**
+ * A fake http server
+ */
+class fakeHttpServer extends events.EventEmitter {
+    public setCallback( callback: any) {
+        this.on("request", callback);
+    }
+    
+    public listen(port: any, host?: any, backlog?: any, callback?: any) {
+    	this.emit("listening");
+    }
+
+    public emitRequest(url: string) {
+        var request = new fakeRequest(false, url);
+        var response = new fakeResponse(false);
+        this.emit("request", request, response);
+        request.end();
+        response.pass();
     }
 }
 
@@ -95,23 +117,13 @@ describe("EndToEnd", () => {
     describe("Basic usage", () => {
         var sandbox;
 
-        before(() => {
-            var originalHttpRequest = http.request;
-            this.request = sinon.stub(http, "request", (options: any, callback: any) => {
-                if(options.headers) {
-                    options.headers["Connection"] = "close";
-                } else {
-                    options.headers = {
-                        "Connection": "close"
-                    }
-                }
-                console.log(JSON.stringify(options));
-                return originalHttpRequest(options, callback);
-            });
-        });
-
         beforeEach(() => {
             sandbox = sinon.sandbox.create();
+            this.request = sandbox.stub(http, "request", (options: any, callback: any) => {
+                var req = new fakeRequest(false);
+                req.on("end", callback);
+                return req;
+            });
 	});
 
         afterEach(() => {
@@ -119,10 +131,6 @@ describe("EndToEnd", () => {
             // cleanly for each test
             AppInsights.dispose();
             sandbox.restore();
-        });
-
-        after(() => {
-            this.request.restore();
         });
 
         it("should send telemetry", (done) => {
@@ -138,13 +146,21 @@ describe("EndToEnd", () => {
         });
 
         it("should collect http request telemetry", (done) => {
+            var fakeHttpSrv = new fakeHttpServer();
+            sandbox.stub(http, 'createServer', (callback: (req: http.ServerRequest, res: http.ServerResponse) => void) => {
+                fakeHttpSrv.setCallback(callback);
+                return fakeHttpSrv;
+            });
+            
+            sandbox.stub(http, 'get', (uri: string, callback: any) => {
+                fakeHttpSrv.emitRequest(uri);
+            });
+
             AppInsights
                 .setup("ikey")
                 .start();
 
             var server = http.createServer((req: http.ServerRequest, res: http.ServerResponse) => {
-                res.setHeader("Content-Type", "text/plain; charset=utf-8");
-                res.end("server is up");
                 setTimeout(() => {
                     AppInsights.client.sendPendingData((response) => {
                         assert.ok(response, "response should not be empty");
@@ -152,15 +168,11 @@ describe("EndToEnd", () => {
                     });
                 }, 10);
             });
-
-            server.listen(0, "::"); // "::" causes node to listen on both ipv4 and ipv6
+           
             server.on("listening", () => {
-                http.get("http://localhost:" + server.address().port +"/test", (response: http.ServerResponse) => {
-                    response.on("end", () => {
-                        server.close();
-                    });
-                });
+                http.get("http://localhost:0/test", (response: http.ServerResponse) => {});
             });
+	    server.listen(0, "::");
         });
 
         it("should collect https request telemetry", (done) => {
