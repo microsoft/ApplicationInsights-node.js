@@ -267,6 +267,11 @@ class AutoCollectPerformance {
 
         this._lastRequests = requests;
     }
+
+    public dispose() {
+        AutoCollectPerformance.INSTANCE = null;
+        this._isInitialized = false;
+    }
 }
 
 export = AutoCollectPerformance;

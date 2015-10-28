@@ -1,6 +1,7 @@
 ///<reference path="..\Declarations\node\node.d.ts" />
 
 import http = require("http");
+import https = require("https");
 import url = require("url");
 
 import ContractsModule = require("../Library/Contracts");
@@ -39,10 +40,10 @@ class AutoCollectRequests {
 
     private _initialize() {
         this._isInitialized = true;
-        var originalServer = http.createServer;
+        var originalHttpServer = http.createServer;
         http.createServer = (onRequest) => {
             // todo: get a pointer to the server so the IP address can be read from server.address
-            return originalServer((request:http.ServerRequest, response:http.ServerResponse) => {
+            return originalHttpServer((request:http.ServerRequest, response:http.ServerResponse) => {
                 if (this._isEnabled) {
                     AutoCollectRequests.trackRequest(this._client, request, response);
                 }
@@ -52,6 +53,19 @@ class AutoCollectRequests {
                 }
             });
         }
+
+	    var originalHttpsServer = https.createServer;
+	    https.createServer = (options, onRequest) => {
+	        return originalHttpsServer(options, (request:http.ServerRequest, response: http.ServerResponse) => {
+                if (this._isEnabled) {
+                    AutoCollectRequests.trackRequest(this._client, request, response);
+                }
+
+                if (typeof onRequest === "function") {
+                    onRequest(request, response);
+                }
+            });
+	    }
     }
 
     /**
@@ -102,6 +116,11 @@ class AutoCollectRequests {
                 processRequest(true);
             });
         }
+    }
+
+    public dispose() {
+         AutoCollectRequests.INSTANCE = null;
+         this._isInitialized = false;
     }
 }
 
