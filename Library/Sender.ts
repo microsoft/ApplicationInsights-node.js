@@ -2,6 +2,7 @@
 
 import fs = require("fs");
 import http = require("http");
+import https = require("https");
 import os = require("os");
 import path = require("path");
 import url = require("url");
@@ -52,7 +53,8 @@ class Sender {
                 "Content-Type": "application/x-json-stream"
             }
         };
-
+        var protocol = parsedUrl.protocol == "https:" ? https : http;
+        
         zlib.gzip(payload, (err, buffer) => {
             var dataToSend = buffer;
             if (err) {
@@ -66,7 +68,7 @@ class Sender {
 
             Logging.info(Sender.TAG, options);
 
-            var req = http.request(options, (res:http.ClientResponse) => {
+            var req = protocol.request(<any> options, (res:http.ClientResponse) => {
                 res.setEncoding("utf-8");
 
                 //returns empty if the data is accepted

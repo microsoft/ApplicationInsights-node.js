@@ -158,6 +158,26 @@ class ApplicationInsights {
         Logging.enableDebug = true;
         return ApplicationInsights;
     }
+
+    /**
+      * Disposes the default client and all the auto collectors so they can be reinitialized with different configuration
+      */
+    public static dispose() {
+        ApplicationInsights.client = null;
+        ApplicationInsights._isStarted = false;
+        if (ApplicationInsights._console) {
+            ApplicationInsights._console.dispose();
+        }
+        if (ApplicationInsights._exceptions) {
+	    ApplicationInsights._exceptions.dispose();
+        }
+        if (ApplicationInsights._performance) {
+            ApplicationInsights._performance.dispose();
+        }
+        if(ApplicationInsights._requests) {
+            ApplicationInsights._requests.dispose();
+        }
+    }
 }
 
 export = ApplicationInsights;
