@@ -111,6 +111,8 @@ class Channel {
 
     private _stringify(e: ContractsModule.Contracts.Envelope) {
         try {
+            // Serialize the envelope in specific order. It is a requirement for
+            // some channels.
             var clonedEnvelope: ContractsModule.Contracts.Envelope = {
                 ver: e.ver,
                 name: e.name,
