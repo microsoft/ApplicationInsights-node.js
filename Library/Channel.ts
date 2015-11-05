@@ -20,7 +20,7 @@ class Channel {
         this._getBatchIntervalMs = getBatchIntervalMs;
         this._sender = sender;
     }
-    
+
     /**
      * Enable or disable offline mode
      */
@@ -109,11 +109,28 @@ class Channel {
         this._timeoutHandle = null;
     }
 
-    private _stringify(envelope) {
+    private _stringify(e: ContractsModule.Contracts.Envelope) {
         try {
-            return JSON.stringify(envelope);
+            var clonedEnvelope: ContractsModule.Contracts.Envelope = {
+                ver: e.ver,
+                name: e.name,
+                time: e.time,
+                sampleRate: e.sampleRate,
+                seq: e.seq,
+                iKey: e.iKey,
+                flags: e.flags,
+                deviceId: e.deviceId,
+                os: e.os,
+                osVer: e.osVer,
+                appId: e.appId,
+                appVer: e.appVer,
+                userId: e.userId,
+                tags: e.tags,
+                data: e.data
+            };
+            return JSON.stringify(clonedEnvelope);
         } catch (error) {
-            Logging.warn("Failed to serialize payload", error, envelope);
+            Logging.warn("Failed to serialize payload", error, e);
         }
     }
 }
