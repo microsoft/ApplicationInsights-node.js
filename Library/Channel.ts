@@ -109,30 +109,11 @@ class Channel {
         this._timeoutHandle = null;
     }
 
-    private _stringify(e: ContractsModule.Contracts.Envelope) {
+    private _stringify(envelope: ContractsModule.Contracts.Envelope) {
         try {
-            // Serialize the envelope in specific order. It is a requirement for
-            // some channels.
-            var clonedEnvelope: ContractsModule.Contracts.Envelope = {
-                ver: e.ver,
-                name: e.name,
-                time: e.time,
-                sampleRate: e.sampleRate,
-                seq: e.seq,
-                iKey: e.iKey,
-                flags: e.flags,
-                deviceId: e.deviceId,
-                os: e.os,
-                osVer: e.osVer,
-                appId: e.appId,
-                appVer: e.appVer,
-                userId: e.userId,
-                tags: e.tags,
-                data: e.data
-            };
-            return JSON.stringify(clonedEnvelope);
+            return JSON.stringify(envelope);
         } catch (error) {
-            Logging.warn("Failed to serialize payload", error, e);
+            Logging.warn("Failed to serialize payload", error, envelope);
         }
     }
 }

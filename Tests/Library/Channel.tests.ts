@@ -6,6 +6,7 @@ import assert = require("assert");
 import sinon = require("sinon");
 
 import Channel = require("../../Library/Channel");
+import Contracts = require("../../Library/Contracts");
 
 class ChannelMock extends Channel {
     public getBuffer() {
@@ -19,7 +20,7 @@ class ChannelMock extends Channel {
 
 describe("Library/Channel", () => {
 
-    var testEnvelope = <any>{test: "test"};
+    var testEnvelope = new Contracts.Contracts.Envelope();
     var sender = {
         saveOnCrash: (str) => null,
         send: (Buffer) => null
@@ -58,7 +59,9 @@ describe("Library/Channel", () => {
             channel.send(testEnvelope);
             clock.tick(config.batchInterval);
             assert.ok(sendSpy.calledOnce);
-            assert.equal(sendSpy.firstCall.args[0].toString(), JSON.stringify(testEnvelope));
+            console.log(sendSpy.firstCall.args[0].toString());
+            console.log(JSON.stringify(testEnvelope));
+            assert.equal(sendSpy.firstCall.args[0].toString(), JSON.stringify(testEnvelope));            
         });
 
         it("should do nothing if disabled", () => {
