@@ -140,7 +140,7 @@ export module Contracts {
         public tags:{ [key: string]: string; };
         public data:Data<Domain>;
 
-        constructor() {            
+        constructor() {
             this.ver = 1;
             // the 'name' property must be initialized before 'tags' and/or 'data'.
             this.name = "";
