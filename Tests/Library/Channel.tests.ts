@@ -59,7 +59,7 @@ describe("Library/Channel", () => {
             channel.send(testEnvelope);
             clock.tick(config.batchInterval);
             assert.ok(sendSpy.calledOnce);
-            assert.equal(sendSpy.firstCall.args[0].toString(), JSON.stringify(testEnvelope));            
+            assert.equal(sendSpy.firstCall.args[0].toString(), JSON.stringify(testEnvelope));
         });
 
         it("should do nothing if disabled", () => {
