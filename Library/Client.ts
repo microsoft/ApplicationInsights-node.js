@@ -181,26 +181,19 @@ class Client {
         // sanitize properties
         data.baseData.properties = Util.validateStringMap(data.baseData.properties);
 
-        // Write the envelope properties in the specific order. It is a
-        // requirement for some channels. 
-        var envelope: ContractsModule.Contracts.Envelope = {
-            ver: 1,
-            // this is kind of a hack, but the envelope name is always the same as the data name sans the chars "data"
-            name: "Microsoft.ApplicationInsights." + data.baseType.substr(0, data.baseType.length - 4),
-            time: (new Date()).toISOString(),
-            sampleRate: 100.0,
-            seq: (Client._sequenceNumber++).toString(),
-            iKey: this.config.instrumentationKey,
-            flags: 0,
-            deviceId: "",
-            os: this.context.tags[this.context.keys.deviceOS],
-            osVer: this.context.tags[this.context.keys.deviceOSVersion],
-            appId: "",
-            appVer: this.context.tags[this.context.keys.applicationVersion],
-            userId: "",
-            tags: tagOverrides || this.context.tags,
-            data: data
-        };
+        var envelope = new ContractsModule.Contracts.Envelope();
+        envelope.data = data;
+        envelope.appVer = this.context.tags[this.context.keys.applicationVersion];
+        envelope.iKey = this.config.instrumentationKey;
+
+        // this is kind of a hack, but the envelope name is always the same as the data name sans the chars "data"
+        envelope.name = "Microsoft.ApplicationInsights." + data.baseType.substr(0, data.baseType.length - 4);
+        envelope.os = this.context.tags[this.context.keys.deviceOS];
+        envelope.osVer = this.context.tags[this.context.keys.deviceOSVersion];
+        envelope.seq = (Client._sequenceNumber++).toString();
+        envelope.tags = tagOverrides || this.context.tags;
+        envelope.time = (new Date()).toISOString();
+        envelope.ver = 1;
         return envelope;
     }
 
