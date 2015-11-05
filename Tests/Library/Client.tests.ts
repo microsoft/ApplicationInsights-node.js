@@ -232,6 +232,20 @@ describe("Library/Client", () => {
             assert.ok(seq1 < seq2);
             assert.equal(seq1 + 1, seq2);
         });
+        
+        it("should write properties in a specific order", () => {
+            let env = client.getEnvelope(mockData);
+            let keys = Object.keys(env);
+            let indices: { [name: string]: number } = {};
+            let index = 0;
+            for(let propertyName in env) {
+                indices[propertyName] = index;
+                ++index;
+            }
+            assert.ok(
+                Math.max(indices["name"], indices["time"]) < 
+                Math.min(indices["data"], indices["tags"]));
+        });
     });
 
     describe("#track()", () => {
