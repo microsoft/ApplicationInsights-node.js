@@ -25,7 +25,7 @@
     {
       "name": "bogdanbe",
       "email": "bogdanbe@microsoft.com"
-    }    
+    }
   ],
   "scripts": {
     "prepublish": "tsc --module commonjs --declaration applicationinsights.ts",
@@ -39,5 +39,8 @@
     "node-mocks-http": "^1.2.3",
     "sinon": "^1.14.1",
     "typescript": "^1.0.1"
+  },
+  "dependencies": {
+    "uuid": "^2.0.1"
   }
 }

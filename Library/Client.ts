@@ -13,6 +13,7 @@ import Util = require("./Util");
 
 class Client {
 
+    private static _sequencePrefix = "";
     private static _sequenceNumber = 0;
 
     public config:Config;
@@ -126,20 +127,20 @@ class Client {
     }
 
     public trackDependency(
-        name: string, 
-        commandName: string, 
-        elapsedTimeMs: number, 
-        success: boolean, 
-        dependencyTypeName?: string, 
-        properties = {}, 
-        dependencyKind = ContractsModule.Contracts.DependencyKind.Other, 
-        async = false, 
-        dependencySource = ContractsModule.Contracts.DependencySourceType.Undefined) 
+        name: string,
+        commandName: string,
+        elapsedTimeMs: number,
+        success: boolean,
+        dependencyTypeName?: string,
+        properties = {},
+        dependencyKind = ContractsModule.Contracts.DependencyKind.Other,
+        async = false,
+        dependencySource = ContractsModule.Contracts.DependencySourceType.Undefined)
     {
-        var remoteDependency = new ContractsModule.Contracts.RemoteDependencyData(); 
+        var remoteDependency = new ContractsModule.Contracts.RemoteDependencyData();
         remoteDependency.name = name;
         remoteDependency.commandName = commandName;
-        remoteDependency.value = elapsedTimeMs; 
+        remoteDependency.value = elapsedTimeMs;
         remoteDependency.success = success;
         remoteDependency.dependencyTypeName = dependencyTypeName;
         remoteDependency.properties = properties;
@@ -159,7 +160,7 @@ class Client {
     public sendPendingData(callback?: (string) => void) {
         this.channel.triggerSend(false, callback);
     }
-    
+
     public getEnvelope(data:ContractsModule.Contracts.Data<ContractsModule.Contracts.Domain>, tagOverrides?:{ [key: string]: string; }) {
         if (data && data.baseData) {
             data.baseData.ver = 2;
