@@ -1,4 +1,5 @@
 ///<reference path="..\Declarations\node\node.d.ts" />
+///<reference path="..\Declarations\node-uuid\node-uuid.d.ts" />
 
 import http = require("http");
 
@@ -10,7 +11,7 @@ import Channel = require("./Channel");
 import RequestTracking = require("../AutoCollection/Requests");
 import Sender = require("./Sender");
 import Util = require("./Util");
-let Uuid = require("uuid");
+import Uuid = require("node-uuid");
 
 class Client {
 
