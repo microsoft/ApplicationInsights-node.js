@@ -10,6 +10,7 @@ import Channel = require("./Channel");
 import RequestTracking = require("../AutoCollection/Requests");
 import Sender = require("./Sender");
 import Util = require("./Util");
+let Uuid = require("uuid");
 
 class Client {
 
