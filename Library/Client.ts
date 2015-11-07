@@ -1,6 +1,4 @@
 ///<reference path="..\Declarations\node\node.d.ts" />
-///<reference path="..\Declarations\node-uuid\node-uuid.d.ts" />
-
 import http = require("http");
 
 import Config = require("./Config");
@@ -11,11 +9,16 @@ import Channel = require("./Channel");
 import RequestTracking = require("../AutoCollection/Requests");
 import Sender = require("./Sender");
 import Util = require("./Util");
-import Uuid = require("node-uuid");
 
 class Client {
 
-    private static _sequencePrefix = "";
+    private static _sequencePrefix =
+        Util.int32ArrayToBase64([
+            Util.random32(),
+            Util.random32(),
+            Util.random32(),
+            Util.random32()]) +
+        ":";
     private static _sequenceNumber = 0;
 
     public config:Config;

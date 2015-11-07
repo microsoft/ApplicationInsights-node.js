@@ -37,6 +37,27 @@ class Util {
     }
 
     /**
+     * Convert an array of int32 to Base64 (no '==' at the end).
+     * MSB first.
+     */
+    public static int32ArrayToBase64(array: number[]) {
+        let toChar = (v: number, i: number) =>
+            String.fromCharCode((v >> i) & 0xFF);
+        let int32AsString = (v: number) =>
+            toChar(v, 24) + toChar(v, 16) + toChar(v, 8) + toChar(v, 0);
+        let x = array.map(int32AsString).join("");
+        let s = new Buffer(x, "binary").toString("base64");
+        return s.substr(0, s.indexOf("="));
+    }
+
+    /**
+     * generate a random 32bit number (-0x80000000..0x7FFFFFFF).
+     */
+    public static random32() {
+        return (0x100000000 * Math.random()) | 0;
+    }
+
+    /**
      * generate GUID
      */
     public static newGuid() {
@@ -45,13 +66,21 @@ class Util {
         // c.f. rfc4122 (UUID version 4 = xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx)
         var oct = "", tmp;
         for (var a = 0; a < 4; a++) {
-            tmp = (4294967296 * Math.random()) | 0;
-            oct += hexValues[tmp & 0xF] + hexValues[tmp >> 4 & 0xF] + hexValues[tmp >> 8 & 0xF] + hexValues[tmp >> 12 & 0xF] + hexValues[tmp >> 16 & 0xF] + hexValues[tmp >> 20 & 0xF] + hexValues[tmp >> 24 & 0xF] + hexValues[tmp >> 28 & 0xF];
+            tmp = Util.random32();
+            oct +=
+                hexValues[tmp & 0xF] +
+                hexValues[tmp >> 4 & 0xF] +
+                hexValues[tmp >> 8 & 0xF] +
+                hexValues[tmp >> 12 & 0xF] +
+                hexValues[tmp >> 16 & 0xF] +
+                hexValues[tmp >> 20 & 0xF] +
+                hexValues[tmp >> 24 & 0xF] +
+                hexValues[tmp >> 28 & 0xF];
         }
 
         // "Set the two most significant bits (bits 6 and 7) of the clock_seq_hi_and_reserved to zero and one, respectively"
         var clockSequenceHi = hexValues[8 + (Math.random() * 4) | 0];
-        return oct.substr(0, 8) + "-" + oct.substr(9, 4) + "-4" + oct.substr(13, 3) + "-" + clockSequenceHi + oct.substr(16, 3) + "-" + oct.substr(19, 12);
+        return oct.substr(0, 8) + "-" + oct.substr(9, 4) + "-4" +oct.substr(13, 3) + "-" + clockSequenceHi + oct.substr(16, 3) + "-" + oct.substr(19, 12);
     }
 
     /**
