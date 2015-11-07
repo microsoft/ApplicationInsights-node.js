@@ -213,6 +213,9 @@ class Client {
         this.channel.send(envelope);
     }
 
+    /**
+     * Parse an envelope sequence.
+     */
     public static parseSeq(seq: string): [string, number] {
         let array = seq.split(":");
         return [array[0], parseInt(array[1])];
