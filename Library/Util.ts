@@ -80,7 +80,7 @@ class Util {
 
         // "Set the two most significant bits (bits 6 and 7) of the clock_seq_hi_and_reserved to zero and one, respectively"
         var clockSequenceHi = hexValues[8 + (Math.random() * 4) | 0];
-        return oct.substr(0, 8) + "-" + oct.substr(9, 4) + "-4" +oct.substr(13, 3) + "-" + clockSequenceHi + oct.substr(16, 3) + "-" + oct.substr(19, 12);
+        return oct.substr(0, 8) + "-" + oct.substr(9, 4) + "-4" + oct.substr(13, 3) + "-" + clockSequenceHi + oct.substr(16, 3) + "-" + oct.substr(19, 12);
     }
 
     /**
