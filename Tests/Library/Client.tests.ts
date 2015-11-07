@@ -171,9 +171,9 @@ describe("Library/Client", () => {
             assert.equal(args[0][0].baseData.success, true);
             assert.equal(args[0][0].baseData.dependencyTypeName, dependencyTypeName);
             assert.deepEqual(args[0][0].baseData.properties, properties);
-            
+
             // default values
-            assert.deepEqual(args[0][0].baseData.dependencyKind, ContractsModule.Contracts.DependencyKind.Other); 
+            assert.deepEqual(args[0][0].baseData.dependencyKind, ContractsModule.Contracts.DependencyKind.Other);
             assert.equal(args[0][0].baseData.async, false);
             assert.deepEqual(args[0][0].baseData.dependencySource, ContractsModule.Contracts.DependencySourceType.Undefined);
         });
@@ -227,10 +227,12 @@ describe("Library/Client", () => {
         it("should set sequence numbers correctly", () => {
             var env1 = client.getEnvelope(mockData);
             var env2 = client.getEnvelope(mockData);
-            var seq1 = parseInt(env1.seq);
-            var seq2 = parseInt(env2.seq);
-            assert.ok(seq1 < seq2);
-            assert.equal(seq1 + 1, seq2);
+            var seq1 = Client.parseSeq(env1.seq);
+            assert.equal(seq1[0].length, 22);
+            var seq2 = Client.parseSeq(env2.seq);
+            assert.equal(seq2[0].length, 22);
+            assert.ok(seq1[1] < seq2[1]);
+            assert.equal(seq1[1] + 1, seq2[1]);
         });
     });
 
@@ -256,7 +258,8 @@ describe("Library/Client", () => {
             var actual = sendStub.firstCall.args[0];
 
             // make sequence numbers and timestamp equal to leverage deepEqual
-            expected.seq = (parseInt(expected.seq) + 1).toString();
+            let seq = Client.parseSeq(expected.seq);
+            expected.seq = seq[0] + ":" + (seq[1] + 1).toString();
             expected.time = actual.time;
 
             assert.deepEqual(actual, expected);

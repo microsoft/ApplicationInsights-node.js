@@ -196,7 +196,7 @@ class Client {
         envelope.name = "Microsoft.ApplicationInsights." + data.baseType.substr(0, data.baseType.length - 4);
         envelope.os = this.context.tags[this.context.keys.deviceOS];
         envelope.osVer = this.context.tags[this.context.keys.deviceOSVersion];
-        envelope.seq = (Client._sequenceNumber++).toString();
+        envelope.seq = Client._sequencePrefix + (Client._sequenceNumber++).toString();
         envelope.tags = tagOverrides || this.context.tags;
         envelope.time = (new Date()).toISOString();
         envelope.ver = 1;
@@ -211,6 +211,11 @@ class Client {
     public track(data:ContractsModule.Contracts.Data<ContractsModule.Contracts.Domain>, tagOverrides?:{ [key: string]: string; }) {
         var envelope = this.getEnvelope(data, tagOverrides);
         this.channel.send(envelope);
+    }
+
+    public static parseSeq(seq: string): [string, number] {
+        let array = seq.split(":");
+        return [array[0], parseInt(array[1])];
     }
 }
 
