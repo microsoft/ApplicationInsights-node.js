@@ -126,20 +126,20 @@ class Client {
     }
 
     public trackDependency(
-        name: string, 
-        commandName: string, 
-        elapsedTimeMs: number, 
-        success: boolean, 
-        dependencyTypeName?: string, 
-        properties = {}, 
-        dependencyKind = ContractsModule.Contracts.DependencyKind.Other, 
-        async = false, 
-        dependencySource = ContractsModule.Contracts.DependencySourceType.Undefined) 
+        name: string,
+        commandName: string,
+        elapsedTimeMs: number,
+        success: boolean,
+        dependencyTypeName?: string,
+        properties = {},
+        dependencyKind = ContractsModule.Contracts.DependencyKind.Other,
+        async = false,
+        dependencySource = ContractsModule.Contracts.DependencySourceType.Undefined)
     {
-        var remoteDependency = new ContractsModule.Contracts.RemoteDependencyData(); 
+        var remoteDependency = new ContractsModule.Contracts.RemoteDependencyData();
         remoteDependency.name = name;
         remoteDependency.commandName = commandName;
-        remoteDependency.value = elapsedTimeMs; 
+        remoteDependency.value = elapsedTimeMs;
         remoteDependency.success = success;
         remoteDependency.dependencyTypeName = dependencyTypeName;
         remoteDependency.properties = properties;
@@ -159,8 +159,11 @@ class Client {
     public sendPendingData(callback?: (string) => void) {
         this.channel.triggerSend(false, callback);
     }
-    
-    public getEnvelope(data:ContractsModule.Contracts.Data<ContractsModule.Contracts.Domain>, tagOverrides?:{ [key: string]: string; }) {
+
+    public getEnvelope(
+        data:ContractsModule.Contracts.Data<ContractsModule.Contracts.Domain>,
+        tagOverrides?:{ [key: string]: string; }) {
+
         if (data && data.baseData) {
             data.baseData.ver = 2;
 
@@ -181,13 +184,18 @@ class Client {
         // sanitize properties
         data.baseData.properties = Util.validateStringMap(data.baseData.properties);
 
+        var iKey = this.config.instrumentationKey;
         var envelope = new ContractsModule.Contracts.Envelope();
         envelope.data = data;
         envelope.appVer = this.context.tags[this.context.keys.applicationVersion];
-        envelope.iKey = this.config.instrumentationKey;
+        envelope.iKey = iKey;
 
         // this is kind of a hack, but the envelope name is always the same as the data name sans the chars "data"
-        envelope.name = "Microsoft.ApplicationInsights." + data.baseType.substr(0, data.baseType.length - 4);
+        envelope.name =
+            "Microsoft.ApplicationInsights." +
+            iKey.replace("-", "") +
+            "." +
+            data.baseType.substr(0, data.baseType.length - 4);
         envelope.os = this.context.tags[this.context.keys.deviceOS];
         envelope.osVer = this.context.tags[this.context.keys.deviceOSVersion];
         envelope.seq = (Client._sequenceNumber++).toString();
@@ -202,7 +210,10 @@ class Client {
      * @param data the telemetry to send
      * @param tagOverrides the context tags to use for this telemetry which overwrite default context values
      */
-    public track(data:ContractsModule.Contracts.Data<ContractsModule.Contracts.Domain>, tagOverrides?:{ [key: string]: string; }) {
+    public track(
+        data:ContractsModule.Contracts.Data<ContractsModule.Contracts.Domain>,
+        tagOverrides?:{ [key: string]: string; }) {
+
         var envelope = this.getEnvelope(data, tagOverrides);
         this.channel.send(envelope);
     }

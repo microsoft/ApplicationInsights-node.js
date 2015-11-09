@@ -16,7 +16,7 @@ describe("Library/Client", () => {
     var mockData = <any>{baseData: {properties: {}}, baseType: "BaseTestData"};
     var properties:{ [key: string]: string; } = {p1: "p1", p2: "p2", common: "commonArg"};
     var measurements:{ [key: string]: number; } = {m1: 1, m2: 2};
-    var client = new Client("key");
+    var client = new Client("instrumentation-key");
     var trackStub:SinonStub;
     var triggerStub:SinonStub;
     var sendStub:SinonStub;
@@ -171,9 +171,9 @@ describe("Library/Client", () => {
             assert.equal(args[0][0].baseData.success, true);
             assert.equal(args[0][0].baseData.dependencyTypeName, dependencyTypeName);
             assert.deepEqual(args[0][0].baseData.properties, properties);
-            
+
             // default values
-            assert.deepEqual(args[0][0].baseData.dependencyKind, ContractsModule.Contracts.DependencyKind.Other); 
+            assert.deepEqual(args[0][0].baseData.dependencyKind, ContractsModule.Contracts.DependencyKind.Other);
             assert.equal(args[0][0].baseData.async, false);
             assert.deepEqual(args[0][0].baseData.dependencySource, ContractsModule.Contracts.DependencySourceType.Undefined);
         });
@@ -231,6 +231,11 @@ describe("Library/Client", () => {
             var seq2 = parseInt(env2.seq);
             assert.ok(seq1 < seq2);
             assert.equal(seq1 + 1, seq2);
+        });
+
+        it("should have valid name", function() {
+            let envelope = client.getEnvelope(mockData);
+            assert.equal(envelope.name, "Microsoft.ApplicationInsights.instrumentationkey.BaseTest");
         });
     });
 
