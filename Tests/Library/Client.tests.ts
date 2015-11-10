@@ -16,7 +16,7 @@ describe("Library/Client", () => {
     var mockData = <any>{baseData: {properties: {}}, baseType: "BaseTestData"};
     var properties:{ [key: string]: string; } = {p1: "p1", p2: "p2", common: "commonArg"};
     var measurements:{ [key: string]: number; } = {m1: 1, m2: 2};
-    var client = new Client("key");
+    var client = new Client("instrumentation-key");
     var trackStub:SinonStub;
     var triggerStub:SinonStub;
     var sendStub:SinonStub;
@@ -247,6 +247,11 @@ describe("Library/Client", () => {
             assert.ok(
                 Math.max(indices["name"], indices["time"]) < 
                 Math.min(indices["data"], indices["tags"]));
+        });
+
+        it("should have valid name", function() {
+            let envelope = client.getEnvelope(mockData);
+            assert.equal(envelope.name, "Microsoft.ApplicationInsights.instrumentationkey.BaseTest");
         });
     });
 
