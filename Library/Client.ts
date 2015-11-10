@@ -1,5 +1,4 @@
 ///<reference path="..\Declarations\node\node.d.ts" />
-
 import http = require("http");
 
 import Config = require("./Config");
@@ -13,6 +12,13 @@ import Util = require("./Util");
 
 class Client {
 
+    private static _sequencePrefix =
+        Util.int32ArrayToBase64([
+            Util.random32(),
+            Util.random32(),
+            Util.random32(),
+            Util.random32()]) +
+        ":";
     private static _sequenceNumber = 0;
 
     public config:Config;
@@ -126,20 +132,20 @@ class Client {
     }
 
     public trackDependency(
-        name: string, 
-        commandName: string, 
-        elapsedTimeMs: number, 
-        success: boolean, 
-        dependencyTypeName?: string, 
-        properties = {}, 
-        dependencyKind = ContractsModule.Contracts.DependencyKind.Other, 
-        async = false, 
-        dependencySource = ContractsModule.Contracts.DependencySourceType.Undefined) 
+        name: string,
+        commandName: string,
+        elapsedTimeMs: number,
+        success: boolean,
+        dependencyTypeName?: string,
+        properties = {},
+        dependencyKind = ContractsModule.Contracts.DependencyKind.Other,
+        async = false,
+        dependencySource = ContractsModule.Contracts.DependencySourceType.Undefined)
     {
-        var remoteDependency = new ContractsModule.Contracts.RemoteDependencyData(); 
+        var remoteDependency = new ContractsModule.Contracts.RemoteDependencyData();
         remoteDependency.name = name;
         remoteDependency.commandName = commandName;
-        remoteDependency.value = elapsedTimeMs; 
+        remoteDependency.value = elapsedTimeMs;
         remoteDependency.success = success;
         remoteDependency.dependencyTypeName = dependencyTypeName;
         remoteDependency.properties = properties;
@@ -159,7 +165,7 @@ class Client {
     public sendPendingData(callback?: (string) => void) {
         this.channel.triggerSend(false, callback);
     }
-    
+
     public getEnvelope(data:ContractsModule.Contracts.Data<ContractsModule.Contracts.Domain>, tagOverrides?:{ [key: string]: string; }) {
         if (data && data.baseData) {
             data.baseData.ver = 2;
@@ -190,7 +196,7 @@ class Client {
         envelope.name = "Microsoft.ApplicationInsights." + data.baseType.substr(0, data.baseType.length - 4);
         envelope.os = this.context.tags[this.context.keys.deviceOS];
         envelope.osVer = this.context.tags[this.context.keys.deviceOSVersion];
-        envelope.seq = (Client._sequenceNumber++).toString();
+        envelope.seq = Client._sequencePrefix + (Client._sequenceNumber++).toString();
         envelope.tags = tagOverrides || this.context.tags;
         envelope.time = (new Date()).toISOString();
         envelope.ver = 1;
@@ -205,6 +211,14 @@ class Client {
     public track(data:ContractsModule.Contracts.Data<ContractsModule.Contracts.Domain>, tagOverrides?:{ [key: string]: string; }) {
         var envelope = this.getEnvelope(data, tagOverrides);
         this.channel.send(envelope);
+    }
+
+    /**
+     * Parse an envelope sequence.
+     */
+    public static parseSeq(seq: string): [string, number] {
+        let array = seq.split(":");
+        return [array[0], parseInt(array[1])];
     }
 }
 

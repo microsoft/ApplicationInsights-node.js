@@ -25,7 +25,7 @@
     {
       "name": "bogdanbe",
       "email": "bogdanbe@microsoft.com"
-    }    
+    }
   ],
   "scripts": {
     "prepublish": "tsc --module commonjs --declaration applicationinsights.ts",
