@@ -142,6 +142,10 @@ export module Contracts {
 
         constructor() {
             this.ver = 1;
+            // the 'name' property must be initialized before 'tags' and/or 'data'.
+            this.name = "";
+            // the 'time' property must be initialized before 'tags' and/or 'data'.
+            this.time = "";
             this.sampleRate = 100.0;
             this.tags = {};
         }

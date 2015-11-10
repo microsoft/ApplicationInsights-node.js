@@ -20,7 +20,7 @@ class Channel {
         this._getBatchIntervalMs = getBatchIntervalMs;
         this._sender = sender;
     }
-    
+
     /**
      * Enable or disable offline mode
      */
@@ -109,7 +109,7 @@ class Channel {
         this._timeoutHandle = null;
     }
 
-    private _stringify(envelope) {
+    private _stringify(envelope: ContractsModule.Contracts.Envelope) {
         try {
             return JSON.stringify(envelope);
         } catch (error) {
