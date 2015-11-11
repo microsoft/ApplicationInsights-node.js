@@ -198,7 +198,7 @@ class Client {
         // this is kind of a hack, but the envelope name is always the same as the data name sans the chars "data"
         envelope.name =
             "Microsoft.ApplicationInsights." +
-            iKey.replace("-", "") +
+            iKey.replace(/-/g, "") +
             "." +
             data.baseType.substr(0, data.baseType.length - 4);
         envelope.os = this.context.tags[this.context.keys.deviceOS];
