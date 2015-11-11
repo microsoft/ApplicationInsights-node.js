@@ -16,7 +16,7 @@ describe("Library/Client", () => {
     var mockData = <any>{baseData: {properties: {}}, baseType: "BaseTestData"};
     var properties:{ [key: string]: string; } = {p1: "p1", p2: "p2", common: "commonArg"};
     var measurements:{ [key: string]: number; } = {m1: 1, m2: 2};
-    var client = new Client("instrumentation-key");
+    var client = new Client("Instrumentation-Key-12345-6789A");
     var trackStub:SinonStub;
     var triggerStub:SinonStub;
     var sendStub:SinonStub;
@@ -234,7 +234,7 @@ describe("Library/Client", () => {
             assert.ok(seq1[1] < seq2[1]);
             assert.equal(seq1[1] + 1, seq2[1]);
         });
-        
+
         it("should write properties in a specific order", () => {
             let env = client.getEnvelope(mockData);
             let keys = Object.keys(env);
@@ -245,13 +245,13 @@ describe("Library/Client", () => {
                 ++index;
             }
             assert.ok(
-                Math.max(indices["name"], indices["time"]) < 
+                Math.max(indices["name"], indices["time"]) <
                 Math.min(indices["data"], indices["tags"]));
         });
 
         it("should have valid name", function() {
             let envelope = client.getEnvelope(mockData);
-            assert.equal(envelope.name, "Microsoft.ApplicationInsights.instrumentationkey.BaseTest");
+            assert.equal(envelope.name, "Microsoft.ApplicationInsights.InstrumentationKey123456789A.BaseTest");
         });
     });
 
