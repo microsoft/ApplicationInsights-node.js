@@ -42,11 +42,13 @@ class AutoCollectExceptions {
                 };
 
                 process.on("uncaughtException", this._exceptionListenerHandle);
+                process.on("unhandledRejection", this._exceptionListenerHandle);
             }
 
         } else {
             if (this._exceptionListenerHandle) {
                 process.removeListener("uncaughtException", this._exceptionListenerHandle);
+                process.removeListener("unhandledRejection", this._exceptionListenerHandle);
                 this._exceptionListenerHandle = undefined;
                 delete this._exceptionListenerHandle;
             }
