@@ -12,14 +12,14 @@ import Util = require("./Util");
 
 class Client {
 
-    private static _sequencePrefix =
+    private _sequencePrefix =
         Util.int32ArrayToBase64([
             Util.random32(),
             Util.random32(),
             Util.random32(),
             Util.random32()]) +
         ":";
-    private static _sequenceNumber = 0;
+    private _sequenceNumber = 0;
 
     public config:Config;
     public context:Context;
@@ -203,7 +203,7 @@ class Client {
             data.baseType.substr(0, data.baseType.length - 4);
         envelope.os = this.context.tags[this.context.keys.deviceOS];
         envelope.osVer = this.context.tags[this.context.keys.deviceOSVersion];
-        envelope.seq = Client._sequencePrefix + (Client._sequenceNumber++).toString();
+        envelope.seq = this._sequencePrefix + (this._sequenceNumber++).toString();
         envelope.tags = tagOverrides || this.context.tags;
         envelope.time = (new Date()).toISOString();
         envelope.ver = 1;
