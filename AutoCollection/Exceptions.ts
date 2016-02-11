@@ -17,7 +17,7 @@ class AutoCollectExceptions {
     private _isInitialized: boolean;
 
     constructor(client: Client) {
-        if(!!AutoCollectExceptions.INSTANCE) {
+        if (!!AutoCollectExceptions.INSTANCE) {
             throw new Error("Exception tracking should be configured from the applicationInsights object");
         }
 
@@ -30,19 +30,21 @@ class AutoCollectExceptions {
     }
 
     public enable(isEnabled: boolean) {
-        if(isEnabled) {
+        if (isEnabled) {
             this._isInitialized = true;
             var self = this;
             if (!this._exceptionListenerHandle) {
-                this._exceptionListenerHandle = (error:Error) => {
+                this._exceptionListenerHandle = (reThrow: boolean, error: Error) => {
                     var data = AutoCollectExceptions.getExceptionData(error, false);
                     var envelope = this._client.getEnvelope(data);
                     this._client.channel.handleCrash(envelope);
-                    throw error;
+                    if (reThrow) {
+                        throw error;
+                    }
                 };
 
-                process.on("uncaughtException", this._exceptionListenerHandle);
-                process.on("unhandledRejection", this._exceptionListenerHandle);
+                process.on("uncaughtException", this._exceptionListenerHandle.bind(this, true));
+                process.on("unhandledRejection", this._exceptionListenerHandle.bind(this, false));
             }
 
         } else {
@@ -61,7 +63,7 @@ class AutoCollectExceptions {
      * @param handledAt where this exception was handled (leave null for unhandled)
      * @param properties additional properties
      */
-    public static getExceptionData(error: Error, isHandled: boolean, properties?:{ [key: string]: string; }) {
+    public static getExceptionData(error: Error, isHandled: boolean, properties?: { [key: string]: string; }) {
 
         var exception = new ContractsModule.Contracts.ExceptionData();
         exception.handledAt = isHandled ? "User" : "Unhandled";
