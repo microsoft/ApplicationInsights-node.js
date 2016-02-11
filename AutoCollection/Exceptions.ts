@@ -34,7 +34,7 @@ class AutoCollectExceptions {
             this._isInitialized = true;
             var self = this;
             if (!this._exceptionListenerHandle) {
-                this._exceptionListenerHandle = (reThrow: boolean, error: Error) => {
+                this._exceptionListenerHandle = (reThrow:boolean, error:Error) => {
                     var data = AutoCollectExceptions.getExceptionData(error, false);
                     var envelope = this._client.getEnvelope(data);
                     this._client.channel.handleCrash(envelope);
