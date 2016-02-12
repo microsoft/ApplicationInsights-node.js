@@ -13,6 +13,7 @@ class AutoCollectExceptions {
     public static INSTANCE: AutoCollectExceptions = null;
 
     private _exceptionListenerHandle;
+    private _rejectionListenerHandle;
     private _client: Client;
     private _isInitialized: boolean;
 
@@ -34,23 +35,29 @@ class AutoCollectExceptions {
             this._isInitialized = true;
             var self = this;
             if (!this._exceptionListenerHandle) {
-                this._exceptionListenerHandle = (error:Error) => {
+                var handle = (reThrow: boolean, error: Error) => {
                     var data = AutoCollectExceptions.getExceptionData(error, false);
                     var envelope = this._client.getEnvelope(data);
                     this._client.channel.handleCrash(envelope);
-                    throw error;
+                    if (reThrow) {
+                        throw error;
+                    }
                 };
+                this._exceptionListenerHandle = handle.bind(this, true);
+                this._rejectionListenerHandle = handle.bind(this, false);
 
                 process.on("uncaughtException", this._exceptionListenerHandle);
-                process.on("unhandledRejection", this._exceptionListenerHandle);
+                process.on("unhandledRejection", this._rejectionListenerHandle);
             }
 
         } else {
             if (this._exceptionListenerHandle) {
                 process.removeListener("uncaughtException", this._exceptionListenerHandle);
-                process.removeListener("unhandledRejection", this._exceptionListenerHandle);
+                process.removeListener("unhandledRejection", this._rejectionListenerHandle);
                 this._exceptionListenerHandle = undefined;
+                this._rejectionListenerHandle = undefined;
                 delete this._exceptionListenerHandle;
+                delete this._rejectionListenerHandle;
             }
         }
     }
