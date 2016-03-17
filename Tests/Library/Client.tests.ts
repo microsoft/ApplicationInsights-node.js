@@ -141,7 +141,7 @@ describe("Library/Client", () => {
             client.trackMetric(name, value);
             client.trackMetric(name, value, count, min, max, stdev, properties);
 
-            assert.ok(trackStub.calledOnce);
+            assert.ok(trackStub.calledTwice);
 
             var args = trackStub.args;
             assert.equal(args[0][0].baseData.metrics[0].name, name);
@@ -152,8 +152,8 @@ describe("Library/Client", () => {
             assert.equal(args[1][0].baseData.metrics[0].count, count);
             assert.equal(args[1][0].baseData.metrics[0].min, min);
             assert.equal(args[1][0].baseData.metrics[0].max, max);
-            assert.equal(args[1][0].baseData.metrics[0].stdev, stdev);
-            assert.deepEqual(args[1][0].baseData.metrics[0].properties, properties);
+            assert.equal(args[1][0].baseData.metrics[0].stdDev, stdev);
+            assert.deepEqual(args[1][0].baseData.properties, properties);
         });
 
         it("should not crash with invalid input", () => {
