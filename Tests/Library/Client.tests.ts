@@ -134,13 +134,26 @@ describe("Library/Client", () => {
     describe("#trackMetric()", () => {
         it("should track Metric with correct data", () => {
             trackStub.reset();
+            var count = 1;
+            var min = 0;
+            var max = 0;
+            var stdev = 0;
             client.trackMetric(name, value);
+            client.trackMetric(name, value, count, min, max, stdev, properties);
 
             assert.ok(trackStub.calledOnce);
 
             var args = trackStub.args;
             assert.equal(args[0][0].baseData.metrics[0].name, name);
             assert.equal(args[0][0].baseData.metrics[0].value, value);
+            
+            assert.equal(args[1][0].baseData.metrics[0].name, name);
+            assert.equal(args[1][0].baseData.metrics[0].value, value);
+            assert.equal(args[1][0].baseData.metrics[0].count, count);
+            assert.equal(args[1][0].baseData.metrics[0].min, min);
+            assert.equal(args[1][0].baseData.metrics[0].max, max);
+            assert.equal(args[1][0].baseData.metrics[0].stdev, stdev);
+            assert.deepEqual(args[1][0].baseData.metrics[0].properties, properties);
         });
 
         it("should not crash with invalid input", () => {
