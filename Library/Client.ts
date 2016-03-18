@@ -106,7 +106,7 @@ class Client {
      * @param max    the max sample for this set
      * @param stdDev the standard deviation of the set
      */
-    public trackMetric(name:string, value:number, count?:number, min?: number, max?: number, stdDev?: number) {
+    public trackMetric(name:string, value:number, count?:number, min?: number, max?: number, stdDev?: number, properties?: { [key: string]: string; }) {
         var metrics = new ContractsModule.Contracts.MetricData(); // todo: enable client-batching of these
         metrics.metrics = [];
 
@@ -120,6 +120,8 @@ class Client {
         metric.value = value;
 
         metrics.metrics.push(metric);
+        
+        metrics.properties = properties;
 
         var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.MetricData>();
         data.baseType = "MetricData";

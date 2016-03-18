@@ -158,6 +158,7 @@ export module Contracts {
         public measurements:any;
 
         constructor() {
+            super();
             this.ver = 2;
             this.properties = {};
             this.measurements = {};
@@ -173,6 +174,7 @@ export module Contracts {
         public properties:any;
 
         constructor() {
+            super();
             this.ver = 2;
             this.properties = {};
 
@@ -191,6 +193,7 @@ export module Contracts {
         public measurements:any;
 
         constructor() {
+            super();
             this.ver = 2;
             this.exceptions = [];
             this.properties = {};
@@ -246,6 +249,7 @@ export module Contracts {
         public properties:any;
 
         constructor() {
+            super();
             this.ver = 2;
             this.metrics = [];
             this.properties = {};
@@ -263,6 +267,7 @@ export module Contracts {
         public measurements:any;
 
         constructor() {
+            super();
             this.ver = 2;
             this.properties = {};
             this.measurements = {};
@@ -285,6 +290,7 @@ export module Contracts {
         public measurements:any;
 
         constructor() {
+            super();
             this.ver = 2;
             this.properties = {};
             this.measurements = {};
@@ -311,6 +317,7 @@ export module Contracts {
         public properties:any;
 
         constructor() {
+            super();
             this.ver = 2;
             this.kind = Contracts.DataPointType.Measurement;
             this.dependencyKind = Contracts.DependencyKind.Other;
@@ -339,6 +346,7 @@ export module Contracts {
         public measurements:any;
 
         constructor() {
+            super();
             this.ver = 2;
             this.properties = {};
             this.measurements = {};
@@ -361,6 +369,7 @@ export module Contracts {
         public measurements:any;
 
         constructor() {
+            super();
             this.ver = 2;
             this.properties = {};
             this.measurements = {};
@@ -375,6 +384,7 @@ export module Contracts {
         public state:Contracts.SessionState;
 
         constructor() {
+            super();
             this.ver = 2;
             this.state = Contracts.SessionState.Start;
 
@@ -396,6 +406,7 @@ export module Contracts {
         public properties:any;
 
         constructor() {
+            super();
             this.ver = 2;
             this.kind = DataPointType.Aggregation;
             this.properties = {};
