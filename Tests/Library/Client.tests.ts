@@ -5,6 +5,7 @@
 import assert = require("assert");
 import sinon = require("sinon");
 import http = require("http");
+import eventEmitter = require('events');
 
 import Client = require("../../Library/Client");
 import ContractsModule = require("../../Library/Contracts");
@@ -161,9 +162,91 @@ describe("Library/Client", () => {
         });
     });
 
-    describe("#trackRequest()", () => {
-        it("should not crash with invalid input", () => {
-            invalidInputHelper("trackRequest");
+    describe("request tracking", () => {
+        var request = {
+            emitError: function(): void {
+                if (this.errorCallback) {
+                    var error = {
+                        "errorProp": "errorVal"
+                    }
+                    this.errorCallback(error);
+                }
+            },
+            on: function(event: string, callback: (error: any) => void): void {
+                if (event === 'error'){
+                    this.errorCallback = callback;
+                }
+            },
+            method: "method",
+            url: "http://bing.com",
+            headers: []
+        };
+        
+        var response = {
+            emitFinish: function(): void {
+                if (this.finishCallback) {
+                    this.finishCallback();
+                }
+            },
+            once: function(event: string, callback: Function): eventEmitter.EventEmitter {
+                if (event === 'finish') {
+                    this.finishCallback = callback;
+                }
+                return new eventEmitter.EventEmitter();
+            },
+            statusCode: 200
+        }
+
+        describe("#trackRequest()", () => {
+            
+            it("should not crash with invalid input", () => {
+                invalidInputHelper("trackRequest");
+            });
+            
+            it('should track request with correct data on response finish event', () => {
+                trackStub.reset();
+                client.trackRequest(<any>request, <any>response, properties);
+                
+                // finish event was not emitted yet
+                assert.ok(trackStub.notCalled);
+                
+                // emit finish event
+                response.emitFinish();
+                assert.ok(trackStub.calledOnce);
+                var args = trackStub.args;
+                assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RequestData");
+                assert.equal(args[0][0].baseData.responseCode, 200);
+                assert.deepEqual(args[0][0].baseData.properties, properties);        
+            });
+            
+            it('should track request with correct data on request error event', () => {
+                trackStub.reset();
+                client.trackRequest(<any>request, <any>response, properties);
+                
+                // finish event was not emitted yet
+                assert.ok(trackStub.notCalled);
+                
+                // emit finish event
+                request.emitError();
+                assert.ok(trackStub.calledOnce);
+                var args = trackStub.args;
+                assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RequestData");
+                assert.equal(args[0][0].baseData.responseCode, 200);
+                assert.equal(args[0][0].baseData.properties['errorProp'], 'errorVal');
+            });
+        });
+        
+        describe("#trackRequestSync()", () => {
+            it('should track request with correct data synchronously', () => {
+                trackStub.reset();
+                client.trackRequestSync(<any>request, <any>response, 100, properties);
+                assert.ok(trackStub.calledOnce);
+                var args = trackStub.args;
+                assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RequestData");
+                assert.equal(args[0][0].baseData.responseCode, 200);
+                assert.equal(args[0][0].baseData.duration, '00:00:00.100');
+                assert.deepEqual(args[0][0].baseData.properties, properties);  
+            });
         });
     });
 
@@ -179,7 +262,7 @@ describe("Library/Client", () => {
             var args = trackStub.args;
             assert.equal(args[0][0].baseType, "RemoteDependencyData");
             assert.equal(args[0][0].baseData.name, name);
-	    assert.equal(args[0][0].baseData.commandName, commandName);
+	        assert.equal(args[0][0].baseData.commandName, commandName);
             assert.equal(args[0][0].baseData.value, value);
             assert.equal(args[0][0].baseData.success, true);
             assert.equal(args[0][0].baseData.dependencyTypeName, dependencyTypeName);
