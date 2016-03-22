@@ -23,9 +23,9 @@ class RequestDataHelper {
     private legacySocketRemoteAddress:string;
     private userAgent: string;
 
-    private endTime:number;
+    private duration:number;
     private statusCode:number;
-    private errorProperties:{[key: string]:string};
+    private properties:{[key: string]:string};
 
     constructor(request:http.ServerRequest) {
         if (request) {
@@ -42,24 +42,29 @@ class RequestDataHelper {
         }
     }
 
-    public onResponse(response:http.ServerResponse, errorProperties?:{[key: string]: string}) {
-        this.endTime = +new Date;
+    public onResponse(response:http.ServerResponse, properties?:{[key: string]: string}, ellapsedMilliseconds?: number) {
+        if (ellapsedMilliseconds) {
+            this.duration = ellapsedMilliseconds;
+        } else {
+            var endTime = +new Date;
+            this.duration = endTime - this.startTime;
+        }
+        
         this.statusCode = response.statusCode;
-        this.errorProperties = errorProperties;
+        this.properties = properties;
     }
 
     public getRequestData():ContractsModule.Contracts.Data<ContractsModule.Contracts.RequestData> {
-        var duration = this.endTime - this.startTime;
         var requestData = new ContractsModule.Contracts.RequestData();
         requestData.httpMethod = this.method;
         requestData.id = Util.newGuid();
         requestData.name = this.method + " " + url.parse(this.url).pathname;
         requestData.startTime = (new Date(this.startTime)).toISOString();
         requestData.url = this.url;
-        requestData.duration = Util.msToTimeSpan(duration);
+        requestData.duration = Util.msToTimeSpan(this.duration);
         requestData.responseCode = this.statusCode.toString();
         requestData.success = this._isSuccess(this.statusCode);
-        requestData.properties = this.errorProperties;
+        requestData.properties = this.properties;
 
         var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.RequestData>();
         data.baseType = "Microsoft.ApplicationInsights.RequestData";
@@ -82,7 +87,7 @@ class RequestDataHelper {
     }
 
     private _isSuccess(statusCode:number) {
-        return (statusCode < 400) && !this.errorProperties; // todo: this could probably be improved
+        return (statusCode < 400); // todo: this could probably be improved
     }
 
     private _getIp() {
