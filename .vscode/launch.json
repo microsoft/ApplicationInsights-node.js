@@ -9,7 +9,7 @@
 			"stopOnEntry": false,
 			"args": ["${workspaceRoot}/Tests", "--recursive", "--debug", "--no-timeouts"],
 			"cwd": "${workspaceRoot}",
-			"preLaunchTask": null,
+			"preLaunchTask": "pretest",
 			"runtimeExecutable": null,
 			"runtimeArgs": [
 				"--nolazy"
