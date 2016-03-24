@@ -166,12 +166,12 @@ class _StackFrame {
 
     constructor(frame: string, level: number) {
         this.level = level;
-        this.method = "unavailable";
+        this.method = "<no_method>";
         this.assembly = Util.trim(frame);
         var matches = frame.match(_StackFrame.regex);
         if (matches && matches.length >= 5) {
-            this.method = Util.trim(matches[2]);
-            this.fileName = Util.trim(matches[4]);
+            this.method = Util.trim(matches[2]) || this.method;
+            this.fileName = Util.trim(matches[4]) || "<no_filename>";
             this.line = parseInt(matches[5]) || 0;
         }
 
