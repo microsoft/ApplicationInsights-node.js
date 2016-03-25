@@ -128,6 +128,10 @@ class Client {
         data.baseData = metrics;
         this.track(data);
     }
+    
+    public trackRequestSync(request: http.ServerRequest, response: http.ServerResponse, ellapsedMilliseconds?: number, properties?: {[key: string]: string;}, error?: any) {
+        RequestTracking.trackRequestSync(this, request, response, ellapsedMilliseconds, properties, error);
+    }
 
     public trackRequest(request: http.ServerRequest, response: http.ServerResponse, properties?:{ [key: string]: string; }) {
         RequestTracking.trackRequest(this, request, response, properties);
