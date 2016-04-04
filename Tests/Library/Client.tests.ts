@@ -196,6 +196,15 @@ describe("Library/Client", () => {
             },
             statusCode: 200
         }
+        
+        function parseDuration(duration: string): number {
+            if (!duration) {
+                return 0;
+            }
+            
+            var parts = duration.match("(\\d\\d):(\\d\\d):(\\d\\d).(\\d\\d\\d)");  
+            return parseInt(parts[1])*60*60*1000 + parseInt(parts[2])*60*1000 + parseInt(parts[3])*1000 + parseInt(parts[4]);    
+        }
 
         describe("#trackRequest()", () => {
             
@@ -203,7 +212,7 @@ describe("Library/Client", () => {
                 invalidInputHelper("trackRequest");
             });
             
-            it('should track request with correct data on response finish event', () => {
+            it('should track request with correct data on response finish event', (done) => {
                 trackStub.reset();
                 client.trackRequest(<any>request, <any>response, properties);
                 
@@ -211,15 +220,20 @@ describe("Library/Client", () => {
                 assert.ok(trackStub.notCalled);
                 
                 // emit finish event
-                response.emitFinish();
-                assert.ok(trackStub.calledOnce);
-                var args = trackStub.args;
-                assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RequestData");
-                assert.equal(args[0][0].baseData.responseCode, 200);
-                assert.deepEqual(args[0][0].baseData.properties, properties);        
+                setTimeout(() => {
+                    response.emitFinish();
+                    assert.ok(trackStub.calledOnce);
+                    var args = trackStub.args;
+                    assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RequestData");
+                    assert.equal(args[0][0].baseData.responseCode, 200);
+                    assert.deepEqual(args[0][0].baseData.properties, properties);
+                    var duration = parseDuration(args[0][0].baseData.duration);
+                    assert.ok(duration >= 10);
+                    done();
+                }, 10);        
             });
             
-            it('should track request with correct data on request error event', () => {
+            it('should track request with correct data on request error event', (done) => {
                 trackStub.reset();
                 client.trackRequest(<any>request, <any>response, properties);
                 
@@ -227,12 +241,17 @@ describe("Library/Client", () => {
                 assert.ok(trackStub.notCalled);
                 
                 // emit finish event
-                request.emitError();
-                assert.ok(trackStub.calledOnce);
-                var args = trackStub.args;
-                assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RequestData");
-                assert.equal(args[0][0].baseData.responseCode, 200);
-                assert.equal(args[0][0].baseData.properties['errorProp'], 'errorVal');
+                setTimeout(() => {
+                    request.emitError();
+                    assert.ok(trackStub.calledOnce);
+                    var args = trackStub.args;
+                    assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RequestData");
+                    assert.equal(args[0][0].baseData.responseCode, 200);
+                    assert.equal(args[0][0].baseData.properties['errorProp'], 'errorVal');
+                    var duration = parseDuration(args[0][0].baseData.duration);
+                    assert.ok(duration >= 10);
+                    done();
+                }, 10);
             });
         });
         

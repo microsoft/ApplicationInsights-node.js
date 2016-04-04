@@ -80,6 +80,37 @@ class AutoCollectRequests {
         // store data about the request
         var requestDataHelper = new RequestDataHelper(request);
         
+        AutoCollectRequests.endRequest(client, requestDataHelper, response, ellapsedMilliseconds, properties, error);
+    }
+
+    /**
+     * Tracks a request by listening to the response 'finish' event
+     */
+    public static trackRequest(client:Client, request:http.ServerRequest, response:http.ServerResponse, properties?:{ [key: string]: string; }) {
+        if (!request || !response || !client) {
+            Logging.info("AutoCollectRequests.trackRequest was called with invalid parameters: ", !request, !response, !client);
+            return;
+        }
+        
+        // store data about the request
+        var requestDataHelper = new RequestDataHelper(request);
+
+        // response listeners
+        if (response && response.once) {
+            response.once("finish", () => { 
+                AutoCollectRequests.endRequest(client, requestDataHelper, response, null, properties, null);
+            });
+        }
+
+        // track a failed request if an error is emitted
+        if (request && request.on) {
+            request.on("error", (error:any) => {
+                AutoCollectRequests.endRequest(client, requestDataHelper, response, null, properties, error);
+            });
+        }
+    }
+    
+    private static endRequest(client: Client, requestDataHelper: RequestDataHelper, response: http.ServerResponse, ellapsedMilliseconds?: number, properties?: { [key: string]: string}, error?: any) {
         if (error) {
             if(!properties) {
                 properties = <{[key: string]: string}>{};
@@ -98,28 +129,6 @@ class AutoCollectRequests {
         var data = requestDataHelper.getRequestData();
         var tags = requestDataHelper.getRequestTags(client.context.tags);
         client.track(data, tags);
-    }
-
-    /**
-     * Tracks a request by listening to the response 'finish' event
-     */
-    public static trackRequest(client:Client, request:http.ServerRequest, response:http.ServerResponse, properties?:{ [key: string]: string; }) {
-        if (!request || !response || !client) {
-            Logging.info("AutoCollectRequests.trackRequest was called with invalid parameters: ", !request, !response, !client);
-            return;
-        }
-
-        // response listeners
-        if (response && response.once) {
-            response.once("finish", () => this.trackRequestSync(client, request, response, null, properties));
-        }
-
-        // track a failed request if an error is emitted
-        if (request && request.on) {
-            request.on("error", (error:any) => {
-                this.trackRequestSync(client, request, response, null, properties, error);
-            });
-        }
     }
 
     public dispose() {
