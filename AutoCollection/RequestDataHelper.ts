@@ -46,7 +46,7 @@ class RequestDataHelper {
         if (ellapsedMilliseconds) {
             this.duration = ellapsedMilliseconds;
         } else {
-            var endTime = +new Date;
+            var endTime = +new Date();
             this.duration = endTime - this.startTime;
         }
         
