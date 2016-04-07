@@ -3,6 +3,7 @@ import AutoCollectExceptions = require("./AutoCollection/Exceptions");
 import AutoCollectPerformance = require("./AutoCollection/Performance");
 import AutoCollectRequests = require("./AutoCollection/Requests");
 import Client = require("./Library/Client");
+import Sender = require("./Library/Sender");
 import Config = require("./Library/Config");
 import Context = require("./Library/Context");
 import Logging = require("./Library/Logging");
@@ -73,6 +74,7 @@ class ApplicationInsights {
             ApplicationInsights._exceptions.enable(ApplicationInsights._isExceptions);
             ApplicationInsights._performance.enable(ApplicationInsights._isPerformance);
             ApplicationInsights._requests.enable(ApplicationInsights._isRequests);
+            ApplicationInsights.client.channel.triggerOfflineFlush();
         } else {
             Logging.warn("Start cannot be called before setup");
         }
@@ -147,6 +149,16 @@ class ApplicationInsights {
             ApplicationInsights.client.channel.setOfflineMode(value);
         }
 
+        return ApplicationInsights;
+    }
+    
+    /**
+     * Sets the directory to use for offline mode and node crashes.
+     * @param value directory to use for offline mode.
+     * @returns {ApplicationInsights} this class
+     */
+    public static setOfflineDirectory(value: string) {
+        Sender.OFFLINE_DIRECTORY = value;
         return ApplicationInsights;
     }
 
