@@ -178,10 +178,10 @@ class Sender {
         });
     }
 
-    private _confirmDirExists(direcotry: string, callback: (err) => void): void {
-        fs.exists(direcotry, (exists) => {
+    private _confirmDirExists(directory: string, callback: (err) => void): void {
+        fs.exists(directory, (exists) => {
             if (!exists) {
-                fs.mkdir(direcotry, (err) => {
+                fs.mkdir(directory, (err) => {
                     callback(err);
                 });
             } else {
@@ -191,7 +191,7 @@ class Sender {
     }
 
     /**
-     * Stores the payload as a json file on disk in the temp direcotry
+     * Stores the payload as a json file on disk in the temp directory
      */
     private _storeToDisk(payload: any) {
 
