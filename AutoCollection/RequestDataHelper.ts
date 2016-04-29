@@ -62,7 +62,7 @@ class RequestDataHelper {
         requestData.startTime = (new Date(this.startTime)).toISOString();
         requestData.url = this.url;
         requestData.duration = Util.msToTimeSpan(this.duration);
-        requestData.responseCode = this.statusCode.toString();
+        requestData.responseCode = this.statusCode ? this.statusCode.toString() : null;
         requestData.success = this._isSuccess(this.statusCode);
         requestData.properties = this.properties;
 
@@ -87,12 +87,14 @@ class RequestDataHelper {
     }
 
     private _isSuccess(statusCode:number) {
-        return (statusCode < 400); // todo: this could probably be improved
+        return statusCode && (statusCode < 400); // todo: this could probably be improved
     }
     
     private _getAbsoluteUrl(request:http.ServerRequest):string {
+        var encrypted = <any>request.connection ? (<any>request.connection).encrypted : null;
+        
         var absoluteUrl = url.format({
-            protocol: (<any>request.connection).encrypted ? "https" : "http",
+            protocol: encrypted ? "https" : "http",
             host: request.headers.host,
             pathname: request.url
         });

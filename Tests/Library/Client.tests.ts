@@ -178,8 +178,13 @@ describe("Library/Client", () => {
                 }
             },
             method: "method",
-            url: "http://bing.com",
-            headers: []
+            url: "/search?q=test",
+            connection: {
+                encrypted: false
+            },
+            headers: {
+                host: "http://bing.com"
+            }
         };
         
         var response = {
