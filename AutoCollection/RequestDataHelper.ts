@@ -30,7 +30,7 @@ class RequestDataHelper {
     constructor(request:http.ServerRequest) {
         if (request) {
             this.method = request.method;
-            this.url = request.url;
+            this.url = this._getAbsoluteUrl(request);
             this.startTime = +new Date();
             this.rawHeaders = request.headers || (<any>request).rawHeaders;
             this.socketRemoteAddress = (<any>request).socket && (<any>request).socket.remoteAddress;
@@ -88,6 +88,16 @@ class RequestDataHelper {
 
     private _isSuccess(statusCode:number) {
         return (statusCode < 400); // todo: this could probably be improved
+    }
+    
+    private _getAbsoluteUrl(request:http.ServerRequest):string {
+        var absoluteUrl = url.format({
+            protocol: (<any>request.connection).encrypted ? "https" : "http",
+            host: request.headers.host,
+            pathname: request.url
+        });
+            
+        return absoluteUrl;
     }
 
     private _getIp() {
