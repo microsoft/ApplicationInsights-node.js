@@ -185,5 +185,18 @@ describe("Library/Channel", () => {
             assert.ok(sendSpy.notCalled);
             assert.ok(saveSpy.notCalled);
         });
+
+        it("should call callback when empty", () => {
+            var callback = sinon.spy();
+            channel.triggerSend(false, callback);
+            assert.ok(callback.calledOnce);
+        });
+
+        it("should call callback when crashing", () => {
+            channel.send(testEnvelope);
+            var callback = sinon.spy();
+            channel.triggerSend(true, callback);
+            assert.ok(callback.calledOnce);
+        });
     });
 });

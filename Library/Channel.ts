@@ -87,14 +87,17 @@ class Channel {
      * Immediately send buffered data
      */
     public triggerSend(isNodeCrashing: boolean, callback?: (string) => void) {
-
-        if (this._buffer.length) {
+        let bufferIsEmpty = this._buffer.length < 1;
+        if (!bufferIsEmpty) {
             // compose an array of payloads
             var batch = this._buffer.join("\n");
 
             // invoke send
             if(isNodeCrashing) {
                 this._sender.saveOnCrash(batch);
+                if (typeof callback === "function") {
+                    callback("data saved on crash");
+                }
             } else {
                 this._sender.send(new Buffer(batch), callback);
             }
@@ -107,6 +110,9 @@ class Channel {
         this._buffer.length = 0;
         clearTimeout(this._timeoutHandle);
         this._timeoutHandle = null;
+        if (bufferIsEmpty && typeof callback === "function") {
+            callback("no data to send");
+        }
     }
 
     private _stringify(envelope: ContractsModule.Contracts.Envelope) {
