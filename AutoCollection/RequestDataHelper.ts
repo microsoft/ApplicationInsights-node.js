@@ -91,6 +91,14 @@ class RequestDataHelper {
     }
     
     private _getAbsoluteUrl(request:http.ServerRequest):string {
+        if (!request) {
+            return null;
+        }
+        
+        if (!request.headers) {
+            return request.url;
+        }
+        
         var encrypted = <any>request.connection ? (<any>request.connection).encrypted : null;
         
         var absoluteUrl = url.format({
