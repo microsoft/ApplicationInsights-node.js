@@ -91,10 +91,6 @@ class RequestDataHelper {
     }
     
     private _getAbsoluteUrl(request:http.ServerRequest):string {
-        if (!request) {
-            return null;
-        }
-        
         if (!request.headers) {
             return request.url;
         }
