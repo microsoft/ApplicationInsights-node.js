@@ -17,4 +17,31 @@ describe("AutoCollection/RequestDataHelper", () => {
             assert.equal("id", actual, "cookie is parsed correctly");
 		});
 	});
+	
+	describe("getRequestData()", () => {
+		var request = {
+			method: "method",
+            url: "/search?q=test",
+            connection: {
+                encrypted: false
+            },
+            headers: {
+                host: "bing.com"
+            }
+		}
+		
+        it("should return an absolute url", () => {
+			var helper = new RequestDataHelper(<any>request);
+			var requestData = helper.getRequestData();
+			assert.equal(requestData.baseData.url, "http://bing.com/search%3Fq=test");
+        });
+		
+		it("should return an absolute url for encrypted traffic", () => {
+			request.connection.encrypted = true;
+			
+			var helper = new RequestDataHelper(<any>request);
+			var requestData = helper.getRequestData();
+			assert.equal(requestData.baseData.url, "https://bing.com/search%3Fq=test");
+        });
+	});
 });

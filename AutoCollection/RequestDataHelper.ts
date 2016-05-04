@@ -30,7 +30,7 @@ class RequestDataHelper {
     constructor(request:http.ServerRequest) {
         if (request) {
             this.method = request.method;
-            this.url = request.url;
+            this.url = this._getAbsoluteUrl(request);
             this.startTime = +new Date();
             this.rawHeaders = request.headers || (<any>request).rawHeaders;
             this.socketRemoteAddress = (<any>request).socket && (<any>request).socket.remoteAddress;
@@ -62,7 +62,7 @@ class RequestDataHelper {
         requestData.startTime = (new Date(this.startTime)).toISOString();
         requestData.url = this.url;
         requestData.duration = Util.msToTimeSpan(this.duration);
-        requestData.responseCode = this.statusCode.toString();
+        requestData.responseCode = this.statusCode ? this.statusCode.toString() : null;
         requestData.success = this._isSuccess(this.statusCode);
         requestData.properties = this.properties;
 
@@ -87,7 +87,23 @@ class RequestDataHelper {
     }
 
     private _isSuccess(statusCode:number) {
-        return (statusCode < 400); // todo: this could probably be improved
+        return statusCode && (statusCode < 400); // todo: this could probably be improved
+    }
+    
+    private _getAbsoluteUrl(request:http.ServerRequest):string {
+        if (!request.headers) {
+            return request.url;
+        }
+        
+        var encrypted = <any>request.connection ? (<any>request.connection).encrypted : null;
+        
+        var absoluteUrl = url.format({
+            protocol: encrypted ? "https" : "http",
+            host: request.headers.host,
+            pathname: request.url
+        });
+            
+        return absoluteUrl;
     }
 
     private _getIp() {
