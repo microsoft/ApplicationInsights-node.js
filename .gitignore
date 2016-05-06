@@ -25,3 +25,6 @@ node_modules/**
 
 # Ignore OS X files
 *.DS_Store
+
+# Ignore log files
+npm-debug.log
