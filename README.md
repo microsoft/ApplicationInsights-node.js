@@ -5,9 +5,9 @@
 
 
 
-This project provides a Node.js SDK for Application Insights. [Application Insights](http://azure.microsoft.com/en-us/services/application-insights/) is a service that allows developers to keep their applications available, performant, and successful. This node module will allow you to send telemetry of various kinds (event, trace, exception, etc.) to the Application Insights service where they can be visualized in the Azure Portal. 
+This project provides a [Visual Studio Application Insights](https://azure.microsoft.com/documentation/articles/app-insights-overview/) SDK for [Node.js](https://nodejs.org/). The SDK sends telemetry about the performance and usage of your live Node.js application to the Application Insights service. There you can analyze charts of request rates, response times, failures and dependencies, and diagnose issues using powerful search and aggregation tools.
 
-
+The SDK provides automatic collection of incoming HTTP request rates and responses, performance counters (CPU, memory, RPS), and unhandled exceptions. In addition, you can add custom calls to track dependencies, metrics, or other events.
 
 
 ## Requirements ##
@@ -15,15 +15,16 @@ This project provides a Node.js SDK for Application Insights. [Application Insig
 ```
 npm install applicationinsights
 ```
-**Get an instrumentation key**
->**Note**: an instrumentation key is required before any data can be sent. Please see the "[Getting an Application Insights Instrumentation Key](https://github.com/Microsoft/AppInsights-Home/wiki#getting-an-application-insights-instrumentation-key)" section of the wiki for more information. To try the SDK without an instrumentation key, set the instrumentationKey config value to a non-empty string.
 
+### Get an instrumentation key
 
+[Create an Application Insights resource](https://azure.microsoft.com/documentation/articles/app-insights-create-new-resource/) where your telemetry will be displayed. This provides you with an instrumentation key that identifies the resource. (You can try the SDK without sending telemetry: set the instrumentation key to a non-empty string.)
 
 
 ## Usage ##
 
-This will enable request monitoring, unhandled exception tracking, and system performance monitoring (CPU/Memory/RPS)
+This will enable request monitoring, unhandled exception tracking, and system performance monitoring (CPU/Memory/RPS).
+
 ```javascript
 import appInsights = require("applicationinsights");
 appInsights.setup("<instrumentation_key>").start();
@@ -34,7 +35,9 @@ appInsights.setup("<instrumentation_key>").start();
 
 
 ## Customized Usage ##
-#####Disabling auto-collection#####
+
+### Disabling auto-collection
+
 ```javascript
 import appInsights = require("applicationinsights");
 appInsights.setup("<instrumentation_key>")
@@ -45,9 +48,22 @@ appInsights.setup("<instrumentation_key>")
     .start();
 ```
 
+### Custom monitoring
 
+```javascript
+import appInsights = require("applicationinsights");
+var client = appInsights.getClient();
 
-#####Using multiple instrumentaion keys#####
+client.trackEvent("custom event", {customProperty: "custom property value"});
+client.trackException(new Error("handled exceptions can be logged with this method"));
+client.trackMetric("custom metric", 3);
+client.trackTrace("trace message");
+```
+
+[Learn more about the telemetry API](https://azure.microsoft.com/documentation/articles/app-insights-api-custom-events-metrics/).
+
+### Using multiple instrumentation keys
+
 ```javascript
 import appInsights = require("applicationinsights");
 
@@ -59,22 +75,10 @@ var otherClient = appInsights.getClient("<other_instrumentation_key>");
 otherClient.trackEvent("custom event");
 ```
 
+## Examples
 
+### Tracking dependency
 
-#####Custom monitoring#####
-```javascript
-import appInsights = require("applicationinsights");
-var client = appInsights.getClient();
-
-client.trackEvent("custom event", {customProperty: "custom property value"});
-client.trackException(new Error("handled exceptions can be logged with this method"));
-client.trackMetric("custom metric", 3);
-client.trackTrace("trace message");
-```
-
-
-
-#####Example with tracking dependency#####
 ```javascript
 import appInsights = require("applicationinsights");
 var client = appInsights.getClient();
@@ -90,7 +94,8 @@ client.trackDependency("dependency name", "command name", elapsedTime, success);
 
 
 
-#####Example with manual request tracking of all "GET" requests#####
+### Manual request tracking of all "GET" requests
+
 ```javascript
 var http = require("http");
 var appInsights = require("applicationinsights");
@@ -130,7 +135,8 @@ server.on("listening", () => {
 
 
 
-## Contributing ##
+## Contributing
+
 **Development environment**
 
 * Install dev dependencies
