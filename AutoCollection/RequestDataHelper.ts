@@ -98,11 +98,14 @@ class RequestDataHelper {
         }
         
         var encrypted = <any>request.connection ? (<any>request.connection).encrypted : null;
+        var pathName = request.url.split('?')[0];
+        var search = request.url.indexOf('?') != -1 ? request.url.substring(request.url.indexOf('?')) : null;
         
         var absoluteUrl = url.format({
             protocol: encrypted ? "https" : "http",
             host: request.headers.host,
-            pathname: request.url
+            pathname: pathName,
+            search: search
         });
             
         return absoluteUrl;

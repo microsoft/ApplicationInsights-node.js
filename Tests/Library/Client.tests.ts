@@ -183,7 +183,7 @@ describe("Library/Client", () => {
                 encrypted: false
             },
             headers: {
-                host: "http://bing.com"
+                host: "bing.com"
             }
         };
         
@@ -245,6 +245,23 @@ describe("Library/Client", () => {
                 assert.deepEqual(args[0][0].baseData.properties, properties);
                 var duration = parseDuration(args[0][0].baseData.duration);
                 assert.equal(duration, 10);    
+            });
+            
+            it('should track request with correct tags on response finish event', () => {
+                trackStub.reset();
+                clock.reset();
+                client.trackRequest(<any>request, <any>response, properties);
+                
+                // emit finish event
+                response.emitFinish();
+                
+                // validate
+                var args = trackStub.args;
+                var tags = args[0][1];
+                
+                assert.equal(tags["ai.operation.name"], "method /search");
+                assert.equal(tags["ai.device.id"], "node");
+                assert.equal(tags["ai.device.type"], "server");
             });
             
             it('should track request with correct data on request error event', () => {
