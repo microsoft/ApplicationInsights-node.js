@@ -83,6 +83,8 @@ class RequestDataHelper {
         newTags[RequestDataHelper.keys.locationIp] = this._getIp();
         newTags[RequestDataHelper.keys.sessionId] = this._getSessionId();
         newTags[RequestDataHelper.keys.userAgent] = this.userAgent;
+        newTags[RequestDataHelper.keys.operationName] = this.method + " " + url.parse(this.url).pathname;
+        
         return newTags;
     }
 
