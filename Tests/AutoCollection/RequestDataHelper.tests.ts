@@ -10,15 +10,15 @@ import RequestDataHelper = require("../../AutoCollection/RequestDataHelper");
 
 describe("AutoCollection/RequestDataHelper", () => {
 
-    describe("#parseSessionId()", () => {
-		it("should extract guid out of session cookie", () => {
+    describe("#parseId()", () => {
+		it("should extract guid out of cookie", () => {
 			var cookieValue = "id|1234|1234";
-            var actual = RequestDataHelper.parseSessionId(cookieValue);
-            assert.equal("id", actual, "cookie is parsed correctly");
+            var actual = RequestDataHelper.parseId(cookieValue);
+            assert.equal("id", actual, "id in cookie is parsed correctly");
 		});
 	});
 	
-	describe("getRequestData()", () => {
+	describe("#getRequestData()", () => {
 		var request = {
 			method: "method",
             url: "/search?q=test",

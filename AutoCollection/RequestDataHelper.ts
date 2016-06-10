@@ -81,7 +81,8 @@ class RequestDataHelper {
         }
 
         newTags[RequestDataHelper.keys.locationIp] = this._getIp();
-        newTags[RequestDataHelper.keys.sessionId] = this._getSessionId();
+        newTags[RequestDataHelper.keys.sessionId] = this._getId("ai_session");
+        newTags[RequestDataHelper.keys.userId] = this._getId("ai_user");
         newTags[RequestDataHelper.keys.userAgent] = this.userAgent;
         return newTags;
     }
@@ -137,15 +138,14 @@ class RequestDataHelper {
         return ip;
     }
 
-    private _getSessionId() {
-        var name = "ai_session";
+    private _getId(name: string) {
         var cookie = (this.rawHeaders && this.rawHeaders["cookie"] && 
             typeof this.rawHeaders["cookie"] === 'string' && this.rawHeaders["cookie"]) || "";
-        var value = RequestDataHelper.parseSessionId(Util.getCookie(name, cookie));
+        var value = RequestDataHelper.parseId(Util.getCookie(name, cookie));
         return value;
     }
-    
-    public static parseSessionId(cookieValue: string): string{
+  
+    public static parseId(cookieValue: string): string{
         return cookieValue.substr(0, cookieValue.indexOf('|'));
     }
 }
