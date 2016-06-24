@@ -17,7 +17,6 @@ describe("Library/Context", () => {
                 context.keys.deviceMachineName,
                 context.keys.deviceOS,
                 context.keys.deviceOSVersion,
-                context.keys.deviceType,
                 context.keys.internalSdkVersion
             ];
 
