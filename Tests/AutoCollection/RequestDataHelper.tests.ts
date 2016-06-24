@@ -20,7 +20,7 @@ describe("AutoCollection/RequestDataHelper", () => {
 	
 	describe("#getRequestData()", () => {
 		var request = {
-			method: "method",
+			method: "GET",
             url: "/search?q=test",
             connection: {
                 encrypted: false
@@ -33,7 +33,7 @@ describe("AutoCollection/RequestDataHelper", () => {
         it("should return an absolute url", () => {
 			var helper = new RequestDataHelper(<any>request);
 			var requestData = helper.getRequestData();
-			assert.equal(requestData.baseData.url, "http://bing.com/search%3Fq=test");
+			assert.equal(requestData.baseData.url, "http://bing.com/search?q=test");
         });
 		
 		it("should return an absolute url for encrypted traffic", () => {
@@ -41,7 +41,58 @@ describe("AutoCollection/RequestDataHelper", () => {
 			
 			var helper = new RequestDataHelper(<any>request);
 			var requestData = helper.getRequestData();
-			assert.equal(requestData.baseData.url, "https://bing.com/search%3Fq=test");
+			assert.equal(requestData.baseData.url, "https://bing.com/search?q=test");
+        });
+		
+		var requestComplex = {
+			method: "GET",
+            url: "/a/b/c/?q=test&test2",
+            connection: {
+                encrypted: false
+            },
+            headers: {
+                host: "bing.com"
+            }
+		}
+		
+		it("should return an absolute url for complex urls", () => {
+			var helper = new RequestDataHelper(<any>requestComplex);
+			var requestData = helper.getRequestData();
+			assert.equal(requestData.baseData.url, "http://bing.com/a/b/c/?q=test&test2");
+        });
+		
+		var requestNoSearchParam = {
+			method: "method",
+            url: "/a/",
+            connection: {
+                encrypted: false
+            },
+            headers: {
+                host: "bing.com"
+            }
+		}
+		
+		it("should return an absolute url when url does not have search part", () => {
+			var helper = new RequestDataHelper(<any>requestNoSearchParam);
+			var requestData = helper.getRequestData();
+			assert.equal(requestData.baseData.url, "http://bing.com/a/");
+        });
+
+		var requestNoPathName = {
+			method: "method",
+            url: "/",
+            connection: {
+                encrypted: false
+            },
+            headers: {
+                host: "bing.com"
+            }
+		}
+		
+		it("should return an absolute url when url does not have path name", () => {
+			var helper = new RequestDataHelper(<any>requestNoPathName);
+			var requestData = helper.getRequestData();
+			assert.equal(requestData.baseData.url, "http://bing.com/");
         });
 	});
 });

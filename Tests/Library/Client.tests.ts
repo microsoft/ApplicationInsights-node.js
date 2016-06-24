@@ -177,13 +177,13 @@ describe("Library/Client", () => {
                     this.errorCallback = callback;
                 }
             },
-            method: "method",
+            method: "GET",
             url: "/search?q=test",
             connection: {
                 encrypted: false
             },
             headers: {
-                host: "http://bing.com"
+                host: "bing.com"
             }
         };
         
@@ -247,7 +247,7 @@ describe("Library/Client", () => {
                 assert.equal(duration, 10);    
             });
             
-            it('should track request with correct tags on response finish event', function () {
+            it('should track request with correct tags on response finish event', () => {
                 trackStub.reset();
                 clock.reset();
                 client.trackRequest(<any>request, <any>response, properties);
@@ -258,6 +258,8 @@ describe("Library/Client", () => {
                 // validate
                 var args = trackStub.args;
                 var tags = args[0][1];
+
+                assert.equal(tags["ai.operation.name"], "GET /search");
                 assert.equal(tags["ai.device.id"], "node");
                 assert.equal(tags["ai.device.type"], null);
             });
