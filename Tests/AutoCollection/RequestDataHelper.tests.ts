@@ -90,7 +90,7 @@ describe("AutoCollection/RequestDataHelper", () => {
 		}
 		
 		it("should return an absolute url when url does not have path name", () => {
-			var helper = new RequestDataHelper(<any>requestNoSearchParam);
+			var helper = new RequestDataHelper(<any>requestNoPathName);
 			var requestData = helper.getRequestData();
 			assert.equal(requestData.baseData.url, "http://bing.com/");
         });
