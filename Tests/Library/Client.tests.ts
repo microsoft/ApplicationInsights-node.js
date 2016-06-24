@@ -177,7 +177,7 @@ describe("Library/Client", () => {
                     this.errorCallback = callback;
                 }
             },
-            method: "method",
+            method: "GET",
             url: "/search?q=test",
             connection: {
                 encrypted: false
@@ -259,7 +259,7 @@ describe("Library/Client", () => {
                 var args = trackStub.args;
                 var tags = args[0][1];
 
-                assert.equal(tags["ai.operation.name"], "method /search");
+                assert.equal(tags["ai.operation.name"], "GET /search");
                 assert.equal(tags["ai.device.id"], "node");
                 assert.equal(tags["ai.device.type"], null);
             });
