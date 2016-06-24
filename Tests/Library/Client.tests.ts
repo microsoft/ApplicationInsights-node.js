@@ -258,10 +258,10 @@ describe("Library/Client", () => {
                 // validate
                 var args = trackStub.args;
                 var tags = args[0][1];
-                
+
                 assert.equal(tags["ai.operation.name"], "method /search");
                 assert.equal(tags["ai.device.id"], "node");
-                assert.equal(tags["ai.device.type"], "server");
+                assert.equal(tags["ai.device.type"], null);
             });
             
             it('should track request with correct data on request error event', () => {

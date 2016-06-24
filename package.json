@@ -19,6 +19,10 @@
   ],
   "contributors": [
     {
+      "name": "Application Insights Developer Support",
+      "email": "aidevsupport@microsoft.com"
+    },
+    {
       "name": "scsouthw",
       "email": "scsouthw@microsoft.com"
     },

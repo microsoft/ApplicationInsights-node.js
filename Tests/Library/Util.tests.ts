@@ -75,6 +75,26 @@ describe("Library/Util", () => {
             assert.ok(!Util.isArray({length: 10}));
         });
     });
+    
+    describe("#isError(obj)", () => {
+       it("should detect if an object is an instance of Error", () => {
+          class MyError extends Error {
+              constructor() {
+                  super();
+              }
+          }
+          
+          assert.ok(!Util.isError(undefined));
+          assert.ok(!Util.isError(null));
+          assert.ok(!Util.isError(true));
+          assert.ok(!Util.isError(1));
+          assert.ok(!Util.isError(""));
+          assert.ok(!Util.isError([]));
+          assert.ok(!Util.isError({}));
+          assert.ok(Util.isError(new Error()));
+          assert.ok(Util.isError(new MyError())); 
+       });
+    });
 
     describe("#random32()", () => {
         let test = (i: number, expected) => {
