@@ -15,5 +15,6 @@ Tests
 *.js.map
 *.d.ts
 .travis.yml
+.ntvs_analysis.dat
 
 Declarations
