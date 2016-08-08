@@ -260,7 +260,7 @@ describe("Library/Client", () => {
                 var tags = args[0][1];
 
                 assert.equal(tags["ai.operation.name"], "GET /search");
-                assert.equal(tags["ai.device.id"], "node");
+                assert.equal(tags["ai.device.id"], "");
                 assert.equal(tags["ai.device.type"], null);
             });
             
