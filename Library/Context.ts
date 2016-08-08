@@ -47,7 +47,7 @@ class Context {
     }
 
     private _loadDeviceContext() {
-        this.tags[this.keys.deviceId] = "node";
+        this.tags[this.keys.deviceId] = "";
         this.tags[this.keys.deviceMachineName] = os && os.hostname();
         this.tags[this.keys.deviceOS] = os && os.type();
         this.tags[this.keys.deviceOSVersion] = os && os.release();
