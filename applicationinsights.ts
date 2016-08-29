@@ -97,12 +97,13 @@ class ApplicationInsights {
     /**
      * Sets the state of exception tracking (enabled by default)
      * @param value if true uncaught exceptions will be sent to Application Insights
+     * @param enableStackTrackCollection if true a stack trace will be added to each exception  
      * @returns {ApplicationInsights} this class
      */
-    public static setAutoCollectExceptions(value: boolean) {
+    public static setAutoCollectExceptions(value: boolean, enableStackTrackCollection = true) {
         ApplicationInsights._isExceptions = value;
         if (ApplicationInsights._isStarted){
-            ApplicationInsights._exceptions.enable(value);
+            ApplicationInsights._exceptions.enable(value, enableStackTrackCollection);
         }
 
         return ApplicationInsights;
