@@ -60,6 +60,36 @@ client.trackMetric("custom metric", 3);
 client.trackTrace("trace message");
 ```
 
+### Telemetry Processor
+
+```javascript
+public addTelemetryProcessor(telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope) => boolean)
+```
+
+Adds telemetry processor to the collection. Telemetry processors will be called one by one before telemetry item is pushed for sending and in the order they were added. 
+If one of telemetry processors returns false then telemetry item will not be sent. 
+If one of telemetry processors throws an error then telemetry item will not be sent.
+
+**Example**
+
+Add the below code before you send any telemetry, it will remove stack trace information from any Exception reported by the SDK.
+
+```javascript
+appInsights.client.addTelemetryProcessor((envelope) => {
+    if (envelope.data.baseType === "Microsoft.ApplicationInsights.ExceptionData") {
+        var data = envelope.data.baseData;
+        if (data.exceptions && data.exceptions.length > 0) {
+            for(var i=0; i<data.exceptions.length; i++) {
+                var exception = data.exceptions[i];
+                exception.parsedStack = null;
+                exception.hasFullStack = false;
+            }
+        }
+    }
+    return true;
+});
+```
+
 [Learn more about the telemetry API](https://azure.microsoft.com/documentation/articles/app-insights-api-custom-events-metrics/).
 
 ### Using multiple instrumentation keys
