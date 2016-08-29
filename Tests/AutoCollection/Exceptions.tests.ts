@@ -12,9 +12,6 @@ describe("AutoCollection/Exceptions", () => {
         var simpleError;
 
         beforeEach(() => {
-            // reset to default value
-            AutoCollectionExceptions.IsStackTrackCollectionEnabled = true;
-
             try {
                 throw Error("simple error");
             } catch (e) {
@@ -51,18 +48,9 @@ describe("AutoCollection/Exceptions", () => {
 
             assert.equal(exceptionData.baseData.exceptions[0].parsedStack, false, "no stack trace");
             assert.equal(exceptionData.baseData.exceptions[0].hasFullStack, false, "no full stack");
-            
+
+            // reset to default value
+            AutoCollectionExceptions.IsStackTrackCollectionEnabled = true;
         })
     });
-
-    describe("#enable()", () => {
-        it("takes parameter to disable stack trace collection", () => {
-            assert.equal(AutoCollectionExceptions.IsStackTrackCollectionEnabled, true, "Stack trace collection should be enabled by default");
-
-            var autoCollection = new AutoCollectionExceptions(null);
-            autoCollection.enable(true, false);
-
-            assert.equal(AutoCollectionExceptions.IsStackTrackCollectionEnabled, false, "Stack trace collection should be disabled");
-        });
-    })
 });
