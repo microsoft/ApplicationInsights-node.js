@@ -19,7 +19,7 @@ class Config {
 
     constructor(instrumentationKey?: string) {
         this.instrumentationKey = instrumentationKey || this._getInstrumentationKey();
-        this.endpointUrl = "http://dc.services.visualstudio.com/v2/track";
+        this.endpointUrl = "https://dc.services.visualstudio.com/v2/track";
         this.sessionRenewalMs = 30 * 60 * 1000;
         this.sessionExpirationMs = 24 * 60 * 60 * 1000;
         this.maxBatchSize = 250;
