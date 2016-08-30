@@ -66,9 +66,9 @@ client.trackTrace("trace message");
 public addTelemetryProcessor(telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope) => boolean)
 ```
 
-Adds telemetry processor to the collection. Telemetry processors will be called one by one before telemetry item is pushed for sending and in the order they were added. 
-If one of telemetry processors returns false then telemetry item will not be sent. 
-If one of telemetry processors throws an error then telemetry item will not be sent.
+Adds a telemetry processor to the collection. Telemetry processors will be called one by one, in the order they were added, before the telemetry item is pushed for sending. 
+If one of the telemetry processors returns false then the telemetry item will not be sent. 
+If one of the telemetry processors throws an error then the telemetry item will not be sent.
 
 **Example**
 
@@ -79,7 +79,7 @@ appInsights.client.addTelemetryProcessor((envelope) => {
     if (envelope.data.baseType === "Microsoft.ApplicationInsights.ExceptionData") {
         var data = envelope.data.baseData;
         if (data.exceptions && data.exceptions.length > 0) {
-            for(var i=0; i<data.exceptions.length; i++) {
+            for(var i = 0; i < data.exceptions.length; i++) {
                 var exception = data.exceptions[i];
                 exception.parsedStack = null;
                 exception.hasFullStack = false;

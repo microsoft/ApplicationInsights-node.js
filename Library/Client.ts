@@ -268,8 +268,9 @@ class Client {
             return accepted;
         }
 
-        try {
-            for (var i = 0; i < telemetryProcessorsCount; ++i) {
+
+        for (var i = 0; i < telemetryProcessorsCount; ++i) {
+            try {
                 var processor = this._telemetryProcessors[i];
                 if (processor) {
                     if (processor.apply(null, [envelope]) === false) {
@@ -277,10 +278,11 @@ class Client {
                         break;
                     }
                 }
+
+            } catch (error) {
+                accepted = false;
+                Logging.warn("One of telemetry processors failed, telemetry item will not be sent.", error, envelope);
             }
-        } catch (error) {
-            accepted = false;
-            Logging.warn("One of telemetry processors failed, telemetry item will not be sent.", error, envelope);
         }
 
         return accepted;
