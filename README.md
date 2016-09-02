@@ -163,6 +163,10 @@ server.on("listening", () => {
 ```
 
 
+## Branches
+
+- [master][master] contains the *latest* published release located on [NPM][applicationinsights].
+- [develop][develop] contains the code for the *next* release. Please send all pull requests to this branch.  
 
 
 ## Contributing
