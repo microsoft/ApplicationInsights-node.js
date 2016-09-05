@@ -20,19 +20,24 @@ class Sender {
     private _onSuccess: (response: string) => void;
     private _onError: (error: Error) => void;
     private _enableOfflineMode: boolean; 
+    private _resendInterval: number;
 
     constructor(getUrl: () => string, onSuccess?: (response: string) => void, onError?: (error: Error) => void) {
         this._getUrl = getUrl;
         this._onSuccess = onSuccess;
         this._onError = onError;
         this._enableOfflineMode = false;
+        this._resendInterval = Sender.WAIT_BETWEEN_RESEND;
     }
     
     /**
     * Enable or disable offline mode
     */
-    public setOfflineMode(value: boolean) {
+    public setOfflineMode(value: boolean, resendInterval?: number) {
         this._enableOfflineMode = value;
+        if (typeof resendInterval === 'number' && resendInterval >= 1) {
+            this._resendInterval = Math.floor(resendInterval);
+        }
     }
 
     public send(payload: Buffer, callback?: (string) => void) {
@@ -90,7 +95,7 @@ class Sender {
                     if (this._enableOfflineMode) {
                         // try to send any cached events if the user is back online
                         if (res.statusCode === 200) {
-                            setTimeout(() => this._sendFirstFileOnDisk(), Sender.WAIT_BETWEEN_RESEND);
+                            setTimeout(() => this._sendFirstFileOnDisk(), this._resendInterval);
                         // store to disk in case of burst throttling  
                         } else if (res.statusCode === 206 ||  
                                    res.statusCode === 429 || 
