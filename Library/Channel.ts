@@ -82,6 +82,13 @@ class Channel {
             Logging.warn("handleCrash was called with empty payload", envelope);
         }
     }
+    
+    /**
+     * Process all files on disk and send data
+     */
+    public triggerOfflineFlush() {
+        this._sender.sendAllFilesOnDisk();
+    }
 
     /**
      * Immediately send buffered data
