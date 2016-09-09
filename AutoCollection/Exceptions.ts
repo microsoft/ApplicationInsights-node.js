@@ -11,6 +11,7 @@ import Util = require("../Library/Util");
 class AutoCollectExceptions {
 
     public static INSTANCE: AutoCollectExceptions = null;
+    public static IsStackTrackCollectionEnabled: boolean = true;
 
     private _exceptionListenerHandle;
     private _rejectionListenerHandle;
@@ -18,7 +19,7 @@ class AutoCollectExceptions {
     private _isInitialized: boolean;
 
     constructor(client: Client) {
-        if(!!AutoCollectExceptions.INSTANCE) {
+        if (!!AutoCollectExceptions.INSTANCE) {
             throw new Error("Exception tracking should be configured from the applicationInsights object");
         }
 
@@ -30,8 +31,12 @@ class AutoCollectExceptions {
         return this._isInitialized;
     }
 
-    public enable(isEnabled: boolean) {
-        if(isEnabled) {
+    public enable(isEnabled: boolean, isStackTrackCollectionEnabled?: boolean) {
+        if (isStackTrackCollectionEnabled !== undefined) {
+            AutoCollectExceptions.IsStackTrackCollectionEnabled = isStackTrackCollectionEnabled;
+        }
+
+        if (isEnabled) {
             this._isInitialized = true;
             var self = this;
             if (!this._exceptionListenerHandle) {
@@ -68,20 +73,23 @@ class AutoCollectExceptions {
      * @param handledAt where this exception was handled (leave null for unhandled)
      * @param properties additional properties
      */
-    public static getExceptionData(error: Error, isHandled: boolean, properties?:{ [key: string]: string; }) {
+    public static getExceptionData(error: Error, isHandled: boolean, properties?: { [key: string]: string; }) {
 
         var exception = new ContractsModule.Contracts.ExceptionData();
         exception.handledAt = isHandled ? "User" : "Unhandled";
-        exception.properties = properties;
         exception.severityLevel = ContractsModule.Contracts.SeverityLevel.Error;
         exception.properties = properties;
         exception.exceptions = [];
 
-        var stack = error["stack"];
         var exceptionDetails = new ContractsModule.Contracts.ExceptionDetails();
         exceptionDetails.message = error.message;
         exceptionDetails.typeName = error.name;
-        exceptionDetails.parsedStack = this.parseStack(stack);
+
+        if (AutoCollectExceptions.IsStackTrackCollectionEnabled) {
+            var stack = error["stack"];
+            exceptionDetails.parsedStack = this.parseStack(stack);
+        }
+
         exceptionDetails.hasFullStack = Util.isArray(exceptionDetails.parsedStack) && exceptionDetails.parsedStack.length > 0;
         exception.exceptions.push(exceptionDetails);
 

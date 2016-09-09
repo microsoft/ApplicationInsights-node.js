@@ -118,5 +118,28 @@ describe("ApplicationInsights", () => {
             assert.ok(!Performance.INSTANCE.isInitialized());
             assert.ok(!Requests.INSTANCE.isInitialized());
         });
+
+        it("Exception auto-collect includes stack traces by default", () => {
+            assert.equal(Exceptions.IsStackTrackCollectionEnabled, true, "Stack trace collection should be enabled by default");
+
+            AppInsights.setup("key")
+                .setAutoCollectExceptions(true)
+                .start();
+
+            assert.equal(Exceptions.IsStackTrackCollectionEnabled, true, "Stack trace collection should be enabled");
+        });
+
+        it("Exception auto-collect allowes to disable stack traces", () => {
+            assert.equal(Exceptions.IsStackTrackCollectionEnabled, true, "Stack trace collection should be enabled by default");
+
+            AppInsights.setup("key")
+                .setAutoCollectExceptions(true, false)
+                .start();
+
+            assert.equal(Exceptions.IsStackTrackCollectionEnabled, false, "Stack trace collection should be disabled");
+
+            // reset to the default value
+            Exceptions.IsStackTrackCollectionEnabled = true;
+        });
     });
 });
