@@ -15,7 +15,7 @@ describe("Library/Sender", () => {
     var sender:SenderMock;
 
     beforeEach(() => {
-        sender = new SenderMock(() => 'https://www.microsoft.com');
+        sender = new SenderMock(() => "https://www.microsoft.com");
     });
 
     describe("#setOfflineMode(value, resendInterval)", () => {
