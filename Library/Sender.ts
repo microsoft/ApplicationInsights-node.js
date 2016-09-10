@@ -20,7 +20,7 @@ class Sender {
     private _onSuccess: (response: string) => void;
     private _onError: (error: Error) => void;
     private _enableOfflineMode: boolean; 
-    private _resendInterval: number;
+    protected _resendInterval: number;
 
     constructor(getUrl: () => string, onSuccess?: (response: string) => void, onError?: (error: Error) => void) {
         this._getUrl = getUrl;
@@ -35,7 +35,7 @@ class Sender {
     */
     public setOfflineMode(value: boolean, resendInterval?: number) {
         this._enableOfflineMode = value;
-        if (typeof resendInterval === 'number' && resendInterval >= 1) {
+        if (typeof resendInterval === 'number' && resendInterval >= 0) {
             this._resendInterval = Math.floor(resendInterval);
         }
     }
