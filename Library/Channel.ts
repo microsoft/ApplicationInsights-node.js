@@ -24,8 +24,8 @@ class Channel {
     /**
      * Enable or disable offline mode
      */
-    public setOfflineMode(value: boolean) {
-        this._sender.setOfflineMode(value);
+    public setOfflineMode(value: boolean, resendInterval?: number) {
+        this._sender.setOfflineMode(value, resendInterval);
     }
 
     /**

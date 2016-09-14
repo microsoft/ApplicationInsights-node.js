@@ -272,10 +272,9 @@ describe("EndToEnd", () => {
             var req = new fakeRequest(false);
             var res = new fakeResponse();
             res.statusCode = 200; 
-            Sender.WAIT_BETWEEN_RESEND =0; 
 
             var client = AppInsights.getClient("key"); 
-            client.channel.setOfflineMode(true);
+            client.channel.setOfflineMode(true, 0);
             
             client.trackEvent("test event");
             

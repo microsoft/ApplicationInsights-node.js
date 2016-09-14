@@ -138,13 +138,14 @@ class ApplicationInsights {
     
      /**
      * Enable or disable offline mode to cache events when client is offline (disabled by default)
-     * @param value if true events that occured while client is offline will be cahced on disk
+     * @param value if true events that occured while client is offline will be cached on disk
+     * @param resendInterval. The wait interval for resending cached events.
      * @returns {ApplicationInsights} this class
      */
-    public static setOfflineMode(value: boolean) {
+    public static setOfflineMode(value: boolean, resendInterval?: number) {
         ApplicationInsights._isOfflineMode = value;
         if (ApplicationInsights.client && ApplicationInsights.client.channel){
-            ApplicationInsights.client.channel.setOfflineMode(value);
+            ApplicationInsights.client.channel.setOfflineMode(value, resendInterval);
         }
 
         return ApplicationInsights;
