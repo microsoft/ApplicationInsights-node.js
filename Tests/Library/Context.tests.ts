@@ -13,11 +13,9 @@ describe("Library/Context", () => {
         it("should initialize default context", () => {
             var context = new Context();
             var defaultkeys = [
-                context.keys.deviceId,
                 context.keys.deviceMachineName,
                 context.keys.deviceOS,
                 context.keys.deviceOSVersion,
-                context.keys.deviceType,
                 context.keys.internalSdkVersion
             ];
 

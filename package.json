@@ -2,7 +2,7 @@
   "name": "applicationinsights",
   "license": "MIT",
   "bugs": "https://github.com/Microsoft/ApplicationInsights-node.js/issues",
-  "version": "0.15.16",
+  "version": "0.15.19",
   "description": "Microsoft Application Insights module for Node.JS",
   "repository": {
     "type": "git",
@@ -19,8 +19,16 @@
   ],
   "contributors": [
     {
-      "name": "scsouthw",
-      "email": "scsouthw@microsoft.com"
+      "name": "Application Insights Developer Support",
+      "email": "aidevsupport@microsoft.com"
+    },
+    {
+      "name": "kszostak",
+      "email": "kszostak@microsoft.com"
+    },
+    {
+      "name": "southwood",
+      "url": "https://github.com/southwood"
     },
     {
       "name": "bogdanbe",

@@ -47,11 +47,10 @@ class Context {
     }
 
     private _loadDeviceContext() {
-        this.tags[this.keys.deviceId] = "node";
+        this.tags[this.keys.deviceId] = "";
         this.tags[this.keys.deviceMachineName] = os && os.hostname();
         this.tags[this.keys.deviceOS] = os && os.type();
         this.tags[this.keys.deviceOSVersion] = os && os.release();
-        this.tags[this.keys.deviceType] = "server";
 
         // not yet supported tags
         this.tags["ai.device.osArchitecture"] = os && os.arch();

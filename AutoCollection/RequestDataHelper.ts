@@ -84,6 +84,8 @@ class RequestDataHelper {
         newTags[RequestDataHelper.keys.sessionId] = this._getId("ai_session");
         newTags[RequestDataHelper.keys.userId] = this._getId("ai_user");
         newTags[RequestDataHelper.keys.userAgent] = this.userAgent;
+        newTags[RequestDataHelper.keys.operationName] = this.method + " " + url.parse(this.url).pathname;
+        
         return newTags;
     }
 
@@ -97,11 +99,16 @@ class RequestDataHelper {
         }
         
         var encrypted = <any>request.connection ? (<any>request.connection).encrypted : null;
+        var requestUrl = url.parse(request.url);
+
+        var pathName = requestUrl.pathname;
+        var search = requestUrl.search;
         
         var absoluteUrl = url.format({
             protocol: encrypted ? "https" : "http",
             host: request.headers.host,
-            pathname: request.url
+            pathname: pathName,
+            search: search
         });
             
         return absoluteUrl;

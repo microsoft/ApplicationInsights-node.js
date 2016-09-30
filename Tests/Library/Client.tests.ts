@@ -14,13 +14,13 @@ describe("Library/Client", () => {
 
     var name = "name";
     var value = 3;
-    var mockData = <any>{baseData: {properties: {}}, baseType: "BaseTestData"};
-    var properties:{ [key: string]: string; } = {p1: "p1", p2: "p2", common: "commonArg"};
-    var measurements:{ [key: string]: number; } = {m1: 1, m2: 2};
+    var mockData = <any>{ baseData: { properties: {} }, baseType: "BaseTestData" };
+    var properties: { [key: string]: string; } = { p1: "p1", p2: "p2", common: "commonArg" };
+    var measurements: { [key: string]: number; } = { m1: 1, m2: 2 };
     var client = new Client("Instrumentation-Key-12345-6789A");
-    var trackStub:SinonStub;
-    var triggerStub:SinonStub;
-    var sendStub:SinonStub;
+    var trackStub: SinonStub;
+    var triggerStub: SinonStub;
+    var sendStub: SinonStub;
 
     before(() => {
         trackStub = sinon.stub(client, "track");
@@ -31,9 +31,15 @@ describe("Library/Client", () => {
         trackStub.restore();
         triggerStub.restore();
         sendStub.restore();
+
     });
 
-    var invalidInputHelper = (name:string) => {
+    afterEach(() => {
+        sendStub.reset();
+        client.clearTelemetryProcessors();
+    })
+
+    var invalidInputHelper = (name: string) => {
         assert.doesNotThrow(() => client[name](null, null));
         assert.doesNotThrow(() => client[name](<any>undefined, <any>undefined));
         assert.doesNotThrow(() => client[name](<any>{}, <any>{}));
@@ -147,7 +153,7 @@ describe("Library/Client", () => {
             var args = trackStub.args;
             assert.equal(args[0][0].baseData.metrics[0].name, name);
             assert.equal(args[0][0].baseData.metrics[0].value, value);
-            
+
             assert.equal(args[1][0].baseData.metrics[0].name, name);
             assert.equal(args[1][0].baseData.metrics[0].value, value);
             assert.equal(args[1][0].baseData.metrics[0].count, count);
@@ -164,7 +170,7 @@ describe("Library/Client", () => {
 
     describe("request tracking", () => {
         var request = {
-            emitError: function(): void {
+            emitError: function (): void {
                 if (this.errorCallback) {
                     var error = {
                         "errorProp": "errorVal"
@@ -172,28 +178,28 @@ describe("Library/Client", () => {
                     this.errorCallback(error);
                 }
             },
-            on: function(event: string, callback: (error: any) => void): void {
-                if (event === 'error'){
+            on: function (event: string, callback: (error: any) => void): void {
+                if (event === 'error') {
                     this.errorCallback = callback;
                 }
             },
-            method: "method",
+            method: "GET",
             url: "/search?q=test",
             connection: {
                 encrypted: false
             },
             headers: {
-                host: "http://bing.com"
+                host: "bing.com"
             }
         };
-        
+
         var response = {
-            emitFinish: function(): void {
+            emitFinish: function (): void {
                 if (this.finishCallback) {
                     this.finishCallback();
                 }
             },
-            once: function(event: string, callback: Function): eventEmitter.EventEmitter {
+            once: function (event: string, callback: Function): eventEmitter.EventEmitter {
                 if (event === 'finish') {
                     this.finishCallback = callback;
                 }
@@ -201,40 +207,40 @@ describe("Library/Client", () => {
             },
             statusCode: 200
         }
-        
+
         function parseDuration(duration: string): number {
             if (!duration) {
                 return 0;
             }
-            
-            var parts = duration.match("(\\d\\d):(\\d\\d):(\\d\\d).(\\d\\d\\d)");  
-            return parseInt(parts[1])*60*60*1000 + parseInt(parts[2])*60*1000 + parseInt(parts[3])*1000 + parseInt(parts[4]);    
+
+            var parts = duration.match("(\\d\\d):(\\d\\d):(\\d\\d).(\\d\\d\\d)");
+            return parseInt(parts[1]) * 60 * 60 * 1000 + parseInt(parts[2]) * 60 * 1000 + parseInt(parts[3]) * 1000 + parseInt(parts[4]);
         }
 
         describe("#trackRequest()", () => {
-            
+
             var clock: SinonFakeTimers;
-            
+
             before(() => {
-               clock = sinon.useFakeTimers(); 
+                clock = sinon.useFakeTimers();
             });
-            
+
             after(() => {
                 clock.restore();
             });
-            
+
             it("should not crash with invalid input", () => {
                 invalidInputHelper("trackRequest");
             });
-            
+
             it('should track request with correct data on response finish event ', () => {
                 trackStub.reset();
                 clock.reset();
                 client.trackRequest(<any>request, <any>response, properties);
-                
+
                 // finish event was not emitted yet
                 assert.ok(trackStub.notCalled);
-                
+
                 // emit finish event
                 clock.tick(10);
                 response.emitFinish();
@@ -244,17 +250,34 @@ describe("Library/Client", () => {
                 assert.equal(args[0][0].baseData.responseCode, 200);
                 assert.deepEqual(args[0][0].baseData.properties, properties);
                 var duration = parseDuration(args[0][0].baseData.duration);
-                assert.equal(duration, 10);    
+                assert.equal(duration, 10);
             });
-            
+
+            it('should track request with correct tags on response finish event', () => {
+                trackStub.reset();
+                clock.reset();
+                client.trackRequest(<any>request, <any>response, properties);
+
+                // emit finish event
+                response.emitFinish();
+
+                // validate
+                var args = trackStub.args;
+                var tags = args[0][1];
+
+                assert.equal(tags["ai.operation.name"], "GET /search");
+                assert.equal(tags["ai.device.id"], "");
+                assert.equal(tags["ai.device.type"], null);
+            });
+
             it('should track request with correct data on request error event', () => {
                 trackStub.reset();
                 clock.reset();
                 client.trackRequest(<any>request, <any>response, properties);
-                
+
                 // finish event was not emitted yet
                 assert.ok(trackStub.notCalled);
-                
+
                 // emit finish event
                 clock.tick(10);
                 request.emitError();
@@ -267,7 +290,7 @@ describe("Library/Client", () => {
                 assert.equal(duration, 10);
             });
         });
-        
+
         describe("#trackRequestSync()", () => {
             it('should track request with correct data synchronously', () => {
                 trackStub.reset();
@@ -277,7 +300,7 @@ describe("Library/Client", () => {
                 assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RequestData");
                 assert.equal(args[0][0].baseData.responseCode, 200);
                 assert.equal(args[0][0].baseData.duration, '00:00:00.100');
-                assert.deepEqual(args[0][0].baseData.properties, properties);  
+                assert.deepEqual(args[0][0].baseData.properties, properties);
             });
         });
     });
@@ -294,7 +317,7 @@ describe("Library/Client", () => {
             var args = trackStub.args;
             assert.equal(args[0][0].baseType, "RemoteDependencyData");
             assert.equal(args[0][0].baseData.name, name);
-	        assert.equal(args[0][0].baseData.commandName, commandName);
+            assert.equal(args[0][0].baseData.commandName, commandName);
             assert.equal(args[0][0].baseData.value, value);
             assert.equal(args[0][0].baseData.success, true);
             assert.equal(args[0][0].baseData.dependencyTypeName, dependencyTypeName);
@@ -324,7 +347,7 @@ describe("Library/Client", () => {
     });
 
     describe("#getEnvelope()", () => {
-        var commonproperties:{[key: string]: string} = {common1: "common1", common2: "common2", common: "common"};
+        var commonproperties: { [key: string]: string } = { common1: "common1", common2: "common2", common: "common" };
         it("should assign common properties to the data", () => {
             var client1 = new Client("key");
             client1.commonProperties = commonproperties;
@@ -347,7 +370,7 @@ describe("Library/Client", () => {
             mockData.properties = {};
             var env = client.getEnvelope(mockData);
             assert.deepEqual(env.tags, client.context.tags, "tags are set by default");
-            var customTag = {custom: "tag"};
+            var customTag = { custom: "tag" };
             env = client.getEnvelope(mockData, <any>customTag);
             assert.deepEqual(env.tags, customTag)
         });
@@ -368,7 +391,7 @@ describe("Library/Client", () => {
             let keys = Object.keys(env);
             let indices: { [name: string]: number } = {};
             let index = 0;
-            for(let propertyName in env) {
+            for (let propertyName in env) {
                 indices[propertyName] = index;
                 ++index;
             }
@@ -377,7 +400,7 @@ describe("Library/Client", () => {
                 Math.min(indices["data"], indices["tags"]));
         });
 
-        it("should have valid name", function() {
+        it("should have valid name", function () {
             let envelope = client.getEnvelope(mockData);
             assert.equal(envelope.name, "Microsoft.ApplicationInsights.InstrumentationKey123456789A.BaseTest");
         });
@@ -410,6 +433,105 @@ describe("Library/Client", () => {
             expected.time = actual.time;
 
             assert.deepEqual(actual, expected);
+        });
+
+        it("telemetry processor can change the envelope", () => {
+            trackStub.restore();
+            var expectedName = "I was here";
+
+            client.addTelemetryProcessor((env) => {
+                env.name = expectedName;
+                return true;
+            });
+
+            client.track(mockData);
+
+            assert.equal(sendStub.callCount, 1, "send called once");
+
+            var actualData = sendStub.firstCall.args[0] as ContractsModule.Contracts.Envelope;
+            assert.equal(actualData.name, expectedName, "envelope name should be changed by the processor");
+        });
+
+        it("telemetry processors are executed in a right order", () => {
+            trackStub.restore();
+
+            client.addTelemetryProcessor((env) => {
+                env.name = "First";
+                return true;
+            });
+
+            client.addTelemetryProcessor((env) => {
+                env.name += ", Second";
+                return true;
+            });
+
+            client.addTelemetryProcessor((env) => {
+                env.name += ", Third";
+                return true;
+            });
+
+            client.track(mockData);
+            assert.equal(sendStub.callCount, 1, "send called once");
+
+            var actualData = sendStub.firstCall.args[0] as ContractsModule.Contracts.Envelope;
+            assert.equal(actualData.name, "First, Second, Third", "processors should executed in the right order");
+        });
+
+        it("envelope rejected by the telemetry processor will not be sent", () => {
+            trackStub.restore();
+
+            client.addTelemetryProcessor((env) => {
+                return false;
+            });
+
+            client.track(mockData);
+
+            assert.ok(sendStub.notCalled, "send should not be called");
+        });
+
+        it("envelope is rejected when processor throws exception", () => {
+            trackStub.restore();
+
+            client.addTelemetryProcessor((env): boolean => {
+                throw "telemetry processor failed";
+            });
+
+            client.track(mockData);
+
+            assert.ok(sendStub.notCalled, "send should not be called");
+        });
+    });
+
+    describe("#addTelemetryProcessor()", () => {
+        it("adds telemetry processor to the queue", () => {
+            trackStub.restore();
+            var processorExecuted = false;
+
+            client.addTelemetryProcessor((env) => {
+                processorExecuted = true;
+                return true;
+            });
+
+            client.track(mockData);
+
+            assert.ok(processorExecuted, "telemetry processor should be executed");
+        });
+    });
+
+    describe("#clearTelemetryProcessors()", () => {
+        it("removes all processors from the telemetry processors list", () => {
+            trackStub.restore();
+            var processorExecuted = false;
+
+            client.addTelemetryProcessor((env) => {
+                processorExecuted = true;
+                return true;
+            });
+
+            client.clearTelemetryProcessors();
+            client.track(mockData);
+
+            assert.ok(!processorExecuted, "telemetry processor should NOT be executed");
         });
     });
 });
