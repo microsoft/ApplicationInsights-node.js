@@ -124,13 +124,20 @@ describe("Library/Client", () => {
             trackStub.reset();
             client.trackException(new Error(name));
             client.trackException(new Error(name), properties);
+            client.trackException(new Error(name), properties, measurements);
 
-            assert.ok(trackStub.calledTwice);
+            assert.ok(trackStub.calledThrice);
 
             var args = trackStub.args;
+            
             assert.equal(args[0][0].baseData.exceptions[0].message, name);
+
             assert.equal(args[1][0].baseData.exceptions[0].message, name);
             assert.deepEqual(args[1][0].baseData.properties, properties);
+            
+            assert.equal(args[2][0].baseData.exceptions[0].message, name);
+            assert.deepEqual(args[2][0].baseData.properties, properties);
+            assert.deepEqual(args[2][0].baseData.measurements, measurements);
         });
 
         it("should not crash with invalid input", () => {
