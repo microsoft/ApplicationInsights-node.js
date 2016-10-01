@@ -67,14 +67,14 @@ class AutoCollectExceptions {
      * @param error the exception to track
      * @param handledAt where this exception was handled (leave null for unhandled)
      * @param properties additional properties
+     * @param measurements metrics associated with this event, displayed in Metrics Explorer on the portal. Defaults to empty.
      */
-    public static getExceptionData(error: Error, isHandled: boolean, properties?:{ [key: string]: string; }) {
-
+    public static getExceptionData(error: Error, isHandled: boolean, properties?:{ [key: string]: string; }, measurements?:{ [key: string]: number; }) {
         var exception = new ContractsModule.Contracts.ExceptionData();
         exception.handledAt = isHandled ? "User" : "Unhandled";
         exception.properties = properties;
         exception.severityLevel = ContractsModule.Contracts.SeverityLevel.Error;
-        exception.properties = properties;
+        exception.measurements = measurements;
         exception.exceptions = [];
 
         var stack = error["stack"];
