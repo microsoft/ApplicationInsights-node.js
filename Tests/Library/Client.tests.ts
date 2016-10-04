@@ -120,25 +120,40 @@ describe("Library/Client", () => {
     });
 
     describe("#trackException()", () => {
-        it("should track Exception with correct data", () => {
+        it("should track Exception with correct data - Error only", () => {
             trackStub.reset();
             client.trackException(new Error(name));
-            client.trackException(new Error(name), properties);
-            client.trackException(new Error(name), properties, measurements);
 
-            assert.ok(trackStub.calledThrice);
+            assert.ok(trackStub.calledOnce);
+
+            var args = trackStub.args;
+            assert.equal(args[0][0].baseData.exceptions[0].message, name);
+        });
+
+        it("should track Exception with correct data - Error and properties", () => {
+            trackStub.reset();
+            client.trackException(new Error(name), properties);
+
+            assert.ok(trackStub.calledOnce);
 
             var args = trackStub.args;
             
             assert.equal(args[0][0].baseData.exceptions[0].message, name);
-
-            assert.equal(args[1][0].baseData.exceptions[0].message, name);
-            assert.deepEqual(args[1][0].baseData.properties, properties);
-            
-            assert.equal(args[2][0].baseData.exceptions[0].message, name);
-            assert.deepEqual(args[2][0].baseData.properties, properties);
-            assert.deepEqual(args[2][0].baseData.measurements, measurements);
+            assert.deepEqual(args[0][0].baseData.properties, properties);
         });
+
+        it("should track Exception with correct data - Error, properties and measurements", () => {
+            trackStub.reset();
+            client.trackException(new Error(name), properties, measurements);
+
+            assert.ok(trackStub.calledOnce);
+
+            var args = trackStub.args;
+           
+            assert.equal(args[0][0].baseData.exceptions[0].message, name);
+            assert.deepEqual(args[0][0].baseData.properties, properties);
+            assert.deepEqual(args[0][0].baseData.measurements, measurements);
+        });                 
 
         it("should not crash with invalid input", () => {
             invalidInputHelper("trackException");
