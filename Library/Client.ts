@@ -87,12 +87,12 @@ class Client {
      * @param   properties  map[string, string] - additional data used to filter events and metrics in the portal. Defaults to empty.
      * @param   measurements    map[string, number] - metrics associated with this event, displayed in Metrics Explorer on the portal. Defaults to empty.
      */
-    public trackException(exception: Error, properties?: { [key: string]: string; }) {
+    public trackException(exception: Error, properties?: { [key: string]: string; }, measurements?:{ [key: string]: number; }) {
         if (!Util.isError(exception)) {
             exception = new Error(<any>exception);
         }
 
-        var data = ExceptionTracking.getExceptionData(exception, true, properties)
+        var data = ExceptionTracking.getExceptionData(exception, true, properties, measurements);
         this.track(data);
     }
 
