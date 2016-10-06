@@ -2,7 +2,7 @@
   "name": "applicationinsights",
   "license": "MIT",
   "bugs": "https://github.com/Microsoft/ApplicationInsights-node.js/issues",
-  "version": "0.15.19",
+  "version": "0.16.0",
   "description": "Microsoft Application Insights module for Node.JS",
   "repository": {
     "type": "git",
@@ -49,7 +49,7 @@
     "chai": "^2.3.0",
     "mocha": "^2.2.4",
     "node-mocks-http": "^1.2.3",
-    "sinon": "^1.14.1",
+    "sinon": "^1.17.6",
     "typescript": "^1.8.9"
   }
 }
