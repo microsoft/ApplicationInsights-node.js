@@ -81,8 +81,8 @@ export module Contracts {
             this.deviceOEMName = "ai.device.oemName";
             this.deviceOS = "ai.device.os";
             this.deviceOSVersion = "ai.device.osVersion";
-            this.deviceRoleInstance = "ai.device.roleInstance";
-            this.deviceRoleName = "ai.device.roleName";
+            this.deviceRoleInstance = "ai.cloud.roleInstance";
+            this.deviceRoleName = "ai.cloud.role";
             this.deviceScreenResolution = "ai.device.screenResolution";
             this.deviceType = "ai.device.type";
             this.deviceMachineName = "ai.device.machineName";
