@@ -212,7 +212,7 @@ describe("EndToEnd", () => {
         
         beforeEach(() => {
             AppInsights.client = undefined;
-            this.request = sinon.stub(http, 'request');
+            this.request = sinon.stub(https, 'request');
             this.writeFile = sinon.stub(fs, 'writeFile');
             this.writeFileSync = sinon.stub(fs, 'writeFileSync');
             this.exists = sinon.stub(fs, 'exists').yields(true);
@@ -247,7 +247,7 @@ describe("EndToEnd", () => {
                     done();
                 });
             });
-        }); 
+        });
         
         it("stores data to disk when enabled", (done) => {
             var req = new fakeRequest();
@@ -306,8 +306,5 @@ describe("EndToEnd", () => {
             assert(this.existsSync.callCount === 1);
             assert(this.writeFileSync.callCount === 1);
         }); 
-        
-            
-        
      }); 
 });
