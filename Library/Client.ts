@@ -1,12 +1,14 @@
 ///<reference path="..\Declarations\node\node.d.ts" />
 import http = require("http");
+import url = require("url");
 
 import Config = require("./Config");
 import Context = require("./Context");
 import ExceptionTracking = require("../AutoCollection/Exceptions");
 import ContractsModule = require("../Library/Contracts");
 import Channel = require("./Channel");
-import RequestTracking = require("../AutoCollection/Requests");
+import ServerRequestTracking = require("../AutoCollection/ServerRequests");
+import ClientRequestTracking = require("../AutoCollection/ClientRequests");
 import Sender = require("./Sender");
 import Util = require("./Util");
 import Logging = require("./Logging");
@@ -132,11 +134,15 @@ class Client {
     }
 
     public trackRequestSync(request: http.ServerRequest, response: http.ServerResponse, ellapsedMilliseconds?: number, properties?: { [key: string]: string; }, error?: any) {
-        RequestTracking.trackRequestSync(this, request, response, ellapsedMilliseconds, properties, error);
+        ServerRequestTracking.trackRequestSync(this, request, response, ellapsedMilliseconds, properties, error);
     }
 
     public trackRequest(request: http.ServerRequest, response: http.ServerResponse, properties?: { [key: string]: string; }) {
-        RequestTracking.trackRequest(this, request, response, properties);
+        ServerRequestTracking.trackRequest(this, request, response, properties);
+    }
+
+    public trackDependencyRequest(requestOptions: any, request: http.ClientRequest, properties?: { [key: string]: string; }) {
+        ClientRequestTracking.trackRequest(this, requestOptions, request, properties);
     }
 
     public trackDependency(
@@ -148,11 +154,17 @@ class Client {
         properties = {},
         dependencyKind = ContractsModule.Contracts.DependencyKind.Other,
         async = false,
-        dependencySource = ContractsModule.Contracts.DependencySourceType.Undefined) {
+        dependencySource = ContractsModule.Contracts.DependencySourceType.Undefined,
+        target: string = null) {
+
+        if (!target && commandName) {
+            target = url.parse(commandName).host;
+        }
 
         var remoteDependency = new ContractsModule.Contracts.RemoteDependencyData();
         remoteDependency.name = name;
         remoteDependency.commandName = commandName;
+        remoteDependency.target = target;
         remoteDependency.value = elapsedTimeMs;
         remoteDependency.success = success;
         remoteDependency.dependencyTypeName = dependencyTypeName;
@@ -238,8 +250,8 @@ class Client {
     /**
      * Adds telemetry processor to the collection. Telemetry processors will be called one by one
      * before telemetry item is pushed for sending and in the order they were added.
-     * 
-     * @param telemetryProcessor function, takes Envelope, returns boolean  
+     *
+     * @param telemetryProcessor function, takes Envelope, returns boolean
      */
     public addTelemetryProcessor(telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope) => boolean) {
         this._telemetryProcessors.push(telemetryProcessor);

@@ -1,7 +1,8 @@
 import AutoCollectConsole = require("./AutoCollection/Console");
 import AutoCollectExceptions = require("./AutoCollection/Exceptions");
 import AutoCollectPerformance = require("./AutoCollection/Performance");
-import AutoCollectRequests = require("./AutoCollection/Requests");
+import AutoCollectClientRequests = require("./AutoCollection/ClientRequests");
+import AutoCollectServerRequests = require("./AutoCollection/ServerRequests");
 import Client = require("./Library/Client");
 import Config = require("./Library/Config");
 import Context = require("./Library/Context");
@@ -20,12 +21,14 @@ class ApplicationInsights {
     private static _isExceptions = true;
     private static _isPerformance = true;
     private static _isRequests = true;
+    private static _isDependencies = true;
     private static _isOfflineMode = false;
 
     private static _console: AutoCollectConsole;
     private static _exceptions: AutoCollectExceptions;
     private static _performance: AutoCollectPerformance;
-    private static _requests: AutoCollectRequests;
+    private static _serverRequests: AutoCollectServerRequests;
+    private static _clientRequests: AutoCollectClientRequests;
 
     private static _isStarted = false;
 
@@ -50,15 +53,16 @@ class ApplicationInsights {
             ApplicationInsights._console = new AutoCollectConsole(ApplicationInsights.client);
             ApplicationInsights._exceptions = new AutoCollectExceptions(ApplicationInsights.client);
             ApplicationInsights._performance = new AutoCollectPerformance(ApplicationInsights.client);
-            ApplicationInsights._requests = new AutoCollectRequests(ApplicationInsights.client);
+            ApplicationInsights._serverRequests = new AutoCollectServerRequests(ApplicationInsights.client);
+            ApplicationInsights._clientRequests = new AutoCollectClientRequests(ApplicationInsights.client);
         } else {
             Logging.info("The default client is already setup");
         }
-        
+
         if (ApplicationInsights.client && ApplicationInsights.client.channel) {
             ApplicationInsights.client.channel.setOfflineMode(ApplicationInsights._isOfflineMode);
         }
-        
+
         return ApplicationInsights;
     }
 
@@ -72,11 +76,12 @@ class ApplicationInsights {
             ApplicationInsights._console.enable(ApplicationInsights._isConsole);
             ApplicationInsights._exceptions.enable(ApplicationInsights._isExceptions);
             ApplicationInsights._performance.enable(ApplicationInsights._isPerformance);
-            ApplicationInsights._requests.enable(ApplicationInsights._isRequests);
+            ApplicationInsights._serverRequests.enable(ApplicationInsights._isRequests);
+            ApplicationInsights._clientRequests.enable(ApplicationInsights._isDependencies);
         } else {
             Logging.warn("Start cannot be called before setup");
         }
-        
+
         return ApplicationInsights;
     }
 
@@ -129,13 +134,27 @@ class ApplicationInsights {
      */
     public static setAutoCollectRequests(value: boolean) {
         ApplicationInsights._isRequests = value;
-        if (ApplicationInsights._isStarted){
-            ApplicationInsights._requests.enable(value);
+        if (ApplicationInsights._isStarted) {
+            ApplicationInsights._serverRequests.enable(value);
         }
 
         return ApplicationInsights;
     }
-    
+
+    /**
+     * Sets the state of dependency tracking (enabled by default)
+     * @param value if true dependencies will be sent to Application Insights
+     * @returns {ApplicationInsights} this class
+     */
+    public static setAutoCollectDependencies(value: boolean) {
+        ApplicationInsights._isDependencies = value;
+        if (ApplicationInsights._isStarted) {
+            ApplicationInsights._clientRequests.enable(value);
+        }
+
+        return ApplicationInsights;
+    }
+
      /**
      * Enable or disable offline mode to cache events when client is offline (disabled by default)
      * @param value if true events that occured while client is offline will be cached on disk
@@ -175,8 +194,11 @@ class ApplicationInsights {
         if (ApplicationInsights._performance) {
             ApplicationInsights._performance.dispose();
         }
-        if(ApplicationInsights._requests) {
-            ApplicationInsights._requests.dispose();
+        if(ApplicationInsights._serverRequests) {
+            ApplicationInsights._serverRequests.dispose();
+        }
+        if(ApplicationInsights._clientRequests) {
+            ApplicationInsights._clientRequests.dispose();
         }
     }
 }
