@@ -12,12 +12,14 @@ describe("ApplicationInsights", () => {
         var Console = require("../AutoCollection/Console");
         var Exceptions = require("../AutoCollection/Exceptions");
         var Performance = require("../AutoCollection/Performance");
-        var Requests = require("../AutoCollection/Requests");
+        var ServerRequests = require("../AutoCollection/ServerRequests");
+        var ClientRequests = require("../AutoCollection/ClientRequests");
         beforeEach(() => {
             Console.INSTANCE = undefined;
             Exceptions.INSTANCE = undefined;
             Performance.INSTANCE = undefined;
-            Requests.INSTANCE = undefined;
+            ServerRequests.INSTANCE = undefined;
+            ClientRequests.INSTANCE = undefined;
         });
 
         it("should not warn if setup is called once", () => {
@@ -55,13 +57,15 @@ describe("ApplicationInsights", () => {
         var Console = require("../AutoCollection/Console");
         var Exceptions = require("../AutoCollection/Exceptions");
         var Performance = require("../AutoCollection/Performance");
-        var Requests = require("../AutoCollection/Requests");
+        var ServerRequests = require("../AutoCollection/ServerRequests");
+        var ClientRequests = require("../AutoCollection/ClientRequests");
 
         beforeEach(() => {
             Console.INSTANCE = undefined;
             Exceptions.INSTANCE = undefined;
             Performance.INSTANCE = undefined;
-            Requests.INSTANCE = undefined;
+            ServerRequests.INSTANCE = undefined;
+            ClientRequests.INSTANCE = undefined;
         });
 
         afterEach(() => AppInsights.client = undefined);
@@ -86,14 +90,16 @@ describe("ApplicationInsights", () => {
         var Console = require("../AutoCollection/Console");
         var Exceptions = require("../AutoCollection/Exceptions");
         var Performance = require("../AutoCollection/Performance");
-        var Requests = require("../AutoCollection/Requests");
+        var ServerRequests = require("../AutoCollection/ServerRequests");
+        var ClientRequests = require("../AutoCollection/ClientRequests");
 
         beforeEach(() => {
             AppInsights.client = undefined;
             Console.INSTANCE = undefined;
             Exceptions.INSTANCE = undefined;
             Performance.INSTANCE = undefined;
-            Requests.INSTANCE = undefined;
+            ServerRequests.INSTANCE = undefined;
+            ClientRequests.INSTANCE = undefined;
         });
 
         it("auto-collection is initialized by default", () => {
@@ -102,7 +108,8 @@ describe("ApplicationInsights", () => {
             //assert.ok(Console.INSTANCE.isInitialized());
             assert.ok(Exceptions.INSTANCE.isInitialized());
             assert.ok(Performance.INSTANCE.isInitialized());
-            assert.ok(Requests.INSTANCE.isInitialized());
+            assert.ok(ServerRequests.INSTANCE.isInitialized());
+            assert.ok(ClientRequests.INSTANCE.isInitialized());
         });
 
         it("auto-collection is not initialized if disabled before 'start'", () => {
@@ -111,12 +118,14 @@ describe("ApplicationInsights", () => {
                 .setAutoCollectExceptions(false)
                 .setAutoCollectPerformance(false)
                 .setAutoCollectRequests(false)
+                .setAutoCollectDependencies(false)
                 .start();
 
             assert.ok(!Console.INSTANCE.isInitialized());
             assert.ok(!Exceptions.INSTANCE.isInitialized());
             assert.ok(!Performance.INSTANCE.isInitialized());
-            assert.ok(!Requests.INSTANCE.isInitialized());
+            assert.ok(!ServerRequests.INSTANCE.isInitialized());
+            assert.ok(!ClientRequests.INSTANCE.isInitialized());
         });
     });
 });
