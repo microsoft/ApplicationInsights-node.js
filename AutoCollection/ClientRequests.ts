@@ -1,7 +1,6 @@
 ///<reference path="..\Declarations\node\node.d.ts" />
 
 import http = require("http");
-import https = require("https");
 import url = require("url");
 
 import ContractsModule = require("../Library/Contracts");
@@ -40,20 +39,16 @@ class AutoCollectClientRequests {
 
     private _initialize() {
         this._isInitialized = true;
-        this._initializeHttpModule(http);
-        this._initializeHttpModule(https);
-    }
-
-    private _initializeHttpModule(httpModule: any) {
-        const originalRequest = httpModule.request;
-        httpModule.request = (options, ...requestArgs) => {
+        // Note there's no need to redirect https.request because it just uses http.request.
+        const originalRequest = http.request;
+        http.request = (options, ...requestArgs) => {
             const request: http.ClientRequest = originalRequest.call(
-                    originalRequest, options, ...requestArgs);
-            if (request) {
+                http, options, ...requestArgs);
+            if (request && options && !options['disableAppInsigntsAutoCollection']) {
                 AutoCollectClientRequests.trackRequest(this._client, options, request);
             }
             return request;
-        }
+        };
     }
 
     public static trackRequest(client: Client, requestOptions: any, request: http.ClientRequest,

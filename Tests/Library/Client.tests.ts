@@ -249,7 +249,7 @@ describe("Library/Client", () => {
             return parseInt(parts[1]) * 60 * 60 * 1000 + parseInt(parts[2]) * 60 * 1000 + parseInt(parts[3]) * 1000 + parseInt(parts[4]);
         }
 
-        describe("#trackServerRequest()", () => {
+        describe("#trackRequest()", () => {
             var clock: SinonFakeTimers;
 
             before(() => {
@@ -261,13 +261,13 @@ describe("Library/Client", () => {
             });
 
             it("should not crash with invalid input", () => {
-                invalidInputHelper("trackServerRequest");
+                invalidInputHelper("trackRequest");
             });
 
             it('should track request with correct data on response finish event ', () => {
                 trackStub.reset();
                 clock.reset();
-                client.trackServerRequest(<any>request, <any>response, properties);
+                client.trackRequest(<any>request, <any>response, properties);
 
                 // finish event was not emitted yet
                 assert.ok(trackStub.notCalled);
@@ -287,7 +287,7 @@ describe("Library/Client", () => {
             it('should track request with correct tags on response finish event', () => {
                 trackStub.reset();
                 clock.reset();
-                client.trackServerRequest(<any>request, <any>response, properties);
+                client.trackRequest(<any>request, <any>response, properties);
 
                 // emit finish event
                 response.emitFinish();
@@ -304,7 +304,7 @@ describe("Library/Client", () => {
             it('should track request with correct data on request error event', () => {
                 trackStub.reset();
                 clock.reset();
-                client.trackServerRequest(<any>request, <any>response, properties);
+                client.trackRequest(<any>request, <any>response, properties);
 
                 // finish event was not emitted yet
                 assert.ok(trackStub.notCalled);
@@ -322,10 +322,10 @@ describe("Library/Client", () => {
             });
         });
 
-        describe("#trackServerRequestSync()", () => {
+        describe("#trackRequestSync()", () => {
             it('should track request with correct data synchronously', () => {
                 trackStub.reset();
-                client.trackServerRequestSync(<any>request, <any>response, 100, properties);
+                client.trackRequestSync(<any>request, <any>response, 100, properties);
                 assert.ok(trackStub.calledOnce);
                 var args = trackStub.args;
                 assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RequestData");
@@ -335,7 +335,7 @@ describe("Library/Client", () => {
             });
         });
 
-        describe("#trackClientRequest()", () => {
+        describe("#trackDependencyRequest()", () => {
             var clock: SinonFakeTimers;
 
             before(() => {
@@ -349,7 +349,7 @@ describe("Library/Client", () => {
             it('should track request with correct data from request options', () => {
                 trackStub.reset();
                 clock.reset();
-                client.trackClientRequest({
+                client.trackDependencyRequest({
                         host: 'bing.com',
                         path: '/search?q=test'
                     },
@@ -376,7 +376,7 @@ describe("Library/Client", () => {
             it('should track request with correct data on response event', () => {
                 trackStub.reset();
                 clock.reset();
-                client.trackClientRequest('http://bing.com/search?q=test', <any>request, properties);
+                client.trackDependencyRequest('http://bing.com/search?q=test', <any>request, properties);
 
                 // response event was not emitted yet
                 assert.ok(trackStub.notCalled);
@@ -398,7 +398,7 @@ describe("Library/Client", () => {
             it('should track request with correct data on request error event', () => {
                 trackStub.reset();
                 clock.reset();
-                client.trackClientRequest('http://bing.com/search?q=test', <any>request, properties);
+                client.trackDependencyRequest('http://bing.com/search?q=test', <any>request, properties);
 
                 // error event was not emitted yet
                 assert.ok(trackStub.notCalled);
@@ -422,11 +422,9 @@ describe("Library/Client", () => {
     describe("#trackDependency()", () => {
         it("should track RemoteDependency with correct data", () => {
             trackStub.reset();
-            var commandName = "commandName";
+            var commandName = "http://bing.com/search?q=test";
             var dependencyTypeName = "dependencyTypeName";
-            var targetName = "targetName";
-            client.trackDependency(name, commandName, targetName, value, true,
-                dependencyTypeName, properties);
+            client.trackDependency(name, commandName, value, true, dependencyTypeName, properties);
 
             assert.ok(trackStub.calledOnce);
 
@@ -434,7 +432,7 @@ describe("Library/Client", () => {
             assert.equal(args[0][0].baseType, "RemoteDependencyData");
             assert.equal(args[0][0].baseData.name, name);
             assert.equal(args[0][0].baseData.commandName, commandName);
-            assert.equal(args[0][0].baseData.target, targetName);
+            assert.equal(args[0][0].baseData.target, 'bing.com');
             assert.equal(args[0][0].baseData.value, value);
             assert.equal(args[0][0].baseData.success, true);
             assert.equal(args[0][0].baseData.dependencyTypeName, dependencyTypeName);

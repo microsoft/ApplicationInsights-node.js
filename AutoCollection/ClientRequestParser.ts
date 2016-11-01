@@ -45,7 +45,7 @@ class ClientRequestParser extends RequestParser {
         let urlObject = url.parse(this.url);
         urlObject.search = undefined;
         urlObject.hash = undefined;
-        let dependencyName = this.method + " " + url.format(urlObject);
+        let dependencyName = this.method.toUpperCase() + " " + url.format(urlObject);
 
         let remoteDependency = new ContractsModule.Contracts.RemoteDependencyData();
         remoteDependency.target = urlObject.hostname;

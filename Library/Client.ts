@@ -1,5 +1,6 @@
 ///<reference path="..\Declarations\node\node.d.ts" />
 import http = require("http");
+import url = require("url");
 
 import Config = require("./Config");
 import Context = require("./Context");
@@ -132,29 +133,33 @@ class Client {
         this.track(data);
     }
 
-    public trackServerRequestSync(request: http.ServerRequest, response: http.ServerResponse, ellapsedMilliseconds?: number, properties?: { [key: string]: string; }, error?: any) {
+    public trackRequestSync(request: http.ServerRequest, response: http.ServerResponse, ellapsedMilliseconds?: number, properties?: { [key: string]: string; }, error?: any) {
         ServerRequestTracking.trackRequestSync(this, request, response, ellapsedMilliseconds, properties, error);
     }
 
-    public trackServerRequest(request: http.ServerRequest, response: http.ServerResponse, properties?: { [key: string]: string; }) {
+    public trackRequest(request: http.ServerRequest, response: http.ServerResponse, properties?: { [key: string]: string; }) {
         ServerRequestTracking.trackRequest(this, request, response, properties);
     }
 
-    public trackClientRequest(requestOptions: any, request: http.ClientRequest, properties?: { [key: string]: string; }) {
+    public trackDependencyRequest(requestOptions: any, request: http.ClientRequest, properties?: { [key: string]: string; }) {
         ClientRequestTracking.trackRequest(this, requestOptions, request, properties);
     }
 
     public trackDependency(
         name: string,
         commandName: string,
-        target: string,
         elapsedTimeMs: number,
         success: boolean,
         dependencyTypeName?: string,
         properties = {},
         dependencyKind = ContractsModule.Contracts.DependencyKind.Other,
         async = false,
-        dependencySource = ContractsModule.Contracts.DependencySourceType.Undefined) {
+        dependencySource = ContractsModule.Contracts.DependencySourceType.Undefined,
+        target: string = null) {
+
+        if (!target && commandName) {
+            target = url.parse(commandName).host;
+        }
 
         var remoteDependency = new ContractsModule.Contracts.RemoteDependencyData();
         remoteDependency.name = name;
