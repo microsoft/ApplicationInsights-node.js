@@ -10,6 +10,7 @@ export module Contracts {
         SQL = 0,
         Http = 1,
         Other = 2,
+        ApplicationInsights = 3,
     }
 
     export enum DependencySourceType
@@ -368,6 +369,7 @@ export module Contracts {
         public url:string;
         public properties:any;
         public measurements:any;
+        public source:string;
 
         constructor() {
             super();

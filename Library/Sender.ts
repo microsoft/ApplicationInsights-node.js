@@ -9,6 +9,7 @@ import url = require("url");
 import zlib = require("zlib");
 
 import Logging = require("./Logging");
+import AutoCollectClientRequests = require("../AutoCollection/ClientRequests");
 
 class Sender {
     private static TAG = "Sender";
@@ -74,7 +75,7 @@ class Sender {
             Logging.info(Sender.TAG, options);
 
             // Ensure this request is not captured by auto-collection.
-            options['disableAppInsigntsAutoCollection'] = true;
+            options[AutoCollectClientRequests.disableCollectionRequestOption] = true;
 
             var req = protocol.request(<any> options, (res:http.ClientResponse) => {
                 res.setEncoding("utf-8");

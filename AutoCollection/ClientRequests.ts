@@ -1,15 +1,18 @@
 ///<reference path="..\Declarations\node\node.d.ts" />
 
 import http = require("http");
+import https = require("http");
 import url = require("url");
 
 import ContractsModule = require("../Library/Contracts");
 import Client = require("../Library/Client");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
+import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import ClientRequestParser = require("./ClientRequestParser");
 
 class AutoCollectClientRequests {
+    public static disableCollectionRequestOption = 'disableAppInsightsAutoCollection';
 
     public static INSTANCE: AutoCollectClientRequests;
 
@@ -39,29 +42,67 @@ class AutoCollectClientRequests {
 
     private _initialize() {
         this._isInitialized = true;
-        // Note there's no need to redirect https.request because it just uses http.request.
+
         const originalRequest = http.request;
         http.request = (options, ...requestArgs) => {
             const request: http.ClientRequest = originalRequest.call(
                 http, options, ...requestArgs);
-            if (request && options && !options['disableAppInsigntsAutoCollection']) {
+            if (request && options && !options[AutoCollectClientRequests.disableCollectionRequestOption]) {
                 AutoCollectClientRequests.trackRequest(this._client, options, request);
             }
             return request;
         };
+
+        // On node >= v0.11.12, https.request just calls http.request (with additional options).
+        // But on older versions, https.request needs to be patched also.
+        // The regex matches versions < 0.11.12 (avoiding a semver package dependency).
+        if (/^0\.([0-9]\.)|(10\.)|(11\.([0-9]|10|11)$)/.test(process.versions.node)) {
+            const originalHttpsRequest = https.request;
+            https.request = (options, ...requestArgs) => {
+                const request: http.ClientRequest = originalHttpsRequest.call(
+                    https, options, ...requestArgs);
+                if (request && options && !options[AutoCollectClientRequests.disableCollectionRequestOption]) {
+                    AutoCollectClientRequests.trackRequest(this._client, options, request);
+                }
+                return request;
+            };
+        }
     }
 
+    /**
+     * Tracks an outgoing request. Because it may set headers this method must be called before
+     * writing content to or ending the request.
+     */
     public static trackRequest(client: Client, requestOptions: any, request: http.ClientRequest,
             properties?: { [key: string]: string }) {
-        let requestParser = new ClientRequestParser(requestOptions, request);
-        request.on('response', (response: http.ClientResponse) => {
-            requestParser.onResponse(response, properties);
-            client.track(requestParser.getDependencyData());
-        });
-        request.on('error', (e: Error) => {
-            requestParser.onError(e, properties);
-            client.track(requestParser.getDependencyData());
-        });
+        if (!requestOptions || !request || !client) {
+            Logging.info("AutoCollectClientRequests.trackRequest was called with invalid parameters: ", !requestOptions, !request, !client);
+            return;
+        }
+
+        // Add the source ikey hash to the request headers, if a value was not already provided.
+        // The getHeader/setHeader methods aren't available on very old Node versions, and
+        // are not included in the v0.10 type declarations currently used. So check if the
+        // methods exist before invoking them.
+        if (client.config && client.config.instrumentationKeyHash &&
+            request['getHeader'] && request['setHeader'] &&
+            !request['getHeader'](RequestResponseHeaders.sourceInstrumentationKeyHeader)) {
+                request['setHeader'](RequestResponseHeaders.sourceInstrumentationKeyHeader,
+                    client.config.instrumentationKeyHash);
+        }
+
+        // Collect dependency telemetry about the request when it finishes.
+        if (request.on) {
+            let requestParser = new ClientRequestParser(requestOptions, request);
+            request.on('response', (response: http.ClientResponse) => {
+                requestParser.onResponse(response, properties);
+                client.track(requestParser.getDependencyData());
+            });
+            request.on('error', (e: Error) => {
+                requestParser.onError(e, properties);
+                client.track(requestParser.getDependencyData());
+            });
+        }
     }
 
     public dispose() {

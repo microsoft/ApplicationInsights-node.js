@@ -3,12 +3,14 @@
 ///<reference path="..\..\Declarations\sinon\sinon.d.ts" />
 
 import assert = require("assert");
+import crypto = require('crypto');
 import sinon = require("sinon");
 import http = require("http");
 import eventEmitter = require('events');
 
 import Client = require("../../Library/Client");
 import ContractsModule = require("../../Library/Contracts");
+import RequestResponseHeaders = require("../../Library/RequestResponseHeaders");
 
 describe("Library/Client", () => {
 
@@ -203,7 +205,10 @@ describe("Library/Client", () => {
                 }
                 return new eventEmitter.EventEmitter();
             },
-            statusCode: 200
+            statusCode: 200,
+            headers: {},
+            getHeader: function (name: string) { return this.headers[name]; },
+            setHeader: function (name: string, value: string) { this.headers[name] = value; },
         };
 
         var request = {
@@ -232,13 +237,20 @@ describe("Library/Client", () => {
             connection: {
                 encrypted: false
             },
+            agent: {
+                protocol: 'http'
+            },
             headers: {
                 host: "bing.com"
             },
-            agent: {
-                protocol: 'http'
-            }
+            getHeader: function (name: string) { return this.headers[name]; },
+            setHeader: function (name: string, value: string) { this.headers[name] = value; },
         };
+
+        afterEach(() => {
+            delete request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader];
+            delete response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader];
+        });
 
         function parseDuration(duration: string): number {
             if (!duration) {
@@ -320,6 +332,32 @@ describe("Library/Client", () => {
                 var duration = parseDuration(args[0][0].baseData.duration);
                 assert.equal(duration, 10);
             });
+
+            it('should use source and target ikey headers', () => {
+                trackStub.reset();
+                clock.reset();
+
+                // Simulate an incoming request that has a different source ikey hash header.
+                let testIKey = crypto.createHash('sha256').update('Instrumentation-Key-98765-4321A').digest('base64');
+                request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader] = testIKey;
+
+                client.trackRequest(<any>request, <any>response, properties);
+
+                // finish event was not emitted yet
+                assert.ok(trackStub.notCalled);
+
+                // emit finish event
+                clock.tick(10);
+                response.emitFinish();
+                assert.ok(trackStub.calledOnce);
+                var args = trackStub.args;
+                assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RequestData");
+                assert.equal(args[0][0].baseData.source, testIKey);
+
+                // The client's ikey hash should have been added as the response target ikey header.
+                assert.equal(response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader],
+                    client.config.instrumentationKeyHash);
+            });
         });
 
         describe("#trackRequestSync()", () => {
@@ -346,6 +384,10 @@ describe("Library/Client", () => {
                 clock.restore();
             });
 
+            it("should not crash with invalid input", () => {
+                invalidInputHelper("trackDependencyRequest");
+            });
+
             it('should track request with correct data from request options', () => {
                 trackStub.reset();
                 clock.reset();
@@ -369,9 +411,10 @@ describe("Library/Client", () => {
                 assert.equal(args[0][0].baseData.name, "GET http://bing.com/search");
                 assert.equal(args[0][0].baseData.commandName, "http://bing.com/search?q=test");
                 assert.equal(args[0][0].baseData.target, "bing.com");
+                assert.equal(args[0][0].baseData.dependencyKind,
+                    ContractsModule.Contracts.DependencyKind.Http);
                 assert.deepEqual(args[0][0].baseData.properties, properties);
             });
-
 
             it('should track request with correct data on response event', () => {
                 trackStub.reset();
@@ -392,6 +435,8 @@ describe("Library/Client", () => {
                 assert.equal(args[0][0].baseData.name, "GET http://bing.com/search");
                 assert.equal(args[0][0].baseData.commandName, "http://bing.com/search?q=test");
                 assert.equal(args[0][0].baseData.target, "bing.com");
+                assert.equal(args[0][0].baseData.dependencyKind,
+                    ContractsModule.Contracts.DependencyKind.Http);
                 assert.deepEqual(args[0][0].baseData.properties, properties);
             });
 
@@ -415,6 +460,37 @@ describe("Library/Client", () => {
                 assert.equal(args[0][0].baseData.commandName, "http://bing.com/search?q=test");
                 assert.equal(args[0][0].baseData.target, "bing.com");
                 assert.deepEqual(args[0][0].baseData.properties, properties);
+            });
+
+            it('should use source and target ikey headers', () => {
+                trackStub.reset();
+                clock.reset();
+                client.trackDependencyRequest({
+                        host: 'bing.com',
+                        path: '/search?q=test'
+                    },
+                    <any>request, properties);
+
+                // The client's ikey hash should have been added as the request source ikey header.
+                assert.equal(request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader],
+                    client.config.instrumentationKeyHash);
+
+                // response event was not emitted yet
+                assert.ok(trackStub.notCalled);
+
+                // Simulate a response from another service that includes a target ikey hash header.
+                response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader] =
+                    crypto.createHash('sha256').update('Instrumentation-Key-98765-4321A').digest('base64');;
+
+                // emit response event
+                clock.tick(10);
+                request.emitResponse();
+                assert.ok(trackStub.calledOnce);
+                var args = trackStub.args;
+                assert.equal(args[0][0].baseData.target, "bing.com | " +
+                    response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader]);
+                assert.equal(args[0][0].baseData.dependencyKind,
+                    ContractsModule.Contracts.DependencyKind.ApplicationInsights);
             });
         });
     });

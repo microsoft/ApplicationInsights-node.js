@@ -7,12 +7,15 @@ import ContractsModule = require("../Library/Contracts");
 import Client = require("../Library/Client");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
+import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import RequestParser = require("./RequestParser");
 
 /**
  * Helper class to read data from the requst/response objects and convert them into the telemetry contract
  */
 class ClientRequestParser extends RequestParser {
+    private targetIKeyHash: string;
+
     constructor(requestOptions: string | Object, request: http.ClientRequest) {
         super();
         if (request && requestOptions) {
@@ -36,6 +39,8 @@ class ClientRequestParser extends RequestParser {
      */
     public onResponse(response: http.ClientResponse, properties?: { [key: string]: string }) {
         this._setStatus(response.statusCode, undefined, properties);
+        this.targetIKeyHash =
+            response.headers && response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader];
     }
 
     /**
@@ -48,15 +53,26 @@ class ClientRequestParser extends RequestParser {
         let dependencyName = this.method.toUpperCase() + " " + url.format(urlObject);
 
         let remoteDependency = new ContractsModule.Contracts.RemoteDependencyData();
-        remoteDependency.target = urlObject.hostname;
+
+        if (this.targetIKeyHash) {
+            // Currently the service supports a dependency type name of ApplicationInsights,
+            // but not a dependency kind. So the dependency kind here is still just HTTP.
+            remoteDependency.dependencyKind = ContractsModule.Contracts.DependencyKind.Http;
+            remoteDependency.dependencyTypeName = ContractsModule.Contracts.DependencyKind
+                [ContractsModule.Contracts.DependencyKind.ApplicationInsights];
+            remoteDependency.target = urlObject.hostname + " | " + this.targetIKeyHash;
+        } else {
+            remoteDependency.dependencyKind = ContractsModule.Contracts.DependencyKind.Http;
+            remoteDependency.dependencyTypeName =
+                ContractsModule.Contracts.DependencyKind[ContractsModule.Contracts.DependencyKind.Http];
+            remoteDependency.target = urlObject.hostname;
+        }
+
         remoteDependency.name = dependencyName;
         remoteDependency.commandName = this.url;
         remoteDependency.value = this.duration;
         remoteDependency.success = this._isSuccess();
         remoteDependency.async = true;
-        remoteDependency.dependencyTypeName =
-            ContractsModule.Contracts.DependencyKind[ContractsModule.Contracts.DependencyKind.Http];
-        remoteDependency.dependencyKind = ContractsModule.Contracts.DependencyKind.Http;
         remoteDependency.dependencySource = ContractsModule.Contracts.DependencySourceType.Undefined;
         remoteDependency.properties = this.properties || {};
 
