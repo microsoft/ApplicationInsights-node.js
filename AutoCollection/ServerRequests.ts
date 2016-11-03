@@ -40,15 +40,11 @@ class AutoCollectServerRequests {
 
     private _initialize() {
         this._isInitialized = true;
-        this._initializeHttpModule(http);
-        this._initializeHttpModule(https);
-    }
 
-    private _initializeHttpModule(httpModule: any) {
-        const originalCreateServer = httpModule.createServer;
-        httpModule.createServer = (onRequest) => {
+        var originalHttpServer = http.createServer;
+        http.createServer = (onRequest) => {
             // todo: get a pointer to the server so the IP address can be read from server.address
-            return originalCreateServer((request: http.ServerRequest, response: http.ServerResponse) => {
+            return originalHttpServer((request:http.ServerRequest, response:http.ServerResponse) => {
                 if (this._isEnabled) {
                     AutoCollectServerRequests.trackRequest(this._client, request, response);
                 }
@@ -57,7 +53,20 @@ class AutoCollectServerRequests {
                     onRequest(request, response);
                 }
             });
-        };
+        }
+
+        var originalHttpsServer = https.createServer;
+        https.createServer = (options, onRequest) => {
+            return originalHttpsServer(options, (request:http.ServerRequest, response:http.ServerResponse) => {
+                if (this._isEnabled) {
+                    AutoCollectServerRequests.trackRequest(this._client, request, response);
+                }
+
+                if (typeof onRequest === "function") {
+                    onRequest(request, response);
+                }
+            });
+        }
     }
 
     /**
