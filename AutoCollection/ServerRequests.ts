@@ -8,22 +8,22 @@ import ContractsModule = require("../Library/Contracts");
 import Client = require("../Library/Client");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
-import RequestDataHelper = require("./RequestDataHelper");
+import ServerRequestParser = require("./ServerRequestParser");
 
-class AutoCollectRequests {
+class AutoCollectServerRequests {
 
-    public static INSTANCE:AutoCollectRequests;
+    public static INSTANCE:AutoCollectServerRequests;
 
     private _client:Client;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
 
     constructor(client:Client) {
-        if (!!AutoCollectRequests.INSTANCE) {
-            throw new Error("Request tracking should be configured from the applicationInsights object");
+        if (!!AutoCollectServerRequests.INSTANCE) {
+            throw new Error("Server request tracking should be configured from the applicationInsights object");
         }
 
-        AutoCollectRequests.INSTANCE = this;
+        AutoCollectServerRequests.INSTANCE = this;
         this._client = client;
     }
 
@@ -40,12 +40,13 @@ class AutoCollectRequests {
 
     private _initialize() {
         this._isInitialized = true;
+
         var originalHttpServer = http.createServer;
         http.createServer = (onRequest) => {
             // todo: get a pointer to the server so the IP address can be read from server.address
             return originalHttpServer((request:http.ServerRequest, response:http.ServerResponse) => {
                 if (this._isEnabled) {
-                    AutoCollectRequests.trackRequest(this._client, request, response);
+                    AutoCollectServerRequests.trackRequest(this._client, request, response);
                 }
 
                 if (typeof onRequest === "function") {
@@ -54,33 +55,33 @@ class AutoCollectRequests {
             });
         }
 
-	    var originalHttpsServer = https.createServer;
-	    https.createServer = (options, onRequest) => {
-	        return originalHttpsServer(options, (request:http.ServerRequest, response: http.ServerResponse) => {
+        var originalHttpsServer = https.createServer;
+        https.createServer = (options, onRequest) => {
+            return originalHttpsServer(options, (request:http.ServerRequest, response:http.ServerResponse) => {
                 if (this._isEnabled) {
-                    AutoCollectRequests.trackRequest(this._client, request, response);
+                    AutoCollectServerRequests.trackRequest(this._client, request, response);
                 }
 
                 if (typeof onRequest === "function") {
                     onRequest(request, response);
                 }
             });
-	    }
+        }
     }
-    
+
     /**
      * Tracks a request synchronously (doesn't wait for response 'finish' event)
      */
     public static trackRequestSync(client: Client, request: http.ServerRequest, response:http.ServerResponse, ellapsedMilliseconds?: number, properties?:{ [key: string]: string; }, error?: any) {
         if (!request || !response || !client) {
-            Logging.info("AutoCollectRequests.trackRequestSync was called with invalid parameters: ", !request, !response, !client);
+            Logging.info("AutoCollectServerRequests.trackRequestSync was called with invalid parameters: ", !request, !response, !client);
             return;
         }
-        
+
         // store data about the request
-        var requestDataHelper = new RequestDataHelper(request);
-        
-        AutoCollectRequests.endRequest(client, requestDataHelper, response, ellapsedMilliseconds, properties, error);
+        var requestParser = new ServerRequestParser(request);
+
+        AutoCollectServerRequests.endRequest(client, requestParser, response, ellapsedMilliseconds, properties, error);
     }
 
     /**
@@ -88,55 +89,46 @@ class AutoCollectRequests {
      */
     public static trackRequest(client:Client, request:http.ServerRequest, response:http.ServerResponse, properties?:{ [key: string]: string; }) {
         if (!request || !response || !client) {
-            Logging.info("AutoCollectRequests.trackRequest was called with invalid parameters: ", !request, !response, !client);
+            Logging.info("AutoCollectServerRequests.trackRequest was called with invalid parameters: ", !request, !response, !client);
             return;
         }
-        
+
         // store data about the request
-        var requestDataHelper = new RequestDataHelper(request);
+        var requestParser = new ServerRequestParser(request);
 
         // response listeners
         if (response && response.once) {
-            response.once("finish", () => { 
-                AutoCollectRequests.endRequest(client, requestDataHelper, response, null, properties, null);
+            response.once("finish", () => {
+                AutoCollectServerRequests.endRequest(client, requestParser, response, null, properties, null);
             });
         }
 
         // track a failed request if an error is emitted
         if (request && request.on) {
             request.on("error", (error:any) => {
-                AutoCollectRequests.endRequest(client, requestDataHelper, response, null, properties, error);
+                AutoCollectServerRequests.endRequest(client, requestParser, response, null, properties, error);
             });
         }
     }
-    
-    private static endRequest(client: Client, requestDataHelper: RequestDataHelper, response: http.ServerResponse, ellapsedMilliseconds?: number, properties?: { [key: string]: string}, error?: any) {
-        if (error) {
-            if(!properties) {
-                properties = <{[key: string]: string}>{};
-            }
 
-            if (typeof error === "string") {
-                properties["error"] = error;
-            } else if (typeof error === "object") {
-                for (var key in error) {
-                    properties[key] = error[key] && error[key].toString && error[key].toString();
-                }
-            }
+    private static endRequest(client: Client, requestParser: ServerRequestParser, response: http.ServerResponse, ellapsedMilliseconds?: number, properties?: { [key: string]: string}, error?: any) {
+        if (error) {
+            requestParser.onError(error, properties, ellapsedMilliseconds);
+        } else {
+            requestParser.onResponse(response, properties, ellapsedMilliseconds);
         }
-        
-        requestDataHelper.onResponse(response, properties, ellapsedMilliseconds);
-        var data = requestDataHelper.getRequestData();
-        var tags = requestDataHelper.getRequestTags(client.context.tags);
+
+        var data = requestParser.getRequestData();
+        var tags = requestParser.getRequestTags(client.context.tags);
         client.track(data, tags);
     }
 
     public dispose() {
-         AutoCollectRequests.INSTANCE = null;
+         AutoCollectServerRequests.INSTANCE = null;
          this._isInitialized = false;
     }
 }
 
 
 
-export = AutoCollectRequests;
+export = AutoCollectServerRequests;

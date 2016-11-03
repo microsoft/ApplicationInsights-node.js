@@ -5,7 +5,7 @@
 import http = require("http");
 import https = require("https");
 import assert = require("assert");
-import fs = require('fs'); 
+import fs = require('fs');
 import sinon = require("sinon");
 import events = require("events");
 import AppInsights = require("../applicationinsights");
@@ -16,11 +16,11 @@ import Sender = require("../Library/Sender");
  */
 class fakeResponse {
     private callbacks: {[event:string]: (data?: any)=>void} = Object.create(null);
-    public setEncoding(): void {}; 
-    public statusCode: number; 
-    
+    public setEncoding(): void {};
+    public statusCode: number;
+
     constructor(private passImmediately: boolean = true) {}
-    
+
     public on(event: string, callback: ()=> void) {
         this.callbacks[event] = callback;
         if (event == "end" && this.passImmediately) {
@@ -34,34 +34,35 @@ class fakeResponse {
             this.pass();
         }
     }
-    
+
     public pass(): void {
-        this.statusCode = 200; 
+        this.statusCode = 200;
         this.callbacks["data"] ? this.callbacks["data"]("data") : null;
-        this.callbacks["end"] ? this.callbacks["end"](): null; 
+        this.callbacks["end"] ? this.callbacks["end"](): null;
         this.callbacks["finish"] ? this.callbacks["finish"]() : null;
     }
-} 
+}
 
 /**
- * A fake request class that fails by default 
+ * A fake request class that fails by default
  */
 class fakeRequest {
     private callbacks: {[event:string]: Function} = Object.create(null);
     public write(): void {}
     public headers = [];
+    public agent = { protocol: 'http' };
 
     constructor (private failImmediatly: boolean = true, public url: string = undefined) {}
-    
+
     public on(event: string, callback) {
         this.callbacks[event] = callback;
         if (event === "error" && this.failImmediatly) {
-            setImmediate(() => this.fail()); 
+            setImmediate(() => this.fail());
         }
     }
-    
+
     public fail(): void {
-        this.callbacks["error"] ? this.callbacks["error"](): null; 
+        this.callbacks["error"] ? this.callbacks["error"](): null;
     }
 
     public end(): void {
@@ -76,7 +77,7 @@ class fakeHttpServer extends events.EventEmitter {
     public setCallback( callback: any) {
         this.on("request", callback);
     }
-    
+
     public listen(port: any, host?: any, backlog?: any, callback?: any) {
     	this.emit("listening");
     }
@@ -98,7 +99,7 @@ class fakeHttpsServer extends events.EventEmitter {
     public setCallback( callback: any) {
         this.on("request", callback);
     }
-    
+
     public listen(port: any, host?: any, backlog?: any, callback?: any) {
     	this.emit("listening");
     }
@@ -151,7 +152,7 @@ describe("EndToEnd", () => {
                 fakeHttpSrv.setCallback(callback);
                 return fakeHttpSrv;
             });
-            
+
             sandbox.stub(http, 'get', (uri: string, callback: any) => {
                 fakeHttpSrv.emitRequest(uri);
             });
@@ -168,7 +169,7 @@ describe("EndToEnd", () => {
                     });
                 }, 10);
             });
-           
+
             server.on("listening", () => {
                 http.get("http://localhost:0/test", (response: http.ServerResponse) => {});
             });
@@ -198,18 +199,18 @@ describe("EndToEnd", () => {
                     });
                 }, 10);
             });
-           
+
             server.on("listening", () => {
                 https.get("https://localhost:0/test", (response: http.ServerResponse) => {});
             });
 	    server.listen(0, "::");
         });
     });
-    
+
     describe("Offline mode", () => {
         var AppInsights = require("../applicationinsights");
-     
-        
+
+
         beforeEach(() => {
             AppInsights.client = undefined;
             this.request = sinon.stub(https, 'request');
@@ -220,7 +221,7 @@ describe("EndToEnd", () => {
             this.readdir = sinon.stub(fs, 'readdir').yields(null, ['1.ai.json']);
             this.readFile = sinon.stub(fs, 'readFile').yields(null, '');
         });
-        
+
         afterEach(()=> {
             this.request.restore();
             this.writeFile.restore();
@@ -234,12 +235,12 @@ describe("EndToEnd", () => {
         it("disabled by default", (done) => {
             var req = new fakeRequest();
 
-            var client = AppInsights.getClient("key"); 
-            
+            var client = AppInsights.getClient("key");
+
             client.trackEvent("test event");
-            
-            this.request.returns(req); 
-  
+
+            this.request.returns(req);
+
             client.sendPendingData((response) => {
                 // yield for the caching behavior
                 setImmediate(() => {
@@ -248,17 +249,17 @@ describe("EndToEnd", () => {
                 });
             });
         });
-        
+
         it("stores data to disk when enabled", (done) => {
             var req = new fakeRequest();
 
-            var client = AppInsights.getClient("key"); 
+            var client = AppInsights.getClient("key");
             client.channel.setOfflineMode(true);
-            
+
             client.trackEvent("test event");
-            
-            this.request.returns(req); 
-  
+
+            this.request.returns(req);
+
             client.sendPendingData((response) => {
                 // yield for the caching behavior
                 setImmediate(() => {
@@ -266,21 +267,21 @@ describe("EndToEnd", () => {
                     done();
                 });
             });
-        }); 
-        
+        });
+
          it("checks for files when connection is back online", (done) => {
             var req = new fakeRequest(false);
             var res = new fakeResponse();
-            res.statusCode = 200; 
+            res.statusCode = 200;
 
-            var client = AppInsights.getClient("key"); 
+            var client = AppInsights.getClient("key");
             client.channel.setOfflineMode(true, 0);
-            
+
             client.trackEvent("test event");
-            
-            this.request.returns(req); 
+
+            this.request.returns(req);
             this.request.yields(res);
-            
+
             client.sendPendingData((response) => {
                 // wait until sdk looks for offline files
                 setTimeout(() => {
@@ -289,22 +290,22 @@ describe("EndToEnd", () => {
                     done();
                 }, 10);
             });
-        }); 
-        
+        });
+
         it("cache payload synchronously when process crashes", () => {
             var req = new fakeRequest(true);
 
-            var client = AppInsights.getClient("key"); 
+            var client = AppInsights.getClient("key");
             client.channel.setOfflineMode(true);
-            
+
             client.trackEvent("test event");
-            
-            this.request.returns(req); 
-            
+
+            this.request.returns(req);
+
             client.channel.triggerSend(true);
-            
+
             assert(this.existsSync.callCount === 1);
             assert(this.writeFileSync.callCount === 1);
-        }); 
-     }); 
+        });
+     });
 });

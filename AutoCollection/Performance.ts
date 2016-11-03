@@ -34,7 +34,7 @@ class AutoCollectPerformance {
 
     constructor(client: Client) {
         if(!!AutoCollectPerformance.INSTANCE) {
-            throw new Error("Exception tracking should be configured from the applicationInsights object");
+            throw new Error("Performance tracking should be configured from the applicationInsights object");
         }
 
         AutoCollectPerformance.INSTANCE = this;
@@ -215,7 +215,7 @@ class AutoCollectPerformance {
             this._trackLegacyPerformance(PerfCounterType.ProcessorTime, totalUser / combinedTotal);
             this._trackLegacyPerformance(PerfCounterType.PercentProcessorTime, (combinedTotal - totalIdle) / combinedTotal);
         }
-        
+
         this._lastCpus = cpus;
     }
 

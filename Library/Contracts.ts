@@ -315,6 +315,7 @@ export module Contracts {
         public commandName:string;
         public dependencyTypeName:string;
         public properties:any;
+        public target:string;
 
         constructor() {
             super();
