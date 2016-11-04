@@ -13,18 +13,21 @@ package-version
 node_modules/**
 
 # Ignore Visual Studio Code files
-.settings/**
+.vscode/
 
 # Ignore Visual Studio files
 *.suo
 *.sln
 *.dat
+*.njsproj
 
 # Ignore webstorm files
 .idea
+*.iml
 
 # Ignore OS X files
 *.DS_Store
 
 # Ignore log files
 npm-debug.log
+
