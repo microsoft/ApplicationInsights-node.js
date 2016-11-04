@@ -1,7 +1,7 @@
 ///<reference path="..\Declarations\node\node.d.ts" />
 
 import http = require("http");
-import https = require("http");
+import https = require("https");
 import url = require("url");
 
 import ContractsModule = require("../Library/Contracts");
