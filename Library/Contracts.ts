@@ -10,7 +10,6 @@ export module Contracts {
         SQL = 0,
         Http = 1,
         Other = 2,
-        ApplicationInsights = 3,
     }
 
     export enum DependencySourceType
@@ -298,6 +297,12 @@ export module Contracts {
 
             super();
         }
+    }
+
+    export class RemoteDependencyTypes {
+        public static ApplicationInsights = "Application Insights";
+        public static Http = "Http";
+        public static Sql = "SQL";
     }
 
     export class RemoteDependencyData extends Contracts.Domain {

@@ -79,12 +79,7 @@ class AutoCollectServerRequests {
             return;
         }
 
-        // Add the target ikey hash to the response headers, if not already provided.
-        if (client.config && client.config.instrumentationKeyHash &&
-            response.setHeader && !response.getHeader(RequestResponseHeaders.targetInstrumentationKeyHeader)) {
-                response.setHeader(RequestResponseHeaders.targetInstrumentationKeyHeader,
-                    client.config.instrumentationKeyHash);
-        }
+        AutoCollectServerRequests.addResponseIKeyHeader(client, response);
 
         // store data about the request
         var requestParser = new ServerRequestParser(request);
@@ -101,12 +96,7 @@ class AutoCollectServerRequests {
             return;
         }
 
-        // Add the target ikey hash to the response headers, if not already provided.
-        if (client.config && client.config.instrumentationKeyHash &&
-            response.setHeader && !response.getHeader(RequestResponseHeaders.targetInstrumentationKeyHeader)) {
-                response.setHeader(RequestResponseHeaders.targetInstrumentationKeyHeader,
-                    client.config.instrumentationKeyHash);
-        }
+        AutoCollectServerRequests.addResponseIKeyHeader(client, response);
 
         // store data about the request
         var requestParser = new ServerRequestParser(request);
@@ -123,6 +113,18 @@ class AutoCollectServerRequests {
             request.on("error", (error:any) => {
                 AutoCollectServerRequests.endRequest(client, requestParser, response, null, properties, error);
             });
+        }
+    }
+
+    /**
+     * Add the target ikey hash to the response headers, if not already provided.
+     */
+    private static addResponseIKeyHeader(client:Client, response:http.ServerResponse) {
+        if (client.config && client.config.instrumentationKeyHash &&
+            response.getHeader && response.setHeader &&
+            !response.getHeader(RequestResponseHeaders.targetInstrumentationKeyHeader)) {
+                response.setHeader(RequestResponseHeaders.targetInstrumentationKeyHeader,
+                    client.config.instrumentationKeyHash);
         }
     }
 

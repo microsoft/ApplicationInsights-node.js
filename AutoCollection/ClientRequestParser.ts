@@ -53,18 +53,14 @@ class ClientRequestParser extends RequestParser {
         let dependencyName = this.method.toUpperCase() + " " + url.format(urlObject);
 
         let remoteDependency = new ContractsModule.Contracts.RemoteDependencyData();
+        remoteDependency.dependencyKind = ContractsModule.Contracts.DependencyKind.Http;
 
         if (this.targetIKeyHash) {
-            // Currently the service supports a dependency type name of ApplicationInsights,
-            // but not a dependency kind. So the dependency kind here is still just HTTP.
-            remoteDependency.dependencyKind = ContractsModule.Contracts.DependencyKind.Http;
-            remoteDependency.dependencyTypeName = ContractsModule.Contracts.DependencyKind
-                [ContractsModule.Contracts.DependencyKind.ApplicationInsights];
+            remoteDependency.dependencyTypeName =
+                ContractsModule.Contracts.RemoteDependencyTypes.ApplicationInsights;
             remoteDependency.target = urlObject.hostname + " | " + this.targetIKeyHash;
         } else {
-            remoteDependency.dependencyKind = ContractsModule.Contracts.DependencyKind.Http;
-            remoteDependency.dependencyTypeName =
-                ContractsModule.Contracts.DependencyKind[ContractsModule.Contracts.DependencyKind.Http];
+            remoteDependency.dependencyTypeName = ContractsModule.Contracts.RemoteDependencyTypes.Http;
             remoteDependency.target = urlObject.hostname;
         }
 

@@ -489,8 +489,8 @@ describe("Library/Client", () => {
                 var args = trackStub.args;
                 assert.equal(args[0][0].baseData.target, "bing.com | " +
                     response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader]);
-                assert.equal(args[0][0].baseData.dependencyKind,
-                    ContractsModule.Contracts.DependencyKind.ApplicationInsights);
+                assert.equal(args[0][0].baseData.dependencyTypeName,
+                    ContractsModule.Contracts.RemoteDependencyTypes.ApplicationInsights);
             });
         });
     });

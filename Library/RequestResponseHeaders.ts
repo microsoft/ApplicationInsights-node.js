@@ -10,14 +10,4 @@ export = {
      * calling application when processing incoming responses.
      */
     targetInstrumentationKeyHeader: "x-ms-request-target-ikey",
-
-    /**
-     * Standard parent Id header.
-     */
-    standardParentIdHeader: "x-ms-request-id",
-
-    /**
-     * Standard root id header.
-     */
-    standardRootIdHeader: "x-ms-request-root-id",
 }
