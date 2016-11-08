@@ -120,12 +120,12 @@ describe("EndToEnd", () => {
 
         beforeEach(() => {
             sandbox = sinon.sandbox.create();
-            this.request = sandbox.stub(http, "request", (options: any, callback: any) => {
+            this.request = sandbox.stub(https, "request", (options: any, callback: any) => {
                 var req = new fakeRequest(false);
                 req.on("end", callback);
                 return req;
             });
-	});
+        });
 
         afterEach(() => {
             // Dispose the default app insights client and auto collectors so that they can be reconfigured

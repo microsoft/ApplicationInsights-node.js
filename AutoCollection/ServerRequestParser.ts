@@ -7,6 +7,7 @@ import ContractsModule = require("../Library/Contracts");
 import Client = require("../Library/Client");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
+import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import RequestParser = require("./RequestParser");
 
 /**
@@ -20,6 +21,7 @@ class ServerRequestParser extends RequestParser {
     private connectionRemoteAddress:string;
     private legacySocketRemoteAddress:string;
     private userAgent: string;
+    private sourceIKeyHash: string;
 
     constructor(request:http.ServerRequest) {
         super();
@@ -30,6 +32,8 @@ class ServerRequestParser extends RequestParser {
             this.rawHeaders = request.headers || (<any>request).rawHeaders;
             this.socketRemoteAddress = (<any>request).socket && (<any>request).socket.remoteAddress;
             this.userAgent = request.headers && request.headers["user-agent"];
+            this.sourceIKeyHash =
+                request.headers && request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader];
             if (request.connection) {
                 this.connectionRemoteAddress = request.connection.remoteAddress;
                 this.legacySocketRemoteAddress = request.connection["socket"] && request.connection["socket"].remoteAddress;
@@ -56,6 +60,7 @@ class ServerRequestParser extends RequestParser {
         requestData.name = this.method + " " + url.parse(this.url).pathname;
         requestData.startTime = (new Date(this.startTime)).toISOString();
         requestData.url = this.url;
+        requestData.source = this.sourceIKeyHash;
         requestData.duration = Util.msToTimeSpan(this.duration);
         requestData.responseCode = this.statusCode ? this.statusCode.toString() : null;
         requestData.success = this._isSuccess();

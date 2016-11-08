@@ -275,6 +275,7 @@ declare module Bond {
         url:string;
         properties:any;
         measurements:any;
+        source:string;
 
         constructor();
     }
