@@ -299,6 +299,12 @@ export module Contracts {
         }
     }
 
+    export class RemoteDependencyTypes {
+        public static ApplicationInsights = "Application Insights";
+        public static Http = "Http";
+        public static Sql = "SQL";
+    }
+
     export class RemoteDependencyData extends Contracts.Domain {
         public ver:number;
         public name:string;
@@ -315,6 +321,7 @@ export module Contracts {
         public commandName:string;
         public dependencyTypeName:string;
         public properties:any;
+        public target:string;
 
         constructor() {
             super();
@@ -367,6 +374,7 @@ export module Contracts {
         public url:string;
         public properties:any;
         public measurements:any;
+        public source:string;
 
         constructor() {
             super();

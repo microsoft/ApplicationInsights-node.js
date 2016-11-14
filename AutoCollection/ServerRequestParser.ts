@@ -7,27 +7,24 @@ import ContractsModule = require("../Library/Contracts");
 import Client = require("../Library/Client");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
+import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
+import RequestParser = require("./RequestParser");
 
 /**
  * Helper class to read data from the requst/response objects and convert them into the telemetry contract
  */
-class RequestDataHelper {
+class ServerRequestParser extends RequestParser {
     private static keys = new ContractsModule.Contracts.ContextTagKeys();
 
-    private method:string;
-    private url:string;
-    private startTime:number;
     private rawHeaders:string[];
     private socketRemoteAddress:string;
     private connectionRemoteAddress:string;
     private legacySocketRemoteAddress:string;
     private userAgent: string;
-
-    private duration:number;
-    private statusCode:number;
-    private properties:{[key: string]:string};
+    private sourceIKeyHash: string;
 
     constructor(request:http.ServerRequest) {
+        super();
         if (request) {
             this.method = request.method;
             this.url = this._getAbsoluteUrl(request);
@@ -35,6 +32,8 @@ class RequestDataHelper {
             this.rawHeaders = request.headers || (<any>request).rawHeaders;
             this.socketRemoteAddress = (<any>request).socket && (<any>request).socket.remoteAddress;
             this.userAgent = request.headers && request.headers["user-agent"];
+            this.sourceIKeyHash =
+                request.headers && request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader];
             if (request.connection) {
                 this.connectionRemoteAddress = request.connection.remoteAddress;
                 this.legacySocketRemoteAddress = request.connection["socket"] && request.connection["socket"].remoteAddress;
@@ -42,16 +41,16 @@ class RequestDataHelper {
         }
     }
 
+    public onError(error: Error | string, properties?:{[key: string]: string}, ellapsedMilliseconds?: number) {
+        this._setStatus(undefined, error, properties);
+    }
+
     public onResponse(response:http.ServerResponse, properties?:{[key: string]: string}, ellapsedMilliseconds?: number) {
+        this._setStatus(response.statusCode, undefined, properties);
+
         if (ellapsedMilliseconds) {
             this.duration = ellapsedMilliseconds;
-        } else {
-            var endTime = +new Date();
-            this.duration = endTime - this.startTime;
         }
-        
-        this.statusCode = response.statusCode;
-        this.properties = properties;
     }
 
     public getRequestData():ContractsModule.Contracts.Data<ContractsModule.Contracts.RequestData> {
@@ -61,9 +60,10 @@ class RequestDataHelper {
         requestData.name = this.method + " " + url.parse(this.url).pathname;
         requestData.startTime = (new Date(this.startTime)).toISOString();
         requestData.url = this.url;
+        requestData.source = this.sourceIKeyHash;
         requestData.duration = Util.msToTimeSpan(this.duration);
         requestData.responseCode = this.statusCode ? this.statusCode.toString() : null;
-        requestData.success = this._isSuccess(this.statusCode);
+        requestData.success = this._isSuccess();
         requestData.properties = this.properties;
 
         var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.RequestData>();
@@ -80,37 +80,33 @@ class RequestDataHelper {
             newTags[key] = tags[key];
         }
 
-        newTags[RequestDataHelper.keys.locationIp] = this._getIp();
-        newTags[RequestDataHelper.keys.sessionId] = this._getId("ai_session");
-        newTags[RequestDataHelper.keys.userId] = this._getId("ai_user");
-        newTags[RequestDataHelper.keys.userAgent] = this.userAgent;
-        newTags[RequestDataHelper.keys.operationName] = this.method + " " + url.parse(this.url).pathname;
-        
+        newTags[ServerRequestParser.keys.locationIp] = this._getIp();
+        newTags[ServerRequestParser.keys.sessionId] = this._getId("ai_session");
+        newTags[ServerRequestParser.keys.userId] = this._getId("ai_user");
+        newTags[ServerRequestParser.keys.userAgent] = this.userAgent;
+        newTags[ServerRequestParser.keys.operationName] = this.method + " " + url.parse(this.url).pathname;
+
         return newTags;
     }
 
-    private _isSuccess(statusCode:number) {
-        return statusCode && (statusCode < 400); // todo: this could probably be improved
-    }
-    
     private _getAbsoluteUrl(request:http.ServerRequest):string {
         if (!request.headers) {
             return request.url;
         }
-        
+
         var encrypted = <any>request.connection ? (<any>request.connection).encrypted : null;
         var requestUrl = url.parse(request.url);
 
         var pathName = requestUrl.pathname;
         var search = requestUrl.search;
-        
+
         var absoluteUrl = url.format({
             protocol: encrypted ? "https" : "http",
             host: request.headers.host,
             pathname: pathName,
             search: search
         });
-            
+
         return absoluteUrl;
     }
 
@@ -146,15 +142,15 @@ class RequestDataHelper {
     }
 
     private _getId(name: string) {
-        var cookie = (this.rawHeaders && this.rawHeaders["cookie"] && 
+        var cookie = (this.rawHeaders && this.rawHeaders["cookie"] &&
             typeof this.rawHeaders["cookie"] === 'string' && this.rawHeaders["cookie"]) || "";
-        var value = RequestDataHelper.parseId(Util.getCookie(name, cookie));
+        var value = ServerRequestParser.parseId(Util.getCookie(name, cookie));
         return value;
     }
-  
+
     public static parseId(cookieValue: string): string{
         return cookieValue.substr(0, cookieValue.indexOf('|'));
     }
 }
 
-export = RequestDataHelper;
+export = ServerRequestParser;

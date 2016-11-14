@@ -258,6 +258,7 @@ declare module Bond {
         commandName:string;
         dependencyTypeName:string;
         properties:any;
+        target:string;
 
         constructor();
     }
@@ -274,6 +275,7 @@ declare module Bond {
         url:string;
         properties:any;
         measurements:any;
+        source:string;
 
         constructor();
     }

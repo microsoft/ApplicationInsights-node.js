@@ -9,17 +9,18 @@ import url = require("url");
 import zlib = require("zlib");
 
 import Logging = require("./Logging");
+import AutoCollectClientRequests = require("../AutoCollection/ClientRequests");
 
 class Sender {
     private static TAG = "Sender";
     // the amount of time the SDK will wait between resending cached data, this buffer is to avoid any throtelling from the service side
-    public static WAIT_BETWEEN_RESEND = 60 * 1000; 
+    public static WAIT_BETWEEN_RESEND = 60 * 1000;
     public static TEMPDIR: string = "appInsights-node";
-    
+
     private _getUrl: () => string;
     private _onSuccess: (response: string) => void;
     private _onError: (error: Error) => void;
-    private _enableOfflineMode: boolean; 
+    private _enableOfflineMode: boolean;
     protected _resendInterval: number;
 
     constructor(getUrl: () => string, onSuccess?: (response: string) => void, onError?: (error: Error) => void) {
@@ -29,7 +30,7 @@ class Sender {
         this._enableOfflineMode = false;
         this._resendInterval = Sender.WAIT_BETWEEN_RESEND;
     }
-    
+
     /**
     * Enable or disable offline mode
     */
@@ -59,7 +60,7 @@ class Sender {
             }
         };
         var protocol = parsedUrl.protocol == "https:" ? https : http;
-        
+
         zlib.gzip(payload, (err, buffer) => {
             var dataToSend = buffer;
             if (err) {
@@ -72,6 +73,9 @@ class Sender {
             }
 
             Logging.info(Sender.TAG, options);
+
+            // Ensure this request is not captured by auto-collection.
+            options[AutoCollectClientRequests.disableCollectionRequestOption] = true;
 
             var req = protocol.request(<any> options, (res:http.ClientResponse) => {
                 res.setEncoding("utf-8");
@@ -96,9 +100,9 @@ class Sender {
                         // try to send any cached events if the user is back online
                         if (res.statusCode === 200) {
                             setTimeout(() => this._sendFirstFileOnDisk(), this._resendInterval);
-                        // store to disk in case of burst throttling  
-                        } else if (res.statusCode === 206 ||  
-                                   res.statusCode === 429 || 
+                        // store to disk in case of burst throttling
+                        } else if (res.statusCode === 206 ||
+                                   res.statusCode === 429 ||
                                    res.statusCode === 439) {
                                        this._storeToDisk(payload);
                                    }
@@ -133,7 +137,7 @@ class Sender {
     public saveOnCrash(payload: string) {
         this._storeToDiskSync(payload);
     }
-    
+
     private _confirmDirExists(direcotry: string, callback: (err) => void): void {
         fs.exists(direcotry, (exists) => {
             if (!exists) {
@@ -145,7 +149,7 @@ class Sender {
             }
         });
     }
-    
+
     /**
      * Stores the payload as a json file on disk in the temp direcotry
      */
@@ -153,25 +157,25 @@ class Sender {
 
         //ensure directory is created
         var direcotry = path.join(os.tmpDir(), Sender.TEMPDIR);
-        
+
         this._confirmDirExists(direcotry, (error) => {
             if (error) {
                 this._onErrorHelper(error);
                 return;
             }
-            
+
             //create file - file name for now is the timestamp, a better approach would be a UUID but that
-            //would require an external dependency 
+            //would require an external dependency
             var fileName = new Date().getTime() + ".ai.json";
             var fileFullPath = path.join(direcotry, fileName);
-            
+
             Logging.info(Sender.TAG, "saving data to disk at: " + fileFullPath);
             fs.writeFile(fileFullPath, payload, (error) => this._onErrorHelper(error));
-        }); 
+        });
     }
-    
+
     /**
-     * Stores the payload as a json file on disk using sync file operations 
+     * Stores the payload as a json file on disk using sync file operations
      * this is used when storing data before crashes
      */
     private _storeToDiskSync(payload: any) {
@@ -181,9 +185,9 @@ class Sender {
             if (!fs.existsSync(direcotry)) {
                 fs.mkdirSync(direcotry);
             }
-            
+
             //create file - file name for now is the timestamp, a better approach would be a UUID but that
-            //would require an external dependency 
+            //would require an external dependency
             var fileName = new Date().getTime() + ".ai.json";
             var fileFullPath = path.join(direcotry, fileName);
 
@@ -194,20 +198,20 @@ class Sender {
             this._onErrorHelper(error);
         }
     }
-    
+
     /**
      * Check for temp telemetry files
      * reads the first file if exist, deletes it and tries to send its load
      */
     private _sendFirstFileOnDisk(): void {
         var tempDir = path.join(os.tmpDir(), Sender.TEMPDIR);
-        
+
         fs.exists(tempDir, (exists: boolean)=> {
             if (exists) {
                     fs.readdir(tempDir,(error, files) => {
                     if (!error) {
                         files = files.filter(f => path.basename(f).indexOf(".ai.json") > -1);
-                        if (files.length > 0) {    
+                        if (files.length > 0) {
                             var firstFile = files[0];
                             var filePath = path.join(tempDir, firstFile);
                             fs.readFile(filePath,(error, payload) => {

@@ -3,12 +3,14 @@
 ///<reference path="..\..\Declarations\sinon\sinon.d.ts" />
 
 import assert = require("assert");
+import crypto = require('crypto');
 import sinon = require("sinon");
 import http = require("http");
 import eventEmitter = require('events');
 
 import Client = require("../../Library/Client");
 import ContractsModule = require("../../Library/Contracts");
+import RequestResponseHeaders = require("../../Library/RequestResponseHeaders");
 
 describe("Library/Client", () => {
 
@@ -137,7 +139,7 @@ describe("Library/Client", () => {
             assert.ok(trackStub.calledOnce);
 
             var args = trackStub.args;
-            
+
             assert.equal(args[0][0].baseData.exceptions[0].message, name);
             assert.deepEqual(args[0][0].baseData.properties, properties);
         });
@@ -149,11 +151,11 @@ describe("Library/Client", () => {
             assert.ok(trackStub.calledOnce);
 
             var args = trackStub.args;
-           
+
             assert.equal(args[0][0].baseData.exceptions[0].message, name);
             assert.deepEqual(args[0][0].baseData.properties, properties);
             assert.deepEqual(args[0][0].baseData.measurements, measurements);
-        });                 
+        });
 
         it("should not crash with invalid input", () => {
             invalidInputHelper("trackException");
@@ -191,30 +193,6 @@ describe("Library/Client", () => {
     });
 
     describe("request tracking", () => {
-        var request = {
-            emitError: function (): void {
-                if (this.errorCallback) {
-                    var error = {
-                        "errorProp": "errorVal"
-                    }
-                    this.errorCallback(error);
-                }
-            },
-            on: function (event: string, callback: (error: any) => void): void {
-                if (event === 'error') {
-                    this.errorCallback = callback;
-                }
-            },
-            method: "GET",
-            url: "/search?q=test",
-            connection: {
-                encrypted: false
-            },
-            headers: {
-                host: "bing.com"
-            }
-        };
-
         var response = {
             emitFinish: function (): void {
                 if (this.finishCallback) {
@@ -227,8 +205,52 @@ describe("Library/Client", () => {
                 }
                 return new eventEmitter.EventEmitter();
             },
-            statusCode: 200
-        }
+            statusCode: 200,
+            headers: {},
+            getHeader: function (name: string) { return this.headers[name]; },
+            setHeader: function (name: string, value: string) { this.headers[name] = value; },
+        };
+
+        var request = {
+            emitError: function (): void {
+                if (this.errorCallback) {
+                    var error = {
+                        "errorProp": "errorVal"
+                    }
+                    this.errorCallback(error);
+                }
+            },
+            emitResponse: function (): void {
+                if (this.responseCallback) {
+                    this.responseCallback(response);
+                }
+            },
+            on: function (event: string, callback: (error: any) => void): void {
+                if (event === 'error') {
+                    this.errorCallback = callback;
+                } else if (event === 'response') {
+                    this.responseCallback = callback;
+                }
+            },
+            method: "GET",
+            url: "/search?q=test",
+            connection: {
+                encrypted: false
+            },
+            agent: {
+                protocol: 'http'
+            },
+            headers: {
+                host: "bing.com"
+            },
+            getHeader: function (name: string) { return this.headers[name]; },
+            setHeader: function (name: string, value: string) { this.headers[name] = value; },
+        };
+
+        afterEach(() => {
+            delete request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader];
+            delete response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader];
+        });
 
         function parseDuration(duration: string): number {
             if (!duration) {
@@ -240,7 +262,6 @@ describe("Library/Client", () => {
         }
 
         describe("#trackRequest()", () => {
-
             var clock: SinonFakeTimers;
 
             before(() => {
@@ -306,10 +327,36 @@ describe("Library/Client", () => {
                 assert.ok(trackStub.calledOnce);
                 var args = trackStub.args;
                 assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RequestData");
-                assert.equal(args[0][0].baseData.responseCode, 200);
+                assert.equal(args[0][0].baseData.success, false);
                 assert.equal(args[0][0].baseData.properties['errorProp'], 'errorVal');
                 var duration = parseDuration(args[0][0].baseData.duration);
                 assert.equal(duration, 10);
+            });
+
+            it('should use source and target ikey headers', () => {
+                trackStub.reset();
+                clock.reset();
+
+                // Simulate an incoming request that has a different source ikey hash header.
+                let testIKey = crypto.createHash('sha256').update('Instrumentation-Key-98765-4321A').digest('base64');
+                request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader] = testIKey;
+
+                client.trackRequest(<any>request, <any>response, properties);
+
+                // finish event was not emitted yet
+                assert.ok(trackStub.notCalled);
+
+                // emit finish event
+                clock.tick(10);
+                response.emitFinish();
+                assert.ok(trackStub.calledOnce);
+                var args = trackStub.args;
+                assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RequestData");
+                assert.equal(args[0][0].baseData.source, testIKey);
+
+                // The client's ikey hash should have been added as the response target ikey header.
+                assert.equal(response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader],
+                    client.config.instrumentationKeyHash);
             });
         });
 
@@ -325,12 +372,133 @@ describe("Library/Client", () => {
                 assert.deepEqual(args[0][0].baseData.properties, properties);
             });
         });
+
+        describe("#trackDependencyRequest()", () => {
+            var clock: SinonFakeTimers;
+
+            before(() => {
+                clock = sinon.useFakeTimers();
+            });
+
+            after(() => {
+                clock.restore();
+            });
+
+            it("should not crash with invalid input", () => {
+                invalidInputHelper("trackDependencyRequest");
+            });
+
+            it('should track request with correct data from request options', () => {
+                trackStub.reset();
+                clock.reset();
+                client.trackDependencyRequest({
+                        host: 'bing.com',
+                        path: '/search?q=test'
+                    },
+                    <any>request, properties);
+
+                // response event was not emitted yet
+                assert.ok(trackStub.notCalled);
+
+                // emit response event
+                clock.tick(10);
+                request.emitResponse();
+                assert.ok(trackStub.calledOnce);
+                var args = trackStub.args;
+                assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RemoteDependencyData");
+                assert.equal(args[0][0].baseData.success, true);
+                assert.equal(args[0][0].baseData.value, 10);
+                assert.equal(args[0][0].baseData.name, "GET http://bing.com/search");
+                assert.equal(args[0][0].baseData.commandName, "http://bing.com/search?q=test");
+                assert.equal(args[0][0].baseData.target, "bing.com");
+                assert.equal(args[0][0].baseData.dependencyKind,
+                    ContractsModule.Contracts.DependencyKind.Http);
+                assert.deepEqual(args[0][0].baseData.properties, properties);
+            });
+
+            it('should track request with correct data on response event', () => {
+                trackStub.reset();
+                clock.reset();
+                client.trackDependencyRequest('http://bing.com/search?q=test', <any>request, properties);
+
+                // response event was not emitted yet
+                assert.ok(trackStub.notCalled);
+
+                // emit response event
+                clock.tick(10);
+                request.emitResponse();
+                assert.ok(trackStub.calledOnce);
+                var args = trackStub.args;
+                assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RemoteDependencyData");
+                assert.equal(args[0][0].baseData.success, true);
+                assert.equal(args[0][0].baseData.value, 10);
+                assert.equal(args[0][0].baseData.name, "GET http://bing.com/search");
+                assert.equal(args[0][0].baseData.commandName, "http://bing.com/search?q=test");
+                assert.equal(args[0][0].baseData.target, "bing.com");
+                assert.equal(args[0][0].baseData.dependencyKind,
+                    ContractsModule.Contracts.DependencyKind.Http);
+                assert.deepEqual(args[0][0].baseData.properties, properties);
+            });
+
+            it('should track request with correct data on request error event', () => {
+                trackStub.reset();
+                clock.reset();
+                client.trackDependencyRequest('http://bing.com/search?q=test', <any>request, properties);
+
+                // error event was not emitted yet
+                assert.ok(trackStub.notCalled);
+
+                // emit error event
+                clock.tick(10);
+                request.emitError();
+                assert.ok(trackStub.calledOnce);
+                var args = trackStub.args;
+                assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RemoteDependencyData");
+                assert.equal(args[0][0].baseData.success, false);
+                assert.equal(args[0][0].baseData.value, 10);
+                assert.equal(args[0][0].baseData.name, "GET http://bing.com/search");
+                assert.equal(args[0][0].baseData.commandName, "http://bing.com/search?q=test");
+                assert.equal(args[0][0].baseData.target, "bing.com");
+                assert.deepEqual(args[0][0].baseData.properties, properties);
+            });
+
+            it('should use source and target ikey headers', () => {
+                trackStub.reset();
+                clock.reset();
+                client.trackDependencyRequest({
+                        host: 'bing.com',
+                        path: '/search?q=test'
+                    },
+                    <any>request, properties);
+
+                // The client's ikey hash should have been added as the request source ikey header.
+                assert.equal(request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader],
+                    client.config.instrumentationKeyHash);
+
+                // response event was not emitted yet
+                assert.ok(trackStub.notCalled);
+
+                // Simulate a response from another service that includes a target ikey hash header.
+                response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader] =
+                    crypto.createHash('sha256').update('Instrumentation-Key-98765-4321A').digest('base64');;
+
+                // emit response event
+                clock.tick(10);
+                request.emitResponse();
+                assert.ok(trackStub.calledOnce);
+                var args = trackStub.args;
+                assert.equal(args[0][0].baseData.target, "bing.com | " +
+                    response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader]);
+                assert.equal(args[0][0].baseData.dependencyTypeName,
+                    ContractsModule.Contracts.RemoteDependencyTypes.ApplicationInsights);
+            });
+        });
     });
 
     describe("#trackDependency()", () => {
         it("should track RemoteDependency with correct data", () => {
             trackStub.reset();
-            var commandName = "commandName";
+            var commandName = "http://bing.com/search?q=test";
             var dependencyTypeName = "dependencyTypeName";
             client.trackDependency(name, commandName, value, true, dependencyTypeName, properties);
 
@@ -340,6 +508,7 @@ describe("Library/Client", () => {
             assert.equal(args[0][0].baseType, "RemoteDependencyData");
             assert.equal(args[0][0].baseData.name, name);
             assert.equal(args[0][0].baseData.commandName, commandName);
+            assert.equal(args[0][0].baseData.target, 'bing.com');
             assert.equal(args[0][0].baseData.value, value);
             assert.equal(args[0][0].baseData.success, true);
             assert.equal(args[0][0].baseData.dependencyTypeName, dependencyTypeName);
