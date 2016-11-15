@@ -6,8 +6,9 @@ obj
 *.tgz
 package-version
 
-# Except imported Declarations and browser js SDK
+# Except imported Declarations and Typings
 !/Declarations/**
+!/typings/**
 
 # Ignore Node files
 node_modules/**
