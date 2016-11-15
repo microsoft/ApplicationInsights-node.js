@@ -1,6 +1,6 @@
 ///<reference path="..\..\Declarations\node\node.d.ts" />
-///<reference path="..\..\Declarations\mocha\mocha.d.ts" />
-///<reference path="..\..\Declarations\sinon\sinon.d.ts" />
+///<reference path="..\..\typings\globals\mocha\index.d.ts" />
+///<reference path="..\..\typings\globals\sinon\index.d.ts" />
 
 import assert = require("assert");
 import crypto = require('crypto');
@@ -20,9 +20,9 @@ describe("Library/Client", () => {
     var properties: { [key: string]: string; } = { p1: "p1", p2: "p2", common: "commonArg" };
     var measurements: { [key: string]: number; } = { m1: 1, m2: 2 };
     var client = new Client("Instrumentation-Key-12345-6789A");
-    var trackStub: SinonStub;
-    var triggerStub: SinonStub;
-    var sendStub: SinonStub;
+    var trackStub: Sinon.SinonStub;
+    var triggerStub: Sinon.SinonStub;
+    var sendStub: Sinon.SinonStub;
 
     before(() => {
         trackStub = sinon.stub(client, "track");
@@ -277,7 +277,7 @@ describe("Library/Client", () => {
         }
 
         describe("#trackRequest()", () => {
-            var clock: SinonFakeTimers;
+            var clock: Sinon.SinonFakeTimers;
 
             before(() => {
                 clock = sinon.useFakeTimers();
@@ -397,7 +397,7 @@ describe("Library/Client", () => {
         });
 
         describe("#trackDependencyRequest()", () => {
-            var clock: SinonFakeTimers;
+            var clock: Sinon.SinonFakeTimers;
 
             before(() => {
                 clock = sinon.useFakeTimers();

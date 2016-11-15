@@ -1,0 +1,6 @@
+{
+  "globalDependencies": {
+    "mocha": "registry:dt/mocha#2.2.5+20161028141524",
+    "sinon": "registry:dt/sinon#1.16.0+20160924120326"
+  }
+}
