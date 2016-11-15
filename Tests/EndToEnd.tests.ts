@@ -1,4 +1,4 @@
-///<reference path="..\Declarations\node\node.d.ts" />
+///<reference path="..\typings\globals\node\index.d.ts" />
 ///<reference path="..\typings\globals\mocha\index.d.ts" />
 ///<reference path="..\typings\globals\sinon\index.d.ts" />
 
@@ -171,7 +171,7 @@ describe("EndToEnd", () => {
             });
 
             server.on("listening", () => {
-                http.get("http://localhost:0/test", (response: http.ServerResponse) => {});
+                http.get("http://localhost:0/test", (response: http.ClientResponse) => {});
             });
 	    server.listen(0, "::");
         });
@@ -201,7 +201,7 @@ describe("EndToEnd", () => {
             });
 
             server.on("listening", () => {
-                https.get("https://localhost:0/test", (response: http.ServerResponse) => {});
+                https.get("https://localhost:0/test", (response: http.ClientResponse) => {});
             });
 	    server.listen(0, "::");
         });

@@ -1,4 +1,4 @@
-///<reference path="..\..\Declarations\node\node.d.ts" />
+///<reference path="..\..\typings\globals\node\index.d.ts" />
 ///<reference path="..\..\typings\globals\mocha\index.d.ts" />
 ///<reference path="..\..\typings\globals\sinon\index.d.ts" />
 
