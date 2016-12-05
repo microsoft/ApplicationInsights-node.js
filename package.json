@@ -45,8 +45,6 @@
     "test": "./node_modules/mocha/bin/mocha ./Tests --recursive"
   },
   "devDependencies": {
-    "async": "^0.9.0",
-    "chai": "^2.3.0",
     "mocha": "^3.1.2",
     "node-mocks-http": "^1.2.3",
     "sinon": "^1.17.6",
