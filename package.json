@@ -45,11 +45,10 @@
     "test": "./node_modules/mocha/bin/mocha ./Tests --recursive"
   },
   "devDependencies": {
-    "async": "^0.9.0",
-    "chai": "^2.3.0",
-    "mocha": "^2.2.4",
+    "mocha": "^3.1.2",
     "node-mocks-http": "^1.2.3",
     "sinon": "^1.17.6",
-    "typescript": "^1.8.9"
+    "typescript": "^1.8.9",
+    "typings": "^2.0.0"
   }
 }

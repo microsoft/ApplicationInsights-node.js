@@ -1,4 +1,4 @@
-﻿///<reference path="..\Declarations\node\node.d.ts" />
+﻿///<reference path="..\typings\globals\node\index.d.ts" />
 
 import fs = require("fs");
 import http = require("http");
@@ -59,7 +59,6 @@ class Sender {
                 "Content-Type": "application/x-json-stream"
             }
         };
-        var protocol = parsedUrl.protocol == "https:" ? https : http;
 
         zlib.gzip(payload, (err, buffer) => {
             var dataToSend = buffer;
@@ -77,7 +76,7 @@ class Sender {
             // Ensure this request is not captured by auto-collection.
             options[AutoCollectClientRequests.disableCollectionRequestOption] = true;
 
-            var req = (<any>protocol).request(<any> options, (res:http.ClientResponse): void => {
+            var requestCallback = (res:http.ClientResponse) => {
                 res.setEncoding("utf-8");
 
                 //returns empty if the data is accepted
@@ -108,7 +107,11 @@ class Sender {
                                    }
                     }
                 });
-            });
+            };
+
+            var req = (parsedUrl.protocol == "https:") ? 
+                      https.request(<any> options, requestCallback) : 
+                      http.request(<any> options, requestCallback); 
 
             req.on("error", (error:Error) => {
                 // todo: handle error codes better (group to recoverable/non-recoverable and persist)
@@ -156,7 +159,7 @@ class Sender {
     private _storeToDisk(payload: any) {
 
         //ensure directory is created
-        var direcotry = path.join(os.tmpDir(), Sender.TEMPDIR);
+        var direcotry = path.join(os.tmpdir(), Sender.TEMPDIR);
 
         this._confirmDirExists(direcotry, (error) => {
             if (error) {
@@ -179,7 +182,7 @@ class Sender {
      * this is used when storing data before crashes
      */
     private _storeToDiskSync(payload: any) {
-        var direcotry = path.join(os.tmpDir(), Sender.TEMPDIR);
+        var direcotry = path.join(os.tmpdir(), Sender.TEMPDIR);
 
         try {
             if (!fs.existsSync(direcotry)) {
@@ -204,7 +207,7 @@ class Sender {
      * reads the first file if exist, deletes it and tries to send its load
      */
     private _sendFirstFileOnDisk(): void {
-        var tempDir = path.join(os.tmpDir(), Sender.TEMPDIR);
+        var tempDir = path.join(os.tmpdir(), Sender.TEMPDIR);
 
         fs.exists(tempDir, (exists: boolean)=> {
             if (exists) {
