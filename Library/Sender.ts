@@ -77,7 +77,7 @@ class Sender {
             // Ensure this request is not captured by auto-collection.
             options[AutoCollectClientRequests.disableCollectionRequestOption] = true;
 
-            var req = protocol.request(<any> options, (res:http.ClientResponse) => {
+            var req = (<any>protocol).request(<any> options, (res:http.ClientResponse): void => {
                 res.setEncoding("utf-8");
 
                 //returns empty if the data is accepted
