@@ -6,6 +6,7 @@ obj
 *.suo
 *.sln
 *.njsproj
+.vscode/
 
 # Ignore test files
 Tests

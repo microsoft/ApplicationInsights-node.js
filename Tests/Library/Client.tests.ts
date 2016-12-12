@@ -1,6 +1,6 @@
-///<reference path="..\..\Declarations\node\node.d.ts" />
-///<reference path="..\..\Declarations\mocha\mocha.d.ts" />
-///<reference path="..\..\Declarations\sinon\sinon.d.ts" />
+///<reference path="..\..\typings\globals\node\index.d.ts" />
+///<reference path="..\..\typings\globals\mocha\index.d.ts" />
+///<reference path="..\..\typings\globals\sinon\index.d.ts" />
 
 import assert = require("assert");
 import crypto = require('crypto');
@@ -20,9 +20,9 @@ describe("Library/Client", () => {
     var properties: { [key: string]: string; } = { p1: "p1", p2: "p2", common: "commonArg" };
     var measurements: { [key: string]: number; } = { m1: 1, m2: 2 };
     var client = new Client("Instrumentation-Key-12345-6789A");
-    var trackStub: SinonStub;
-    var triggerStub: SinonStub;
-    var sendStub: SinonStub;
+    var trackStub: Sinon.SinonStub;
+    var triggerStub: Sinon.SinonStub;
+    var sendStub: Sinon.SinonStub;
 
     before(() => {
         trackStub = sinon.stub(client, "track");
@@ -85,12 +85,16 @@ describe("Library/Client", () => {
             assert.ok(trackStub.calledThrice);
 
             var args = trackStub.args;
-            assert.equal(args[0][0].baseData.name, name);
-            assert.equal(args[1][0].baseData.name, name);
-            assert.deepEqual(args[1][0].baseData.properties, properties);
-            assert.equal(args[2][0].baseData.name, name);
-            assert.deepEqual(args[2][0].baseData.properties, properties);
-            assert.equal(args[2][0].baseData.measurements, measurements);
+            var obj0 = args[0][0];
+            var obj1 = args[1][0];
+            var obj2 = args[2][0];
+
+            assert.equal(obj0.baseData.name, name);
+            assert.equal(obj1.baseData.name, name);
+            assert.deepEqual(obj1.baseData.properties, properties);
+            assert.equal(obj2.baseData.name, name);
+            assert.deepEqual(obj2.baseData.properties, properties);
+            assert.equal(obj2.baseData.measurements, measurements);
         });
 
         it("should not crash with invalid input", () => {
@@ -108,12 +112,16 @@ describe("Library/Client", () => {
             assert.ok(trackStub.calledThrice);
 
             var args = trackStub.args;
-            assert.equal(args[0][0].baseData.message, name);
-            assert.equal(args[1][0].baseData.message, name);
-            assert.deepEqual(args[1][0].baseData.severityLevel, 0);
-            assert.equal(args[2][0].baseData.message, name);
-            assert.deepEqual(args[2][0].baseData.severityLevel, 0);
-            assert.equal(args[2][0].baseData.properties, properties);
+            var obj0 = args[0][0];
+            var obj1 = args[1][0];
+            var obj2 = args[2][0];
+
+            assert.equal(obj0.baseData.message, name);
+            assert.equal(obj1.baseData.message, name);
+            assert.deepEqual(obj1.baseData.severityLevel, 0);
+            assert.equal(obj2.baseData.message, name);
+            assert.deepEqual(obj2.baseData.severityLevel, 0);
+            assert.equal(obj2.baseData.properties, properties);
         });
 
         it("should not crash with invalid input", () => {
@@ -129,7 +137,9 @@ describe("Library/Client", () => {
             assert.ok(trackStub.calledOnce);
 
             var args = trackStub.args;
-            assert.equal(args[0][0].baseData.exceptions[0].message, name);
+            var obj0 = args[0][0];
+
+            assert.equal(obj0.baseData.exceptions[0].message, name);
         });
 
         it("should track Exception with correct data - Error and properties", () => {
@@ -139,9 +149,10 @@ describe("Library/Client", () => {
             assert.ok(trackStub.calledOnce);
 
             var args = trackStub.args;
+            var obj0 = args[0][0];
 
-            assert.equal(args[0][0].baseData.exceptions[0].message, name);
-            assert.deepEqual(args[0][0].baseData.properties, properties);
+            assert.equal(obj0.baseData.exceptions[0].message, name);
+            assert.deepEqual(obj0.baseData.properties, properties);
         });
 
         it("should track Exception with correct data - Error, properties and measurements", () => {
@@ -151,10 +162,11 @@ describe("Library/Client", () => {
             assert.ok(trackStub.calledOnce);
 
             var args = trackStub.args;
+            var obj0 = args[0][0];
 
-            assert.equal(args[0][0].baseData.exceptions[0].message, name);
-            assert.deepEqual(args[0][0].baseData.properties, properties);
-            assert.deepEqual(args[0][0].baseData.measurements, measurements);
+            assert.equal(obj0.baseData.exceptions[0].message, name);
+            assert.deepEqual(obj0.baseData.properties, properties);
+            assert.deepEqual(obj0.baseData.measurements, measurements);
         });
 
         it("should not crash with invalid input", () => {
@@ -175,16 +187,19 @@ describe("Library/Client", () => {
             assert.ok(trackStub.calledTwice);
 
             var args = trackStub.args;
-            assert.equal(args[0][0].baseData.metrics[0].name, name);
-            assert.equal(args[0][0].baseData.metrics[0].value, value);
+            var obj0 = args[0][0];
+            var obj1 = args[1][0];
 
-            assert.equal(args[1][0].baseData.metrics[0].name, name);
-            assert.equal(args[1][0].baseData.metrics[0].value, value);
-            assert.equal(args[1][0].baseData.metrics[0].count, count);
-            assert.equal(args[1][0].baseData.metrics[0].min, min);
-            assert.equal(args[1][0].baseData.metrics[0].max, max);
-            assert.equal(args[1][0].baseData.metrics[0].stdDev, stdev);
-            assert.deepEqual(args[1][0].baseData.properties, properties);
+            assert.equal(obj0.baseData.metrics[0].name, name);
+            assert.equal(obj0.baseData.metrics[0].value, value);
+
+            assert.equal(obj1.baseData.metrics[0].name, name);
+            assert.equal(obj1.baseData.metrics[0].value, value);
+            assert.equal(obj1.baseData.metrics[0].count, count);
+            assert.equal(obj1.baseData.metrics[0].min, min);
+            assert.equal(obj1.baseData.metrics[0].max, max);
+            assert.equal(obj1.baseData.metrics[0].stdDev, stdev);
+            assert.deepEqual(obj1.baseData.properties, properties);
         });
 
         it("should not crash with invalid input", () => {
@@ -262,7 +277,7 @@ describe("Library/Client", () => {
         }
 
         describe("#trackRequest()", () => {
-            var clock: SinonFakeTimers;
+            var clock: Sinon.SinonFakeTimers;
 
             before(() => {
                 clock = sinon.useFakeTimers();
@@ -289,10 +304,12 @@ describe("Library/Client", () => {
                 response.emitFinish();
                 assert.ok(trackStub.calledOnce);
                 var args = trackStub.args;
-                assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RequestData");
-                assert.equal(args[0][0].baseData.responseCode, 200);
-                assert.deepEqual(args[0][0].baseData.properties, properties);
-                var duration = parseDuration(args[0][0].baseData.duration);
+                var obj0 = args[0][0];
+
+                assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RequestData");
+                assert.equal(obj0.baseData.responseCode, 200);
+                assert.deepEqual(obj0.baseData.properties, properties);
+                var duration = parseDuration(obj0.baseData.duration);
                 assert.equal(duration, 10);
             });
 
@@ -326,10 +343,12 @@ describe("Library/Client", () => {
                 request.emitError();
                 assert.ok(trackStub.calledOnce);
                 var args = trackStub.args;
-                assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RequestData");
-                assert.equal(args[0][0].baseData.success, false);
-                assert.equal(args[0][0].baseData.properties['errorProp'], 'errorVal');
-                var duration = parseDuration(args[0][0].baseData.duration);
+                var obj0 = args[0][0];
+
+                assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RequestData");
+                assert.equal(obj0.baseData.success, false);
+                assert.equal(obj0.baseData.properties['errorProp'], 'errorVal');
+                var duration = parseDuration(obj0.baseData.duration);
                 assert.equal(duration, 10);
             });
 
@@ -351,8 +370,10 @@ describe("Library/Client", () => {
                 response.emitFinish();
                 assert.ok(trackStub.calledOnce);
                 var args = trackStub.args;
-                assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RequestData");
-                assert.equal(args[0][0].baseData.source, testIKey);
+                var obj0 = args[0][0];
+
+                assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RequestData");
+                assert.equal(obj0.baseData.source, testIKey);
 
                 // The client's ikey hash should have been added as the response target ikey header.
                 assert.equal(response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader],
@@ -366,15 +387,17 @@ describe("Library/Client", () => {
                 client.trackRequestSync(<any>request, <any>response, 100, properties);
                 assert.ok(trackStub.calledOnce);
                 var args = trackStub.args;
-                assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RequestData");
-                assert.equal(args[0][0].baseData.responseCode, 200);
-                assert.equal(args[0][0].baseData.duration, '00:00:00.100');
-                assert.deepEqual(args[0][0].baseData.properties, properties);
+                var obj0 = args[0][0];
+
+                assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RequestData");
+                assert.equal(obj0.baseData.responseCode, 200);
+                assert.equal(obj0.baseData.duration, '00:00:00.100');
+                assert.deepEqual(obj0.baseData.properties, properties);
             });
         });
 
         describe("#trackDependencyRequest()", () => {
-            var clock: SinonFakeTimers;
+            var clock: Sinon.SinonFakeTimers;
 
             before(() => {
                 clock = sinon.useFakeTimers();
@@ -405,15 +428,17 @@ describe("Library/Client", () => {
                 request.emitResponse();
                 assert.ok(trackStub.calledOnce);
                 var args = trackStub.args;
-                assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RemoteDependencyData");
-                assert.equal(args[0][0].baseData.success, true);
-                assert.equal(args[0][0].baseData.value, 10);
-                assert.equal(args[0][0].baseData.name, "GET http://bing.com/search");
-                assert.equal(args[0][0].baseData.commandName, "http://bing.com/search?q=test");
-                assert.equal(args[0][0].baseData.target, "bing.com");
-                assert.equal(args[0][0].baseData.dependencyKind,
+                var obj0 = args[0][0];
+
+                assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RemoteDependencyData");
+                assert.equal(obj0.baseData.success, true);
+                assert.equal(obj0.baseData.value, 10);
+                assert.equal(obj0.baseData.name, "GET http://bing.com/search");
+                assert.equal(obj0.baseData.commandName, "http://bing.com/search?q=test");
+                assert.equal(obj0.baseData.target, "bing.com");
+                assert.equal(obj0.baseData.dependencyKind,
                     ContractsModule.Contracts.DependencyKind.Http);
-                assert.deepEqual(args[0][0].baseData.properties, properties);
+                assert.deepEqual(obj0.baseData.properties, properties);
             });
 
             it('should track request with correct data on response event', () => {
@@ -429,15 +454,17 @@ describe("Library/Client", () => {
                 request.emitResponse();
                 assert.ok(trackStub.calledOnce);
                 var args = trackStub.args;
-                assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RemoteDependencyData");
-                assert.equal(args[0][0].baseData.success, true);
-                assert.equal(args[0][0].baseData.value, 10);
-                assert.equal(args[0][0].baseData.name, "GET http://bing.com/search");
-                assert.equal(args[0][0].baseData.commandName, "http://bing.com/search?q=test");
-                assert.equal(args[0][0].baseData.target, "bing.com");
-                assert.equal(args[0][0].baseData.dependencyKind,
+                var obj0 = args[0][0];
+
+                assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RemoteDependencyData");
+                assert.equal(obj0.baseData.success, true);
+                assert.equal(obj0.baseData.value, 10);
+                assert.equal(obj0.baseData.name, "GET http://bing.com/search");
+                assert.equal(obj0.baseData.commandName, "http://bing.com/search?q=test");
+                assert.equal(obj0.baseData.target, "bing.com");
+                assert.equal(obj0.baseData.dependencyKind,
                     ContractsModule.Contracts.DependencyKind.Http);
-                assert.deepEqual(args[0][0].baseData.properties, properties);
+                assert.deepEqual(obj0.baseData.properties, properties);
             });
 
             it('should track request with correct data on request error event', () => {
@@ -453,13 +480,15 @@ describe("Library/Client", () => {
                 request.emitError();
                 assert.ok(trackStub.calledOnce);
                 var args = trackStub.args;
-                assert.equal(args[0][0].baseType, "Microsoft.ApplicationInsights.RemoteDependencyData");
-                assert.equal(args[0][0].baseData.success, false);
-                assert.equal(args[0][0].baseData.value, 10);
-                assert.equal(args[0][0].baseData.name, "GET http://bing.com/search");
-                assert.equal(args[0][0].baseData.commandName, "http://bing.com/search?q=test");
-                assert.equal(args[0][0].baseData.target, "bing.com");
-                assert.deepEqual(args[0][0].baseData.properties, properties);
+                var obj0 = args[0][0];
+
+                assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RemoteDependencyData");
+                assert.equal(obj0.baseData.success, false);
+                assert.equal(obj0.baseData.value, 10);
+                assert.equal(obj0.baseData.name, "GET http://bing.com/search");
+                assert.equal(obj0.baseData.commandName, "http://bing.com/search?q=test");
+                assert.equal(obj0.baseData.target, "bing.com");
+                assert.deepEqual(obj0.baseData.properties, properties);
             });
 
             it('should use source and target ikey headers', () => {
@@ -487,9 +516,11 @@ describe("Library/Client", () => {
                 request.emitResponse();
                 assert.ok(trackStub.calledOnce);
                 var args = trackStub.args;
-                assert.equal(args[0][0].baseData.target, "bing.com | " +
+                var obj0 = args[0][0];
+
+                assert.equal(obj0.baseData.target, "bing.com | " +
                     response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader]);
-                assert.equal(args[0][0].baseData.dependencyTypeName,
+                assert.equal(obj0.baseData.dependencyTypeName,
                     ContractsModule.Contracts.RemoteDependencyTypes.ApplicationInsights);
             });
         });
@@ -505,19 +536,21 @@ describe("Library/Client", () => {
             assert.ok(trackStub.calledOnce);
 
             var args = trackStub.args;
-            assert.equal(args[0][0].baseType, "RemoteDependencyData");
-            assert.equal(args[0][0].baseData.name, name);
-            assert.equal(args[0][0].baseData.commandName, commandName);
-            assert.equal(args[0][0].baseData.target, 'bing.com');
-            assert.equal(args[0][0].baseData.value, value);
-            assert.equal(args[0][0].baseData.success, true);
-            assert.equal(args[0][0].baseData.dependencyTypeName, dependencyTypeName);
-            assert.deepEqual(args[0][0].baseData.properties, properties);
+            var obj0 = args[0][0];
+
+            assert.equal(obj0.baseType, "RemoteDependencyData");
+            assert.equal(obj0.baseData.name, name);
+            assert.equal(obj0.baseData.commandName, commandName);
+            assert.equal(obj0.baseData.target, 'bing.com');
+            assert.equal(obj0.baseData.value, value);
+            assert.equal(obj0.baseData.success, true);
+            assert.equal(obj0.baseData.dependencyTypeName, dependencyTypeName);
+            assert.deepEqual(obj0.baseData.properties, properties);
 
             // default values
-            assert.deepEqual(args[0][0].baseData.dependencyKind, ContractsModule.Contracts.DependencyKind.Other);
-            assert.equal(args[0][0].baseData.async, false);
-            assert.deepEqual(args[0][0].baseData.dependencySource, ContractsModule.Contracts.DependencySourceType.Undefined);
+            assert.deepEqual(obj0.baseData.dependencyKind, ContractsModule.Contracts.DependencyKind.Other);
+            assert.equal(obj0.baseData.async, false);
+            assert.deepEqual(obj0.baseData.dependencySource, ContractsModule.Contracts.DependencySourceType.Undefined);
         });
     });
 

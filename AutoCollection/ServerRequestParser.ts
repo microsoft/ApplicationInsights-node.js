@@ -1,4 +1,4 @@
-///<reference path="..\Declarations\node\node.d.ts" />
+///<reference path="..\typings\globals\node\index.d.ts" />
 
 import http = require("http");
 import url = require("url");
@@ -80,11 +80,12 @@ class ServerRequestParser extends RequestParser {
             newTags[key] = tags[key];
         }
 
-        newTags[ServerRequestParser.keys.locationIp] = this._getIp();
-        newTags[ServerRequestParser.keys.sessionId] = this._getId("ai_session");
-        newTags[ServerRequestParser.keys.userId] = this._getId("ai_user");
-        newTags[ServerRequestParser.keys.userAgent] = this.userAgent;
-        newTags[ServerRequestParser.keys.operationName] = this.method + " " + url.parse(this.url).pathname;
+        // don't override tags if they are already set
+        newTags[ServerRequestParser.keys.locationIp] = tags[ServerRequestParser.keys.locationIp] || this._getIp();
+        newTags[ServerRequestParser.keys.sessionId] = tags[ServerRequestParser.keys.sessionId] || this._getId("ai_session");
+        newTags[ServerRequestParser.keys.userId] = tags[ServerRequestParser.keys.userId] || this._getId("ai_user");
+        newTags[ServerRequestParser.keys.userAgent] = tags[ServerRequestParser.keys.userAgent] || this.userAgent;
+        newTags[ServerRequestParser.keys.operationName] = tags[ServerRequestParser.keys.operationName] || this.method + " " + url.parse(this.url).pathname;
 
         return newTags;
     }

@@ -1,4 +1,4 @@
-///<reference path="..\Declarations\node\node.d.ts" />
+///<reference path="..\typings\globals\node\index.d.ts" />
 
 import http = require("http");
 import https = require("https");
@@ -122,7 +122,8 @@ class AutoCollectServerRequests {
     private static addResponseIKeyHeader(client:Client, response:http.ServerResponse) {
         if (client.config && client.config.instrumentationKeyHash &&
             response.getHeader && response.setHeader &&
-            !response.getHeader(RequestResponseHeaders.targetInstrumentationKeyHeader)) {
+            !response.getHeader(RequestResponseHeaders.targetInstrumentationKeyHeader) &&
+            !(<any>response).headersSent) {
                 response.setHeader(RequestResponseHeaders.targetInstrumentationKeyHeader,
                     client.config.instrumentationKeyHash);
         }
