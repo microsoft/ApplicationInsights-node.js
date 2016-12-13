@@ -51,5 +51,10 @@ describe("Library/Config", () => {
             assert(typeof config.maxBatchIntervalMs === "number");
             assert(typeof config.disableAppInsights === "boolean");
         });
+
+        it("should add azure blob storage domain to excluded list", () => {
+            var config = new Config("iKey");
+            assert.equal(config.correlationHeaderExcludedDomains[0].toString(), /^[^\.]+\.blob\.core\.windows\.net/g.toString());
+        });
     });
 });

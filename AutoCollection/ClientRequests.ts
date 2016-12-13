@@ -16,11 +16,11 @@ class AutoCollectClientRequests {
 
     public static INSTANCE: AutoCollectClientRequests;
 
-    private _client:Client;
+    private _client: Client;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
 
-    constructor(client:Client) {
+    constructor(client: Client) {
         if (!!AutoCollectClientRequests.INSTANCE) {
             throw new Error("Client request tracking should be configured from the applicationInsights object");
         }
@@ -29,7 +29,7 @@ class AutoCollectClientRequests {
         this._client = client;
     }
 
-    public enable(isEnabled:boolean) {
+    public enable(isEnabled: boolean) {
         this._isEnabled = isEnabled;
         if (this._isEnabled && !this._isInitialized) {
             this._initialize();
@@ -73,8 +73,8 @@ class AutoCollectClientRequests {
      * Tracks an outgoing request. Because it may set headers this method must be called before
      * writing content to or ending the request.
      */
-    public static trackRequest(client: Client, requestOptions: any, request: http.ClientRequest,
-            properties?: { [key: string]: string }) {
+    public static trackRequest(client: Client, requestOptions: http.RequestOptions, request: http.ClientRequest,
+        properties?: { [key: string]: string }) {
         if (!requestOptions || !request || !client) {
             Logging.info("AutoCollectClientRequests.trackRequest was called with invalid parameters: ", !requestOptions, !request, !client);
             return;
@@ -85,10 +85,11 @@ class AutoCollectClientRequests {
         // are not included in the v0.10 type declarations currently used. So check if the
         // methods exist before invoking them.
         if (client.config && client.config.instrumentationKeyHash &&
+            Util.canIncludeCorrelationHeader(client, requestOptions) &&
             request['getHeader'] && request['setHeader'] &&
             !request['getHeader'](RequestResponseHeaders.sourceInstrumentationKeyHeader)) {
-                request['setHeader'](RequestResponseHeaders.sourceInstrumentationKeyHeader,
-                    client.config.instrumentationKeyHash);
+            request['setHeader'](RequestResponseHeaders.sourceInstrumentationKeyHeader,
+                client.config.instrumentationKeyHash);
         }
 
         // Collect dependency telemetry about the request when it finishes.
@@ -106,8 +107,8 @@ class AutoCollectClientRequests {
     }
 
     public dispose() {
-         AutoCollectClientRequests.INSTANCE = null;
-         this._isInitialized = false;
+        AutoCollectClientRequests.INSTANCE = null;
+        this._isInitialized = false;
     }
 }
 

@@ -9,17 +9,19 @@ import http = require("http");
 import eventEmitter = require('events');
 
 import Client = require("../../Library/Client");
+import Config = require("../../Library/Config");
 import ContractsModule = require("../../Library/Contracts");
 import RequestResponseHeaders = require("../../Library/RequestResponseHeaders");
 
 describe("Library/Client", () => {
 
+    var iKey = "Instrumentation-Key-12345-6789A";
     var name = "name";
     var value = 3;
     var mockData = <any>{ baseData: { properties: {} }, baseType: "BaseTestData" };
     var properties: { [key: string]: string; } = { p1: "p1", p2: "p2", common: "commonArg" };
     var measurements: { [key: string]: number; } = { m1: 1, m2: 2 };
-    var client = new Client("Instrumentation-Key-12345-6789A");
+    var client = new Client(iKey);
     var trackStub: Sinon.SinonStub;
     var triggerStub: Sinon.SinonStub;
     var sendStub: Sinon.SinonStub;
@@ -265,6 +267,7 @@ describe("Library/Client", () => {
         afterEach(() => {
             delete request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader];
             delete response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader];
+            client.config = new Config(iKey);
         });
 
         function parseDuration(duration: string): number {
@@ -355,6 +358,36 @@ describe("Library/Client", () => {
             it('should use source and target ikey headers', () => {
                 trackStub.reset();
                 clock.reset();
+
+                // Simulate an incoming request that has a different source ikey hash header.
+                let testIKey = crypto.createHash('sha256').update('Instrumentation-Key-98765-4321A').digest('base64');
+                request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader] = testIKey;
+
+                client.trackRequest(<any>request, <any>response, properties);
+
+                // finish event was not emitted yet
+                assert.ok(trackStub.notCalled);
+
+                // emit finish event
+                clock.tick(10);
+                response.emitFinish();
+                assert.ok(trackStub.calledOnce);
+                var args = trackStub.args;
+                var obj0 = args[0][0];
+
+                assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RequestData");
+                assert.equal(obj0.baseData.source, testIKey);
+
+                // The client's ikey hash should have been added as the response target ikey header.
+                assert.equal(response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader],
+                    client.config.instrumentationKeyHash);
+            });
+
+            it('should NOT use source and target ikey headers when url is on the excluded list', () => {
+                trackStub.reset();
+                clock.reset();
+
+                client.config.correlationHeaderExcludedDomains = [RegExp("bing.com")];
 
                 // Simulate an incoming request that has a different source ikey hash header.
                 let testIKey = crypto.createHash('sha256').update('Instrumentation-Key-98765-4321A').digest('base64');
@@ -522,6 +555,21 @@ describe("Library/Client", () => {
                     response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader]);
                 assert.equal(obj0.baseData.dependencyTypeName,
                     ContractsModule.Contracts.RemoteDependencyTypes.ApplicationInsights);
+            });
+
+            it('should not set source ikey headers when the host is on a excluded domain list', () => {
+                trackStub.reset();
+                clock.reset();
+
+                client.config.correlationHeaderExcludedDomains = [/^[^\.]+\.domain\.com/g]
+                client.trackDependencyRequest({
+                        host: 'excluded.domain.com',
+                        path: '/search?q=test'
+                    },
+                    <any>request, properties);
+
+                // The client's ikey hash should NOT have been added for excluded domains
+                assert.equal(request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader], null);
             });
         });
     });
