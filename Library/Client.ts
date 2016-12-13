@@ -142,7 +142,7 @@ class Client {
         ServerRequestTracking.trackRequest(this, request, response, properties);
     }
 
-    public trackDependencyRequest(requestOptions: any, request: http.ClientRequest, properties?: { [key: string]: string; }) {
+    public trackDependencyRequest(requestOptions: http.RequestOptions, request: http.ClientRequest, properties?: { [key: string]: string; }) {
         ClientRequestTracking.trackRequest(this, requestOptions, request, properties);
     }
 

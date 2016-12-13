@@ -1,4 +1,7 @@
-﻿import Logging = require("./Logging");
+﻿import http = require("http");
+
+import Logging = require("./Logging");
+import Client = require("../Library/Client");
 
 class Util {
     public static MAX_PROPERTY_LENGTH = 1024;
@@ -13,7 +16,7 @@ class Util {
             var cookieName = name + "=";
             var cookies = cookie.split(";");
             for (var i = 0; i < cookies.length; i++) {
-                var cookie = cookies[i];
+                var cookie = <any>cookies[i];
                 cookie = Util.trim(cookie);
                 if (cookie && cookie.indexOf(cookieName) === 0) {
                     value = cookie.substring(cookieName.length, cookies[i].length);
@@ -150,6 +153,30 @@ class Util {
         }
 
         return map;
+    }
+
+    /**
+     * Checks if a request url is not on a excluded domain list 
+     * and if it is safe to add correlation headers (x-ms-request-source-ikey, x-ms-request-target-ikey)
+     */
+    public static canIncludeCorrelationHeader(client: Client, options: http.RequestOptions | http.ServerResponse) {
+        let excludedDomains = client && client.config && client.config.correlationHeaderExcludedDomains;
+        if (!excludedDomains || excludedDomains.length == 0 || !options) {
+            return true;
+        }
+
+        let url = (<http.RequestOptions>options).host ||
+                ((<http.ServerResponse>options).getHeader && (<http.ServerResponse>options).getHeader("host"));
+
+        for (let i = 0; i < excludedDomains.length; i++) {
+            let matches = url ? url.match(excludedDomains[i]) : null;
+
+            if (matches && matches.length > 0) {
+                return false;
+            } 
+        }
+
+        return true;
     }
 }
 export = Util;

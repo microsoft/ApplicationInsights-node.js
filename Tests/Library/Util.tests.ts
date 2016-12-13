@@ -71,29 +71,29 @@ describe("Library/Util", () => {
             assert.ok(Util.isArray([]));
             assert.ok(!Util.isArray("sdf"));
             assert.ok(Util.isArray([0, 1]));
-            assert.ok(!Util.isArray({length: ""}));
-            assert.ok(!Util.isArray({length: 10}));
+            assert.ok(!Util.isArray({ length: "" }));
+            assert.ok(!Util.isArray({ length: 10 }));
         });
     });
-    
+
     describe("#isError(obj)", () => {
-       it("should detect if an object is an instance of Error", () => {
-          class MyError extends Error {
-              constructor() {
-                  super();
-              }
-          }
-          
-          assert.ok(!Util.isError(undefined));
-          assert.ok(!Util.isError(null));
-          assert.ok(!Util.isError(true));
-          assert.ok(!Util.isError(1));
-          assert.ok(!Util.isError(""));
-          assert.ok(!Util.isError([]));
-          assert.ok(!Util.isError({}));
-          assert.ok(Util.isError(new Error()));
-          assert.ok(Util.isError(new MyError())); 
-       });
+        it("should detect if an object is an instance of Error", () => {
+            class MyError extends Error {
+                constructor() {
+                    super();
+                }
+            }
+
+            assert.ok(!Util.isError(undefined));
+            assert.ok(!Util.isError(null));
+            assert.ok(!Util.isError(true));
+            assert.ok(!Util.isError(1));
+            assert.ok(!Util.isError(""));
+            assert.ok(!Util.isError([]));
+            assert.ok(!Util.isError({}));
+            assert.ok(Util.isError(new Error()));
+            assert.ok(Util.isError(new MyError()));
+        });
     });
 
     describe("#random32()", () => {
@@ -158,8 +158,41 @@ describe("Library/Util", () => {
             assert.equal(Util.validateStringMap(true), undefined);
             assert.equal(Util.validateStringMap("test"), undefined);
             assert.equal(Util.validateStringMap(() => null), undefined);
-            assert.deepEqual(Util.validateStringMap({a:{}}), {a: "[object Object]"});
-            assert.deepEqual(Util.validateStringMap({a:3, b: "test"}), {a: "3", b: "test"});
+            assert.deepEqual(Util.validateStringMap({ a: {} }), { a: "[object Object]" });
+            assert.deepEqual(Util.validateStringMap({ a: 3, b: "test" }), { a: "3", b: "test" });
+        });
+    });
+
+    describe("#canIncludeCorrelationHeader", () => {
+        it("should return true if arguments are missing", () => {
+            assert.equal(Util.canIncludeCorrelationHeader(null, null), true);
+            assert.equal(Util.canIncludeCorrelationHeader(<any>{ config: null }, null), true);
+            assert.equal(Util.canIncludeCorrelationHeader(<any>{ config: { correlationHeaderExcludedDomains: [] } }, null), true);
+
+            let client = <any>{ config: { correlationHeaderExcludedDomains: ["example.com"] } };
+            assert.equal(Util.canIncludeCorrelationHeader(client, <any>{ host: null }), true);
+            assert.equal(Util.canIncludeCorrelationHeader(client, <any>{ getHeader: null }), true);
+        });
+
+        it("should return true if domain is not on the excluded list", () => {
+            let client = <any>{ config: { correlationHeaderExcludedDomains: ["example.com", "bing.net", "abc.bing.com"] } };
+            let options = <any>{ host: "bing.com" };
+
+            assert.equal(Util.canIncludeCorrelationHeader(client, options), true);
+        });
+
+        it("should return false if domain is on the excluded list", () => {
+            let client = <any>{ config: { correlationHeaderExcludedDomains: ["bing.com"] } };
+            let options = <any>{ host: "bing.com" };
+
+            assert.equal(Util.canIncludeCorrelationHeader(client, options), false);
+        });
+
+        it("can take RegExps in excluded list", () => {
+            let client = <any>{ config: { correlationHeaderExcludedDomains: [/^[^\.]+\.bing\.com/g] } };
+            let options = <any>{ host: "abc.bing.com" };
+
+            assert.equal(Util.canIncludeCorrelationHeader(client, options), false);
         });
     });
 });
