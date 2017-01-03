@@ -1,3 +1,7 @@
+// this file is manually constructed and many types and fields here are deprecated.
+// Need to switch to use Declarations\Constracts\Generated instead
+// This will be consistent with JavaScript SDK
+
 export module Contracts {
     export enum DataPointType
     {
@@ -5,25 +9,6 @@ export module Contracts {
         Aggregation = 1,
     }
 
-    export enum DependencyKind
-    {
-        SQL = 0,
-        Http = 1,
-        Other = 2,
-    }
-
-    export enum DependencySourceType
-    {
-        Undefined = 0,
-        Aic = 1,
-        Apmc = 2,
-    }
-
-    export enum SessionState
-    {
-        Start = 0,
-        End = 1,
-    }
     export enum SeverityLevel
     {
         Verbose = 0,
@@ -35,75 +20,56 @@ export module Contracts {
 
     export class ContextTagKeys {
         public applicationVersion:string;
-        public applicationBuild:string;
         public deviceId:string;
-        public deviceIp:string;
-        public deviceLanguage:string;
         public deviceLocale:string;
         public deviceModel:string;
-        public deviceNetwork:string;
         public deviceOEMName:string;
-        public deviceOS:string;
         public deviceOSVersion:string;
-        public deviceRoleInstance:string;
-        public deviceRoleName:string;
-        public deviceScreenResolution:string;
         public deviceType:string;
-        public deviceMachineName:string;
         public locationIp:string;
         public operationId:string;
         public operationName:string;
         public operationParentId:string;
-        public operationRootId:string;
         public operationSyntheticSource:string;
-        public operationIsSynthetic:string;
+        public operationCorrelationVector:string;
         public sessionId:string;
         public sessionIsFirst:string;
-        public sessionIsNew:string;
-        public userAccountAcquisitionDate:string;
         public userAccountId:string;
         public userAgent:string;
         public userId:string;
-        public userStoreRegion:string;
-        public sampleRate:string;
+        public userAuthUserId:string;
+        public cloudRole:string;
+        public cloudRoleInstance:string;
         public internalSdkVersion:string;
         public internalAgentVersion:string;
-
-        constructor() {
+        public internalNodeName:string;
+        
+        constructor()
+        {
             this.applicationVersion = "ai.application.ver";
-            this.applicationBuild = "ai.application.build";
             this.deviceId = "ai.device.id";
-            this.deviceIp = "ai.device.ip";
-            this.deviceLanguage = "ai.device.language";
             this.deviceLocale = "ai.device.locale";
             this.deviceModel = "ai.device.model";
-            this.deviceNetwork = "ai.device.network";
             this.deviceOEMName = "ai.device.oemName";
-            this.deviceOS = "ai.device.os";
             this.deviceOSVersion = "ai.device.osVersion";
-            this.deviceRoleInstance = "ai.cloud.roleInstance";
-            this.deviceRoleName = "ai.cloud.role";
-            this.deviceScreenResolution = "ai.device.screenResolution";
             this.deviceType = "ai.device.type";
-            this.deviceMachineName = "ai.device.machineName";
             this.locationIp = "ai.location.ip";
             this.operationId = "ai.operation.id";
             this.operationName = "ai.operation.name";
             this.operationParentId = "ai.operation.parentId";
-            this.operationRootId = "ai.operation.rootId";
             this.operationSyntheticSource = "ai.operation.syntheticSource";
-            this.operationIsSynthetic = "ai.operation.isSynthetic";
+            this.operationCorrelationVector = "ai.operation.correlationVector";
             this.sessionId = "ai.session.id";
             this.sessionIsFirst = "ai.session.isFirst";
-            this.sessionIsNew = "ai.session.isNew";
-            this.userAccountAcquisitionDate = "ai.user.accountAcquisitionDate";
             this.userAccountId = "ai.user.accountId";
             this.userAgent = "ai.user.userAgent";
             this.userId = "ai.user.id";
-            this.userStoreRegion = "ai.user.storeRegion";
-            this.sampleRate = "ai.sample.sampleRate";
+            this.userAuthUserId = "ai.user.authUserId";
+            this.cloudRole = "ai.cloud.role";
+            this.cloudRoleInstance = "ai.cloud.roleInstance";
             this.internalSdkVersion = "ai.internal.sdkVersion";
             this.internalAgentVersion = "ai.internal.agentVersion";
+            this.internalNodeName = "ai.internal.nodeName";
         }
     }
 
@@ -139,13 +105,14 @@ export module Contracts {
         public userId:string;
         public tags:{ [key: string]: string; };
         public data:Data<Domain>;
-
+        
         constructor() {
             this.ver = 1;
             // the 'name' property must be initialized before 'tags' and/or 'data'.
             this.name = "";
             // the 'time' property must be initialized before 'tags' and/or 'data'.
             this.time = "";
+            
             this.sampleRate = 100.0;
             this.tags = {};
         }
@@ -184,22 +151,18 @@ export module Contracts {
 
     export class ExceptionData extends Contracts.Domain {
         public ver:number;
-        public handledAt:string;
         public exceptions:ExceptionDetails[];
         public severityLevel:Contracts.SeverityLevel;
         public problemId:string;
-        public crashThreadId:number;
         public properties:any;
         public measurements:any;
-
+        
         constructor() {
             super();
             this.ver = 2;
             this.exceptions = [];
             this.properties = {};
             this.measurements = {};
-
-            super();
         }
     }
 
@@ -237,7 +200,7 @@ export module Contracts {
         public min:number;
         public max:number;
         public stdDev:number;
-
+        
         constructor() {
             this.kind = Contracts.DataPointType.Measurement;
         }
@@ -294,45 +257,28 @@ export module Contracts {
             this.ver = 2;
             this.properties = {};
             this.measurements = {};
-
-            super();
         }
-    }
-
-    export class RemoteDependencyTypes {
-        public static ApplicationInsights = "Application Insights";
-        public static Http = "Http";
-        public static Sql = "SQL";
     }
 
     export class RemoteDependencyData extends Contracts.Domain {
         public ver:number;
         public name:string;
-        public kind:Contracts.DataPointType;
-        public value:number;
-        public count:number;
-        public min:number;
-        public max:number;
-        public stdDev:number;
-        public dependencyKind:Contracts.DependencyKind;
+        public id:string;
+        public resultCode:string;
+        public duration:string;
         public success:boolean;
-        public async:boolean;
-        public dependencySource:Contracts.DependencySourceType;
-        public commandName:string;
-        public dependencyTypeName:string;
-        public properties:any;
+        public data:string;
         public target:string;
-
+        public type:string;
+        public properties:any;
+        public measurements:any;
+        
         constructor() {
             super();
             this.ver = 2;
-            this.kind = Contracts.DataPointType.Measurement;
-            this.dependencyKind = Contracts.DependencyKind.Other;
             this.success = true;
-            this.dependencySource = Contracts.DependencySourceType.Undefined;
             this.properties = {};
-
-            super();
+            this.measurements = {};
         }
     }
 
@@ -365,38 +311,20 @@ export module Contracts {
     export class RequestData extends Contracts.Domain {
         public ver:number;
         public id:string;
+        public source:string;
         public name:string;
-        public startTime:string;
         public duration:string;
         public responseCode:string;
         public success:boolean;
-        public httpMethod:string;
         public url:string;
         public properties:any;
         public measurements:any;
-        public source:string;
-
+        
         constructor() {
             super();
             this.ver = 2;
             this.properties = {};
             this.measurements = {};
-
-            super();
-        }
-    }
-
-
-    export class SessionStateData extends Contracts.Domain {
-        public ver:number;
-        public state:Contracts.SessionState;
-
-        constructor() {
-            super();
-            this.ver = 2;
-            this.state = Contracts.SessionState.Start;
-
-            super();
         }
     }
 

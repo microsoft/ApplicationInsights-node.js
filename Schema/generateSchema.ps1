@@ -43,18 +43,18 @@ $argumentList = ""
     & Invoke-WebRequest -o "$currentDir\PublicSchema\$fileName" "$publicSchemaLocation/$fileName"
 }
 
-$argumentList = "-v $argumentList -o $currentDir\PublicSchema\ -e TypeScriptDeclarationLanguage -t TypeScriptDeclarationLayout -n AI --flatten true"
+$argumentList = "-v $argumentList -o $currentDir\PublicSchema\ -e TypeScriptLanguage -t TypeScriptLayout -n AI --flatten true"
 
 # Generate public schema using bond generator
 $p1 = Start-Process "$generatorPath\BondSchemaGenerator.exe"  -ArgumentList $argumentList -wait -NoNewWindow -PassThru 
 $p1.HasExited
 $p1.ExitCode
 
-del "$currentDir\..\Declarations\applicationInsights\*.ts"
+del "$currentDir\..\Declarations\Contracts\Generated\*.ts"
 
 dir "$currentDir\PublicSchema\Contracts\Generated\*.ts" | ForEach-Object { 
     $fileName = $_
-    copy $fileName "$currentDir\..\Declarations\applicationInsights\"
+    copy $fileName "$currentDir\..\Declarations\Contracts\Generated\"
 }
 
 del "$currentDir\PublicSchema\Contracts\Generated\*.ts"

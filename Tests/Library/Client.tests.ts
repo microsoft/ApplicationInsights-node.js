@@ -11,6 +11,7 @@ import eventEmitter = require('events');
 import Client = require("../../Library/Client");
 import ContractsModule = require("../../Library/Contracts");
 import RequestResponseHeaders = require("../../Library/RequestResponseHeaders");
+import Util = require("../../Library/Util")
 
 describe("Library/Client", () => {
 
@@ -432,12 +433,11 @@ describe("Library/Client", () => {
 
                 assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RemoteDependencyData");
                 assert.equal(obj0.baseData.success, true);
-                assert.equal(obj0.baseData.value, 10);
-                assert.equal(obj0.baseData.name, "GET http://bing.com/search");
-                assert.equal(obj0.baseData.commandName, "http://bing.com/search?q=test");
+                assert.equal(obj0.baseData.duration, "00:00:00.010");
+                assert.equal(obj0.baseData.name, "GET /search");
+                assert.equal(obj0.baseData.data, "http://bing.com/search?q=test");
                 assert.equal(obj0.baseData.target, "bing.com");
-                assert.equal(obj0.baseData.dependencyKind,
-                    ContractsModule.Contracts.DependencyKind.Http);
+                assert.equal(obj0.baseData.type, "Http");
                 assert.deepEqual(obj0.baseData.properties, properties);
             });
 
@@ -458,12 +458,11 @@ describe("Library/Client", () => {
 
                 assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RemoteDependencyData");
                 assert.equal(obj0.baseData.success, true);
-                assert.equal(obj0.baseData.value, 10);
-                assert.equal(obj0.baseData.name, "GET http://bing.com/search");
-                assert.equal(obj0.baseData.commandName, "http://bing.com/search?q=test");
+                assert.equal(obj0.baseData.duration, "00:00:00.010");
+                assert.equal(obj0.baseData.name, "GET /search");
+                assert.equal(obj0.baseData.data, "http://bing.com/search?q=test");
                 assert.equal(obj0.baseData.target, "bing.com");
-                assert.equal(obj0.baseData.dependencyKind,
-                    ContractsModule.Contracts.DependencyKind.Http);
+                assert.equal(obj0.baseData.type, "Http");
                 assert.deepEqual(obj0.baseData.properties, properties);
             });
 
@@ -484,9 +483,9 @@ describe("Library/Client", () => {
 
                 assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RemoteDependencyData");
                 assert.equal(obj0.baseData.success, false);
-                assert.equal(obj0.baseData.value, 10);
-                assert.equal(obj0.baseData.name, "GET http://bing.com/search");
-                assert.equal(obj0.baseData.commandName, "http://bing.com/search?q=test");
+                assert.equal(obj0.baseData.duration, "00:00:00.010");
+                assert.equal(obj0.baseData.name, "GET /search");
+                assert.equal(obj0.baseData.data, "http://bing.com/search?q=test");
                 assert.equal(obj0.baseData.target, "bing.com");
                 assert.deepEqual(obj0.baseData.properties, properties);
             });
@@ -520,8 +519,7 @@ describe("Library/Client", () => {
 
                 assert.equal(obj0.baseData.target, "bing.com | " +
                     response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader]);
-                assert.equal(obj0.baseData.dependencyTypeName,
-                    ContractsModule.Contracts.RemoteDependencyTypes.ApplicationInsights);
+                assert.equal(obj0.baseData.type, "ApplicationInsights");
             });
         });
     });
@@ -540,17 +538,12 @@ describe("Library/Client", () => {
 
             assert.equal(obj0.baseType, "RemoteDependencyData");
             assert.equal(obj0.baseData.name, name);
-            assert.equal(obj0.baseData.commandName, commandName);
+            assert.equal(obj0.baseData.data, commandName);
             assert.equal(obj0.baseData.target, 'bing.com');
-            assert.equal(obj0.baseData.value, value);
+            assert.equal(obj0.baseData.duration, Util.msToTimeSpan(value);
             assert.equal(obj0.baseData.success, true);
-            assert.equal(obj0.baseData.dependencyTypeName, dependencyTypeName);
+            assert.equal(obj0.baseData.type, dependencyTypeName);
             assert.deepEqual(obj0.baseData.properties, properties);
-
-            // default values
-            assert.deepEqual(obj0.baseData.dependencyKind, ContractsModule.Contracts.DependencyKind.Other);
-            assert.equal(obj0.baseData.async, false);
-            assert.deepEqual(obj0.baseData.dependencySource, ContractsModule.Contracts.DependencySourceType.Undefined);
         });
     });
 
@@ -621,7 +614,7 @@ describe("Library/Client", () => {
             }
             assert.ok(
                 Math.max(indices["name"], indices["time"]) <
-                Math.min(indices["data"], indices["tags"]));
+                Math.min(indices["data"], indices["tags"]), JSON.stringify(env));
         });
 
         it("should have valid name", function () {

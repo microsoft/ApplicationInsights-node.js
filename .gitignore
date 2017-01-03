@@ -1,8 +1,6 @@
 # Ignore build files
 obj
-*.js
 *.d.ts
-*.js.map
 *.tgz
 package-version
 
@@ -29,3 +27,6 @@ node_modules/**
 # Ignore log files
 npm-debug.log
 
+
+*.js.map
+*.js
