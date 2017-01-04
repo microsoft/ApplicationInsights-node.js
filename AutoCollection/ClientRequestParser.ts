@@ -50,26 +50,24 @@ class ClientRequestParser extends RequestParser {
         let urlObject = url.parse(this.url);
         urlObject.search = undefined;
         urlObject.hash = undefined;
-        let dependencyName = this.method.toUpperCase() + " " + url.format(urlObject);
+        let dependencyName = this.method.toUpperCase() + " " + urlObject.pathname;
 
         let remoteDependency = new ContractsModule.Contracts.RemoteDependencyData();
-        remoteDependency.dependencyKind = ContractsModule.Contracts.DependencyKind.Http;
+        remoteDependency.type = ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
 
         if (this.targetIKeyHash) {
-            remoteDependency.dependencyTypeName =
-                ContractsModule.Contracts.RemoteDependencyTypes.ApplicationInsights;
+            remoteDependency.type = "ApplicationInsights";
             remoteDependency.target = urlObject.hostname + " | " + this.targetIKeyHash;
         } else {
-            remoteDependency.dependencyTypeName = ContractsModule.Contracts.RemoteDependencyTypes.Http;
+            remoteDependency.type = ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
             remoteDependency.target = urlObject.hostname;
         }
 
         remoteDependency.name = dependencyName;
-        remoteDependency.commandName = this.url;
-        remoteDependency.value = this.duration;
+        remoteDependency.data = this.url;
+        remoteDependency.duration = Util.msToTimeSpan(this.duration);
         remoteDependency.success = this._isSuccess();
-        remoteDependency.async = true;
-        remoteDependency.dependencySource = ContractsModule.Contracts.DependencySourceType.Undefined;
+        remoteDependency.resultCode = this.statusCode ? this.statusCode.toString() : null;
         remoteDependency.properties = this.properties || {};
 
         let data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.RemoteDependencyData>();
