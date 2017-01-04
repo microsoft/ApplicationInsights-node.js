@@ -96,10 +96,12 @@ class AutoCollectServerRequests {
             return;
         }
 
-        AutoCollectServerRequests.addResponseIKeyHeader(client, response);
-
         // store data about the request
         var requestParser = new ServerRequestParser(request);
+
+        if (Util.canIncludeCorrelationHeader(client, requestParser.getUrl())) {
+            AutoCollectServerRequests.addResponseIKeyHeader(client, response);
+        }
 
         // response listeners
         if (response.once) {
@@ -122,7 +124,6 @@ class AutoCollectServerRequests {
     private static addResponseIKeyHeader(client:Client, response:http.ServerResponse) {
         if (client.config && client.config.instrumentationKeyHash &&
             response.getHeader && response.setHeader &&
-            Util.canIncludeCorrelationHeader(client, response) &&
             !response.getHeader(RequestResponseHeaders.targetInstrumentationKeyHeader) &&
             !(<any>response).headersSent) {
                 response.setHeader(RequestResponseHeaders.targetInstrumentationKeyHeader,

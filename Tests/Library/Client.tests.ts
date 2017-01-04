@@ -387,7 +387,7 @@ describe("Library/Client", () => {
                 trackStub.reset();
                 clock.reset();
 
-                client.config.correlationHeaderExcludedDomains = [RegExp("bing.com")];
+                client.config.correlationHeaderExcludedDomains = ["bing.com"];
 
                 // Simulate an incoming request that has a different source ikey hash header.
                 let testIKey = crypto.createHash('sha256').update('Instrumentation-Key-98765-4321A').digest('base64');
@@ -406,11 +406,7 @@ describe("Library/Client", () => {
                 var obj0 = args[0][0];
 
                 assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RequestData");
-                assert.equal(obj0.baseData.source, testIKey);
-
-                // The client's ikey hash should have been added as the response target ikey header.
-                assert.equal(response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader],
-                    client.config.instrumentationKeyHash);
+                assert.equal(response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader], undefined);
             });
         });
 
@@ -561,7 +557,7 @@ describe("Library/Client", () => {
                 trackStub.reset();
                 clock.reset();
 
-                client.config.correlationHeaderExcludedDomains = [/^[^\.]+\.domain\.com/g]
+                client.config.correlationHeaderExcludedDomains = ["*.domain.com"]
                 client.trackDependencyRequest({
                         host: 'excluded.domain.com',
                         path: '/search?q=test'

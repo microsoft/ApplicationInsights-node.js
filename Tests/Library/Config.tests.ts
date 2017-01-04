@@ -54,7 +54,7 @@ describe("Library/Config", () => {
 
         it("should add azure blob storage domain to excluded list", () => {
             var config = new Config("iKey");
-            assert.equal(config.correlationHeaderExcludedDomains[0].toString(), /^[^\.]+\.blob\.core\.windows\.net/g.toString());
+            assert.equal(config.correlationHeaderExcludedDomains[0].toString(), "*.blob.core.windows.net");
         });
     });
 });

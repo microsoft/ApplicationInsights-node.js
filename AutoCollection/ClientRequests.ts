@@ -73,19 +73,21 @@ class AutoCollectClientRequests {
      * Tracks an outgoing request. Because it may set headers this method must be called before
      * writing content to or ending the request.
      */
-    public static trackRequest(client: Client, requestOptions: http.RequestOptions, request: http.ClientRequest,
+    public static trackRequest(client: Client, requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest,
         properties?: { [key: string]: string }) {
         if (!requestOptions || !request || !client) {
             Logging.info("AutoCollectClientRequests.trackRequest was called with invalid parameters: ", !requestOptions, !request, !client);
             return;
         }
 
+        let requestParser = new ClientRequestParser(requestOptions, request);
+
         // Add the source ikey hash to the request headers, if a value was not already provided.
         // The getHeader/setHeader methods aren't available on very old Node versions, and
         // are not included in the v0.10 type declarations currently used. So check if the
         // methods exist before invoking them.
         if (client.config && client.config.instrumentationKeyHash &&
-            Util.canIncludeCorrelationHeader(client, requestOptions) &&
+            Util.canIncludeCorrelationHeader(client, requestParser.getUrl()) &&
             request['getHeader'] && request['setHeader'] &&
             !request['getHeader'](RequestResponseHeaders.sourceInstrumentationKeyHeader)) {
             request['setHeader'](RequestResponseHeaders.sourceInstrumentationKeyHeader,
@@ -94,7 +96,6 @@ class AutoCollectClientRequests {
 
         // Collect dependency telemetry about the request when it finishes.
         if (request.on) {
-            let requestParser = new ClientRequestParser(requestOptions, request);
             request.on('response', (response: http.ClientResponse) => {
                 requestParser.onResponse(response, properties);
                 client.track(requestParser.getDependencyData());

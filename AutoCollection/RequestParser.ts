@@ -11,6 +11,13 @@ abstract class RequestParser {
     protected statusCode: number;
     protected properties: { [key: string]: string };
 
+    /**
+     * Gets a url parsed out from request options
+     */
+    public getUrl(): string {
+        return this.url;
+    }
+
     protected RequestParser() {
         this.startTime = +new Date();
     }

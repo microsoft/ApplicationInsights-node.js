@@ -20,8 +20,8 @@ class Config {
     public maxBatchIntervalMs: number;
     public disableAppInsights: boolean;
 
-    // A list of domains (string | RegExp) for which correlation headers will not be added.
-    public correlationHeaderExcludedDomains: RegExp[];
+    // A list of domains for which correlation headers will not be added.
+    public correlationHeaderExcludedDomains: string[];
 
     constructor(instrumentationKey?: string) {
         this.instrumentationKey = instrumentationKey || Config._getInstrumentationKey();
@@ -32,7 +32,7 @@ class Config {
         this.maxBatchSize = 250;
         this.maxBatchIntervalMs = 15000;
         this.disableAppInsights = false;
-        this.correlationHeaderExcludedDomains = [/^[^\.]+\.blob\.core\.windows\.net/g];
+        this.correlationHeaderExcludedDomains = ["*.blob.core.windows.net"];
     }
 
     private static _getInstrumentationKey(): string {
