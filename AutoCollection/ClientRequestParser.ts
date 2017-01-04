@@ -53,13 +53,13 @@ class ClientRequestParser extends RequestParser {
         let dependencyName = this.method.toUpperCase() + " " + urlObject.pathname;
 
         let remoteDependency = new ContractsModule.Contracts.RemoteDependencyData();
-        remoteDependency.type = "Http";
+        remoteDependency.type = ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
 
         if (this.targetIKeyHash) {
             remoteDependency.type = "ApplicationInsights";
             remoteDependency.target = urlObject.hostname + " | " + this.targetIKeyHash;
         } else {
-            remoteDependency.type = "Http";
+            remoteDependency.type = ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
             remoteDependency.target = urlObject.hostname;
         }
 

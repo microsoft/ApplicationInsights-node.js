@@ -437,7 +437,7 @@ describe("Library/Client", () => {
                 assert.equal(obj0.baseData.name, "GET /search");
                 assert.equal(obj0.baseData.data, "http://bing.com/search?q=test");
                 assert.equal(obj0.baseData.target, "bing.com");
-                assert.equal(obj0.baseData.type, "Http");
+                assert.equal(obj0.baseData.type, ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
                 assert.deepEqual(obj0.baseData.properties, properties);
             });
 
@@ -462,7 +462,7 @@ describe("Library/Client", () => {
                 assert.equal(obj0.baseData.name, "GET /search");
                 assert.equal(obj0.baseData.data, "http://bing.com/search?q=test");
                 assert.equal(obj0.baseData.target, "bing.com");
-                assert.equal(obj0.baseData.type, "Http");
+                assert.equal(obj0.baseData.type, ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
                 assert.deepEqual(obj0.baseData.properties, properties);
             });
 
