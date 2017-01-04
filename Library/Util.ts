@@ -159,17 +159,15 @@ class Util {
      * Checks if a request url is not on a excluded domain list 
      * and if it is safe to add correlation headers (x-ms-request-source-ikey, x-ms-request-target-ikey)
      */
-    public static canIncludeCorrelationHeader(client: Client, options: http.RequestOptions | http.ServerResponse) {
+    public static canIncludeCorrelationHeader(client: Client, url: string) {
         let excludedDomains = client && client.config && client.config.correlationHeaderExcludedDomains;
-        if (!excludedDomains || excludedDomains.length == 0 || !options) {
+        if (!excludedDomains || excludedDomains.length == 0 || !url) {
             return true;
         }
 
-        let url = (<http.RequestOptions>options).host ||
-                ((<http.ServerResponse>options).getHeader && (<http.ServerResponse>options).getHeader("host"));
-
         for (let i = 0; i < excludedDomains.length; i++) {
-            let matches = url ? url.match(excludedDomains[i]) : null;
+            let regex = new RegExp(excludedDomains[i].replace(/\./g,"\.").replace(/\*/g,".*"));
+            let matches = url.match(regex);
 
             if (matches && matches.length > 0) {
                 return false;

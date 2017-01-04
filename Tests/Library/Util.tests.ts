@@ -168,31 +168,31 @@ describe("Library/Util", () => {
             assert.equal(Util.canIncludeCorrelationHeader(null, null), true);
             assert.equal(Util.canIncludeCorrelationHeader(<any>{ config: null }, null), true);
             assert.equal(Util.canIncludeCorrelationHeader(<any>{ config: { correlationHeaderExcludedDomains: [] } }, null), true);
-
-            let client = <any>{ config: { correlationHeaderExcludedDomains: ["example.com"] } };
-            assert.equal(Util.canIncludeCorrelationHeader(client, <any>{ host: null }), true);
-            assert.equal(Util.canIncludeCorrelationHeader(client, <any>{ getHeader: null }), true);
         });
 
         it("should return true if domain is not on the excluded list", () => {
             let client = <any>{ config: { correlationHeaderExcludedDomains: ["example.com", "bing.net", "abc.bing.com"] } };
-            let options = <any>{ host: "bing.com" };
+            let url = "http://bing.com/search?q=node";
 
-            assert.equal(Util.canIncludeCorrelationHeader(client, options), true);
+            assert.equal(Util.canIncludeCorrelationHeader(client, url), true);
         });
 
         it("should return false if domain is on the excluded list", () => {
             let client = <any>{ config: { correlationHeaderExcludedDomains: ["bing.com"] } };
-            let options = <any>{ host: "bing.com" };
+            let url = "http://bing.com/search?q=node";
 
-            assert.equal(Util.canIncludeCorrelationHeader(client, options), false);
+            assert.equal(Util.canIncludeCorrelationHeader(client, url), false);
+
+            let urlSecure = "https://bing.com/search?q=node";
+
+            assert.equal(Util.canIncludeCorrelationHeader(client, urlSecure), false);
         });
 
-        it("can take RegExps in excluded list", () => {
-            let client = <any>{ config: { correlationHeaderExcludedDomains: [/^[^\.]+\.bing\.com/g] } };
-            let options = <any>{ host: "abc.bing.com" };
+        it("can take wildcards in the excluded domain list", () => {
+            let client = <any>{ config: { correlationHeaderExcludedDomains: ["*.bing.com"] } };
+            let url = "abc.bing.com";
 
-            assert.equal(Util.canIncludeCorrelationHeader(client, options), false);
+            assert.equal(Util.canIncludeCorrelationHeader(client, url), false);
         });
     });
 });
