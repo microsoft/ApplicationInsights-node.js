@@ -540,7 +540,7 @@ describe("Library/Client", () => {
             assert.equal(obj0.baseData.name, name);
             assert.equal(obj0.baseData.data, commandName);
             assert.equal(obj0.baseData.target, 'bing.com');
-            assert.equal(obj0.baseData.duration, Util.msToTimeSpan(value);
+            assert.equal(obj0.baseData.duration, Util.msToTimeSpan(value));
             assert.equal(obj0.baseData.success, true);
             assert.equal(obj0.baseData.type, dependencyTypeName);
             assert.deepEqual(obj0.baseData.properties, properties);
