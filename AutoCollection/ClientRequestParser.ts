@@ -1,6 +1,7 @@
 ///<reference path="..\typings\globals\node\index.d.ts" />
 
 import http = require("http");
+import https = require("https");
 import url = require("url");
 
 import ContractsModule = require("../Library/Contracts");
@@ -16,9 +17,9 @@ import RequestParser = require("./RequestParser");
 class ClientRequestParser extends RequestParser {
     private targetIKeyHash: string;
 
-    constructor(requestOptions: string | Object, request: http.ClientRequest) {
+    constructor(requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest) {
         super();
-        if (request && requestOptions) {
+        if (request && (<any>request).method && requestOptions) {
             // The ClientRequest.method property isn't documented, but is always there.
             this.method = (<any>request).method;
 

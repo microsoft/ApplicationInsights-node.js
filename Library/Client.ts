@@ -1,6 +1,7 @@
 ///<reference path="..\typings\globals\node\index.d.ts" />
 
 import http = require("http");
+import https = require("https");
 import url = require("url");
 import os = require("os");
 
@@ -143,7 +144,7 @@ class Client {
         ServerRequestTracking.trackRequest(this, request, response, properties);
     }
 
-    public trackDependencyRequest(requestOptions: any, request: http.ClientRequest, properties?: { [key: string]: string; }) {
+    public trackDependencyRequest(requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest, properties?: { [key: string]: string; }) {
         ClientRequestTracking.trackRequest(this, requestOptions, request, properties);
     }
 

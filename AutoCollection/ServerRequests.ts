@@ -96,10 +96,12 @@ class AutoCollectServerRequests {
             return;
         }
 
-        AutoCollectServerRequests.addResponseIKeyHeader(client, response);
-
         // store data about the request
         var requestParser = new ServerRequestParser(request);
+
+        if (Util.canIncludeCorrelationHeader(client, requestParser.getUrl())) {
+            AutoCollectServerRequests.addResponseIKeyHeader(client, response);
+        }
 
         // response listeners
         if (response.once) {
