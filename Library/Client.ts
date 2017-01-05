@@ -235,10 +235,11 @@ class Client {
      */
     public track(
         data: ContractsModule.Contracts.Data<ContractsModule.Contracts.Domain>,
-        tagOverrides?: { [key: string]: string; }) {
+        tagOverrides?: { [key: string]: string; },
+        contextObject?: any) {
 
         var envelope = this.getEnvelope(data, tagOverrides);
-        var accepted = this.runTelemetryProcessors(envelope);
+        var accepted = this.runTelemetryProcessors(envelope, contextObject);
 
         if (accepted) {
             this.channel.send(envelope);
@@ -249,9 +250,9 @@ class Client {
      * Adds telemetry processor to the collection. Telemetry processors will be called one by one
      * before telemetry item is pushed for sending and in the order they were added.
      *
-     * @param telemetryProcessor function, takes Envelope, returns boolean
+     * @param telemetryProcessor function, takes Envelope, and optional context object and returns boolean
      */
-    public addTelemetryProcessor(telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope) => boolean) {
+    public addTelemetryProcessor(telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope, contextObject?: any) => boolean) {
         this._telemetryProcessors.push(telemetryProcessor);
     }
 
@@ -270,7 +271,7 @@ class Client {
         return [array[0], parseInt(array[1])];
     }
 
-    private runTelemetryProcessors(envelope: ContractsModule.Contracts.Envelope): boolean {
+    private runTelemetryProcessors(envelope: ContractsModule.Contracts.Envelope, contextObject: any): boolean {
         var accepted = true;
         var telemetryProcessorsCount = this._telemetryProcessors.length;
 
@@ -283,7 +284,7 @@ class Client {
             try {
                 var processor = this._telemetryProcessors[i];
                 if (processor) {
-                    if (processor.apply(null, [envelope]) === false) {
+                    if (processor.apply(null, [envelope, contextObject]) === false) {
                         accepted = false;
                         break;
                     }
