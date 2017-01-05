@@ -168,6 +168,9 @@ server.on("listening", () => {
 - [master](https://github.com/Microsoft/ApplicationInsights-node.js/tree/master) contains the *latest* published release located on [NPM](https://www.npmjs.com/package/applicationinsights).
 - [develop](https://github.com/Microsoft/ApplicationInsights-node.js/tree/develop) contains the code for the *next* release. Please send all pull requests to this branch.  
 
+## Links
+
+* Follow latest Application Insights changes and announcements on [ApplicationInsights Announcements](https://github.com/Microsoft/ApplicationInsights-Announcements)
 
 ## Contributing
 
