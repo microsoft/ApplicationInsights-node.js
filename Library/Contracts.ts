@@ -261,7 +261,7 @@ export module Contracts {
     }
 
     export class RemoteDependencyDataConstants {
-        public static get TYPE_HTTP():string { return "Http"; }
+        public static TYPE_HTTP:string = "Http";
     }
 
     export class RemoteDependencyData extends Contracts.Domain {
