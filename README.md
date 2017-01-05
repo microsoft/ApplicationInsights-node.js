@@ -170,7 +170,7 @@ server.on("listening", () => {
 
 ## Links
 
-* Follow latest Application Insights changes and announcements on [ApplicationInsights Announcements](https://github.com/Microsoft/ApplicationInsights-Announcements)
+* Follow the latest Application Insights changes and announcements on [ApplicationInsights Announcements](https://github.com/Microsoft/ApplicationInsights-Announcements)
 
 ## Contributing
 
