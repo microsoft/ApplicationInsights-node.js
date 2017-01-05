@@ -172,7 +172,7 @@ describe("Library/Util", () => {
 
         it("should return true if domain is not on the excluded list", () => {
             let client = <any>{ config: { correlationHeaderExcludedDomains: ["example.com", "bing.net", "abc.bing.com"] } };
-            let url = "http://bing.com/search?q=node";
+            let url = "http://bing.com/search?q=example.com";
 
             assert.equal(Util.canIncludeCorrelationHeader(client, url), true);
         });
@@ -190,7 +190,7 @@ describe("Library/Util", () => {
 
         it("can take wildcards in the excluded domain list", () => {
             let client = <any>{ config: { correlationHeaderExcludedDomains: ["*.bing.com"] } };
-            let url = "abc.bing.com";
+            let url = "https://abc.bing.com";
 
             assert.equal(Util.canIncludeCorrelationHeader(client, url), false);
         });

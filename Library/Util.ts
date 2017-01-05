@@ -1,4 +1,5 @@
 ﻿import http = require("http");
+import url = require("url");
 
 import Logging = require("./Logging");
 import Client = require("../Library/Client");
@@ -159,19 +160,15 @@ class Util {
      * Checks if a request url is not on a excluded domain list 
      * and if it is safe to add correlation headers (x-ms-request-source-ikey, x-ms-request-target-ikey)
      */
-    public static canIncludeCorrelationHeader(client: Client, url: string) {
+    public static canIncludeCorrelationHeader(client: Client, requestUrl: string) {
         let excludedDomains = client && client.config && client.config.correlationHeaderExcludedDomains;
-        if (!excludedDomains || excludedDomains.length == 0 || !url) {
+        if (!excludedDomains || excludedDomains.length == 0 || !requestUrl) {
             return true;
         }
 
         for (let i = 0; i < excludedDomains.length; i++) {
             let regex = new RegExp(excludedDomains[i].replace(/\./g,"\.").replace(/\*/g,".*"));
-            let matches = url.match(regex);
-
-            if (matches && matches.length > 0) {
-                return false;
-            } 
+            return !regex.test(url.parse(requestUrl).hostname);
         }
 
         return true;
