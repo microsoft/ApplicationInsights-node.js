@@ -10,6 +10,7 @@ import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import ServerRequestParser = require("./ServerRequestParser");
+import ServerRequestContextObject = require("../Library/ContextObject/ServerRequestContextObject");
 
 class AutoCollectServerRequests {
 
@@ -84,7 +85,7 @@ class AutoCollectServerRequests {
         // store data about the request
         var requestParser = new ServerRequestParser(request);
 
-        AutoCollectServerRequests.endRequest(client, requestParser, response, ellapsedMilliseconds, properties, error);
+        AutoCollectServerRequests.endRequest(client, requestParser, request, response, ellapsedMilliseconds, properties, error);
     }
 
     /**
@@ -106,14 +107,14 @@ class AutoCollectServerRequests {
         // response listeners
         if (response.once) {
             response.once("finish", () => {
-                AutoCollectServerRequests.endRequest(client, requestParser, response, null, properties, null);
+                AutoCollectServerRequests.endRequest(client, requestParser, request, response, null, properties, null);
             });
         }
 
         // track a failed request if an error is emitted
         if (request.on) {
             request.on("error", (error:any) => {
-                AutoCollectServerRequests.endRequest(client, requestParser, response, null, properties, error);
+                AutoCollectServerRequests.endRequest(client, requestParser, request, response, null, properties, error);
             });
         }
     }
@@ -131,7 +132,7 @@ class AutoCollectServerRequests {
         }
     }
 
-    private static endRequest(client: Client, requestParser: ServerRequestParser, response: http.ServerResponse, ellapsedMilliseconds?: number, properties?: { [key: string]: string}, error?: any) {
+    private static endRequest(client: Client, requestParser: ServerRequestParser, request: http.ServerRequest, response: http.ServerResponse, ellapsedMilliseconds?: number, properties?: { [key: string]: string}, error?: any) {
         if (error) {
             requestParser.onError(error, properties, ellapsedMilliseconds);
         } else {
@@ -140,7 +141,8 @@ class AutoCollectServerRequests {
 
         var data = requestParser.getRequestData();
         var tags = requestParser.getRequestTags(client.context.tags);
-        client.track(data, tags);
+        var context : ServerRequestContextObject = {request: null, response: response};
+        client.track(data, tags, context);
     }
 
     public dispose() {

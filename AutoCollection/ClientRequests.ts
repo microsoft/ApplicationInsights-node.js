@@ -10,6 +10,7 @@ import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import ClientRequestParser = require("./ClientRequestParser");
+import ClientRequestContextObject = require("../Library/ContextObject/ClientRequestContextObject");
 
 class AutoCollectClientRequests {
     public static disableCollectionRequestOption = 'disableAppInsightsAutoCollection';
@@ -98,11 +99,13 @@ class AutoCollectClientRequests {
         if (request.on) {
             request.on('response', (response: http.ClientResponse) => {
                 requestParser.onResponse(response, properties);
-                client.track(requestParser.getDependencyData(), null, { requestOptions: requestOptions, request: request, response: response });
+                var context : ClientRequestContextObject = { requestOptions: requestOptions, request: request, response: response, error: null };
+                client.track(requestParser.getDependencyData(), null, context);
             });
             request.on('error', (e: Error) => {
                 requestParser.onError(e, properties);
-                client.track(requestParser.getDependencyData(), null, { requestOptions: requestOptions, request: request, error: e });
+                var context : ClientRequestContextObject = { requestOptions: requestOptions, request: request, response: null, error: e };
+                client.track(requestParser.getDependencyData(), null, context);
             });
         }
     }
