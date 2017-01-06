@@ -15,6 +15,8 @@ import ClientRequestTracking = require("../AutoCollection/ClientRequests");
 import Sender = require("./Sender");
 import Util = require("./Util");
 import Logging = require("./Logging");
+import ServerRequestContextObject = require("../Library/contextObject/ServerRequestContextObject");
+import ClientRequestContextObject = require("../Library/contextObject/ClientRequestContextObject");
 
 class Client {
 
@@ -236,7 +238,7 @@ class Client {
     public track(
         data: ContractsModule.Contracts.Data<ContractsModule.Contracts.Domain>,
         tagOverrides?: { [key: string]: string; },
-        contextObject?: any) {
+        contextObject?: ServerRequestContextObject | ClientRequestContextObject | any) {
 
         var envelope = this.getEnvelope(data, tagOverrides);
         var accepted = this.runTelemetryProcessors(envelope, contextObject);
