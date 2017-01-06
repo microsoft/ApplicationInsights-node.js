@@ -15,8 +15,8 @@ import ClientRequestTracking = require("../AutoCollection/ClientRequests");
 import Sender = require("./Sender");
 import Util = require("./Util");
 import Logging = require("./Logging");
-import ServerRequestContextObject = require("../Library/contextObject/ServerRequestContextObject");
-import ClientRequestContextObject = require("../Library/contextObject/ClientRequestContextObject");
+import ServerRequestContextObject = require("../Library/ContextObject/ServerRequestContextObject");
+import ClientRequestContextObject = require("../Library/ContextObject/ClientRequestContextObject");
 
 class Client {
 
