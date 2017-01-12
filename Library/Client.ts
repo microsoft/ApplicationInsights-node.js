@@ -15,8 +15,6 @@ import ClientRequestTracking = require("../AutoCollection/ClientRequests");
 import Sender = require("./Sender");
 import Util = require("./Util");
 import Logging = require("./Logging");
-import ServerRequestContextObject = require("../Library/ContextObject/ServerRequestContextObject");
-import ClientRequestContextObject = require("../Library/ContextObject/ClientRequestContextObject");
 
 class Client {
 
@@ -238,10 +236,10 @@ class Client {
     public track(
         data: ContractsModule.Contracts.Data<ContractsModule.Contracts.Domain>,
         tagOverrides?: { [key: string]: string; },
-        contextObject?: ServerRequestContextObject | ClientRequestContextObject | any) {
+        contextObjects?: { [name: string]: any; }) {
 
         var envelope = this.getEnvelope(data, tagOverrides);
-        var accepted = this.runTelemetryProcessors(envelope, contextObject);
+        var accepted = this.runTelemetryProcessors(envelope, contextObjects);
 
         if (accepted) {
             this.channel.send(envelope);
@@ -254,7 +252,7 @@ class Client {
      *
      * @param telemetryProcessor function, takes Envelope, and optional context object and returns boolean
      */
-    public addTelemetryProcessor(telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope, contextObject?: any) => boolean) {
+    public addTelemetryProcessor(telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope, contextObjects?: { [name: string]: any; }) => boolean) {
         this._telemetryProcessors.push(telemetryProcessor);
     }
 
@@ -273,7 +271,7 @@ class Client {
         return [array[0], parseInt(array[1])];
     }
 
-    private runTelemetryProcessors(envelope: ContractsModule.Contracts.Envelope, contextObject: any): boolean {
+    private runTelemetryProcessors(envelope: ContractsModule.Contracts.Envelope, contextObjects: { [name: string]: any; }): boolean {
         var accepted = true;
         var telemetryProcessorsCount = this._telemetryProcessors.length;
 
@@ -286,7 +284,7 @@ class Client {
             try {
                 var processor = this._telemetryProcessors[i];
                 if (processor) {
-                    if (processor.apply(null, [envelope, contextObject]) === false) {
+                    if (processor.apply(null, [envelope, contextObjects]) === false) {
                         accepted = false;
                         break;
                     }

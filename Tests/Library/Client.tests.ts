@@ -717,12 +717,12 @@ describe("Library/Client", () => {
             trackStub.restore();
             var expectedName = "I was here";
 
-            client.addTelemetryProcessor((env, contextObject) => {
-                env.name = contextObject;
+            client.addTelemetryProcessor((env, contextObjects) => {
+                env.name = contextObjects["name"];
                 return true;
             });
 
-            client.track(mockData, null, expectedName);
+            client.track(mockData, null, {"name": expectedName});
 
             assert.equal(sendStub.callCount, 1, "send called once");
 

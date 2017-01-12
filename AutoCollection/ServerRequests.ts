@@ -10,7 +10,6 @@ import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import ServerRequestParser = require("./ServerRequestParser");
-import ServerRequestContextObject = require("../Library/ContextObject/ServerRequestContextObject");
 
 class AutoCollectServerRequests {
 
@@ -141,7 +140,7 @@ class AutoCollectServerRequests {
 
         var data = requestParser.getRequestData();
         var tags = requestParser.getRequestTags(client.context.tags);
-        var context : ServerRequestContextObject = {request: null, response: response};
+        var context : { [name: string]: any; } = {"http.ServerRequest": request, "http.ServerResponse": response};
         client.track(data, tags, context);
     }
 
