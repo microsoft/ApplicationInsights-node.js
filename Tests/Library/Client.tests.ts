@@ -565,6 +565,21 @@ describe("Library/Client", () => {
                 // The client's ikey hash should NOT have been added for excluded domains
                 assert.equal(request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader], null);
             });
+
+            it('should not set source ikey headers when the host is on a excluded domain list', () => {
+                trackStub.reset();
+                clock.reset();
+
+                client.config.correlationHeaderExcludedDomains = ["*.domain.com"]
+                client.trackDependencyRequest({
+                        host: 'excluded.domain.com',
+                        path: '/search?q=test'
+                    },
+                    <any>request, properties);
+
+                // The client's ikey hash should NOT have been added for excluded domains
+                assert.equal(request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader], null);
+            });
         });
     });
 
