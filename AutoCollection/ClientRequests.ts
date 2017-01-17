@@ -98,11 +98,13 @@ class AutoCollectClientRequests {
         if (request.on) {
             request.on('response', (response: http.ClientResponse) => {
                 requestParser.onResponse(response, properties);
-                client.track(requestParser.getDependencyData());
+                var context : { [name: string]: any; } = { "http.RequestOptions": requestOptions, "http.ClientRequest": request, "http.ClientResponse": response };
+                client.track(requestParser.getDependencyData(), null, context);
             });
             request.on('error', (e: Error) => {
                 requestParser.onError(e, properties);
-                client.track(requestParser.getDependencyData());
+                var context : { [name: string]: any; } = { "http.RequestOptions": requestOptions, "http.ClientRequest": request, "Error": e };
+                client.track(requestParser.getDependencyData(), null, context);
             });
         }
     }

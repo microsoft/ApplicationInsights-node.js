@@ -713,6 +713,23 @@ describe("Library/Client", () => {
             assert.equal(actualData.name, expectedName, "envelope name should be changed by the processor");
         });
 
+        it("telemetry processor can access the context object", () => {
+            trackStub.restore();
+            var expectedName = "I was here";
+
+            client.addTelemetryProcessor((env, contextObjects) => {
+                env.name = contextObjects["name"];
+                return true;
+            });
+
+            client.track(mockData, null, {"name": expectedName});
+
+            assert.equal(sendStub.callCount, 1, "send called once");
+
+            var actualData = sendStub.firstCall.args[0] as ContractsModule.Contracts.Envelope;
+            assert.equal(actualData.name, expectedName, "envelope name should be changed by the processor");
+        });
+
         it("telemetry processors are executed in a right order", () => {
             trackStub.restore();
 
