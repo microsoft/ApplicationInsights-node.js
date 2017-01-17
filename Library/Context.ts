@@ -41,16 +41,16 @@ class Context {
         }
 
         this.tags[this.keys.applicationVersion] = version;
-        if(description) {
-            this.tags[this.keys.applicationBuild] = description;
-        }
+        // TODO: consider sending it as a custom property
+        //if(description) {
+        //    this.tags[this.keys.applicationBuild] = description;
+        //}
     }
 
     private _loadDeviceContext() {
         this.tags[this.keys.deviceId] = "";
-        this.tags[this.keys.deviceMachineName] = os && os.hostname();
-        this.tags[this.keys.deviceOS] = os && os.type();
-        this.tags[this.keys.deviceOSVersion] = os && os.release();
+        this.tags[this.keys.cloudRoleInstance] = os && os.hostname();
+        this.tags[this.keys.deviceOSVersion] = os && os.type() + " " + os && os.release();
 
         // not yet supported tags
         this.tags["ai.device.osArchitecture"] = os && os.arch();

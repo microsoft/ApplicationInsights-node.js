@@ -22,6 +22,8 @@ class ServerRequestParser extends RequestParser {
     private legacySocketRemoteAddress:string;
     private userAgent: string;
     private sourceIKeyHash: string;
+    private parentId: string;
+    private operationId: string;
 
     constructor(request:http.ServerRequest) {
         super();
@@ -34,6 +36,10 @@ class ServerRequestParser extends RequestParser {
             this.userAgent = request.headers && request.headers["user-agent"];
             this.sourceIKeyHash =
                 request.headers && request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader];
+            this.parentId =
+                request.headers && request.headers[RequestResponseHeaders.parentIdHeader];
+            this.operationId =
+                request.headers && request.headers[RequestResponseHeaders.rootIdHeader];
             if (request.connection) {
                 this.connectionRemoteAddress = request.connection.remoteAddress;
                 this.legacySocketRemoteAddress = request.connection["socket"] && request.connection["socket"].remoteAddress;
@@ -55,10 +61,8 @@ class ServerRequestParser extends RequestParser {
 
     public getRequestData():ContractsModule.Contracts.Data<ContractsModule.Contracts.RequestData> {
         var requestData = new ContractsModule.Contracts.RequestData();
-        requestData.httpMethod = this.method;
         requestData.id = Util.newGuid();
         requestData.name = this.method + " " + url.parse(this.url).pathname;
-        requestData.startTime = (new Date(this.startTime)).toISOString();
         requestData.url = this.url;
         requestData.source = this.sourceIKeyHash;
         requestData.duration = Util.msToTimeSpan(this.duration);
@@ -86,6 +90,8 @@ class ServerRequestParser extends RequestParser {
         newTags[ServerRequestParser.keys.userId] = tags[ServerRequestParser.keys.userId] || this._getId("ai_user");
         newTags[ServerRequestParser.keys.userAgent] = tags[ServerRequestParser.keys.userAgent] || this.userAgent;
         newTags[ServerRequestParser.keys.operationName] = tags[ServerRequestParser.keys.operationName] || this.method + " " + url.parse(this.url).pathname;
+        newTags[ServerRequestParser.keys.operationParentId] = tags[ServerRequestParser.keys.operationParentId] || this.parentId;
+        newTags[ServerRequestParser.keys.operationId] = tags[ServerRequestParser.keys.operationId] || this.operationId;
 
         return newTags;
     }

@@ -107,7 +107,9 @@ describe("AutoCollection/ServerRequestParser", () => {
             headers: {
                 host: "bing.com",
                 "x-forwarded-for": "123.123.123.123",
-                "cookie": "ai_user=cookieUser;ai_session=cookieSession"
+                "cookie": "ai_user=cookieUser|time;ai_session=cookieSession|time",
+                "x-ms-request-id": "parentRequestId",
+                "x-ms-request-root-id": "operationId",
             }
         }
 
@@ -118,13 +120,32 @@ describe("AutoCollection/ServerRequestParser", () => {
                 [(<any>ServerRequestParser).keys.locationIp]: 'originalIp',
                 [(<any>ServerRequestParser).keys.userId]: 'originalUserId',
                 [(<any>ServerRequestParser).keys.userAgent]: 'originalUserAgent',
-                [(<any>ServerRequestParser).keys.operationName]: 'originalOperationName'
+                [(<any>ServerRequestParser).keys.operationName]: 'originalOperationName',
+                [(<any>ServerRequestParser).keys.operationId]: 'originalOperationId',
+                [(<any>ServerRequestParser).keys.operationParentId]: 'originalOperationParentId'
             };
             var newTags = helper.getRequestTags(originalTags);
             assert.equal(newTags[(<any>ServerRequestParser).keys.locationIp], 'originalIp');
             assert.equal(newTags[(<any>ServerRequestParser).keys.userId], 'originalUserId');
             assert.equal(newTags[(<any>ServerRequestParser).keys.userAgent], 'originalUserAgent');
             assert.equal(newTags[(<any>ServerRequestParser).keys.operationName], 'originalOperationName');
+            assert.equal(newTags[(<any>ServerRequestParser).keys.operationId], 'originalOperationId');
+            assert.equal(newTags[(<any>ServerRequestParser).keys.operationParentId], 'originalOperationParentId');
+        });
+
+        it("should read tags from headers", () => {
+            var helper = new ServerRequestParser(<any>request);
+
+            var originalTags: {[key: string]:string} = {
+            };
+
+            var newTags = helper.getRequestTags(originalTags);
+            assert.equal(newTags[(<any>ServerRequestParser).keys.locationIp], '123.123.123.123');
+            assert.equal(newTags[(<any>ServerRequestParser).keys.userId], 'cookieUser');
+            assert.equal(newTags[(<any>ServerRequestParser).keys.userAgent], undefined);
+            assert.equal(newTags[(<any>ServerRequestParser).keys.operationName], 'GET /search');
+            assert.equal(newTags[(<any>ServerRequestParser).keys.operationId], 'operationId');
+            assert.equal(newTags[(<any>ServerRequestParser).keys.operationParentId], 'parentRequestId');
         });
     });
 });

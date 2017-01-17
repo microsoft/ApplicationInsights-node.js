@@ -12,6 +12,7 @@ import Client = require("../../Library/Client");
 import Config = require("../../Library/Config");
 import ContractsModule = require("../../Library/Contracts");
 import RequestResponseHeaders = require("../../Library/RequestResponseHeaders");
+import Util = require("../../Library/Util")
 
 describe("Library/Client", () => {
 
@@ -461,12 +462,11 @@ describe("Library/Client", () => {
 
                 assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RemoteDependencyData");
                 assert.equal(obj0.baseData.success, true);
-                assert.equal(obj0.baseData.value, 10);
-                assert.equal(obj0.baseData.name, "GET http://bing.com/search");
-                assert.equal(obj0.baseData.commandName, "http://bing.com/search?q=test");
+                assert.equal(obj0.baseData.duration, "00:00:00.010");
+                assert.equal(obj0.baseData.name, "GET /search");
+                assert.equal(obj0.baseData.data, "http://bing.com/search?q=test");
                 assert.equal(obj0.baseData.target, "bing.com");
-                assert.equal(obj0.baseData.dependencyKind,
-                    ContractsModule.Contracts.DependencyKind.Http);
+                assert.equal(obj0.baseData.type, ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
                 assert.deepEqual(obj0.baseData.properties, properties);
             });
 
@@ -487,12 +487,11 @@ describe("Library/Client", () => {
 
                 assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RemoteDependencyData");
                 assert.equal(obj0.baseData.success, true);
-                assert.equal(obj0.baseData.value, 10);
-                assert.equal(obj0.baseData.name, "GET http://bing.com/search");
-                assert.equal(obj0.baseData.commandName, "http://bing.com/search?q=test");
+                assert.equal(obj0.baseData.duration, "00:00:00.010");
+                assert.equal(obj0.baseData.name, "GET /search");
+                assert.equal(obj0.baseData.data, "http://bing.com/search?q=test");
                 assert.equal(obj0.baseData.target, "bing.com");
-                assert.equal(obj0.baseData.dependencyKind,
-                    ContractsModule.Contracts.DependencyKind.Http);
+                assert.equal(obj0.baseData.type, ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
                 assert.deepEqual(obj0.baseData.properties, properties);
             });
 
@@ -513,9 +512,9 @@ describe("Library/Client", () => {
 
                 assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RemoteDependencyData");
                 assert.equal(obj0.baseData.success, false);
-                assert.equal(obj0.baseData.value, 10);
-                assert.equal(obj0.baseData.name, "GET http://bing.com/search");
-                assert.equal(obj0.baseData.commandName, "http://bing.com/search?q=test");
+                assert.equal(obj0.baseData.duration, "00:00:00.010");
+                assert.equal(obj0.baseData.name, "GET /search");
+                assert.equal(obj0.baseData.data, "http://bing.com/search?q=test");
                 assert.equal(obj0.baseData.target, "bing.com");
                 assert.deepEqual(obj0.baseData.properties, properties);
             });
@@ -549,8 +548,22 @@ describe("Library/Client", () => {
 
                 assert.equal(obj0.baseData.target, "bing.com | " +
                     response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader]);
-                assert.equal(obj0.baseData.dependencyTypeName,
-                    ContractsModule.Contracts.RemoteDependencyTypes.ApplicationInsights);
+                assert.equal(obj0.baseData.type, "ApplicationInsights");
+            });
+
+            it('should not set source ikey headers when the host is on a excluded domain list', () => {
+                trackStub.reset();
+                clock.reset();
+
+                client.config.correlationHeaderExcludedDomains = ["*.domain.com"]
+                client.trackDependencyRequest({
+                        host: 'excluded.domain.com',
+                        path: '/search?q=test'
+                    },
+                    <any>request, properties);
+
+                // The client's ikey hash should NOT have been added for excluded domains
+                assert.equal(request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader], null);
             });
 
             it('should not set source ikey headers when the host is on a excluded domain list', () => {
@@ -584,17 +597,12 @@ describe("Library/Client", () => {
 
             assert.equal(obj0.baseType, "RemoteDependencyData");
             assert.equal(obj0.baseData.name, name);
-            assert.equal(obj0.baseData.commandName, commandName);
+            assert.equal(obj0.baseData.data, commandName);
             assert.equal(obj0.baseData.target, 'bing.com');
-            assert.equal(obj0.baseData.value, value);
+            assert.equal(obj0.baseData.duration, Util.msToTimeSpan(value));
             assert.equal(obj0.baseData.success, true);
-            assert.equal(obj0.baseData.dependencyTypeName, dependencyTypeName);
+            assert.equal(obj0.baseData.type, dependencyTypeName);
             assert.deepEqual(obj0.baseData.properties, properties);
-
-            // default values
-            assert.deepEqual(obj0.baseData.dependencyKind, ContractsModule.Contracts.DependencyKind.Other);
-            assert.equal(obj0.baseData.async, false);
-            assert.deepEqual(obj0.baseData.dependencySource, ContractsModule.Contracts.DependencySourceType.Undefined);
         });
     });
 
@@ -665,7 +673,7 @@ describe("Library/Client", () => {
             }
             assert.ok(
                 Math.max(indices["name"], indices["time"]) <
-                Math.min(indices["data"], indices["tags"]));
+                Math.min(indices["data"], indices["tags"]), JSON.stringify(env));
         });
 
         it("should have valid name", function () {
@@ -713,6 +721,23 @@ describe("Library/Client", () => {
             });
 
             client.track(mockData);
+
+            assert.equal(sendStub.callCount, 1, "send called once");
+
+            var actualData = sendStub.firstCall.args[0] as ContractsModule.Contracts.Envelope;
+            assert.equal(actualData.name, expectedName, "envelope name should be changed by the processor");
+        });
+
+        it("telemetry processor can access the context object", () => {
+            trackStub.restore();
+            var expectedName = "I was here";
+
+            client.addTelemetryProcessor((env, contextObjects) => {
+                env.name = contextObjects["name"];
+                return true;
+            });
+
+            client.track(mockData, null, {"name": expectedName});
 
             assert.equal(sendStub.callCount, 1, "send called once");
 

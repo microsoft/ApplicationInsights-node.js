@@ -3,6 +3,7 @@
 import http = require("http");
 import https = require("https");
 import url = require("url");
+import os = require("os");
 
 import Config = require("./Config");
 import Context = require("./Context");
@@ -154,9 +155,7 @@ class Client {
         success: boolean,
         dependencyTypeName?: string,
         properties = {},
-        dependencyKind = ContractsModule.Contracts.DependencyKind.Other,
         async = false,
-        dependencySource = ContractsModule.Contracts.DependencySourceType.Undefined,
         target: string = null) {
 
         if (!target && commandName) {
@@ -165,15 +164,12 @@ class Client {
 
         var remoteDependency = new ContractsModule.Contracts.RemoteDependencyData();
         remoteDependency.name = name;
-        remoteDependency.commandName = commandName;
+        remoteDependency.data = commandName;
         remoteDependency.target = target;
-        remoteDependency.value = elapsedTimeMs;
+        remoteDependency.duration = Util.msToTimeSpan(elapsedTimeMs);
         remoteDependency.success = success;
-        remoteDependency.dependencyTypeName = dependencyTypeName;
+        remoteDependency.type = dependencyTypeName;
         remoteDependency.properties = properties;
-        remoteDependency.dependencyKind = dependencyKind;
-        remoteDependency.async = async;
-        remoteDependency.dependencySource = dependencySource;
 
         var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.RemoteDependencyData>();
         data.baseType = "RemoteDependencyData";
@@ -223,8 +219,8 @@ class Client {
             iKey.replace(/-/g, "") +
             "." +
             data.baseType.substr(0, data.baseType.length - 4);
-        envelope.os = this.context.tags[this.context.keys.deviceOS];
-        envelope.osVer = this.context.tags[this.context.keys.deviceOSVersion];
+        envelope.os = os && os.type();
+        envelope.osVer = os && os.release();
         envelope.seq = this._sequencePrefix + (this._sequenceNumber++).toString();
         envelope.tags = tagOverrides || this.context.tags;
         envelope.time = (new Date()).toISOString();
@@ -239,10 +235,11 @@ class Client {
      */
     public track(
         data: ContractsModule.Contracts.Data<ContractsModule.Contracts.Domain>,
-        tagOverrides?: { [key: string]: string; }) {
+        tagOverrides?: { [key: string]: string; },
+        contextObjects?: { [name: string]: any; }) {
 
         var envelope = this.getEnvelope(data, tagOverrides);
-        var accepted = this.runTelemetryProcessors(envelope);
+        var accepted = this.runTelemetryProcessors(envelope, contextObjects);
 
         if (accepted) {
             this.channel.send(envelope);
@@ -253,9 +250,9 @@ class Client {
      * Adds telemetry processor to the collection. Telemetry processors will be called one by one
      * before telemetry item is pushed for sending and in the order they were added.
      *
-     * @param telemetryProcessor function, takes Envelope, returns boolean
+     * @param telemetryProcessor function, takes Envelope, and optional context object and returns boolean
      */
-    public addTelemetryProcessor(telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope) => boolean) {
+    public addTelemetryProcessor(telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope, contextObjects?: { [name: string]: any; }) => boolean) {
         this._telemetryProcessors.push(telemetryProcessor);
     }
 
@@ -274,7 +271,7 @@ class Client {
         return [array[0], parseInt(array[1])];
     }
 
-    private runTelemetryProcessors(envelope: ContractsModule.Contracts.Envelope): boolean {
+    private runTelemetryProcessors(envelope: ContractsModule.Contracts.Envelope, contextObjects: { [name: string]: any; }): boolean {
         var accepted = true;
         var telemetryProcessorsCount = this._telemetryProcessors.length;
 
@@ -287,7 +284,7 @@ class Client {
             try {
                 var processor = this._telemetryProcessors[i];
                 if (processor) {
-                    if (processor.apply(null, [envelope]) === false) {
+                    if (processor.apply(null, [envelope, contextObjects]) === false) {
                         accepted = false;
                         break;
                     }

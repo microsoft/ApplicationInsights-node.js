@@ -10,4 +10,15 @@ export = {
      * calling application when processing incoming responses.
      */
     targetInstrumentationKeyHeader: "x-ms-request-target-ikey",
+
+    /**
+     * Header containing the id of the immidiate caller
+     */
+    parentIdHeader: "x-ms-request-id",
+
+    /**
+     * Header containing the correlation id that kept the same for every telemetry item
+     * accross transactions
+     */
+    rootIdHeader: "x-ms-request-root-id",
 }
