@@ -171,6 +171,8 @@ server.on("listening", () => {
 ## Links
 
 * Follow the latest Application Insights changes and announcements on [ApplicationInsights Announcements](https://github.com/Microsoft/ApplicationInsights-Announcements)
+* [Application Insights Home](https://github.com/Microsoft/ApplicationInsights-Home). The main repository for documentation of overall SDK offerings for all platforms.
+* [SDK Release Schedule](https://github.com/Microsoft/ApplicationInsights-Home/wiki/SDK-Release-Schedule)
 
 ## Contributing
 
