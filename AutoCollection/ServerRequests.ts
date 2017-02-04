@@ -10,6 +10,7 @@ import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import ServerRequestParser = require("./ServerRequestParser");
+import CorrelationContextManager = require("./CorrelationContextManager");
 
 class AutoCollectServerRequests {
 
@@ -18,6 +19,7 @@ class AutoCollectServerRequests {
     private _client:Client;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
+    private _isAutoCorrelating: boolean;
 
     constructor(client:Client) {
         if (!!AutoCollectServerRequests.INSTANCE) {
@@ -28,11 +30,19 @@ class AutoCollectServerRequests {
         this._client = client;
     }
 
-    public enable(isEnabled:boolean) {
+    public enable(isEnabled:boolean, isAutoCorrelating:boolean) {
         this._isEnabled = isEnabled;
         if(this._isEnabled && !this._isInitialized) {
+            this.useAutoCorrelation(isAutoCorrelating);
             this._initialize();
         }
+    }
+
+    public useAutoCorrelation(isEnabled:boolean) {
+        if (isEnabled && !this._isAutoCorrelating) {
+            CorrelationContextManager.enable();
+        }
+        this._isAutoCorrelating = isEnabled;
     }
 
     public isInitialized() {
@@ -46,7 +56,19 @@ class AutoCollectServerRequests {
         http.createServer = (onRequest) => {
             // todo: get a pointer to the server so the IP address can be read from server.address
             return originalHttpServer((request:http.ServerRequest, response:http.ServerResponse) => {
+                // Set up correlation context
+                var correlationContext = null;
+                if (this._isAutoCorrelating) {
+                    correlationContext = {
+                        id: Util.newGuid(),
+                        req: request,
+                        res: response
+                    };
+                }
+                CorrelationContextManager.enterNewContext(correlationContext);
+
                 if (this._isEnabled) {
+                    // Auto collect request
                     AutoCollectServerRequests.trackRequest(this._client, request, response);
                 }
 

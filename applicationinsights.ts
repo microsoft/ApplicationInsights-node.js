@@ -23,6 +23,7 @@ class ApplicationInsights {
     private static _isRequests = true;
     private static _isDependencies = true;
     private static _isOfflineMode = false;
+    private static _isCorrelating = true;
 
     private static _console: AutoCollectConsole;
     private static _exceptions: AutoCollectExceptions;
@@ -150,6 +151,20 @@ class ApplicationInsights {
         ApplicationInsights._isDependencies = value;
         if (ApplicationInsights._isStarted) {
             ApplicationInsights._clientRequests.enable(value);
+        }
+
+        return ApplicationInsights;
+    }
+
+    /**
+     * Sets the state of dependency correlation (enabled by default)
+     * @param value if true dependencies will be correlated with requests
+     * @returns {ApplicationInsights} this class
+     */
+    public static setAutoDependencyCorrelation(value: boolean) {
+        ApplicationInsights._isCorrelating = value;
+        if (ApplicationInsights._isStarted) {
+            ApplicationInsights._serverRequests.enable(value);
         }
 
         return ApplicationInsights;
