@@ -41,6 +41,8 @@ class AutoCollectServerRequests {
     public useAutoCorrelation(isEnabled:boolean) {
         if (isEnabled && !this._isAutoCorrelating) {
             CorrelationContextManager.enable();
+        } else if (!isEnabled && this._isAutoCorrelating) {
+            CorrelationContextManager.disable();
         }
         this._isAutoCorrelating = isEnabled;
     }
