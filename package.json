@@ -52,6 +52,6 @@
     "typings": "2.0.0"
   },
   "dependencies": {
-    "async-hook": "^1.7.1"
+    "async-hook": "1.7.1"
   }
 }

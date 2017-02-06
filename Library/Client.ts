@@ -12,7 +12,7 @@ import ContractsModule = require("../Library/Contracts");
 import Channel = require("./Channel");
 import ServerRequestTracking = require("../AutoCollection/ServerRequests");
 import ClientRequestTracking = require("../AutoCollection/ClientRequests");
-import CorrelationContextManager = require("../AutoCollection/CorrelationContextManager");
+import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
 import Sender = require("./Sender");
 import Util = require("./Util");
 import Logging = require("./Logging");

@@ -1,21 +1,21 @@
 import http = require("http");
 
-interface CorrelationContext {
+export interface CorrelationContext {
     operationId: string;
 }
 
-class CorrelationContextManager {
-    private contexts: {[uid: number]: CorrelationContext} = [];
-    private currentContext: CorrelationContext = null;
-    private enabled: boolean = false;
-    private hasEverEnabled: boolean = false;
+export class CorrelationContextManager {
+    private static contexts: {[uid: number]: CorrelationContext} = [];
+    private static currentContext: CorrelationContext = null;
+    private static enabled: boolean = false;
+    private static hasEverEnabled: boolean = false;
 
     /** 
      *  Provides the current Context.
      *  The context is the most recent one entered into for the current
      *  logical chain of execution, including across asynchronous calls.
      */
-    public getCurrentContext(): CorrelationContext {
+    public static getCurrentContext(): CorrelationContext {
         if (!this.enabled) {
             return null;
         }
@@ -27,7 +27,7 @@ class CorrelationContextManager {
      *  All logical children of the execution path that entered this Context
      *  will receive this Context object on calls to GetCurrentContext.
      */
-    public enterNewContext(context: CorrelationContext) {
+    public static enterNewContext(context: CorrelationContext) {
         this.currentContext = context;
     }
 
@@ -36,7 +36,7 @@ class CorrelationContextManager {
      *  API which is not available in older versions of Node (< 0.12.1).
      *  This method will detect these old versions and do nothing.
      */
-    public enable() {
+    public static enable() {
         if (/^0\.([0-9]\.)|(10\.)|(11\.)|(12\.0$)/.test(process.versions.node)) {
             return;
         }
@@ -60,32 +60,29 @@ class CorrelationContextManager {
         }
     }
 
-    public disable() {
+    public static disable() {
         this.enabled = false;
     }
 
-    public isEnabled() {
+    public static isEnabled() {
         return this.enabled;
     }
 
 
     // Callbacks for async-hook
-    private onAsyncInit(uid: number) {
+    private static onAsyncInit(uid: number) {
         this.contexts[uid] = this.currentContext;
     }
 
-    private onAsyncPre(uid: number) {
+    private static onAsyncPre(uid: number) {
         this.currentContext = this.contexts[uid];
     }
 
-    private onAsyncPost(uid: number) {
+    private static onAsyncPost(uid: number) {
         this.currentContext = null;
     }
 
-    private onAsyncDestroy(uid: number) {
+    private static onAsyncDestroy(uid: number) {
         delete this.contexts[uid];
     }
 }
-
-// Force singleton
-export = new CorrelationContextManager();

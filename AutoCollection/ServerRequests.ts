@@ -10,7 +10,7 @@ import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import ServerRequestParser = require("./ServerRequestParser");
-import CorrelationContextManager = require("./CorrelationContextManager");
+import { CorrelationContextManager, CorrelationContext } from "./CorrelationContextManager";
 
 class AutoCollectServerRequests {
 
@@ -52,10 +52,10 @@ class AutoCollectServerRequests {
     }
 
     private _generateCorrelationContext(request:http.ServerRequest, response:http.ServerResponse) {
-        var correlationContext = null;
+        var correlationContext: CorrelationContext = null;
         if (this._isAutoCorrelating) {
             correlationContext = {
-                operationId: Util.newGuid(),
+                operationId: Util.newGuid()
             };
         }
         CorrelationContextManager.enterNewContext(correlationContext);
