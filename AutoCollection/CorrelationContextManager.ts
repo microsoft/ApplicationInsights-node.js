@@ -1,10 +1,9 @@
 import http = require("http");
 
 interface CorrelationContext {
-    id: string;
+    operationId: string;
     req: http.ServerRequest;
     res: http.ServerResponse;
-    metadata?: {};
 }
 
 class CorrelationContextManager {

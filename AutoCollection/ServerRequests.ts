@@ -30,10 +30,10 @@ class AutoCollectServerRequests {
         this._client = client;
     }
 
-    public enable(isEnabled:boolean, isAutoCorrelating:boolean) {
+    public enable(isEnabled:boolean) {
         this._isEnabled = isEnabled;
         if(this._isEnabled && !this._isInitialized) {
-            this.useAutoCorrelation(isAutoCorrelating);
+            this.useAutoCorrelation(this._isAutoCorrelating);
             this._initialize();
         }
     }
@@ -49,6 +49,18 @@ class AutoCollectServerRequests {
         return this._isInitialized;
     }
 
+    private _generateCorrelationContext(request:http.ServerRequest, response:http.ServerResponse) {
+        var correlationContext = null;
+        if (this._isAutoCorrelating) {
+            correlationContext = {
+                operationId: Util.newGuid(),
+                req: request,
+                res: response
+            };
+        }
+        CorrelationContextManager.enterNewContext(correlationContext);
+    }
+
     private _initialize() {
         this._isInitialized = true;
 
@@ -57,15 +69,7 @@ class AutoCollectServerRequests {
             // todo: get a pointer to the server so the IP address can be read from server.address
             return originalHttpServer((request:http.ServerRequest, response:http.ServerResponse) => {
                 // Set up correlation context
-                var correlationContext = null;
-                if (this._isAutoCorrelating) {
-                    correlationContext = {
-                        id: Util.newGuid(),
-                        req: request,
-                        res: response
-                    };
-                }
-                CorrelationContextManager.enterNewContext(correlationContext);
+                this._generateCorrelationContext(request, response);
 
                 if (this._isEnabled) {
                     // Auto collect request
@@ -81,6 +85,9 @@ class AutoCollectServerRequests {
         var originalHttpsServer = https.createServer;
         https.createServer = (options, onRequest) => {
             return originalHttpsServer(options, (request:http.ServerRequest, response:http.ServerResponse) => {
+                // Set up correlation context
+                this._generateCorrelationContext(request, response);
+
                 if (this._isEnabled) {
                     AutoCollectServerRequests.trackRequest(this._client, request, response);
                 }
@@ -106,6 +113,14 @@ class AutoCollectServerRequests {
         // store data about the request
         var requestParser = new ServerRequestParser(request);
 
+        // Establish the definitive operationId. Update the correlation context with the result
+        // This can be either the value from ServerRequestParser or from the correlation context.
+        // ServerRequestParser always wins.
+        var correlationContext = CorrelationContextManager.getCurrentContext();
+        if (correlationContext) {
+            correlationContext.operationId = requestParser.getOperationId(client.context.tags) || correlationContext.operationId;
+        }
+
         AutoCollectServerRequests.endRequest(client, requestParser, request, response, ellapsedMilliseconds, properties, error);
     }
 
@@ -123,6 +138,14 @@ class AutoCollectServerRequests {
 
         if (Util.canIncludeCorrelationHeader(client, requestParser.getUrl())) {
             AutoCollectServerRequests.addResponseIKeyHeader(client, response);
+        }
+
+        // Establish the definitive operationId. Update the correlation context with the result
+        // This can be either the value from ServerRequestParser or from the correlation context.
+        // ServerRequestParser always wins.
+        var correlationContext = CorrelationContextManager.getCurrentContext();
+        if (correlationContext) {
+            correlationContext.operationId = requestParser.getOperationId(client.context.tags) || correlationContext.operationId;
         }
 
         // response listeners
@@ -160,9 +183,10 @@ class AutoCollectServerRequests {
             requestParser.onResponse(response, properties, ellapsedMilliseconds);
         }
 
-        var data = requestParser.getRequestData();
-        var tags = requestParser.getRequestTags(client.context.tags);
         var context : { [name: string]: any; } = {"http.ServerRequest": request, "http.ServerResponse": response};
+        var data = requestParser.getRequestData();
+        var tags = requestParser.getRequestTags(client.context.tags);        
+
         client.track(data, tags, context);
     }
 

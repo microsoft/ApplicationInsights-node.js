@@ -12,6 +12,7 @@ import ContractsModule = require("../Library/Contracts");
 import Channel = require("./Channel");
 import ServerRequestTracking = require("../AutoCollection/ServerRequests");
 import ClientRequestTracking = require("../AutoCollection/ClientRequests");
+import CorrelationContextManager = require("../AutoCollection/CorrelationContextManager");
 import Sender = require("./Sender");
 import Util = require("./Util");
 import Logging = require("./Logging");
@@ -222,7 +223,7 @@ class Client {
         envelope.os = os && os.type();
         envelope.osVer = os && os.release();
         envelope.seq = this._sequencePrefix + (this._sequenceNumber++).toString();
-        envelope.tags = tagOverrides || this.context.tags;
+        envelope.tags = this.getTags();
         envelope.time = (new Date()).toISOString();
         envelope.ver = 1;
         return envelope;
@@ -297,6 +298,29 @@ class Client {
         }
 
         return accepted;
+    }
+
+    private getTags(tagOverrides?: { [key: string]: string; }){
+        var correlationContext = CorrelationContextManager.getCurrentContext();
+
+        // Make a copy of context tags so we don't alter the actual object
+        // Also perform tag overriding
+        var newTags = <{[key: string]:string}>{};
+        for (var key in this.context.tags) {
+            newTags[key] = this.context.tags[key];
+        }
+        for (var key in tagOverrides) {
+            newTags[key] = tagOverrides[key];
+        }
+
+        if (!correlationContext) {
+            return newTags;
+        }
+
+        // Fill in internally-populated values if not already set
+        newTags[this.context.keys.operationId] = newTags[this.context.keys.operationId] || correlationContext.operationId;
+
+        return newTags;
     }
 }
 

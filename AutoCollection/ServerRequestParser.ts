@@ -91,9 +91,13 @@ class ServerRequestParser extends RequestParser {
         newTags[ServerRequestParser.keys.userAgent] = tags[ServerRequestParser.keys.userAgent] || this.userAgent;
         newTags[ServerRequestParser.keys.operationName] = tags[ServerRequestParser.keys.operationName] || this.method + " " + url.parse(this.url).pathname;
         newTags[ServerRequestParser.keys.operationParentId] = tags[ServerRequestParser.keys.operationParentId] || this.parentId;
-        newTags[ServerRequestParser.keys.operationId] = tags[ServerRequestParser.keys.operationId] || this.operationId;
+        newTags[ServerRequestParser.keys.operationId] = this.getOperationId(tags);
 
         return newTags;
+    }
+
+    public getOperationId(tags:{[key: string]:string}) {
+        return tags[ServerRequestParser.keys.operationId] || this.operationId;
     }
 
     private _getAbsoluteUrl(request:http.ServerRequest):string {

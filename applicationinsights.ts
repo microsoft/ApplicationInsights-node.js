@@ -77,6 +77,7 @@ class ApplicationInsights {
             ApplicationInsights._console.enable(ApplicationInsights._isConsole);
             ApplicationInsights._exceptions.enable(ApplicationInsights._isExceptions);
             ApplicationInsights._performance.enable(ApplicationInsights._isPerformance);
+            ApplicationInsights._serverRequests.useAutoCorrelation(ApplicationInsights._isCorrelating);
             ApplicationInsights._serverRequests.enable(ApplicationInsights._isRequests);
             ApplicationInsights._clientRequests.enable(ApplicationInsights._isDependencies);
         } else {
@@ -164,7 +165,7 @@ class ApplicationInsights {
     public static setAutoDependencyCorrelation(value: boolean) {
         ApplicationInsights._isCorrelating = value;
         if (ApplicationInsights._isStarted) {
-            ApplicationInsights._serverRequests.enable(value);
+            ApplicationInsights._serverRequests.useAutoCorrelation(value);
         }
 
         return ApplicationInsights;
