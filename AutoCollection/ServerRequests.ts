@@ -54,8 +54,6 @@ class AutoCollectServerRequests {
         if (this._isAutoCorrelating) {
             correlationContext = {
                 operationId: Util.newGuid(),
-                req: request,
-                res: response
             };
         }
         CorrelationContextManager.enterNewContext(correlationContext);
@@ -115,7 +113,7 @@ class AutoCollectServerRequests {
 
         // Establish the definitive operationId. Update the correlation context with the result
         // This can be either the value from ServerRequestParser or from the correlation context.
-        // ServerRequestParser always wins.
+        // ServerRequestParser always wins. This value will get restored in track()
         var correlationContext = CorrelationContextManager.getCurrentContext();
         if (correlationContext) {
             correlationContext.operationId = requestParser.getOperationId(client.context.tags) || correlationContext.operationId;
@@ -142,7 +140,7 @@ class AutoCollectServerRequests {
 
         // Establish the definitive operationId. Update the correlation context with the result
         // This can be either the value from ServerRequestParser or from the correlation context.
-        // ServerRequestParser always wins.
+        // ServerRequestParser always wins. This value will get restored in track()
         var correlationContext = CorrelationContextManager.getCurrentContext();
         if (correlationContext) {
             correlationContext.operationId = requestParser.getOperationId(client.context.tags) || correlationContext.operationId;
