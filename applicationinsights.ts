@@ -1,3 +1,4 @@
+import CorrelationContextManager = require("./AutoCollection/CorrelationContextManager");
 import AutoCollectConsole = require("./AutoCollection/Console");
 import AutoCollectExceptions = require("./AutoCollection/Exceptions");
 import AutoCollectPerformance = require("./AutoCollection/Performance");
@@ -32,6 +33,10 @@ class ApplicationInsights {
     private static _clientRequests: AutoCollectClientRequests;
 
     private static _isStarted = false;
+
+    public static getContext() {
+        return CorrelationContextManager.CorrelationContextManager;
+    }
 
     /**
      * Initializes a client with the given instrumentation key, if this is not specified, the value will be

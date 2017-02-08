@@ -1,3 +1,4 @@
+import "zone.js";
 import http = require("http");
 
 export interface CorrelationContext {
@@ -5,8 +6,6 @@ export interface CorrelationContext {
 }
 
 export class CorrelationContextManager {
-    private static contexts: {[uid: number]: CorrelationContext} = [];
-    private static currentContext: CorrelationContext = null;
     private static enabled: boolean = false;
     private static hasEverEnabled: boolean = false;
 
@@ -16,73 +15,78 @@ export class CorrelationContextManager {
      *  logical chain of execution, including across asynchronous calls.
      */
     public static getCurrentContext(): CorrelationContext {
-        if (!this.enabled) {
+        if (!CorrelationContextManager.enabled) {
             return null;
         }
-        return this.currentContext;
+        return Zone.current.get("context");
     }
 
     /** 
-     *  Enters a new Context.
+     *  Runs a function inside a given Context.
      *  All logical children of the execution path that entered this Context
      *  will receive this Context object on calls to GetCurrentContext.
      */
-    public static enterNewContext(context: CorrelationContext) {
-        this.currentContext = context;
+    public static runWithContext(context: CorrelationContext, fn: ()=>any) {
+        if (CorrelationContextManager.enabled) {
+            var newZone = Zone.current.fork({name: context.operationId, properties: {context: context}});
+            newZone.run(fn);
+        } else {
+            fn();
+        }
     }
 
     /**
-     *  Enables the CorrelationContextManager. This uses Node's async_wrap
-     *  API which is not available in older versions of Node (< 0.12.1).
-     *  This method will detect these old versions and do nothing.
+     *  Enables the CorrelationContextManager.
      */
     public static enable() {
-        if (/^0\.([0-9]\.)|(10\.)|(11\.)|(12\.0$)/.test(process.versions.node)) {
-            return;
+        // Run patches first
+        if (!this.hasEverEnabled) {
+            this.hasEverEnabled = true;
+            this.patchRedis();
         }
 
         this.enabled = true;
-        
-        if (!this.hasEverEnabled) {
-            this.hasEverEnabled = true;
-
-            // Suppress unstable warning from async-hook
-            process.env["NODE_ASYNC_HOOK_NO_WARNING"] = true;
-
-            // Load in async-hook and enable it
-            var asyncHook = require("async-hook");
-            asyncHook.addHooks({
-                init: this.onAsyncInit,
-                pre: this.onAsyncPre,
-                post: this.onAsyncPost,
-                destroy: this.onAsyncDestroy});
-            asyncHook.enable();
-        }
     }
 
+    /**
+     *  Disables the CorrelationContextManager.
+     */
     public static disable() {
         this.enabled = false;
     }
 
-    public static isEnabled() {
-        return this.enabled;
+    // Patch methods that manually go async that Zone doesn't catch
+    private static requireForPatch(module: string) {
+        var req = null;
+        try {
+            req = require(module);
+        } catch (e) {
+            return null;
+        }
+        return req;
+    }
+    private static patchRedis() {
+        var redis = this.requireForPatch("redis");
+
+        if (!redis || !redis.RedisClient) {
+            return;
+        }
+
+        var orig = redis.RedisClient.prototype.send_command;
+        redis.RedisClient.prototype.send_command = function() {
+            var args = Array.prototype.slice.call(arguments);
+            var lastArg = args[args.length - 1];
+
+            if (typeof lastArg === "function") {
+                args[args.length - 1] = Zone.current.wrap(lastArg, "ApplicationInsights.CorrelationContextManager.patchRedis");
+            } else if (Array.isArray(lastArg) && typeof lastArg[lastArg.length - 1] === "function") {
+                // The last argument can be an array!
+                var lastIndexLastArg = lastArg[lastArg.length - 1];
+                lastArg[lastArg.length - 1] = Zone.current.wrap(lastIndexLastArg, "ApplicationInsights.CorrelationContextManager.patchRedis");
+            }
+
+            return orig.apply(this, args);
+        };
     }
 
-
-    // Callbacks for async-hook
-    private static onAsyncInit(uid: number) {
-        this.contexts[uid] = this.currentContext;
-    }
-
-    private static onAsyncPre(uid: number) {
-        this.currentContext = this.contexts[uid];
-    }
-
-    private static onAsyncPost(uid: number) {
-        this.currentContext = null;
-    }
-
-    private static onAsyncDestroy(uid: number) {
-        delete this.contexts[uid];
-    }
 }

@@ -32,7 +32,11 @@ class AutoCollectServerRequests {
 
     public enable(isEnabled:boolean) {
         this._isEnabled = isEnabled;
-        if(this._isEnabled && !this._isInitialized) {
+
+        // Autocorrelation requires automatic monitoring of incoming server requests
+        // Disabling autocollection but enabling autocorrelation will still enable
+        // request monitoring but will not produce request events
+        if ((this._isAutoCorrelating || this._isEnabled) && !this._isInitialized) {
             this.useAutoCorrelation(this._isAutoCorrelating);
             this._initialize();
         }
@@ -58,7 +62,7 @@ class AutoCollectServerRequests {
                 operationId: Util.newGuid()
             };
         }
-        CorrelationContextManager.enterNewContext(correlationContext);
+        return correlationContext;
     }
 
     private _initialize() {
@@ -69,16 +73,18 @@ class AutoCollectServerRequests {
             // todo: get a pointer to the server so the IP address can be read from server.address
             return originalHttpServer((request:http.ServerRequest, response:http.ServerResponse) => {
                 // Set up correlation context
-                this._generateCorrelationContext(request, response);
+                var correlationContext = this._generateCorrelationContext(request, response);
 
-                if (this._isEnabled) {
-                    // Auto collect request
-                    AutoCollectServerRequests.trackRequest(this._client, request, response);
-                }
+                CorrelationContextManager.runWithContext(correlationContext, () => {
+                    if (this._isEnabled) {
+                        // Auto collect request
+                        AutoCollectServerRequests.trackRequest(this._client, request, response);
+                    }
 
-                if (typeof onRequest === "function") {
-                    onRequest(request, response);
-                }
+                    if (typeof onRequest === "function") {
+                        onRequest(request, response);
+                    }
+                });
             });
         }
 
@@ -86,15 +92,17 @@ class AutoCollectServerRequests {
         https.createServer = (options, onRequest) => {
             return originalHttpsServer(options, (request:http.ServerRequest, response:http.ServerResponse) => {
                 // Set up correlation context
-                this._generateCorrelationContext(request, response);
+                var correlationContext = this._generateCorrelationContext(request, response);
 
-                if (this._isEnabled) {
-                    AutoCollectServerRequests.trackRequest(this._client, request, response);
-                }
+                CorrelationContextManager.runWithContext(correlationContext, () => {
+                    if (this._isEnabled) {
+                        AutoCollectServerRequests.trackRequest(this._client, request, response);
+                    }
 
-                if (typeof onRequest === "function") {
-                    onRequest(request, response);
-                }
+                    if (typeof onRequest === "function") {
+                        onRequest(request, response);
+                    }
+                });
             });
         }
     }
