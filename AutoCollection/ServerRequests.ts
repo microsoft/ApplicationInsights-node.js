@@ -55,6 +55,10 @@ class AutoCollectServerRequests {
         return this._isInitialized;
     }
 
+    public isAutoCorrelating() {
+        return this._isAutoCorrelating;
+    }
+
     private _generateCorrelationContext(request:http.ServerRequest, response:http.ServerResponse) {
         var correlationContext: CorrelationContext = null;
         if (this._isAutoCorrelating) {

@@ -223,7 +223,7 @@ class Client {
         envelope.os = os && os.type();
         envelope.osVer = os && os.release();
         envelope.seq = this._sequencePrefix + (this._sequenceNumber++).toString();
-        envelope.tags = this.getTags();
+        envelope.tags = this.getTags(tagOverrides);
         envelope.time = (new Date()).toISOString();
         envelope.ver = 1;
         return envelope;

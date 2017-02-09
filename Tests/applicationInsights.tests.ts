@@ -109,6 +109,7 @@ describe("ApplicationInsights", () => {
             assert.ok(Exceptions.INSTANCE.isInitialized());
             assert.ok(Performance.INSTANCE.isInitialized());
             assert.ok(ServerRequests.INSTANCE.isInitialized());
+            assert.ok(ServerRequests.INSTANCE.isAutoCorrelating());
             assert.ok(ClientRequests.INSTANCE.isInitialized());
         });
 
@@ -119,12 +120,14 @@ describe("ApplicationInsights", () => {
                 .setAutoCollectPerformance(false)
                 .setAutoCollectRequests(false)
                 .setAutoCollectDependencies(false)
+                .setAutoDependencyCorrelation(false)
                 .start();
 
             assert.ok(!Console.INSTANCE.isInitialized());
             assert.ok(!Exceptions.INSTANCE.isInitialized());
             assert.ok(!Performance.INSTANCE.isInitialized());
             assert.ok(!ServerRequests.INSTANCE.isInitialized());
+            assert.ok(!ServerRequests.INSTANCE.isAutoCorrelating());
             assert.ok(!ClientRequests.INSTANCE.isInitialized());
         });
     });

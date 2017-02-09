@@ -1,4 +1,4 @@
-import "zone.js";
+import "zone.js"; // Keep this first
 import http = require("http");
 
 export interface CorrelationContext {
@@ -29,7 +29,7 @@ export class CorrelationContextManager {
      */
     public static runWithContext(context: CorrelationContext, fn: ()=>any) {
         if (CorrelationContextManager.enabled) {
-            var newZone = Zone.current.fork({name: context.operationId, properties: {context: context}});
+            var newZone = Zone.current.fork({name: "AI-"+((context && context.operationId) || "Unknown"), properties: {context: context}});
             newZone.run(fn);
         } else {
             fn();

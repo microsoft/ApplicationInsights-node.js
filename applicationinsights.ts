@@ -1,4 +1,4 @@
-import CorrelationContextManager = require("./AutoCollection/CorrelationContextManager");
+import CorrelationContextManager = require("./AutoCollection/CorrelationContextManager"); // Keep this first
 import AutoCollectConsole = require("./AutoCollection/Console");
 import AutoCollectExceptions = require("./AutoCollection/Exceptions");
 import AutoCollectPerformance = require("./AutoCollection/Performance");
