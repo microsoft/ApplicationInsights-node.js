@@ -9,6 +9,7 @@ This project provides a [Visual Studio Application Insights](https://azure.micro
 
 The SDK provides automatic collection of incoming HTTP request rates and responses, performance counters (CPU, memory, RPS), and unhandled exceptions. In addition, you can add custom calls to track dependencies, metrics, or other events.
 
+In versions of Node.js > 4.0 (and io.js > 3.3) the SDK provides automatic correlation of dependencies to requests.
 
 ## Requirements ##
 **Install**

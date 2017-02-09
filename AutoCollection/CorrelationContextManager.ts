@@ -1,4 +1,8 @@
-import "zone.js"; // Keep this first
+/// <reference path="..\node_modules\zone.js\dist\zone.js.d.ts" />
+var nodeVer = process.versions.node.split(".");
+if (parseInt(nodeVer[0]) > 3 || (parseInt(nodeVer[0]) > 2 && parseInt(nodeVer[1]) > 2)) { // Unit tests warn of errors < 3.3 from timer patching. All versions before 4 were 0.x
+    require("zone.js"); // Keep this first
+}
 import http = require("http");
 
 export interface CorrelationContext {
@@ -54,6 +58,11 @@ export class CorrelationContextManager {
      *  Enables the CorrelationContextManager.
      */
     public static enable() {
+        if (!this.isNodeVersionCompatible()) {
+            this.enabled = false;
+            return;
+        }
+
         // Run patches first
         if (!this.hasEverEnabled) {
             this.hasEverEnabled = true;
@@ -68,6 +77,14 @@ export class CorrelationContextManager {
      */
     public static disable() {
         this.enabled = false;
+    }
+
+
+    /**
+     *  Reports if the CorrelationContextManager is able to run in this environment
+     */
+    public static isNodeVersionCompatible() {
+        return typeof Zone !== 'undefined'
     }
 
     // Patch methods that manually go async that Zone doesn't catch
