@@ -44,6 +44,7 @@ appInsights.setup("<instrumentation_key>")
     .setAutoCollectRequests(false)
     .setAutoCollectPerformance(false)
     .setAutoCollectExceptions(false)
+    .setAutoCollectDependencies(false)
     .setAutoDependencyCorrelation(false)
     // no telemetry will be sent until .start() is called
     .start();

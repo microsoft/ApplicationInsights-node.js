@@ -221,8 +221,18 @@ class ApplicationInsights {
      * Enables verbose debug logging
      * @returns {ApplicationInsights} this class
      */
-    public static enableVerboseLogging() {
+    public static enableVerboseLogging(enableWarningLogging = true) {
         Logging.enableDebug = true;
+        Logging.disableWarnings = !enableWarningLogging;
+        return ApplicationInsights;
+    }
+
+    /**
+     * Disables verbose debug and warning logging
+     */
+    public static disableConsoleLogging() {
+        Logging.enableDebug = false;
+        Logging.disableWarnings = true;
         return ApplicationInsights;
     }
 
