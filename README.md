@@ -36,7 +36,7 @@ appInsights.setup("<instrumentation_key>").start();
 
 ## Customized Usage ##
 
-### Disabling auto-collection
+### Disabling automatic collection and correlation
 
 ```javascript
 import appInsights = require("applicationinsights");
@@ -44,6 +44,7 @@ appInsights.setup("<instrumentation_key>")
     .setAutoCollectRequests(false)
     .setAutoCollectPerformance(false)
     .setAutoCollectExceptions(false)
+    .setAutoDependencyCorrelation(false)
     // no telemetry will be sent until .start() is called
     .start();
 ```
@@ -63,12 +64,15 @@ client.trackTrace("trace message");
 ### Telemetry Processor
 
 ```javascript
-public addTelemetryProcessor(telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope) => boolean)
+public addTelemetryProcessor(telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope, context: { http.RequestOptions, http.ClientRequest, http.ClientResponse, userProperties }) => boolean)
 ```
 
 Adds a telemetry processor to the collection. Telemetry processors will be called one by one, in the order they were added, before the telemetry item is pushed for sending. 
 If one of the telemetry processors returns false then the telemetry item will not be sent. 
 If one of the telemetry processors throws an error then the telemetry item will not be sent.
+
+All telemetry processors receive the envelope to modify before sending. They also receive a context object with relevant request information (if available)
+as well as the request storage object returned by `appInsights.getCorrelationContext()` (if automatic dependency correlation is enabled).
 
 **Example**
 

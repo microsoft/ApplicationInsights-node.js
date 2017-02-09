@@ -27,7 +27,7 @@ class Client {
         Util.random32()]) +
     ":";
     private _sequenceNumber = 0;
-    private _telemetryProcessors: { (envelope: ContractsModule.Contracts.Envelope): boolean; }[] = [];
+    private _telemetryProcessors: { (envelope: ContractsModule.Contracts.Envelope, contextObjects: {[name: string]: any;}): boolean; }[] = [];
 
     public config: Config;
     public context: Context;
@@ -278,8 +278,12 @@ class Client {
 
         if (telemetryProcessorsCount === 0) {
             return accepted;
-        }
+        }     
 
+        var correlationContext = CorrelationContextManager.getCurrentContext();
+        var userCorrelationContext = correlationContext && correlationContext.userProperties;
+        contextObjects = contextObjects || {};
+        contextObjects['userProperties'] = userCorrelationContext;
 
         for (var i = 0; i < telemetryProcessorsCount; ++i) {
             try {

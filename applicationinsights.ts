@@ -34,10 +34,6 @@ class ApplicationInsights {
 
     private static _isStarted = false;
 
-    public static getContext() {
-        return CorrelationContextManager.CorrelationContextManager;
-    }
-
     /**
      * Initializes a client with the given instrumentation key, if this is not specified, the value will be
      * read from the environment variable APPINSIGHTS_INSTRUMENTATIONKEY
@@ -90,6 +86,36 @@ class ApplicationInsights {
         }
 
         return ApplicationInsights;
+    }
+
+    /**
+     * Returns an object that is shared across all code handling a given request. This can be used similarly to thread-local storage in other languages.
+     * Properties set on this object will be available to telemetry processors.
+     * 
+     * This method will return null if automatic dependency correlation is disabled.
+     * @returns A plain object for request storage or null if automatic dependency correlation is disabled.
+     */
+    public static getCorrelationContext() {
+        if (this._isCorrelating) {
+            var correlationContext = CorrelationContextManager.CorrelationContextManager.getCurrentContext();
+            if (correlationContext){
+                // Lazy create user properties so that we don't carry around an empty object with requests unless required.
+                if(!correlationContext.userProperties) {
+                    correlationContext.userProperties = {};
+                }
+                return correlationContext.userProperties;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns a function that will get the same correlation context within its function body as the code executing this function.
+     * Use this method if automatic dependency correlation is not propagating correctly to an asynchronous callback.
+     */
+    public static wrapWithCorrelationContext<T extends Function>(fn: T): T {
+        return CorrelationContextManager.CorrelationContextManager.wrapCallback(fn);
     }
 
     /**
@@ -163,7 +189,7 @@ class ApplicationInsights {
     }
 
     /**
-     * Sets the state of dependency correlation (enabled by default)
+     * Sets the state of automatic dependency correlation (enabled by default)
      * @param value if true dependencies will be correlated with requests
      * @returns {ApplicationInsights} this class
      */
