@@ -280,10 +280,8 @@ class Client {
             return accepted;
         }     
 
-        var correlationContext = CorrelationContextManager.getCurrentContext();
-        var userCorrelationContext = correlationContext && correlationContext.userProperties;
         contextObjects = contextObjects || {};
-        contextObjects['userProperties'] = userCorrelationContext;
+        contextObjects['correlationContext'] = CorrelationContextManager.getCurrentContext();
 
         for (var i = 0; i < telemetryProcessorsCount; ++i) {
             try {
@@ -322,7 +320,11 @@ class Client {
         }
 
         // Fill in internally-populated values if not already set
-        newTags[this.context.keys.operationId] = newTags[this.context.keys.operationId] || correlationContext.operationId;
+        if (correlationContext) {
+            newTags[this.context.keys.operationId] = newTags[this.context.keys.operationId] || correlationContext.operation.id;
+            newTags[this.context.keys.operationName] = newTags[this.context.keys.operationName] || correlationContext.operation.name;
+            newTags[this.context.keys.operationParentId] = newTags[this.context.keys.operationParentId] || correlationContext.operation.parentId;
+        }
 
         return newTags;
     }

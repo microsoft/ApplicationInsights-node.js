@@ -59,14 +59,16 @@ class AutoCollectServerRequests {
         return this._isAutoCorrelating;
     }
 
-    private _generateCorrelationContext(request:http.ServerRequest, response:http.ServerResponse) {
-        var correlationContext: CorrelationContext = null;
-        if (this._isAutoCorrelating) {
-            correlationContext = {
-                operationId: Util.newGuid()
-            };
+    private _generateCorrelationContext(requestParser:ServerRequestParser): CorrelationContext {
+        if (!this._isAutoCorrelating) {
+            return;
         }
-        return correlationContext;
+
+        return CorrelationContextManager.generateContextObject(
+            requestParser.getRequestId(),
+            requestParser.getOperationName(this._client.context.tags),
+            requestParser.getOperationId(this._client.context.tags)
+        );
     }
 
     private _initialize() {
@@ -77,12 +79,13 @@ class AutoCollectServerRequests {
             // todo: get a pointer to the server so the IP address can be read from server.address
             return originalHttpServer((request:http.ServerRequest, response:http.ServerResponse) => {
                 // Set up correlation context
-                var correlationContext = this._generateCorrelationContext(request, response);
+                var requestParser = new ServerRequestParser(request);
+                var correlationContext = this._generateCorrelationContext(requestParser);
 
                 CorrelationContextManager.runWithContext(correlationContext, () => {
                     if (this._isEnabled) {
                         // Auto collect request
-                        AutoCollectServerRequests.trackRequest(this._client, request, response);
+                        AutoCollectServerRequests.trackRequest(this._client, request, response, null, requestParser);
                     }
 
                     if (typeof onRequest === "function") {
@@ -96,11 +99,12 @@ class AutoCollectServerRequests {
         https.createServer = (options, onRequest) => {
             return originalHttpsServer(options, (request:http.ServerRequest, response:http.ServerResponse) => {
                 // Set up correlation context
-                var correlationContext = this._generateCorrelationContext(request, response);
+                var requestParser = new ServerRequestParser(request);
+                var correlationContext = this._generateCorrelationContext(requestParser);
 
                 CorrelationContextManager.runWithContext(correlationContext, () => {
                     if (this._isEnabled) {
-                        AutoCollectServerRequests.trackRequest(this._client, request, response);
+                        AutoCollectServerRequests.trackRequest(this._client, request, response, null, requestParser);
                     }
 
                     if (typeof onRequest === "function") {
@@ -123,14 +127,14 @@ class AutoCollectServerRequests {
         AutoCollectServerRequests.addResponseIKeyHeader(client, response);
 
         // store data about the request
-        var requestParser = new ServerRequestParser(request);
-
-        // Establish the definitive operationId. Update the correlation context with the result
-        // This can be either the value from ServerRequestParser or from the correlation context.
-        // ServerRequestParser always wins. This value will get restored in track()
         var correlationContext = CorrelationContextManager.getCurrentContext();
+        var requestParser = new ServerRequestParser(request, (correlationContext && correlationContext.operation.parentId) || Util.newGuid());
+
+        // Overwrite correlation context with request parser results
         if (correlationContext) {
-            correlationContext.operationId = requestParser.getOperationId(client.context.tags) || correlationContext.operationId;
+            correlationContext.operation.id = requestParser.getOperationId(client.context.tags) || correlationContext.operation.id;
+            correlationContext.operation.name = requestParser.getOperationName(client.context.tags) || correlationContext.operation.name;
+            correlationContext.operation.parentId = requestParser.getRequestId() || correlationContext.operation.parentId;
         }
 
         AutoCollectServerRequests.endRequest(client, requestParser, request, response, ellapsedMilliseconds, properties, error);
@@ -139,25 +143,25 @@ class AutoCollectServerRequests {
     /**
      * Tracks a request by listening to the response 'finish' event
      */
-    public static trackRequest(client:Client, request:http.ServerRequest, response:http.ServerResponse, properties?:{ [key: string]: string; }) {
+    public static trackRequest(client:Client, request:http.ServerRequest, response:http.ServerResponse, properties?:{ [key: string]: string; }, _requestParser?:ServerRequestParser) {
         if (!request || !response || !client) {
             Logging.info("AutoCollectServerRequests.trackRequest was called with invalid parameters: ", !request, !response, !client);
             return;
         }
 
         // store data about the request
-        var requestParser = new ServerRequestParser(request);
+        var correlationContext = CorrelationContextManager.getCurrentContext();
+        var requestParser = _requestParser || new ServerRequestParser(request, correlationContext && correlationContext.operation.parentId || Util.newGuid());
 
         if (Util.canIncludeCorrelationHeader(client, requestParser.getUrl())) {
             AutoCollectServerRequests.addResponseIKeyHeader(client, response);
         }
 
-        // Establish the definitive operationId. Update the correlation context with the result
-        // This can be either the value from ServerRequestParser or from the correlation context.
-        // ServerRequestParser always wins. This value will get restored in track()
-        var correlationContext = CorrelationContextManager.getCurrentContext();
-        if (correlationContext) {
-            correlationContext.operationId = requestParser.getOperationId(client.context.tags) || correlationContext.operationId;
+        // Overwrite correlation context with request parser results (if not an automatic track. we've already precalculated the correlation context in that case)
+        if (correlationContext && !_requestParser) {
+            correlationContext.operation.id = requestParser.getOperationId(client.context.tags) || correlationContext.operation.id;
+            correlationContext.operation.name = requestParser.getOperationName(client.context.tags) || correlationContext.operation.name;
+            correlationContext.operation.parentId = requestParser.getOperationParentId(client.context.tags) || correlationContext.operation.parentId;
         }
 
         // response listeners

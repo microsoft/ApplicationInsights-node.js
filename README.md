@@ -9,7 +9,7 @@ This project provides a [Visual Studio Application Insights](https://azure.micro
 
 The SDK provides automatic collection of incoming HTTP request rates and responses, performance counters (CPU, memory, RPS), and unhandled exceptions. In addition, you can add custom calls to track dependencies, metrics, or other events.
 
-In versions of Node.js > 4.0 (and io.js > 3.3) the SDK provides automatic correlation of dependencies to requests.
+In versions of Node.js > 4.0 (and io.js > 3.3) the SDK provides automatic correlation of dependencies to requests (off by default, see Customized Usage below to enable).
 
 ## Requirements ##
 **Install**
@@ -37,7 +37,17 @@ appInsights.setup("<instrumentation_key>").start();
 
 ## Customized Usage ##
 
-### Disabling automatic collection and correlation
+### Enabling automatic correlation
+
+```javascript
+import appInsights = require("applicationinsights");
+appInsights.setup("<instrumentation_key>")
+    .setAutoDependencyCorrelation(true)
+    // no telemetry will be sent until .start() is called
+    .start();
+```
+
+### Disabling automatic collection
 
 ```javascript
 import appInsights = require("applicationinsights");
@@ -46,7 +56,6 @@ appInsights.setup("<instrumentation_key>")
     .setAutoCollectPerformance(false)
     .setAutoCollectExceptions(false)
     .setAutoCollectDependencies(false)
-    .setAutoDependencyCorrelation(false)
     // no telemetry will be sent until .start() is called
     .start();
 ```
@@ -66,7 +75,7 @@ client.trackTrace("trace message");
 ### Telemetry Processor
 
 ```javascript
-public addTelemetryProcessor(telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope, context: { http.RequestOptions, http.ClientRequest, http.ClientResponse, userProperties }) => boolean)
+public addTelemetryProcessor(telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope, context: { http.RequestOptions, http.ClientRequest, http.ClientResponse, correlationContext }) => boolean)
 ```
 
 Adds a telemetry processor to the collection. Telemetry processors will be called one by one, in the order they were added, before the telemetry item is pushed for sending. 

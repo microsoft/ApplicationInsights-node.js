@@ -4,10 +4,15 @@ if (parseInt(nodeVer[0]) > 3 || (parseInt(nodeVer[0]) > 2 && parseInt(nodeVer[1]
     require("zone.js"); // Keep this first
 }
 import http = require("http");
+import Util = require("../Library/Util");
 
 export interface CorrelationContext {
-    operationId: string;
-    userProperties?: {};
+    operation: {
+        name: string;
+        id: string;
+        parentId: string; // Always used for dependencies, may be ignored in favor of incoming headers for requests
+    };
+    customProperties: {};
 }
 
 export class CorrelationContextManager {
@@ -26,6 +31,27 @@ export class CorrelationContextManager {
         return Zone.current.get("context");
     }
 
+    /**
+     *  A helper to generate objects conforming to the CorrelationContext interface
+     */
+    public static generateContextObject(parentId?: string, operationName?: string, operationId?: string): CorrelationContext {
+        operationId = operationId || Util.newGuid();
+        parentId = parentId || operationId;
+        
+        if (this.enabled) {
+            return {
+                operation: {
+                    name: operationName,
+                    id: operationId,
+                    parentId: parentId
+                },
+                customProperties: {}
+            };
+        }
+
+        return null;
+    }
+
     /** 
      *  Runs a function inside a given Context.
      *  All logical children of the execution path that entered this Context
@@ -33,7 +59,10 @@ export class CorrelationContextManager {
      */
     public static runWithContext(context: CorrelationContext, fn: ()=>any) {
         if (CorrelationContextManager.enabled) {
-            var newZone = Zone.current.fork({name: "AI-"+((context && context.operationId) || "Unknown"), properties: {context: context}});
+            var newZone = Zone.current.fork({
+                name: "AI-" + ((context && context.operation.parentId) || "Unknown"), 
+                properties: {context: context}
+            });
             newZone.run(fn);
         } else {
             fn();

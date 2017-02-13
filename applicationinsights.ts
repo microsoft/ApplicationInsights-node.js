@@ -24,7 +24,7 @@ class ApplicationInsights {
     private static _isRequests = true;
     private static _isDependencies = true;
     private static _isOfflineMode = false;
-    private static _isCorrelating = true;
+    private static _isCorrelating = false;
 
     private static _console: AutoCollectConsole;
     private static _exceptions: AutoCollectExceptions;
@@ -95,16 +95,9 @@ class ApplicationInsights {
      * This method will return null if automatic dependency correlation is disabled.
      * @returns A plain object for request storage or null if automatic dependency correlation is disabled.
      */
-    public static getCorrelationContext() {
+    public static getCorrelationContext(): CorrelationContextManager.CorrelationContext {
         if (this._isCorrelating) {
-            var correlationContext = CorrelationContextManager.CorrelationContextManager.getCurrentContext();
-            if (correlationContext){
-                // Lazy create user properties so that we don't carry around an empty object with requests unless required.
-                if(!correlationContext.userProperties) {
-                    correlationContext.userProperties = {};
-                }
-                return correlationContext.userProperties;
-            }
+            return CorrelationContextManager.CorrelationContextManager.getCurrentContext();
         }
 
         return null;

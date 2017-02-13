@@ -10,10 +10,20 @@ import sinon = require("sinon");
 if (CorrelationContextManager.isNodeVersionCompatible()) {
     describe("AutoCollection/CorrelationContextManager", () => {
         var testContext: CorrelationContext = {
-            operationId: "test"
+            operation: {
+                id: "test",
+                name: "test",
+                parentId: "test"
+            },
+            customProperties: {}
         };
         var testContext2: CorrelationContext = {
-            operationId: "test2"
+            operation: {
+                id: "test2",
+                name: "test2",
+                parentId: "test2"
+            },
+            customProperties: {}
         };
 
         describe("#getCurrentContext()", () => {
@@ -133,10 +143,20 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
 } else {
     describe("AutoCollection/CorrelationContextManager[IncompatibleVersion!]", () => {
         var testContext: CorrelationContext = {
-            operationId: "test"
+            operation: {
+                id: "test",
+                name: "test",
+                parentId: "test"
+            },
+            customProperties: {}
         };
         var testContext2: CorrelationContext = {
-            operationId: "test2"
+            operation: {
+                id: "test2",
+                name: "test2",
+                parentId: "test2"
+            },
+            customProperties: {}
         };
 
         describe("#getCurrentContext()", () => {

@@ -109,7 +109,7 @@ describe("ApplicationInsights", () => {
             assert.ok(Exceptions.INSTANCE.isInitialized());
             assert.ok(Performance.INSTANCE.isInitialized());
             assert.ok(ServerRequests.INSTANCE.isInitialized());
-            assert.ok(ServerRequests.INSTANCE.isAutoCorrelating());
+            assert.ok(!ServerRequests.INSTANCE.isAutoCorrelating());
             assert.ok(ClientRequests.INSTANCE.isInitialized());
         });
 
