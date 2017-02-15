@@ -47,6 +47,8 @@ appInsights.setup("<instrumentation_key>")
     .start();
 ```
 
+> Be sure to call `require("applicationinsights")` before your other imports. This allows the SDK to do patching necessary for tracking correlation state before other libraries use patched methods. If you encounter conflicts with other libraries doing similar patching, place this import below those libraries.
+
 ### Disabling automatic collection
 
 ```javascript
