@@ -1,3 +1,4 @@
+import CorrelationContextManager = require("./AutoCollection/CorrelationContextManager"); // Keep this first
 import AutoCollectConsole = require("./AutoCollection/Console");
 import AutoCollectExceptions = require("./AutoCollection/Exceptions");
 import AutoCollectPerformance = require("./AutoCollection/Performance");
@@ -23,6 +24,7 @@ class ApplicationInsights {
     private static _isRequests = true;
     private static _isDependencies = true;
     private static _isOfflineMode = false;
+    private static _isCorrelating = false;
 
     private static _console: AutoCollectConsole;
     private static _exceptions: AutoCollectExceptions;
@@ -76,6 +78,7 @@ class ApplicationInsights {
             ApplicationInsights._console.enable(ApplicationInsights._isConsole);
             ApplicationInsights._exceptions.enable(ApplicationInsights._isExceptions);
             ApplicationInsights._performance.enable(ApplicationInsights._isPerformance);
+            ApplicationInsights._serverRequests.useAutoCorrelation(ApplicationInsights._isCorrelating);
             ApplicationInsights._serverRequests.enable(ApplicationInsights._isRequests);
             ApplicationInsights._clientRequests.enable(ApplicationInsights._isDependencies);
         } else {
@@ -83,6 +86,29 @@ class ApplicationInsights {
         }
 
         return ApplicationInsights;
+    }
+
+    /**
+     * Returns an object that is shared across all code handling a given request. This can be used similarly to thread-local storage in other languages.
+     * Properties set on this object will be available to telemetry processors.
+     * 
+     * This method will return null if automatic dependency correlation is disabled.
+     * @returns A plain object for request storage or null if automatic dependency correlation is disabled.
+     */
+    public static getCorrelationContext(): CorrelationContextManager.CorrelationContext {
+        if (this._isCorrelating) {
+            return CorrelationContextManager.CorrelationContextManager.getCurrentContext();
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns a function that will get the same correlation context within its function body as the code executing this function.
+     * Use this method if automatic dependency correlation is not propagating correctly to an asynchronous callback.
+     */
+    public static wrapWithCorrelationContext<T extends Function>(fn: T): T {
+        return CorrelationContextManager.CorrelationContextManager.wrapCallback(fn);
     }
 
     /**
@@ -150,6 +176,20 @@ class ApplicationInsights {
         ApplicationInsights._isDependencies = value;
         if (ApplicationInsights._isStarted) {
             ApplicationInsights._clientRequests.enable(value);
+        }
+
+        return ApplicationInsights;
+    }
+
+    /**
+     * Sets the state of automatic dependency correlation (enabled by default)
+     * @param value if true dependencies will be correlated with requests
+     * @returns {ApplicationInsights} this class
+     */
+    public static setAutoDependencyCorrelation(value: boolean) {
+        ApplicationInsights._isCorrelating = value;
+        if (ApplicationInsights._isStarted) {
+            ApplicationInsights._serverRequests.useAutoCorrelation(value);
         }
 
         return ApplicationInsights;

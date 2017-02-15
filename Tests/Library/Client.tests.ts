@@ -646,9 +646,13 @@ describe("Library/Client", () => {
             mockData.properties = {};
             var env = client.getEnvelope(mockData);
             assert.deepEqual(env.tags, client.context.tags, "tags are set by default");
-            var customTag = { custom: "tag" };
+            var customTag = { "ai.cloud.roleInstance": "override" };
+            var expected = {};
+            for(var tag in client.context.tags) {
+                expected[tag] = customTag[tag] || client.context.tags[tag];
+            }
             env = client.getEnvelope(mockData, <any>customTag);
-            assert.deepEqual(env.tags, customTag)
+            assert.deepEqual(env.tags, expected)
         });
 
         it("should set sequence numbers correctly", () => {
