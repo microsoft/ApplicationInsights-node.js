@@ -1,8 +1,4 @@
 /// <reference path="..\node_modules\zone.js\dist\zone.js.d.ts" />
-var nodeVer = process.versions.node.split(".");
-if (parseInt(nodeVer[0]) > 3 || (parseInt(nodeVer[0]) > 2 && parseInt(nodeVer[1]) > 2)) { // Unit tests warn of errors < 3.3 from timer patching. All versions before 4 were 0.x
-    require("zone.js"); // Keep this first
-}
 import http = require("http");
 import Util = require("../Library/Util");
 
@@ -92,9 +88,15 @@ export class CorrelationContextManager {
             return;
         }
 
-        // Run patches first
+        // Load in Zone.js
+        require("zone.js");
+        
+
+        // Run patches for Zone.js
         if (!this.hasEverEnabled) {
             this.hasEverEnabled = true;
+            this.patchError();
+            this.patchTimers(["setTimeout", "setInterval"]);
             this.patchRedis();
         }
 
@@ -113,7 +115,9 @@ export class CorrelationContextManager {
      *  Reports if the CorrelationContextManager is able to run in this environment
      */
     public static isNodeVersionCompatible() {
-        return typeof Zone !== 'undefined'
+        // Unit tests warn of errors < 3.3 from timer patching. All versions before 4 were 0.x
+        var nodeVer = process.versions.node.split(".");
+        return parseInt(nodeVer[0]) > 3 || (parseInt(nodeVer[0]) > 2 && parseInt(nodeVer[1]) > 2);
     }
 
     // Patch methods that manually go async that Zone doesn't catch
@@ -127,6 +131,11 @@ export class CorrelationContextManager {
         return req;
     }
 
+    // A good example of patching a third party library to respect context.
+    // send_command is always used in this library to send data out.
+    // By overwriting the function to capture the callback provided to it,
+    // and wrapping that callback, we ensure that consumers of this library
+    // will have context persisted.
     private static patchRedis() {
         var redis = this.requireForPatch("redis");
 
@@ -138,7 +147,7 @@ export class CorrelationContextManager {
 
                 if (typeof lastArg === "function") {
                     args[args.length - 1] = Zone.current.wrap(lastArg, "AI.CCM.patchRedis");
-                } else if (Array.isArray(lastArg) && typeof lastArg[lastArg.length - 1] === "function") {
+                } else if (lastArg instanceof Array && typeof lastArg[lastArg.length - 1] === "function") {
                     // The last argument can be an array!
                     var lastIndexLastArg = lastArg[lastArg.length - 1];
                     lastArg[lastArg.length - 1] = Zone.current.wrap(lastIndexLastArg, "AI.CCM.patchRedis");
@@ -149,4 +158,68 @@ export class CorrelationContextManager {
         }
     }
 
+    // Zone.js breaks concatenation of timer return values.
+    // This fixes that.
+    private static patchTimers(methodNames: string[]) {
+        methodNames.forEach(methodName => {
+            var orig = global[methodName];
+            global[methodName] = function() {
+                var ret = orig.apply(this, arguments);
+                ret.toString = function(){
+                    if (this.data && typeof this.data.handleId !== 'undefined') {
+                        return this.data.handleId.toString();
+                    } else {
+                        return Object.prototype.toString.call(this);
+                    }
+                }
+                return ret;
+            };
+        });
+    }
+
+    // Zone.js breaks deepEqual on error objects (by making internal properties enumerable).
+    // This fixes that by subclassing the error object and making all properties not enumerable
+    private static patchError() {
+        var orig = global.Error;
+
+        // New error handler
+        function AppInsightsAsyncCorrelatedErrorHandler() {
+            if (!(this instanceof AppInsightsAsyncCorrelatedErrorHandler)) {
+                return AppInsightsAsyncCorrelatedErrorHandler.apply(Object.create(AppInsightsAsyncCorrelatedErrorHandler.prototype), arguments);
+            }
+
+            orig.apply(this, arguments);
+            
+            // getOwnPropertyNames should be a superset of Object.keys...
+            // This appears to not always be the case
+            var props = Object.getOwnPropertyNames(this).concat(Object.keys(this));
+
+            // Zone.js will automatically create some hidden properties at read time.
+            // We need to proactively make those not enumerable as well as the currently visible properties
+            for(var i=0; i<props.length; i++) {
+                var propertyName = props[i];
+                var hiddenPropertyName = Zone['__symbol__'](propertyName);
+                Object.defineProperty(this, propertyName, { enumerable: false });
+                Object.defineProperty(this, hiddenPropertyName, { enumerable: false, writable: true });
+            }
+
+            return this;
+        }
+
+        // Inherit from the Zone.js error handler
+        AppInsightsAsyncCorrelatedErrorHandler.prototype = orig.prototype;
+
+        // We need this loop to copy outer methods like Error.captureStackTrace
+        var props = Object.getOwnPropertyNames(orig);
+        for(var i=0; i<props.length; i++) {
+            var propertyName = props[i];
+            if (!AppInsightsAsyncCorrelatedErrorHandler[propertyName]) {
+                Object.defineProperty(AppInsightsAsyncCorrelatedErrorHandler, propertyName, {
+                    value: orig[propertyName],
+                    enumerable: orig.propertyIsEnumerable(propertyName)
+                });
+            }
+        }
+        global.Error = AppInsightsAsyncCorrelatedErrorHandler;
+    }
 }
