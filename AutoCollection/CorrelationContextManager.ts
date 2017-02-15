@@ -183,9 +183,9 @@ export class CorrelationContextManager {
         var orig = global.Error;
 
         // New error handler
-        function AppInsightsAsyncCorrelatedErrorHandler() {
-            if (!(this instanceof AppInsightsAsyncCorrelatedErrorHandler)) {
-                return AppInsightsAsyncCorrelatedErrorHandler.apply(Object.create(AppInsightsAsyncCorrelatedErrorHandler.prototype), arguments);
+        function AppInsightsAsyncCorrelatedErrorWrapper() {
+            if (!(this instanceof AppInsightsAsyncCorrelatedErrorWrapper)) {
+                return AppInsightsAsyncCorrelatedErrorWrapper.apply(Object.create(AppInsightsAsyncCorrelatedErrorWrapper.prototype), arguments);
             }
 
             orig.apply(this, arguments);
@@ -207,19 +207,19 @@ export class CorrelationContextManager {
         }
 
         // Inherit from the Zone.js error handler
-        AppInsightsAsyncCorrelatedErrorHandler.prototype = orig.prototype;
+        AppInsightsAsyncCorrelatedErrorWrapper.prototype = orig.prototype;
 
         // We need this loop to copy outer methods like Error.captureStackTrace
         var props = Object.getOwnPropertyNames(orig);
         for(var i=0; i<props.length; i++) {
             var propertyName = props[i];
-            if (!AppInsightsAsyncCorrelatedErrorHandler[propertyName]) {
-                Object.defineProperty(AppInsightsAsyncCorrelatedErrorHandler, propertyName, {
+            if (!AppInsightsAsyncCorrelatedErrorWrapper[propertyName]) {
+                Object.defineProperty(AppInsightsAsyncCorrelatedErrorWrapper, propertyName, {
                     value: orig[propertyName],
                     enumerable: orig.propertyIsEnumerable(propertyName)
                 });
             }
         }
-        global.Error = AppInsightsAsyncCorrelatedErrorHandler;
+        global.Error = AppInsightsAsyncCorrelatedErrorWrapper;
     }
 }
