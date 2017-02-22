@@ -140,10 +140,11 @@ class Util {
                 var property = obj[field];
                 var propertyType = typeof property;
                 if (propertyType !== "string") {
-                    if (property && typeof property.toString === "function") {
+                    if (property != null && typeof property.toString === "function") {
                         property = property.toString();
                     } else {
-                        property = "invalid property type: " + propertyType;
+                        Logging.info("key: " + field + ", invalid property type: " + propertyType);
+                        continue;
                     }
                 }
 
