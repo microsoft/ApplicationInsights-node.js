@@ -214,10 +214,7 @@ export class CorrelationContextManager {
         for(var i=0; i<props.length; i++) {
             var propertyName = props[i];
             if (!AppInsightsAsyncCorrelatedErrorWrapper[propertyName]) {
-                Object.defineProperty(AppInsightsAsyncCorrelatedErrorWrapper, propertyName, {
-                    value: orig[propertyName],
-                    enumerable: orig.propertyIsEnumerable(propertyName)
-                });
+                Object.defineProperty(AppInsightsAsyncCorrelatedErrorWrapper, propertyName, Object.getOwnPropertyDescriptor(orig, propertyName));
             }
         }
         global.Error = AppInsightsAsyncCorrelatedErrorWrapper;
