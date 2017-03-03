@@ -169,7 +169,9 @@ class Util {
 
         for (let i = 0; i < excludedDomains.length; i++) {
             let regex = new RegExp(excludedDomains[i].replace(/\./g,"\.").replace(/\*/g,".*"));
-            return !regex.test(url.parse(requestUrl).hostname);
+            if (regex.test(url.parse(requestUrl).hostname)) {
+                return false;
+            }
         }
 
         return true;
