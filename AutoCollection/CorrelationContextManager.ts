@@ -8,7 +8,7 @@ export interface CorrelationContext {
         id: string;
         parentId: string; // Always used for dependencies, may be ignored in favor of incoming headers for requests
     };
-    customProperties: {};
+    customProperties: { [id: string]: string };
 }
 
 export class CorrelationContextManager {
