@@ -18,15 +18,6 @@ import Util = require("./Util");
 import Logging = require("./Logging");
 
 class Client {
-
-    private _sequencePrefix =
-    Util.int32ArrayToBase64([
-        Util.random32(),
-        Util.random32(),
-        Util.random32(),
-        Util.random32()]) +
-    ":";
-    private _sequenceNumber = 0;
     private _telemetryProcessors: { (envelope: ContractsModule.Contracts.Envelope, contextObjects: {[name: string]: any;}): boolean; }[] = [];
 
     public config: Config;
@@ -211,7 +202,6 @@ class Client {
         var iKey = this.config.instrumentationKey;
         var envelope = new ContractsModule.Contracts.Envelope();
         envelope.data = data;
-        envelope.appVer = this.context.tags[this.context.keys.applicationVersion];
         envelope.iKey = iKey;
 
         // this is kind of a hack, but the envelope name is always the same as the data name sans the chars "data"
@@ -220,9 +210,6 @@ class Client {
             iKey.replace(/-/g, "") +
             "." +
             data.baseType.substr(0, data.baseType.length - 4);
-        envelope.os = os && os.type();
-        envelope.osVer = os && os.release();
-        envelope.seq = this._sequencePrefix + (this._sequenceNumber++).toString();
         envelope.tags = this.getTags(tagOverrides);
         envelope.time = (new Date()).toISOString();
         envelope.ver = 1;
@@ -263,15 +250,7 @@ class Client {
     public clearTelemetryProcessors() {
         this._telemetryProcessors = [];
     }
-
-    /**
-     * Parse an envelope sequence.
-     */
-    public static parseSeq(seq: string): [string, number] {
-        let array = seq.split(":");
-        return [array[0], parseInt(array[1])];
-    }
-
+    
     private runTelemetryProcessors(envelope: ContractsModule.Contracts.Envelope, contextObjects: { [name: string]: any; }): boolean {
         var accepted = true;
         var telemetryProcessorsCount = this._telemetryProcessors.length;
