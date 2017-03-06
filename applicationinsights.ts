@@ -92,6 +92,10 @@ class ApplicationInsights {
      * Returns an object that is shared across all code handling a given request. This can be used similarly to thread-local storage in other languages.
      * Properties set on this object will be available to telemetry processors.
      * 
+     * Do not store sensitive information here.
+     * Custom properties set on this object can be exposed in a future SDK release via outgoing HTTP headers.
+     * This is to allow for correlating data cross-component.
+     * 
      * This method will return null if automatic dependency correlation is disabled.
      * @returns A plain object for request storage or null if automatic dependency correlation is disabled.
      */

@@ -8,6 +8,10 @@ export interface CorrelationContext {
         id: string;
         parentId: string; // Always used for dependencies, may be ignored in favor of incoming headers for requests
     };
+
+    /** Do not store sensitive information here. 
+     *  Properties here can be exposed in a future SDK release via outgoing HTTP headers for correlating data cross-component.
+     */
     customProperties: { [id: string]: string };
 }
 
