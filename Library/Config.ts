@@ -32,7 +32,11 @@ class Config {
         this.maxBatchSize = 250;
         this.maxBatchIntervalMs = 15000;
         this.disableAppInsights = false;
-        this.correlationHeaderExcludedDomains = ["*.blob.core.windows.net"];
+        this.correlationHeaderExcludedDomains = [
+            "*.blob.core.windows.net", 
+            "*.blob.core.chinacloudapi.cn",
+            "*.blob.core.cloudapi.de",
+            "*.blob.core.usgovcloudapi.net"];
     }
 
     private static _getInstrumentationKey(): string {
