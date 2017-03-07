@@ -137,8 +137,9 @@ describe("Library/Util", () => {
             test(10 * 60 * 1000, "00:10:00.000", "minutes digit 2");
             test(1 * 60 * 60 * 1000, "01:00:00.000", "hours digit 1");
             test(10 * 60 * 60 * 1000, "10:00:00.000", "hours digit 2");
-            test(24 * 60 * 60 * 1000, "00:00:00.000", "hours overflow");
+            test(24 * 60 * 60 * 1000, "1.00:00:00.000", "hours overflow");
             test(11 * 3600000 + 11 * 60000 + 11111, "11:11:11.111", "all digits");
+            test(5 * 86400000 + 13 * 3600000 + 9 * 60000 + 8 * 1000 + 789, "5.13:09:08.789", "all digits with days");
         });
 
         it("should handle invalid input", () => {
