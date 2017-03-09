@@ -5,5 +5,5 @@
         "**/*.js.map": true,
         "**/*.d.ts": true
      },
-     "typescript.tsdk": "./node_modules/typescript/lib"
+    "typescript.tsdk": "./node_modules/typescript/lib"
 }
