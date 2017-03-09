@@ -646,20 +646,13 @@ describe("Library/Client", () => {
             mockData.properties = {};
             var env = client.getEnvelope(mockData);
             assert.deepEqual(env.tags, client.context.tags, "tags are set by default");
-            var customTag = { custom: "tag" };
+            var customTag = { "ai.cloud.roleInstance": "override" };
+            var expected = {};
+            for(var tag in client.context.tags) {
+                expected[tag] = customTag[tag] || client.context.tags[tag];
+            }
             env = client.getEnvelope(mockData, <any>customTag);
-            assert.deepEqual(env.tags, customTag)
-        });
-
-        it("should set sequence numbers correctly", () => {
-            var env1 = client.getEnvelope(mockData);
-            var env2 = client.getEnvelope(mockData);
-            var seq1 = Client.parseSeq(env1.seq);
-            assert.equal(seq1[0].length, 22);
-            var seq2 = Client.parseSeq(env2.seq);
-            assert.equal(seq2[0].length, 22);
-            assert.ok(seq1[1] < seq2[1]);
-            assert.equal(seq1[1] + 1, seq2[1]);
+            assert.deepEqual(env.tags, expected)
         });
 
         it("should write properties in a specific order", () => {
@@ -703,9 +696,7 @@ describe("Library/Client", () => {
 
             var actual = sendStub.firstCall.args[0];
 
-            // make sequence numbers and timestamp equal to leverage deepEqual
-            let seq = Client.parseSeq(expected.seq);
-            expected.seq = seq[0] + ":" + (seq[1] + 1).toString();
+            // make timestamp equal to leverage deepEqual
             expected.time = actual.time;
 
             assert.deepEqual(actual, expected);

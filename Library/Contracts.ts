@@ -96,13 +96,6 @@ export module Contracts {
         public sampleRate:number;
         public seq:string;
         public iKey:string;
-        public flags:number;
-        public deviceId:string;
-        public os:string;
-        public osVer:string;
-        public appId:string;
-        public appVer:string;
-        public userId:string;
         public tags:{ [key: string]: string; };
         public data:Data<Domain>;
         

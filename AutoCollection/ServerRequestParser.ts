@@ -24,10 +24,12 @@ class ServerRequestParser extends RequestParser {
     private sourceIKeyHash: string;
     private parentId: string;
     private operationId: string;
+    private requestId: string;
 
-    constructor(request:http.ServerRequest) {
+    constructor(request:http.ServerRequest, requestId?: string) {
         super();
         if (request) {
+            this.requestId = requestId || Util.newGuid();
             this.method = request.method;
             this.url = this._getAbsoluteUrl(request);
             this.startTime = +new Date();
@@ -61,7 +63,7 @@ class ServerRequestParser extends RequestParser {
 
     public getRequestData():ContractsModule.Contracts.Data<ContractsModule.Contracts.RequestData> {
         var requestData = new ContractsModule.Contracts.RequestData();
-        requestData.id = Util.newGuid();
+        requestData.id = this.requestId;
         requestData.name = this.method + " " + url.parse(this.url).pathname;
         requestData.url = this.url;
         requestData.source = this.sourceIKeyHash;
@@ -89,11 +91,27 @@ class ServerRequestParser extends RequestParser {
         newTags[ServerRequestParser.keys.sessionId] = tags[ServerRequestParser.keys.sessionId] || this._getId("ai_session");
         newTags[ServerRequestParser.keys.userId] = tags[ServerRequestParser.keys.userId] || this._getId("ai_user");
         newTags[ServerRequestParser.keys.userAgent] = tags[ServerRequestParser.keys.userAgent] || this.userAgent;
-        newTags[ServerRequestParser.keys.operationName] = tags[ServerRequestParser.keys.operationName] || this.method + " " + url.parse(this.url).pathname;
-        newTags[ServerRequestParser.keys.operationParentId] = tags[ServerRequestParser.keys.operationParentId] || this.parentId;
-        newTags[ServerRequestParser.keys.operationId] = tags[ServerRequestParser.keys.operationId] || this.operationId;
+        newTags[ServerRequestParser.keys.operationName] = this.getOperationName(tags);
+        newTags[ServerRequestParser.keys.operationParentId] = this.getOperationParentId(tags);
+        newTags[ServerRequestParser.keys.operationId] = this.getOperationId(tags);
 
         return newTags;
+    }
+
+    public getOperationId(tags:{[key: string]:string}) {
+        return tags[ServerRequestParser.keys.operationId] || this.operationId;
+    }
+
+    public getOperationParentId(tags:{[key: string]:string}) {
+        return tags[ServerRequestParser.keys.operationParentId] || this.parentId || this.getOperationId(tags);
+    }
+
+    public getOperationName(tags:{[key: string]:string}) {
+        return tags[ServerRequestParser.keys.operationName] || this.method + " " + url.parse(this.url).pathname;
+    }
+
+    public getRequestId() {
+        return this.requestId;
     }
 
     private _getAbsoluteUrl(request:http.ServerRequest):string {

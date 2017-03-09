@@ -120,13 +120,15 @@ class Util {
         var sec = "" + Math.floor(totalms / 1000) % 60;
         var min = "" + Math.floor(totalms / (1000 * 60)) % 60;
         var hour = "" + Math.floor(totalms / (1000 * 60 * 60)) % 24;
+        var days = Math.floor(totalms / (1000 * 60 * 60 * 24));
 
         ms = ms.length === 1 ? "00" + ms : ms.length === 2 ? "0" + ms : ms;
         sec = sec.length < 2 ? "0" + sec : sec;
         min = min.length < 2 ? "0" + min : min;
         hour = hour.length < 2 ? "0" + hour : hour;
+        var daysText = days > 0 ? days + "." : "";
 
-        return hour + ":" + min + ":" + sec + "." + ms;
+        return daysText + hour + ":" + min + ":" + sec + "." + ms;
     }
 
     /**
@@ -140,10 +142,11 @@ class Util {
                 var property = obj[field];
                 var propertyType = typeof property;
                 if (propertyType !== "string") {
-                    if (property && typeof property.toString === "function") {
+                    if (property != null && typeof property.toString === "function") {
                         property = property.toString();
                     } else {
-                        property = "invalid property type: " + propertyType;
+                        Logging.info("key: " + field + ", invalid property type: " + propertyType);
+                        continue;
                     }
                 }
 
@@ -168,7 +171,9 @@ class Util {
 
         for (let i = 0; i < excludedDomains.length; i++) {
             let regex = new RegExp(excludedDomains[i].replace(/\./g,"\.").replace(/\*/g,".*"));
-            return !regex.test(url.parse(requestUrl).hostname);
+            if (regex.test(url.parse(requestUrl).hostname)) {
+                return false;
+            }
         }
 
         return true;

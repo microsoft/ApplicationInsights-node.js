@@ -137,8 +137,9 @@ describe("Library/Util", () => {
             test(10 * 60 * 1000, "00:10:00.000", "minutes digit 2");
             test(1 * 60 * 60 * 1000, "01:00:00.000", "hours digit 1");
             test(10 * 60 * 60 * 1000, "10:00:00.000", "hours digit 2");
-            test(24 * 60 * 60 * 1000, "00:00:00.000", "hours overflow");
+            test(24 * 60 * 60 * 1000, "1.00:00:00.000", "hours overflow");
             test(11 * 3600000 + 11 * 60000 + 11111, "11:11:11.111", "all digits");
+            test(5 * 86400000 + 13 * 3600000 + 9 * 60000 + 8 * 1000 + 789, "5.13:09:08.789", "all digits with days");
         });
 
         it("should handle invalid input", () => {
@@ -160,6 +161,7 @@ describe("Library/Util", () => {
             assert.equal(Util.validateStringMap(() => null), undefined);
             assert.deepEqual(Util.validateStringMap({ a: {} }), { a: "[object Object]" });
             assert.deepEqual(Util.validateStringMap({ a: 3, b: "test" }), { a: "3", b: "test" });
+            assert.deepEqual(Util.validateStringMap({ a: 0, b: null, c: undefined, d: [], e: '', f: -1 }), { a: "0", d: "", e: "", f: "-1" });
         });
     });
 
@@ -178,7 +180,7 @@ describe("Library/Util", () => {
         });
 
         it("should return false if domain is on the excluded list", () => {
-            let client = <any>{ config: { correlationHeaderExcludedDomains: ["bing.com"] } };
+            let client = <any>{ config: { correlationHeaderExcludedDomains: ["bing.com", "bing.net"] } };
             let url = "http://bing.com/search?q=node";
 
             assert.equal(Util.canIncludeCorrelationHeader(client, url), false);
@@ -186,6 +188,10 @@ describe("Library/Util", () => {
             let urlSecure = "https://bing.com/search?q=node";
 
             assert.equal(Util.canIncludeCorrelationHeader(client, urlSecure), false);
+
+            let secondDomainUrl = "http://bing.net/search?q=node";
+
+            assert.equal(Util.canIncludeCorrelationHeader(client, secondDomainUrl), false);
         });
 
         it("can take wildcards in the excluded domain list", () => {
