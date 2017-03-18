@@ -41,8 +41,8 @@
   ],
   "scripts": {
     "prepublish": "tsc --module commonjs --declaration applicationinsights.ts",
-    "pretest": "find Tests -type f -name \"*.ts\" | xargs tsc --module commonjs",
-    "test": "./node_modules/mocha/bin/mocha ./Tests --recursive"
+    "pretest": "for /f %f in ('dir Tests\\*.ts /b /s') do tsc --module commonjs %f",
+    "test": "node node_modules\\mocha\\bin\\mocha Tests\\ --recursive"
   },
   "devDependencies": {
     "mocha": "3.1.2",
