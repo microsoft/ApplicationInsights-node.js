@@ -40,6 +40,7 @@
     }
   ],
   "scripts": {
+    "build":"tsc --module commonjs --declaration applicationinsights.ts",
     "prepublish": "tsc --module commonjs --declaration applicationinsights.ts",
     "pretest": "find Tests -type f -name \"*.ts\" | xargs tsc --module commonjs",
     "test": "./node_modules/mocha/bin/mocha ./Tests --recursive"
