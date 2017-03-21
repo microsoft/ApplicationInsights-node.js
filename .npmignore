@@ -19,3 +19,9 @@ Tests
 .ntvs_analysis.dat
 
 Declarations
+
+Schema
+
+typings
+tsconfig.json
+typings.json
