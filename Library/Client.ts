@@ -41,10 +41,11 @@ class Client {
 
     /**
      * Log a user action or other occurrence.
-     * @param   name    A string to identify this event in the portal.
-     * @param   properties  map[string, string] - additional data used to filter events and metrics in the portal. Defaults to empty.
-     * @param   measurements    map[string, number] - metrics associated with this event, displayed in Metrics Explorer on the portal. Defaults to empty.
-     * @param   tagOverrides the context tags to use for this telemetry which overwrite default context values
+     * @param name              A string to identify this event in the portal.
+     * @param properties        map[string, string] - additional data used to filter events and metrics in the portal. Defaults to empty.
+     * @param measurements      map[string, number] - metrics associated with this event, displayed in Metrics Explorer on the portal. Defaults to empty.
+     * @param tagOverrides      the context tags to use for this telemetry which overwrite default context values
+     * @param contextObjects    map[string, contextObject] - An event-specific context that will be passed to telemetry processors handling this event before it is sent. For a context spanning your entire operation, consider appInsights.getCorrelationContext
      */
     public trackEvent(name: string, properties?: { [key: string]: string; }, measurements?: { [key: string]: number; }, 
         tagOverrides?: { [key: string]: string; },
@@ -62,9 +63,10 @@ class Client {
 
     /**
      * Log a trace message
-     * @param   message    A string to identify this event in the portal.
-     * @param   properties  map[string, string] - additional data used to filter events and metrics in the portal. Defaults to empty.
-     * @param   tagOverrides the context tags to use for this telemetry which overwrite default context values
+     * @param message        A string to identify this event in the portal.
+     * @param properties     map[string, string] - additional data used to filter events and metrics in the portal. Defaults to empty.
+     * @param tagOverrides   the context tags to use for this telemetry which overwrite default context values
+     * @param contextObjects map[string, contextObject] - An event-specific context that will be passed to telemetry processors handling this event before it is sent. For a context spanning your entire operation, consider appInsights.getCorrelationContext
      */
     public trackTrace(message: string, severityLevel?: ContractsModule.Contracts.SeverityLevel, properties?: { [key: string]: string; }, 
         tagOverrides?: { [key: string]: string; },
@@ -90,6 +92,7 @@ class Client {
      * @param   properties  map[string, string] - additional data used to filter events and metrics in the portal. Defaults to empty.
      * @param   measurements    map[string, number] - metrics associated with this event, displayed in Metrics Explorer on the portal. Defaults to empty.
      * @param   tagOverrides the context tags to use for this telemetry which overwrite default context values
+     * @param   contextObjects        map[string, contextObject] - An event-specific context that will be passed to telemetry processors handling this event before it is sent. For a context spanning your entire operation, consider appInsights.getCorrelationContext
      */
     public trackException(exception: Error, properties?: { [key: string]: string; }, measurements?:{ [key: string]: number; }, 
         tagOverrides?: { [key: string]: string; },
@@ -107,14 +110,15 @@ class Client {
      * To send a single measurement, use just the first two parameters. If you take measurements very frequently, you can reduce the
      * telemetry bandwidth by aggregating multiple measurements and sending the resulting average at intervals.
      *
-     * @param name         A string that identifies the metric.
-     * @param value        The value of the metric
-     * @param count        the number of samples used to get this value
-     * @param min          the min sample for this set
-     * @param max          the max sample for this set
-     * @param stdDev       the standard deviation of the set
-     * @param properties   map[string, string] - additional data used to filter events and metrics in the portal. Defaults to empty.
-     * @param tagOverrides the context tags to use for this telemetry which overwrite default context values
+     * @param name              A string that identifies the metric.
+     * @param value             The value of the metric
+     * @param count             the number of samples used to get this value
+     * @param min               the min sample for this set
+     * @param max               the max sample for this set
+     * @param stdDev            the standard deviation of the set
+     * @param properties        map[string, string] - additional data used to filter events and metrics in the portal. Defaults to empty.
+     * @param tagOverrides      the context tags to use for this telemetry which overwrite default context values
+     * @param contextObjects    map[string, contextObject] - An event-specific context that will be passed to telemetry processors handling this event before it is sent. For a context spanning your entire operation, consider appInsights.getCorrelationContext
      */
     public trackMetric(name: string, value: number, count?: number, min?: number, max?: number, stdDev?: number, properties?: { [key: string]: string; }, 
         tagOverrides?: { [key: string]: string; },
@@ -166,6 +170,7 @@ class Client {
      * @param async                 boolean - never used
      * @param target                String of the target host of the dependency
      * @param tagOverrides          the context tags to use for this telemetry which overwrite default context values
+     * @param contextObjects        map[string, contextObject] - An event-specific context that will be passed to telemetry processors handling this event before it is sent. For a context spanning your entire operation, consider appInsights.getCorrelationContext
      */
     public trackDependency(
         name: string,
