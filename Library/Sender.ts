@@ -55,6 +55,7 @@ class Sender {
             port: parsedUrl.port,
             path: parsedUrl.pathname,
             method: "POST",
+            withCredentials: false,
             headers: {
                 "Content-Type": "application/x-json-stream"
             }
