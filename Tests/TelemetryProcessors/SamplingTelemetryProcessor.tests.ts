@@ -66,33 +66,27 @@ describe("TelemetryProcessors/SamplingTelemetryProcessor", () => {
         });
 
         it("will keep all telemetry from an operation together if correlation tracking is enabled", () => {
-            var getHashCodeStub = sinon.stub(Sampling, "getSamplingHashCode").returns(10);
-
             var iterations = 1000;
             var accepted = 0;
             mockData.sampleRate = 33;
 
             for (var i=0; i<iterations; i++) {
-                var result = Sampling.samplingTelemetryProcessor(mockData, <any>{correlationContext: {operation: {id: "A"}}});
+                var result = Sampling.samplingTelemetryProcessor(mockData, <any>{correlationContext: {operation: {id: "a"}}});
                 if (result) accepted++;
             }
-            getHashCodeStub.restore();
 
             assert.equal(accepted, iterations, "data should pass 100% of the time");            
         });
 
         it("will keep all telemetry from an operation together if correlation tracking is enabled #2", () => {
-            var getHashCodeStub = sinon.stub(Sampling, "getSamplingHashCode").returns(40);
-
             var iterations = 1000;
             var accepted = 0;
             mockData.sampleRate = 33;
 
             for (var i=0; i<iterations; i++) {
-                var result = Sampling.samplingTelemetryProcessor(mockData, <any>{correlationContext: {operation: {id: "A"}}});
+                var result = Sampling.samplingTelemetryProcessor(mockData, <any>{correlationContext: {operation: {id: "abc"}}});
                 if (result) accepted++;
             }
-            getHashCodeStub.restore();
 
             assert.equal(accepted, 0, "data should pass 0% of the time");            
         });
