@@ -19,6 +19,7 @@ class Config {
     public maxBatchSize: number;
     public maxBatchIntervalMs: number;
     public disableAppInsights: boolean;
+    public samplingPercentage: number;
 
     // A list of domains for which correlation headers will not be added.
     public correlationHeaderExcludedDomains: string[];
@@ -32,6 +33,7 @@ class Config {
         this.maxBatchSize = 250;
         this.maxBatchIntervalMs = 15000;
         this.disableAppInsights = false;
+        this.samplingPercentage = 100;
         this.correlationHeaderExcludedDomains = [
             "*.blob.core.windows.net", 
             "*.blob.core.chinacloudapi.cn",
