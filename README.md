@@ -65,8 +65,9 @@ appInsights.setup("<instrumentation_key>")
 ### Enabling sampling
 ```javascript
 import appInsights = require("applicationinsights");
-appInsights.setup("<instrumentation_key>").start();
+appInsights.setup("<instrumentation_key>");
 appInsights.client.config.samplingPercentage = 33; // 33% of all telemetry will be sent to Application Insights
+appInsights.start();
 ```
 By default, the SDK will send all telemetry collected to the Application Insights backend. If you collect large amounts of data, you may wish to enable sampling to reduce your data rate. The `samplingPercentage` field on the Config object of every Client can be used to accomplish this. A sampling percentage of 100 indicates sending of all telemetry, and 0 is sending of no telemetry. If you have enabled automatic correlation, all telemetry associated with a request will be sampled in or out together.
 
