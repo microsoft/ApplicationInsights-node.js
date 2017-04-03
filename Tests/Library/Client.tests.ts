@@ -548,7 +548,7 @@ describe("Library/Client", () => {
 
                 assert.equal(obj0.baseData.target, "bing.com | " +
                     response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader]);
-                assert.equal(obj0.baseData.type, "ApplicationInsights");
+                assert.equal(obj0.baseData.type, "Http (tracked component)");
             });
 
             it('should not set source ikey headers when the host is on a excluded domain list', () => {
