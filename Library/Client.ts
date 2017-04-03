@@ -145,14 +145,44 @@ class Client {
         this.track(data, tagOverrides, contextObjects);
     }
 
+    /**
+     * Log an incoming request. This method will synchronously record the event, rather than waiting for response send.
+     * Use this when you need to perform custom logic to record the duration of the request.
+     * 
+     * This call will also add outgoing headers to the supplied response object for correlating telemetry across different services.
+     * @param request              http.ServerRequest - the request object to monitor
+     * @param response             http.ServerResponse - the response object to monitor
+     * @param elapsedMilliseconds  number - the elapsed time taken to handle this request in milliseconds
+     * @param properties           map[string, string] - additional data used for filtering in the portal. Defaults to empty.
+     * @param error                any - an object indicating the request was unsuccessful. This object will be recorded with the request telemetry.
+     */
     public trackRequestSync(request: http.ServerRequest, response: http.ServerResponse, ellapsedMilliseconds?: number, properties?: { [key: string]: string; }, error?: any) {
         ServerRequestTracking.trackRequestSync(this, request, response, ellapsedMilliseconds, properties, error);
     }
 
+    /**
+     * Log an incoming request. Use this at the beginning of your request handling code.
+     * This method will monitor a supplied response object and send telemetry after the response is sent,
+     * recording elapsed time from the start of this call to the request being sent back to the user.
+     * 
+     * This call will also add outgoing headers to the supplied response object for correlating telemetry across different services.
+     * @param request     http.ServerRequest - the request object to monitor
+     * @param response    http.ServerResponse - the response object to monitor
+     * @param properties  map[string, string] - additional data used for filtering in the portal. Defaults to empty.
+     */
     public trackRequest(request: http.ServerRequest, response: http.ServerResponse, properties?: { [key: string]: string; }) {
         ServerRequestTracking.trackRequest(this, request, response, properties);
     }
 
+    /**
+     * Log an outgoing ClientRequest dependency. This is a helper method around trackDependency for common outgoing HTTP calls.
+     * Use this at the beginning of your request.
+     * 
+     * This call will also add outgoing headers to your request for correlating telemetry across different services.
+     * @param request    string | http.RequestOptions  | https.RequestOptions - the options used for this request
+     * @param response   http.ClientRequest - the outgoing request to monitor
+     * @param properties map[string, string] - additional data used for filtering in the portal. Defaults to empty.
+     */
     public trackDependencyRequest(requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest, properties?: { [key: string]: string; }) {
         ClientRequestTracking.trackRequest(this, requestOptions, request, properties);
     }
