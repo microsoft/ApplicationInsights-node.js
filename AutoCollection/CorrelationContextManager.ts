@@ -1,4 +1,5 @@
-/// <reference path="..\node_modules\zone.js\dist\zone.js.d.ts" />
+/// <reference path="../node_modules/zone.js/dist/zone.js.d.ts" />
+
 import http = require("http");
 import Util = require("../Library/Util");
 
@@ -200,7 +201,7 @@ export class CorrelationContextManager {
 
             // Zone.js will automatically create some hidden properties at read time.
             // We need to proactively make those not enumerable as well as the currently visible properties
-            for(var i=0; i<props.length; i++) {
+            for(var i=0; i < props.length; i++) {
                 var propertyName = props[i];
                 var hiddenPropertyName = Zone['__symbol__'](propertyName);
                 Object.defineProperty(this, propertyName, { enumerable: false });
@@ -215,12 +216,15 @@ export class CorrelationContextManager {
 
         // We need this loop to copy outer methods like Error.captureStackTrace
         var props = Object.getOwnPropertyNames(orig);
-        for(var i=0; i<props.length; i++) {
+        for(var i=0; i < props.length; i++) {
             var propertyName = props[i];
             if (!AppInsightsAsyncCorrelatedErrorWrapper[propertyName]) {
                 Object.defineProperty(AppInsightsAsyncCorrelatedErrorWrapper, propertyName, Object.getOwnPropertyDescriptor(orig, propertyName));
             }
         }
-        global.Error = AppInsightsAsyncCorrelatedErrorWrapper;
+        
+        // explicit cast to <any> required to avoid type error for captureStackTrace
+        // with latest node.d.ts (despite workaround above)
+        global.Error = <any>AppInsightsAsyncCorrelatedErrorWrapper;
     }
 }
