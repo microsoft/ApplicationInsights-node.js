@@ -1,10 +1,7 @@
-///<reference path="..\..\typings\globals\node\index.d.ts" />
-///<reference path="..\..\typings\globals\mocha\index.d.ts" />
-///<reference path="..\..\typings\globals\sinon\index.d.ts" />
-
 import assert = require("assert");
 import crypto = require('crypto');
 import sinon = require("sinon");
+import Sinon = require("sinon");
 import http = require("http");
 import eventEmitter = require('events');
 
@@ -548,7 +545,7 @@ describe("Library/Client", () => {
 
                 assert.equal(obj0.baseData.target, "bing.com | " +
                     response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader]);
-                assert.equal(obj0.baseData.type, "ApplicationInsights");
+                assert.equal(obj0.baseData.type, "Http (tracked component)");
             });
 
             it('should not set source ikey headers when the host is on a excluded domain list', () => {

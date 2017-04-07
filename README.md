@@ -74,6 +74,7 @@ By default, the SDK will send all telemetry collected to the Application Insight
 ### Custom monitoring
 
 ```javascript
+import http = require("http");
 import appInsights = require("applicationinsights");
 var client = appInsights.getClient();
 
@@ -81,6 +82,10 @@ client.trackEvent("custom event", {customProperty: "custom property value"});
 client.trackException(new Error("handled exceptions can be logged with this method"));
 client.trackMetric("custom metric", 3);
 client.trackTrace("trace message");
+
+http.createServer((req,res)=>{
+    client.trackRequest(req, res); // Place at the beginning of your request handler
+});
 ```
 
 ### Telemetry Processor

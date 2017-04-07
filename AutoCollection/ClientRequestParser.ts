@@ -1,5 +1,3 @@
-///<reference path="..\typings\globals\node\index.d.ts" />
-
 import http = require("http");
 import https = require("https");
 import url = require("url");
@@ -57,7 +55,7 @@ class ClientRequestParser extends RequestParser {
         remoteDependency.type = ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
 
         if (this.targetIKeyHash) {
-            remoteDependency.type = "ApplicationInsights";
+            remoteDependency.type = "Http (tracked component)";
             remoteDependency.target = urlObject.hostname + " | " + this.targetIKeyHash;
         } else {
             remoteDependency.type = ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP;

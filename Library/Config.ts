@@ -1,5 +1,3 @@
-///<reference path="..\typings\globals\node\index.d.ts" />
-
 import crypto = require('crypto');
 
 class Config {
