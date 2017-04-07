@@ -624,8 +624,12 @@ describe("Library/Client", () => {
         it("should assign common properties to the data", () => {
             var client1 = new Client("key");
             client1.commonProperties = commonproperties;
+            client1.config.samplingPercentage = 99;
             mockData.baseData.properties = JSON.parse(JSON.stringify(properties));
             var env = client1.getEnvelope(mockData);
+
+            // check sample rate
+            assert.equal(env.sampleRate, client1.config.samplingPercentage);
 
             // check common properties
             assert.equal(env.data.baseData.properties.common1, (<any>commonproperties).common1);

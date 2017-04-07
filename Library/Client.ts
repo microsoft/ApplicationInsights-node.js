@@ -10,6 +10,7 @@ import ContractsModule = require("../Library/Contracts");
 import Channel = require("./Channel");
 import ServerRequestTracking = require("../AutoCollection/ServerRequests");
 import ClientRequestTracking = require("../AutoCollection/ClientRequests");
+import TelemetryProcessors = require("../TelemetryProcessors");
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
 import Sender = require("./Sender");
 import Util = require("./Util");
@@ -275,6 +276,8 @@ class Client {
         envelope.tags = this.getTags(tagOverrides);
         envelope.time = (new Date()).toISOString();
         envelope.ver = 1;
+        envelope.sampleRate = this.config.samplingPercentage;
+
         return envelope;
     }
 
@@ -291,7 +294,11 @@ class Client {
         var envelope = this.getEnvelope(data, tagOverrides);
         var accepted = this.runTelemetryProcessors(envelope, contextObjects);
 
-        if (accepted) {
+        // Ideally we would have a central place for "internal" telemetry processors and users can configure which ones are in use.
+        // This will do for now. Otherwise clearTelemetryProcessors() would be problematic.
+        var sampledIn = TelemetryProcessors.samplingTelemetryProcessor(envelope, {correlationContext: CorrelationContextManager.getCurrentContext()});
+
+        if (accepted && sampledIn) {
             this.channel.send(envelope);
         }
     }
