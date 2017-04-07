@@ -1,6 +1,4 @@
-﻿///<reference path="..\typings\globals\node\index.d.ts" />
-
-import os = require("os");
+﻿import os = require("os");
 import http = require("http");
 
 import ContractsModule = require("../Library/Contracts");

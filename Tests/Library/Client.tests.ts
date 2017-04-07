@@ -1,10 +1,7 @@
-///<reference path="..\..\typings\globals\node\index.d.ts" />
-///<reference path="..\..\typings\globals\mocha\index.d.ts" />
-///<reference path="..\..\typings\globals\sinon\index.d.ts" />
-
 import assert = require("assert");
 import crypto = require('crypto');
 import sinon = require("sinon");
+import Sinon = require("sinon");
 import http = require("http");
 import eventEmitter = require('events');
 
