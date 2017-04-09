@@ -5,7 +5,7 @@ import ContractsModule = require("../Library/Contracts");
 import Client = require("../Library/Client");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
-import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
+import HttpHeaders = require("./HttpHeaders");
 import RequestParser = require("./RequestParser");
 
 /**
@@ -35,11 +35,11 @@ class ServerRequestParser extends RequestParser {
             this.socketRemoteAddress = (<any>request).socket && (<any>request).socket.remoteAddress;
             this.userAgent = request.headers && request.headers["user-agent"];
             this.sourceIKeyHash =
-                request.headers && request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader];
+                request.headers && request.headers[HttpHeaders.Request.theirIkey];
             this.parentId =
-                request.headers && request.headers[RequestResponseHeaders.parentIdHeader];
+                request.headers && request.headers[HttpHeaders.Request.parentId];
             this.operationId =
-                request.headers && request.headers[RequestResponseHeaders.rootIdHeader];
+                request.headers && request.headers[HttpHeaders.Request.rootId];
             if (request.connection) {
                 this.connectionRemoteAddress = request.connection.remoteAddress;
                 this.legacySocketRemoteAddress = request.connection["socket"] && request.connection["socket"].remoteAddress;

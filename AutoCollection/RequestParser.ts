@@ -10,6 +10,8 @@ abstract class RequestParser {
     protected statusCode: number;
     protected properties: { [key: string]: string };
 
+    constructor () { }
+
     /**
      * Gets a url parsed out from request options
      */
