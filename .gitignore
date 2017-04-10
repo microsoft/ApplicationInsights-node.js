@@ -1,12 +1,9 @@
 # Ignore build files
-obj
-*.d.ts
-*.tgz
-package-version
+out/
+obj/
 
 # Except imported Declarations and Typings
 !/Declarations/**
-!/typings/**
 
 # Ignore Node files
 node_modules/**
@@ -27,6 +24,3 @@ node_modules/**
 # Ignore log files
 npm-debug.log
 
-
-*.js.map
-*.js
