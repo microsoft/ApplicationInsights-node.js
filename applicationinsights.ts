@@ -251,6 +251,14 @@ class ApplicationInsights {
     }
 
     /**
+     * Deprecate me!!
+     */
+    public static disableConsoleLogging() {
+        console.warn('disableConsoleLogging has been deprecated in favor of disableVerboseLogging');
+        this.disableVerboseLogging();
+    }
+
+    /**
       * Disposes the default client and all the auto collectors so they can be reinitialized with different configuration
       */
     public static dispose() {
