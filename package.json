@@ -3,12 +3,12 @@
   "license": "MIT",
   "bugs": "https://github.com/Microsoft/ApplicationInsights-node.js/issues",
   "version": "0.19.0",
-  "description": "Microsoft Application Insights module for Node.JS",
+  "description": "Microsoft Application Insights module for Node.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/Microsoft/ApplicationInsights-node.js"
   },
-  "main": "applicationinsights",
+  "main": "./out/applicationinsights.js",
   "keywords": [
     "exception monitoring",
     "request monitoring",
@@ -40,17 +40,25 @@
     }
   ],
   "scripts": {
-    "build":"tsc --module commonjs --declaration applicationinsights.ts",
-    "prepublish": "tsc --module commonjs --declaration applicationinsights.ts",
-    "pretest": "find Tests -type f -name \"*.ts\" | xargs tsc --module commonjs",
-    "test": "./node_modules/mocha/bin/mocha ./Tests --recursive"
+    "clean": "rm -rf ./out && rm -rf ./node_modules",
+    "build": "npm run build:deps && npm run build:compile",
+    "build:deps": "npm update --dev",
+    "build:compile": "./node_modules/typescript/bin/tsc --project ./tsconfig.json",
+    "prepare": "npm run build:compile",
+    "prepublishOnly": "npm run build",
+    "pretest": "npm run build",
+    "test": "npm run test:ts && npm run test:js",
+    "test:ts": "./node_modules/mocha/bin/mocha ./out/Tests --recursive",
+    "test:js": "./node_modules/mocha/bin/mocha ./Tests/js --recursive"
   },
   "devDependencies": {
+    "@types/mocha": "2.2.40",
+    "@types/node": "4.2.4",
+    "@types/sinon": "2.1.2",
+    "typescript": "2.2.2",
     "mocha": "3.1.2",
     "node-mocks-http": "1.2.3",
-    "sinon": "1.17.6",
-    "typescript": "2.0.10",
-    "typings": "2.0.0"
+    "sinon": "1.17.6"
   },
   "dependencies": {
     "zone.js": "0.7.6"

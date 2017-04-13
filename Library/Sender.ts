@@ -1,6 +1,4 @@
-﻿///<reference path="..\typings\globals\node\index.d.ts" />
-
-import fs = require("fs");
+﻿import fs = require("fs");
 import http = require("http");
 import https = require("https");
 import os = require("os");
