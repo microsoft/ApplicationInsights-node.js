@@ -2,6 +2,10 @@
 module AI
 {
 "use strict";
+    
+    /**
+     * Defines the level of severity for the event.
+     */
     export enum SeverityLevel
     {
         Verbose = 0,
