@@ -1,8 +1,4 @@
-﻿///<reference path="..\..\typings\globals\node\index.d.ts" />
-///<reference path="..\..\typings\globals\mocha\index.d.ts" />
-///<reference path="..\..\typings\globals\sinon\index.d.ts" />
-
-import assert = require("assert");
+﻿import assert = require("assert");
 import sinon = require("sinon");
 
 import Util = require("../../Library/Util");

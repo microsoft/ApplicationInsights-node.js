@@ -1,5 +1,3 @@
-///<reference path="..\typings\globals\node\index.d.ts" />
-
 import http = require("http");
 import url = require("url");
 

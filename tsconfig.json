@@ -2,6 +2,11 @@
     "compilerOptions": {
         "target": "es5",
         "module": "commonjs",
-        "sourceMap": true
+        "sourceMap": true,
+        "declaration": true,
+        "outDir": "./out",
+        "typeRoots": [
+            "./node_modules/@types"
+        ]
     }
 }

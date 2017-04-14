@@ -1,10 +1,7 @@
-///<reference path="..\..\typings\globals\node\index.d.ts" />
-///<reference path="..\..\typings\globals\mocha\index.d.ts" />
-///<reference path="..\..\typings\globals\sinon\index.d.ts" />
-
 import assert = require("assert");
 import crypto = require('crypto');
 import sinon = require("sinon");
+import Sinon = require("sinon");
 import http = require("http");
 import eventEmitter = require('events');
 
@@ -548,7 +545,7 @@ describe("Library/Client", () => {
 
                 assert.equal(obj0.baseData.target, "bing.com | " +
                     response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader]);
-                assert.equal(obj0.baseData.type, "ApplicationInsights");
+                assert.equal(obj0.baseData.type, "Http (tracked component)");
             });
 
             it('should not set source ikey headers when the host is on a excluded domain list', () => {
@@ -627,8 +624,12 @@ describe("Library/Client", () => {
         it("should assign common properties to the data", () => {
             var client1 = new Client("key");
             client1.commonProperties = commonproperties;
+            client1.config.samplingPercentage = 99;
             mockData.baseData.properties = JSON.parse(JSON.stringify(properties));
             var env = <any>client1.getEnvelope(mockData);
+
+            // check sample rate
+            assert.equal(env.sampleRate, client1.config.samplingPercentage);
 
             // check common properties
             assert.equal(env.data.baseData.properties.common1, (<any>commonproperties).common1);

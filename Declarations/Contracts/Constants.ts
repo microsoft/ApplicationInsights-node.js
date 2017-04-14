@@ -1,7 +1,7 @@
 import { Domain, EventData, ExceptionData, MessageData, MetricData, PageViewData, RemoteDependencyData, RequestData } from "./Generated";
 
 export class RemoteDependencyDataConstants {
-    public static TYPE_HTTP:string = "Http";
+    public static TYPE_HTTP:string = "Http (tracked component)";
     public static TYPE_AI:string = "ApplicationInsights";
 }
 

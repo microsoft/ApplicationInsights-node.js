@@ -1,5 +1,3 @@
-///<reference path="..\typings\globals\node\index.d.ts" />
-
 import http = require("http");
 
 import Contracts = require("../Declarations/Contracts");
