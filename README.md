@@ -77,7 +77,7 @@ client.trackTrace("trace message");
 ### Telemetry Processor
 
 ```javascript
-public addTelemetryProcessor(telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope, context: { http.RequestOptions, http.ClientRequest, http.ClientResponse, correlationContext }) => boolean)
+public addTelemetryProcessor(telemetryProcessor: (envelope: Contracts.Envelope, context: { http.RequestOptions, http.ClientRequest, http.ClientResponse, correlationContext }) => boolean)
 ```
 
 Adds a telemetry processor to the collection. Telemetry processors will be called one by one, in the order they were added, before the telemetry item is pushed for sending. 

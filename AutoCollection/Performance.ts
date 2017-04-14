@@ -4,7 +4,7 @@ import http = require("http");
 import os = require("os");
 
 import Client = require("../Library/Client");
-import ContractsModule = require("../Library/Contracts");
+import Contracts = require("../Declarations/Contracts");
 import Logging = require("../Library/Logging");
 
 enum PerfCounterType
@@ -113,51 +113,6 @@ class AutoCollectPerformance {
         this._trackNetwork();
     }
 
-    // this is necessary to accommodate some point-in-time UI quirks
-    private _trackLegacyPerformance(counterType: PerfCounterType, value: number) {
-        var perfmetric = new ContractsModule.Contracts.PerformanceCounterData();
-
-        // semantic descriptions of these can be found here: https://support.microsoft.com/en-us/kb/815159/
-        switch (counterType) {
-            case PerfCounterType.ProcessorTime:
-                perfmetric.categoryName = "Process";
-                perfmetric.counterName = "% Processor Time";
-                break;
-            case PerfCounterType.AvailableMemory:
-                perfmetric.categoryName = "Memory";
-                perfmetric.counterName = "Available Bytes";
-                break;
-            case PerfCounterType.RequestsPerSec:
-                perfmetric.categoryName = "ASP.NET Applications";
-                perfmetric.counterName = "Requests/Sec";
-                break;
-            case PerfCounterType.PrivateBytes:
-                perfmetric.categoryName = "Process";
-                perfmetric.counterName = "Private Bytes";
-                break;
-            case PerfCounterType.RequestExecutionTime:
-                perfmetric.categoryName = "ASP.NET Applications";
-                perfmetric.counterName = "Request Execution Time";
-                break;
-            case PerfCounterType.PercentProcessorTime:
-                perfmetric.categoryName = "Processor";
-                perfmetric.counterName = "% Processor Time";
-                break;
-        }
-
-        perfmetric.count = 1;
-        perfmetric.kind = ContractsModule.Contracts.DataPointType.Aggregation;
-        perfmetric.max = value;
-        perfmetric.min = value;
-        perfmetric.stdDev = 0;
-        perfmetric.value = value;
-
-        var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.PerformanceCounterData>();
-        data.baseType = "Microsoft.ApplicationInsights.PerformanceCounterData";
-        data.baseData = perfmetric;
-        this._client.track(data);
-    }
-
     private _trackCpu() {
         // this reports total ms spent in each category since the OS was booted, to calculate percent it is necessary
         // to find the delta since the last measurement
@@ -210,10 +165,6 @@ class AutoCollectPerformance {
             this._client.trackMetric(combinedName + "nice", totalNice / combinedTotal);
             this._client.trackMetric(combinedName + "idle", totalIdle / combinedTotal);
             this._client.trackMetric(combinedName + "irq", totalIrq/ combinedTotal);
-
-            // todo: remove this legacy counter once the UI updates (~june 2015)
-            this._trackLegacyPerformance(PerfCounterType.ProcessorTime, totalUser / combinedTotal);
-            this._trackLegacyPerformance(PerfCounterType.PercentProcessorTime, (combinedTotal - totalIdle) / combinedTotal);
         }
 
         this._lastCpus = cpus;
@@ -230,10 +181,6 @@ class AutoCollectPerformance {
         this._client.trackMetric("Memory Total", totalMem);
         this._client.trackMetric("% Memory Used", percentUsedMem);
         this._client.trackMetric("% Memory Free", percentAvailableMem);
-
-        // todo: remove this legacy counter once the UI updates (~june 2015)
-        this._trackLegacyPerformance(PerfCounterType.AvailableMemory ,freeMem);
-        this._trackLegacyPerformance(PerfCounterType.PrivateBytes, usedMem);
     }
 
     private _trackNetwork() {
@@ -259,10 +206,6 @@ class AutoCollectPerformance {
             this._client.trackMetric("Requests per Second", requestsPerSec);
             this._client.trackMetric("Failed Requests per Second", failedRequestsPerSec);
             this._client.trackMetric("Last Request Execution Time", AutoCollectPerformance._lastRequestExecutionTime);
-
-            // todo: remove this legacy counter once the UI updates (~june 2015)
-            this._trackLegacyPerformance(PerfCounterType.RequestsPerSec, requestsPerSec);
-            this._trackLegacyPerformance(PerfCounterType.RequestExecutionTime, AutoCollectPerformance._lastRequestExecutionTime);
         }
 
         this._lastRequests = requests;

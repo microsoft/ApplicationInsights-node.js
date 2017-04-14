@@ -4,7 +4,6 @@ import http = require("http");
 import https = require("https");
 import url = require("url");
 
-import ContractsModule = require("../Library/Contracts");
 import Client = require("../Library/Client");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
