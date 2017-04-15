@@ -241,7 +241,7 @@ class Client {
 
     public getEnvelope(
         data: Contracts.Data<Contracts.Domain>,
-        tagOverrides?: { [key: string]: string; }) {
+        tagOverrides?: { [key: string]: string; }): Contracts.Envelope {
         if (Contracts.domainSupportsProperties(data.baseData)) { // Do instanceof check. TS will automatically cast and allow the properties property
             if (data && data.baseData) {
                 // if no properties are specified just add the common ones

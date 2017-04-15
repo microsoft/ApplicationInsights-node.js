@@ -67,7 +67,7 @@ class AutoCollectExceptions {
      * @param properties additional properties
      * @param measurements metrics associated with this event, displayed in Metrics Explorer on the portal. Defaults to empty.
      */
-    public static getExceptionData(error: Error, isHandled: boolean, properties?:{ [key: string]: string; }, measurements?:{ [key: string]: number; }) {
+    public static getExceptionData(error: Error, isHandled: boolean, properties?:{ [key: string]: string; }, measurements?:{ [key: string]: number; }): Contracts.Data<Contracts.ExceptionData> {
         var exception = new Contracts.ExceptionData();
         exception.properties = properties;
         exception.severityLevel = Contracts.SeverityLevel.Error;
