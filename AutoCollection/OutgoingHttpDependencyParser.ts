@@ -1,6 +1,7 @@
 import http = require("http");
 import https = require("https");
 import url = require("url");
+import assert = require("assert");
 
 import ContractsModule = require("../Library/Contracts");
 import Client = require("../Library/Client");
@@ -20,8 +21,6 @@ class OutgoingHttpDependencyParser extends DependencyParser {
     private _properties: { [key: string]: string };
     private _theirIkeyHash: string;
     private _myIkeyHash: string;
-
-    // TODO: getters and setters for the private properties above
 
     get myIkeyHash () : string {
         return this._myIkeyHash;
@@ -143,19 +142,17 @@ class OutgoingHttpDependencyParser extends DependencyParser {
      * Builds a URL from request options, using the same logic as http.request(). This is
      * necessary because a IncomingMessage object does not expose a url property.
      */
-    static _getUrlFromRequestOptions(options: any, request: http.ClientRequest) {
-        if (typeof options === 'string') {
-            options = url.parse(options);
+    static _getUrlFromRequestOptions(requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest) {
+        var options = null;
+        if (typeof requestOptions === 'string') {
+            options = url.parse(requestOptions);
         } else {
-            // Avoid modifying the original options object.
-            let originalOptions = options;
             options = {};
-            if (originalOptions) {
-                Object.keys(originalOptions).forEach(key => {
-                    options[key] = originalOptions[key];
-                });
-            }
+            Object.keys(requestOptions).forEach(key => {
+                options[key] = requestOptions[key];
+            });
         }
+        assert(options !== null);
 
         // Oddly, url.format ignores path and only uses pathname and search,
         // so create them from the path, if path was specified

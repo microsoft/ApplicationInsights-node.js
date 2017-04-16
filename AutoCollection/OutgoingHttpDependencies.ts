@@ -10,6 +10,8 @@ import HttpHeaders = require('./HttpHeaders');
 import OutgoingHttpDependencyParser = require('./OutgoingHttpDependencyParser');
 
 class AutoCollectHttpDependencies {
+    public static disableOutgoingHttpAutoCollectionOption = 'disableOutgoingHttpAutoCollectionOption';
+    // deprecated
     public static disableCollectionRequestOption = 'disableAppInsightsAutoCollection';
 
     public static INSTANCE: AutoCollectHttpDependencies;
@@ -45,7 +47,7 @@ class AutoCollectHttpDependencies {
         http.request = (options, ...requestArgs) => {
             const requestResult: http.ClientRequest = originalRequestFunction.call(http, options, ...requestArgs);
 
-            if (requestResult && options && !options[AutoCollectHttpDependencies.disableCollectionRequestOption]) {
+            if (requestResult && options && !options[AutoCollectHttpDependencies.disableOutgoingHttpAutoCollectionOption]) {
                 AutoCollectHttpDependencies.trackDependency(this._client, options, requestResult);
             }
             return requestResult;
@@ -59,7 +61,7 @@ class AutoCollectHttpDependencies {
             https.request = (options, ...requestArgs) => {
                 const requestResult: http.ClientRequest = originalHttpsRequestFunction.call(
                     https, options, ...requestArgs);
-                if (requestResult && options && !options[AutoCollectHttpDependencies.disableCollectionRequestOption]) {
+                if (requestResult && options && !options[AutoCollectHttpDependencies.disableOutgoingHttpAutoCollectionOption]) {
                     AutoCollectHttpDependencies.trackDependency(this._client, options, requestResult);
                 }
                 return requestResult;
@@ -79,13 +81,14 @@ class AutoCollectHttpDependencies {
             return;
         }
 
+        // TODO(joshgav): get rootRequest (first param) from correlation context?
         let outgoingHttpDependencyParser = new OutgoingHttpDependencyParser(null, client, requestOptions, request);
 
         // Add the source ikey hash to the request headers, if a value was not already present in the request.
         // The getHeader/setHeader methods aren't available on very old Node versions, and
         // are not included in the v0.10 type declarations currently used. So check if the
         // methods exist before invoking them.
-        // TODO(joshgav): this may not get called before the request is sent. need to add a prepare outgoing request method and do this there
+        // TODO(joshgav): Is this guaranteed to be called *before* sending the outgoing request?
         if (request['getHeader'] && request['setHeader'] &&
                 !request['getHeader'](HttpHeaders.RemoteDependency.myIkey)) {
             request['setHeader'](HttpHeaders.RemoteDependency.myIkey, outgoingHttpDependencyParser.myIkeyHash);
@@ -95,7 +98,7 @@ class AutoCollectHttpDependencies {
         if (request.on) {
             request.on('response', (response: http.IncomingMessage) => {
                 outgoingHttpDependencyParser.onResponse(response, properties);
-                // TODO(joshgav): ClientResponse -> IncomingMessage
+                // TODO(joshgav): Is it okay to change ClientResponse -> IncomingMessage?
                 var context : { [name: string]: any; } = { "http.RequestOptions": requestOptions, "http.ClientRequest": request, "http.ClientResponse": response };
                 client.track(outgoingHttpDependencyParser.getDependencyData(), null, context);
             });

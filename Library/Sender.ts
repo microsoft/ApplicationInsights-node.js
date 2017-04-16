@@ -73,7 +73,7 @@ class Sender {
             Logging.info(Sender.TAG, options);
 
             // Ensure this request is not captured by auto-collection.
-            options[AutoCollectHttpDependencies.disableCollectionRequestOption] = true;
+            options[AutoCollectHttpDependencies.disableOutgoingHttpAutoCollectionOption] = true;
 
             var requestCallback = (res:http.ClientResponse) => {
                 res.setEncoding("utf-8");

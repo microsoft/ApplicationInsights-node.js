@@ -1,5 +1,3 @@
-'use strict'
-
 import ContractsModule = require('../Library/Contracts');
 import RequestParser = require('./RequestParser');
 import Client = require('../Library/Client');
@@ -8,22 +6,19 @@ abstract class DependencyParser {
     private _rootRequest: RequestParser;
     private _client: Client;
 
-    // unfortunately request means an **incoming** request in App Insights
-    // but also is often used to refer to **outgoing** HTTP calls in Node
-    // because of the `http.request` API.
-
-    get rootRequest () : RequestParser | null {
-        // if we don't have one we don't want to accidentally manipulate it
-        // in children so we create a new empty object
+    // A Request in App Insights means an **incoming** HTTP request.
+    // A request in Node.js often refers to an **outgoing** HTTP request
+    //     because of the `http.request` API and `request` module.
+    // To disambiguate we refer to the AI Request as rootRequest.
+    get rootRequest () : RequestParser {
         return this._rootRequest;
     }
 
-    // could be situations where we can't find our root at first
-    // but we can later so allow setting
-    set rootRequest ( value: RequestParser | null ) {
+    set rootRequest ( value: RequestParser ) {
         this._rootRequest = value;
     }
 
+    // only settable in constructor
     get client () : Client {
         return this._client;
     }
@@ -41,6 +36,9 @@ abstract class DependencyParser {
         return this._getDependencyData();
     }
 
+    /*
+     * Overridden with implementation in derived classes.
+     */
     protected abstract _getDependencyData () : ContractsModule.Contracts.Data<ContractsModule.Contracts.RemoteDependencyData>;
 }
 
