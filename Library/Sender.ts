@@ -7,7 +7,7 @@ import url = require("url");
 import zlib = require("zlib");
 
 import Logging = require("./Logging");
-import AutoCollectClientRequests = require("../AutoCollection/ClientRequests");
+import AutoCollectHttpDependencies = require('../AutoCollection/OutgoingHttpDependencies');
 
 class Sender {
     private static TAG = "Sender";
@@ -73,7 +73,7 @@ class Sender {
             Logging.info(Sender.TAG, options);
 
             // Ensure this request is not captured by auto-collection.
-            options[AutoCollectClientRequests.disableCollectionRequestOption] = true;
+            options[AutoCollectHttpDependencies.disableOutgoingHttpAutoCollectionOption] = true;
 
             var requestCallback = (res:http.ClientResponse) => {
                 res.setEncoding("utf-8");

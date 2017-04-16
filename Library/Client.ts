@@ -9,7 +9,7 @@ import ExceptionTracking = require("../AutoCollection/Exceptions");
 import ContractsModule = require("../Library/Contracts");
 import Channel = require("./Channel");
 import ServerRequestTracking = require("../AutoCollection/ServerRequests");
-import ClientRequestTracking = require("../AutoCollection/ClientRequests");
+import HttpDependencyTracking = require("../AutoCollection/OutgoingHttpDependencies");
 import TelemetryProcessors = require("../TelemetryProcessors");
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
 import Sender = require("./Sender");
@@ -174,7 +174,7 @@ class Client {
     }
 
     /**
-     * Log an outgoing ClientRequest dependency. This is a helper method around trackDependency for common outgoing HTTP calls.
+     * Log an OutgoingHttpDependency dependency. This is a helper method around trackDependency for common outgoing HTTP calls.
      * Use this at the beginning of your request.
      * 
      * This call will also add outgoing headers to your request for correlating telemetry across different services.
@@ -182,8 +182,13 @@ class Client {
      * @param response   http.ClientRequest - the outgoing request to monitor
      * @param properties map[string, string] - additional data used for filtering in the portal. Defaults to empty.
      */
+    public trackHttpDependency(requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest, properties?: { [key: string]: string; }) {
+        HttpDependencyTracking.trackDependency(this, requestOptions, request, properties);
+    }
+
+    // deprecate!
     public trackDependencyRequest(requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest, properties?: { [key: string]: string; }) {
-        ClientRequestTracking.trackRequest(this, requestOptions, request, properties);
+        this.trackHttpDependency(requestOptions, request, properties);
     }
 
     /**

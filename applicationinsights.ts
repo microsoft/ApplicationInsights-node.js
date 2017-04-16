@@ -2,7 +2,7 @@ import CorrelationContextManager = require("./AutoCollection/CorrelationContextM
 import AutoCollectConsole = require("./AutoCollection/Console");
 import AutoCollectExceptions = require("./AutoCollection/Exceptions");
 import AutoCollectPerformance = require("./AutoCollection/Performance");
-import AutoCollectClientRequests = require("./AutoCollection/ClientRequests");
+import AutoCollectHttpDependencies = require("./AutoCollection/OutgoingHttpDependencies");
 import AutoCollectServerRequests = require("./AutoCollection/ServerRequests");
 import Client = require("./Library/Client");
 import Config = require("./Library/Config");
@@ -35,7 +35,7 @@ class ApplicationInsights {
     private static _exceptions: AutoCollectExceptions;
     private static _performance: AutoCollectPerformance;
     private static _serverRequests: AutoCollectServerRequests;
-    private static _clientRequests: AutoCollectClientRequests;
+    private static _httpDependencies: AutoCollectHttpDependencies;
 
     private static _isStarted = false;
 
@@ -65,7 +65,7 @@ class ApplicationInsights {
             ApplicationInsights._exceptions = new AutoCollectExceptions(ApplicationInsights.client);
             ApplicationInsights._performance = new AutoCollectPerformance(ApplicationInsights.client);
             ApplicationInsights._serverRequests = new AutoCollectServerRequests(ApplicationInsights.client);
-            ApplicationInsights._clientRequests = new AutoCollectClientRequests(ApplicationInsights.client);
+            ApplicationInsights._httpDependencies = new AutoCollectHttpDependencies(ApplicationInsights.client);
         } else {
             Logging.info("The default client is already setup");
         }
@@ -91,7 +91,7 @@ class ApplicationInsights {
             ApplicationInsights._performance.enable(ApplicationInsights._isPerformance);
             ApplicationInsights._serverRequests.useAutoCorrelation(ApplicationInsights._isCorrelating);
             ApplicationInsights._serverRequests.enable(ApplicationInsights._isRequests);
-            ApplicationInsights._clientRequests.enable(ApplicationInsights._isDependencies);
+            ApplicationInsights._httpDependencies.enable(ApplicationInsights._isDependencies);
         } else {
             Logging.warn("Start cannot be called before setup");
         }
@@ -194,7 +194,7 @@ class ApplicationInsights {
     public static setAutoCollectDependencies(value: boolean) {
         ApplicationInsights._isDependencies = value;
         if (ApplicationInsights._isStarted) {
-            ApplicationInsights._clientRequests.enable(value);
+            ApplicationInsights._httpDependencies.enable(value);
         }
 
         return ApplicationInsights;
@@ -276,8 +276,8 @@ class ApplicationInsights {
         if(ApplicationInsights._serverRequests) {
             ApplicationInsights._serverRequests.dispose();
         }
-        if(ApplicationInsights._clientRequests) {
-            ApplicationInsights._clientRequests.dispose();
+        if(ApplicationInsights._httpDependencies) {
+            ApplicationInsights._httpDependencies.dispose();
         }
     }
 }

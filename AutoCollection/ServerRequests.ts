@@ -6,7 +6,7 @@ import ContractsModule = require("../Library/Contracts");
 import Client = require("../Library/Client");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
-import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
+import HttpHeaders = require("./HttpHeaders");
 import ServerRequestParser = require("./ServerRequestParser");
 import { CorrelationContextManager, CorrelationContext } from "./CorrelationContextManager";
 
@@ -183,9 +183,9 @@ class AutoCollectServerRequests {
     private static addResponseIKeyHeader(client:Client, response:http.ServerResponse) {
         if (client.config && client.config.instrumentationKeyHash &&
             response.getHeader && response.setHeader &&
-            !response.getHeader(RequestResponseHeaders.targetInstrumentationKeyHeader) &&
+            !response.getHeader(HttpHeaders.Request.myIkey) &&
             !(<any>response).headersSent) {
-                response.setHeader(RequestResponseHeaders.targetInstrumentationKeyHeader,
+                response.setHeader(HttpHeaders.Request.myIkey,
                     client.config.instrumentationKeyHash);
         }
     }
