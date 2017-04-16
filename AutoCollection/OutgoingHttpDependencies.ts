@@ -69,6 +69,15 @@ class AutoCollectHttpDependencies {
         }
     }
 
+
+    // TODO: make fully specific
+    private static _isRequestOptions(requestOptions: string | http.RequestOptions | https.RequestOptions): boolean {
+        return ( requestOptions !== null && typeof requestOptions === 'string' || typeof requestOptions === 'object');
+    }
+    private static _isClientRequest(request: http.ClientRequest) : boolean {
+        return ( request !== null && typeof request === 'object');
+    }
+
     /**
      * Tracks an outgoing request. Because it may set headers this method must be called before
      * writing content to or ending the request.
@@ -76,7 +85,7 @@ class AutoCollectHttpDependencies {
     public static trackDependency(client: Client, requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest,
             properties?: { [key: string]: string }) {
 
-        if (!requestOptions || !request || !client) {
+        if (!AutoCollectHttpDependencies._isRequestOptions(requestOptions) || !AutoCollectHttpDependencies._isClientRequest(request) || !client) {
             Logging.info("AutoCollectHttpDependencies.trackDependency was called with invalid parameters: ", !requestOptions, !request, !client);
             return;
         }
