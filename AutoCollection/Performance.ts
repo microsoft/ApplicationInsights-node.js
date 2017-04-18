@@ -155,14 +155,15 @@ class AutoCollectPerformance {
                 this._client.trackMetric(name + "user", user / total);
             }
 
-            var combinedName = "% total cpu ";
+            var combinedName = "% total cpu";
             var combinedTotal = (totalUser + totalSys + totalNice + totalIdle + totalIrq) || 1;
 
-            this._client.trackMetric(combinedName + "user", totalUser / combinedTotal);
-            this._client.trackMetric(combinedName + "sys", totalSys / combinedTotal);
-            this._client.trackMetric(combinedName + "nice", totalNice / combinedTotal);
-            this._client.trackMetric(combinedName + "idle", totalIdle / combinedTotal);
-            this._client.trackMetric(combinedName + "irq", totalIrq/ combinedTotal);
+            this._client.trackMetric(combinedName, (combinedTotal - totalIdle) / combinedTotal);
+            this._client.trackMetric(combinedName + " user", totalUser / combinedTotal);
+            this._client.trackMetric(combinedName + " sys", totalSys / combinedTotal);
+            this._client.trackMetric(combinedName + " nice", totalNice / combinedTotal);
+            this._client.trackMetric(combinedName + " idle", totalIdle / combinedTotal);
+            this._client.trackMetric(combinedName + " irq", totalIrq/ combinedTotal);
         }
 
         this._lastCpus = cpus;
