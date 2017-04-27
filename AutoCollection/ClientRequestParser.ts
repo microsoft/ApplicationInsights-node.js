@@ -13,7 +13,7 @@ import RequestParser = require("./RequestParser");
  * Helper class to read data from the requst/response objects and convert them into the telemetry contract
  */
 class ClientRequestParser extends RequestParser {
-    private targetIKeyHash: string;
+    private correlationId: string;
 
     constructor(requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest) {
         super();
@@ -38,8 +38,17 @@ class ClientRequestParser extends RequestParser {
      */
     public onResponse(response: http.ClientResponse, properties?: { [key: string]: string }) {
         this._setStatus(response.statusCode, undefined, properties);
-        this.targetIKeyHash =
-            response.headers && response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader];
+        const contextHeaders = response.headers && response.headers[RequestResponseHeaders.requestContextHeader];
+        if (contextHeaders) {
+            const keyValues = contextHeaders.split(",");
+            for(let i = 0; i < keyValues.length; ++i) {
+                const keyValue = keyValues[i].split("=");
+                if (keyValue.length == 2 && keyValue[0] == RequestResponseHeaders.requestContextTargetKey) {
+                    this.correlationId = keyValue[1];
+                    break;
+                }
+            }
+        }
     }
 
     /**
@@ -54,9 +63,9 @@ class ClientRequestParser extends RequestParser {
         let remoteDependency = new Contracts.RemoteDependencyData();
         remoteDependency.type = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
 
-        if (this.targetIKeyHash) {
+        if (this.correlationId) {
             remoteDependency.type = Contracts.RemoteDependencyDataConstants.TYPE_AI;
-            remoteDependency.target = urlObject.hostname + " | " + this.targetIKeyHash;
+            remoteDependency.target = urlObject.hostname + " | " + this.correlationId;
         } else {
             remoteDependency.type = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
             remoteDependency.target = urlObject.hostname;
