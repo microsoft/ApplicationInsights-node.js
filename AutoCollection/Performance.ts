@@ -158,8 +158,8 @@ class AutoCollectPerformance {
             var combinedName = "% total cpu";
             var combinedTotal = (totalUser + totalSys + totalNice + totalIdle + totalIrq) || 1;
 
-            this._client.trackMetric(combinedName, (combinedTotal - totalIdle) / combinedTotal);
-            this._client.trackMetric(combinedName + " user", totalUser / combinedTotal);
+            this._client.trackMetric("\\Processor(_Total)\\% Processor Time", (combinedTotal - totalIdle) / combinedTotal);
+            this._client.trackMetric("\\Process(??APP_WIN32_PROC??)\\% Processor Time", totalUser / combinedTotal);
             this._client.trackMetric(combinedName + " sys", totalSys / combinedTotal);
             this._client.trackMetric(combinedName + " nice", totalNice / combinedTotal);
             this._client.trackMetric(combinedName + " idle", totalIdle / combinedTotal);
@@ -175,8 +175,8 @@ class AutoCollectPerformance {
         var usedMem = totalMem - freeMem;
         var percentUsedMem = usedMem / (totalMem || 1);
         var percentAvailableMem = freeMem / (totalMem || 1);
-        this._client.trackMetric("Memory Used", usedMem);
-        this._client.trackMetric("Memory Free", freeMem);
+        this._client.trackMetric("\\Process(??APP_WIN32_PROC??)\\Private Bytes", usedMem);
+        this._client.trackMetric("\\Memory\\Available Bytes", freeMem);
         this._client.trackMetric("Memory Total", totalMem);
         this._client.trackMetric("% Memory Used", percentUsedMem);
         this._client.trackMetric("% Memory Free", percentAvailableMem);
@@ -202,9 +202,9 @@ class AutoCollectPerformance {
 
             this._client.trackMetric("Total Requests", requests.totalRequestCount);
             this._client.trackMetric("Total Failed Requests", requests.totalFailedRequestCount);
-            this._client.trackMetric("Requests per Second", requestsPerSec);
+            this._client.trackMetric("\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Requests/Sec", requestsPerSec);
             this._client.trackMetric("Failed Requests per Second", failedRequestsPerSec);
-            this._client.trackMetric("Last Request Execution Time", AutoCollectPerformance._lastRequestExecutionTime);
+            this._client.trackMetric("\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Request Execution Time", AutoCollectPerformance._lastRequestExecutionTime);
         }
 
         this._lastRequests = requests;
