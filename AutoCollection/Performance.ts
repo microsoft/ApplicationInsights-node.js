@@ -152,18 +152,18 @@ class AutoCollectPerformance {
                 totalIrq += irq;
 
                 var total = (user + sys + nice + idle + irq) || 1; // don"t let this be 0 since it is a divisor
-                this._client.trackMetric(name + "user", user / total);
+                this._client.trackMetric(name + "user", (user / total) * 100);
             }
 
             var combinedName = "% total cpu";
             var combinedTotal = (totalUser + totalSys + totalNice + totalIdle + totalIrq) || 1;
 
-            this._client.trackMetric("\\Processor(_Total)\\% Processor Time", (combinedTotal - totalIdle) / combinedTotal);
-            this._client.trackMetric("\\Process(??APP_WIN32_PROC??)\\% Processor Time", totalUser / combinedTotal);
-            this._client.trackMetric(combinedName + " sys", totalSys / combinedTotal);
-            this._client.trackMetric(combinedName + " nice", totalNice / combinedTotal);
-            this._client.trackMetric(combinedName + " idle", totalIdle / combinedTotal);
-            this._client.trackMetric(combinedName + " irq", totalIrq/ combinedTotal);
+            this._client.trackMetric("\\Processor(_Total)\\% Processor Time", ((combinedTotal - totalIdle) / combinedTotal) * 100);
+            this._client.trackMetric("\\Process(??APP_WIN32_PROC??)\\% Processor Time", (totalUser / combinedTotal) * 100);
+            this._client.trackMetric(combinedName + " sys", (totalSys / combinedTotal) * 100);
+            this._client.trackMetric(combinedName + " nice", (totalNice / combinedTotal) * 100);
+            this._client.trackMetric(combinedName + " idle", (totalIdle / combinedTotal) * 100);
+            this._client.trackMetric(combinedName + " irq", (totalIrq/ combinedTotal) * 100);
         }
 
         this._lastCpus = cpus;
@@ -178,8 +178,8 @@ class AutoCollectPerformance {
         this._client.trackMetric("\\Process(??APP_WIN32_PROC??)\\Private Bytes", usedMem);
         this._client.trackMetric("\\Memory\\Available Bytes", freeMem);
         this._client.trackMetric("Memory Total", totalMem);
-        this._client.trackMetric("% Memory Used", percentUsedMem);
-        this._client.trackMetric("% Memory Free", percentAvailableMem);
+        this._client.trackMetric("% Memory Used", percentUsedMem * 100);
+        this._client.trackMetric("% Memory Free", percentAvailableMem * 100);
     }
 
     private _trackNetwork() {
