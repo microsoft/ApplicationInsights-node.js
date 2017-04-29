@@ -2,7 +2,7 @@ import assert = require("assert");
 import sinon = require("sinon");
 
 import Channel = require("../../Library/Channel");
-import Contracts = require("../../Library/Contracts");
+import Contracts = require("../../Declarations/Contracts");
 
 class ChannelMock extends Channel {
     public getBuffer() {
@@ -16,7 +16,7 @@ class ChannelMock extends Channel {
 
 describe("Library/Channel", () => {
 
-    var testEnvelope = new Contracts.Contracts.Envelope();
+    var testEnvelope = new Contracts.Envelope();
     var sender = {
         saveOnCrash: (str) => null,
         send: (Buffer) => null

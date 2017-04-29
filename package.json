@@ -23,20 +23,8 @@
       "email": "aidevsupport@microsoft.com"
     },
     {
-      "name": "kszostak",
-      "email": "kszostak@microsoft.com"
-    },
-    {
-      "name": "southwood",
-      "url": "https://github.com/southwood"
-    },
-    {
-      "name": "bogdanbe",
-      "email": "bogdanbe@microsoft.com"
-    },
-    {
-      "name": "lukim",
-      "email": "lukim@microsoft.com"
+      "name": "Application Insights SDK Maintainers",
+      "email": "appinsightssdk@microsoft.com"
     }
   ],
   "scripts": {
