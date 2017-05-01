@@ -34,18 +34,7 @@ class ServerRequestParser extends RequestParser {
             this.rawHeaders = request.headers || (<any>request).rawHeaders;
             this.socketRemoteAddress = (<any>request).socket && (<any>request).socket.remoteAddress;
             this.userAgent = request.headers && request.headers["user-agent"];
-
-            if (request.headers && request.headers[RequestResponseHeaders.requestContextHeader]) {
-                const keyValues = request.headers[RequestResponseHeaders.requestContextHeader].split(",");
-                for(let i = 0; i < keyValues.length; ++i) {
-                    const keyValue = keyValues[i].split("=");
-                    if (keyValue.length == 2 && keyValue[0] == RequestResponseHeaders.requestContextTargetKey) {
-                        this.sourceCorrelationId = keyValue[1];
-                        break;
-                    }
-                }
-            }
-
+            this.sourceCorrelationId = Util.getCorrelationContextTarget(request);
             this.parentId =
                 request.headers && request.headers[RequestResponseHeaders.parentIdHeader];
             this.operationId =

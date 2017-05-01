@@ -3,6 +3,7 @@ import url = require("url");
 
 import Logging = require("./Logging");
 import Client = require("../Library/Client");
+import RequestResponseHeaders = require("./RequestResponseHeaders");
 
 class Util {
     public static MAX_PROPERTY_LENGTH = 1024;
@@ -177,6 +178,19 @@ class Util {
         }
 
         return true;
+    }
+
+    public static getCorrelationContextTarget(response: http.ClientResponse | http.ServerRequest) {
+        const contextHeaders = response.headers && response.headers[RequestResponseHeaders.requestContextHeader];
+        if (contextHeaders) {
+            const keyValues = contextHeaders.split(",");
+            for(let i = 0; i < keyValues.length; ++i) {
+                const keyValue = keyValues[i].split("=");
+                if (keyValue.length == 2 && keyValue[0] == RequestResponseHeaders.requestContextTargetKey) {
+                    return keyValue[1];
+                }
+            }
+        }
     }
 }
 export = Util;

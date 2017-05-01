@@ -1,5 +1,4 @@
-import https = require('https');
-import url = require('url');
+import CorrelationIdManager = require('./CorrelationIdManager');
 
 class Config {
 
@@ -42,7 +41,12 @@ class Config {
             "*.blob.core.cloudapi.de",
             "*.blob.core.usgovcloudapi.net"];
         
-        this.queryCorrelationId();
+        this.correlationId = CorrelationIdManager.correlationIdPrefix; // Initialize with a blank correlation ID until we fetch the correct value.
+        CorrelationIdManager.queryCorrelationId(
+            this.endpointBase,
+            this.instrumentationKey,
+            this.correlationIdRetryInterval,
+            (correlationId) => this.correlationId = correlationId);
     }
 
     private static _getInstrumentationKey(): string {
@@ -56,45 +60,6 @@ class Config {
         }
 
         return iKey;
-    }
-
-    private queryCorrelationId() {
-        // GET request to `${this.endpointBase}/api/profiles/${this.instrumentationKey}/appId`
-        // If it 404s, the iKey is bad and we should give up
-        // If it fails otherwise, try again later
-        const appIdUrl = url.parse(`${this.endpointBase}/api/profiles/${this.instrumentationKey}/appId`);
-        const requestOptions = {
-            protocol: appIdUrl.protocol,
-            hostname: appIdUrl.host,
-            path: appIdUrl.pathname,
-            method: 'GET',
-            // Ensure this request is not captured by auto-collection.
-            // Note: we don't refer to the property in ClientRequestParser because that would cause a cyclical dependency
-            disableAppInsightsAutoCollection: true
-        };
-
-        const fetchAppId = () => {
-            const req = https.request(requestOptions, (res) => {
-                if (res.statusCode === 200) {
-                    // Success; extract the appId from the body
-                    let appId = "";
-                    res.setEncoding("utf-8");
-                    res.on('data', function (data) {
-                        appId += data;
-                    });
-                    res.on('end', () => {
-                        this.correlationId = `cid-v1:${appId}`;
-                    });
-                } else if (res.statusCode >= 400 && res.statusCode < 500) {
-                    // Not found, probably a bad key. Do not try again.
-                } else {
-                    // Retry after timeout.
-                    setTimeout(fetchAppId, this.correlationIdRetryInterval);
-                }
-            });
-            req.end();
-        }
-        
     }
 }
 

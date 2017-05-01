@@ -6,7 +6,6 @@ import Contracts = require("../Declarations/Contracts");
 import Client = require("../Library/Client");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
-import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import RequestParser = require("./RequestParser");
 
 /**
@@ -38,17 +37,7 @@ class ClientRequestParser extends RequestParser {
      */
     public onResponse(response: http.ClientResponse, properties?: { [key: string]: string }) {
         this._setStatus(response.statusCode, undefined, properties);
-        const contextHeaders = response.headers && response.headers[RequestResponseHeaders.requestContextHeader];
-        if (contextHeaders) {
-            const keyValues = contextHeaders.split(",");
-            for(let i = 0; i < keyValues.length; ++i) {
-                const keyValue = keyValues[i].split("=");
-                if (keyValue.length == 2 && keyValue[0] == RequestResponseHeaders.requestContextTargetKey) {
-                    this.correlationId = keyValue[1];
-                    break;
-                }
-            }
-        }
+        this.correlationId = Util.getCorrelationContextTarget(response);
     }
 
     /**
