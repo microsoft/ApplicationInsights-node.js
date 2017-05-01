@@ -180,13 +180,13 @@ class Util {
         return true;
     }
 
-    public static getCorrelationContextTarget(response: http.ClientResponse | http.ServerRequest) {
+    public static getCorrelationContextTarget(response: http.ClientResponse | http.ServerRequest, key: string) {
         const contextHeaders = response.headers && response.headers[RequestResponseHeaders.requestContextHeader];
         if (contextHeaders) {
             const keyValues = contextHeaders.split(",");
             for(let i = 0; i < keyValues.length; ++i) {
                 const keyValue = keyValues[i].split("=");
-                if (keyValue.length == 2 && keyValue[0] == RequestResponseHeaders.requestContextTargetKey) {
+                if (keyValue.length == 2 && keyValue[0] == key) {
                     return keyValue[1];
                 }
             }

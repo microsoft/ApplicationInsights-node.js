@@ -6,7 +6,9 @@ import Contracts = require("../Declarations/Contracts");
 import Client = require("../Library/Client");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
+import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import RequestParser = require("./RequestParser");
+import CorrelationIdManager = require("../Library/CorrelationIdManager");
 
 /**
  * Helper class to read data from the requst/response objects and convert them into the telemetry contract
@@ -37,7 +39,7 @@ class ClientRequestParser extends RequestParser {
      */
     public onResponse(response: http.ClientResponse, properties?: { [key: string]: string }) {
         this._setStatus(response.statusCode, undefined, properties);
-        this.correlationId = Util.getCorrelationContextTarget(response);
+        this.correlationId = Util.getCorrelationContextTarget(response, RequestResponseHeaders.requestContextTargetKey);
     }
 
     /**
@@ -52,12 +54,14 @@ class ClientRequestParser extends RequestParser {
         let remoteDependency = new Contracts.RemoteDependencyData();
         remoteDependency.type = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
 
+        remoteDependency.target = urlObject.hostname;
         if (this.correlationId) {
             remoteDependency.type = Contracts.RemoteDependencyDataConstants.TYPE_AI;
-            remoteDependency.target = urlObject.hostname + " | " + this.correlationId;
+            if (this.correlationId !== CorrelationIdManager.correlationIdPrefix) {
+                remoteDependency.target = urlObject.hostname + " | " + this.correlationId;
+            }
         } else {
             remoteDependency.type = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
-            remoteDependency.target = urlObject.hostname;
         }
 
         remoteDependency.name = dependencyName;

@@ -14,58 +14,54 @@ class Config {
     public correlationId: string;
     public sessionRenewalMs: number;
     public sessionExpirationMs: number;
-    public endpointBase: string;
     public endpointUrl: string;
-    public profileQueryEndpoint: string;
     public maxBatchSize: number;
     public maxBatchIntervalMs: number;
     public disableAppInsights: boolean;
     public samplingPercentage: number;
-    public correlationIdRetryInterval: number;
+    public correlationIdRetryIntervalMs: number;
 
+    private endpointBase: string = "https://dc.services.visualstudio.com";
     private setCorrelationId: (string) => void;
+    private _profileQueryEndpoint: string;
 
     // A list of domains for which correlation headers will not be added.
     public correlationHeaderExcludedDomains: string[];
 
     constructor(instrumentationKey?: string) {
         this.instrumentationKey = instrumentationKey || Config._getInstrumentationKey();
-        this.endpointBase = "https://dc.services.visualstudio.com";
         this.endpointUrl = `${this.endpointBase}/v2/track`;
-        this.profileQueryEndpoint = process.env[Config.ENV_profileQueryEndpoint] || this.endpointBase;
         this.sessionRenewalMs = 30 * 60 * 1000;
         this.sessionExpirationMs = 24 * 60 * 60 * 1000;
         this.maxBatchSize = 250;
         this.maxBatchIntervalMs = 15000;
         this.disableAppInsights = false;
         this.samplingPercentage = 100;
-        this.correlationIdRetryInterval = 30 * 1000;
+        this.correlationIdRetryIntervalMs = 30 * 1000;
         this.correlationHeaderExcludedDomains = [
             "*.blob.core.windows.net", 
             "*.blob.core.chinacloudapi.cn",
             "*.blob.core.cloudapi.de",
             "*.blob.core.usgovcloudapi.net"];
         
-        this.correlationId = CorrelationIdManager.correlationIdPrefix; // Initialize with a blank correlation ID until we fetch the correct value.
-
         this.setCorrelationId = (correlationId) => this.correlationId = correlationId;
 
+        this.profileQueryEndpoint = process.env[Config.ENV_profileQueryEndpoint] || this.endpointBase;
+    }
+
+    public set profileQueryEndpoint(endpoint: string) {
+        CorrelationIdManager.cancelCorrelationIdQuery(this._profileQueryEndpoint, this.instrumentationKey, this.setCorrelationId);
+        this._profileQueryEndpoint = endpoint;
+        this.correlationId = CorrelationIdManager.correlationIdPrefix; // Reset the correlationId while we wait for the new query
         CorrelationIdManager.queryCorrelationId(
-            this.profileQueryEndpoint,
+            this._profileQueryEndpoint,
             this.instrumentationKey,
-            this.correlationIdRetryInterval,
+            this.correlationIdRetryIntervalMs,
             this.setCorrelationId);
     }
 
-    public setProfileQueryEndpoint(endpoint: string) {
-        CorrelationIdManager.cancelCorrelationIdQuery(this.profileQueryEndpoint, this.instrumentationKey, this.setCorrelationId);
-        this.profileQueryEndpoint = endpoint;
-        this.correlationId = CorrelationIdManager.correlationIdPrefix; // Reset the correlationId while we wait for the new query
-        CorrelationIdManager.queryCorrelationId(
-            this.profileQueryEndpoint,
-            this.instrumentationKey,
-            this.correlationIdRetryInterval,
-            this.setCorrelationId);
+    public get profileQueryEndpoint() {
+        return this._profileQueryEndpoint;
     }
 
 

@@ -34,7 +34,7 @@ class ServerRequestParser extends RequestParser {
             this.rawHeaders = request.headers || (<any>request).rawHeaders;
             this.socketRemoteAddress = (<any>request).socket && (<any>request).socket.remoteAddress;
             this.userAgent = request.headers && request.headers["user-agent"];
-            this.sourceCorrelationId = Util.getCorrelationContextTarget(request);
+            this.sourceCorrelationId = Util.getCorrelationContextTarget(request, RequestResponseHeaders.requestContextSourceKey);
             this.parentId =
                 request.headers && request.headers[RequestResponseHeaders.parentIdHeader];
             this.operationId =
