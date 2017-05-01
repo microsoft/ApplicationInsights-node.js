@@ -8,6 +8,7 @@ class Config {
     // This key is provided in the readme
     public static ENV_iKey = "APPINSIGHTS_INSTRUMENTATIONKEY";
     public static legacy_ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
+    public static ENV_profileQueryEndpoint = "APPINSIGHTS_PROFILE_QUERY_ENDPOINT";
 
     public instrumentationKey: string;
     public correlationId: string;
@@ -15,6 +16,7 @@ class Config {
     public sessionExpirationMs: number;
     public endpointBase: string;
     public endpointUrl: string;
+    public profileQueryEndpoint: string;
     public maxBatchSize: number;
     public maxBatchIntervalMs: number;
     public disableAppInsights: boolean;
@@ -28,6 +30,7 @@ class Config {
         this.instrumentationKey = instrumentationKey || Config._getInstrumentationKey();
         this.endpointBase = "https://dc.services.visualstudio.com";
         this.endpointUrl = `${this.endpointBase}/v2/track`;
+        this.profileQueryEndpoint = process.env[Config.ENV_profileQueryEndpoint] || this.endpointBase;
         this.sessionRenewalMs = 30 * 60 * 1000;
         this.sessionExpirationMs = 24 * 60 * 60 * 1000;
         this.maxBatchSize = 250;
@@ -42,11 +45,14 @@ class Config {
             "*.blob.core.usgovcloudapi.net"];
         
         this.correlationId = CorrelationIdManager.correlationIdPrefix; // Initialize with a blank correlation ID until we fetch the correct value.
-        CorrelationIdManager.queryCorrelationId(
-            this.endpointBase,
-            this.instrumentationKey,
-            this.correlationIdRetryInterval,
-            (correlationId) => this.correlationId = correlationId);
+        // Async to allow caller to set profileQueryEndpoint if they wish
+        setTimeout(() =>
+            CorrelationIdManager.queryCorrelationId(
+                this.profileQueryEndpoint,
+                this.instrumentationKey,
+                this.correlationIdRetryInterval,
+                (correlationId) => this.correlationId = correlationId),
+            0);
     }
 
     private static _getInstrumentationKey(): string {

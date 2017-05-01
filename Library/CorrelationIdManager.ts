@@ -1,4 +1,5 @@
 import https = require('https');
+import http = require('http');
 import url = require('url');
 
 class CorrelationIdManager {
@@ -14,7 +15,7 @@ class CorrelationIdManager {
         const appIdUrlString = `${endpointBase}/api/profiles/${instrumentationKey}/appId`;
         const appIdUrl = url.parse(appIdUrlString);
 
-        if (CorrelationIdManager.completedLookups[appIdUrlString]) {
+        if (CorrelationIdManager.completedLookups.hasOwnProperty(appIdUrlString)) {
             callback(CorrelationIdManager.completedLookups[appIdUrlString]);
             return;
         } else if (CorrelationIdManager.pendingLookups[appIdUrlString]) {
@@ -34,8 +35,10 @@ class CorrelationIdManager {
             disableAppInsightsAutoCollection: true
         };
 
+        let httpRequest = appIdUrl.protocol === 'https:' ? https.request : http.request;
+
         const fetchAppId = () => {
-            const req = https.request(requestOptions, (res) => {
+            const req = httpRequest(requestOptions, (res) => {
                 if (res.statusCode === 200) {
                     // Success; extract the appId from the body
                     let appId = "";
@@ -51,6 +54,8 @@ class CorrelationIdManager {
                     });
                 } else if (res.statusCode >= 400 && res.statusCode < 500) {
                     // Not found, probably a bad key. Do not try again.
+                    CorrelationIdManager.completedLookups[appIdUrlString] = undefined;
+                    delete CorrelationIdManager.pendingLookups[appIdUrlString];
                 } else {
                     // Retry after timeout.
                     setTimeout(fetchAppId, correlationIdRetryInterval);
