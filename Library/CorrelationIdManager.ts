@@ -38,6 +38,10 @@ class CorrelationIdManager {
         let httpRequest = appIdUrl.protocol === 'https:' ? https.request : http.request;
 
         const fetchAppId = () => {
+            if (!CorrelationIdManager.pendingLookups[appIdUrlString]) {
+                // This query has been cancelled.
+                return;
+            }
             const req = httpRequest(requestOptions, (res) => {
                 if (res.statusCode === 200) {
                     // Success; extract the appId from the body
@@ -49,7 +53,9 @@ class CorrelationIdManager {
                     res.on('end', () => {
                         const result = CorrelationIdManager.correlationIdPrefix + appId;
                         CorrelationIdManager.completedLookups[appIdUrlString] = result;
-                        CorrelationIdManager.pendingLookups[appIdUrlString].forEach((cb) => cb(result));
+                        if (CorrelationIdManager.pendingLookups[appIdUrlString]) {
+                            CorrelationIdManager.pendingLookups[appIdUrlString].forEach((cb) => cb(result));
+                        }
                         delete CorrelationIdManager.pendingLookups[appIdUrlString];
                     });
                 } else if (res.statusCode >= 400 && res.statusCode < 500) {
@@ -62,10 +68,25 @@ class CorrelationIdManager {
                 }
             });
             if (req) {
+                req.on('error', () => {
+                    // Unable to contact endpoint.
+                    // Do nothing for now.
+                });
                 req.end();
             }
         };
-        fetchAppId();
+        setTimeout(fetchAppId, 0);
+    }
+
+    public static cancelCorrelationIdQuery(endpointBase: string, instrumentationKey: string, callback: (correlationId: string) => void) {
+        const appIdUrlString = `${endpointBase}/api/profiles/${instrumentationKey}/appId`;
+        const pendingLookups = CorrelationIdManager.pendingLookups[appIdUrlString];
+        if (pendingLookups) {
+            CorrelationIdManager.pendingLookups[appIdUrlString] = pendingLookups.filter((cb) => cb != callback);
+            if (CorrelationIdManager.pendingLookups[appIdUrlString].length == 0) {
+                delete CorrelationIdManager.pendingLookups[appIdUrlString];
+            }
+        }
     }
 }
 

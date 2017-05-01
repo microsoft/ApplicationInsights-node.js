@@ -23,6 +23,8 @@ class Config {
     public samplingPercentage: number;
     public correlationIdRetryInterval: number;
 
+    private setCorrelationId: (string) => void;
+
     // A list of domains for which correlation headers will not be added.
     public correlationHeaderExcludedDomains: string[];
 
@@ -45,15 +47,27 @@ class Config {
             "*.blob.core.usgovcloudapi.net"];
         
         this.correlationId = CorrelationIdManager.correlationIdPrefix; // Initialize with a blank correlation ID until we fetch the correct value.
-        // Async to allow caller to set profileQueryEndpoint if they wish
-        setTimeout(() =>
-            CorrelationIdManager.queryCorrelationId(
-                this.profileQueryEndpoint,
-                this.instrumentationKey,
-                this.correlationIdRetryInterval,
-                (correlationId) => this.correlationId = correlationId),
-            0);
+
+        this.setCorrelationId = (correlationId) => this.correlationId = correlationId;
+
+        CorrelationIdManager.queryCorrelationId(
+            this.profileQueryEndpoint,
+            this.instrumentationKey,
+            this.correlationIdRetryInterval,
+            this.setCorrelationId);
     }
+
+    public setProfileQueryEndpoint(endpoint: string) {
+        CorrelationIdManager.cancelCorrelationIdQuery(this.profileQueryEndpoint, this.instrumentationKey, this.setCorrelationId);
+        this.profileQueryEndpoint = endpoint;
+        this.correlationId = CorrelationIdManager.correlationIdPrefix; // Reset the correlationId while we wait for the new query
+        CorrelationIdManager.queryCorrelationId(
+            this.profileQueryEndpoint,
+            this.instrumentationKey,
+            this.correlationIdRetryInterval,
+            this.setCorrelationId);
+    }
+
 
     private static _getInstrumentationKey(): string {
         // check for both the documented env variable and the azure-prefixed variable
