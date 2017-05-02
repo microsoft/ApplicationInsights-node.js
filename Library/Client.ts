@@ -38,6 +38,7 @@ class Client {
         this.channel = new Channel(() => config.disableAppInsights, () => config.maxBatchSize, () => config.maxBatchIntervalMs, sender);
     }
 
+
     /**
      * Log a user action or other occurrence.
      * @param name              A string to identify this event in the portal.
@@ -375,6 +376,14 @@ class Client {
         }
 
         return newTags;
+    }
+    /**
+     * Sets the client app version to the contest tags.
+     * @param version, takes the host app version.
+     */
+    public setVersion(version: string)
+    {
+        this.context.tags[this.context.keys.applicationVersion] = version;
     }
 }
 

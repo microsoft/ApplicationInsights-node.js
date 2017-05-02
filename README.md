@@ -29,6 +29,7 @@ This will enable request monitoring, unhandled exception tracking, and system pe
 ```javascript
 import appInsights = require("applicationinsights");
 appInsights.setup("<instrumentation_key>").start();
+appInsights.client.setVersion("<host_app_version>");
 ```
 
 >The instrumentation key can also be set in the environment variable APPINSIGHTS_INSTRUMENTATIONKEY. If this is done, no argument is required when calling `appInsights.setup()` or `appInsights.getClient()`.

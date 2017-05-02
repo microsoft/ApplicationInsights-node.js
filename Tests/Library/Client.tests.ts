@@ -7,6 +7,7 @@ import eventEmitter = require('events');
 
 import Client = require("../../Library/Client");
 import Config = require("../../Library/Config");
+import Context = require("../../Library/Context");
 import ContractsModule = require("../../Library/Contracts");
 import RequestResponseHeaders = require("../../Library/RequestResponseHeaders");
 import Util = require("../../Library/Util")
@@ -817,6 +818,12 @@ describe("Library/Client", () => {
             client.track(mockData);
 
             assert.ok(!processorExecuted, "telemetry processor should NOT be executed");
+        });
+    });
+    describe("#setVersion()", () => {
+        it("sets the app version to the context tags", () => {
+            client.setVersion("version");
+            assert.ok(client.context.tags);
         });
     });
 });
