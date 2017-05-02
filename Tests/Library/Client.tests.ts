@@ -73,6 +73,11 @@ describe("Library/Client", () => {
             var client = new Client("key");
             assert.ok(client.channel);
         });
+
+        it("should initialize contracts", () => {
+            var client = new Client("key");
+            assert.ok(client.contracts);
+        });
     });
 
     describe("#trackEvent()", () => {
@@ -803,6 +808,14 @@ describe("Library/Client", () => {
             client.track(mockData);
 
             assert.ok(!processorExecuted, "telemetry processor should NOT be executed");
+        });
+    });
+
+    describe("Provide access to contracts", () => {
+        it("should provide access to severity levels", () => {
+            var client = new Client("key");
+            
+            assert.equal(client.contracts.SeverityLevel.Information, Contracts.SeverityLevel.Information);
         });
     });
 });
