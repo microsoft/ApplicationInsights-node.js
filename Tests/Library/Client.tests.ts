@@ -805,9 +805,9 @@ describe("Library/Client", () => {
             assert.ok(!processorExecuted, "telemetry processor should NOT be executed");
         });
     });
-    describe("#setVersion()", () => {
+    describe("#overrideApplicationVersion()", () => {
         it("sets the app version to the context tags", () => {
-            client.setVersion("version");
+            client.overrideApplicationVersion("version");
             assert.equal(client.context.tags[client.context.keys.applicationVersion], "version");
         });
     });
