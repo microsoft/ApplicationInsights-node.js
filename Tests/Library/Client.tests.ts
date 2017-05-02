@@ -7,8 +7,7 @@ import eventEmitter = require('events');
 
 import Client = require("../../Library/Client");
 import Config = require("../../Library/Config");
-import Context = require("../../Library/Context");
-import ContractsModule = require("../../Library/Contracts");
+import Contracts = require("../../Declarations/Contracts");
 import RequestResponseHeaders = require("../../Library/RequestResponseHeaders");
 import Util = require("../../Library/Util")
 
@@ -464,7 +463,7 @@ describe("Library/Client", () => {
                 assert.equal(obj0.baseData.name, "GET /search");
                 assert.equal(obj0.baseData.data, "http://bing.com/search?q=test");
                 assert.equal(obj0.baseData.target, "bing.com");
-                assert.equal(obj0.baseData.type, ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
+                assert.equal(obj0.baseData.type, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
                 assert.deepEqual(obj0.baseData.properties, properties);
             });
 
@@ -489,7 +488,7 @@ describe("Library/Client", () => {
                 assert.equal(obj0.baseData.name, "GET /search");
                 assert.equal(obj0.baseData.data, "http://bing.com/search?q=test");
                 assert.equal(obj0.baseData.target, "bing.com");
-                assert.equal(obj0.baseData.type, ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
+                assert.equal(obj0.baseData.type, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
                 assert.deepEqual(obj0.baseData.properties, properties);
             });
 
@@ -627,7 +626,7 @@ describe("Library/Client", () => {
             client1.commonProperties = commonproperties;
             client1.config.samplingPercentage = 99;
             mockData.baseData.properties = JSON.parse(JSON.stringify(properties));
-            var env = client1.getEnvelope(mockData);
+            var env = <any>client1.getEnvelope(mockData);
 
             // check sample rate
             assert.equal(env.sampleRate, client1.config.samplingPercentage);
@@ -655,20 +654,6 @@ describe("Library/Client", () => {
             }
             env = client.getEnvelope(mockData, <any>customTag);
             assert.deepEqual(env.tags, expected)
-        });
-
-        it("should write properties in a specific order", () => {
-            let env = client.getEnvelope(mockData);
-            let keys = Object.keys(env);
-            let indices: { [name: string]: number } = {};
-            let index = 0;
-            for (let propertyName in env) {
-                indices[propertyName] = index;
-                ++index;
-            }
-            assert.ok(
-                Math.max(indices["name"], indices["time"]) <
-                Math.min(indices["data"], indices["tags"]), JSON.stringify(env));
         });
 
         it("should have valid name", function () {
@@ -717,7 +702,7 @@ describe("Library/Client", () => {
 
             assert.equal(sendStub.callCount, 1, "send called once");
 
-            var actualData = sendStub.firstCall.args[0] as ContractsModule.Contracts.Envelope;
+            var actualData = sendStub.firstCall.args[0] as Contracts.Envelope;
             assert.equal(actualData.name, expectedName, "envelope name should be changed by the processor");
         });
 
@@ -734,7 +719,7 @@ describe("Library/Client", () => {
 
             assert.equal(sendStub.callCount, 1, "send called once");
 
-            var actualData = sendStub.firstCall.args[0] as ContractsModule.Contracts.Envelope;
+            var actualData = sendStub.firstCall.args[0] as Contracts.Envelope;
             assert.equal(actualData.name, expectedName, "envelope name should be changed by the processor");
         });
 
@@ -759,7 +744,7 @@ describe("Library/Client", () => {
             client.track(mockData);
             assert.equal(sendStub.callCount, 1, "send called once");
 
-            var actualData = sendStub.firstCall.args[0] as ContractsModule.Contracts.Envelope;
+            var actualData = sendStub.firstCall.args[0] as Contracts.Envelope;
             assert.equal(actualData.name, "First, Second, Third", "processors should executed in the right order");
         });
 

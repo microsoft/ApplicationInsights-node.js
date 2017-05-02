@@ -1,6 +1,6 @@
 import http = require("http");
 
-import ContractsModule = require("../Library/Contracts");
+import Contracts = require("../Declarations/Contracts");
 import Client = require("../Library/Client");
 import Sender = require("../Library/Sender");
 import Queue = require("../Library/Channel");
@@ -67,22 +67,22 @@ class AutoCollectExceptions {
      * @param properties additional properties
      * @param measurements metrics associated with this event, displayed in Metrics Explorer on the portal. Defaults to empty.
      */
-    public static getExceptionData(error: Error, isHandled: boolean, properties?:{ [key: string]: string; }, measurements?:{ [key: string]: number; }) {
-        var exception = new ContractsModule.Contracts.ExceptionData();
+    public static getExceptionData(error: Error, isHandled: boolean, properties?:{ [key: string]: string; }, measurements?:{ [key: string]: number; }): Contracts.Data<Contracts.ExceptionData> {
+        var exception = new Contracts.ExceptionData();
         exception.properties = properties;
-        exception.severityLevel = ContractsModule.Contracts.SeverityLevel.Error;
+        exception.severityLevel = Contracts.SeverityLevel.Error;
         exception.measurements = measurements;
         exception.exceptions = [];
 
         var stack = error["stack"];
-        var exceptionDetails = new ContractsModule.Contracts.ExceptionDetails();
+        var exceptionDetails = new Contracts.ExceptionDetails();
         exceptionDetails.message = error.message;
         exceptionDetails.typeName = error.name;
         exceptionDetails.parsedStack = this.parseStack(stack);
         exceptionDetails.hasFullStack = Util.isArray(exceptionDetails.parsedStack) && exceptionDetails.parsedStack.length > 0;
         exception.exceptions.push(exceptionDetails);
 
-        var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.ExceptionData>();
+        var data = new Contracts.Data<Contracts.ExceptionData>();
         data.baseType = "Microsoft.ApplicationInsights.ExceptionData";
         data.baseData = exception;
         return data;

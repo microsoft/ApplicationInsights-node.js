@@ -6,7 +6,7 @@ import os = require("os");
 import Config = require("./Config");
 import Context = require("./Context");
 import ExceptionTracking = require("../AutoCollection/Exceptions");
-import ContractsModule = require("../Library/Contracts");
+import Contracts = require("../Declarations/Contracts");
 import Channel = require("./Channel");
 import ServerRequestTracking = require("../AutoCollection/ServerRequests");
 import ClientRequestTracking = require("../AutoCollection/ClientRequests");
@@ -17,7 +17,7 @@ import Util = require("./Util");
 import Logging = require("./Logging");
 
 class Client {
-    private _telemetryProcessors: { (envelope: ContractsModule.Contracts.Envelope, contextObjects: {[name: string]: any;}): boolean; }[] = [];
+    private _telemetryProcessors: { (envelope: Contracts.Envelope, contextObjects: {[name: string]: any;}): boolean; }[] = [];
 
     public config: Config;
     public context: Context;
@@ -50,12 +50,12 @@ class Client {
     public trackEvent(name: string, properties?: { [key: string]: string; }, measurements?: { [key: string]: number; }, 
         tagOverrides?: { [key: string]: string; },
         contextObjects?: { [name: string]: any; }) {
-        var event = new ContractsModule.Contracts.EventData();
+        var event = new Contracts.EventData();
         event.name = name;
         event.properties = properties;
         event.measurements = measurements;
 
-        var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.EventData>();
+        var data = new Contracts.Data<Contracts.EventData>();
         data.baseType = "EventData";
         data.baseData = event;
         this.track(data, tagOverrides, contextObjects);
@@ -68,19 +68,19 @@ class Client {
      * @param tagOverrides   the context tags to use for this telemetry which overwrite default context values
      * @param contextObjects map[string, contextObject] - An event-specific context that will be passed to telemetry processors handling this event before it is sent. For a context spanning your entire operation, consider appInsights.getCorrelationContext
      */
-    public trackTrace(message: string, severityLevel?: ContractsModule.Contracts.SeverityLevel, properties?: { [key: string]: string; }, 
+    public trackTrace(message: string, severityLevel?: Contracts.SeverityLevel, properties?: { [key: string]: string; }, 
         tagOverrides?: { [key: string]: string; },
         contextObjects?: { [name: string]: any; }) {
-        var trace = new ContractsModule.Contracts.MessageData();
+        var trace = new Contracts.MessageData();
         trace.message = message;
         trace.properties = properties;
         if (!isNaN(severityLevel)) {
             trace.severityLevel = severityLevel;
         } else {
-            trace.severityLevel = ContractsModule.Contracts.SeverityLevel.Information;
+            trace.severityLevel = Contracts.SeverityLevel.Information;
         }
 
-        var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.MessageData>();
+        var data = new Contracts.Data<Contracts.MessageData>();
         data.baseType = "MessageData";
         data.baseData = trace;
         this.track(data, tagOverrides, contextObjects);
@@ -123,12 +123,12 @@ class Client {
     public trackMetric(name: string, value: number, count?: number, min?: number, max?: number, stdDev?: number, properties?: { [key: string]: string; }, 
         tagOverrides?: { [key: string]: string; },
         contextObjects?: { [name: string]: any; }) {
-        var metrics = new ContractsModule.Contracts.MetricData(); // todo: enable client-batching of these
+        var metrics = new Contracts.MetricData(); // todo: enable client-batching of these
         metrics.metrics = [];
 
-        var metric = new ContractsModule.Contracts.DataPoint();
+        var metric = new Contracts.DataPoint();
         metric.count = !isNaN(count) ? count : 1;
-        metric.kind = ContractsModule.Contracts.DataPointType.Aggregation;
+        metric.kind = Contracts.DataPointType.Aggregation;
         metric.max = !isNaN(max) ? max : value;
         metric.min = !isNaN(min) ? min : value;
         metric.name = name;
@@ -139,7 +139,7 @@ class Client {
 
         metrics.properties = properties;
 
-        var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.MetricData>();
+        var data = new Contracts.Data<Contracts.MetricData>();
         data.baseType = "MetricData";
         data.baseData = metrics;
         this.track(data, tagOverrides, contextObjects);
@@ -218,7 +218,7 @@ class Client {
             target = url.parse(commandName).host;
         }
 
-        var remoteDependency = new ContractsModule.Contracts.RemoteDependencyData();
+        var remoteDependency = new Contracts.RemoteDependencyData();
         remoteDependency.name = name;
         remoteDependency.data = commandName;
         remoteDependency.target = target;
@@ -227,7 +227,7 @@ class Client {
         remoteDependency.type = dependencyTypeName;
         remoteDependency.properties = properties;
 
-        var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.RemoteDependencyData>();
+        var data = new Contracts.Data<Contracts.RemoteDependencyData>();
         data.baseType = "RemoteDependencyData";
         data.baseData = remoteDependency;
         this.track(data, tagOverrides, contextObjects);
@@ -241,30 +241,30 @@ class Client {
     }
 
     public getEnvelope(
-        data: ContractsModule.Contracts.Data<ContractsModule.Contracts.Domain>,
-        tagOverrides?: { [key: string]: string; }) {
-        if (data && data.baseData) {
-            data.baseData.ver = 2;
-
-            // if no properties are specified just add the common ones
-            if (!data.baseData.properties) {
-                data.baseData.properties = this.commonProperties;
-            } else {
-                // otherwise, check each of the common ones
-                for (var name in this.commonProperties) {
-                    // only override if the property `name` has not been set on this item
-                    if (!data.baseData.properties[name]) {
-                        data.baseData.properties[name] = this.commonProperties[name];
+        data: Contracts.Data<Contracts.Domain>,
+        tagOverrides?: { [key: string]: string; }): Contracts.Envelope {
+        if (Contracts.domainSupportsProperties(data.baseData)) { // Do instanceof check. TS will automatically cast and allow the properties property
+            if (data && data.baseData) {
+                // if no properties are specified just add the common ones
+                if (!data.baseData.properties) {
+                    data.baseData.properties = this.commonProperties;
+                } else {
+                    // otherwise, check each of the common ones
+                    for (var name in this.commonProperties) {
+                        // only override if the property `name` has not been set on this item
+                        if (!data.baseData.properties[name]) {
+                            data.baseData.properties[name] = this.commonProperties[name];
+                        }
                     }
                 }
             }
+
+            // sanitize properties
+            data.baseData.properties = Util.validateStringMap(data.baseData.properties);
         }
 
-        // sanitize properties
-        data.baseData.properties = Util.validateStringMap(data.baseData.properties);
-
         var iKey = this.config.instrumentationKey;
-        var envelope = new ContractsModule.Contracts.Envelope();
+        var envelope = new Contracts.Envelope();
         envelope.data = data;
         envelope.iKey = iKey;
 
@@ -288,7 +288,7 @@ class Client {
      * @param tagOverrides the context tags to use for this telemetry which overwrite default context values
      */
     public track(
-        data: ContractsModule.Contracts.Data<ContractsModule.Contracts.Domain>,
+        data: Contracts.Data<Contracts.Domain>,
         tagOverrides?: { [key: string]: string; },
         contextObjects?: { [name: string]: any; }) {
 
@@ -310,7 +310,7 @@ class Client {
      *
      * @param telemetryProcessor function, takes Envelope, and optional context object and returns boolean
      */
-    public addTelemetryProcessor(telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope, contextObjects?: { [name: string]: any; }) => boolean) {
+    public addTelemetryProcessor(telemetryProcessor: (envelope: Contracts.Envelope, contextObjects?: { [name: string]: any; }) => boolean) {
         this._telemetryProcessors.push(telemetryProcessor);
     }
 
@@ -321,7 +321,7 @@ class Client {
         this._telemetryProcessors = [];
     }
     
-    private runTelemetryProcessors(envelope: ContractsModule.Contracts.Envelope, contextObjects: { [name: string]: any; }): boolean {
+    private runTelemetryProcessors(envelope: Contracts.Envelope, contextObjects: { [name: string]: any; }): boolean {
         var accepted = true;
         var telemetryProcessorsCount = this._telemetryProcessors.length;
 

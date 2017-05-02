@@ -2,7 +2,7 @@ import http = require("http");
 import https = require("https");
 import url = require("url");
 
-import ContractsModule = require("../Library/Contracts");
+import Contracts = require("../Declarations/Contracts");
 import Client = require("../Library/Client");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
@@ -45,20 +45,20 @@ class ClientRequestParser extends RequestParser {
     /**
      * Gets a dependency data contract object for a completed ClientRequest.
      */
-    public getDependencyData(): ContractsModule.Contracts.Data<ContractsModule.Contracts.RemoteDependencyData> {
+    public getDependencyData(): Contracts.Data<Contracts.RemoteDependencyData> {
         let urlObject = url.parse(this.url);
         urlObject.search = undefined;
         urlObject.hash = undefined;
         let dependencyName = this.method.toUpperCase() + " " + urlObject.pathname;
 
-        let remoteDependency = new ContractsModule.Contracts.RemoteDependencyData();
-        remoteDependency.type = ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
+        let remoteDependency = new Contracts.RemoteDependencyData();
+        remoteDependency.type = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
 
         if (this.targetIKeyHash) {
-            remoteDependency.type = "Http (tracked component)";
+            remoteDependency.type = Contracts.RemoteDependencyDataConstants.TYPE_AI;
             remoteDependency.target = urlObject.hostname + " | " + this.targetIKeyHash;
         } else {
-            remoteDependency.type = ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
+            remoteDependency.type = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
             remoteDependency.target = urlObject.hostname;
         }
 
@@ -69,7 +69,7 @@ class ClientRequestParser extends RequestParser {
         remoteDependency.resultCode = this.statusCode ? this.statusCode.toString() : null;
         remoteDependency.properties = this.properties || {};
 
-        let data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.RemoteDependencyData>();
+        let data = new Contracts.Data<Contracts.RemoteDependencyData>();
         data.baseType = "Microsoft.ApplicationInsights.RemoteDependencyData";
         data.baseData = remoteDependency;
 
