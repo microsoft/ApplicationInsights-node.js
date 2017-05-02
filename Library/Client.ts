@@ -23,7 +23,6 @@ class Client {
     public context: Context;
     public commonProperties: { [key: string]: string; };
     public channel: Channel;
-    public contracts: typeof Contracts;
 
     /**
      * Constructs a new client of the client
@@ -34,7 +33,6 @@ class Client {
         this.config = config;
         this.context = new Context();
         this.commonProperties = {};
-        this.contracts = Contracts;
 
         var sender = new Sender(() => config.endpointUrl);
         this.channel = new Channel(() => config.disableAppInsights, () => config.maxBatchSize, () => config.maxBatchIntervalMs, sender);
