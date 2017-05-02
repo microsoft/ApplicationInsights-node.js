@@ -378,10 +378,10 @@ class Client {
         return newTags;
     }
     /**
-     * Sets the client app version to the contest tags.
+     * Sets the client app version to the context tags.
      * @param version, takes the host app version.
      */
-    public setVersion(version: string)
+    public overrideApplicationVersion(version: string)
     {
         this.context.tags[this.context.keys.applicationVersion] = version;
     }
