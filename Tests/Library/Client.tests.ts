@@ -823,7 +823,7 @@ describe("Library/Client", () => {
     describe("#setVersion()", () => {
         it("sets the app version to the context tags", () => {
             client.setVersion("version");
-            assert.ok(client.context.tags);
+            assert.equal(client.context.tags[client.context.keys.applicationVersion], "version");
         });
     });
 });
