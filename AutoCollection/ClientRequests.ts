@@ -38,9 +38,9 @@ class AutoCollectClientRequests {
         if (this._isEnabled && !this._isInitialized) {
             this._initialize();
         }
-        enableMongodb(isEnabled);
-        enableMysql(isEnabled);
-        enableRedis(isEnabled);
+        enableMongodb(isEnabled, this._client);
+        enableMysql(isEnabled, this._client);
+        enableRedis(isEnabled, this._client);
     }
 
     public isInitialized() {

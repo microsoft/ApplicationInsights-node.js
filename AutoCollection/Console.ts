@@ -25,8 +25,8 @@ class AutoCollectConsole {
     }
 
     public enable(isEnabled: boolean) {
-        enableConsole(isEnabled);
-        enableBunyan(isEnabled);
+        enableConsole(isEnabled, this._client);
+        enableBunyan(isEnabled, this._client);
     }
 
     public isInitialized() {
