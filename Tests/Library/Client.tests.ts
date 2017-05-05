@@ -14,12 +14,14 @@ import Util = require("../../Library/Util")
 describe("Library/Client", () => {
 
     var iKey = "Instrumentation-Key-12345-6789A";
+    var appId = "Application-Key-12345-6789A";
     var name = "name";
     var value = 3;
     var mockData = <any>{ baseData: { properties: {} }, baseType: "BaseTestData" };
     var properties: { [key: string]: string; } = { p1: "p1", p2: "p2", common: "commonArg" };
     var measurements: { [key: string]: number; } = { m1: 1, m2: 2 };
     var client = new Client(iKey);
+    client.config.correlationId = `cid-v1:${appId}`;
     var trackStub: Sinon.SinonStub;
     var triggerStub: Sinon.SinonStub;
     var sendStub: Sinon.SinonStub;
@@ -263,9 +265,10 @@ describe("Library/Client", () => {
         };
 
         afterEach(() => {
-            delete request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader];
-            delete response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader];
+            delete request.headers[RequestResponseHeaders.requestContextHeader];
+            delete response.headers[RequestResponseHeaders.requestContextHeader];
             client.config = new Config(iKey);
+            client.config.correlationId = `cid-v1:${appId}`;
         });
 
         function parseDuration(duration: string): number {
@@ -353,13 +356,13 @@ describe("Library/Client", () => {
                 assert.equal(duration, 10);
             });
 
-            it('should use source and target ikey headers', () => {
+            it('should use source and target correlationId headers', () => {
                 trackStub.reset();
                 clock.reset();
 
-                // Simulate an incoming request that has a different source ikey hash header.
-                let testIKey = crypto.createHash('sha256').update('Instrumentation-Key-98765-4321A').digest('base64');
-                request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader] = testIKey;
+                // Simulate an incoming request that has a different source correlationId header.
+                let testCorrelationId = 'cid-v1:Application-Id-98765-4321A';
+                request.headers[RequestResponseHeaders.requestContextHeader] = `${RequestResponseHeaders.requestContextSourceKey}=${testCorrelationId}`;
 
                 client.trackRequest(<any>request, <any>response, properties);
 
@@ -374,22 +377,22 @@ describe("Library/Client", () => {
                 var obj0 = args[0][0];
 
                 assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RequestData");
-                assert.equal(obj0.baseData.source, testIKey);
+                assert.equal(obj0.baseData.source, testCorrelationId);
 
-                // The client's ikey hash should have been added as the response target ikey header.
-                assert.equal(response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader],
-                    client.config.instrumentationKeyHash);
+                // The client's correlationId should have been added as the response target correlationId header.
+                assert.equal(response.headers[RequestResponseHeaders.requestContextHeader],
+                    `${RequestResponseHeaders.requestContextTargetKey}=${client.config.correlationId}`);
             });
 
-            it('should NOT use source and target ikey headers when url is on the excluded list', () => {
+            it('should NOT use source and target correlationId headers when url is on the excluded list', () => {
                 trackStub.reset();
                 clock.reset();
 
                 client.config.correlationHeaderExcludedDomains = ["bing.com"];
 
                 // Simulate an incoming request that has a different source ikey hash header.
-                let testIKey = crypto.createHash('sha256').update('Instrumentation-Key-98765-4321A').digest('base64');
-                request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader] = testIKey;
+                let testCorrelationId = 'cid-v1:Application-Id-98765-4321A';
+                request.headers[RequestResponseHeaders.requestContextHeader] = `${RequestResponseHeaders.requestContextSourceKey}=${testCorrelationId}`;
 
                 client.trackRequest(<any>request, <any>response, properties);
 
@@ -404,7 +407,7 @@ describe("Library/Client", () => {
                 var obj0 = args[0][0];
 
                 assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RequestData");
-                assert.equal(response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader], undefined);
+                assert.equal(response.headers[RequestResponseHeaders.requestContextHeader], undefined);
             });
         });
 
@@ -516,7 +519,7 @@ describe("Library/Client", () => {
                 assert.deepEqual(obj0.baseData.properties, properties);
             });
 
-            it('should use source and target ikey headers', () => {
+            it('should use source and target correlationId headers', () => {
                 trackStub.reset();
                 clock.reset();
                 client.trackDependencyRequest({
@@ -525,16 +528,17 @@ describe("Library/Client", () => {
                     },
                     <any>request, properties);
 
-                // The client's ikey hash should have been added as the request source ikey header.
-                assert.equal(request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader],
-                    client.config.instrumentationKeyHash);
+                // The client's correlationId should have been added as the request source correlationId header.
+                assert.equal(request.headers[RequestResponseHeaders.requestContextHeader],
+                    `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
 
                 // response event was not emitted yet
                 assert.ok(trackStub.notCalled);
 
-                // Simulate a response from another service that includes a target ikey hash header.
-                response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader] =
-                    crypto.createHash('sha256').update('Instrumentation-Key-98765-4321A').digest('base64');;
+                // Simulate a response from another service that includes a target correlationId header.
+                const targetCorrelationId = "cid-v1:Application-Key-98765-4321A";
+                response.headers[RequestResponseHeaders.requestContextHeader] =
+                    `${RequestResponseHeaders.requestContextTargetKey}=${targetCorrelationId}`;
 
                 // emit response event
                 clock.tick(10);
@@ -543,12 +547,11 @@ describe("Library/Client", () => {
                 var args = trackStub.args;
                 var obj0 = args[0][0];
 
-                assert.equal(obj0.baseData.target, "bing.com | " +
-                    response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader]);
+                assert.equal(obj0.baseData.target, "bing.com | " + targetCorrelationId);
                 assert.equal(obj0.baseData.type, "Http (tracked component)");
             });
 
-            it('should not set source ikey headers when the host is on a excluded domain list', () => {
+            it('should not set source correlationId headers when the host is on a excluded domain list', () => {
                 trackStub.reset();
                 clock.reset();
 
@@ -559,23 +562,8 @@ describe("Library/Client", () => {
                     },
                     <any>request, properties);
 
-                // The client's ikey hash should NOT have been added for excluded domains
-                assert.equal(request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader], null);
-            });
-
-            it('should not set source ikey headers when the host is on a excluded domain list', () => {
-                trackStub.reset();
-                clock.reset();
-
-                client.config.correlationHeaderExcludedDomains = ["*.domain.com"]
-                client.trackDependencyRequest({
-                        host: 'excluded.domain.com',
-                        path: '/search?q=test'
-                    },
-                    <any>request, properties);
-
-                // The client's ikey hash should NOT have been added for excluded domains
-                assert.equal(request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader], null);
+                // The client's correlationId should NOT have been added for excluded domains
+                assert.equal(request.headers[RequestResponseHeaders.requestContextHeader], null);
             });
         });
     });
@@ -803,6 +791,12 @@ describe("Library/Client", () => {
             client.track(mockData);
 
             assert.ok(!processorExecuted, "telemetry processor should NOT be executed");
+        });
+    });
+    describe("#overrideApplicationVersion()", () => {
+        it("sets the app version to the context tags", () => {
+            client.overrideApplicationVersion("version");
+            assert.equal(client.context.tags[client.context.keys.applicationVersion], "version");
         });
     });
 });
