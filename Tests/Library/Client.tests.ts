@@ -310,7 +310,7 @@ describe("Library/Client", () => {
                 var args = trackStub.args;
                 var obj0 = args[0][0];
 
-                assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RequestData");
+                assert.equal(obj0.baseType, "RequestData");
                 assert.equal(obj0.baseData.responseCode, 200);
                 assert.deepEqual(obj0.baseData.properties, properties);
                 var duration = parseDuration(obj0.baseData.duration);
@@ -349,7 +349,7 @@ describe("Library/Client", () => {
                 var args = trackStub.args;
                 var obj0 = args[0][0];
 
-                assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RequestData");
+                assert.equal(obj0.baseType, "RequestData");
                 assert.equal(obj0.baseData.success, false);
                 assert.equal(obj0.baseData.properties['errorProp'], 'errorVal');
                 var duration = parseDuration(obj0.baseData.duration);
@@ -376,7 +376,7 @@ describe("Library/Client", () => {
                 var args = trackStub.args;
                 var obj0 = args[0][0];
 
-                assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RequestData");
+                assert.equal(obj0.baseType, "RequestData");
                 assert.equal(obj0.baseData.source, testCorrelationId);
 
                 // The client's correlationId should have been added as the response target correlationId header.
@@ -406,7 +406,7 @@ describe("Library/Client", () => {
                 var args = trackStub.args;
                 var obj0 = args[0][0];
 
-                assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RequestData");
+                assert.equal(obj0.baseType, "RequestData");
                 assert.equal(response.headers[RequestResponseHeaders.requestContextHeader], undefined);
             });
         });
@@ -419,7 +419,7 @@ describe("Library/Client", () => {
                 var args = trackStub.args;
                 var obj0 = args[0][0];
 
-                assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RequestData");
+                assert.equal(obj0.baseType, "RequestData");
                 assert.equal(obj0.baseData.responseCode, 200);
                 assert.equal(obj0.baseData.duration, '00:00:00.100');
                 assert.deepEqual(obj0.baseData.properties, properties);
@@ -460,7 +460,7 @@ describe("Library/Client", () => {
                 var args = trackStub.args;
                 var obj0 = args[0][0];
 
-                assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RemoteDependencyData");
+                assert.equal(obj0.baseType, "RemoteDependencyData");
                 assert.equal(obj0.baseData.success, true);
                 assert.equal(obj0.baseData.duration, "00:00:00.010");
                 assert.equal(obj0.baseData.name, "GET /search");
@@ -485,7 +485,7 @@ describe("Library/Client", () => {
                 var args = trackStub.args;
                 var obj0 = args[0][0];
 
-                assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RemoteDependencyData");
+                assert.equal(obj0.baseType, "RemoteDependencyData");
                 assert.equal(obj0.baseData.success, true);
                 assert.equal(obj0.baseData.duration, "00:00:00.010");
                 assert.equal(obj0.baseData.name, "GET /search");
@@ -510,7 +510,7 @@ describe("Library/Client", () => {
                 var args = trackStub.args;
                 var obj0 = args[0][0];
 
-                assert.equal(obj0.baseType, "Microsoft.ApplicationInsights.RemoteDependencyData");
+                assert.equal(obj0.baseType, "RemoteDependencyData");
                 assert.equal(obj0.baseData.success, false);
                 assert.equal(obj0.baseData.duration, "00:00:00.010");
                 assert.equal(obj0.baseData.name, "GET /search");

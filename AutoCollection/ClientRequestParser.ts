@@ -72,7 +72,7 @@ class ClientRequestParser extends RequestParser {
         remoteDependency.properties = this.properties || {};
 
         let data = new Contracts.Data<Contracts.RemoteDependencyData>();
-        data.baseType = "Microsoft.ApplicationInsights.RemoteDependencyData";
+        data.baseType = Contracts.DataTypes.REMOTE_DEPENDENCY;
         data.baseData = remoteDependency;
 
         return data;

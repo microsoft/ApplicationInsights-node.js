@@ -70,7 +70,7 @@ class ServerRequestParser extends RequestParser {
         requestData.properties = this.properties;
 
         var data = new Contracts.Data<Contracts.RequestData>();
-        data.baseType = "Microsoft.ApplicationInsights.RequestData";
+        data.baseType = Contracts.DataTypes.REQUEST;
         data.baseData = requestData;
 
         return data;

@@ -83,7 +83,7 @@ class AutoCollectExceptions {
         exception.exceptions.push(exceptionDetails);
 
         var data = new Contracts.Data<Contracts.ExceptionData>();
-        data.baseType = "Microsoft.ApplicationInsights.ExceptionData";
+        data.baseType = Contracts.DataTypes.EXCEPTION;
         data.baseData = exception;
         return data;
     }
