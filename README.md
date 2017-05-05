@@ -74,17 +74,21 @@ Configuration section below.
 The appInsights object provides a number of configuration methods. They are
 listed in the following snippet with their default values.
 
-To correlate events in a request across callbacks and dependencies, you'll need
-to call `.setAutoDependencyCorrelation(true)`.
+Beginning in v0.19, an experimental mechanism is available to correlate all
+events in a request even across asynchronous callbacks and I/O. Since this
+feature is still experimental you'll need to explicitly call
+`.setAutoDependencyCorrelation(true)` to enable it.
 
 ```javascript
 let appInsights = require("applicationinsights");
 appInsights.setup("<instrumentation_key>")
+    // false while still experimental
     .setAutoDependencyCorrelation(false)
     .setAutoCollectRequests(true)
     .setAutoCollectPerformance(true)
     .setAutoCollectExceptions(true)
     .setAutoCollectDependencies(true)
+    .setAutoCollectConsole(true)
     .start();
 ```
 
@@ -219,6 +223,9 @@ otherClient.trackEvent("my custom event");
     ```
 
 * Manually track all HTTP GET requests
+
+    Note that all requests are tracked by default. To disable automatic
+    collection, call `.setAutoCollectRequests(false)` before calling `start()`.
 
     ```javascript
     var server = http.createServer((req, res) => {
