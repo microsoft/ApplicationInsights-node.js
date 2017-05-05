@@ -107,7 +107,7 @@ Add the below code before you send any telemetry, it will remove stack trace inf
 
 ```javascript
 appInsights.client.addTelemetryProcessor((envelope) => {
-    if (envelope.data.baseType === "Microsoft.ApplicationInsights.ExceptionData") {
+    if (envelope.data.baseType === "ExceptionData") {
         var data = envelope.data.baseData;
         if (data.exceptions && data.exceptions.length > 0) {
             for(var i = 0; i < data.exceptions.length; i++) {
