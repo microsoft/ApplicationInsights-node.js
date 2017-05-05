@@ -19,7 +19,7 @@ class ServerRequestParser extends RequestParser {
     private connectionRemoteAddress:string;
     private legacySocketRemoteAddress:string;
     private userAgent: string;
-    private sourceIKeyHash: string;
+    private sourceCorrelationId: string;
     private parentId: string;
     private operationId: string;
     private requestId: string;
@@ -34,8 +34,7 @@ class ServerRequestParser extends RequestParser {
             this.rawHeaders = request.headers || (<any>request).rawHeaders;
             this.socketRemoteAddress = (<any>request).socket && (<any>request).socket.remoteAddress;
             this.userAgent = request.headers && request.headers["user-agent"];
-            this.sourceIKeyHash =
-                request.headers && request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader];
+            this.sourceCorrelationId = Util.getCorrelationContextTarget(request, RequestResponseHeaders.requestContextSourceKey);
             this.parentId =
                 request.headers && request.headers[RequestResponseHeaders.parentIdHeader];
             this.operationId =
@@ -64,7 +63,7 @@ class ServerRequestParser extends RequestParser {
         requestData.id = this.requestId;
         requestData.name = this.method + " " + url.parse(this.url).pathname;
         requestData.url = this.url;
-        requestData.source = this.sourceIKeyHash;
+        requestData.source = this.sourceCorrelationId;
         requestData.duration = Util.msToTimeSpan(this.duration);
         requestData.responseCode = this.statusCode ? this.statusCode.toString() : null;
         requestData.success = this._isSuccess();

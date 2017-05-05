@@ -31,13 +31,13 @@
     "clean": "rm -rf ./out && rm -rf ./node_modules",
     "build": "npm run build:deps && npm run build:compile",
     "build:deps": "npm update --dev",
-    "build:compile": "./node_modules/typescript/bin/tsc --project ./tsconfig.json",
+    "build:compile": "tsc --project ./tsconfig.json",
     "prepare": "npm run build:compile",
     "prepublishOnly": "npm run build",
     "pretest": "npm run build",
     "test": "npm run test:ts && npm run test:js",
-    "test:ts": "./node_modules/mocha/bin/mocha ./out/Tests --recursive",
-    "test:js": "./node_modules/mocha/bin/mocha ./Tests/js --recursive"
+    "test:ts": "mocha ./out/Tests --recursive",
+    "test:js": "mocha ./Tests/js --recursive"
   },
   "devDependencies": {
     "@types/mocha": "2.2.40",
