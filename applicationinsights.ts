@@ -7,6 +7,7 @@ import AutoCollectServerRequests = require("./AutoCollection/ServerRequests");
 import Client = require("./Library/Client");
 import Config = require("./Library/Config");
 import Context = require("./Library/Context");
+import Contracts = require("./Declarations/Contracts");
 import Logging = require("./Library/Logging");
 import Util = require("./Library/Util");
 
@@ -22,6 +23,7 @@ class ApplicationInsights {
     * The default client.
     */
     public static client: Client;
+    public static contracts = Contracts;
 
     private static _isConsole = true;
     private static _isExceptions = true;
