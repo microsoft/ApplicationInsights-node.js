@@ -1,6 +1,11 @@
 import Client = require("../Library/Client");
 import Logging = require("../Library/Logging");
 
+import {enable as enableConsole} from "./diagnostic-channel/console.sub";
+import {enable as enableBunyan} from "./diagnostic-channel/bunyan.sub";
+
+import "./diagnostic-channel/initialization";
+
 class AutoCollectConsole {
     public static originalMethods: {[name: string]: (message?: any, ...optionalParams: any[]) => void};
 
@@ -20,7 +25,8 @@ class AutoCollectConsole {
     }
 
     public enable(isEnabled: boolean) {
-        // todo: investigate feasibility/utility of this; does it make sense to have a logging adapter in node?
+        enableConsole(isEnabled);
+        enableBunyan(isEnabled);
     }
 
     public isInitialized() {

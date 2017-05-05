@@ -9,6 +9,12 @@ import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import ClientRequestParser = require("./ClientRequestParser");
 import { CorrelationContextManager, CorrelationContext } from "./CorrelationContextManager";
 
+import {enable as enableMongodb} from "./diagnostic-channel/mongodb.sub";
+import {enable as enableMysql} from "./diagnostic-channel/mysql.sub";
+import {enable as enableRedis} from "./diagnostic-channel/redis.sub";
+
+import "./diagnostic-channel/initialization";
+
 class AutoCollectClientRequests {
     public static disableCollectionRequestOption = 'disableAppInsightsAutoCollection';
 
@@ -32,6 +38,9 @@ class AutoCollectClientRequests {
         if (this._isEnabled && !this._isInitialized) {
             this._initialize();
         }
+        enableMongodb(isEnabled);
+        enableMysql(isEnabled);
+        enableRedis(isEnabled);
     }
 
     public isInitialized() {
