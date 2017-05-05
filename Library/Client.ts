@@ -56,7 +56,7 @@ class Client {
         event.measurements = measurements;
 
         var data = new Contracts.Data<Contracts.EventData>();
-        data.baseType = "EventData";
+        data.baseType = Contracts.DataTypes.EVENT;
         data.baseData = event;
         this.track(data, tagOverrides, contextObjects);
     }
@@ -81,7 +81,7 @@ class Client {
         }
 
         var data = new Contracts.Data<Contracts.MessageData>();
-        data.baseType = "MessageData";
+        data.baseType = Contracts.DataTypes.MESSAGE;
         data.baseData = trace;
         this.track(data, tagOverrides, contextObjects);
     }
@@ -140,7 +140,7 @@ class Client {
         metrics.properties = properties;
 
         var data = new Contracts.Data<Contracts.MetricData>();
-        data.baseType = "MetricData";
+        data.baseType = Contracts.DataTypes.METRIC;
         data.baseData = metrics;
         this.track(data, tagOverrides, contextObjects);
     }
@@ -228,7 +228,7 @@ class Client {
         remoteDependency.properties = properties;
 
         var data = new Contracts.Data<Contracts.RemoteDependencyData>();
-        data.baseType = "RemoteDependencyData";
+        data.baseType = Contracts.DataTypes.REMOTE_DEPENDENCY;
         data.baseData = remoteDependency;
         this.track(data, tagOverrides, contextObjects);
     }

@@ -127,4 +127,13 @@ describe("ApplicationInsights", () => {
             assert.ok(!ClientRequests.INSTANCE.isInitialized());
         });
     });
+
+    describe("#Provide access to contracts", () => {
+        var AppInsights = require("../applicationinsights");
+        var Contracts = require("../Declarations/Contracts");
+
+        it("should provide access to severity levels", () => {
+            assert.equal(AppInsights.contracts.SeverityLevel.Information, Contracts.SeverityLevel.Information);
+        });
+    });
 });
