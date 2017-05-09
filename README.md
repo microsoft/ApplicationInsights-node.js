@@ -116,8 +116,6 @@ Insights client. Examples follow:
 let appInsights = require("applicationinsights");
 appInsights.setup().start(); // assuming ikey in env var
 let client = appInsights.getClient();
->>>>>>> update README
-
 client.trackEvent("my custom event", {customProperty: "custom property value"});
 client.trackException(new Error("handled exceptions can be logged with this method"));
 client.trackMetric("custom metric", 3);
