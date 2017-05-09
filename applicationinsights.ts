@@ -31,7 +31,7 @@ class ApplicationInsights {
     private static _isRequests = true;
     private static _isDependencies = true;
     private static _isOfflineMode = false;
-    private static _isCorrelating = false;
+    private static _isCorrelating = true;
 
     private static _console: AutoCollectConsole;
     private static _exceptions: AutoCollectExceptions;

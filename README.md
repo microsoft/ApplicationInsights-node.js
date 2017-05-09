@@ -64,8 +64,8 @@ loading the Application Insights library after those.
 
 Because of the way JavaScript handles callbacks, additional work is necessary to
 track a request across external dependencies and later callbacks. By default
-this additional tracking is disabled; enable it by calling
-`appInsights.setAutoDependencyCorrelation(true)` as described in the
+this additional tracking is enabled; disable it by calling
+`appInsights.setAutoDependencyCorrelation(false)` as described in the
 Configuration section below.
 
 
@@ -74,16 +74,10 @@ Configuration section below.
 The appInsights object provides a number of configuration methods. They are
 listed in the following snippet with their default values.
 
-Beginning in v0.19, an experimental mechanism is available to correlate all
-events in a request even across asynchronous callbacks and I/O. Since this
-feature is still experimental you'll need to explicitly call
-`.setAutoDependencyCorrelation(true)` to enable it.
-
 ```javascript
 let appInsights = require("applicationinsights");
 appInsights.setup("<instrumentation_key>")
-    // false while still experimental
-    .setAutoDependencyCorrelation(false)
+    .setAutoDependencyCorrelation(true)
     .setAutoCollectRequests(true)
     .setAutoCollectPerformance(true)
     .setAutoCollectExceptions(true)
