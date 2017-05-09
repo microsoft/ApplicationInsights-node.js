@@ -107,6 +107,14 @@ appInsights.client.config.samplingPercentage = 33; // 33% of all telemetry will 
 appInsights.start();
 ```
 
+### Automatic third-party instrumentation
+
+In order to track context across asynchronous calls, some changes are required in third party libraries such as mongodb and redis. By default ApplicationInsights will use `diagnostic-channel-publishers` to monkey-patch some of these libraries. This can be disabled by setting the `APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL` environment variable. Note that by setting that environment variable, events may no longer be correctly associated with the right operation.
+
+Currently there are 6 packages which are instrumented: `bunyan`, `console`, `mongodb`, `mongodb-core`, `mysql` and `redis`.
+
+The `bunyan` package and `console` messages will generate Application Insights Trace events based on whether `setAutoCollectConsole` is enabled. The `mongodb`, `mysql` and `redis` packages will generate Application Insights Dependency events based on whether `setAutoCollectDependencies` is enabled.
+
 ## Track custom metrics
 
 You can track any request, event, metric or exception using the Application
@@ -176,7 +184,6 @@ appInsights.client.addTelemetryProcessor(removeStackTraces);
 More info on the telemetry API is available in [the docs][].
 
 [the docs]: https://azure.microsoft.com/documentation/articles/app-insights-api-custom-events-metrics/
-
 
 ## Use multiple instrumentation keys
 
