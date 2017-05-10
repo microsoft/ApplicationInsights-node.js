@@ -3,6 +3,7 @@ import url = require("url");
 
 import Logging = require("./Logging");
 import Client = require("../Library/Client");
+import RequestResponseHeaders = require("./RequestResponseHeaders");
 
 class Util {
     public static MAX_PROPERTY_LENGTH = 1024;
@@ -161,7 +162,7 @@ class Util {
 
     /**
      * Checks if a request url is not on a excluded domain list 
-     * and if it is safe to add correlation headers (x-ms-request-source-ikey, x-ms-request-target-ikey)
+     * and if it is safe to add correlation headers
      */
     public static canIncludeCorrelationHeader(client: Client, requestUrl: string) {
         let excludedDomains = client && client.config && client.config.correlationHeaderExcludedDomains;
@@ -177,6 +178,19 @@ class Util {
         }
 
         return true;
+    }
+
+    public static getCorrelationContextTarget(response: http.ClientResponse | http.ServerRequest, key: string) {
+        const contextHeaders = response.headers && response.headers[RequestResponseHeaders.requestContextHeader];
+        if (contextHeaders) {
+            const keyValues = contextHeaders.split(",");
+            for(let i = 0; i < keyValues.length; ++i) {
+                const keyValue = keyValues[i].split("=");
+                if (keyValue.length == 2 && keyValue[0] == key) {
+                    return keyValue[1];
+                }
+            }
+        }
     }
 }
 export = Util;

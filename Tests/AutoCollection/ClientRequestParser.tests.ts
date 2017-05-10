@@ -1,13 +1,9 @@
-///<reference path="..\..\typings\globals\node\index.d.ts" />
-///<reference path="..\..\typings\globals\mocha\index.d.ts" />
-///<reference path="..\..\typings\globals\sinon\index.d.ts" />
-
 import http = require("http");
 import assert = require("assert");
 import sinon = require("sinon");
 
 import ClientRequestParser = require("../../AutoCollection/ClientRequestParser");
-import ContractsModule = require("../../Library/Contracts");
+import Contracts = require("../../Declarations/Contracts");
 
 describe("AutoCollection/ClientRequestParser", () => {
 
@@ -26,7 +22,7 @@ describe("AutoCollection/ClientRequestParser", () => {
             parser.onResponse(response);
 
             let dependencyData = parser.getDependencyData().baseData;
-            assert.equal(dependencyData.type, ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
+            assert.equal(dependencyData.type, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
             assert.equal(dependencyData.success, true);
             assert.equal(dependencyData.name, "GET /search");
             assert.equal(dependencyData.data, "http://bing.com/search");
@@ -41,7 +37,7 @@ describe("AutoCollection/ClientRequestParser", () => {
             parser.onResponse(response);
 
             let dependencyData = parser.getDependencyData().baseData;
-            assert.equal(dependencyData.type, ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
+            assert.equal(dependencyData.type, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
             assert.equal(dependencyData.success, true);
             assert.equal(dependencyData.name, "POST /search");
             assert.equal(dependencyData.data, "http://bing.com/search?q=test");
@@ -61,7 +57,7 @@ describe("AutoCollection/ClientRequestParser", () => {
             parser.onResponse(response);
 
             let dependencyData = parser.getDependencyData().baseData;
-            assert.equal(dependencyData.type, ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
+            assert.equal(dependencyData.type, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
             assert.equal(dependencyData.success, true);
             assert.equal(dependencyData.name, "POST /search");
             assert.equal(dependencyData.data, "http://bing.com:8000/search?q=test");
@@ -82,7 +78,7 @@ describe("AutoCollection/ClientRequestParser", () => {
             parser.onResponse(response);
 
             let dependencyData = parser.getDependencyData().baseData;
-            assert.equal(dependencyData.type, ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
+            assert.equal(dependencyData.type, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
             assert.equal(dependencyData.success, true);
             assert.equal(dependencyData.name, "GET /finance/info");
             assert.equal(dependencyData.data, "http://finance.google.com/finance/info?client=ig&q=msft");
@@ -95,7 +91,7 @@ describe("AutoCollection/ClientRequestParser", () => {
             parser.onError(new Error("test error message"));
 
             let dependencyData = parser.getDependencyData().baseData;
-            assert.equal(dependencyData.type, ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
+            assert.equal(dependencyData.type, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
             assert.equal(dependencyData.success, false);
             assert.ok(dependencyData.properties);
             assert.equal(dependencyData.properties.error, "test error message");
@@ -109,7 +105,7 @@ describe("AutoCollection/ClientRequestParser", () => {
             parser.onResponse(response);
 
             let dependencyData = parser.getDependencyData().baseData;
-            assert.equal(dependencyData.type, ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
+            assert.equal(dependencyData.type, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
             assert.equal(dependencyData.success, false);
         });
     });

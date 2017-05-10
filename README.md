@@ -1,214 +1,294 @@
 # Application Insights for Node.js
 
-[![NPM version](https://badge.fury.io/js/applicationinsights.svg)](http://badge.fury.io/js/applicationinsights)
+[![npm version](https://badge.fury.io/js/applicationinsights.svg)](http://badge.fury.io/js/applicationinsights)
 [![Build Status](https://travis-ci.org/Microsoft/ApplicationInsights-node.js.svg?branch=master)](https://travis-ci.org/Microsoft/ApplicationInsights-node.js)
 
+[Azure Application Insights][] gathers correlated metrics, logs, and exceptions
+for each transaction (request) in a distributed system and reports these in the
+Azure Portal. Add this Node.js SDK to Node.js services in your system to include
+deep info about Node.js processes and their external dependencies such as
+database and cache services to those reports.
+
+[Azure Application Insights]: https://azure.microsoft.com/documentation/articles/app-insights-overview/
+
+By default this library tracks incoming and outgoing HTTP requests, several
+system metrics, and exceptions. You can track more aspects of your app and
+system using the API described below.
+
+## Getting Started
+
+1. Create an Application Insights resource in Azure by following [these instructions][].
+2. Grab the _Instrumentation Key_ (aka "ikey") from the resource you created in
+   step 1. Later, you'll either add it to your app's environment variables or
+   use it directly in your scripts.
+3. Add the Application Insights Node.js SDK to your app's dependencies and
+   package.json:
+     ```bash
+     npm install --save applicationinsights
+     ```
+4. As early as possible in your app's code, load the Application Insights
+   package:
+     ```javascript
+     let appInsights = require('applicationinsights');
+     ```
+5. Configure the local SDK by calling `appInsights.setup('_your_ikey_');`, using
+   the ikey you grabbed in step 2. Or put this ikey in the
+   `APPINSIGHTS_INSTRUMENTATIONKEY` environment variable and call
+   `appInsights.setup()` without parameters.
+   > For more configuration options see below.
+6. Finally, start automatically collecting and sending data by calling
+   `appInsights.start();`.
+
+[these instructions]: https://azure.microsoft.com/documentation/articles/app-insights-create-new-resource/
 
 
-This project provides a [Visual Studio Application Insights](https://azure.microsoft.com/documentation/articles/app-insights-overview/) SDK for [Node.js](https://nodejs.org/). The SDK sends telemetry about the performance and usage of your live Node.js application to the Application Insights service. There you can analyze charts of request rates, response times, failures and dependencies, and diagnose issues using powerful search and aggregation tools.
+## Basic Usage
 
-The SDK provides automatic collection of incoming HTTP request rates and responses, performance counters (CPU, memory, RPS), and unhandled exceptions. In addition, you can add custom calls to track dependencies, metrics, or other events.
-
-In versions of Node.js > 4.0 (and io.js > 3.3) the SDK provides automatic correlation of dependencies to requests (off by default, see Customized Usage below to enable).
-
-## Requirements ##
-**Install**
-```
-npm install applicationinsights
-```
-
-### Get an instrumentation key
-
-[Create an Application Insights resource](https://azure.microsoft.com/documentation/articles/app-insights-create-new-resource/) where your telemetry will be displayed. This provides you with an instrumentation key that identifies the resource. (You can try the SDK without sending telemetry: set the instrumentation key to a non-empty string.)
-
-
-## Usage ##
-
-This will enable request monitoring, unhandled exception tracking, and system performance monitoring (CPU/Memory/RPS).
+To track HTTP requests, unhandled exceptions and system metrics:
 
 ```javascript
-import appInsights = require("applicationinsights");
-appInsights.setup("<instrumentation_key>").start();
+let appInsights = require("applicationinsights");
+appInsights.setup("_your_ikey_").start();
 ```
 
->The instrumentation key can also be set in the environment variable APPINSIGHTS_INSTRUMENTATIONKEY. If this is done, no argument is required when calling `appInsights.setup()` or `appInsights.getClient()`.
+* If the instrumentation key is set in the environment variable
+  APPINSIGHTS\_INSTRUMENTATIONKEY, `.setup()` can be called with no
+  arguments. This makes it easy to use different ikeys for different
+  environments.
+
+Load the Application Insights library (i.e. `require("applicationinsights")`) as
+early as possible in your scripts, before loading other packages. This is needed
+so that the Application Insights libary can prepare later packages for tracking.
+If you encounter conflicts with other libraries doing similar preparation, try
+loading the Application Insights library after those.
+
+Because of the way JavaScript handles callbacks, additional work is necessary to
+track a request across external dependencies and later callbacks. By default
+this additional tracking is enabled; disable it by calling
+`appInsights.setAutoDependencyCorrelation(false)` as described in the
+Configuration section below.
 
 
+## Configuration
 
-## Customized Usage ##
-
-### Enabling automatic correlation
+The appInsights object provides a number of configuration methods. They are
+listed in the following snippet with their default values.
 
 ```javascript
-import appInsights = require("applicationinsights");
+let appInsights = require("applicationinsights");
 appInsights.setup("<instrumentation_key>")
     .setAutoDependencyCorrelation(true)
-    // no telemetry will be sent until .start() is called
+    .setAutoCollectRequests(true)
+    .setAutoCollectPerformance(true)
+    .setAutoCollectExceptions(true)
+    .setAutoCollectDependencies(true)
+    .setAutoCollectConsole(true)
     .start();
 ```
 
-> Be sure to call `require("applicationinsights")` before your other imports. This allows the SDK to do patching necessary for tracking correlation state before other libraries use patched methods. If you encounter conflicts with other libraries doing similar patching, place this import below those libraries.
+### Sampling
 
-### Disabling automatic collection
+By default, the SDK will send all collected data to the Application Insights service. If you collect a lot of data, you might want to enable sampling to reduce the amount of data sent. Set the `samplingPercentage` field on the Config object of a Client to accomplish this. Setting `samplingPercentage` to 100 (the default) means all data will be sent, and 0 means nothing will be sent.
+
+If you are using automatic correlation, all data associated with a single request will be included or excluded as a unit.
+
+Add code such as the following to enable sampling:
 
 ```javascript
-import appInsights = require("applicationinsights");
-appInsights.setup("<instrumentation_key>")
-    .setAutoCollectRequests(false)
-    .setAutoCollectPerformance(false)
-    .setAutoCollectExceptions(false)
-    .setAutoCollectDependencies(false)
-    // no telemetry will be sent until .start() is called
-    .start();
+const appInsights = require("applicationinsights");
+appInsights.setup("<instrumentation_key>");
+appInsights.client.config.samplingPercentage = 33; // 33% of all telemetry will be sent to Application Insights
+appInsights.start();
 ```
 
-### Custom monitoring
+### Automatic third-party instrumentation
+
+In order to track context across asynchronous calls, some changes are required in third party libraries such as mongodb and redis. By default ApplicationInsights will use `diagnostic-channel-publishers` to monkey-patch some of these libraries. This can be disabled by setting the `APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL` environment variable. Note that by setting that environment variable, events may no longer be correctly associated with the right operation.
+
+Currently there are 6 packages which are instrumented: `bunyan`, `console`, `mongodb`, `mongodb-core`, `mysql` and `redis`.
+
+The `bunyan` package and `console` messages will generate Application Insights Trace events based on whether `setAutoCollectConsole` is enabled. The `mongodb`, `mysql` and `redis` packages will generate Application Insights Dependency events based on whether `setAutoCollectDependencies` is enabled.
+
+## Track custom metrics
+
+You can track any request, event, metric or exception using the Application
+Insights client. Examples follow:
 
 ```javascript
-import appInsights = require("applicationinsights");
-var client = appInsights.getClient();
-
-client.trackEvent("custom event", {customProperty: "custom property value"});
+let appInsights = require("applicationinsights");
+appInsights.setup().start(); // assuming ikey in env var. start() can be omitted to disable any non-custom data
+let client = appInsights.client;
+client.trackEvent("my custom event", {customProperty: "custom property value"});
 client.trackException(new Error("handled exceptions can be logged with this method"));
 client.trackMetric("custom metric", 3);
 client.trackTrace("trace message");
-```
 
-### Telemetry Processor
-
-```javascript
-public addTelemetryProcessor(telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope, context: { http.RequestOptions, http.ClientRequest, http.ClientResponse, correlationContext }) => boolean)
-```
-
-Adds a telemetry processor to the collection. Telemetry processors will be called one by one, in the order they were added, before the telemetry item is pushed for sending. 
-If one of the telemetry processors returns false then the telemetry item will not be sent. 
-If one of the telemetry processors throws an error then the telemetry item will not be sent.
-
-All telemetry processors receive the envelope to modify before sending. They also receive a context object with relevant request information (if available)
-as well as the request storage object returned by `appInsights.getCorrelationContext()` (if automatic dependency correlation is enabled).
-
-**Example**
-
-Add the below code before you send any telemetry, it will remove stack trace information from any Exception reported by the SDK.
-
-```javascript
-appInsights.client.addTelemetryProcessor((envelope) => {
-    if (envelope.data.baseType === "Microsoft.ApplicationInsights.ExceptionData") {
-        var data = envelope.data.baseData;
-        if (data.exceptions && data.exceptions.length > 0) {
-            for(var i = 0; i < data.exceptions.length; i++) {
-                var exception = data.exceptions[i];
-                exception.parsedStack = null;
-                exception.hasFullStack = false;
-            }
-        }
-    }
-    return true;
+let http = require("http");
+http.createServer( (req, res) => {
+  client.trackRequest(req, res); // Place at the beginning of your request handler
 });
 ```
 
-[Learn more about the telemetry API](https://azure.microsoft.com/documentation/articles/app-insights-api-custom-events-metrics/).
-
-### Using multiple instrumentation keys
+## Preprocess data with Telemetry Processors
 
 ```javascript
-import appInsights = require("applicationinsights");
+public addTelemetryProcessor(telemetryProcessor: (envelope: Contracts.Envelope, context: { http.RequestOptions, http.ClientRequest, http.ClientResponse, correlationContext }) => boolean)
+```
 
-// configure auto-collection with one instrumentation key
-appInsights.setup("<instrumentation_key>").start();
+You can process and filter collected data before it is sent for retention using
+_Telemetry Processors_. Telemetry processors are called one by one in the
+order they were added before the telemetry item is sent to the cloud.
 
-// get a client for another instrumentation key
-var otherClient = appInsights.getClient("<other_instrumentation_key>");
-otherClient.trackEvent("custom event");
+If a telemetry processor returns false or throws an error that telemetry item
+will not be sent.
+
+All telemetry processors receive the telemetry data and its envelope to inspect and
+modify. They also receive a context object with available request information
+and the persistent request context as provided by
+`appInsights.getCorrelationContext()` (if automatic dependency correlation is
+enabled).
+
+The TypeScript type for a telemetry processor is:
+
+```typescript
+telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope, context: { http.RequestOptions, http.ClientRequest, http.ClientResponse, correlationContext }) => boolean;
+```
+
+For example, a processor that removes stack trace data from exceptions might be
+written and added as follows:
+
+```javascript
+function removeStackTraces ( envelope, context ) {
+  if (envelope.data.baseType === "Microsoft.ApplicationInsights.ExceptionData") {
+    var data = envelope.data.baseData;
+    if (data.exceptions && data.exceptions.length > 0) {
+      for (var i = 0; i < data.exceptions.length; i++) {
+        var exception = data.exceptions[i];
+        exception.parsedStack = null;
+        exception.hasFullStack = false;
+      }
+    }
+  }
+  return true;
+}
+
+appInsights.client.addTelemetryProcessor(removeStackTraces);
+```
+
+More info on the telemetry API is available in [the docs][].
+
+[the docs]: https://azure.microsoft.com/documentation/articles/app-insights-api-custom-events-metrics/
+
+## Use multiple instrumentation keys
+
+You can create multiple Azure Application Insights resources and send different
+data to each by using their respective instrumentation keys ("ikey"). For
+example:
+
+```javascript
+let appInsights = require("applicationinsights");
+
+// configure auto-collection under one ikey
+appInsights.setup("_ikey-A_").start();
+
+// track some events manually under another ikey
+let otherClient = appInsights.getClient("_ikey-B_");
+otherClient.trackEvent("my custom event");
 ```
 
 ## Examples
 
-### Tracking dependency
+* Track dependencies
 
-```javascript
-import appInsights = require("applicationinsights");
-var client = appInsights.getClient();
+    ```javascript
+    let appInsights = require("applicationinsights");
+    let client = appInsights.getClient();
 
-var startTime = Date.now();
-// execute dependency call
-var endTime = Date.now();
+    var success = false;
+    let startTime = Date.now();
+    // execute dependency call here....
+    let duration = Date.now() - startTime;
+    success = true;
 
-var elapsedTime = endTime - startTime;
-var success = true;
-client.trackDependency("dependency name", "command name", elapsedTime, success);
-```
+    client.trackDependency("dependency name", "command name", duration, success);
+    ```
 
+* Assign custom properties to be included with all events
 
+    ```javascript
+    appInsights.client.commonProperties = {
+      environment: process.env.SOME_ENV_VARIABLE
+    };
+    ```
 
-### Manual request tracking of all "GET" requests
+* Manually track all HTTP GET requests
 
-```javascript
-var http = require("http");
-var appInsights = require("applicationinsights");
-appInsights.setup("<instrumentation_key>")
-    .setAutoCollectRequests(false) // disable auto-collection of requests for this example
-    .start();
+    Note that all requests are tracked by default. To disable automatic
+    collection, call `.setAutoCollectRequests(false)` before calling `start()`.
 
-// assign common properties to all telemetry sent from the default client
-appInsights.client.commonProperties = {
-    environment: process.env.SOME_ENV_VARIABLE
-};
+    ```javascript
+    var server = http.createServer((req, res) => {
+      if ( req.method === "GET" ) {
+          appInsights.client.trackRequest(req, res);
+      }
+      // other work here....
+      res.end();
+    });
+    ```
 
-// track a system startup event
-appInsights.client.trackEvent("server start");
+* Track server startup time
 
-// create server
-var port = process.env.port || 1337
-var server = http.createServer(function (req, res) {
-    // track all "GET" requests
-    if(req.method === "GET") {
-        appInsights.client.trackRequest(req, res);
-    }
-
-    res.writeHead(200, { "Content-Type": "text/plain" });
-    res.end("Hello World\n");
-}).listen(port);
-
-// track startup time of the server as a custom metric
-var start = +new Date;
-server.on("listening", () => {
-    var end = +new Date;
-    var duration = end - start;
-    appInsights.client.trackMetric("StartupTime", duration);
-});
-```
-
+    ```javascript
+    let start = Date.now();
+    server.on("listening", () => {
+      let duration = Date.now() - start;
+      appInsights.client.trackMetric("server startup time", duration);
+    });
+    ```
 
 ## Branches
 
-- [master](https://github.com/Microsoft/ApplicationInsights-node.js/tree/master) contains the *latest* published release located on [NPM](https://www.npmjs.com/package/applicationinsights).
-- [develop](https://github.com/Microsoft/ApplicationInsights-node.js/tree/develop) contains the code for the *next* release. Please send all pull requests to this branch.  
+- Ongoing development takes place on the [develop][] branch. **Please submit
+  pull requests to this branch.**
+- Releases are merged to the [master][] branch and published to [npm][].
+
+[master]: https://github.com/Microsoft/ApplicationInsights-node.js/tree/master
+[develop]: https://github.com/Microsoft/ApplicationInsights-node.js/tree/develop
+[npm]: https://www.npmjs.com/package/applicationinsights
 
 ## Links
 
-* Follow the latest Application Insights changes and announcements on [ApplicationInsights Announcements](https://github.com/Microsoft/ApplicationInsights-Announcements)
-* [Application Insights Home](https://github.com/Microsoft/ApplicationInsights-Home). The main repository for documentation of overall SDK offerings for all platforms.
-* [SDK Release Schedule](https://github.com/Microsoft/ApplicationInsights-Home/wiki/SDK-Release-Schedule)
+* [ApplicationInsights-Home][] is our central repo for libraries and info for
+  all languages and platforms.
+* Follow the latest Application Insights changes and announcements on the
+  [ApplicationInsights-Announcements][] repo.
+* [SDK Release Schedule][]
+
+[ApplicationInsights-Announcements]: https://github.com/Microsoft/ApplicationInsights-Announcements
+[ApplicationInsights-Home]: https://github.com/Microsoft/ApplicationInsights-Home
+[SDK Release Schedule]: https://github.com/Microsoft/ApplicationInsights-Home/wiki/SDK-Release-Schedule
 
 ## Contributing
 
-**Development environment**
-
-* Install dev dependencies
-    
-    ```
-    npm install 
-    ```
-* (optional) Set an environment variable to your instrumentation key
-    
-    ```
+1. Install all dependencies with `npm install`.
+2. Set an environment variable to your instrumentation key (optional).
+    ```bash
+    // windows
     set APPINSIGHTS_INSTRUMENTATIONKEY=<insert_your_instrumentation_key_here>
+    // linux/macos
+    export APPINSIGHTS_INSTRUMENTATIONKEY=<insert_your_instrumentation_key_here>
     ```
-* Run tests
-    
-    ```
+3. Run tests
+    ```bash
     npm test
     ```
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+---
+
+This project has adopted the [Microsoft Open Source Code of Conduct][]. For more
+information see the [Code of Conduct FAQ][] or contact
+[opencode@microsoft.com][] with any additional questions or comments.
+
+[Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
+[Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
+[opencode@microsoft.com]: mailto:opencode@microsoft.com

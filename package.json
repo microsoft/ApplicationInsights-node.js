@@ -2,13 +2,14 @@
   "name": "applicationinsights",
   "license": "MIT",
   "bugs": "https://github.com/Microsoft/ApplicationInsights-node.js/issues",
-  "version": "0.19.0",
-  "description": "Microsoft Application Insights module for Node.JS",
+  "version": "0.20.0",
+  "description": "Microsoft Application Insights module for Node.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/Microsoft/ApplicationInsights-node.js"
   },
-  "main": "applicationinsights",
+  "main": "./out/applicationinsights.js",
+  "types": "./out/applicationinsights.d.ts",
   "keywords": [
     "exception monitoring",
     "request monitoring",
@@ -23,35 +24,34 @@
       "email": "aidevsupport@microsoft.com"
     },
     {
-      "name": "kszostak",
-      "email": "kszostak@microsoft.com"
-    },
-    {
-      "name": "southwood",
-      "url": "https://github.com/southwood"
-    },
-    {
-      "name": "bogdanbe",
-      "email": "bogdanbe@microsoft.com"
-    },
-    {
-      "name": "lukim",
-      "email": "lukim@microsoft.com"
+      "name": "Application Insights SDK Maintainers",
+      "email": "appinsightssdk@microsoft.com"
     }
   ],
   "scripts": {
-    "prepublish": "tsc --module commonjs --declaration applicationinsights.ts",
-    "pretest": "find Tests -type f -name \"*.ts\" | xargs tsc --module commonjs",
-    "test": "./node_modules/mocha/bin/mocha ./Tests --recursive"
+    "clean": "rm -rf ./out && rm -rf ./node_modules",
+    "build": "npm run build:deps && npm run build:compile",
+    "build:deps": "npm update --dev",
+    "build:compile": "tsc --project ./tsconfig.json",
+    "prepare": "npm run build:compile",
+    "prepublishOnly": "npm run build",
+    "pretest": "npm run build",
+    "test": "npm run test:ts && npm run test:js",
+    "test:ts": "mocha ./out/Tests --recursive",
+    "test:js": "mocha ./Tests/js --recursive"
   },
   "devDependencies": {
+    "@types/mocha": "2.2.40",
+    "@types/node": "4.2.4",
+    "@types/sinon": "2.1.2",
+    "typescript": "2.2.2",
     "mocha": "3.1.2",
     "node-mocks-http": "1.2.3",
-    "sinon": "1.17.6",
-    "typescript": "2.0.10",
-    "typings": "2.0.0"
+    "sinon": "1.17.6"
   },
   "dependencies": {
-    "zone.js": "0.7.6"
+    "zone.js": "0.7.6",
+    "diagnostic-channel": "0.1.0",
+    "diagnostic-channel-publishers": "0.1.1"
   }
 }

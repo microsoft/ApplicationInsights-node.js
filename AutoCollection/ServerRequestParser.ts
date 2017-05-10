@@ -1,9 +1,7 @@
-///<reference path="..\typings\globals\node\index.d.ts" />
-
 import http = require("http");
 import url = require("url");
 
-import ContractsModule = require("../Library/Contracts");
+import Contracts = require("../Declarations/Contracts");
 import Client = require("../Library/Client");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
@@ -14,14 +12,14 @@ import RequestParser = require("./RequestParser");
  * Helper class to read data from the requst/response objects and convert them into the telemetry contract
  */
 class ServerRequestParser extends RequestParser {
-    private static keys = new ContractsModule.Contracts.ContextTagKeys();
+    private static keys = new Contracts.ContextTagKeys();
 
     private rawHeaders:string[];
     private socketRemoteAddress:string;
     private connectionRemoteAddress:string;
     private legacySocketRemoteAddress:string;
     private userAgent: string;
-    private sourceIKeyHash: string;
+    private sourceCorrelationId: string;
     private parentId: string;
     private operationId: string;
     private requestId: string;
@@ -36,8 +34,7 @@ class ServerRequestParser extends RequestParser {
             this.rawHeaders = request.headers || (<any>request).rawHeaders;
             this.socketRemoteAddress = (<any>request).socket && (<any>request).socket.remoteAddress;
             this.userAgent = request.headers && request.headers["user-agent"];
-            this.sourceIKeyHash =
-                request.headers && request.headers[RequestResponseHeaders.sourceInstrumentationKeyHeader];
+            this.sourceCorrelationId = Util.getCorrelationContextTarget(request, RequestResponseHeaders.requestContextSourceKey);
             this.parentId =
                 request.headers && request.headers[RequestResponseHeaders.parentIdHeader];
             this.operationId =
@@ -61,19 +58,19 @@ class ServerRequestParser extends RequestParser {
         }
     }
 
-    public getRequestData():ContractsModule.Contracts.Data<ContractsModule.Contracts.RequestData> {
-        var requestData = new ContractsModule.Contracts.RequestData();
+    public getRequestData():Contracts.Data<Contracts.RequestData> {
+        var requestData = new Contracts.RequestData();
         requestData.id = this.requestId;
         requestData.name = this.method + " " + url.parse(this.url).pathname;
         requestData.url = this.url;
-        requestData.source = this.sourceIKeyHash;
+        requestData.source = this.sourceCorrelationId;
         requestData.duration = Util.msToTimeSpan(this.duration);
         requestData.responseCode = this.statusCode ? this.statusCode.toString() : null;
         requestData.success = this._isSuccess();
         requestData.properties = this.properties;
 
-        var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.RequestData>();
-        data.baseType = "Microsoft.ApplicationInsights.RequestData";
+        var data = new Contracts.Data<Contracts.RequestData>();
+        data.baseType = Contracts.DataTypes.REQUEST;
         data.baseData = requestData;
 
         return data;
@@ -90,7 +87,6 @@ class ServerRequestParser extends RequestParser {
         newTags[ServerRequestParser.keys.locationIp] = tags[ServerRequestParser.keys.locationIp] || this._getIp();
         newTags[ServerRequestParser.keys.sessionId] = tags[ServerRequestParser.keys.sessionId] || this._getId("ai_session");
         newTags[ServerRequestParser.keys.userId] = tags[ServerRequestParser.keys.userId] || this._getId("ai_user");
-        newTags[ServerRequestParser.keys.userAgent] = tags[ServerRequestParser.keys.userAgent] || this.userAgent;
         newTags[ServerRequestParser.keys.operationName] = this.getOperationName(tags);
         newTags[ServerRequestParser.keys.operationParentId] = this.getOperationParentId(tags);
         newTags[ServerRequestParser.keys.operationId] = this.getOperationId(tags);

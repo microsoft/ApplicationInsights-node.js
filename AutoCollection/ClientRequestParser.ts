@@ -1,21 +1,20 @@
-///<reference path="..\typings\globals\node\index.d.ts" />
-
 import http = require("http");
 import https = require("https");
 import url = require("url");
 
-import ContractsModule = require("../Library/Contracts");
+import Contracts = require("../Declarations/Contracts");
 import Client = require("../Library/Client");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import RequestParser = require("./RequestParser");
+import CorrelationIdManager = require("../Library/CorrelationIdManager");
 
 /**
  * Helper class to read data from the requst/response objects and convert them into the telemetry contract
  */
 class ClientRequestParser extends RequestParser {
-    private targetIKeyHash: string;
+    private correlationId: string;
 
     constructor(requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest) {
         super();
@@ -40,28 +39,29 @@ class ClientRequestParser extends RequestParser {
      */
     public onResponse(response: http.ClientResponse, properties?: { [key: string]: string }) {
         this._setStatus(response.statusCode, undefined, properties);
-        this.targetIKeyHash =
-            response.headers && response.headers[RequestResponseHeaders.targetInstrumentationKeyHeader];
+        this.correlationId = Util.getCorrelationContextTarget(response, RequestResponseHeaders.requestContextTargetKey);
     }
 
     /**
      * Gets a dependency data contract object for a completed ClientRequest.
      */
-    public getDependencyData(): ContractsModule.Contracts.Data<ContractsModule.Contracts.RemoteDependencyData> {
+    public getDependencyData(): Contracts.Data<Contracts.RemoteDependencyData> {
         let urlObject = url.parse(this.url);
         urlObject.search = undefined;
         urlObject.hash = undefined;
         let dependencyName = this.method.toUpperCase() + " " + urlObject.pathname;
 
-        let remoteDependency = new ContractsModule.Contracts.RemoteDependencyData();
-        remoteDependency.type = ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
+        let remoteDependency = new Contracts.RemoteDependencyData();
+        remoteDependency.type = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
 
-        if (this.targetIKeyHash) {
-            remoteDependency.type = "ApplicationInsights";
-            remoteDependency.target = urlObject.hostname + " | " + this.targetIKeyHash;
+        remoteDependency.target = urlObject.hostname;
+        if (this.correlationId) {
+            remoteDependency.type = Contracts.RemoteDependencyDataConstants.TYPE_AI;
+            if (this.correlationId !== CorrelationIdManager.correlationIdPrefix) {
+                remoteDependency.target = urlObject.hostname + " | " + this.correlationId;
+            }
         } else {
-            remoteDependency.type = ContractsModule.Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
-            remoteDependency.target = urlObject.hostname;
+            remoteDependency.type = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
         }
 
         remoteDependency.name = dependencyName;
@@ -71,8 +71,8 @@ class ClientRequestParser extends RequestParser {
         remoteDependency.resultCode = this.statusCode ? this.statusCode.toString() : null;
         remoteDependency.properties = this.properties || {};
 
-        let data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.RemoteDependencyData>();
-        data.baseType = "Microsoft.ApplicationInsights.RemoteDependencyData";
+        let data = new Contracts.Data<Contracts.RemoteDependencyData>();
+        data.baseType = Contracts.DataTypes.REMOTE_DEPENDENCY;
         data.baseData = remoteDependency;
 
         return data;

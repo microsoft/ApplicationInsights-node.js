@@ -1,15 +1,19 @@
-///<reference path="..\typings\globals\node\index.d.ts" />
-
 import http = require("http");
 import https = require("https");
 import url = require("url");
 
-import ContractsModule = require("../Library/Contracts");
 import Client = require("../Library/Client");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import ClientRequestParser = require("./ClientRequestParser");
+import { CorrelationContextManager, CorrelationContext } from "./CorrelationContextManager";
+
+import {enable as enableMongodb} from "./diagnostic-channel/mongodb.sub";
+import {enable as enableMysql} from "./diagnostic-channel/mysql.sub";
+import {enable as enableRedis} from "./diagnostic-channel/redis.sub";
+
+import "./diagnostic-channel/initialization";
 
 class AutoCollectClientRequests {
     public static disableCollectionRequestOption = 'disableAppInsightsAutoCollection';
@@ -34,6 +38,9 @@ class AutoCollectClientRequests {
         if (this._isEnabled && !this._isInitialized) {
             this._initialize();
         }
+        enableMongodb(isEnabled, this._client);
+        enableMysql(isEnabled, this._client);
+        enableRedis(isEnabled, this._client);
     }
 
     public isInitialized() {
@@ -82,16 +89,30 @@ class AutoCollectClientRequests {
 
         let requestParser = new ClientRequestParser(requestOptions, request);
 
-        // Add the source ikey hash to the request headers, if a value was not already provided.
+        // Add the source correlationId to the request headers, if a value was not already provided.
         // The getHeader/setHeader methods aren't available on very old Node versions, and
         // are not included in the v0.10 type declarations currently used. So check if the
         // methods exist before invoking them.
-        if (client.config && client.config.instrumentationKeyHash &&
-            Util.canIncludeCorrelationHeader(client, requestParser.getUrl()) &&
-            request['getHeader'] && request['setHeader'] &&
-            !request['getHeader'](RequestResponseHeaders.sourceInstrumentationKeyHeader)) {
-            request['setHeader'](RequestResponseHeaders.sourceInstrumentationKeyHeader,
-                client.config.instrumentationKeyHash);
+        if (Util.canIncludeCorrelationHeader(client, requestParser.getUrl()) &&
+            request['getHeader'] && request['setHeader']) {
+            if (client.config && client.config.correlationId) {
+                const correlationHeader = request['getHeader'](RequestResponseHeaders.requestContextHeader);
+                if (correlationHeader) {
+                    const components = correlationHeader.split(",");
+                    const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
+                    if (!components.some((value) => value.substring(0,key.length) === key)) {
+                        request['setHeader'](RequestResponseHeaders.requestContextHeader, `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+                    }
+                } else {
+                    request['setHeader'](RequestResponseHeaders.requestContextHeader, `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+                }
+            }
+
+            const currentContext = CorrelationContextManager.getCurrentContext();
+            if (currentContext && currentContext.operation) {
+                request['setHeader'](RequestResponseHeaders.parentIdHeader, currentContext.operation.id);
+                request['setHeader'](RequestResponseHeaders.rootIdHeader, currentContext.operation.parentId);
+            }
         }
 
         // Collect dependency telemetry about the request when it finishes.

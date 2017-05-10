@@ -7,16 +7,23 @@ import AutoCollectServerRequests = require("./AutoCollection/ServerRequests");
 import Client = require("./Library/Client");
 import Config = require("./Library/Config");
 import Context = require("./Library/Context");
+import Contracts = require("./Declarations/Contracts");
 import Logging = require("./Library/Logging");
 import Util = require("./Library/Util");
 
 /**
- * The singleton meta class for the default client of the client. This class is used to setup/start and configure
- * the auto-collection behavior of the application insights module.
+ * A singleton meta class for:
+ *   * setting library-wide configuration options
+ *   * setting up and starting the default client
+ *   * creating additional clients
  */
 class ApplicationInsights {
 
+    /**
+    * The default client.
+    */
     public static client: Client;
+    public static contracts = Contracts;
 
     private static _isConsole = true;
     private static _isExceptions = true;
@@ -24,7 +31,7 @@ class ApplicationInsights {
     private static _isRequests = true;
     private static _isDependencies = true;
     private static _isOfflineMode = false;
-    private static _isCorrelating = false;
+    private static _isCorrelating = true;
 
     private static _console: AutoCollectConsole;
     private static _exceptions: AutoCollectExceptions;
@@ -35,8 +42,9 @@ class ApplicationInsights {
     private static _isStarted = false;
 
     /**
-     * Initializes a client with the given instrumentation key, if this is not specified, the value will be
-     * read from the environment variable APPINSIGHTS_INSTRUMENTATIONKEY
+     * Creates a new client with the given instrumentation key. If this is not
+     * specified, we try to read it from the environment variable
+     * APPINSIGHTS_INSTRUMENTATIONKEY.
      * @returns {ApplicationInsights/Client} a new client
      */
     public static getClient(instrumentationKey?: string) {
@@ -44,9 +52,12 @@ class ApplicationInsights {
     }
 
     /**
-     * Initializes the default client of the client and sets the default configuration
-     * @param instrumentationKey the instrumentation key to use. Optional, if this is not specified, the value will be
-     * read from the environment variable APPINSIGHTS_INSTRUMENTATIONKEY
+     * Initializes the default client. Should be called after setting
+     * configuration options.
+     * 
+     * @param instrumentationKey the instrumentation key to use. Optional, if
+     * this is not specified, the value will be read from the environment
+     * variable APPINSIGHTS_INSTRUMENTATIONKEY.
      * @returns {ApplicationInsights} this class
      */
     public static setup(instrumentationKey?: string) {
@@ -69,7 +80,9 @@ class ApplicationInsights {
     }
 
     /**
-     * Starts automatic collection of telemetry. Prior to calling start no telemetry will be collected
+     * Starts automatic collection of telemetry. Prior to calling start no
+     * telemetry will be *automatically* collected, though manual collection 
+     * is enabled.
      * @returns {ApplicationInsights} this class
      */
     public static start() {
@@ -89,11 +102,13 @@ class ApplicationInsights {
     }
 
     /**
-     * Returns an object that is shared across all code handling a given request. This can be used similarly to thread-local storage in other languages.
+     * Returns an object that is shared across all code handling a given request.
+     * This can be used similarly to thread-local storage in other languages.
      * Properties set on this object will be available to telemetry processors.
      * 
      * Do not store sensitive information here.
-     * Custom properties set on this object can be exposed in a future SDK release via outgoing HTTP headers.
+     * Custom properties set on this object can be exposed in a future SDK
+     * release via outgoing HTTP headers.
      * This is to allow for correlating data cross-component.
      * 
      * This method will return null if automatic dependency correlation is disabled.
@@ -108,8 +123,10 @@ class ApplicationInsights {
     }
 
     /**
-     * Returns a function that will get the same correlation context within its function body as the code executing this function.
-     * Use this method if automatic dependency correlation is not propagating correctly to an asynchronous callback.
+     * Returns a function that will get the same correlation context within its
+     * function body as the code executing this function.
+     * Use this method if automatic dependency correlation is not propagating
+     * correctly to an asynchronous callback.
      */
     public static wrapWithCorrelationContext<T extends Function>(fn: T): T {
         return CorrelationContextManager.CorrelationContextManager.wrapCallback(fn);
@@ -215,7 +232,8 @@ class ApplicationInsights {
     }
 
     /**
-     * Enables verbose debug logging
+     * Enables debug and warning logging for AppInsights itself.
+     * @param enableWarningLogging also show warnings
      * @returns {ApplicationInsights} this class
      */
     public static enableVerboseLogging(enableWarningLogging = true) {
@@ -225,12 +243,21 @@ class ApplicationInsights {
     }
 
     /**
-     * Disables verbose debug and warning logging
+     * Disables debug and warning logging for AppInsights itself.
+     * @returns {ApplicationInsights} this class
      */
-    public static disableConsoleLogging() {
+    public static disableVerboseLogging() {
         Logging.enableDebug = false;
         Logging.disableWarnings = true;
         return ApplicationInsights;
+    }
+
+    /**
+     * Deprecate me!!
+     */
+    public static disableConsoleLogging() {
+        console.warn('disableConsoleLogging has been deprecated in favor of disableVerboseLogging');
+        this.disableVerboseLogging();
     }
 
     /**
@@ -243,7 +270,7 @@ class ApplicationInsights {
             ApplicationInsights._console.dispose();
         }
         if (ApplicationInsights._exceptions) {
-	    ApplicationInsights._exceptions.dispose();
+            ApplicationInsights._exceptions.dispose();
         }
         if (ApplicationInsights._performance) {
             ApplicationInsights._performance.dispose();

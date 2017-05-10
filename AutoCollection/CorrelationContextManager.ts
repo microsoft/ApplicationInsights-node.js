@@ -1,6 +1,7 @@
-/// <reference path="..\node_modules\zone.js\dist\zone.js.d.ts" />
 import http = require("http");
 import Util = require("../Library/Util");
+
+import {channel} from "diagnostic-channel";
 
 export interface CorrelationContext {
     operation: {
@@ -99,9 +100,11 @@ export class CorrelationContextManager {
         // Run patches for Zone.js
         if (!this.hasEverEnabled) {
             this.hasEverEnabled = true;
+            channel.addContextPreservation((cb) => {
+                return Zone.current.wrap(cb, "AI-ContextPreservation");
+            })
             this.patchError();
             this.patchTimers(["setTimeout", "setInterval"]);
-            this.patchRedis();
         }
 
         this.enabled = true;
@@ -133,33 +136,6 @@ export class CorrelationContextManager {
             return null;
         }
         return req;
-    }
-
-    // A good example of patching a third party library to respect context.
-    // send_command is always used in this library to send data out.
-    // By overwriting the function to capture the callback provided to it,
-    // and wrapping that callback, we ensure that consumers of this library
-    // will have context persisted.
-    private static patchRedis() {
-        var redis = this.requireForPatch("redis");
-
-        if (redis && redis.RedisClient) {
-            var orig = redis.RedisClient.prototype.send_command;
-            redis.RedisClient.prototype.send_command = function() {
-                var args = Array.prototype.slice.call(arguments);
-                var lastArg = args[args.length - 1];
-
-                if (typeof lastArg === "function") {
-                    args[args.length - 1] = Zone.current.wrap(lastArg, "AI.CCM.patchRedis");
-                } else if (lastArg instanceof Array && typeof lastArg[lastArg.length - 1] === "function") {
-                    // The last argument can be an array!
-                    var lastIndexLastArg = lastArg[lastArg.length - 1];
-                    lastArg[lastArg.length - 1] = Zone.current.wrap(lastIndexLastArg, "AI.CCM.patchRedis");
-                }
-
-                return orig.apply(this, args);
-            };
-        }
     }
 
     // Zone.js breaks concatenation of timer return values.
@@ -200,7 +176,7 @@ export class CorrelationContextManager {
 
             // Zone.js will automatically create some hidden properties at read time.
             // We need to proactively make those not enumerable as well as the currently visible properties
-            for(var i=0; i<props.length; i++) {
+            for(var i=0; i < props.length; i++) {
                 var propertyName = props[i];
                 var hiddenPropertyName = Zone['__symbol__'](propertyName);
                 Object.defineProperty(this, propertyName, { enumerable: false });
@@ -215,12 +191,15 @@ export class CorrelationContextManager {
 
         // We need this loop to copy outer methods like Error.captureStackTrace
         var props = Object.getOwnPropertyNames(orig);
-        for(var i=0; i<props.length; i++) {
+        for(var i=0; i < props.length; i++) {
             var propertyName = props[i];
             if (!AppInsightsAsyncCorrelatedErrorWrapper[propertyName]) {
                 Object.defineProperty(AppInsightsAsyncCorrelatedErrorWrapper, propertyName, Object.getOwnPropertyDescriptor(orig, propertyName));
             }
         }
-        global.Error = AppInsightsAsyncCorrelatedErrorWrapper;
+        
+        // explicit cast to <any> required to avoid type error for captureStackTrace
+        // with latest node.d.ts (despite workaround above)
+        global.Error = <any>AppInsightsAsyncCorrelatedErrorWrapper;
     }
 }
