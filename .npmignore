@@ -13,8 +13,8 @@ Tests
 
 # Don't publish source files that aren't needed in package
 *.ts
+!*.d.ts
 *.js.map
-*.d.ts
 .travis.yml
 .ntvs_analysis.dat
 
