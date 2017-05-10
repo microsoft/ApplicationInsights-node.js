@@ -116,8 +116,8 @@ Insights client. Examples follow:
 
 ```javascript
 let appInsights = require("applicationinsights");
-appInsights.setup().start(); // assuming ikey in env var
-let client = appInsights.getClient();
+appInsights.setup().start(); // assuming ikey in env var. start() can be omitted to disable any non-custom data
+let client = appInsights.client;
 client.trackEvent("my custom event", {customProperty: "custom property value"});
 client.trackException(new Error("handled exceptions can be logged with this method"));
 client.trackMetric("custom metric", 3);
