@@ -1,15 +1,17 @@
 export = {
+
+    requestContextHeader: "Request-Context",
     /**
      * Source instrumentation header that is added by an application while making http
      * requests and retrieved by the other application when processing incoming requests.
      */
-    sourceInstrumentationKeyHeader: "x-ms-request-source-ikey",
+    requestContextSourceKey: "appId",
 
     /**
      * Target instrumentation header that is added to the response and retrieved by the
      * calling application when processing incoming responses.
      */
-    targetInstrumentationKeyHeader: "x-ms-request-target-ikey",
+    requestContextTargetKey: "appId",
 
     /**
      * Header containing the id of the immidiate caller

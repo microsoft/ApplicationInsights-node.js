@@ -1,18 +1,16 @@
-﻿///<reference path="..\typings\globals\node\index.d.ts" />
-
-import os = require("os");
+﻿import os = require("os");
 import http = require("http");
 
-import ContractsModule = require("../Library/Contracts");
+import Contracts = require("../Declarations/Contracts");
 import Logging = require("./Logging");
 
 class Context {
 
-    public keys: ContractsModule.Contracts.ContextTagKeys;
+    public keys: Contracts.ContextTagKeys;
     public tags: { [key: string]: string};
 
     constructor(packageJsonPath?: string) {
-        this.keys = new ContractsModule.Contracts.ContextTagKeys();
+        this.keys = new Contracts.ContextTagKeys();
         this.tags = <{ [key: string]: string}>{};
 
         this._loadApplicationContext();

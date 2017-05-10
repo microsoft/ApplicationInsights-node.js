@@ -1,10 +1,7 @@
-///<reference path="..\typings\globals\node\index.d.ts" />
-
 import http = require("http");
 import https = require("https");
 import url = require("url");
 
-import ContractsModule = require("../Library/Contracts");
 import Client = require("../Library/Client");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
@@ -124,7 +121,7 @@ class AutoCollectServerRequests {
             return;
         }
 
-        AutoCollectServerRequests.addResponseIKeyHeader(client, response);
+        AutoCollectServerRequests.addResponseCorrelationIdHeader(client, response);
 
         // store data about the request
         var correlationContext = CorrelationContextManager.getCurrentContext();
@@ -154,7 +151,7 @@ class AutoCollectServerRequests {
         var requestParser = _requestParser || new ServerRequestParser(request, correlationContext && correlationContext.operation.parentId || Util.newGuid());
 
         if (Util.canIncludeCorrelationHeader(client, requestParser.getUrl())) {
-            AutoCollectServerRequests.addResponseIKeyHeader(client, response);
+            AutoCollectServerRequests.addResponseCorrelationIdHeader(client, response);
         }
 
         // Overwrite correlation context with request parser results (if not an automatic track. we've already precalculated the correlation context in that case)
@@ -180,15 +177,21 @@ class AutoCollectServerRequests {
     }
 
     /**
-     * Add the target ikey hash to the response headers, if not already provided.
+     * Add the target correlationId to the response headers, if not already provided.
      */
-    private static addResponseIKeyHeader(client:Client, response:http.ServerResponse) {
-        if (client.config && client.config.instrumentationKeyHash &&
-            response.getHeader && response.setHeader &&
-            !response.getHeader(RequestResponseHeaders.targetInstrumentationKeyHeader) &&
-            !(<any>response).headersSent) {
-                response.setHeader(RequestResponseHeaders.targetInstrumentationKeyHeader,
-                    client.config.instrumentationKeyHash);
+    private static addResponseCorrelationIdHeader(client:Client, response:http.ServerResponse) {
+        if (client.config && client.config.correlationId &&
+            response.getHeader && response.setHeader && !(<any>response).headersSent) {
+            const correlationHeader = response.getHeader(RequestResponseHeaders.requestContextHeader);
+            if (correlationHeader) {
+                const components = correlationHeader.split(",");
+                const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
+                if (!components.some((value) => value.substring(0,key.length) === key)) {
+                    response.setHeader(RequestResponseHeaders.requestContextHeader, `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+                }
+            } else {
+                response.setHeader(RequestResponseHeaders.requestContextHeader, `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+            }
         }
     }
 

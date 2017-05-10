@@ -1,4 +1,4 @@
-﻿import ContractsModule = require("./Contracts");
+﻿import Contracts = require("../Declarations/Contracts");
 import Logging = require("./Logging");
 import Sender = require("./Sender");
 
@@ -31,7 +31,7 @@ class Channel {
     /**
      * Add a telemetry item to the send buffer
      */
-    public send(envelope: ContractsModule.Contracts.Envelope) {
+    public send(envelope: Contracts.Envelope) {
 
         // if master off switch is set, don't send any data
         if (this._isDisabled()) {
@@ -69,7 +69,7 @@ class Channel {
         }
     }
 
-    public handleCrash(envelope: ContractsModule.Contracts.Envelope) {
+    public handleCrash(envelope: Contracts.Envelope) {
         if(envelope) {
             var payload = this._stringify(envelope);
             if (typeof payload === "string") {
@@ -115,7 +115,7 @@ class Channel {
         }
     }
 
-    private _stringify(envelope: ContractsModule.Contracts.Envelope) {
+    private _stringify(envelope: Contracts.Envelope) {
         try {
             return JSON.stringify(envelope);
         } catch (error) {

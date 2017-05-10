@@ -1,7 +1,3 @@
-///<reference path="..\typings\globals\node\index.d.ts" />
-///<reference path="..\typings\globals\mocha\index.d.ts" />
-///<reference path="..\typings\globals\sinon\index.d.ts" />
-
 import assert = require("assert");
 import sinon = require("sinon");
 
@@ -109,7 +105,7 @@ describe("ApplicationInsights", () => {
             assert.ok(Exceptions.INSTANCE.isInitialized());
             assert.ok(Performance.INSTANCE.isInitialized());
             assert.ok(ServerRequests.INSTANCE.isInitialized());
-            assert.ok(!ServerRequests.INSTANCE.isAutoCorrelating());
+            assert.ok(ServerRequests.INSTANCE.isAutoCorrelating());
             assert.ok(ClientRequests.INSTANCE.isInitialized());
         });
 
@@ -129,6 +125,15 @@ describe("ApplicationInsights", () => {
             assert.ok(!ServerRequests.INSTANCE.isInitialized());
             assert.ok(!ServerRequests.INSTANCE.isAutoCorrelating());
             assert.ok(!ClientRequests.INSTANCE.isInitialized());
+        });
+    });
+
+    describe("#Provide access to contracts", () => {
+        var AppInsights = require("../applicationinsights");
+        var Contracts = require("../Declarations/Contracts");
+
+        it("should provide access to severity levels", () => {
+            assert.equal(AppInsights.contracts.SeverityLevel.Information, Contracts.SeverityLevel.Information);
         });
     });
 });

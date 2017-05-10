@@ -1,5 +1,3 @@
-///<reference path="..\typings\globals\node\index.d.ts" />
-
 import http = require("http");
 import https = require("https");
 import url = require("url");
@@ -8,17 +6,18 @@ import os = require("os");
 import Config = require("./Config");
 import Context = require("./Context");
 import ExceptionTracking = require("../AutoCollection/Exceptions");
-import ContractsModule = require("../Library/Contracts");
+import Contracts = require("../Declarations/Contracts");
 import Channel = require("./Channel");
 import ServerRequestTracking = require("../AutoCollection/ServerRequests");
 import ClientRequestTracking = require("../AutoCollection/ClientRequests");
+import TelemetryProcessors = require("../TelemetryProcessors");
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
 import Sender = require("./Sender");
 import Util = require("./Util");
 import Logging = require("./Logging");
 
 class Client {
-    private _telemetryProcessors: { (envelope: ContractsModule.Contracts.Envelope, contextObjects: {[name: string]: any;}): boolean; }[] = [];
+    private _telemetryProcessors: { (envelope: Contracts.Envelope, contextObjects: {[name: string]: any;}): boolean; }[] = [];
 
     public config: Config;
     public context: Context;
@@ -39,43 +38,52 @@ class Client {
         this.channel = new Channel(() => config.disableAppInsights, () => config.maxBatchSize, () => config.maxBatchIntervalMs, sender);
     }
 
+
     /**
      * Log a user action or other occurrence.
-     * @param   name    A string to identify this event in the portal.
-     * @param   properties  map[string, string] - additional data used to filter events and metrics in the portal. Defaults to empty.
-     * @param   measurements    map[string, number] - metrics associated with this event, displayed in Metrics Explorer on the portal. Defaults to empty.
+     * @param name              A string to identify this event in the portal.
+     * @param properties        map[string, string] - additional data used to filter events and metrics in the portal. Defaults to empty.
+     * @param measurements      map[string, number] - metrics associated with this event, displayed in Metrics Explorer on the portal. Defaults to empty.
+     * @param tagOverrides      the context tags to use for this telemetry which overwrite default context values
+     * @param contextObjects    map[string, contextObject] - An event-specific context that will be passed to telemetry processors handling this event before it is sent. For a context spanning your entire operation, consider appInsights.getCorrelationContext
      */
-    public trackEvent(name: string, properties?: { [key: string]: string; }, measurements?: { [key: string]: number; }) {
-        var event = new ContractsModule.Contracts.EventData();
+    public trackEvent(name: string, properties?: { [key: string]: string; }, measurements?: { [key: string]: number; }, 
+        tagOverrides?: { [key: string]: string; },
+        contextObjects?: { [name: string]: any; }) {
+        var event = new Contracts.EventData();
         event.name = name;
         event.properties = properties;
         event.measurements = measurements;
 
-        var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.EventData>();
-        data.baseType = "EventData";
+        var data = new Contracts.Data<Contracts.EventData>();
+        data.baseType = Contracts.DataTypes.EVENT;
         data.baseData = event;
-        this.track(data);
+        this.track(data, tagOverrides, contextObjects);
     }
 
     /**
      * Log a trace message
-     * @param   message    A string to identify this event in the portal.
-     * @param   properties  map[string, string] - additional data used to filter events and metrics in the portal. Defaults to empty.
+     * @param message        A string to identify this event in the portal.
+     * @param properties     map[string, string] - additional data used to filter events and metrics in the portal. Defaults to empty.
+     * @param tagOverrides   the context tags to use for this telemetry which overwrite default context values
+     * @param contextObjects map[string, contextObject] - An event-specific context that will be passed to telemetry processors handling this event before it is sent. For a context spanning your entire operation, consider appInsights.getCorrelationContext
      */
-    public trackTrace(message: string, severityLevel?: ContractsModule.Contracts.SeverityLevel, properties?: { [key: string]: string; }) {
-        var trace = new ContractsModule.Contracts.MessageData();
+    public trackTrace(message: string, severityLevel?: Contracts.SeverityLevel, properties?: { [key: string]: string; }, 
+        tagOverrides?: { [key: string]: string; },
+        contextObjects?: { [name: string]: any; }) {
+        var trace = new Contracts.MessageData();
         trace.message = message;
         trace.properties = properties;
         if (!isNaN(severityLevel)) {
             trace.severityLevel = severityLevel;
         } else {
-            trace.severityLevel = ContractsModule.Contracts.SeverityLevel.Information;
+            trace.severityLevel = Contracts.SeverityLevel.Information;
         }
 
-        var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.MessageData>();
-        data.baseType = "MessageData";
+        var data = new Contracts.Data<Contracts.MessageData>();
+        data.baseType = Contracts.DataTypes.MESSAGE;
         data.baseData = trace;
-        this.track(data);
+        this.track(data, tagOverrides, contextObjects);
     }
 
     /**
@@ -83,35 +91,44 @@ class Client {
      * @param   exception   An Error from a catch clause, or the string error message.
      * @param   properties  map[string, string] - additional data used to filter events and metrics in the portal. Defaults to empty.
      * @param   measurements    map[string, number] - metrics associated with this event, displayed in Metrics Explorer on the portal. Defaults to empty.
+     * @param   tagOverrides the context tags to use for this telemetry which overwrite default context values
+     * @param   contextObjects        map[string, contextObject] - An event-specific context that will be passed to telemetry processors handling this event before it is sent. For a context spanning your entire operation, consider appInsights.getCorrelationContext
      */
-    public trackException(exception: Error, properties?: { [key: string]: string; }, measurements?:{ [key: string]: number; }) {
+    public trackException(exception: Error, properties?: { [key: string]: string; }, measurements?:{ [key: string]: number; }, 
+        tagOverrides?: { [key: string]: string; },
+        contextObjects?: { [name: string]: any; }) {
         if (!Util.isError(exception)) {
             exception = new Error(<any>exception);
         }
 
         var data = ExceptionTracking.getExceptionData(exception, true, properties, measurements);
-        this.track(data);
+        this.track(data, tagOverrides, contextObjects);
     }
 
     /**
-     * * Log a numeric value that is not associated with a specific event. Typically used to send regular reports of performance indicators.
+     * Log a numeric value that is not associated with a specific event. Typically used to send regular reports of performance indicators.
      * To send a single measurement, use just the first two parameters. If you take measurements very frequently, you can reduce the
      * telemetry bandwidth by aggregating multiple measurements and sending the resulting average at intervals.
      *
-     * @param name   A string that identifies the metric.
-     * @param value  The value of the metric
-     * @param count  the number of samples used to get this value
-     * @param min    the min sample for this set
-     * @param max    the max sample for this set
-     * @param stdDev the standard deviation of the set
+     * @param name              A string that identifies the metric.
+     * @param value             The value of the metric
+     * @param count             the number of samples used to get this value
+     * @param min               the min sample for this set
+     * @param max               the max sample for this set
+     * @param stdDev            the standard deviation of the set
+     * @param properties        map[string, string] - additional data used to filter events and metrics in the portal. Defaults to empty.
+     * @param tagOverrides      the context tags to use for this telemetry which overwrite default context values
+     * @param contextObjects    map[string, contextObject] - An event-specific context that will be passed to telemetry processors handling this event before it is sent. For a context spanning your entire operation, consider appInsights.getCorrelationContext
      */
-    public trackMetric(name: string, value: number, count?: number, min?: number, max?: number, stdDev?: number, properties?: { [key: string]: string; }) {
-        var metrics = new ContractsModule.Contracts.MetricData(); // todo: enable client-batching of these
+    public trackMetric(name: string, value: number, count?: number, min?: number, max?: number, stdDev?: number, properties?: { [key: string]: string; }, 
+        tagOverrides?: { [key: string]: string; },
+        contextObjects?: { [name: string]: any; }) {
+        var metrics = new Contracts.MetricData(); // todo: enable client-batching of these
         metrics.metrics = [];
 
-        var metric = new ContractsModule.Contracts.DataPoint();
+        var metric = new Contracts.DataPoint();
         metric.count = !isNaN(count) ? count : 1;
-        metric.kind = ContractsModule.Contracts.DataPointType.Aggregation;
+        metric.kind = Contracts.DataPointType.Aggregation;
         metric.max = !isNaN(max) ? max : value;
         metric.min = !isNaN(min) ? min : value;
         metric.name = name;
@@ -122,24 +139,69 @@ class Client {
 
         metrics.properties = properties;
 
-        var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.MetricData>();
-        data.baseType = "MetricData";
+        var data = new Contracts.Data<Contracts.MetricData>();
+        data.baseType = Contracts.DataTypes.METRIC;
         data.baseData = metrics;
-        this.track(data);
+        this.track(data, tagOverrides, contextObjects);
     }
 
+    /**
+     * Log an incoming request. This method will synchronously record the event, rather than waiting for response send.
+     * Use this when you need to perform custom logic to record the duration of the request.
+     * 
+     * This call will also add outgoing headers to the supplied response object for correlating telemetry across different services.
+     * @param request              http.ServerRequest - the request object to monitor
+     * @param response             http.ServerResponse - the response object to monitor
+     * @param elapsedMilliseconds  number - the elapsed time taken to handle this request in milliseconds
+     * @param properties           map[string, string] - additional data used for filtering in the portal. Defaults to empty.
+     * @param error                any - an object indicating the request was unsuccessful. This object will be recorded with the request telemetry.
+     */
     public trackRequestSync(request: http.ServerRequest, response: http.ServerResponse, ellapsedMilliseconds?: number, properties?: { [key: string]: string; }, error?: any) {
         ServerRequestTracking.trackRequestSync(this, request, response, ellapsedMilliseconds, properties, error);
     }
 
+    /**
+     * Log an incoming request. Use this at the beginning of your request handling code.
+     * This method will monitor a supplied response object and send telemetry after the response is sent,
+     * recording elapsed time from the start of this call to the request being sent back to the user.
+     * 
+     * This call will also add outgoing headers to the supplied response object for correlating telemetry across different services.
+     * @param request     http.ServerRequest - the request object to monitor
+     * @param response    http.ServerResponse - the response object to monitor
+     * @param properties  map[string, string] - additional data used for filtering in the portal. Defaults to empty.
+     */
     public trackRequest(request: http.ServerRequest, response: http.ServerResponse, properties?: { [key: string]: string; }) {
         ServerRequestTracking.trackRequest(this, request, response, properties);
     }
 
+    /**
+     * Log an outgoing ClientRequest dependency. This is a helper method around trackDependency for common outgoing HTTP calls.
+     * Use this at the beginning of your request.
+     * 
+     * This call will also add outgoing headers to your request for correlating telemetry across different services.
+     * @param request    string | http.RequestOptions  | https.RequestOptions - the options used for this request
+     * @param response   http.ClientRequest - the outgoing request to monitor
+     * @param properties map[string, string] - additional data used for filtering in the portal. Defaults to empty.
+     */
     public trackDependencyRequest(requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest, properties?: { [key: string]: string; }) {
         ClientRequestTracking.trackRequest(this, requestOptions, request, properties);
     }
 
+    /**
+     * Log a dependency. Note that the default client will attempt collect dependencies automatically so only use this for dependencies 
+     * that aren't automatically captured or if you've disabled custom dependencies.
+     * 
+     * @param name                  String that identifies the dependency
+     * @param commandName           String of the name of the command made against the dependency
+     * @param elapsedTimeMs         Number for elapsed time in milliseconds of the command made against the dependency 
+     * @param success               Boolean which indicates success
+     * @param dependencyTypeName    String which denotes dependency type. Defaults to null.
+     * @param properties            map[string, string] - additional data used to filter events and metrics in the portal. Defaults to empty.
+     * @param async                 boolean - never used
+     * @param target                String of the target host of the dependency
+     * @param tagOverrides          the context tags to use for this telemetry which overwrite default context values
+     * @param contextObjects        map[string, contextObject] - An event-specific context that will be passed to telemetry processors handling this event before it is sent. For a context spanning your entire operation, consider appInsights.getCorrelationContext
+     */
     public trackDependency(
         name: string,
         commandName: string,
@@ -148,13 +210,15 @@ class Client {
         dependencyTypeName?: string,
         properties = {},
         async = false,
-        target: string = null) {
+        target: string = null, 
+        tagOverrides?: { [key: string]: string; },
+        contextObjects?: { [name: string]: any; }) {
 
         if (!target && commandName) {
             target = url.parse(commandName).host;
         }
 
-        var remoteDependency = new ContractsModule.Contracts.RemoteDependencyData();
+        var remoteDependency = new Contracts.RemoteDependencyData();
         remoteDependency.name = name;
         remoteDependency.data = commandName;
         remoteDependency.target = target;
@@ -163,10 +227,10 @@ class Client {
         remoteDependency.type = dependencyTypeName;
         remoteDependency.properties = properties;
 
-        var data = new ContractsModule.Contracts.Data<ContractsModule.Contracts.RemoteDependencyData>();
-        data.baseType = "RemoteDependencyData";
+        var data = new Contracts.Data<Contracts.RemoteDependencyData>();
+        data.baseType = Contracts.DataTypes.REMOTE_DEPENDENCY;
         data.baseData = remoteDependency;
-        this.track(data);
+        this.track(data, tagOverrides, contextObjects);
     }
 
     /**
@@ -177,30 +241,30 @@ class Client {
     }
 
     public getEnvelope(
-        data: ContractsModule.Contracts.Data<ContractsModule.Contracts.Domain>,
-        tagOverrides?: { [key: string]: string; }) {
-        if (data && data.baseData) {
-            data.baseData.ver = 2;
-
-            // if no properties are specified just add the common ones
-            if (!data.baseData.properties) {
-                data.baseData.properties = this.commonProperties;
-            } else {
-                // otherwise, check each of the common ones
-                for (var name in this.commonProperties) {
-                    // only override if the property `name` has not been set on this item
-                    if (!data.baseData.properties[name]) {
-                        data.baseData.properties[name] = this.commonProperties[name];
+        data: Contracts.Data<Contracts.Domain>,
+        tagOverrides?: { [key: string]: string; }): Contracts.Envelope {
+        if (Contracts.domainSupportsProperties(data.baseData)) { // Do instanceof check. TS will automatically cast and allow the properties property
+            if (data && data.baseData) {
+                // if no properties are specified just add the common ones
+                if (!data.baseData.properties) {
+                    data.baseData.properties = this.commonProperties;
+                } else {
+                    // otherwise, check each of the common ones
+                    for (var name in this.commonProperties) {
+                        // only override if the property `name` has not been set on this item
+                        if (!data.baseData.properties[name]) {
+                            data.baseData.properties[name] = this.commonProperties[name];
+                        }
                     }
                 }
             }
+
+            // sanitize properties
+            data.baseData.properties = Util.validateStringMap(data.baseData.properties);
         }
 
-        // sanitize properties
-        data.baseData.properties = Util.validateStringMap(data.baseData.properties);
-
         var iKey = this.config.instrumentationKey;
-        var envelope = new ContractsModule.Contracts.Envelope();
+        var envelope = new Contracts.Envelope();
         envelope.data = data;
         envelope.iKey = iKey;
 
@@ -213,6 +277,8 @@ class Client {
         envelope.tags = this.getTags(tagOverrides);
         envelope.time = (new Date()).toISOString();
         envelope.ver = 1;
+        envelope.sampleRate = this.config.samplingPercentage;
+
         return envelope;
     }
 
@@ -222,14 +288,18 @@ class Client {
      * @param tagOverrides the context tags to use for this telemetry which overwrite default context values
      */
     public track(
-        data: ContractsModule.Contracts.Data<ContractsModule.Contracts.Domain>,
+        data: Contracts.Data<Contracts.Domain>,
         tagOverrides?: { [key: string]: string; },
         contextObjects?: { [name: string]: any; }) {
 
         var envelope = this.getEnvelope(data, tagOverrides);
         var accepted = this.runTelemetryProcessors(envelope, contextObjects);
 
-        if (accepted) {
+        // Ideally we would have a central place for "internal" telemetry processors and users can configure which ones are in use.
+        // This will do for now. Otherwise clearTelemetryProcessors() would be problematic.
+        var sampledIn = TelemetryProcessors.samplingTelemetryProcessor(envelope, {correlationContext: CorrelationContextManager.getCurrentContext()});
+
+        if (accepted && sampledIn) {
             this.channel.send(envelope);
         }
     }
@@ -240,7 +310,7 @@ class Client {
      *
      * @param telemetryProcessor function, takes Envelope, and optional context object and returns boolean
      */
-    public addTelemetryProcessor(telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope, contextObjects?: { [name: string]: any; }) => boolean) {
+    public addTelemetryProcessor(telemetryProcessor: (envelope: Contracts.Envelope, contextObjects?: { [name: string]: any; }) => boolean) {
         this._telemetryProcessors.push(telemetryProcessor);
     }
 
@@ -251,7 +321,7 @@ class Client {
         this._telemetryProcessors = [];
     }
     
-    private runTelemetryProcessors(envelope: ContractsModule.Contracts.Envelope, contextObjects: { [name: string]: any; }): boolean {
+    private runTelemetryProcessors(envelope: Contracts.Envelope, contextObjects: { [name: string]: any; }): boolean {
         var accepted = true;
         var telemetryProcessorsCount = this._telemetryProcessors.length;
 
@@ -306,6 +376,14 @@ class Client {
         }
 
         return newTags;
+    }
+    /**
+     * Sets the client app version to the context tags.
+     * @param version, takes the host app version.
+     */
+    public overrideApplicationVersion(version: string)
+    {
+        this.context.tags[this.context.keys.applicationVersion] = version;
     }
 }
 

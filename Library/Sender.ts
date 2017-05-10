@@ -1,6 +1,4 @@
-﻿///<reference path="..\typings\globals\node\index.d.ts" />
-
-import fs = require("fs");
+﻿import fs = require("fs");
 import http = require("http");
 import https = require("https");
 import os = require("os");
@@ -55,6 +53,7 @@ class Sender {
             port: parsedUrl.port,
             path: parsedUrl.pathname,
             method: "POST",
+            withCredentials: false,
             headers: {
                 "Content-Type": "application/x-json-stream"
             }
