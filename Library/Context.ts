@@ -60,7 +60,7 @@ class Context {
 
         try {
             // note: this should return the appInsights package.json
-            var packageJson = require("../package.json");
+            var packageJson = require("../../package.json");
             if(packageJson && typeof packageJson.version === "string") {
                 version = packageJson.version;
             }
