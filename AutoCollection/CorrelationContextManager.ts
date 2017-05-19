@@ -168,7 +168,25 @@ export class CorrelationContextManager {
                 return AppInsightsAsyncCorrelatedErrorWrapper.apply(Object.create(AppInsightsAsyncCorrelatedErrorWrapper.prototype), arguments);
             }
 
+            // Is this object set to rewrite the stack?
+            // If so, we should turn off some Zone stuff that is prone to break
+            var stackRewrite = orig['stackRewrite'];
+            if (orig['prepareStackTrace']) {
+                orig['stackRewrite'] = false;
+                var stackTrace = orig['prepareStackTrace'];
+                orig['prepareStackTrace'] = (e, s) => {
+                    // Remove some AI and Zone methods from the stack trace
+                    // Otherwise we leave side-effects
+                    s.splice(0, 3);
+                    return stackTrace(e, s);
+                }
+            }
+
+            // Apply the error constructor
             orig.apply(this, arguments);
+
+            // Restore Zone stack rewriting settings
+            orig['stackRewrite'] = stackRewrite;
             
             // getOwnPropertyNames should be a superset of Object.keys...
             // This appears to not always be the case
