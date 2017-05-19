@@ -85,6 +85,25 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             });
         });
 
+        describe("#AppInsightsAsyncCorrelatedErrorWrapper", () => {
+            it("should not crash if prepareStackTrace is used", () => {
+                CorrelationContextManager.enable();
+
+                try {
+                    var stackTrace = Error['prepareStackTrace'];
+                    Error['prepareStackTrace'] = function (_, stack) {
+                        Error['prepareStackTrace'] = stackTrace;
+                        return stack;
+                    };
+
+                    var error = new Error();
+                    assert(<any>error.stack instanceof Array);
+                } catch (e) {
+                    assert(false);
+                }
+            })
+        });
+
         describe("#runWithContext()", () => {
             it("should run the supplied function", () => {
                 CorrelationContextManager.enable();
