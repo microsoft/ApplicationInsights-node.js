@@ -170,11 +170,11 @@ export class CorrelationContextManager {
 
             // Is this object set to rewrite the stack?
             // If so, we should turn off some Zone stuff that is prone to break
-            var stackRewrite = orig['stackRewrite'];
-            if (orig['prepareStackTrace']) {
-                orig['stackRewrite'] = false;
-                var stackTrace = orig['prepareStackTrace'];
-                orig['prepareStackTrace'] = (e, s) => {
+            var stackRewrite = (<any>orig).stackRewrite;
+            if ((<any>orig).prepareStackTrace) {
+                (<any>orig).stackRewrite= false;
+                var stackTrace = (<any>orig).prepareStackTrace;
+                (<any>orig).prepareStackTrace = (e, s) => {
                     // Remove some AI and Zone methods from the stack trace
                     // Otherwise we leave side-effects
                     s.splice(0, 3);
@@ -186,7 +186,7 @@ export class CorrelationContextManager {
             orig.apply(this, arguments);
 
             // Restore Zone stack rewriting settings
-            orig['stackRewrite'] = stackRewrite;
+            (<any>orig).stackRewrite = stackRewrite;
             
             // getOwnPropertyNames should be a superset of Object.keys...
             // This appears to not always be the case

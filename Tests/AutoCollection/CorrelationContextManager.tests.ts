@@ -101,7 +101,19 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
                 } catch (e) {
                     assert(false);
                 }
-            })
+            });
+            it("should remove extra AI+Zone methods if prepareStackTrace is used", () => {
+                CorrelationContextManager.enable();
+
+                var stackTrace = Error['prepareStackTrace'];
+                Error['prepareStackTrace'] = function (_, stack) {
+                    Error['prepareStackTrace'] = stackTrace;
+                    return stack;
+                };
+
+                var error = new Error();
+                assert((<any>error.stack)[0].getFileName().indexOf("CorrelationContextManager.tests.js") !== -1);
+            });
         });
 
         describe("#runWithContext()", () => {
