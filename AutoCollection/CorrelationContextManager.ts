@@ -177,7 +177,20 @@ export class CorrelationContextManager {
                 (<any>orig).prepareStackTrace = (e, s) => {
                     // Remove some AI and Zone methods from the stack trace
                     // Otherwise we leave side-effects
-                    s.splice(0, 3);
+                    var foundOne = false;
+                    for (var i=0; i<s.length; i++) {
+                        if (s[i].getFileName().indexOf("AutoCollection/CorrelationContextManager") === -1) {
+                            if (foundOne) {
+                                break;
+                            }
+                        } else {
+                            foundOne = true;
+                        }
+                    }
+                    // Loop above goes one extra step
+                    i = Math.max(0, i - 1);
+                    
+                    s.splice(0, i);
                     return stackTrace(e, s);
                 }
             }
