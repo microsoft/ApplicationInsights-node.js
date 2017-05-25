@@ -85,6 +85,38 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             });
         });
 
+        describe("#AppInsightsAsyncCorrelatedErrorWrapper", () => {
+            it("should not crash if prepareStackTrace is used", () => {
+                CorrelationContextManager.enable();
+
+                try {
+                    var stackTrace = Error['prepareStackTrace'];
+                    Error['prepareStackTrace'] = function (_, stack) {
+                        Error['prepareStackTrace'] = stackTrace;
+                        return stack;
+                    };
+
+                    var error = new Error();
+                    assert(<any>error.stack instanceof Array);
+                } catch (e) {
+                    assert(false);
+                }
+            });
+            it("should remove extra AI+Zone methods if prepareStackTrace is used", () => {
+                CorrelationContextManager.enable();
+
+                var stackTrace = Error['prepareStackTrace'];
+                Error['prepareStackTrace'] = function (_, stack) {
+                    Error['prepareStackTrace'] = stackTrace;
+                    return stack;
+                };
+
+                var error = new Error();
+                var topOfStack = (<any>error.stack)[0].getFileName();
+                assert(topOfStack.indexOf("CorrelationContextManager.tests.js") !== -1, "Top of stack not expected to be " + topOfStack);
+            });
+        });
+
         describe("#runWithContext()", () => {
             it("should run the supplied function", () => {
                 CorrelationContextManager.enable();

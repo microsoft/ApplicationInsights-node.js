@@ -168,7 +168,45 @@ export class CorrelationContextManager {
                 return AppInsightsAsyncCorrelatedErrorWrapper.apply(Object.create(AppInsightsAsyncCorrelatedErrorWrapper.prototype), arguments);
             }
 
+            // Is this object set to rewrite the stack?
+            // If so, we should turn off some Zone stuff that is prone to break
+            var stackRewrite = (<any>orig).stackRewrite;
+            if ((<any>orig).prepareStackTrace) {
+                (<any>orig).stackRewrite= false;
+                var stackTrace = (<any>orig).prepareStackTrace;
+                (<any>orig).prepareStackTrace = (e, s) => {
+                    // Remove some AI and Zone methods from the stack trace
+                    // Otherwise we leave side-effects
+
+                    // Algorithm is to find the first frame on the stack after the first instance(s)
+                    // of AutoCollection/CorrelationContextManager
+                    // Eg. this should return the User frame on an array like below:
+                    //  Zone | Zone | CorrelationContextManager | CorrelationContextManager | User
+                    var foundOne = false;
+                    for (var i=0; i<s.length; i++) {
+                        if (s[i].getFileName().indexOf("AutoCollection/CorrelationContextManager") === -1 &&
+                            s[i].getFileName().indexOf("AutoCollection\\CorrelationContextManager") === -1) {
+
+                            if (foundOne) {
+                                break;
+                            }
+                        } else {
+                            foundOne = true;
+                        }
+                    }
+                    // Loop above goes one extra step
+                    i = Math.max(0, i - 1);
+                    
+                    s.splice(0, i);
+                    return stackTrace(e, s);
+                }
+            }
+
+            // Apply the error constructor
             orig.apply(this, arguments);
+
+            // Restore Zone stack rewriting settings
+            (<any>orig).stackRewrite = stackRewrite;
             
             // getOwnPropertyNames should be a superset of Object.keys...
             // This appears to not always be the case
