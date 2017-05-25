@@ -179,7 +179,9 @@ export class CorrelationContextManager {
                     // Otherwise we leave side-effects
                     var foundOne = false;
                     for (var i=0; i<s.length; i++) {
-                        if (s[i].getFileName().indexOf("AutoCollection/CorrelationContextManager") === -1) {
+                        if (s[i].getFileName().indexOf("AutoCollection/CorrelationContextManager") === -1 &&
+                            s[i].getFileName().indexOf("AutoCollection\\CorrelationContextManager") === -1) {
+                                
                             if (foundOne) {
                                 break;
                             }
