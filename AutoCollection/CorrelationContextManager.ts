@@ -177,11 +177,16 @@ export class CorrelationContextManager {
                 (<any>orig).prepareStackTrace = (e, s) => {
                     // Remove some AI and Zone methods from the stack trace
                     // Otherwise we leave side-effects
+
+                    // Algorithm is to find the first frame on the stack after the first instance(s)
+                    // of AutoCollection/CorrelationContextManager
+                    // Eg. this should return the User frame on an array like below:
+                    //  Zone | Zone | CorrelationContextManager | CorrelationContextManager | User
                     var foundOne = false;
                     for (var i=0; i<s.length; i++) {
                         if (s[i].getFileName().indexOf("AutoCollection/CorrelationContextManager") === -1 &&
                             s[i].getFileName().indexOf("AutoCollection\\CorrelationContextManager") === -1) {
-                                
+
                             if (foundOne) {
                                 break;
                             }
