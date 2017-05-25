@@ -112,7 +112,8 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
                 };
 
                 var error = new Error();
-                assert((<any>error.stack)[0].getFileName().indexOf("CorrelationContextManager.tests.js") !== -1);
+                var topOfStack = (<any>error.stack)[0].getFileName();
+                assert(topOfStack.indexOf("CorrelationContextManager.tests.js") !== -1, "Top of stack not expected to be " + topOfStack);
             });
         });
 
