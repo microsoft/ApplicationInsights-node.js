@@ -103,7 +103,12 @@ appInsights.start();
 
 ### Automatic third-party instrumentation
 
-In order to track context across asynchronous calls, some changes are required in third party libraries such as mongodb and redis. By default ApplicationInsights will use `diagnostic-channel-publishers` to monkey-patch some of these libraries. This can be disabled by setting the `APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL` environment variable. Note that by setting that environment variable, events may no longer be correctly associated with the right operation.
+In order to track context across asynchronous calls, some changes are required in third party libraries such as mongodb and redis.
+By default ApplicationInsights will use `diagnostic-channel-publishers` to monkey-patch some of these libraries.
+This can be disabled by setting the `APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL` environment variable. Note that by setting that
+environment variable, events may no longer be correctly associated with the right operation. Individual monkey-patches can be
+disabled by setting the `APPLICATION_INSIGHTS_NO_PATCH_MODULES` environment variable to a comma separated list of packages to
+disable, e.g. `APPLICATION_INSIGHTS_NO_PATCH_MODULES=console,redis` to avoid patching the `console` and `redis` packages.
 
 Currently there are 6 packages which are instrumented: `bunyan`, `console`, `mongodb`, `mongodb-core`, `mysql` and `redis`.
 

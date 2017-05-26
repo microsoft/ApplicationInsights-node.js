@@ -14,6 +14,6 @@ node_js:
   - "iojs"
   - "iojs-v1.0.4" 
 before_install:
-  - npm install -g npm
+  - npm install -g npm@4.5.0
 before_script:
   - npm install
