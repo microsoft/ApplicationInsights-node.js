@@ -7,6 +7,7 @@ import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import RequestParser = require("./RequestParser");
+import CorrelationIdManager = require("../Library/CorrelationIdManager");
 
 /**
  * Helper class to read data from the requst/response objects and convert them into the telemetry contract
@@ -24,21 +25,16 @@ class ServerRequestParser extends RequestParser {
     private operationId: string;
     private requestId: string;
 
-    constructor(request:http.ServerRequest, requestId?: string) {
+    private correlationContext: string;
+
+    constructor(request:http.ServerRequest, parentId?: string) {
         super();
         if (request) {
-            this.requestId = requestId || Util.newGuid();
             this.method = request.method;
             this.url = this._getAbsoluteUrl(request);
             this.startTime = +new Date();
-            this.rawHeaders = request.headers || (<any>request).rawHeaders;
             this.socketRemoteAddress = (<any>request).socket && (<any>request).socket.remoteAddress;
-            this.userAgent = request.headers && request.headers["user-agent"];
-            this.sourceCorrelationId = Util.getCorrelationContextTarget(request, RequestResponseHeaders.requestContextSourceKey);
-            this.parentId =
-                request.headers && request.headers[RequestResponseHeaders.parentIdHeader];
-            this.operationId =
-                request.headers && request.headers[RequestResponseHeaders.rootIdHeader];
+            this.parseHeaders(request, parentId);
             if (request.connection) {
                 this.connectionRemoteAddress = request.connection.remoteAddress;
                 this.legacySocketRemoteAddress = request.connection["socket"] && request.connection["socket"].remoteAddress;
@@ -110,6 +106,10 @@ class ServerRequestParser extends RequestParser {
         return this.requestId;
     }
 
+    public getCorrelationContext() {
+        return this.correlationContext;
+    }
+
     private _getAbsoluteUrl(request:http.ServerRequest):string {
         if (!request.headers) {
             return request.url;
@@ -167,6 +167,29 @@ class ServerRequestParser extends RequestParser {
             typeof this.rawHeaders["cookie"] === 'string' && this.rawHeaders["cookie"]) || "";
         var value = ServerRequestParser.parseId(Util.getCookie(name, cookie));
         return value;
+    }
+
+    private parseHeaders(request:http.ServerRequest, parentId?: string) {
+        this.rawHeaders = request.headers || (<any>request).rawHeaders;
+        this.userAgent = request.headers && request.headers["user-agent"];
+        this.sourceCorrelationId = Util.getCorrelationContextTarget(request, RequestResponseHeaders.requestContextSourceKey);
+
+        if (request.headers) {
+            this.correlationContext = request.headers[RequestResponseHeaders.correlationContextHeader];
+
+            if (request.headers[RequestResponseHeaders.requestIdHeader]) {
+                this.parentId = request.headers[RequestResponseHeaders.requestIdHeader];
+                this.requestId = CorrelationIdManager.generateRequestId(this.parentId);
+                this.correlationContext = request.headers[RequestResponseHeaders.correlationContextHeader];
+            } else {
+                // Legacy fallback
+                const rootId = request.headers[RequestResponseHeaders.rootIdHeader];
+                this.parentId = request.headers[RequestResponseHeaders.parentIdHeader];
+                this.requestId = CorrelationIdManager.generateRequestId(rootId || this.parentId || parentId);
+                this.correlationContext = null;
+            }
+            this.operationId = CorrelationIdManager.getRootId(this.requestId); 
+        }
     }
 
     public static parseId(cookieValue: string): string{

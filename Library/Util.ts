@@ -63,6 +63,13 @@ class Util {
     }
 
     /**
+     * generate a random 32bit number (0x00000000..0xFFFFFFFF).
+     */
+    public static randomu32() {
+        return Util.random32() + 0x80000000;
+    }
+
+    /**
      * generate GUID
      */
     public static newGuid() {

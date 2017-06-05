@@ -8,6 +8,7 @@ export interface CorrelationContext {
         name: string;
         id: string;
         parentId: string; // Always used for dependencies, may be ignored in favor of incoming headers for requests
+        correlationContextHeader?: string;
     };
 
     /** Do not store sensitive information here. 
@@ -35,8 +36,7 @@ export class CorrelationContextManager {
     /**
      *  A helper to generate objects conforming to the CorrelationContext interface
      */
-    public static generateContextObject(parentId?: string, operationName?: string, operationId?: string): CorrelationContext {
-        operationId = operationId || Util.newGuid();
+    public static generateContextObject(operationId: string, parentId?: string, operationName?: string, correlationContextHeader?: string): CorrelationContext {
         parentId = parentId || operationId;
         
         if (this.enabled) {
@@ -44,7 +44,8 @@ export class CorrelationContextManager {
                 operation: {
                     name: operationName,
                     id: operationId,
-                    parentId: parentId
+                    parentId: parentId,
+                    correlationContextHeader: correlationContextHeader
                 },
                 customProperties: {}
             };

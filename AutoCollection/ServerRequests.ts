@@ -62,9 +62,10 @@ class AutoCollectServerRequests {
         }
 
         return CorrelationContextManager.generateContextObject(
+            requestParser.getOperationId(this._client.context.tags),
             requestParser.getRequestId(),
             requestParser.getOperationName(this._client.context.tags),
-            requestParser.getOperationId(this._client.context.tags)
+            requestParser.getCorrelationContext()
         );
     }
 
@@ -132,6 +133,7 @@ class AutoCollectServerRequests {
             correlationContext.operation.id = requestParser.getOperationId(client.context.tags) || correlationContext.operation.id;
             correlationContext.operation.name = requestParser.getOperationName(client.context.tags) || correlationContext.operation.name;
             correlationContext.operation.parentId = requestParser.getRequestId() || correlationContext.operation.parentId;
+            correlationContext.operation.correlationContextHeader = requestParser.getCorrelationContext();
         }
 
         AutoCollectServerRequests.endRequest(client, requestParser, request, response, ellapsedMilliseconds, properties, error);
@@ -159,6 +161,7 @@ class AutoCollectServerRequests {
             correlationContext.operation.id = requestParser.getOperationId(client.context.tags) || correlationContext.operation.id;
             correlationContext.operation.name = requestParser.getOperationName(client.context.tags) || correlationContext.operation.name;
             correlationContext.operation.parentId = requestParser.getOperationParentId(client.context.tags) || correlationContext.operation.parentId;
+            correlationContext.operation.correlationContextHeader = requestParser.getCorrelationContext();
         }
 
         // response listeners

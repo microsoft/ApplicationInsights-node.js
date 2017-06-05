@@ -20,6 +20,8 @@ class AutoCollectClientRequests {
 
     public static INSTANCE: AutoCollectClientRequests;
 
+    private static requestNumber = 1;
+
     private _client: Client;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
@@ -110,8 +112,15 @@ class AutoCollectClientRequests {
 
             const currentContext = CorrelationContextManager.getCurrentContext();
             if (currentContext && currentContext.operation) {
+                const uniqueParentId = currentContext.operation.parentId + AutoCollectClientRequests.requestNumber++ + '.';
+                request['setHeader'](RequestResponseHeaders.requestIdHeader, uniqueParentId);
+                // Also set legacy headers
                 request['setHeader'](RequestResponseHeaders.parentIdHeader, currentContext.operation.id);
-                request['setHeader'](RequestResponseHeaders.rootIdHeader, currentContext.operation.parentId);
+                request['setHeader'](RequestResponseHeaders.rootIdHeader, uniqueParentId);
+
+                if (currentContext.operation.correlationContextHeader) {
+                    request['setHeader'](RequestResponseHeaders.correlationContextHeader, currentContext.operation.correlationContextHeader);
+                }
             }
         }
 
