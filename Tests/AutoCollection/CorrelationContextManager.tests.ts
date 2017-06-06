@@ -3,6 +3,13 @@ import { CorrelationContextManager, CorrelationContext } from "../../AutoCollect
 import assert = require("assert");
 import sinon = require("sinon");
 
+const customProperties = {
+    addHeaderData(header: string) {},
+    getProperty(prop: string) {return ""},
+    setProperty(prop: string, val: string) {},
+    serializeToHeader() {return ""}
+}
+
 if (CorrelationContextManager.isNodeVersionCompatible()) {
     describe("AutoCollection/CorrelationContextManager", () => {
         var testContext: CorrelationContext = {
@@ -11,7 +18,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
                 name: "test",
                 parentId: "test"
             },
-            customProperties: {}
+            customProperties
         };
         var testContext2: CorrelationContext = {
             operation: {
@@ -19,7 +26,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
                 name: "test2",
                 parentId: "test2"
             },
-            customProperties: {}
+            customProperties
         };
 
         describe("#getCurrentContext()", () => {
@@ -176,7 +183,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
                 name: "test",
                 parentId: "test"
             },
-            customProperties: {}
+            customProperties
         };
         var testContext2: CorrelationContext = {
             operation: {
@@ -184,7 +191,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
                 name: "test2",
                 parentId: "test2"
             },
-            customProperties: {}
+            customProperties
         };
 
         describe("#getCurrentContext()", () => {

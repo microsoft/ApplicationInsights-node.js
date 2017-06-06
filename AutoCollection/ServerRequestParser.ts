@@ -25,16 +25,16 @@ class ServerRequestParser extends RequestParser {
     private operationId: string;
     private requestId: string;
 
-    private correlationContext: string;
+    private correlationContextHeader: string;
 
-    constructor(request:http.ServerRequest, parentId?: string) {
+    constructor(request:http.ServerRequest, requestId?: string) {
         super();
         if (request) {
             this.method = request.method;
             this.url = this._getAbsoluteUrl(request);
             this.startTime = +new Date();
             this.socketRemoteAddress = (<any>request).socket && (<any>request).socket.remoteAddress;
-            this.parseHeaders(request, parentId);
+            this.parseHeaders(request, requestId);
             if (request.connection) {
                 this.connectionRemoteAddress = request.connection.remoteAddress;
                 this.legacySocketRemoteAddress = request.connection["socket"] && request.connection["socket"].remoteAddress;
@@ -106,8 +106,8 @@ class ServerRequestParser extends RequestParser {
         return this.requestId;
     }
 
-    public getCorrelationContext() {
-        return this.correlationContext;
+    public getCorrelationContextHeader() {
+        return this.correlationContextHeader;
     }
 
     private _getAbsoluteUrl(request:http.ServerRequest):string {
@@ -169,24 +169,29 @@ class ServerRequestParser extends RequestParser {
         return value;
     }
 
-    private parseHeaders(request:http.ServerRequest, parentId?: string) {
+    private parseHeaders(request:http.ServerRequest, requestId?: string) {
         this.rawHeaders = request.headers || (<any>request).rawHeaders;
         this.userAgent = request.headers && request.headers["user-agent"];
         this.sourceCorrelationId = Util.getCorrelationContextTarget(request, RequestResponseHeaders.requestContextSourceKey);
 
         if (request.headers) {
-            this.correlationContext = request.headers[RequestResponseHeaders.correlationContextHeader];
+            this.correlationContextHeader = request.headers[RequestResponseHeaders.correlationContextHeader];
 
             if (request.headers[RequestResponseHeaders.requestIdHeader]) {
                 this.parentId = request.headers[RequestResponseHeaders.requestIdHeader];
                 this.requestId = CorrelationIdManager.generateRequestId(this.parentId);
-                this.correlationContext = request.headers[RequestResponseHeaders.correlationContextHeader];
+                this.correlationContextHeader = request.headers[RequestResponseHeaders.correlationContextHeader];
             } else {
                 // Legacy fallback
                 const rootId = request.headers[RequestResponseHeaders.rootIdHeader];
                 this.parentId = request.headers[RequestResponseHeaders.parentIdHeader];
-                this.requestId = CorrelationIdManager.generateRequestId(rootId || this.parentId || parentId);
-                this.correlationContext = null;
+                this.requestId = CorrelationIdManager.generateRequestId(rootId || this.parentId);
+                this.correlationContextHeader = null;
+            }
+            if (requestId) {
+                // For the scenarios that don't guarantee an AI-created context,
+                // override the requestId with the provided one.
+                this.requestId = requestId;
             }
             this.operationId = CorrelationIdManager.getRootId(this.requestId); 
         }

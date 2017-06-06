@@ -91,6 +91,9 @@ class AutoCollectClientRequests {
 
         let requestParser = new ClientRequestParser(requestOptions, request);
 
+        const currentContext = CorrelationContextManager.getCurrentContext();
+        const uniqueParentId = currentContext && currentContext.operation && (currentContext.operation.parentId + AutoCollectClientRequests.requestNumber++ + '.');
+
         // Add the source correlationId to the request headers, if a value was not already provided.
         // The getHeader/setHeader methods aren't available on very old Node versions, and
         // are not included in the v0.10 type declarations currently used. So check if the
@@ -110,16 +113,15 @@ class AutoCollectClientRequests {
                 }
             }
 
-            const currentContext = CorrelationContextManager.getCurrentContext();
             if (currentContext && currentContext.operation) {
-                const uniqueParentId = currentContext.operation.parentId + AutoCollectClientRequests.requestNumber++ + '.';
                 request['setHeader'](RequestResponseHeaders.requestIdHeader, uniqueParentId);
                 // Also set legacy headers
                 request['setHeader'](RequestResponseHeaders.parentIdHeader, currentContext.operation.id);
                 request['setHeader'](RequestResponseHeaders.rootIdHeader, uniqueParentId);
 
-                if (currentContext.operation.correlationContextHeader) {
-                    request['setHeader'](RequestResponseHeaders.correlationContextHeader, currentContext.operation.correlationContextHeader);
+                const correlationContextHeader = currentContext.customProperties.serializeToHeader();
+                if (correlationContextHeader) {
+                    request['setHeader'](RequestResponseHeaders.correlationContextHeader, correlationContextHeader);
                 }
             }
         }
@@ -129,12 +131,12 @@ class AutoCollectClientRequests {
             request.on('response', (response: http.ClientResponse) => {
                 requestParser.onResponse(response, properties);
                 var context : { [name: string]: any; } = { "http.RequestOptions": requestOptions, "http.ClientRequest": request, "http.ClientResponse": response };
-                client.track(requestParser.getDependencyData(), null, context);
+                client.track(requestParser.getDependencyData(uniqueParentId), null, context);
             });
             request.on('error', (e: Error) => {
                 requestParser.onError(e, properties);
                 var context : { [name: string]: any; } = { "http.RequestOptions": requestOptions, "http.ClientRequest": request, "Error": e };
-                client.track(requestParser.getDependencyData(), null, context);
+                client.track(requestParser.getDependencyData(uniqueParentId), null, context);
             });
         }
     }

@@ -8,13 +8,17 @@ export interface CorrelationContext {
         name: string;
         id: string;
         parentId: string; // Always used for dependencies, may be ignored in favor of incoming headers for requests
-        correlationContextHeader?: string;
     };
 
     /** Do not store sensitive information here. 
      *  Properties here can be exposed in a future SDK release via outgoing HTTP headers for correlating data cross-component.
      */
-    customProperties: { [id: string]: string };
+    customProperties: { 
+        addHeaderData(header: string): void;
+        getProperty(prop: string): string;
+        setProperty(prop: string, val: string): void;
+        serializeToHeader(): string;
+     };
 }
 
 export class CorrelationContextManager {
@@ -38,16 +42,64 @@ export class CorrelationContextManager {
      */
     public static generateContextObject(operationId: string, parentId?: string, operationName?: string, correlationContextHeader?: string): CorrelationContext {
         parentId = parentId || operationId;
-        
+
+        const bannedCharacters = /[,=]/;
+
+        const customProperties: any = {
+            props: []
+        }
+        customProperties.addHeaderData = function (header: string) {
+            header = header || "";
+            this.props = header.split(", ").map((keyval) => {
+                const parts = keyval.split("=");
+                return {key: parts[0], value: parts[1]};
+            }).concat(this.props);
+        }.bind(customProperties);
+
+        customProperties.serializeToHeader = function () {
+            return this.props.map((keyval) => {
+                `${keyval.key}=${keyval.value}`
+            }).join(", ");
+        }.bind(customProperties);
+
+        customProperties.getProperty = function (prop: string) {
+            for(let i = 0; i < this.props.length; ++i) {
+                const keyval = this.props[i]
+                if (keyval.key === prop) {
+                    return keyval.value;
+                }
+            }
+            return;
+        }.bind(customProperties);
+
+        customProperties.addHeaderData(correlationContextHeader);
+
+        // TODO: Strictly according to the spec, properties which are recieved from
+        // an incoming request should be left untouched, while we may add our own new
+        // properties. The logic here will need to change to track that.
+        customProperties.setProperty = function (prop: string, val: string) {
+            if (bannedCharacters.test(prop) || bannedCharacters.test(val)) {
+                throw new Error("Keys and values must not contain ',' or '='");
+            }
+            for(let i = 0; i < this.props.length; ++i) {
+                const keyval = this.props[i];
+                if (keyval.key === prop) {
+                    keyval.value = val;
+                    return;
+                }
+            }
+            this.props.push({key: prop, value: val});
+        }.bind(customProperties);
+
+
         if (this.enabled) {
             return {
                 operation: {
                     name: operationName,
                     id: operationId,
-                    parentId: parentId,
-                    correlationContextHeader: correlationContextHeader
+                    parentId: parentId
                 },
-                customProperties: {}
+                customProperties
             };
         }
 
