@@ -7,7 +7,7 @@ import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import ServerRequestParser = require("./ServerRequestParser");
-import { CorrelationContextManager, CorrelationContext } from "./CorrelationContextManager";
+import { CorrelationContextManager, CorrelationContext, PrivateCustomProperties } from "./CorrelationContextManager";
 
 class AutoCollectServerRequests {
 
@@ -133,7 +133,7 @@ class AutoCollectServerRequests {
             correlationContext.operation.id = requestParser.getOperationId(client.context.tags) || correlationContext.operation.id;
             correlationContext.operation.name = requestParser.getOperationName(client.context.tags) || correlationContext.operation.name;
             correlationContext.operation.parentId = requestParser.getRequestId() || correlationContext.operation.parentId;
-            correlationContext.customProperties.addHeaderData(requestParser.getCorrelationContextHeader());
+            (<PrivateCustomProperties>correlationContext.customProperties).addHeaderData(requestParser.getCorrelationContextHeader());
         }
 
         AutoCollectServerRequests.endRequest(client, requestParser, request, response, ellapsedMilliseconds, properties, error);
@@ -161,7 +161,7 @@ class AutoCollectServerRequests {
             correlationContext.operation.id = requestParser.getOperationId(client.context.tags) || correlationContext.operation.id;
             correlationContext.operation.name = requestParser.getOperationName(client.context.tags) || correlationContext.operation.name;
             correlationContext.operation.parentId = requestParser.getOperationParentId(client.context.tags) || correlationContext.operation.parentId;
-            correlationContext.customProperties.addHeaderData(requestParser.getCorrelationContextHeader());
+            (<PrivateCustomProperties>correlationContext.customProperties).addHeaderData(requestParser.getCorrelationContextHeader());
         }
 
         // response listeners

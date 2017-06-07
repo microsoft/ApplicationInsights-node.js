@@ -3,6 +3,16 @@ import Util = require("../Library/Util");
 
 import {channel} from "diagnostic-channel";
 
+export interface CustomProperties {
+    getProperty(prop: string): string;
+    setProperty(prop: string, val: string): void;
+}
+
+export interface PrivateCustomProperties extends CustomProperties {
+    addHeaderData(header: string): void;
+    serializeToHeader(): string;
+}
+
 export interface CorrelationContext {
     operation: {
         name: string;
@@ -11,14 +21,9 @@ export interface CorrelationContext {
     };
 
     /** Do not store sensitive information here. 
-     *  Properties here can be exposed in a future SDK release via outgoing HTTP headers for correlating data cross-component.
+     *  Properties here are exposed via outgoing HTTP headers for correlating data cross-component.
      */
-    customProperties: { 
-        addHeaderData(header: string): void;
-        getProperty(prop: string): string;
-        setProperty(prop: string, val: string): void;
-        serializeToHeader(): string;
-     };
+    customProperties: CustomProperties
 }
 
 export class CorrelationContextManager {

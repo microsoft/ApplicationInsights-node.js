@@ -7,7 +7,7 @@ import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import ClientRequestParser = require("./ClientRequestParser");
-import { CorrelationContextManager, CorrelationContext } from "./CorrelationContextManager";
+import { CorrelationContextManager, CorrelationContext, PrivateCustomProperties } from "./CorrelationContextManager";
 
 import {enable as enableMongodb} from "./diagnostic-channel/mongodb.sub";
 import {enable as enableMysql} from "./diagnostic-channel/mysql.sub";
@@ -92,7 +92,7 @@ class AutoCollectClientRequests {
         let requestParser = new ClientRequestParser(requestOptions, request);
 
         const currentContext = CorrelationContextManager.getCurrentContext();
-        const uniqueParentId = currentContext && currentContext.operation && (currentContext.operation.parentId + AutoCollectClientRequests.requestNumber++ + '.');
+        const uniqueRequestId = currentContext && currentContext.operation && (currentContext.operation.parentId + AutoCollectClientRequests.requestNumber++ + '.');
 
         // Add the source correlationId to the request headers, if a value was not already provided.
         // The getHeader/setHeader methods aren't available on very old Node versions, and
@@ -114,12 +114,12 @@ class AutoCollectClientRequests {
             }
 
             if (currentContext && currentContext.operation) {
-                request['setHeader'](RequestResponseHeaders.requestIdHeader, uniqueParentId);
+                request['setHeader'](RequestResponseHeaders.requestIdHeader, uniqueRequestId);
                 // Also set legacy headers
                 request['setHeader'](RequestResponseHeaders.parentIdHeader, currentContext.operation.id);
-                request['setHeader'](RequestResponseHeaders.rootIdHeader, uniqueParentId);
+                request['setHeader'](RequestResponseHeaders.rootIdHeader, uniqueRequestId);
 
-                const correlationContextHeader = currentContext.customProperties.serializeToHeader();
+                const correlationContextHeader = (<PrivateCustomProperties>currentContext.customProperties).serializeToHeader();
                 if (correlationContextHeader) {
                     request['setHeader'](RequestResponseHeaders.correlationContextHeader, correlationContextHeader);
                 }
@@ -131,12 +131,12 @@ class AutoCollectClientRequests {
             request.on('response', (response: http.ClientResponse) => {
                 requestParser.onResponse(response, properties);
                 var context : { [name: string]: any; } = { "http.RequestOptions": requestOptions, "http.ClientRequest": request, "http.ClientResponse": response };
-                client.track(requestParser.getDependencyData(uniqueParentId), null, context);
+                client.track(requestParser.getDependencyData(uniqueRequestId), null, context);
             });
             request.on('error', (e: Error) => {
                 requestParser.onError(e, properties);
                 var context : { [name: string]: any; } = { "http.RequestOptions": requestOptions, "http.ClientRequest": request, "Error": e };
-                client.track(requestParser.getDependencyData(uniqueParentId), null, context);
+                client.track(requestParser.getDependencyData(uniqueRequestId), null, context);
             });
         }
     }

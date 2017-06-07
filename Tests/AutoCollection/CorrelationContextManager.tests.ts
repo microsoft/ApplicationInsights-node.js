@@ -4,10 +4,8 @@ import assert = require("assert");
 import sinon = require("sinon");
 
 const customProperties = {
-    addHeaderData(header: string) {},
     getProperty(prop: string) {return ""},
     setProperty(prop: string, val: string) {},
-    serializeToHeader() {return ""}
 }
 
 if (CorrelationContextManager.isNodeVersionCompatible()) {
