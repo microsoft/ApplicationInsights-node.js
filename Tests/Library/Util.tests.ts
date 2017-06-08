@@ -108,6 +108,22 @@ describe("Library/Util", () => {
         });
     });
 
+    describe("#randomu32()", () => {
+        let test = (i: number, expected) => {
+            let mathStub = sinon.stub(Math, "random", () => i);
+            assert.equal(Util.randomu32(), expected);
+            mathStub.restore();
+        }
+        it("should generate a number in the range [0x00000000..0xFFFFFFFF]", () => {
+            test(0, 0x80000000);
+            test(0.125, 0xA0000000);
+            test(0.25, 0xC0000000);
+            test(0.5, 0x00000000);
+            test(0.75, 0x40000000);
+            test(1.0, 0x80000000);
+        });
+    });
+
     describe("#uint32ArrayToBase64()", () => {
         it("should convert an 32-bit array to Base64", () => {
             assert.equal(Util.int32ArrayToBase64([-1, -1, -1, -1]), "/////////////////////w");

@@ -45,7 +45,7 @@ class ClientRequestParser extends RequestParser {
     /**
      * Gets a dependency data contract object for a completed ClientRequest.
      */
-    public getDependencyData(): Contracts.Data<Contracts.RemoteDependencyData> {
+    public getDependencyData(dependencyId?: string): Contracts.Data<Contracts.RemoteDependencyData> {
         let urlObject = url.parse(this.url);
         urlObject.search = undefined;
         urlObject.hash = undefined;
@@ -64,6 +64,7 @@ class ClientRequestParser extends RequestParser {
             remoteDependency.type = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
         }
 
+        remoteDependency.id = dependencyId;
         remoteDependency.name = dependencyName;
         remoteDependency.data = this.url;
         remoteDependency.duration = Util.msToTimeSpan(this.duration);

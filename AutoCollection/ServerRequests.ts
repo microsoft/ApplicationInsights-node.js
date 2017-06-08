@@ -7,7 +7,7 @@ import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import ServerRequestParser = require("./ServerRequestParser");
-import { CorrelationContextManager, CorrelationContext } from "./CorrelationContextManager";
+import { CorrelationContextManager, CorrelationContext, PrivateCustomProperties } from "./CorrelationContextManager";
 
 class AutoCollectServerRequests {
 
@@ -62,9 +62,10 @@ class AutoCollectServerRequests {
         }
 
         return CorrelationContextManager.generateContextObject(
+            requestParser.getOperationId(this._client.context.tags),
             requestParser.getRequestId(),
             requestParser.getOperationName(this._client.context.tags),
-            requestParser.getOperationId(this._client.context.tags)
+            requestParser.getCorrelationContextHeader()
         );
     }
 
@@ -125,13 +126,14 @@ class AutoCollectServerRequests {
 
         // store data about the request
         var correlationContext = CorrelationContextManager.getCurrentContext();
-        var requestParser = new ServerRequestParser(request, (correlationContext && correlationContext.operation.parentId) || Util.newGuid());
+        var requestParser = new ServerRequestParser(request, (correlationContext && correlationContext.operation.parentId));
 
         // Overwrite correlation context with request parser results
         if (correlationContext) {
             correlationContext.operation.id = requestParser.getOperationId(client.context.tags) || correlationContext.operation.id;
             correlationContext.operation.name = requestParser.getOperationName(client.context.tags) || correlationContext.operation.name;
             correlationContext.operation.parentId = requestParser.getRequestId() || correlationContext.operation.parentId;
+            (<PrivateCustomProperties>correlationContext.customProperties).addHeaderData(requestParser.getCorrelationContextHeader());
         }
 
         AutoCollectServerRequests.endRequest(client, requestParser, request, response, ellapsedMilliseconds, properties, error);
@@ -148,7 +150,7 @@ class AutoCollectServerRequests {
 
         // store data about the request
         var correlationContext = CorrelationContextManager.getCurrentContext();
-        var requestParser = _requestParser || new ServerRequestParser(request, correlationContext && correlationContext.operation.parentId || Util.newGuid());
+        var requestParser = _requestParser || new ServerRequestParser(request, correlationContext && correlationContext.operation.parentId);
 
         if (Util.canIncludeCorrelationHeader(client, requestParser.getUrl())) {
             AutoCollectServerRequests.addResponseCorrelationIdHeader(client, response);
@@ -159,6 +161,7 @@ class AutoCollectServerRequests {
             correlationContext.operation.id = requestParser.getOperationId(client.context.tags) || correlationContext.operation.id;
             correlationContext.operation.name = requestParser.getOperationName(client.context.tags) || correlationContext.operation.name;
             correlationContext.operation.parentId = requestParser.getOperationParentId(client.context.tags) || correlationContext.operation.parentId;
+            (<PrivateCustomProperties>correlationContext.customProperties).addHeaderData(requestParser.getCorrelationContextHeader());
         }
 
         // response listeners
