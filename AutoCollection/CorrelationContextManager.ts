@@ -251,7 +251,7 @@ export class CorrelationContextManager {
     }
 }
 
-class CustomPropertiesImpl implements CustomProperties {
+class CustomPropertiesImpl implements PrivateCustomProperties {
     private static bannedCharacters = /[,=]/;
     private props: {key: string, value:string}[] = [];
 
