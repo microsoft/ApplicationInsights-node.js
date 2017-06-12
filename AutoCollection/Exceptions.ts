@@ -10,8 +10,8 @@ class AutoCollectExceptions {
 
     public static INSTANCE: AutoCollectExceptions = null;
 
-    private _exceptionListenerHandle;
-    private _rejectionListenerHandle;
+    private _exceptionListenerHandle: (reThrow: boolean, error: Error) => void;
+    private _rejectionListenerHandle: (reThrow: boolean, error: Error) => void;
     private _client: Client;
     private _isInitialized: boolean;
 
@@ -88,7 +88,7 @@ class AutoCollectExceptions {
         return data;
     }
 
-    private static parseStack(stack): _StackFrame[] {
+    private static parseStack(stack: any): _StackFrame[] {
         var parsedStack: _StackFrame[] = undefined;
         if (typeof stack === "string") {
             var frames = stack.split("\n");
@@ -155,11 +155,11 @@ class _StackFrame {
     public static regex = /^([\s]+at)?(.*?)(\@|\s\(|\s)([^\(\@\n]+):([0-9]+):([0-9]+)(\)?)$/;
     public static baseSize = 58; //'{"method":"","level":,"assembly":"","fileName":"","line":}'.length
     public sizeInBytes = 0;
-    public level;
-    public method;
-    public assembly;
-    public fileName;
-    public line;
+    public level: number;
+    public method: string;
+    public assembly: string;
+    public fileName: string;
+    public line: number;
 
     constructor(frame: string, level: number) {
         this.level = level;

@@ -54,7 +54,7 @@ class CorrelationIdManager {
                     // Success; extract the appId from the body
                     let appId = "";
                     res.setEncoding("utf-8");
-                    res.on('data', function (data) {
+                    res.on('data', (data: any) => {
                         appId += data;
                     });
                     res.on('end', () => {

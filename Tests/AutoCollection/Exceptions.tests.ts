@@ -5,7 +5,7 @@ import AutoCollectionExceptions = require("../../AutoCollection/Exceptions");
 
 describe("AutoCollection/Exceptions", () => {
     describe("#getExceptionData()", () => {
-        var simpleError;
+        var simpleError: Error;
         
         beforeEach(() => {
             try {

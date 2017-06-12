@@ -53,10 +53,10 @@ class AutoCollectClientRequests {
         this._isInitialized = true;
 
         const originalRequest = http.request;
-        http.request = (options, ...requestArgs) => {
+        http.request = (options, ...requestArgs: any[]) => {
             const request: http.ClientRequest = originalRequest.call(
                 http, options, ...requestArgs);
-            if (request && options && !options[AutoCollectClientRequests.disableCollectionRequestOption]) {
+            if (request && options && !(<any>options)[AutoCollectClientRequests.disableCollectionRequestOption]) {
                 AutoCollectClientRequests.trackRequest(this._client, options, request);
             }
             return request;
@@ -67,10 +67,10 @@ class AutoCollectClientRequests {
         // The regex matches versions < 0.11.12 (avoiding a semver package dependency).
         if (/^0\.([0-9]\.)|(10\.)|(11\.([0-9]|10|11)$)/.test(process.versions.node)) {
             const originalHttpsRequest = https.request;
-            https.request = (options, ...requestArgs) => {
+            https.request = (options, ...requestArgs: any[]) => {
                 const request: http.ClientRequest = originalHttpsRequest.call(
                     https, options, ...requestArgs);
-                if (request && options && !options[AutoCollectClientRequests.disableCollectionRequestOption]) {
+                if (request && options && !(<any>options)[AutoCollectClientRequests.disableCollectionRequestOption]) {
                     AutoCollectClientRequests.trackRequest(this._client, options, request);
                 }
                 return request;

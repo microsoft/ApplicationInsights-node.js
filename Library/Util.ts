@@ -12,13 +12,13 @@ class Util {
     /**
      * helper method to access userId and sessionId cookie
      */
-    public static getCookie(name, cookie) {
+    public static getCookie(name: string, cookie: string) {
         var value = "";
         if (name && name.length && typeof cookie === "string") {
             var cookieName = name + "=";
             var cookies = cookie.split(";");
             for (var i = 0; i < cookies.length; i++) {
-                var cookie = <any>cookies[i];
+                var cookie = cookies[i];
                 cookie = Util.trim(cookie);
                 if (cookie && cookie.indexOf(cookieName) === 0) {
                     value = cookie.substring(cookieName.length, cookies[i].length);

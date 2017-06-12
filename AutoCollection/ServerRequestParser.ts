@@ -15,7 +15,7 @@ import CorrelationIdManager = require("../Library/CorrelationIdManager");
 class ServerRequestParser extends RequestParser {
     private static keys = new Contracts.ContextTagKeys();
 
-    private rawHeaders:string[];
+    private rawHeaders: {[key: string] : string};
     private socketRemoteAddress:string;
     private connectionRemoteAddress:string;
     private legacySocketRemoteAddress:string;
@@ -37,7 +37,7 @@ class ServerRequestParser extends RequestParser {
             this.parseHeaders(request, requestId);
             if (request.connection) {
                 this.connectionRemoteAddress = request.connection.remoteAddress;
-                this.legacySocketRemoteAddress = request.connection["socket"] && request.connection["socket"].remoteAddress;
+                this.legacySocketRemoteAddress = (<any>request.connection)["socket"] && (<any>request.connection)["socket"].remoteAddress;
             }
         }
     }

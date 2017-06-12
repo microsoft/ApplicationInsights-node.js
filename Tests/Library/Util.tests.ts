@@ -7,7 +7,7 @@ describe("Library/Util", () => {
 
     describe("#getCookie(name, cookie)", () => {
 
-        var test = (cookie, query, expected) => {
+        var test = (cookie: string, query: string, expected: string) => {
             var actual = Util.getCookie(query, cookie);
             assert.equal(expected, actual, "cookie is parsed correctly");
         }
@@ -93,7 +93,7 @@ describe("Library/Util", () => {
     });
 
     describe("#random32()", () => {
-        let test = (i: number, expected) => {
+        let test = (i: number, expected: number) => {
             let mathStub = sinon.stub(Math, "random", () => i);
             assert.equal(Util.random32(), expected);
             mathStub.restore();
@@ -109,7 +109,7 @@ describe("Library/Util", () => {
     });
 
     describe("#randomu32()", () => {
-        let test = (i: number, expected) => {
+        let test = (i: number, expected: number) => {
             let mathStub = sinon.stub(Math, "random", () => i);
             assert.equal(Util.randomu32(), expected);
             mathStub.restore();
@@ -133,7 +133,7 @@ describe("Library/Util", () => {
     });
 
     describe("#msToTimeSpan(totalMs)", () => {
-        var test = (input, expected, message) => {
+        var test = (input: number, expected: string, message: string) => {
             var actual = Util.msToTimeSpan(input);
             assert.equal(expected, actual, message);
         }
@@ -155,11 +155,11 @@ describe("Library/Util", () => {
         });
 
         it("should handle invalid input", () => {
-            test("", "00:00:00.000", "invalid input");
-            test("'", "00:00:00.000", "invalid input");
+            test(<any>"", "00:00:00.000", "invalid input");
+            test(<any>"'", "00:00:00.000", "invalid input");
             test(NaN, "00:00:00.000", "invalid input");
-            test({}, "00:00:00.000", "invalid input");
-            test([], "00:00:00.000", "invalid input");
+            test(<any>{}, "00:00:00.000", "invalid input");
+            test(<any>[], "00:00:00.000", "invalid input");
             test(-1, "00:00:00.000", "invalid input");
         });
     });
@@ -170,7 +170,7 @@ describe("Library/Util", () => {
             assert.equal(Util.validateStringMap(1), undefined);
             assert.equal(Util.validateStringMap(true), undefined);
             assert.equal(Util.validateStringMap("test"), undefined);
-            assert.equal(Util.validateStringMap(() => null), undefined);
+            assert.equal(Util.validateStringMap(():void => null), undefined);
             assert.deepEqual(Util.validateStringMap({ a: {} }), { a: "[object Object]" });
             assert.deepEqual(Util.validateStringMap({ a: 3, b: "test" }), { a: "3", b: "test" });
             assert.deepEqual(Util.validateStringMap({ a: 0, b: null, c: undefined, d: [], e: '', f: -1 }), { a: "0", d: "", e: "", f: "-1" });

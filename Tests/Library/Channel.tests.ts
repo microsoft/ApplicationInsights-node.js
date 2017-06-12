@@ -18,16 +18,16 @@ describe("Library/Channel", () => {
 
     var testEnvelope = new Contracts.Envelope();
     var sender = {
-        saveOnCrash: (str) => null,
-        send: (Buffer) => null
+        saveOnCrash: <(s: string) => void>((str) => null),
+        send: <(b: Buffer) => void>((buffer) => null)
     };
 
     var sendSpy = sinon.spy(sender, "send");
     var saveSpy = sinon.spy(sender, "saveOnCrash");
 
     var channel:ChannelMock;
-    var config;
-    var clock;
+    var config: any;
+    var clock: any;
     before(() => clock = sinon.useFakeTimers());
     after(() => clock.restore());
 

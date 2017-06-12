@@ -44,13 +44,13 @@ describe("Library/Client", () => {
     })
 
     var invalidInputHelper = (name: string) => {
-        assert.doesNotThrow(() => client[name](null, null));
-        assert.doesNotThrow(() => client[name](<any>undefined, <any>undefined));
-        assert.doesNotThrow(() => client[name](<any>{}, <any>{}));
-        assert.doesNotThrow(() => client[name](<any>[], <any>[]));
-        assert.doesNotThrow(() => client[name](<any>"", <any>""));
-        assert.doesNotThrow(() => client[name](<any>1, <any>1));
-        assert.doesNotThrow(() => client[name](<any>true, <any>true));
+        assert.doesNotThrow(() => (<any>client)[name](null, null));
+        assert.doesNotThrow(() => (<any>client)[name](<any>undefined, <any>undefined));
+        assert.doesNotThrow(() => (<any>client)[name](<any>{}, <any>{}));
+        assert.doesNotThrow(() => (<any>client)[name](<any>[], <any>[]));
+        assert.doesNotThrow(() => (<any>client)[name](<any>"", <any>""));
+        assert.doesNotThrow(() => (<any>client)[name](<any>1, <any>1));
+        assert.doesNotThrow(() => (<any>client)[name](<any>true, <any>true));
     };
 
     describe("#constructor()", () => {
@@ -223,7 +223,7 @@ describe("Library/Client", () => {
                 return new eventEmitter.EventEmitter();
             },
             statusCode: 200,
-            headers: {},
+            headers: <{[id: string]: string}>{},
             getHeader: function (name: string) { return this.headers[name]; },
             setHeader: function (name: string, value: string) { this.headers[name] = value; },
         };
@@ -257,7 +257,7 @@ describe("Library/Client", () => {
             agent: {
                 protocol: 'http'
             },
-            headers: {
+            headers: <{[id: string]: string}>{
                 host: "bing.com"
             },
             getHeader: function (name: string) { return this.headers[name]; },
@@ -635,8 +635,8 @@ describe("Library/Client", () => {
             mockData.properties = {};
             var env = client.getEnvelope(mockData);
             assert.deepEqual(env.tags, client.context.tags, "tags are set by default");
-            var customTag = { "ai.cloud.roleInstance": "override" };
-            var expected = {};
+            var customTag = <{[id: string]: string}>{ "ai.cloud.roleInstance": "override" };
+            var expected: {[id: string]: string} = {};
             for(var tag in client.context.tags) {
                 expected[tag] = customTag[tag] || client.context.tags[tag];
             }
