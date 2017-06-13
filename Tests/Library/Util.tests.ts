@@ -152,6 +152,7 @@ describe("Library/Util", () => {
             test(24 * 60 * 60 * 1000, "1.00:00:00.000", "hours overflow");
             test(11 * 3600000 + 11 * 60000 + 11111, "11:11:11.111", "all digits");
             test(5 * 86400000 + 13 * 3600000 + 9 * 60000 + 8 * 1000 + 789, "5.13:09:08.789", "all digits with days");
+            test(1001.505, "00:00:01.001505", "fractional milliseconds");
         });
 
         it("should handle invalid input", () => {

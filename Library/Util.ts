@@ -124,19 +124,17 @@ class Util {
             totalms = 0;
         }
 
-        var ms = "" + totalms % 1000;
-        var sec = "" + Math.floor(totalms / 1000) % 60;
+        var sec = ((totalms / 1000) % 60).toFixed(7).replace(/0{0,4}$/, "");
         var min = "" + Math.floor(totalms / (1000 * 60)) % 60;
         var hour = "" + Math.floor(totalms / (1000 * 60 * 60)) % 24;
         var days = Math.floor(totalms / (1000 * 60 * 60 * 24));
 
-        ms = ms.length === 1 ? "00" + ms : ms.length === 2 ? "0" + ms : ms;
-        sec = sec.length < 2 ? "0" + sec : sec;
+        var secPadding = sec.indexOf(".") < 2 ? "0" : "";
         min = min.length < 2 ? "0" + min : min;
         hour = hour.length < 2 ? "0" + hour : hour;
         var daysText = days > 0 ? days + "." : "";
 
-        return daysText + hour + ":" + min + ":" + sec + "." + ms;
+        return daysText + hour + ":" + min + ":" + secPadding + sec;
     }
 
     /**
