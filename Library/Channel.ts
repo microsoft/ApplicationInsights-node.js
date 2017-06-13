@@ -86,7 +86,7 @@ class Channel {
     /**
      * Immediately send buffered data
      */
-    public triggerSend(isNodeCrashing: boolean, callback?: (string) => void) {
+    public triggerSend(isNodeCrashing: boolean, callback?: (v: string) => void) {
         let bufferIsEmpty = this._buffer.length < 1;
         if (!bufferIsEmpty) {
             // compose an array of payloads

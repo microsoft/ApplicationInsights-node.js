@@ -6,7 +6,7 @@ import {bunyan, console as consoleModule, mongodb, mysql, redis} from "diagnosti
 if (!process.env["APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL"]) {
     const individualOptOuts = process.env["APPLICATION_INSIGHTS_NO_PATCH_MODULES"] || "";
     const unpatchedModules = individualOptOuts.split(",");
-    const modules = {bunyan, console: consoleModule, mongodb, mysql, redis};
+    const modules: {[key: string] : any} = {bunyan, console: consoleModule, mongodb, mysql, redis};
     for (const mod in modules) {
         if (unpatchedModules.indexOf(mod) === -1) {
            modules[mod].enable();

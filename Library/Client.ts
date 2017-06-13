@@ -236,7 +236,7 @@ class Client {
     /**
      * Immediately send all queued telemetry.
      */
-    public sendPendingData(callback?: (string) => void) {
+    public sendPendingData(callback?: (v: string) => void) {
         this.channel.triggerSend(false, callback);
     }
 

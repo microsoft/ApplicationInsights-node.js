@@ -45,12 +45,12 @@ class fakeResponse {
 class fakeRequest {
     private callbacks: {[event:string]: Function} = Object.create(null);
     public write(): void {}
-    public headers = [];
+    public headers: {[id: string]: string} = {};
     public agent = { protocol: 'http' };
 
     constructor (private failImmediatly: boolean = true, public url: string = undefined) {}
 
-    public on(event: string, callback) {
+    public on(event: string, callback: Function) {
         this.callbacks[event] = callback;
         if (event === "error" && this.failImmediatly) {
             setImmediate(() => this.fail());
@@ -112,7 +112,7 @@ class fakeHttpsServer extends events.EventEmitter {
 describe("EndToEnd", () => {
 
     describe("Basic usage", () => {
-        var sandbox;
+        var sandbox: sinon.SinonSandbox;
 
         beforeEach(() => {
             sandbox = sinon.sandbox.create();
@@ -237,7 +237,7 @@ describe("EndToEnd", () => {
 
             this.request.returns(req);
 
-            client.sendPendingData((response) => {
+            client.sendPendingData((response: any) => {
                 // yield for the caching behavior
                 setImmediate(() => {
                     assert(this.writeFile.callCount === 0);
@@ -256,7 +256,7 @@ describe("EndToEnd", () => {
 
             this.request.returns(req);
 
-            client.sendPendingData((response) => {
+            client.sendPendingData((response: any) => {
                 // yield for the caching behavior
                 setImmediate(() => {
                     assert(this.writeFile.callCount === 1);
@@ -278,7 +278,7 @@ describe("EndToEnd", () => {
             this.request.returns(req);
             this.request.yields(res);
 
-            client.sendPendingData((response) => {
+            client.sendPendingData((response: any) => {
                 // wait until sdk looks for offline files
                 setTimeout(() => {
                     assert(this.readdir.callCount === 1);

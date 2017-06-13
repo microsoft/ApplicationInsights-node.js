@@ -10,13 +10,14 @@ import {bunyan} from "diagnostic-channel-publishers";
 let clients: Client[] = [];
 
 // Mapping from bunyan levels defined at https://github.com/trentm/node-bunyan/blob/master/lib/bunyan.js#L256
-const bunyanToAILevelMap = {};
-bunyanToAILevelMap[10] = SeverityLevel.Verbose;
-bunyanToAILevelMap[20] = SeverityLevel.Verbose;
-bunyanToAILevelMap[30] = SeverityLevel.Information;
-bunyanToAILevelMap[40] = SeverityLevel.Warning;
-bunyanToAILevelMap[50] = SeverityLevel.Error;
-bunyanToAILevelMap[60] = SeverityLevel.Critical;
+const bunyanToAILevelMap: {[key: number] : number} = {
+    10: SeverityLevel.Verbose,
+    20: SeverityLevel.Verbose,
+    30: SeverityLevel.Information,
+    40: SeverityLevel.Warning,
+    50: SeverityLevel.Error,
+    60: SeverityLevel.Critical,
+};
 
 const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
     clients.forEach((client) => {

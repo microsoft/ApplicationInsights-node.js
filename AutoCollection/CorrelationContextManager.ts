@@ -48,55 +48,6 @@ export class CorrelationContextManager {
     public static generateContextObject(operationId: string, parentId?: string, operationName?: string, correlationContextHeader?: string): CorrelationContext {
         parentId = parentId || operationId;
 
-        const bannedCharacters = /[,=]/;
-
-        const customProperties: any = {
-            props: []
-        }
-        customProperties.addHeaderData = function (header: string) {
-            header = header || "";
-            this.props = header.split(", ").map((keyval) => {
-                const parts = keyval.split("=");
-                return {key: parts[0], value: parts[1]};
-            }).concat(this.props);
-        }.bind(customProperties);
-
-        customProperties.serializeToHeader = function () {
-            return this.props.map((keyval) => {
-                `${keyval.key}=${keyval.value}`
-            }).join(", ");
-        }.bind(customProperties);
-
-        customProperties.getProperty = function (prop: string) {
-            for(let i = 0; i < this.props.length; ++i) {
-                const keyval = this.props[i]
-                if (keyval.key === prop) {
-                    return keyval.value;
-                }
-            }
-            return;
-        }.bind(customProperties);
-
-        customProperties.addHeaderData(correlationContextHeader);
-
-        // TODO: Strictly according to the spec, properties which are recieved from
-        // an incoming request should be left untouched, while we may add our own new
-        // properties. The logic here will need to change to track that.
-        customProperties.setProperty = function (prop: string, val: string) {
-            if (bannedCharacters.test(prop) || bannedCharacters.test(val)) {
-                throw new Error("Keys and values must not contain ',' or '='");
-            }
-            for(let i = 0; i < this.props.length; ++i) {
-                const keyval = this.props[i];
-                if (keyval.key === prop) {
-                    keyval.value = val;
-                    return;
-                }
-            }
-            this.props.push({key: prop, value: val});
-        }.bind(customProperties);
-
-
         if (this.enabled) {
             return {
                 operation: {
@@ -104,7 +55,7 @@ export class CorrelationContextManager {
                     id: operationId,
                     parentId: parentId
                 },
-                customProperties
+                customProperties: new CustomPropertiesImpl(correlationContextHeader)
             };
         }
 
@@ -200,8 +151,8 @@ export class CorrelationContextManager {
     // This fixes that.
     private static patchTimers(methodNames: string[]) {
         methodNames.forEach(methodName => {
-            var orig = global[methodName];
-            global[methodName] = function() {
+            var orig = (<any>global)[methodName];
+            (<any>global)[methodName] = function() {
                 var ret = orig.apply(this, arguments);
                 ret.toString = function(){
                     if (this.data && typeof this.data.handleId !== 'undefined') {
@@ -232,7 +183,7 @@ export class CorrelationContextManager {
             if ((<any>orig).prepareStackTrace) {
                 (<any>orig).stackRewrite= false;
                 var stackTrace = (<any>orig).prepareStackTrace;
-                (<any>orig).prepareStackTrace = (e, s) => {
+                (<any>orig).prepareStackTrace = (e: any, s: any) => {
                     // Remove some AI and Zone methods from the stack trace
                     // Otherwise we leave side-effects
 
@@ -274,7 +225,7 @@ export class CorrelationContextManager {
             // We need to proactively make those not enumerable as well as the currently visible properties
             for(var i=0; i < props.length; i++) {
                 var propertyName = props[i];
-                var hiddenPropertyName = Zone['__symbol__'](propertyName);
+                var hiddenPropertyName = (<any>Zone)['__symbol__'](propertyName);
                 Object.defineProperty(this, propertyName, { enumerable: false });
                 Object.defineProperty(this, hiddenPropertyName, { enumerable: false, writable: true });
             }
@@ -289,7 +240,7 @@ export class CorrelationContextManager {
         var props = Object.getOwnPropertyNames(orig);
         for(var i=0; i < props.length; i++) {
             var propertyName = props[i];
-            if (!AppInsightsAsyncCorrelatedErrorWrapper[propertyName]) {
+            if (!(<any>AppInsightsAsyncCorrelatedErrorWrapper)[propertyName]) {
                 Object.defineProperty(AppInsightsAsyncCorrelatedErrorWrapper, propertyName, Object.getOwnPropertyDescriptor(orig, propertyName));
             }
         }
@@ -297,5 +248,55 @@ export class CorrelationContextManager {
         // explicit cast to <any> required to avoid type error for captureStackTrace
         // with latest node.d.ts (despite workaround above)
         global.Error = <any>AppInsightsAsyncCorrelatedErrorWrapper;
+    }
+}
+
+class CustomPropertiesImpl implements PrivateCustomProperties {
+    private static bannedCharacters = /[,=]/;
+    private props: {key: string, value:string}[] = [];
+
+    public constructor(header: string) {
+        this.addHeaderData(header);
+    }
+    
+    public addHeaderData(header: string) {
+        header = header || "";
+        this.props = header.split(", ").map((keyval) => {
+            const parts = keyval.split("=");
+            return {key: parts[0], value: parts[1]};
+        }).concat(this.props);
+    }
+
+    public serializeToHeader() {
+        return this.props.map((keyval) => {
+            `${keyval.key}=${keyval.value}`
+        }).join(", ");
+    }
+
+    public getProperty(prop: string) {
+        for(let i = 0; i < this.props.length; ++i) {
+            const keyval = this.props[i]
+            if (keyval.key === prop) {
+                return keyval.value;
+            }
+        }
+        return;
+    }
+
+    // TODO: Strictly according to the spec, properties which are recieved from
+    // an incoming request should be left untouched, while we may add our own new
+    // properties. The logic here will need to change to track that.
+    public setProperty(prop: string, val: string) {
+        if (CustomPropertiesImpl.bannedCharacters.test(prop) || CustomPropertiesImpl.bannedCharacters.test(val)) {
+            throw new Error("Keys and values must not contain ',' or '='");
+        }
+        for (let i = 0; i < this.props.length; ++i) {
+            const keyval = this.props[i];
+            if (keyval.key === prop) {
+                keyval.value = val;
+                return;
+            }
+        }
+        this.props.push({key: prop, value: val});
     }
 }

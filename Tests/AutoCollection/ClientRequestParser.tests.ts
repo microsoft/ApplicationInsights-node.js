@@ -15,7 +15,7 @@ describe("AutoCollection/ClientRequestParser", () => {
         };
 
         it("should return correct data for a URL string", () => {
-            request["method"] = "GET";
+            (<any>request)["method"] = "GET";
             let parser = new ClientRequestParser("http://bing.com/search", request);
 
             response.statusCode = 200;
@@ -30,7 +30,7 @@ describe("AutoCollection/ClientRequestParser", () => {
         });
 
         it("should return correct data for a posted URL with query string", () => {
-            request["method"] = "POST";
+            (<any>request)["method"] = "POST";
             let parser = new ClientRequestParser("http://bing.com/search?q=test", request);
 
             response.statusCode = 200;
@@ -50,7 +50,7 @@ describe("AutoCollection/ClientRequestParser", () => {
                 port: 8000,
                 path: "/search?q=test",
             };
-            request["method"] = "POST";
+            (<any>request)["method"] = "POST";
             let parser = new ClientRequestParser(requestOptions, request);
 
             response.statusCode = 200;
@@ -71,7 +71,7 @@ describe("AutoCollection/ClientRequestParser", () => {
                 host: "finance.google.com",
                 path: path + "msft"
             };
-            request["method"] = "GET";
+            (<any>request)["method"] = "GET";
             let parser = new ClientRequestParser(requestOptions, request);
 
             response.statusCode = 200;
@@ -86,7 +86,7 @@ describe("AutoCollection/ClientRequestParser", () => {
         });
 
         it("should return non-success for a request error", () => {
-            request["method"] = "GET";
+            (<any>request)["method"] = "GET";
             let parser = new ClientRequestParser("http://bing.com/search", request);
             parser.onError(new Error("test error message"));
 
@@ -98,7 +98,7 @@ describe("AutoCollection/ClientRequestParser", () => {
         });
 
         it("should return non-success for a response error status", () => {
-            request["method"] = "GET";
+            (<any>request)["method"] = "GET";
             let parser = new ClientRequestParser("http://bing.com/search", request);
 
             response.statusCode = 400;
