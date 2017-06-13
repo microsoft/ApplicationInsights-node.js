@@ -129,12 +129,12 @@ class Util {
         var hour = "" + Math.floor(totalms / (1000 * 60 * 60)) % 24;
         var days = Math.floor(totalms / (1000 * 60 * 60 * 24));
 
-        var secPadding = sec.indexOf(".") < 2 ? "0" : "";
+        sec = sec.indexOf(".") < 2 ? "0" + sec : sec;
         min = min.length < 2 ? "0" + min : min;
         hour = hour.length < 2 ? "0" + hour : hour;
         var daysText = days > 0 ? days + "." : "";
 
-        return daysText + hour + ":" + min + ":" + secPadding + sec;
+        return daysText + hour + ":" + min + ":" + sec;
     }
 
     /**
