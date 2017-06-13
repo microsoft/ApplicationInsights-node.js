@@ -39,7 +39,7 @@ class Sender {
         }
     }
 
-    public send(payload: Buffer, callback?: (string) => void) {
+    public send(payload: Buffer, callback?: (v: string) => void) {
         var endpointUrl = this._getUrl();
         if (endpointUrl && endpointUrl.indexOf("//") === 0) {
             // use https if the config did not specify a protocol
@@ -54,7 +54,7 @@ class Sender {
             path: parsedUrl.pathname,
             method: "POST",
             withCredentials: false,
-            headers: {
+            headers: <{[key: string] : string}>{
                 "Content-Type": "application/x-json-stream"
             }
         };
@@ -64,7 +64,7 @@ class Sender {
             if (err) {
                 Logging.warn(err);
                 dataToSend = payload; // something went wrong so send without gzip
-                options.headers["Content-Length"] = payload.length;
+                options.headers["Content-Length"] = payload.length.toString();
             } else {
                 options.headers["Content-Encoding"] = "gzip";
                 options.headers["Content-Length"] = buffer.length;
@@ -73,7 +73,7 @@ class Sender {
             Logging.info(Sender.TAG, options);
 
             // Ensure this request is not captured by auto-collection.
-            options[AutoCollectClientRequests.disableCollectionRequestOption] = true;
+            (<any>options)[AutoCollectClientRequests.disableCollectionRequestOption] = true;
 
             var requestCallback = (res:http.ClientResponse) => {
                 res.setEncoding("utf-8");
@@ -140,10 +140,10 @@ class Sender {
         this._storeToDiskSync(payload);
     }
 
-    private _confirmDirExists(direcotry: string, callback: (err) => void): void {
-        fs.exists(direcotry, (exists) => {
+    private _confirmDirExists(directory: string, callback: (err: NodeJS.ErrnoException) => void): void {
+        fs.exists(directory, (exists) => {
             if (!exists) {
-               fs.mkdir(direcotry, (err) => {
+               fs.mkdir(directory, (err) => {
                    callback(err);
                });
             } else {

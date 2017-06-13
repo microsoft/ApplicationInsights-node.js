@@ -95,9 +95,9 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
                 CorrelationContextManager.enable();
 
                 try {
-                    var stackTrace = Error['prepareStackTrace'];
-                    Error['prepareStackTrace'] = function (_, stack) {
-                        Error['prepareStackTrace'] = stackTrace;
+                    var stackTrace = (<any>Error)['prepareStackTrace'];
+                    (<any>Error)['prepareStackTrace'] = function (_: any, stack: any) {
+                        (<any>Error)['prepareStackTrace'] = stackTrace;
                         return stack;
                     };
 
@@ -110,9 +110,9 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             it("should remove extra AI+Zone methods if prepareStackTrace is used", () => {
                 CorrelationContextManager.enable();
 
-                var stackTrace = Error['prepareStackTrace'];
-                Error['prepareStackTrace'] = function (_, stack) {
-                    Error['prepareStackTrace'] = stackTrace;
+                var stackTrace = (<any>Error)['prepareStackTrace'];
+                (<any>Error)['prepareStackTrace'] = function (_: any, stack: any) {
+                    (<any>Error)['prepareStackTrace'] = stackTrace;
                     return stack;
                 };
 

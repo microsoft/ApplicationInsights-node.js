@@ -22,7 +22,7 @@ class Config {
     public correlationIdRetryIntervalMs: number;
 
     private endpointBase: string = "https://dc.services.visualstudio.com";
-    private setCorrelationId: (string) => void;
+    private setCorrelationId: (v: string) => void;
     private _profileQueryEndpoint: string;
 
     // A list of domains for which correlation headers will not be added.

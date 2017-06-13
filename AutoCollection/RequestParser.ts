@@ -37,7 +37,7 @@ abstract class RequestParser {
                 properties["error"] = error.message;
             } else if (typeof error === "object") {
                 for (var key in <any>error) {
-                    properties[key] = error[key] && error[key].toString && error[key].toString();
+                    properties[key] = (<any>error)[key] && (<any>error)[key].toString && (<any>error)[key].toString();
                 }
             }
         }
