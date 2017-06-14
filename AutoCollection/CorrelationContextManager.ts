@@ -8,13 +8,14 @@ export interface CustomProperties {
     /**
      * Get a custom property from the correlation context
      */
-    getProperty(prop: string): string;
+    getProperty(key: string): string;
     /**
      * Store a custom property in the correlation context.
      * Do not store sensitive information here.
      * Properties stored here are exposed via outgoing HTTP headers for correlating data cross-component.
+     * The characters ',' and '=' are disallowed within keys or values.
      */
-    setProperty(prop: string, val: string): void;
+    setProperty(key: string, value: string): void;
 }
 
 export interface PrivateCustomProperties extends CustomProperties {
