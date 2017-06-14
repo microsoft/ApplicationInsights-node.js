@@ -1,5 +1,6 @@
 import http = require("http");
 import Util = require("../Library/Util");
+import Logging = require("../Library/Logging");
 
 import {channel} from "diagnostic-channel";
 
@@ -288,7 +289,8 @@ class CustomPropertiesImpl implements PrivateCustomProperties {
     // properties. The logic here will need to change to track that.
     public setProperty(prop: string, val: string) {
         if (CustomPropertiesImpl.bannedCharacters.test(prop) || CustomPropertiesImpl.bannedCharacters.test(val)) {
-            throw new Error("Keys and values must not contain ',' or '='");
+            Logging.warn("Correlation context property keys and values must not contain ',' or '='.");
+            return;
         }
         for (let i = 0; i < this.props.length; ++i) {
             const keyval = this.props[i];
