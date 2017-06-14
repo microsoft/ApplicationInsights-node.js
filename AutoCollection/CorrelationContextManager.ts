@@ -269,7 +269,7 @@ class CustomPropertiesImpl implements PrivateCustomProperties {
 
     public serializeToHeader() {
         return this.props.map((keyval) => {
-            `${keyval.key}=${keyval.value}`
+            return `${keyval.key}=${keyval.value}`
         }).join(", ");
     }
 
