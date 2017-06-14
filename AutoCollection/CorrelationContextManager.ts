@@ -259,9 +259,9 @@ class CustomPropertiesImpl implements PrivateCustomProperties {
         this.addHeaderData(header);
     }
     
-    public addHeaderData(header: string) {
-        header = header || "";
-        this.props = header.split(", ").map((keyval) => {
+    public addHeaderData(header?: string) {
+        const keyvals = header ? header.split(", ") || [];
+        this.props = keyvals.map((keyval) => {
             const parts = keyval.split("=");
             return {key: parts[0], value: parts[1]};
         }).concat(this.props);
