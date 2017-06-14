@@ -297,7 +297,7 @@ class CustomPropertiesImpl implements PrivateCustomProperties {
     // properties. The logic here will need to change to track that.
     public setProperty(prop: string, val: string) {
         if (CustomPropertiesImpl.bannedCharacters.test(prop) || CustomPropertiesImpl.bannedCharacters.test(val)) {
-            Logging.warn("Correlation context property keys and values must not contain ',' or '='. setProperty was called with name: "+prop+" and value: "+ val);
+            Logging.warn("Correlation context property keys and values must not contain ',' or '='. setProperty was called with key: "+prop+" and value: "+ val);
             return;
         }
         for (let i = 0; i < this.props.length; ++i) {
