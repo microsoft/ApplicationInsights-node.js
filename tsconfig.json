@@ -4,6 +4,7 @@
         "module": "commonjs",
         "sourceMap": true,
         "declaration": true,
+        "noImplicitAny": true,
         "outDir": "./out",
         "typeRoots": [
             "./node_modules/@types"

@@ -3,6 +3,11 @@ import { CorrelationContextManager, CorrelationContext } from "../../AutoCollect
 import assert = require("assert");
 import sinon = require("sinon");
 
+const customProperties = {
+    getProperty(prop: string) {return ""},
+    setProperty(prop: string, val: string) {},
+}
+
 if (CorrelationContextManager.isNodeVersionCompatible()) {
     describe("AutoCollection/CorrelationContextManager", () => {
         var testContext: CorrelationContext = {
@@ -11,7 +16,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
                 name: "test",
                 parentId: "test"
             },
-            customProperties: {}
+            customProperties
         };
         var testContext2: CorrelationContext = {
             operation: {
@@ -19,7 +24,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
                 name: "test2",
                 parentId: "test2"
             },
-            customProperties: {}
+            customProperties
         };
 
         describe("#getCurrentContext()", () => {
@@ -90,9 +95,9 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
                 CorrelationContextManager.enable();
 
                 try {
-                    var stackTrace = Error['prepareStackTrace'];
-                    Error['prepareStackTrace'] = function (_, stack) {
-                        Error['prepareStackTrace'] = stackTrace;
+                    var stackTrace = (<any>Error)['prepareStackTrace'];
+                    (<any>Error)['prepareStackTrace'] = function (_: any, stack: any) {
+                        (<any>Error)['prepareStackTrace'] = stackTrace;
                         return stack;
                     };
 
@@ -105,9 +110,9 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             it("should remove extra AI+Zone methods if prepareStackTrace is used", () => {
                 CorrelationContextManager.enable();
 
-                var stackTrace = Error['prepareStackTrace'];
-                Error['prepareStackTrace'] = function (_, stack) {
-                    Error['prepareStackTrace'] = stackTrace;
+                var stackTrace = (<any>Error)['prepareStackTrace'];
+                (<any>Error)['prepareStackTrace'] = function (_: any, stack: any) {
+                    (<any>Error)['prepareStackTrace'] = stackTrace;
                     return stack;
                 };
 
@@ -176,7 +181,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
                 name: "test",
                 parentId: "test"
             },
-            customProperties: {}
+            customProperties
         };
         var testContext2: CorrelationContext = {
             operation: {
@@ -184,7 +189,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
                 name: "test2",
                 parentId: "test2"
             },
-            customProperties: {}
+            customProperties
         };
 
         describe("#getCurrentContext()", () => {

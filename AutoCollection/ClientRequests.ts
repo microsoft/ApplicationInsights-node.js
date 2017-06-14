@@ -7,7 +7,7 @@ import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import ClientRequestParser = require("./ClientRequestParser");
-import { CorrelationContextManager, CorrelationContext } from "./CorrelationContextManager";
+import { CorrelationContextManager, CorrelationContext, PrivateCustomProperties } from "./CorrelationContextManager";
 
 import {enable as enableMongodb} from "./diagnostic-channel/mongodb.sub";
 import {enable as enableMysql} from "./diagnostic-channel/mysql.sub";
@@ -19,6 +19,8 @@ class AutoCollectClientRequests {
     public static disableCollectionRequestOption = 'disableAppInsightsAutoCollection';
 
     public static INSTANCE: AutoCollectClientRequests;
+
+    private static requestNumber = 1;
 
     private _client: Client;
     private _isEnabled: boolean;
@@ -51,10 +53,10 @@ class AutoCollectClientRequests {
         this._isInitialized = true;
 
         const originalRequest = http.request;
-        http.request = (options, ...requestArgs) => {
+        http.request = (options, ...requestArgs: any[]) => {
             const request: http.ClientRequest = originalRequest.call(
                 http, options, ...requestArgs);
-            if (request && options && !options[AutoCollectClientRequests.disableCollectionRequestOption]) {
+            if (request && options && !(<any>options)[AutoCollectClientRequests.disableCollectionRequestOption]) {
                 AutoCollectClientRequests.trackRequest(this._client, options, request);
             }
             return request;
@@ -65,10 +67,10 @@ class AutoCollectClientRequests {
         // The regex matches versions < 0.11.12 (avoiding a semver package dependency).
         if (/^0\.([0-9]\.)|(10\.)|(11\.([0-9]|10|11)$)/.test(process.versions.node)) {
             const originalHttpsRequest = https.request;
-            https.request = (options, ...requestArgs) => {
+            https.request = (options, ...requestArgs: any[]) => {
                 const request: http.ClientRequest = originalHttpsRequest.call(
                     https, options, ...requestArgs);
-                if (request && options && !options[AutoCollectClientRequests.disableCollectionRequestOption]) {
+                if (request && options && !(<any>options)[AutoCollectClientRequests.disableCollectionRequestOption]) {
                     AutoCollectClientRequests.trackRequest(this._client, options, request);
                 }
                 return request;
@@ -89,6 +91,9 @@ class AutoCollectClientRequests {
 
         let requestParser = new ClientRequestParser(requestOptions, request);
 
+        const currentContext = CorrelationContextManager.getCurrentContext();
+        const uniqueRequestId = currentContext && currentContext.operation && (currentContext.operation.parentId + AutoCollectClientRequests.requestNumber++ + '.');
+
         // Add the source correlationId to the request headers, if a value was not already provided.
         // The getHeader/setHeader methods aren't available on very old Node versions, and
         // are not included in the v0.10 type declarations currently used. So check if the
@@ -108,10 +113,16 @@ class AutoCollectClientRequests {
                 }
             }
 
-            const currentContext = CorrelationContextManager.getCurrentContext();
             if (currentContext && currentContext.operation) {
+                request['setHeader'](RequestResponseHeaders.requestIdHeader, uniqueRequestId);
+                // Also set legacy headers
                 request['setHeader'](RequestResponseHeaders.parentIdHeader, currentContext.operation.id);
-                request['setHeader'](RequestResponseHeaders.rootIdHeader, currentContext.operation.parentId);
+                request['setHeader'](RequestResponseHeaders.rootIdHeader, uniqueRequestId);
+
+                const correlationContextHeader = (<PrivateCustomProperties>currentContext.customProperties).serializeToHeader();
+                if (correlationContextHeader) {
+                    request['setHeader'](RequestResponseHeaders.correlationContextHeader, correlationContextHeader);
+                }
             }
         }
 
@@ -120,12 +131,12 @@ class AutoCollectClientRequests {
             request.on('response', (response: http.ClientResponse) => {
                 requestParser.onResponse(response, properties);
                 var context : { [name: string]: any; } = { "http.RequestOptions": requestOptions, "http.ClientRequest": request, "http.ClientResponse": response };
-                client.track(requestParser.getDependencyData(), null, context);
+                client.track(requestParser.getDependencyData(uniqueRequestId), null, context);
             });
             request.on('error', (e: Error) => {
                 requestParser.onError(e, properties);
                 var context : { [name: string]: any; } = { "http.RequestOptions": requestOptions, "http.ClientRequest": request, "Error": e };
-                client.track(requestParser.getDependencyData(), null, context);
+                client.track(requestParser.getDependencyData(uniqueRequestId), null, context);
             });
         }
     }

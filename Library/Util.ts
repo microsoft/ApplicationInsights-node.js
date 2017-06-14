@@ -12,13 +12,13 @@ class Util {
     /**
      * helper method to access userId and sessionId cookie
      */
-    public static getCookie(name, cookie) {
+    public static getCookie(name: string, cookie: string) {
         var value = "";
         if (name && name.length && typeof cookie === "string") {
             var cookieName = name + "=";
             var cookies = cookie.split(";");
             for (var i = 0; i < cookies.length; i++) {
-                var cookie = <any>cookies[i];
+                var cookie = cookies[i];
                 cookie = Util.trim(cookie);
                 if (cookie && cookie.indexOf(cookieName) === 0) {
                     value = cookie.substring(cookieName.length, cookies[i].length);
@@ -60,6 +60,13 @@ class Util {
      */
     public static random32() {
         return (0x100000000 * Math.random()) | 0;
+    }
+
+    /**
+     * generate a random 32bit number (0x00000000..0xFFFFFFFF).
+     */
+    public static randomu32() {
+        return Util.random32() + 0x80000000;
     }
 
     /**
@@ -117,19 +124,17 @@ class Util {
             totalms = 0;
         }
 
-        var ms = "" + totalms % 1000;
-        var sec = "" + Math.floor(totalms / 1000) % 60;
+        var sec = ((totalms / 1000) % 60).toFixed(7).replace(/0{0,4}$/, "");
         var min = "" + Math.floor(totalms / (1000 * 60)) % 60;
         var hour = "" + Math.floor(totalms / (1000 * 60 * 60)) % 24;
         var days = Math.floor(totalms / (1000 * 60 * 60 * 24));
 
-        ms = ms.length === 1 ? "00" + ms : ms.length === 2 ? "0" + ms : ms;
-        sec = sec.length < 2 ? "0" + sec : sec;
+        sec = sec.indexOf(".") < 2 ? "0" + sec : sec;
         min = min.length < 2 ? "0" + min : min;
         hour = hour.length < 2 ? "0" + hour : hour;
         var daysText = days > 0 ? days + "." : "";
 
-        return daysText + hour + ":" + min + ":" + sec + "." + ms;
+        return daysText + hour + ":" + min + ":" + sec;
     }
 
     /**

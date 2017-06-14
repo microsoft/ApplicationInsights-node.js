@@ -18,7 +18,7 @@ describe("Library/Config", () => {
         });
 
         it("should read iKey from environment", () => {
-            var env = {};
+            var env = <{[id: string]: string}>{};
             env[Config.ENV_iKey] = iKey;
             var originalEnv = process.env;
             process.env = env;
@@ -28,7 +28,7 @@ describe("Library/Config", () => {
         });
 
         it("should read iKey from azure environment", () => {
-            var env = {};
+            var env = <{[id: string]: string}>{};
             env[Config.ENV_azurePrefix + Config.ENV_iKey] = iKey;
             var originalEnv = process.env;
             process.env = env;

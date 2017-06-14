@@ -45,12 +45,12 @@ class fakeResponse {
 class fakeRequest {
     private callbacks: {[event:string]: Function} = Object.create(null);
     public write(): void {}
-    public headers = [];
+    public headers: {[id: string]: string} = {};
     public agent = { protocol: 'http' };
 
     constructor (private failImmediatly: boolean = true, public url: string = undefined) {}
 
-    public on(event: string, callback) {
+    public on(event: string, callback: Function) {
         this.callbacks[event] = callback;
         if (event === "error" && this.failImmediatly) {
             setImmediate(() => this.fail());
@@ -112,7 +112,7 @@ class fakeHttpsServer extends events.EventEmitter {
 describe("EndToEnd", () => {
 
     describe("Basic usage", () => {
-        var sandbox;
+        var sandbox: sinon.SinonSandbox;
 
         beforeEach(() => {
             sandbox = sinon.sandbox.create();
@@ -205,10 +205,13 @@ describe("EndToEnd", () => {
 
     describe("Offline mode", () => {
         var AppInsights = require("../applicationinsights");
+        var CorrelationIdManager = require("../Library/CorrelationIdManager");
+        var cidStub: sinon.SinonStub = null;
 
 
         beforeEach(() => {
             AppInsights.client = undefined;
+            cidStub = sinon.stub(CorrelationIdManager, 'queryCorrelationId'); // TODO: Fix method of stubbing requests to allow CID to be part of E2E tests
             this.request = sinon.stub(https, 'request');
             this.writeFile = sinon.stub(fs, 'writeFile');
             this.writeFileSync = sinon.stub(fs, 'writeFileSync');
@@ -219,6 +222,7 @@ describe("EndToEnd", () => {
         });
 
         afterEach(()=> {
+            cidStub.restore();
             this.request.restore();
             this.writeFile.restore();
             this.exists.restore();
@@ -237,7 +241,7 @@ describe("EndToEnd", () => {
 
             this.request.returns(req);
 
-            client.sendPendingData((response) => {
+            client.sendPendingData((response: any) => {
                 // yield for the caching behavior
                 setImmediate(() => {
                     assert(this.writeFile.callCount === 0);
@@ -256,7 +260,7 @@ describe("EndToEnd", () => {
 
             this.request.returns(req);
 
-            client.sendPendingData((response) => {
+            client.sendPendingData((response: any) => {
                 // yield for the caching behavior
                 setImmediate(() => {
                     assert(this.writeFile.callCount === 1);
@@ -278,7 +282,7 @@ describe("EndToEnd", () => {
             this.request.returns(req);
             this.request.yields(res);
 
-            client.sendPendingData((response) => {
+            client.sendPendingData((response: any) => {
                 // wait until sdk looks for offline files
                 setTimeout(() => {
                     assert(this.readdir.callCount === 1);

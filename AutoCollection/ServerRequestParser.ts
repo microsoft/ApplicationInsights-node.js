@@ -7,6 +7,7 @@ import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import RequestParser = require("./RequestParser");
+import CorrelationIdManager = require("../Library/CorrelationIdManager");
 
 /**
  * Helper class to read data from the requst/response objects and convert them into the telemetry contract
@@ -14,7 +15,7 @@ import RequestParser = require("./RequestParser");
 class ServerRequestParser extends RequestParser {
     private static keys = new Contracts.ContextTagKeys();
 
-    private rawHeaders:string[];
+    private rawHeaders: {[key: string] : string};
     private socketRemoteAddress:string;
     private connectionRemoteAddress:string;
     private legacySocketRemoteAddress:string;
@@ -24,24 +25,19 @@ class ServerRequestParser extends RequestParser {
     private operationId: string;
     private requestId: string;
 
+    private correlationContextHeader: string;
+
     constructor(request:http.ServerRequest, requestId?: string) {
         super();
         if (request) {
-            this.requestId = requestId || Util.newGuid();
             this.method = request.method;
             this.url = this._getAbsoluteUrl(request);
             this.startTime = +new Date();
-            this.rawHeaders = request.headers || (<any>request).rawHeaders;
             this.socketRemoteAddress = (<any>request).socket && (<any>request).socket.remoteAddress;
-            this.userAgent = request.headers && request.headers["user-agent"];
-            this.sourceCorrelationId = Util.getCorrelationContextTarget(request, RequestResponseHeaders.requestContextSourceKey);
-            this.parentId =
-                request.headers && request.headers[RequestResponseHeaders.parentIdHeader];
-            this.operationId =
-                request.headers && request.headers[RequestResponseHeaders.rootIdHeader];
+            this.parseHeaders(request, requestId);
             if (request.connection) {
                 this.connectionRemoteAddress = request.connection.remoteAddress;
-                this.legacySocketRemoteAddress = request.connection["socket"] && request.connection["socket"].remoteAddress;
+                this.legacySocketRemoteAddress = (<any>request.connection)["socket"] && (<any>request.connection)["socket"].remoteAddress;
             }
         }
     }
@@ -110,6 +106,10 @@ class ServerRequestParser extends RequestParser {
         return this.requestId;
     }
 
+    public getCorrelationContextHeader() {
+        return this.correlationContextHeader;
+    }
+
     private _getAbsoluteUrl(request:http.ServerRequest):string {
         if (!request.headers) {
             return request.url;
@@ -167,6 +167,34 @@ class ServerRequestParser extends RequestParser {
             typeof this.rawHeaders["cookie"] === 'string' && this.rawHeaders["cookie"]) || "";
         var value = ServerRequestParser.parseId(Util.getCookie(name, cookie));
         return value;
+    }
+
+    private parseHeaders(request:http.ServerRequest, requestId?: string) {
+        this.rawHeaders = request.headers || (<any>request).rawHeaders;
+        this.userAgent = request.headers && request.headers["user-agent"];
+        this.sourceCorrelationId = Util.getCorrelationContextTarget(request, RequestResponseHeaders.requestContextSourceKey);
+
+        if (request.headers) {
+            this.correlationContextHeader = request.headers[RequestResponseHeaders.correlationContextHeader];
+
+            if (request.headers[RequestResponseHeaders.requestIdHeader]) {
+                this.parentId = request.headers[RequestResponseHeaders.requestIdHeader];
+                this.requestId = CorrelationIdManager.generateRequestId(this.parentId);
+                this.correlationContextHeader = request.headers[RequestResponseHeaders.correlationContextHeader];
+            } else {
+                // Legacy fallback
+                const rootId = request.headers[RequestResponseHeaders.rootIdHeader];
+                this.parentId = request.headers[RequestResponseHeaders.parentIdHeader];
+                this.requestId = CorrelationIdManager.generateRequestId(rootId || this.parentId);
+                this.correlationContextHeader = null;
+            }
+            if (requestId) {
+                // For the scenarios that don't guarantee an AI-created context,
+                // override the requestId with the provided one.
+                this.requestId = requestId;
+            }
+            this.operationId = CorrelationIdManager.getRootId(this.requestId); 
+        }
     }
 
     public static parseId(cookieValue: string): string{

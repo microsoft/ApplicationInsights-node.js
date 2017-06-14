@@ -7,7 +7,7 @@ describe("Library/Util", () => {
 
     describe("#getCookie(name, cookie)", () => {
 
-        var test = (cookie, query, expected) => {
+        var test = (cookie: string, query: string, expected: string) => {
             var actual = Util.getCookie(query, cookie);
             assert.equal(expected, actual, "cookie is parsed correctly");
         }
@@ -93,7 +93,7 @@ describe("Library/Util", () => {
     });
 
     describe("#random32()", () => {
-        let test = (i: number, expected) => {
+        let test = (i: number, expected: number) => {
             let mathStub = sinon.stub(Math, "random", () => i);
             assert.equal(Util.random32(), expected);
             mathStub.restore();
@@ -108,6 +108,22 @@ describe("Library/Util", () => {
         });
     });
 
+    describe("#randomu32()", () => {
+        let test = (i: number, expected: number) => {
+            let mathStub = sinon.stub(Math, "random", () => i);
+            assert.equal(Util.randomu32(), expected);
+            mathStub.restore();
+        }
+        it("should generate a number in the range [0x00000000..0xFFFFFFFF]", () => {
+            test(0, 0x80000000);
+            test(0.125, 0xA0000000);
+            test(0.25, 0xC0000000);
+            test(0.5, 0x00000000);
+            test(0.75, 0x40000000);
+            test(1.0, 0x80000000);
+        });
+    });
+
     describe("#uint32ArrayToBase64()", () => {
         it("should convert an 32-bit array to Base64", () => {
             assert.equal(Util.int32ArrayToBase64([-1, -1, -1, -1]), "/////////////////////w");
@@ -117,7 +133,7 @@ describe("Library/Util", () => {
     });
 
     describe("#msToTimeSpan(totalMs)", () => {
-        var test = (input, expected, message) => {
+        var test = (input: number, expected: string, message: string) => {
             var actual = Util.msToTimeSpan(input);
             assert.equal(expected, actual, message);
         }
@@ -136,14 +152,19 @@ describe("Library/Util", () => {
             test(24 * 60 * 60 * 1000, "1.00:00:00.000", "hours overflow");
             test(11 * 3600000 + 11 * 60000 + 11111, "11:11:11.111", "all digits");
             test(5 * 86400000 + 13 * 3600000 + 9 * 60000 + 8 * 1000 + 789, "5.13:09:08.789", "all digits with days");
+            test(1001.505, "00:00:01.001505", "fractional milliseconds");
+            test(1001.5, "00:00:01.0015", "fractional milliseconds - not all precision 1");
+            test(1001.55, "00:00:01.00155", "fractional milliseconds - not all precision 2");
+            test(1001.5059, "00:00:01.0015059", "fractional milliseconds - all digits");
+            test(1001.50559, "00:00:01.0015056", "fractional milliseconds - too many digits, round up");
         });
 
         it("should handle invalid input", () => {
-            test("", "00:00:00.000", "invalid input");
-            test("'", "00:00:00.000", "invalid input");
+            test(<any>"", "00:00:00.000", "invalid input");
+            test(<any>"'", "00:00:00.000", "invalid input");
             test(NaN, "00:00:00.000", "invalid input");
-            test({}, "00:00:00.000", "invalid input");
-            test([], "00:00:00.000", "invalid input");
+            test(<any>{}, "00:00:00.000", "invalid input");
+            test(<any>[], "00:00:00.000", "invalid input");
             test(-1, "00:00:00.000", "invalid input");
         });
     });
@@ -154,7 +175,7 @@ describe("Library/Util", () => {
             assert.equal(Util.validateStringMap(1), undefined);
             assert.equal(Util.validateStringMap(true), undefined);
             assert.equal(Util.validateStringMap("test"), undefined);
-            assert.equal(Util.validateStringMap(() => null), undefined);
+            assert.equal(Util.validateStringMap(():void => null), undefined);
             assert.deepEqual(Util.validateStringMap({ a: {} }), { a: "[object Object]" });
             assert.deepEqual(Util.validateStringMap({ a: 3, b: "test" }), { a: "3", b: "test" });
             assert.deepEqual(Util.validateStringMap({ a: 0, b: null, c: undefined, d: [], e: '', f: -1 }), { a: "0", d: "", e: "", f: "-1" });
