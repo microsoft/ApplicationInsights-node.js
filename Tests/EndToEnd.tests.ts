@@ -205,10 +205,13 @@ describe("EndToEnd", () => {
 
     describe("Offline mode", () => {
         var AppInsights = require("../applicationinsights");
+        var CorrelationIdManager = require("../Library/CorrelationIdManager");
+        var cidStub: sinon.SinonStub = null;
 
 
         beforeEach(() => {
             AppInsights.client = undefined;
+            cidStub = sinon.stub(CorrelationIdManager, 'queryCorrelationId'); // TODO: Fix method of stubbing requests to allow CID to be part of E2E tests
             this.request = sinon.stub(https, 'request');
             this.writeFile = sinon.stub(fs, 'writeFile');
             this.writeFileSync = sinon.stub(fs, 'writeFileSync');
@@ -219,6 +222,7 @@ describe("EndToEnd", () => {
         });
 
         afterEach(()=> {
+            cidStub.restore();
             this.request.restore();
             this.writeFile.restore();
             this.exists.restore();
