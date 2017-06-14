@@ -1,11 +1,21 @@
 import http = require("http");
 import Util = require("../Library/Util");
+import Logging = require("../Library/Logging");
 
 import {channel} from "diagnostic-channel";
 
 export interface CustomProperties {
-    getProperty(prop: string): string;
-    setProperty(prop: string, val: string): void;
+    /**
+     * Get a custom property from the correlation context
+     */
+    getProperty(key: string): string;
+    /**
+     * Store a custom property in the correlation context.
+     * Do not store sensitive information here.
+     * Properties stored here are exposed via outgoing HTTP headers for correlating data cross-component.
+     * The characters ',' and '=' are disallowed within keys or values.
+     */
+    setProperty(key: string, value: string): void;
 }
 
 export interface PrivateCustomProperties extends CustomProperties {
@@ -288,7 +298,8 @@ class CustomPropertiesImpl implements PrivateCustomProperties {
     // properties. The logic here will need to change to track that.
     public setProperty(prop: string, val: string) {
         if (CustomPropertiesImpl.bannedCharacters.test(prop) || CustomPropertiesImpl.bannedCharacters.test(val)) {
-            throw new Error("Keys and values must not contain ',' or '='");
+            Logging.warn("Correlation context property keys and values must not contain ',' or '='. setProperty was called with key: " + prop + " and value: "+ val);
+            return;
         }
         for (let i = 0; i < this.props.length; ++i) {
             const keyval = this.props[i];
