@@ -5,7 +5,15 @@ import Logging = require("../Library/Logging");
 import {channel} from "diagnostic-channel";
 
 export interface CustomProperties {
+    /**
+     * Get a custom property from the correlation context
+     */
     getProperty(prop: string): string;
+    /**
+     * Store a custom property in the correlation context.
+     * Do not store sensitive information here.
+     * Properties stored here are exposed via outgoing HTTP headers for correlating data cross-component.
+     */
     setProperty(prop: string, val: string): void;
 }
 
@@ -289,7 +297,7 @@ class CustomPropertiesImpl implements PrivateCustomProperties {
     // properties. The logic here will need to change to track that.
     public setProperty(prop: string, val: string) {
         if (CustomPropertiesImpl.bannedCharacters.test(prop) || CustomPropertiesImpl.bannedCharacters.test(val)) {
-            Logging.warn("Correlation context property keys and values must not contain ',' or '='.");
+            Logging.warn("Correlation context property keys and values must not contain ',' or '='. setProperty was called with name: "+prop+" and value: "+ val);
             return;
         }
         for (let i = 0; i < this.props.length; ++i) {
