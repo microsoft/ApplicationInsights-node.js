@@ -7,12 +7,14 @@ obj/
 
 # Ignore Node files
 node_modules/**
+Tests/SampleApp/node_modules/**
 
 # Ignore Visual Studio files
 *.suo
 *.sln
 *.dat
 *.njsproj
+.vscode/
 
 # Ignore webstorm files
 .idea

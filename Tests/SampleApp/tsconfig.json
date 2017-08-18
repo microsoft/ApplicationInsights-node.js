@@ -11,14 +11,9 @@
         ]
     },
     "include": [
-        "*.ts",
-        "Tests/**/*.ts"
-    ],
-    "files": [
-        "./node_modules/zone.js/dist/zone.js.d.ts"
+        "./src/*.ts"
     ],
     "exclude": [
-        "node_modules",
-        "Tests/SampleApp"
+        "node_modules"
     ]
 }
