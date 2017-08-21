@@ -343,8 +343,8 @@ class Client {
                 }
 
             } catch (error) {
-                accepted = false;
-                Logging.warn("One of telemetry processors failed, telemetry item will not be sent.", error, envelope);
+                accepted = true;
+                Logging.warn("One of telemetry processors failed, telemetry item will be sent.", error, envelope);
             }
         }
 
