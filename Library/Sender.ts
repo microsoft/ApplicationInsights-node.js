@@ -54,7 +54,7 @@ class Sender {
             path: parsedUrl.pathname,
             method: "POST",
             withCredentials: false,
-            headers: <{[key: string] : string}>{
+            headers: <{ [key: string]: string }>{
                 "Content-Type": "application/x-json-stream"
             }
         };
@@ -75,12 +75,12 @@ class Sender {
             // Ensure this request is not captured by auto-collection.
             (<any>options)[AutoCollectClientRequests.disableCollectionRequestOption] = true;
 
-            var requestCallback = (res:http.ClientResponse) => {
+            var requestCallback = (res: http.ClientResponse) => {
                 res.setEncoding("utf-8");
 
                 //returns empty if the data is accepted
                 var responseString = "";
-                res.on("data", (data:string) => {
+                res.on("data", (data: string) => {
                     responseString += data;
                 });
 
@@ -98,21 +98,21 @@ class Sender {
                         // try to send any cached events if the user is back online
                         if (res.statusCode === 200) {
                             setTimeout(() => this._sendFirstFileOnDisk(), this._resendInterval);
-                        // store to disk in case of burst throttling
+                            // store to disk in case of burst throttling
                         } else if (res.statusCode === 206 ||
-                                   res.statusCode === 429 ||
-                                   res.statusCode === 439) {
-                                       this._storeToDisk(payload);
-                                   }
+                            res.statusCode === 429 ||
+                            res.statusCode === 439) {
+                            this._storeToDisk(payload);
+                        }
                     }
                 });
             };
 
-            var req = (parsedUrl.protocol == "https:") ? 
-                      https.request(<any> options, requestCallback) : 
-                      http.request(<any> options, requestCallback); 
+            var req = (parsedUrl.protocol == "https:") ?
+                https.request(<any>options, requestCallback) :
+                http.request(<any>options, requestCallback);
 
-            req.on("error", (error:Error) => {
+            req.on("error", (error: Error) => {
                 // todo: handle error codes better (group to recoverable/non-recoverable and persist)
                 Logging.warn(Sender.TAG, error);
                 this._onErrorHelper(error);
@@ -137,15 +137,17 @@ class Sender {
     }
 
     public saveOnCrash(payload: string) {
-        this._storeToDiskSync(payload);
+        if (this._enableOfflineMode) {
+            this._storeToDiskSync(payload);
+        }
     }
 
     private _confirmDirExists(directory: string, callback: (err: NodeJS.ErrnoException) => void): void {
         fs.exists(directory, (exists) => {
             if (!exists) {
-               fs.mkdir(directory, (err) => {
-                   callback(err);
-               });
+                fs.mkdir(directory, (err) => {
+                    callback(err);
+                });
             } else {
                 callback(null);
             }
@@ -153,14 +155,14 @@ class Sender {
     }
 
     /**
-     * Stores the payload as a json file on disk in the temp direcotry
+     * Stores the payload as a json file on disk in the temp directory
      */
     private _storeToDisk(payload: any) {
 
         //ensure directory is created
-        var direcotry = path.join(os.tmpdir(), Sender.TEMPDIR);
+        var directory = path.join(os.tmpdir(), Sender.TEMPDIR);
 
-        this._confirmDirExists(direcotry, (error) => {
+        this._confirmDirExists(directory, (error) => {
             if (error) {
                 this._onErrorHelper(error);
                 return;
@@ -169,7 +171,7 @@ class Sender {
             //create file - file name for now is the timestamp, a better approach would be a UUID but that
             //would require an external dependency
             var fileName = new Date().getTime() + ".ai.json";
-            var fileFullPath = path.join(direcotry, fileName);
+            var fileFullPath = path.join(directory, fileName);
 
             Logging.info(Sender.TAG, "saving data to disk at: " + fileFullPath);
             fs.writeFile(fileFullPath, payload, (error) => this._onErrorHelper(error));
@@ -181,17 +183,17 @@ class Sender {
      * this is used when storing data before crashes
      */
     private _storeToDiskSync(payload: any) {
-        var direcotry = path.join(os.tmpdir(), Sender.TEMPDIR);
+        var directory = path.join(os.tmpdir(), Sender.TEMPDIR);
 
         try {
-            if (!fs.existsSync(direcotry)) {
-                fs.mkdirSync(direcotry);
+            if (!fs.existsSync(directory)) {
+                fs.mkdirSync(directory);
             }
 
             //create file - file name for now is the timestamp, a better approach would be a UUID but that
             //would require an external dependency
             var fileName = new Date().getTime() + ".ai.json";
-            var fileFullPath = path.join(direcotry, fileName);
+            var fileFullPath = path.join(directory, fileName);
 
             Logging.info(Sender.TAG, "saving data before crash to disk at: " + fileFullPath);
             fs.writeFileSync(fileFullPath, payload);
@@ -208,18 +210,18 @@ class Sender {
     private _sendFirstFileOnDisk(): void {
         var tempDir = path.join(os.tmpdir(), Sender.TEMPDIR);
 
-        fs.exists(tempDir, (exists: boolean)=> {
+        fs.exists(tempDir, (exists: boolean) => {
             if (exists) {
-                    fs.readdir(tempDir,(error, files) => {
+                fs.readdir(tempDir, (error, files) => {
                     if (!error) {
                         files = files.filter(f => path.basename(f).indexOf(".ai.json") > -1);
                         if (files.length > 0) {
                             var firstFile = files[0];
                             var filePath = path.join(tempDir, firstFile);
-                            fs.readFile(filePath,(error, payload) => {
+                            fs.readFile(filePath, (error, payload) => {
                                 if (!error) {
                                     // delete the file first to prevent double sending
-                                    fs.unlink(filePath,(error) => {
+                                    fs.unlink(filePath, (error) => {
                                         if (!error) {
                                             this.send(payload);
                                         } else {
