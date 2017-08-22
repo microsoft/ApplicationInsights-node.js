@@ -223,7 +223,7 @@ describe("Library/Client", () => {
                 return new eventEmitter.EventEmitter();
             },
             statusCode: 200,
-            headers: <{[id: string]: string}>{},
+            headers: <{ [id: string]: string }>{},
             getHeader: function (name: string) { return this.headers[name]; },
             setHeader: function (name: string, value: string) { this.headers[name] = value; },
         };
@@ -257,7 +257,7 @@ describe("Library/Client", () => {
             agent: {
                 protocol: 'http'
             },
-            headers: <{[id: string]: string}>{
+            headers: <{ [id: string]: string }>{
                 host: "bing.com"
             },
             getHeader: function (name: string) { return this.headers[name]; },
@@ -445,9 +445,9 @@ describe("Library/Client", () => {
                 trackStub.reset();
                 clock.reset();
                 client.trackDependencyRequest({
-                        host: 'bing.com',
-                        path: '/search?q=test'
-                    },
+                    host: 'bing.com',
+                    path: '/search?q=test'
+                },
                     <any>request, properties);
 
                 // response event was not emitted yet
@@ -523,9 +523,9 @@ describe("Library/Client", () => {
                 trackStub.reset();
                 clock.reset();
                 client.trackDependencyRequest({
-                        host: 'bing.com',
-                        path: '/search?q=test'
-                    },
+                    host: 'bing.com',
+                    path: '/search?q=test'
+                },
                     <any>request, properties);
 
                 // The client's correlationId should have been added as the request source correlationId header.
@@ -557,9 +557,9 @@ describe("Library/Client", () => {
 
                 client.config.correlationHeaderExcludedDomains = ["*.domain.com"]
                 client.trackDependencyRequest({
-                        host: 'excluded.domain.com',
-                        path: '/search?q=test'
-                    },
+                    host: 'excluded.domain.com',
+                    path: '/search?q=test'
+                },
                     <any>request, properties);
 
                 // The client's correlationId should NOT have been added for excluded domains
@@ -635,9 +635,9 @@ describe("Library/Client", () => {
             mockData.properties = {};
             var env = client.getEnvelope(mockData);
             assert.deepEqual(env.tags, client.context.tags, "tags are set by default");
-            var customTag = <{[id: string]: string}>{ "ai.cloud.roleInstance": "override" };
-            var expected: {[id: string]: string} = {};
-            for(var tag in client.context.tags) {
+            var customTag = <{ [id: string]: string }>{ "ai.cloud.roleInstance": "override" };
+            var expected: { [id: string]: string } = {};
+            for (var tag in client.context.tags) {
                 expected[tag] = customTag[tag] || client.context.tags[tag];
             }
             env = client.getEnvelope(mockData, <any>customTag);
@@ -703,7 +703,7 @@ describe("Library/Client", () => {
                 return true;
             });
 
-            client.track(mockData, null, {"name": expectedName});
+            client.track(mockData, null, { "name": expectedName });
 
             assert.equal(sendStub.callCount, 1, "send called once");
 
@@ -748,16 +748,23 @@ describe("Library/Client", () => {
             assert.ok(sendStub.notCalled, "send should not be called");
         });
 
-        it("envelope is rejected when processor throws exception", () => {
+        it("envelope is sent when processor throws exception", () => {
             trackStub.restore();
 
             client.addTelemetryProcessor((env): boolean => {
                 throw "telemetry processor failed";
             });
 
+            client.addTelemetryProcessor((env): boolean => {
+                env.name = "more data";
+                return true;
+            });
+
             client.track(mockData);
 
-            assert.ok(sendStub.notCalled, "send should not be called");
+            assert.ok(sendStub.called, "send should be called despite telemetry processor failure");
+            var actualData = sendStub.firstCall.args[0] as Contracts.Envelope;
+            assert.equal(actualData.name, "more data", "more data is added as part of telemetry processor");
         });
     });
 

@@ -35,6 +35,7 @@ class AutoCollectConsole {
 
     public dispose() {
         AutoCollectConsole.INSTANCE = null;
+        this.enable(false);
     }
 }
 

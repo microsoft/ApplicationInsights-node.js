@@ -143,6 +143,7 @@ class AutoCollectClientRequests {
 
     public dispose() {
         AutoCollectClientRequests.INSTANCE = null;
+        this.enable(false);
         this._isInitialized = false;
     }
 }

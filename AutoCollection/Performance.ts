@@ -212,6 +212,7 @@ class AutoCollectPerformance {
 
     public dispose() {
         AutoCollectPerformance.INSTANCE = null;
+        this.enable(false);
         this._isInitialized = false;
     }
 }
