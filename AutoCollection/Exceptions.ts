@@ -9,6 +9,8 @@ import Util = require("../Library/Util");
 class AutoCollectExceptions {
 
     public static INSTANCE: AutoCollectExceptions = null;
+    public static get UNCAUGHT_EXCEPTION_HANDLER_NAME(): string { return "uncaughtException"; }
+    public static get UNHANDLED_REJECTION_HANDLER_NAME(): string { return "unhandledRejection"; }
 
     private _exceptionListenerHandle: (reThrow: boolean, error: Error) => void;
     private _rejectionListenerHandle: (reThrow: boolean, error: Error) => void;
@@ -16,7 +18,7 @@ class AutoCollectExceptions {
     private _isInitialized: boolean;
 
     constructor(client: Client) {
-        if(!!AutoCollectExceptions.INSTANCE) {
+        if (!!AutoCollectExceptions.INSTANCE) {
             throw new Error("Exception tracking should be configured from the applicationInsights object");
         }
 
@@ -29,7 +31,7 @@ class AutoCollectExceptions {
     }
 
     public enable(isEnabled: boolean) {
-        if(isEnabled) {
+        if (isEnabled) {
             this._isInitialized = true;
             var self = this;
             if (!this._exceptionListenerHandle) {
@@ -44,14 +46,14 @@ class AutoCollectExceptions {
                 this._exceptionListenerHandle = handle.bind(this, true);
                 this._rejectionListenerHandle = handle.bind(this, false);
 
-                process.on("uncaughtException", this._exceptionListenerHandle);
-                process.on("unhandledRejection", this._rejectionListenerHandle);
+                process.on(AutoCollectExceptions.UNCAUGHT_EXCEPTION_HANDLER_NAME, this._exceptionListenerHandle);
+                process.on(AutoCollectExceptions.UNHANDLED_REJECTION_HANDLER_NAME, this._rejectionListenerHandle);
             }
 
         } else {
             if (this._exceptionListenerHandle) {
-                process.removeListener("uncaughtException", this._exceptionListenerHandle);
-                process.removeListener("unhandledRejection", this._rejectionListenerHandle);
+                process.removeListener(AutoCollectExceptions.UNCAUGHT_EXCEPTION_HANDLER_NAME, this._exceptionListenerHandle);
+                process.removeListener(AutoCollectExceptions.UNHANDLED_REJECTION_HANDLER_NAME, this._rejectionListenerHandle);
                 this._exceptionListenerHandle = undefined;
                 this._rejectionListenerHandle = undefined;
                 delete this._exceptionListenerHandle;
@@ -67,7 +69,7 @@ class AutoCollectExceptions {
      * @param properties additional properties
      * @param measurements metrics associated with this event, displayed in Metrics Explorer on the portal. Defaults to empty.
      */
-    public static getExceptionData(error: Error, isHandled: boolean, properties?:{ [key: string]: string; }, measurements?:{ [key: string]: number; }): Contracts.Data<Contracts.ExceptionData> {
+    public static getExceptionData(error: Error, isHandled: boolean, properties?: { [key: string]: string; }, measurements?: { [key: string]: number; }): Contracts.Data<Contracts.ExceptionData> {
         var exception = new Contracts.ExceptionData();
         exception.properties = properties;
         exception.severityLevel = Contracts.SeverityLevel.Error;
@@ -144,6 +146,7 @@ class AutoCollectExceptions {
 
     public dispose() {
         AutoCollectExceptions.INSTANCE = null;
+        this.enable(false);
         this._isInitialized = false;
     }
 }
