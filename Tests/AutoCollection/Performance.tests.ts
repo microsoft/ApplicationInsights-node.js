@@ -4,9 +4,12 @@ import sinon = require("sinon");
 import AppInsights = require("../../applicationinsights");
 
 describe("AutoCollection/Performance", () => {
+    afterEach(() => {
+        AppInsights.dispose();
+    });
     describe("#init and #dispose()", () => {
         it("init should enable and dispose should stop autocollection interval", () => {
-            var setIntervalSpy = sinon.spy(global,"setInterval");
+            var setIntervalSpy = sinon.spy(global, "setInterval");
             var clearIntervalSpy = sinon.spy(global, "clearInterval");
             AppInsights.setup("key").setAutoCollectPerformance(true).start();
             assert.equal(setIntervalSpy.callCount, 1, "setInteval should be called once as part of performance initialization");

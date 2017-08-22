@@ -40,39 +40,19 @@ describe("AutoCollection/Exceptions", () => {
         });
     });
 
-    describe("#dispose()", () => {
+    describe("#init and dispose()", () => {
+        afterEach(() => {
+            AppInsights.dispose();
+        });
+
         it("disables autocollection", () => {
-            var uncaughtExceptionListenerCountBeforeEnable = process.listenerCount(AutoCollectionExceptions.UNCAUGHT_EXCEPTION_HANDLER_NAME);
-            var unhandledRejectionListenerCountEnable = process.listenerCount(AutoCollectionExceptions.UNHANDLED_REJECTION_HANDLER_NAME);
+            var processOnSpy = sinon.spy(global.process, "on");
+            var processRemoveListenerSpy = sinon.spy(global.process, "removeListener");
 
             AppInsights.setup("key").setAutoCollectExceptions(true).start();
-            var uncaughtExceptionListenerCountAfterEnable = process.listenerCount(AutoCollectionExceptions.UNCAUGHT_EXCEPTION_HANDLER_NAME);
-            var unhandledRejectionListenerAfterEnable = process.listenerCount(AutoCollectionExceptions.UNHANDLED_REJECTION_HANDLER_NAME);
-
-            assert.equal(
-                uncaughtExceptionListenerCountAfterEnable,
-                uncaughtExceptionListenerCountBeforeEnable + 1,
-                "After enabling exception autocollection, there should be one more uncaughtException listener");
-
-            assert.equal(
-                unhandledRejectionListenerAfterEnable,
-                unhandledRejectionListenerCountEnable + 1,
-                "After enabling exception autocollection, there should be one more unhandledRejection listener");
-
-
-            AppInsights.dispose();
-            var uncaughtExceptionListenerCountAfterDispose = process.listenerCount(AutoCollectionExceptions.UNCAUGHT_EXCEPTION_HANDLER_NAME);
-            var unhandledRejectionListenerAfterDispose = process.listenerCount(AutoCollectionExceptions.UNHANDLED_REJECTION_HANDLER_NAME);
-
-            assert.equal(
-                uncaughtExceptionListenerCountAfterDispose,
-                uncaughtExceptionListenerCountBeforeEnable,
-                "After calling dispose, there should be the same number of uncaughtException listeners as before initial enable");
-
-            assert.equal(
-                unhandledRejectionListenerAfterDispose,
-                unhandledRejectionListenerCountEnable,
-                "After calling dispose, there should be the same number of unhandledRejection listeners as before initial enable");
+            assert.equal(processOnSpy.callCount, 2, "After enabling exception autocollection, there should be 2 calls to processOnSpy");
+            assert.equal(processOnSpy.getCall(0).args[0], AutoCollectionExceptions.UNCAUGHT_EXCEPTION_HANDLER_NAME);
+            assert.equal(processOnSpy.getCall(1).args[0], AutoCollectionExceptions.UNHANDLED_REJECTION_HANDLER_NAME);
         });
     });
 });

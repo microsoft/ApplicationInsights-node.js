@@ -214,6 +214,7 @@ class AutoCollectServerRequests {
 
     public dispose() {
          AutoCollectServerRequests.INSTANCE = null;
+         this.enable(false);
          this._isInitialized = false;
     }
 }
