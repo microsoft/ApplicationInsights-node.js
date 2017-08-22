@@ -9,7 +9,7 @@ describe("AutoCollection/ServerRequests", () => {
     });
     describe("#init and #dispose()", () => {
         it("init should enable and dispose should stop server requests autocollection", () => {
-        var appInsights = AppInsights.setup("key").setAutoCollectDependencies(true);
+        var appInsights = AppInsights.setup("key").setAutoCollectRequests(true);
             var enableServerRequestsSpy = sinon.spy(ServerRequests.INSTANCE, "enable");
             appInsights.start();
 
