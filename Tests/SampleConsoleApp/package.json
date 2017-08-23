@@ -1,0 +1,16 @@
+{
+  "name": "sampleconsoleapp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "out/app.js",
+  "scripts": {
+    "build": "tsc --project ./tsconfig.json",
+    "start": "node out/app.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@types/node": "4.2.4",
+    "typescript": "2.2.2"
+  }
+}
