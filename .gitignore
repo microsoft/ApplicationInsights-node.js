@@ -8,6 +8,7 @@ obj/
 # Ignore Node files
 node_modules/**
 Tests/SampleApp/node_modules/**
+Tests/SampleConsoleApp/node_modules/**
 
 # Ignore Visual Studio files
 *.suo
