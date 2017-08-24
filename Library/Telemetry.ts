@@ -15,11 +15,6 @@ interface Telemetry {
      * The context tags to use for this telemetry which overwrite default context values
      */
     tagOverrides?: { [key: string]: string; };
-
-    /**
-     * Telemetry type
-     */
-    type: string;
 }
 
 export = Telemetry;

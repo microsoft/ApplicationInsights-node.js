@@ -29,7 +29,7 @@ interface MetricTelemetry extends Telemetry {
     /**
      * The standard deviation of the set
      */
-    stdDev?: number
+    stdDev?: number;
 }
 
 export = MetricTelemetry;

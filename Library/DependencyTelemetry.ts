@@ -8,6 +8,7 @@ interface DependencyTelemetry extends Telemetry {
     duration: number;
     resultCode: string;
     success: boolean;
+    dependencyId?:string;
 }
 
 export = DependencyTelemetry;

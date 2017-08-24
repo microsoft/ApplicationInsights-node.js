@@ -22,7 +22,7 @@ const bunyanToAILevelMap: {[key: number] : number} = {
 const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
     clients.forEach((client) => {
         const AIlevel = bunyanToAILevelMap[event.data.level];
-        client.trackTrace(event.data.result, AIlevel);
+        client.trackTrace({message: event.data.result, severity: AIlevel});
     });
 };
 

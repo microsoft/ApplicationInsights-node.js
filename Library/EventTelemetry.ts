@@ -1,4 +1,5 @@
 import Telemetry = require("./Telemetry")
+
 interface EventTelemetry extends Telemetry
 {
     /**

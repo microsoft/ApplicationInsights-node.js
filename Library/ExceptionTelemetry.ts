@@ -1,5 +1,4 @@
 import Telemetry = require("./Telemetry")
-import Contracts = require("../Declarations/Contracts")
 
 interface ExceptionTelemetry extends Telemetry
 {
@@ -12,11 +11,6 @@ interface ExceptionTelemetry extends Telemetry
      * Metrics associated with this exception, displayed in Metrics Explorer on the portal. Defaults to empty
      */
     measurements?: { [key: string]: number; };
-
-    /**
-     * 
-     */
-    type: Contracts.DataTypes.EXCEPTION;
 }
 
 export = ExceptionTelemetry;

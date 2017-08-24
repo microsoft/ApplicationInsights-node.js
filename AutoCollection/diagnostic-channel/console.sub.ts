@@ -11,7 +11,7 @@ let clients: Client[] = [];
 
 const subscriber = (event: IStandardEvent<consolePub.IConsoleData>) => {
     clients.forEach((client) => {
-        client.trackTrace(event.data.message, event.data.stderr ? SeverityLevel.Warning : SeverityLevel.Information);
+        client.trackTrace({message: event.data.message, severity: (event.data.stderr ? SeverityLevel.Warning : SeverityLevel.Information)});
     });
 };
 

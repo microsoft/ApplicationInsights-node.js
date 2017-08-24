@@ -22,6 +22,7 @@ import TraceTelemetry = require("./TraceTelemetry")
 import ExceptionTelemetry = require("./ExceptionTelemetry")
 import RequestTelemetry = require("./RequestTelemetry")
 import MetricTelemetry = require("./MetricTelemetry")
+import EnvelopeFactory = require("./EnvelopeFactory")
 
 class Client {
     private _telemetryProcessors: { (envelope: Contracts.Envelope, contextObjects: { [name: string]: any; }): boolean; }[] = [];
@@ -50,19 +51,7 @@ class Client {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackTrace(telemetry: TraceTelemetry): void {
-        var trace = new Contracts.MessageData();
-        trace.message = telemetry.message;
-        trace.properties = telemetry.properties;
-        if (!isNaN(telemetry.severityLevel)) {
-            trace.severityLevel = telemetry.severityLevel;
-        } else {
-            trace.severityLevel = Contracts.SeverityLevel.Information;
-        }
-
-        var data = new Contracts.Data<Contracts.MessageData>();
-        data.baseType = Contracts.DataTypes.MESSAGE;
-        data.baseData = trace;
-        this.track(data, telemetry);
+        this.track(telemetry, Contracts.DataTypes.MESSAGE);
     }
 
     /**
@@ -72,26 +61,7 @@ class Client {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackMetric(telemetry: MetricTelemetry): void {
-        var metrics = new Contracts.MetricData(); // todo: enable client-batching of these
-        metrics.metrics = [];
-
-        var metric = new Contracts.DataPoint();
-        metric.count = !isNaN(telemetry.count) ? telemetry.count : 1;
-        metric.kind = Contracts.DataPointType.Aggregation;
-        metric.max = !isNaN(telemetry.max) ? telemetry.max : telemetry.value;
-        metric.min = !isNaN(telemetry.min) ? telemetry.min : telemetry.value;
-        metric.name = telemetry.name;
-        metric.stdDev = !isNaN(telemetry.stdDev) ? telemetry.stdDev : 0;
-        metric.value = telemetry.value;
-
-        metrics.metrics.push(metric);
-
-        metrics.properties = telemetry.properties;
-
-        var data = new Contracts.Data<Contracts.MetricData>();
-        data.baseType = Contracts.DataTypes.METRIC;
-        data.baseData = metrics;
-        this.track(data, telemetry);
+        this.track(telemetry, Contracts.DataTypes.METRIC);
     }
 
     /**
@@ -102,10 +72,7 @@ class Client {
         if (!Util.isError(telemetry.exception)) {
             telemetry.exception = new Error(<any>telemetry.exception);
         }
-
-        var data = ExceptionTracking.getExceptionData(telemetry.exception, true, telemetry.properties, telemetry.measurements);
-        this.track(data, telemetry);
-
+        this.track(telemetry, Contracts.DataTypes.EXCEPTION);
     }
 
     /*
@@ -120,15 +87,8 @@ class Client {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackEvent(telemetry: EventTelemetry): void {
-        var event = new Contracts.EventData();
-        event.name = telemetry.eventName;
-        event.properties = telemetry.properties;
-        event.measurements = telemetry.measurements;
 
-        var data = new Contracts.Data<Contracts.EventData>();
-        data.baseType = Contracts.DataTypes.EVENT;
-        data.baseData = event;
-        this.track(data, telemetry);
+        this.track(telemetry, Contracts.DataTypes.EVENT);
     }
 
     /*
@@ -148,20 +108,7 @@ class Client {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackRequest(telemetry: RequestTelemetry): void {
-        var requestData = new Contracts.RequestData();
-        requestData.id = telemetry.id;
-        requestData.name = telemetry.name;
-        requestData.url = telemetry.url
-        requestData.source = telemetry.source;
-        requestData.duration = Util.msToTimeSpan(telemetry.duration);
-        requestData.responseCode = telemetry.resultCode;
-        requestData.success = telemetry.success
-        requestData.properties = telemetry.properties;
-
-        var data = new Contracts.Data<Contracts.RequestData>();
-        data.baseType = Contracts.DataTypes.REQUEST;
-        data.baseData = requestData;
-        this.track(data, telemetry);
+        this.track(telemetry, Contracts.DataTypes.REQUEST);
     }
 
     /**
@@ -175,20 +122,7 @@ class Client {
         if (!telemetry.target && telemetry.data) {
             telemetry.target = url.parse(telemetry.data).host;
         }
-
-        var remoteDependency = new Contracts.RemoteDependencyData();
-        remoteDependency.name = telemetry.name;
-        remoteDependency.data = telemetry.data;
-        remoteDependency.target = telemetry.target;
-        remoteDependency.duration = Util.msToTimeSpan(telemetry.duration);
-        remoteDependency.success = telemetry.success;
-        remoteDependency.type = telemetry.dependencyTypeName;
-        remoteDependency.properties = telemetry.properties;
-
-        var data = new Contracts.Data<Contracts.RemoteDependencyData>();
-        data.baseType = Contracts.DataTypes.REMOTE_DEPENDENCY;
-        data.baseData = remoteDependency;
-        this.track(data, telemetry);
+        this.track(telemetry, Contracts.DataTypes.REMOTE_DEPENDENCY);
     }
 
     /**
@@ -198,56 +132,15 @@ class Client {
         this.channel.triggerSend(false, callback);
     }
 
-    public getEnvelope(
-        data: Contracts.Data<Contracts.Domain>,
-        tagOverrides?: { [key: string]: string; }): Contracts.Envelope {
-        if (Contracts.domainSupportsProperties(data.baseData)) { // Do instanceof check. TS will automatically cast and allow the properties property
-            if (data && data.baseData) {
-                // if no properties are specified just add the common ones
-                if (!data.baseData.properties) {
-                    data.baseData.properties = this.commonProperties;
-                } else {
-                    // otherwise, check each of the common ones
-                    for (var name in this.commonProperties) {
-                        // only override if the property `name` has not been set on this item
-                        if (!data.baseData.properties[name]) {
-                            data.baseData.properties[name] = this.commonProperties[name];
-                        }
-                    }
-                }
-            }
-
-            // sanitize properties
-            data.baseData.properties = Util.validateStringMap(data.baseData.properties);
-        }
-
-        var iKey = this.config.instrumentationKey;
-        var envelope = new Contracts.Envelope();
-        envelope.data = data;
-        envelope.iKey = iKey;
-
-        // this is kind of a hack, but the envelope name is always the same as the data name sans the chars "data"
-        envelope.name =
-            "Microsoft.ApplicationInsights." +
-            iKey.replace(/-/g, "") +
-            "." +
-            data.baseType.substr(0, data.baseType.length - 4);
-        envelope.tags = this.getTags(tagOverrides);
-        envelope.time = (new Date()).toISOString();
-        envelope.ver = 1;
-        envelope.sampleRate = this.config.samplingPercentage;
-
-        return envelope;
-    }
 
     /**
      * Generic track method for all telemetry types
      * @param data the telemetry to send
      * @param tagOverrides the context tags to use for this telemetry which overwrite default context values
      */
-    public track(telemetry: Telemetry) {
+    public track(telemetry: Telemetry, telemetryType: string) {
 
-        var envelope = this.getEnvelope(data, telemetry.tagOverrides);
+        var envelope = EnvelopeFactory.createEnvelope(telemetry, telemetryType, this.commonProperties, this.context, this.config);
 
         // Set time on the envelope if it was set on the telemetry item
         if (telemetry.time) {
@@ -312,32 +205,6 @@ class Client {
         return accepted;
     }
 
-    private getTags(tagOverrides?: { [key: string]: string; }) {
-        var correlationContext = CorrelationContextManager.getCurrentContext();
-
-        // Make a copy of context tags so we don't alter the actual object
-        // Also perform tag overriding
-        var newTags = <{ [key: string]: string }>{};
-        for (var key in this.context.tags) {
-            newTags[key] = this.context.tags[key];
-        }
-        for (var key in tagOverrides) {
-            newTags[key] = tagOverrides[key];
-        }
-
-        if (!correlationContext) {
-            return newTags;
-        }
-
-        // Fill in internally-populated values if not already set
-        if (correlationContext) {
-            newTags[this.context.keys.operationId] = newTags[this.context.keys.operationId] || correlationContext.operation.id;
-            newTags[this.context.keys.operationName] = newTags[this.context.keys.operationName] || correlationContext.operation.name;
-            newTags[this.context.keys.operationParentId] = newTags[this.context.keys.operationParentId] || correlationContext.operation.parentId;
-        }
-
-        return newTags;
-    }
     /**
      * Sets the client app version to the context tags.
      * @param version, takes the host app version.

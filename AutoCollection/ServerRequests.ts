@@ -206,10 +206,10 @@ class AutoCollectServerRequests {
         }
 
         var context : { [name: string]: any; } = {"http.ServerRequest": request, "http.ServerResponse": response};
-        var data = requestParser.getRequestData();
-        var tags = requestParser.getRequestTags(client.context.tags);        
-
-        client.track(data, tags, context);
+        var requestTelemetry = requestParser.getRequestTelemetry();
+        requestTelemetry.tagOverrides = requestParser.getRequestTags(client.context.tags);        
+        requestTelemetry.contextObjects = context;
+        client.trackRequest(requestTelemetry);
     }
 
     public dispose() {
