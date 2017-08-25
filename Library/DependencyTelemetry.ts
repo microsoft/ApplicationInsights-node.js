@@ -2,7 +2,7 @@ import Telemetry = require("./Telemetry")
 
 interface DependencyTelemetry extends Telemetry {
     dependencyTypeName: string;
-    target: string;
+    target?: string;
     name: string;
     data: string;
     duration: number;

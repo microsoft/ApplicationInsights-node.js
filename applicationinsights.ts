@@ -4,7 +4,7 @@ import AutoCollectExceptions = require("./AutoCollection/Exceptions");
 import AutoCollectPerformance = require("./AutoCollection/Performance");
 import AutoCollectClientRequests = require("./AutoCollection/ClientRequests");
 import AutoCollectServerRequests = require("./AutoCollection/ServerRequests");
-import Client = require("./Library/Client");
+import NodeClient = require("./Library/NodeClient");
 import Config = require("./Library/Config");
 import Context = require("./Library/Context");
 import Contracts = require("./Declarations/Contracts");
@@ -22,7 +22,7 @@ class ApplicationInsights {
     /**
     * The default client.
     */
-    public static client: Client;
+    public static client: NodeClient;
     public static contracts = Contracts;
 
     private static _isConsole = true;
@@ -48,7 +48,7 @@ class ApplicationInsights {
      * @returns {ApplicationInsights/Client} a new client
      */
     public static getClient(instrumentationKey?: string) {
-        return new Client(instrumentationKey);
+        return new NodeClient(instrumentationKey);
     }
 
     /**

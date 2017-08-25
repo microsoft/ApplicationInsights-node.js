@@ -5,7 +5,7 @@ interface EventTelemetry extends Telemetry
     /**
      * Name of the event
      */
-     eventName: string;
+     name: string;
      
     /**
      * Metrics associated with this event, displayed in Metrics Explorer on the portal. Defaults to empty

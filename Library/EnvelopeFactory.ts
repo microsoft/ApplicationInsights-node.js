@@ -15,10 +15,10 @@ import { CorrelationContextManager } from "../AutoCollection/CorrelationContextM
 class EnvelopeFactory {
     public static createEnvelope(
         telemetry: Telemetry,
-        telemetryType:string,
-        commonProperties: { [key: string]: string; },
-        context: Context,
-        config: Config): Contracts.Envelope {
+        telemetryType: string,
+        commonProperties?: { [key: string]: string; },
+        context?: Context,
+        config?: Config): Contracts.Envelope {
 
         var data:
             Contracts.Data<Contracts.MessageData> |
@@ -50,7 +50,7 @@ class EnvelopeFactory {
                 break;
         }
 
-        if (Contracts.domainSupportsProperties(data.baseData)) { // Do instanceof check. TS will automatically cast and allow the properties property
+        if (commonProperties && Contracts.domainSupportsProperties(data.baseData)) { // Do instanceof check. TS will automatically cast and allow the properties property
             if (data && data.baseData) {
                 // if no properties are specified just add the common ones
                 if (!data.baseData.properties) {
@@ -70,7 +70,7 @@ class EnvelopeFactory {
             data.baseData.properties = Util.validateStringMap(data.baseData.properties);
         }
 
-        var iKey = config.instrumentationKey;
+        var iKey = config ? config.instrumentationKey : null;
         var envelope = new Contracts.Envelope();
         envelope.data = data;
         envelope.iKey = iKey;
@@ -84,7 +84,7 @@ class EnvelopeFactory {
         envelope.tags = this.getTags(context, telemetry.tagOverrides);
         envelope.time = (new Date()).toISOString();
         envelope.ver = 1;
-        envelope.sampleRate = config.samplingPercentage;
+        envelope.sampleRate = config ? config.samplingPercentage : 100;
         return envelope;
     }
 
@@ -123,7 +123,7 @@ class EnvelopeFactory {
 
     private static createEventData(telemetry: EventTelemetry): Contracts.Data<Contracts.EventData> {
         var event = new Contracts.EventData();
-        event.name = telemetry.eventName;
+        event.name = telemetry.name;
         event.properties = telemetry.properties;
         event.measurements = telemetry.measurements;
 

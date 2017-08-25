@@ -5,7 +5,7 @@ import Sinon = require("sinon");
 import http = require("http");
 import eventEmitter = require('events');
 
-import Client = require("../../Library/Client");
+import Client = require("../../Library/NodeClient");
 import Config = require("../../Library/Config");
 import Contracts = require("../../Declarations/Contracts");
 import RequestResponseHeaders = require("../../Library/RequestResponseHeaders");
@@ -80,9 +80,9 @@ describe("Library/Client", () => {
     describe("#trackEvent()", () => {
         it("should track Event with correct data", () => {
             trackStub.reset();
-            client.trackEvent(name);
-            client.trackEvent(name, properties);
-            client.trackEvent(name, properties, measurements);
+            client.trackEvent({ name: name });
+            client.trackEvent({ name: name, properties });
+            client.trackEvent({ name: name, properties, measurements });
 
             assert.ok(trackStub.calledThrice);
 
@@ -107,9 +107,9 @@ describe("Library/Client", () => {
     describe("#trackTrace()", () => {
         it("should track Trace with correct data", () => {
             trackStub.reset();
-            client.trackTrace(name);
-            client.trackTrace(name, 0);
-            client.trackTrace(name, 0, properties);
+            client.trackTrace({ message: name });
+            client.trackTrace({ message: name, severity: 0 });
+            client.trackTrace({ message: name, severity: 0, properties: properties });
 
             assert.ok(trackStub.calledThrice);
 
@@ -134,7 +134,7 @@ describe("Library/Client", () => {
     describe("#trackException()", () => {
         it("should track Exception with correct data - Error only", () => {
             trackStub.reset();
-            client.trackException(new Error(name));
+            client.trackException({ exception: new Error(name) });
 
             assert.ok(trackStub.calledOnce);
 
@@ -146,7 +146,7 @@ describe("Library/Client", () => {
 
         it("should track Exception with correct data - Error and properties", () => {
             trackStub.reset();
-            client.trackException(new Error(name), properties);
+            client.trackException({ exception: new Error(name), properties: properties });
 
             assert.ok(trackStub.calledOnce);
 
@@ -159,7 +159,7 @@ describe("Library/Client", () => {
 
         it("should track Exception with correct data - Error, properties and measurements", () => {
             trackStub.reset();
-            client.trackException(new Error(name), properties, measurements);
+            client.trackException({ exception: new Error(name), properties: properties, measurements: measurements });
 
             assert.ok(trackStub.calledOnce);
 
@@ -183,8 +183,8 @@ describe("Library/Client", () => {
             var min = 0;
             var max = 0;
             var stdev = 0;
-            client.trackMetric(name, value);
-            client.trackMetric(name, value, count, min, max, stdev, properties);
+            client.trackMetric({ name: name, value: value });
+            client.trackMetric({ name: name, value: value, count: count, min: min, max: max, stdDev: stdev, properties: properties });
 
             assert.ok(trackStub.calledTwice);
 
@@ -298,7 +298,7 @@ describe("Library/Client", () => {
             it('should track request with correct data on response finish event ', () => {
                 trackStub.reset();
                 clock.reset();
-                client.trackRequest(<any>request, <any>response, properties);
+                client.trackNodeHttpRequest({ request: <any>request, response: <any>response, properties: properties });
 
                 // finish event was not emitted yet
                 assert.ok(trackStub.notCalled);
@@ -320,7 +320,7 @@ describe("Library/Client", () => {
             it('should track request with correct tags on response finish event', () => {
                 trackStub.reset();
                 clock.reset();
-                client.trackRequest(<any>request, <any>response, properties);
+                client.trackNodeHttpRequest({ request: <any>request, response: <any>response, properties: properties });
 
                 // emit finish event
                 response.emitFinish();
@@ -337,7 +337,7 @@ describe("Library/Client", () => {
             it('should track request with correct data on request error event', () => {
                 trackStub.reset();
                 clock.reset();
-                client.trackRequest(<any>request, <any>response, properties);
+                client.trackNodeHttpRequest({ request: <any>request, response: <any>response, properties: properties });
 
                 // finish event was not emitted yet
                 assert.ok(trackStub.notCalled);
@@ -364,7 +364,7 @@ describe("Library/Client", () => {
                 let testCorrelationId = 'cid-v1:Application-Id-98765-4321A';
                 request.headers[RequestResponseHeaders.requestContextHeader] = `${RequestResponseHeaders.requestContextSourceKey}=${testCorrelationId}`;
 
-                client.trackRequest(<any>request, <any>response, properties);
+                client.trackNodeHttpRequest({ request: <any>request, response: <any>response, properties: properties });
 
                 // finish event was not emitted yet
                 assert.ok(trackStub.notCalled);
@@ -394,7 +394,7 @@ describe("Library/Client", () => {
                 let testCorrelationId = 'cid-v1:Application-Id-98765-4321A';
                 request.headers[RequestResponseHeaders.requestContextHeader] = `${RequestResponseHeaders.requestContextSourceKey}=${testCorrelationId}`;
 
-                client.trackRequest(<any>request, <any>response, properties);
+                client.trackNodeHttpRequest({ request: <any>request, response: <any>response, properties: properties });
 
                 // finish event was not emitted yet
                 assert.ok(trackStub.notCalled);
@@ -414,7 +414,7 @@ describe("Library/Client", () => {
         describe("#trackRequestSync()", () => {
             it('should track request with correct data synchronously', () => {
                 trackStub.reset();
-                client.trackRequestSync(<any>request, <any>response, 100, properties);
+                client.trackNodeHttpRequestSync({ request: <any>request, response: <any>response, duration: 100, properties: properties });
                 assert.ok(trackStub.calledOnce);
                 var args = trackStub.args;
                 var obj0 = args[0][0];
@@ -444,11 +444,13 @@ describe("Library/Client", () => {
             it('should track request with correct data from request options', () => {
                 trackStub.reset();
                 clock.reset();
-                client.trackDependencyRequest({
-                    host: 'bing.com',
-                    path: '/search?q=test'
-                },
-                    <any>request, properties);
+                client.trackNodeHttpDependency({
+                    options: {
+                        host: 'bing.com',
+                        path: '/search?q=test'
+                    },
+                    request: <any>request, properties: properties
+                });
 
                 // response event was not emitted yet
                 assert.ok(trackStub.notCalled);
@@ -473,7 +475,7 @@ describe("Library/Client", () => {
             it('should track request with correct data on response event', () => {
                 trackStub.reset();
                 clock.reset();
-                client.trackDependencyRequest('http://bing.com/search?q=test', <any>request, properties);
+                client.trackNodeHttpDependency({ options: 'http://bing.com/search?q=test', request: <any>request, properties: properties });
 
                 // response event was not emitted yet
                 assert.ok(trackStub.notCalled);
@@ -498,7 +500,7 @@ describe("Library/Client", () => {
             it('should track request with correct data on request error event', () => {
                 trackStub.reset();
                 clock.reset();
-                client.trackDependencyRequest('http://bing.com/search?q=test', <any>request, properties);
+                client.trackNodeHttpDependency({ options: 'http://bing.com/search?q=test', request: <any>request, properties: properties });
 
                 // error event was not emitted yet
                 assert.ok(trackStub.notCalled);
@@ -522,11 +524,13 @@ describe("Library/Client", () => {
             it('should use source and target correlationId headers', () => {
                 trackStub.reset();
                 clock.reset();
-                client.trackDependencyRequest({
-                    host: 'bing.com',
-                    path: '/search?q=test'
-                },
-                    <any>request, properties);
+                client.trackNodeHttpDependency({
+                    options: {
+                        host: 'bing.com',
+                        path: '/search?q=test'
+                    },
+                    request: <any>request, properties: properties
+                });
 
                 // The client's correlationId should have been added as the request source correlationId header.
                 assert.equal(request.headers[RequestResponseHeaders.requestContextHeader],
@@ -556,11 +560,11 @@ describe("Library/Client", () => {
                 clock.reset();
 
                 client.config.correlationHeaderExcludedDomains = ["*.domain.com"]
-                client.trackDependencyRequest({
+                client.trackNodeHttpDependency({options:{
                     host: 'excluded.domain.com',
                     path: '/search?q=test'
                 },
-                    <any>request, properties);
+                    request: <any>request, properties: properties});
 
                 // The client's correlationId should NOT have been added for excluded domains
                 assert.equal(request.headers[RequestResponseHeaders.requestContextHeader], null);
@@ -573,7 +577,7 @@ describe("Library/Client", () => {
             trackStub.reset();
             var commandName = "http://bing.com/search?q=test";
             var dependencyTypeName = "dependencyTypeName";
-            client.trackDependency(name, commandName, value, true, dependencyTypeName, properties);
+            client.trackDependency({name:name, data: commandName, duration: value, success: true, resultCode:"0", dependencyTypeName: dependencyTypeName, properties: properties});
 
             assert.ok(trackStub.calledOnce);
 
@@ -604,49 +608,6 @@ describe("Library/Client", () => {
             client.sendPendingData(callback);
             assert.strictEqual(triggerStub.firstCall.args[0], false);
             assert.strictEqual(triggerStub.firstCall.args[1], callback);
-        });
-    });
-
-    describe("#getEnvelope()", () => {
-        var commonproperties: { [key: string]: string } = { common1: "common1", common2: "common2", common: "common" };
-        it("should assign common properties to the data", () => {
-            var client1 = new Client("key");
-            client1.commonProperties = commonproperties;
-            client1.config.samplingPercentage = 99;
-            mockData.baseData.properties = JSON.parse(JSON.stringify(properties));
-            var env = <any>client1.getEnvelope(mockData);
-
-            // check sample rate
-            assert.equal(env.sampleRate, client1.config.samplingPercentage);
-
-            // check common properties
-            assert.equal(env.data.baseData.properties.common1, (<any>commonproperties).common1);
-            assert.equal(env.data.baseData.properties.common2, (<any>commonproperties).common2);
-
-            // check argument properties
-            assert.equal(env.data.baseData.properties.p1, (<any>properties).p1);
-            assert.equal(env.data.baseData.properties.p2, (<any>properties).p2);
-
-            // check that argument properties overwrite common properties1
-            assert.equal(env.data.baseData.properties.common, (<any>properties).common);
-        });
-
-        it("should allow tags to be overwritten", () => {
-            mockData.properties = {};
-            var env = client.getEnvelope(mockData);
-            assert.deepEqual(env.tags, client.context.tags, "tags are set by default");
-            var customTag = <{ [id: string]: string }>{ "ai.cloud.roleInstance": "override" };
-            var expected: { [id: string]: string } = {};
-            for (var tag in client.context.tags) {
-                expected[tag] = customTag[tag] || client.context.tags[tag];
-            }
-            env = client.getEnvelope(mockData, <any>customTag);
-            assert.deepEqual(env.tags, expected)
-        });
-
-        it("should have valid name", function () {
-            let envelope = client.getEnvelope(mockData);
-            assert.equal(envelope.name, "Microsoft.ApplicationInsights.InstrumentationKey123456789A.BaseTest");
         });
     });
 

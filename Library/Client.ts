@@ -1,15 +1,10 @@
-import http = require("http");
-import https = require("https");
 import url = require("url");
 import os = require("os");
 
 import Config = require("./Config");
 import Context = require("./Context");
-import ExceptionTracking = require("../AutoCollection/Exceptions");
 import Contracts = require("../Declarations/Contracts");
 import Channel = require("./Channel");
-import ServerRequestTracking = require("../AutoCollection/ServerRequests");
-import ClientRequestTracking = require("../AutoCollection/ClientRequests");
 import TelemetryProcessors = require("../TelemetryProcessors");
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
 import Sender = require("./Sender");
@@ -90,18 +85,6 @@ class Client {
 
         this.track(telemetry, Contracts.DataTypes.EVENT);
     }
-
-    /*
-    public trackRequestSync(request: http.ServerRequest, response: http.ServerResponse, ellapsedMilliseconds?: number, properties?: { [key: string]: string; }, error?: any) {
-        ServerRequestTracking.trackRequestSync(this, request, response, ellapsedMilliseconds, properties, error);
-    }
-    public trackRequest(request: http.ServerRequest, response: http.ServerResponse, properties?: { [key: string]: string; }) {
-        ServerRequestTracking.trackRequest(this, request, response, properties);
-    }
-    public trackDependencyRequest(requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest, properties?: { [key: string]: string; }) {
-        ClientRequestTracking.trackRequest(this, requestOptions, request, properties);
-    }
-    */
 
     /**
      * Log a user action or other occurrence.
