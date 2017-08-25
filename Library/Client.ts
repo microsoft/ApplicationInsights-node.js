@@ -65,7 +65,7 @@ class Client {
      */
     public trackException(telemetry: ExceptionTelemetry): void {
         if (telemetry && !Util.isError(telemetry.exception)) {
-            telemetry.exception = new Error(<any>telemetry.exception);
+            telemetry.exception = new Error((<any>telemetry.exception).toString());
         }
         this.track(telemetry, Contracts.DataTypes.EXCEPTION);
     }

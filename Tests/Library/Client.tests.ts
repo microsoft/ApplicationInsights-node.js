@@ -13,6 +13,10 @@ import Util = require("../../Library/Util")
 import EventTelemetry = require("../../Library/EventTelemetry")
 import DependencyTelemetry = require("../../Library/DependencyTelemetry")
 import EnvelopeFactory = require("../../Library/EnvelopeFactory");
+import RequestTelemetry = require("../../Library/RequestTelemetry")
+import MetricTelemetry = require("../../Library/MetricTelemetry")
+import ExceptionTelemetry = require("../../Library/ExceptionTelemetry")
+import TraceTelemetry = require("../../Library/TraceTelemetry")
 
 
 describe("Library/Client", () => {
@@ -48,13 +52,13 @@ describe("Library/Client", () => {
     })
 
     var invalidInputHelper = (name: string) => {
-        assert.doesNotThrow(() => (<any>client)[name](null, null));
-        assert.doesNotThrow(() => (<any>client)[name](<any>undefined, <any>undefined));
-        assert.doesNotThrow(() => (<any>client)[name](<any>{}, <any>{}));
-        assert.doesNotThrow(() => (<any>client)[name](<any>[], <any>[]));
-        assert.doesNotThrow(() => (<any>client)[name](<any>"", <any>""));
-        assert.doesNotThrow(() => (<any>client)[name](<any>1, <any>1));
-        assert.doesNotThrow(() => (<any>client)[name](<any>true, <any>true));
+        assert.doesNotThrow(() => (<any>client)[name](null, null), "#1");
+        assert.doesNotThrow(() => (<any>client)[name](<any>undefined, <any>undefined), "#2");
+        assert.doesNotThrow(() => (<any>client)[name](<any>{}, <any>{}), "#3");
+        assert.doesNotThrow(() => (<any>client)[name](<any>[], <any>[]), "#4");
+        assert.doesNotThrow(() => (<any>client)[name](<any>"", <any>""), "#5");
+        assert.doesNotThrow(() => (<any>client)[name](<any>1, <any>1), "#6");
+        assert.doesNotThrow(() => (<any>client)[name](<any>true, <any>true), "#7");
     };
 
     describe("#constructor()", () => {
@@ -90,17 +94,16 @@ describe("Library/Client", () => {
 
             assert.ok(trackStub.calledThrice);
 
-            var args = trackStub.args;
-            var obj0 = args[0][0];
-            var obj1 = args[1][0];
-            var obj2 = args[2][0];
+            var eventTelemetry1 = <EventTelemetry>trackStub.firstCall.args[0];
+            var eventTelemetry2 = <EventTelemetry>trackStub.secondCall.args[0];
+            var eventTelemetry3 = <EventTelemetry>trackStub.thirdCall.args[0];
 
-            assert.equal(obj0.name, name);
-            assert.equal(obj1.name, name);
-            assert.deepEqual(obj1.properties, properties);
-            assert.equal(obj2.name, name);
-            assert.deepEqual(obj2.properties, properties);
-            assert.equal(obj2.measurements, measurements);
+            assert.equal(eventTelemetry1.name, name);
+            assert.equal(eventTelemetry2.name, name);
+            assert.deepEqual(eventTelemetry2.properties, properties);
+            assert.equal(eventTelemetry3.name, name);
+            assert.deepEqual(eventTelemetry3.properties, properties);
+            assert.equal(eventTelemetry3.measurements, measurements);
         });
 
         it("should not crash with invalid input", () => {
@@ -117,17 +120,16 @@ describe("Library/Client", () => {
 
             assert.ok(trackStub.calledThrice);
 
-            var args = trackStub.args;
-            var obj0 = args[0][0];
-            var obj1 = args[1][0];
-            var obj2 = args[2][0];
+            var traceTelemetry1 = <TraceTelemetry>trackStub.firstCall.args[0];
+            var traceTelemetry2 = <TraceTelemetry>trackStub.secondCall.args[0];
+            var traceTelemetry3 = <TraceTelemetry>trackStub.thirdCall.args[0];
 
-            assert.equal(obj0.message, name);
-            assert.equal(obj1.message, name);
-            assert.deepEqual(obj1.severity, 0);
-            assert.equal(obj2.message, name);
-            assert.deepEqual(obj2.severity, 0);
-            assert.equal(obj2.properties, properties);
+            assert.equal(traceTelemetry1.message, name);
+            assert.equal(traceTelemetry2.message, name);
+            assert.deepEqual(traceTelemetry2.severity, 0);
+            assert.equal(traceTelemetry3.message, name);
+            assert.deepEqual(traceTelemetry3.severity, 0);
+            assert.equal(traceTelemetry3.properties, properties);
         });
 
         it("should not crash with invalid input", () => {
@@ -142,10 +144,10 @@ describe("Library/Client", () => {
 
             assert.ok(trackStub.calledOnce);
 
-            var args = trackStub.getCall(0).args;
-            var obj0 = args[0];
+            var exceptionTelemetry = <ExceptionTelemetry>trackStub.firstCall.args[0];
 
-            assert.equal(obj0.exceptions[0].message, name);
+
+            assert.equal(exceptionTelemetry.exception.message, name);
         });
 
         it("should track Exception with correct data - Error and properties", () => {
@@ -154,11 +156,9 @@ describe("Library/Client", () => {
 
             assert.ok(trackStub.calledOnce);
 
-            var args = trackStub.args;
-            var obj0 = args[0][0];
-
-            assert.equal(obj0.exceptions[0].message, name);
-            assert.deepEqual(obj0.baseData.properties, properties);
+            var exceptionTelemetry = <ExceptionTelemetry>trackStub.firstCall.args[0];
+            assert.equal(exceptionTelemetry.exception.message, name);
+            assert.deepEqual(exceptionTelemetry.properties, properties);
         });
 
         it("should track Exception with correct data - Error, properties and measurements", () => {
@@ -167,12 +167,11 @@ describe("Library/Client", () => {
 
             assert.ok(trackStub.calledOnce);
 
-            var args = trackStub.args;
-            var obj0 = args[0][0];
+            var exceptionTelemetry = <ExceptionTelemetry>trackStub.firstCall.args[0];
 
-            assert.equal(obj0.exceptions[0].message, name);
-            assert.deepEqual(obj0.baseData.properties, properties);
-            assert.deepEqual(obj0.baseData.measurements, measurements);
+            assert.equal(exceptionTelemetry.exception.message, name);
+            assert.deepEqual(exceptionTelemetry.properties, properties);
+            assert.deepEqual(exceptionTelemetry.measurements, measurements);
         });
 
         it("should not crash with invalid input", () => {
@@ -192,20 +191,19 @@ describe("Library/Client", () => {
 
             assert.ok(trackStub.calledTwice);
 
-            var args = trackStub.args;
-            var obj0 = args[0][0];
-            var obj1 = args[1][0];
+            var metricTelemetry1 = <MetricTelemetry>trackStub.firstCall.args[0];
+            var metricTelemetry2 = <MetricTelemetry>trackStub.secondCall.args[0];
 
-            assert.equal(obj0.baseData.metrics[0].name, name);
-            assert.equal(obj0.baseData.metrics[0].value, value);
+            assert.equal(metricTelemetry1.name, name);
+            assert.equal(metricTelemetry1.value, value);
 
-            assert.equal(obj1.baseData.metrics[0].name, name);
-            assert.equal(obj1.baseData.metrics[0].value, value);
-            assert.equal(obj1.baseData.metrics[0].count, count);
-            assert.equal(obj1.baseData.metrics[0].min, min);
-            assert.equal(obj1.baseData.metrics[0].max, max);
-            assert.equal(obj1.baseData.metrics[0].stdDev, stdev);
-            assert.deepEqual(obj1.baseData.properties, properties);
+            assert.equal(metricTelemetry2.name, name);
+            assert.equal(metricTelemetry2.value, value);
+            assert.equal(metricTelemetry2.count, count);
+            assert.equal(metricTelemetry2.min, min);
+            assert.equal(metricTelemetry2.max, max);
+            assert.equal(metricTelemetry2.stdDev, stdev);
+            assert.deepEqual(metricTelemetry2.properties, properties);
         });
 
         it("should not crash with invalid input", () => {
@@ -284,7 +282,7 @@ describe("Library/Client", () => {
             return parseInt(parts[1]) * 60 * 60 * 1000 + parseInt(parts[2]) * 60 * 1000 + parseInt(parts[3]) * 1000 + parseInt(parts[4]);
         }
 
-        describe("#trackRequest()", () => {
+        describe("#trackNodeHttpRequest()", () => {
             var clock: Sinon.SinonFakeTimers;
 
             before(() => {
@@ -310,15 +308,13 @@ describe("Library/Client", () => {
                 // emit finish event
                 clock.tick(10);
                 response.emitFinish();
-                assert.ok(trackStub.calledOnce);
-                var args = trackStub.args;
-                var obj0 = args[0][0];
 
-                assert.equal(obj0.baseType, "RequestData");
-                assert.equal(obj0.baseData.responseCode, 200);
-                assert.deepEqual(obj0.baseData.properties, properties);
-                var duration = parseDuration(obj0.baseData.duration);
-                assert.equal(duration, 10);
+                assert.ok(trackStub.calledOnce);
+                var requestTelemetry = <RequestTelemetry>trackStub.firstCall.args[0];
+
+                assert.equal(requestTelemetry.resultCode, "200");
+                assert.deepEqual(requestTelemetry.properties, properties);
+                assert.equal(requestTelemetry.duration, 10);
             });
 
             it('should track request with correct tags on response finish event', () => {
@@ -331,7 +327,9 @@ describe("Library/Client", () => {
 
                 // validate
                 var args = trackStub.args;
-                var tags = args[0][1];
+                assert.ok(trackStub.calledOnce);
+                var requestTelemetry = <RequestTelemetry>trackStub.firstCall.args[0];
+                var tags = requestTelemetry.tagOverrides;
 
                 assert.equal(tags["ai.operation.name"], "GET /search");
                 assert.equal(tags["ai.device.id"], "");
@@ -350,14 +348,11 @@ describe("Library/Client", () => {
                 clock.tick(10);
                 request.emitError();
                 assert.ok(trackStub.calledOnce);
-                var args = trackStub.args;
-                var obj0 = args[0][0];
+                var requestTelemetry = <RequestTelemetry>trackStub.firstCall.args[0];
 
-                assert.equal(obj0.baseType, "RequestData");
-                assert.equal(obj0.baseData.success, false);
-                assert.equal(obj0.baseData.properties['errorProp'], 'errorVal');
-                var duration = parseDuration(obj0.baseData.duration);
-                assert.equal(duration, 10);
+                assert.equal(requestTelemetry.success, false);
+                assert.equal(requestTelemetry.properties['errorProp'], 'errorVal');
+                assert.equal(requestTelemetry.duration, 10);
             });
 
             it('should use source and target correlationId headers', () => {
@@ -377,11 +372,8 @@ describe("Library/Client", () => {
                 clock.tick(10);
                 response.emitFinish();
                 assert.ok(trackStub.calledOnce);
-                var args = trackStub.args;
-                var obj0 = args[0][0];
-
-                assert.equal(obj0.baseType, "RequestData");
-                assert.equal(obj0.baseData.source, testCorrelationId);
+                var requestTelemetry = <RequestTelemetry>trackStub.firstCall.args[0];
+                assert.equal(requestTelemetry.source, testCorrelationId);
 
                 // The client's correlationId should have been added as the response target correlationId header.
                 assert.equal(response.headers[RequestResponseHeaders.requestContextHeader],
@@ -407,30 +399,25 @@ describe("Library/Client", () => {
                 clock.tick(10);
                 response.emitFinish();
                 assert.ok(trackStub.calledOnce);
-                var args = trackStub.args;
-                var obj0 = args[0][0];
 
-                assert.equal(obj0.baseType, "RequestData");
                 assert.equal(response.headers[RequestResponseHeaders.requestContextHeader], undefined);
             });
         });
 
-        describe("#trackRequestSync()", () => {
+        describe("#trackNodeHttpRequestSync()", () => {
             it('should track request with correct data synchronously', () => {
                 trackStub.reset();
                 client.trackNodeHttpRequestSync({ request: <any>request, response: <any>response, duration: 100, properties: properties });
                 assert.ok(trackStub.calledOnce);
-                var args = trackStub.args;
-                var obj0 = args[0][0];
+                var requestTelemetry = <RequestTelemetry>trackStub.firstCall.args[0];
 
-                assert.equal(obj0.baseType, "RequestData");
-                assert.equal(obj0.baseData.responseCode, 200);
-                assert.equal(obj0.baseData.duration, '00:00:00.100');
-                assert.deepEqual(obj0.baseData.properties, properties);
+                assert.equal(requestTelemetry.resultCode, "200");
+                assert.equal(requestTelemetry.duration, 100);
+                assert.deepEqual(requestTelemetry.properties, properties);
             });
         });
 
-        describe("#trackDependencyRequest()", () => {
+        describe("#trackNodeHttpDependency()", () => {
             var clock: Sinon.SinonFakeTimers;
 
             before(() => {
@@ -442,7 +429,7 @@ describe("Library/Client", () => {
             });
 
             it("should not crash with invalid input", () => {
-                invalidInputHelper("trackDependencyRequest");
+                invalidInputHelper("trackNodeHttpDependency");
             });
 
             it('should track request with correct data from request options', () => {
