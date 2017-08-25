@@ -64,18 +64,11 @@ class Client {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackException(telemetry: ExceptionTelemetry): void {
-        if (!Util.isError(telemetry.exception)) {
+        if (telemetry && !Util.isError(telemetry.exception)) {
             telemetry.exception = new Error(<any>telemetry.exception);
         }
         this.track(telemetry, Contracts.DataTypes.EXCEPTION);
     }
-
-    /*
-    public trackRequest(telemetry: RequestTelemetry | HttpRequestTelemetry): void {
-
-          ServerRequestTracking.trackRequestSync(this, request, response, ellapsedMilliseconds, properties, error);
-    }
-    */
 
     /**
      * Log a user action or other occurrence.
@@ -102,7 +95,7 @@ class Client {
      * */
     public trackDependency(telemetry: DependencyTelemetry) {
 
-        if (!telemetry.target && telemetry.data) {
+        if (telemetry && !telemetry.target && telemetry.data) {
             telemetry.target = url.parse(telemetry.data).host;
         }
         this.track(telemetry, Contracts.DataTypes.REMOTE_DEPENDENCY);
@@ -115,29 +108,32 @@ class Client {
         this.channel.triggerSend(false, callback);
     }
 
-
     /**
      * Generic track method for all telemetry types
      * @param data the telemetry to send
      * @param tagOverrides the context tags to use for this telemetry which overwrite default context values
      */
     public track(telemetry: Telemetry, telemetryType: string) {
+        if (telemetry && telemetryType) {
+            var envelope = EnvelopeFactory.createEnvelope(telemetry, telemetryType, this.commonProperties, this.context, this.config);
 
-        var envelope = EnvelopeFactory.createEnvelope(telemetry, telemetryType, this.commonProperties, this.context, this.config);
+            // Set time on the envelope if it was set on the telemetry item
+            if (telemetry.time) {
+                envelope.time = telemetry.time.toISOString();
+            }
 
-        // Set time on the envelope if it was set on the telemetry item
-        if (telemetry.time) {
-            envelope.time = telemetry.time.toISOString();
+            var accepted = this.runTelemetryProcessors(envelope, telemetry.contextObjects);
+
+            // Ideally we would have a central place for "internal" telemetry processors and users can configure which ones are in use.
+            // This will do for now. Otherwise clearTelemetryProcessors() would be problematic.
+            var sampledIn = TelemetryProcessors.samplingTelemetryProcessor(envelope, { correlationContext: CorrelationContextManager.getCurrentContext() });
+
+            if (accepted && sampledIn) {
+                this.channel.send(envelope);
+            }
         }
-
-        var accepted = this.runTelemetryProcessors(envelope, telemetry.contextObjects);
-
-        // Ideally we would have a central place for "internal" telemetry processors and users can configure which ones are in use.
-        // This will do for now. Otherwise clearTelemetryProcessors() would be problematic.
-        var sampledIn = TelemetryProcessors.samplingTelemetryProcessor(envelope, { correlationContext: CorrelationContextManager.getCurrentContext() });
-
-        if (accepted && sampledIn) {
-            this.channel.send(envelope);
+        else {
+            Logging.warn("track() requires telemetry object and telemetryType to be specified.")
         }
     }
 

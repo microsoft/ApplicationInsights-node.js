@@ -237,7 +237,7 @@ describe("EndToEnd", () => {
 
             var client = AppInsights.getClient("key");
 
-            client.trackEvent("test event");
+            client.trackEvent({ name: "test event" });
 
             this.request.returns(req);
 
@@ -256,7 +256,7 @@ describe("EndToEnd", () => {
             var client = AppInsights.getClient("key");
             client.channel.setOfflineMode(true);
 
-            client.trackEvent("test event");
+            client.trackEvent({ name: "test event" });
 
             this.request.returns(req);
 
@@ -277,7 +277,7 @@ describe("EndToEnd", () => {
             var client = AppInsights.getClient("key");
             client.channel.setOfflineMode(true, 0);
 
-            client.trackEvent("test event");
+            client.trackEvent({ name: "test event" });
 
             this.request.returns(req);
             this.request.yields(res);
@@ -298,7 +298,7 @@ describe("EndToEnd", () => {
             var client = AppInsights.getClient("key");
             client.channel.setOfflineMode(true);
 
-            client.trackEvent("test event");
+            client.trackEvent({ name: "test event" });
 
             this.request.returns(req);
 

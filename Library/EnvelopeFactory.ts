@@ -70,7 +70,7 @@ class EnvelopeFactory {
             data.baseData.properties = Util.validateStringMap(data.baseData.properties);
         }
 
-        var iKey = config ? config.instrumentationKey : null;
+        var iKey = config ? config.instrumentationKey || "" : "";
         var envelope = new Contracts.Envelope();
         envelope.data = data;
         envelope.iKey = iKey;
@@ -158,7 +158,7 @@ class EnvelopeFactory {
         var requestData = new Contracts.RequestData();
         requestData.id = telemetry.id;
         requestData.name = telemetry.name;
-        requestData.url = telemetry.url
+        requestData.url = telemetry.url;
         requestData.source = telemetry.source;
         requestData.duration = Util.msToTimeSpan(telemetry.duration);
         requestData.responseCode = telemetry.resultCode;
@@ -200,15 +200,16 @@ class EnvelopeFactory {
         // Make a copy of context tags so we don't alter the actual object
         // Also perform tag overriding
         var newTags = <{ [key: string]: string }>{};
-        for (var key in context.tags) {
-            newTags[key] = context.tags[key];
-        }
-        for (var key in tagOverrides) {
-            newTags[key] = tagOverrides[key];
-        }
 
-        if (!correlationContext) {
-            return newTags;
+        if (context && context.tags) {
+            for (var key in context.tags) {
+                newTags[key] = context.tags[key];
+            }
+        }
+        if (tagOverrides) {
+            for (var key in tagOverrides) {
+                newTags[key] = tagOverrides[key];
+            }
         }
 
         // Fill in internally-populated values if not already set
