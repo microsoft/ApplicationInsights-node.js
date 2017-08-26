@@ -1,5 +1,9 @@
 import Telemetry = require("./Telemetry")
 
+/**
+ * Telemetry encapsulating a custom metric, i.e. aggregated numeric values describing value, count, frequency and distribution of
+ * of a particular indicator.
+ */
 interface MetricTelemetry extends Telemetry {
     /**
      * A string that identifies the metric.

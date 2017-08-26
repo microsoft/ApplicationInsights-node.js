@@ -37,7 +37,7 @@ class AutoCollectExceptions {
             if (!this._exceptionListenerHandle) {
                 var handle = (reThrow: boolean, error: Error) => {
                     this._client.trackException({exception: error});
-                    this._client.sendPendingData();
+                    this._client.flush();
                     if (reThrow) {
                         throw error;
                     }

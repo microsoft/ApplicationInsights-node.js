@@ -583,17 +583,17 @@ describe("Library/Client", () => {
         });
     });
 
-    describe("#sendPendingData()", () => {
+    describe("#flush()", () => {
         it("should invoke the sender", () => {
             triggerStub.reset();
-            client.sendPendingData();
+            client.flush();
             assert.ok(triggerStub.calledOnce);
         });
 
         it("should accept a callback", () => {
             triggerStub.reset();
             var callback = sinon.spy();
-            client.sendPendingData(callback);
+            client.flush(callback);
             assert.strictEqual(triggerStub.firstCall.args[0], false);
             assert.strictEqual(triggerStub.firstCall.args[1], callback);
         });
@@ -746,12 +746,6 @@ describe("Library/Client", () => {
             client.track(testEventTelemetry, Contracts.DataTypes.EVENT);
 
             assert.ok(!processorExecuted, "telemetry processor should NOT be executed");
-        });
-    });
-    describe("#overrideApplicationVersion()", () => {
-        it("sets the app version to the context tags", () => {
-            client.overrideApplicationVersion("version");
-            assert.equal(client.context.tags[client.context.keys.applicationVersion], "version");
         });
     });
 });

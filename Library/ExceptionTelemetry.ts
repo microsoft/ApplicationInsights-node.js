@@ -1,5 +1,8 @@
 import Telemetry = require("./Telemetry")
 
+/**
+ * Telemetry about the exception thrown by the application
+ */
 interface ExceptionTelemetry extends Telemetry
 {
     /**

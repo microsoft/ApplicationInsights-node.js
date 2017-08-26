@@ -8,7 +8,7 @@ import appInsights = require("../../../");
 var testAppExitsAfterSendingTelemetry = () => {
     var c = appInsights.getClient("key");
     c.trackEvent({name:'some event', properties: { 'version': 'foo' }});
-    //c.sendPendingData();
+    //c.flush();
     console.log('All done');
 }
 

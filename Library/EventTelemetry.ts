@@ -1,5 +1,9 @@
 import Telemetry = require("./Telemetry")
 
+/**
+ * Telemetry about the custom event of interest, such application workflow event, business logic event (purchase) and anything that
+ * you would like to track and aggregate by count. Event can contain measurements such as purchase amount associated with purchase event
+ */
 interface EventTelemetry extends Telemetry
 {
     /**
@@ -8,7 +12,7 @@ interface EventTelemetry extends Telemetry
      name: string;
      
     /**
-     * Metrics associated with this event, displayed in Metrics Explorer on the portal. Defaults to empty
+     * Metrics associated with this event, displayed in Metrics Explorer on the portal.
      */
     measurements?: { [key: string]: number; };
 }

@@ -46,6 +46,6 @@ app.get('/redis', ((req, res) => redisDependency.generateRedisDepdendency(req, r
 
 
 app.listen(PORT, function () {
-    appInsightsClient.trackEvent("AppStartListen");
+    appInsightsClient.trackEvent({ name: "AppStartListen" });
     console.log('Now listening on port ' + PORT.toString() + '!');
 })

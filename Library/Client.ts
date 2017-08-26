@@ -19,6 +19,10 @@ import RequestTelemetry = require("./RequestTelemetry")
 import MetricTelemetry = require("./MetricTelemetry")
 import EnvelopeFactory = require("./EnvelopeFactory")
 
+/**
+ * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
+ * and manually trigger immediate sending (flushing)
+ */
 class Client {
     private _telemetryProcessors: { (envelope: Contracts.Envelope, contextObjects: { [name: string]: any; }): boolean; }[] = [];
 
@@ -64,8 +68,8 @@ class Client {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackException(telemetry: ExceptionTelemetry): void {
-        if (telemetry && !Util.isError(telemetry.exception)) {
-            telemetry.exception = new Error((<any>telemetry.exception).toString());
+        if (telemetry && telemetry.exception && !Util.isError(telemetry.exception)) {
+            telemetry.exception = new Error(telemetry.exception.toString());
         }
         this.track(telemetry, Contracts.DataTypes.EXCEPTION);
     }
@@ -104,14 +108,14 @@ class Client {
     /**
      * Immediately send all queued telemetry.
      */
-    public sendPendingData(callback?: (v: string) => void) {
+    public flush(callback?: (v: string) => void) {
         this.channel.triggerSend(false, callback);
     }
 
     /**
      * Generic track method for all telemetry types
      * @param data the telemetry to send
-     * @param tagOverrides the context tags to use for this telemetry which overwrite default context values
+     * @param telemetryType specify the type of telemetry you are tracking from the list of Contracts.DataTypes
      */
     public track(telemetry: Telemetry, telemetryType: string) {
         if (telemetry && telemetryType) {
@@ -182,14 +186,6 @@ class Client {
         }
 
         return accepted;
-    }
-
-    /**
-     * Sets the client app version to the context tags.
-     * @param version, takes the host app version.
-     */
-    public overrideApplicationVersion(version: string) {
-        this.context.tags[this.context.keys.applicationVersion] = version;
     }
 }
 

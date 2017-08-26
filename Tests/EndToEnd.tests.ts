@@ -136,7 +136,7 @@ describe("EndToEnd", () => {
             client.trackException({ exception: new Error("test error") });
             client.trackMetric({ name: "test metric", value: 3 });
             client.trackTrace({ message: "test trace" });
-            client.sendPendingData((response) => {
+            client.flush((response) => {
                 assert.ok(response, "response should not be empty");
                 done();
             });
@@ -159,7 +159,7 @@ describe("EndToEnd", () => {
 
             var server = http.createServer((req: http.ServerRequest, res: http.ServerResponse) => {
                 setTimeout(() => {
-                    AppInsights.client.sendPendingData((response) => {
+                    AppInsights.client.flush((response) => {
                         assert.ok(response, "response should not be empty");
                         done();
                     });
@@ -189,7 +189,7 @@ describe("EndToEnd", () => {
 
             var server = https.createServer(null, (req: http.ServerRequest, res: http.ServerResponse) => {
                 setTimeout(() => {
-                    AppInsights.client.sendPendingData((response) => {
+                    AppInsights.client.flush((response) => {
                         assert.ok(response, "response should not be empty");
                         done();
                     });
@@ -241,7 +241,7 @@ describe("EndToEnd", () => {
 
             this.request.returns(req);
 
-            client.sendPendingData((response: any) => {
+            client.flush((response: any) => {
                 // yield for the caching behavior
                 setImmediate(() => {
                     assert(this.writeFile.callCount === 0);
@@ -260,7 +260,7 @@ describe("EndToEnd", () => {
 
             this.request.returns(req);
 
-            client.sendPendingData((response: any) => {
+            client.flush((response: any) => {
                 // yield for the caching behavior
                 setImmediate(() => {
                     assert(this.writeFile.callCount === 1);
@@ -282,7 +282,7 @@ describe("EndToEnd", () => {
             this.request.returns(req);
             this.request.yields(res);
 
-            client.sendPendingData((response: any) => {
+            client.flush((response: any) => {
                 // wait until sdk looks for offline files
                 setTimeout(() => {
                     assert(this.readdir.callCount === 1);
