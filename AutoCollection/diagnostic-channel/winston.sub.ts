@@ -1,15 +1,15 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 import Client = require("../../Library/Client");
-import {SeverityLevel} from "../../Declarations/Contracts";
+import { SeverityLevel } from "../../Declarations/Contracts";
 
-import {channel, IStandardEvent} from "diagnostic-channel";
+import { channel, IStandardEvent } from "diagnostic-channel";
 
-import {winston} from "diagnostic-channel-publishers";
+import { winston } from "diagnostic-channel-publishers";
 
 let clients: Client[] = [];
 
-const winstonToAILevelMap: {[key: string]: (og: string) => number} = {
+const winstonToAILevelMap: { [key: string]: (og: string) => number } = {
     syslog(og: string) {
         return {
             emerg: SeverityLevel.Critical,
@@ -40,7 +40,12 @@ const winstonToAILevelMap: {[key: string]: (og: string) => number} = {
 const subscriber = (event: IStandardEvent<winston.IWinstonData>) => {
     clients.forEach((client) => {
         const AIlevel = winstonToAILevelMap[event.data.levelKind](event.data.level);
-        client.trackTrace(event.data.message, AIlevel, event.data.meta);
+        client.trackTrace(
+            {
+                message: event.data.message,
+                severity: AIlevel,
+                properties: event.data.meta
+            });
     });
 };
 

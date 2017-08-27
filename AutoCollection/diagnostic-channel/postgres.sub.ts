@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 import Client = require("../../Library/Client");
-import {channel, IStandardEvent} from "diagnostic-channel";
+import { channel, IStandardEvent } from "diagnostic-channel";
 
-import {pg} from "diagnostic-channel-publishers";
+import { pg } from "diagnostic-channel-publishers";
 
 let clients: Client[] = [];
 
@@ -13,12 +13,14 @@ export const subscriber = (event: IStandardEvent<pg.IPostgresData>) => {
         const sql = q.preparable.text || q.plan || q.text || "unknown query";
         const success = !event.data.error;
         const conn = `${event.data.database.host}:${event.data.database.port}`;
-        client.trackDependency(
-                conn,
-                sql,
-                event.data.duration | 0,
-                success,
-                "postgres");
+        client.trackDependency({
+            target: conn,
+            data: sql,
+            name: sql,
+            duration: event.data.duration | 0,
+            success: success,
+            resultCode: success ? "0" : "1",
+            dependencyTypeName: "postgres"});
     });
 };
 
