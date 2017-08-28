@@ -18,6 +18,7 @@ import MetricTelemetry = require("../../Library/TelemetryTypes/MetricTelemetry")
 import ExceptionTelemetry = require("../../Library/TelemetryTypes/ExceptionTelemetry")
 import TraceTelemetry = require("../../Library/TelemetryTypes/TraceTelemetry")
 import TelemetryType = require("../../Library/TelemetryTypes/TelemetryType")
+import Identified = require("../../Library/TelemetryTypes/Identified")
 
 describe("Library/Client", () => {
 
@@ -585,6 +586,93 @@ describe("Library/Client", () => {
             assert.equal(obj0.baseData.type, dependencyTypeName);
             assert.deepEqual(obj0.baseData.properties, properties);
         });
+
+        it("should process the id when specified", () => {
+            trackStub.restore();
+            var commandName = "http://bing.com/search?q=test";
+            var dependencyTypeName = "dependencyTypeName";
+            var createEnvelopeSpy = sinon.spy(EnvelopeFactory, "createEnvelope");
+            client.trackDependency(<DependencyTelemetry & Identified>{ id: "testid", name: name, data: commandName, duration: value, success: true, resultCode: "0", dependencyTypeName: dependencyTypeName, properties: properties });
+            assert.ok(createEnvelopeSpy.calledOnce);
+
+
+            var envelopeCreated = createEnvelopeSpy.firstCall.returnValue;
+            var obj0 = <Contracts.Data<Contracts.RemoteDependencyData>>envelopeCreated.data;
+            createEnvelopeSpy.restore();
+            assert.equal(obj0.baseData.id, "testid");
+            assert.deepEqual(obj0.baseData.properties, properties);
+        });
+
+        it("should auto-generate the id when not specified", () => {
+            trackStub.restore();
+            var commandName = "http://bing.com/search?q=test";
+            var dependencyTypeName = "dependencyTypeName";
+            var createEnvelopeSpy = sinon.spy(EnvelopeFactory, "createEnvelope");
+            client.trackDependency(<DependencyTelemetry>{ name: name, data: commandName, duration: value, success: true, resultCode: "0", dependencyTypeName: dependencyTypeName, properties: properties });
+            assert.ok(createEnvelopeSpy.calledOnce);
+
+
+            var envelopeCreated = createEnvelopeSpy.firstCall.returnValue;
+            var obj0 = <Contracts.Data<Contracts.RemoteDependencyData>>envelopeCreated.data;
+            createEnvelopeSpy.restore();
+            assert.ok(!!obj0.baseData.id);
+            assert.deepEqual(obj0.baseData.properties, properties);
+        });
+    });
+
+    describe("#trackRequest()", () => {
+        it("should create envelope with correct properties", () => {
+            trackStub.restore();
+            var url = "http://bing.com/search?q=test";
+            var createEnvelopeSpy = sinon.spy(EnvelopeFactory, "createEnvelope");
+            client.trackRequest({ url: url, source: "source", name: name, duration: value, success: true, resultCode: "200", properties: properties });
+            assert.ok(createEnvelopeSpy.calledOnce);
+
+
+            var envelopeCreated = createEnvelopeSpy.firstCall.returnValue;
+            var obj0 = <Contracts.Data<Contracts.RequestData>>envelopeCreated.data;
+            createEnvelopeSpy.restore();
+
+            assert.equal(obj0.baseData.name, name);
+            assert.equal(obj0.baseData.url, url);
+            assert.equal(obj0.baseData.source, 'source');
+            assert.equal(obj0.baseData.duration, Util.msToTimeSpan(value));
+            assert.equal(obj0.baseData.success, true);
+            assert.equal(obj0.baseData.responseCode, "200");
+            assert.deepEqual(obj0.baseData.properties, properties);
+        });
+
+        it("should process the id when specified", () => {
+            trackStub.restore();
+            var url = "http://bing.com/search?q=test";
+            var createEnvelopeSpy = sinon.spy(EnvelopeFactory, "createEnvelope");
+            client.trackRequest(<RequestTelemetry & Identified>{ id: "testid", url: url, source: "source", name: name, duration: value, success: true, resultCode: "200", properties: properties });
+            assert.ok(createEnvelopeSpy.calledOnce);
+
+
+            var envelopeCreated = createEnvelopeSpy.firstCall.returnValue;
+            var obj0 = <Contracts.Data<Contracts.RequestData>>envelopeCreated.data;
+            createEnvelopeSpy.restore();
+
+            assert.equal(obj0.baseData.id, "testid");
+            assert.deepEqual(obj0.baseData.properties, properties);
+        });
+
+        it("should auto-generate the id when not specified", () => {
+            trackStub.restore();
+            var url = "http://bing.com/search?q=test";
+            var createEnvelopeSpy = sinon.spy(EnvelopeFactory, "createEnvelope");
+            client.trackRequest({ url: url, source: "source", name: name, duration: value, success: true, resultCode: "200", properties: properties });
+            assert.ok(createEnvelopeSpy.calledOnce);
+
+
+            var envelopeCreated = createEnvelopeSpy.firstCall.returnValue;
+            var obj0 = <Contracts.Data<Contracts.RequestData>>envelopeCreated.data;
+            createEnvelopeSpy.restore();
+
+            assert.ok(!!obj0.baseData.id);
+            assert.deepEqual(obj0.baseData.properties, properties);
+        });
     });
 
     describe("#flush()", () => {
@@ -644,6 +732,7 @@ describe("Library/Client", () => {
             assert.ok(sendStub.calledOnce);
         });
 
+
         it("should send the envelope that was created", () => {
             sendStub.reset();
             var createEnvelopeSpy = sinon.spy(EnvelopeFactory, "createEnvelope");
@@ -656,6 +745,17 @@ describe("Library/Client", () => {
             createEnvelopeSpy.restore();
 
             assert.deepEqual(actual, expected);
+        });
+
+        it("should use timestamp if it was set", () => {
+            var timestamp = new Date("Mon Aug 28 2017 11:44:17");
+            var createEnvelopeSpy = sinon.spy(EnvelopeFactory, "createEnvelope");
+            trackStub.restore();
+            client.trackEvent({ name: "eventName", time: timestamp });
+            trackStub = sinon.stub(client, "track");
+            var envelope = <Contracts.Envelope>createEnvelopeSpy.firstCall.returnValue;
+            createEnvelopeSpy.restore();
+            assert.equal(envelope.time, timestamp.toISOString());
         });
 
         it("telemetry processor can change the envelope", () => {

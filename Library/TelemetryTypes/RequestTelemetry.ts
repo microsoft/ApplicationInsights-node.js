@@ -18,7 +18,7 @@ interface RequestTelemetry extends Telemetry
      /**
       * Request source. This encapsulates the information about the component that initiated the request
       */
-     source: string;
+     source?: string;
 
      /**
       * Request duration in ms
