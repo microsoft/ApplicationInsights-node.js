@@ -19,13 +19,3 @@ export function domainSupportsProperties(domain: Domain): domain is ISupportProp
         domain instanceof RemoteDependencyData ||
         domain instanceof RequestData;
 }
-
-export class DataTypes {
-    public static EVENT: string = 'EventData';
-    public static EXCEPTION: string = 'ExceptionData';
-    public static MESSAGE: string = 'MessageData';
-    public static METRIC: string = 'MetricData';
-    public static PERFORMANCE_COUNTER: string = 'PerformanceCounterData';
-    public static REQUEST: string = 'RequestData';
-    public static REMOTE_DEPENDENCY: string = 'RemoteDependencyData';
-}

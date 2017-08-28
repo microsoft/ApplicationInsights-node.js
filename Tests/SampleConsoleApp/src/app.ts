@@ -6,9 +6,9 @@ import appInsights = require("../../../");
 
 // https://github.com/Microsoft/ApplicationInsights-node.js/issues/54
 var testAppExitsAfterSendingTelemetry = () => {
-    var c = appInsights.getClient("key");
-    c.trackEvent('some event', { 'version': 'foo' });
-    //c.sendPendingData();
+    var c = appInsights.createClient("key");
+    c.trackEvent({name:'some event', properties: { 'version': 'foo' }});
+    //c.flush();
     console.log('All done');
 }
 

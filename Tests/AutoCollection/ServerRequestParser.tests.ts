@@ -27,16 +27,16 @@ describe("AutoCollection/ServerRequestParser", () => {
 
         it("should return an absolute url", () => {
             var helper = new ServerRequestParser(<any>request);
-            var requestData = helper.getRequestData();
-            assert.equal(requestData.baseData.url, "http://bing.com/search?q=test");
+            var requestData = helper.getRequestTelemetry();
+            assert.equal(requestData.url, "http://bing.com/search?q=test");
         });
 
         it("should return an absolute url for encrypted traffic", () => {
             request.connection.encrypted = true;
 
             var helper = new ServerRequestParser(<any>request);
-            var requestData = helper.getRequestData();
-            assert.equal(requestData.baseData.url, "https://bing.com/search?q=test");
+            var requestData = helper.getRequestTelemetry();
+            assert.equal(requestData.url, "https://bing.com/search?q=test");
         });
 
         var requestComplex = {
@@ -52,8 +52,8 @@ describe("AutoCollection/ServerRequestParser", () => {
 
         it("should return an absolute url for complex urls", () => {
             var helper = new ServerRequestParser(<any>requestComplex);
-            var requestData = helper.getRequestData();
-            assert.equal(requestData.baseData.url, "http://bing.com/a/b/c/?q=test&test2");
+            var requestData = helper.getRequestTelemetry();
+            assert.equal(requestData.url, "http://bing.com/a/b/c/?q=test&test2");
         });
 
         var requestNoSearchParam = {
@@ -69,8 +69,8 @@ describe("AutoCollection/ServerRequestParser", () => {
 
         it("should return an absolute url when url does not have search part", () => {
             var helper = new ServerRequestParser(<any>requestNoSearchParam);
-            var requestData = helper.getRequestData();
-            assert.equal(requestData.baseData.url, "http://bing.com/a/");
+            var requestData = helper.getRequestTelemetry();
+            assert.equal(requestData.url, "http://bing.com/a/");
         });
 
         var requestNoPathName = {
@@ -86,8 +86,8 @@ describe("AutoCollection/ServerRequestParser", () => {
 
         it("should return an absolute url when url does not have path name", () => {
             var helper = new ServerRequestParser(<any>requestNoPathName);
-            var requestData = helper.getRequestData();
-            assert.equal(requestData.baseData.url, "http://bing.com/");
+            var requestData = helper.getRequestTelemetry();
+            assert.equal(requestData.url, "http://bing.com/");
         });
     });
 

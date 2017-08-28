@@ -118,34 +118,6 @@ describe("Library/Channel", () => {
         });
     });
 
-    describe("#handleCrash(envelope)", () => {
-        it("should warn if envelope is empty", () => {
-            var warnStub = sinon.stub(console, "warn");
-            channel.handleCrash(undefined);
-            channel.handleCrash(null);
-            channel.handleCrash(<any>"");
-            assert.ok(warnStub.calledThrice);
-            warnStub.restore();
-        });
-
-        it("should warn if envelope cannot be serialized", () => {
-            var warnStub = sinon.stub(console, "warn");
-            var a = <any>{b: null};
-            a.b = a;
-
-            channel.handleCrash(a);
-            assert.ok(warnStub.calledTwice);
-            warnStub.restore();
-        });
-
-        it("should trigger send", () => {
-            channel.handleCrash(testEnvelope);
-            assert.ok(sendSpy.notCalled, "saveOnCrash should be called, not send");
-            assert.ok(saveSpy.calledOnce);
-            assert.ok(channel.getBuffer().length === 0);
-        });
-    });
-
     describe("#triggerSend(isCrash)", () => {
         it("should clear timeout handle", () => {
             channel.send(testEnvelope);

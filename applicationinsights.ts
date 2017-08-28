@@ -4,7 +4,7 @@ import AutoCollectExceptions = require("./AutoCollection/Exceptions");
 import AutoCollectPerformance = require("./AutoCollection/Performance");
 import AutoCollectClientRequests = require("./AutoCollection/ClientRequests");
 import AutoCollectServerRequests = require("./AutoCollection/ServerRequests");
-import Client = require("./Library/Client");
+import NodeClient = require("./Library/NodeClient");
 import Config = require("./Library/Config");
 import Context = require("./Library/Context");
 import Contracts = require("./Declarations/Contracts");
@@ -20,9 +20,10 @@ import Util = require("./Library/Util");
 class ApplicationInsights {
 
     /**
-    * The default client.
+    * Retrieves the default client, initialized when ApplicationInsights.setup was called. If you would like to initialize a different client
+    * potentially using different configuration options, use createClient API
     */
-    public static client: Client;
+    public static client: NodeClient;
     public static contracts = Contracts;
 
     private static _isConsole = true;
@@ -47,8 +48,8 @@ class ApplicationInsights {
      * APPINSIGHTS_INSTRUMENTATIONKEY.
      * @returns {ApplicationInsights/Client} a new client
      */
-    public static getClient(instrumentationKey?: string) {
-        return new Client(instrumentationKey);
+    public static createClient(instrumentationKey?: string) {
+        return new NodeClient(instrumentationKey);
     }
 
     /**
@@ -62,7 +63,7 @@ class ApplicationInsights {
      */
     public static setup(instrumentationKey?: string) {
         if(!ApplicationInsights.client) {
-            ApplicationInsights.client = ApplicationInsights.getClient(instrumentationKey);
+            ApplicationInsights.client = ApplicationInsights.createClient(instrumentationKey);
             ApplicationInsights._console = new AutoCollectConsole(ApplicationInsights.client);
             ApplicationInsights._exceptions = new AutoCollectExceptions(ApplicationInsights.client);
             ApplicationInsights._performance = new AutoCollectPerformance(ApplicationInsights.client);

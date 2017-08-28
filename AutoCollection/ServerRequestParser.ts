@@ -8,6 +8,8 @@ import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import RequestParser = require("./RequestParser");
 import CorrelationIdManager = require("../Library/CorrelationIdManager");
+import RequestTelemetry = require("../Library/TelemetryTypes/RequestTelemetry")
+import Identified = require("../Library/TelemetryTypes/Identified")
 
 /**
  * Helper class to read data from the requst/response objects and convert them into the telemetry contract
@@ -15,10 +17,10 @@ import CorrelationIdManager = require("../Library/CorrelationIdManager");
 class ServerRequestParser extends RequestParser {
     private static keys = new Contracts.ContextTagKeys();
 
-    private rawHeaders: {[key: string] : string};
-    private socketRemoteAddress:string;
-    private connectionRemoteAddress:string;
-    private legacySocketRemoteAddress:string;
+    private rawHeaders: { [key: string]: string };
+    private socketRemoteAddress: string;
+    private connectionRemoteAddress: string;
+    private legacySocketRemoteAddress: string;
     private userAgent: string;
     private sourceCorrelationId: string;
     private parentId: string;
@@ -27,7 +29,7 @@ class ServerRequestParser extends RequestParser {
 
     private correlationContextHeader: string;
 
-    constructor(request:http.ServerRequest, requestId?: string) {
+    constructor(request: http.ServerRequest, requestId?: string) {
         super();
         if (request) {
             this.method = request.method;
@@ -42,11 +44,11 @@ class ServerRequestParser extends RequestParser {
         }
     }
 
-    public onError(error: Error | string, properties?:{[key: string]: string}, ellapsedMilliseconds?: number) {
+    public onError(error: Error | string, properties?: { [key: string]: string }, ellapsedMilliseconds?: number) {
         this._setStatus(undefined, error, properties);
     }
 
-    public onResponse(response:http.ServerResponse, properties?:{[key: string]: string}, ellapsedMilliseconds?: number) {
+    public onResponse(response: http.ServerResponse, properties?: { [key: string]: string }, ellapsedMilliseconds?: number) {
         this._setStatus(response.statusCode, undefined, properties);
 
         if (ellapsedMilliseconds) {
@@ -54,27 +56,24 @@ class ServerRequestParser extends RequestParser {
         }
     }
 
-    public getRequestData():Contracts.Data<Contracts.RequestData> {
-        var requestData = new Contracts.RequestData();
-        requestData.id = this.requestId;
-        requestData.name = this.method + " " + url.parse(this.url).pathname;
-        requestData.url = this.url;
-        requestData.source = this.sourceCorrelationId;
-        requestData.duration = Util.msToTimeSpan(this.duration);
-        requestData.responseCode = this.statusCode ? this.statusCode.toString() : null;
-        requestData.success = this._isSuccess();
-        requestData.properties = this.properties;
+    public getRequestTelemetry(): RequestTelemetry {
+        var requestTelemetry: RequestTelemetry & Identified = {
+            id: this.requestId,
+            name: this.method + " " + url.parse(this.url).pathname,
+            url: this.url,
+            source: this.sourceCorrelationId,
+            duration: this.duration,
+            resultCode: this.statusCode ? this.statusCode.toString() : null,
+            success: this._isSuccess(),
+            properties: this.properties
+        };
 
-        var data = new Contracts.Data<Contracts.RequestData>();
-        data.baseType = Contracts.DataTypes.REQUEST;
-        data.baseData = requestData;
-
-        return data;
+        return requestTelemetry;
     }
 
-    public getRequestTags(tags:{[key: string]:string}):{[key: string]:string} {
+    public getRequestTags(tags: { [key: string]: string }): { [key: string]: string } {
         // create a copy of the context for requests since client info will be used here
-        var newTags = <{[key: string]:string}>{};
+        var newTags = <{ [key: string]: string }>{};
         for (var key in tags) {
             newTags[key] = tags[key];
         }
@@ -90,15 +89,15 @@ class ServerRequestParser extends RequestParser {
         return newTags;
     }
 
-    public getOperationId(tags:{[key: string]:string}) {
+    public getOperationId(tags: { [key: string]: string }) {
         return tags[ServerRequestParser.keys.operationId] || this.operationId;
     }
 
-    public getOperationParentId(tags:{[key: string]:string}) {
+    public getOperationParentId(tags: { [key: string]: string }) {
         return tags[ServerRequestParser.keys.operationParentId] || this.parentId || this.getOperationId(tags);
     }
 
-    public getOperationName(tags:{[key: string]:string}) {
+    public getOperationName(tags: { [key: string]: string }) {
         return tags[ServerRequestParser.keys.operationName] || this.method + " " + url.parse(this.url).pathname;
     }
 
@@ -110,7 +109,7 @@ class ServerRequestParser extends RequestParser {
         return this.correlationContextHeader;
     }
 
-    private _getAbsoluteUrl(request:http.ServerRequest):string {
+    private _getAbsoluteUrl(request: http.ServerRequest): string {
         if (!request.headers) {
             return request.url;
         }
@@ -137,7 +136,7 @@ class ServerRequestParser extends RequestParser {
         // Note: including the port would cause the payload to be rejected by the data collector
         var ipMatch = /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/;
 
-        var check = (str:string):string => {
+        var check = (str: string): string => {
             var results = ipMatch.exec(str);
             if (results) {
                 return results[0];
@@ -169,7 +168,7 @@ class ServerRequestParser extends RequestParser {
         return value;
     }
 
-    private parseHeaders(request:http.ServerRequest, requestId?: string) {
+    private parseHeaders(request: http.ServerRequest, requestId?: string) {
         this.rawHeaders = request.headers || (<any>request).rawHeaders;
         this.userAgent = request.headers && request.headers["user-agent"];
         this.sourceCorrelationId = Util.getCorrelationContextTarget(request, RequestResponseHeaders.requestContextSourceKey);
@@ -193,11 +192,11 @@ class ServerRequestParser extends RequestParser {
                 // override the requestId with the provided one.
                 this.requestId = requestId;
             }
-            this.operationId = CorrelationIdManager.getRootId(this.requestId); 
+            this.operationId = CorrelationIdManager.getRootId(this.requestId);
         }
     }
 
-    public static parseId(cookieValue: string): string{
+    public static parseId(cookieValue: string): string {
         return cookieValue.substr(0, cookieValue.indexOf('|'));
     }
 }

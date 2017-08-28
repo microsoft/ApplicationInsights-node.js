@@ -17,11 +17,16 @@ export const subscriber = (event: IStandardEvent<mysql.IMysqlData>) => {
         const connectionConfig = connection.config || {};
         const dbName = connectionConfig.socketPath ? connectionConfig.socketPath : `${connectionConfig.host || "localhost"}:${connectionConfig.port}`;
         client.trackDependency(
-                dbName,
-                sqlString,
-                event.data.duration | 0,
-                success,
-                "mysql");
+            {
+                target: dbName,
+                data: sqlString,
+                name: sqlString,
+                duration: event.data.duration,
+                success: success,
+                /* TODO: transmit result code from mysql */
+                resultCode: success? "0": "1",
+                dependencyTypeName: "mysql"
+            });
     });
 };
 

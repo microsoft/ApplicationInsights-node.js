@@ -11,13 +11,13 @@ import Sender = require("../Library/Sender");
  * A fake response class that passes by default
  */
 class fakeResponse {
-    private callbacks: {[event:string]: (data?: any)=>void} = Object.create(null);
-    public setEncoding(): void {};
+    private callbacks: { [event: string]: (data?: any) => void } = Object.create(null);
+    public setEncoding(): void { };
     public statusCode: number;
 
-    constructor(private passImmediately: boolean = true) {}
+    constructor(private passImmediately: boolean = true) { }
 
-    public on(event: string, callback: ()=> void) {
+    public on(event: string, callback: () => void) {
         this.callbacks[event] = callback;
         if (event == "end" && this.passImmediately) {
             this.pass();
@@ -26,7 +26,7 @@ class fakeResponse {
 
     public once(event: string, callback: () => void) {
         this.callbacks[event] = callback;
-        if(event == "end" && this.passImmediately) {
+        if (event == "end" && this.passImmediately) {
             this.pass();
         }
     }
@@ -34,7 +34,7 @@ class fakeResponse {
     public pass(): void {
         this.statusCode = 200;
         this.callbacks["data"] ? this.callbacks["data"]("data") : null;
-        this.callbacks["end"] ? this.callbacks["end"](): null;
+        this.callbacks["end"] ? this.callbacks["end"]() : null;
         this.callbacks["finish"] ? this.callbacks["finish"]() : null;
     }
 }
@@ -43,12 +43,12 @@ class fakeResponse {
  * A fake request class that fails by default
  */
 class fakeRequest {
-    private callbacks: {[event:string]: Function} = Object.create(null);
-    public write(): void {}
-    public headers: {[id: string]: string} = {};
+    private callbacks: { [event: string]: Function } = Object.create(null);
+    public write(): void { }
+    public headers: { [id: string]: string } = {};
     public agent = { protocol: 'http' };
 
-    constructor (private failImmediatly: boolean = true, public url: string = undefined) {}
+    constructor(private failImmediatly: boolean = true, public url: string = undefined) { }
 
     public on(event: string, callback: Function) {
         this.callbacks[event] = callback;
@@ -58,7 +58,7 @@ class fakeRequest {
     }
 
     public fail(): void {
-        this.callbacks["error"] ? this.callbacks["error"](): null;
+        this.callbacks["error"] ? this.callbacks["error"]() : null;
     }
 
     public end(): void {
@@ -70,12 +70,12 @@ class fakeRequest {
  * A fake http server
  */
 class fakeHttpServer extends events.EventEmitter {
-    public setCallback( callback: any) {
+    public setCallback(callback: any) {
         this.on("request", callback);
     }
 
     public listen(port: any, host?: any, backlog?: any, callback?: any) {
-    	this.emit("listening");
+        this.emit("listening");
     }
 
     public emitRequest(url: string) {
@@ -92,12 +92,12 @@ class fakeHttpServer extends events.EventEmitter {
  */
 class fakeHttpsServer extends events.EventEmitter {
 
-    public setCallback( callback: any) {
+    public setCallback(callback: any) {
         this.on("request", callback);
     }
 
     public listen(port: any, host?: any, backlog?: any, callback?: any) {
-    	this.emit("listening");
+        this.emit("listening");
     }
 
     public emitRequest(url: string) {
@@ -131,14 +131,16 @@ describe("EndToEnd", () => {
         });
 
         it("should send telemetry", (done) => {
-            var client =AppInsights.getClient("iKey");
-            client.trackEvent("test event");
-            client.trackException(new Error("test error"));
-            client.trackMetric("test metric", 3);
-            client.trackTrace("test trace");
-            client.sendPendingData((response) => {
-                assert.ok(response, "response should not be empty");
-                done();
+            var client = AppInsights.createClient("iKey");
+            client.trackEvent({ name: "test event" });
+            client.trackException({ exception: new Error("test error") });
+            client.trackMetric({ name: "test metric", value: 3 });
+            client.trackTrace({ message: "test trace" });
+            client.flush({
+                callback: (response) => {
+                    assert.ok(response, "response should not be empty");
+                    done();
+                }
             });
         });
 
@@ -159,17 +161,19 @@ describe("EndToEnd", () => {
 
             var server = http.createServer((req: http.ServerRequest, res: http.ServerResponse) => {
                 setTimeout(() => {
-                    AppInsights.client.sendPendingData((response) => {
-                        assert.ok(response, "response should not be empty");
-                        done();
+                    AppInsights.client.flush({
+                        callback: (response) => {
+                            assert.ok(response, "response should not be empty");
+                            done();
+                        }
                     });
                 }, 10);
             });
 
             server.on("listening", () => {
-                http.get("http://localhost:0/test", (response: http.ClientResponse) => {});
+                http.get("http://localhost:0/test", (response: http.ClientResponse) => { });
             });
-	    server.listen(0, "::");
+            server.listen(0, "::");
         });
 
         it("should collect https request telemetry", (done) => {
@@ -189,17 +193,19 @@ describe("EndToEnd", () => {
 
             var server = https.createServer(null, (req: http.ServerRequest, res: http.ServerResponse) => {
                 setTimeout(() => {
-                    AppInsights.client.sendPendingData((response) => {
-                        assert.ok(response, "response should not be empty");
-                        done();
+                    AppInsights.client.flush({
+                        callback: (response) => {
+                            assert.ok(response, "response should not be empty");
+                            done();
+                        }
                     });
                 }, 10);
             });
 
             server.on("listening", () => {
-                https.get("https://localhost:0/test", (response: http.ClientResponse) => {});
+                https.get(<any>"https://localhost:0/test", (response: http.ClientResponse) => { });
             });
-	    server.listen(0, "::");
+            server.listen(0, "::");
         });
     });
 
@@ -221,7 +227,7 @@ describe("EndToEnd", () => {
             this.readFile = sinon.stub(fs, 'readFile').yields(null, '');
         });
 
-        afterEach(()=> {
+        afterEach(() => {
             cidStub.restore();
             this.request.restore();
             this.writeFile.restore();
@@ -230,75 +236,81 @@ describe("EndToEnd", () => {
             this.readFile.restore();
             this.writeFileSync.restore();
             this.existsSync.restore();
-    	});
+        });
 
         it("disabled by default", (done) => {
             var req = new fakeRequest();
 
-            var client = AppInsights.getClient("key");
+            var client = AppInsights.createClient("key");
 
-            client.trackEvent("test event");
+            client.trackEvent({ name: "test event" });
 
             this.request.returns(req);
 
-            client.sendPendingData((response: any) => {
-                // yield for the caching behavior
-                setImmediate(() => {
-                    assert(this.writeFile.callCount === 0);
-                    done();
-                });
+            client.flush({
+                callback: (response: any) => {
+                    // yield for the caching behavior
+                    setImmediate(() => {
+                        assert(this.writeFile.callCount === 0);
+                        done();
+                    });
+                }
             });
         });
 
         it("stores data to disk when enabled", (done) => {
             var req = new fakeRequest();
 
-            var client = AppInsights.getClient("key");
+            var client = AppInsights.createClient("key");
             client.channel.setOfflineMode(true);
 
-            client.trackEvent("test event");
+            client.trackEvent({ name: "test event" });
 
             this.request.returns(req);
 
-            client.sendPendingData((response: any) => {
-                // yield for the caching behavior
-                setImmediate(() => {
-                    assert(this.writeFile.callCount === 1);
-                    done();
-                });
+            client.flush({
+                callback: (response: any) => {
+                    // yield for the caching behavior
+                    setImmediate(() => {
+                        assert(this.writeFile.callCount === 1);
+                        done();
+                    });
+                }
             });
         });
 
-         it("checks for files when connection is back online", (done) => {
+        it("checks for files when connection is back online", (done) => {
             var req = new fakeRequest(false);
             var res = new fakeResponse();
             res.statusCode = 200;
 
-            var client = AppInsights.getClient("key");
+            var client = AppInsights.createClient("key");
             client.channel.setOfflineMode(true, 0);
 
-            client.trackEvent("test event");
+            client.trackEvent({ name: "test event" });
 
             this.request.returns(req);
             this.request.yields(res);
 
-            client.sendPendingData((response: any) => {
-                // wait until sdk looks for offline files
-                setTimeout(() => {
-                    assert(this.readdir.callCount === 1);
-                    assert(this.readFile.callCount === 1);
-                    done();
-                }, 10);
+            client.flush({
+                callback: (response: any) => {
+                    // wait until sdk looks for offline files
+                    setTimeout(() => {
+                        assert(this.readdir.callCount === 1);
+                        assert(this.readFile.callCount === 1);
+                        done();
+                    }, 10);
+                }
             });
         });
 
         it("cache payload synchronously when process crashes", () => {
             var req = new fakeRequest(true);
 
-            var client = AppInsights.getClient("key");
+            var client = AppInsights.createClient("key");
             client.channel.setOfflineMode(true);
 
-            client.trackEvent("test event");
+            client.trackEvent({ name: "test event" });
 
             this.request.returns(req);
 
@@ -307,5 +319,5 @@ describe("EndToEnd", () => {
             assert(this.existsSync.callCount === 1);
             assert(this.writeFileSync.callCount === 1);
         });
-     });
+    });
 });

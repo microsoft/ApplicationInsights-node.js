@@ -127,14 +127,16 @@ Insights client. Examples follow:
 let appInsights = require("applicationinsights");
 appInsights.setup().start(); // assuming ikey in env var. start() can be omitted to disable any non-custom data
 let client = appInsights.client;
-client.trackEvent("my custom event", {customProperty: "custom property value"});
-client.trackException(new Error("handled exceptions can be logged with this method"));
-client.trackMetric("custom metric", 3);
-client.trackTrace("trace message");
+client.trackEvent({name: "my custom event", properties: {customProperty: "custom property value"}});
+client.trackException({exception: new Error("handled exceptions can be logged with this method")});
+client.trackMetric({name: "custom metric", value: 3});
+client.trackTrace({message: "trace message"});
+client.trackDependency({target:"http://dbname", name:"select customers proc", data:"SELECT * FROM Customers", duration:231, resultCode:0, success: true, dependencyTypeName: "ZSQL"});
+client.trackRequest({name:"GET /customers", url:"http://myserver/customers", duration:309, resultCode:200, success:true});
 
 let http = require("http");
 http.createServer( (req, res) => {
-  client.trackRequest(req, res); // Place at the beginning of your request handler
+  client.trackRequest({request: req, response: res}); // Place at the beginning of your request handler
 });
 ```
 
@@ -201,8 +203,8 @@ let appInsights = require("applicationinsights");
 appInsights.setup("_ikey-A_").start();
 
 // track some events manually under another ikey
-let otherClient = appInsights.getClient("_ikey-B_");
-otherClient.trackEvent("my custom event");
+let otherClient = appInsights.createClient("_ikey-B_");
+otherClient.trackEvent({name: "my custom event"});
 ```
 
 ## Examples
@@ -211,7 +213,7 @@ otherClient.trackEvent("my custom event");
 
     ```javascript
     let appInsights = require("applicationinsights");
-    let client = appInsights.getClient();
+    let client = appInsights.createClient();
 
     var success = false;
     let startTime = Date.now();
@@ -219,7 +221,7 @@ otherClient.trackEvent("my custom event");
     let duration = Date.now() - startTime;
     success = true;
 
-    client.trackDependency("dependency name", "command name", duration, success);
+    client.trackDependency({target:"http://dbname", name:"select customers proc", data:"SELECT * FROM Customers", duration:duration, resultCode:0, success: true, dependencyTypeName: "ZSQL"});
     ```
 
 * Assign custom properties to be included with all events
@@ -236,9 +238,14 @@ otherClient.trackEvent("my custom event");
     collection, call `.setAutoCollectRequests(false)` before calling `start()`.
 
     ```javascript
+    appInsights.client.trackRequest({name:"GET /customers", url:"http://myserver/customers", duration:309, resultCode:200, success:true});
+    ```
+    Alternatively you can track requests using ```trackNodeHttpRequest``` method:   
+
+    ```javascript
     var server = http.createServer((req, res) => {
       if ( req.method === "GET" ) {
-          appInsights.client.trackRequest(req, res);
+          appInsights.client.trackNodeHttpRequest({request:req, response:res});
       }
       // other work here....
       res.end();
@@ -251,7 +258,7 @@ otherClient.trackEvent("my custom event");
     let start = Date.now();
     server.on("listening", () => {
       let duration = Date.now() - start;
-      appInsights.client.trackMetric("server startup time", duration);
+      appInsights.client.trackMetric({name: "server startup time", value: duration});
     });
     ```
 
