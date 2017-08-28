@@ -43,7 +43,7 @@ class Client {
         this.context = new Context();
         this.commonProperties = {};
 
-        var sender = new Sender(() => config.endpointUrl);
+        var sender = new Sender(this.config);
         this.channel = new Channel(() => config.disableAppInsights, () => config.maxBatchSize, () => config.maxBatchIntervalMs, sender);
     }
 
