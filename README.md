@@ -294,14 +294,6 @@ otherClient.trackEvent("my custom event");
 
 ---
 
-## Osvaldo's feedback (TODO: remove before final commit)
-* DataTypes -> enum, not string?
-* Dependency ID and request ID?
-* EnvelopeFactory: line 34 - enumerating all types?
-* [DONE] Moving telemetry classes into their own folder
-* What's your opinion on simply overriding trackRequest here to overload? If input is not of type NodeHttpRequestTelemetry call into the base class. This allows trackRequest to be used for both manual and the preferred one of the two node shortcut methods. Same question for the dependency shortcut as well
-* getClient - rename
-
 This project has adopted the [Microsoft Open Source Code of Conduct][]. For more
 information see the [Code of Conduct FAQ][] or contact
 [opencode@microsoft.com][] with any additional questions or comments.
