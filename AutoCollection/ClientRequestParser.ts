@@ -9,7 +9,7 @@ import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import RequestParser = require("./RequestParser");
 import CorrelationIdManager = require("../Library/CorrelationIdManager");
-import DependencyTelemetry = require("../Library/DependencyTelemetry");
+import DependencyTelemetry = require("../Library/TelemetryTypes/DependencyTelemetry");
 
 /**
  * Helper class to read data from the requst/response objects and convert them into the telemetry contract

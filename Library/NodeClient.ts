@@ -3,8 +3,8 @@ import https = require("https")
 import Client = require("./Client")
 import ServerRequestTracking = require("../AutoCollection/ServerRequests")
 import ClientRequestTracking = require("../AutoCollection/ClientRequests")
-import NodeHttpDependencyTelemetry = require("./NodeHttpDependencyTelemetry")
-import NodeHttpRequestTelemetry = require("./NodeHttpRequestTelemetry")
+import NodeHttpDependencyTelemetry = require("./TelemetryTypes/NodeHttpDependencyTelemetry")
+import NodeHttpRequestTelemetry = require("./TelemetryTypes/NodeHttpRequestTelemetry")
 import Logging = require("./Logging")
 
 /**

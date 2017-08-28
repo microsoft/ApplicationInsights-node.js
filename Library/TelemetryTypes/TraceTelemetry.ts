@@ -1,5 +1,5 @@
 import Telemetry = require("./Telemetry")
-import Contracts = require("../Declarations/Contracts")
+import Contracts = require("../../Declarations/Contracts")
 
 /**
  * Trace telemetry reports technical, usually detailed information about the environment, 

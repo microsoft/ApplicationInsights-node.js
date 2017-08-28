@@ -21,7 +21,7 @@ export const subscriber = (event: IStandardEvent<mysql.IMysqlData>) => {
                 target: dbName,
                 data: sqlString,
                 name: sqlString,
-                duration: event.data.duration | 0,
+                duration: event.data.duration,
                 success: success,
                 /* TODO: transmit result code from mysql */
                 resultCode: success? "0": "1",

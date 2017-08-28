@@ -136,9 +136,11 @@ describe("EndToEnd", () => {
             client.trackException({ exception: new Error("test error") });
             client.trackMetric({ name: "test metric", value: 3 });
             client.trackTrace({ message: "test trace" });
-            client.flush((response) => {
-                assert.ok(response, "response should not be empty");
-                done();
+            client.flush({
+                callback: (response) => {
+                    assert.ok(response, "response should not be empty");
+                    done();
+                }
             });
         });
 
@@ -159,9 +161,11 @@ describe("EndToEnd", () => {
 
             var server = http.createServer((req: http.ServerRequest, res: http.ServerResponse) => {
                 setTimeout(() => {
-                    AppInsights.client.flush((response) => {
-                        assert.ok(response, "response should not be empty");
-                        done();
+                    AppInsights.client.flush({
+                        callback: (response) => {
+                            assert.ok(response, "response should not be empty");
+                            done();
+                        }
                     });
                 }, 10);
             });
@@ -189,9 +193,11 @@ describe("EndToEnd", () => {
 
             var server = https.createServer(null, (req: http.ServerRequest, res: http.ServerResponse) => {
                 setTimeout(() => {
-                    AppInsights.client.flush((response) => {
-                        assert.ok(response, "response should not be empty");
-                        done();
+                    AppInsights.client.flush({
+                        callback: (response) => {
+                            assert.ok(response, "response should not be empty");
+                            done();
+                        }
                     });
                 }, 10);
             });
@@ -241,12 +247,14 @@ describe("EndToEnd", () => {
 
             this.request.returns(req);
 
-            client.flush((response: any) => {
-                // yield for the caching behavior
-                setImmediate(() => {
-                    assert(this.writeFile.callCount === 0);
-                    done();
-                });
+            client.flush({
+                callback: (response: any) => {
+                    // yield for the caching behavior
+                    setImmediate(() => {
+                        assert(this.writeFile.callCount === 0);
+                        done();
+                    });
+                }
             });
         });
 
@@ -260,12 +268,14 @@ describe("EndToEnd", () => {
 
             this.request.returns(req);
 
-            client.flush((response: any) => {
-                // yield for the caching behavior
-                setImmediate(() => {
-                    assert(this.writeFile.callCount === 1);
-                    done();
-                });
+            client.flush({
+                callback: (response: any) => {
+                    // yield for the caching behavior
+                    setImmediate(() => {
+                        assert(this.writeFile.callCount === 1);
+                        done();
+                    });
+                }
             });
         });
 
@@ -282,13 +292,15 @@ describe("EndToEnd", () => {
             this.request.returns(req);
             this.request.yields(res);
 
-            client.flush((response: any) => {
-                // wait until sdk looks for offline files
-                setTimeout(() => {
-                    assert(this.readdir.callCount === 1);
-                    assert(this.readFile.callCount === 1);
-                    done();
-                }, 10);
+            client.flush({
+                callback: (response: any) => {
+                    // wait until sdk looks for offline files
+                    setTimeout(() => {
+                        assert(this.readdir.callCount === 1);
+                        assert(this.readFile.callCount === 1);
+                        done();
+                    }, 10);
+                }
             });
         });
 

@@ -10,14 +10,16 @@ import { CorrelationContextManager } from "../AutoCollection/CorrelationContextM
 import Sender = require("./Sender");
 import Util = require("./Util");
 import Logging = require("./Logging");
-import Telemetry = require("./Telemetry")
-import DependencyTelemetry = require("./DependencyTelemetry")
-import EventTelemetry = require("./EventTelemetry")
-import TraceTelemetry = require("./TraceTelemetry")
-import ExceptionTelemetry = require("./ExceptionTelemetry")
-import RequestTelemetry = require("./RequestTelemetry")
-import MetricTelemetry = require("./MetricTelemetry")
+import Telemetry = require("./TelemetryTypes/Telemetry")
+import DependencyTelemetry = require("./TelemetryTypes/DependencyTelemetry")
+import EventTelemetry = require("./TelemetryTypes/EventTelemetry")
+import TraceTelemetry = require("./TelemetryTypes/TraceTelemetry")
+import ExceptionTelemetry = require("./TelemetryTypes/ExceptionTelemetry")
+import RequestTelemetry = require("./TelemetryTypes/RequestTelemetry")
+import MetricTelemetry = require("./TelemetryTypes/MetricTelemetry")
 import EnvelopeFactory = require("./EnvelopeFactory")
+import FlushOptions = require("./FlushOptions")
+import TelemetryType = require("./TelemetryTypes/TelemetryType")
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -50,7 +52,7 @@ class Client {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackTrace(telemetry: TraceTelemetry): void {
-        this.track(telemetry, Contracts.DataTypes.MESSAGE);
+        this.track(telemetry, TelemetryType.MessageData);
     }
 
     /**
@@ -60,7 +62,7 @@ class Client {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackMetric(telemetry: MetricTelemetry): void {
-        this.track(telemetry, Contracts.DataTypes.METRIC);
+        this.track(telemetry, TelemetryType.MetricData);
     }
 
     /**
@@ -71,7 +73,7 @@ class Client {
         if (telemetry && telemetry.exception && !Util.isError(telemetry.exception)) {
             telemetry.exception = new Error(telemetry.exception.toString());
         }
-        this.track(telemetry, Contracts.DataTypes.EXCEPTION);
+        this.track(telemetry, TelemetryType.ExceptionData);
     }
 
     /**
@@ -80,7 +82,7 @@ class Client {
      */
     public trackEvent(telemetry: EventTelemetry): void {
 
-        this.track(telemetry, Contracts.DataTypes.EVENT);
+        this.track(telemetry, TelemetryType.EventData);
     }
 
     /**
@@ -88,7 +90,7 @@ class Client {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackRequest(telemetry: RequestTelemetry): void {
-        this.track(telemetry, Contracts.DataTypes.REQUEST);
+        this.track(telemetry, TelemetryType.RequestData);
     }
 
     /**
@@ -102,14 +104,17 @@ class Client {
         if (telemetry && !telemetry.target && telemetry.data) {
             telemetry.target = url.parse(telemetry.data).host;
         }
-        this.track(telemetry, Contracts.DataTypes.REMOTE_DEPENDENCY);
+        this.track(telemetry, TelemetryType.RemoteDependencyData);
     }
 
     /**
      * Immediately send all queued telemetry.
+     * @param options Flush options, including indicator whether app is crashing and callback
      */
-    public flush(callback?: (v: string) => void) {
-        this.channel.triggerSend(false, callback);
+    public flush(options?: FlushOptions) {
+        this.channel.triggerSend(
+            options ? !!options.isAppCrashing : false,
+            options ? options.callback : undefined);
     }
 
     /**
@@ -117,7 +122,7 @@ class Client {
      * @param data the telemetry to send
      * @param telemetryType specify the type of telemetry you are tracking from the list of Contracts.DataTypes
      */
-    public track(telemetry: Telemetry, telemetryType: string) {
+    public track(telemetry: Telemetry, telemetryType: TelemetryType) {
         if (telemetry && telemetryType) {
             var envelope = EnvelopeFactory.createEnvelope(telemetry, telemetryType, this.commonProperties, this.context, this.config);
 

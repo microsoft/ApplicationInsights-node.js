@@ -36,8 +36,8 @@ class AutoCollectExceptions {
             var self = this;
             if (!this._exceptionListenerHandle) {
                 var handle = (reThrow: boolean, error: Error) => {
-                    this._client.trackException({exception: error});
-                    this._client.flush();
+                    this._client.trackException({ exception: error });
+                    this._client.flush({ isAppCrashing: true });
                     if (reThrow) {
                         throw error;
                     }

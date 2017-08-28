@@ -17,7 +17,7 @@ export const subscriber = (event: IStandardEvent<pg.IPostgresData>) => {
             target: conn,
             data: sql,
             name: sql,
-            duration: event.data.duration | 0,
+            duration: event.data.duration,
             success: success,
             resultCode: success ? "0" : "1",
             dependencyTypeName: "postgres"});

@@ -10,14 +10,14 @@ import Config = require("../../Library/Config");
 import Contracts = require("../../Declarations/Contracts");
 import RequestResponseHeaders = require("../../Library/RequestResponseHeaders");
 import Util = require("../../Library/Util")
-import EventTelemetry = require("../../Library/EventTelemetry")
-import DependencyTelemetry = require("../../Library/DependencyTelemetry")
+import EventTelemetry = require("../../Library/TelemetryTypes/EventTelemetry")
+import DependencyTelemetry = require("../../Library/TelemetryTypes/DependencyTelemetry")
 import EnvelopeFactory = require("../../Library/EnvelopeFactory");
-import RequestTelemetry = require("../../Library/RequestTelemetry")
-import MetricTelemetry = require("../../Library/MetricTelemetry")
-import ExceptionTelemetry = require("../../Library/ExceptionTelemetry")
-import TraceTelemetry = require("../../Library/TraceTelemetry")
-
+import RequestTelemetry = require("../../Library/TelemetryTypes/RequestTelemetry")
+import MetricTelemetry = require("../../Library/TelemetryTypes/MetricTelemetry")
+import ExceptionTelemetry = require("../../Library/TelemetryTypes/ExceptionTelemetry")
+import TraceTelemetry = require("../../Library/TelemetryTypes/TraceTelemetry")
+import TelemetryType = require("../../Library/TelemetryTypes/TelemetryType")
 
 describe("Library/Client", () => {
 
@@ -33,22 +33,26 @@ describe("Library/Client", () => {
     var trackStub: Sinon.SinonStub;
     var triggerStub: Sinon.SinonStub;
     var sendStub: Sinon.SinonStub;
+    var saveOnCrashStub: Sinon.SinonStub;
 
     before(() => {
         trackStub = sinon.stub(client, "track");
         triggerStub = sinon.stub(client.channel, "triggerSend");
         sendStub = sinon.stub(client.channel, "send");
+        saveOnCrashStub = sinon.stub(client.channel._sender, "saveOnCrash");
     });
     after(() => {
         trackStub.restore();
         triggerStub.restore();
         sendStub.restore();
+        saveOnCrashStub.restore();
 
     });
 
     afterEach(() => {
         sendStub.reset();
         client.clearTelemetryProcessors();
+        saveOnCrashStub.reset();
     })
 
     var invalidInputHelper = (name: string) => {
@@ -584,6 +588,16 @@ describe("Library/Client", () => {
     });
 
     describe("#flush()", () => {
+
+        afterEach(() => {
+            client.clearTelemetryProcessors();
+            saveOnCrashStub.reset();
+            sendStub.restore();
+            sendStub = sinon.stub(client.channel, "send");
+            triggerStub.restore();
+            triggerStub = sinon.stub(client.channel, "triggerSend");
+        });
+
         it("should invoke the sender", () => {
             triggerStub.reset();
             client.flush();
@@ -593,10 +607,30 @@ describe("Library/Client", () => {
         it("should accept a callback", () => {
             triggerStub.reset();
             var callback = sinon.spy();
-            client.flush(callback);
+            client.flush({ callback: callback });
             assert.strictEqual(triggerStub.firstCall.args[0], false);
             assert.strictEqual(triggerStub.firstCall.args[1], callback);
         });
+
+        it("should save on disk when isAppCrashing option is set to true", () => {
+            sendStub.reset();
+            client.flush({ isAppCrashing: true });
+            assert.ok(sendStub.notCalled, "saveOnCrash should be called, not send");
+            saveOnCrashStub.reset();
+
+            // temporarily restore send and trigger stubs to allow saveOnCrash to be called
+            sendStub.restore();
+            triggerStub.restore();
+
+            // fake something in the buffer
+            client.channel._buffer.push("");
+            client.flush({ isAppCrashing: true });
+
+            assert.ok(saveOnCrashStub.calledOnce);
+            saveOnCrashStub.restore();
+
+        });
+
     });
 
     describe("#track()", () => {
@@ -604,7 +638,7 @@ describe("Library/Client", () => {
             sendStub.reset();
 
             trackStub.restore();
-            client.track(testEventTelemetry, Contracts.DataTypes.EVENT);
+            client.track(testEventTelemetry, TelemetryType.EventData);
             trackStub = sinon.stub(client, "track");
 
             assert.ok(sendStub.calledOnce);
@@ -614,7 +648,7 @@ describe("Library/Client", () => {
             sendStub.reset();
             var createEnvelopeSpy = sinon.spy(EnvelopeFactory, "createEnvelope");
             trackStub.restore();
-            client.track(testEventTelemetry, Contracts.DataTypes.EVENT);
+            client.track(testEventTelemetry, TelemetryType.EventData);
             trackStub = sinon.stub(client, "track");
 
             var expected = createEnvelopeSpy.firstCall.returnValue;
@@ -633,7 +667,7 @@ describe("Library/Client", () => {
                 return true;
             });
 
-            client.track(testEventTelemetry, Contracts.DataTypes.EVENT);
+            client.track(testEventTelemetry, TelemetryType.EventData);
 
             assert.equal(sendStub.callCount, 1, "send called once");
 
@@ -651,7 +685,7 @@ describe("Library/Client", () => {
             });
             testEventTelemetry.contextObjects = { "name": expectedName };
 
-            client.track(testEventTelemetry, Contracts.DataTypes.EVENT);
+            client.track(testEventTelemetry, TelemetryType.EventData);
             testEventTelemetry.contextObjects = undefined;
 
             assert.equal(sendStub.callCount, 1, "send called once");
@@ -677,7 +711,7 @@ describe("Library/Client", () => {
                 env.name += ", Third";
                 return true;
             });
-            client.track(testEventTelemetry, Contracts.DataTypes.EVENT);
+            client.track(testEventTelemetry, TelemetryType.EventData);
             assert.equal(sendStub.callCount, 1, "send called once");
 
             var actualData = sendStub.firstCall.args[0] as Contracts.Envelope;
@@ -691,7 +725,7 @@ describe("Library/Client", () => {
                 return false;
             });
 
-            client.track(testEventTelemetry, Contracts.DataTypes.EVENT);
+            client.track(testEventTelemetry, TelemetryType.EventData);
 
             assert.ok(sendStub.notCalled, "send should not be called");
         });
@@ -708,7 +742,7 @@ describe("Library/Client", () => {
                 return true;
             });
 
-            client.track(testEventTelemetry, Contracts.DataTypes.EVENT);
+            client.track(testEventTelemetry, TelemetryType.EventData);
 
             assert.ok(sendStub.called, "send should be called despite telemetry processor failure");
             var actualData = sendStub.firstCall.args[0] as Contracts.Envelope;
@@ -726,7 +760,7 @@ describe("Library/Client", () => {
                 return true;
             });
 
-            client.track(testEventTelemetry, Contracts.DataTypes.EVENT);
+            client.track(testEventTelemetry, TelemetryType.EventData);
 
             assert.ok(processorExecuted, "telemetry processor should be executed");
         });
@@ -743,7 +777,7 @@ describe("Library/Client", () => {
             });
 
             client.clearTelemetryProcessors();
-            client.track(testEventTelemetry, Contracts.DataTypes.EVENT);
+            client.track(testEventTelemetry, TelemetryType.EventData);
 
             assert.ok(!processorExecuted, "telemetry processor should NOT be executed");
         });

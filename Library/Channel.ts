@@ -3,14 +3,16 @@ import Logging = require("./Logging");
 import Sender = require("./Sender");
 
 class Channel {
-    protected _buffer: string[];
+    
     protected _lastSend: number;
     protected _timeoutHandle: any;
 
     protected _isDisabled: () => boolean;
     protected _getBatchSize: () => number;
     protected _getBatchIntervalMs: () => number;
-    protected _sender: Sender;
+
+    public _sender: Sender;
+    public _buffer: string[];
 
     constructor(isDisabled: () => boolean, getBatchSize: () => number, getBatchIntervalMs: () => number, sender: Sender) {
         this._buffer = [];
@@ -66,20 +68,6 @@ class Channel {
                 this._timeoutHandle = null;
                 this.triggerSend(false);
             }, this._getBatchIntervalMs());
-        }
-    }
-
-    public handleCrash(envelope: Contracts.Envelope) {
-        if (envelope) {
-            var payload = this._stringify(envelope);
-            if (typeof payload === "string") {
-                this._buffer.push(payload);
-                this.triggerSend(true);
-            } else {
-                Logging.warn("Could not send crash", envelope);
-            }
-        } else {
-            Logging.warn("handleCrash was called with empty payload", envelope);
         }
     }
 
