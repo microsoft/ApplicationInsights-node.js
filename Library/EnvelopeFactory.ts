@@ -38,22 +38,22 @@ class EnvelopeFactory {
 
 
         switch (telemetryType) {
-            case TelemetryType.MessageData:
+            case TelemetryType.Trace:
                 data = EnvelopeFactory.createTraceData(<TraceTelemetry>telemetry);
                 break;
-            case TelemetryType.RemoteDependencyData:
+            case TelemetryType.Dependency:
                 data = EnvelopeFactory.createDependencyData(<DependencyTelemetry>telemetry);
                 break;
-            case TelemetryType.EventData:
+            case TelemetryType.Event:
                 data = EnvelopeFactory.createEventData(<EventTelemetry>telemetry);
                 break;
-            case TelemetryType.ExceptionData:
+            case TelemetryType.Exception:
                 data = EnvelopeFactory.createExceptionData(<ExceptionTelemetry>telemetry);
                 break;
-            case TelemetryType.RequestData:
+            case TelemetryType.Request:
                 data = EnvelopeFactory.createRequestData(<RequestTelemetry>telemetry);
                 break;
-            case TelemetryType.MetricData:
+            case TelemetryType.Metric:
                 data = EnvelopeFactory.createMetricData(<MetricTelemetry>telemetry);
                 break;
         }
@@ -107,7 +107,7 @@ class EnvelopeFactory {
         }
 
         var data = new Contracts.Data<Contracts.MessageData>();
-        data.baseType = TelemetryType[TelemetryType.MessageData];
+        data.baseType = TelemetryType.Trace;
         data.baseData = trace;
         return data;
     }
@@ -130,7 +130,7 @@ class EnvelopeFactory {
         }
 
         var data = new Contracts.Data<Contracts.RemoteDependencyData>();
-        data.baseType = TelemetryType[TelemetryType.RemoteDependencyData];
+        data.baseType = TelemetryType.Dependency;
         data.baseData = remoteDependency;
         return data;
     }
@@ -142,7 +142,7 @@ class EnvelopeFactory {
         event.measurements = telemetry.measurements;
 
         var data = new Contracts.Data<Contracts.EventData>();
-        data.baseType = TelemetryType[TelemetryType.EventData];
+        data.baseType = TelemetryType.Event;
         data.baseData = event;
         return data;
     }
@@ -163,7 +163,7 @@ class EnvelopeFactory {
         exception.exceptions.push(exceptionDetails);
 
         var data = new Contracts.Data<Contracts.ExceptionData>();
-        data.baseType = TelemetryType[TelemetryType.ExceptionData];
+        data.baseType = TelemetryType.Exception;
         data.baseData = exception;
         return data;
     }
@@ -185,7 +185,7 @@ class EnvelopeFactory {
         requestData.properties = telemetry.properties;
 
         var data = new Contracts.Data<Contracts.RequestData>();
-        data.baseType = TelemetryType[TelemetryType.RequestData];
+        data.baseType = TelemetryType.Request;
         data.baseData = requestData;
         return data;
     }
@@ -208,7 +208,7 @@ class EnvelopeFactory {
         metrics.properties = telemetry.properties;
 
         var data = new Contracts.Data<Contracts.MetricData>();
-        data.baseType = TelemetryType[TelemetryType.MetricData];
+        data.baseType = TelemetryType.Metric;
         data.baseData = metrics;
         return data;
     }

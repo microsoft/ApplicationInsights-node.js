@@ -52,7 +52,7 @@ class Client {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackTrace(telemetry: TraceTelemetry): void {
-        this.track(telemetry, TelemetryType.MessageData);
+        this.track(telemetry, TelemetryType.Trace);
     }
 
     /**
@@ -62,7 +62,7 @@ class Client {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackMetric(telemetry: MetricTelemetry): void {
-        this.track(telemetry, TelemetryType.MetricData);
+        this.track(telemetry, TelemetryType.Metric);
     }
 
     /**
@@ -73,7 +73,7 @@ class Client {
         if (telemetry && telemetry.exception && !Util.isError(telemetry.exception)) {
             telemetry.exception = new Error(telemetry.exception.toString());
         }
-        this.track(telemetry, TelemetryType.ExceptionData);
+        this.track(telemetry, TelemetryType.Exception);
     }
 
     /**
@@ -82,7 +82,7 @@ class Client {
      */
     public trackEvent(telemetry: EventTelemetry): void {
 
-        this.track(telemetry, TelemetryType.EventData);
+        this.track(telemetry, TelemetryType.Event);
     }
 
     /**
@@ -90,7 +90,7 @@ class Client {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackRequest(telemetry: RequestTelemetry): void {
-        this.track(telemetry, TelemetryType.RequestData);
+        this.track(telemetry, TelemetryType.Request);
     }
 
     /**
@@ -104,7 +104,7 @@ class Client {
         if (telemetry && !telemetry.target && telemetry.data) {
             telemetry.target = url.parse(telemetry.data).host;
         }
-        this.track(telemetry, TelemetryType.RemoteDependencyData);
+        this.track(telemetry, TelemetryType.Dependency);
     }
 
     /**

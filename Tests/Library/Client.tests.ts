@@ -638,7 +638,7 @@ describe("Library/Client", () => {
             sendStub.reset();
 
             trackStub.restore();
-            client.track(testEventTelemetry, TelemetryType.EventData);
+            client.track(testEventTelemetry, TelemetryType.Event);
             trackStub = sinon.stub(client, "track");
 
             assert.ok(sendStub.calledOnce);
@@ -648,7 +648,7 @@ describe("Library/Client", () => {
             sendStub.reset();
             var createEnvelopeSpy = sinon.spy(EnvelopeFactory, "createEnvelope");
             trackStub.restore();
-            client.track(testEventTelemetry, TelemetryType.EventData);
+            client.track(testEventTelemetry, TelemetryType.Event);
             trackStub = sinon.stub(client, "track");
 
             var expected = createEnvelopeSpy.firstCall.returnValue;
@@ -667,7 +667,7 @@ describe("Library/Client", () => {
                 return true;
             });
 
-            client.track(testEventTelemetry, TelemetryType.EventData);
+            client.track(testEventTelemetry, TelemetryType.Event);
 
             assert.equal(sendStub.callCount, 1, "send called once");
 
@@ -685,7 +685,7 @@ describe("Library/Client", () => {
             });
             testEventTelemetry.contextObjects = { "name": expectedName };
 
-            client.track(testEventTelemetry, TelemetryType.EventData);
+            client.track(testEventTelemetry, TelemetryType.Event);
             testEventTelemetry.contextObjects = undefined;
 
             assert.equal(sendStub.callCount, 1, "send called once");
@@ -711,7 +711,7 @@ describe("Library/Client", () => {
                 env.name += ", Third";
                 return true;
             });
-            client.track(testEventTelemetry, TelemetryType.EventData);
+            client.track(testEventTelemetry, TelemetryType.Event);
             assert.equal(sendStub.callCount, 1, "send called once");
 
             var actualData = sendStub.firstCall.args[0] as Contracts.Envelope;
@@ -725,7 +725,7 @@ describe("Library/Client", () => {
                 return false;
             });
 
-            client.track(testEventTelemetry, TelemetryType.EventData);
+            client.track(testEventTelemetry, TelemetryType.Event);
 
             assert.ok(sendStub.notCalled, "send should not be called");
         });
@@ -742,7 +742,7 @@ describe("Library/Client", () => {
                 return true;
             });
 
-            client.track(testEventTelemetry, TelemetryType.EventData);
+            client.track(testEventTelemetry, TelemetryType.Event);
 
             assert.ok(sendStub.called, "send should be called despite telemetry processor failure");
             var actualData = sendStub.firstCall.args[0] as Contracts.Envelope;
@@ -760,7 +760,7 @@ describe("Library/Client", () => {
                 return true;
             });
 
-            client.track(testEventTelemetry, TelemetryType.EventData);
+            client.track(testEventTelemetry, TelemetryType.Event);
 
             assert.ok(processorExecuted, "telemetry processor should be executed");
         });
@@ -777,7 +777,7 @@ describe("Library/Client", () => {
             });
 
             client.clearTelemetryProcessors();
-            client.track(testEventTelemetry, TelemetryType.EventData);
+            client.track(testEventTelemetry, TelemetryType.Event);
 
             assert.ok(!processorExecuted, "telemetry processor should NOT be executed");
         });

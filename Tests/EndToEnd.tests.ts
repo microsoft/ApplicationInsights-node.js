@@ -203,7 +203,7 @@ describe("EndToEnd", () => {
             });
 
             server.on("listening", () => {
-                https.get("https://localhost:0/test", (response: http.ClientResponse) => { });
+                https.get(<any>"https://localhost:0/test", (response: http.ClientResponse) => { });
             });
             server.listen(0, "::");
         });
