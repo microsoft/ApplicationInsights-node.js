@@ -38,11 +38,6 @@ interface DependencyTelemetry extends Telemetry {
      * True if remote call was successful, false otherwise
      */
     success: boolean;
-
-    /**
-     * Unique dependency identifier used for correlation. Leave it unspecified when calling trackDependency manually
-     */
-    dependencyId?: string;
 }
 
 export = DependencyTelemetry;

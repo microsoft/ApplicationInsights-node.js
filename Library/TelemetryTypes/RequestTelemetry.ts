@@ -5,12 +5,6 @@ import Telemetry = require("./Telemetry")
  */
 interface RequestTelemetry extends Telemetry
 {
-    /**
-     * Unique identifier of the request. This property is used by auto-collection and auto-correlation logic,
-     * leave it unspecified when tracking requests manually
-     */
-     id?: string;
-
      /**
       * Request name
       */

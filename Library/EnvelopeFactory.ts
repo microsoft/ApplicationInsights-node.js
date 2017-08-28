@@ -12,6 +12,7 @@ import Util = require("./Util")
 import Config = require("./Config");
 import Context = require("./Context");
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
+import Identified = require("./TelemetryTypes/Identified")
 
 /**
  * Manages the logic of creating envelopes from Telemetry objects
@@ -33,13 +34,7 @@ class EnvelopeFactory {
         context?: Context,
         config?: Config): Contracts.Envelope {
 
-        var data:
-            Contracts.Data<Contracts.MessageData> |
-            Contracts.Data<Contracts.RemoteDependencyData> |
-            Contracts.Data<Contracts.EventData> |
-            Contracts.Data<Contracts.ExceptionData> |
-            Contracts.Data<Contracts.RequestData> |
-            Contracts.Data<Contracts.MetricData> = null;
+        var data = null;
 
 
         switch (telemetryType) {
@@ -117,7 +112,7 @@ class EnvelopeFactory {
         return data;
     }
 
-    private static createDependencyData(telemetry: DependencyTelemetry): Contracts.Data<Contracts.RemoteDependencyData> {
+    private static createDependencyData(telemetry: DependencyTelemetry & Identified): Contracts.Data<Contracts.RemoteDependencyData> {
         var remoteDependency = new Contracts.RemoteDependencyData();
         remoteDependency.name = telemetry.name;
         remoteDependency.data = telemetry.data;
@@ -126,7 +121,13 @@ class EnvelopeFactory {
         remoteDependency.success = telemetry.success;
         remoteDependency.type = telemetry.dependencyTypeName;
         remoteDependency.properties = telemetry.properties;
-        remoteDependency.id = telemetry.dependencyId;
+
+        if (telemetry.id) {
+            remoteDependency.id = telemetry.id;
+        }
+        else {
+            remoteDependency.id = Util.newGuid();
+        }
 
         var data = new Contracts.Data<Contracts.RemoteDependencyData>();
         data.baseType = TelemetryType[TelemetryType.RemoteDependencyData];
@@ -162,14 +163,19 @@ class EnvelopeFactory {
         exception.exceptions.push(exceptionDetails);
 
         var data = new Contracts.Data<Contracts.ExceptionData>();
-        data.baseType =  TelemetryType[TelemetryType.ExceptionData];
+        data.baseType = TelemetryType[TelemetryType.ExceptionData];
         data.baseData = exception;
         return data;
     }
 
-    private static createRequestData(telemetry: RequestTelemetry): Contracts.Data<Contracts.RequestData> {
+    private static createRequestData(telemetry: RequestTelemetry & Identified): Contracts.Data<Contracts.RequestData> {
         var requestData = new Contracts.RequestData();
-        requestData.id = telemetry.id;
+        if (telemetry.id) {
+            requestData.id = telemetry.id;
+        }
+        else {
+            requestData.id = Util.newGuid();
+        }
         requestData.name = telemetry.name;
         requestData.url = telemetry.url;
         requestData.source = telemetry.source;

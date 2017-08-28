@@ -9,6 +9,7 @@ import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import RequestParser = require("./RequestParser");
 import CorrelationIdManager = require("../Library/CorrelationIdManager");
 import RequestTelemetry = require("../Library/TelemetryTypes/RequestTelemetry")
+import Identified = require("../Library/TelemetryTypes/Identified")
 
 /**
  * Helper class to read data from the requst/response objects and convert them into the telemetry contract
@@ -56,7 +57,7 @@ class ServerRequestParser extends RequestParser {
     }
 
     public getRequestTelemetry(): RequestTelemetry {
-        var requestTelemetry: RequestTelemetry = {
+        var requestTelemetry: RequestTelemetry & Identified = {
             id: this.requestId,
             name: this.method + " " + url.parse(this.url).pathname,
             url: this.url,
