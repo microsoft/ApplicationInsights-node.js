@@ -1,14 +1,14 @@
 import assert = require("assert");
 import sinon = require("sinon");
 
-import ServerRequestParser = require("../../AutoCollection/ServerRequestParser");
+import HttpRequestParser = require("../../AutoCollection/HttpRequestParser");
 
-describe("AutoCollection/ServerRequestParser", () => {
+describe("AutoCollection/HttpRequestParser", () => {
 
     describe("#parseId()", () => {
         it("should extract guid out of cookie", () => {
             var cookieValue = "id|1234|1234";
-            var actual = ServerRequestParser.parseId(cookieValue);
+            var actual = HttpRequestParser.parseId(cookieValue);
             assert.equal("id", actual, "id in cookie is parsed correctly");
         });
     });
@@ -26,7 +26,7 @@ describe("AutoCollection/ServerRequestParser", () => {
         }
 
         it("should return an absolute url", () => {
-            var helper = new ServerRequestParser(<any>request);
+            var helper = new HttpRequestParser(<any>request);
             var requestData = helper.getRequestTelemetry();
             assert.equal(requestData.url, "http://bing.com/search?q=test");
         });
@@ -34,7 +34,7 @@ describe("AutoCollection/ServerRequestParser", () => {
         it("should return an absolute url for encrypted traffic", () => {
             request.connection.encrypted = true;
 
-            var helper = new ServerRequestParser(<any>request);
+            var helper = new HttpRequestParser(<any>request);
             var requestData = helper.getRequestTelemetry();
             assert.equal(requestData.url, "https://bing.com/search?q=test");
         });
@@ -51,7 +51,7 @@ describe("AutoCollection/ServerRequestParser", () => {
         }
 
         it("should return an absolute url for complex urls", () => {
-            var helper = new ServerRequestParser(<any>requestComplex);
+            var helper = new HttpRequestParser(<any>requestComplex);
             var requestData = helper.getRequestTelemetry();
             assert.equal(requestData.url, "http://bing.com/a/b/c/?q=test&test2");
         });
@@ -68,7 +68,7 @@ describe("AutoCollection/ServerRequestParser", () => {
         }
 
         it("should return an absolute url when url does not have search part", () => {
-            var helper = new ServerRequestParser(<any>requestNoSearchParam);
+            var helper = new HttpRequestParser(<any>requestNoSearchParam);
             var requestData = helper.getRequestTelemetry();
             assert.equal(requestData.url, "http://bing.com/a/");
         });
@@ -85,7 +85,7 @@ describe("AutoCollection/ServerRequestParser", () => {
         }
 
         it("should return an absolute url when url does not have path name", () => {
-            var helper = new ServerRequestParser(<any>requestNoPathName);
+            var helper = new HttpRequestParser(<any>requestNoPathName);
             var requestData = helper.getRequestTelemetry();
             assert.equal(requestData.url, "http://bing.com/");
         });
@@ -109,38 +109,38 @@ describe("AutoCollection/ServerRequestParser", () => {
         }
 
         it("should not override context tags if they are already set", () => {
-            var helper = new ServerRequestParser(<any>request);
+            var helper = new HttpRequestParser(<any>request);
 
             var originalTags: {[key: string]:string} = {
-                [(<any>ServerRequestParser).keys.locationIp]: 'originalIp',
-                [(<any>ServerRequestParser).keys.userId]: 'originalUserId',
-                [(<any>ServerRequestParser).keys.userAgent]: 'originalUserAgent',
-                [(<any>ServerRequestParser).keys.operationName]: 'originalOperationName',
-                [(<any>ServerRequestParser).keys.operationId]: 'originalOperationId',
-                [(<any>ServerRequestParser).keys.operationParentId]: 'originalOperationParentId'
+                [(<any>HttpRequestParser).keys.locationIp]: 'originalIp',
+                [(<any>HttpRequestParser).keys.userId]: 'originalUserId',
+                [(<any>HttpRequestParser).keys.userAgent]: 'originalUserAgent',
+                [(<any>HttpRequestParser).keys.operationName]: 'originalOperationName',
+                [(<any>HttpRequestParser).keys.operationId]: 'originalOperationId',
+                [(<any>HttpRequestParser).keys.operationParentId]: 'originalOperationParentId'
             };
             var newTags = helper.getRequestTags(originalTags);
-            assert.equal(newTags[(<any>ServerRequestParser).keys.locationIp], 'originalIp');
-            assert.equal(newTags[(<any>ServerRequestParser).keys.userId], 'originalUserId');
-            assert.equal(newTags[(<any>ServerRequestParser).keys.userAgent], 'originalUserAgent');
-            assert.equal(newTags[(<any>ServerRequestParser).keys.operationName], 'originalOperationName');
-            assert.equal(newTags[(<any>ServerRequestParser).keys.operationId], 'originalOperationId');
-            assert.equal(newTags[(<any>ServerRequestParser).keys.operationParentId], 'originalOperationParentId');
+            assert.equal(newTags[(<any>HttpRequestParser).keys.locationIp], 'originalIp');
+            assert.equal(newTags[(<any>HttpRequestParser).keys.userId], 'originalUserId');
+            assert.equal(newTags[(<any>HttpRequestParser).keys.userAgent], 'originalUserAgent');
+            assert.equal(newTags[(<any>HttpRequestParser).keys.operationName], 'originalOperationName');
+            assert.equal(newTags[(<any>HttpRequestParser).keys.operationId], 'originalOperationId');
+            assert.equal(newTags[(<any>HttpRequestParser).keys.operationParentId], 'originalOperationParentId');
         });
 
         it("should read tags from headers", () => {
-            var helper = new ServerRequestParser(<any>request);
+            var helper = new HttpRequestParser(<any>request);
 
             var originalTags: {[key: string]:string} = {
             };
 
             var newTags = helper.getRequestTags(originalTags);
-            assert.equal(newTags[(<any>ServerRequestParser).keys.locationIp], '123.123.123.123');
-            assert.equal(newTags[(<any>ServerRequestParser).keys.userId], 'cookieUser');
-            assert.equal(newTags[(<any>ServerRequestParser).keys.userAgent], undefined);
-            assert.equal(newTags[(<any>ServerRequestParser).keys.operationName], 'GET /search');
-            assert.equal(newTags[(<any>ServerRequestParser).keys.operationId], 'operationId');
-            assert.equal(newTags[(<any>ServerRequestParser).keys.operationParentId], 'parentRequestId');
+            assert.equal(newTags[(<any>HttpRequestParser).keys.locationIp], '123.123.123.123');
+            assert.equal(newTags[(<any>HttpRequestParser).keys.userId], 'cookieUser');
+            assert.equal(newTags[(<any>HttpRequestParser).keys.userAgent], undefined);
+            assert.equal(newTags[(<any>HttpRequestParser).keys.operationName], 'GET /search');
+            assert.equal(newTags[(<any>HttpRequestParser).keys.operationId], 'operationId');
+            assert.equal(newTags[(<any>HttpRequestParser).keys.operationParentId], 'parentRequestId');
         });
     });
 });

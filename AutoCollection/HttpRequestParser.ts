@@ -14,7 +14,7 @@ import Identified = require("../Library/TelemetryTypes/Identified")
 /**
  * Helper class to read data from the requst/response objects and convert them into the telemetry contract
  */
-class ServerRequestParser extends RequestParser {
+class HttpRequestParser extends RequestParser {
     private static keys = new Contracts.ContextTagKeys();
 
     private rawHeaders: { [key: string]: string };
@@ -79,26 +79,26 @@ class ServerRequestParser extends RequestParser {
         }
 
         // don't override tags if they are already set
-        newTags[ServerRequestParser.keys.locationIp] = tags[ServerRequestParser.keys.locationIp] || this._getIp();
-        newTags[ServerRequestParser.keys.sessionId] = tags[ServerRequestParser.keys.sessionId] || this._getId("ai_session");
-        newTags[ServerRequestParser.keys.userId] = tags[ServerRequestParser.keys.userId] || this._getId("ai_user");
-        newTags[ServerRequestParser.keys.operationName] = this.getOperationName(tags);
-        newTags[ServerRequestParser.keys.operationParentId] = this.getOperationParentId(tags);
-        newTags[ServerRequestParser.keys.operationId] = this.getOperationId(tags);
+        newTags[HttpRequestParser.keys.locationIp] = tags[HttpRequestParser.keys.locationIp] || this._getIp();
+        newTags[HttpRequestParser.keys.sessionId] = tags[HttpRequestParser.keys.sessionId] || this._getId("ai_session");
+        newTags[HttpRequestParser.keys.userId] = tags[HttpRequestParser.keys.userId] || this._getId("ai_user");
+        newTags[HttpRequestParser.keys.operationName] = this.getOperationName(tags);
+        newTags[HttpRequestParser.keys.operationParentId] = this.getOperationParentId(tags);
+        newTags[HttpRequestParser.keys.operationId] = this.getOperationId(tags);
 
         return newTags;
     }
 
     public getOperationId(tags: { [key: string]: string }) {
-        return tags[ServerRequestParser.keys.operationId] || this.operationId;
+        return tags[HttpRequestParser.keys.operationId] || this.operationId;
     }
 
     public getOperationParentId(tags: { [key: string]: string }) {
-        return tags[ServerRequestParser.keys.operationParentId] || this.parentId || this.getOperationId(tags);
+        return tags[HttpRequestParser.keys.operationParentId] || this.parentId || this.getOperationId(tags);
     }
 
     public getOperationName(tags: { [key: string]: string }) {
-        return tags[ServerRequestParser.keys.operationName] || this.method + " " + url.parse(this.url).pathname;
+        return tags[HttpRequestParser.keys.operationName] || this.method + " " + url.parse(this.url).pathname;
     }
 
     public getRequestId() {
@@ -164,7 +164,7 @@ class ServerRequestParser extends RequestParser {
     private _getId(name: string) {
         var cookie = (this.rawHeaders && this.rawHeaders["cookie"] &&
             typeof this.rawHeaders["cookie"] === 'string' && this.rawHeaders["cookie"]) || "";
-        var value = ServerRequestParser.parseId(Util.getCookie(name, cookie));
+        var value = HttpRequestParser.parseId(Util.getCookie(name, cookie));
         return value;
     }
 
@@ -201,4 +201,4 @@ class ServerRequestParser extends RequestParser {
     }
 }
 
-export = ServerRequestParser;
+export = HttpRequestParser;
