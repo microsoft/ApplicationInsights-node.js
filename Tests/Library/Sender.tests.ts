@@ -1,6 +1,7 @@
 import assert = require("assert");
 
 import Sender = require("../../Library/Sender");
+import Config = require("../../Library/Config");
 
 class SenderMock extends Sender {
     public getResendInterval() {
@@ -12,7 +13,7 @@ describe("Library/Sender", () => {
     var sender:SenderMock;
 
     beforeEach(() => {
-        sender = new SenderMock(() => "https://www.microsoft.com");
+        sender = new SenderMock(new Config("testikey"));
     });
 
     describe("#setOfflineMode(value, resendInterval)", () => {

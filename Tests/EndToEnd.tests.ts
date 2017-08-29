@@ -1,6 +1,8 @@
 import http = require("http");
 import https = require("https");
 import assert = require("assert");
+import path = require("path")
+import os = require("os")
 import fs = require('fs');
 import sinon = require("sinon");
 import events = require("events");
@@ -213,28 +215,30 @@ describe("EndToEnd", () => {
         var AppInsights = require("../applicationinsights");
         var CorrelationIdManager = require("../Library/CorrelationIdManager");
         var cidStub: sinon.SinonStub = null;
-
+        var writeFile: sinon.SinonStub;
+        var writeFileSync: sinon.SinonStub;
+        var readFile: sinon.SinonStub;
 
         beforeEach(() => {
             AppInsights.client = undefined;
             cidStub = sinon.stub(CorrelationIdManager, 'queryCorrelationId'); // TODO: Fix method of stubbing requests to allow CID to be part of E2E tests
             this.request = sinon.stub(https, 'request');
-            this.writeFile = sinon.stub(fs, 'writeFile');
-            this.writeFileSync = sinon.stub(fs, 'writeFileSync');
+            writeFile = sinon.stub(fs, 'writeFile');
+            writeFileSync = sinon.stub(fs, 'writeFileSync');
             this.exists = sinon.stub(fs, 'exists').yields(true);
             this.existsSync = sinon.stub(fs, 'existsSync').returns(true);
             this.readdir = sinon.stub(fs, 'readdir').yields(null, ['1.ai.json']);
-            this.readFile = sinon.stub(fs, 'readFile').yields(null, '');
+            readFile = sinon.stub(fs, 'readFile').yields(null, '');
         });
 
         afterEach(() => {
             cidStub.restore();
             this.request.restore();
-            this.writeFile.restore();
+            writeFile.restore();
             this.exists.restore();
             this.readdir.restore();
-            this.readFile.restore();
-            this.writeFileSync.restore();
+            readFile.restore();
+            writeFileSync.restore();
             this.existsSync.restore();
         });
 
@@ -251,7 +255,7 @@ describe("EndToEnd", () => {
                 callback: (response: any) => {
                     // yield for the caching behavior
                     setImmediate(() => {
-                        assert(this.writeFile.callCount === 0);
+                        assert(writeFile.callCount === 0);
                         done();
                     });
                 }
@@ -272,7 +276,10 @@ describe("EndToEnd", () => {
                 callback: (response: any) => {
                     // yield for the caching behavior
                     setImmediate(() => {
-                        assert(this.writeFile.callCount === 1);
+                        assert(writeFile.callCount === 1);
+                        assert.equal(
+                            path.dirname(writeFile.firstCall.args[0]),
+                            path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
                         done();
                     });
                 }
@@ -297,7 +304,10 @@ describe("EndToEnd", () => {
                     // wait until sdk looks for offline files
                     setTimeout(() => {
                         assert(this.readdir.callCount === 1);
-                        assert(this.readFile.callCount === 1);
+                        assert(readFile.callCount === 1);
+                        assert.equal(
+                            path.dirname(readFile.firstCall.args[0]),
+                            path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
                         done();
                     }, 10);
                 }
@@ -317,7 +327,10 @@ describe("EndToEnd", () => {
             client.channel.triggerSend(true);
 
             assert(this.existsSync.callCount === 1);
-            assert(this.writeFileSync.callCount === 1);
+            assert(writeFileSync.callCount === 1);
+            assert.equal(
+                path.dirname(writeFileSync.firstCall.args[0]),
+                path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
         });
     });
 });

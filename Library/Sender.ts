@@ -7,22 +7,24 @@ import url = require("url");
 import zlib = require("zlib");
 
 import Logging = require("./Logging");
+import Config = require("./Config")
 import AutoCollectClientRequests = require("../AutoCollection/ClientRequests");
 
 class Sender {
     private static TAG = "Sender";
     // the amount of time the SDK will wait between resending cached data, this buffer is to avoid any throtelling from the service side
     public static WAIT_BETWEEN_RESEND = 60 * 1000;
-    public static TEMPDIR: string = "appInsights-node";
+    public static TEMPDIR_PREFIX: string = "appInsights-node";
 
-    private _getUrl: () => string;
+    private _config: Config;
+    private _storageDirectory: string;
     private _onSuccess: (response: string) => void;
     private _onError: (error: Error) => void;
     private _enableOfflineMode: boolean;
     protected _resendInterval: number;
 
-    constructor(getUrl: () => string, onSuccess?: (response: string) => void, onError?: (error: Error) => void) {
-        this._getUrl = getUrl;
+    constructor(config: Config, onSuccess?: (response: string) => void, onError?: (error: Error) => void) {
+        this._config = config;
         this._onSuccess = onSuccess;
         this._onError = onError;
         this._enableOfflineMode = false;
@@ -40,7 +42,7 @@ class Sender {
     }
 
     public send(payload: Buffer, callback?: (v: string) => void) {
-        var endpointUrl = this._getUrl();
+        var endpointUrl = this._config.endpointUrl;
         if (endpointUrl && endpointUrl.indexOf("//") === 0) {
             // use https if the config did not specify a protocol
             endpointUrl = "https:" + endpointUrl;
@@ -160,7 +162,7 @@ class Sender {
     private _storeToDisk(payload: any) {
 
         //ensure directory is created
-        var directory = path.join(os.tmpdir(), Sender.TEMPDIR);
+        var directory = path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + this._config.instrumentationKey);
 
         this._confirmDirExists(directory, (error) => {
             if (error) {
@@ -183,7 +185,7 @@ class Sender {
      * this is used when storing data before crashes
      */
     private _storeToDiskSync(payload: any) {
-        var directory = path.join(os.tmpdir(), Sender.TEMPDIR);
+        var directory = path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + this._config.instrumentationKey);
 
         try {
             if (!fs.existsSync(directory)) {
@@ -208,7 +210,7 @@ class Sender {
      * reads the first file if exist, deletes it and tries to send its load
      */
     private _sendFirstFileOnDisk(): void {
-        var tempDir = path.join(os.tmpdir(), Sender.TEMPDIR);
+        var tempDir = path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + this._config.instrumentationKey);
 
         fs.exists(tempDir, (exists: boolean) => {
             if (exists) {
