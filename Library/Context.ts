@@ -8,6 +8,7 @@ class Context {
 
     public keys: Contracts.ContextTagKeys;
     public tags: { [key: string]: string};
+    public static DefaultRoleName:string = "Web";
 
     constructor(packageJsonPath?: string) {
         this.keys = new Contracts.ContextTagKeys();
@@ -49,6 +50,7 @@ class Context {
         this.tags[this.keys.deviceId] = "";
         this.tags[this.keys.cloudRoleInstance] = os && os.hostname();
         this.tags[this.keys.deviceOSVersion] = os && (os.type() + " " + os.release());
+        this.tags[this.keys.cloudRole] = Context.DefaultRoleName;
 
         // not yet supported tags
         this.tags["ai.device.osArchitecture"] = os && os.arch();

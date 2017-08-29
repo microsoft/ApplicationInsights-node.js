@@ -190,10 +190,14 @@ class AutoCollectServerRequests {
                 const components = correlationHeader.split(",");
                 const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
                 if (!components.some((value) => value.substring(0,key.length) === key)) {
-                    response.setHeader(RequestResponseHeaders.requestContextHeader, `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+                    response.setHeader(
+                        RequestResponseHeaders.requestContextHeader, 
+                        `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId},${RequestResponseHeaders.requestContextSourceRoleNameKey}=${client.context.tags[client.context.keys.cloudRole]}`);
                 }
             } else {
-                response.setHeader(RequestResponseHeaders.requestContextHeader, `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+                response.setHeader(
+                    RequestResponseHeaders.requestContextHeader, 
+                    `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId},${RequestResponseHeaders.requestContextSourceRoleNameKey}=${client.context.tags[client.context.keys.cloudRole]}`);
             }
         }
     }

@@ -23,6 +23,7 @@ class ServerRequestParser extends RequestParser {
     private legacySocketRemoteAddress: string;
     private userAgent: string;
     private sourceCorrelationId: string;
+    private sourceRoleName: string;
     private parentId: string;
     private operationId: string;
     private requestId: string;
@@ -61,7 +62,11 @@ class ServerRequestParser extends RequestParser {
             id: this.requestId,
             name: this.method + " " + url.parse(this.url).pathname,
             url: this.url,
-            source: this.sourceCorrelationId,
+            /* 
+            See https://github.com/Microsoft/ApplicationInsights-dotnet-server/blob/25d695e6a906fbe977f67be3966d25dbf1c50a79/Src/Web/Web.Shared.Net/RequestTrackingTelemetryModule.cs#L250
+            for reference
+            */
+            source: this.sourceCorrelationId + " | roleName:" + this.sourceRoleName,
             duration: this.duration,
             resultCode: this.statusCode ? this.statusCode.toString() : null,
             success: this._isSuccess(),
@@ -172,6 +177,7 @@ class ServerRequestParser extends RequestParser {
         this.rawHeaders = request.headers || (<any>request).rawHeaders;
         this.userAgent = request.headers && request.headers["user-agent"];
         this.sourceCorrelationId = Util.getCorrelationContextTarget(request, RequestResponseHeaders.requestContextSourceKey);
+        this.sourceRoleName = Util.getCorrelationContextTarget(request, RequestResponseHeaders.requestContextSourceRoleNameKey);
 
         if (request.headers) {
             this.correlationContextHeader = request.headers[RequestResponseHeaders.correlationContextHeader];

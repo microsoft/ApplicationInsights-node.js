@@ -366,7 +366,8 @@ describe("Library/Client", () => {
 
                 // Simulate an incoming request that has a different source correlationId header.
                 let testCorrelationId = 'cid-v1:Application-Id-98765-4321A';
-                request.headers[RequestResponseHeaders.requestContextHeader] = `${RequestResponseHeaders.requestContextSourceKey}=${testCorrelationId}`;
+                let testRoleName = "Backend";
+                request.headers[RequestResponseHeaders.requestContextHeader] = `${RequestResponseHeaders.requestContextSourceKey}=${testCorrelationId},${RequestResponseHeaders.requestContextSourceRoleNameKey}=${testRoleName}`;
 
                 client.trackNodeHttpRequest({ request: <any>request, response: <any>response, properties: properties });
 
@@ -378,11 +379,11 @@ describe("Library/Client", () => {
                 response.emitFinish();
                 assert.ok(trackStub.calledOnce);
                 var requestTelemetry = <RequestTelemetry>trackStub.firstCall.args[0];
-                assert.equal(requestTelemetry.source, testCorrelationId);
+                assert.equal(requestTelemetry.source, testCorrelationId + " | roleName:" + testRoleName);
 
                 // The client's correlationId should have been added as the response target correlationId header.
                 assert.equal(response.headers[RequestResponseHeaders.requestContextHeader],
-                    `${RequestResponseHeaders.requestContextTargetKey}=${client.config.correlationId}`);
+                    `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId},${RequestResponseHeaders.requestContextSourceRoleNameKey}=${client.context.tags[client.context.keys.cloudRole]}`);
             });
 
             it('should NOT use source and target correlationId headers when url is on the excluded list', () => {
@@ -525,15 +526,16 @@ describe("Library/Client", () => {
 
                 // The client's correlationId should have been added as the request source correlationId header.
                 assert.equal(request.headers[RequestResponseHeaders.requestContextHeader],
-                    `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+                    `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId},${RequestResponseHeaders.requestContextSourceRoleNameKey}=${client.context.tags[client.context.keys.cloudRole]}`);
 
                 // response event was not emitted yet
                 assert.ok(trackStub.notCalled);
 
                 // Simulate a response from another service that includes a target correlationId header.
                 const targetCorrelationId = "cid-v1:Application-Key-98765-4321A";
+                const targetRoleName = "Backend";
                 response.headers[RequestResponseHeaders.requestContextHeader] =
-                    `${RequestResponseHeaders.requestContextTargetKey}=${targetCorrelationId}`;
+                    `${RequestResponseHeaders.requestContextTargetKey}=${targetCorrelationId},${RequestResponseHeaders.requestContextTargetRoleNameKey}=${targetRoleName},`;
 
                 // emit response event
                 clock.tick(10);
@@ -541,7 +543,7 @@ describe("Library/Client", () => {
                 assert.ok(trackStub.calledOnce);
                 var dependencyTelemetry = <DependencyTelemetry>trackStub.firstCall.args[0];
 
-                assert.equal(dependencyTelemetry.target, "bing.com | " + targetCorrelationId);
+                assert.equal(dependencyTelemetry.target, "bing.com | " + targetCorrelationId + " | roleName:" + targetRoleName);
                 assert.equal(dependencyTelemetry.dependencyTypeName, "Http (tracked component)");
             });
 

@@ -105,11 +105,16 @@ class AutoCollectClientRequests {
                 if (correlationHeader) {
                     const components = correlationHeader.split(",");
                     const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
+                    const roleNameKey = `${RequestResponseHeaders.requestContextSourceRoleNameKey}=`;
                     if (!components.some((value) => value.substring(0,key.length) === key)) {
-                        request['setHeader'](RequestResponseHeaders.requestContextHeader, `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+                        request['setHeader'](
+                            RequestResponseHeaders.requestContextHeader, 
+                            `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId},${RequestResponseHeaders.requestContextSourceRoleNameKey}=${client.context.tags[client.context.keys.cloudRole]}`);
                     }
                 } else {
-                    request['setHeader'](RequestResponseHeaders.requestContextHeader, `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+                    request['setHeader'](
+                        RequestResponseHeaders.requestContextHeader, 
+                        `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId},${RequestResponseHeaders.requestContextSourceRoleNameKey}=${client.context.tags[client.context.keys.cloudRole]}`);
                 }
             }
 
