@@ -48,7 +48,7 @@ class Context {
     private _loadDeviceContext() {
         this.tags[this.keys.deviceId] = "";
         this.tags[this.keys.cloudRoleInstance] = os && os.hostname();
-        this.tags[this.keys.deviceOSVersion] = os && os.type() + " " + (os && os.release());
+        this.tags[this.keys.deviceOSVersion] = os && (os.type() + " " + os.release());
 
         // not yet supported tags
         this.tags["ai.device.osArchitecture"] = os && os.arch();
