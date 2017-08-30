@@ -8,14 +8,14 @@ describe("ApplicationInsights", () => {
         var Console = require("../AutoCollection/Console");
         var Exceptions = require("../AutoCollection/Exceptions");
         var Performance = require("../AutoCollection/Performance");
-        var ServerRequests = require("../AutoCollection/ServerRequests");
-        var ClientRequests = require("../AutoCollection/ClientRequests");
+        var HttpRequests = require("../AutoCollection/HttpRequests");
+        var HttpDependencies = require("../AutoCollection/HttpDependencies");
         beforeEach(() => {
             Console.INSTANCE = undefined;
             Exceptions.INSTANCE = undefined;
             Performance.INSTANCE = undefined;
-            ServerRequests.INSTANCE = undefined;
-            ClientRequests.INSTANCE = undefined;
+            HttpRequests.INSTANCE = undefined;
+            HttpDependencies.INSTANCE = undefined;
         });
 
         it("should not warn if setup is called once", () => {
@@ -53,15 +53,15 @@ describe("ApplicationInsights", () => {
         var Console = require("../AutoCollection/Console");
         var Exceptions = require("../AutoCollection/Exceptions");
         var Performance = require("../AutoCollection/Performance");
-        var ServerRequests = require("../AutoCollection/ServerRequests");
-        var ClientRequests = require("../AutoCollection/ClientRequests");
+        var HttpRequests = require("../AutoCollection/HttpRequests");
+        var HttpDependencies = require("../AutoCollection/HttpDependencies");
 
         beforeEach(() => {
             Console.INSTANCE = undefined;
             Exceptions.INSTANCE = undefined;
             Performance.INSTANCE = undefined;
-            ServerRequests.INSTANCE = undefined;
-            ClientRequests.INSTANCE = undefined;
+            HttpRequests.INSTANCE = undefined;
+            HttpDependencies.INSTANCE = undefined;
         });
 
         afterEach(() => AppInsights.client = undefined);
@@ -86,16 +86,16 @@ describe("ApplicationInsights", () => {
         var Console = require("../AutoCollection/Console");
         var Exceptions = require("../AutoCollection/Exceptions");
         var Performance = require("../AutoCollection/Performance");
-        var ServerRequests = require("../AutoCollection/ServerRequests");
-        var ClientRequests = require("../AutoCollection/ClientRequests");
+        var HttpRequests = require("../AutoCollection/HttpRequests");
+        var HttpDependencies = require("../AutoCollection/HttpDependencies");
 
         beforeEach(() => {
             AppInsights.client = undefined;
             Console.INSTANCE = undefined;
             Exceptions.INSTANCE = undefined;
             Performance.INSTANCE = undefined;
-            ServerRequests.INSTANCE = undefined;
-            ClientRequests.INSTANCE = undefined;
+            HttpRequests.INSTANCE = undefined;
+            HttpDependencies.INSTANCE = undefined;
         });
 
         it("auto-collection is initialized by default", () => {
@@ -104,9 +104,9 @@ describe("ApplicationInsights", () => {
             //assert.ok(Console.INSTANCE.isInitialized());
             assert.ok(Exceptions.INSTANCE.isInitialized());
             assert.ok(Performance.INSTANCE.isInitialized());
-            assert.ok(ServerRequests.INSTANCE.isInitialized());
-            assert.ok(ServerRequests.INSTANCE.isAutoCorrelating());
-            assert.ok(ClientRequests.INSTANCE.isInitialized());
+            assert.ok(HttpRequests.INSTANCE.isInitialized());
+            assert.ok(HttpRequests.INSTANCE.isAutoCorrelating());
+            assert.ok(HttpDependencies.INSTANCE.isInitialized());
         });
 
         it("auto-collection is not initialized if disabled before 'start'", () => {
@@ -122,9 +122,9 @@ describe("ApplicationInsights", () => {
             assert.ok(!Console.INSTANCE.isInitialized());
             assert.ok(!Exceptions.INSTANCE.isInitialized());
             assert.ok(!Performance.INSTANCE.isInitialized());
-            assert.ok(!ServerRequests.INSTANCE.isInitialized());
-            assert.ok(!ServerRequests.INSTANCE.isAutoCorrelating());
-            assert.ok(!ClientRequests.INSTANCE.isInitialized());
+            assert.ok(!HttpRequests.INSTANCE.isInitialized());
+            assert.ok(!HttpRequests.INSTANCE.isAutoCorrelating());
+            assert.ok(!HttpDependencies.INSTANCE.isInitialized());
         });
     });
 

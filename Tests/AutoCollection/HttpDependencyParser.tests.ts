@@ -2,10 +2,10 @@ import http = require("http");
 import assert = require("assert");
 import sinon = require("sinon");
 
-import ClientRequestParser = require("../../AutoCollection/ClientRequestParser");
+import HttpDependencyParser = require("../../AutoCollection/HttpDependencyParser");
 import Contracts = require("../../Declarations/Contracts");
 
-describe("AutoCollection/ClientRequestParser", () => {
+describe("AutoCollection/HttpDependencyParser", () => {
 
     describe("#getDependencyData()", () => {
         let request: http.ClientRequest = <any>{
@@ -16,7 +16,7 @@ describe("AutoCollection/ClientRequestParser", () => {
 
         it("should return correct data for a URL string", () => {
             (<any>request)["method"] = "GET";
-            let parser = new ClientRequestParser("http://bing.com/search", request);
+            let parser = new HttpDependencyParser("http://bing.com/search", request);
 
             response.statusCode = 200;
             parser.onResponse(response);
@@ -31,7 +31,7 @@ describe("AutoCollection/ClientRequestParser", () => {
 
         it("should return correct data for a posted URL with query string", () => {
             (<any>request)["method"] = "POST";
-            let parser = new ClientRequestParser("http://bing.com/search?q=test", request);
+            let parser = new HttpDependencyParser("http://bing.com/search?q=test", request);
 
             response.statusCode = 200;
             parser.onResponse(response);
@@ -51,7 +51,7 @@ describe("AutoCollection/ClientRequestParser", () => {
                 path: "/search?q=test",
             };
             (<any>request)["method"] = "POST";
-            let parser = new ClientRequestParser(requestOptions, request);
+            let parser = new HttpDependencyParser(requestOptions, request);
 
             response.statusCode = 200;
             parser.onResponse(response);
@@ -72,7 +72,7 @@ describe("AutoCollection/ClientRequestParser", () => {
                 path: path + "msft"
             };
             (<any>request)["method"] = "GET";
-            let parser = new ClientRequestParser(requestOptions, request);
+            let parser = new HttpDependencyParser(requestOptions, request);
 
             response.statusCode = 200;
             parser.onResponse(response);
@@ -87,7 +87,7 @@ describe("AutoCollection/ClientRequestParser", () => {
 
         it("should return non-success for a request error", () => {
             (<any>request)["method"] = "GET";
-            let parser = new ClientRequestParser("http://bing.com/search", request);
+            let parser = new HttpDependencyParser("http://bing.com/search", request);
             parser.onError(new Error("test error message"));
 
             let dependencyTelemetry = parser.getDependencyTelemetry();
@@ -99,7 +99,7 @@ describe("AutoCollection/ClientRequestParser", () => {
 
         it("should return non-success for a response error status", () => {
             (<any>request)["method"] = "GET";
-            let parser = new ClientRequestParser("http://bing.com/search", request);
+            let parser = new HttpDependencyParser("http://bing.com/search", request);
 
             response.statusCode = 400;
             parser.onResponse(response);

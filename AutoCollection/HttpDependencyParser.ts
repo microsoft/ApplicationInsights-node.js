@@ -15,7 +15,7 @@ import Identified = require("../Library/TelemetryTypes/Identified")
 /**
  * Helper class to read data from the requst/response objects and convert them into the telemetry contract
  */
-class ClientRequestParser extends RequestParser {
+class HttpDependencyParser extends RequestParser {
     private correlationId: string;
 
     constructor(requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest) {
@@ -24,7 +24,7 @@ class ClientRequestParser extends RequestParser {
             // The ClientRequest.method property isn't documented, but is always there.
             this.method = (<any>request).method;
 
-            this.url = ClientRequestParser._getUrlFromRequestOptions(requestOptions, request);
+            this.url = HttpDependencyParser._getUrlFromRequestOptions(requestOptions, request);
             this.startTime = +new Date();
         }
     }
@@ -130,4 +130,4 @@ class ClientRequestParser extends RequestParser {
     }
 }
 
-export = ClientRequestParser;
+export = HttpDependencyParser;
