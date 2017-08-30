@@ -27,7 +27,8 @@ describe("Library/Context", () => {
             var defaultkeys = [
                 context.keys.cloudRoleInstance,
                 context.keys.deviceOSVersion,
-                context.keys.internalSdkVersion
+                context.keys.internalSdkVersion,
+                context.keys.cloudRole
             ];
 
             for (var i = 0; i < defaultkeys.length; i++) {
@@ -45,6 +46,7 @@ describe("Library/Context", () => {
             var context = new Context();
             assert.equal(context.tags[context.keys.cloudRoleInstance], "host");
             assert.equal(context.tags[context.keys.deviceOSVersion], "type release");
+            assert.equal(context.tags[context.keys.cloudRole], Context.DefaultRoleName);
 
             assert.equal(context.tags["ai.device.osArchitecture"], "arch");
             assert.equal(context.tags["ai.device.osPlatform"], "platform");

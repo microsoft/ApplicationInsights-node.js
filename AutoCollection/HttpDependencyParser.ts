@@ -17,6 +17,7 @@ import Identified = require("../Library/TelemetryTypes/Identified")
  */
 class HttpDependencyParser extends RequestParser {
     private correlationId: string;
+    private targetRoleName: string;
 
     constructor(requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest) {
         super();
@@ -42,6 +43,7 @@ class HttpDependencyParser extends RequestParser {
     public onResponse(response: http.ClientResponse, properties?: { [key: string]: string }) {
         this._setStatus(response.statusCode, undefined, properties);
         this.correlationId = Util.getCorrelationContextTarget(response, RequestResponseHeaders.requestContextTargetKey);
+        this.targetRoleName = Util.getCorrelationContextTarget(response, RequestResponseHeaders.requestContextTargetRoleNameKey);
     }
 
     /**
@@ -60,7 +62,7 @@ class HttpDependencyParser extends RequestParser {
         if (this.correlationId) {
             remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_AI;
             if (this.correlationId !== CorrelationIdManager.correlationIdPrefix) {
-                remoteDependencyTarget = urlObject.hostname + " | " + this.correlationId;
+                remoteDependencyTarget = urlObject.hostname + " | " + this.correlationId + " | roleName:" + this.targetRoleName;
             }
         } else {
             remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
