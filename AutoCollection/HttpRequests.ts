@@ -6,12 +6,12 @@ import Client = require("../Library/Client");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
-import ServerRequestParser = require("./ServerRequestParser");
+import HttpRequestParser = require("./HttpRequestParser");
 import { CorrelationContextManager, CorrelationContext, PrivateCustomProperties } from "./CorrelationContextManager";
 
-class AutoCollectServerRequests {
+class AutoCollectHttpRequests {
 
-    public static INSTANCE:AutoCollectServerRequests;
+    public static INSTANCE:AutoCollectHttpRequests;
 
     private _client:Client;
     private _isEnabled: boolean;
@@ -19,11 +19,11 @@ class AutoCollectServerRequests {
     private _isAutoCorrelating: boolean;
 
     constructor(client:Client) {
-        if (!!AutoCollectServerRequests.INSTANCE) {
+        if (!!AutoCollectHttpRequests.INSTANCE) {
             throw new Error("Server request tracking should be configured from the applicationInsights object");
         }
 
-        AutoCollectServerRequests.INSTANCE = this;
+        AutoCollectHttpRequests.INSTANCE = this;
         this._client = client;
     }
 
@@ -56,7 +56,7 @@ class AutoCollectServerRequests {
         return this._isAutoCorrelating;
     }
 
-    private _generateCorrelationContext(requestParser:ServerRequestParser): CorrelationContext {
+    private _generateCorrelationContext(requestParser:HttpRequestParser): CorrelationContext {
         if (!this._isAutoCorrelating) {
             return;
         }
@@ -77,13 +77,13 @@ class AutoCollectServerRequests {
             // todo: get a pointer to the server so the IP address can be read from server.address
             return originalHttpServer((request:http.ServerRequest, response:http.ServerResponse) => {
                 // Set up correlation context
-                var requestParser = new ServerRequestParser(request);
+                var requestParser = new HttpRequestParser(request);
                 var correlationContext = this._generateCorrelationContext(requestParser);
 
                 CorrelationContextManager.runWithContext(correlationContext, () => {
                     if (this._isEnabled) {
                         // Auto collect request
-                        AutoCollectServerRequests.trackRequest(this._client, request, response, null, requestParser);
+                        AutoCollectHttpRequests.trackRequest(this._client, request, response, null, requestParser);
                     }
 
                     if (typeof onRequest === "function") {
@@ -97,12 +97,12 @@ class AutoCollectServerRequests {
         https.createServer = (options, onRequest) => {
             return originalHttpsServer(options, (request:http.ServerRequest, response:http.ServerResponse) => {
                 // Set up correlation context
-                var requestParser = new ServerRequestParser(request);
+                var requestParser = new HttpRequestParser(request);
                 var correlationContext = this._generateCorrelationContext(requestParser);
 
                 CorrelationContextManager.runWithContext(correlationContext, () => {
                     if (this._isEnabled) {
-                        AutoCollectServerRequests.trackRequest(this._client, request, response, null, requestParser);
+                        AutoCollectHttpRequests.trackRequest(this._client, request, response, null, requestParser);
                     }
 
                     if (typeof onRequest === "function") {
@@ -118,15 +118,15 @@ class AutoCollectServerRequests {
      */
     public static trackRequestSync(client: Client, request: http.ServerRequest, response:http.ServerResponse, ellapsedMilliseconds?: number, properties?:{ [key: string]: string; }, error?: any) {
         if (!request || !response || !client) {
-            Logging.info("AutoCollectServerRequests.trackRequestSync was called with invalid parameters: ", !request, !response, !client);
+            Logging.info("AutoCollectHttpRequests.trackRequestSync was called with invalid parameters: ", !request, !response, !client);
             return;
         }
 
-        AutoCollectServerRequests.addResponseCorrelationIdHeader(client, response);
+        AutoCollectHttpRequests.addResponseCorrelationIdHeader(client, response);
 
         // store data about the request
         var correlationContext = CorrelationContextManager.getCurrentContext();
-        var requestParser = new ServerRequestParser(request, (correlationContext && correlationContext.operation.parentId));
+        var requestParser = new HttpRequestParser(request, (correlationContext && correlationContext.operation.parentId));
 
         // Overwrite correlation context with request parser results
         if (correlationContext) {
@@ -136,24 +136,24 @@ class AutoCollectServerRequests {
             (<PrivateCustomProperties>correlationContext.customProperties).addHeaderData(requestParser.getCorrelationContextHeader());
         }
 
-        AutoCollectServerRequests.endRequest(client, requestParser, request, response, ellapsedMilliseconds, properties, error);
+        AutoCollectHttpRequests.endRequest(client, requestParser, request, response, ellapsedMilliseconds, properties, error);
     }
 
     /**
      * Tracks a request by listening to the response 'finish' event
      */
-    public static trackRequest(client:Client, request:http.ServerRequest, response:http.ServerResponse, properties?:{ [key: string]: string; }, _requestParser?:ServerRequestParser) {
+    public static trackRequest(client:Client, request:http.ServerRequest, response:http.ServerResponse, properties?:{ [key: string]: string; }, _requestParser?:HttpRequestParser) {
         if (!request || !response || !client) {
-            Logging.info("AutoCollectServerRequests.trackRequest was called with invalid parameters: ", !request, !response, !client);
+            Logging.info("AutoCollectHttpRequests.trackRequest was called with invalid parameters: ", !request, !response, !client);
             return;
         }
 
         // store data about the request
         var correlationContext = CorrelationContextManager.getCurrentContext();
-        var requestParser = _requestParser || new ServerRequestParser(request, correlationContext && correlationContext.operation.parentId);
+        var requestParser = _requestParser || new HttpRequestParser(request, correlationContext && correlationContext.operation.parentId);
 
         if (Util.canIncludeCorrelationHeader(client, requestParser.getUrl())) {
-            AutoCollectServerRequests.addResponseCorrelationIdHeader(client, response);
+            AutoCollectHttpRequests.addResponseCorrelationIdHeader(client, response);
         }
 
         // Overwrite correlation context with request parser results (if not an automatic track. we've already precalculated the correlation context in that case)
@@ -167,14 +167,14 @@ class AutoCollectServerRequests {
         // response listeners
         if (response.once) {
             response.once("finish", () => {
-                AutoCollectServerRequests.endRequest(client, requestParser, request, response, null, properties, null);
+                AutoCollectHttpRequests.endRequest(client, requestParser, request, response, null, properties, null);
             });
         }
 
         // track a failed request if an error is emitted
         if (request.on) {
             request.on("error", (error:any) => {
-                AutoCollectServerRequests.endRequest(client, requestParser, request, response, null, properties, error);
+                AutoCollectHttpRequests.endRequest(client, requestParser, request, response, null, properties, error);
             });
         }
     }
@@ -202,7 +202,7 @@ class AutoCollectServerRequests {
         }
     }
 
-    private static endRequest(client: Client, requestParser: ServerRequestParser, request: http.ServerRequest, response: http.ServerResponse, ellapsedMilliseconds?: number, properties?: { [key: string]: string}, error?: any) {
+    private static endRequest(client: Client, requestParser: HttpRequestParser, request: http.ServerRequest, response: http.ServerResponse, ellapsedMilliseconds?: number, properties?: { [key: string]: string}, error?: any) {
         if (error) {
             requestParser.onError(error, properties, ellapsedMilliseconds);
         } else {
@@ -217,7 +217,7 @@ class AutoCollectServerRequests {
     }
 
     public dispose() {
-         AutoCollectServerRequests.INSTANCE = null;
+         AutoCollectHttpRequests.INSTANCE = null;
          this.enable(false);
          this._isInitialized = false;
     }
@@ -225,4 +225,4 @@ class AutoCollectServerRequests {
 
 
 
-export = AutoCollectServerRequests;
+export = AutoCollectHttpRequests;

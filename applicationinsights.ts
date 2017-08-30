@@ -2,8 +2,8 @@ import CorrelationContextManager = require("./AutoCollection/CorrelationContextM
 import AutoCollectConsole = require("./AutoCollection/Console");
 import AutoCollectExceptions = require("./AutoCollection/Exceptions");
 import AutoCollectPerformance = require("./AutoCollection/Performance");
-import AutoCollectClientRequests = require("./AutoCollection/ClientRequests");
-import AutoCollectServerRequests = require("./AutoCollection/ServerRequests");
+import AutoCollectHttpDependencies = require("./AutoCollection/HttpDependencies");
+import AutoCollectHttpRequests = require("./AutoCollection/HttpRequests");
 import NodeClient = require("./Library/NodeClient");
 import Config = require("./Library/Config");
 import Context = require("./Library/Context");
@@ -37,8 +37,8 @@ class ApplicationInsights {
     private static _console: AutoCollectConsole;
     private static _exceptions: AutoCollectExceptions;
     private static _performance: AutoCollectPerformance;
-    private static _serverRequests: AutoCollectServerRequests;
-    private static _clientRequests: AutoCollectClientRequests;
+    private static _serverRequests: AutoCollectHttpRequests;
+    private static _clientRequests: AutoCollectHttpDependencies;
 
     private static _isStarted = false;
 
@@ -67,8 +67,8 @@ class ApplicationInsights {
             ApplicationInsights._console = new AutoCollectConsole(ApplicationInsights.client);
             ApplicationInsights._exceptions = new AutoCollectExceptions(ApplicationInsights.client);
             ApplicationInsights._performance = new AutoCollectPerformance(ApplicationInsights.client);
-            ApplicationInsights._serverRequests = new AutoCollectServerRequests(ApplicationInsights.client);
-            ApplicationInsights._clientRequests = new AutoCollectClientRequests(ApplicationInsights.client);
+            ApplicationInsights._serverRequests = new AutoCollectHttpRequests(ApplicationInsights.client);
+            ApplicationInsights._clientRequests = new AutoCollectHttpDependencies(ApplicationInsights.client);
         } else {
             Logging.info("The default client is already setup");
         }
