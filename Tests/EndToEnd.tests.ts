@@ -133,7 +133,7 @@ describe("EndToEnd", () => {
         });
 
         it("should send telemetry", (done) => {
-            var client = AppInsights.createClient("iKey");
+            var client = new AppInsights.Client("iKey");
             client.trackEvent({ name: "test event" });
             client.trackException({ exception: new Error("test error") });
             client.trackMetric({ name: "test metric", value: 3 });
@@ -163,7 +163,7 @@ describe("EndToEnd", () => {
 
             var server = http.createServer((req: http.ServerRequest, res: http.ServerResponse) => {
                 setTimeout(() => {
-                    AppInsights.client.flush({
+                    AppInsights.defaultClient.flush({
                         callback: (response) => {
                             assert.ok(response, "response should not be empty");
                             done();
@@ -195,7 +195,7 @@ describe("EndToEnd", () => {
 
             var server = https.createServer(null, (req: http.ServerRequest, res: http.ServerResponse) => {
                 setTimeout(() => {
-                    AppInsights.client.flush({
+                    AppInsights.defaultClient.flush({
                         callback: (response) => {
                             assert.ok(response, "response should not be empty");
                             done();
