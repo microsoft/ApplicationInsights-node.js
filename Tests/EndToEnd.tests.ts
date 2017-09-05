@@ -212,7 +212,6 @@ describe("EndToEnd", () => {
     });
 
     describe("Offline mode", () => {
-        var AppInsights = require("../applicationinsights");
         var CorrelationIdManager = require("../Library/CorrelationIdManager");
         var cidStub: sinon.SinonStub = null;
         var writeFile: sinon.SinonStub;
@@ -220,7 +219,7 @@ describe("EndToEnd", () => {
         var readFile: sinon.SinonStub;
 
         beforeEach(() => {
-            AppInsights.client = undefined;
+            AppInsights.defaultClient = undefined;
             cidStub = sinon.stub(CorrelationIdManager, 'queryCorrelationId'); // TODO: Fix method of stubbing requests to allow CID to be part of E2E tests
             this.request = sinon.stub(https, 'request');
             writeFile = sinon.stub(fs, 'writeFile');
@@ -245,7 +244,7 @@ describe("EndToEnd", () => {
         it("disabled by default", (done) => {
             var req = new fakeRequest();
 
-            var client = AppInsights.createClient("key");
+            var client = new AppInsights.Client("key");
 
             client.trackEvent({ name: "test event" });
 
@@ -265,7 +264,7 @@ describe("EndToEnd", () => {
         it("stores data to disk when enabled", (done) => {
             var req = new fakeRequest();
 
-            var client = AppInsights.createClient("key");
+            var client = new AppInsights.Client("key");
             client.channel.setOfflineMode(true);
 
             client.trackEvent({ name: "test event" });
@@ -291,7 +290,7 @@ describe("EndToEnd", () => {
             var res = new fakeResponse();
             res.statusCode = 200;
 
-            var client = AppInsights.createClient("key");
+            var client = new AppInsights.Client("key");
             client.channel.setOfflineMode(true, 0);
 
             client.trackEvent({ name: "test event" });
@@ -317,7 +316,7 @@ describe("EndToEnd", () => {
         it("cache payload synchronously when process crashes", () => {
             var req = new fakeRequest(true);
 
-            var client = AppInsights.createClient("key");
+            var client = new AppInsights.Client("key");
             client.channel.setOfflineMode(true);
 
             client.trackEvent({ name: "test event" });
