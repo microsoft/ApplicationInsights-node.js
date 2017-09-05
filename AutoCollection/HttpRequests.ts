@@ -72,13 +72,17 @@ class AutoCollectHttpRequests {
     private _initialize() {
         this._isInitialized = true;
 
-        var originalHttpServer = http.createServer;
-        http.createServer = (onRequest) => {
-            // todo: get a pointer to the server so the IP address can be read from server.address
-            return originalHttpServer((request:http.ServerRequest, response:http.ServerResponse) => {
+        const wrapOnRequestHandler: Function = (onRequest?: Function) => {
+            if (!onRequest) {
+                return undefined;
+            }
+            if (typeof onRequest !== 'function') {
+                throw new Error('onRequest handler must be a function');
+            }
+            return (request:http.ServerRequest, response:http.ServerResponse) => {
                 // Set up correlation context
-                var requestParser = new HttpRequestParser(request);
-                var correlationContext = this._generateCorrelationContext(requestParser);
+                const requestParser = new HttpRequestParser(request);
+                const correlationContext = this._generateCorrelationContext(requestParser);
 
                 CorrelationContextManager.runWithContext(correlationContext, () => {
                     if (this._isEnabled) {
@@ -90,26 +94,50 @@ class AutoCollectHttpRequests {
                         onRequest(request, response);
                     }
                 });
-            });
+            }
         }
 
-        var originalHttpsServer = https.createServer;
-        https.createServer = (options, onRequest) => {
-            return originalHttpsServer(options, (request:http.ServerRequest, response:http.ServerResponse) => {
-                // Set up correlation context
-                var requestParser = new HttpRequestParser(request);
-                var correlationContext = this._generateCorrelationContext(requestParser);
+        // The `http.createServer` function will instantiate a new http.Server object.
+        // Inside the Server's constructor, it is using addListener to register the
+        // onRequest handler. So there are two ways to inject the wrapped onRequest handler:
+        // 1) Overwrite Server.prototype.addListener (and .on()) globally and not patching
+        //    the http.createServer call. Or
+        // 2) Overwrite the http.createServer method and add a patched addListener to the
+        //    fresh server instance. This seems more stable for possible future changes as
+        //    it also covers the case where the Server might not use addListener to manage
+        //    the callback internally.
+        //    And also as long as the constructor uses addListener to add the handle, it is
+        //    ok to patch the addListener after construction only. Because if we would patch
+        //    the prototype one and the createServer method, we would wrap the handler twice
+        //    in case of the constructor call.
+        const wrapServerEventHandler: Function = (server: (http.Server | https.Server)) => {
+            const originalAddListener = server.addListener.bind(server);
+            server.addListener = (eventType: string, eventHandler: Function) => {
+                switch (eventType) {
+                    case 'request':
+                    case 'checkContinue':
+                        return originalAddListener(eventType, wrapOnRequestHandler(eventHandler));
+                    default:
+                        return originalAddListener(eventType, eventHandler);
+                }
+            };
+            // on is an alias to addListener only
+            server.on = server.addListener;
+        }
 
-                CorrelationContextManager.runWithContext(correlationContext, () => {
-                    if (this._isEnabled) {
-                        AutoCollectHttpRequests.trackRequest(this._client, request, response, null, requestParser);
-                    }
+        const originalHttpServer = http.createServer;
+        http.createServer = (onRequest) => {
+            // todo: get a pointer to the server so the IP address can be read from server.address
+            const server: http.Server = originalHttpServer(wrapOnRequestHandler(onRequest));
+            wrapServerEventHandler(server);
+            return server;
+        }
 
-                    if (typeof onRequest === "function") {
-                        onRequest(request, response);
-                    }
-                });
-            });
+        const originalHttpsServer = https.createServer;
+        https.createServer = (options: https.ServerOptions, onRequest?: Function) => {
+            const server: https.Server = originalHttpsServer(options, wrapOnRequestHandler(onRequest));
+            wrapServerEventHandler(server);
+            return server;
         }
     }
 
@@ -211,7 +239,7 @@ class AutoCollectHttpRequests {
 
         var context : { [name: string]: any; } = {"http.ServerRequest": request, "http.ServerResponse": response};
         var requestTelemetry = requestParser.getRequestTelemetry();
-        requestTelemetry.tagOverrides = requestParser.getRequestTags(client.context.tags);        
+        requestTelemetry.tagOverrides = requestParser.getRequestTags(client.context.tags);
         requestTelemetry.contextObjects = context;
         client.trackRequest(requestTelemetry);
     }
