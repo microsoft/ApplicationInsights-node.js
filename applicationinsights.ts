@@ -9,17 +9,12 @@ import Context = require("./Library/Context");
 import Logging = require("./Library/Logging");
 import Util = require("./Library/Util");
 
-/**
-* The default client, initialized when setup was called. To initialize a different client
-* with its own configuration, use `new Client(instrumentationKey?)`.
-*/
-export let defaultClient: Client;
-
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
 export import Client = require("./Library/NodeClient");
 export import Contracts = require("./Declarations/Contracts");
 
+// Default autocollection configuration
 let _isConsole = true;
 let _isExceptions = true;
 let _isPerformance = true;
@@ -37,14 +32,10 @@ let _clientRequests: AutoCollectHttpDependencies;
 let _isStarted = false;
 
 /**
- * Creates a new client with the given instrumentation key. If this is not
- * specified, we try to read it from the environment variable
- * APPINSIGHTS_INSTRUMENTATIONKEY.
- * @returns {ApplicationInsights/Client} a new client
- */
-export function createClient(instrumentationKey?: string) {
-    return new Client(instrumentationKey);
-}
+* The default client, initialized when setup was called. To initialize a different client
+* with its own configuration, use `new Client(instrumentationKey?)`.
+*/
+export let defaultClient: Client;
 
 /**
  * Initializes the default client. Should be called after setting
@@ -53,11 +44,12 @@ export function createClient(instrumentationKey?: string) {
  * @param instrumentationKey the instrumentation key to use. Optional, if
  * this is not specified, the value will be read from the environment
  * variable APPINSIGHTS_INSTRUMENTATIONKEY.
- * @returns {ApplicationInsights} this class
+ * @returns {ConfigurationBuilder} the configuration class to initialize
+ * and start the SDK.
  */
 export function setup(instrumentationKey?: string) {
     if(!defaultClient) {
-        defaultClient = createClient(instrumentationKey);
+        defaultClient = new Client(instrumentationKey);
         _console = new AutoCollectConsole(defaultClient);
         _exceptions = new AutoCollectExceptions(defaultClient);
         _performance = new AutoCollectPerformance(defaultClient);
@@ -71,30 +63,9 @@ export function setup(instrumentationKey?: string) {
         defaultClient.channel.setOfflineMode(_isOfflineMode);
     }
 
-    return ApplicationInsights;
+    return Configuration;
 }
 
-/**
- * Starts automatic collection of telemetry. Prior to calling start no
- * telemetry will be *automatically* collected, though manual collection 
- * is enabled.
- * @returns {ApplicationInsights} this class
- */
-export function start() {
-    if(!!this.defaultClient) {
-        _isStarted = true;
-        _console.enable(_isConsole);
-        _exceptions.enable(_isExceptions);
-        _performance.enable(_isPerformance);
-        _serverRequests.useAutoCorrelation(_isCorrelating);
-        _serverRequests.enable(_isRequests);
-        _clientRequests.enable(_isDependencies);
-    } else {
-        Logging.warn("Start cannot be called before setup");
-    }
-
-    return ApplicationInsights;
-}
 
 /**
  * Returns an object that is shared across all code handling a given request.
@@ -128,136 +99,147 @@ export function wrapWithCorrelationContext<T extends Function>(fn: T): T {
 }
 
 /**
- * Sets the state of console tracking (enabled by default)
- * @param value if true console activity will be sent to Application Insights
- * @returns {ApplicationInsights} this class
+ * The active configuration for global SDK behaviors, such as autocollection.
  */
-export function setAutoCollectConsole(value: boolean) {
-    _isConsole = value;
-    if (_isStarted){
-        _console.enable(value);
-    }
-
-    return ApplicationInsights;
-}
-
-/**
- * Sets the state of exception tracking (enabled by default)
- * @param value if true uncaught exceptions will be sent to Application Insights
- * @returns {ApplicationInsights} this class
- */
-export function setAutoCollectExceptions(value: boolean) {
-    _isExceptions = value;
-    if (_isStarted){
-        _exceptions.enable(value);
-    }
-
-    return ApplicationInsights;
-}
-
-/**
- * Sets the state of performance tracking (enabled by default)
- * @param value if true performance counters will be collected every second and sent to Application Insights
- * @returns {ApplicationInsights} this class
- */
-export function setAutoCollectPerformance(value: boolean) {
-    _isPerformance = value;
-    if (_isStarted){
-        _performance.enable(value);
-    }
-
-    return ApplicationInsights;
-}
-
-/**
- * Sets the state of request tracking (enabled by default)
- * @param value if true requests will be sent to Application Insights
- * @returns {ApplicationInsights} this class
- */
-export function setAutoCollectRequests(value: boolean) {
-    _isRequests = value;
-    if (_isStarted) {
-        _serverRequests.enable(value);
-    }
-
-    return ApplicationInsights;
-}
-
-/**
- * Sets the state of dependency tracking (enabled by default)
- * @param value if true dependencies will be sent to Application Insights
- * @returns {ApplicationInsights} this class
- */
-export function setAutoCollectDependencies(value: boolean) {
-    _isDependencies = value;
-    if (_isStarted) {
-        _clientRequests.enable(value);
-    }
-
-    return ApplicationInsights;
-}
-
-/**
- * Sets the state of automatic dependency correlation (enabled by default)
- * @param value if true dependencies will be correlated with requests
- * @returns {ApplicationInsights} this class
- */
-export function setAutoDependencyCorrelation(value: boolean) {
-    _isCorrelating = value;
-    if (_isStarted) {
-        _serverRequests.useAutoCorrelation(value);
-    }
-
-    return ApplicationInsights;
-}
+export class Configuration {
 
     /**
- * Enable or disable offline mode to cache events when client is offline (disabled by default)
- * @param value if true events that occured while client is offline will be cached on disk
- * @param resendInterval. The wait interval for resending cached events.
- * @returns {ApplicationInsights} this class
- */
-export function setOfflineMode(value: boolean, resendInterval?: number) {
-    _isOfflineMode = value;
-    if (defaultClient && defaultClient.channel){
-        defaultClient.channel.setOfflineMode(value, resendInterval);
+     * Starts automatic collection of telemetry. Prior to calling start no
+     * telemetry will be *automatically* collected, though manual collection 
+     * is enabled.
+     * @returns {ApplicationInsights} this class
+     */
+    public static start() {
+        if(!!defaultClient) {
+            _isStarted = true;
+            _console.enable(_isConsole);
+            _exceptions.enable(_isExceptions);
+            _performance.enable(_isPerformance);
+            _serverRequests.useAutoCorrelation(_isCorrelating);
+            _serverRequests.enable(_isRequests);
+            _clientRequests.enable(_isDependencies);
+        } else {
+            Logging.warn("Start cannot be called before setup");
+        }
+
+        return Configuration;
     }
 
-    return ApplicationInsights;
+    /**
+     * Sets the state of console tracking (enabled by default)
+     * @param value if true console activity will be sent to Application Insights
+     * @returns {ApplicationInsights} this class
+     */
+    public static setAutoCollectConsole(value: boolean) {
+        _isConsole = value;
+        if (_isStarted){
+            _console.enable(value);
+        }
+
+        return Configuration;
+    }
+
+    /**
+     * Sets the state of exception tracking (enabled by default)
+     * @param value if true uncaught exceptions will be sent to Application Insights
+     * @returns {ApplicationInsights} this class
+     */
+    public static setAutoCollectExceptions(value: boolean) {
+        _isExceptions = value;
+        if (_isStarted){
+            _exceptions.enable(value);
+        }
+
+        return Configuration;
+    }
+
+    /**
+     * Sets the state of performance tracking (enabled by default)
+     * @param value if true performance counters will be collected every second and sent to Application Insights
+     * @returns {ApplicationInsights} this class
+     */
+    public static setAutoCollectPerformance(value: boolean) {
+        _isPerformance = value;
+        if (_isStarted){
+            _performance.enable(value);
+        }
+
+        return Configuration;
+    }
+
+    /**
+     * Sets the state of request tracking (enabled by default)
+     * @param value if true requests will be sent to Application Insights
+     * @returns {ApplicationInsights} this class
+     */
+    public static setAutoCollectRequests(value: boolean) {
+        _isRequests = value;
+        if (_isStarted) {
+            _serverRequests.enable(value);
+        }
+
+        return Configuration;
+    }
+
+    /**
+     * Sets the state of dependency tracking (enabled by default)
+     * @param value if true dependencies will be sent to Application Insights
+     * @returns {ApplicationInsights} this class
+     */
+    public static setAutoCollectDependencies(value: boolean) {
+        _isDependencies = value;
+        if (_isStarted) {
+            _clientRequests.enable(value);
+        }
+
+        return Configuration;
+    }
+
+    /**
+     * Sets the state of automatic dependency correlation (enabled by default)
+     * @param value if true dependencies will be correlated with requests
+     * @returns {ApplicationInsights} this class
+     */
+    public static setAutoDependencyCorrelation(value: boolean) {
+        _isCorrelating = value;
+        if (_isStarted) {
+            _serverRequests.useAutoCorrelation(value);
+        }
+
+        return Configuration;
+    }
+
+        /**
+     * Enable or disable offline mode to cache events when client is offline (disabled by default)
+     * @param value if true events that occured while client is offline will be cached on disk
+     * @param resendInterval. The wait interval for resending cached events.
+     * @returns {ApplicationInsights} this class
+     */
+    public static setOfflineMode(value: boolean, resendInterval?: number) {
+        _isOfflineMode = value;
+        if (defaultClient && defaultClient.channel){
+            defaultClient.channel.setOfflineMode(value, resendInterval);
+        }
+
+        return Configuration;
+    }
+
+    /**
+     * Enables debug and warning logging for AppInsights itself.
+     * @param enableDebugLogging if true, enables debug logging
+     * @param enableWarningLogging if true, enables warning logging
+     * @returns {ApplicationInsights} this class
+     */
+    public static setInternalLogging(enableDebugLogging = false, enableWarningLogging = true) {
+        Logging.enableDebug = enableDebugLogging;
+        Logging.disableWarnings = enableWarningLogging;
+        return Configuration;
+    }
 }
 
 /**
- * Enables debug and warning logging for AppInsights itself.
- * @param enableWarningLogging also show warnings
- * @returns {ApplicationInsights} this class
- */
-export function enableVerboseLogging(enableWarningLogging = true) {
-    Logging.enableDebug = true;
-    Logging.disableWarnings = !enableWarningLogging;
-    return ApplicationInsights;
-}
-
-/**
- * Disables debug and warning logging for AppInsights itself.
- * @returns {ApplicationInsights} this class
- */
-export function disableVerboseLogging() {
-    Logging.enableDebug = false;
-    Logging.disableWarnings = true;
-    return ApplicationInsights;
-}
-
-/**
- * Deprecate me!!
- */
-export function disableConsoleLogging() {
-    console.warn('disableConsoleLogging has been deprecated in favor of disableVerboseLogging');
-    this.disableVerboseLogging();
-}
-
-/**
-     * Disposes the default client and all the auto collectors so they can be reinitialized with different configuration
-    */
+ * Disposes the default client and all the auto collectors so they can be reinitialized with different configuration
+*/
 export function dispose() {
     defaultClient = null;
     _isStarted = false;
