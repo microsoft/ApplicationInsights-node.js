@@ -66,6 +66,27 @@ export function setup(instrumentationKey?: string) {
     return Configuration;
 }
 
+/**
+ * Starts automatic collection of telemetry. Prior to calling start no
+ * telemetry will be *automatically* collected, though manual collection 
+ * is enabled.
+ * @returns {ApplicationInsights} this class
+ */
+export function start() {
+    if(!!defaultClient) {
+        _isStarted = true;
+        _console.enable(_isConsole);
+        _exceptions.enable(_isExceptions);
+        _performance.enable(_isPerformance);
+        _serverRequests.useAutoCorrelation(_isCorrelating);
+        _serverRequests.enable(_isRequests);
+        _clientRequests.enable(_isDependencies);
+    } else {
+        Logging.warn("Start cannot be called before setup");
+    }
+
+    return Configuration;
+}
 
 /**
  * Returns an object that is shared across all code handling a given request.
@@ -102,28 +123,8 @@ export function wrapWithCorrelationContext<T extends Function>(fn: T): T {
  * The active configuration for global SDK behaviors, such as autocollection.
  */
 export class Configuration {
-
-    /**
-     * Starts automatic collection of telemetry. Prior to calling start no
-     * telemetry will be *automatically* collected, though manual collection 
-     * is enabled.
-     * @returns {ApplicationInsights} this class
-     */
-    public static start() {
-        if(!!defaultClient) {
-            _isStarted = true;
-            _console.enable(_isConsole);
-            _exceptions.enable(_isExceptions);
-            _performance.enable(_isPerformance);
-            _serverRequests.useAutoCorrelation(_isCorrelating);
-            _serverRequests.enable(_isRequests);
-            _clientRequests.enable(_isDependencies);
-        } else {
-            Logging.warn("Start cannot be called before setup");
-        }
-
-        return Configuration;
-    }
+    // Convenience shortcut to ApplicationInsights.start
+    public static start = start;
 
     /**
      * Sets the state of console tracking (enabled by default)
