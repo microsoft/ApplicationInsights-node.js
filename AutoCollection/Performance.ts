@@ -11,14 +11,14 @@ class AutoCollectPerformance {
 
     private static _totalRequestCount: number = 0;
     private static _totalFailedRequestCount: number = 0;
-    private static _totalRequestExecutionTime: number = 0;
+    private static _lastRequestExecutionTime: number = 0;
 
     private _client: Client;
     private _handle: NodeJS.Timer;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _lastCpus: { model: string; speed: number; times: { user: number; nice: number; sys: number; idle: number; irq: number; }; }[];
-    private _lastRequests: { totalRequestCount: number; totalFailedRequestCount: number; totalRequestExecutionTime: number; time: number; };
+    private _lastRequests: { totalRequestCount: number; totalFailedRequestCount: number; time: number; };
 
     constructor(client: Client) {
         if (!!AutoCollectPerformance.INSTANCE) {
@@ -32,6 +32,9 @@ class AutoCollectPerformance {
 
     public enable(isEnabled: boolean) {
         this._isEnabled = isEnabled;
+        if (this._isEnabled && !this._isInitialized) {
+            this._isInitialized = true;
+        }
 
         if (isEnabled) {
             if (!this._handle) {
@@ -39,7 +42,6 @@ class AutoCollectPerformance {
                 this._lastRequests = {
                     totalRequestCount: AutoCollectPerformance._totalRequestCount,
                     totalFailedRequestCount: AutoCollectPerformance._totalFailedRequestCount,
-                    totalRequestExecutionTime: AutoCollectPerformance._totalRequestExecutionTime,
                     time: +new Date
                 };
 
@@ -68,13 +70,17 @@ class AutoCollectPerformance {
         if (typeof response.once === "function") {
             response.once("finish", () => {
                 var end = +new Date;
-                this._totalRequestExecutionTime += end - start;
+                this._lastRequestExecutionTime = end - start;
                 AutoCollectPerformance._totalRequestCount++;
                 if (response.statusCode >= 400) {
                     AutoCollectPerformance._totalFailedRequestCount++;
                 }
             });
         }
+    }
+
+    public isInitialized() {
+        return this._isInitialized;
     }
 
     public trackPerformance() {
@@ -160,14 +166,11 @@ class AutoCollectPerformance {
         var requests = {
             totalRequestCount: AutoCollectPerformance._totalRequestCount,
             totalFailedRequestCount: AutoCollectPerformance._totalFailedRequestCount,
-            totalRequestExecutionTime: AutoCollectPerformance._totalRequestExecutionTime,
             time: +new Date
         };
 
         var intervalRequests = (requests.totalRequestCount - lastRequests.totalRequestCount) || 0;
         var intervalFailedRequests = (requests.totalFailedRequestCount - lastRequests.totalFailedRequestCount) || 0;
-        var intervalRequestExecutionTime = (requests.totalRequestExecutionTime - lastRequests.totalRequestExecutionTime) || 0;
-        var avgRequestExecutionTime = (intervalFailedRequests > 0) ? (intervalRequestExecutionTime / intervalFailedRequests) : 0;
         var elapsedMs = requests.time - lastRequests.time;
         var elapsedSeconds = elapsedMs / 1000;
 
@@ -179,7 +182,7 @@ class AutoCollectPerformance {
             // this._client.trackMetric({ name: "Total Failed Requests", value: requests.totalFailedRequestCount });
             this._client.trackMetric({ name: "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Requests/Sec", value: requestsPerSec });
             // this._client.trackMetric({ name: "Failed Requests per Second", value: failedRequestsPerSec });
-            this._client.trackMetric({ name: "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Request Execution Time", value: avgRequestExecutionTime });
+            this._client.trackMetric({ name: "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Request Execution Time", value: AutoCollectPerformance._lastRequestExecutionTime });
         }
 
         this._lastRequests = requests;
