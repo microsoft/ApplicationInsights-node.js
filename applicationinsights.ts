@@ -20,7 +20,7 @@ let _isExceptions = true;
 let _isPerformance = true;
 let _isRequests = true;
 let _isDependencies = true;
-let _isOfflineMode = false;
+let _isDiskRetry = true;
 let _isCorrelating = true;
 
 let _console: AutoCollectConsole;
@@ -60,7 +60,7 @@ export function setup(instrumentationKey?: string) {
     }
 
     if (defaultClient && defaultClient.channel) {
-        defaultClient.channel.setOfflineMode(_isOfflineMode);
+        defaultClient.channel.setUseDiskRetryCaching(_isDiskRetry);
     }
 
     return Configuration;
@@ -210,16 +210,18 @@ export class Configuration {
         return Configuration;
     }
 
-        /**
-     * Enable or disable offline mode to cache events when client is offline (disabled by default)
+    /**
+     * Enable or disable disk-backed retry caching to cache events when client is offline (enabled by default)
+     * Note that this method only applies to the default client. Disk-backed retry caching is disabled by default for additional clients.
+     * For enable for additional clients, use client.channel.setUseDiskRetryCaching(true).
      * @param value if true events that occured while client is offline will be cached on disk
      * @param resendInterval. The wait interval for resending cached events.
      * @returns {ApplicationInsights} this class
      */
-    public static setOfflineMode(value: boolean, resendInterval?: number) {
-        _isOfflineMode = value;
+    public static setUseDiskRetryCaching(value: boolean, resendInterval?: number) {
+        _isDiskRetry = value;
         if (defaultClient && defaultClient.channel){
-            defaultClient.channel.setOfflineMode(value, resendInterval);
+            defaultClient.channel.setUseDiskRetryCaching(value, resendInterval);
         }
 
         return Configuration;

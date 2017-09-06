@@ -20,22 +20,22 @@ class Sender {
     private _storageDirectory: string;
     private _onSuccess: (response: string) => void;
     private _onError: (error: Error) => void;
-    private _enableOfflineMode: boolean;
+    private _enableDiskRetryMode: boolean;
     protected _resendInterval: number;
 
     constructor(config: Config, onSuccess?: (response: string) => void, onError?: (error: Error) => void) {
         this._config = config;
         this._onSuccess = onSuccess;
         this._onError = onError;
-        this._enableOfflineMode = false;
+        this._enableDiskRetryMode = false;
         this._resendInterval = Sender.WAIT_BETWEEN_RESEND;
     }
 
     /**
     * Enable or disable offline mode
     */
-    public setOfflineMode(value: boolean, resendInterval?: number) {
-        this._enableOfflineMode = value;
+    public setDiskRetryMode(value: boolean, resendInterval?: number) {
+        this._enableDiskRetryMode = value;
         if (typeof resendInterval === 'number' && resendInterval >= 0) {
             this._resendInterval = Math.floor(resendInterval);
         }
@@ -96,7 +96,7 @@ class Sender {
                         callback(responseString);
                     }
 
-                    if (this._enableOfflineMode) {
+                    if (this._enableDiskRetryMode) {
                         // try to send any cached events if the user is back online
                         if (res.statusCode === 200) {
                             setTimeout(() => this._sendFirstFileOnDisk(), this._resendInterval);
@@ -128,7 +128,7 @@ class Sender {
                     callback(errorMessage);
                 }
 
-                if (this._enableOfflineMode) {
+                if (this._enableDiskRetryMode) {
                     this._storeToDisk(payload);
                 }
             });
@@ -139,7 +139,7 @@ class Sender {
     }
 
     public saveOnCrash(payload: string) {
-        if (this._enableOfflineMode) {
+        if (this._enableDiskRetryMode) {
             this._storeToDiskSync(payload);
         }
     }

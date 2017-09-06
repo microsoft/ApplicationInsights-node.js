@@ -211,7 +211,7 @@ describe("EndToEnd", () => {
         });
     });
 
-    describe("Offline mode", () => {
+    describe("Disk retry mode", () => {
         var CorrelationIdManager = require("../Library/CorrelationIdManager");
         var cidStub: sinon.SinonStub = null;
         var writeFile: sinon.SinonStub;
@@ -241,7 +241,7 @@ describe("EndToEnd", () => {
             this.existsSync.restore();
         });
 
-        it("disabled by default", (done) => {
+        it("disabled by default for new clients", (done) => {
             var req = new fakeRequest();
 
             var client = new AppInsights.Client("key");
@@ -261,11 +261,32 @@ describe("EndToEnd", () => {
             });
         });
 
+        it("enabled by default for default client", (done) => {
+            var req = new fakeRequest();
+
+            AppInsights.setup("key").start();
+            var client = AppInsights.defaultClient;
+
+            client.trackEvent({ name: "test event" });
+
+            this.request.returns(req);
+
+            client.flush({
+                callback: (response: any) => {
+                    // yield for the caching behavior
+                    setImmediate(() => {
+                        assert(writeFile.callCount === 1);
+                        done();
+                    });
+                }
+            });
+        });
+
         it("stores data to disk when enabled", (done) => {
             var req = new fakeRequest();
 
             var client = new AppInsights.Client("key");
-            client.channel.setOfflineMode(true);
+            client.channel.setUseDiskRetryCaching(true);
 
             client.trackEvent({ name: "test event" });
 
@@ -291,7 +312,7 @@ describe("EndToEnd", () => {
             res.statusCode = 200;
 
             var client = new AppInsights.Client("key");
-            client.channel.setOfflineMode(true, 0);
+            client.channel.setUseDiskRetryCaching(true, 0);
 
             client.trackEvent({ name: "test event" });
 
@@ -317,7 +338,7 @@ describe("EndToEnd", () => {
             var req = new fakeRequest(true);
 
             var client = new AppInsights.Client("key");
-            client.channel.setOfflineMode(true);
+            client.channel.setUseDiskRetryCaching(true);
 
             client.trackEvent({ name: "test event" });
 
