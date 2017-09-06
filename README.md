@@ -93,6 +93,7 @@ appInsights.setup("<instrumentation_key>")
     .setAutoCollectExceptions(true)
     .setAutoCollectDependencies(true)
     .setAutoCollectConsole(true)
+    .setUseDiskRetryCaching(true)
     .start();
 ```
 
