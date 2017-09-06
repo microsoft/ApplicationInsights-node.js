@@ -8,6 +8,7 @@ import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import HttpRequestParser = require("./HttpRequestParser");
 import { CorrelationContextManager, CorrelationContext, PrivateCustomProperties } from "./CorrelationContextManager";
+import AutoColllectPerformance = require("./Performance");
 
 class AutoCollectHttpRequests {
 
@@ -175,6 +176,9 @@ class AutoCollectHttpRequests {
             Logging.info("AutoCollectHttpRequests.trackRequest was called with invalid parameters: ", !request, !response, !client);
             return;
         }
+
+        // Register performance counter monitor
+        AutoColllectPerformance.countRequest(request, response);
 
         // store data about the request
         var correlationContext = CorrelationContextManager.getCurrentContext();
