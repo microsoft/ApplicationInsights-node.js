@@ -10,29 +10,33 @@ class Config {
     public static legacy_ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
     public static ENV_profileQueryEndpoint = "APPINSIGHTS_PROFILE_QUERY_ENDPOINT";
 
+    /** An identifier for your Application Insights resource */
     public instrumentationKey: string;
+    /** The id for cross-component correlation. READ ONLY. */
     public correlationId: string;
-    public sessionRenewalMs: number;
-    public sessionExpirationMs: number;
+    /** The ingestion endpoint to send telemetry payloads to */
     public endpointUrl: string;
+    /** The maximum number of telemetry items to include in a payload to the ingestion endpoint (Default 250) */
     public maxBatchSize: number;
+    /** The maximum amount of time to wait for a payload to reach maxBatchSize (Default 1500) */
     public maxBatchIntervalMs: number;
+    /** A flag indicating if telemetry transmission is disabled (Default false) */
     public disableAppInsights: boolean;
+    /** The percentage of telemetry items tracked that should be transmitted (Default 100) */
     public samplingPercentage: number;
+    /** The time to wait before retrying to retrieve the id for cross-component correlation (Default 30000) */
     public correlationIdRetryIntervalMs: number;
+    /** A list of domains to exclude from cross-component header injection */
+    public correlationHeaderExcludedDomains: string[];
 
     private endpointBase: string = "https://dc.services.visualstudio.com";
     private setCorrelationId: (v: string) => void;
     private _profileQueryEndpoint: string;
-
-    // A list of domains for which correlation headers will not be added.
-    public correlationHeaderExcludedDomains: string[];
+    
 
     constructor(instrumentationKey?: string) {
         this.instrumentationKey = instrumentationKey || Config._getInstrumentationKey();
         this.endpointUrl = `${this.endpointBase}/v2/track`;
-        this.sessionRenewalMs = 30 * 60 * 1000;
-        this.sessionExpirationMs = 24 * 60 * 60 * 1000;
         this.maxBatchSize = 250;
         this.maxBatchIntervalMs = 15000;
         this.disableAppInsights = false;

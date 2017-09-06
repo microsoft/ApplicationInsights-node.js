@@ -41,11 +41,21 @@ describe("Library/Config", () => {
             var config = new Config("iKey");
             assert(typeof config.instrumentationKey === "string");
             assert(typeof config.endpointUrl === "string");
-            assert(typeof config.sessionRenewalMs === "number");
-            assert(typeof config.sessionExpirationMs === "number");
             assert(typeof config.maxBatchSize === "number");
             assert(typeof config.maxBatchIntervalMs === "number");
             assert(typeof config.disableAppInsights === "boolean");
+            assert(typeof config.samplingPercentage === "number");
+            assert(typeof config.correlationIdRetryIntervalMs === "number");
+            assert(typeof config.correlationHeaderExcludedDomains === "object");
+        });
+
+        it("should initialize values that we claim in README", () => {
+            var config = new Config("iKey");
+            assert(config.maxBatchSize === 250);
+            assert(config.maxBatchIntervalMs === 15000);
+            assert(config.disableAppInsights === false);
+            assert(config.samplingPercentage === 100);
+            assert(config.correlationIdRetryIntervalMs === 30000);
         });
 
         it("should add azure blob storage domain to excluded list", () => {

@@ -107,7 +107,7 @@ Add code such as the following to enable sampling:
 ```javascript
 const appInsights = require("applicationinsights");
 appInsights.setup("<instrumentation_key>");
-appInsights.client.config.samplingPercentage = 33; // 33% of all telemetry will be sent to Application Insights
+appInsights.defaultClient.config.samplingPercentage = 33; // 33% of all telemetry will be sent to Application Insights
 appInsights.start();
 ```
 
@@ -136,7 +136,7 @@ Insights client. Examples follow:
 ```javascript
 let appInsights = require("applicationinsights");
 appInsights.setup().start(); // assuming ikey in env var. start() can be omitted to disable any non-custom data
-let client = appInsights.client;
+let client = appInsights.defaultClient;
 client.trackEvent({name: "my custom event", properties: {customProperty: "custom property value"}});
 client.trackException({exception: new Error("handled exceptions can be logged with this method")});
 client.trackMetric({name: "custom metric", value: 3});
@@ -193,7 +193,7 @@ function removeStackTraces ( envelope, context ) {
   return true;
 }
 
-appInsights.client.addTelemetryProcessor(removeStackTraces);
+appInsights.defaultClient.addTelemetryProcessor(removeStackTraces);
 ```
 
 More info on the telemetry API is available in [the docs][].
@@ -237,7 +237,7 @@ otherClient.trackEvent({name: "my custom event"});
 * Assign custom properties to be included with all events
 
     ```javascript
-    appInsights.client.commonProperties = {
+    appInsights.defaultClient.commonProperties = {
       environment: process.env.SOME_ENV_VARIABLE
     };
     ```
@@ -248,14 +248,14 @@ otherClient.trackEvent({name: "my custom event"});
     collection, call `.setAutoCollectRequests(false)` before calling `start()`.
 
     ```javascript
-    appInsights.client.trackRequest({name:"GET /customers", url:"http://myserver/customers", duration:309, resultCode:200, success:true});
+    appInsights.defaultClient.trackRequest({name:"GET /customers", url:"http://myserver/customers", duration:309, resultCode:200, success:true});
     ```
     Alternatively you can track requests using ```trackNodeHttpRequest``` method:   
 
     ```javascript
     var server = http.createServer((req, res) => {
       if ( req.method === "GET" ) {
-          appInsights.client.trackNodeHttpRequest({request:req, response:res});
+          appInsights.defaultClient.trackNodeHttpRequest({request:req, response:res});
       }
       // other work here....
       res.end();
@@ -268,9 +268,31 @@ otherClient.trackEvent({name: "my custom event"});
     let start = Date.now();
     server.on("listening", () => {
       let duration = Date.now() - start;
-      appInsights.client.trackMetric({name: "server startup time", value: duration});
+      appInsights.defaultClient.trackMetric({name: "server startup time", value: duration});
     });
     ```
+
+## Advanced configuration options
+The Client object contains a `config` property with many optional settings for 
+advanced scenarios. These can be set as follows:
+```
+client.config.PROPERTYNAME = VALUE;
+```
+These properties are client specific, so you can configure `appInsights.defaultClient` 
+separately from clients created with `new appInsights.Client()`.
+
+| Property                        | Description                                                                                                |
+| ------------------------------- |------------------------------------------------------------------------------------------------------------|
+| instrumentationKey              | An identifier for your Application Insights resource                                                       |
+| endpointUrl                     | The ingestion endpoint to send telemetry payloads to                                                       |
+| maxBatchSize                    | The maximum number of telemetry items to include in a payload to the ingestion endpoint (Default `250`)    |
+| maxBatchIntervalMs              | The maximum amount of time to wait to for a payload to reach maxBatchSize (Default `15000`)                |
+| disableAppInsights              | A flag indicating if telemetry transmission is disabled (Default `false`)                                  |
+| samplingPercentage              | The percentage of telemetry items tracked that should be transmitted (Default `100`)                       |
+| correlationIdRetryIntervalMs    | The time to wait before retrying to retrieve the id for cross-component correlation (Default `30000`)      |
+| correlationHeaderExcludedDomains| A list of domains to exclude from cross-component correlation header injection (Default See [Config.ts][]) |
+
+[Config.ts]: https://github.com/Microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
 
 ## Branches
 
