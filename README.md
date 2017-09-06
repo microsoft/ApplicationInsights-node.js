@@ -213,7 +213,7 @@ let appInsights = require("applicationinsights");
 appInsights.setup("_ikey-A_").start();
 
 // track some events manually under another ikey
-let otherClient = appInsights.createClient("_ikey-B_");
+let otherClient = new appInsights.Client("_ikey-B_");
 otherClient.trackEvent({name: "my custom event"});
 ```
 
@@ -223,7 +223,7 @@ otherClient.trackEvent({name: "my custom event"});
 
     ```javascript
     let appInsights = require("applicationinsights");
-    let client = appInsights.createClient();
+    let client = new appInsights.Client();
 
     var success = false;
     let startTime = Date.now();
