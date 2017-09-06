@@ -44,7 +44,7 @@ export let defaultClient: Client;
  * @param instrumentationKey the instrumentation key to use. Optional, if
  * this is not specified, the value will be read from the environment
  * variable APPINSIGHTS_INSTRUMENTATIONKEY.
- * @returns {ConfigurationBuilder} the configuration class to initialize
+ * @returns {Configuration} the configuration class to initialize
  * and start the SDK.
  */
 export function setup(instrumentationKey?: string) {
@@ -129,7 +129,7 @@ export class Configuration {
     /**
      * Sets the state of console tracking (enabled by default)
      * @param value if true console activity will be sent to Application Insights
-     * @returns {ApplicationInsights} this class
+     * @returns {Configuration} this class
      */
     public static setAutoCollectConsole(value: boolean) {
         _isConsole = value;
@@ -143,7 +143,7 @@ export class Configuration {
     /**
      * Sets the state of exception tracking (enabled by default)
      * @param value if true uncaught exceptions will be sent to Application Insights
-     * @returns {ApplicationInsights} this class
+     * @returns {Configuration} this class
      */
     public static setAutoCollectExceptions(value: boolean) {
         _isExceptions = value;
@@ -157,7 +157,7 @@ export class Configuration {
     /**
      * Sets the state of performance tracking (enabled by default)
      * @param value if true performance counters will be collected every second and sent to Application Insights
-     * @returns {ApplicationInsights} this class
+     * @returns {Configuration} this class
      */
     public static setAutoCollectPerformance(value: boolean) {
         _isPerformance = value;
@@ -171,7 +171,7 @@ export class Configuration {
     /**
      * Sets the state of request tracking (enabled by default)
      * @param value if true requests will be sent to Application Insights
-     * @returns {ApplicationInsights} this class
+     * @returns {Configuration} this class
      */
     public static setAutoCollectRequests(value: boolean) {
         _isRequests = value;
@@ -185,7 +185,7 @@ export class Configuration {
     /**
      * Sets the state of dependency tracking (enabled by default)
      * @param value if true dependencies will be sent to Application Insights
-     * @returns {ApplicationInsights} this class
+     * @returns {Configuration} this class
      */
     public static setAutoCollectDependencies(value: boolean) {
         _isDependencies = value;
@@ -199,7 +199,7 @@ export class Configuration {
     /**
      * Sets the state of automatic dependency correlation (enabled by default)
      * @param value if true dependencies will be correlated with requests
-     * @returns {ApplicationInsights} this class
+     * @returns {Configuration} this class
      */
     public static setAutoDependencyCorrelation(value: boolean) {
         _isCorrelating = value;
@@ -216,7 +216,7 @@ export class Configuration {
      * For enable for additional clients, use client.channel.setUseDiskRetryCaching(true).
      * @param value if true events that occured while client is offline will be cached on disk
      * @param resendInterval. The wait interval for resending cached events.
-     * @returns {ApplicationInsights} this class
+     * @returns {Configuration} this class
      */
     public static setUseDiskRetryCaching(value: boolean, resendInterval?: number) {
         _isDiskRetry = value;
@@ -231,7 +231,7 @@ export class Configuration {
      * Enables debug and warning logging for AppInsights itself.
      * @param enableDebugLogging if true, enables debug logging
      * @param enableWarningLogging if true, enables warning logging
-     * @returns {ApplicationInsights} this class
+     * @returns {Configuration} this class
      */
     public static setInternalLogging(enableDebugLogging = false, enableWarningLogging = true) {
         Logging.enableDebug = enableDebugLogging;
