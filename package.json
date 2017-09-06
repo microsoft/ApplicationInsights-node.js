@@ -16,7 +16,11 @@
     "performance monitoring",
     "application insights",
     "microsoft",
-    "azure"
+    "azure",
+    "tracing",
+    "telemetry",
+    "analytics",
+    "apm"
   ],
   "contributors": [
     {
