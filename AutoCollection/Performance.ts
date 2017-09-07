@@ -5,15 +5,6 @@ import Client = require("../Library/Client");
 import Contracts = require("../Declarations/Contracts");
 import Logging = require("../Library/Logging");
 
-enum PerfCounterType {
-    ProcessorTime = 0,
-    AvailableMemory = 1,
-    RequestsPerSec = 2,
-    PrivateBytes = 3,
-    RequestExecutionTime = 4,
-    PercentProcessorTime = 5
-}
-
 class AutoCollectPerformance {
 
     public static INSTANCE: AutoCollectPerformance;
@@ -27,7 +18,7 @@ class AutoCollectPerformance {
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _lastCpus: { model: string; speed: number; times: { user: number; nice: number; sys: number; idle: number; irq: number; }; }[];
-    private _lastRequests: { totalRequestCount: number; totalFailedRequestCount: number; time: number };
+    private _lastRequests: { totalRequestCount: number; totalFailedRequestCount: number; time: number; };
 
     constructor(client: Client) {
         if (!!AutoCollectPerformance.INSTANCE) {
@@ -42,7 +33,7 @@ class AutoCollectPerformance {
     public enable(isEnabled: boolean) {
         this._isEnabled = isEnabled;
         if (this._isEnabled && !this._isInitialized) {
-            this._initialize();
+            this._isInitialized = true;
         }
 
         if (isEnabled) {
@@ -54,7 +45,7 @@ class AutoCollectPerformance {
                     time: +new Date
                 };
 
-                this._handle = setInterval(() => this.trackPerformance(), 10000);
+                this._handle = setInterval(() => this.trackPerformance(), 60000);
             }
         } else {
             if (this._handle) {
@@ -64,27 +55,11 @@ class AutoCollectPerformance {
         }
     }
 
-    public isInitialized() {
-        return this._isInitialized;
-    }
-
-    private _initialize() {
-        this._isInitialized = true;
-        var originalServer = http.createServer;
-        http.createServer = (onRequest) => {
-            return originalServer((request: http.ServerRequest, response: http.ServerResponse) => {
-                if (this._isEnabled) {
-                    AutoCollectPerformance.countRequest(request, response);
-                }
-
-                if (typeof onRequest === "function") {
-                    onRequest(request, response);
-                }
-            });
-        }
-    }
-
     public static countRequest(request: http.ServerRequest, response: http.ServerResponse) {
+        if (!AutoCollectPerformance.isEnabled()) {
+            return;
+        }
+
         var start = +new Date;
         if (!request || !response) {
             Logging.warn("AutoCollectPerformance.countRequest was called with invalid parameters: ", !!request, !!response);
@@ -102,6 +77,14 @@ class AutoCollectPerformance {
                 }
             });
         }
+    }
+
+    public isInitialized() {
+        return this._isInitialized;
+    }
+
+    public static isEnabled() {
+        return AutoCollectPerformance.INSTANCE && AutoCollectPerformance.INSTANCE._isEnabled;
     }
 
     public trackPerformance() {
@@ -149,20 +132,12 @@ class AutoCollectPerformance {
                 // irq (or) % CPU time spent servicing/handling hardware interrupts
                 var irq = (times.irq - lastTimes.irq) || 0;
                 totalIrq += irq;
-
-                var total = (user + sys + nice + idle + irq) || 1; // don"t let this be 0 since it is a divisor
-                this._client.trackMetric({name: name + "user", value: (user / total) * 100});
             }
 
-            var combinedName = "% total cpu";
             var combinedTotal = (totalUser + totalSys + totalNice + totalIdle + totalIrq) || 1;
 
             this._client.trackMetric({name: "\\Processor(_Total)\\% Processor Time", value: ((combinedTotal - totalIdle) / combinedTotal) * 100});
             this._client.trackMetric({name: "\\Process(??APP_WIN32_PROC??)\\% Processor Time", value: (totalUser / combinedTotal) * 100});
-            this._client.trackMetric({name: combinedName + " sys", value: (totalSys / combinedTotal) * 100});
-            this._client.trackMetric({name: combinedName + " nice", value: (totalNice / combinedTotal) * 100});
-            this._client.trackMetric({name: combinedName + " idle", value: (totalIdle / combinedTotal) * 100});
-            this._client.trackMetric({name: combinedName + " irq", value: (totalIrq / combinedTotal) * 100});
         }
 
         this._lastCpus = cpus;
@@ -176,9 +151,6 @@ class AutoCollectPerformance {
         var percentAvailableMem = freeMem / (totalMem || 1);
         this._client.trackMetric({name:"\\Process(??APP_WIN32_PROC??)\\Private Bytes", value: usedMem});
         this._client.trackMetric({name: "\\Memory\\Available Bytes", value: freeMem});
-        this._client.trackMetric({name: "Memory Total", value: totalMem});
-        this._client.trackMetric({name: "% Memory Used", value: percentUsedMem * 100});
-        this._client.trackMetric({name: "% Memory Free", value: percentAvailableMem * 100});
     }
 
     private _trackNetwork() {
@@ -199,10 +171,7 @@ class AutoCollectPerformance {
             var requestsPerSec = intervalRequests / elapsedSeconds;
             var failedRequestsPerSec = intervalFailedRequests / elapsedSeconds;
 
-            this._client.trackMetric({ name: "Total Requests", value: requests.totalRequestCount });
-            this._client.trackMetric({ name: "Total Failed Requests", value: requests.totalFailedRequestCount });
             this._client.trackMetric({ name: "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Requests/Sec", value: requestsPerSec });
-            this._client.trackMetric({ name: "Failed Requests per Second", value: failedRequestsPerSec });
             this._client.trackMetric({ name: "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Request Execution Time", value: AutoCollectPerformance._lastRequestExecutionTime });
         }
 

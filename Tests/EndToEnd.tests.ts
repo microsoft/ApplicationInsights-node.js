@@ -133,7 +133,7 @@ describe("EndToEnd", () => {
         });
 
         it("should send telemetry", (done) => {
-            var client = AppInsights.createClient("iKey");
+            var client = new AppInsights.Client("iKey");
             client.trackEvent({ name: "test event" });
             client.trackException({ exception: new Error("test error") });
             client.trackMetric({ name: "test metric", value: 3 });
@@ -163,7 +163,7 @@ describe("EndToEnd", () => {
 
             var server = http.createServer((req: http.ServerRequest, res: http.ServerResponse) => {
                 setTimeout(() => {
-                    AppInsights.client.flush({
+                    AppInsights.defaultClient.flush({
                         callback: (response) => {
                             assert.ok(response, "response should not be empty");
                             done();
@@ -195,7 +195,7 @@ describe("EndToEnd", () => {
 
             var server = https.createServer(null, (req: http.ServerRequest, res: http.ServerResponse) => {
                 setTimeout(() => {
-                    AppInsights.client.flush({
+                    AppInsights.defaultClient.flush({
                         callback: (response) => {
                             assert.ok(response, "response should not be empty");
                             done();
@@ -211,8 +211,7 @@ describe("EndToEnd", () => {
         });
     });
 
-    describe("Offline mode", () => {
-        var AppInsights = require("../applicationinsights");
+    describe("Disk retry mode", () => {
         var CorrelationIdManager = require("../Library/CorrelationIdManager");
         var cidStub: sinon.SinonStub = null;
         var writeFile: sinon.SinonStub;
@@ -220,7 +219,7 @@ describe("EndToEnd", () => {
         var readFile: sinon.SinonStub;
 
         beforeEach(() => {
-            AppInsights.client = undefined;
+            AppInsights.defaultClient = undefined;
             cidStub = sinon.stub(CorrelationIdManager, 'queryCorrelationId'); // TODO: Fix method of stubbing requests to allow CID to be part of E2E tests
             this.request = sinon.stub(https, 'request');
             writeFile = sinon.stub(fs, 'writeFile');
@@ -242,10 +241,10 @@ describe("EndToEnd", () => {
             this.existsSync.restore();
         });
 
-        it("disabled by default", (done) => {
+        it("disabled by default for new clients", (done) => {
             var req = new fakeRequest();
 
-            var client = AppInsights.createClient("key");
+            var client = new AppInsights.Client("key");
 
             client.trackEvent({ name: "test event" });
 
@@ -262,11 +261,32 @@ describe("EndToEnd", () => {
             });
         });
 
+        it("enabled by default for default client", (done) => {
+            var req = new fakeRequest();
+
+            AppInsights.setup("key").start();
+            var client = AppInsights.defaultClient;
+
+            client.trackEvent({ name: "test event" });
+
+            this.request.returns(req);
+
+            client.flush({
+                callback: (response: any) => {
+                    // yield for the caching behavior
+                    setImmediate(() => {
+                        assert(writeFile.callCount === 1);
+                        done();
+                    });
+                }
+            });
+        });
+
         it("stores data to disk when enabled", (done) => {
             var req = new fakeRequest();
 
-            var client = AppInsights.createClient("key");
-            client.channel.setOfflineMode(true);
+            var client = new AppInsights.Client("key");
+            client.channel.setUseDiskRetryCaching(true);
 
             client.trackEvent({ name: "test event" });
 
@@ -291,8 +311,8 @@ describe("EndToEnd", () => {
             var res = new fakeResponse();
             res.statusCode = 200;
 
-            var client = AppInsights.createClient("key");
-            client.channel.setOfflineMode(true, 0);
+            var client = new AppInsights.Client("key");
+            client.channel.setUseDiskRetryCaching(true, 0);
 
             client.trackEvent({ name: "test event" });
 
@@ -317,8 +337,8 @@ describe("EndToEnd", () => {
         it("cache payload synchronously when process crashes", () => {
             var req = new fakeRequest(true);
 
-            var client = AppInsights.createClient("key");
-            client.channel.setOfflineMode(true);
+            var client = new AppInsights.Client("key");
+            client.channel.setUseDiskRetryCaching(true);
 
             client.trackEvent({ name: "test event" });
 

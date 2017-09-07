@@ -24,10 +24,12 @@ class Channel {
     }
 
     /**
-     * Enable or disable offline mode
+     * Enable or disable disk-backed retry caching to cache events when client is offline (enabled by default)
+     * @param value if true events that occured while client is offline will be cached on disk
+     * @param resendInterval. The wait interval for resending cached events.
      */
-    public setOfflineMode(value: boolean, resendInterval?: number) {
-        this._sender.setOfflineMode(value, resendInterval);
+    public setUseDiskRetryCaching(value: boolean, resendInterval?: number) {
+        this._sender.setDiskRetryMode(value, resendInterval);
     }
 
     /**

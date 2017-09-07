@@ -81,7 +81,6 @@ class Client {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackEvent(telemetry: EventTelemetry): void {
-
         this.track(telemetry, TelemetryType.Event);
     }
 
@@ -135,9 +134,9 @@ class Client {
 
             // Ideally we would have a central place for "internal" telemetry processors and users can configure which ones are in use.
             // This will do for now. Otherwise clearTelemetryProcessors() would be problematic.
-            var sampledIn = TelemetryProcessors.samplingTelemetryProcessor(envelope, { correlationContext: CorrelationContextManager.getCurrentContext() });
+            accepted = accepted && TelemetryProcessors.samplingTelemetryProcessor(envelope, { correlationContext: CorrelationContextManager.getCurrentContext() });
 
-            if (accepted && sampledIn) {
+            if (accepted) {
                 this.channel.send(envelope);
             }
         }
