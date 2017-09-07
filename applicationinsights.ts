@@ -235,7 +235,7 @@ export class Configuration {
      */
     public static setInternalLogging(enableDebugLogging = false, enableWarningLogging = true) {
         Logging.enableDebug = enableDebugLogging;
-        Logging.disableWarnings = enableWarningLogging;
+        Logging.disableWarnings = !enableWarningLogging;
         return Configuration;
     }
 }

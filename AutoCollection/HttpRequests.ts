@@ -8,7 +8,7 @@ import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import HttpRequestParser = require("./HttpRequestParser");
 import { CorrelationContextManager, CorrelationContext, PrivateCustomProperties } from "./CorrelationContextManager";
-import AutoColllectPerformance = require("./Performance");
+import AutoCollectPerformance = require("./Performance");
 
 class AutoCollectHttpRequests {
 
@@ -34,7 +34,7 @@ class AutoCollectHttpRequests {
         // Autocorrelation requires automatic monitoring of incoming server requests
         // Disabling autocollection but enabling autocorrelation will still enable
         // request monitoring but will not produce request events
-        if ((this._isAutoCorrelating || this._isEnabled) && !this._isInitialized) {
+        if ((this._isAutoCorrelating || this._isEnabled || AutoCollectPerformance.isEnabled()) && !this._isInitialized) {
             this.useAutoCorrelation(this._isAutoCorrelating);
             this._initialize();
         }
@@ -85,11 +85,19 @@ class AutoCollectHttpRequests {
                 const requestParser = new HttpRequestParser(request);
                 const correlationContext = this._generateCorrelationContext(requestParser);
 
+                // Note: Check for if correlation is enabled happens within this method.
+                // If not enabled, function will directly call the callback.
                 CorrelationContextManager.runWithContext(correlationContext, () => {
                     if (this._isEnabled) {
                         // Auto collect request
                         AutoCollectHttpRequests.trackRequest(this._client, request, response, null, requestParser);
                     }
+
+                    // Add this request to the performance counter
+                    // Note: Check for if perf counters are enabled happens within this method.
+                    // TODO: Refactor common bits between trackRequest and countRequest so they can
+                    // be used together, even when perf counters are on, and request tracking is off
+                    AutoCollectPerformance.countRequest(request, response);
 
                     if (typeof onRequest === "function") {
                         onRequest(request, response);
@@ -176,9 +184,6 @@ class AutoCollectHttpRequests {
             Logging.info("AutoCollectHttpRequests.trackRequest was called with invalid parameters: ", !request, !response, !client);
             return;
         }
-
-        // Register performance counter monitor
-        AutoColllectPerformance.countRequest(request, response);
 
         // store data about the request
         var correlationContext = CorrelationContextManager.getCurrentContext();
