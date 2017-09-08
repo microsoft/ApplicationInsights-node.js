@@ -133,7 +133,7 @@ describe("EndToEnd", () => {
         });
 
         it("should send telemetry", (done) => {
-            var client = new AppInsights.Client("iKey");
+            var client = new AppInsights.TelemetryClient("iKey");
             client.trackEvent({ name: "test event" });
             client.trackException({ exception: new Error("test error") });
             client.trackMetric({ name: "test metric", value: 3 });
@@ -244,7 +244,7 @@ describe("EndToEnd", () => {
         it("disabled by default for new clients", (done) => {
             var req = new fakeRequest();
 
-            var client = new AppInsights.Client("key");
+            var client = new AppInsights.TelemetryClient("key");
 
             client.trackEvent({ name: "test event" });
 
@@ -285,7 +285,7 @@ describe("EndToEnd", () => {
         it("stores data to disk when enabled", (done) => {
             var req = new fakeRequest();
 
-            var client = new AppInsights.Client("key");
+            var client = new AppInsights.TelemetryClient("key");
             client.channel.setUseDiskRetryCaching(true);
 
             client.trackEvent({ name: "test event" });
@@ -311,7 +311,7 @@ describe("EndToEnd", () => {
             var res = new fakeResponse();
             res.statusCode = 200;
 
-            var client = new AppInsights.Client("key");
+            var client = new AppInsights.TelemetryClient("key");
             client.channel.setUseDiskRetryCaching(true, 0);
 
             client.trackEvent({ name: "test event" });
@@ -337,7 +337,7 @@ describe("EndToEnd", () => {
         it("cache payload synchronously when process crashes", () => {
             var req = new fakeRequest(true);
 
-            var client = new AppInsights.Client("key");
+            var client = new AppInsights.TelemetryClient("key");
             client.channel.setUseDiskRetryCaching(true);
 
             client.trackEvent({ name: "test event" });
