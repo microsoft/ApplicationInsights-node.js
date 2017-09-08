@@ -1,7 +1,7 @@
 import http = require("http");
 import os = require("os");
 
-import Client = require("../Library/TelemetryClient");
+import TelemetryClient = require("../Library/TelemetryClient");
 import Contracts = require("../Declarations/Contracts");
 import Logging = require("../Library/Logging");
 
@@ -13,14 +13,14 @@ class AutoCollectPerformance {
     private static _totalFailedRequestCount: number = 0;
     private static _lastRequestExecutionTime: number = 0;
 
-    private _client: Client;
+    private _client: TelemetryClient;
     private _handle: NodeJS.Timer;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _lastCpus: { model: string; speed: number; times: { user: number; nice: number; sys: number; idle: number; irq: number; }; }[];
     private _lastRequests: { totalRequestCount: number; totalFailedRequestCount: number; time: number; };
 
-    constructor(client: Client) {
+    constructor(client: TelemetryClient) {
         if (!!AutoCollectPerformance.INSTANCE) {
             throw new Error("Performance tracking should be configured from the applicationInsights object");
         }

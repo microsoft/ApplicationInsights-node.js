@@ -1,4 +1,4 @@
-import Client = require("../Library/TelemetryClient");
+import TelemetryClient = require("../Library/TelemetryClient");
 import Logging = require("../Library/Logging");
 
 import {enable as enableConsole} from "./diagnostic-channel/console.sub";
@@ -12,10 +12,10 @@ class AutoCollectConsole {
     public static INSTANCE: AutoCollectConsole;
     private static _methodNames = ["debug", "info", "log", "warn", "error"];
 
-    private _client: Client;
+    private _client: TelemetryClient;
     private _isInitialized: boolean;
 
-    constructor(client: Client) {
+    constructor(client: TelemetryClient) {
         if(!!AutoCollectConsole.INSTANCE) {
             throw new Error("Console logging adapter tracking should be configured from the applicationInsights object");
         }

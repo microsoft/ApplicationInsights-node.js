@@ -1,6 +1,6 @@
 import http = require("http")
 import https = require("https")
-import Client = require("./TelemetryClient")
+import TelemetryClient = require("./TelemetryClient")
 import ServerRequestTracking = require("../AutoCollection/HttpRequests")
 import ClientRequestTracking = require("../AutoCollection/HttpDependencies")
 import NodeHttpDependencyTelemetry = require("./TelemetryTypes/NodeHttpDependencyTelemetry")
@@ -13,7 +13,7 @@ import Logging = require("./Logging")
  * Construct a new TelemetryClient to have an instance with a different configuration than the default client.
  * In most cases, `appInsights.defaultClient` should be used instead.
  */
-class NodeClient extends Client {
+class NodeClient extends TelemetryClient {
 
     /**
      * Log RequestTelemetry from HTTP request and response. This method will log immediately without waitng for request completion

@@ -1,13 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
-import Client = require("../../Library/TelemetryClient");
+import TelemetryClient = require("../../Library/TelemetryClient");
 import {SeverityLevel} from "../../Declarations/Contracts";
 
 import {channel, IStandardEvent} from "diagnostic-channel";
 
 import {bunyan} from "diagnostic-channel-publishers";
 
-let clients: Client[] = [];
+let clients: TelemetryClient[] = [];
 
 // Mapping from bunyan levels defined at https://github.com/trentm/node-bunyan/blob/master/lib/bunyan.js#L256
 const bunyanToAILevelMap: {[key: number] : number} = {
@@ -26,7 +26,7 @@ const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
     });
 };
 
-export function enable(enabled: boolean, client: Client) {
+export function enable(enabled: boolean, client: TelemetryClient) {
     if (enabled) {
         if (clients.length === 0) {
             channel.subscribe<bunyan.IBunyanData>("bunyan", subscriber);

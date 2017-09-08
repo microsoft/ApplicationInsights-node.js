@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
-import Client = require("../../Library/TelemetryClient");
+import TelemetryClient = require("../../Library/TelemetryClient");
 import { channel, IStandardEvent } from "diagnostic-channel";
 
 import { pg } from "diagnostic-channel-publishers";
 
-let clients: Client[] = [];
+let clients: TelemetryClient[] = [];
 
 export const subscriber = (event: IStandardEvent<pg.IPostgresData>) => {
     clients.forEach((client) => {
@@ -24,7 +24,7 @@ export const subscriber = (event: IStandardEvent<pg.IPostgresData>) => {
     });
 };
 
-export function enable(enabled: boolean, client: Client) {
+export function enable(enabled: boolean, client: TelemetryClient) {
     if (enabled) {
         if (clients.length === 0) {
             channel.subscribe<pg.IPostgresData>("postgres", subscriber);
