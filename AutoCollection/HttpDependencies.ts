@@ -2,7 +2,7 @@ import http = require("http");
 import https = require("https");
 import url = require("url");
 
-import Client = require("../Library/Client");
+import TelemetryClient = require("../Library/TelemetryClient");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
@@ -22,11 +22,11 @@ class AutoCollectHttpDependencies {
 
     private static requestNumber = 1;
 
-    private _client: Client;
+    private _client: TelemetryClient;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
 
-    constructor(client: Client) {
+    constructor(client: TelemetryClient) {
         if (!!AutoCollectHttpDependencies.INSTANCE) {
             throw new Error("Client request tracking should be configured from the applicationInsights object");
         }
@@ -82,7 +82,7 @@ class AutoCollectHttpDependencies {
      * Tracks an outgoing request. Because it may set headers this method must be called before
      * writing content to or ending the request.
      */
-    public static trackRequest(client: Client, requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest,
+    public static trackRequest(client: TelemetryClient, requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest,
         properties?: { [key: string]: string }) {
         if (!requestOptions || !request || !client) {
             Logging.info("AutoCollectHttpDependencies.trackRequest was called with invalid parameters: ", !requestOptions, !request, !client);

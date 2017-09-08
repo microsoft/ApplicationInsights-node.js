@@ -2,7 +2,7 @@ import http = require("http");
 import https = require("https");
 import url = require("url");
 
-import Client = require("../Library/Client");
+import TelemetryClient = require("../Library/TelemetryClient");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
@@ -14,12 +14,12 @@ class AutoCollectHttpRequests {
 
     public static INSTANCE:AutoCollectHttpRequests;
 
-    private _client:Client;
+    private _client: TelemetryClient;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _isAutoCorrelating: boolean;
 
-    constructor(client:Client) {
+    constructor(client: TelemetryClient) {
         if (!!AutoCollectHttpRequests.INSTANCE) {
             throw new Error("Server request tracking should be configured from the applicationInsights object");
         }
@@ -153,7 +153,7 @@ class AutoCollectHttpRequests {
     /**
      * Tracks a request synchronously (doesn't wait for response 'finish' event)
      */
-    public static trackRequestSync(client: Client, request: http.ServerRequest, response:http.ServerResponse, ellapsedMilliseconds?: number, properties?:{ [key: string]: string; }, error?: any) {
+    public static trackRequestSync(client: TelemetryClient, request: http.ServerRequest, response:http.ServerResponse, ellapsedMilliseconds?: number, properties?:{ [key: string]: string; }, error?: any) {
         if (!request || !response || !client) {
             Logging.info("AutoCollectHttpRequests.trackRequestSync was called with invalid parameters: ", !request, !response, !client);
             return;
@@ -179,7 +179,7 @@ class AutoCollectHttpRequests {
     /**
      * Tracks a request by listening to the response 'finish' event
      */
-    public static trackRequest(client:Client, request:http.ServerRequest, response:http.ServerResponse, properties?:{ [key: string]: string; }, _requestParser?:HttpRequestParser) {
+    public static trackRequest(client: TelemetryClient, request:http.ServerRequest, response:http.ServerResponse, properties?:{ [key: string]: string; }, _requestParser?:HttpRequestParser) {
         if (!request || !response || !client) {
             Logging.info("AutoCollectHttpRequests.trackRequest was called with invalid parameters: ", !request, !response, !client);
             return;
@@ -219,7 +219,7 @@ class AutoCollectHttpRequests {
     /**
      * Add the target correlationId to the response headers, if not already provided.
      */
-    private static addResponseCorrelationIdHeader(client:Client, response:http.ServerResponse) {
+    private static addResponseCorrelationIdHeader(client: TelemetryClient, response:http.ServerResponse) {
         if (client.config && client.config.correlationId &&
             response.getHeader && response.setHeader && !(<any>response).headersSent) {
             const correlationHeader = response.getHeader(RequestResponseHeaders.requestContextHeader);
@@ -239,7 +239,7 @@ class AutoCollectHttpRequests {
         }
     }
 
-    private static endRequest(client: Client, requestParser: HttpRequestParser, request: http.ServerRequest, response: http.ServerResponse, ellapsedMilliseconds?: number, properties?: { [key: string]: string}, error?: any) {
+    private static endRequest(client: TelemetryClient, requestParser: HttpRequestParser, request: http.ServerRequest, response: http.ServerResponse, ellapsedMilliseconds?: number, properties?: { [key: string]: string}, error?: any) {
         if (error) {
             requestParser.onError(error, properties, ellapsedMilliseconds);
         } else {

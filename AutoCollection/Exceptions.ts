@@ -1,7 +1,7 @@
 import http = require("http");
 
 import Contracts = require("../Declarations/Contracts");
-import Client = require("../Library/Client");
+import TelemetryClient = require("../Library/TelemetryClient");
 import Sender = require("../Library/Sender");
 import Queue = require("../Library/Channel");
 import Util = require("../Library/Util");
@@ -14,10 +14,10 @@ class AutoCollectExceptions {
 
     private _exceptionListenerHandle: (reThrow: boolean, error: Error) => void;
     private _rejectionListenerHandle: (reThrow: boolean, error: Error) => void;
-    private _client: Client;
+    private _client: TelemetryClient;
     private _isInitialized: boolean;
 
-    constructor(client: Client) {
+    constructor(client: TelemetryClient) {
         if (!!AutoCollectExceptions.INSTANCE) {
             throw new Error("Exception tracking should be configured from the applicationInsights object");
         }

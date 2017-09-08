@@ -1,6 +1,6 @@
 import assert = require("assert");
 import sinon = require("sinon");
-import Client = require("../../Library/Client");
+import Client = require("../../Library/TelemetryClient");
 
 import Sampling = require("../../TelemetryProcessors/SamplingTelemetryProcessor");
 

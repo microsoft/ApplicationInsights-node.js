@@ -25,7 +25,7 @@ import TelemetryType = require("./TelemetryTypes/TelemetryType")
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
  * and manually trigger immediate sending (flushing)
  */
-class Client {
+class TelemetryClient {
     private _telemetryProcessors: { (envelope: Contracts.Envelope, contextObjects: { [name: string]: any; }): boolean; }[] = [];
 
     public config: Config;
@@ -193,4 +193,4 @@ class Client {
     }
 }
 
-export = Client;
+export = TelemetryClient;

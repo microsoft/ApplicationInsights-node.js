@@ -14,12 +14,9 @@ const app = express();
 const PORT = 8080;
 
 appInsights.setup(process.env.APPINSIGHTS_INSTRUMENTATIONKEY || "test").start().setAutoDependencyCorrelation(true);
-appInsights.enableVerboseLogging(true);
+appInsights.Configuration.setInternalLogging(true);
 
-var appInsightsClient = appInsights.client;
-
-
-
+var appInsightsClient = appInsights.defaultClient;
 
 app.get('/', (req, res) => {
     res.send(
@@ -34,7 +31,7 @@ app.get('/', (req, res) => {
         "    </ul>" +
         "   </p>" +
         "   <p>" +
-        "    <span>ikey: " + appInsights.client.config.instrumentationKey + "<span>" +
+        "    <span>ikey: " + appInsights.defaultClient.config.instrumentationKey + "<span>" +
         "   </p>" +
         "  </body>" +
         "</html>");

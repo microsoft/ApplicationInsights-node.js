@@ -2,7 +2,7 @@
 import url = require("url");
 
 import Logging = require("./Logging");
-import Client = require("../Library/Client");
+import TelemetryClient = require("../Library/TelemetryClient");
 import RequestResponseHeaders = require("./RequestResponseHeaders");
 
 class Util {
@@ -169,7 +169,7 @@ class Util {
      * Checks if a request url is not on a excluded domain list 
      * and if it is safe to add correlation headers
      */
-    public static canIncludeCorrelationHeader(client: Client, requestUrl: string) {
+    public static canIncludeCorrelationHeader(client: TelemetryClient, requestUrl: string) {
         let excludedDomains = client && client.config && client.config.correlationHeaderExcludedDomains;
         if (!excludedDomains || excludedDomains.length == 0 || !requestUrl) {
             return true;
