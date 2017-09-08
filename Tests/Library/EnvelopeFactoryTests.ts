@@ -5,7 +5,7 @@ import http = require("http");
 import EnvelopeFactory = require("../../Library/EnvelopeFactory");
 import ExceptionTelemetry = require("../../Library/TelemetryTypes/ExceptionTelemetry");
 import Contracts = require("../../Declarations/Contracts")
-import Client = require("../../Library/Client")
+import Client = require("../../Library/TelemetryClient")
 import EventTelemetry = require("../../Library/TelemetryTypes/EventTelemetry")
 import TelemetryType = require("../../Library/TelemetryTypes/TelemetryType")
 

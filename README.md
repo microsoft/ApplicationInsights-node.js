@@ -214,7 +214,7 @@ let appInsights = require("applicationinsights");
 appInsights.setup("_ikey-A_").start();
 
 // track some events manually under another ikey
-let otherClient = new appInsights.Client("_ikey-B_");
+let otherClient = new appInsights.TelemetryClient("_ikey-B_");
 otherClient.trackEvent({name: "my custom event"});
 ```
 
@@ -224,7 +224,7 @@ otherClient.trackEvent({name: "my custom event"});
 
     ```javascript
     let appInsights = require("applicationinsights");
-    let client = new appInsights.Client();
+    let client = new appInsights.TelemetryClient();
 
     var success = false;
     let startTime = Date.now();
@@ -280,7 +280,7 @@ advanced scenarios. These can be set as follows:
 client.config.PROPERTYNAME = VALUE;
 ```
 These properties are client specific, so you can configure `appInsights.defaultClient` 
-separately from clients created with `new appInsights.Client()`.
+separately from clients created with `new appInsights.TelemetryClient()`.
 
 | Property                        | Description                                                                                                |
 | ------------------------------- |------------------------------------------------------------------------------------------------------------|

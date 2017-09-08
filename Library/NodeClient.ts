@@ -1,6 +1,6 @@
 import http = require("http")
 import https = require("https")
-import Client = require("./Client")
+import Client = require("./TelemetryClient")
 import ServerRequestTracking = require("../AutoCollection/HttpRequests")
 import ClientRequestTracking = require("../AutoCollection/HttpDependencies")
 import NodeHttpDependencyTelemetry = require("./TelemetryTypes/NodeHttpDependencyTelemetry")
@@ -8,8 +8,10 @@ import NodeHttpRequestTelemetry = require("./TelemetryTypes/NodeHttpRequestTelem
 import Logging = require("./Logging")
 
 /**
- * Application Insights telemetry client for Node.JS extends base Client object to provide Node.JS-specific methods
- * to track incoming and outgoing HTTP requests.
+ * Application Insights Telemetry Client for Node.JS. Provides the Application Insights TelemetryClient API
+ * in addition to Node-specific helper functions.
+ * Construct a new TelemetryClient to have an instance with a different configuration than the default client.
+ * In most cases, `appInsights.defaultClient` should be used instead.
  */
 class NodeClient extends Client {
 

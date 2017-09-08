@@ -2,7 +2,7 @@ import http = require("http");
 import url = require("url");
 
 import Contracts = require("../Declarations/Contracts");
-import Client = require("../Library/Client");
+import Client = require("../Library/TelemetryClient");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");

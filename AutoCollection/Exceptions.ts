@@ -1,7 +1,7 @@
 import http = require("http");
 
 import Contracts = require("../Declarations/Contracts");
-import Client = require("../Library/Client");
+import Client = require("../Library/TelemetryClient");
 import Sender = require("../Library/Sender");
 import Queue = require("../Library/Channel");
 import Util = require("../Library/Util");

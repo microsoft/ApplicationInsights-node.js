@@ -1,7 +1,7 @@
 import http = require("http");
 import os = require("os");
 
-import Client = require("../Library/Client");
+import Client = require("../Library/TelemetryClient");
 import Contracts = require("../Declarations/Contracts");
 import Logging = require("../Library/Logging");
 

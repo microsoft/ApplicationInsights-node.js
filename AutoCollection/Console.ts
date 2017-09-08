@@ -1,4 +1,4 @@
-import Client = require("../Library/Client");
+import Client = require("../Library/TelemetryClient");
 import Logging = require("../Library/Logging");
 
 import {enable as enableConsole} from "./diagnostic-channel/console.sub";

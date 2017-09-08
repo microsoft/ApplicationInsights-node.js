@@ -2,7 +2,7 @@ import assert = require("assert");
 import sinon = require("sinon");
 
 import AutoCollectionExceptions = require("../../AutoCollection/Exceptions");
-import Client = require("../../Library/Client");
+import Client = require("../../Library/TelemetryClient");
 import AppInsights = require("../../applicationinsights");
 
 describe("AutoCollection/Exceptions", () => {

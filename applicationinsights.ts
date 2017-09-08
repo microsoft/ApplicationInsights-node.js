@@ -11,7 +11,7 @@ import Util = require("./Library/Util");
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
-export import Client = require("./Library/NodeClient");
+export import TelemetryClient = require("./Library/NodeClient");
 export import Contracts = require("./Declarations/Contracts");
 
 // Default autocollection configuration
@@ -33,9 +33,9 @@ let _isStarted = false;
 
 /**
 * The default client, initialized when setup was called. To initialize a different client
-* with its own configuration, use `new Client(instrumentationKey?)`.
+* with its own configuration, use `new TelemetryClient(instrumentationKey?)`.
 */
-export let defaultClient: Client;
+export let defaultClient: TelemetryClient;
 
 /**
  * Initializes the default client. Should be called after setting
@@ -49,7 +49,7 @@ export let defaultClient: Client;
  */
 export function setup(instrumentationKey?: string) {
     if(!defaultClient) {
-        defaultClient = new Client(instrumentationKey);
+        defaultClient = new TelemetryClient(instrumentationKey);
         _console = new AutoCollectConsole(defaultClient);
         _exceptions = new AutoCollectExceptions(defaultClient);
         _performance = new AutoCollectPerformance(defaultClient);
