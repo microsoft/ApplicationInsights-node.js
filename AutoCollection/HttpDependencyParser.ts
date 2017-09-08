@@ -3,18 +3,21 @@ import https = require("https");
 import url = require("url");
 
 import Contracts = require("../Declarations/Contracts");
-import Client = require("../Library/Client");
+import TelemetryClient = require("../Library/TelemetryClient");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import RequestParser = require("./RequestParser");
 import CorrelationIdManager = require("../Library/CorrelationIdManager");
+import DependencyTelemetry = require("../Library/TelemetryTypes/DependencyTelemetry");
+import Identified = require("../Library/TelemetryTypes/Identified")
 
 /**
  * Helper class to read data from the requst/response objects and convert them into the telemetry contract
  */
-class ClientRequestParser extends RequestParser {
+class HttpDependencyParser extends RequestParser {
     private correlationId: string;
+    private targetRoleName: string;
 
     constructor(requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest) {
         super();
@@ -22,7 +25,7 @@ class ClientRequestParser extends RequestParser {
             // The ClientRequest.method property isn't documented, but is always there.
             this.method = (<any>request).method;
 
-            this.url = ClientRequestParser._getUrlFromRequestOptions(requestOptions, request);
+            this.url = HttpDependencyParser._getUrlFromRequestOptions(requestOptions, request);
             this.startTime = +new Date();
         }
     }
@@ -40,43 +43,44 @@ class ClientRequestParser extends RequestParser {
     public onResponse(response: http.ClientResponse, properties?: { [key: string]: string }) {
         this._setStatus(response.statusCode, undefined, properties);
         this.correlationId = Util.getCorrelationContextTarget(response, RequestResponseHeaders.requestContextTargetKey);
+        this.targetRoleName = Util.getCorrelationContextTarget(response, RequestResponseHeaders.requestContextTargetRoleNameKey);
     }
 
     /**
      * Gets a dependency data contract object for a completed ClientRequest.
      */
-    public getDependencyData(dependencyId?: string): Contracts.Data<Contracts.RemoteDependencyData> {
+    public getDependencyTelemetry(dependencyId?: string): DependencyTelemetry {
         let urlObject = url.parse(this.url);
         urlObject.search = undefined;
         urlObject.hash = undefined;
         let dependencyName = this.method.toUpperCase() + " " + urlObject.pathname;
 
-        let remoteDependency = new Contracts.RemoteDependencyData();
-        remoteDependency.type = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
 
-        remoteDependency.target = urlObject.hostname;
+        let remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
+
+        let remoteDependencyTarget = urlObject.hostname;
         if (this.correlationId) {
-            remoteDependency.type = Contracts.RemoteDependencyDataConstants.TYPE_AI;
+            remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_AI;
             if (this.correlationId !== CorrelationIdManager.correlationIdPrefix) {
-                remoteDependency.target = urlObject.hostname + " | " + this.correlationId;
+                remoteDependencyTarget = urlObject.hostname + " | " + this.correlationId + " | roleName:" + this.targetRoleName;
             }
         } else {
-            remoteDependency.type = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
+            remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
         }
 
-        remoteDependency.id = dependencyId;
-        remoteDependency.name = dependencyName;
-        remoteDependency.data = this.url;
-        remoteDependency.duration = Util.msToTimeSpan(this.duration);
-        remoteDependency.success = this._isSuccess();
-        remoteDependency.resultCode = this.statusCode ? this.statusCode.toString() : null;
-        remoteDependency.properties = this.properties || {};
+        var telemetry: DependencyTelemetry & Identified = {
+            id: dependencyId,
+            name: dependencyName,
+            data: this.url,
+            duration: this.duration,
+            success: this._isSuccess(),
+            resultCode: this.statusCode ? this.statusCode.toString() : null,
+            properties: this.properties || {},
+            dependencyTypeName: remoteDependencyType,
+            target: remoteDependencyTarget
+        };
 
-        let data = new Contracts.Data<Contracts.RemoteDependencyData>();
-        data.baseType = Contracts.DataTypes.REMOTE_DEPENDENCY;
-        data.baseData = remoteDependency;
-
-        return data;
+        return telemetry;
     }
 
     /**
@@ -128,4 +132,4 @@ class ClientRequestParser extends RequestParser {
     }
 }
 
-export = ClientRequestParser;
+export = HttpDependencyParser;

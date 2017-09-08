@@ -2,32 +2,35 @@ import http = require("http");
 import url = require("url");
 
 import Contracts = require("../Declarations/Contracts");
-import Client = require("../Library/Client");
+import TelemetryClient = require("../Library/TelemetryClient");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import RequestParser = require("./RequestParser");
 import CorrelationIdManager = require("../Library/CorrelationIdManager");
+import RequestTelemetry = require("../Library/TelemetryTypes/RequestTelemetry")
+import Identified = require("../Library/TelemetryTypes/Identified")
 
 /**
  * Helper class to read data from the requst/response objects and convert them into the telemetry contract
  */
-class ServerRequestParser extends RequestParser {
+class HttpRequestParser extends RequestParser {
     private static keys = new Contracts.ContextTagKeys();
 
-    private rawHeaders: {[key: string] : string};
-    private socketRemoteAddress:string;
-    private connectionRemoteAddress:string;
-    private legacySocketRemoteAddress:string;
+    private rawHeaders: { [key: string]: string };
+    private socketRemoteAddress: string;
+    private connectionRemoteAddress: string;
+    private legacySocketRemoteAddress: string;
     private userAgent: string;
     private sourceCorrelationId: string;
+    private sourceRoleName: string;
     private parentId: string;
     private operationId: string;
     private requestId: string;
 
     private correlationContextHeader: string;
 
-    constructor(request:http.ServerRequest, requestId?: string) {
+    constructor(request: http.ServerRequest, requestId?: string) {
         super();
         if (request) {
             this.method = request.method;
@@ -42,11 +45,11 @@ class ServerRequestParser extends RequestParser {
         }
     }
 
-    public onError(error: Error | string, properties?:{[key: string]: string}, ellapsedMilliseconds?: number) {
+    public onError(error: Error | string, properties?: { [key: string]: string }, ellapsedMilliseconds?: number) {
         this._setStatus(undefined, error, properties);
     }
 
-    public onResponse(response:http.ServerResponse, properties?:{[key: string]: string}, ellapsedMilliseconds?: number) {
+    public onResponse(response: http.ServerResponse, properties?: { [key: string]: string }, ellapsedMilliseconds?: number) {
         this._setStatus(response.statusCode, undefined, properties);
 
         if (ellapsedMilliseconds) {
@@ -54,52 +57,53 @@ class ServerRequestParser extends RequestParser {
         }
     }
 
-    public getRequestData():Contracts.Data<Contracts.RequestData> {
-        var requestData = new Contracts.RequestData();
-        requestData.id = this.requestId;
-        requestData.name = this.method + " " + url.parse(this.url).pathname;
-        requestData.url = this.url;
-        requestData.source = this.sourceCorrelationId;
-        requestData.duration = Util.msToTimeSpan(this.duration);
-        requestData.responseCode = this.statusCode ? this.statusCode.toString() : null;
-        requestData.success = this._isSuccess();
-        requestData.properties = this.properties;
+    public getRequestTelemetry(): RequestTelemetry {
+        var requestTelemetry: RequestTelemetry & Identified = {
+            id: this.requestId,
+            name: this.method + " " + url.parse(this.url).pathname,
+            url: this.url,
+            /* 
+            See https://github.com/Microsoft/ApplicationInsights-dotnet-server/blob/25d695e6a906fbe977f67be3966d25dbf1c50a79/Src/Web/Web.Shared.Net/RequestTrackingTelemetryModule.cs#L250
+            for reference
+            */
+            source: this.sourceCorrelationId + " | roleName:" + this.sourceRoleName,
+            duration: this.duration,
+            resultCode: this.statusCode ? this.statusCode.toString() : null,
+            success: this._isSuccess(),
+            properties: this.properties
+        };
 
-        var data = new Contracts.Data<Contracts.RequestData>();
-        data.baseType = Contracts.DataTypes.REQUEST;
-        data.baseData = requestData;
-
-        return data;
+        return requestTelemetry;
     }
 
-    public getRequestTags(tags:{[key: string]:string}):{[key: string]:string} {
+    public getRequestTags(tags: { [key: string]: string }): { [key: string]: string } {
         // create a copy of the context for requests since client info will be used here
-        var newTags = <{[key: string]:string}>{};
+        var newTags = <{ [key: string]: string }>{};
         for (var key in tags) {
             newTags[key] = tags[key];
         }
 
         // don't override tags if they are already set
-        newTags[ServerRequestParser.keys.locationIp] = tags[ServerRequestParser.keys.locationIp] || this._getIp();
-        newTags[ServerRequestParser.keys.sessionId] = tags[ServerRequestParser.keys.sessionId] || this._getId("ai_session");
-        newTags[ServerRequestParser.keys.userId] = tags[ServerRequestParser.keys.userId] || this._getId("ai_user");
-        newTags[ServerRequestParser.keys.operationName] = this.getOperationName(tags);
-        newTags[ServerRequestParser.keys.operationParentId] = this.getOperationParentId(tags);
-        newTags[ServerRequestParser.keys.operationId] = this.getOperationId(tags);
+        newTags[HttpRequestParser.keys.locationIp] = tags[HttpRequestParser.keys.locationIp] || this._getIp();
+        newTags[HttpRequestParser.keys.sessionId] = tags[HttpRequestParser.keys.sessionId] || this._getId("ai_session");
+        newTags[HttpRequestParser.keys.userId] = tags[HttpRequestParser.keys.userId] || this._getId("ai_user");
+        newTags[HttpRequestParser.keys.operationName] = this.getOperationName(tags);
+        newTags[HttpRequestParser.keys.operationParentId] = this.getOperationParentId(tags);
+        newTags[HttpRequestParser.keys.operationId] = this.getOperationId(tags);
 
         return newTags;
     }
 
-    public getOperationId(tags:{[key: string]:string}) {
-        return tags[ServerRequestParser.keys.operationId] || this.operationId;
+    public getOperationId(tags: { [key: string]: string }) {
+        return tags[HttpRequestParser.keys.operationId] || this.operationId;
     }
 
-    public getOperationParentId(tags:{[key: string]:string}) {
-        return tags[ServerRequestParser.keys.operationParentId] || this.parentId || this.getOperationId(tags);
+    public getOperationParentId(tags: { [key: string]: string }) {
+        return tags[HttpRequestParser.keys.operationParentId] || this.parentId || this.getOperationId(tags);
     }
 
-    public getOperationName(tags:{[key: string]:string}) {
-        return tags[ServerRequestParser.keys.operationName] || this.method + " " + url.parse(this.url).pathname;
+    public getOperationName(tags: { [key: string]: string }) {
+        return tags[HttpRequestParser.keys.operationName] || this.method + " " + url.parse(this.url).pathname;
     }
 
     public getRequestId() {
@@ -110,7 +114,7 @@ class ServerRequestParser extends RequestParser {
         return this.correlationContextHeader;
     }
 
-    private _getAbsoluteUrl(request:http.ServerRequest):string {
+    private _getAbsoluteUrl(request: http.ServerRequest): string {
         if (!request.headers) {
             return request.url;
         }
@@ -137,7 +141,7 @@ class ServerRequestParser extends RequestParser {
         // Note: including the port would cause the payload to be rejected by the data collector
         var ipMatch = /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/;
 
-        var check = (str:string):string => {
+        var check = (str: string): string => {
             var results = ipMatch.exec(str);
             if (results) {
                 return results[0];
@@ -165,14 +169,15 @@ class ServerRequestParser extends RequestParser {
     private _getId(name: string) {
         var cookie = (this.rawHeaders && this.rawHeaders["cookie"] &&
             typeof this.rawHeaders["cookie"] === 'string' && this.rawHeaders["cookie"]) || "";
-        var value = ServerRequestParser.parseId(Util.getCookie(name, cookie));
+        var value = HttpRequestParser.parseId(Util.getCookie(name, cookie));
         return value;
     }
 
-    private parseHeaders(request:http.ServerRequest, requestId?: string) {
+    private parseHeaders(request: http.ServerRequest, requestId?: string) {
         this.rawHeaders = request.headers || (<any>request).rawHeaders;
         this.userAgent = request.headers && request.headers["user-agent"];
         this.sourceCorrelationId = Util.getCorrelationContextTarget(request, RequestResponseHeaders.requestContextSourceKey);
+        this.sourceRoleName = Util.getCorrelationContextTarget(request, RequestResponseHeaders.requestContextSourceRoleNameKey);
 
         if (request.headers) {
             this.correlationContextHeader = request.headers[RequestResponseHeaders.correlationContextHeader];
@@ -193,13 +198,13 @@ class ServerRequestParser extends RequestParser {
                 // override the requestId with the provided one.
                 this.requestId = requestId;
             }
-            this.operationId = CorrelationIdManager.getRootId(this.requestId); 
+            this.operationId = CorrelationIdManager.getRootId(this.requestId);
         }
     }
 
-    public static parseId(cookieValue: string): string{
+    public static parseId(cookieValue: string): string {
         return cookieValue.substr(0, cookieValue.indexOf('|'));
     }
 }
 
-export = ServerRequestParser;
+export = HttpRequestParser;

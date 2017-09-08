@@ -38,7 +38,7 @@ class CorrelationIdManager {
             path: appIdUrl.pathname,
             method: 'GET',
             // Ensure this request is not captured by auto-collection.
-            // Note: we don't refer to the property in ClientRequestParser because that would cause a cyclical dependency
+            // Note: we don't refer to the property in HttpDependencyParser because that would cause a cyclical dependency
             disableAppInsightsAutoCollection: true
         };
 

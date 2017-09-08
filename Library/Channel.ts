@@ -3,14 +3,16 @@ import Logging = require("./Logging");
 import Sender = require("./Sender");
 
 class Channel {
-    protected _buffer:string[];
-    protected _lastSend:number;
-    protected _timeoutHandle:any;
+    
+    protected _lastSend: number;
+    protected _timeoutHandle: any;
 
     protected _isDisabled: () => boolean;
     protected _getBatchSize: () => number;
     protected _getBatchIntervalMs: () => number;
-    protected _sender: Sender;
+
+    public _sender: Sender;
+    public _buffer: string[];
 
     constructor(isDisabled: () => boolean, getBatchSize: () => number, getBatchIntervalMs: () => number, sender: Sender) {
         this._buffer = [];
@@ -22,10 +24,12 @@ class Channel {
     }
 
     /**
-     * Enable or disable offline mode
+     * Enable or disable disk-backed retry caching to cache events when client is offline (enabled by default)
+     * @param value if true events that occured while client is offline will be cached on disk
+     * @param resendInterval. The wait interval for resending cached events.
      */
-    public setOfflineMode(value: boolean, resendInterval?: number) {
-        this._sender.setOfflineMode(value, resendInterval);
+    public setUseDiskRetryCaching(value: boolean, resendInterval?: number) {
+        this._sender.setDiskRetryMode(value, resendInterval);
     }
 
     /**
@@ -46,8 +50,8 @@ class Channel {
         }
 
         // check if the incoming payload is too large, truncate if necessary
-        var payload:string = this._stringify(envelope);
-        if (typeof payload !== "string"){
+        var payload: string = this._stringify(envelope);
+        if (typeof payload !== "string") {
             return;
         }
 
@@ -69,20 +73,6 @@ class Channel {
         }
     }
 
-    public handleCrash(envelope: Contracts.Envelope) {
-        if(envelope) {
-            var payload = this._stringify(envelope);
-            if (typeof payload === "string") {
-                this._buffer.push(payload);
-                this.triggerSend(true);
-            } else {
-                Logging.warn("Could not send crash", envelope);
-            }
-        } else {
-            Logging.warn("handleCrash was called with empty payload", envelope);
-        }
-    }
-
     /**
      * Immediately send buffered data
      */
@@ -93,7 +83,7 @@ class Channel {
             var batch = this._buffer.join("\n");
 
             // invoke send
-            if(isNodeCrashing) {
+            if (isNodeCrashing) {
                 this._sender.saveOnCrash(batch);
                 if (typeof callback === "function") {
                     callback("data saved on crash");

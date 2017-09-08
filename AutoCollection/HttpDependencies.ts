@@ -2,11 +2,11 @@ import http = require("http");
 import https = require("https");
 import url = require("url");
 
-import Client = require("../Library/Client");
+import TelemetryClient = require("../Library/TelemetryClient");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
-import ClientRequestParser = require("./ClientRequestParser");
+import HttpDependencyParser = require("./HttpDependencyParser");
 import { CorrelationContextManager, CorrelationContext, PrivateCustomProperties } from "./CorrelationContextManager";
 
 import {enable as enableMongodb} from "./diagnostic-channel/mongodb.sub";
@@ -15,23 +15,23 @@ import {enable as enableRedis} from "./diagnostic-channel/redis.sub";
 
 import "./diagnostic-channel/initialization";
 
-class AutoCollectClientRequests {
+class AutoCollectHttpDependencies {
     public static disableCollectionRequestOption = 'disableAppInsightsAutoCollection';
 
-    public static INSTANCE: AutoCollectClientRequests;
+    public static INSTANCE: AutoCollectHttpDependencies;
 
     private static requestNumber = 1;
 
-    private _client: Client;
+    private _client: TelemetryClient;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
 
-    constructor(client: Client) {
-        if (!!AutoCollectClientRequests.INSTANCE) {
+    constructor(client: TelemetryClient) {
+        if (!!AutoCollectHttpDependencies.INSTANCE) {
             throw new Error("Client request tracking should be configured from the applicationInsights object");
         }
 
-        AutoCollectClientRequests.INSTANCE = this;
+        AutoCollectHttpDependencies.INSTANCE = this;
         this._client = client;
     }
 
@@ -56,8 +56,8 @@ class AutoCollectClientRequests {
         http.request = (options, ...requestArgs: any[]) => {
             const request: http.ClientRequest = originalRequest.call(
                 http, options, ...requestArgs);
-            if (request && options && !(<any>options)[AutoCollectClientRequests.disableCollectionRequestOption]) {
-                AutoCollectClientRequests.trackRequest(this._client, options, request);
+            if (request && options && !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption]) {
+                AutoCollectHttpDependencies.trackRequest(this._client, options, request);
             }
             return request;
         };
@@ -70,8 +70,8 @@ class AutoCollectClientRequests {
             https.request = (options, ...requestArgs: any[]) => {
                 const request: http.ClientRequest = originalHttpsRequest.call(
                     https, options, ...requestArgs);
-                if (request && options && !(<any>options)[AutoCollectClientRequests.disableCollectionRequestOption]) {
-                    AutoCollectClientRequests.trackRequest(this._client, options, request);
+                if (request && options && !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption]) {
+                    AutoCollectHttpDependencies.trackRequest(this._client, options, request);
                 }
                 return request;
             };
@@ -82,17 +82,17 @@ class AutoCollectClientRequests {
      * Tracks an outgoing request. Because it may set headers this method must be called before
      * writing content to or ending the request.
      */
-    public static trackRequest(client: Client, requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest,
+    public static trackRequest(client: TelemetryClient, requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest,
         properties?: { [key: string]: string }) {
         if (!requestOptions || !request || !client) {
-            Logging.info("AutoCollectClientRequests.trackRequest was called with invalid parameters: ", !requestOptions, !request, !client);
+            Logging.info("AutoCollectHttpDependencies.trackRequest was called with invalid parameters: ", !requestOptions, !request, !client);
             return;
         }
 
-        let requestParser = new ClientRequestParser(requestOptions, request);
+        let requestParser = new HttpDependencyParser(requestOptions, request);
 
         const currentContext = CorrelationContextManager.getCurrentContext();
-        const uniqueRequestId = currentContext && currentContext.operation && (currentContext.operation.parentId + AutoCollectClientRequests.requestNumber++ + '.');
+        const uniqueRequestId = currentContext && currentContext.operation && (currentContext.operation.parentId + AutoCollectHttpDependencies.requestNumber++ + '.');
 
         // Add the source correlationId to the request headers, if a value was not already provided.
         // The getHeader/setHeader methods aren't available on very old Node versions, and
@@ -105,11 +105,16 @@ class AutoCollectClientRequests {
                 if (correlationHeader) {
                     const components = correlationHeader.split(",");
                     const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
+                    const roleNameKey = `${RequestResponseHeaders.requestContextSourceRoleNameKey}=`;
                     if (!components.some((value) => value.substring(0,key.length) === key)) {
-                        request['setHeader'](RequestResponseHeaders.requestContextHeader, `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+                        request['setHeader'](
+                            RequestResponseHeaders.requestContextHeader, 
+                            `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId},${RequestResponseHeaders.requestContextSourceRoleNameKey}=${client.context.tags[client.context.keys.cloudRole]}`);
                     }
                 } else {
-                    request['setHeader'](RequestResponseHeaders.requestContextHeader, `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+                    request['setHeader'](
+                        RequestResponseHeaders.requestContextHeader, 
+                        `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId},${RequestResponseHeaders.requestContextSourceRoleNameKey}=${client.context.tags[client.context.keys.cloudRole]}`);
                 }
             }
 
@@ -131,20 +136,25 @@ class AutoCollectClientRequests {
             request.on('response', (response: http.ClientResponse) => {
                 requestParser.onResponse(response, properties);
                 var context : { [name: string]: any; } = { "http.RequestOptions": requestOptions, "http.ClientRequest": request, "http.ClientResponse": response };
-                client.track(requestParser.getDependencyData(uniqueRequestId), null, context);
+                var dependencyTelemetry = requestParser.getDependencyTelemetry(uniqueRequestId);
+                dependencyTelemetry.contextObjects = context;
+                client.trackDependency(dependencyTelemetry);
             });
             request.on('error', (e: Error) => {
                 requestParser.onError(e, properties);
                 var context : { [name: string]: any; } = { "http.RequestOptions": requestOptions, "http.ClientRequest": request, "Error": e };
-                client.track(requestParser.getDependencyData(uniqueRequestId), null, context);
+                var dependencyTelemetry = requestParser.getDependencyTelemetry(uniqueRequestId);
+                dependencyTelemetry.contextObjects = context;
+                client.trackDependency(dependencyTelemetry);
             });
         }
     }
 
     public dispose() {
-        AutoCollectClientRequests.INSTANCE = null;
+        AutoCollectHttpDependencies.INSTANCE = null;
+        this.enable(false);
         this._isInitialized = false;
     }
 }
 
-export = AutoCollectClientRequests;
+export = AutoCollectHttpDependencies;

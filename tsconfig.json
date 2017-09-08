@@ -2,6 +2,7 @@
     "compilerOptions": {
         "target": "es5",
         "module": "commonjs",
+        "moduleResolution": "node",
         "sourceMap": true,
         "declaration": true,
         "noImplicitAny": true,
@@ -18,6 +19,8 @@
         "./node_modules/zone.js/dist/zone.js.d.ts"
     ],
     "exclude": [
-        "node_modules"
+        "node_modules",
+        "Tests/SampleApp",
+        "Tests/SampleConsoleApp"
     ]
 }

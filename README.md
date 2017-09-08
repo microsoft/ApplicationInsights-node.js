@@ -3,17 +3,24 @@
 [![npm version](https://badge.fury.io/js/applicationinsights.svg)](http://badge.fury.io/js/applicationinsights)
 [![Build Status](https://travis-ci.org/Microsoft/ApplicationInsights-node.js.svg?branch=master)](https://travis-ci.org/Microsoft/ApplicationInsights-node.js)
 
-[Azure Application Insights][] gathers correlated metrics, logs, and exceptions
-for each transaction (request) in a distributed system and reports these in the
-Azure Portal. Add this Node.js SDK to Node.js services in your system to include
-deep info about Node.js processes and their external dependencies such as
-database and cache services to those reports.
+[Azure Application Insights][] monitors your backend services and components after
+you deploy them to help you [discover and rapidly diagnose performance and other
+issues][]. Add this SDK to your Node.js services to include deep info about Node.js 
+processes and their external dependencies such as database and cache services.
+You can use this SDK for your Node.js services hosted anywhere: your datacenter,
+Azure VMs and Web Apps, and even other public clouds.
 
 [Azure Application Insights]: https://azure.microsoft.com/documentation/articles/app-insights-overview/
+[discover and rapidly diagnose performance and other issues]: https://docs.microsoft.com/azure/application-insights/app-insights-detect-triage-diagnose
 
-By default this library tracks incoming and outgoing HTTP requests, several
-system metrics, and exceptions. You can track more aspects of your app and
-system using the API described below.
+This library tracks the following out-of-the-box:
+- Incoming and outgoing HTTP requests
+- Important system metrics such as CPU usage
+- Unhandled exceptions
+- Events from many popular third-party libraries ([see Automatic third-party instrumentation](#automatic-third-party-instrumentation))
+
+You can manually track more aspects of your app and system using the API described in the
+[Track custom telemetry](#track-custom-telemetry) section.
 
 ## Getting Started
 
@@ -26,6 +33,8 @@ system using the API described below.
      ```bash
      npm install --save applicationinsights
      ```
+     > *Note:* If you're using TypeScript, do not install a separate "typings" package.
+     > This NPM package contains built-in typings.
 4. As early as possible in your app's code, load the Application Insights
    package:
      ```javascript
@@ -39,12 +48,13 @@ system using the API described below.
 6. Finally, start automatically collecting and sending data by calling
    `appInsights.start();`.
 
-[these instructions]: https://azure.microsoft.com/documentation/articles/app-insights-create-new-resource/
+[these instructions]: https://docs.microsoft.com/azure/application-insights/app-insights-nodejs
 
 
 ## Basic Usage
 
-To track HTTP requests, unhandled exceptions and system metrics:
+For out-of-the-box collection of HTTP requests, popular third-party library events,
+unhandled exceptions, and system metrics:
 
 ```javascript
 let appInsights = require("applicationinsights");
@@ -83,6 +93,7 @@ appInsights.setup("<instrumentation_key>")
     .setAutoCollectExceptions(true)
     .setAutoCollectDependencies(true)
     .setAutoCollectConsole(true)
+    .setUseDiskRetryCaching(true)
     .start();
 ```
 
@@ -97,24 +108,28 @@ Add code such as the following to enable sampling:
 ```javascript
 const appInsights = require("applicationinsights");
 appInsights.setup("<instrumentation_key>");
-appInsights.client.config.samplingPercentage = 33; // 33% of all telemetry will be sent to Application Insights
+appInsights.defaultClient.config.samplingPercentage = 33; // 33% of all telemetry will be sent to Application Insights
 appInsights.start();
 ```
 
 ### Automatic third-party instrumentation
 
 In order to track context across asynchronous calls, some changes are required in third party libraries such as mongodb and redis.
-By default ApplicationInsights will use `diagnostic-channel-publishers` to monkey-patch some of these libraries.
+By default ApplicationInsights will use [`diagnostic-channel-publishers`](https://github.com/Microsoft/node-diagnostic-channel/tree/master/src/diagnostic-channel-publishers)
+to monkey-patch some of these libraries.
 This can be disabled by setting the `APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL` environment variable. Note that by setting that
 environment variable, events may no longer be correctly associated with the right operation. Individual monkey-patches can be
 disabled by setting the `APPLICATION_INSIGHTS_NO_PATCH_MODULES` environment variable to a comma separated list of packages to
 disable, e.g. `APPLICATION_INSIGHTS_NO_PATCH_MODULES=console,redis` to avoid patching the `console` and `redis` packages.
 
-Currently there are 6 packages which are instrumented: `bunyan`, `console`, `mongodb`, `mongodb-core`, `mysql` and `redis`.
+Currently there are 9 packages which are instrumented: `bunyan`, `console`, `mongodb`, `mongodb-core`, `mysql`, `redis`, `winston`,
+`pg`, and `pg-pool`. Visit the [diagnostic-channel-publishers' README](https://github.com/Microsoft/node-diagnostic-channel/blob/master/src/diagnostic-channel-publishers/README.md)
+for information about exactly which versions of these packages are patched.
 
-The `bunyan` package and `console` messages will generate Application Insights Trace events based on whether `setAutoCollectConsole` is enabled. The `mongodb`, `mysql` and `redis` packages will generate Application Insights Dependency events based on whether `setAutoCollectDependencies` is enabled.
+The `bunyan`, `winston`, and `console` patches will generate Application Insights Trace events based on whether `setAutoCollectConsole` is enabled.
+The rest will generate Application Insights Dependency events based on whether `setAutoCollectDependencies` is enabled.
 
-## Track custom metrics
+## Track custom telemetry
 
 You can track any request, event, metric or exception using the Application
 Insights client. Examples follow:
@@ -122,15 +137,17 @@ Insights client. Examples follow:
 ```javascript
 let appInsights = require("applicationinsights");
 appInsights.setup().start(); // assuming ikey in env var. start() can be omitted to disable any non-custom data
-let client = appInsights.client;
-client.trackEvent("my custom event", {customProperty: "custom property value"});
-client.trackException(new Error("handled exceptions can be logged with this method"));
-client.trackMetric("custom metric", 3);
-client.trackTrace("trace message");
+let client = appInsights.defaultClient;
+client.trackEvent({name: "my custom event", properties: {customProperty: "custom property value"}});
+client.trackException({exception: new Error("handled exceptions can be logged with this method")});
+client.trackMetric({name: "custom metric", value: 3});
+client.trackTrace({message: "trace message"});
+client.trackDependency({target:"http://dbname", name:"select customers proc", data:"SELECT * FROM Customers", duration:231, resultCode:0, success: true, dependencyTypeName: "ZSQL"});
+client.trackRequest({name:"GET /customers", url:"http://myserver/customers", duration:309, resultCode:200, success:true});
 
 let http = require("http");
 http.createServer( (req, res) => {
-  client.trackRequest(req, res); // Place at the beginning of your request handler
+  client.trackRequest({request: req, response: res}); // Place at the beginning of your request handler
 });
 ```
 
@@ -177,7 +194,7 @@ function removeStackTraces ( envelope, context ) {
   return true;
 }
 
-appInsights.client.addTelemetryProcessor(removeStackTraces);
+appInsights.defaultClient.addTelemetryProcessor(removeStackTraces);
 ```
 
 More info on the telemetry API is available in [the docs][].
@@ -197,8 +214,8 @@ let appInsights = require("applicationinsights");
 appInsights.setup("_ikey-A_").start();
 
 // track some events manually under another ikey
-let otherClient = appInsights.getClient("_ikey-B_");
-otherClient.trackEvent("my custom event");
+let otherClient = new appInsights.TelemetryClient("_ikey-B_");
+otherClient.trackEvent({name: "my custom event"});
 ```
 
 ## Examples
@@ -207,7 +224,7 @@ otherClient.trackEvent("my custom event");
 
     ```javascript
     let appInsights = require("applicationinsights");
-    let client = appInsights.getClient();
+    let client = new appInsights.TelemetryClient();
 
     var success = false;
     let startTime = Date.now();
@@ -215,13 +232,13 @@ otherClient.trackEvent("my custom event");
     let duration = Date.now() - startTime;
     success = true;
 
-    client.trackDependency("dependency name", "command name", duration, success);
+    client.trackDependency({target:"http://dbname", name:"select customers proc", data:"SELECT * FROM Customers", duration:duration, resultCode:0, success: true, dependencyTypeName: "ZSQL"});
     ```
 
 * Assign custom properties to be included with all events
 
     ```javascript
-    appInsights.client.commonProperties = {
+    appInsights.defaultClient.commonProperties = {
       environment: process.env.SOME_ENV_VARIABLE
     };
     ```
@@ -232,9 +249,14 @@ otherClient.trackEvent("my custom event");
     collection, call `.setAutoCollectRequests(false)` before calling `start()`.
 
     ```javascript
+    appInsights.defaultClient.trackRequest({name:"GET /customers", url:"http://myserver/customers", duration:309, resultCode:200, success:true});
+    ```
+    Alternatively you can track requests using ```trackNodeHttpRequest``` method:   
+
+    ```javascript
     var server = http.createServer((req, res) => {
       if ( req.method === "GET" ) {
-          appInsights.client.trackRequest(req, res);
+          appInsights.defaultClient.trackNodeHttpRequest({request:req, response:res});
       }
       // other work here....
       res.end();
@@ -247,9 +269,31 @@ otherClient.trackEvent("my custom event");
     let start = Date.now();
     server.on("listening", () => {
       let duration = Date.now() - start;
-      appInsights.client.trackMetric("server startup time", duration);
+      appInsights.defaultClient.trackMetric({name: "server startup time", value: duration});
     });
     ```
+
+## Advanced configuration options
+The Client object contains a `config` property with many optional settings for 
+advanced scenarios. These can be set as follows:
+```
+client.config.PROPERTYNAME = VALUE;
+```
+These properties are client specific, so you can configure `appInsights.defaultClient` 
+separately from clients created with `new appInsights.TelemetryClient()`.
+
+| Property                        | Description                                                                                                |
+| ------------------------------- |------------------------------------------------------------------------------------------------------------|
+| instrumentationKey              | An identifier for your Application Insights resource                                                       |
+| endpointUrl                     | The ingestion endpoint to send telemetry payloads to                                                       |
+| maxBatchSize                    | The maximum number of telemetry items to include in a payload to the ingestion endpoint (Default `250`)    |
+| maxBatchIntervalMs              | The maximum amount of time to wait to for a payload to reach maxBatchSize (Default `15000`)                |
+| disableAppInsights              | A flag indicating if telemetry transmission is disabled (Default `false`)                                  |
+| samplingPercentage              | The percentage of telemetry items tracked that should be transmitted (Default `100`)                       |
+| correlationIdRetryIntervalMs    | The time to wait before retrying to retrieve the id for cross-component correlation (Default `30000`)      |
+| correlationHeaderExcludedDomains| A list of domains to exclude from cross-component correlation header injection (Default See [Config.ts][]) |
+
+[Config.ts]: https://github.com/Microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
 
 ## Branches
 
