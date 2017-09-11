@@ -11,7 +11,7 @@ let clients: TelemetryClient[] = [];
 
 const winstonToAILevelMap: { [key: string]: (og: string) => number } = {
     syslog(og: string) {
-        return {
+        const map: { [key: string ]: number } = {
             emerg: SeverityLevel.Critical,
             alert: SeverityLevel.Critical,
             crit: SeverityLevel.Critical,
@@ -20,17 +20,21 @@ const winstonToAILevelMap: { [key: string]: (og: string) => number } = {
             notice: SeverityLevel.Information,
             info: SeverityLevel.Information,
             debug: SeverityLevel.Verbose
-        }[og] || SeverityLevel.Information;
+        };
+
+        return map[og] || SeverityLevel.Information;
     },
     npm(og: string) {
-        return {
+        const map: { [key: string]: number } = {
             error: SeverityLevel.Critical,
             warn: SeverityLevel.Warning,
             info: SeverityLevel.Information,
             verbose: SeverityLevel.Verbose,
             debug: SeverityLevel.Verbose,
             silly: SeverityLevel.Verbose
-        }[og] || SeverityLevel.Information;
+        };
+        
+        return map[og] || SeverityLevel.Information;
     },
     unknown(og: string) {
         return SeverityLevel.Information;
