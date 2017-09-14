@@ -17,4 +17,8 @@ before_install:
   - npm install -g npm@4.5.0
 before_script:
   - npm install
-script: npm test && npm run functionaltest
+script:
+  - npm test
+  # Only run funcs for LTS releases
+  - if [ "$TRAVIS_NODE_VERSION" = "6" ]; then npm run functionaltest; fi
+  - if [ "$TRAVIS_NODE_VERSION" = "4" ]; then npm run functionaltest; fi
