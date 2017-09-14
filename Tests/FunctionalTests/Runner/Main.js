@@ -110,7 +110,7 @@ const runAndValidateLongTest = () => {
         const stressTelemetry = Ingestion.telemetry["RequestData"].filter((v) => {
             return v.data.baseData.name == "GET " + testSequence.path;
         });
-        const distinctOpIds = [...new Set(stressTelemetry.map(item => item.tags["ai.operation.id"]))];
+        const distinctOpIds = Array.from(new Set(stressTelemetry.map(item => item.tags["ai.operation.id"])));
 
         // Validate number of operations
         if (distinctOpIds.length != attemptCounter) {
