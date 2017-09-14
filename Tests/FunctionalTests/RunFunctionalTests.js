@@ -14,13 +14,13 @@ function help() {
 }
 
 function findDefaultPath() {
-    const rootDir = "../../"
+    const rootDir = path.resolve(__dirname, "../../");
     const files = fs.readdirSync(rootDir);
     for(let i = 0; i < files.length; i++) {
         const file = path.join(rootDir, files[i]);
         const stat = fs.lstatSync(file);
         if (!stat.isDirectory()) {
-            if (file.indexOf("applicationinsights") === rootDir.length &&
+            if (file.indexOf("applicationinsights") === rootDir.length + 1 &&
                 file.indexOf(".tgz") === file.length - 4) {
                 return path.resolve(file);
             }
@@ -32,7 +32,7 @@ function findDefaultPath() {
 function run(cmd, workingDir) {
     const proc = childProcess.spawnSync(cmd, {
         shell: true,
-        cwd: workingDir
+        cwd: workingDir && path.resolve(__dirname, workingDir)
     });
     return {
         code: proc.status,
@@ -43,7 +43,7 @@ function run(cmd, workingDir) {
 function runLive(cmd, workingDir) {
     const proc = childProcess.spawnSync(cmd, {
         shell: true,
-        cwd: workingDir,
+        cwd: workingDir && path.resolve(__dirname, workingDir),
         stdio: 'inherit'
     });
     return {
@@ -56,7 +56,7 @@ function runLive(cmd, workingDir) {
 function runAsync(cmd, workingDir) {
     const proc = childProcess.spawn(cmd, [], {
         shell: true,
-        cwd: workingDir
+        cwd: workingDir && path.resolve(__dirname, workingDir)
     });
     return proc;
 }

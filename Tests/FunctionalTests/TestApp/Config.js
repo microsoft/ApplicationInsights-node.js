@@ -1,5 +1,5 @@
 var Config = {
-    ServerPort: "9092",
+    ServerPort: "9099",
     EndpointBaseAddress: "http://localhost:9091",
     MongoConnectionString: "mongodb://localhost:27017/testapp",
     InstrumentationKey: "TESTIKEY",
