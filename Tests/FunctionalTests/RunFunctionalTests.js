@@ -119,8 +119,8 @@ function main() {
     // Run tests
     console.log("Running functional tests...");
     console.log("=======================\n");
-    const testApp = runAsync("node Main.js", "./TestApp");
-    const runnerStatus = runLive("node Main.js", "./Runner").code;
+    const testApp = runAsync("node --use_strict Main.js", "./TestApp");
+    const runnerStatus = runLive("node --use_strict Main.js", "./Runner").code;
     console.log("\n=======================");
 
     // Clean up
