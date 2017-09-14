@@ -1,5 +1,3 @@
-// process.env['APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL'] = true;
-
 var Config = require("./Config");
 var appInsights = null;
 if (Config.AppInsightsEnabled) {
