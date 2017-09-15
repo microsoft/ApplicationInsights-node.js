@@ -42,7 +42,8 @@
     "pretest": "npm run build",
     "test": "npm run test:ts && npm run test:js",
     "test:ts": "mocha ./out/Tests --recursive",
-    "test:js": "mocha ./Tests/js --recursive"
+    "test:js": "mocha ./Tests/js --recursive",
+    "functionaltest": "npm build && npm pack && node --use_strict ./Tests/FunctionalTests/RunFunctionalTests.js"
   },
   "devDependencies": {
     "@types/mocha": "2.2.40",

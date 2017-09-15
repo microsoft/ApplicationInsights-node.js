@@ -1,6 +1,7 @@
 # Ignore build files
 out/
 obj/
+*.tgz
 
 # Except imported Declarations and Typings
 !/Declarations/**
@@ -9,6 +10,8 @@ obj/
 node_modules/**
 Tests/SampleApp/node_modules/**
 Tests/SampleConsoleApp/node_modules/**
+Tests/FunctionalTests/Runner/node_modules/**
+Tests/FunctionalTests/TestApp/node_modules/**
 
 # Ignore Visual Studio files
 *.suo

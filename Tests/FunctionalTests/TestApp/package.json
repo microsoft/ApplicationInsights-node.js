@@ -1,0 +1,18 @@
+{
+  "name": "ainodejs-functionaltests-testapp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "Main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "osrosado@microsoft.com",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "body-parser": "^1.17.2",
+    "express": "^4.15.2",
+    "mongodb": "^2.2.26",
+    "url": "^0.11.0"
+  }
+}

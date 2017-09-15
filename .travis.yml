@@ -1,15 +1,13 @@
+sudo: required
 language: node_js
+services:
+  - docker
 node_js:
   - "node"
   - "8"
   - "7"
   - "6"
-  - "5"
-  - "5.1"
   - "4"
-  - "4.2"
-  - "4.1"
-  - "4.0"
   - "0.12"
   - "0.11"
   - "0.10"
@@ -19,3 +17,8 @@ before_install:
   - npm install -g npm@4.5.0
 before_script:
   - npm install
+script:
+  - npm test
+  # Only run funcs for LTS releases
+  - if [ "$TRAVIS_NODE_VERSION" = "6" ]; then npm run functionaltest; fi
+  - if [ "$TRAVIS_NODE_VERSION" = "4" ]; then npm run functionaltest; fi
