@@ -21,6 +21,7 @@
     "exclude": [
         "node_modules",
         "Tests/SampleApp",
-        "Tests/SampleConsoleApp"
+        "Tests/SampleConsoleApp",
+        "Tests/FunctionalTests"
     ]
 }

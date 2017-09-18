@@ -1,0 +1,15 @@
+{
+  "name": "ainodejs-functionaltests-runner",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "main": "Main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "osrosado@microsoft.com",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "url": "^0.11.0"
+  }
+}
