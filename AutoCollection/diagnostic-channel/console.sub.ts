@@ -11,7 +11,12 @@ let clients: TelemetryClient[] = [];
 
 const subscriber = (event: IStandardEvent<consolePub.IConsoleData>) => {
     clients.forEach((client) => {
-        client.trackTrace({message: event.data.message, severity: (event.data.stderr ? SeverityLevel.Warning : SeverityLevel.Information)});
+        // Message can have a trailing newline
+        let message = event.data.message;
+        if (message.lastIndexOf("\n") == message.length - 1) {
+            message = message.substring(0, message.length - 1);
+        }
+        client.trackTrace({message: message, severity: (event.data.stderr ? SeverityLevel.Warning : SeverityLevel.Information)});
     });
 };
 

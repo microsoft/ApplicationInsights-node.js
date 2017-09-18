@@ -7,8 +7,11 @@ var db = null;
 function connect() {
     mongo.connect(Config.MongoConnectionString, function(err, _db) {
         if (!err) {
-            db = _db;
-            ready = true;
+            var collection = _db.collection('testCollection');
+            collection.insert({testrecord: true}, function(err, result) {
+                db = _db;
+                ready = true;
+            });
         } else {
             setTimeout(connect, 100);
         }
@@ -16,9 +19,9 @@ function connect() {
 }
 connect();
 
-function insert(callback) {
-    if (!ready && !err) {
-        setTimeout(() => insert(callback), 50);
+function insertMany(callback) {
+    if (!ready) {
+        setTimeout(() => insertMany(callback), 50);
         return;
     }
     var collection = db.collection('testCollection');
@@ -27,6 +30,55 @@ function insert(callback) {
     });
 }
 
+function insert(callback) {
+    if (!ready) {
+        setTimeout(() => insert(callback), 50);
+        return;
+    }
+    var collection = db.collection('testCollection');
+    collection.insert({a : 1}, function(err, result) {
+        callback();
+    });
+}
+
+function find(callback) {
+    if (!ready) {
+        setTimeout(() => find(callback), 50);
+        return;
+    }
+    var collection = db.collection('testCollection');
+    collection.find({testrecord: true}).toArray(function(err, result) {
+        callback();
+    });
+}
+
+function updateOne(callback) {
+    if (!ready) {
+        setTimeout(() => updateOne(callback), 50);
+        return;
+    }
+    var collection = db.collection('testCollection');
+    collection.updateOne({testrecord : true}, {$set: {updated: true}}, function(err, result) {
+        callback();
+    });
+}
+
+function createIndex(callback) {
+    if (!ready) {
+        setTimeout(() => createIndex(callback), 50);
+        return;
+    }
+    var collection = db.collection('testCollection');
+    collection.createIndex({testrecord : true}, null, function(err, result) {
+        callback();
+    });
+}
+
+
 module.exports = {
-    insert: insert
+    insertMany: insertMany,
+    insert: insert,
+    find: find,
+    updateOne: updateOne,
+    createIndex: createIndex
 }

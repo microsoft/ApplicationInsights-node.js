@@ -44,28 +44,30 @@ module.exports.TestValidation = class TestValidation {
                 let hadFailed = false;
 
                 // Helper fn to find item in the datset
-                const findItem = (type, fn) => {
+                const findItem = (type, fn, stepName) => {
                     if (!type) return true;
                     for (var i = 0; i<dataSet.length; i++) {
                         var item = dataSet[i];
-                        if (item.data.baseType === type && fn(item)) {
-                            // Remove this item from the dataset so we don't find it twice
-                            // The test is successful if we find all items we seek out and
-                            // no extras remain
-                            dataSet.splice(i, 1);
-                            return true;
-                        }
+                        try {
+                            if (item.data.baseType === type && fn(item)) {
+                                // Remove this item from the dataset so we don't find it twice
+                                // The test is successful if we find all items we seek out and
+                                // no extras remain
+                                dataSet.splice(i, 1);
+                                return true;
+                            }
+                        } catch (e) { }
                     }
                     const telemetry = this.ingestion.telemetry;
                     const correlTelemetry = this.ingestion.correlatedTelemetry;
-                    Utils.Logging.error("FAILED EXPECTATION - Could not find expected "+type+" child telemetry!");
+                    Utils.Logging.error("FAILED EXPECTATION - Could not find expected "+type+" child telemetry for rule "+stepName+"!");
                     return false;
                 }
 
                 // Find all expected items
                 test.steps.forEach((step)=>{
                     const expectation = TaskExpectations[step];
-                    const success = findItem(expectation.expectedTelemetryType, expectation.telemetryVerifier);
+                    const success = findItem(expectation.expectedTelemetryType, expectation.telemetryVerifier, step);
 
                     if (!success) {
                         hadFailed = true;
@@ -73,8 +75,9 @@ module.exports.TestValidation = class TestValidation {
                 });
 
                 // Did we find all of the items in the data set?
-                if (dataSet.length > 1 ){
+                if (dataSet.length > 1){
                     Utils.Logging.error("FAILED EXPECTATION - Unexpected child telemetry item(s)!");
+                    Utils.Logging.error(JSON.stringify(dataSet));
                     hadFailed = true;
                 }
 

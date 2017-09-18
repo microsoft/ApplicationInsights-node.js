@@ -28,6 +28,42 @@ module.exports = {
                 telemetry.data.baseData.type === "mongodb";
         }
     ),
+    "MongoInsertMany": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "insert" &&
+                telemetry.data.baseData.success === true &&
+                telemetry.data.baseData.target === "testapp" &&
+                telemetry.data.baseData.type === "mongodb";
+        }
+    ),
+    "MongoFind": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "find" &&
+                telemetry.data.baseData.success === true &&
+                telemetry.data.baseData.target === "testapp" &&
+                telemetry.data.baseData.type === "mongodb";
+        }
+    ),
+    "MongoUpdateOne": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "update" &&
+                telemetry.data.baseData.success === true &&
+                telemetry.data.baseData.target === "testapp" &&
+                telemetry.data.baseData.type === "mongodb";
+        }
+    ),
+    "MongoCreateIndex": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "createIndexes" &&
+                telemetry.data.baseData.data === "createIndexes" &&
+                telemetry.data.baseData.target === "testapp" &&
+                telemetry.data.baseData.type === "mongodb";
+        }
+    ),
     "AITrackDep": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
@@ -57,6 +93,83 @@ module.exports = {
         "ExceptionData",
         (telemetry) => {
             return telemetry.data.baseData.exceptions[0].message === "Native error";
+        }
+    ),
+    "BunyanFatal": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return JSON.parse(telemetry.data.baseData.message).msg === "test fatal" &&
+            telemetry.data.baseData.severityLevel === 4;
+        }
+    ),
+    "BunyanError": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return JSON.parse(telemetry.data.baseData.message).msg === "test error" &&
+            telemetry.data.baseData.severityLevel === 3;
+        }
+    ),
+    "BunyanWarn": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return JSON.parse(telemetry.data.baseData.message).msg === "test warn" &&
+            telemetry.data.baseData.severityLevel === 2
+        }
+    ),
+    "BunyanInfo": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return JSON.parse(telemetry.data.baseData.message).msg === "test info" &&
+            telemetry.data.baseData.severityLevel === 1
+        }
+    ),
+    "BunyanDebug": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return JSON.parse(telemetry.data.baseData.message).msg === "test debug" &&
+            telemetry.data.baseData.severityLevel === 0;
+        }
+    ),
+    "BunyanTrace": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return JSON.parse(telemetry.data.baseData.message).msg === "test trace" &&
+            telemetry.data.baseData.severityLevel === 0;
+        }
+    ),
+    "ConsoleError": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return telemetry.data.baseData.message === "Test console.error" &&
+            telemetry.data.baseData.severityLevel === 2;
+        }
+    ),
+    "ConsoleWarn": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return telemetry.data.baseData.message === "Test console.warn" &&
+            telemetry.data.baseData.severityLevel === 2;
+        }
+    ),
+    "ConsoleInfo": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return telemetry.data.baseData.message === "Test console.info" &&
+            telemetry.data.baseData.severityLevel === 1;
+        }
+    ),
+    "ConsoleLog": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return telemetry.data.baseData.message === "Test console.log" &&
+            telemetry.data.baseData.severityLevel === 1;
+        }
+    ),
+    "ConsoleAssert": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return telemetry.data.baseData.message.indexOf("AssertionError: Test console.assert") === 0 &&
+            telemetry.data.baseData.severityLevel === 2;
         }
     )
 }

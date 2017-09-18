@@ -1,8 +1,9 @@
 [
-{"path": "/_longRunTest", "steps": ["MongoInsert", "HttpGet", "AITrackDep", "AITrackTrace"]},
+{"path": "/__longRunTest", "steps": ["MongoInsert", "HttpGet", "AITrackDep", "AITrackTrace"]},
 {"path": "/dependencyTestBasic", "steps": ["HttpGet", "Timeout", "HttpGet"]},
 {"path": "/manualTracks", "steps": ["AITrackDep", "AITrackTrace", "AITrackExc"]},
 {"path": "/deepRequest", "steps": ["HttpGet", "Timeout", "Timeout", "HttpGet", "AITrackDep", "AITrackTrace", "Timeout", "AITrackExc"]},
-{"path": "/diagChannelMongo", "steps": ["MongoInsert", "Timeout", "HttpGet"]},
-{"path": "/diagChannelVeryDeepRequest", "steps": ["HttpGet", "Timeout", "Timeout", "MongoInsert", "Timeout", "HttpGet", "HttpGet", "AITrackDep", "AITrackTrace", "MongoInsert", "Timeout", "AITrackExc", "MongoInsert"]}
+{"path": "/diagChannelMongo", "steps": ["MongoInsert", "MongoInsertMany", "MongoUpdateOne", "MongoCreateIndex", "MongoFind"]},
+{"path": "/diagChannelBunyan", "steps": ["BunyanFatal", "BunyanError", "BunyanWarn", "BunyanInfo", "BunyanDebug", "BunyanTrace"]},
+{"path": "/diagChannelConsole", "steps": ["ConsoleLog", "ConsoleWarn", "ConsoleError", "ConsoleInfo", "ConsoleAssert"]}
 ]
