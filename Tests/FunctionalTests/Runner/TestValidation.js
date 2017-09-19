@@ -67,7 +67,11 @@ module.exports.TestValidation = class TestValidation {
                 // Find all expected items
                 test.steps.forEach((step)=>{
                     const expectation = TaskExpectations[step];
+<<<<<<< HEAD
                     const success = findItem(expectation.expectedTelemetryType, expectation.telemetryVerifier, step);
+=======
+                    const success = findItem(expectation.expectedTelemetryType, expectation.telemetryVerifier);
+>>>>>>> develop
 
                     if (!success) {
                         hadFailed = true;
@@ -75,9 +79,14 @@ module.exports.TestValidation = class TestValidation {
                 });
 
                 // Did we find all of the items in the data set?
+<<<<<<< HEAD
                 if (dataSet.length > 1){
                     Utils.Logging.error("FAILED EXPECTATION - Unexpected child telemetry item(s)!");
                     Utils.Logging.error(JSON.stringify(dataSet));
+=======
+                if (dataSet.length > 1 ){
+                    Utils.Logging.error("FAILED EXPECTATION - Unexpected child telemetry item(s)!");
+>>>>>>> develop
                     hadFailed = true;
                 }
 

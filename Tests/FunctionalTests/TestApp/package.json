@@ -10,7 +10,6 @@
   "author": "osrosado@microsoft.com",
   "license": "UNLICENSED",
   "dependencies": {
-    "applicationinsights": "file:../../../applicationinsights-0.22.0.tgz",
     "body-parser": "^1.17.2",
     "bunyan": "^1.8.12",
     "express": "^4.15.2",
