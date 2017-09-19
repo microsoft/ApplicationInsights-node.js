@@ -228,7 +228,7 @@ export class CorrelationContextManager {
             (<any>orig).stackRewrite = stackRewrite;
 
             // Remove unexpected bits from stack trace
-            if (this.stack) {
+            if (this.stack && typeof this.stack === "string") {
                 var stackFrames: string[] = (<string>this.stack).split("\n");
                 // Remove this class
                 if (stackFrames.length > 3) {
