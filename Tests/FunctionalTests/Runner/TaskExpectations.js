@@ -181,6 +181,15 @@ module.exports = {
             telemetry.data.baseData.type == "mysql";
         }
     ),
+    "RedisGet": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "get" &&
+            telemetry.data.baseData.data === "get" &&
+            telemetry.data.baseData.target.indexOf(":6379") > -1 &&
+            telemetry.data.baseData.type === "redis";
+        }
+    ),
     "RedisSet": outputContract(
         "RemoteDependencyData",
         (telemetry) => {

@@ -76,6 +76,7 @@ function hkeys(callback) {
 }
 
 module.exports = {
+    get: get,
     set: set,
     set2: set2,
     hset: hset,

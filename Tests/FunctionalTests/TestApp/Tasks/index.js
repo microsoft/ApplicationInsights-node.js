@@ -26,6 +26,7 @@ module.exports = {
     ConsoleLog: Utils.consoleLog,
     ConsoleAssert: Utils.consoleAssert,
     MySQLQuery: MySQL.query,
+    RedisGet: Redis.get,
     RedisSet: Redis.set,
     RedisSet2: Redis.set2,
     RedisHset: Redis.hset,

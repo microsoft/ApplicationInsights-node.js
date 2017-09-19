@@ -51,7 +51,7 @@ const validateTestSequence = (index) => {
     }
 };
 const runAndValidateLongTest = () => {
-    Utils.Logging.enterSubunit("Performing stress test sequence for " + Config.StressTestTime + "ms");
+    Utils.Logging.enterSubunit("Performing parallel requests test sequence for " + Config.StressTestTime + "ms");
     
     // Find stress test
     let testSequence = null;
@@ -65,7 +65,7 @@ const runAndValidateLongTest = () => {
 
     // Don't continue if we don't have one
     if (!testSequence) {
-        Utils.Logging.info("No stress test sequence defined. Skipping.");
+        Utils.Logging.info("No parallel test sequence defined. Skipping.");
         Utils.Logging.exitSubunit();
         return Promise.resolve(false);
     } else if (!successfulRun) {
