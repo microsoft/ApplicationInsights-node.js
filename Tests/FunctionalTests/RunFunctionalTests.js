@@ -64,6 +64,7 @@ function runAsync(cmd, workingDir) {
 function startDocker() {
     const mongo = run("docker run -d -p 27017:27017 --name ainjsmongo mongo");
     const mysql = run("docker run -e MYSQL_ROOT_PASSWORD=dummypw -e MYSQL_DATABASE=testdb -d -p 3306:3306 --name ainjsmysql mysql");
+    const redis = run("docker run -d -p 6379:6379 --name ainjsredis redis:alpine");
 
     return mongo.code === 0 && mysql.code === 0;
 }
@@ -71,8 +72,11 @@ function startDocker() {
 function cleanUpDocker() {
     run("docker stop ainjsmongo");
     run("docker stop ainjsmysql");
+    run("docker stop ainjsredis");
+
     run("docker rm ainjsmongo");
     run("docker rm ainjsmysql");
+    run("docker rm ainjsredis");
 }
 
 function main() {

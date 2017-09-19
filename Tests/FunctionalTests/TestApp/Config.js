@@ -3,6 +3,7 @@ var Config = {
     EndpointBaseAddress: "http://localhost:9091",
     MongoConnectionString: "mongodb://localhost:27017/testapp",
     MySqlConnectionString: "mysql://root:dummypw@localhost:3306/testdb",
+    RedisConnectionString: "redis://localhost:6379",
     InstrumentationKey: "TESTIKEY",
     AppInsightsEnabled: true,
     UseAutoCorrelation: true,

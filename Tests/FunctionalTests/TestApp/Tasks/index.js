@@ -2,6 +2,7 @@ var AISDK = require("./AISDK");
 var Mongo = require("./Mongo");
 var MySQL = require("./MySQL");
 var Bunyan = require("./Bunyan");
+var Redis = require("./Redis");
 var Utils = require("./Utils");
 
 module.exports = {
@@ -23,6 +24,10 @@ module.exports = {
     ConsoleLog: Utils.consoleLog,
     ConsoleAssert: Utils.consoleAssert,
     MySQLQuery: MySQL.query,
+    RedisSet: Redis.set,
+    RedisSet2: Redis.set2,
+    RedisHset: Redis.hset,
+    RedisHkeys: Redis.hkeys,
     AITrackDep: AISDK.trackDependency,
     AITrackTrace: AISDK.trackTrace,
     AITrackExc: AISDK.trackException,
