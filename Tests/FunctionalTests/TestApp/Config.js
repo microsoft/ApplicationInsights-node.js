@@ -2,6 +2,7 @@ var Config = {
     ServerPort: "9099",
     EndpointBaseAddress: "http://localhost:9091",
     MongoConnectionString: "mongodb://localhost:27017/testapp",
+    MySqlConnectionString: "mysql://root:dummypw@localhost:3306/testdb",
     InstrumentationKey: "TESTIKEY",
     AppInsightsEnabled: true,
     UseAutoCorrelation: true,

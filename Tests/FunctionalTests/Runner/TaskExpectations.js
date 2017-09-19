@@ -171,5 +171,13 @@ module.exports = {
             return telemetry.data.baseData.message.indexOf("AssertionError: Test console.assert") === 0 &&
             telemetry.data.baseData.severityLevel === 2;
         }
+    ),
+    "MySQLQuery": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "SELECT * FROM 'test_table'" &&
+            telemetry.data.baseData.data === "SELECT * FROM 'test_table'" &&
+            telemetry.data.baseData.target.indexOf(":3306") > -1;
+        }
     )
 }

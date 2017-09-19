@@ -5,5 +5,6 @@
 {"path": "/deepRequest", "steps": ["HttpGet", "Timeout", "Timeout", "HttpGet", "AITrackDep", "AITrackTrace", "Timeout", "AITrackExc"]},
 {"path": "/diagChannelMongo", "steps": ["MongoInsert", "MongoInsertMany", "MongoUpdateOne", "MongoCreateIndex", "MongoFind"]},
 {"path": "/diagChannelBunyan", "steps": ["BunyanFatal", "BunyanError", "BunyanWarn", "BunyanInfo", "BunyanDebug", "BunyanTrace"]},
-{"path": "/diagChannelConsole", "steps": ["ConsoleLog", "ConsoleWarn", "ConsoleError", "ConsoleInfo", "ConsoleAssert"]}
+{"path": "/diagChannelConsole", "steps": ["ConsoleLog", "ConsoleWarn", "ConsoleError", "ConsoleInfo", "ConsoleAssert"]},
+{"path": "/diagChannelMySql", "steps": ["MySQLQuery", "Timeout", "MySQLQuery"]}
 ]

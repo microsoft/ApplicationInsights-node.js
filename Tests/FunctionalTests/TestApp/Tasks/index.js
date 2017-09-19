@@ -1,5 +1,6 @@
 var AISDK = require("./AISDK");
 var Mongo = require("./Mongo");
+var MySQL = require("./MySQL");
 var Bunyan = require("./Bunyan");
 var Utils = require("./Utils");
 
@@ -21,6 +22,7 @@ module.exports = {
     ConsoleInfo: Utils.consoleInfo,
     ConsoleLog: Utils.consoleLog,
     ConsoleAssert: Utils.consoleAssert,
+    MySQLQuery: MySQL.query,
     AITrackDep: AISDK.trackDependency,
     AITrackTrace: AISDK.trackTrace,
     AITrackExc: AISDK.trackException,
