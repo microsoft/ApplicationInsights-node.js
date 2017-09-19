@@ -5,6 +5,7 @@ var Bunyan = require("./Bunyan");
 var Winston = require("./Winston");
 var Redis = require("./Redis");
 var Utils = require("./Utils");
+var Postgres = require("./Postgres");
 
 module.exports = {
     HttpGet: require("./HttpGet"),
@@ -39,6 +40,7 @@ module.exports = {
     WinstonError2: Winston.error2,
     WinstonWarn2: Winston.warn2,
     WinstonInfo2: Winston.info2,
+    PostgresQuery: Postgres.query,
     AITrackDep: AISDK.trackDependency,
     AITrackTrace: AISDK.trackTrace,
     AITrackExc: AISDK.trackException,

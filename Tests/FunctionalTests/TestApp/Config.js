@@ -4,6 +4,7 @@ var Config = {
     MongoConnectionString: "mongodb://localhost:27017/testapp",
     MySqlConnectionString: "mysql://root:dummypw@localhost:3306/testdb",
     RedisConnectionString: "redis://localhost:6379",
+    PostgresConnectionString: "pg://postgres@localhost:5432/postgres",
     InstrumentationKey: "TESTIKEY",
     AppInsightsEnabled: true,
     UseAutoCorrelation: true,

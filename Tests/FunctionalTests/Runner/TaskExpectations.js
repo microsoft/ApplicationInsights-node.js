@@ -229,55 +229,73 @@ module.exports = {
     "WinstonError": outputContract(
         "MessageData",
         (telemetry) => {
-            return false;
+            return telemetry.data.baseData.message === "test error" &&
+            telemetry.data.baseData.severityLevel === 3;
         }
     ),
     "WinstonWarn": outputContract(
         "MessageData",
         (telemetry) => {
-            return false;
+            return telemetry.data.baseData.message === "test warn" &&
+            telemetry.data.baseData.severityLevel === 2;
         }
     ),
     "WinstonInfo": outputContract(
         "MessageData",
         (telemetry) => {
-            return false;
+            return telemetry.data.baseData.message === "test info" &&
+            telemetry.data.baseData.severityLevel === 1;
         }
     ),
     "WinstonVerbose": outputContract(
         "MessageData",
         (telemetry) => {
-            return false;
+            return telemetry.data.baseData.message === "test verbose" &&
+            telemetry.data.baseData.severityLevel === 0;
         }
     ),
     "WinstonDebug": outputContract(
         "MessageData",
         (telemetry) => {
-            return false;
+            return telemetry.data.baseData.message === "test debug" &&
+            telemetry.data.baseData.severityLevel === 0;
         }
     ),
     "WinstonSilly": outputContract(
         "MessageData",
         (telemetry) => {
-            return false;
+            return telemetry.data.baseData.message === "test silly" &&
+            telemetry.data.baseData.severityLevel === 0;
         }
     ),
     "WinstonError2": outputContract(
         "MessageData",
         (telemetry) => {
-            return false;
+            return telemetry.data.baseData.message === "test error" &&
+            telemetry.data.baseData.severityLevel === 3;
         }
     ),
     "WinstonWarn2": outputContract(
         "MessageData",
         (telemetry) => {
-            return false;
+            return telemetry.data.baseData.message === "test warn" &&
+            telemetry.data.baseData.severityLevel === 2;
         }
     ),
     "WinstonInfo2": outputContract(
         "MessageData",
         (telemetry) => {
-            return false;
+            return telemetry.data.baseData.message === "test info" &&
+            telemetry.data.baseData.severityLevel === 1;
+        }
+    ),
+    "PostgresQuery": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "SELECT * FROM test_table" &&
+            telemetry.data.baseData.data === "SELECT * FROM test_table" &&
+            telemetry.data.baseData.target.indexOf(":5432") > -1 &&
+            telemetry.data.baseData.type == "postgres";
         }
     )
 }

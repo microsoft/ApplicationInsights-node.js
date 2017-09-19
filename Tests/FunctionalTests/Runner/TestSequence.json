@@ -8,5 +8,6 @@
 {"path": "/diagChannelConsole", "steps": ["ConsoleLog", "ConsoleWarn", "ConsoleError", "ConsoleInfo", "ConsoleAssert"]},
 {"path": "/diagChannelMySql", "steps": ["MySQLQuery", "Timeout", "MySQLQuery"]},
 {"path": "/diagChannelRedis", "steps": ["RedisSet", "RedisSet2", "RedisHset", "RedisHkeys", "RedisHincrby"]},
-{"path": "/diagChannelWinston", "steps": ["WinstonError", "WinstonWarn", "WinstonInfo", "WinstonVerbose", "WinstonDebug", "WinstonSilly", "WinstonError2", "WinstonWarn2", "WinstonInfo2"]}
+{"path": "/diagChannelWinston", "steps": ["WinstonError", "WinstonWarn", "WinstonInfo", "WinstonVerbose", "WinstonDebug", "WinstonSilly", "WinstonError2", "WinstonWarn2", "WinstonInfo2"]},
+{"path": "/diagChannelPostgres", "steps": ["PostgresQuery", "Timeout", "PostgresQuery"]}
 ]
