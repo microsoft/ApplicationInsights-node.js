@@ -119,7 +119,7 @@ function main() {
     }
     console.log("Installing " + path);
     run("npm uninstall applicationinsights", "./TestApp");
-    if (run("npm install " + path, "./TestApp").code !== 0) {
+    if (run("npm install --no-save " + path, "./TestApp").code !== 0) {
         console.error("Could not install SDK!");
         return 1;
     }
