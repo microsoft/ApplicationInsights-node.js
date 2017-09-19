@@ -24,7 +24,7 @@ const winstonToAILevelMap: { [key: string]: (og: string) => number } = {
     },
     npm(og: string) {
         return {
-            error: SeverityLevel.Critical,
+            error: SeverityLevel.Error,
             warn: SeverityLevel.Warning,
             info: SeverityLevel.Information,
             verbose: SeverityLevel.Verbose,

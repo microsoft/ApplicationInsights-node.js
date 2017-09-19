@@ -17,7 +17,7 @@ PRIMARY KEY  ('id')
                     ready = true;
                 });
         } else {
-            setTimeout(connect, 100);
+            setTimeout(connect, 500);
         }
     });
 }
@@ -25,7 +25,7 @@ connect();
 
 function query(callback) {
     if (!ready) {
-        setTimeout(() => query(callback), 50);
+        setTimeout(() => query(callback), 500);
         return;
     }
 

@@ -177,7 +177,107 @@ module.exports = {
         (telemetry) => {
             return telemetry.data.baseData.name === "SELECT * FROM 'test_table'" &&
             telemetry.data.baseData.data === "SELECT * FROM 'test_table'" &&
-            telemetry.data.baseData.target.indexOf(":3306") > -1;
+            telemetry.data.baseData.target.indexOf(":3306") > -1 &&
+            telemetry.data.baseData.type == "mysql";
+        }
+    ),
+    "RedisSet": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "set" &&
+            telemetry.data.baseData.data === "set" &&
+            telemetry.data.baseData.target.indexOf(":6379") > -1 &&
+            telemetry.data.baseData.type === "redis";
+        }
+    ),
+    "RedisSet2": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "set" &&
+            telemetry.data.baseData.data === "set" &&
+            telemetry.data.baseData.target.indexOf(":6379") > -1 &&
+            telemetry.data.baseData.type === "redis";
+        }
+    ),
+    "RedisHset": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "hset" &&
+            telemetry.data.baseData.data === "hset" &&
+            telemetry.data.baseData.target.indexOf(":6379") > -1 &&
+            telemetry.data.baseData.type === "redis";
+        }
+    ),
+    "RedisHkeys": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "hkeys" &&
+            telemetry.data.baseData.data === "hkeys" &&
+            telemetry.data.baseData.target.indexOf(":6379") > -1 &&
+            telemetry.data.baseData.type === "redis";
+        }
+    ),
+    "RedisHincrby": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "hincrby" &&
+            telemetry.data.baseData.data === "hincrby" &&
+            telemetry.data.baseData.target.indexOf(":6379") > -1 &&
+            telemetry.data.baseData.type === "redis";
+        }
+    ),
+    "WinstonError": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return false;
+        }
+    ),
+    "WinstonWarn": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return false;
+        }
+    ),
+    "WinstonInfo": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return false;
+        }
+    ),
+    "WinstonVerbose": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return false;
+        }
+    ),
+    "WinstonDebug": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return false;
+        }
+    ),
+    "WinstonSilly": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return false;
+        }
+    ),
+    "WinstonError2": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return false;
+        }
+    ),
+    "WinstonWarn2": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return false;
+        }
+    ),
+    "WinstonInfo2": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return false;
         }
     )
 }

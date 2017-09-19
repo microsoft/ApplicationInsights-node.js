@@ -50,7 +50,17 @@ function hset(callback) {
         setTimeout(() => hset(callback), 50);
         return;
     }
-    client.hset("testkey", "testval", "testval", () => {
+    client.hset("testhash", "testfield", 1, () => {
+        callback();
+    });
+}
+
+function hincrby(callback) {
+    if (!ready) {
+        setTimeout(() => hincrby(callback), 50);
+        return;
+    }
+    client.hincrby("testhash", "testfield", 1, () => {
         callback();
     });
 }
@@ -60,7 +70,7 @@ function hkeys(callback) {
         setTimeout(() => hkeys(callback), 50);
         return;
     }
-    client.hkeys("testkey", () => {
+    client.hkeys("testhash", () => {
         callback();
     });
 }
@@ -69,5 +79,6 @@ module.exports = {
     set: set,
     set2: set2,
     hset: hset,
-    hkeys: hkeys
+    hkeys: hkeys,
+    hincrby: hincrby
 }
