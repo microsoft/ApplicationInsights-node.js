@@ -12,6 +12,7 @@ import { CorrelationContextManager, CorrelationContext, PrivateCustomProperties 
 import {enable as enableMongodb} from "./diagnostic-channel/mongodb.sub";
 import {enable as enableMysql} from "./diagnostic-channel/mysql.sub";
 import {enable as enableRedis} from "./diagnostic-channel/redis.sub";
+import {enable as enablePostgres} from "./diagnostic-channel/postgres.sub";
 
 import "./diagnostic-channel/initialization";
 
@@ -43,6 +44,7 @@ class AutoCollectHttpDependencies {
         enableMongodb(isEnabled, this._client);
         enableMysql(isEnabled, this._client);
         enableRedis(isEnabled, this._client);
+        enablePostgres(isEnabled, this._client);
     }
 
     public isInitialized() {
