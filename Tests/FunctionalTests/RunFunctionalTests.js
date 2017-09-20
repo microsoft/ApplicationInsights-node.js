@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const childProcess = require('child_process');
-const noRunner = false;
+let noRunner = false;
 
 function help() {
     console.log(
