@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const childProcess = require('child_process');
+const noRunner = false;
 
 function help() {
     console.log(
@@ -99,6 +100,9 @@ function main() {
         if (path === "-h" || path === "--help") {
             return help();
         }
+        if (process.argv.length > 3 && process.argv[3] === "-norunner") {
+            noRunner = true;
+        }
     } else {
         path = findDefaultPath();
     }
@@ -137,15 +141,21 @@ function main() {
     }
 
     // Run tests
-    console.log("Running functional tests...");
-    console.log("=======================\n");
-    const testApp = runAsync("node --use_strict Main.js", "./TestApp");
-    const runnerStatus = runLive("node --use_strict Main.js", "./Runner").code;
-    console.log("\n=======================");
+    if (!noRunner) {
+        console.log("Running functional tests...");
+        console.log("=======================\n");
+        const testApp = runAsync("node --use_strict Main.js", "./TestApp");
+        const runnerStatus = runLive("node --use_strict Main.js", "./Runner").code;
+        console.log("\n=======================");
 
-    // Clean up
-    console.log("Killing TestApp...");
-    testApp.kill();
+        // Clean up
+        console.log("Killing TestApp...");
+        testApp.kill();
+    } else {
+        console.log("Running TestApp...");
+        console.log("=======================\n");
+        const runnerStatus = runLive("node --use_strict Main.js", "./TestApp").code;
+    }
     console.log("Spinning down and deleting Docker containers...");
     cleanUpDocker();
 
