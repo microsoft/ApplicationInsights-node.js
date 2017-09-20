@@ -10,7 +10,7 @@ var AppConnector = require("./AppConnector");
 var successfulRun = true;
 let startTime = null;
 
-let perfMode = process.argv.indexOf("-perfMode")
+let perfMode = process.argv.indexOf("-perfmode")
 
 // Helpers
 const runTestSequence = (index) => {
