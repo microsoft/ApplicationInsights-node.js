@@ -10,6 +10,8 @@ var AppConnector = require("./AppConnector");
 var successfulRun = true;
 let startTime = null;
 
+let perfMode = process.argv.indexOf("-perfMode")
+
 // Helpers
 const runTestSequence = (index) => {
     const testIndex = index || 0;
@@ -163,26 +165,30 @@ const validatePerfCounters = () => {
 
 // Main runner
 Ingestion.enable();
-AppConnector.startConnection(TestSequence)
-    .then(() => { startTime = new Date(); })
-    .then(runTestSequence)
-    .then(validateTestSequence)
-    .then(runAndValidateLongTest)
-    .then(validatePerfCounters)
-    .then(AppConnector.closeConnection)
-    .then(() => {
-        Ingestion.disable();
-        Utils.Logging.info("Test run done!");
+if (!perfMode) {
+    AppConnector.startConnection(TestSequence)
+        .then(() => { startTime = new Date(); })
+        .then(runTestSequence)
+        .then(validateTestSequence)
+        .then(runAndValidateLongTest)
+        .then(validatePerfCounters)
+        .then(AppConnector.closeConnection)
+        .then(() => {
+            Ingestion.disable();
+            Utils.Logging.info("Test run done!");
 
-        if (successfulRun) {
-            Utils.Logging.success("All tests PASSED!");
-        } else {
-            Utils.Logging.error("At least one test FAILED!");
-        }
-        process.exit(successfulRun ? 0: 1);
-    })
-    .catch((e) => {
-        Utils.Logging.error("Error thrown!");
-        Utils.Logging.error(e.stack || e);
-        process.exit(1);
-    });
+            if (successfulRun) {
+                Utils.Logging.success("All tests PASSED!");
+            } else {
+                Utils.Logging.error("At least one test FAILED!");
+            }
+            process.exit(successfulRun ? 0: 1);
+        })
+        .catch((e) => {
+            Utils.Logging.error("Error thrown!");
+            Utils.Logging.error(e.stack || e);
+            process.exit(1);
+        });
+} else {
+    AppConnector.startConnection(TestSequence);
+}
