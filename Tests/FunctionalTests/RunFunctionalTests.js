@@ -103,7 +103,8 @@ function main() {
         if (process.argv.indexOf("-perfmode") !== -1) {
             perfMode = true;
         }
-    } else if (path === null || path === "-perfmode") {
+    }
+    if (path === null || path.indexOf("-") === 0) {
         path = findDefaultPath();
     }
     if (path === null) {
