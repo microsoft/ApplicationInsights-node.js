@@ -226,6 +226,26 @@ export class CorrelationContextManager {
 
             // Restore Zone stack rewriting settings
             (<any>orig).stackRewrite = stackRewrite;
+
+            // Remove unexpected bits from stack trace
+            if (this.stack && typeof this.stack === "string") {
+                var stackFrames: string[] = (<string>this.stack).split("\n");
+                // Remove this class
+                if (stackFrames.length > 3) {
+                    if (stackFrames[2].trim().indexOf("at Error.AppInsightsAsyncCorrelatedErrorWrapper") === 0) {
+                        stackFrames.splice(2, 1);
+                    }
+                }
+                // Remove AI correlation ids
+                this.stack = stackFrames.map((v) => {
+                    let startIndex = v.indexOf(") [");
+                    if (startIndex > -1) {
+                        v = v.substr(0, startIndex + 1);
+                    }
+                    return v;
+                }).join("\n");
+            }
+
             
             // getOwnPropertyNames should be a superset of Object.keys...
             // This appears to not always be the case

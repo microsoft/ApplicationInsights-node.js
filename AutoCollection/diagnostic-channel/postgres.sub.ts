@@ -10,7 +10,7 @@ let clients: TelemetryClient[] = [];
 export const subscriber = (event: IStandardEvent<pg.IPostgresData>) => {
     clients.forEach((client) => {
         const q = event.data.query;
-        const sql = q.preparable.text || q.plan || q.text || "unknown query";
+        const sql = (q.preparable && q.preparable.text) || q.plan || q.text || "unknown query";
         const success = !event.data.error;
         const conn = `${event.data.database.host}:${event.data.database.port}`;
         client.trackDependency({

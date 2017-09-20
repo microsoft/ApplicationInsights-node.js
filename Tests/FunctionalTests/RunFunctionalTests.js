@@ -62,14 +62,33 @@ function runAsync(cmd, workingDir) {
 }
 
 function startDocker() {
-    const mongo = run("docker run -d -p 27017:27017 --name ainjsmongo mongo");
+    const tasks =  [
+        run("docker run -d -p 27017:27017 --name ainjsmongo mongo"),
+        run("docker run -e MYSQL_ROOT_PASSWORD=dummypw -e MYSQL_DATABASE=testdb -d -p 33060:3306 --name ainjsmysql mysql"),
+        run("docker run -d -p 63790:6379 --name ainjsredis redis:alpine"),
+        run("docker run -d -p 54320:5432 --name ainjspostgres postgres:alpine")
+    ];
 
-    return mongo.code === 0;
+    for(let i = 0; i < tasks.length; i++) {
+        if (tasks[i].code !== 0) {
+            console.error("Failed to start container!");
+            console.error(tasks[i].output);
+            return false;
+        }
+    }
+    return true;
 }
 
 function cleanUpDocker() {
     run("docker stop ainjsmongo");
+    run("docker stop ainjsmysql");
+    run("docker stop ainjsredis");
+    run("docker stop ainjspostgres");
+
     run("docker rm ainjsmongo");
+    run("docker rm ainjsmysql");
+    run("docker rm ainjsredis");
+    run("docker rm ainjspostgres");
 }
 
 function main() {
@@ -111,7 +130,8 @@ function main() {
         return 1;
     }
     console.log("Installing " + path);
-    if (run("npm install " + path, "./TestApp").code !== 0) {
+    run("npm uninstall applicationinsights", "./TestApp");
+    if (run("npm install --no-save " + path, "./TestApp").code !== 0) {
         console.error("Could not install SDK!");
         return 1;
     }

@@ -28,6 +28,42 @@ module.exports = {
                 telemetry.data.baseData.type === "mongodb";
         }
     ),
+    "MongoInsertMany": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "insert" &&
+                telemetry.data.baseData.success === true &&
+                telemetry.data.baseData.target === "testapp" &&
+                telemetry.data.baseData.type === "mongodb";
+        }
+    ),
+    "MongoFind": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "find" &&
+                telemetry.data.baseData.success === true &&
+                telemetry.data.baseData.target === "testapp" &&
+                telemetry.data.baseData.type === "mongodb";
+        }
+    ),
+    "MongoUpdateOne": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "update" &&
+                telemetry.data.baseData.success === true &&
+                telemetry.data.baseData.target === "testapp" &&
+                telemetry.data.baseData.type === "mongodb";
+        }
+    ),
+    "MongoCreateIndex": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "createIndexes" &&
+                telemetry.data.baseData.data === "createIndexes" &&
+                telemetry.data.baseData.target === "testapp" &&
+                telemetry.data.baseData.type === "mongodb";
+        }
+    ),
     "AITrackDep": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
@@ -57,6 +93,218 @@ module.exports = {
         "ExceptionData",
         (telemetry) => {
             return telemetry.data.baseData.exceptions[0].message === "Native error";
+        }
+    ),
+    "BunyanFatal": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return JSON.parse(telemetry.data.baseData.message).msg === "test fatal" &&
+            telemetry.data.baseData.severityLevel === 4;
+        }
+    ),
+    "BunyanError": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return JSON.parse(telemetry.data.baseData.message).msg === "test error" &&
+            telemetry.data.baseData.severityLevel === 3;
+        }
+    ),
+    "BunyanWarn": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return JSON.parse(telemetry.data.baseData.message).msg === "test warn" &&
+            telemetry.data.baseData.severityLevel === 2
+        }
+    ),
+    "BunyanInfo": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return JSON.parse(telemetry.data.baseData.message).msg === "test info" &&
+            telemetry.data.baseData.severityLevel === 1
+        }
+    ),
+    "BunyanDebug": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return JSON.parse(telemetry.data.baseData.message).msg === "test debug" &&
+            telemetry.data.baseData.severityLevel === 0;
+        }
+    ),
+    "BunyanTrace": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return JSON.parse(telemetry.data.baseData.message).msg === "test trace" &&
+            telemetry.data.baseData.severityLevel === 0;
+        }
+    ),
+    "ConsoleError": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return telemetry.data.baseData.message === "Test console.error" &&
+            telemetry.data.baseData.severityLevel === 2;
+        }
+    ),
+    "ConsoleWarn": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return telemetry.data.baseData.message === "Test console.warn" &&
+            telemetry.data.baseData.severityLevel === 2;
+        }
+    ),
+    "ConsoleInfo": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return telemetry.data.baseData.message === "Test console.info" &&
+            telemetry.data.baseData.severityLevel === 1;
+        }
+    ),
+    "ConsoleLog": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return telemetry.data.baseData.message === "Test console.log" &&
+            telemetry.data.baseData.severityLevel === 1;
+        }
+    ),
+    "ConsoleAssert": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return telemetry.data.baseData.message.indexOf("AssertionError: Test console.assert") === 0 &&
+            telemetry.data.baseData.severityLevel === 2;
+        }
+    ),
+    "MySQLQuery": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "SELECT * FROM 'test_table'" &&
+            telemetry.data.baseData.data === "SELECT * FROM 'test_table'" &&
+            telemetry.data.baseData.target.indexOf(":3306") > -1 &&
+            telemetry.data.baseData.type == "mysql";
+        }
+    ),
+    "RedisGet": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "get" &&
+            telemetry.data.baseData.data === "get" &&
+            telemetry.data.baseData.target.indexOf(":6379") > -1 &&
+            telemetry.data.baseData.type === "redis";
+        }
+    ),
+    "RedisSet": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "set" &&
+            telemetry.data.baseData.data === "set" &&
+            telemetry.data.baseData.target.indexOf(":6379") > -1 &&
+            telemetry.data.baseData.type === "redis";
+        }
+    ),
+    "RedisSet2": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "set" &&
+            telemetry.data.baseData.data === "set" &&
+            telemetry.data.baseData.target.indexOf(":6379") > -1 &&
+            telemetry.data.baseData.type === "redis";
+        }
+    ),
+    "RedisHset": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "hset" &&
+            telemetry.data.baseData.data === "hset" &&
+            telemetry.data.baseData.target.indexOf(":6379") > -1 &&
+            telemetry.data.baseData.type === "redis";
+        }
+    ),
+    "RedisHkeys": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "hkeys" &&
+            telemetry.data.baseData.data === "hkeys" &&
+            telemetry.data.baseData.target.indexOf(":6379") > -1 &&
+            telemetry.data.baseData.type === "redis";
+        }
+    ),
+    "RedisHincrby": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "hincrby" &&
+            telemetry.data.baseData.data === "hincrby" &&
+            telemetry.data.baseData.target.indexOf(":6379") > -1 &&
+            telemetry.data.baseData.type === "redis";
+        }
+    ),
+    "WinstonError": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return telemetry.data.baseData.message === "test error" &&
+            telemetry.data.baseData.severityLevel === 3;
+        }
+    ),
+    "WinstonWarn": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return telemetry.data.baseData.message === "test warn" &&
+            telemetry.data.baseData.severityLevel === 2;
+        }
+    ),
+    "WinstonInfo": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return telemetry.data.baseData.message === "test info" &&
+            telemetry.data.baseData.severityLevel === 1;
+        }
+    ),
+    "WinstonVerbose": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return telemetry.data.baseData.message === "test verbose" &&
+            telemetry.data.baseData.severityLevel === 0;
+        }
+    ),
+    "WinstonDebug": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return telemetry.data.baseData.message === "test debug" &&
+            telemetry.data.baseData.severityLevel === 0;
+        }
+    ),
+    "WinstonSilly": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return telemetry.data.baseData.message === "test silly" &&
+            telemetry.data.baseData.severityLevel === 0;
+        }
+    ),
+    "WinstonError2": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return telemetry.data.baseData.message === "test error" &&
+            telemetry.data.baseData.severityLevel === 3;
+        }
+    ),
+    "WinstonWarn2": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return telemetry.data.baseData.message === "test warn" &&
+            telemetry.data.baseData.severityLevel === 2;
+        }
+    ),
+    "WinstonInfo2": outputContract(
+        "MessageData",
+        (telemetry) => {
+            return telemetry.data.baseData.message === "test info" &&
+            telemetry.data.baseData.severityLevel === 1;
+        }
+    ),
+    "PostgresQuery": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "SELECT * FROM test_table" &&
+            telemetry.data.baseData.data === "SELECT * FROM test_table" &&
+            telemetry.data.baseData.target.indexOf(":5432") > -1 &&
+            telemetry.data.baseData.type == "postgres";
         }
     )
 }

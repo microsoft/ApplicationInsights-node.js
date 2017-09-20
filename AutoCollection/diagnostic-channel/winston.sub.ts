@@ -22,11 +22,11 @@ const winstonToAILevelMap: { [key: string]: (og: string) => number } = {
             debug: SeverityLevel.Verbose
         };
 
-        return map[og] || SeverityLevel.Information;
+        return map[og] === undefined ? SeverityLevel.Information : map[og];
     },
     npm(og: string) {
-        const map: { [key: string]: number } = {
-            error: SeverityLevel.Critical,
+        const map: { [key: string ]: number } = {
+            error: SeverityLevel.Error,
             warn: SeverityLevel.Warning,
             info: SeverityLevel.Information,
             verbose: SeverityLevel.Verbose,
@@ -34,7 +34,7 @@ const winstonToAILevelMap: { [key: string]: (og: string) => number } = {
             silly: SeverityLevel.Verbose
         };
         
-        return map[og] || SeverityLevel.Information;
+        return map[og] === undefined ? SeverityLevel.Information : map[og];
     },
     unknown(og: string) {
         return SeverityLevel.Information;

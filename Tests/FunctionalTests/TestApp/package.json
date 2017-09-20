@@ -11,8 +11,13 @@
   "license": "UNLICENSED",
   "dependencies": {
     "body-parser": "^1.17.2",
+    "bunyan": "^1.8.12",
     "express": "^4.15.2",
     "mongodb": "^2.2.26",
-    "url": "^0.11.0"
+    "mysql": "^2.14.1",
+    "pg": "^6.4.2",
+    "redis": "^2.8.0",
+    "url": "^0.11.0",
+    "winston": "^2.3.1"
   }
 }
