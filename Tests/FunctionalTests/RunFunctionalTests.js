@@ -100,7 +100,7 @@ function main() {
         if (path === "-h" || path === "--help") {
             return help();
         }
-        if (process.argv.length > 3 && process.argv[3] === "-perfmode") {
+        if (process.argv.indexOf("-perfmode") !== -1) {
             perfMode = true;
         }
     } else {
