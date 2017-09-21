@@ -209,8 +209,8 @@ if (!perfMode) {
     let lastCPU = getCPU();
     setTimeout(()=>{
         let newCPU = getCPU();
-        let idleDifference = endMeasure.idle - startMeasure.idle;
-        let totalDifference = endMeasure.total - startMeasure.total;
+        let idleDifference = newCPU.idle - lastCPU.idle;
+        let totalDifference = newCPU.total - lastCPU.total;
         Utils.Logging.info("Telemetry Items: " + Ingestion.telemetryCount);
         Utils.Logging.info("CPU Usage: " + (100 - ~~(100 * idleDifference / totalDifference)) + "%");
         lastCPU = newCPU;
