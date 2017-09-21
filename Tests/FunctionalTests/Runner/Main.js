@@ -167,7 +167,7 @@ const getCPU = () => {
     for(let i = 0, len = cpus.length; i < len; i++) {
         let cpu = cpus[i];
 
-        for(type in cpu.times) {
+        for(let type in cpu.times) {
             totalTick += cpu.times[type];
         }     
         
