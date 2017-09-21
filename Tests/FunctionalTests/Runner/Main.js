@@ -172,9 +172,8 @@ const getCPU = () => {
         }     
         
         totalIdle += cpu.times.idle;
-    
-        return {idle: totalIdle / cpus.length,  total: totalTick / cpus.length};
     }
+    return {idle: totalIdle / cpus.length,  total: totalTick / cpus.length};
 }
 
 
