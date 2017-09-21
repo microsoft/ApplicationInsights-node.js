@@ -207,7 +207,7 @@ if (!perfMode) {
 } else {
     AppConnector.startConnection(TestSequence);
     let lastCPU = getCPU();
-    setTimeout(()=>{
+    setInterval(()=>{
         let newCPU = getCPU();
         let idleDifference = newCPU.idle - lastCPU.idle;
         let totalDifference = newCPU.total - lastCPU.total;

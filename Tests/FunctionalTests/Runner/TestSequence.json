@@ -1,5 +1,6 @@
 [
 {"path": "/_longRunTest", "steps": ["PostgresQuery", "HttpGet", "AITrackDep", "RedisSet"]},
+{"path": "/_perfRun", "steps": ["PostgresQuery", "HttpGet", "BunyanTrace", "RedisSet"]},
 {"path": "/dependencyTestBasic", "steps": ["HttpGet", "Timeout", "HttpGet"]},
 {"path": "/manualTracks", "steps": ["AITrackDep", "AITrackTrace", "AITrackExc"]},
 {"path": "/deepRequest", "steps": ["HttpGet", "Timeout", "Timeout", "HttpGet", "AITrackDep", "AITrackTrace", "Timeout", "AITrackExc"]},
