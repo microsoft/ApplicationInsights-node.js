@@ -1,5 +1,5 @@
 var fs = require('fs');
-
+var os = require('os');
 
 var Config = require("./Config");
 var Ingestion = new (require("./Ingestion"))();
@@ -10,7 +10,7 @@ var AppConnector = require("./AppConnector");
 var successfulRun = true;
 let startTime = null;
 
-let perfMode = process.argv.indexOf("-perfmode")
+let perfMode = process.argv.indexOf("-perfmode") !== -1;
 
 // Helpers
 const runTestSequence = (index) => {
@@ -161,6 +161,21 @@ const validatePerfCounters = () => {
         return success;
     });
 };
+const getCPU = () => {
+    const cpus = os.cpus();
+    let totalIdle = 0, totalTick = 0;
+    for(let i = 0, len = cpus.length; i < len; i++) {
+        let cpu = cpus[i];
+
+        for(type in cpu.times) {
+            totalTick += cpu.times[type];
+        }     
+        
+        totalIdle += cpu.times.idle;
+    
+        return {idle: totalIdle / cpus.length,  total: totalTick / cpus.length};
+    }
+}
 
 
 // Main runner
@@ -191,4 +206,13 @@ if (!perfMode) {
         });
 } else {
     AppConnector.startConnection(TestSequence);
+    let lastCPU = getCPU();
+    setTimeout(()=>{
+        let newCPU = getCPU();
+        let idleDifference = endMeasure.idle - startMeasure.idle;
+        let totalDifference = endMeasure.total - startMeasure.total;
+        Utils.Logging.info("Telemetry Items: " + Ingestion.telemetryCount);
+        Utils.Logging.info("CPU Usage: " + (100 - ~~(100 * idleDifference / totalDifference)) + "%");
+        lastCPU = newCPU;
+    }, 30 * 1000);
 }
