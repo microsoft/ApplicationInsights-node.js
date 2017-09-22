@@ -1,10 +1,10 @@
-import Telemetry = require("./Telemetry")
+import { Telemetry }  from "./Telemetry";
 
 /**
  * Telemetry encapsulating a custom metric, i.e. aggregated numeric values describing value, count, frequency and distribution of
  * of a particular indicator.
  */
-interface MetricTelemetry extends Telemetry {
+export interface MetricTelemetry extends Telemetry {
     /**
      * A string that identifies the metric.
      */
@@ -35,5 +35,3 @@ interface MetricTelemetry extends Telemetry {
      */
     stdDev?: number;
 }
-
-export = MetricTelemetry;

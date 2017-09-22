@@ -1,11 +1,11 @@
-import Telemetry = require("./Telemetry")
-import http = require("http")
-import https = require("https")
+import { Telemetry }  from "./Telemetry";
+import http = require("http");
+import https = require("https");
 
 /**
  * Object encapsulating information about the outgoing request
  */
-interface NodeHttpDependencyTelemetry extends Telemetry
+export interface NodeHttpDependencyTelemetry extends Telemetry
 {
     /**
      * Request options that will be used to instrument outgoing request
@@ -17,5 +17,3 @@ interface NodeHttpDependencyTelemetry extends Telemetry
      */
     request: http.ClientRequest;
 }
-
-export = NodeHttpDependencyTelemetry;

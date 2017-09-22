@@ -1,0 +1,17 @@
+{
+  "name": "oldtsc",
+  "version": "1.0.0",
+  "description": ".",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "author": "",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "typescript": "2.0.0",
+    "@types/node": "4.2.4"
+  },
+  "dependencies": {}
+}

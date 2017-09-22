@@ -10,16 +10,8 @@ import { CorrelationContextManager } from "../AutoCollection/CorrelationContextM
 import Sender = require("./Sender");
 import Util = require("./Util");
 import Logging = require("./Logging");
-import Telemetry = require("./TelemetryTypes/Telemetry")
-import DependencyTelemetry = require("./TelemetryTypes/DependencyTelemetry")
-import EventTelemetry = require("./TelemetryTypes/EventTelemetry")
-import TraceTelemetry = require("./TelemetryTypes/TraceTelemetry")
-import ExceptionTelemetry = require("./TelemetryTypes/ExceptionTelemetry")
-import RequestTelemetry = require("./TelemetryTypes/RequestTelemetry")
-import MetricTelemetry = require("./TelemetryTypes/MetricTelemetry")
-import EnvelopeFactory = require("./EnvelopeFactory")
-import FlushOptions = require("./FlushOptions")
-import TelemetryType = require("./TelemetryTypes/TelemetryType")
+import FlushOptions = require("./FlushOptions");
+import EnvelopeFactory = require("./EnvelopeFactory");
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -51,8 +43,8 @@ class TelemetryClient {
      * Log a trace message
      * @param telemetry      Object encapsulating tracking options
      */
-    public trackTrace(telemetry: TraceTelemetry): void {
-        this.track(telemetry, TelemetryType.Trace);
+    public trackTrace(telemetry: Contracts.TraceTelemetry): void {
+        this.track(telemetry, Contracts.TelemetryType.Trace);
     }
 
     /**
@@ -61,35 +53,35 @@ class TelemetryClient {
      * telemetry bandwidth by aggregating multiple measurements and sending the resulting average at intervals.
      * @param telemetry      Object encapsulating tracking options
      */
-    public trackMetric(telemetry: MetricTelemetry): void {
-        this.track(telemetry, TelemetryType.Metric);
+    public trackMetric(telemetry: Contracts.MetricTelemetry): void {
+        this.track(telemetry, Contracts.TelemetryType.Metric);
     }
 
     /**
      * Log an exception
      * @param telemetry      Object encapsulating tracking options
      */
-    public trackException(telemetry: ExceptionTelemetry): void {
+    public trackException(telemetry: Contracts.ExceptionTelemetry): void {
         if (telemetry && telemetry.exception && !Util.isError(telemetry.exception)) {
             telemetry.exception = new Error(telemetry.exception.toString());
         }
-        this.track(telemetry, TelemetryType.Exception);
+        this.track(telemetry, Contracts.TelemetryType.Exception);
     }
 
     /**
      * Log a user action or other occurrence.
      * @param telemetry      Object encapsulating tracking options
      */
-    public trackEvent(telemetry: EventTelemetry): void {
-        this.track(telemetry, TelemetryType.Event);
+    public trackEvent(telemetry: Contracts.EventTelemetry): void {
+        this.track(telemetry, Contracts.TelemetryType.Event);
     }
 
     /**
      * Log a user action or other occurrence.
      * @param telemetry      Object encapsulating tracking options
      */
-    public trackRequest(telemetry: RequestTelemetry): void {
-        this.track(telemetry, TelemetryType.Request);
+    public trackRequest(telemetry: Contracts.RequestTelemetry): void {
+        this.track(telemetry, Contracts.TelemetryType.Request);
     }
 
     /**
@@ -98,12 +90,12 @@ class TelemetryClient {
      * 
      * @param telemetry      Object encapsulating tracking option
      * */
-    public trackDependency(telemetry: DependencyTelemetry) {
+    public trackDependency(telemetry: Contracts.DependencyTelemetry) {
 
         if (telemetry && !telemetry.target && telemetry.data) {
             telemetry.target = url.parse(telemetry.data).host;
         }
-        this.track(telemetry, TelemetryType.Dependency);
+        this.track(telemetry, Contracts.TelemetryType.Dependency);
     }
 
     /**
@@ -121,8 +113,8 @@ class TelemetryClient {
      * @param data the telemetry to send
      * @param telemetryType specify the type of telemetry you are tracking from the list of Contracts.DataTypes
      */
-    public track(telemetry: Telemetry, telemetryType: TelemetryType) {
-        if (telemetry && telemetryType) {
+    public track(telemetry: Contracts.Telemetry, telemetryType: Contracts.TelemetryType) {
+        if (telemetry && Contracts.telemetryTypeToBaseType(telemetryType)) {
             var envelope = EnvelopeFactory.createEnvelope(telemetry, telemetryType, this.commonProperties, this.context, this.config);
 
             // Set time on the envelope if it was set on the telemetry item

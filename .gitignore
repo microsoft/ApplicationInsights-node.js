@@ -8,6 +8,7 @@ obj/
 
 # Ignore Node files
 node_modules/**
+Tests/BackCompatibility/OldTSC/node_modules/**
 Tests/FunctionalTests/Runner/node_modules/**
 Tests/FunctionalTests/TestApp/node_modules/**
 

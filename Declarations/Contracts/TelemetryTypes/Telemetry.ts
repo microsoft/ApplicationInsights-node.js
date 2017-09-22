@@ -1,7 +1,7 @@
 /**
  * Base telemetry interface encapsulating comming properties
  */
-interface Telemetry {
+export interface Telemetry {
     /**
      * Telemetry time stamp. When it is not specified, current tiestamp will be used.
      */
@@ -19,5 +19,3 @@ interface Telemetry {
      */
     tagOverrides?: { [key: string]: string; };
 }
-
-export = Telemetry;

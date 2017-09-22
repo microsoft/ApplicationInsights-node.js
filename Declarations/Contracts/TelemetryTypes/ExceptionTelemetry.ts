@@ -1,9 +1,9 @@
-import Telemetry = require("./Telemetry")
+import { Telemetry }  from "./Telemetry";
 
 /**
  * Telemetry about the exception thrown by the application
  */
-interface ExceptionTelemetry extends Telemetry
+export interface ExceptionTelemetry extends Telemetry
 {
     /**
      * Exception thrown
@@ -15,5 +15,3 @@ interface ExceptionTelemetry extends Telemetry
      */
     measurements?: { [key: string]: number; };
 }
-
-export = ExceptionTelemetry;

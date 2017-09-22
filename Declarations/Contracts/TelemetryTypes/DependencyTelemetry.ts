@@ -1,9 +1,9 @@
-import Telemetry = require("./Telemetry")
+import { Telemetry }  from "./Telemetry";
 
 /**
  * Telemetry about the call to remote component
  */
-interface DependencyTelemetry extends Telemetry {
+export interface DependencyTelemetry extends Telemetry {
     /**
      * Type name of the telemetry, such as HTTP of SQL
      */
@@ -39,5 +39,3 @@ interface DependencyTelemetry extends Telemetry {
      */
     success: boolean;
 }
-
-export = DependencyTelemetry;

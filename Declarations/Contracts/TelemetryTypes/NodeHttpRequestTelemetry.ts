@@ -1,10 +1,10 @@
-import Telemetry = require("./Telemetry")
-import http = require("http")
+import { Telemetry }  from "./Telemetry";
+import http = require("http");
 
 /**
  * Object encapsulating information about the incoming HTTP request
  */
-interface NodeHttpRequestTelemetry extends Telemetry
+export interface NodeHttpRequestTelemetry extends Telemetry
 {
     /**
      * HTTP request object
@@ -26,5 +26,3 @@ interface NodeHttpRequestTelemetry extends Telemetry
      */
     error?: any
 }
-
-export = NodeHttpRequestTelemetry;
