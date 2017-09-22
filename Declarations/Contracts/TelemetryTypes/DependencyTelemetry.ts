@@ -11,6 +11,8 @@ export interface DependencyTelemetry extends Telemetry {
 
     /**
      * Remote component general target information
+     * If left empty, this will be prepopulated with an extracted hostname from the data field, if it is a url.
+     * This prepopulation happens when calling `trackDependency`. Use `track` directly to avoid this behavior.
      */
     target?: string;
 

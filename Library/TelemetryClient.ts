@@ -77,7 +77,9 @@ class TelemetryClient {
     }
 
     /**
-     * Log a user action or other occurrence.
+     * Log a request. Note that the default client will attempt to collect HTTP requests automatically so only use this for requests 
+     * that aren't automatically captured or if you've disabled automatic request collection.
+     * 
      * @param telemetry      Object encapsulating tracking options
      */
     public trackRequest(telemetry: Contracts.RequestTelemetry): void {
@@ -85,14 +87,17 @@ class TelemetryClient {
     }
 
     /**
-     * Log a dependency. Note that the default client will attempt collect dependencies automatically so only use this for dependencies 
-     * that aren't automatically captured or if you've disabled custom dependencies.
+     * Log a dependency. Note that the default client will attempt to collect dependencies automatically so only use this for dependencies 
+     * that aren't automatically captured or if you've disabled automatic dependency collection.
      * 
      * @param telemetry      Object encapsulating tracking option
      * */
     public trackDependency(telemetry: Contracts.DependencyTelemetry) {
 
         if (telemetry && !telemetry.target && telemetry.data) {
+            // url.parse().host returns null for non-urls,
+            // making this essentially a no-op in those cases
+            // If this logic is moved, update jsdoc in DependencyTelemetry.target
             telemetry.target = url.parse(telemetry.data).host;
         }
         this.track(telemetry, Contracts.TelemetryType.Dependency);
