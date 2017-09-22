@@ -10,6 +10,9 @@ export function samplingTelemetryProcessor(envelope: Contracts.Envelope, context
 
     if (samplingPercentage === null || samplingPercentage === undefined || samplingPercentage >= 100) {
         return true;
+    } else if (envelope.data && Contracts.TelemetryType.Metric === Contracts.baseTypeToTelemetryType(envelope.data.baseType)) {
+        // Exclude MetricData telemetry from sampling
+        return true;
     } else if (contextObjects.correlationContext && contextObjects.correlationContext.operation) {
         // If we're using dependency correlation, sampling should retain all telemetry from a given request 
         isSampledIn = getSamplingHashCode(contextObjects.correlationContext.operation.id) < samplingPercentage;
