@@ -1,5 +1,5 @@
 var fs = require('fs');
-
+var os = require('os');
 
 var Config = require("./Config");
 var Ingestion = new (require("./Ingestion"))();
@@ -9,6 +9,8 @@ var AppConnector = require("./AppConnector");
 
 var successfulRun = true;
 let startTime = null;
+
+let perfMode = process.argv.indexOf("-perfmode") !== -1;
 
 // Helpers
 const runTestSequence = (index) => {
@@ -159,30 +161,57 @@ const validatePerfCounters = () => {
         return success;
     });
 };
+const getCPU = () => {
+    const cpus = os.cpus();
+    let totalIdle = 0, totalTick = 0;
+    for(let i = 0, len = cpus.length; i < len; i++) {
+        let cpu = cpus[i];
+
+        for(let type in cpu.times) {
+            totalTick += cpu.times[type];
+        }     
+        
+        totalIdle += cpu.times.idle;
+    }
+    return {idle: totalIdle / cpus.length,  total: totalTick / cpus.length};
+}
 
 
 // Main runner
 Ingestion.enable();
-AppConnector.startConnection(TestSequence)
-    .then(() => { startTime = new Date(); })
-    .then(runTestSequence)
-    .then(validateTestSequence)
-    .then(runAndValidateLongTest)
-    .then(validatePerfCounters)
-    .then(AppConnector.closeConnection)
-    .then(() => {
-        Ingestion.disable();
-        Utils.Logging.info("Test run done!");
+if (!perfMode) {
+    AppConnector.startConnection(TestSequence)
+        .then(() => { startTime = new Date(); })
+        .then(runTestSequence)
+        .then(validateTestSequence)
+        .then(runAndValidateLongTest)
+        .then(validatePerfCounters)
+        .then(AppConnector.closeConnection)
+        .then(() => {
+            Ingestion.disable();
+            Utils.Logging.info("Test run done!");
 
-        if (successfulRun) {
-            Utils.Logging.success("All tests PASSED!");
-        } else {
-            Utils.Logging.error("At least one test FAILED!");
-        }
-        process.exit(successfulRun ? 0: 1);
-    })
-    .catch((e) => {
-        Utils.Logging.error("Error thrown!");
-        Utils.Logging.error(e.stack || e);
-        process.exit(1);
-    });
+            if (successfulRun) {
+                Utils.Logging.success("All tests PASSED!");
+            } else {
+                Utils.Logging.error("At least one test FAILED!");
+            }
+            process.exit(successfulRun ? 0: 1);
+        })
+        .catch((e) => {
+            Utils.Logging.error("Error thrown!");
+            Utils.Logging.error(e.stack || e);
+            process.exit(1);
+        });
+} else {
+    AppConnector.startConnection(TestSequence);
+    let lastCPU = getCPU();
+    setInterval(()=>{
+        let newCPU = getCPU();
+        let idleDifference = newCPU.idle - lastCPU.idle;
+        let totalDifference = newCPU.total - lastCPU.total;
+        Utils.Logging.info("Telemetry Items: " + Ingestion.telemetryCount);
+        Utils.Logging.info("CPU Usage: " + (100 - ~~(100 * idleDifference / totalDifference)) + "%");
+        lastCPU = newCPU;
+    }, 30 * 1000);
+}

@@ -13,7 +13,8 @@ var Config = {
     UseAutoExceptions: true,
     UseAutoDependencies: true,
     UseAutoConsole: true,
-    UseDiskCaching: false
+    UseDiskCaching: false,
+    SampleRate: "100",
 }
 
 // Allow config overrides from env variables
