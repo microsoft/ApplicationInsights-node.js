@@ -70,7 +70,7 @@ function main() {
     console.log("Using SDK package at " + path);
 
     // OldTSC
-    console.info("Testing compilation in app with TSC 2.0.0...");
+    console.info("Testing compilation in app with TSC 2.0.0 and node 0.12 types...");
     run("npm uninstall applicationinsights", "./OldTSC");
     if (run("npm install", "./OldTSC").code !== 0) {
         console.error("Could not install OldTSC dependencies!")
