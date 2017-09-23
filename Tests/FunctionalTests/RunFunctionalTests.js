@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const childProcess = require('child_process');
+let perfMode = false;
 
 function help() {
     console.log(
@@ -99,7 +100,11 @@ function main() {
         if (path === "-h" || path === "--help") {
             return help();
         }
-    } else {
+        if (process.argv.indexOf("-perfmode") !== -1) {
+            perfMode = true;
+        }
+    }
+    if (path === null || path.indexOf("-") === 0) {
         path = findDefaultPath();
     }
     if (path === null) {
@@ -140,12 +145,13 @@ function main() {
     console.log("Running functional tests...");
     console.log("=======================\n");
     const testApp = runAsync("node --use_strict Main.js", "./TestApp");
-    const runnerStatus = runLive("node --use_strict Main.js", "./Runner").code;
+    const runnerStatus = runLive("node --use_strict Main.js" + (perfMode ? " -perfmode": ""), "./Runner").code;
     console.log("\n=======================");
 
     // Clean up
     console.log("Killing TestApp...");
     testApp.kill();
+
     console.log("Spinning down and deleting Docker containers...");
     cleanUpDocker();
 

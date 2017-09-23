@@ -12,6 +12,7 @@ class Ingestion {
         var self = this;
         this.telemetry = {};
         this.correlatedTelemetry = {};
+        this.telemetryCount = 0;
         this.testValidator = new TestValidation(this);
         this.server = http.createServer(function (request, response) {
             // Handle appid
@@ -75,6 +76,7 @@ class Ingestion {
             }
             this.correlatedTelemetry[opId].push(item);
         }
+        this.telemetryCount++;
         // console.log("INGESTION: Recieved item of type: "+ type);
     }
 
@@ -88,6 +90,8 @@ class Ingestion {
 
     resetTelemetry() {
         this.telemetry = {};
+        this.correlatedTelemetry = {};
+        this.telemetryCount = 0;
     }
 }
 

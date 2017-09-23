@@ -5,6 +5,7 @@ if (Config.AppInsightsEnabled) {
     appInsights.setup(Config.InstrumentationKey);
     appInsights.defaultClient.config.endpointUrl = Config.EndpointBaseAddress+"/v2/track";
     appInsights.defaultClient.config.profileQueryEndpoint = Config.EndpointBaseAddress;
+    appInsights.defaultClient.config.samplingPercentage = parseFloat(Config.SampleRate);
     appInsights.Configuration.setAutoDependencyCorrelation(Config.UseAutoCorrelation)
     appInsights.Configuration.setAutoCollectRequests(Config.UseAutoRequests)
     appInsights.Configuration.setAutoCollectPerformance(Config.UseAutoPerformance)
