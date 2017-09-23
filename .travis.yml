@@ -23,4 +23,4 @@ script:
   - if [ "$TRAVIS_NODE_VERSION" = "6" ]; then npm run functionaltest; fi
   - if [ "$TRAVIS_NODE_VERSION" = "4" ]; then npm run functionaltest; fi
   # Only run backcompat tests once
-    - if [ "$TRAVIS_NODE_VERSION" = "0.12" ]; then npm run backcompattest; fi
+  - if [ "$TRAVIS_NODE_VERSION" = "0.12" ]; then npm run backcompattest; fi
