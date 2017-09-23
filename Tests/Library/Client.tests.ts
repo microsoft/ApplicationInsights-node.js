@@ -12,7 +12,7 @@ import RequestResponseHeaders = require("../../Library/RequestResponseHeaders");
 import Util = require("../../Library/Util");
 import EnvelopeFactory = require("../../Library/EnvelopeFactory");
 
-describe("Library/Client", () => {
+describe("Library/TelemetryClient", () => {
 
     var iKey = "Instrumentation-Key-12345-6789A";
     var appId = "Application-Key-12345-6789A";
@@ -611,6 +611,36 @@ describe("Library/Client", () => {
             createEnvelopeSpy.restore();
             assert.ok(!!obj0.baseData.id);
             assert.deepEqual(obj0.baseData.properties, properties);
+        });
+
+        it("should autopopulate target field for url data", () => {
+            trackStub.restore();
+            var commandName = "http://bing.com/search?q=test";
+            var dependencyTypeName = "dependencyTypeName";
+            var createEnvelopeSpy = sinon.spy(EnvelopeFactory, "createEnvelope");
+            client.trackDependency(<Contracts.DependencyTelemetry>{ name: name, data: commandName, duration: value, success: true, resultCode: "0", dependencyTypeName: dependencyTypeName, properties: properties });
+            assert.ok(createEnvelopeSpy.calledOnce);
+
+
+            var envelopeCreated = createEnvelopeSpy.firstCall.returnValue;
+            var obj0 = <Contracts.Data<Contracts.RemoteDependencyData>>envelopeCreated.data;
+            createEnvelopeSpy.restore();
+            assert.equal(obj0.baseData.target, "bing.com");
+        });
+
+        it("should not autopopulate target field for non-url data", () => {
+            trackStub.restore();
+            var commandName = "NOT A URL";
+            var dependencyTypeName = "dependencyTypeName";
+            var createEnvelopeSpy = sinon.spy(EnvelopeFactory, "createEnvelope");
+            client.trackDependency(<Contracts.DependencyTelemetry>{ name: name, data: commandName, duration: value, success: true, resultCode: "0", dependencyTypeName: dependencyTypeName, properties: properties });
+            assert.ok(createEnvelopeSpy.calledOnce);
+
+
+            var envelopeCreated = createEnvelopeSpy.firstCall.returnValue;
+            var obj0 = <Contracts.Data<Contracts.RemoteDependencyData>>envelopeCreated.data;
+            createEnvelopeSpy.restore();
+            assert.equal(obj0.baseData.target, null);
         });
     });
 
