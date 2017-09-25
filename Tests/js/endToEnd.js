@@ -22,13 +22,13 @@ describe('module', function () {
     });
     describe('applicationinsights', function() {
         it('does not prevent the app from terminating if started', function (done) {
-            this.timeout(5000);
+            this.timeout(15000);
             var testCase = require('child_process').fork(__filename, ['embeddedTestCase-AppTerminates1']);
             var timer = setTimeout(function(){
                 assert(false, "App failed to terminate!");
                 testCase.kill();
                 done();
-            }, 5000);
+            }, 15000);
             testCase.on("close", function() {
                 clearTimeout(timer);
                 done();
@@ -36,13 +36,13 @@ describe('module', function () {
             
         });
         it('does not prevent the app from terminating if started and called track and flush', function (done) {
-            this.timeout(5000);
+            this.timeout(15000);
             var testCase = require('child_process').fork(__filename, ['embeddedTestCase-AppTerminates2']);
             var timer = setTimeout(function(){
                 assert(false, "App failed to terminate!");
                 testCase.kill();
                 done();
-            }, 5000);
+            }, 15000);
             testCase.on("close", function() {
                 clearTimeout(timer);
                 done();
