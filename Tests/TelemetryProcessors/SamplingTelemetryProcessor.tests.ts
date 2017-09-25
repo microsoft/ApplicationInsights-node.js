@@ -20,6 +20,16 @@ describe("TelemetryProcessors/SamplingTelemetryProcessor", () => {
             assert.equal(result, false, "data should not pass");
         });
 
+        it("will send MetricData data on 0% sampling", () => {
+            mockData.sampleRate = 0;
+
+            mockData.baseType = "MetricData";
+            var result = Sampling.samplingTelemetryProcessor(mockData, {correlationContext: null});
+            mockData.baseType = "BaseTestData";
+
+            assert.equal(result, false, "data should not pass");
+        });
+
         it("will send data roughly 1/3 of the time on 33% sampling", () => {
             var iterations = 1000;
             var accepted = 0;

@@ -1,11 +1,11 @@
-import Telemetry = require("./Telemetry")
-import Contracts = require("../../Declarations/Contracts")
+import { Telemetry }  from "./Telemetry";
+import Contracts = require("../");
 
 /**
  * Trace telemetry reports technical, usually detailed information about the environment, 
  * usage of resources, performance, capacity etc
  */
-interface TraceTelemetry extends Telemetry {
+export interface TraceTelemetry extends Telemetry {
     /**
      * Trace message
      */
@@ -15,5 +15,3 @@ interface TraceTelemetry extends Telemetry {
      */
     severity?: Contracts.SeverityLevel;
 }
-
-export = TraceTelemetry;

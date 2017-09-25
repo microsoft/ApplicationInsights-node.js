@@ -1,10 +1,10 @@
-import Telemetry = require("./Telemetry")
+import { Telemetry }  from "./Telemetry";
 
 /**
  * Telemetry about the custom event of interest, such application workflow event, business logic event (purchase) and anything that
  * you would like to track and aggregate by count. Event can contain measurements such as purchase amount associated with purchase event
  */
-interface EventTelemetry extends Telemetry
+export interface EventTelemetry extends Telemetry
 {
     /**
      * Name of the event
@@ -16,4 +16,3 @@ interface EventTelemetry extends Telemetry
      */
     measurements?: { [key: string]: number; };
 }
-export = EventTelemetry;

@@ -1,9 +1,9 @@
-import Telemetry = require("./Telemetry")
+import { Telemetry }  from "./Telemetry";
 
 /**
  * Telemetry about the call to remote component
  */
-interface DependencyTelemetry extends Telemetry {
+export interface DependencyTelemetry extends Telemetry {
     /**
      * Type name of the telemetry, such as HTTP of SQL
      */
@@ -11,6 +11,8 @@ interface DependencyTelemetry extends Telemetry {
 
     /**
      * Remote component general target information
+     * If left empty, this will be prepopulated with an extracted hostname from the data field, if it is a url.
+     * This prepopulation happens when calling `trackDependency`. Use `track` directly to avoid this behavior.
      */
     target?: string;
 
@@ -39,5 +41,3 @@ interface DependencyTelemetry extends Telemetry {
      */
     success: boolean;
 }
-
-export = DependencyTelemetry;

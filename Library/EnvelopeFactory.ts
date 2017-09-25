@@ -1,18 +1,8 @@
-import Telemetry = require("./TelemetryTypes/Telemetry")
-import DependencyTelemetry = require("./TelemetryTypes/DependencyTelemetry")
-import EventTelemetry = require("./TelemetryTypes/EventTelemetry")
-import TraceTelemetry = require("./TelemetryTypes/TraceTelemetry")
-import ExceptionTelemetry = require("./TelemetryTypes/ExceptionTelemetry")
-import RequestTelemetry = require("./TelemetryTypes/RequestTelemetry")
-import MetricTelemetry = require("./TelemetryTypes/MetricTelemetry")
-import TelemetryType = require("./TelemetryTypes/TelemetryType")
-
 import Contracts = require("../Declarations/Contracts")
 import Util = require("./Util")
 import Config = require("./Config");
 import Context = require("./Context");
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
-import Identified = require("./TelemetryTypes/Identified")
 
 /**
  * Manages the logic of creating envelopes from Telemetry objects
@@ -28,8 +18,8 @@ class EnvelopeFactory {
      * @param config Client configuration
      */
     public static createEnvelope(
-        telemetry: Telemetry,
-        telemetryType: TelemetryType,
+        telemetry: Contracts.Telemetry,
+        telemetryType: Contracts.TelemetryType,
         commonProperties?: { [key: string]: string; },
         context?: Context,
         config?: Config): Contracts.Envelope {
@@ -38,23 +28,23 @@ class EnvelopeFactory {
 
 
         switch (telemetryType) {
-            case TelemetryType.Trace:
-                data = EnvelopeFactory.createTraceData(<TraceTelemetry>telemetry);
+            case Contracts.TelemetryType.Trace:
+                data = EnvelopeFactory.createTraceData(<Contracts.TraceTelemetry>telemetry);
                 break;
-            case TelemetryType.Dependency:
-                data = EnvelopeFactory.createDependencyData(<DependencyTelemetry>telemetry);
+            case Contracts.TelemetryType.Dependency:
+                data = EnvelopeFactory.createDependencyData(<Contracts.DependencyTelemetry>telemetry);
                 break;
-            case TelemetryType.Event:
-                data = EnvelopeFactory.createEventData(<EventTelemetry>telemetry);
+            case Contracts.TelemetryType.Event:
+                data = EnvelopeFactory.createEventData(<Contracts.EventTelemetry>telemetry);
                 break;
-            case TelemetryType.Exception:
-                data = EnvelopeFactory.createExceptionData(<ExceptionTelemetry>telemetry);
+            case Contracts.TelemetryType.Exception:
+                data = EnvelopeFactory.createExceptionData(<Contracts.ExceptionTelemetry>telemetry);
                 break;
-            case TelemetryType.Request:
-                data = EnvelopeFactory.createRequestData(<RequestTelemetry>telemetry);
+            case Contracts.TelemetryType.Request:
+                data = EnvelopeFactory.createRequestData(<Contracts.RequestTelemetry>telemetry);
                 break;
-            case TelemetryType.Metric:
-                data = EnvelopeFactory.createMetricData(<MetricTelemetry>telemetry);
+            case Contracts.TelemetryType.Metric:
+                data = EnvelopeFactory.createMetricData(<Contracts.MetricTelemetry>telemetry);
                 break;
         }
 
@@ -96,7 +86,7 @@ class EnvelopeFactory {
         return envelope;
     }
 
-    private static createTraceData(telemetry: TraceTelemetry): Contracts.Data<Contracts.MessageData> {
+    private static createTraceData(telemetry: Contracts.TraceTelemetry): Contracts.Data<Contracts.MessageData> {
         var trace = new Contracts.MessageData();
         trace.message = telemetry.message;
         trace.properties = telemetry.properties;
@@ -107,12 +97,12 @@ class EnvelopeFactory {
         }
 
         var data = new Contracts.Data<Contracts.MessageData>();
-        data.baseType = TelemetryType.Trace;
+        data.baseType = Contracts.telemetryTypeToBaseType(Contracts.TelemetryType.Trace);
         data.baseData = trace;
         return data;
     }
 
-    private static createDependencyData(telemetry: DependencyTelemetry & Identified): Contracts.Data<Contracts.RemoteDependencyData> {
+    private static createDependencyData(telemetry: Contracts.DependencyTelemetry & Contracts.Identified): Contracts.Data<Contracts.RemoteDependencyData> {
         var remoteDependency = new Contracts.RemoteDependencyData();
         remoteDependency.name = telemetry.name;
         remoteDependency.data = telemetry.data;
@@ -130,24 +120,24 @@ class EnvelopeFactory {
         }
 
         var data = new Contracts.Data<Contracts.RemoteDependencyData>();
-        data.baseType = TelemetryType.Dependency;
+        data.baseType = Contracts.telemetryTypeToBaseType(Contracts.TelemetryType.Dependency);
         data.baseData = remoteDependency;
         return data;
     }
 
-    private static createEventData(telemetry: EventTelemetry): Contracts.Data<Contracts.EventData> {
+    private static createEventData(telemetry: Contracts.EventTelemetry): Contracts.Data<Contracts.EventData> {
         var event = new Contracts.EventData();
         event.name = telemetry.name;
         event.properties = telemetry.properties;
         event.measurements = telemetry.measurements;
 
         var data = new Contracts.Data<Contracts.EventData>();
-        data.baseType = TelemetryType.Event;
+        data.baseType = Contracts.telemetryTypeToBaseType(Contracts.TelemetryType.Event);
         data.baseData = event;
         return data;
     }
 
-    private static createExceptionData(telemetry: ExceptionTelemetry): Contracts.Data<Contracts.ExceptionData> {
+    private static createExceptionData(telemetry: Contracts.ExceptionTelemetry): Contracts.Data<Contracts.ExceptionData> {
         var exception = new Contracts.ExceptionData();
         exception.properties = telemetry.properties;
         exception.severityLevel = Contracts.SeverityLevel.Error;
@@ -163,12 +153,12 @@ class EnvelopeFactory {
         exception.exceptions.push(exceptionDetails);
 
         var data = new Contracts.Data<Contracts.ExceptionData>();
-        data.baseType = TelemetryType.Exception;
+        data.baseType = Contracts.telemetryTypeToBaseType(Contracts.TelemetryType.Exception);
         data.baseData = exception;
         return data;
     }
 
-    private static createRequestData(telemetry: RequestTelemetry & Identified): Contracts.Data<Contracts.RequestData> {
+    private static createRequestData(telemetry: Contracts.RequestTelemetry & Contracts.Identified): Contracts.Data<Contracts.RequestData> {
         var requestData = new Contracts.RequestData();
         if (telemetry.id) {
             requestData.id = telemetry.id;
@@ -185,12 +175,12 @@ class EnvelopeFactory {
         requestData.properties = telemetry.properties;
 
         var data = new Contracts.Data<Contracts.RequestData>();
-        data.baseType = TelemetryType.Request;
+        data.baseType = Contracts.telemetryTypeToBaseType(Contracts.TelemetryType.Request);
         data.baseData = requestData;
         return data;
     }
 
-    private static createMetricData(telemetry: MetricTelemetry): Contracts.Data<Contracts.MetricData> {
+    private static createMetricData(telemetry: Contracts.MetricTelemetry): Contracts.Data<Contracts.MetricData> {
         var metrics = new Contracts.MetricData(); // todo: enable client-batching of these
         metrics.metrics = [];
 
@@ -208,7 +198,7 @@ class EnvelopeFactory {
         metrics.properties = telemetry.properties;
 
         var data = new Contracts.Data<Contracts.MetricData>();
-        data.baseType = TelemetryType.Metric;
+        data.baseType = Contracts.telemetryTypeToBaseType(Contracts.TelemetryType.Metric);
         data.baseData = metrics;
         return data;
     }

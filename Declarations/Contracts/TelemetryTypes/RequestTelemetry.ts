@@ -1,9 +1,9 @@
-import Telemetry = require("./Telemetry")
+import { Telemetry }  from "./Telemetry";
 
 /**
  * Telemetry about the incoming request processsed by the application
  */
-interface RequestTelemetry extends Telemetry
+export interface RequestTelemetry extends Telemetry
 {
      /**
       * Request name
@@ -35,5 +35,3 @@ interface RequestTelemetry extends Telemetry
       */
      success: boolean;
 }
-
-export = RequestTelemetry;

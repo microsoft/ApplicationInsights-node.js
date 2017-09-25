@@ -46,6 +46,7 @@ class AutoCollectPerformance {
                 };
 
                 this._handle = setInterval(() => this.trackPerformance(), 60000);
+                this._handle.unref(); // Allow the app to terminate even while this loop is going on
             }
         } else {
             if (this._handle) {
