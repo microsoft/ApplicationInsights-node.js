@@ -21,14 +21,18 @@ describe('module', function () {
         });
     });
     describe('applicationinsights', function() {
+        if (/^0\.([0-9]\.)|(10\.)/.test(process.versions.node)) {
+            // These tests aren't valid in Node 0.10
+            return;
+        }
         it('does not prevent the app from terminating if started', function (done) {
-            this.timeout(15000);
+            this.timeout(5000);
             var testCase = require('child_process').fork(__filename, ['embeddedTestCase-AppTerminates1']);
             var timer = setTimeout(function(){
                 assert(false, "App failed to terminate!");
                 testCase.kill();
                 done();
-            }, 15000);
+            }, 5000);
             testCase.on("close", function() {
                 clearTimeout(timer);
                 done();
@@ -36,13 +40,13 @@ describe('module', function () {
             
         });
         it('does not prevent the app from terminating if started and called track and flush', function (done) {
-            this.timeout(15000);
+            this.timeout(5000);
             var testCase = require('child_process').fork(__filename, ['embeddedTestCase-AppTerminates2']);
             var timer = setTimeout(function(){
                 assert(false, "App failed to terminate!");
                 testCase.kill();
                 done();
-            }, 15000);
+            }, 5000);
             testCase.on("close", function() {
                 clearTimeout(timer);
                 done();
