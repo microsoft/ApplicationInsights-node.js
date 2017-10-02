@@ -89,7 +89,7 @@ In general, you can migrate with the following:
 - Replace references to `appInsights.client` with `appInsights.defaultClient`
 - Replace references to `appInsights.getClient()` with `new appInsights.TelemetryClient()`
 - Replace all arguments to client.track* methods with a single object containing named
-properties as arguments. See your IDE's built-in type hinting, or [TelemetryTypes](https://github.com/Microsoft/ApplicationInsights-node.js/tree/develop/Library/TelemetryTypes), for
+properties as arguments. See your IDE's built-in type hinting, or [TelemetryTypes](https://github.com/Microsoft/ApplicationInsights-node.js/tree/develop/Declarations/Contracts/TelemetryTypes), for
 the expected object for each type of telemetry.
 
 If you access SDK configuration functions without chaining them to `appInsights.setup()`,
