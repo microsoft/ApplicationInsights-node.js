@@ -78,6 +78,24 @@ this additional tracking is enabled; disable it by calling
 `appInsights.setAutoDependencyCorrelation(false)` as described in the
 Configuration section below.
 
+## Migrating from versions prior to 0.22
+
+There are breaking changes between releases prior to version 0.22 and after. These 
+changes are designed to bring consistency with other Application Insights SDKs and 
+allow future extensibility. Please review this README for new method and property names. 
+For additional detail on the changes to the track API, review #302.
+
+In general, you can migrate with the following:
+- Replace references to `appInsights.client` with `appInsights.defaultClient`
+- Replace references to `appInsights.getClient()` with `new appInsights.TelemetryClient()`
+- Replace all arguments to client.track* methods with a single object containing named
+properties as arguments. See your IDE's built-in type hinting, or [TelemetryTypes](https://github.com/Microsoft/ApplicationInsights-node.js/tree/develop/Library/TelemetryTypes), for
+the expected object for each type of telemetry.
+
+If you access SDK configuration functions without chaining them to `appInsights.setup()`,
+you can now find these functions at appInsights.Configuration 
+(eg. `appInsights.Configuration.setAutoCollectDependencies(true)`).
+Take care to review the changes to the default configuration in the next section.
 
 ## Configuration
 
@@ -96,6 +114,15 @@ appInsights.setup("<instrumentation_key>")
     .setUseDiskRetryCaching(true)
     .start();
 ```
+
+Please review their descriptions in your IDE's built-in type hinting, or [applicationinsights.ts]
+(https://github.com/Microsoft/ApplicationInsights-node.js/tree/develop/applicationinsights.ts) for 
+detailed information on what these control, and optional secondary arguments.
+
+Note that by default `setAutoCollectConsole` is configured to *exclude* calls to `console.log`
+(and other `console` methods). By default, only calls to supported third-party loggers 
+(e.g. `winston`, `bunyan`) will be collected. You can change this behavior to *include* calls 
+to `console` methods by using `setAutoCollectConsole(true, true)`.
 
 ### Sampling
 
@@ -147,7 +174,7 @@ client.trackRequest({name:"GET /customers", url:"http://myserver/customers", dur
 
 let http = require("http");
 http.createServer( (req, res) => {
-  client.trackRequest({request: req, response: res}); // Place at the beginning of your request handler
+  client.trackNodeHttpRequest({request: req, response: res}); // Place at the beginning of your request handler
 });
 ```
 
@@ -161,14 +188,14 @@ You can process and filter collected data before it is sent for retention using
 _Telemetry Processors_. Telemetry processors are called one by one in the
 order they were added before the telemetry item is sent to the cloud.
 
-If a telemetry processor returns false or throws an error that telemetry item
-will not be sent.
+If a telemetry processor returns false that telemetry item will not be sent.
 
 All telemetry processors receive the telemetry data and its envelope to inspect and
-modify. They also receive a context object with available request information
-and the persistent request context as provided by
-`appInsights.getCorrelationContext()` (if automatic dependency correlation is
-enabled).
+modify. They also receive a context object. The contents of this object is defined by
+the `contextObjects` parameter when calling a track method for manually tracked telemetry.
+For automatically collected telemetry, this object is filled with available request information
+and the persistent request context as provided by `appInsights.getCorrelationContext()` (if 
+automatic dependency correlation is enabled).
 
 The TypeScript type for a telemetry processor is:
 

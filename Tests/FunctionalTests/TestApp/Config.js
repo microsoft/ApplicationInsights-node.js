@@ -13,6 +13,7 @@ var Config = {
     UseAutoExceptions: true,
     UseAutoDependencies: true,
     UseAutoConsole: true,
+    UseAutoConsoleLog: true,
     UseDiskCaching: false,
     SampleRate: "100",
 }
