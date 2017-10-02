@@ -49,7 +49,7 @@ module.exports.TestValidation = class TestValidation {
                     for (var i = 0; i<dataSet.length; i++) {
                         var item = dataSet[i];
                         try {
-                            if (item.data.baseType === type && fn(item)) {
+                            if (item.data.baseType === type && item.tags['ai.operation.parentId'] === "|"+correlationId+"." && fn(item)) {
                                 // Remove this item from the dataset so we don't find it twice
                                 // The test is successful if we find all items we seek out and
                                 // no extras remain
