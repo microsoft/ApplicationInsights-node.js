@@ -75,7 +75,7 @@ loading the Application Insights library after those.
 Because of the way JavaScript handles callbacks, additional work is necessary to
 track a request across external dependencies and later callbacks. By default
 this additional tracking is enabled; disable it by calling
-`appInsights.setAutoDependencyCorrelation(false)` as described in the
+`setAutoDependencyCorrelation(false)` as described in the
 Configuration section below.
 
 ## Migrating from versions prior to 0.22
