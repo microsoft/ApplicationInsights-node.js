@@ -82,8 +82,7 @@ Configuration section below.
 
 There are breaking changes between releases prior to version 0.22 and after. These 
 changes are designed to bring consistency with other Application Insights SDKs and 
-allow future extensibility. Please review this README for new method and property names. 
-For additional detail on the changes to the track API, review #302.
+allow future extensibility. Please review this README for new method and property names.
 
 In general, you can migrate with the following:
 - Replace references to `appInsights.client` with `appInsights.defaultClient`
