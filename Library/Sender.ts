@@ -101,9 +101,14 @@ class Sender {
                         if (res.statusCode === 200) {
                             setTimeout(() => this._sendFirstFileOnDisk(), this._resendInterval);
                             // store to disk in case of burst throttling
-                        } else if (res.statusCode === 206 ||
-                            res.statusCode === 429 ||
-                            res.statusCode === 439) {
+                        } else if (
+                            res.statusCode === 408 || // Timeout
+                            res.statusCode === 429 || // Throttle
+                            res.statusCode === 439 || // Quota
+                            res.statusCode === 500 || // Server Error
+                            res.statusCode === 503) { // Service unavailable
+
+                            // TODO: Do not support partial success (206) until _sendFirstFileOnDisk checks payload age
                             this._storeToDisk(payload);
                         }
                     }
