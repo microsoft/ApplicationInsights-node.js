@@ -115,8 +115,7 @@ appInsights.setup("<instrumentation_key>")
     .start();
 ```
 
-Please review their descriptions in your IDE's built-in type hinting, or [applicationinsights.ts]
-(https://github.com/Microsoft/ApplicationInsights-node.js/tree/develop/applicationinsights.ts) for 
+Please review their descriptions in your IDE's built-in type hinting, or [applicationinsights.ts](https://github.com/Microsoft/ApplicationInsights-node.js/tree/develop/applicationinsights.ts) for 
 detailed information on what these control, and optional secondary arguments.
 
 Note that by default `setAutoCollectConsole` is configured to *exclude* calls to `console.log`
