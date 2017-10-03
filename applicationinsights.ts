@@ -16,6 +16,7 @@ export import Contracts = require("./Declarations/Contracts");
 
 // Default autocollection configuration
 let _isConsole = true;
+let _isConsoleLog = false;
 let _isExceptions = true;
 let _isPerformance = true;
 let _isRequests = true;
@@ -75,7 +76,7 @@ export function setup(instrumentationKey?: string) {
 export function start() {
     if(!!defaultClient) {
         _isStarted = true;
-        _console.enable(_isConsole);
+        _console.enable(_isConsole, _isConsoleLog);
         _exceptions.enable(_isExceptions);
         _performance.enable(_isPerformance);
         _serverRequests.useAutoCorrelation(_isCorrelating);
@@ -127,14 +128,16 @@ export class Configuration {
     public static start = start;
 
     /**
-     * Sets the state of console tracking (enabled by default)
-     * @param value if true console activity will be sent to Application Insights
+     * Sets the state of console and logger tracking (enabled by default for third-party loggers only)
+     * @param value if true logger activity will be sent to Application Insights
+     * @param collectConsoleLog if true, logger autocollection will include console.log calls (default false)
      * @returns {Configuration} this class
      */
-    public static setAutoCollectConsole(value: boolean) {
+    public static setAutoCollectConsole(value: boolean, collectConsoleLog: boolean = false) {
         _isConsole = value;
+        _isConsoleLog = collectConsoleLog;
         if (_isStarted){
-            _console.enable(value);
+            _console.enable(value, collectConsoleLog);
         }
 
         return Configuration;

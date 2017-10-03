@@ -25,8 +25,8 @@ class AutoCollectConsole {
         AutoCollectConsole.INSTANCE = this;
     }
 
-    public enable(isEnabled: boolean) {
-        enableConsole(isEnabled, this._client);
+    public enable(isEnabled: boolean, collectConsoleLog: boolean) {
+        enableConsole(isEnabled && collectConsoleLog, this._client);
         enableBunyan(isEnabled, this._client);
         enableWinston(isEnabled, this._client);
     }
@@ -37,7 +37,7 @@ class AutoCollectConsole {
 
     public dispose() {
         AutoCollectConsole.INSTANCE = null;
-        this.enable(false);
+        this.enable(false, false);
     }
 }
 
