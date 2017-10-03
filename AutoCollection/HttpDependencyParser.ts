@@ -9,8 +9,6 @@ import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import RequestParser = require("./RequestParser");
 import CorrelationIdManager = require("../Library/CorrelationIdManager");
-import DependencyTelemetry = require("../Library/TelemetryTypes/DependencyTelemetry");
-import Identified = require("../Library/TelemetryTypes/Identified")
 
 /**
  * Helper class to read data from the requst/response objects and convert them into the telemetry contract
@@ -49,7 +47,7 @@ class HttpDependencyParser extends RequestParser {
     /**
      * Gets a dependency data contract object for a completed ClientRequest.
      */
-    public getDependencyTelemetry(dependencyId?: string): DependencyTelemetry {
+    public getDependencyTelemetry(dependencyId?: string): Contracts.DependencyTelemetry {
         let urlObject = url.parse(this.url);
         urlObject.search = undefined;
         urlObject.hash = undefined;
@@ -68,7 +66,7 @@ class HttpDependencyParser extends RequestParser {
             remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
         }
 
-        var telemetry: DependencyTelemetry & Identified = {
+        var telemetry: Contracts.DependencyTelemetry & Contracts.Identified = {
             id: dependencyId,
             name: dependencyName,
             data: this.url,

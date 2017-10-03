@@ -2,7 +2,7 @@
   "name": "applicationinsights",
   "license": "MIT",
   "bugs": "https://github.com/Microsoft/ApplicationInsights-node.js/issues",
-  "version": "0.22.0",
+  "version": "1.0.0",
   "description": "Microsoft Application Insights module for Node.js",
   "repository": {
     "type": "git",
@@ -42,7 +42,9 @@
     "pretest": "npm run build",
     "test": "npm run test:ts && npm run test:js",
     "test:ts": "mocha ./out/Tests --recursive",
-    "test:js": "mocha ./Tests/js --recursive"
+    "test:js": "mocha ./Tests/js --recursive",
+    "functionaltest": "npm run build && npm pack && node --use_strict ./Tests/FunctionalTests/RunFunctionalTests.js",
+    "backcompattest": "npm run build && npm pack && node --use_strict ./Tests/BackCompatibility/RunBackCompatTests.js"
   },
   "devDependencies": {
     "@types/mocha": "2.2.40",

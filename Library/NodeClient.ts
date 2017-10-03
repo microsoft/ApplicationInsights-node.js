@@ -1,11 +1,10 @@
-import http = require("http")
-import https = require("https")
-import TelemetryClient = require("./TelemetryClient")
-import ServerRequestTracking = require("../AutoCollection/HttpRequests")
-import ClientRequestTracking = require("../AutoCollection/HttpDependencies")
-import NodeHttpDependencyTelemetry = require("./TelemetryTypes/NodeHttpDependencyTelemetry")
-import NodeHttpRequestTelemetry = require("./TelemetryTypes/NodeHttpRequestTelemetry")
-import Logging = require("./Logging")
+import http = require("http");
+import https = require("https");
+import TelemetryClient = require("./TelemetryClient");
+import ServerRequestTracking = require("../AutoCollection/HttpRequests");
+import ClientRequestTracking = require("../AutoCollection/HttpDependencies");
+import Logging = require("./Logging");
+import Contracts = require("../Declarations/Contracts");
 
 /**
  * Application Insights Telemetry Client for Node.JS. Provides the Application Insights TelemetryClient API
@@ -21,7 +20,7 @@ class NodeClient extends TelemetryClient {
      * Use trackNodeHttpRequest function to log the telemetry after request completion
      * @param telemetry Object encapsulating incoming request, response and duration information 
      */
-    public trackNodeHttpRequestSync(telemetry: NodeHttpRequestTelemetry) {
+    public trackNodeHttpRequestSync(telemetry: Contracts.NodeHttpRequestTelemetry) {
         if (telemetry && telemetry.request && telemetry.response && telemetry.duration) {
             ServerRequestTracking.trackRequestSync(this, telemetry.request, telemetry.response, telemetry.duration, telemetry.properties, telemetry.error);
         }
@@ -35,7 +34,7 @@ class NodeClient extends TelemetryClient {
      * Use trackNodeHttpRequestSync function to log telemetry immediately without waiting for request completion
      * @param telemetry Object encapsulating incoming request and response information
      */
-    public trackNodeHttpRequest(telemetry: NodeHttpRequestTelemetry) {
+    public trackNodeHttpRequest(telemetry: Contracts.NodeHttpRequestTelemetry) {
         if (telemetry && telemetry.request && telemetry.response) {
             ServerRequestTracking.trackRequest(this, telemetry.request, telemetry.response, telemetry.properties);
         }
@@ -49,7 +48,7 @@ class NodeClient extends TelemetryClient {
      * the specified headers and will log the telemetry when outgoing request is complete
      * @param telemetry Object encapsulating outgoing request information
      */
-    public trackNodeHttpDependency(telemetry: NodeHttpDependencyTelemetry) {
+    public trackNodeHttpDependency(telemetry: Contracts.NodeHttpDependencyTelemetry) {
         if (telemetry && telemetry.request) {
             ClientRequestTracking.trackRequest(this, telemetry.options, telemetry.request, telemetry.properties);
         }

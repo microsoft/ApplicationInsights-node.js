@@ -3,11 +3,8 @@ import sinon = require("sinon");
 import http = require("http");
 
 import EnvelopeFactory = require("../../Library/EnvelopeFactory");
-import ExceptionTelemetry = require("../../Library/TelemetryTypes/ExceptionTelemetry");
-import Contracts = require("../../Declarations/Contracts")
-import Client = require("../../Library/TelemetryClient")
-import EventTelemetry = require("../../Library/TelemetryTypes/EventTelemetry")
-import TelemetryType = require("../../Library/TelemetryTypes/TelemetryType")
+import Contracts = require("../../Declarations/Contracts");
+import Client = require("../../Library/TelemetryClient");
 
 describe("Library/EnvelopeFactory", () => {
         
@@ -19,9 +16,9 @@ describe("Library/EnvelopeFactory", () => {
             var client1 = new Client("key");
             client1.commonProperties = commonproperties;
             client1.config.samplingPercentage = 99;
-            var eventTelemetry = <EventTelemetry>{name:"name"};
+            var eventTelemetry = <Contracts.EventTelemetry>{name:"name"};
             eventTelemetry.properties  = properties;
-            var env = EnvelopeFactory.createEnvelope(eventTelemetry, TelemetryType.Event, commonproperties, client1.context, client1.config);
+            var env = EnvelopeFactory.createEnvelope(eventTelemetry, Contracts.TelemetryType.Event, commonproperties, client1.context, client1.config);
 
             // check sample rate
             assert.equal(env.sampleRate, client1.config.samplingPercentage);
@@ -43,20 +40,20 @@ describe("Library/EnvelopeFactory", () => {
         it("should allow tags to be overwritten", () => {
           
             var client = new Client("key");
-            var env = EnvelopeFactory.createEnvelope(<EventTelemetry>{name:"name"}, TelemetryType.Event, commonproperties, client.context, client.config);
+            var env = EnvelopeFactory.createEnvelope(<Contracts.EventTelemetry>{name:"name"}, Contracts.TelemetryType.Event, commonproperties, client.context, client.config);
             assert.deepEqual(env.tags, client.context.tags, "tags are set by default");
             var customTag = <{ [id: string]: string }>{ "ai.cloud.roleInstance": "override" };
             var expected: { [id: string]: string } = {};
             for (var tag in client.context.tags) {
                 expected[tag] = customTag[tag] || client.context.tags[tag];
             }
-            env = EnvelopeFactory.createEnvelope(<EventTelemetry>{name:"name", tagOverrides:customTag}, TelemetryType.Event, commonproperties, client.context, client.config);
+            env = EnvelopeFactory.createEnvelope(<Contracts.EventTelemetry>{name:"name", tagOverrides:customTag}, Contracts.TelemetryType.Event, commonproperties, client.context, client.config);
             assert.deepEqual(env.tags, expected)
         });
 
         it("should have valid name", function () {
             var client = new Client("key");
-            var envelope = EnvelopeFactory.createEnvelope(<EventTelemetry>{name:"name"}, TelemetryType.Event, commonproperties, client.context, client.config);
+            var envelope = EnvelopeFactory.createEnvelope(<Contracts.EventTelemetry>{name:"name"}, Contracts.TelemetryType.Event, commonproperties, client.context, client.config);
             assert.equal(envelope.name, "Microsoft.ApplicationInsights.key.Event");
         });
     });
@@ -74,7 +71,7 @@ describe("Library/EnvelopeFactory", () => {
         it("fills empty 'method' with '<no_method>'", () => {
             simpleError.stack = "  at \t (/path/file.js:12:34)\n" + simpleError.stack;
 
-            var envelope = EnvelopeFactory.createEnvelope(<ExceptionTelemetry>{ exception: simpleError }, TelemetryType.Exception);
+            var envelope = EnvelopeFactory.createEnvelope(<Contracts.ExceptionTelemetry>{ exception: simpleError }, Contracts.TelemetryType.Exception);
             var exceptionData = <Contracts.Data<Contracts.ExceptionData>>envelope.data;
             var actual = exceptionData.baseData.exceptions[0].parsedStack[0].method;
             var expected = "<no_method>";
@@ -85,7 +82,7 @@ describe("Library/EnvelopeFactory", () => {
         it("fills empty 'method' with '<no_filename>'", () => {
             simpleError.stack = "  at Context.<anonymous> (\t:12:34)\n" + simpleError.stack;
 
-            var envelope = EnvelopeFactory.createEnvelope(<ExceptionTelemetry>{ exception: simpleError }, TelemetryType.Exception);
+            var envelope = EnvelopeFactory.createEnvelope(<Contracts.ExceptionTelemetry>{ exception: simpleError }, Contracts.TelemetryType.Exception);
             var exceptionData = <Contracts.Data<Contracts.ExceptionData>>envelope.data;
 
             var actual = exceptionData.baseData.exceptions[0].parsedStack[0].fileName;

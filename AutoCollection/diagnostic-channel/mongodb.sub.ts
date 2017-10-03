@@ -21,10 +21,6 @@ export const subscriber = (event: IStandardEvent<mongodb.IMongoData>) => {
                 resultCode: event.data.succeeded ? "0" : "1",
                 dependencyTypeName: 'mongodb'
             });
-
-        if (!event.data.succeeded) {
-            client.trackException({exception:new Error(event.data.event.failure)});
-        }
     });
 };
 

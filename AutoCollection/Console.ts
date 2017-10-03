@@ -3,6 +3,7 @@ import Logging = require("../Library/Logging");
 
 import {enable as enableConsole} from "./diagnostic-channel/console.sub";
 import {enable as enableBunyan} from "./diagnostic-channel/bunyan.sub";
+import {enable as enableWinston} from "./diagnostic-channel/winston.sub";
 
 import "./diagnostic-channel/initialization";
 
@@ -24,9 +25,10 @@ class AutoCollectConsole {
         AutoCollectConsole.INSTANCE = this;
     }
 
-    public enable(isEnabled: boolean) {
-        enableConsole(isEnabled, this._client);
+    public enable(isEnabled: boolean, collectConsoleLog: boolean) {
+        enableConsole(isEnabled && collectConsoleLog, this._client);
         enableBunyan(isEnabled, this._client);
+        enableWinston(isEnabled, this._client);
     }
 
     public isInitialized() {
@@ -35,7 +37,7 @@ class AutoCollectConsole {
 
     public dispose() {
         AutoCollectConsole.INSTANCE = null;
-        this.enable(false);
+        this.enable(false, false);
     }
 }
 
