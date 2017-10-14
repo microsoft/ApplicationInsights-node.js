@@ -18,7 +18,7 @@ class Config {
     public endpointUrl: string;
     /** The maximum number of telemetry items to include in a payload to the ingestion endpoint (Default 250) */
     public maxBatchSize: number;
-    /** The maximum amount of time to wait for a payload to reach maxBatchSize (Default 1500) */
+    /** The maximum amount of time to wait for a payload to reach maxBatchSize (Default 15000) */
     public maxBatchIntervalMs: number;
     /** A flag indicating if telemetry transmission is disabled (Default false) */
     public disableAppInsights: boolean;
