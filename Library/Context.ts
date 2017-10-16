@@ -25,7 +25,7 @@ class Context {
 
         try {
             // note: this should return the host package.json
-            var packageJson = require(packageJsonPath || "../../../package.json");
+            var packageJson = require(packageJsonPath || "../../../../package.json");
             if(packageJson) {
                 if (typeof packageJson.version === "string") {
                     version = packageJson.version;
