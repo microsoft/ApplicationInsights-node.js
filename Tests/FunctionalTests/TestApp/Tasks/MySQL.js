@@ -13,8 +13,8 @@ CREATE TABLE IF NOT EXISTS 'test_table' (
 'id' int(11) NOT NULL auto_increment,
 'data' varchar(100) NOT NULL default '',
 PRIMARY KEY  ('id')
-);`, (err) => {
-                    if (!err) {
+);`, (res) => {
+                    if (!!res) {
                         ready = true;
                     } else {
                         setTimeout(connect, 1500);
