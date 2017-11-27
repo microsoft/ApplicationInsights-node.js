@@ -354,8 +354,11 @@ separately from clients created with `new appInsights.TelemetryClient()`.
     ```
 3. Run tests
     ```bash
-    npm test
+    npm run test
+    npm run backcompattest
+    npm run functionaltest
     ```
+    _Note: Functional tests require Docker_
 
 ---
 

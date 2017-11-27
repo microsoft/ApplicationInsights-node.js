@@ -23,6 +23,11 @@ class AutoCollectHttpDependencies {
 
     private static requestNumber = 1;
 
+    // The difference between this and the disable flag above is that we delete this flag before returning to user code.
+    // The idea is we create this flag inside patched code, and delete it before returning from it, so the user has no impact from it
+    // We use this flag to ensure we don't double-collect telemetry
+    private static alreadyAutoCollectedFlag = '_appInsightsAutoCollected';
+
     private _client: TelemetryClient;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
@@ -55,29 +60,45 @@ class AutoCollectHttpDependencies {
         this._isInitialized = true;
 
         const originalRequest = http.request;
+        const originalHttpsRequest = https.request;
+
+        // On node >= v0.11.12 and < 9.0 (excluding 8.9.0) https.request just calls http.request (with additional options).
+        // On node < 0.11.12, 8.9.0, and 9.0 > https.request is handled separately
+        // Patch both and leave a flag to not double-count on versions that just call through
+        // We add the flag to both http and https to protect against strange double collection in other scenarios
         http.request = (options, ...requestArgs: any[]) => {
+            var shouldCollect = !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] &&
+                !(<any>options)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
+
+            (<any>options)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag] = true;
+
             const request: http.ClientRequest = originalRequest.call(
                 http, options, ...requestArgs);
-            if (request && options && !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption]) {
+            if (request && options && shouldCollect) {
                 AutoCollectHttpDependencies.trackRequest(this._client, options, request);
             }
+
+            delete (<any>options)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
+
             return request;
         };
 
-        // On node >= v0.11.12, https.request just calls http.request (with additional options).
-        // But on older versions, https.request needs to be patched also.
-        // The regex matches versions < 0.11.12 (avoiding a semver package dependency).
-        if (/^0\.([0-9]\.)|(10\.)|(11\.([0-9]|10|11)$)/.test(process.versions.node)) {
-            const originalHttpsRequest = https.request;
-            https.request = (options, ...requestArgs: any[]) => {
-                const request: http.ClientRequest = originalHttpsRequest.call(
-                    https, options, ...requestArgs);
-                if (request && options && !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption]) {
-                    AutoCollectHttpDependencies.trackRequest(this._client, options, request);
-                }
-                return request;
-            };
-        }
+        https.request = (options, ...requestArgs: any[]) => {
+            var shouldCollect = !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] &&
+                !(<any>options)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
+
+            (<any>options)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag] = true;
+
+            const request: http.ClientRequest = originalHttpsRequest.call(
+                https, options, ...requestArgs);
+            if (request && options && shouldCollect) {
+                AutoCollectHttpDependencies.trackRequest(this._client, options, request);
+            }
+
+            delete (<any>options)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
+
+            return request;
+        };
     }
 
     /**
