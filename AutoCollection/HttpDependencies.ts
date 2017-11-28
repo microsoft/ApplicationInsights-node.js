@@ -75,8 +75,6 @@ class AutoCollectHttpDependencies {
                 AutoCollectHttpDependencies.trackRequest(this._client, options, request);
             }
 
-            delete (<any>options)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
-
             return request;
         };
 
