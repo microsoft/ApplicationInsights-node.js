@@ -58,39 +58,30 @@ class AutoCollectHttpDependencies {
         const originalRequest = http.request;
         const originalHttpsRequest = https.request;
 
+        const clientRequestPatch = (request: http.ClientRequest, options: http.RequestOptions | https.RequestOptions) => {
+            var shouldCollect = !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] &&
+                !(<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
+
+            (<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag] = true;
+
+            if (request && options && shouldCollect) {
+                AutoCollectHttpDependencies.trackRequest(this._client, options, request);
+            }
+        };
+
         // On node >= v0.11.12 and < 9.0 (excluding 8.9.0) https.request just calls http.request (with additional options).
         // On node < 0.11.12, 8.9.0, and 9.0 > https.request is handled separately
         // Patch both and leave a flag to not double-count on versions that just call through
         // We add the flag to both http and https to protect against strange double collection in other scenarios
         http.request = (options, ...requestArgs: any[]) => {
-            const request: http.ClientRequest = originalRequest.call(
-                http, options, ...requestArgs);
-
-            var shouldCollect = !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] &&
-                !(<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
-
-            (<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag] = true;
-
-            if (request && options && shouldCollect) {
-                AutoCollectHttpDependencies.trackRequest(this._client, options, request);
-            }
-
+            const request: http.ClientRequest = originalRequest.call(http, options, ...requestArgs);
+            clientRequestPatch(request, options);
             return request;
         };
 
         https.request = (options, ...requestArgs: any[]) => {
-            const request: http.ClientRequest = originalHttpsRequest.call(
-                https, options, ...requestArgs);
-
-            var shouldCollect = !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] &&
-                !(<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
-
-            (<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag] = true;
-
-            if (request && options && shouldCollect) {
-                AutoCollectHttpDependencies.trackRequest(this._client, options, request);
-            }
-
+            const request: http.ClientRequest = originalHttpsRequest.call(https, options, ...requestArgs);
+            clientRequestPatch(request, options);
             return request;
         };
     }
