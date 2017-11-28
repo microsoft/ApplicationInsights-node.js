@@ -8,6 +8,7 @@ import sinon = require("sinon");
 import events = require("events");
 import AppInsights = require("../applicationinsights");
 import Sender = require("../Library/Sender");
+import { EventEmitter } from "events";
 
 /**
  * A fake response class that passes by default
@@ -20,25 +21,29 @@ class fakeResponse {
     constructor(private passImmediately: boolean = true) { }
 
     public on(event: string, callback: () => void) {
-        this.callbacks[event] = callback;
+        if (!this.callbacks[event]) {
+            this.callbacks[event] = callback;
+        } else {
+            var lastCallback = this.callbacks[event];
+            this.callbacks[event] = () => {
+                callback();
+                lastCallback();
+            };
+        }
+
         if (event == "end" && this.passImmediately) {
-            this.pass();
+            this.pass(true);
         }
     }
 
-    public once(event: string, callback: () => void) {
-        this.callbacks[event] = callback;
-        if (event == "end" && this.passImmediately) {
-            this.pass();
-        }
-    }
-
-    public pass(): void {
-        this.statusCode = 200;
+    public pass(test = false): void {
         this.callbacks["data"] ? this.callbacks["data"]("data") : null;
         this.callbacks["end"] ? this.callbacks["end"]() : null;
         this.callbacks["finish"] ? this.callbacks["finish"]() : null;
     }
+
+    public end = this.pass;
+    public once = this.on;
 }
 
 /**
@@ -85,7 +90,6 @@ class fakeHttpServer extends events.EventEmitter {
         var response = new fakeResponse(false);
         this.emit("request", request, response);
         request.end();
-        response.pass();
     }
 }
 
@@ -141,6 +145,7 @@ describe("EndToEnd", () => {
             client.flush({
                 callback: (response) => {
                     assert.ok(response, "response should not be empty");
+                    assert.ok(response !== "no data to send", "response should have data");
                     done();
                 }
             });
@@ -152,62 +157,92 @@ describe("EndToEnd", () => {
                 fakeHttpSrv.setCallback(callback);
                 return fakeHttpSrv;
             });
-
-            sandbox.stub(http, 'get', (uri: string, callback: any) => {
-                fakeHttpSrv.emitRequest(uri);
-            });
-
+            
             AppInsights
                 .setup("ikey")
+                .setAutoCollectRequests(true)
                 .start();
 
-            var server = http.createServer((req: http.ServerRequest, res: http.ServerResponse) => {
-                setTimeout(() => {
-                    AppInsights.defaultClient.flush({
-                        callback: (response) => {
-                            assert.ok(response, "response should not be empty");
-                            done();
-                        }
-                    });
-                }, 10);
+            var track = sandbox.stub(AppInsights.defaultClient, 'track');
+            http.createServer((req, res) => {
+                assert.equal(track.callCount, 0);
+                res.end();
+                assert.equal(track.callCount, 1);
+                done();
             });
 
-            server.on("listening", () => {
-                http.get("http://localhost:0/test", (response: http.ClientResponse) => { });
-            });
-            server.listen(0, "::");
+            fakeHttpSrv.emitRequest("http://localhost:0/test");
         });
 
         it("should collect https request telemetry", (done) => {
-            var fakeHttpsSrv = new fakeHttpsServer();
+            var fakeHttpSrv = new fakeHttpServer();
             sandbox.stub(https, 'createServer', (options: any, callback: (req: http.ServerRequest, res: http.ServerResponse) => void) => {
-                fakeHttpsSrv.setCallback(callback);
-                return fakeHttpsSrv;
+                fakeHttpSrv.setCallback(callback);
+                return fakeHttpSrv;
+            });
+            
+            AppInsights
+                .setup("ikey")
+                .setAutoCollectRequests(true)
+                .start();
+
+            var track = sandbox.stub(AppInsights.defaultClient, 'track');
+            https.createServer(null, (req: http.ServerRequest, res: http.ServerResponse) => {
+                assert.equal(track.callCount, 0);
+                res.end();
+                assert.equal(track.callCount, 1);
+                done();
             });
 
-            sandbox.stub(https, 'get', (uri: string, callback: any) => {
-                fakeHttpsSrv.emitRequest(uri);
+            fakeHttpSrv.emitRequest("http://localhost:0/test");
+        });
+
+        it("should collect http dependency telemetry", (done) => {
+            this.request.restore();
+            var eventEmitter = new EventEmitter();
+            (<any>eventEmitter).method = "GET";
+            sandbox.stub(http, 'request', (url: string, c: Function) => {
+                process.nextTick(c);
+                return eventEmitter;
             });
 
             AppInsights
                 .setup("ikey")
+                .setAutoCollectDependencies(true)
                 .start();
 
-            var server = https.createServer(null, (req: http.ServerRequest, res: http.ServerResponse) => {
-                setTimeout(() => {
-                    AppInsights.defaultClient.flush({
-                        callback: (response) => {
-                            assert.ok(response, "response should not be empty");
-                            done();
-                        }
-                    });
-                }, 10);
+            var track = sandbox.stub(AppInsights.defaultClient, 'track');
+
+            http.request(<any>'http://test.com', (c) => {
+                assert.equal(track.callCount, 0);
+                eventEmitter.emit("response", {});
+                assert.equal(track.callCount, 1);
+                done();
+            });
+        });
+
+        it("should collect https dependency telemetry", (done) => {
+            this.request.restore();
+            var eventEmitter = new EventEmitter();
+            (<any>eventEmitter).method = "GET";
+            sandbox.stub(https, 'request', (url: string, c: Function) => {
+                process.nextTick(c);
+                return eventEmitter;
             });
 
-            server.on("listening", () => {
-                https.get(<any>"https://localhost:0/test", (response: http.ClientResponse) => { });
+            AppInsights
+                .setup("ikey")
+                .setAutoCollectDependencies(true)
+                .start();
+
+            var track = sandbox.stub(AppInsights.defaultClient, 'track');
+
+            https.request(<any>'https://test.com', (c) => {
+                assert.equal(track.callCount, 0);
+                eventEmitter.emit("response", {});
+                assert.equal(track.callCount, 1);
+                done();
             });
-            server.listen(0, "::");
         });
     });
 

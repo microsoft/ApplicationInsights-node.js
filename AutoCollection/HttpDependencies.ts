@@ -22,10 +22,6 @@ class AutoCollectHttpDependencies {
     public static INSTANCE: AutoCollectHttpDependencies;
 
     private static requestNumber = 1;
-
-    // The difference between this and the disable flag above is that we delete this flag before returning to user code.
-    // The idea is we create this flag inside patched code, and delete it before returning from it, so the user has no impact from it
-    // We use this flag to ensure we don't double-collect telemetry
     private static alreadyAutoCollectedFlag = '_appInsightsAutoCollected';
 
     private _client: TelemetryClient;
@@ -67,13 +63,14 @@ class AutoCollectHttpDependencies {
         // Patch both and leave a flag to not double-count on versions that just call through
         // We add the flag to both http and https to protect against strange double collection in other scenarios
         http.request = (options, ...requestArgs: any[]) => {
-            var shouldCollect = !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] &&
-                !(<any>options)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
-
-            (<any>options)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag] = true;
-
             const request: http.ClientRequest = originalRequest.call(
                 http, options, ...requestArgs);
+
+            var shouldCollect = !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] &&
+                !(<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
+
+            (<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag] = true;
+
             if (request && options && shouldCollect) {
                 AutoCollectHttpDependencies.trackRequest(this._client, options, request);
             }
@@ -84,18 +81,17 @@ class AutoCollectHttpDependencies {
         };
 
         https.request = (options, ...requestArgs: any[]) => {
-            var shouldCollect = !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] &&
-                !(<any>options)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
-
-            (<any>options)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag] = true;
-
             const request: http.ClientRequest = originalHttpsRequest.call(
                 https, options, ...requestArgs);
+
+            var shouldCollect = !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] &&
+                !(<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
+
+            (<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag] = true;
+
             if (request && options && shouldCollect) {
                 AutoCollectHttpDependencies.trackRequest(this._client, options, request);
             }
-
-            delete (<any>options)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
 
             return request;
         };
