@@ -103,7 +103,7 @@ export function start() {
  * @returns A plain object for request storage or null if automatic dependency correlation is disabled.
  */
 export function getCorrelationContext(): CorrelationContextManager.CorrelationContext {
-    if (this._isCorrelating) {
+    if (_isCorrelating) {
         return CorrelationContextManager.CorrelationContextManager.getCurrentContext();
     }
 

@@ -83,6 +83,12 @@ class EnvelopeFactory {
         envelope.time = (new Date()).toISOString();
         envelope.ver = 1;
         envelope.sampleRate = config ? config.samplingPercentage : 100;
+
+        // Exclude metrics from sampling by default
+        if (telemetryType === Contracts.TelemetryType.Metric) {
+            envelope.sampleRate = 100;
+        }
+
         return envelope;
     }
 
