@@ -168,7 +168,8 @@ module.exports = {
     "ConsoleAssert": outputContract(
         "MessageData",
         (telemetry) => {
-            return telemetry.data.baseData.message.indexOf("AssertionError: Test console.assert") === 0 &&
+            return telemetry.data.baseData.message.indexOf("AssertionError") === 0 &&
+            telemetry.data.baseData.message.indexOf("Test console.assert") > 0 &&
             telemetry.data.baseData.severityLevel === 2;
         }
     ),

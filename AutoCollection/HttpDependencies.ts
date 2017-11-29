@@ -55,6 +55,7 @@ class AutoCollectHttpDependencies {
     private _initialize() {
         this._isInitialized = true;
 
+        const originalGet = http.get;
         const originalRequest = http.request;
         const originalHttpsRequest = https.request;
 
@@ -82,6 +83,23 @@ class AutoCollectHttpDependencies {
         https.request = (options, ...requestArgs: any[]) => {
             const request: http.ClientRequest = originalHttpsRequest.call(https, options, ...requestArgs);
             clientRequestPatch(request, options);
+            return request;
+        };
+
+        // Node 8 calls http.request from http.get using a local reference!
+        // We have to patch .get manually in this case and can't just assume request is enough
+        http.get = (options, ...requestArgs: any[]) => {
+            // We have to replace the entire method in this case. We can't call the original.
+            // This is because calling the original will give us no chance to set headers.
+            const request: http.ClientRequest = http.request.call(http, options, ...requestArgs);
+            request.end();
+            return request;
+        };
+        https.get = (options, ...requestArgs: any[]) => {
+            // We have to replace the entire method in this case. We can't call the original.
+            // This is because calling the original will give us no chance to set headers.
+            const request: http.ClientRequest = originalHttpsRequest.call(https, options, ...requestArgs);
+            request.end();
             return request;
         };
     }
