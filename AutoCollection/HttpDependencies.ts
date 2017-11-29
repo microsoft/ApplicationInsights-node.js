@@ -98,7 +98,7 @@ class AutoCollectHttpDependencies {
         https.get = (options, ...requestArgs: any[]) => {
             // We have to replace the entire method in this case. We can't call the original.
             // This is because calling the original will give us no chance to set headers.
-            const request: http.ClientRequest = originalHttpsRequest.call(https, options, ...requestArgs);
+            const request: http.ClientRequest = https.request.call(https, options, ...requestArgs);
             request.end();
             return request;
         };
