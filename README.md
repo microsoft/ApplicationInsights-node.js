@@ -187,7 +187,7 @@ function startMeasuringEventLoop() {
   // Measure event loop scheduling delay
   setInterval(() => {
     var elapsed = process.hrtime(startTime);
-    sampleSum += = elapsed[0] * 1e9 + elapsed[1];
+    sampleSum += elapsed[0] * 1e9 + elapsed[1];
     sampleCount++;
   }, 0);
 
