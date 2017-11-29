@@ -22,6 +22,7 @@ class AutoCollectHttpDependencies {
     public static INSTANCE: AutoCollectHttpDependencies;
 
     private static requestNumber = 1;
+    private static alreadyAutoCollectedFlag = '_appInsightsAutoCollected';
 
     private _client: TelemetryClient;
     private _isEnabled: boolean;
@@ -54,30 +55,51 @@ class AutoCollectHttpDependencies {
     private _initialize() {
         this._isInitialized = true;
 
+        const originalGet = http.get;
         const originalRequest = http.request;
-        http.request = (options, ...requestArgs: any[]) => {
-            const request: http.ClientRequest = originalRequest.call(
-                http, options, ...requestArgs);
-            if (request && options && !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption]) {
+        const originalHttpsRequest = https.request;
+
+        const clientRequestPatch = (request: http.ClientRequest, options: http.RequestOptions | https.RequestOptions) => {
+            var shouldCollect = !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] &&
+                !(<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
+
+            (<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag] = true;
+
+            if (request && options && shouldCollect) {
                 AutoCollectHttpDependencies.trackRequest(this._client, options, request);
             }
+        };
+
+        // On node >= v0.11.12 and < 9.0 (excluding 8.9.0) https.request just calls http.request (with additional options).
+        // On node < 0.11.12, 8.9.0, and 9.0 > https.request is handled separately
+        // Patch both and leave a flag to not double-count on versions that just call through
+        // We add the flag to both http and https to protect against strange double collection in other scenarios
+        http.request = (options, ...requestArgs: any[]) => {
+            const request: http.ClientRequest = originalRequest.call(http, options, ...requestArgs);
+            clientRequestPatch(request, options);
             return request;
         };
 
-        // On node >= v0.11.12, https.request just calls http.request (with additional options).
-        // But on older versions, https.request needs to be patched also.
-        // The regex matches versions < 0.11.12 (avoiding a semver package dependency).
-        if (/^0\.([0-9]\.)|(10\.)|(11\.([0-9]|10|11)$)/.test(process.versions.node)) {
-            const originalHttpsRequest = https.request;
-            https.request = (options, ...requestArgs: any[]) => {
-                const request: http.ClientRequest = originalHttpsRequest.call(
-                    https, options, ...requestArgs);
-                if (request && options && !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption]) {
-                    AutoCollectHttpDependencies.trackRequest(this._client, options, request);
-                }
-                return request;
-            };
-        }
+        https.request = (options, ...requestArgs: any[]) => {
+            const request: http.ClientRequest = originalHttpsRequest.call(https, options, ...requestArgs);
+            clientRequestPatch(request, options);
+            return request;
+        };
+
+        // Node 8 calls http.request from http.get using a local reference!
+        // We have to patch .get manually in this case and can't just assume request is enough
+        // We have to replace the entire method in this case. We can't call the original.
+        // This is because calling the original will give us no chance to set headers as it internally does .end().
+        http.get = (options, ...requestArgs: any[]) => {
+            const request: http.ClientRequest = http.request.call(http, options, ...requestArgs);
+            request.end();
+            return request;
+        };
+        https.get = (options, ...requestArgs: any[]) => {
+            const request: http.ClientRequest = https.request.call(https, options, ...requestArgs);
+            request.end();
+            return request;
+        };
     }
 
     /**

@@ -176,6 +176,37 @@ http.createServer( (req, res) => {
 });
 ```
 
+An example utility using `trackMetric` to measure how long event loop scheduling takes:
+
+```javascript
+function startMeasuringEventLoop() {
+  var startTime = process.hrtime();
+  var sampleSum = 0;
+  var sampleCount = 0;
+
+  // Measure event loop scheduling delay
+  setInterval(() => {
+    var elapsed = process.hrtime(startTime);
+    sampleSum += elapsed[0] * 1e9 + elapsed[1];
+    sampleCount++;
+  }, 0);
+
+  // Report custom metric every second
+  setInterval(() => {
+    var samples = sampleSum;
+    var count = sampleCount;
+    sampleSum = 0;
+    sampleCount = 0;
+
+    if (count > 0) {
+      var avgNs = samples / count;
+      var avgMs = Math.round(avgNs / 1e6);
+      client.trackMetric({name: "Event Loop Delay", value: avgMs});
+    }
+  }, 1000);
+}
+```
+
 ## Preprocess data with Telemetry Processors
 
 ```javascript
@@ -354,8 +385,11 @@ separately from clients created with `new appInsights.TelemetryClient()`.
     ```
 3. Run tests
     ```bash
-    npm test
+    npm run test
+    npm run backcompattest
+    npm run functionaltest
     ```
+    _Note: Functional tests require Docker_
 
 ---
 

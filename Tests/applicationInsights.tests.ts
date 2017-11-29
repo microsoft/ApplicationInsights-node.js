@@ -136,4 +136,33 @@ describe("ApplicationInsights", () => {
             assert.equal(AppInsights.Contracts.SeverityLevel.Information, Contracts.SeverityLevel.Information);
         });
     });
+
+    describe("#getCorrelationContext", () => {
+        var AppInsights = require("../applicationinsights");
+        var Contracts = require("../Declarations/Contracts");
+        var CCM = require("../AutoCollection/CorrelationContextManager").CorrelationContextManager;
+        var origGCC = CCM.getCurrentContext;        
+
+        beforeEach(() => {
+            CCM.getCurrentContext = () => 'context';
+        });
+
+        afterEach(() => {
+            CCM.getCurrentContext = origGCC;
+        });
+
+        it("should provide a context if correlating", () => {
+            AppInsights.setup("key")
+            .setAutoDependencyCorrelation(true)
+            .start();
+            assert.equal(AppInsights.getCorrelationContext(), 'context');
+        });
+
+        it("should not provide a context if not correlating", () => {
+            AppInsights.setup("key")
+            .setAutoDependencyCorrelation(false)
+            .start();
+            assert.equal(AppInsights.getCorrelationContext(), null);
+        });
+    });
 });
