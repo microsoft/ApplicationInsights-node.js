@@ -117,6 +117,7 @@ class EnvelopeFactory {
         remoteDependency.success = telemetry.success;
         remoteDependency.type = telemetry.dependencyTypeName;
         remoteDependency.properties = telemetry.properties;
+        remoteDependency.resultCode = telemetry.resultCode;
 
         if (telemetry.id) {
             remoteDependency.id = telemetry.id;
