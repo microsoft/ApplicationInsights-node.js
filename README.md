@@ -137,6 +137,19 @@ appInsights.defaultClient.config.samplingPercentage = 33; // 33% of all telemetr
 appInsights.start();
 ```
 
+### Multiple roles for multi-component applications
+
+If your application consists of multiple components that you wish to instrument all with the same Instrumentation Key and still see these components as separate units in the Portal as if they were using separate Instrumentation Keys (for example, as separate nodes on the Application Map) you may need to manually configure the RoleName field to distinguish one component's telemetry from other components sending data to your Application Insights resource. (See [Monitor multi-component applications with Application Insights (preview)](https://docs.microsoft.com/azure/application-insights/app-insights-monitor-multi-role-apps))
+
+Use the following to set the RoleName field:
+
+```javascript
+const appInsights = require("applicationinsights");
+appInsights.setup("<instrumentation_key>");
+appInsights.defaultClient.context.tags[appInsights.defaultClient.context.keys.cloudRole] = "MyRoleName";
+appInsights.start();
+```
+
 ### Automatic third-party instrumentation
 
 In order to track context across asynchronous calls, some changes are required in third party libraries such as mongodb and redis.
