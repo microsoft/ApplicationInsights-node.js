@@ -43,10 +43,10 @@ class Config {
         this.samplingPercentage = 100;
         this.correlationIdRetryIntervalMs = 30 * 1000;
         this.correlationHeaderExcludedDomains = [
-            "*.blob.core.windows.net", 
-            "*.blob.core.chinacloudapi.cn",
-            "*.blob.core.cloudapi.de",
-            "*.blob.core.usgovcloudapi.net"];
+            "*.core.windows.net", 
+            "*.core.chinacloudapi.cn",
+            "*.core.cloudapi.de",
+            "*.core.usgovcloudapi.net"];
         
         this.setCorrelationId = (correlationId) => this.correlationId = correlationId;
 
