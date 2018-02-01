@@ -193,7 +193,7 @@ export class CorrelationContextManager {
             if ((<any>orig).prepareStackTrace) {
                 (<any>orig).stackRewrite= false;
                 var stackTrace = (<any>orig).prepareStackTrace;
-                (<any>orig).prepareStackTrace = (e: any, s: any) => {
+                (<any>orig).prepareStackTrace = (e: any, s: any[]) => {
                     // Remove some AI and Zone methods from the stack trace
                     // Otherwise we leave side-effects
 
@@ -203,20 +203,25 @@ export class CorrelationContextManager {
                     //  Zone | Zone | CorrelationContextManager | CorrelationContextManager | User
                     var foundOne = false;
                     for (var i=0; i<s.length; i++) {
-                        if (s[i].getFileName().indexOf("AutoCollection/CorrelationContextManager") === -1 &&
-                            s[i].getFileName().indexOf("AutoCollection\\CorrelationContextManager") === -1) {
+                        let fileName = s[i] && typeof s[i].getFileName === 'function' && s[i].getFileName();
+                        if (fileName) {
+                            if (fileName.indexOf("AutoCollection/CorrelationContextManager") === -1 &&
+                                fileName.indexOf("AutoCollection\\CorrelationContextManager") === -1) {
 
-                            if (foundOne) {
-                                break;
+                                if (foundOne) {
+                                    break;
+                                }
+                            } else {
+                                foundOne = true;
                             }
-                        } else {
-                            foundOne = true;
                         }
                     }
                     // Loop above goes one extra step
                     i = Math.max(0, i - 1);
                     
-                    s.splice(0, i);
+                    if (foundOne) {
+                        s.splice(0, i);
+                    }
                     return stackTrace(e, s);
                 }
             }

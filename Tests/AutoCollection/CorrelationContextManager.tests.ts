@@ -120,6 +120,23 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
                 var topOfStack = (<any>error.stack)[0].getFileName();
                 assert(topOfStack.indexOf("CorrelationContextManager.tests.js") !== -1, "Top of stack not expected to be " + topOfStack);
             });
+            it("should not crash on missing filename", () => {
+                CorrelationContextManager.enable();
+
+                var stackTrace = (<any>Error)['prepareStackTrace'];
+                (<any>Error)['prepareStackTrace'] = function (_: any, stack: any): any[] {
+                    return stack;
+                };
+
+                var error = new Error();
+                try {
+                    (<any>Error)['prepareStackTrace'](null, [{getFunctionName: ()=>''}]);
+                    (<any>Error)['prepareStackTrace'] = stackTrace;
+                } catch (e) {
+                    (<any>Error)['prepareStackTrace'] = stackTrace;
+                    assert(false, "prepareStackTrace should not throw. Threw: " + e);
+                }
+            });
         });
 
         describe("#runWithContext()", () => {
