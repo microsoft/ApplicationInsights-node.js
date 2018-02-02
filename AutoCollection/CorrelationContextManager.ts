@@ -107,18 +107,34 @@ export class CorrelationContextManager {
      *  Enables the CorrelationContextManager.
      */
     public static enable() {
+        if (this.enabled) {
+            return;
+        }
+
         if (!this.isNodeVersionCompatible()) {
             this.enabled = false;
             return;
         }
 
-        // Load in Zone.js
-        require("zone.js");
-        
-
         // Run patches for Zone.js
-        if (!this.hasEverEnabled) {
+        if (!CorrelationContextManager.hasEverEnabled) {
             this.hasEverEnabled = true;
+
+            // Load in Zone.js
+            try {
+                // Require zone if we can't detect its presence - guarded because of issue #346
+                // Note that usually multiple requires of zone.js does not error - but we see reports of it happening
+                // in the Azure Functions environment.
+                // This indicates that the file is being included multiple times in the same global scope,
+                // averting require's cache somehow.
+                if (typeof Zone === "undefined") {
+                    require("zone.js");
+                }
+            } catch (e) {
+                // Zone was already loaded even though we couldn't find its global variable
+                Logging.warn("Failed to require zone.js");
+            }
+
             channel.addContextPreservation((cb) => {
                 return Zone.current.wrap(cb, "AI-ContextPreservation");
             })
