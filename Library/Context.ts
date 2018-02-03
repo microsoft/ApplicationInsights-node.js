@@ -1,5 +1,7 @@
 ﻿import os = require("os");
 import http = require("http");
+import fs = require("fs");
+import path = require("path");
 
 import Contracts = require("../Declarations/Contracts");
 import Logging = require("./Logging");
@@ -9,6 +11,8 @@ class Context {
     public keys: Contracts.ContextTagKeys;
     public tags: { [key: string]: string};
     public static DefaultRoleName:string = "Web";
+    public static appVersion: {[path: string]: string} = {};
+    public static sdkVersion: string = null;
 
     constructor(packageJsonPath?: string) {
         this.keys = new Contracts.ContextTagKeys();
@@ -20,30 +24,22 @@ class Context {
     }
 
     private _loadApplicationContext(packageJsonPath?: string) {
-        var version = "unknown";
-        var description = undefined;
-
-        try {
-            // note: this should return the host package.json
-            var packageJson = require(packageJsonPath || "../../../../package.json");
-            if(packageJson) {
-                if (typeof packageJson.version === "string") {
-                    version = packageJson.version;
+        // note: this should return the host package.json
+        packageJsonPath = packageJsonPath || path.resolve(__dirname, "../../../../package.json");
+        
+        if (!Context.appVersion[packageJsonPath]) {
+            Context.appVersion[packageJsonPath] = "unknown";
+            try {
+                let packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+                if (packageJson && typeof packageJson.version === "string") {
+                    Context.appVersion[packageJsonPath] = packageJson.version;
                 }
-
-                if (typeof packageJson.description === "string") {
-                    description = packageJson.description;
-                }
+            } catch (exception) {
+                Logging.info("unable to read app version: ", exception);
             }
-        } catch (exception) {
-            Logging.info("unable to read app version: ", exception);
         }
 
-        this.tags[this.keys.applicationVersion] = version;
-        // TODO: consider sending it as a custom property
-        //if(description) {
-        //    this.tags[this.keys.applicationBuild] = description;
-        //}
+        this.tags[this.keys.applicationVersion] = Context.appVersion[packageJsonPath];
     }
 
     private _loadDeviceContext() {
@@ -58,19 +54,22 @@ class Context {
     }
 
     private _loadInternalContext() {
-        var version = "unknown";
-
-        try {
-            // note: this should return the appInsights package.json
-            var packageJson = require("../../package.json");
-            if(packageJson && typeof packageJson.version === "string") {
-                version = packageJson.version;
+        // note: this should return the sdk package.json
+        let packageJsonPath = path.resolve(__dirname, "../../package.json");
+        
+        if (!Context.sdkVersion) {
+            Context.sdkVersion = "unknown";
+            try {
+                let packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+                if (packageJson && typeof packageJson.version === "string") {
+                    Context.sdkVersion = packageJson.version;
+                }
+            } catch (exception) {
+                Logging.info("unable to read app version: ", exception);
             }
-        } catch (exception) {
-            Logging.info("unable to read SDK version: " + exception);
         }
 
-        this.tags[this.keys.internalSdkVersion] = "node:" + version || "unknown";
+        this.tags[this.keys.internalSdkVersion] = "node:" + Context.sdkVersion;
     }
 }
 
