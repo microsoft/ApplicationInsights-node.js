@@ -2,6 +2,7 @@ import http = require("http");
 import https = require("https");
 import url = require("url");
 
+import Contracts = require("../Declarations/Contracts");
 import TelemetryClient = require("../Library/TelemetryClient");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
@@ -66,7 +67,7 @@ class AutoCollectHttpDependencies {
             (<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag] = true;
 
             if (request && options && shouldCollect) {
-                AutoCollectHttpDependencies.trackRequest(this._client, options, request);
+                AutoCollectHttpDependencies.trackRequest(this._client, {options: options, request: request});
             }
         };
 
@@ -106,14 +107,13 @@ class AutoCollectHttpDependencies {
      * Tracks an outgoing request. Because it may set headers this method must be called before
      * writing content to or ending the request.
      */
-    public static trackRequest(client: TelemetryClient, requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest,
-        properties?: { [key: string]: string }) {
-        if (!requestOptions || !request || !client) {
-            Logging.info("AutoCollectHttpDependencies.trackRequest was called with invalid parameters: ", !requestOptions, !request, !client);
+    public static trackRequest(client: TelemetryClient, telemetry: Contracts.NodeHttpDependencyTelemetry) {
+        if (!telemetry.options || !telemetry.request || !client) {
+            Logging.info("AutoCollectHttpDependencies.trackRequest was called with invalid parameters: ", !telemetry.options, !telemetry.request, !client);
             return;
         }
 
-        let requestParser = new HttpDependencyParser(requestOptions, request);
+        let requestParser = new HttpDependencyParser(telemetry.options, telemetry.request);
 
         const currentContext = CorrelationContextManager.getCurrentContext();
         const uniqueRequestId = currentContext && currentContext.operation && (currentContext.operation.parentId + AutoCollectHttpDependencies.requestNumber++ + '.');
@@ -122,53 +122,62 @@ class AutoCollectHttpDependencies {
         // The getHeader/setHeader methods aren't available on very old Node versions, and
         // are not included in the v0.10 type declarations currently used. So check if the
         // methods exist before invoking them.
-        if (Util.canIncludeCorrelationHeader(client, requestParser.getUrl()) &&
-            request['getHeader'] && request['setHeader']) {
+        if (Util.canIncludeCorrelationHeader(client, requestParser.getUrl()) && telemetry.request.getHeader && telemetry.request.setHeader) {
             if (client.config && client.config.correlationId) {
-                const correlationHeader = request['getHeader'](RequestResponseHeaders.requestContextHeader);
+                const correlationHeader = telemetry.request.getHeader(RequestResponseHeaders.requestContextHeader);
                 if (correlationHeader) {
                     const components = correlationHeader.split(",");
                     const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
                     const roleNameKey = `${RequestResponseHeaders.requestContextSourceRoleNameKey}=`;
                     if (!components.some((value) => value.substring(0,key.length) === key)) {
-                        request['setHeader'](
+                        telemetry.request.setHeader(
                             RequestResponseHeaders.requestContextHeader, 
                             `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId},${RequestResponseHeaders.requestContextSourceRoleNameKey}=${client.context.tags[client.context.keys.cloudRole]}`);
                     }
                 } else {
-                    request['setHeader'](
+                    telemetry.request.setHeader(
                         RequestResponseHeaders.requestContextHeader, 
                         `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId},${RequestResponseHeaders.requestContextSourceRoleNameKey}=${client.context.tags[client.context.keys.cloudRole]}`);
                 }
             }
 
             if (currentContext && currentContext.operation) {
-                request['setHeader'](RequestResponseHeaders.requestIdHeader, uniqueRequestId);
+                telemetry.request.setHeader(RequestResponseHeaders.requestIdHeader, uniqueRequestId);
                 // Also set legacy headers
-                request['setHeader'](RequestResponseHeaders.parentIdHeader, currentContext.operation.id);
-                request['setHeader'](RequestResponseHeaders.rootIdHeader, uniqueRequestId);
+                telemetry.request.setHeader(RequestResponseHeaders.parentIdHeader, currentContext.operation.id);
+                telemetry.request.setHeader(RequestResponseHeaders.rootIdHeader, uniqueRequestId);
 
                 const correlationContextHeader = (<PrivateCustomProperties>currentContext.customProperties).serializeToHeader();
                 if (correlationContextHeader) {
-                    request['setHeader'](RequestResponseHeaders.correlationContextHeader, correlationContextHeader);
+                    telemetry.request.setHeader(RequestResponseHeaders.correlationContextHeader, correlationContextHeader);
                 }
             }
         }
 
         // Collect dependency telemetry about the request when it finishes.
-        if (request.on) {
-            request.on('response', (response: http.ClientResponse) => {
-                requestParser.onResponse(response, properties);
-                var context : { [name: string]: any; } = { "http.RequestOptions": requestOptions, "http.ClientRequest": request, "http.ClientResponse": response };
-                var dependencyTelemetry = requestParser.getDependencyTelemetry(uniqueRequestId);
-                dependencyTelemetry.contextObjects = context;
+        if (telemetry.request.on) {
+            telemetry.request.on('response', (response: http.ClientResponse) => {
+                requestParser.onResponse(response);
+
+                var dependencyTelemetry = requestParser.getDependencyTelemetry(telemetry, uniqueRequestId);
+                
+                dependencyTelemetry.contextObjects = dependencyTelemetry.contextObjects || {};
+                dependencyTelemetry.contextObjects["http.RequestOptions"] = telemetry.options;
+                dependencyTelemetry.contextObjects["http.ClientRequest"] = telemetry.request;
+                dependencyTelemetry.contextObjects["http.ClientResponse"] = response;                
+
                 client.trackDependency(dependencyTelemetry);
             });
-            request.on('error', (e: Error) => {
-                requestParser.onError(e, properties);
-                var context : { [name: string]: any; } = { "http.RequestOptions": requestOptions, "http.ClientRequest": request, "Error": e };
-                var dependencyTelemetry = requestParser.getDependencyTelemetry(uniqueRequestId);
-                dependencyTelemetry.contextObjects = context;
+            telemetry.request.on('error', (e: Error) => {
+                requestParser.onError(e);
+
+                var dependencyTelemetry = requestParser.getDependencyTelemetry(telemetry, uniqueRequestId);
+                
+                dependencyTelemetry.contextObjects = dependencyTelemetry.contextObjects || {};
+                dependencyTelemetry.contextObjects["http.RequestOptions"] = telemetry.options;
+                dependencyTelemetry.contextObjects["http.ClientRequest"] = telemetry.request;
+                dependencyTelemetry.contextObjects["Error"] = e; 
+
                 client.trackDependency(dependencyTelemetry);
             });
         }

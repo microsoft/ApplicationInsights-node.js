@@ -20,6 +20,7 @@ describe("Library/TelemetryClient", () => {
     var value = 3;
     var testEventTelemetry = <Contracts.EventTelemetry>{ name: "testEvent" };
     var properties: { [key: string]: string; } = { p1: "p1", p2: "p2", common: "commonArg" };
+    var failedProperties: { [key: string]: string; } = { p1: "p1", p2: "p2", common: "commonArg", errorProp: "errorVal" };
     var measurements: { [key: string]: number; } = { m1: 1, m2: 2 };
     var client = new Client(iKey);
     client.config.correlationId = `cid-v1:${appId}`;
@@ -333,6 +334,26 @@ describe("Library/TelemetryClient", () => {
                 assert.equal(tags["ai.device.type"], null);
             });
 
+            it('should track request with tagOverrides on response finish event', () => {
+                trackStub.reset();
+                clock.reset();
+                client.trackNodeHttpRequest({ request: <any>request, response: <any>response, properties: properties, tagOverrides: {"custom": "A", "ai.device.id": "B"} });
+
+                // emit finish event
+                response.emitFinish();
+
+                // validate
+                var args = trackStub.args;
+                assert.ok(trackStub.calledOnce);
+                var requestTelemetry = <Contracts.RequestTelemetry>trackStub.firstCall.args[0];
+                var tags = requestTelemetry.tagOverrides;
+
+                assert.equal(tags["ai.operation.name"], "GET /search");
+                assert.equal(tags["ai.device.id"], "B");
+                assert.equal(tags["custom"], "A");
+                assert.equal(tags["ai.device.type"], null);
+            });
+
             it('should track request with correct data on request error event #1', () => {
                 trackStub.reset();
                 clock.reset();
@@ -348,7 +369,7 @@ describe("Library/TelemetryClient", () => {
                 var requestTelemetry = <Contracts.RequestTelemetry>trackStub.firstCall.args[0];
 
                 assert.equal(requestTelemetry.success, false);
-                assert.equal(requestTelemetry.properties['errorProp'], 'errorVal');
+                assert.deepEqual(requestTelemetry.properties, failedProperties);
                 assert.equal(requestTelemetry.duration, 10);
             });
 
@@ -412,6 +433,29 @@ describe("Library/TelemetryClient", () => {
                 assert.equal(requestTelemetry.resultCode, "200");
                 assert.equal(requestTelemetry.duration, 100);
                 assert.deepEqual(requestTelemetry.properties, properties);
+
+                var tags = requestTelemetry.tagOverrides;
+
+                assert.equal(tags["ai.operation.name"], "GET /search");
+                assert.equal(tags["ai.device.id"], "");
+                assert.equal(tags["ai.device.type"], null);
+            });
+            it('should track request with correct data and tag overrides synchronously', () => {
+                trackStub.reset();
+                client.trackNodeHttpRequestSync({ request: <any>request, response: <any>response, duration: 100, properties: properties, tagOverrides: {"custom": "A", "ai.device.id": "B"}});
+                assert.ok(trackStub.calledOnce);
+                var requestTelemetry = <Contracts.RequestTelemetry>trackStub.firstCall.args[0];
+
+                assert.equal(requestTelemetry.resultCode, "200");
+                assert.equal(requestTelemetry.duration, 100);
+                assert.deepEqual(requestTelemetry.properties, properties);
+
+                var tags = requestTelemetry.tagOverrides;
+
+                assert.equal(tags["ai.operation.name"], "GET /search");
+                assert.equal(tags["ai.device.id"], "B");
+                assert.equal(tags["custom"], "A");
+                assert.equal(tags["ai.device.type"], null);
             });
         });
 
@@ -438,7 +482,8 @@ describe("Library/TelemetryClient", () => {
                         host: 'bing.com',
                         path: '/search?q=test'
                     },
-                    request: <any>request, properties: properties
+                    request: <any>request, properties: properties,
+                    tagOverrides: {"custom": "A", "ai.device.id": "B"}
                 });
 
                 // response event was not emitted yet
@@ -458,6 +503,7 @@ describe("Library/TelemetryClient", () => {
                 assert.equal(dependencyTelemetry.target, "bing.com");
                 assert.equal(dependencyTelemetry.dependencyTypeName, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
                 assert.deepEqual(dependencyTelemetry.properties, properties);
+                assert.deepEqual(dependencyTelemetry.tagOverrides, {"custom": "A", "ai.device.id": "B"});
             });
 
             it('should track request with correct data on response event', () => {
@@ -502,7 +548,7 @@ describe("Library/TelemetryClient", () => {
                 assert.equal(dependencyTelemetry.name, "GET /search");
                 assert.equal(dependencyTelemetry.data, "http://bing.com/search?q=test");
                 assert.equal(dependencyTelemetry.target, "bing.com");
-                assert.deepEqual(dependencyTelemetry.properties, properties);
+                assert.deepEqual(dependencyTelemetry.properties, failedProperties);
             });
 
             it('should use source and target correlationId headers', () => {
