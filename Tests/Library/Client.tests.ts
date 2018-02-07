@@ -581,6 +581,28 @@ describe("Library/TelemetryClient", () => {
             assert.deepEqual(obj0.baseData.properties, properties);
         });
 
+        it("should create envelope with correct properties (numeric result code)", () => {
+            trackStub.restore();
+            var commandName = "http://bing.com/search?q=test";
+            var dependencyTypeName = "dependencyTypeName";
+            var createEnvelopeSpy = sinon.spy(EnvelopeFactory, "createEnvelope");
+            client.trackDependency({ name: name, data: commandName, duration: value, success: true, resultCode: 0, dependencyTypeName: dependencyTypeName, properties: properties });
+            assert.ok(createEnvelopeSpy.calledOnce);
+
+
+            var envelopeCreated = createEnvelopeSpy.firstCall.returnValue;
+            var obj0 = <Contracts.Data<Contracts.RemoteDependencyData>>envelopeCreated.data;
+            createEnvelopeSpy.restore();
+
+            assert.equal(obj0.baseData.name, name);
+            assert.equal(obj0.baseData.data, commandName);
+            assert.equal(obj0.baseData.target, 'bing.com');
+            assert.equal(obj0.baseData.duration, Util.msToTimeSpan(value));
+            assert.equal(obj0.baseData.success, true);
+            assert.equal(obj0.baseData.type, dependencyTypeName);
+            assert.deepEqual(obj0.baseData.properties, properties);
+        });
+
         it("should process the id when specified", () => {
             trackStub.restore();
             var commandName = "http://bing.com/search?q=test";
@@ -650,6 +672,27 @@ describe("Library/TelemetryClient", () => {
             var url = "http://bing.com/search?q=test";
             var createEnvelopeSpy = sinon.spy(EnvelopeFactory, "createEnvelope");
             client.trackRequest({ url: url, source: "source", name: name, duration: value, success: true, resultCode: "200", properties: properties });
+            assert.ok(createEnvelopeSpy.calledOnce);
+
+
+            var envelopeCreated = createEnvelopeSpy.firstCall.returnValue;
+            var obj0 = <Contracts.Data<Contracts.RequestData>>envelopeCreated.data;
+            createEnvelopeSpy.restore();
+
+            assert.equal(obj0.baseData.name, name);
+            assert.equal(obj0.baseData.url, url);
+            assert.equal(obj0.baseData.source, 'source');
+            assert.equal(obj0.baseData.duration, Util.msToTimeSpan(value));
+            assert.equal(obj0.baseData.success, true);
+            assert.equal(obj0.baseData.responseCode, "200");
+            assert.deepEqual(obj0.baseData.properties, properties);
+        });
+
+        it("should create envelope with correct properties (numeric resultCode)", () => {
+            trackStub.restore();
+            var url = "http://bing.com/search?q=test";
+            var createEnvelopeSpy = sinon.spy(EnvelopeFactory, "createEnvelope");
+            client.trackRequest({ url: url, source: "source", name: name, duration: value, success: true, resultCode: 200, properties: properties });
             assert.ok(createEnvelopeSpy.calledOnce);
 
 

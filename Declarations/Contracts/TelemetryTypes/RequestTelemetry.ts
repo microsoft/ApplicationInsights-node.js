@@ -28,7 +28,7 @@ export interface RequestTelemetry extends Telemetry
      /**
       * Result code reported by the application
       */
-     resultCode: string;
+     resultCode: string | number;
 
      /**
       * Whether the request was successful
