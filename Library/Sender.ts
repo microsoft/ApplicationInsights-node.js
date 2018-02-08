@@ -14,6 +14,7 @@ class Sender {
     private static TAG = "Sender";
     // the amount of time the SDK will wait between resending cached data, this buffer is to avoid any throtelling from the service side
     public static WAIT_BETWEEN_RESEND = 60 * 1000;
+    public static MAX_BYTES_ON_DISK = 50 * 1000 * 1000;
     public static TEMPDIR_PREFIX: string = "appInsights-node";
 
     private _config: Config;
@@ -22,6 +23,7 @@ class Sender {
     private _onError: (error: Error) => void;
     private _enableDiskRetryMode: boolean;
     protected _resendInterval: number;
+    protected _maxBytesOnDisk: number;
 
     constructor(config: Config, onSuccess?: (response: string) => void, onError?: (error: Error) => void) {
         this._config = config;
@@ -29,15 +31,19 @@ class Sender {
         this._onError = onError;
         this._enableDiskRetryMode = false;
         this._resendInterval = Sender.WAIT_BETWEEN_RESEND;
+        this._maxBytesOnDisk = Sender.MAX_BYTES_ON_DISK;
     }
 
     /**
     * Enable or disable offline mode
     */
-    public setDiskRetryMode(value: boolean, resendInterval?: number) {
+    public setDiskRetryMode(value: boolean, resendInterval?: number, maxBytesOnDisk?: number) {
         this._enableDiskRetryMode = value;
         if (typeof resendInterval === 'number' && resendInterval >= 0) {
             this._resendInterval = Math.floor(resendInterval);
+        }
+        if (typeof maxBytesOnDisk === 'number' && maxBytesOnDisk >= 0) {
+            this._maxBytesOnDisk = Math.floor(maxBytesOnDisk);
         }
     }
 
@@ -150,38 +156,112 @@ class Sender {
     }
 
     private _confirmDirExists(directory: string, callback: (err: NodeJS.ErrnoException) => void): void {
-        fs.exists(directory, (exists) => {
-            if (!exists) {
+        fs.lstat(directory, (err, stats) => {
+            if (err && err.code === 'ENOENT') {
                 fs.mkdir(directory, (err) => {
                     callback(err);
                 });
-            } else {
+            } else if (!err && stats.isDirectory()){
                 callback(null);
+            } else {
+                callback(err || new Error("Path existed but was not a directory"));
             }
         });
+    }
+
+    /**
+     * Computes the size (in bytes) of all files in a directory at the root level. Asynchronously.
+     */
+    private _getShallowDirectorySize(directory: string, callback: (err: NodeJS.ErrnoException, size: number) => void) {
+        // Get the directory listing
+        fs.readdir(directory, (err, files) => {
+            if (err) {
+                return callback(err, -1);
+            }
+
+            let error: NodeJS.ErrnoException = null;
+            let totalSize = 0;
+            let count = 0;
+
+            if (files.length === 0) {
+                callback(null, 0);
+                return;
+            }
+
+            // Query all file sizes
+            for (let i = 0; i < files.length; i++) {
+                fs.stat(path.join(directory, files[i]), (err, fileStats) => {
+                    count++;
+
+                    if (err) {
+                        error = err;
+                    } else {
+                        if (fileStats.isFile()) {
+                            totalSize += fileStats.size;
+                        }
+                    }
+
+                    if (count === files.length) {
+                        // Did we get an error?
+                        if (error) {
+                            callback(error, -1);
+                        } else {
+                            callback(error, totalSize);
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * Computes the size (in bytes) of all files in a directory at the root level. Synchronously.
+     */
+    private _getShallowDirectorySizeSync(directory: string): number {
+        let files = fs.readdirSync(directory);
+        let totalSize = 0;
+        for (let i = 0; i < files.length; i++) {
+            totalSize += fs.statSync(path.join(directory, files[i])).size;
+        }
+        return totalSize;
     }
 
     /**
      * Stores the payload as a json file on disk in the temp directory
      */
     private _storeToDisk(payload: any) {
-
-        //ensure directory is created
+        // tmpdir is /tmp for *nix and USERDIR/AppData/Local/Temp for Windows
         var directory = path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + this._config.instrumentationKey);
 
+        // This will create the dir if it does not exist
+        // Default permissions on *nix are directory listing from other users but no file creations
+        Logging.info(Sender.TAG, "Checking existance of data storage directory: " + directory);
         this._confirmDirExists(directory, (error) => {
             if (error) {
+                Logging.warn(Sender.TAG, "Error while checking/creating directory: " + (error && error.message));
                 this._onErrorHelper(error);
                 return;
             }
 
-            //create file - file name for now is the timestamp, a better approach would be a UUID but that
-            //would require an external dependency
-            var fileName = new Date().getTime() + ".ai.json";
-            var fileFullPath = path.join(directory, fileName);
+            this._getShallowDirectorySize(directory, (err, size) => {
+                if (err || size < 0) {
+                    Logging.warn(Sender.TAG, "Error while checking directory size: " + (err && err.message));
+                    this._onErrorHelper(err);
+                    return;
+                } else if (size > this._maxBytesOnDisk) {
+                    Logging.warn(Sender.TAG, "Not saving data due to max size limit being met. Directory size in bytes is: " + size);
+                    return;
+                }
 
-            Logging.info(Sender.TAG, "saving data to disk at: " + fileFullPath);
-            fs.writeFile(fileFullPath, payload, (error) => this._onErrorHelper(error));
+                //create file - file name for now is the timestamp, a better approach would be a UUID but that
+                //would require an external dependency
+                var fileName = new Date().getTime() + ".ai.json";
+                var fileFullPath = path.join(directory, fileName);
+
+                // Mode 600 is w/r for creator and no read access for others (only applies on *nix)
+                Logging.info(Sender.TAG, "saving data to disk at: " + fileFullPath);
+                fs.writeFile(fileFullPath, payload, {mode: 0o600}, (error) => this._onErrorHelper(error));
+            });
         });
     }
 
@@ -190,11 +270,19 @@ class Sender {
      * this is used when storing data before crashes
      */
     private _storeToDiskSync(payload: any) {
+        // tmpdir is /tmp for *nix and USERDIR/AppData/Local/Temp for Windows
         var directory = path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + this._config.instrumentationKey);
 
         try {
+            Logging.info(Sender.TAG, "Checking existance of data storage directory: " + directory);
             if (!fs.existsSync(directory)) {
                 fs.mkdirSync(directory);
+            }
+
+            let dirSize = this._getShallowDirectorySizeSync(directory);
+            if (dirSize > this._maxBytesOnDisk) {
+                Logging.info(Sender.TAG, "Not saving data due to max size limit being met. Directory size in bytes is: " + dirSize);
+                return;
             }
 
             //create file - file name for now is the timestamp, a better approach would be a UUID but that
@@ -202,10 +290,12 @@ class Sender {
             var fileName = new Date().getTime() + ".ai.json";
             var fileFullPath = path.join(directory, fileName);
 
+            // Mode 600 is w/r for creator and no access for anyone else (only applies on *nix)
             Logging.info(Sender.TAG, "saving data before crash to disk at: " + fileFullPath);
-            fs.writeFileSync(fileFullPath, payload);
+            fs.writeFileSync(fileFullPath, payload, {mode: 0o600});
 
         } catch (error) {
+            Logging.warn(Sender.TAG, "Error while saving data to disk: " + (error && error.message));
             this._onErrorHelper(error);
         }
     }

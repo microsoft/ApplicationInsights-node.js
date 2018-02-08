@@ -252,6 +252,8 @@ describe("EndToEnd", () => {
         var writeFile: sinon.SinonStub;
         var writeFileSync: sinon.SinonStub;
         var readFile: sinon.SinonStub;
+        var lstat: sinon.SinonStub;
+        var mkdir: sinon.SinonStub;
 
         beforeEach(() => {
             AppInsights.defaultClient = undefined;
@@ -262,6 +264,12 @@ describe("EndToEnd", () => {
             this.exists = sinon.stub(fs, 'exists').yields(true);
             this.existsSync = sinon.stub(fs, 'existsSync').returns(true);
             this.readdir = sinon.stub(fs, 'readdir').yields(null, ['1.ai.json']);
+            this.readdirSync = sinon.stub(fs, 'readdirSync').returns(['1.ai.json']);
+            this.stat = sinon.stub(fs, 'stat').yields(null, {isFile: () => true, size: 8000});
+            this.statSync = sinon.stub(fs, 'statSync').returns({isFile: () => true, size: 8000});
+            lstat = sinon.stub(fs, 'lstat').yields(null, {isDirectory: () => true});
+            mkdir = sinon.stub(fs, 'mkdir').yields(null);
+            this.mkdirSync = sinon.stub(fs, 'mkdirSync').returns(null);
             readFile = sinon.stub(fs, 'readFile').yields(null, '');
         });
 
@@ -274,6 +282,12 @@ describe("EndToEnd", () => {
             readFile.restore();
             writeFileSync.restore();
             this.existsSync.restore();
+            this.stat.restore();
+            lstat.restore();
+            mkdir.restore();
+            this.mkdirSync.restore();
+            this.readdirSync.restore();
+            this.statSync.restore();
         });
 
         it("disabled by default for new clients", (done) => {
@@ -310,7 +324,7 @@ describe("EndToEnd", () => {
                 callback: (response: any) => {
                     // yield for the caching behavior
                     setImmediate(() => {
-                        assert(writeFile.callCount === 1);
+                        assert.equal(writeFile.callCount, 1);
                         done();
                     });
                 }
@@ -335,6 +349,59 @@ describe("EndToEnd", () => {
                         assert.equal(
                             path.dirname(writeFile.firstCall.args[0]),
                             path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
+                        assert.equal(writeFile.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
+                        done();
+                    });
+                }
+            });
+        });
+
+        it("creates directory when nonexistent", (done) => {
+            lstat.restore();
+            var tempLstat = sinon.stub(fs, 'lstat').yields({code: "ENOENT"}, null);
+
+            var req = new fakeRequest();
+
+            var client = new AppInsights.TelemetryClient("key");
+            client.channel.setUseDiskRetryCaching(true);
+
+            client.trackEvent({ name: "test event" });
+
+            this.request.returns(req);
+
+            client.flush({
+                callback: (response: any) => {
+                    setImmediate(() => {
+                        assert.equal(mkdir.callCount, 1);
+                        assert.equal(mkdir.firstCall.args[0], path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
+                        assert.equal(writeFile.callCount, 1);
+                        assert.equal(
+                            path.dirname(writeFile.firstCall.args[0]),
+                            path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
+                        assert.equal(writeFile.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
+                        
+                        tempLstat.restore();
+                        done();
+                    });
+                }
+            });
+        });
+
+        it("does not store data when limit is below directory size", (done) => {
+            var req = new fakeRequest();
+
+            var client = new AppInsights.TelemetryClient("key");
+            client.channel.setUseDiskRetryCaching(true, null, 10); // 10 bytes is less than synthetic directory size (see file size in stat mock)
+
+            client.trackEvent({ name: "test event" });
+
+            this.request.returns(req);
+
+            client.flush({
+                callback: (response: any) => {
+                    // yield for the caching behavior
+                    setImmediate(() => {
+                        assert(writeFile.callCount === 0);
                         done();
                     });
                 }
@@ -386,6 +453,7 @@ describe("EndToEnd", () => {
             assert.equal(
                 path.dirname(writeFileSync.firstCall.args[0]),
                 path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
+            assert.equal(writeFileSync.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
         });
     });
 });
