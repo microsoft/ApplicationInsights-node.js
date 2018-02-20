@@ -5,6 +5,7 @@ import os = require("os");
 import path = require("path");
 import url = require("url");
 import zlib = require("zlib");
+import child_process = require("child_process");
 
 import Logging = require("./Logging");
 import Config = require("./Config")
@@ -12,10 +13,15 @@ import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies
 
 class Sender {
     private static TAG = "Sender";
+    private static ICACLS_PATH = `${process.env.systemdrive}/windows/system32/icacls.exe`;
+    private static ACLED_DIRECTORIES: {[id: string]: boolean} = {};
+
     // the amount of time the SDK will wait between resending cached data, this buffer is to avoid any throtelling from the service side
     public static WAIT_BETWEEN_RESEND = 60 * 1000;
     public static MAX_BYTES_ON_DISK = 50 * 1000 * 1000;
     public static TEMPDIR_PREFIX: string = "appInsights-node";
+    public static OS_PROVIDES_FILE_PROTECTION = false;
+    public static USE_ICACLS = os.type() === "Windows_NT";
 
     private _config: Config;
     private _storageDirectory: string;
@@ -32,18 +38,42 @@ class Sender {
         this._enableDiskRetryMode = false;
         this._resendInterval = Sender.WAIT_BETWEEN_RESEND;
         this._maxBytesOnDisk = Sender.MAX_BYTES_ON_DISK;
+
+        if (!Sender.OS_PROVIDES_FILE_PROTECTION) {
+            // Node's chmod levels do not appropriately restrict file access on Windows
+            // Use the built-in command line tool ICACLS on Windows to properly restrict
+            // access to the temporary directory used for disk retry mode.
+            if (Sender.USE_ICACLS) {
+                // This should be async - but it's currently safer to have this synchronous
+                // This guarantees we can immediately fail setDiskRetryMode if we need to
+                try {
+                    Sender.OS_PROVIDES_FILE_PROTECTION = fs.existsSync(Sender.ICACLS_PATH);
+                } catch (e) {}
+                if (!Sender.OS_PROVIDES_FILE_PROTECTION) {
+                    Logging.warn(Sender.TAG, "Could not find ICACLS in expected location! This is necessary to use disk retry mode on Windows.")
+                }
+            } else {
+                // chmod works everywhere else
+                Sender.OS_PROVIDES_FILE_PROTECTION = true;
+            }
+        }
     }
 
     /**
     * Enable or disable offline mode
     */
     public setDiskRetryMode(value: boolean, resendInterval?: number, maxBytesOnDisk?: number) {
-        this._enableDiskRetryMode = value;
+        this._enableDiskRetryMode = Sender.OS_PROVIDES_FILE_PROTECTION && value;
         if (typeof resendInterval === 'number' && resendInterval >= 0) {
             this._resendInterval = Math.floor(resendInterval);
         }
         if (typeof maxBytesOnDisk === 'number' && maxBytesOnDisk >= 0) {
             this._maxBytesOnDisk = Math.floor(maxBytesOnDisk);
+        }
+
+        if (value && !Sender.OS_PROVIDES_FILE_PROTECTION) {
+            this._enableDiskRetryMode = false;
+            Logging.warn(Sender.TAG, "Ignoring request to enable disk retry mode. Sufficient file protection capabilities were not detected.")
         }
     }
 
@@ -155,14 +185,73 @@ class Sender {
         }
     }
 
+    private _runICACLS(args: string[], callback: (err: Error) => void) {
+        var aclProc = child_process.spawn(Sender.ICACLS_PATH, args, <any>{windowsHide: true});
+        aclProc.on("error", (e: Error) => callback(e));
+        aclProc.on("close", (code: number, signal: string) => {
+            return callback(code === 0 ? null : new Error(`Setting ACL restrictions did not succeed (ICACLS returned code ${code})`));
+        });
+    }
+
+    private _runICACLSSync(args: string[]) {
+        var aclProc = child_process.spawnSync(Sender.ICACLS_PATH, args, <any>{windowsHide: true});
+        if (aclProc.error) {
+            throw aclProc.error;
+        } else if (aclProc.status !== 0) {
+            throw new Error(`Setting ACL restrictions did not succeed (ICACLS returned code ${aclProc.status})`);
+        }
+    }
+
+    private _getACLArguments(directory: string) {
+        return [directory,
+            "/grant", "*S-1-5-32-544:(OI)(CI)F", // Full permission for Administrators
+            "/grant", `${process.env.username}:(OI)(CI)F`, // Full permission for current user
+            "/inheritance:r"]; // Remove all inherited permissions
+    }
+
+    private _applyACLRules(directory: string, callback: (err: Error) => void) {
+        if (!Sender.USE_ICACLS) {
+            return callback(null);
+        }
+
+        // For performance, only run ACL rules if we haven't already during this session
+        if (Sender.ACLED_DIRECTORIES[directory] === undefined) {
+            // Restrict this directory to only current user and administrator access
+            this._runICACLS(this._getACLArguments(directory), (err) => {
+                Sender.ACLED_DIRECTORIES[directory] = !err;
+                return callback(err);
+            });
+        } else {
+            return callback(Sender.ACLED_DIRECTORIES[directory] ? null :
+                new Error("Setting ACL restrictions did not succeed (cached result)"));
+        }
+    }
+
+    private _applyACLRulesSync(directory: string) {
+        if (Sender.USE_ICACLS) {
+            // For performance, only run ACL rules if we haven't already during this session
+            if (Sender.ACLED_DIRECTORIES[directory] === undefined) {
+                this._runICACLSSync(this._getACLArguments(directory));
+                Sender.ACLED_DIRECTORIES[directory] = true; // If we get here, it succeeded. _runIACLSSync will throw on failures
+                return;
+            } else if (!Sender.ACLED_DIRECTORIES[directory]) { // falsy but not undefined
+                throw new Error("Setting ACL restrictions did not succeed (cached result)");
+            }
+        }
+    }
+
     private _confirmDirExists(directory: string, callback: (err: NodeJS.ErrnoException) => void): void {
         fs.lstat(directory, (err, stats) => {
             if (err && err.code === 'ENOENT') {
                 fs.mkdir(directory, (err) => {
-                    callback(err);
+                    if (err) {
+                        callback(err);
+                    } else {
+                        this._applyACLRules(directory, callback);
+                    }
                 });
             } else if (!err && stats.isDirectory()){
-                callback(null);
+                this._applyACLRules(directory, callback);
             } else {
                 callback(err || new Error("Path existed but was not a directory"));
             }
@@ -259,6 +348,7 @@ class Sender {
                 var fileFullPath = path.join(directory, fileName);
 
                 // Mode 600 is w/r for creator and no read access for others (only applies on *nix)
+                // For Windows, ACL rules are applied to the entire directory (see logic in _confirmDirExists and _applyACLRules)
                 Logging.info(Sender.TAG, "saving data to disk at: " + fileFullPath);
                 fs.writeFile(fileFullPath, payload, {mode: 0o600}, (error) => this._onErrorHelper(error));
             });
@@ -278,6 +368,9 @@ class Sender {
             if (!fs.existsSync(directory)) {
                 fs.mkdirSync(directory);
             }
+
+            // Make sure permissions are valid
+            this._applyACLRulesSync(directory);
 
             let dirSize = this._getShallowDirectorySizeSync(directory);
             if (dirSize > this._maxBytesOnDisk) {
