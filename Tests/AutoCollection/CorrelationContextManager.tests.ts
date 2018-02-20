@@ -130,7 +130,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
 
                 var error = new Error();
                 try {
-                    (<any>Error)['prepareStackTrace'](null, [{getFunctionName: ()=>''}]);
+                    (<any>Error)['prepareStackTrace'](null, [{getFunctionName: ()=>'', getFileName: ():any=>null}]);
                     (<any>Error)['prepareStackTrace'] = stackTrace;
                 } catch (e) {
                     (<any>Error)['prepareStackTrace'] = stackTrace;

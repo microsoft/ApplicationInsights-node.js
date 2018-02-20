@@ -219,7 +219,7 @@ export class CorrelationContextManager {
                     //  Zone | Zone | CorrelationContextManager | CorrelationContextManager | User
                     var foundOne = false;
                     for (var i=0; i<s.length; i++) {
-                        let fileName = s[i] && typeof s[i].getFileName === 'function' && s[i].getFileName();
+                        let fileName = s[i].getFileName();
                         if (fileName) {
                             if (fileName.indexOf("AutoCollection/CorrelationContextManager") === -1 &&
                                 fileName.indexOf("AutoCollection\\CorrelationContextManager") === -1) {
