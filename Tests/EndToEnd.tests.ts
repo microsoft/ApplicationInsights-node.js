@@ -555,7 +555,6 @@ describe("EndToEnd", () => {
 
                 assert(this.existsSync.callCount === 1);
                 assert(writeFileSync.callCount === 1);
-                assert.equal(spawnSync.callCount, os.type() === "Windows_NT" ? 1 : 0);
                 assert.equal(
                     path.dirname(writeFileSync.firstCall.args[0]),
                     path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key2"));
@@ -564,8 +563,10 @@ describe("EndToEnd", () => {
         });
 
         it("refuses to cache payload when process crashes if ICACLS fails", () => {
-            spawnSync.restore();
-            var tempSpawnSync = sinon.stub(child_process, 'spawnSync').returns({status: 2000});
+            if (child_process.spawnSync) { // Doesn't exist in Node < 0.11.12
+                spawnSync.restore();
+                var tempSpawnSync = sinon.stub(child_process, 'spawnSync').returns({status: 2000});
+            }
 
             var req = new fakeRequest(true);
 
@@ -582,10 +583,13 @@ describe("EndToEnd", () => {
 
             assert(this.existsSync.callCount === 1);
             assert(writeFileSync.callCount === 0);
-            assert.equal(tempSpawnSync.callCount, 1);
 
-            (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
-            tempSpawnSync.restore();
+            if (child_process.spawnSync) {
+                assert.equal(tempSpawnSync.callCount, 1);
+
+                (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
+                tempSpawnSync.restore();
+            }
         });
     });
 });
