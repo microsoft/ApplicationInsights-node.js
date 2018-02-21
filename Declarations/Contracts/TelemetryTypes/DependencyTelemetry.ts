@@ -34,7 +34,7 @@ export interface DependencyTelemetry extends Telemetry {
     /**
      * Result code returned form the remote component. This is domain specific and can be HTTP status code or SQL result code
      */
-    resultCode: string;
+    resultCode: string | number;
 
     /**
      * True if remote call was successful, false otherwise

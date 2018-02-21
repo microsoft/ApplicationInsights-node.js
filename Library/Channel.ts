@@ -25,11 +25,14 @@ class Channel {
 
     /**
      * Enable or disable disk-backed retry caching to cache events when client is offline (enabled by default)
+     * These cached events are stored in your system or user's temporary directory and access restricted to your user when possible.
      * @param value if true events that occured while client is offline will be cached on disk
-     * @param resendInterval. The wait interval for resending cached events.
+     * @param resendInterval The wait interval for resending cached events.
+     * @param maxBytesOnDisk The maximum size (in bytes) that the created temporary directory for cache events can grow to, before caching is disabled.
+     * @returns {Configuration} this class
      */
-    public setUseDiskRetryCaching(value: boolean, resendInterval?: number) {
-        this._sender.setDiskRetryMode(value, resendInterval);
+    public setUseDiskRetryCaching(value: boolean, resendInterval?: number, maxBytesOnDisk?: number) {
+        this._sender.setDiskRetryMode(value, resendInterval, maxBytesOnDisk);
     }
 
     /**

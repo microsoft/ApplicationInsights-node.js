@@ -22,9 +22,8 @@ class NodeClient extends TelemetryClient {
      */
     public trackNodeHttpRequestSync(telemetry: Contracts.NodeHttpRequestTelemetry) {
         if (telemetry && telemetry.request && telemetry.response && telemetry.duration) {
-            ServerRequestTracking.trackRequestSync(this, telemetry.request, telemetry.response, telemetry.duration, telemetry.properties, telemetry.error);
-        }
-        else {
+            ServerRequestTracking.trackRequestSync(this, telemetry);
+        } else {
             Logging.warn("trackNodeHttpRequestSync requires NodeHttpRequestTelemetry object with request, response and duration specified.");
         }
     }
@@ -35,10 +34,12 @@ class NodeClient extends TelemetryClient {
      * @param telemetry Object encapsulating incoming request and response information
      */
     public trackNodeHttpRequest(telemetry: Contracts.NodeHttpRequestTelemetry) {
-        if (telemetry && telemetry.request && telemetry.response) {
-            ServerRequestTracking.trackRequest(this, telemetry.request, telemetry.response, telemetry.properties);
+        if (telemetry.duration || telemetry.error) {
+            Logging.warn("trackNodeHttpRequest will ignore supplied duration and error parameters. These values are collected from the request and response objects.");
         }
-        else {
+        if (telemetry && telemetry.request && telemetry.response) {
+            ServerRequestTracking.trackRequest(this, telemetry);
+        } else {
             Logging.warn("trackNodeHttpRequest requires NodeHttpRequestTelemetry object with request and response specified.");
         }
     }
@@ -50,7 +51,7 @@ class NodeClient extends TelemetryClient {
      */
     public trackNodeHttpDependency(telemetry: Contracts.NodeHttpDependencyTelemetry) {
         if (telemetry && telemetry.request) {
-            ClientRequestTracking.trackRequest(this, telemetry.options, telemetry.request, telemetry.properties);
+            ClientRequestTracking.trackRequest(this, telemetry);
         }
         else {
             Logging.warn("trackNodeHttpDependency requires NodeHttpDependencyTelemetry object with request specified.");

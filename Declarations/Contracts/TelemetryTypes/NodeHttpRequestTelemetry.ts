@@ -17,12 +17,12 @@ export interface NodeHttpRequestTelemetry extends Telemetry
     response: http.ServerResponse;
     
     /**
-     * HTTP request duration
+     * HTTP request duration. Used only for synchronous tracks.
      */
     duration?: number;
 
     /**
-     * Error that occurred while processing the request
+     * Error that occurred while processing the request. Used only for synchronous tracks.
      */
     error?: any
 }

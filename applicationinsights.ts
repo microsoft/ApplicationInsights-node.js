@@ -24,6 +24,9 @@ let _isDependencies = true;
 let _isDiskRetry = true;
 let _isCorrelating = true;
 
+let _diskRetryInterval: number = undefined;
+let _diskRetryMaxBytes: number = undefined;
+
 let _console: AutoCollectConsole;
 let _exceptions: AutoCollectExceptions;
 let _performance: AutoCollectPerformance;
@@ -61,7 +64,7 @@ export function setup(instrumentationKey?: string) {
     }
 
     if (defaultClient && defaultClient.channel) {
-        defaultClient.channel.setUseDiskRetryCaching(_isDiskRetry);
+        defaultClient.channel.setUseDiskRetryCaching(_isDiskRetry, _diskRetryInterval, _diskRetryMaxBytes);
     }
 
     return Configuration;
@@ -217,14 +220,18 @@ export class Configuration {
      * Enable or disable disk-backed retry caching to cache events when client is offline (enabled by default)
      * Note that this method only applies to the default client. Disk-backed retry caching is disabled by default for additional clients.
      * For enable for additional clients, use client.channel.setUseDiskRetryCaching(true).
+     * These cached events are stored in your system or user's temporary directory and access restricted to your user when possible.
      * @param value if true events that occured while client is offline will be cached on disk
-     * @param resendInterval. The wait interval for resending cached events.
+     * @param resendInterval The wait interval for resending cached events.
+     * @param maxBytesOnDisk The maximum size (in bytes) that the created temporary directory for cache events can grow to, before caching is disabled.
      * @returns {Configuration} this class
      */
-    public static setUseDiskRetryCaching(value: boolean, resendInterval?: number) {
+    public static setUseDiskRetryCaching(value: boolean, resendInterval?: number, maxBytesOnDisk?: number) {
         _isDiskRetry = value;
+        _diskRetryInterval = resendInterval;
+        _diskRetryMaxBytes = maxBytesOnDisk
         if (defaultClient && defaultClient.channel){
-            defaultClient.channel.setUseDiskRetryCaching(value, resendInterval);
+            defaultClient.channel.setUseDiskRetryCaching(value, resendInterval, maxBytesOnDisk);
         }
 
         return Configuration;

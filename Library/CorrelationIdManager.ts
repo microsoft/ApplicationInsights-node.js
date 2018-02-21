@@ -3,8 +3,10 @@ import http = require('http');
 import url = require('url');
 
 import Util = require("./Util");
+import Logging = require("./Logging");
 
 class CorrelationIdManager {
+    private static TAG = "CorrelationIdManager";
     public static correlationIdPrefix = "cid-v1:";
 
     // To avoid extraneous HTTP requests, we maintain a queue of callbacks waiting on a particular appId lookup,
@@ -49,6 +51,7 @@ class CorrelationIdManager {
                 // This query has been cancelled.
                 return;
             }
+            Logging.info(CorrelationIdManager.TAG, requestOptions);
             const req = httpRequest(requestOptions, (res) => {
                 if (res.statusCode === 200) {
                     // Success; extract the appId from the body
@@ -58,6 +61,7 @@ class CorrelationIdManager {
                         appId += data;
                     });
                     res.on('end', () => {
+                        Logging.info(CorrelationIdManager.TAG, appId);
                         const result = CorrelationIdManager.correlationIdPrefix + appId;
                         CorrelationIdManager.completedLookups[appIdUrlString] = result;
                         if (CorrelationIdManager.pendingLookups[appIdUrlString]) {
@@ -75,9 +79,10 @@ class CorrelationIdManager {
                 }
             });
             if (req) {
-                req.on('error', () => {
+                req.on('error', (error: Error) => {
                     // Unable to contact endpoint.
                     // Do nothing for now.
+                    Logging.warn(CorrelationIdManager.TAG, error);
                 });
                 req.end();
             }

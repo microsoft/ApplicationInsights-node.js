@@ -2,6 +2,7 @@ import http = require("http");
 import https = require("https");
 import url = require("url");
 
+import Contracts = require("../Declarations/Contracts");
 import TelemetryClient = require("../Library/TelemetryClient");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
@@ -90,7 +91,7 @@ class AutoCollectHttpRequests {
                 CorrelationContextManager.runWithContext(correlationContext, () => {
                     if (this._isEnabled) {
                         // Auto collect request
-                        AutoCollectHttpRequests.trackRequest(this._client, request, response, null, requestParser);
+                        AutoCollectHttpRequests.trackRequest(this._client, {request: request, response: response}, requestParser);
                     }
 
                     // Add this request to the performance counter
@@ -153,17 +154,17 @@ class AutoCollectHttpRequests {
     /**
      * Tracks a request synchronously (doesn't wait for response 'finish' event)
      */
-    public static trackRequestSync(client: TelemetryClient, request: http.ServerRequest, response:http.ServerResponse, ellapsedMilliseconds?: number, properties?:{ [key: string]: string; }, error?: any) {
-        if (!request || !response || !client) {
-            Logging.info("AutoCollectHttpRequests.trackRequestSync was called with invalid parameters: ", !request, !response, !client);
+    public static trackRequestSync(client: TelemetryClient, telemetry: Contracts.NodeHttpRequestTelemetry) {
+        if (!telemetry.request || !telemetry.response || !client) {
+            Logging.info("AutoCollectHttpRequests.trackRequestSync was called with invalid parameters: ", !telemetry.request, !telemetry.response, !client);
             return;
         }
 
-        AutoCollectHttpRequests.addResponseCorrelationIdHeader(client, response);
+        AutoCollectHttpRequests.addResponseCorrelationIdHeader(client, telemetry.response);
 
         // store data about the request
         var correlationContext = CorrelationContextManager.getCurrentContext();
-        var requestParser = new HttpRequestParser(request, (correlationContext && correlationContext.operation.parentId));
+        var requestParser = new HttpRequestParser(telemetry.request, (correlationContext && correlationContext.operation.parentId));
 
         // Overwrite correlation context with request parser results
         if (correlationContext) {
@@ -173,24 +174,24 @@ class AutoCollectHttpRequests {
             (<PrivateCustomProperties>correlationContext.customProperties).addHeaderData(requestParser.getCorrelationContextHeader());
         }
 
-        AutoCollectHttpRequests.endRequest(client, requestParser, request, response, ellapsedMilliseconds, properties, error);
+        AutoCollectHttpRequests.endRequest(client, requestParser, telemetry, telemetry.duration, telemetry.error);
     }
 
     /**
      * Tracks a request by listening to the response 'finish' event
      */
-    public static trackRequest(client: TelemetryClient, request:http.ServerRequest, response:http.ServerResponse, properties?:{ [key: string]: string; }, _requestParser?:HttpRequestParser) {
-        if (!request || !response || !client) {
-            Logging.info("AutoCollectHttpRequests.trackRequest was called with invalid parameters: ", !request, !response, !client);
+    public static trackRequest(client: TelemetryClient, telemetry: Contracts.NodeHttpRequestTelemetry, _requestParser?:HttpRequestParser) {
+        if (!telemetry.request || !telemetry.response || !client) {
+            Logging.info("AutoCollectHttpRequests.trackRequest was called with invalid parameters: ", !telemetry.request, !telemetry.response, !client);
             return;
         }
 
         // store data about the request
         var correlationContext = CorrelationContextManager.getCurrentContext();
-        var requestParser = _requestParser || new HttpRequestParser(request, correlationContext && correlationContext.operation.parentId);
+        var requestParser = _requestParser || new HttpRequestParser(telemetry.request, correlationContext && correlationContext.operation.parentId);
 
         if (Util.canIncludeCorrelationHeader(client, requestParser.getUrl())) {
-            AutoCollectHttpRequests.addResponseCorrelationIdHeader(client, response);
+            AutoCollectHttpRequests.addResponseCorrelationIdHeader(client, telemetry.response);
         }
 
         // Overwrite correlation context with request parser results (if not an automatic track. we've already precalculated the correlation context in that case)
@@ -202,16 +203,16 @@ class AutoCollectHttpRequests {
         }
 
         // response listeners
-        if (response.once) {
-            response.once("finish", () => {
-                AutoCollectHttpRequests.endRequest(client, requestParser, request, response, null, properties, null);
+        if (telemetry.response.once) {
+            telemetry.response.once("finish", () => {
+                AutoCollectHttpRequests.endRequest(client, requestParser, telemetry, null, null);
             });
         }
 
         // track a failed request if an error is emitted
-        if (request.on) {
-            request.on("error", (error:any) => {
-                AutoCollectHttpRequests.endRequest(client, requestParser, request, response, null, properties, error);
+        if (telemetry.request.on) {
+            telemetry.request.on("error", (error:any) => {
+                AutoCollectHttpRequests.endRequest(client, requestParser, telemetry, null, error);
             });
         }
     }
@@ -239,17 +240,26 @@ class AutoCollectHttpRequests {
         }
     }
 
-    private static endRequest(client: TelemetryClient, requestParser: HttpRequestParser, request: http.ServerRequest, response: http.ServerResponse, ellapsedMilliseconds?: number, properties?: { [key: string]: string}, error?: any) {
+    private static endRequest(client: TelemetryClient, requestParser: HttpRequestParser, telemetry: Contracts.NodeHttpRequestTelemetry, ellapsedMilliseconds?: number, error?: any) {
         if (error) {
-            requestParser.onError(error, properties, ellapsedMilliseconds);
+            requestParser.onError(error, ellapsedMilliseconds);
         } else {
-            requestParser.onResponse(response, properties, ellapsedMilliseconds);
+            requestParser.onResponse(telemetry.response, ellapsedMilliseconds);
         }
 
-        var context : { [name: string]: any; } = {"http.ServerRequest": request, "http.ServerResponse": response};
-        var requestTelemetry = requestParser.getRequestTelemetry();
+        var requestTelemetry = requestParser.getRequestTelemetry(telemetry);
+
         requestTelemetry.tagOverrides = requestParser.getRequestTags(client.context.tags);
-        requestTelemetry.contextObjects = context;
+        if (telemetry.tagOverrides) {
+            for (let key in telemetry.tagOverrides) {
+                requestTelemetry.tagOverrides[key] = telemetry.tagOverrides[key];
+            }
+        }
+
+        requestTelemetry.contextObjects = requestTelemetry.contextObjects || {};
+        requestTelemetry.contextObjects["http.ServerRequest"] = telemetry.request;
+        requestTelemetry.contextObjects["http.ServerResponse"] = telemetry.response;
+
         client.trackRequest(requestTelemetry);
     }
 
