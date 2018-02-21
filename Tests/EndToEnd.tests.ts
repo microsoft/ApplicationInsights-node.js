@@ -281,7 +281,9 @@ describe("EndToEnd", () => {
                     }
                 }
             });
-            spawnSync = sinon.stub(child_process, 'spawnSync').returns({status: 0});
+            if (child_process.spawnSync) {
+                spawnSync = sinon.stub(child_process, 'spawnSync').returns({status: 0});
+            }
         });
 
         afterEach(() => {
@@ -300,7 +302,9 @@ describe("EndToEnd", () => {
             this.readdirSync.restore();
             this.statSync.restore();
             spawn.restore();
-            spawnSync.restore();
+            if (child_process.spawnSync) {
+                spawnSync.restore();
+            }
         });
 
         it("disabled by default for new clients", (done) => {
@@ -487,25 +491,76 @@ describe("EndToEnd", () => {
             });
         });
 
-        it("cache payload synchronously when process crashes", () => {
-            var req = new fakeRequest(true);
+        it("cache payload synchronously when process crashes (Node >= 0.11.12)", () => {
+            var nodeVer = process.versions.node.split(".");
+            if (parseInt(nodeVer[0]) > 0 || parseInt(nodeVer[1]) > 11 || (parseInt(nodeVer[1]) == 11) && parseInt(nodeVer[2]) > 11) {
+                var req = new fakeRequest(true);
 
-            var client = new AppInsights.TelemetryClient("key2");
-            client.channel.setUseDiskRetryCaching(true);
+                var client = new AppInsights.TelemetryClient("key2");
+                client.channel.setUseDiskRetryCaching(true);
 
-            client.trackEvent({ name: "test event" });
+                client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+                this.request.returns(req);
 
-            client.channel.triggerSend(true);
+                client.channel.triggerSend(true);
 
-            assert(this.existsSync.callCount === 1);
-            assert(writeFileSync.callCount === 1);
-            assert.equal(spawnSync.callCount, os.type() === "Windows_NT" ? 1 : 0);
-            assert.equal(
-                path.dirname(writeFileSync.firstCall.args[0]),
-                path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key2"));
-            assert.equal(writeFileSync.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
+                assert(this.existsSync.callCount === 1);
+                assert(writeFileSync.callCount === 1);
+                assert.equal(spawnSync.callCount, os.type() === "Windows_NT" ? 1 : 0);
+                assert.equal(
+                    path.dirname(writeFileSync.firstCall.args[0]),
+                    path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key2"));
+                assert.equal(writeFileSync.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
+            }
+        });
+
+        it("cache payload synchronously when process crashes (Node < 0.11.12, ICACLS)", () => {
+            var nodeVer = process.versions.node.split(".");
+            if (!(parseInt(nodeVer[0]) > 0 || parseInt(nodeVer[1]) > 11 || (parseInt(nodeVer[1]) == 11) && parseInt(nodeVer[2]) > 11)) {
+                var req = new fakeRequest(true);
+
+                var client = new AppInsights.TelemetryClient("key22");
+                client.channel.setUseDiskRetryCaching(true);
+                var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
+                (<any>client.channel._sender.constructor).USE_ICACLS = true; // Simulate ICACLS environment even on *nix
+
+                client.trackEvent({ name: "test event" });
+
+                this.request.returns(req);
+
+                client.channel.triggerSend(true);
+
+                assert(this.existsSync.callCount === 1);
+                assert(writeFileSync.callCount === 0);
+                (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
+            }
+        });
+
+        it("cache payload synchronously when process crashes (Node < 0.11.12, Non-ICACLS)", () => {
+            var nodeVer = process.versions.node.split(".");
+            if (!(parseInt(nodeVer[0]) > 0 || parseInt(nodeVer[1]) > 11 || (parseInt(nodeVer[1]) == 11) && parseInt(nodeVer[2]) > 11)) {
+                var req = new fakeRequest(true);
+
+                var client = new AppInsights.TelemetryClient("key23");
+                client.channel.setUseDiskRetryCaching(true);
+                var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
+                (<any>client.channel._sender.constructor).USE_ICACLS = false; // Simulate Non-ICACLS environment even on Windows
+
+                client.trackEvent({ name: "test event" });
+
+                this.request.returns(req);
+
+                client.channel.triggerSend(true);
+
+                assert(this.existsSync.callCount === 1);
+                assert(writeFileSync.callCount === 1);
+                assert.equal(spawnSync.callCount, os.type() === "Windows_NT" ? 1 : 0);
+                assert.equal(
+                    path.dirname(writeFileSync.firstCall.args[0]),
+                    path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key2"));
+                assert.equal(writeFileSync.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
+            }
         });
 
         it("refuses to cache payload when process crashes if ICACLS fails", () => {

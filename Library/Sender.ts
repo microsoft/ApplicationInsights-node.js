@@ -194,11 +194,16 @@ class Sender {
     }
 
     private _runICACLSSync(args: string[]) {
-        var aclProc = child_process.spawnSync(Sender.ICACLS_PATH, args, <any>{windowsHide: true});
-        if (aclProc.error) {
-            throw aclProc.error;
-        } else if (aclProc.status !== 0) {
-            throw new Error(`Setting ACL restrictions did not succeed (ICACLS returned code ${aclProc.status})`);
+        // Some very old versions of Node (< 0.11) don't have this
+        if (child_process.spawnSync) {
+            var aclProc = child_process.spawnSync(Sender.ICACLS_PATH, args, <any>{windowsHide: true});
+            if (aclProc.error) {
+                throw aclProc.error;
+            } else if (aclProc.status !== 0) {
+                throw new Error(`Setting ACL restrictions did not succeed (ICACLS returned code ${aclProc.status})`);
+            }
+        } else {
+            throw new Error("Could not synchronously call ICACLS under current version of Node.js");
         }
     }
 
