@@ -557,7 +557,7 @@ describe("EndToEnd", () => {
                 assert(writeFileSync.callCount === 1);
                 assert.equal(
                     path.dirname(writeFileSync.firstCall.args[0]),
-                    path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key2"));
+                    path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key23"));
                 assert.equal(writeFileSync.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
             }
         });
