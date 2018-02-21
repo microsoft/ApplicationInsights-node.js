@@ -58,9 +58,9 @@ describe("Library/Config", () => {
             assert(config.correlationIdRetryIntervalMs === 30000);
         });
 
-        it("should add azure blob storage domain to excluded list", () => {
+        it("should add azure domain to excluded list", () => {
             var config = new Config("iKey");
-            assert.equal(config.correlationHeaderExcludedDomains[0].toString(), "*.blob.core.windows.net");
+            assert.equal(config.correlationHeaderExcludedDomains[0].toString(), "*.core.windows.net");
         });
     });
 });

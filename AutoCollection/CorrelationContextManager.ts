@@ -107,18 +107,34 @@ export class CorrelationContextManager {
      *  Enables the CorrelationContextManager.
      */
     public static enable() {
+        if (this.enabled) {
+            return;
+        }
+
         if (!this.isNodeVersionCompatible()) {
             this.enabled = false;
             return;
         }
 
-        // Load in Zone.js
-        require("zone.js");
-        
-
         // Run patches for Zone.js
-        if (!this.hasEverEnabled) {
+        if (!CorrelationContextManager.hasEverEnabled) {
             this.hasEverEnabled = true;
+
+            // Load in Zone.js
+            try {
+                // Require zone if we can't detect its presence - guarded because of issue #346
+                // Note that usually multiple requires of zone.js does not error - but we see reports of it happening
+                // in the Azure Functions environment.
+                // This indicates that the file is being included multiple times in the same global scope,
+                // averting require's cache somehow.
+                if (typeof Zone === "undefined") {
+                    require("zone.js");
+                }
+            } catch (e) {
+                // Zone was already loaded even though we couldn't find its global variable
+                Logging.warn("Failed to require zone.js");
+            }
+
             channel.addContextPreservation((cb) => {
                 return Zone.current.wrap(cb, "AI-ContextPreservation");
             })
@@ -193,7 +209,7 @@ export class CorrelationContextManager {
             if ((<any>orig).prepareStackTrace) {
                 (<any>orig).stackRewrite= false;
                 var stackTrace = (<any>orig).prepareStackTrace;
-                (<any>orig).prepareStackTrace = (e: any, s: any) => {
+                (<any>orig).prepareStackTrace = (e: any, s: any[]) => {
                     // Remove some AI and Zone methods from the stack trace
                     // Otherwise we leave side-effects
 
@@ -203,20 +219,25 @@ export class CorrelationContextManager {
                     //  Zone | Zone | CorrelationContextManager | CorrelationContextManager | User
                     var foundOne = false;
                     for (var i=0; i<s.length; i++) {
-                        if (s[i].getFileName().indexOf("AutoCollection/CorrelationContextManager") === -1 &&
-                            s[i].getFileName().indexOf("AutoCollection\\CorrelationContextManager") === -1) {
+                        let fileName = s[i].getFileName();
+                        if (fileName) {
+                            if (fileName.indexOf("AutoCollection/CorrelationContextManager") === -1 &&
+                                fileName.indexOf("AutoCollection\\CorrelationContextManager") === -1) {
 
-                            if (foundOne) {
-                                break;
+                                if (foundOne) {
+                                    break;
+                                }
+                            } else {
+                                foundOne = true;
                             }
-                        } else {
-                            foundOne = true;
                         }
                     }
                     // Loop above goes one extra step
                     i = Math.max(0, i - 1);
                     
-                    s.splice(0, i);
+                    if (foundOne) {
+                        s.splice(0, i);
+                    }
                     return stackTrace(e, s);
                 }
             }

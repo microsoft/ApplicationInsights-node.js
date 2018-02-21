@@ -6,6 +6,7 @@ import os = require("os")
 import fs = require('fs');
 import sinon = require("sinon");
 import events = require("events");
+import child_process = require("child_process");
 import AppInsights = require("../applicationinsights");
 import Sender = require("../Library/Sender");
 import { EventEmitter } from "events";
@@ -252,6 +253,10 @@ describe("EndToEnd", () => {
         var writeFile: sinon.SinonStub;
         var writeFileSync: sinon.SinonStub;
         var readFile: sinon.SinonStub;
+        var lstat: sinon.SinonStub;
+        var mkdir: sinon.SinonStub;
+        var spawn: sinon.SinonStub;
+        var spawnSync: sinon.SinonStub;
 
         beforeEach(() => {
             AppInsights.defaultClient = undefined;
@@ -262,7 +267,23 @@ describe("EndToEnd", () => {
             this.exists = sinon.stub(fs, 'exists').yields(true);
             this.existsSync = sinon.stub(fs, 'existsSync').returns(true);
             this.readdir = sinon.stub(fs, 'readdir').yields(null, ['1.ai.json']);
+            this.readdirSync = sinon.stub(fs, 'readdirSync').returns(['1.ai.json']);
+            this.stat = sinon.stub(fs, 'stat').yields(null, {isFile: () => true, size: 8000});
+            this.statSync = sinon.stub(fs, 'statSync').returns({isFile: () => true, size: 8000});
+            lstat = sinon.stub(fs, 'lstat').yields(null, {isDirectory: () => true});
+            mkdir = sinon.stub(fs, 'mkdir').yields(null);
+            this.mkdirSync = sinon.stub(fs, 'mkdirSync').returns(null);
             readFile = sinon.stub(fs, 'readFile').yields(null, '');
+            spawn = sinon.stub(child_process, 'spawn').returns({
+                on: (type: string, cb: any) => {
+                    if (type == 'close') {
+                        cb(0);
+                    }
+                }
+            });
+            if (child_process.spawnSync) {
+                spawnSync = sinon.stub(child_process, 'spawnSync').returns({status: 0});
+            }
         });
 
         afterEach(() => {
@@ -274,6 +295,16 @@ describe("EndToEnd", () => {
             readFile.restore();
             writeFileSync.restore();
             this.existsSync.restore();
+            this.stat.restore();
+            lstat.restore();
+            mkdir.restore();
+            this.mkdirSync.restore();
+            this.readdirSync.restore();
+            this.statSync.restore();
+            spawn.restore();
+            if (child_process.spawnSync) {
+                spawnSync.restore();
+            }
         });
 
         it("disabled by default for new clients", (done) => {
@@ -310,7 +341,8 @@ describe("EndToEnd", () => {
                 callback: (response: any) => {
                     // yield for the caching behavior
                     setImmediate(() => {
-                        assert(writeFile.callCount === 1);
+                        assert.equal(writeFile.callCount, 1);
+                        assert.equal(spawn.callCount, os.type() === "Windows_NT" ? 1 : 0);
                         done();
                     });
                 }
@@ -335,6 +367,96 @@ describe("EndToEnd", () => {
                         assert.equal(
                             path.dirname(writeFile.firstCall.args[0]),
                             path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
+                        assert.equal(writeFile.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
+                        assert.equal(spawn.callCount, 0); // Should always be 0 because of caching after first call to ICACLS
+                        done();
+                    });
+                }
+            });
+        });
+
+        it("refuses to store data if ICACLS fails", (done) => {
+            spawn.restore();
+            var tempSpawn = sinon.stub(child_process, 'spawn').returns({
+                on: (type: string, cb: any) => {
+                    if (type == 'close') {
+                        cb(2000); // return non-zero status code
+                    }
+                }
+            });
+
+            var req = new fakeRequest();
+
+            var client = new AppInsights.TelemetryClient("uniquekey");
+            client.channel.setUseDiskRetryCaching(true);
+            var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
+            (<any>client.channel._sender.constructor).USE_ICACLS = true; // Simulate ICACLS environment even on *nix
+
+            client.trackEvent({ name: "test event" });
+
+            this.request.returns(req);
+
+            client.flush({
+                callback: (response: any) => {
+                    // yield for the caching behavior
+                    setImmediate(() => {
+                        assert(writeFile.callCount === 0);
+                        assert.equal(tempSpawn.callCount, 1);
+
+                        tempSpawn.restore();
+                        (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
+                        done();
+                    });
+                }
+            });
+        });
+
+        it("creates directory when nonexistent", (done) => {
+            lstat.restore();
+            var tempLstat = sinon.stub(fs, 'lstat').yields({code: "ENOENT"}, null);
+
+            var req = new fakeRequest();
+
+            var client = new AppInsights.TelemetryClient("key");
+            client.channel.setUseDiskRetryCaching(true);
+
+            client.trackEvent({ name: "test event" });
+
+            this.request.returns(req);
+
+            client.flush({
+                callback: (response: any) => {
+                    setImmediate(() => {
+                        assert.equal(mkdir.callCount, 1);
+                        assert.equal(mkdir.firstCall.args[0], path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
+                        assert.equal(writeFile.callCount, 1);
+                        assert.equal(
+                            path.dirname(writeFile.firstCall.args[0]),
+                            path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
+                        assert.equal(writeFile.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
+                        
+                        tempLstat.restore();
+                        done();
+                    });
+                }
+            });
+        });
+
+        it("does not store data when limit is below directory size", (done) => {
+            var req = new fakeRequest();
+
+            var client = new AppInsights.TelemetryClient("key");
+            client.channel.setUseDiskRetryCaching(true, null, 10); // 10 bytes is less than synthetic directory size (see file size in stat mock)
+
+            client.trackEvent({ name: "test event" });
+
+            this.request.returns(req);
+
+            client.flush({
+                callback: (response: any) => {
+                    // yield for the caching behavior
+                    setImmediate(() => {
+                        assert(writeFile.callCount === 0);
                         done();
                     });
                 }
@@ -369,11 +491,89 @@ describe("EndToEnd", () => {
             });
         });
 
-        it("cache payload synchronously when process crashes", () => {
+        it("cache payload synchronously when process crashes (Node >= 0.11.12)", () => {
+            var nodeVer = process.versions.node.split(".");
+            if (parseInt(nodeVer[0]) > 0 || parseInt(nodeVer[1]) > 11 || (parseInt(nodeVer[1]) == 11) && parseInt(nodeVer[2]) > 11) {
+                var req = new fakeRequest(true);
+
+                var client = new AppInsights.TelemetryClient("key2");
+                client.channel.setUseDiskRetryCaching(true);
+
+                client.trackEvent({ name: "test event" });
+
+                this.request.returns(req);
+
+                client.channel.triggerSend(true);
+
+                assert(this.existsSync.callCount === 1);
+                assert(writeFileSync.callCount === 1);
+                assert.equal(spawnSync.callCount, os.type() === "Windows_NT" ? 1 : 0);
+                assert.equal(
+                    path.dirname(writeFileSync.firstCall.args[0]),
+                    path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key2"));
+                assert.equal(writeFileSync.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
+            }
+        });
+
+        it("cache payload synchronously when process crashes (Node < 0.11.12, ICACLS)", () => {
+            var nodeVer = process.versions.node.split(".");
+            if (!(parseInt(nodeVer[0]) > 0 || parseInt(nodeVer[1]) > 11 || (parseInt(nodeVer[1]) == 11) && parseInt(nodeVer[2]) > 11)) {
+                var req = new fakeRequest(true);
+
+                var client = new AppInsights.TelemetryClient("key22");
+                client.channel.setUseDiskRetryCaching(true);
+                var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
+                (<any>client.channel._sender.constructor).USE_ICACLS = true; // Simulate ICACLS environment even on *nix
+
+                client.trackEvent({ name: "test event" });
+
+                this.request.returns(req);
+
+                client.channel.triggerSend(true);
+
+                assert(this.existsSync.callCount === 1);
+                assert(writeFileSync.callCount === 0);
+                (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
+            }
+        });
+
+        it("cache payload synchronously when process crashes (Node < 0.11.12, Non-ICACLS)", () => {
+            var nodeVer = process.versions.node.split(".");
+            if (!(parseInt(nodeVer[0]) > 0 || parseInt(nodeVer[1]) > 11 || (parseInt(nodeVer[1]) == 11) && parseInt(nodeVer[2]) > 11)) {
+                var req = new fakeRequest(true);
+
+                var client = new AppInsights.TelemetryClient("key23");
+                client.channel.setUseDiskRetryCaching(true);
+                var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
+                (<any>client.channel._sender.constructor).USE_ICACLS = false; // Simulate Non-ICACLS environment even on Windows
+
+                client.trackEvent({ name: "test event" });
+
+                this.request.returns(req);
+
+                client.channel.triggerSend(true);
+
+                assert(this.existsSync.callCount === 1);
+                assert(writeFileSync.callCount === 1);
+                assert.equal(
+                    path.dirname(writeFileSync.firstCall.args[0]),
+                    path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key23"));
+                assert.equal(writeFileSync.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
+            }
+        });
+
+        it("refuses to cache payload when process crashes if ICACLS fails", () => {
+            if (child_process.spawnSync) { // Doesn't exist in Node < 0.11.12
+                spawnSync.restore();
+                var tempSpawnSync = sinon.stub(child_process, 'spawnSync').returns({status: 2000});
+            }
+
             var req = new fakeRequest(true);
 
-            var client = new AppInsights.TelemetryClient("key");
+            var client = new AppInsights.TelemetryClient("key3"); // avoid icacls cache by making key unique
             client.channel.setUseDiskRetryCaching(true);
+            var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
+            (<any>client.channel._sender.constructor).USE_ICACLS = true; // Simulate ICACLS environment even on *nix
 
             client.trackEvent({ name: "test event" });
 
@@ -382,10 +582,14 @@ describe("EndToEnd", () => {
             client.channel.triggerSend(true);
 
             assert(this.existsSync.callCount === 1);
-            assert(writeFileSync.callCount === 1);
-            assert.equal(
-                path.dirname(writeFileSync.firstCall.args[0]),
-                path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
+            assert(writeFileSync.callCount === 0);
+
+            if (child_process.spawnSync) {
+                assert.equal(tempSpawnSync.callCount, 1);
+
+                (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
+                tempSpawnSync.restore();
+            }
         });
     });
 });

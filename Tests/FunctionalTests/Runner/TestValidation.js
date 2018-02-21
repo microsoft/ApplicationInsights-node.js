@@ -43,13 +43,19 @@ module.exports.TestValidation = class TestValidation {
                 const dataSet = this.ingestion.correlatedTelemetry[correlationId].slice(0);
                 let hadFailed = false;
 
+                // Helper fn for validator that runs on all telemetry items
+                const baseValidator = (item) => {
+                    return item.tags['ai.application.ver'] === "1.0.0" && // version of TestApp
+                        item.tags['ai.internal.sdkVersion'].indexOf("node:") === 0; // sdk should always report a version starting with "node:"
+                };
+
                 // Helper fn to find item in the datset
                 const findItem = (type, fn, stepName) => {
                     if (!type) return true;
                     for (var i = 0; i<dataSet.length; i++) {
                         var item = dataSet[i];
                         try {
-                            if (item.data.baseType === type && item.tags['ai.operation.parentId'] === "|"+correlationId+"." && fn(item)) {
+                            if (item.data.baseType === type && item.tags['ai.operation.parentId'] === "|"+correlationId+"." && baseValidator(item) && fn(item)) {
                                 // Remove this item from the dataset so we don't find it twice
                                 // The test is successful if we find all items we seek out and
                                 // no extras remain
@@ -62,7 +68,7 @@ module.exports.TestValidation = class TestValidation {
                     const correlTelemetry = this.ingestion.correlatedTelemetry;
                     Utils.Logging.error("FAILED EXPECTATION - Could not find expected "+type+" child telemetry for rule "+stepName+"!");
                     return false;
-                }
+                };
 
                 // Find all expected items
                 test.steps.forEach((step)=>{

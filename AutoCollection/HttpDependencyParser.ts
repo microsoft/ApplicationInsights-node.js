@@ -31,15 +31,15 @@ class HttpDependencyParser extends RequestParser {
     /**
      * Called when the ClientRequest emits an error event.
      */
-    public onError(error: Error, properties?: { [key: string]: string }) {
-        this._setStatus(undefined, error, properties);
+    public onError(error: Error) {
+        this._setStatus(undefined, error);
     }
 
     /**
      * Called when the ClientRequest emits a response event.
      */
-    public onResponse(response: http.ClientResponse, properties?: { [key: string]: string }) {
-        this._setStatus(response.statusCode, undefined, properties);
+    public onResponse(response: http.ClientResponse) {
+        this._setStatus(response.statusCode, undefined);
         this.correlationId = Util.getCorrelationContextTarget(response, RequestResponseHeaders.requestContextTargetKey);
         this.targetRoleName = Util.getCorrelationContextTarget(response, RequestResponseHeaders.requestContextTargetRoleNameKey);
     }
@@ -47,7 +47,7 @@ class HttpDependencyParser extends RequestParser {
     /**
      * Gets a dependency data contract object for a completed ClientRequest.
      */
-    public getDependencyTelemetry(dependencyId?: string): Contracts.DependencyTelemetry {
+    public getDependencyTelemetry(baseTelemetry?: Contracts.Telemetry, dependencyId?: string): Contracts.DependencyTelemetry {
         let urlObject = url.parse(this.url);
         urlObject.search = undefined;
         urlObject.hash = undefined;
@@ -66,7 +66,7 @@ class HttpDependencyParser extends RequestParser {
             remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
         }
 
-        var telemetry: Contracts.DependencyTelemetry & Contracts.Identified = {
+        var dependencyTelemetry: Contracts.DependencyTelemetry & Contracts.Identified = {
             id: dependencyId,
             name: dependencyName,
             data: this.url,
@@ -78,7 +78,25 @@ class HttpDependencyParser extends RequestParser {
             target: remoteDependencyTarget
         };
 
-        return telemetry;
+        // We should keep any parameters the user passed in
+        // Except the fields defined above in requestTelemetry, which take priority
+        // Except the properties field, where they're merged instead, with baseTelemetry taking priority
+        if (baseTelemetry) {
+            // Copy missing fields
+            for (let key in baseTelemetry) {
+                if (!(<any>dependencyTelemetry)[key]) {
+                    (<any>dependencyTelemetry)[key] = (<any>baseTelemetry)[key];
+                }
+            }
+            // Merge properties
+            if (baseTelemetry.properties) {
+                for (let key in baseTelemetry.properties) {
+                    dependencyTelemetry.properties[key] = baseTelemetry.properties[key];
+                }
+            }
+        }
+
+        return dependencyTelemetry;
     }
 
     /**

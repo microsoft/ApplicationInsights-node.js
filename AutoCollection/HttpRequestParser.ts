@@ -43,19 +43,25 @@ class HttpRequestParser extends RequestParser {
         }
     }
 
-    public onError(error: Error | string, properties?: { [key: string]: string }, ellapsedMilliseconds?: number) {
-        this._setStatus(undefined, error, properties);
-    }
+    public onError(error: Error | string, ellapsedMilliseconds?: number) {
+        this._setStatus(undefined, error);
 
-    public onResponse(response: http.ServerResponse, properties?: { [key: string]: string }, ellapsedMilliseconds?: number) {
-        this._setStatus(response.statusCode, undefined, properties);
-
+        // This parameter is only for overrides. setStatus handles this internally for the autocollected case
         if (ellapsedMilliseconds) {
             this.duration = ellapsedMilliseconds;
         }
     }
 
-    public getRequestTelemetry(): Contracts.RequestTelemetry {
+    public onResponse(response: http.ServerResponse, ellapsedMilliseconds?: number) {
+        this._setStatus(response.statusCode, undefined);
+
+        // This parameter is only for overrides. setStatus handles this internally for the autocollected case
+        if (ellapsedMilliseconds) {
+            this.duration = ellapsedMilliseconds;
+        }
+    }
+
+    public getRequestTelemetry(baseTelemetry?: Contracts.Telemetry): Contracts.RequestTelemetry {
         var requestTelemetry: Contracts.RequestTelemetry & Contracts.Identified = {
             id: this.requestId,
             name: this.method + " " + url.parse(this.url).pathname,
@@ -70,6 +76,24 @@ class HttpRequestParser extends RequestParser {
             success: this._isSuccess(),
             properties: this.properties
         };
+
+        // We should keep any parameters the user passed in
+        // Except the fields defined above in requestTelemetry, which take priority
+        // Except the properties field, where they're merged instead, with baseTelemetry taking priority
+        if (baseTelemetry) {
+            // Copy missing fields
+            for (let key in baseTelemetry) {
+                if (!(<any>requestTelemetry)[key]) {
+                    (<any>requestTelemetry)[key] = (<any>baseTelemetry)[key];
+                }
+            }
+            // Merge properties
+            if (baseTelemetry.properties) {
+                for (let key in baseTelemetry.properties) {
+                    requestTelemetry.properties[key] = baseTelemetry.properties[key];
+                }
+            }
+        }
 
         return requestTelemetry;
     }

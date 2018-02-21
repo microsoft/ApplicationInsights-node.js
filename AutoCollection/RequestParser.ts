@@ -21,16 +21,13 @@ abstract class RequestParser {
         this.startTime = +new Date();
     }
 
-    protected _setStatus(status: number, error: Error | string, properties: { [key: string]: string }) {
+    protected _setStatus(status: number, error: Error | string) {
         let endTime = +new Date();
         this.duration = endTime - this.startTime;
         this.statusCode = status;
 
+        let properties: {[key: string]: string} = this.properties || {};
         if (error) {
-            if(!properties) {
-                properties = <{[key: string]: string}>{};
-            }
-
             if (typeof error === "string") {
                 properties["error"] = error;
             } else if (error instanceof Error) {
