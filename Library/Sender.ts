@@ -99,7 +99,6 @@ class Sender {
 
         var proxyUrl: string = undefined;
 
-
         // if a proxy is defined, we have to update options to handle it
         if (parsedUrl.protocol == "https:" && this._config.proxyHttpsUrl) {
             proxyUrl = this._config.proxyHttpsUrl;
