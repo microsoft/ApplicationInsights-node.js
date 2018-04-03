@@ -28,11 +28,13 @@ class Config {
     public correlationIdRetryIntervalMs: number;
     /** A list of domains to exclude from cross-component header injection */
     public correlationHeaderExcludedDomains: string[];
+    /** The proxy URL to use if defined */
+    public proxyUrl: string;
 
     private endpointBase: string = "https://dc.services.visualstudio.com";
     private setCorrelationId: (v: string) => void;
     private _profileQueryEndpoint: string;
-    
+
 
     constructor(instrumentationKey?: string) {
         this.instrumentationKey = instrumentationKey || Config._getInstrumentationKey();
@@ -43,14 +45,15 @@ class Config {
         this.samplingPercentage = 100;
         this.correlationIdRetryIntervalMs = 30 * 1000;
         this.correlationHeaderExcludedDomains = [
-            "*.core.windows.net", 
+            "*.core.windows.net",
             "*.core.chinacloudapi.cn",
             "*.core.cloudapi.de",
             "*.core.usgovcloudapi.net"];
-        
+
         this.setCorrelationId = (correlationId) => this.correlationId = correlationId;
 
         this.profileQueryEndpoint = process.env[Config.ENV_profileQueryEndpoint] || this.endpointBase;
+        this.proxyUrl = undefined;
     }
 
     public set profileQueryEndpoint(endpoint: string) {

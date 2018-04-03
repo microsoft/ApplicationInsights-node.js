@@ -97,6 +97,26 @@ class Sender {
             }
         };
 
+        // if a proxy is defined, we have to update options to handle it
+        var proxyUrl = this._config.proxyUrl;
+        var parsedProxyUrl = undefined;
+        if (proxyUrl) {
+            if (proxyUrl.indexOf("//") === 0) {
+                proxyUrl = "http:" + proxyUrl;
+            }
+            parsedProxyUrl = url.parse(proxyUrl);
+
+            // override just what we need
+            options = {...options,
+                host: parsedProxyUrl.hostname,
+                port: parsedProxyUrl.port || "3128",
+                path: endpointUrl,
+                headers: {...options.headers,
+                    Host: parsedUrl.hostname,
+                }
+            };
+        }
+
         zlib.gzip(payload, (err, buffer) => {
             var dataToSend = buffer;
             if (err) {
