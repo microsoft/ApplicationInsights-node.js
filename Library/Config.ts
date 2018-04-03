@@ -10,6 +10,9 @@ class Config {
     public static legacy_ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
     public static ENV_profileQueryEndpoint = "APPINSIGHTS_PROFILE_QUERY_ENDPOINT";
 
+    public static ENV_http_proxy = "http_proxy";
+    public static ENV_https_proxy = "https_proxy";
+
     /** An identifier for your Application Insights resource */
     public instrumentationKey: string;
     /** The id for cross-component correlation. READ ONLY. */
@@ -53,7 +56,7 @@ class Config {
         this.setCorrelationId = (correlationId) => this.correlationId = correlationId;
 
         this.profileQueryEndpoint = process.env[Config.ENV_profileQueryEndpoint] || this.endpointBase;
-        this.proxyUrl = undefined;
+        this.proxyUrl = Config._getProxy();
     }
 
     public set profileQueryEndpoint(endpoint: string) {
@@ -83,6 +86,14 @@ class Config {
         }
 
         return iKey;
+    }
+
+    private static _getProxy(): string {
+        var proxy = process.env[Config.ENV_https_proxy];
+        if (!proxy || proxy == "") {
+            return undefined;
+        }
+        return proxy;
     }
 }
 
