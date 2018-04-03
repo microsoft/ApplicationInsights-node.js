@@ -97,24 +97,36 @@ class Sender {
             }
         };
 
-        // if a proxy is defined, we have to update options to handle it
-        var proxyUrl = this._config.proxyUrl;
-        var parsedProxyUrl = undefined;
-        if (proxyUrl) {
-            if (proxyUrl.indexOf("//") === 0) {
-                proxyUrl = "http:" + proxyUrl;
-            }
-            parsedProxyUrl = url.parse(proxyUrl);
+        var proxyUrl: string = undefined;
 
-            // override just what we need
-            options = {...options,
-                host: parsedProxyUrl.hostname,
-                port: parsedProxyUrl.port || "3128",
-                path: endpointUrl,
-                headers: {...options.headers,
-                    Host: parsedUrl.hostname,
+
+        // if a proxy is defined, we have to update options to handle it
+        if (parsedUrl.protocol == "https:" && this._config.proxyHttpsUrl) {
+            proxyUrl = this._config.proxyHttpsUrl;
+        }
+        if (parsedUrl.protocol == "http:" && this._config.proxyHttpUrl) {
+            proxyUrl = this._config.proxyHttpUrl;
+        }
+
+        // if proxy Url found
+        if (proxyUrl) {
+            var parsedProxyUrl = undefined;
+            if (proxyUrl) {
+                if (proxyUrl.indexOf("//") === 0) {
+                    proxyUrl = "http:" + proxyUrl;
                 }
-            };
+                parsedProxyUrl = url.parse(proxyUrl);
+
+                // override just what we need
+                options = {...options,
+                    host: parsedProxyUrl.hostname,
+                    port: parsedProxyUrl.port || "80",
+                    path: endpointUrl,
+                    headers: {...options.headers,
+                        Host: parsedUrl.hostname,
+                    }
+                };
+            }
         }
 
         zlib.gzip(payload, (err, buffer) => {
