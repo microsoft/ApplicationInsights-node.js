@@ -171,7 +171,7 @@ class Sender {
                 });
             };
 
-            var req = (parsedUrl.protocol == "https:") ?
+            var req = (parsedUrl.protocol == "https:" && !proxyUrl) ?
                 https.request(<any>options, requestCallback) :
                 http.request(<any>options, requestCallback);
 
