@@ -97,10 +97,13 @@ class Sender {
             }
         };
 
+        console.log(`AppInsight::Sender.ts ProxyUrl = ${proxyUrl}`);
         // if a proxy is defined, we have to update options to handle it
         var proxyUrl = this._config.proxyUrl;
         var parsedProxyUrl = undefined;
         if (proxyUrl) {
+            console.log(`AppInsight::Sender.ts Proxy ENABLED`);
+            console.log(`ProxyUrl = ${proxyUrl}`);
             if (proxyUrl.indexOf("//") === 0) {
                 proxyUrl = "http:" + proxyUrl;
             }
