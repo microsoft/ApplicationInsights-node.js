@@ -31,8 +31,10 @@ class Config {
     public correlationIdRetryIntervalMs: number;
     /** A list of domains to exclude from cross-component header injection */
     public correlationHeaderExcludedDomains: string[];
-    /** The proxy URL to use if defined */
-    public proxyUrl: string;
+    /** The proxy for http URL to use if defined */
+    public proxyHttpUrl: string;
+    /** The proxy for https URL to use if defined */
+    public proxyHttpsUrl: string;
 
     private endpointBase: string = "https://dc.services.visualstudio.com";
     private setCorrelationId: (v: string) => void;
@@ -56,7 +58,8 @@ class Config {
         this.setCorrelationId = (correlationId) => this.correlationId = correlationId;
 
         this.profileQueryEndpoint = process.env[Config.ENV_profileQueryEndpoint] || this.endpointBase;
-        this.proxyUrl = Config._getProxy();
+        this.proxyHttpUrl = process.env[Config.ENV_http_proxy] || undefined;
+        this.proxyHttpsUrl = process.env[Config.ENV_https_proxy] || undefined;
     }
 
     public set profileQueryEndpoint(endpoint: string) {
@@ -86,14 +89,6 @@ class Config {
         }
 
         return iKey;
-    }
-
-    private static _getProxy(): string {
-        var proxy = process.env[Config.ENV_https_proxy];
-        if (!proxy || proxy == "") {
-            return undefined;
-        }
-        return proxy;
     }
 }
 
