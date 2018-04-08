@@ -1,5 +1,8 @@
 ﻿import assert = require("assert");
 import sinon = require("sinon");
+var http = require("http");
+var https = require("https");
+import url = require('url');
 
 import Util = require("../../Library/Util");
 
@@ -217,5 +220,171 @@ describe("Library/Util", () => {
 
             assert.equal(Util.canIncludeCorrelationHeader(client, url), false);
         });
+    });
+
+    describe("#makeRequest()", () => {
+        const proxyUrl = "http://10.0.0.1:3128";
+        const proxyUrlParsed = url.parse(proxyUrl);
+        const options = {
+            method: "GET",
+            headers: <{ [key: string]: string }>{
+                "Content-Type": "application/x-json-stream"
+            }
+        };
+
+        describe("for http request", () => {
+            const requestUrl = "http://abc.def.bing.com";
+            const requestUrlParsed = url.parse(requestUrl);
+
+            beforeEach(() => {
+                if (process.env.hasOwnProperty('https_proxy')) {
+                    delete process.env.https_proxy;
+                }
+                if (process.env.hasOwnProperty('http_proxy')) {
+                    delete process.env.http_proxy;
+                }
+                if (process.env.hasOwnProperty('no_proxy')) {
+                    delete process.env.no_proxy;
+                }
+                sinon.spy(http, 'request')
+            });
+
+            afterEach(() => {
+                http.request.restore();
+            });
+
+            it("should not override options when http_proxy not defined", () => {
+                const callback = sinon.spy();
+                const expectedOptions = {
+                    ...options,
+                    host: requestUrlParsed.hostname,
+                    port: requestUrlParsed.port,
+                    path: requestUrlParsed.pathname,
+                };
+
+                const req = Util.makeRequest(requestUrl, options, callback);
+
+                assert.equal(http.request.calledOnce, true);
+                assert.deepEqual(http.request.getCall(0).args[0], expectedOptions);
+                assert.deepEqual(http.request.getCall(0).args[1], callback);
+            });
+
+            it("should not override options when http_proxy not defined and https_proxy is defined", () => {
+                const callback = sinon.spy();
+                const expectedOptions = {
+                    ...options,
+                    host: requestUrlParsed.hostname,
+                    port: requestUrlParsed.port,
+                    path: requestUrlParsed.pathname,
+                };
+
+                process.env.https_proxy = proxyUrl;
+                const req = Util.makeRequest(requestUrl, options, callback);
+
+                assert.equal(http.request.calledOnce, true);
+                assert.deepEqual(http.request.getCall(0).args[0], expectedOptions);
+                assert.deepEqual(http.request.getCall(0).args[1], callback);
+            });
+
+            it("should override options when http_proxy is defined with the correct values", () => {
+                const callback = sinon.spy();
+                const expectedOptions = {
+                    ...options,
+                    host: proxyUrlParsed.hostname,
+                    port: proxyUrlParsed.port,
+                    path: requestUrl,
+                    headers: {...options.headers,
+                        Host: requestUrlParsed.hostname,
+                    }
+                };
+
+                process.env.http_proxy = proxyUrl;
+                const req = Util.makeRequest(requestUrl, options, callback);
+
+                assert.equal(http.request.calledOnce, true);
+                assert.deepEqual(http.request.getCall(0).args[0], expectedOptions);
+                assert.deepEqual(http.request.getCall(0).args[1], callback);
+            });
+        });
+
+
+        describe("for https request", () => {
+            const requestUrl = "https://abc.def.bing.com";
+            const requestUrlParsed = url.parse(requestUrl);
+
+            beforeEach(() => {
+                if (process.env.hasOwnProperty('https_proxy')) {
+                    delete process.env.https_proxy;
+                }
+                if (process.env.hasOwnProperty('http_proxy')) {
+                    delete process.env.http_proxy;
+                }
+                if (process.env.hasOwnProperty('no_proxy')) {
+                    delete process.env.no_proxy;
+                }
+                sinon.spy(http, 'request')
+                sinon.spy(https, 'request');
+            });
+
+            afterEach(() => {
+                http.request.restore();
+                https.request.restore();
+            });
+
+            it("should not override options when https_proxy not defined", () => {
+                const callback = sinon.spy();
+                const expectedOptions = {
+                    ...options,
+                    host: requestUrlParsed.hostname,
+                    port: requestUrlParsed.port,
+                    path: requestUrlParsed.pathname,
+                };
+
+                const req = Util.makeRequest(requestUrl, options, callback);
+
+                assert.equal(https.request.calledOnce, true, "https.request should be called");
+                assert.deepEqual(https.request.getCall(0).args[0], expectedOptions);
+                assert.deepEqual(https.request.getCall(0).args[1], callback);
+            });
+
+            it("should not override options when https_proxy not defined and http_proxy is defined", () => {
+                const callback = sinon.spy();
+                const expectedOptions = {
+                    ...options,
+                    host: requestUrlParsed.hostname,
+                    port: requestUrlParsed.port,
+                    path: requestUrlParsed.pathname,
+                };
+
+                process.env.http_proxy = proxyUrl;
+                const req = Util.makeRequest(requestUrl, options, callback);
+
+                assert.equal(https.request.calledOnce, true);
+                assert.deepEqual(https.request.getCall(0).args[0], expectedOptions);
+                assert.deepEqual(https.request.getCall(0).args[1], callback);
+            });
+
+            it("should override options when https_proxy is defined with the correct values", () => {
+                const callback = sinon.spy();
+                const expectedOptions = {
+                    ...options,
+                    host: proxyUrlParsed.hostname,
+                    port: proxyUrlParsed.port,
+                    path: requestUrl,
+                    headers: {...options.headers,
+                        Host: requestUrlParsed.hostname,
+                    }
+                };
+
+                process.env.https_proxy = proxyUrl;
+                const req = Util.makeRequest(requestUrl, options, callback);
+
+                assert.equal(https.request.calledOnce, false);
+                assert.equal(http.request.calledOnce, true);
+                assert.deepEqual(http.request.getCall(0).args[0], expectedOptions);
+                assert.deepEqual(http.request.getCall(0).args[1], callback);
+            });
+        });
+
     });
 });
