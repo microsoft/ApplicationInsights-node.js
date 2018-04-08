@@ -10,6 +10,7 @@ import child_process = require("child_process");
 import Logging = require("./Logging");
 import Config = require("./Config")
 import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
+import Util = require("./Util");
 
 class Sender {
     private static TAG = "Sender";
@@ -79,54 +80,15 @@ class Sender {
 
     public send(payload: Buffer, callback?: (v: string) => void) {
         var endpointUrl = this._config.endpointUrl;
-        if (endpointUrl && endpointUrl.indexOf("//") === 0) {
-            // use https if the config did not specify a protocol
-            endpointUrl = "https:" + endpointUrl;
-        }
 
         // todo: investigate specifying an agent here: https://nodejs.org/api/http.html#http_class_http_agent
-        var parsedUrl = url.parse(endpointUrl);
         var options = {
-            host: parsedUrl.hostname,
-            port: parsedUrl.port,
-            path: parsedUrl.pathname,
             method: "POST",
             withCredentials: false,
             headers: <{ [key: string]: string }>{
                 "Content-Type": "application/x-json-stream"
             }
         };
-
-        var proxyUrl: string = undefined;
-
-        // if a proxy is defined, we have to update options to handle it
-        if (parsedUrl.protocol == "https:" && this._config.proxyHttpsUrl) {
-            proxyUrl = this._config.proxyHttpsUrl;
-        }
-        if (parsedUrl.protocol == "http:" && this._config.proxyHttpUrl) {
-            proxyUrl = this._config.proxyHttpUrl;
-        }
-
-        // if proxy Url found
-        if (proxyUrl) {
-            var parsedProxyUrl = undefined;
-            if (proxyUrl) {
-                if (proxyUrl.indexOf("//") === 0) {
-                    proxyUrl = "http:" + proxyUrl;
-                }
-                parsedProxyUrl = url.parse(proxyUrl);
-
-                // override just what we need
-                options = {...options,
-                    host: parsedProxyUrl.hostname,
-                    port: parsedProxyUrl.port || "80",
-                    path: endpointUrl,
-                    headers: {...options.headers,
-                        Host: parsedUrl.hostname,
-                    }
-                };
-            }
-        }
 
         zlib.gzip(payload, (err, buffer) => {
             var dataToSend = buffer;
@@ -182,9 +144,7 @@ class Sender {
                 });
             };
 
-            var req = (parsedUrl.protocol == "https:" && !proxyUrl) ?
-                https.request(<any>options, requestCallback) :
-                http.request(<any>options, requestCallback);
+            var req = Util.makeRequest(endpointUrl, options, requestCallback);
 
             req.on("error", (error: Error) => {
                 // todo: handle error codes better (group to recoverable/non-recoverable and persist)

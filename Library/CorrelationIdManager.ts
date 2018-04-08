@@ -22,7 +22,6 @@ class CorrelationIdManager {
         // If it 404s, the iKey is bad and we should give up
         // If it fails otherwise, try again later
         const appIdUrlString = `${endpointBase}/api/profiles/${instrumentationKey}/appId`;
-        const appIdUrl = url.parse(appIdUrlString);
 
         if (CorrelationIdManager.completedLookups.hasOwnProperty(appIdUrlString)) {
             callback(CorrelationIdManager.completedLookups[appIdUrlString]);
@@ -34,25 +33,21 @@ class CorrelationIdManager {
 
         CorrelationIdManager.pendingLookups[appIdUrlString] = [callback];
 
-        const requestOptions = {
-            protocol: appIdUrl.protocol,
-            hostname: appIdUrl.host,
-            path: appIdUrl.pathname,
-            method: 'GET',
-            // Ensure this request is not captured by auto-collection.
-            // Note: we don't refer to the property in HttpDependencyParser because that would cause a cyclical dependency
-            disableAppInsightsAutoCollection: true
-        };
-
-        let httpRequest = appIdUrl.protocol === 'https:' ? https.request : http.request;
-
         const fetchAppId = () => {
             if (!CorrelationIdManager.pendingLookups[appIdUrlString]) {
                 // This query has been cancelled.
                 return;
             }
+
+            const requestOptions = {
+                method: 'GET',
+                // Ensure this request is not captured by auto-collection.
+                // Note: we don't refer to the property in HttpDependencyParser because that would cause a cyclical dependency
+                disableAppInsightsAutoCollection: true
+            };
+
             Logging.info(CorrelationIdManager.TAG, requestOptions);
-            const req = httpRequest(requestOptions, (res) => {
+            const req = Util.makeRequest(appIdUrlString, requestOptions, (res) => {
                 if (res.statusCode === 200) {
                     // Success; extract the appId from the body
                     let appId = "";
@@ -103,7 +98,7 @@ class CorrelationIdManager {
 
     /**
      * Generate a request Id according to https://github.com/lmolkova/correlation/blob/master/hierarchical_request_id.md
-     * @param parentId 
+     * @param parentId
      */
     public static generateRequestId(parentId: string): string {
         if (parentId) {
@@ -123,7 +118,7 @@ class CorrelationIdManager {
     /**
      * Given a hierarchical identifier of the form |X.*
      * return the root identifier X
-     * @param id 
+     * @param id
      */
     public static getRootId(id: string): string {
         let endIndex = id.indexOf('.');
