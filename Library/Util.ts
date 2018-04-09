@@ -240,14 +240,19 @@ class Util {
             }
             var proxyUrlParsed = url.parse(proxyUrl);
 
-            options = {...options,
-                host: proxyUrlParsed.hostname,
-                port: proxyUrlParsed.port || "80",
-                path: requestUrl,
-                headers: {...options.headers,
-                    Host: requestUrlParsed.hostname,
-                },
-            };
+            // https is not supported at the moment
+            if (proxyUrlParsed.protocol === 'https:') {
+                Logging.info("Proxy protocol https is not supported");
+            } else {
+                options = {...options,
+                    host: proxyUrlParsed.hostname,
+                    port: proxyUrlParsed.port || "80",
+                    path: requestUrl,
+                    headers: {...options.headers,
+                        Host: requestUrlParsed.hostname,
+                    },
+                };
+            }
         }
 
         var req = (requestUrlParsed.protocol === 'https:' && !proxyUrl) ?
