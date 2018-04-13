@@ -70,24 +70,22 @@ class EnvelopeFactory {
 
         var iKey = config ? config.instrumentationKey || "" : "";
         var envelope = new Contracts.Envelope();
-        envelope.data = data;
+        envelope.time = (new Date()).toISOString();
+        envelope.ver = 1;
+
+        // Exclude metrics from sampling by default
+        envelope.sampleRate = (config && telemetryType !== Contracts.TelemetryType.Metric) ? config.samplingPercentage : 100;
         envelope.iKey = iKey;
 
         // this is kind of a hack, but the envelope name is always the same as the data name sans the chars "data"
         envelope.name =
             "Microsoft.ApplicationInsights." +
-            iKey.replace(/-/g, "") +
+            iKey.replace(/-/g, "").toLowerCase() +
             "." +
             data.baseType.substr(0, data.baseType.length - 4);
-        envelope.tags = this.getTags(context, telemetry.tagOverrides);
-        envelope.time = (new Date()).toISOString();
-        envelope.ver = 1;
-        envelope.sampleRate = config ? config.samplingPercentage : 100;
 
-        // Exclude metrics from sampling by default
-        if (telemetryType === Contracts.TelemetryType.Metric) {
-            envelope.sampleRate = 100;
-        }
+        envelope.tags = this.getTags(context, telemetry.tagOverrides);
+        envelope.data = data;
 
         return envelope;
     }
