@@ -10,6 +10,7 @@ import child_process = require("child_process");
 import Logging = require("./Logging");
 import Config = require("./Config")
 import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
+import Util = require("./Util");
 
 class Sender {
     private static TAG = "Sender";
@@ -79,17 +80,9 @@ class Sender {
 
     public send(payload: Buffer, callback?: (v: string) => void) {
         var endpointUrl = this._config.endpointUrl;
-        if (endpointUrl && endpointUrl.indexOf("//") === 0) {
-            // use https if the config did not specify a protocol
-            endpointUrl = "https:" + endpointUrl;
-        }
 
         // todo: investigate specifying an agent here: https://nodejs.org/api/http.html#http_class_http_agent
-        var parsedUrl = url.parse(endpointUrl);
         var options = {
-            host: parsedUrl.hostname,
-            port: parsedUrl.port,
-            path: parsedUrl.pathname,
             method: "POST",
             withCredentials: false,
             headers: <{ [key: string]: string }>{
@@ -151,9 +144,7 @@ class Sender {
                 });
             };
 
-            var req = (parsedUrl.protocol == "https:") ?
-                https.request(<any>options, requestCallback) :
-                http.request(<any>options, requestCallback);
+            var req = Util.makeRequest(endpointUrl, options, requestCallback);
 
             req.on("error", (error: Error) => {
                 // todo: handle error codes better (group to recoverable/non-recoverable and persist)

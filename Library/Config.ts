@@ -10,6 +10,9 @@ class Config {
     public static legacy_ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
     public static ENV_profileQueryEndpoint = "APPINSIGHTS_PROFILE_QUERY_ENDPOINT";
 
+    public static ENV_http_proxy = "http_proxy";
+    public static ENV_https_proxy = "https_proxy";
+
     /** An identifier for your Application Insights resource */
     public instrumentationKey: string;
     /** The id for cross-component correlation. READ ONLY. */
@@ -28,11 +31,15 @@ class Config {
     public correlationIdRetryIntervalMs: number;
     /** A list of domains to exclude from cross-component header injection */
     public correlationHeaderExcludedDomains: string[];
+    /** The proxy for http URL to use if defined */
+    public proxyHttpUrl: string;
+    /** The proxy for https URL to use if defined */
+    public proxyHttpsUrl: string;
 
     private endpointBase: string = "https://dc.services.visualstudio.com";
     private setCorrelationId: (v: string) => void;
     private _profileQueryEndpoint: string;
-    
+
 
     constructor(instrumentationKey?: string) {
         this.instrumentationKey = instrumentationKey || Config._getInstrumentationKey();
@@ -43,14 +50,16 @@ class Config {
         this.samplingPercentage = 100;
         this.correlationIdRetryIntervalMs = 30 * 1000;
         this.correlationHeaderExcludedDomains = [
-            "*.core.windows.net", 
+            "*.core.windows.net",
             "*.core.chinacloudapi.cn",
             "*.core.cloudapi.de",
             "*.core.usgovcloudapi.net"];
-        
+
         this.setCorrelationId = (correlationId) => this.correlationId = correlationId;
 
         this.profileQueryEndpoint = process.env[Config.ENV_profileQueryEndpoint] || this.endpointBase;
+        this.proxyHttpUrl = process.env[Config.ENV_http_proxy] || undefined;
+        this.proxyHttpsUrl = process.env[Config.ENV_https_proxy] || undefined;
     }
 
     public set profileQueryEndpoint(endpoint: string) {

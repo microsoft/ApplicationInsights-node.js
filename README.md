@@ -5,7 +5,7 @@
 
 [Azure Application Insights][] monitors your backend services and components after
 you deploy them to help you [discover and rapidly diagnose performance and other
-issues][]. Add this SDK to your Node.js services to include deep info about Node.js 
+issues][]. Add this SDK to your Node.js services to include deep info about Node.js
 processes and their external dependencies such as database and cache services.
 You can use this SDK for your Node.js services hosted anywhere: your datacenter,
 Azure VMs and Web Apps, and even other public clouds.
@@ -80,8 +80,8 @@ Configuration section below.
 
 ## Migrating from versions prior to 0.22
 
-There are breaking changes between releases prior to version 0.22 and after. These 
-changes are designed to bring consistency with other Application Insights SDKs and 
+There are breaking changes between releases prior to version 0.22 and after. These
+changes are designed to bring consistency with other Application Insights SDKs and
 allow future extensibility. Please review this README for new method and property names.
 
 In general, you can migrate with the following:
@@ -92,7 +92,7 @@ properties as arguments. See your IDE's built-in type hinting, or [TelemetryType
 the expected object for each type of telemetry.
 
 If you access SDK configuration functions without chaining them to `appInsights.setup()`,
-you can now find these functions at appInsights.Configuration 
+you can now find these functions at appInsights.Configuration
 (eg. `appInsights.Configuration.setAutoCollectDependencies(true)`).
 Take care to review the changes to the default configuration in the next section.
 
@@ -114,12 +114,12 @@ appInsights.setup("<instrumentation_key>")
     .start();
 ```
 
-Please review their descriptions in your IDE's built-in type hinting, or [applicationinsights.ts](https://github.com/Microsoft/ApplicationInsights-node.js/tree/develop/applicationinsights.ts) for 
+Please review their descriptions in your IDE's built-in type hinting, or [applicationinsights.ts](https://github.com/Microsoft/ApplicationInsights-node.js/tree/develop/applicationinsights.ts) for
 detailed information on what these control, and optional secondary arguments.
 
 Note that by default `setAutoCollectConsole` is configured to *exclude* calls to `console.log`
-(and other `console` methods). By default, only calls to supported third-party loggers 
-(e.g. `winston`, `bunyan`) will be collected. You can change this behavior to *include* calls 
+(and other `console` methods). By default, only calls to supported third-party loggers
+(e.g. `winston`, `bunyan`) will be collected. You can change this behavior to *include* calls
 to `console` methods by using `setAutoCollectConsole(true, true)`.
 
 ### Sampling
@@ -236,7 +236,7 @@ All telemetry processors receive the telemetry data and its envelope to inspect 
 modify. They also receive a context object. The contents of this object is defined by
 the `contextObjects` parameter when calling a track method for manually tracked telemetry.
 For automatically collected telemetry, this object is filled with available request information
-and the persistent request context as provided by `appInsights.getCorrelationContext()` (if 
+and the persistent request context as provided by `appInsights.getCorrelationContext()` (if
 automatic dependency correlation is enabled).
 
 The TypeScript type for a telemetry processor is:
@@ -320,7 +320,7 @@ otherClient.trackEvent({name: "my custom event"});
     ```javascript
     appInsights.defaultClient.trackRequest({name:"GET /customers", url:"http://myserver/customers", duration:309, resultCode:200, success:true});
     ```
-    Alternatively you can track requests using ```trackNodeHttpRequest``` method:   
+    Alternatively you can track requests using ```trackNodeHttpRequest``` method:
 
     ```javascript
     var server = http.createServer((req, res) => {
@@ -343,18 +343,20 @@ otherClient.trackEvent({name: "my custom event"});
     ```
 
 ## Advanced configuration options
-The Client object contains a `config` property with many optional settings for 
+The Client object contains a `config` property with many optional settings for
 advanced scenarios. These can be set as follows:
 ```
 client.config.PROPERTYNAME = VALUE;
 ```
-These properties are client specific, so you can configure `appInsights.defaultClient` 
+These properties are client specific, so you can configure `appInsights.defaultClient`
 separately from clients created with `new appInsights.TelemetryClient()`.
 
 | Property                        | Description                                                                                                |
 | ------------------------------- |------------------------------------------------------------------------------------------------------------|
 | instrumentationKey              | An identifier for your Application Insights resource                                                       |
 | endpointUrl                     | The ingestion endpoint to send telemetry payloads to                                                       |
+| proxyHttpUrl                    | Proxy URL to use for http (value based on env var http_proxy)                                              |
+| proxyHttpsUrl                   | Proxy URL to use for https (value based on env var https_proxy)                                            |
 | maxBatchSize                    | The maximum number of telemetry items to include in a payload to the ingestion endpoint (Default `250`)    |
 | maxBatchIntervalMs              | The maximum amount of time to wait to for a payload to reach maxBatchSize (Default `15000`)                |
 | disableAppInsights              | A flag indicating if telemetry transmission is disabled (Default `false`)                                  |
