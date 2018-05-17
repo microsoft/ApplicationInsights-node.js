@@ -139,6 +139,7 @@ describe("AutoCollection/HttpRequestParser", () => {
             var newTags = helper.getRequestTags(originalTags);
             assert.equal(newTags[(<any>HttpRequestParser).keys.locationIp], '123.123.123.123');
             assert.equal(newTags[(<any>HttpRequestParser).keys.userId], 'cookieUser');
+            assert.equal(newTags[(<any>HttpRequestParser).keys.userAuthUserId], 'cookieAuthUser');
             assert.equal(newTags[(<any>HttpRequestParser).keys.userAgent], undefined);
             assert.equal(newTags[(<any>HttpRequestParser).keys.operationName], 'GET /search');
             assert.equal(newTags[(<any>HttpRequestParser).keys.operationId], 'operationId');
