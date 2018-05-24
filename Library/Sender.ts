@@ -32,7 +32,7 @@ class Sender {
     private _onSuccess: (response: string) => void;
     private _onError: (error: Error) => void;
     private _enableDiskRetryMode: boolean;
-    private _numConsecutiveFailures: number = 0;
+    private _numConsecutiveFailures: number;
     protected _resendInterval: number;
     protected _maxBytesOnDisk: number;
 
@@ -43,6 +43,7 @@ class Sender {
         this._enableDiskRetryMode = false;
         this._resendInterval = Sender.WAIT_BETWEEN_RESEND;
         this._maxBytesOnDisk = Sender.MAX_BYTES_ON_DISK;
+        this._numConsecutiveFailures = 0;
 
         if (!Sender.OS_PROVIDES_FILE_PROTECTION) {
             // Node's chmod levels do not appropriately restrict file access on Windows
