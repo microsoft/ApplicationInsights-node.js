@@ -15,7 +15,9 @@ import Util = require("./Util");
 class Sender {
     private static TAG = "Sender";
     private static ICACLS_PATH = `${process.env.systemdrive}/windows/system32/icacls.exe`;
+    private static POWERSHELL_PATH = `${process.env.systemdrive}/windows/system32/windowspowershell/v1.0/powershell.exe`;
     private static ACLED_DIRECTORIES: {[id: string]: boolean} = {};
+    private static ACL_IDENTITY: string = null;
 
     // the amount of time the SDK will wait between resending cached data, this buffer is to avoid any throtelling from the service side
     public static WAIT_BETWEEN_RESEND = 60 * 1000;
@@ -198,10 +200,47 @@ class Sender {
         }
     }
 
-    private _getACLArguments(directory: string) {
+    private _getACLIdentity(callback: (error: Error, identity: string) => void) {
+        if (Sender.ACL_IDENTITY) {
+            return callback(null, Sender.ACL_IDENTITY);
+        }
+        var psProc = child_process.spawn(Sender.POWERSHELL_PATH, 
+            ["-Command", "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name"], <any>{windowsHide: true});
+        let data = "";
+        psProc.stdout.on("data", (d: string) => data += d);
+        psProc.on("error", (e: Error) => callback(e, null));
+        psProc.on("close", (code: number, signal: string) => {
+            Sender.ACL_IDENTITY = data && data.trim();
+            return callback(
+                code === 0 ? null : new Error(`Getting ACL identity did not succeed (PS returned code ${code})`),
+                Sender.ACL_IDENTITY);
+        });
+    }
+
+    private _getACLIdentitySync() {
+        if (Sender.ACL_IDENTITY) {
+            return Sender.ACL_IDENTITY;
+        }
+        // Some very old versions of Node (< 0.11) don't have this
+        if (child_process.spawnSync) {
+            var psProc = child_process.spawnSync(Sender.POWERSHELL_PATH, 
+                ["-Command", "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name"], <any>{windowsHide: true});
+            if (psProc.error) {
+                throw psProc.error;
+            } else if (psProc.status !== 0) {
+                throw new Error(`Getting ACL identity did not succeed (PS returned code ${psProc.status})`);
+            }
+            Sender.ACL_IDENTITY = psProc.stdout && psProc.stdout.trim();
+            return Sender.ACL_IDENTITY;
+        } else {
+            throw new Error("Could not synchronously get ACL identity under current version of Node.js");
+        }
+    }
+
+    private _getACLArguments(directory: string, identity: string) {
         return [directory,
             "/grant", "*S-1-5-32-544:(OI)(CI)F", // Full permission for Administrators
-            "/grant", `${process.env.username}:(OI)(CI)F`, // Full permission for current user
+            "/grant", `${identity}:(OI)(CI)F`, // Full permission for current user
             "/inheritance:r"]; // Remove all inherited permissions
     }
 
@@ -213,9 +252,15 @@ class Sender {
         // For performance, only run ACL rules if we haven't already during this session
         if (Sender.ACLED_DIRECTORIES[directory] === undefined) {
             // Restrict this directory to only current user and administrator access
-            this._runICACLS(this._getACLArguments(directory), (err) => {
-                Sender.ACLED_DIRECTORIES[directory] = !err;
-                return callback(err);
+            this._getACLIdentity((err, identity) => {
+                if (err) {
+                    return callback(err);
+                } else {
+                    this._runICACLS(this._getACLArguments(directory, identity), (err) => {
+                        Sender.ACLED_DIRECTORIES[directory] = !err;
+                        return callback(err);
+                    });
+                }
             });
         } else {
             return callback(Sender.ACLED_DIRECTORIES[directory] ? null :
@@ -227,7 +272,7 @@ class Sender {
         if (Sender.USE_ICACLS) {
             // For performance, only run ACL rules if we haven't already during this session
             if (Sender.ACLED_DIRECTORIES[directory] === undefined) {
-                this._runICACLSSync(this._getACLArguments(directory));
+                this._runICACLSSync(this._getACLArguments(directory, this._getACLIdentitySync()));
                 Sender.ACLED_DIRECTORIES[directory] = true; // If we get here, it succeeded. _runIACLSSync will throw on failures
                 return;
             } else if (!Sender.ACLED_DIRECTORIES[directory]) { // falsy but not undefined
