@@ -159,14 +159,15 @@ class Sender {
 
                 // Only use warn level if retries are disabled or we've had some number of consecutive failures sending data
                 // This is because warn level is printed in the console by default, and we don't want to be noisy for transient and self-recovering errors
+                // Continue informing on each failure if verbose logging is being used
                 if (!this._enableDiskRetryMode || this._numConsecutiveFailures > 0 && this._numConsecutiveFailures % Sender.MAX_CONNECTION_FAILURES_BEFORE_WARN === 0) {
-                    let notice = "Failed to send telemetry to Application Insights backend. This batch of telemetry items has been lost. Use Disk Retry Caching to enable resending of failed telemetry. Detailed error:";
+                    let notice = "Ingestion endpoint could not be reached. This batch of telemetry items has been lost. Use Disk Retry Caching to enable resending of failed telemetry. Error:";
                     if (this._enableDiskRetryMode) {
-                        notice = `Failed to send telemetry to Application Insights backend ${this._numConsecutiveFailures} consecutive times. There may be resulting telemetry loss. Detailed error:`;
+                        notice = `Ingestion endpoint could not be reached ${this._numConsecutiveFailures} consecutive times. There may be resulting telemetry loss. Most recent error:`;
                     }
                     Logging.warn(Sender.TAG, notice, error);
                 } else {
-                    let notice = "Transient failure to send telemetry. This batch of telemetry items will be retried. Detailed error:";
+                    let notice = "Transient failure to reach ingestion endpoint. This batch of telemetry items will be retried. Error:";
                     Logging.info(Sender.TAG, notice, error)
                 }
                 this._onErrorHelper(error);
@@ -248,7 +249,7 @@ class Sender {
             } else if (psProc.status !== 0) {
                 throw new Error(`Getting ACL identity did not succeed (PS returned code ${psProc.status})`);
             }
-            Sender.ACL_IDENTITY = psProc.stdout && psProc.stdout.trim();
+            Sender.ACL_IDENTITY = psProc.stdout && psProc.stdout.toString().trim();
             return Sender.ACL_IDENTITY;
         } else {
             throw new Error("Could not synchronously get ACL identity under current version of Node.js");
