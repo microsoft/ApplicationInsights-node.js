@@ -273,6 +273,7 @@ class Sender {
             // Restrict this directory to only current user and administrator access
             this._getACLIdentity((err, identity) => {
                 if (err) {
+                    Sender.ACLED_DIRECTORIES[directory] = false; // false is used to cache failed (vs undefined which is "not yet tried")
                     return callback(err);
                 } else {
                     this._runICACLS(this._getACLArguments(directory, identity), (err) => {

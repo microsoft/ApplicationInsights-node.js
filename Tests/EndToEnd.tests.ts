@@ -468,6 +468,65 @@ describe("EndToEnd", () => {
             });
         });
 
+        it("refuses to query for ACL identity twice", (done) => {
+            spawn.restore();
+            var tempSpawn = sinon.stub(child_process, 'spawn').returns({
+                on: (type: string, cb: any) => {
+                    if (type == 'close') {
+                        cb(2000); // return non-zero status code
+                    }
+                },
+                stdout: {
+                    on: (type: string, cb: any) => {
+                        return; // do nothing
+                    }
+                }
+            });
+
+            var req = new fakeRequest();
+
+            var client = new AppInsights.TelemetryClient("uniquekey");
+            client.channel.setUseDiskRetryCaching(true);
+            var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
+            (<any>client.channel._sender.constructor).USE_ICACLS = true; // Simulate ICACLS environment even on *nix
+
+            // Set ICACLS caches for test purposes
+            (<any>client.channel._sender.constructor).ACL_IDENTITY = null;
+            (<any>client.channel._sender.constructor).ACLED_DIRECTORIES = {};
+
+            client.trackEvent({ name: "test event" });
+
+            this.request.returns(req);
+
+            client.flush({
+                callback: (response: any) => {
+                    // yield for the caching behavior
+                    setImmediate(() => {
+                        assert(writeFile.callCount === 0);
+                        assert.equal(tempSpawn.callCount, 1);
+
+                        client.trackEvent({ name: "test event" });
+                        this.request.returns(req);
+                        
+                        client.flush({
+                            callback: (response: any) => {
+                                // yield for the caching behavior
+                                setImmediate(() => {
+                                    // The call counts shouldnt have changed
+                                    assert(writeFile.callCount === 0);
+                                    assert.equal(tempSpawn.callCount, 1);
+                                    
+                                    tempSpawn.restore();
+                                    (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
+                                    done();
+                                });
+                            }
+                        });
+                    });
+                }
+            });
+        });
+
         it("refuses to store data if ICACLS fails", (done) => {
             spawn.restore();
             var tempSpawn = sinon.stub(child_process, 'spawn').returns({
