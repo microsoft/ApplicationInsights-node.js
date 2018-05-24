@@ -121,7 +121,7 @@ class Sender {
 
                 res.on("end", () => {
                     this._numConsecutiveFailures = 0;
-                    
+
                     Logging.info(Sender.TAG, responseString);
                     if (typeof this._onSuccess === "function") {
                         this._onSuccess(responseString);
@@ -156,6 +156,8 @@ class Sender {
                 // todo: handle error codes better (group to recoverable/non-recoverable and persist)
                 this._numConsecutiveFailures++;
 
+                // Only use warn level if retries are disabled or we've had some number of consecutive failures sending data
+                // This is because warn level is printed in the console by default, and we don't want to be noisy for transient and self-recovering errors
                 if (!this._enableDiskRetryMode || this._numConsecutiveFailures > 0 && this._numConsecutiveFailures % Sender.MAX_CONNECTION_FAILURES_BEFORE_WARN === 0) {
                     let notice = "Failed to send telemetry to Application Insights backend. This batch of telemetry items has been lost. Use Disk Retry Caching to enable resending of failed telemetry. Detailed error:";
                     if (this._enableDiskRetryMode) {
