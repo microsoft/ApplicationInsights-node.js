@@ -17,7 +17,6 @@ if (Config.AppInsightsEnabled) {
 }
 
 var Tasks = require("./Tasks");
-var MySQL = require("./Tasks/MySQL"); // HACK! This takes a long time! So don't send "OK" until it's ready
 var port = parseInt(Config.ServerPort);
 var bodyParser = require('body-parser');
 var express = require("express");
@@ -26,11 +25,7 @@ var app = express();
 app.use(bodyParser.json());
 
 app.get("/", (req, res) => {
-    if (MySQL.isReady()) {
-        res.send("OK");
-    } else {
-        res.send("NOT OK");
-    }
+    res.send("OK");
 });
 
 /**
