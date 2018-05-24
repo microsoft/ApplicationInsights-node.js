@@ -13,10 +13,10 @@ function getOk(url) {
 /** @param {string} url */
 function waitForOk(url, tries) {
     return getOk(url).then(ok => {
-        if (!ok && (tries || 0) < 20) {
+        if (!ok && (tries || 0) < 50) {
             Utils.Logging.info("Waiting for TestApp...");
             return new Promise( (resolve, reject)=> {
-                setTimeout(() => resolve(waitForOk(url, (tries || 0) + 1)), 500);
+                setTimeout(() => resolve(waitForOk(url, (tries || 0) + 1)), 1500);
             });
         } else if (!ok) {
             throw new Error("TestApp could not be reached!");

@@ -38,5 +38,6 @@ function query(callback) {
 
 
 module.exports = {
-    query: query
+    query: query,
+    isReady: () => ready
 }
