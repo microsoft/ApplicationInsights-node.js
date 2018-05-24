@@ -22,6 +22,7 @@ class Sender {
     // the amount of time the SDK will wait between resending cached data, this buffer is to avoid any throtelling from the service side
     public static WAIT_BETWEEN_RESEND = 60 * 1000;
     public static MAX_BYTES_ON_DISK = 50 * 1000 * 1000;
+    public static MAX_CONNECTION_FAILURES_BEFORE_WARN = 5;
     public static TEMPDIR_PREFIX: string = "appInsights-node";
     public static OS_PROVIDES_FILE_PROTECTION = false;
     public static USE_ICACLS = os.type() === "Windows_NT";
@@ -31,6 +32,7 @@ class Sender {
     private _onSuccess: (response: string) => void;
     private _onError: (error: Error) => void;
     private _enableDiskRetryMode: boolean;
+    private _numConsecutiveFailures: number = 0;
     protected _resendInterval: number;
     protected _maxBytesOnDisk: number;
 
@@ -118,6 +120,8 @@ class Sender {
                 });
 
                 res.on("end", () => {
+                    this._numConsecutiveFailures = 0;
+                    
                     Logging.info(Sender.TAG, responseString);
                     if (typeof this._onSuccess === "function") {
                         this._onSuccess(responseString);
@@ -150,7 +154,18 @@ class Sender {
 
             req.on("error", (error: Error) => {
                 // todo: handle error codes better (group to recoverable/non-recoverable and persist)
-                Logging.warn(Sender.TAG, error);
+                this._numConsecutiveFailures++;
+
+                if (!this._enableDiskRetryMode || this._numConsecutiveFailures > 0 && this._numConsecutiveFailures % Sender.MAX_CONNECTION_FAILURES_BEFORE_WARN === 0) {
+                    let notice = "Failed to send telemetry to Application Insights backend. This batch of telemetry items has been lost. Use Disk Retry Caching to enable resending of failed telemetry. Detailed error:";
+                    if (this._enableDiskRetryMode) {
+                        notice = `Failed to send telemetry to Application Insights backend ${this._numConsecutiveFailures} consecutive times. There may be resulting telemetry loss. Detailed error:`;
+                    }
+                    Logging.warn(Sender.TAG, notice, error);
+                } else {
+                    let notice = "Transient failure to send telemetry. This batch of telemetry items will be retried. Detailed error:";
+                    Logging.info(Sender.TAG, notice, error)
+                }
                 this._onErrorHelper(error);
 
                 if (typeof callback === "function") {
