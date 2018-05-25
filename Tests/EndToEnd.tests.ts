@@ -276,13 +276,20 @@ describe("EndToEnd", () => {
             readFile = sinon.stub(fs, 'readFile').yields(null, '');
             spawn = sinon.stub(child_process, 'spawn').returns({
                 on: (type: string, cb: any) => {
-                    if (type == 'close') {
+                    if (type === 'close') {
                         cb(0);
+                    }
+                },
+                stdout: {
+                    on: (type: string, cb: any) => {
+                        if (type === 'data') {
+                            cb('stdoutmock');
+                        }
                     }
                 }
             });
             if (child_process.spawnSync) {
-                spawnSync = sinon.stub(child_process, 'spawnSync').returns({status: 0});
+                spawnSync = sinon.stub(child_process, 'spawnSync').returns({status: 0, stdout: 'stdoutmock'});
             }
         });
 
@@ -342,7 +349,7 @@ describe("EndToEnd", () => {
                     // yield for the caching behavior
                     setImmediate(() => {
                         assert.equal(writeFile.callCount, 1);
-                        assert.equal(spawn.callCount, os.type() === "Windows_NT" ? 1 : 0);
+                        assert.equal(spawn.callCount, os.type() === "Windows_NT" ? 2 : 0);
                         done();
                     });
                 }
@@ -375,6 +382,151 @@ describe("EndToEnd", () => {
             });
         });
 
+        it("uses WindowsIdentity to get the identity for ICACLS", (done) => {
+            var req = new fakeRequest();
+
+            var client = new AppInsights.TelemetryClient("uniquekey");
+            client.channel.setUseDiskRetryCaching(true);
+            var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
+            (<any>client.channel._sender.constructor).USE_ICACLS = true; // Simulate ICACLS environment even on *nix
+
+            // Clear ICACLS caches for test purposes
+            (<any>client.channel._sender.constructor).ACL_IDENTITY = null;
+            (<any>client.channel._sender.constructor).ACLED_DIRECTORIES = {};
+
+            client.trackEvent({ name: "test event" });
+
+            this.request.returns(req);
+
+            client.flush({
+                callback: (response: any) => {
+                    // yield for the caching behavior
+                    setImmediate(() => {
+                        assert.equal(writeFile.callCount, 1);
+                        assert.equal(spawn.callCount, 2);
+
+                        // First external call should be to powershell to query WindowsIdentity
+                        assert(spawn.firstCall.args[0].indexOf('powershell.exe'));
+                        assert.equal(spawn.firstCall.args[1][0], "-Command");
+                        assert.equal(spawn.firstCall.args[1][1], "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name");
+                        assert.equal((<any>client.channel._sender.constructor).ACL_IDENTITY, 'stdoutmock');
+
+                        // Next call should be to ICACLS (with the acquired identity)
+                        assert(spawn.lastCall.args[0].indexOf('icacls.exe'));
+                        assert.equal(spawn.lastCall.args[1][3], "/grant");
+                        assert.equal(spawn.lastCall.args[1][4], "stdoutmock:(OI)(CI)F");
+
+                        (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
+                        done();
+                    });
+                }
+            });
+        });
+
+        it("refuses to store data if ACL identity fails", (done) => {
+            spawn.restore();
+            var tempSpawn = sinon.stub(child_process, 'spawn').returns({
+                on: (type: string, cb: any) => {
+                    if (type == 'close') {
+                        cb(2000); // return non-zero status code
+                    }
+                },
+                stdout: {
+                    on: (type: string, cb: any) => {
+                        return; // do nothing
+                    }
+                }
+            });
+
+            var req = new fakeRequest();
+
+            var client = new AppInsights.TelemetryClient("uniquekey");
+            client.channel.setUseDiskRetryCaching(true);
+            var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
+            (<any>client.channel._sender.constructor).USE_ICACLS = true; // Simulate ICACLS environment even on *nix
+
+            // Set ICACLS caches for test purposes
+            (<any>client.channel._sender.constructor).ACL_IDENTITY = null;
+            (<any>client.channel._sender.constructor).ACLED_DIRECTORIES = {};
+
+            client.trackEvent({ name: "test event" });
+
+            this.request.returns(req);
+
+            client.flush({
+                callback: (response: any) => {
+                    // yield for the caching behavior
+                    setImmediate(() => {
+                        assert(writeFile.callCount === 0);
+                        assert.equal(tempSpawn.callCount, 1);
+
+                        tempSpawn.restore();
+                        (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
+                        done();
+                    });
+                }
+            });
+        });
+
+        it("refuses to query for ACL identity twice", (done) => {
+            spawn.restore();
+            var tempSpawn = sinon.stub(child_process, 'spawn').returns({
+                on: (type: string, cb: any) => {
+                    if (type == 'close') {
+                        cb(2000); // return non-zero status code
+                    }
+                },
+                stdout: {
+                    on: (type: string, cb: any) => {
+                        return; // do nothing
+                    }
+                }
+            });
+
+            var req = new fakeRequest();
+
+            var client = new AppInsights.TelemetryClient("uniquekey");
+            client.channel.setUseDiskRetryCaching(true);
+            var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
+            (<any>client.channel._sender.constructor).USE_ICACLS = true; // Simulate ICACLS environment even on *nix
+
+            // Set ICACLS caches for test purposes
+            (<any>client.channel._sender.constructor).ACL_IDENTITY = null;
+            (<any>client.channel._sender.constructor).ACLED_DIRECTORIES = {};
+
+            client.trackEvent({ name: "test event" });
+
+            this.request.returns(req);
+
+            client.flush({
+                callback: (response: any) => {
+                    // yield for the caching behavior
+                    setImmediate(() => {
+                        assert(writeFile.callCount === 0);
+                        assert.equal(tempSpawn.callCount, 1);
+
+                        client.trackEvent({ name: "test event" });
+                        this.request.returns(req);
+                        
+                        client.flush({
+                            callback: (response: any) => {
+                                // yield for the caching behavior
+                                setImmediate(() => {
+                                    // The call counts shouldnt have changed
+                                    assert(writeFile.callCount === 0);
+                                    assert.equal(tempSpawn.callCount, 1);
+                                    
+                                    tempSpawn.restore();
+                                    (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
+                                    done();
+                                });
+                            }
+                        });
+                    });
+                }
+            });
+        });
+
         it("refuses to store data if ICACLS fails", (done) => {
             spawn.restore();
             var tempSpawn = sinon.stub(child_process, 'spawn').returns({
@@ -391,6 +543,10 @@ describe("EndToEnd", () => {
             client.channel.setUseDiskRetryCaching(true);
             var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
             (<any>client.channel._sender.constructor).USE_ICACLS = true; // Simulate ICACLS environment even on *nix
+
+            // Set ICACLS caches for test purposes
+            (<any>client.channel._sender.constructor).ACL_IDENTITY = 'testidentity'; // Don't use spawn for identity
+            (<any>client.channel._sender.constructor).ACLED_DIRECTORIES = {};
 
             client.trackEvent({ name: "test event" });
 
@@ -507,7 +663,7 @@ describe("EndToEnd", () => {
 
                 assert(this.existsSync.callCount === 1);
                 assert(writeFileSync.callCount === 1);
-                assert.equal(spawnSync.callCount, os.type() === "Windows_NT" ? 1 : 0);
+                assert.equal(spawnSync.callCount, os.type() === "Windows_NT" ? 1 : 0); // This is implicitly testing caching of ACL identity (otherwise call count would be 2 like it is the non-sync time)
                 assert.equal(
                     path.dirname(writeFileSync.firstCall.args[0]),
                     path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key2"));
@@ -559,6 +715,41 @@ describe("EndToEnd", () => {
                     path.dirname(writeFileSync.firstCall.args[0]),
                     path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key23"));
                 assert.equal(writeFileSync.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
+            }
+        });
+
+        it("use WindowsIdentity to get ACL identity when process crashes (Node > 0.11.12, ICACLS)", () => {
+            var nodeVer = process.versions.node.split(".");
+            if ((parseInt(nodeVer[0]) > 0 || parseInt(nodeVer[1]) > 11 || (parseInt(nodeVer[1]) == 11) && parseInt(nodeVer[2]) > 11)) {
+                var req = new fakeRequest(true);
+
+                var client = new AppInsights.TelemetryClient("key22");
+                client.channel.setUseDiskRetryCaching(true);
+                var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
+                (<any>client.channel._sender.constructor).USE_ICACLS = true; // Simulate ICACLS environment even on *nix
+
+                // Set ICACLS caches for test purposes
+                (<any>client.channel._sender.constructor).ACL_IDENTITY = null;
+                (<any>client.channel._sender.constructor).ACLED_DIRECTORIES = {};
+
+                client.trackEvent({ name: "test event" });
+
+                this.request.returns(req);
+
+                client.channel.triggerSend(true);
+
+                // First external call should be to powershell to query WindowsIdentity
+                assert(spawnSync.firstCall.args[0].indexOf('powershell.exe'));
+                assert.equal(spawnSync.firstCall.args[1][0], "-Command");
+                assert.equal(spawnSync.firstCall.args[1][1], "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name");
+                assert.equal((<any>client.channel._sender.constructor).ACL_IDENTITY, 'stdoutmock');
+
+                // Next call should be to ICACLS (with the acquired identity)
+                assert(spawnSync.lastCall.args[0].indexOf('icacls.exe'));
+                assert.equal(spawnSync.lastCall.args[1][3], "/grant");
+                assert.equal(spawnSync.lastCall.args[1][4], "stdoutmock:(OI)(CI)F");
+
+                (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
             }
         });
 
