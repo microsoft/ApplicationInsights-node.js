@@ -66,7 +66,7 @@ class HttpRequestParser extends RequestParser {
             id: this.requestId,
             name: this.method + " " + url.parse(this.url).pathname,
             url: this.url,
-            /* 
+            /*
             See https://github.com/Microsoft/ApplicationInsights-dotnet-server/blob/25d695e6a906fbe977f67be3966d25dbf1c50a79/Src/Web/Web.Shared.Net/RequestTrackingTelemetryModule.cs#L250
             for reference
             */
@@ -109,6 +109,7 @@ class HttpRequestParser extends RequestParser {
         newTags[HttpRequestParser.keys.locationIp] = tags[HttpRequestParser.keys.locationIp] || this._getIp();
         newTags[HttpRequestParser.keys.sessionId] = tags[HttpRequestParser.keys.sessionId] || this._getId("ai_session");
         newTags[HttpRequestParser.keys.userId] = tags[HttpRequestParser.keys.userId] || this._getId("ai_user");
+        newTags[HttpRequestParser.keys.userAuthUserId] = tags[HttpRequestParser.keys.userAuthUserId] || this._getId("ai_authUser");
         newTags[HttpRequestParser.keys.operationName] = this.getOperationName(tags);
         newTags[HttpRequestParser.keys.operationParentId] = this.getOperationParentId(tags);
         newTags[HttpRequestParser.keys.operationId] = this.getOperationId(tags);
