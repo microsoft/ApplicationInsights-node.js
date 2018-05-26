@@ -102,7 +102,7 @@ describe("AutoCollection/HttpRequestParser", () => {
             headers: {
                 host: "bing.com",
                 "x-forwarded-for": "123.123.123.123",
-                "cookie": "ai_user=cookieUser|time;ai_session=cookieSession|time",
+                "cookie": "ai_user=cookieUser|time;ai_session=cookieSession|time;ai_authUser=cookieAuthUser|time",
                 "x-ms-request-id": "parentRequestId",
                 "x-ms-request-root-id": "operationId",
             }
@@ -114,6 +114,7 @@ describe("AutoCollection/HttpRequestParser", () => {
             var originalTags: {[key: string]:string} = {
                 [(<any>HttpRequestParser).keys.locationIp]: 'originalIp',
                 [(<any>HttpRequestParser).keys.userId]: 'originalUserId',
+                [(<any>HttpRequestParser).keys.userAuthUserId]: 'originalAuthUserId',
                 [(<any>HttpRequestParser).keys.userAgent]: 'originalUserAgent',
                 [(<any>HttpRequestParser).keys.operationName]: 'originalOperationName',
                 [(<any>HttpRequestParser).keys.operationId]: 'originalOperationId',
@@ -122,6 +123,7 @@ describe("AutoCollection/HttpRequestParser", () => {
             var newTags = helper.getRequestTags(originalTags);
             assert.equal(newTags[(<any>HttpRequestParser).keys.locationIp], 'originalIp');
             assert.equal(newTags[(<any>HttpRequestParser).keys.userId], 'originalUserId');
+            assert.equal(newTags[(<any>HttpRequestParser).keys.userAuthUserId], 'originalAuthUserId');
             assert.equal(newTags[(<any>HttpRequestParser).keys.userAgent], 'originalUserAgent');
             assert.equal(newTags[(<any>HttpRequestParser).keys.operationName], 'originalOperationName');
             assert.equal(newTags[(<any>HttpRequestParser).keys.operationId], 'originalOperationId');
@@ -137,6 +139,7 @@ describe("AutoCollection/HttpRequestParser", () => {
             var newTags = helper.getRequestTags(originalTags);
             assert.equal(newTags[(<any>HttpRequestParser).keys.locationIp], '123.123.123.123');
             assert.equal(newTags[(<any>HttpRequestParser).keys.userId], 'cookieUser');
+            assert.equal(newTags[(<any>HttpRequestParser).keys.userAuthUserId], 'cookieAuthUser');
             assert.equal(newTags[(<any>HttpRequestParser).keys.userAgent], undefined);
             assert.equal(newTags[(<any>HttpRequestParser).keys.operationName], 'GET /search');
             assert.equal(newTags[(<any>HttpRequestParser).keys.operationId], 'operationId');
