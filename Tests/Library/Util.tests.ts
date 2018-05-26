@@ -5,6 +5,7 @@ var https = require("https");
 import url = require('url');
 
 import Util = require("../../Library/Util");
+import { Configuration } from "../../applicationinsights";
 
 describe("Library/Util", () => {
 
@@ -224,6 +225,7 @@ describe("Library/Util", () => {
 
     describe("#makeRequest()", () => {
         const proxyUrl = "http://10.0.0.1:3128";
+        const proxyUrlHttps = "https://10.0.0.1:3128";
         const proxyUrlParsed = url.parse(proxyUrl);
         const options = {
             method: "GET",
@@ -261,8 +263,9 @@ describe("Library/Util", () => {
                     port: requestUrlParsed.port,
                     path: requestUrlParsed.pathname,
                 };
+                const config: any = {proxyHttpUrl: undefined, proxyHttpsUrl: undefined};
 
-                const req = Util.makeRequest(requestUrl, options, callback);
+                const req = Util.makeRequest(config, requestUrl, options, callback);
 
                 assert.equal(http.request.calledOnce, true);
                 assert.deepEqual(http.request.getCall(0).args[0], expectedOptions);
@@ -278,8 +281,8 @@ describe("Library/Util", () => {
                     path: requestUrlParsed.pathname,
                 };
 
-                process.env.https_proxy = proxyUrl;
-                const req = Util.makeRequest(requestUrl, options, callback);
+                const config: any = {proxyHttpUrl: undefined, proxyHttpsUrl: proxyUrl};
+                const req = Util.makeRequest(config, requestUrl, options, callback);
 
                 assert.equal(http.request.calledOnce, true);
                 assert.deepEqual(http.request.getCall(0).args[0], expectedOptions);
@@ -298,8 +301,8 @@ describe("Library/Util", () => {
                     }
                 };
 
-                process.env.http_proxy = proxyUrl;
-                const req = Util.makeRequest(requestUrl, options, callback);
+                const config: any = {proxyHttpUrl: proxyUrl, proxyHttpsUrl: undefined};
+                const req = Util.makeRequest(config, requestUrl, options, callback);
 
                 assert.equal(http.request.calledOnce, true);
                 assert.deepEqual(http.request.getCall(0).args[0], expectedOptions);
@@ -340,7 +343,8 @@ describe("Library/Util", () => {
                     path: requestUrlParsed.pathname,
                 };
 
-                const req = Util.makeRequest(requestUrl, options, callback);
+                const config: any = {proxyHttpUrl: undefined, proxyHttpsUrl: undefined};
+                const req = Util.makeRequest(config, requestUrl, options, callback);
 
                 assert.equal(https.request.calledOnce, true, "https.request should be called");
                 assert.deepEqual(https.request.getCall(0).args[0], expectedOptions);
@@ -356,8 +360,8 @@ describe("Library/Util", () => {
                     path: requestUrlParsed.pathname,
                 };
 
-                process.env.http_proxy = proxyUrl;
-                const req = Util.makeRequest(requestUrl, options, callback);
+                const config: any = {proxyHttpUrl: proxyUrl, proxyHttpsUrl: undefined};
+                const req = Util.makeRequest(config, requestUrl, options, callback);
 
                 assert.equal(https.request.calledOnce, true);
                 assert.deepEqual(https.request.getCall(0).args[0], expectedOptions);
@@ -376,10 +380,27 @@ describe("Library/Util", () => {
                     }
                 };
 
-                process.env.https_proxy = proxyUrl;
-                const req = Util.makeRequest(requestUrl, options, callback);
+                const config: any = {proxyHttpUrl: undefined, proxyHttpsUrl: proxyUrl};
+                const req = Util.makeRequest(config, requestUrl, options, callback);
 
                 assert.equal(https.request.calledOnce, false);
+                assert.equal(http.request.calledOnce, true);
+                assert.deepEqual(http.request.getCall(0).args[0], expectedOptions);
+                assert.deepEqual(http.request.getCall(0).args[1], callback);
+            });
+
+            it("should not override options when https_proxy is defined with a proxy using https", () => {
+                const callback = sinon.spy();
+                const expectedOptions = {
+                    ...options,
+                    host: requestUrlParsed.hostname,
+                    port: requestUrlParsed.port,
+                    path: requestUrlParsed.pathname,
+                };
+                const config: any = {proxyHttpUrl: undefined, proxyHttpsUrl: proxyUrlHttps};
+
+                const req = Util.makeRequest(config, requestUrl, options, callback);
+
                 assert.equal(http.request.calledOnce, true);
                 assert.deepEqual(http.request.getCall(0).args[0], expectedOptions);
                 assert.deepEqual(http.request.getCall(0).args[1], callback);

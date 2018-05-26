@@ -31,9 +31,9 @@ class Config {
     public correlationIdRetryIntervalMs: number;
     /** A list of domains to exclude from cross-component header injection */
     public correlationHeaderExcludedDomains: string[];
-    /** The proxy for http URL to use if defined */
+    /** A proxy server for SDK HTTP traffic (Optional, Default pulled from `http_proxy` environment variable) */
     public proxyHttpUrl: string;
-    /** The proxy for https URL to use if defined */
+    /** A proxy server for SDK HTTPS traffic (Optional, Default pulled from `https_proxy` environment variable) */
     public proxyHttpsUrl: string;
 
     private endpointBase: string = "https://dc.services.visualstudio.com";
@@ -63,14 +63,10 @@ class Config {
     }
 
     public set profileQueryEndpoint(endpoint: string) {
-        CorrelationIdManager.cancelCorrelationIdQuery(this._profileQueryEndpoint, this.instrumentationKey, this.setCorrelationId);
+        CorrelationIdManager.cancelCorrelationIdQuery(this, this.setCorrelationId);
         this._profileQueryEndpoint = endpoint;
         this.correlationId = CorrelationIdManager.correlationIdPrefix; // Reset the correlationId while we wait for the new query
-        CorrelationIdManager.queryCorrelationId(
-            this._profileQueryEndpoint,
-            this.instrumentationKey,
-            this.correlationIdRetryIntervalMs,
-            this.setCorrelationId);
+        CorrelationIdManager.queryCorrelationId(this, this.setCorrelationId);
     }
 
     public get profileQueryEndpoint() {

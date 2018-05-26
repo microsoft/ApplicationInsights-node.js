@@ -3,6 +3,7 @@ import https = require("https");
 import url = require("url");
 
 import Logging = require("./Logging");
+import Config = require("./Config");
 import TelemetryClient = require("../Library/TelemetryClient");
 import RequestResponseHeaders = require("./RequestResponseHeaders");
 
@@ -210,7 +211,9 @@ class Util {
      * @param {Function} requestCallback callback on request
      * @returns {http.ClientRequest} request object
      */
-    public static makeRequest(requestUrl: string,
+    public static makeRequest(
+        config: Config,
+        requestUrl: string,
         requestOptions: http.RequestOptions | https.RequestOptions,
         requestCallback: (res: http.IncomingMessage) => void): http.ClientRequest {
 
@@ -228,10 +231,10 @@ class Util {
         var proxyUrl: string = undefined;
 
         if (requestUrlParsed.protocol === 'https:') {
-            proxyUrl = process.env.https_proxy || undefined;
+            proxyUrl = config.proxyHttpsUrl || undefined;
         }
         if (requestUrlParsed.protocol === 'http:') {
-            proxyUrl = process.env.http_proxy || undefined;
+            proxyUrl = config.proxyHttpUrl || undefined;
         }
 
         if (proxyUrl) {
@@ -242,7 +245,7 @@ class Util {
 
             // https is not supported at the moment
             if (proxyUrlParsed.protocol === 'https:') {
-                Logging.info("Proxy protocol https is not supported");
+                Logging.info("Proxies that use HTTPS are not supported");
             } else {
                 options = {...options,
                     host: proxyUrlParsed.hostname,

@@ -56,6 +56,16 @@ describe("Library/Config", () => {
             assert(config.disableAppInsights === false);
             assert(config.samplingPercentage === 100);
             assert(config.correlationIdRetryIntervalMs === 30000);
+            assert(config.proxyHttpUrl === undefined);
+            assert(config.proxyHttpsUrl === undefined);
+        });
+
+        it("should initialize values that we claim in README (2)", () => {
+            process.env.http_proxy = "test";
+            process.env.https_proxy = "test2";
+            var config = new Config("iKey");
+            assert(config.proxyHttpUrl === "test");
+            assert(config.proxyHttpsUrl === "test2");
         });
 
         it("should add azure domain to excluded list", () => {
