@@ -151,7 +151,7 @@ class Sender {
                 });
             };
 
-            var req = Util.makeRequest(endpointUrl, options, requestCallback);
+            var req = Util.makeRequest(this._config, endpointUrl, options, requestCallback);
 
             req.on("error", (error: Error) => {
                 // todo: handle error codes better (group to recoverable/non-recoverable and persist)
@@ -305,7 +305,7 @@ class Sender {
         fs.lstat(directory, (err, stats) => {
             if (err && err.code === 'ENOENT') {
                 fs.mkdir(directory, (err) => {
-                    if (err) {
+                    if (err && err.code !== 'EEXIST') { // Handle race condition by ignoring EEXIST
                         callback(err);
                     } else {
                         this._applyACLRules(directory, callback);

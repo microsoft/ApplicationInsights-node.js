@@ -4,6 +4,7 @@ import url = require('url');
 
 import Util = require("./Util");
 import Logging = require("./Logging");
+import Config = require("./Config");
 
 class CorrelationIdManager {
     private static TAG = "CorrelationIdManager";
@@ -17,11 +18,11 @@ class CorrelationIdManager {
     private static requestIdMaxLength = 1024;
     private static currentRootId = Util.randomu32();
 
-    public static queryCorrelationId(endpointBase: string, instrumentationKey: string, correlationIdRetryInterval: number, callback: (correlationId: string) => void) {
+    public static queryCorrelationId(config: Config, callback: (correlationId: string) => void) {
         // GET request to `${this.endpointBase}/api/profiles/${this.instrumentationKey}/appId`
         // If it 404s, the iKey is bad and we should give up
         // If it fails otherwise, try again later
-        const appIdUrlString = `${endpointBase}/api/profiles/${instrumentationKey}/appId`;
+        const appIdUrlString = `${config.profileQueryEndpoint}/api/profiles/${config.instrumentationKey}/appId`;
 
         if (CorrelationIdManager.completedLookups.hasOwnProperty(appIdUrlString)) {
             callback(CorrelationIdManager.completedLookups[appIdUrlString]);
@@ -47,7 +48,7 @@ class CorrelationIdManager {
             };
 
             Logging.info(CorrelationIdManager.TAG, requestOptions);
-            const req = Util.makeRequest(appIdUrlString, requestOptions, (res) => {
+            const req = Util.makeRequest(config, appIdUrlString, requestOptions, (res) => {
                 if (res.statusCode === 200) {
                     // Success; extract the appId from the body
                     let appId = "";
@@ -70,7 +71,7 @@ class CorrelationIdManager {
                     delete CorrelationIdManager.pendingLookups[appIdUrlString];
                 } else {
                     // Retry after timeout.
-                    setTimeout(fetchAppId, correlationIdRetryInterval);
+                    setTimeout(fetchAppId, config.correlationIdRetryIntervalMs);
                 }
             });
             if (req) {
@@ -85,8 +86,8 @@ class CorrelationIdManager {
         setTimeout(fetchAppId, 0);
     }
 
-    public static cancelCorrelationIdQuery(endpointBase: string, instrumentationKey: string, callback: (correlationId: string) => void) {
-        const appIdUrlString = `${endpointBase}/api/profiles/${instrumentationKey}/appId`;
+    public static cancelCorrelationIdQuery(config: Config, callback: (correlationId: string) => void) {
+        const appIdUrlString = `${config.profileQueryEndpoint}/api/profiles/${config.instrumentationKey}/appId`;
         const pendingLookups = CorrelationIdManager.pendingLookups[appIdUrlString];
         if (pendingLookups) {
             CorrelationIdManager.pendingLookups[appIdUrlString] = pendingLookups.filter((cb) => cb != callback);
