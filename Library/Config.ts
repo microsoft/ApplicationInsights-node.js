@@ -1,4 +1,6 @@
 import CorrelationIdManager = require('./CorrelationIdManager');
+import http = require('http');
+import https = require('https');
 
 class Config {
 
@@ -35,6 +37,10 @@ class Config {
     public proxyHttpUrl: string;
     /** A proxy server for SDK HTTPS traffic (Optional, Default pulled from `https_proxy` environment variable) */
     public proxyHttpsUrl: string;
+    /** An http.Agent to use for SDK HTTP traffic (Optional, Default undefined) */
+    public httpAgent: http.Agent;
+    /** An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined) */
+    public httpsAgent: https.Agent;
 
     private endpointBase: string = "https://dc.services.visualstudio.com";
     private setCorrelationId: (v: string) => void;
@@ -60,6 +66,8 @@ class Config {
         this.profileQueryEndpoint = process.env[Config.ENV_profileQueryEndpoint] || this.endpointBase;
         this.proxyHttpUrl = process.env[Config.ENV_http_proxy] || undefined;
         this.proxyHttpsUrl = process.env[Config.ENV_https_proxy] || undefined;
+        this.httpAgent = undefined;
+        this.httpsAgent = undefined;
     }
 
     public set profileQueryEndpoint(endpoint: string) {

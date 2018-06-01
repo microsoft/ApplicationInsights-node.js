@@ -357,6 +357,8 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | endpointUrl                     | The ingestion endpoint to send telemetry payloads to                                                       |
 | proxyHttpUrl                    | A proxy server for SDK HTTP traffic (Optional, Default pulled from `http_proxy` environment variable)      |
 | proxyHttpsUrl                   | A proxy server for SDK HTTPS traffic (Optional, Default pulled from `https_proxy` environment variable)    |
+| httpAgent                       | An http.Agent to use for SDK HTTP traffic (Optional, Default undefined)                                    |
+| httpsAgent                      | An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined)                                  |
 | maxBatchSize                    | The maximum number of telemetry items to include in a payload to the ingestion endpoint (Default `250`)    |
 | maxBatchIntervalMs              | The maximum amount of time to wait to for a payload to reach maxBatchSize (Default `15000`)                |
 | disableAppInsights              | A flag indicating if telemetry transmission is disabled (Default `false`)                                  |
