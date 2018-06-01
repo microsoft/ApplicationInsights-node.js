@@ -4,6 +4,7 @@ import url = require('url');
 
 import Util = require("./Util");
 import Logging = require("./Logging");
+import Config = require("./Config");
 
 class CorrelationIdManager {
     private static TAG = "CorrelationIdManager";
@@ -17,12 +18,11 @@ class CorrelationIdManager {
     private static requestIdMaxLength = 1024;
     private static currentRootId = Util.randomu32();
 
-    public static queryCorrelationId(endpointBase: string, instrumentationKey: string, correlationIdRetryInterval: number, callback: (correlationId: string) => void) {
+    public static queryCorrelationId(config: Config, callback: (correlationId: string) => void) {
         // GET request to `${this.endpointBase}/api/profiles/${this.instrumentationKey}/appId`
         // If it 404s, the iKey is bad and we should give up
         // If it fails otherwise, try again later
-        const appIdUrlString = `${endpointBase}/api/profiles/${instrumentationKey}/appId`;
-        const appIdUrl = url.parse(appIdUrlString);
+        const appIdUrlString = `${config.profileQueryEndpoint}/api/profiles/${config.instrumentationKey}/appId`;
 
         if (CorrelationIdManager.completedLookups.hasOwnProperty(appIdUrlString)) {
             callback(CorrelationIdManager.completedLookups[appIdUrlString]);
@@ -34,25 +34,21 @@ class CorrelationIdManager {
 
         CorrelationIdManager.pendingLookups[appIdUrlString] = [callback];
 
-        const requestOptions = {
-            protocol: appIdUrl.protocol,
-            hostname: appIdUrl.host,
-            path: appIdUrl.pathname,
-            method: 'GET',
-            // Ensure this request is not captured by auto-collection.
-            // Note: we don't refer to the property in HttpDependencyParser because that would cause a cyclical dependency
-            disableAppInsightsAutoCollection: true
-        };
-
-        let httpRequest = appIdUrl.protocol === 'https:' ? https.request : http.request;
-
         const fetchAppId = () => {
             if (!CorrelationIdManager.pendingLookups[appIdUrlString]) {
                 // This query has been cancelled.
                 return;
             }
+
+            const requestOptions = {
+                method: 'GET',
+                // Ensure this request is not captured by auto-collection.
+                // Note: we don't refer to the property in HttpDependencyParser because that would cause a cyclical dependency
+                disableAppInsightsAutoCollection: true
+            };
+
             Logging.info(CorrelationIdManager.TAG, requestOptions);
-            const req = httpRequest(requestOptions, (res) => {
+            const req = Util.makeRequest(config, appIdUrlString, requestOptions, (res) => {
                 if (res.statusCode === 200) {
                     // Success; extract the appId from the body
                     let appId = "";
@@ -75,7 +71,7 @@ class CorrelationIdManager {
                     delete CorrelationIdManager.pendingLookups[appIdUrlString];
                 } else {
                     // Retry after timeout.
-                    setTimeout(fetchAppId, correlationIdRetryInterval);
+                    setTimeout(fetchAppId, config.correlationIdRetryIntervalMs);
                 }
             });
             if (req) {
@@ -90,8 +86,8 @@ class CorrelationIdManager {
         setTimeout(fetchAppId, 0);
     }
 
-    public static cancelCorrelationIdQuery(endpointBase: string, instrumentationKey: string, callback: (correlationId: string) => void) {
-        const appIdUrlString = `${endpointBase}/api/profiles/${instrumentationKey}/appId`;
+    public static cancelCorrelationIdQuery(config: Config, callback: (correlationId: string) => void) {
+        const appIdUrlString = `${config.profileQueryEndpoint}/api/profiles/${config.instrumentationKey}/appId`;
         const pendingLookups = CorrelationIdManager.pendingLookups[appIdUrlString];
         if (pendingLookups) {
             CorrelationIdManager.pendingLookups[appIdUrlString] = pendingLookups.filter((cb) => cb != callback);
@@ -103,7 +99,7 @@ class CorrelationIdManager {
 
     /**
      * Generate a request Id according to https://github.com/lmolkova/correlation/blob/master/hierarchical_request_id.md
-     * @param parentId 
+     * @param parentId
      */
     public static generateRequestId(parentId: string): string {
         if (parentId) {
@@ -123,7 +119,7 @@ class CorrelationIdManager {
     /**
      * Given a hierarchical identifier of the form |X.*
      * return the root identifier X
-     * @param id 
+     * @param id
      */
     public static getRootId(id: string): string {
         let endIndex = id.indexOf('.');

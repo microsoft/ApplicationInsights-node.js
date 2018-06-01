@@ -1,9 +1,12 @@
 ﻿import http = require("http");
+import https = require("https");
 import url = require("url");
 
 import Logging = require("./Logging");
+import Config = require("./Config");
 import TelemetryClient = require("../Library/TelemetryClient");
 import RequestResponseHeaders = require("./RequestResponseHeaders");
+
 
 class Util {
     public static MAX_PROPERTY_LENGTH = 1024;
@@ -166,7 +169,7 @@ class Util {
     }
 
     /**
-     * Checks if a request url is not on a excluded domain list 
+     * Checks if a request url is not on a excluded domain list
      * and if it is safe to add correlation headers
      */
     public static canIncludeCorrelationHeader(client: TelemetryClient, requestUrl: string) {
@@ -197,5 +200,78 @@ class Util {
             }
         }
     }
+
+    /**
+     * Generate request
+     *
+     * Proxify the request creation to handle proxy http
+     *
+     * @param {string} requestUrl url endpoint
+     * @param {Object} requestOptions Request option
+     * @param {Function} requestCallback callback on request
+     * @returns {http.ClientRequest} request object
+     */
+    public static makeRequest(
+        config: Config,
+        requestUrl: string,
+        requestOptions: http.RequestOptions | https.RequestOptions,
+        requestCallback: (res: http.IncomingMessage) => void): http.ClientRequest {
+
+        if (requestUrl && requestUrl.indexOf('//') === 0) {
+            requestUrl = 'https:' + requestUrl;
+        }
+
+        var requestUrlParsed = url.parse(requestUrl);
+        var options = {...requestOptions,
+            host: requestUrlParsed.hostname,
+            port: requestUrlParsed.port,
+            path: requestUrlParsed.pathname,
+        };
+
+        var proxyUrl: string = undefined;
+
+        if (requestUrlParsed.protocol === 'https:') {
+            proxyUrl = config.proxyHttpsUrl || undefined;
+        }
+        if (requestUrlParsed.protocol === 'http:') {
+            proxyUrl = config.proxyHttpUrl || undefined;
+        }
+
+        if (proxyUrl) {
+            if (proxyUrl.indexOf('//') === 0) {
+                proxyUrl = 'http:' + proxyUrl;
+            }
+            var proxyUrlParsed = url.parse(proxyUrl);
+
+            // https is not supported at the moment
+            if (proxyUrlParsed.protocol === 'https:') {
+                Logging.info("Proxies that use HTTPS are not supported");
+            } else {
+                options = {...options,
+                    host: proxyUrlParsed.hostname,
+                    port: proxyUrlParsed.port || "80",
+                    path: requestUrl,
+                    headers: {...options.headers,
+                        Host: requestUrlParsed.hostname,
+                    },
+                };
+            }
+        }
+
+        var isHttps = requestUrlParsed.protocol === 'https:' && !proxyUrl;
+
+        if (isHttps && config.httpsAgent !== undefined) {
+            options.agent = config.httpsAgent;
+        } else if (!isHttps && config.httpAgent !== undefined) {
+            options.agent = config.httpAgent;
+        }
+
+        var req = isHttps ?
+            https.request(<any>options, requestCallback) :
+            http.request(<any>options, requestCallback);
+
+        return req;
+
+    };
 }
 export = Util;

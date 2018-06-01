@@ -21,7 +21,6 @@ class HttpRequestParser extends RequestParser {
     private legacySocketRemoteAddress: string;
     private userAgent: string;
     private sourceCorrelationId: string;
-    private sourceRoleName: string;
     private parentId: string;
     private operationId: string;
     private requestId: string;
@@ -66,11 +65,11 @@ class HttpRequestParser extends RequestParser {
             id: this.requestId,
             name: this.method + " " + url.parse(this.url).pathname,
             url: this.url,
-            /* 
+            /*
             See https://github.com/Microsoft/ApplicationInsights-dotnet-server/blob/25d695e6a906fbe977f67be3966d25dbf1c50a79/Src/Web/Web.Shared.Net/RequestTrackingTelemetryModule.cs#L250
             for reference
             */
-            source: this.sourceCorrelationId + " | roleName:" + this.sourceRoleName,
+            source: this.sourceCorrelationId,
             duration: this.duration,
             resultCode: this.statusCode ? this.statusCode.toString() : null,
             success: this._isSuccess(),
@@ -109,6 +108,7 @@ class HttpRequestParser extends RequestParser {
         newTags[HttpRequestParser.keys.locationIp] = tags[HttpRequestParser.keys.locationIp] || this._getIp();
         newTags[HttpRequestParser.keys.sessionId] = tags[HttpRequestParser.keys.sessionId] || this._getId("ai_session");
         newTags[HttpRequestParser.keys.userId] = tags[HttpRequestParser.keys.userId] || this._getId("ai_user");
+        newTags[HttpRequestParser.keys.userAuthUserId] = tags[HttpRequestParser.keys.userAuthUserId] || this._getId("ai_authUser");
         newTags[HttpRequestParser.keys.operationName] = this.getOperationName(tags);
         newTags[HttpRequestParser.keys.operationParentId] = this.getOperationParentId(tags);
         newTags[HttpRequestParser.keys.operationId] = this.getOperationId(tags);
@@ -199,7 +199,6 @@ class HttpRequestParser extends RequestParser {
         this.rawHeaders = request.headers || (<any>request).rawHeaders;
         this.userAgent = request.headers && request.headers["user-agent"];
         this.sourceCorrelationId = Util.getCorrelationContextTarget(request, RequestResponseHeaders.requestContextSourceKey);
-        this.sourceRoleName = Util.getCorrelationContextTarget(request, RequestResponseHeaders.requestContextSourceRoleNameKey);
 
         if (request.headers) {
             this.correlationContextHeader = request.headers[RequestResponseHeaders.correlationContextHeader];

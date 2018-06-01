@@ -128,16 +128,15 @@ class AutoCollectHttpDependencies {
                 if (correlationHeader) {
                     const components = correlationHeader.split(",");
                     const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
-                    const roleNameKey = `${RequestResponseHeaders.requestContextSourceRoleNameKey}=`;
                     if (!components.some((value) => value.substring(0,key.length) === key)) {
                         telemetry.request.setHeader(
                             RequestResponseHeaders.requestContextHeader, 
-                            `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId},${RequestResponseHeaders.requestContextSourceRoleNameKey}=${client.context.tags[client.context.keys.cloudRole]}`);
+                            `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
                     }
                 } else {
                     telemetry.request.setHeader(
                         RequestResponseHeaders.requestContextHeader, 
-                        `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId},${RequestResponseHeaders.requestContextSourceRoleNameKey}=${client.context.tags[client.context.keys.cloudRole]}`);
+                        `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
                 }
             }
 
