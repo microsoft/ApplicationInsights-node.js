@@ -18,18 +18,6 @@ export = {
     requestContextTargetKey: "appId",
 
     /**
-     * Source-RoleName key in the request context header that is added by an application 
-     * while making http requests and retrieved by the other application when processing incoming requests.
-     */
-    requestContextSourceRoleNameKey: "roleName",
-
-    /**
-     * Target-RoleName key in the request context header that is added to the response 
-     * and retrieved by the calling application when processing incoming responses.
-     */
-    requestContextTargetRoleNameKey: "roleName",
-
-    /**
      * Request-Id header
      */
     requestIdHeader: "request-id",

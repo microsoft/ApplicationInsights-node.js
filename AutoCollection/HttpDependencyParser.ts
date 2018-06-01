@@ -15,7 +15,6 @@ import CorrelationIdManager = require("../Library/CorrelationIdManager");
  */
 class HttpDependencyParser extends RequestParser {
     private correlationId: string;
-    private targetRoleName: string;
 
     constructor(requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest) {
         super();
@@ -41,7 +40,6 @@ class HttpDependencyParser extends RequestParser {
     public onResponse(response: http.ClientResponse) {
         this._setStatus(response.statusCode, undefined);
         this.correlationId = Util.getCorrelationContextTarget(response, RequestResponseHeaders.requestContextTargetKey);
-        this.targetRoleName = Util.getCorrelationContextTarget(response, RequestResponseHeaders.requestContextTargetRoleNameKey);
     }
 
     /**
@@ -60,7 +58,7 @@ class HttpDependencyParser extends RequestParser {
         if (this.correlationId) {
             remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_AI;
             if (this.correlationId !== CorrelationIdManager.correlationIdPrefix) {
-                remoteDependencyTarget = urlObject.hostname + " | " + this.correlationId + " | roleName:" + this.targetRoleName;
+                remoteDependencyTarget = urlObject.hostname + " | " + this.correlationId;
             }
         } else {
             remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
