@@ -260,9 +260,9 @@ class Util {
 
         var isHttps = requestUrlParsed.protocol === 'https:' && !proxyUrl;
 
-        if (isHttps && config.httpsAgent) {
+        if (isHttps && config.httpsAgent !== undefined) {
             options.agent = config.httpsAgent;
-        } else if (!isHttps && config.httpAgent) {
+        } else if (!isHttps && config.httpAgent !== undefined) {
             options.agent = config.httpAgent;
         }
 
