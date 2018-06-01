@@ -258,7 +258,15 @@ class Util {
             }
         }
 
-        var req = (requestUrlParsed.protocol === 'https:' && !proxyUrl) ?
+        var isHttps = requestUrlParsed.protocol === 'https:' && !proxyUrl;
+
+        if (isHttps && config.httpsAgent) {
+            options.agent = config.httpsAgent;
+        } else if (!isHttps && config.httpAgent) {
+            options.agent = config.httpAgent;
+        }
+
+        var req = isHttps ?
             https.request(<any>options, requestCallback) :
             http.request(<any>options, requestCallback);
 
