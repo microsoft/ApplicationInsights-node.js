@@ -48,11 +48,5 @@ import Base = require('./Base');
          */
         public data: Base;
         
-        constructor()
-        {
-            this.ver = 1;
-            this.sampleRate = 100.0;
-            this.tags = {};
-        }
     }
 export = Envelope;
