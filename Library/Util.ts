@@ -73,12 +73,12 @@ class Util {
     }
 
     /**
-     * generate GUID
+     * generate W3C-compatible trace id
      */
-    public static newGuid() {
-        var hexValues = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"];
+    public static w3cTraceId() {
+        var hexValues = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"];
 
-        // c.f. rfc4122 (UUID version 4 = xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx)
+        // rfc4122 version 4 UUID without dashes and with lowercase letters
         var oct = "", tmp;
         for (var a = 0; a < 4; a++) {
             tmp = Util.random32();
@@ -95,7 +95,7 @@ class Util {
 
         // "Set the two most significant bits (bits 6 and 7) of the clock_seq_hi_and_reserved to zero and one, respectively"
         var clockSequenceHi = hexValues[8 + (Math.random() * 4) | 0];
-        return oct.substr(0, 8) + "-" + oct.substr(9, 4) + "-4" + oct.substr(13, 3) + "-" + clockSequenceHi + oct.substr(16, 3) + "-" + oct.substr(19, 12);
+        return oct.substr(0, 8) + oct.substr(9, 4) + "4" + oct.substr(13, 3) + clockSequenceHi + oct.substr(16, 3) + oct.substr(19, 12);
     }
 
     /**
