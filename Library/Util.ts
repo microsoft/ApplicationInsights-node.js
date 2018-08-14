@@ -74,6 +74,7 @@ class Util {
 
     /**
      * generate W3C-compatible trace id
+     * https://github.com/w3c/distributed-tracing/blob/master/trace_context/HTTP_HEADER_FORMAT.md#trace-id
      */
     public static w3cTraceId() {
         var hexValues = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"];
