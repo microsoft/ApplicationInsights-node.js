@@ -56,13 +56,24 @@ describe("Library/Util", () => {
         });
     });
 
-    describe("#newGuid()", () => {
-        it("should generate a valid guid", () => {
+    describe("#w3cTraceId()", () => {
+        it("should generate a valid trace id", () => {
             var mathStub = sinon.stub(Math, "random", () => 0);
-            var expected = "00000000-0000-4000-8000-000000000000";
-            var actual = Util.newGuid();
+            var expected = "00000000000040008000000000000000";
+            var actual = Util.w3cTraceId();
             assert.equal(actual, expected, "expected guid was generated");
             mathStub.restore();
+        });
+        it("should generate a valid trace id (conformance rules)", () => {
+            var alreadySeen: {[id: string] : boolean} = {};
+            for (var i=0; i < 10; i++) {
+                var traceId = Util.w3cTraceId();
+                assert.equal(traceId.length, 32);
+                assert.equal(traceId, traceId.toLowerCase());
+                assert.equal(traceId, traceId.replace(/[^a-z0-9]/g, ''));
+                assert.ok(!alreadySeen[traceId]);
+                alreadySeen[traceId] = true;
+            }
         });
     });
 

@@ -132,7 +132,7 @@ class CorrelationIdManager {
     }
 
     private static generateRootId(): string {
-        return '|' + Util.newGuid() + '.';
+        return '|' + Util.w3cTraceId() + '.';
     }
 
     private static appendSuffix(parentId: string, suffix: string, delimiter: string): string {
