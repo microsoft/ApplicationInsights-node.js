@@ -1,6 +1,7 @@
 ﻿import http = require("http");
 import https = require("https");
 import url = require("url");
+import constants = require("constants");
 
 import Logging = require("./Logging");
 import Config = require("./Config");
@@ -10,7 +11,10 @@ import RequestResponseHeaders = require("./RequestResponseHeaders");
 
 class Util {
     public static MAX_PROPERTY_LENGTH = 1024;
-    private static document:any = typeof document !== "undefined" ? document : {};
+    public static tlsRestrictedAgent: https.Agent = new https.Agent(<any>{
+        secureOptions: constants.SSL_OP_NO_SSLv2 | constants.SSL_OP_NO_SSLv3 |
+            constants.SSL_OP_NO_TLSv1 | constants.SSL_OP_NO_TLSv1_1
+    });
 
     /**
      * helper method to access userId and sessionId cookie
@@ -247,6 +251,7 @@ class Util {
             // https is not supported at the moment
             if (proxyUrlParsed.protocol === 'https:') {
                 Logging.info("Proxies that use HTTPS are not supported");
+                proxyUrl = undefined;
             } else {
                 options = {...options,
                     host: proxyUrlParsed.hostname,
@@ -265,13 +270,16 @@ class Util {
             options.agent = config.httpsAgent;
         } else if (!isHttps && config.httpAgent !== undefined) {
             options.agent = config.httpAgent;
+        } else if (isHttps) {
+            // HTTPS without a passed in agent. Use one that enforces our TLS rules
+            options.agent = Util.tlsRestrictedAgent;
         }
 
-        var req = isHttps ?
-            https.request(<any>options, requestCallback) :
-            http.request(<any>options, requestCallback);
-
-        return req;
+        if (isHttps) {
+            return https.request(<any>options, requestCallback);
+        } else {
+            return http.request(<any>options, requestCallback);
+        }
 
     };
 }

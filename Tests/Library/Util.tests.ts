@@ -259,11 +259,13 @@ describe("Library/Util", () => {
                 if (process.env.hasOwnProperty('no_proxy')) {
                     delete process.env.no_proxy;
                 }
-                sinon.spy(http, 'request')
+                sinon.spy(http, 'request');
+                sinon.spy(https, 'request');
             });
 
             afterEach(() => {
                 http.request.restore();
+                https.request.restore();
             });
 
             it("should not override options when http_proxy not defined", () => {
@@ -272,7 +274,7 @@ describe("Library/Util", () => {
                     ...options,
                     host: requestUrlParsed.hostname,
                     port: requestUrlParsed.port,
-                    path: requestUrlParsed.pathname,
+                    path: requestUrlParsed.pathname
                 };
                 const config: any = {proxyHttpUrl: undefined, proxyHttpsUrl: undefined};
 
@@ -289,7 +291,7 @@ describe("Library/Util", () => {
                     ...options,
                     host: requestUrlParsed.hostname,
                     port: requestUrlParsed.port,
-                    path: requestUrlParsed.pathname,
+                    path: requestUrlParsed.pathname
                 };
 
                 const config: any = {proxyHttpUrl: undefined, proxyHttpsUrl: proxyUrl};
@@ -309,7 +311,7 @@ describe("Library/Util", () => {
                     path: requestUrl,
                     headers: {...options.headers,
                         Host: requestUrlParsed.hostname,
-                    }
+                    },
                 };
 
                 const config: any = {proxyHttpUrl: proxyUrl, proxyHttpsUrl: undefined};
@@ -336,8 +338,8 @@ describe("Library/Util", () => {
                 if (process.env.hasOwnProperty('no_proxy')) {
                     delete process.env.no_proxy;
                 }
-                sinon.spy(http, 'request')
-                sinon.spy(https, 'request');
+                sinon.stub(http, 'request');
+                sinon.stub(https, 'request');
             });
 
             afterEach(() => {
@@ -349,6 +351,7 @@ describe("Library/Util", () => {
                 const callback = sinon.spy();
                 const expectedOptions = {
                     ...options,
+                    agent: Util.tlsRestrictedAgent,
                     host: requestUrlParsed.hostname,
                     port: requestUrlParsed.port,
                     path: requestUrlParsed.pathname,
@@ -362,10 +365,53 @@ describe("Library/Util", () => {
                 assert.deepEqual(https.request.getCall(0).args[1], callback);
             });
 
+            it("should not override options when https_proxy not defined (custom agent - not applied)", () => {
+                const customAgent = new https.Agent();
+                const reqOptions = {
+                    ...options,
+                    agent: customAgent
+                }
+                const callback = sinon.spy();
+                const expectedOptions = {
+                    ...options,
+                    agent: Util.tlsRestrictedAgent,
+                    host: requestUrlParsed.hostname,
+                    port: requestUrlParsed.port,
+                    path: requestUrlParsed.pathname,
+                };
+
+                const config: any = {proxyHttpUrl: undefined, proxyHttpsUrl: undefined};
+                const req = Util.makeRequest(config, requestUrl, reqOptions, callback);
+
+                assert.equal(https.request.calledOnce, true, "https.request should be called");
+                assert.deepEqual(https.request.getCall(0).args[0], expectedOptions);
+                assert.deepEqual(https.request.getCall(0).args[1], callback);
+            });
+
+            it("should not override options when https_proxy not defined (custom agent - applied)", () => {
+                const customAgent = new https.Agent();
+                const callback = sinon.spy();
+                const expectedOptions = {
+                    ...options,
+                    agent: customAgent,
+                    host: requestUrlParsed.hostname,
+                    port: requestUrlParsed.port,
+                    path: requestUrlParsed.pathname,
+                };
+
+                const config: any = {proxyHttpUrl: undefined, proxyHttpsUrl: undefined, httpsAgent: customAgent};
+                const req = Util.makeRequest(config, requestUrl, options, callback);
+
+                assert.equal(https.request.calledOnce, true, "https.request should be called");
+                assert.deepEqual(https.request.getCall(0).args[0], expectedOptions);
+                assert.deepEqual(https.request.getCall(0).args[1], callback);
+            });
+
             it("should not override options when https_proxy not defined and http_proxy is defined", () => {
                 const callback = sinon.spy();
                 const expectedOptions = {
                     ...options,
+                    agent: Util.tlsRestrictedAgent,
                     host: requestUrlParsed.hostname,
                     port: requestUrlParsed.port,
                     path: requestUrlParsed.pathname,
@@ -404,6 +450,7 @@ describe("Library/Util", () => {
                 const callback = sinon.spy();
                 const expectedOptions = {
                     ...options,
+                    agent: Util.tlsRestrictedAgent,
                     host: requestUrlParsed.hostname,
                     port: requestUrlParsed.port,
                     path: requestUrlParsed.pathname,
@@ -412,9 +459,10 @@ describe("Library/Util", () => {
 
                 const req = Util.makeRequest(config, requestUrl, options, callback);
 
-                assert.equal(http.request.calledOnce, true);
-                assert.deepEqual(http.request.getCall(0).args[0], expectedOptions);
-                assert.deepEqual(http.request.getCall(0).args[1], callback);
+                assert.equal(https.request.calledOnce, true);
+                assert.equal(http.request.calledOnce, false);
+                assert.deepEqual(https.request.getCall(0).args[0], expectedOptions);
+                assert.deepEqual(https.request.getCall(0).args[1], callback);
             });
         });
 
