@@ -1,6 +1,7 @@
 ﻿import http = require("http");
 import https = require("https");
 import url = require("url");
+import constants = require("constants");
 
 import Logging = require("./Logging");
 import Config = require("./Config");
@@ -10,7 +11,10 @@ import RequestResponseHeaders = require("./RequestResponseHeaders");
 
 class Util {
     public static MAX_PROPERTY_LENGTH = 1024;
-    private static document:any = typeof document !== "undefined" ? document : {};
+    public static tlsRestrictedAgent: https.Agent = new https.Agent(<any>{
+        secureOptions: constants.SSL_OP_NO_SSLv2 | constants.SSL_OP_NO_SSLv3 |
+            constants.SSL_OP_NO_TLSv1 | constants.SSL_OP_NO_TLSv1_1
+    });
 
     /**
      * helper method to access userId and sessionId cookie
@@ -73,12 +77,13 @@ class Util {
     }
 
     /**
-     * generate GUID
+     * generate W3C-compatible trace id
+     * https://github.com/w3c/distributed-tracing/blob/master/trace_context/HTTP_HEADER_FORMAT.md#trace-id
      */
-    public static newGuid() {
-        var hexValues = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"];
+    public static w3cTraceId() {
+        var hexValues = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"];
 
-        // c.f. rfc4122 (UUID version 4 = xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx)
+        // rfc4122 version 4 UUID without dashes and with lowercase letters
         var oct = "", tmp;
         for (var a = 0; a < 4; a++) {
             tmp = Util.random32();
@@ -95,7 +100,7 @@ class Util {
 
         // "Set the two most significant bits (bits 6 and 7) of the clock_seq_hi_and_reserved to zero and one, respectively"
         var clockSequenceHi = hexValues[8 + (Math.random() * 4) | 0];
-        return oct.substr(0, 8) + "-" + oct.substr(9, 4) + "-4" + oct.substr(13, 3) + "-" + clockSequenceHi + oct.substr(16, 3) + "-" + oct.substr(19, 12);
+        return oct.substr(0, 8) + oct.substr(9, 4) + "4" + oct.substr(13, 3) + clockSequenceHi + oct.substr(16, 3) + oct.substr(19, 12);
     }
 
     /**
@@ -246,6 +251,7 @@ class Util {
             // https is not supported at the moment
             if (proxyUrlParsed.protocol === 'https:') {
                 Logging.info("Proxies that use HTTPS are not supported");
+                proxyUrl = undefined;
             } else {
                 options = {...options,
                     host: proxyUrlParsed.hostname,
@@ -264,13 +270,16 @@ class Util {
             options.agent = config.httpsAgent;
         } else if (!isHttps && config.httpAgent !== undefined) {
             options.agent = config.httpAgent;
+        } else if (isHttps) {
+            // HTTPS without a passed in agent. Use one that enforces our TLS rules
+            options.agent = Util.tlsRestrictedAgent;
         }
 
-        var req = isHttps ?
-            https.request(<any>options, requestCallback) :
-            http.request(<any>options, requestCallback);
-
-        return req;
+        if (isHttps) {
+            return https.request(<any>options, requestCallback);
+        } else {
+            return http.request(<any>options, requestCallback);
+        }
 
     };
 }

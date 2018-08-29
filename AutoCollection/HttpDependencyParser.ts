@@ -139,7 +139,7 @@ class HttpDependencyParser extends RequestParser {
         }
 
         // Mix in default values used by http.request and others
-        options.protocol = options.protocol || (<any>request).agent.protocol;
+        options.protocol = options.protocol || ((<any>request).agent && (<any>request).agent.protocol) || undefined;
         options.hostname = options.hostname || 'localhost';
 
         return url.format(options);

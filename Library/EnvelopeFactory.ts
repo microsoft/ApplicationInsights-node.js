@@ -123,7 +123,7 @@ class EnvelopeFactory {
             remoteDependency.id = telemetry.id;
         }
         else {
-            remoteDependency.id = Util.newGuid();
+            remoteDependency.id = Util.w3cTraceId();
         }
 
         var data = new Contracts.Data<Contracts.RemoteDependencyData>();
@@ -171,7 +171,7 @@ class EnvelopeFactory {
             requestData.id = telemetry.id;
         }
         else {
-            requestData.id = Util.newGuid();
+            requestData.id = Util.w3cTraceId();
         }
         requestData.name = telemetry.name;
         requestData.url = telemetry.url;
