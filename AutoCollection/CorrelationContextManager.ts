@@ -162,17 +162,6 @@ export class CorrelationContextManager {
         return parseInt(nodeVer[0]) > 3 || (parseInt(nodeVer[0]) > 2 && parseInt(nodeVer[1]) > 2);
     }
 
-    // Patch methods that manually go async that Zone doesn't catch
-    private static requireForPatch(module: string) {
-        var req = null;
-        try {
-            req = require(module);
-        } catch (e) {
-            return null;
-        }
-        return req;
-    }
-
     // Zone.js breaks concatenation of timer return values.
     // This fixes that.
     private static patchTimers(methodNames: string[]) {
