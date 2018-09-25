@@ -2,7 +2,7 @@ import http = require("http");
 import Util = require("../Library/Util");
 import Logging = require("../Library/Logging");
 
-import {channel} from "diagnostic-channel";
+import * as DiagChannel from "./diagnostic-channel/initialization";
 
 export interface CustomProperties {
     /**
@@ -135,9 +135,9 @@ export class CorrelationContextManager {
                 Logging.warn("Failed to require zone.js");
             }
 
-            channel.addContextPreservation((cb) => {
+            DiagChannel.registerContextPreservation((cb) => {
                 return Zone.current.wrap(cb, "AI-ContextPreservation");
-            })
+            });
             this.patchError();
             this.patchTimers(["setTimeout", "setInterval"]);
         }

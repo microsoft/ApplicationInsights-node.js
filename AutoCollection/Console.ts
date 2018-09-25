@@ -1,11 +1,7 @@
 import TelemetryClient = require("../Library/TelemetryClient");
 import Logging = require("../Library/Logging");
 
-import {enable as enableConsole} from "./diagnostic-channel/console.sub";
-import {enable as enableBunyan} from "./diagnostic-channel/bunyan.sub";
-import {enable as enableWinston} from "./diagnostic-channel/winston.sub";
-
-import "./diagnostic-channel/initialization";
+import * as DiagChannel from "./diagnostic-channel/initialization";
 
 class AutoCollectConsole {
     public static originalMethods: {[name: string]: (message?: any, ...optionalParams: any[]) => void};
@@ -26,9 +22,11 @@ class AutoCollectConsole {
     }
 
     public enable(isEnabled: boolean, collectConsoleLog: boolean) {
-        enableConsole(isEnabled && collectConsoleLog, this._client);
-        enableBunyan(isEnabled, this._client);
-        enableWinston(isEnabled, this._client);
+        if (DiagChannel.IsInitialized) {
+            require("./diagnostic-channel/console.sub").enable(isEnabled && collectConsoleLog, this._client);
+            require("./diagnostic-channel/bunyan.sub").enable(isEnabled, this._client);
+            require("./diagnostic-channel/winston.sub").enable(isEnabled, this._client);
+        }
     }
 
     public isInitialized() {

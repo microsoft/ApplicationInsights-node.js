@@ -10,12 +10,7 @@ import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import HttpDependencyParser = require("./HttpDependencyParser");
 import { CorrelationContextManager, CorrelationContext, PrivateCustomProperties } from "./CorrelationContextManager";
 
-import {enable as enableMongodb} from "./diagnostic-channel/mongodb.sub";
-import {enable as enableMysql} from "./diagnostic-channel/mysql.sub";
-import {enable as enableRedis} from "./diagnostic-channel/redis.sub";
-import {enable as enablePostgres} from "./diagnostic-channel/postgres.sub";
-
-import "./diagnostic-channel/initialization";
+import * as DiagChannel from "./diagnostic-channel/initialization";
 
 class AutoCollectHttpDependencies {
     public static disableCollectionRequestOption = 'disableAppInsightsAutoCollection';
@@ -43,10 +38,12 @@ class AutoCollectHttpDependencies {
         if (this._isEnabled && !this._isInitialized) {
             this._initialize();
         }
-        enableMongodb(isEnabled, this._client);
-        enableMysql(isEnabled, this._client);
-        enableRedis(isEnabled, this._client);
-        enablePostgres(isEnabled, this._client);
+        if (DiagChannel.IsInitialized) {
+            require("./diagnostic-channel/mongodb.sub").enable(isEnabled, this._client);
+            require("./diagnostic-channel/mysql.sub").enable(isEnabled, this._client);
+            require("./diagnostic-channel/redis.sub").enable(isEnabled, this._client);
+            require("./diagnostic-channel/postgres.sub").enable(isEnabled, this._client);
+        }
     }
 
     public isInitialized() {
