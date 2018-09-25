@@ -2,7 +2,7 @@ import http = require("http");
 import Util = require("../Library/Util");
 import Logging = require("../Library/Logging");
 
-import {channel} from "diagnostic-channel";
+import * as DiagChannel from "./diagnostic-channel/initialization";
 
 export interface CustomProperties {
     /**
@@ -135,9 +135,9 @@ export class CorrelationContextManager {
                 Logging.warn("Failed to require zone.js");
             }
 
-            channel.addContextPreservation((cb) => {
+            DiagChannel.registerContextPreservation((cb) => {
                 return Zone.current.wrap(cb, "AI-ContextPreservation");
-            })
+            });
             this.patchError();
             this.patchTimers(["setTimeout", "setInterval"]);
         }
@@ -160,17 +160,6 @@ export class CorrelationContextManager {
         // Unit tests warn of errors < 3.3 from timer patching. All versions before 4 were 0.x
         var nodeVer = process.versions.node.split(".");
         return parseInt(nodeVer[0]) > 3 || (parseInt(nodeVer[0]) > 2 && parseInt(nodeVer[1]) > 2);
-    }
-
-    // Patch methods that manually go async that Zone doesn't catch
-    private static requireForPatch(module: string) {
-        var req = null;
-        try {
-            req = require(module);
-        } catch (e) {
-            return null;
-        }
-        return req;
     }
 
     // Zone.js breaks concatenation of timer return values.
