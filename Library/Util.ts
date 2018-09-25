@@ -158,6 +158,8 @@ class Util {
                 if (propertyType !== "string") {
                     if (property != null && typeof property.toString === "function") {
                         property = property.toString();
+                    } else if (property === null || propertyType === "undefined") {
+                        property = "";
                     } else {
                         Logging.info("key: " + field + ", invalid property type: " + propertyType);
                         continue;
