@@ -193,7 +193,7 @@ describe("Library/Util", () => {
             assert.equal(Util.validateStringMap(():void => null), undefined);
             assert.deepEqual(Util.validateStringMap({ a: {} }), { a: "[object Object]" });
             assert.deepEqual(Util.validateStringMap({ a: 3, b: "test" }), { a: "3", b: "test" });
-            assert.deepEqual(Util.validateStringMap({ a: 0, b: null, c: undefined, d: [], e: '', f: -1 }), { a: "0", d: "", e: "", f: "-1" });
+            assert.deepEqual(Util.validateStringMap({ a: 0, b: null, c: undefined, d: [], e: '', f: -1 }), { a: "0", b: "", c: "", d: "", e: "", f: "-1" });
         });
     });
 
