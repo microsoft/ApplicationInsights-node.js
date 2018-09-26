@@ -117,6 +117,11 @@ class Util {
         return obj instanceof Error;
     }
 
+    public static isPrimitive(input: any): boolean {
+        const propType = typeof input;
+        return propType === "string" || propType === "number" || propType === "boolean";
+    }
+
     /**
      * Check if an object is of type Date
      */
@@ -146,34 +151,72 @@ class Util {
     }
 
     /**
+     * Using JSON.stringify, by default Errors do not serialize to something useful:
+     * Simplify a generic Node Error into a simpler map for customDimensions
+     * Custom errors can still implement toJSON to override this functionality
+     */
+    protected static extractError(err: Error): { message: string, code: string } {
+        // Error is often subclassed so may have code OR id properties:
+        // https://nodejs.org/api/errors.html#errors_error_code
+        const looseError = err as any;
+        return {
+            message: err.message,
+            code: looseError.code || looseError.id || "",
+        }
+    }
+
+    /**
+     * Manually call toJSON if available to pre-convert the value.
+     * If a primitive is returned, then the consumer of this function can skip JSON.stringify.
+     * This avoids double escaping of quotes for Date objects, for example.
+     */
+    protected static extractObject(origProperty: any): any {
+        if (origProperty instanceof Error) {
+            return Util.extractError(origProperty);
+        }
+        if (typeof origProperty.toJSON === "function") {
+            return origProperty.toJSON();
+        }
+        return origProperty;
+    }
+
+    /**
      * Validate that an object is of type { [key: string]: string }
      */
     public static validateStringMap(obj: any): { [key: string]: string } {
-        var map: { [key: string]: string };
-        if(typeof obj === "object") {
-            map = <{ [key: string]: string }>{};
-            for (var field in obj) {
-                var property = obj[field];
-                var propertyType = typeof property;
-                if (propertyType !== "string") {
-                    if (property != null && typeof property.toString === "function") {
-                        property = property.toString();
-                    } else if (property === null || propertyType === "undefined") {
-                        property = "";
-                    } else {
-                        Logging.info("key: " + field + ", invalid property type: " + propertyType);
-                        continue;
-                    }
-                }
-
-                map[field] = property.trim(0, Util.MAX_PROPERTY_LENGTH);
-            }
-        } else {
+        if(typeof obj !== "object") {
             Logging.info("Invalid properties dropped from payload");
+            return;
         }
+        const map: { [key: string]: string } = {};
+        for (let field in obj) {
+            let property: string = '';
+            const origProperty: any = obj[field];
+            const propType = typeof origProperty;
 
+            if (Util.isPrimitive(origProperty)) {
+                property = origProperty.toString();
+            } else if (origProperty === null || propType === "undefined") {
+                property = "";
+            } else {
+                const stringTarget = Util.isArray(origProperty) ? origProperty : Util.extractObject(origProperty);
+                try {
+                    if (Util.isPrimitive(stringTarget)) {
+                        property = stringTarget;
+                    } else {
+                        property = JSON.stringify(stringTarget);
+                    }
+                } catch (e) {
+                    property = origProperty.constructor.name.toString() + " (Error: " + e.message + ")";
+                    Logging.info("key: " + field + ", could not be serialized");
+                }
+            }
+
+            map[field] = property.substring(0, Util.MAX_PROPERTY_LENGTH);
+        }
         return map;
     }
+
 
     /**
      * Checks if a request url is not on a excluded domain list
