@@ -198,6 +198,9 @@ class Util {
                 property = origProperty.toString();
             } else if (origProperty === null || propType === "undefined") {
                 property = "";
+            } else if (propType === "function") {
+                Logging.info("key: " + field + " was function; will not serialize");
+                continue;
             } else {
                 const stringTarget = Util.isArray(origProperty) ? origProperty : Util.extractObject(origProperty);
                 try {

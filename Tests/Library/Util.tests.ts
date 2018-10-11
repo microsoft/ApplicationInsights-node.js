@@ -196,6 +196,9 @@ describe("Library/Util", () => {
             assert.deepEqual(Util.validateStringMap({ a: 0, b: null, c: undefined, d: [], e: '', f: -1, g: true, h: false }), { a: "0", b: "", c: "", d: "[]", e: "", f: "-1", g: "true", h: "false" });
             assert.deepEqual(Util.validateStringMap({ d: new Date("1995-12-17T03:24:00") }), { d: "1995-12-17T03:24:00.000Z" });
         });
+        it("skips functions", () => {
+            assert.deepEqual(Util.validateStringMap({ f: function () { } }), { });
+        });
         it("should gracefully handle errors", () => {
             const vanillaError = new Error("Test userland error");
             const mapped = Util.validateStringMap({ error: vanillaError });
