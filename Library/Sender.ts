@@ -224,7 +224,10 @@ class Sender {
             return callback(null, Sender.ACL_IDENTITY);
         }
         var psProc = child_process.spawn(Sender.POWERSHELL_PATH, 
-            ["-Command", "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name"], <any>{windowsHide: true});
+            ["-Command", "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name"], <any>{
+                windowsHide: true,
+                stdio: ['ignore', 'pipe', 'pipe'] // Needed to prevent hanging on Win 7
+            });
         let data = "";
         psProc.stdout.on("data", (d: string) => data += d);
         psProc.on("error", (e: Error) => callback(e, null));
@@ -243,7 +246,10 @@ class Sender {
         // Some very old versions of Node (< 0.11) don't have this
         if (child_process.spawnSync) {
             var psProc = child_process.spawnSync(Sender.POWERSHELL_PATH, 
-                ["-Command", "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name"], <any>{windowsHide: true});
+                ["-Command", "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name"], <any>{
+                    windowsHide: true,
+                    stdio: ['ignore', 'pipe', 'pipe'] // Needed to prevent hanging on Win 7
+                });
             if (psProc.error) {
                 throw psProc.error;
             } else if (psProc.status !== 0) {
@@ -270,6 +276,11 @@ class Sender {
 
         // For performance, only run ACL rules if we haven't already during this session
         if (Sender.ACLED_DIRECTORIES[directory] === undefined) {
+            // Avoid multiple calls race condition by setting ACLED_DIRECTORIES to false for this directory immediately
+            // If batches are being failed faster than the processes spawned below return, some data won't be stored to disk
+            // This is better than the alternative of potentially infinitely spawned processes
+            Sender.ACLED_DIRECTORIES[directory] = false;
+
             // Restrict this directory to only current user and administrator access
             this._getACLIdentity((err, identity) => {
                 if (err) {

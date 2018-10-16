@@ -184,16 +184,61 @@ describe("Library/Util", () => {
         });
     });
 
-    describe("#enforceStringMap", () => {
+    describe("#validateStringMap", () => {
         it("should only allow string:string", () => {
             assert.equal(Util.validateStringMap(undefined), undefined);
             assert.equal(Util.validateStringMap(1), undefined);
             assert.equal(Util.validateStringMap(true), undefined);
             assert.equal(Util.validateStringMap("test"), undefined);
             assert.equal(Util.validateStringMap(():void => null), undefined);
-            assert.deepEqual(Util.validateStringMap({ a: {} }), { a: "[object Object]" });
+            assert.deepEqual(Util.validateStringMap({ a: {} }), { a: "{}" });
             assert.deepEqual(Util.validateStringMap({ a: 3, b: "test" }), { a: "3", b: "test" });
-            assert.deepEqual(Util.validateStringMap({ a: 0, b: null, c: undefined, d: [], e: '', f: -1 }), { a: "0", d: "", e: "", f: "-1" });
+            assert.deepEqual(Util.validateStringMap({ a: 0, b: null, c: undefined, d: [], e: '', f: -1, g: true, h: false }), { a: "0", b: "", c: "", d: "[]", e: "", f: "-1", g: "true", h: "false" });
+            assert.deepEqual(Util.validateStringMap({ d: new Date("1995-12-17T03:24:00") }), { d: new Date("1995-12-17T03:24:00").toJSON() });
+        });
+        it("skips functions", () => {
+            assert.deepEqual(Util.validateStringMap({ f: function () { } }), { });
+        });
+        it("should gracefully handle errors", () => {
+            const vanillaError = new Error("Test userland error");
+            const mapped = Util.validateStringMap({ error: vanillaError });
+            const stringMapped = JSON.parse(mapped.error);
+            assert.equal(stringMapped.message, "Test userland error");
+            assert.equal(stringMapped.stack, undefined);
+            assert.equal(stringMapped.code, "");
+            const errorWithCode = new Error("Test error with code");
+            (errorWithCode as any).code = 418;
+            const idMapped = Util.validateStringMap({ error: errorWithCode });
+            assert.equal(JSON.parse(idMapped.error).code, 418);
+        });
+        it("supports object and string .toJSON return values", () => {
+            const complex = {
+                secret: "private",
+                isPublic: "public",
+                toJSON: function() {
+                    return {
+                        isPublic: this.isPublic,
+                    }
+                },
+            };
+            const d = new Date(1971, 5, 28);
+            const mapped = Util.validateStringMap({ date: d, complex });
+            assert.deepEqual(JSON.parse(mapped.complex), { isPublic: "public" });
+            assert.equal(mapped.date, d.toJSON());
+        });
+        it("should handle circular references", () => {
+            const circObj = <{[key: string]: any}>{};
+            circObj.test = true;
+            circObj.circular = circObj;
+            circObj.arr = [0, 1, circObj.circular];
+            assert.deepEqual(
+                Util.validateStringMap(circObj),
+                {
+                    test: "true",
+                    circular: "Object (Error: Converting circular structure to JSON)",
+                    arr: "Array (Error: Converting circular structure to JSON)",
+                }
+            );
         });
     });
 
