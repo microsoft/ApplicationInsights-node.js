@@ -194,7 +194,7 @@ describe("Library/Util", () => {
             assert.deepEqual(Util.validateStringMap({ a: {} }), { a: "{}" });
             assert.deepEqual(Util.validateStringMap({ a: 3, b: "test" }), { a: "3", b: "test" });
             assert.deepEqual(Util.validateStringMap({ a: 0, b: null, c: undefined, d: [], e: '', f: -1, g: true, h: false }), { a: "0", b: "", c: "", d: "[]", e: "", f: "-1", g: "true", h: "false" });
-            assert.deepEqual(Util.validateStringMap({ d: new Date("1995-12-17T03:24:00") }), { d: "1995-12-17T03:24:00.000Z" });
+            assert.deepEqual(Util.validateStringMap({ d: new Date("1995-12-17T03:24:00") }), { d: new Date("1995-12-17T03:24:00").toJSON() });
         });
         it("skips functions", () => {
             assert.deepEqual(Util.validateStringMap({ f: function () { } }), { });
@@ -224,7 +224,7 @@ describe("Library/Util", () => {
             const d = new Date(1971, 5, 28);
             const mapped = Util.validateStringMap({ date: d, complex });
             assert.deepEqual(JSON.parse(mapped.complex), { isPublic: "public" });
-            assert.equal(mapped.date, "1971-06-28T00:00:00.000Z");
+            assert.equal(mapped.date, d.toJSON());
         });
         it("should handle circular references", () => {
             const circObj = <{[key: string]: any}>{};
