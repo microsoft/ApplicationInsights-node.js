@@ -10,7 +10,7 @@ import RequestResponseHeaders = require("./RequestResponseHeaders");
 
 
 class Util {
-    public static MAX_PROPERTY_LENGTH = 1024;
+    public static MAX_PROPERTY_LENGTH = 8192;
     public static tlsRestrictedAgent: https.Agent = new https.Agent(<any>{
         secureOptions: constants.SSL_OP_NO_SSLv2 | constants.SSL_OP_NO_SSLv3 |
             constants.SSL_OP_NO_TLSv1 | constants.SSL_OP_NO_TLSv1_1
