@@ -145,11 +145,8 @@ class AutoCollectPerformance {
     }
 
     private _trackMemory() {
-        var totalMem = os.totalmem();
         var freeMem = os.freemem();
-        var usedMem = process.memoryUsage().heapTotal;
-        var percentUsedMem = usedMem / (totalMem || 1);
-        var percentAvailableMem = freeMem / (totalMem || 1);
+        var usedMem = process.memoryUsage().rss;
         this._client.trackMetric({name:"\\Process(??APP_WIN32_PROC??)\\Private Bytes", value: usedMem});
         this._client.trackMetric({name: "\\Memory\\Available Bytes", value: freeMem});
     }
