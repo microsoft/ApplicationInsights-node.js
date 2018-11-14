@@ -84,13 +84,13 @@ class AutoCollectHttpRequests {
                 throw new Error('onRequest handler must be a function');
             }
             return (request:http.ServerRequest, response:http.ServerResponse) => {
-                const shouldCollect: boolean = !(<any>request)[AutoCollectHttpRequests.alreadyAutoCollectedFlag];
-
-                // Set up correlation context
-                const requestParser = new HttpRequestParser(request);
-                const correlationContext = this._generateCorrelationContext(requestParser);
+                const shouldCollect: boolean = request && !(<any>request)[AutoCollectHttpRequests.alreadyAutoCollectedFlag];
 
                 if (request && shouldCollect) {
+                    // Set up correlation context
+                    const requestParser = new HttpRequestParser(request);
+                    const correlationContext = this._generateCorrelationContext(requestParser);
+
                     // Note: Check for if correlation is enabled happens within this method.
                     // If not enabled, function will directly call the callback.
                     CorrelationContextManager.runWithContext(correlationContext, () => {
