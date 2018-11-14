@@ -84,34 +84,39 @@ class AutoCollectHttpRequests {
                 throw new Error('onRequest handler must be a function');
             }
             return (request:http.ServerRequest, response:http.ServerResponse) => {
+                const shouldCollect: boolean = !(<any>request)[AutoCollectHttpRequests.alreadyAutoCollectedFlag];
+
                 // Set up correlation context
                 const requestParser = new HttpRequestParser(request);
                 const correlationContext = this._generateCorrelationContext(requestParser);
 
-                // Note: Check for if correlation is enabled happens within this method.
-                // If not enabled, function will directly call the callback.
-                CorrelationContextManager.runWithContext(correlationContext, () => {
-                    let shouldCollect: boolean = !(<any>request)[AutoCollectHttpRequests.alreadyAutoCollectedFlag];
+                if (request && shouldCollect) {
+                    // Note: Check for if correlation is enabled happens within this method.
+                    // If not enabled, function will directly call the callback.
+                    CorrelationContextManager.runWithContext(correlationContext, () => {
+                        if (this._isEnabled) {
+                            // Mark as auto collected
+                            (<any>request)[AutoCollectHttpRequests.alreadyAutoCollectedFlag] = true;
 
+                            // Auto collect request
+                            AutoCollectHttpRequests.trackRequest(this._client, {request: request, response: response}, requestParser);
+                        }
 
-                    if (this._isEnabled && request && shouldCollect) {
-                        // Mark as auto collected
-                        (<any>request)[AutoCollectHttpRequests.alreadyAutoCollectedFlag] = true;
+                        // Add this request to the performance counter
+                        // Note: Check for if perf counters are enabled happens within this method.
+                        // TODO: Refactor common bits between trackRequest and countRequest so they can
+                        // be used together, even when perf counters are on, and request tracking is off
+                        AutoCollectPerformance.countRequest(request, response);
 
-                        // Auto collect request
-                        AutoCollectHttpRequests.trackRequest(this._client, {request: request, response: response}, requestParser);
-                    }
-
-                    // Add this request to the performance counter
-                    // Note: Check for if perf counters are enabled happens within this method.
-                    // TODO: Refactor common bits between trackRequest and countRequest so they can
-                    // be used together, even when perf counters are on, and request tracking is off
-                    AutoCollectPerformance.countRequest(request, response);
-
+                        if (typeof onRequest === "function") {
+                            onRequest(request, response);
+                        }
+                    });
+                } else {
                     if (typeof onRequest === "function") {
                         onRequest(request, response);
                     }
-                });
+                }
             }
         }
 
