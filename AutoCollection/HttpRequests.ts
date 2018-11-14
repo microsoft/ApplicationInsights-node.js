@@ -13,7 +13,9 @@ import AutoCollectPerformance = require("./Performance");
 
 class AutoCollectHttpRequests {
 
-    public static INSTANCE:AutoCollectHttpRequests;
+    public static INSTANCE: AutoCollectHttpRequests;
+
+    private static alreadyAutoCollectedFlag = '_appInsightsAutoCollected';
 
     private _client: TelemetryClient;
     private _isEnabled: boolean;
@@ -89,7 +91,13 @@ class AutoCollectHttpRequests {
                 // Note: Check for if correlation is enabled happens within this method.
                 // If not enabled, function will directly call the callback.
                 CorrelationContextManager.runWithContext(correlationContext, () => {
-                    if (this._isEnabled) {
+                    let shouldCollect: boolean = !(<any>request)[AutoCollectHttpRequests.alreadyAutoCollectedFlag];
+
+
+                    if (this._isEnabled && request && shouldCollect) {
+                        // Mark as auto collected
+                        (<any>request)[AutoCollectHttpRequests.alreadyAutoCollectedFlag] = true;
+
                         // Auto collect request
                         AutoCollectHttpRequests.trackRequest(this._client, {request: request, response: response}, requestParser);
                     }
