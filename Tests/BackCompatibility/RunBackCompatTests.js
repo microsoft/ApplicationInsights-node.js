@@ -84,6 +84,22 @@ function main() {
         console.error("Test FAILED!")
         return 1;
     }
+
+    // Node10Types
+    console.info("Testing compilation in app with TSC 3.1.0 and node 10 types...");
+    run("npm uninstall applicationinsights", "./Node10Types");
+    if (run("npm install", "./Node10Types").code !== 0) {
+        console.error("Could not install OldTSC dependencies!")
+        return 1;
+    }
+    if (run("npm install --no-save " + path, "./Node10Types").code !== 0) {
+        console.error("Could not install SDK in Node10Types!");
+        return 1;
+    }
+    if(runLive("npm run build", "./Node10Types").code !== 0) {
+        console.error("Test FAILED!")
+        return 1;
+    }
     
 
     return 0;

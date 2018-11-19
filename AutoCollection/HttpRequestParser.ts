@@ -1,5 +1,6 @@
 import http = require("http");
 import url = require("url");
+import net = require("net");
 
 import Contracts = require("../Declarations/Contracts");
 import TelemetryClient = require("../Library/TelemetryClient");
@@ -27,7 +28,7 @@ class HttpRequestParser extends RequestParser {
 
     private correlationContextHeader: string;
 
-    constructor(request: http.ServerRequest, requestId?: string) {
+    constructor(request: http.IncomingMessage, requestId?: string) {
         super();
         if (request) {
             this.method = request.method;
@@ -35,9 +36,9 @@ class HttpRequestParser extends RequestParser {
             this.startTime = +new Date();
             this.socketRemoteAddress = (<any>request).socket && (<any>request).socket.remoteAddress;
             this.parseHeaders(request, requestId);
-            if (request.connection) {
-                this.connectionRemoteAddress = request.connection.remoteAddress;
-                this.legacySocketRemoteAddress = (<any>request.connection)["socket"] && (<any>request.connection)["socket"].remoteAddress;
+            if ((<any>request).connection) {
+                this.connectionRemoteAddress = ((<any>request).connection as net.Socket).remoteAddress;
+                this.legacySocketRemoteAddress = (<any>(<any>request).connection)["socket"] && (<any>(<any>request).connection)["socket"].remoteAddress;
             }
         }
     }
@@ -136,12 +137,12 @@ class HttpRequestParser extends RequestParser {
         return this.correlationContextHeader;
     }
 
-    private _getAbsoluteUrl(request: http.ServerRequest): string {
+    private _getAbsoluteUrl(request: http.IncomingMessage): string {
         if (!request.headers) {
             return request.url;
         }
 
-        var encrypted = <any>request.connection ? (<any>request.connection).encrypted : null;
+        var encrypted = (<any>request).connection ? ((<any>request).connection as any).encrypted : null;
         var requestUrl = url.parse(request.url);
 
         var pathName = requestUrl.pathname;
@@ -195,7 +196,7 @@ class HttpRequestParser extends RequestParser {
         return value;
     }
 
-    private parseHeaders(request: http.ServerRequest, requestId?: string) {
+    private parseHeaders(request: http.IncomingMessage, requestId?: string) {
         this.rawHeaders = request.headers || (<any>request).rawHeaders;
         this.userAgent = request.headers && request.headers["user-agent"];
         this.sourceCorrelationId = Util.getCorrelationContextTarget(request, RequestResponseHeaders.requestContextSourceKey);

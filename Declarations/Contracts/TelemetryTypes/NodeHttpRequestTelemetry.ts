@@ -9,7 +9,7 @@ export interface NodeHttpRequestTelemetry extends Telemetry
     /**
      * HTTP request object
      */
-    request: http.ServerRequest;
+    request: http.IncomingMessage;
 
     /**
      * HTTP response object
