@@ -58,7 +58,8 @@ class Util {
         let int32AsString = (v: number) =>
             toChar(v, 24) + toChar(v, 16) + toChar(v, 8) + toChar(v, 0);
         let x = array.map(int32AsString).join("");
-        let s = new Buffer(x, "binary").toString("base64");
+        const b = Buffer.from ? Buffer.from(x, "binary") : new Buffer(x, "binary");
+        let s = b.toString("base64");
         return s.substr(0, s.indexOf("="));
     }
 

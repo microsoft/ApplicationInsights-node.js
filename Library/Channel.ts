@@ -92,7 +92,7 @@ class Channel {
                     callback("data saved on crash");
                 }
             } else {
-                this._sender.send(new Buffer(batch), callback);
+                this._sender.send(Buffer.from ? Buffer.from(batch) : new Buffer(batch), callback);
             }
         }
 
