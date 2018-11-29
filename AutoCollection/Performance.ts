@@ -17,6 +17,8 @@ class AutoCollectPerformance {
     private _handle: NodeJS.Timer;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
+    private _lastAppCpuUsage: { user: number, system: number } = {user: 0, system: 0};
+    private _lastHrtime: number[] = process.hrtime();
     private _lastCpus: { model: string; speed: number; times: { user: number; nice: number; sys: number; idle: number; irq: number; }; }[];
     private _lastRequests: { totalRequestCount: number; totalFailedRequestCount: number; time: number; };
 
@@ -135,10 +137,26 @@ class AutoCollectPerformance {
                 totalIrq += irq;
             }
 
+            // Calculate % of total cpu time (user + system) this App Process used (Only supported by node v6.1.0+)
+            let appCpuPercent: number = undefined;
+            if (typeof (process as any).cpuUsage === 'function') {
+                const appCpuUsage = (process as any).cpuUsage();
+                const hrtime = process.hrtime();
+
+                const totalApp = ((appCpuUsage.user - this._lastAppCpuUsage.user) + (appCpuUsage.system - this._lastAppCpuUsage.system)) || 0;
+                const elapsedTime = ((hrtime[0] - this._lastHrtime[0])*1e6 + (hrtime[1] - this._lastHrtime[1])/1e3) || 0; // convert to microseconds
+
+                appCpuPercent = 100 * totalApp / (elapsedTime * cpus.length);
+
+                // Set previous
+                this._lastAppCpuUsage = appCpuUsage;
+                this._lastHrtime = hrtime;
+            }
+
             var combinedTotal = (totalUser + totalSys + totalNice + totalIdle + totalIrq) || 1;
 
             this._client.trackMetric({name: "\\Processor(_Total)\\% Processor Time", value: ((combinedTotal - totalIdle) / combinedTotal) * 100});
-            this._client.trackMetric({name: "\\Process(??APP_WIN32_PROC??)\\% Processor Time", value: (totalUser / combinedTotal) * 100});
+            this._client.trackMetric({name: "\\Process(??APP_WIN32_PROC??)\\% Processor Time", value: appCpuPercent || ((totalUser / combinedTotal) * 100)});
         }
 
         this._lastCpus = cpus;
