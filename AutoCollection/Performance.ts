@@ -17,8 +17,8 @@ class AutoCollectPerformance {
     private _handle: NodeJS.Timer;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
-    private _lastAppCpuUsage: { user: number, system: number } = {user: 0, system: 0};
-    private _lastHrtime: number[] = process.hrtime();
+    private _lastAppCpuUsage: { user: number, system: number };
+    private _lastHrtime: number[];
     private _lastCpus: { model: string; speed: number; times: { user: number; nice: number; sys: number; idle: number; irq: number; }; }[];
     private _lastRequests: { totalRequestCount: number; totalFailedRequestCount: number; time: number; };
 
@@ -46,6 +46,10 @@ class AutoCollectPerformance {
                     totalFailedRequestCount: AutoCollectPerformance._totalFailedRequestCount,
                     time: +new Date
                 };
+                if (typeof (process as any).cpuUsage === 'function'){
+                    this._lastAppCpuUsage = (process as any).cpuUsage();
+                }
+                this._lastHrtime = process.hrtime();
 
                 this._handle = setInterval(() => this.trackPerformance(), 60000);
                 this._handle.unref(); // Allow the app to terminate even while this loop is going on
@@ -144,9 +148,12 @@ class AutoCollectPerformance {
                 const hrtime = process.hrtime();
 
                 const totalApp = ((appCpuUsage.user - this._lastAppCpuUsage.user) + (appCpuUsage.system - this._lastAppCpuUsage.system)) || 0;
-                const elapsedTime = ((hrtime[0] - this._lastHrtime[0])*1e6 + (hrtime[1] - this._lastHrtime[1])/1e3) || 0; // convert to microseconds
 
-                appCpuPercent = 100 * totalApp / (elapsedTime * cpus.length);
+                if (typeof this._lastHrtime !== 'undefined' && this._lastHrtime.length === 2) {
+                    const elapsedTime = ((hrtime[0] - this._lastHrtime[0])*1e6 + (hrtime[1] - this._lastHrtime[1])/1e3) || 0; // convert to microseconds
+
+                    appCpuPercent = 100 * totalApp / (elapsedTime * cpus.length);
+                }
 
                 // Set previous
                 this._lastAppCpuUsage = appCpuUsage;
