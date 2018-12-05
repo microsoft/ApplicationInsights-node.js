@@ -30,7 +30,7 @@ export interface CorrelationContext {
         parentId: string; // Always used for dependencies, may be ignored in favor of incoming headers for requests
     };
 
-    /** Do not store sensitive information here. 
+    /** Do not store sensitive information here.
      *  Properties here are exposed via outgoing HTTP headers for correlating data cross-component.
      */
     customProperties: CustomProperties
@@ -40,7 +40,7 @@ export class CorrelationContextManager {
     private static enabled: boolean = false;
     private static hasEverEnabled: boolean = false;
 
-    /** 
+    /**
      *  Provides the current Context.
      *  The context is the most recent one entered into for the current
      *  logical chain of execution, including across asynchronous calls.
@@ -72,7 +72,7 @@ export class CorrelationContextManager {
         return null;
     }
 
-    /** 
+    /**
      *  Runs a function inside a given Context.
      *  All logical children of the execution path that entered this Context
      *  will receive this Context object on calls to GetCurrentContext.
@@ -80,7 +80,7 @@ export class CorrelationContextManager {
     public static runWithContext(context: CorrelationContext, fn: ()=>any) {
         if (CorrelationContextManager.enabled) {
             var newZone = Zone.current.fork({
-                name: "AI-" + ((context && context.operation.parentId) || "Unknown"), 
+                name: "AI-" + ((context && context.operation.parentId) || "Unknown"),
                 properties: {context: context}
             });
             newZone.run(fn);
@@ -89,12 +89,12 @@ export class CorrelationContextManager {
         }
     }
 
-    /** 
-     *  Patches a callback to restore the correct Context when getCurrentContext 
+    /**
+     *  Patches a callback to restore the correct Context when getCurrentContext
      *  is run within it. This is necessary if automatic correlation fails to work
      *  with user-included libraries.
-     * 
-     *  The supplied callback will be given the same context that was present for 
+     *
+     *  The supplied callback will be given the same context that was present for
      *  the call to wrapCallback.  */
     public static wrapCallback<T extends Function>(fn: T): T {
         if (CorrelationContextManager.enabled) {
@@ -223,7 +223,7 @@ export class CorrelationContextManager {
                     }
                     // Loop above goes one extra step
                     i = Math.max(0, i - 1);
-                    
+
                     if (foundOne) {
                         s.splice(0, i);
                     }
@@ -244,6 +244,9 @@ export class CorrelationContextManager {
                 if (stackFrames.length > 3) {
                     if (stackFrames[2].trim().indexOf("at Error.AppInsightsAsyncCorrelatedErrorWrapper") === 0) {
                         stackFrames.splice(2, 1);
+                    } else if (stackFrames[1].trim().indexOf("at AppInsightsAsyncCorrelatedErrorWrapper.ZoneAwareError") === 0
+                        && stackFrames[2].trim().indexOf("at new AppInsightsAsyncCorrelatedErrorWrapper") === 0) {
+                        stackFrames.splice(1, 2);
                     }
                 }
                 // Remove AI correlation ids
@@ -256,7 +259,7 @@ export class CorrelationContextManager {
                 }).join("\n");
             }
 
-            
+
             // getOwnPropertyNames should be a superset of Object.keys...
             // This appears to not always be the case
             var props = Object.getOwnPropertyNames(this).concat(Object.keys(this));
@@ -284,7 +287,7 @@ export class CorrelationContextManager {
                 Object.defineProperty(AppInsightsAsyncCorrelatedErrorWrapper, propertyName, Object.getOwnPropertyDescriptor(orig, propertyName));
             }
         }
-        
+
         // explicit cast to <any> required to avoid type error for captureStackTrace
         // with latest node.d.ts (despite workaround above)
         global.Error = <any>AppInsightsAsyncCorrelatedErrorWrapper;
@@ -298,7 +301,7 @@ class CustomPropertiesImpl implements PrivateCustomProperties {
     public constructor(header: string) {
         this.addHeaderData(header);
     }
-    
+
     public addHeaderData(header?: string) {
         const keyvals = header ? header.split(", ") : [];
         this.props = keyvals.map((keyval) => {
