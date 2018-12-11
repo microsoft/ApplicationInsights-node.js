@@ -39,7 +39,8 @@ class AutoCollectExceptions {
                     this._client.trackException({ exception: error });
                     this._client.flush({ isAppCrashing: true });
                     if (reThrow) {
-                        throw error;
+                        var THIS_IS_APPLICATION_INSIGHTS_RETHROWING_YOUR_EXCEPTION = error;
+                        throw THIS_IS_APPLICATION_INSIGHTS_RETHROWING_YOUR_EXCEPTION; // Error originated somewhere else in your app
                     }
                 };
                 this._exceptionListenerHandle = handle.bind(this, true);
