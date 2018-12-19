@@ -48,6 +48,7 @@
     "backcompattest": "npm run build && npm pack && node --use_strict ./Tests/BackCompatibility/RunBackCompatTests.js"
   },
   "devDependencies": {
+    "@types/cls-hooked": "^4.2.1",
     "@types/mocha": "2.2.40",
     "@types/node": "4.2.4",
     "@types/sinon": "2.1.2",
@@ -59,6 +60,6 @@
   "dependencies": {
     "diagnostic-channel": "0.2.0",
     "diagnostic-channel-publishers": "0.2.1",
-    "zone.js": "0.7.6"
+    "cls-hooked": "^4.2.2"
   }
 }

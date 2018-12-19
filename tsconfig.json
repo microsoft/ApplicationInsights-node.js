@@ -17,7 +17,7 @@
         "Tests/**/*.ts"
     ],
     "files": [
-        "./node_modules/zone.js/dist/zone.js.d.ts"
+        "./node_modules/@types/cls-hooked/index.d.ts"
     ],
     "exclude": [
         "node_modules",
