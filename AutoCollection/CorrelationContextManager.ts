@@ -134,7 +134,7 @@ export class CorrelationContextManager {
             }
 
             DiagChannel.registerContextPreservation((cb) => {
-                return CorrelationContextManager.session.bind(cb, "AI-ContextPreservation");
+                return CorrelationContextManager.session.bind(cb);
                 // return Zone.current.wrap(cb, "AI-ContextPreservation");
             });
         }
