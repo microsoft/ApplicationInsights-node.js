@@ -28,11 +28,12 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
         };
 
         describe("#getCurrentContext()", () => {
-            afterEach(()=>{
-                // Mocha's async "done" methods cause future tests to be in the same context chain
-                // Reset the context each time
-                CorrelationContextManager.enable();
-                CorrelationContextManager.runWithContext(null, ()=>null);
+            afterEach(() => {
+              // Mocha's async "done" methods cause future tests to be in the same context chain
+              // Reset the context each time
+              CorrelationContextManager.enable();
+              CorrelationContextManager.reset();
+              assert.equal(null, CorrelationContextManager.getCurrentContext());
             });
             it("should return null if not in a context", () => {
                 CorrelationContextManager.enable();

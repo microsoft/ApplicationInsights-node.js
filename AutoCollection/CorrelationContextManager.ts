@@ -3,7 +3,7 @@ import Util = require("../Library/Util");
 import Logging = require("../Library/Logging");
 
 import * as DiagChannel from "./diagnostic-channel/initialization";
-import { createNamespace } from "cls-hooked";
+import { createNamespace, reset } from "cls-hooked";
 import HttpRequestParser = require("./HttpRequestParser");
 import TelemetryClient = require("../Library/TelemetryClient");
 
@@ -109,23 +109,6 @@ export class CorrelationContextManager {
     }
 
     /**
-     * Helper method to use internal AI SDK methods to generate a correlation context manually for an HTTP-like request
-     * @param client
-     * @param req
-     * @param cb
-     */
-    public static startOperation(client: TelemetryClient, req: http.IncomingMessage, cb: ()=>any): any {
-    const requestParser = new HttpRequestParser(req);
-    const correlationContext = CorrelationContextManager.generateContextObject(
-        requestParser.getOperationId(client.context.tags),
-        requestParser.getRequestId(),
-        requestParser.getOperationName(client.context.tags),
-        requestParser.getCorrelationContextHeader()
-    );
-    return CorrelationContextManager.runWithContext(correlationContext, cb);
- }
-
-    /**
      *  Enables the CorrelationContextManager.
      */
     public static enable() {
@@ -165,6 +148,15 @@ export class CorrelationContextManager {
         this.enabled = false;
     }
 
+    /**
+     * Resets the CorrelationContextManager
+     */
+    public static reset() {
+        if (CorrelationContextManager.session.active) {
+          CorrelationContextManager.session.set("context", null);
+          reset();
+        }
+    }
 
     /**
      *  Reports if the CorrelationContextManager is able to run in this environment

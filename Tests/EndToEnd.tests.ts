@@ -10,6 +10,7 @@ import child_process = require("child_process");
 import AppInsights = require("../applicationinsights");
 import Sender = require("../Library/Sender");
 import { EventEmitter } from "events";
+import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
 
 /**
  * A fake response class that passes by default
@@ -133,6 +134,7 @@ describe("EndToEnd", () => {
         afterEach(() => {
             // Dispose the default app insights client and auto collectors so that they can be reconfigured
             // cleanly for each test
+            CorrelationContextManager.reset();
             AppInsights.dispose();
             sandbox.restore();
         });
