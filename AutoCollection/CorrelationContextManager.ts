@@ -138,7 +138,6 @@ export class CorrelationContextManager {
             return;
         }
 
-        // Run patches for Zone.js
         if (!CorrelationContextManager.hasEverEnabled) {
             this.hasEverEnabled = true;
 
@@ -147,13 +146,12 @@ export class CorrelationContextManager {
                     require('cls-hooked');
                 }
             } catch (e) {
-                // Zone was already loaded even though we couldn't find its global variable
+                // cls-hooked was already loaded even though we couldn't find its global variable
                 Logging.warn("Failed to require cls-hooked");
             }
 
             DiagChannel.registerContextPreservation((cb) => {
                 return CorrelationContextManager.session.bind(cb);
-                // return Zone.current.wrap(cb, "AI-ContextPreservation");
             });
         }
 
