@@ -3,7 +3,6 @@ import Util = require("../Library/Util");
 import Logging = require("../Library/Logging");
 
 import * as DiagChannel from "./diagnostic-channel/initialization";
-import { createNamespace, reset } from "cls-hooked";
 import HttpRequestParser = require("./HttpRequestParser");
 import TelemetryClient = require("../Library/TelemetryClient");
 
@@ -42,7 +41,8 @@ export interface CorrelationContext {
 export class CorrelationContextManager {
     private static enabled: boolean = false;
     private static hasEverEnabled: boolean = false;
-    private static session = createNamespace('session');
+    private static session: any;
+    private static cls: any;
 
     /**
      *  Provides the current Context.
@@ -125,13 +125,15 @@ export class CorrelationContextManager {
             this.hasEverEnabled = true;
 
             try {
-                if (typeof createNamespace === "undefined") {
-                    require('cls-hooked');
+                if (typeof this.cls === "undefined") {
+                    this.cls = require('cls-hooked');
                 }
             } catch (e) {
                 // cls-hooked was already loaded even though we couldn't find its global variable
                 Logging.warn("Failed to require cls-hooked");
             }
+
+            CorrelationContextManager.session = this.cls.createNamespace("session");
 
             DiagChannel.registerContextPreservation((cb) => {
                 return CorrelationContextManager.session.bind(cb);
@@ -152,9 +154,9 @@ export class CorrelationContextManager {
      * Resets the CorrelationContextManager
      */
     public static reset() {
-        if (CorrelationContextManager.session.active) {
+        if (this.enabled && CorrelationContextManager.session.active) {
           CorrelationContextManager.session.set("context", null);
-          reset();
+          this.cls.reset();
         }
     }
 
