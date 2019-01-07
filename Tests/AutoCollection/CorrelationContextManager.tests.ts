@@ -32,7 +32,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
               // Mocha's async "done" methods cause future tests to be in the same context chain
               // Reset the context each time
               CorrelationContextManager.enable();
-              CorrelationContextManager.reset();
+              CorrelationContextManager.runWithContext(null, ()=>null);
               assert.equal(null, CorrelationContextManager.getCurrentContext());
             });
             it("should return null if not in a context", () => {

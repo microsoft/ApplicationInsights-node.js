@@ -134,7 +134,6 @@ describe("EndToEnd", () => {
         afterEach(() => {
             // Dispose the default app insights client and auto collectors so that they can be reconfigured
             // cleanly for each test
-            CorrelationContextManager.reset();
             AppInsights.dispose();
             sandbox.restore();
         });

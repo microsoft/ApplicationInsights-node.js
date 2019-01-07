@@ -88,6 +88,9 @@ export class CorrelationContextManager {
      */
     public static runWithContext(context: CorrelationContext, fn: ()=>any): any {
         if (CorrelationContextManager.enabled) {
+            if (CorrelationContextManager.session.active) {
+                CorrelationContextManager.session.set('context', context);
+            }
             return CorrelationContextManager.session.bind(fn, {context: context})();
         } else {
             return fn();
@@ -133,7 +136,7 @@ export class CorrelationContextManager {
                 Logging.warn("Failed to require cls-hooked");
             }
 
-            CorrelationContextManager.session = this.cls.createNamespace("session");
+            CorrelationContextManager.session = this.cls.createNamespace("AI-CLS-Session");
 
             DiagChannel.registerContextPreservation((cb) => {
                 return CorrelationContextManager.session.bind(cb);
@@ -148,16 +151,6 @@ export class CorrelationContextManager {
      */
     public static disable() {
         this.enabled = false;
-    }
-
-    /**
-     * Resets the CorrelationContextManager
-     */
-    public static reset() {
-        if (this.enabled && CorrelationContextManager.session.active) {
-          CorrelationContextManager.session.set("context", null);
-          this.cls.reset();
-        }
     }
 
     /**
