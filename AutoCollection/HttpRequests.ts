@@ -90,6 +90,8 @@ class AutoCollectHttpRequests {
                     // Set up correlation context
                     const requestParser = new HttpRequestParser(request);
                     const correlationContext = this._generateCorrelationContext(requestParser);
+                    CorrelationContextManager.bindEmitter(request);
+                    CorrelationContextManager.bindEmitter(response);
 
                     // Note: Check for if correlation is enabled happens within this method.
                     // If not enabled, function will directly call the callback.
@@ -242,12 +244,12 @@ class AutoCollectHttpRequests {
                 const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
                 if (!components.some((value) => value.substring(0,key.length) === key)) {
                     response.setHeader(
-                        RequestResponseHeaders.requestContextHeader, 
+                        RequestResponseHeaders.requestContextHeader,
                         `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
                 }
             } else {
                 response.setHeader(
-                    RequestResponseHeaders.requestContextHeader, 
+                    RequestResponseHeaders.requestContextHeader,
                     `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
             }
         }

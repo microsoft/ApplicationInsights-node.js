@@ -38,6 +38,18 @@ class fakeResponse {
         }
     }
 
+    public emit(eventName: string, ...args: any[]): boolean {
+        return true;
+    }
+
+    public addListener(eventName: string, listener: () => void): void {
+        this.on(eventName, listener);
+    }
+
+    public removeListener(eventName: string, listener: () => void) {
+
+    }
+
     public pass(test = false): void {
         this.callbacks["data"] ? this.callbacks["data"]("data") : null;
         this.callbacks["end"] ? this.callbacks["end"]() : null;
@@ -64,6 +76,18 @@ class fakeRequest {
         if (event === "error" && this.failImmediatly) {
             setImmediate(() => this.fail());
         }
+    }
+
+    public emit(eventName: string, ...args: any[]): boolean {
+        return true;
+    }
+
+    public addListener(eventName: string, listener: Function): void {
+        this.on(eventName, listener);
+    }
+
+    public removeListener(eventName: string, listener?: Function) {
+
     }
 
     public fail(): void {
@@ -159,7 +183,7 @@ describe("EndToEnd", () => {
                 fakeHttpSrv.setCallback(callback);
                 return fakeHttpSrv;
             });
-            
+
             AppInsights
                 .setup("ikey")
                 .setAutoCollectRequests(true)
@@ -182,7 +206,7 @@ describe("EndToEnd", () => {
                 fakeHttpSrv.setCallback(callback);
                 return fakeHttpSrv;
             });
-            
+
             AppInsights
                 .setup("ikey")
                 .setAutoCollectRequests(true)
@@ -508,7 +532,7 @@ describe("EndToEnd", () => {
 
                         client.trackEvent({ name: "test event" });
                         this.request.returns(req);
-                        
+
                         client.flush({
                             callback: (response: any) => {
                                 // yield for the caching behavior
@@ -516,7 +540,7 @@ describe("EndToEnd", () => {
                                     // The call counts shouldnt have changed
                                     assert(writeFile.callCount === 0);
                                     assert.equal(tempSpawn.callCount, 1);
-                                    
+
                                     tempSpawn.restore();
                                     (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
                                     done();
@@ -565,7 +589,7 @@ describe("EndToEnd", () => {
 
                         client.trackEvent({ name: "test event" });
                         this.request.returns(req);
-                        
+
                         client.flush({
                             callback: (response: any) => {
                                 // yield for the caching behavior
@@ -573,7 +597,7 @@ describe("EndToEnd", () => {
                                     // The call counts shouldnt have changed
                                     assert(writeFile.callCount === 0);
                                     assert.equal(tempSpawn.callCount, 1);
-                                    
+
                                     tempSpawn.restore();
                                     (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
                                     done();
@@ -648,7 +672,7 @@ describe("EndToEnd", () => {
                             path.dirname(writeFile.firstCall.args[0]),
                             path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
                         assert.equal(writeFile.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
-                        
+
                         tempLstat.restore();
                         done();
                     });

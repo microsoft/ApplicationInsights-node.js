@@ -98,6 +98,13 @@ export class CorrelationContextManager {
     }
 
     /**
+     * Wrapper for cls-hooked bindEmitter method
+     */
+    public static bindEmitter(reqres: any): void {
+        CorrelationContextManager.session.bindEmitter(reqres);
+    }
+
+    /**
      *  Patches a callback to restore the correct Context when getCurrentContext
      *  is run within it. This is necessary if automatic correlation fails to work
      *  with user-included libraries.
