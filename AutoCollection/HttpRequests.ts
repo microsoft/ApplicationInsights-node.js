@@ -90,8 +90,8 @@ class AutoCollectHttpRequests {
                     // Set up correlation context
                     const requestParser = new HttpRequestParser(request);
                     const correlationContext = this._generateCorrelationContext(requestParser);
-                    CorrelationContextManager.bindEmitter(request);
-                    CorrelationContextManager.bindEmitter(response);
+                    CorrelationContextManager.wrapEmitter(request);
+                    CorrelationContextManager.wrapEmitter(response);
 
                     // Note: Check for if correlation is enabled happens within this method.
                     // If not enabled, function will directly call the callback.

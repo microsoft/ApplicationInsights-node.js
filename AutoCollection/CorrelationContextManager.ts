@@ -1,4 +1,5 @@
 import http = require("http");
+import events = require("events");
 import Util = require("../Library/Util");
 import Logging = require("../Library/Logging");
 
@@ -43,6 +44,7 @@ export class CorrelationContextManager {
     private static hasEverEnabled: boolean = false;
     private static session: any;
     private static cls: any;
+    private static CONTEXT_NAME = "ApplicationInsights-Context"
 
     /**
      *  Provides the current Context.
@@ -53,7 +55,7 @@ export class CorrelationContextManager {
         if (!CorrelationContextManager.enabled) {
             return null;
         }
-        const context = CorrelationContextManager.session.get('context');
+        const context = CorrelationContextManager.session.get(CorrelationContextManager.CONTEXT_NAME);
 
         if (context === undefined) { // cast undefined to null
             return null;
@@ -89,9 +91,9 @@ export class CorrelationContextManager {
     public static runWithContext(context: CorrelationContext, fn: ()=>any): any {
         if (CorrelationContextManager.enabled) {
             if (CorrelationContextManager.session.active) {
-                CorrelationContextManager.session.set('context', context);
+                CorrelationContextManager.session.set(CorrelationContextManager.CONTEXT_NAME, context);
             }
-            return CorrelationContextManager.session.bind(fn, {context: context})();
+            return CorrelationContextManager.session.bind(fn, {[CorrelationContextManager.CONTEXT_NAME]: context})();
         } else {
             return fn();
         }
@@ -100,8 +102,10 @@ export class CorrelationContextManager {
     /**
      * Wrapper for cls-hooked bindEmitter method
      */
-    public static bindEmitter(reqres: any): void {
-        CorrelationContextManager.session.bindEmitter(reqres);
+    public static wrapEmitter(emitter: events.EventEmitter): void {
+        if (CorrelationContextManager.enabled) {
+            CorrelationContextManager.session.bindEmitter(emitter);
+        }
     }
 
     /**
@@ -164,9 +168,9 @@ export class CorrelationContextManager {
      *  Reports if the CorrelationContextManager is able to run in this environment
      */
     public static isNodeVersionCompatible() {
-        // Unit tests warn of errors < 3.3 from timer patching. All versions before 4 were 0.x
+        // cls-hooked requires 4.7+
         var nodeVer = process.versions.node.split(".");
-        return parseInt(nodeVer[0]) > 3 || (parseInt(nodeVer[0]) > 2 && parseInt(nodeVer[1]) > 2);
+        return parseInt(nodeVer[0]) >= 4 && parseInt(nodeVer[1]) >= 7;
     }
 }
 
