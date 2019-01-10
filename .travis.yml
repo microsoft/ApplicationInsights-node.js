@@ -16,19 +16,23 @@ node_js:
   - "0.11"
   - "0.10"
   - "iojs"
-  - "iojs-v1.0.4" 
+  - "iojs-v1.0.4"
 before_install:
   - npm install -g npm@4.5.0
 before_script:
   - npm install
 script:
   - npm test
-  # Only run funcs for LTS releases
+  # Run funcs for current release
   - if [ "$TRAVIS_NODE_VERSION" = "11" ]; then npm run functionaltest; fi
+  # Run funcs for LTS releases (currently 6, 8, 10)
   - if [ "$TRAVIS_NODE_VERSION" = "10" ]; then npm run functionaltest; fi
-  - if [ "$TRAVIS_NODE_VERSION" = "8.0.0" ]; then npm run functionaltest; fi
   - if [ "$TRAVIS_NODE_VERSION" = "8" ]; then npm run functionaltest; fi
   - if [ "$TRAVIS_NODE_VERSION" = "6" ]; then npm run functionaltest; fi
   - if [ "$TRAVIS_NODE_VERSION" = "4" ]; then npm run functionaltest; fi
+  # 8.0.0 uses async-listener for dependency correlation instead of async_hooks
+  # as in latest node8, so run funcs for 8.0.0 as well
+  - if [ "$TRAVIS_NODE_VERSION" = "8.0.0" ]; then npm run functionaltest; fi
+
   # Only run backcompat tests once
   - if [ "$TRAVIS_NODE_VERSION" = "4" ]; then npm run backcompattest; fi

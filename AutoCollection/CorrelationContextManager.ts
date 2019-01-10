@@ -4,8 +4,9 @@ import Util = require("../Library/Util");
 import Logging = require("../Library/Logging");
 
 import * as DiagChannel from "./diagnostic-channel/initialization";
-import HttpRequestParser = require("./HttpRequestParser");
-import TelemetryClient = require("../Library/TelemetryClient");
+
+// Don't reference modules from these directly. Use only for types.
+import { Namespace } from "cls-hooked";
 
 export interface CustomProperties {
     /**
@@ -42,7 +43,7 @@ export interface CorrelationContext {
 export class CorrelationContextManager {
     private static enabled: boolean = false;
     private static hasEverEnabled: boolean = false;
-    private static session: any;
+    private static session: Namespace;
     private static cls: any;
     private static CONTEXT_NAME = "ApplicationInsights-Context"
 
@@ -135,17 +136,12 @@ export class CorrelationContextManager {
         if (!CorrelationContextManager.hasEverEnabled) {
             this.hasEverEnabled = true;
 
-            try {
-                if (typeof this.cls === "undefined") {
-                    if (CorrelationContextManager.isClsHookedCompatible()) {
-                        this.cls = require('cls-hooked');
-                    } else {
-                        this.cls = require('continuation-local-storage');
-                    }
+            if (typeof this.cls === "undefined") {
+                if (CorrelationContextManager.isClsHookedCompatible()) {
+                    this.cls = require('cls-hooked');
+                } else {
+                    this.cls = require('continuation-local-storage');
                 }
-            } catch (e) {
-                // cls-hooked was already loaded even though we couldn't find its global variable
-                Logging.warn("Failed to require cls-hooked");
             }
 
             CorrelationContextManager.session = this.cls.createNamespace("AI-CLS-Session");
@@ -165,6 +161,9 @@ export class CorrelationContextManager {
         this.enabled = false;
     }
 
+    /**
+     * Reset the namespace
+     */
     public static reset() {
         if (CorrelationContextManager.hasEverEnabled) {
             CorrelationContextManager.session = null;
