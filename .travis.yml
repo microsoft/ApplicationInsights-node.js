@@ -4,7 +4,11 @@ services:
   - docker
 node_js:
   - "node"
+  - "11"
+  - "10"
   - "9"
+  - "8.2.0"
+  - "8.2.1"
   - "8"
   - "7"
   - "6"
@@ -21,7 +25,13 @@ before_script:
 script:
   - npm test
   # Only run funcs for LTS releases
+  - if [ "$TRAVIS_NODE_VERSION" = "11" ]; then npm run functionaltest; fi
+  - if [ "$TRAVIS_NODE_VERSION" = "10" ]; then npm run functionaltest; fi
+  - if [ "$TRAVIS_NODE_VERSION" = "9" ]; then npm run functionaltest; fi
+  - if [ "$TRAVIS_NODE_VERSION" = "8.2.1" ]; then npm run functionaltest; fi
+  - if [ "$TRAVIS_NODE_VERSION" = "8.2.0" ]; then npm run functionaltest; fi
   - if [ "$TRAVIS_NODE_VERSION" = "8" ]; then npm run functionaltest; fi
+  - if [ "$TRAVIS_NODE_VERSION" = "7" ]; then npm run functionaltest; fi
   - if [ "$TRAVIS_NODE_VERSION" = "6" ]; then npm run functionaltest; fi
   - if [ "$TRAVIS_NODE_VERSION" = "4" ]; then npm run functionaltest; fi
   # Only run backcompat tests once
