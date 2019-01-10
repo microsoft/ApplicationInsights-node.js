@@ -90,9 +90,6 @@ export class CorrelationContextManager {
      */
     public static runWithContext(context: CorrelationContext, fn: ()=>any): any {
         if (CorrelationContextManager.enabled) {
-            if (CorrelationContextManager.session.active) {
-                CorrelationContextManager.session.set(CorrelationContextManager.CONTEXT_NAME, context);
-            }
             return CorrelationContextManager.session.bind(fn, {[CorrelationContextManager.CONTEXT_NAME]: context})();
         } else {
             return fn();
@@ -117,7 +114,7 @@ export class CorrelationContextManager {
      *  the call to wrapCallback.  */
     public static wrapCallback<T extends Function>(fn: T): T {
         if (CorrelationContextManager.enabled) {
-            return CorrelationContextManager.session.bind(fn);
+            return CorrelationContextManager.session.bind(fn, {[CorrelationContextManager.CONTEXT_NAME]: CorrelationContextManager.getCurrentContext()});
         }
         return fn;
     }
@@ -150,7 +147,7 @@ export class CorrelationContextManager {
             CorrelationContextManager.session = this.cls.createNamespace("AI-CLS-Session");
 
             DiagChannel.registerContextPreservation((cb) => {
-                return CorrelationContextManager.session.bind(cb);
+                return CorrelationContextManager.session.bind(cb, {[CorrelationContextManager.CONTEXT_NAME]: CorrelationContextManager.getCurrentContext()});
             });
         }
 
@@ -164,13 +161,20 @@ export class CorrelationContextManager {
         this.enabled = false;
     }
 
+    public static reset() {
+        if (CorrelationContextManager.hasEverEnabled) {
+            CorrelationContextManager.session = null;
+            CorrelationContextManager.session = this.cls.createNamespace('AI-CLS-Session');
+        }
+    }
+
     /**
      *  Reports if the CorrelationContextManager is able to run in this environment
      */
     public static isNodeVersionCompatible() {
         // cls-hooked requires 4.7+
         var nodeVer = process.versions.node.split(".");
-        return parseInt(nodeVer[0]) >= 4 && parseInt(nodeVer[1]) >= 7;
+        return parseInt(nodeVer[0]) > 4 || (parseInt(nodeVer[0]) >= 4 && parseInt(nodeVer[1]) >= 7);
     }
 }
 
