@@ -12,6 +12,8 @@ node_js:
   - "7"
   - "6"
   - "4"
+  - "3.3.1"
+  - "3.3.0"
   - "0.12"
   - "0.11"
   - "0.10"
@@ -30,9 +32,13 @@ script:
   - if [ "$TRAVIS_NODE_VERSION" = "8" ]; then npm run functionaltest; fi
   - if [ "$TRAVIS_NODE_VERSION" = "6" ]; then npm run functionaltest; fi
   - if [ "$TRAVIS_NODE_VERSION" = "4" ]; then npm run functionaltest; fi
-  # 8.0.0 uses async-listener for dependency correlation instead of async_hooks
-  # as in latest node8, so run funcs for 8.0.0 as well
+  # latest node8 uses cls-hooked for dependency correlation, while 8.0.0 uses
+  # plain cls instead, so run funcs for 8.0.0 as well
   - if [ "$TRAVIS_NODE_VERSION" = "8.0.0" ]; then npm run functionaltest; fi
+  - if [ "$TRAVIS_NODE_VERSION" = "3.3.1" ]; then npm run functionaltest; fi
+  - if [ "$TRAVIS_NODE_VERSION" = "3.3.0" ]; then npm run functionaltest; fi
+  - if [ "$TRAVIS_NODE_VERSION" = "0.12" ]; then npm run functionaltest; fi
+  - if [ "$TRAVIS_NODE_VERSION" = "0.11" ]; then npm run functionaltest; fi
 
   # Only run backcompat tests once
   - if [ "$TRAVIS_NODE_VERSION" = "4" ]; then npm run backcompattest; fi
