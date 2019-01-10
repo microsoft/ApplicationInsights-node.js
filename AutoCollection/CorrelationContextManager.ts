@@ -114,7 +114,7 @@ export class CorrelationContextManager {
      *  the call to wrapCallback.  */
     public static wrapCallback<T extends Function>(fn: T): T {
         if (CorrelationContextManager.enabled) {
-            return CorrelationContextManager.session.bind(fn, {[CorrelationContextManager.CONTEXT_NAME]: CorrelationContextManager.getCurrentContext()});
+            return CorrelationContextManager.session.bind(fn);
         }
         return fn;
     }
@@ -151,7 +151,7 @@ export class CorrelationContextManager {
             CorrelationContextManager.session = this.cls.createNamespace("AI-CLS-Session");
 
             DiagChannel.registerContextPreservation((cb) => {
-                return CorrelationContextManager.session.bind(cb, {[CorrelationContextManager.CONTEXT_NAME]: CorrelationContextManager.getCurrentContext()});
+                return CorrelationContextManager.session.bind(cb);
             });
         }
 
