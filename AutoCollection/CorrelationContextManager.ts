@@ -137,7 +137,11 @@ export class CorrelationContextManager {
 
             try {
                 if (typeof this.cls === "undefined") {
-                    this.cls = require('cls-hooked');
+                    if (CorrelationContextManager.isClsHookedCompatible()) {
+                        this.cls = require('cls-hooked');
+                    } else {
+                        this.cls = require('continuation-local-storage');
+                    }
                 }
             } catch (e) {
                 // cls-hooked was already loaded even though we couldn't find its global variable
@@ -172,9 +176,17 @@ export class CorrelationContextManager {
      *  Reports if the CorrelationContextManager is able to run in this environment
      */
     public static isNodeVersionCompatible() {
-        // cls-hooked requires 4.7+
         var nodeVer = process.versions.node.split(".");
         return parseInt(nodeVer[0]) > 4 || (parseInt(nodeVer[0]) >= 4 && parseInt(nodeVer[1]) >= 7);
+    }
+
+    /**
+     * We only want to use cls-hooked when it uses async_hooks api, else
+     * use async-listener
+     */
+    public static isClsHookedCompatible() {
+        var nodeVer = process.versions.node.split(".");
+        return (parseInt(nodeVer[0]) > 8) || (parseInt(nodeVer[0]) >= 8 && parseInt(nodeVer[1]) >= 2);
     }
 }
 
