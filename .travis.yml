@@ -7,9 +7,12 @@ node_js:
   - "11"
   - "10"
   - "9"
-  - "8.2.0"
-  - "8.2.1"
   - "8"
+  - "8.2.1"
+  - "8.2.0"
+  - "8.1.3"
+  - "8.1.0"
+  - "8.0.0"
   - "7"
   - "6"
   - "4"
@@ -30,6 +33,9 @@ script:
   - if [ "$TRAVIS_NODE_VERSION" = "9" ]; then npm run functionaltest; fi
   - if [ "$TRAVIS_NODE_VERSION" = "8.2.1" ]; then npm run functionaltest; fi
   - if [ "$TRAVIS_NODE_VERSION" = "8.2.0" ]; then npm run functionaltest; fi
+  - if [ "$TRAVIS_NODE_VERSION" = "8.1.3" ]; then npm run functionaltest; fi
+  - if [ "$TRAVIS_NODE_VERSION" = "8.1.0" ]; then npm run functionaltest; fi
+  - if [ "$TRAVIS_NODE_VERSION" = "8.0.0" ]; then npm run functionaltest; fi
   - if [ "$TRAVIS_NODE_VERSION" = "8" ]; then npm run functionaltest; fi
   - if [ "$TRAVIS_NODE_VERSION" = "7" ]; then npm run functionaltest; fi
   - if [ "$TRAVIS_NODE_VERSION" = "6" ]; then npm run functionaltest; fi
