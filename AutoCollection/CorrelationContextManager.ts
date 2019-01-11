@@ -172,7 +172,7 @@ export class CorrelationContextManager {
     }
 
     /**
-     *  Reports if the CorrelationContextManager is able to run in this environment
+     *  Reports if CorrelationContextManager is able to run in this environment
      */
     public static isNodeVersionCompatible() {
         var nodeVer = process.versions.node.split(".");
