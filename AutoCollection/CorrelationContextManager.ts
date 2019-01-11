@@ -6,7 +6,7 @@ import Logging = require("../Library/Logging");
 import * as DiagChannel from "./diagnostic-channel/initialization";
 
 // Don't reference modules from these directly. Use only for types.
-import * as cls from "cls-hooked";
+import {Namespace} from "cls-hooked";
 
 export interface CustomProperties {
     /**
@@ -43,8 +43,8 @@ export interface CorrelationContext {
 export class CorrelationContextManager {
     private static enabled: boolean = false;
     private static hasEverEnabled: boolean = false;
-    private static session: cls.Namespace;
-    private static cls: cls;
+    private static session: Namespace;
+    private static cls: any;
     private static CONTEXT_NAME = "ApplicationInsights-Context"
 
     /**
