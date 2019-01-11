@@ -6,7 +6,7 @@ import Logging = require("../Library/Logging");
 import * as DiagChannel from "./diagnostic-channel/initialization";
 
 // Don't reference modules from these directly. Use only for types.
-import {Namespace} from "cls-hooked";
+import * as cls from "cls-hooked";
 
 export interface CustomProperties {
     /**
@@ -43,8 +43,8 @@ export interface CorrelationContext {
 export class CorrelationContextManager {
     private static enabled: boolean = false;
     private static hasEverEnabled: boolean = false;
-    private static session: Namespace;
-    private static cls: any;
+    private static session: cls.Namespace;
+    private static cls: typeof cls;
     private static CONTEXT_NAME = "ApplicationInsights-Context"
 
     /**
@@ -175,14 +175,14 @@ export class CorrelationContextManager {
      *  Reports if the CorrelationContextManager is able to run in this environment
      */
     public static isNodeVersionCompatible() {
-        // var nodeVer = process.versions.node.split(".");
-        // return parseInt(nodeVer[0]) > 4 || (parseInt(nodeVer[0]) >= 4 && parseInt(nodeVer[1]) >= 7);
-        return true;
+        var nodeVer = process.versions.node.split(".");
+        return parseInt(nodeVer[0]) > 3 || (parseInt(nodeVer[0]) > 2 && parseInt(nodeVer[1]) > 2);
+
     }
 
     /**
-     * We only want to use cls-hooked when it uses async_hooks api, else
-     * use async-listener
+     * We only want to use cls-hooked when it uses async_hooks api (8.2+), else
+     * use async-listener (plain -cls)
      */
     public static isClsHookedCompatible() {
         var nodeVer = process.versions.node.split(".");
