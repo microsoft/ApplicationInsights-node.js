@@ -65,7 +65,7 @@ class CorrelationIdManager {
                         }
                         delete CorrelationIdManager.pendingLookups[appIdUrlString];
                     });
-                } else if (res.statusCode >= 400 && res.statusCode < 500) {
+                } else if (res.statusCode >= 400 && res.statusCode < 500 || res.statusCode === undefined) {
                     // Not found, probably a bad key. Do not try again.
                     CorrelationIdManager.completedLookups[appIdUrlString] = undefined;
                     delete CorrelationIdManager.pendingLookups[appIdUrlString];

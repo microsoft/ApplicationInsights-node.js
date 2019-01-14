@@ -1,5 +1,7 @@
 import assert = require("assert");
 import sinon = require("sinon");
+var http = require("http");
+var https = require("https");
 
 import Config = require("../../Library/Config");
 
@@ -9,6 +11,14 @@ describe("Library/Config", () => {
     var appVer = "appVer";
 
     describe("#constructor(iKey)", () => {
+        beforeEach(()=> {
+            sinon.stub(http, 'request');
+            sinon.stub(https, 'request');
+        });
+        afterEach(() => {
+            http.request.restore();
+            https.request.restore();
+        })
         it("should throw if no iKey is available", () => {
             var env = {};
             var originalEnv = process.env;

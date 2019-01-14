@@ -304,8 +304,8 @@ describe("Library/Util", () => {
                 if (process.env.hasOwnProperty('no_proxy')) {
                     delete process.env.no_proxy;
                 }
-                sinon.spy(http, 'request');
-                sinon.spy(https, 'request');
+                sinon.stub(http, 'request');
+                sinon.stub(https, 'request');
             });
 
             afterEach(() => {
