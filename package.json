@@ -42,9 +42,9 @@
     "prepublishOnly": "npm run build",
     "pretest": "npm run build",
     "test": "npm run test:ts && npm run test:js",
-    "test:ts": "mocha ./out/Tests --recursive",
-    "test:js": "mocha ./Tests/js --recursive",
-    "functionaltest": "npm run build && npm pack && node --use_strict ./Tests/FunctionalTests/RunFunctionalTests.js ../../applicationinsights-1.1.0-beta.0.tgz",
+    "test:ts": "mocha ./out/Tests --recursive --no-exit",
+    "test:js": "mocha ./Tests/js --recursive --no-exit",
+    "functionaltest": "npm run build && npm pack && node --use_strict ./Tests/FunctionalTests/RunFunctionalTests.js",
     "backcompattest": "npm run build && npm pack && node --use_strict ./Tests/BackCompatibility/RunBackCompatTests.js"
   },
   "devDependencies": {
