@@ -23,7 +23,7 @@ let _isRequests = true;
 let _isDependencies = true;
 let _isDiskRetry = true;
 let _isCorrelating = true;
-let _forceClsHooked;
+let _forceClsHooked: boolean;
 
 let _diskRetryInterval: number = undefined;
 let _diskRetryMaxBytes: number = undefined;
@@ -83,7 +83,7 @@ export function start() {
         _console.enable(_isConsole, _isConsoleLog);
         _exceptions.enable(_isExceptions);
         _performance.enable(_isPerformance);
-        _serverRequests.useAutoCorrelation(_isCorrelating);
+        _serverRequests.useAutoCorrelation(_isCorrelating, _forceClsHooked);
         _serverRequests.enable(_isRequests);
         _clientRequests.enable(_isDependencies);
     } else {
@@ -212,7 +212,7 @@ export class Configuration {
         _isCorrelating = value;
         _forceClsHooked = forceClsHooked;
         if (_isStarted) {
-            _serverRequests.useAutoCorrelation(value);
+            _serverRequests.useAutoCorrelation(value, forceClsHooked);
         }
 
         return Configuration;

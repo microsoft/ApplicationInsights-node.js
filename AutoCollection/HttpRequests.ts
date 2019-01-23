@@ -282,6 +282,8 @@ class AutoCollectHttpRequests {
          AutoCollectHttpRequests.INSTANCE = null;
          this.enable(false);
          this._isInitialized = false;
+         CorrelationContextManager.disable();
+         this._isAutoCorrelating = false;
     }
 }
 
