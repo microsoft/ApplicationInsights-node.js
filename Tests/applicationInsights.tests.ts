@@ -141,7 +141,7 @@ describe("ApplicationInsights", () => {
         var AppInsights = require("../applicationinsights");
         var Contracts = require("../Declarations/Contracts");
         var CCM = require("../AutoCollection/CorrelationContextManager").CorrelationContextManager;
-        var origGCC = CCM.getCurrentContext;        
+        var origGCC = CCM.getCurrentContext;
 
         beforeEach(() => {
             CCM.getCurrentContext = () => 'context';
@@ -149,11 +149,27 @@ describe("ApplicationInsights", () => {
 
         afterEach(() => {
             CCM.getCurrentContext = origGCC;
+            CCM.hasEverEnabled = false;
+            CCM.disable();
         });
 
         it("should provide a context if correlating", () => {
             AppInsights.setup("key")
             .setAutoDependencyCorrelation(true)
+            .start();
+            assert.equal(AppInsights.getCorrelationContext(), 'context');
+        });
+
+        it("should provide a cls-hooked context if force flag set", () => {
+            AppInsights.setup("key")
+            .setAutoDependencyCorrelation(true, true)
+            .start();
+            assert.equal(AppInsights.getCorrelationContext(), 'context');
+        });
+
+        it("should provide a continuation-local-storage context if force flag set", () => {
+            AppInsights.setup("key")
+            .setAutoDependencyCorrelation(true, false)
             .start();
             assert.equal(AppInsights.getCorrelationContext(), 'context');
         });

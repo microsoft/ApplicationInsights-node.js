@@ -26,6 +26,34 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             },
             customProperties
         };
+        describe("#enable", () => {
+            afterEach(() => {
+                (CorrelationContextManager as any).hasEverEnabled = false;
+                (CorrelationContextManager as any).cls = undefined;
+                CorrelationContextManager.disable();
+            });
+
+            it("should use cls-hooked if force flag is set to true", () => {
+                CorrelationContextManager.enable(true);
+                assert.deepEqual(require('cls-hooked'), (CorrelationContextManager as any).cls, 'cls-hooked is loaded');
+                assert.notDeepEqual(require('continuation-local-storage'), (CorrelationContextManager as any).cls);
+            });
+            it("should use continuation-local-storage if force flag is set to false", () => {
+                CorrelationContextManager.enable(false);
+                assert.deepEqual(require('continuation-local-storage'), (CorrelationContextManager as any).cls, 'cls is loaded');
+                assert.notDeepEqual(require('cls-hooked'), (CorrelationContextManager as any).cls);
+            });
+            it("should pick correct version of cls based on node version", () => {
+                CorrelationContextManager.enable();
+                if (CorrelationContextManager.isClsHookedCompatible()) {
+                    assert.deepEqual(require('cls-hooked'), (CorrelationContextManager as any).cls, 'cls-hooked is loaded');
+                    assert.notDeepEqual(require('continuation-local-storage'), (CorrelationContextManager as any).cls);
+                } else {
+                    assert.deepEqual(require('continuation-local-storage'), (CorrelationContextManager as any).cls, 'cls is loaded');
+                    assert.notDeepEqual(require('cls-hooked'), (CorrelationContextManager as any).cls);
+                }
+            });
+        });
 
         describe("#getCurrentContext()", () => {
             afterEach(() => {

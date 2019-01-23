@@ -43,6 +43,7 @@ export interface CorrelationContext {
 export class CorrelationContextManager {
     private static enabled: boolean = false;
     private static hasEverEnabled: boolean = false;
+    private static forceClsHooked: boolean = undefined; // true: use cls-hooked, false: use cls, undefined: choose based on node version
     private static session: cls.Namespace;
     private static cls: typeof cls;
     private static CONTEXT_NAME = "ApplicationInsights-Context"
@@ -123,7 +124,7 @@ export class CorrelationContextManager {
     /**
      *  Enables the CorrelationContextManager.
      */
-    public static enable() {
+    public static enable(forceClsHooked?: boolean) {
         if (this.enabled) {
             return;
         }
@@ -132,12 +133,12 @@ export class CorrelationContextManager {
             this.enabled = false;
             return;
         }
-
         if (!CorrelationContextManager.hasEverEnabled) {
+            this.forceClsHooked = forceClsHooked;
             this.hasEverEnabled = true;
 
             if (typeof this.cls === "undefined") {
-                if (CorrelationContextManager.isClsHookedCompatible()) {
+                if (CorrelationContextManager.forceClsHooked === true || (CorrelationContextManager.forceClsHooked === undefined && CorrelationContextManager.isClsHookedCompatible())) {
                     this.cls = require('cls-hooked');
                 } else {
                     this.cls = require('continuation-local-storage');

@@ -43,9 +43,9 @@ class AutoCollectHttpRequests {
         }
     }
 
-    public useAutoCorrelation(isEnabled:boolean) {
+    public useAutoCorrelation(isEnabled:boolean, forceClsHooked?:boolean) {
         if (isEnabled && !this._isAutoCorrelating) {
-            CorrelationContextManager.enable();
+            CorrelationContextManager.enable(forceClsHooked);
         } else if (!isEnabled && this._isAutoCorrelating) {
             CorrelationContextManager.disable();
         }
