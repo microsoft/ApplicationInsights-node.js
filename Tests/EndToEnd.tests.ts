@@ -18,7 +18,7 @@ import { CorrelationContextManager } from "../AutoCollection/CorrelationContextM
 class fakeResponse {
     private callbacks: { [event: string]: (data?: any) => void } = Object.create(null);
     public setEncoding(): void { };
-    public statusCode: number;
+    public statusCode: number = 200;
 
     constructor(private passImmediately: boolean = true) { }
 
