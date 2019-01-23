@@ -135,7 +135,7 @@ class Sender {
                     if (this._enableDiskRetryMode) {
                         // try to send any cached events if the user is back online
                         if (res.statusCode === 200) {
-                            setTimeout(() => this._sendFirstFileOnDisk(), this._resendInterval);
+                            setTimeout(() => this._sendFirstFileOnDisk(), this._resendInterval).unref();
                             // store to disk in case of burst throttling
                         } else if (
                             res.statusCode === 408 || // Timeout
