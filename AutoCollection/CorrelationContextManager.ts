@@ -138,7 +138,7 @@ export class CorrelationContextManager {
             this.hasEverEnabled = true;
 
             if (typeof this.cls === "undefined") {
-                if (CorrelationContextManager.forceClsHooked === true || (CorrelationContextManager.forceClsHooked === undefined && CorrelationContextManager.isClsHookedCompatible())) {
+                if ((CorrelationContextManager.forceClsHooked === true) || (CorrelationContextManager.forceClsHooked === undefined && CorrelationContextManager.shouldUseClsHooked())) {
                     this.cls = require('cls-hooked');
                 } else {
                     this.cls = require('continuation-local-storage');
@@ -185,9 +185,20 @@ export class CorrelationContextManager {
      * We only want to use cls-hooked when it uses async_hooks api (8.2+), else
      * use async-listener (plain -cls)
      */
-    public static isClsHookedCompatible() {
+    public static shouldUseClsHooked() {
         var nodeVer = process.versions.node.split(".");
         return (parseInt(nodeVer[0]) > 8) || (parseInt(nodeVer[0]) >= 8 && parseInt(nodeVer[1]) >= 2);
+    }
+
+    /**
+     * A TypeError is triggered by cls-hooked for node [8.0, 8.2)
+     * @internal Used in tests only
+     */
+    public static canUseClsHooked() {
+        var nodeVer = process.versions.node.split(".");
+        var greater800 = (parseInt(nodeVer[0]) > 8) || (parseInt(nodeVer[0]) >= 8 && parseInt(nodeVer[1]) >= 0);
+        var less820 = (parseInt(nodeVer[0]) < 8) || (parseInt(nodeVer[0]) <= 8 && parseInt(nodeVer[1]) < 2)
+        return !(greater800 && less820) && this.isNodeVersionCompatible();
     }
 }
 
