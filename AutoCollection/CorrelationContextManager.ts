@@ -198,7 +198,8 @@ export class CorrelationContextManager {
         var nodeVer = process.versions.node.split(".");
         var greater800 = (parseInt(nodeVer[0]) > 8) || (parseInt(nodeVer[0]) >= 8 && parseInt(nodeVer[1]) >= 0);
         var less820 = (parseInt(nodeVer[0]) < 8) || (parseInt(nodeVer[0]) <= 8 && parseInt(nodeVer[1]) < 2)
-        return !(greater800 && less820) && this.isNodeVersionCompatible();
+        var greater470 = parseInt(nodeVer[0]) > 4 || (parseInt(nodeVer[0]) >= 4 && parseInt(nodeVer[1]) >= 7) // cls-hooked requires node 4.7+
+        return !(greater800 && less820) && greater470;
     }
 }
 
