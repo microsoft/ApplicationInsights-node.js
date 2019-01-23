@@ -163,12 +163,14 @@ describe("ApplicationInsights", () => {
         });
 
         it("should provide a cls-hooked context if force flag set to true", () => {
-            AppInsights.setup("key")
-            .setAutoDependencyCorrelation(true, true)
-            .start();
-            assert.equal(AppInsights.getCorrelationContext(), 'context');
-            if (CCM.isNodeVersionCompatible()) {
-                assert.equal(CCM.cls, require('cls-hooked'));
+            if (CCM.canUseClsHooked()) {
+                AppInsights.setup("key")
+                .setAutoDependencyCorrelation(true, true)
+                .start();
+                assert.equal(AppInsights.getCorrelationContext(), 'context');
+                if (CCM.isNodeVersionCompatible()) {
+                    assert.equal(CCM.cls, require('cls-hooked'));
+                }
             }
         });
 
