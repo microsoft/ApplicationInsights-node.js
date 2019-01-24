@@ -43,6 +43,7 @@ export interface CorrelationContext {
 export class CorrelationContextManager {
     private static enabled: boolean = false;
     private static hasEverEnabled: boolean = false;
+    private static forceClsHooked: boolean = undefined; // true: use cls-hooked, false: use cls, undefined: choose based on node version
     private static session: cls.Namespace;
     private static cls: typeof cls;
     private static CONTEXT_NAME = "ApplicationInsights-Context"
@@ -123,7 +124,7 @@ export class CorrelationContextManager {
     /**
      *  Enables the CorrelationContextManager.
      */
-    public static enable() {
+    public static enable(forceClsHooked?: boolean) {
         if (this.enabled) {
             return;
         }
@@ -132,12 +133,12 @@ export class CorrelationContextManager {
             this.enabled = false;
             return;
         }
-
         if (!CorrelationContextManager.hasEverEnabled) {
+            this.forceClsHooked = forceClsHooked;
             this.hasEverEnabled = true;
 
             if (typeof this.cls === "undefined") {
-                if (CorrelationContextManager.isClsHookedCompatible()) {
+                if ((CorrelationContextManager.forceClsHooked === true) || (CorrelationContextManager.forceClsHooked === undefined && CorrelationContextManager.shouldUseClsHooked())) {
                     this.cls = require('cls-hooked');
                 } else {
                     this.cls = require('continuation-local-storage');
@@ -184,9 +185,21 @@ export class CorrelationContextManager {
      * We only want to use cls-hooked when it uses async_hooks api (8.2+), else
      * use async-listener (plain -cls)
      */
-    public static isClsHookedCompatible() {
+    public static shouldUseClsHooked() {
         var nodeVer = process.versions.node.split(".");
         return (parseInt(nodeVer[0]) > 8) || (parseInt(nodeVer[0]) >= 8 && parseInt(nodeVer[1]) >= 2);
+    }
+
+    /**
+     * A TypeError is triggered by cls-hooked for node [8.0, 8.2)
+     * @internal Used in tests only
+     */
+    public static canUseClsHooked() {
+        var nodeVer = process.versions.node.split(".");
+        var greater800 = (parseInt(nodeVer[0]) > 8) || (parseInt(nodeVer[0]) >= 8 && parseInt(nodeVer[1]) >= 0);
+        var less820 = (parseInt(nodeVer[0]) < 8) || (parseInt(nodeVer[0]) <= 8 && parseInt(nodeVer[1]) < 2)
+        var greater470 = parseInt(nodeVer[0]) > 4 || (parseInt(nodeVer[0]) >= 4 && parseInt(nodeVer[1]) >= 7) // cls-hooked requires node 4.7+
+        return !(greater800 && less820) && greater470;
     }
 }
 

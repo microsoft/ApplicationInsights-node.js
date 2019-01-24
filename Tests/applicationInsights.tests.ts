@@ -141,7 +141,7 @@ describe("ApplicationInsights", () => {
         var AppInsights = require("../applicationinsights");
         var Contracts = require("../Declarations/Contracts");
         var CCM = require("../AutoCollection/CorrelationContextManager").CorrelationContextManager;
-        var origGCC = CCM.getCurrentContext;        
+        var origGCC = CCM.getCurrentContext;
 
         beforeEach(() => {
             CCM.getCurrentContext = () => 'context';
@@ -149,6 +149,10 @@ describe("ApplicationInsights", () => {
 
         afterEach(() => {
             CCM.getCurrentContext = origGCC;
+            CCM.hasEverEnabled = false;
+            CCM.cls = undefined;
+            CCM.disable();
+            AppInsights.dispose();
         });
 
         it("should provide a context if correlating", () => {
@@ -156,6 +160,28 @@ describe("ApplicationInsights", () => {
             .setAutoDependencyCorrelation(true)
             .start();
             assert.equal(AppInsights.getCorrelationContext(), 'context');
+        });
+
+        it("should provide a cls-hooked context if force flag set to true", () => {
+            if (CCM.canUseClsHooked()) {
+                AppInsights.setup("key")
+                .setAutoDependencyCorrelation(true, true)
+                .start();
+                assert.equal(AppInsights.getCorrelationContext(), 'context');
+                if (CCM.isNodeVersionCompatible()) {
+                    assert.equal(CCM.cls, require('cls-hooked'));
+                }
+            }
+        });
+
+        it("should provide a continuation-local-storage context if force flag set to false", () => {
+            AppInsights.setup("key")
+            .setAutoDependencyCorrelation(true, false)
+            .start();
+            assert.equal(AppInsights.getCorrelationContext(), 'context');
+            if (CCM.isNodeVersionCompatible()) {
+                assert.equal(CCM.cls, require('continuation-local-storage'));
+            }
         });
 
         it("should not provide a context if not correlating", () => {

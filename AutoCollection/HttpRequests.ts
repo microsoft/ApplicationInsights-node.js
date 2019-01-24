@@ -43,9 +43,9 @@ class AutoCollectHttpRequests {
         }
     }
 
-    public useAutoCorrelation(isEnabled:boolean) {
+    public useAutoCorrelation(isEnabled:boolean, forceClsHooked?:boolean) {
         if (isEnabled && !this._isAutoCorrelating) {
-            CorrelationContextManager.enable();
+            CorrelationContextManager.enable(forceClsHooked);
         } else if (!isEnabled && this._isAutoCorrelating) {
             CorrelationContextManager.disable();
         }
@@ -282,6 +282,8 @@ class AutoCollectHttpRequests {
          AutoCollectHttpRequests.INSTANCE = null;
          this.enable(false);
          this._isInitialized = false;
+         CorrelationContextManager.disable();
+         this._isAutoCorrelating = false;
     }
 }
 

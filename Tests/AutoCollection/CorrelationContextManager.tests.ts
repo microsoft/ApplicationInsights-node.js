@@ -26,6 +26,45 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             },
             customProperties
         };
+        describe("#enable", () => {
+            beforeEach(() => {
+                (CorrelationContextManager as any).hasEverEnabled = false;
+                (CorrelationContextManager as any).cls = undefined;
+                CorrelationContextManager.disable();
+            });
+            afterEach(() => {
+                (CorrelationContextManager as any).hasEverEnabled = false;
+                (CorrelationContextManager as any).cls = undefined;
+                CorrelationContextManager.disable();
+            });
+
+            it("should use cls-hooked if force flag is set to true", () => {
+                if (CorrelationContextManager.canUseClsHooked()){
+                    CorrelationContextManager.enable(true);
+                    assert.deepEqual((CorrelationContextManager as any).cls, require('cls-hooked'), 'cls-hooked is loaded');
+                    assert.notDeepEqual((CorrelationContextManager as any).cls, require('continuation-local-storage'));
+                }
+            });
+            it("should use continuation-local-storage if force flag is set to false", () => {
+                CorrelationContextManager.enable(false);
+                assert.deepEqual((CorrelationContextManager as any).cls, require('continuation-local-storage'), 'cls is loaded');
+                if (CorrelationContextManager.canUseClsHooked()) {
+                    assert.notDeepEqual((CorrelationContextManager as any).cls, require('cls-hooked'));
+                }
+            });
+            it("should pick correct version of cls based on node version", () => {
+                CorrelationContextManager.enable();
+                if (CorrelationContextManager.shouldUseClsHooked()) {
+                    assert.deepEqual((CorrelationContextManager as any).cls, require('cls-hooked'), 'cls-hooked is loaded');
+                    assert.notDeepEqual((CorrelationContextManager as any).cls, require('continuation-local-storage'));
+                } else {
+                    assert.deepEqual((CorrelationContextManager as any).cls, require('continuation-local-storage'), 'cls is loaded');
+                    if (CorrelationContextManager.canUseClsHooked()) {
+                        assert.notDeepEqual((CorrelationContextManager as any).cls, require('cls-hooked'));
+                    }
+                }
+            });
+        });
 
         describe("#getCurrentContext()", () => {
             afterEach(() => {
