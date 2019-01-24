@@ -206,7 +206,7 @@ export class Configuration {
     /**
      * Sets the state of automatic dependency correlation (enabled by default)
      * @param value if true dependencies will be correlated with requests
-     * @param useAsyncHooks if true, forces use of experimental async_hooks module to provide correlation. If false, instead uses async-listener. If left blank, the best option is chosen for you based on your version on NodeJS.
+     * @param useAsyncHooks if true, forces use of experimental async_hooks module to provide correlation. If false, instead uses only patching-based techniques. If left blank, the best option is chosen for you based on your version of NodeJS.
      * @returns {Configuration} this class
      */
     public static setAutoDependencyCorrelation(value: boolean, useAsyncHooks?: boolean) {
