@@ -43,9 +43,9 @@ class AutoCollectHttpRequests {
         }
     }
 
-    public useAutoCorrelation(isEnabled:boolean) {
+    public useAutoCorrelation(isEnabled:boolean, forceClsHooked?:boolean) {
         if (isEnabled && !this._isAutoCorrelating) {
-            CorrelationContextManager.enable();
+            CorrelationContextManager.enable(forceClsHooked);
         } else if (!isEnabled && this._isAutoCorrelating) {
             CorrelationContextManager.disable();
         }
@@ -84,6 +84,8 @@ class AutoCollectHttpRequests {
                 throw new Error('onRequest handler must be a function');
             }
             return (request:http.ServerRequest, response:http.ServerResponse) => {
+                CorrelationContextManager.wrapEmitter(request);
+                CorrelationContextManager.wrapEmitter(response);
                 const shouldCollect: boolean = request && !(<any>request)[AutoCollectHttpRequests.alreadyAutoCollectedFlag];
 
                 if (request && shouldCollect) {
@@ -242,12 +244,12 @@ class AutoCollectHttpRequests {
                 const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
                 if (!components.some((value) => value.substring(0,key.length) === key)) {
                     response.setHeader(
-                        RequestResponseHeaders.requestContextHeader, 
+                        RequestResponseHeaders.requestContextHeader,
                         `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
                 }
             } else {
                 response.setHeader(
-                    RequestResponseHeaders.requestContextHeader, 
+                    RequestResponseHeaders.requestContextHeader,
                     `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
             }
         }
@@ -280,6 +282,8 @@ class AutoCollectHttpRequests {
          AutoCollectHttpRequests.INSTANCE = null;
          this.enable(false);
          this._isInitialized = false;
+         CorrelationContextManager.disable();
+         this._isAutoCorrelating = false;
     }
 }
 

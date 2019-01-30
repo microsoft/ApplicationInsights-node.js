@@ -83,7 +83,7 @@ module.exports.TestValidation = class TestValidation {
                 // Did we find all of the items in the data set?
                 if (dataSet.length > 1){
                     Utils.Logging.error("FAILED EXPECTATION - Unexpected child telemetry item(s)!");
-                    Utils.Logging.error(JSON.stringify(dataSet));
+                    Utils.Logging.error(JSON.stringify(dataSet, null, 2));
                     hadFailed = true;
                 }
 

@@ -2,6 +2,7 @@ import assert = require("assert");
 import sinon = require("sinon");
 import HttpRequests = require("../../AutoCollection/HttpRequests")
 import AppInsights = require("../../applicationinsights");
+import { CorrelationContextManager, CorrelationContext } from "../../AutoCollection/CorrelationContextManager";
 
 describe("AutoCollection/HttpRequests", () => {
     afterEach(() => {

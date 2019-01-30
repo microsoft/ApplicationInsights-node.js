@@ -64,6 +64,7 @@ class AutoCollectHttpDependencies {
             (<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag] = true;
 
             if (request && options && shouldCollect) {
+                CorrelationContextManager.wrapEmitter(request);
                 AutoCollectHttpDependencies.trackRequest(this._client, {options: options, request: request});
             }
         };
@@ -127,12 +128,12 @@ class AutoCollectHttpDependencies {
                     const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
                     if (!components.some((value) => value.substring(0,key.length) === key)) {
                         telemetry.request.setHeader(
-                            RequestResponseHeaders.requestContextHeader, 
+                            RequestResponseHeaders.requestContextHeader,
                             `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
                     }
                 } else {
                     telemetry.request.setHeader(
-                        RequestResponseHeaders.requestContextHeader, 
+                        RequestResponseHeaders.requestContextHeader,
                         `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
                 }
             }
@@ -156,11 +157,11 @@ class AutoCollectHttpDependencies {
                 requestParser.onResponse(response);
 
                 var dependencyTelemetry = requestParser.getDependencyTelemetry(telemetry, uniqueRequestId);
-                
+
                 dependencyTelemetry.contextObjects = dependencyTelemetry.contextObjects || {};
                 dependencyTelemetry.contextObjects["http.RequestOptions"] = telemetry.options;
                 dependencyTelemetry.contextObjects["http.ClientRequest"] = telemetry.request;
-                dependencyTelemetry.contextObjects["http.ClientResponse"] = response;                
+                dependencyTelemetry.contextObjects["http.ClientResponse"] = response;
 
                 client.trackDependency(dependencyTelemetry);
             });
@@ -168,11 +169,11 @@ class AutoCollectHttpDependencies {
                 requestParser.onError(e);
 
                 var dependencyTelemetry = requestParser.getDependencyTelemetry(telemetry, uniqueRequestId);
-                
+
                 dependencyTelemetry.contextObjects = dependencyTelemetry.contextObjects || {};
                 dependencyTelemetry.contextObjects["http.RequestOptions"] = telemetry.options;
                 dependencyTelemetry.contextObjects["http.ClientRequest"] = telemetry.request;
-                dependencyTelemetry.contextObjects["Error"] = e; 
+                dependencyTelemetry.contextObjects["Error"] = e;
 
                 client.trackDependency(dependencyTelemetry);
             });

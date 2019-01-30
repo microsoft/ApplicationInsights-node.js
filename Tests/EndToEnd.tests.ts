@@ -10,6 +10,7 @@ import child_process = require("child_process");
 import AppInsights = require("../applicationinsights");
 import Sender = require("../Library/Sender");
 import { EventEmitter } from "events";
+import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
 
 /**
  * A fake response class that passes by default
@@ -17,7 +18,7 @@ import { EventEmitter } from "events";
 class fakeResponse {
     private callbacks: { [event: string]: (data?: any) => void } = Object.create(null);
     public setEncoding(): void { };
-    public statusCode: number;
+    public statusCode: number = 200;
 
     constructor(private passImmediately: boolean = true) { }
 
@@ -35,6 +36,18 @@ class fakeResponse {
         if (event == "end" && this.passImmediately) {
             this.pass(true);
         }
+    }
+
+    public emit(eventName: string, ...args: any[]): boolean {
+        return true;
+    }
+
+    public addListener(eventName: string, listener: () => void): void {
+        this.on(eventName, listener);
+    }
+
+    public removeListener(eventName: string, listener: () => void) {
+
     }
 
     public pass(test = false): void {
@@ -63,6 +76,18 @@ class fakeRequest {
         if (event === "error" && this.failImmediatly) {
             setImmediate(() => this.fail());
         }
+    }
+
+    public emit(eventName: string, ...args: any[]): boolean {
+        return true;
+    }
+
+    public addListener(eventName: string, listener: Function): void {
+        this.on(eventName, listener);
+    }
+
+    public removeListener(eventName: string, listener?: Function) {
+
     }
 
     public fail(): void {
@@ -133,6 +158,7 @@ describe("EndToEnd", () => {
         afterEach(() => {
             // Dispose the default app insights client and auto collectors so that they can be reconfigured
             // cleanly for each test
+            CorrelationContextManager.reset();
             AppInsights.dispose();
             sandbox.restore();
         });
@@ -158,7 +184,7 @@ describe("EndToEnd", () => {
                 fakeHttpSrv.setCallback(callback);
                 return fakeHttpSrv;
             });
-            
+
             AppInsights
                 .setup("ikey")
                 .setAutoCollectRequests(true)
@@ -181,7 +207,7 @@ describe("EndToEnd", () => {
                 fakeHttpSrv.setCallback(callback);
                 return fakeHttpSrv;
             });
-            
+
             AppInsights
                 .setup("ikey")
                 .setAutoCollectRequests(true)
@@ -507,7 +533,7 @@ describe("EndToEnd", () => {
 
                         client.trackEvent({ name: "test event" });
                         this.request.returns(req);
-                        
+
                         client.flush({
                             callback: (response: any) => {
                                 // yield for the caching behavior
@@ -515,7 +541,7 @@ describe("EndToEnd", () => {
                                     // The call counts shouldnt have changed
                                     assert(writeFile.callCount === 0);
                                     assert.equal(tempSpawn.callCount, 1);
-                                    
+
                                     tempSpawn.restore();
                                     (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
                                     done();
@@ -564,7 +590,7 @@ describe("EndToEnd", () => {
 
                         client.trackEvent({ name: "test event" });
                         this.request.returns(req);
-                        
+
                         client.flush({
                             callback: (response: any) => {
                                 // yield for the caching behavior
@@ -572,7 +598,7 @@ describe("EndToEnd", () => {
                                     // The call counts shouldnt have changed
                                     assert(writeFile.callCount === 0);
                                     assert.equal(tempSpawn.callCount, 1);
-                                    
+
                                     tempSpawn.restore();
                                     (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
                                     done();
@@ -647,7 +673,7 @@ describe("EndToEnd", () => {
                             path.dirname(writeFile.firstCall.args[0]),
                             path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
                         assert.equal(writeFile.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
-                        
+
                         tempLstat.restore();
                         done();
                     });

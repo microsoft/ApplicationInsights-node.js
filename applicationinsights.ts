@@ -23,6 +23,7 @@ let _isRequests = true;
 let _isDependencies = true;
 let _isDiskRetry = true;
 let _isCorrelating = true;
+let _forceClsHooked: boolean;
 
 let _diskRetryInterval: number = undefined;
 let _diskRetryMaxBytes: number = undefined;
@@ -44,7 +45,7 @@ export let defaultClient: TelemetryClient;
 /**
  * Initializes the default client. Should be called after setting
  * configuration options.
- * 
+ *
  * @param instrumentationKey the instrumentation key to use. Optional, if
  * this is not specified, the value will be read from the environment
  * variable APPINSIGHTS_INSTRUMENTATIONKEY.
@@ -72,7 +73,7 @@ export function setup(instrumentationKey?: string) {
 
 /**
  * Starts automatic collection of telemetry. Prior to calling start no
- * telemetry will be *automatically* collected, though manual collection 
+ * telemetry will be *automatically* collected, though manual collection
  * is enabled.
  * @returns {ApplicationInsights} this class
  */
@@ -82,7 +83,7 @@ export function start() {
         _console.enable(_isConsole, _isConsoleLog);
         _exceptions.enable(_isExceptions);
         _performance.enable(_isPerformance);
-        _serverRequests.useAutoCorrelation(_isCorrelating);
+        _serverRequests.useAutoCorrelation(_isCorrelating, _forceClsHooked);
         _serverRequests.enable(_isRequests);
         _clientRequests.enable(_isDependencies);
     } else {
@@ -96,12 +97,12 @@ export function start() {
  * Returns an object that is shared across all code handling a given request.
  * This can be used similarly to thread-local storage in other languages.
  * Properties set on this object will be available to telemetry processors.
- * 
+ *
  * Do not store sensitive information here.
  * Custom properties set on this object can be exposed in a future SDK
  * release via outgoing HTTP headers.
  * This is to allow for correlating data cross-component.
- * 
+ *
  * This method will return null if automatic dependency correlation is disabled.
  * @returns A plain object for request storage or null if automatic dependency correlation is disabled.
  */
@@ -205,12 +206,14 @@ export class Configuration {
     /**
      * Sets the state of automatic dependency correlation (enabled by default)
      * @param value if true dependencies will be correlated with requests
+     * @param useAsyncHooks if true, forces use of experimental async_hooks module to provide correlation. If false, instead uses only patching-based techniques. If left blank, the best option is chosen for you based on your version of Node.js.
      * @returns {Configuration} this class
      */
-    public static setAutoDependencyCorrelation(value: boolean) {
+    public static setAutoDependencyCorrelation(value: boolean, useAsyncHooks?: boolean) {
         _isCorrelating = value;
+        _forceClsHooked = useAsyncHooks;
         if (_isStarted) {
-            _serverRequests.useAutoCorrelation(value);
+            _serverRequests.useAutoCorrelation(value, useAsyncHooks);
         }
 
         return Configuration;

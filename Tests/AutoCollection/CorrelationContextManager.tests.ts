@@ -26,13 +26,52 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             },
             customProperties
         };
+        describe("#enable", () => {
+            beforeEach(() => {
+                (CorrelationContextManager as any).hasEverEnabled = false;
+                (CorrelationContextManager as any).cls = undefined;
+                CorrelationContextManager.disable();
+            });
+            afterEach(() => {
+                (CorrelationContextManager as any).hasEverEnabled = false;
+                (CorrelationContextManager as any).cls = undefined;
+                CorrelationContextManager.disable();
+            });
+
+            it("should use cls-hooked if force flag is set to true", () => {
+                if (CorrelationContextManager.canUseClsHooked()){
+                    CorrelationContextManager.enable(true);
+                    assert.deepEqual((CorrelationContextManager as any).cls, require('cls-hooked'), 'cls-hooked is loaded');
+                    assert.notDeepEqual((CorrelationContextManager as any).cls, require('continuation-local-storage'));
+                }
+            });
+            it("should use continuation-local-storage if force flag is set to false", () => {
+                CorrelationContextManager.enable(false);
+                assert.deepEqual((CorrelationContextManager as any).cls, require('continuation-local-storage'), 'cls is loaded');
+                if (CorrelationContextManager.canUseClsHooked()) {
+                    assert.notDeepEqual((CorrelationContextManager as any).cls, require('cls-hooked'));
+                }
+            });
+            it("should pick correct version of cls based on node version", () => {
+                CorrelationContextManager.enable();
+                if (CorrelationContextManager.shouldUseClsHooked()) {
+                    assert.deepEqual((CorrelationContextManager as any).cls, require('cls-hooked'), 'cls-hooked is loaded');
+                    assert.notDeepEqual((CorrelationContextManager as any).cls, require('continuation-local-storage'));
+                } else {
+                    assert.deepEqual((CorrelationContextManager as any).cls, require('continuation-local-storage'), 'cls is loaded');
+                    if (CorrelationContextManager.canUseClsHooked()) {
+                        assert.notDeepEqual((CorrelationContextManager as any).cls, require('cls-hooked'));
+                    }
+                }
+            });
+        });
 
         describe("#getCurrentContext()", () => {
-            afterEach(()=>{
-                // Mocha's async "done" methods cause future tests to be in the same context chain
-                // Reset the context each time
-                CorrelationContextManager.enable();
-                CorrelationContextManager.runWithContext(null, ()=>null);
+            afterEach(() => {
+              // Mocha's async "done" methods cause future tests to be in the same context chain
+              // Reset the context each time
+              CorrelationContextManager.reset();
+              assert.equal(null, CorrelationContextManager.getCurrentContext());
             });
             it("should return null if not in a context", () => {
                 CorrelationContextManager.enable();
@@ -64,9 +103,9 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             it("should return the context if called by an asynchronous callback in a context", (done) => {
                 CorrelationContextManager.enable();
 
-                CorrelationContextManager.runWithContext(testContext, ()=>{
+                CorrelationContextManager.runWithContext(testContext2, ()=>{
                     process.nextTick(()=>{
-                        assert.equal(CorrelationContextManager.getCurrentContext(), testContext);
+                        assert.equal(CorrelationContextManager.getCurrentContext(), testContext2);
                         done();
                     });
                 });
