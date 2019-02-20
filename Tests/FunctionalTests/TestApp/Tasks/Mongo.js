@@ -5,8 +5,9 @@ var ready = false;
 var db = null;
 
 function connect() {
-    mongo.connect(Config.MongoConnectionString, function(err, _db) {
+    mongo.connect(Config.MongoConnectionString, function(err, _client) {
         if (!err) {
+            var _db = _client.db(Config.MongoDbName);
             var collection = _db.collection('testCollection');
             collection.insert({testrecord: true}, function(err, result) {
                 db = _db;
