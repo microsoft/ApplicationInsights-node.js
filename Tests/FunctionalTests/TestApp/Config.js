@@ -1,7 +1,8 @@
 var Config = {
     ServerPort: "9099",
     EndpointBaseAddress: "http://localhost:9091",
-    MongoConnectionString: "mongodb://localhost:27017/testapp",
+    MongoConnectionString: "mongodb://localhost:27017",
+    MongoDbName: "testapp",
     MySqlConnectionString: "mysql://root:dummypw@localhost:33060/testdb",
     RedisConnectionString: "redis://localhost:63790",
     PostgresConnectionString: "pg://postgres@localhost:54320/postgres",
