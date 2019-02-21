@@ -18,6 +18,10 @@ describe("ApplicationInsights", () => {
             HttpDependencies.INSTANCE = undefined;
         });
 
+        afterEach(() => {
+            AppInsights.dispose();
+        })
+
         it("should not warn if setup is called once", () => {
             var warnStub = sinon.stub(console, "warn");
             AppInsights.defaultClient = undefined;
@@ -35,15 +39,20 @@ describe("ApplicationInsights", () => {
             warnStub.restore();
         });
 
-        it("should not overwrite default client if called more than once", () => {
+        it("should overwrite default client if called more than once", () => {
             var warnStub = sinon.stub(console, "warn");
             AppInsights.defaultClient = undefined;
             AppInsights.setup("key");
             var client = AppInsights.defaultClient;
             AppInsights.setup("key");
+            assert.notStrictEqual(AppInsights.defaultClient, client, "client is overwritten #1");
+            client = AppInsights.defaultClient;
             AppInsights.setup("key");
-            AppInsights.setup("key");
-            assert.ok(client === AppInsights.defaultClient, "client is not overwritten");
+            assert.notStrictEqual(AppInsights.defaultClient, client, "client is overwritten #2");
+            client = AppInsights.defaultClient;
+            AppInsights.setup("key2");
+            assert.equal(AppInsights.defaultClient.config.instrumentationKey, "key2");
+            assert.notStrictEqual(AppInsights.defaultClient, client, "client is overwritten #3");
             warnStub.restore();
         });
     });

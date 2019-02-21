@@ -53,16 +53,16 @@ export let defaultClient: TelemetryClient;
  * and start the SDK.
  */
 export function setup(instrumentationKey?: string) {
-    if(!defaultClient) {
-        defaultClient = new TelemetryClient(instrumentationKey);
-        _console = new AutoCollectConsole(defaultClient);
-        _exceptions = new AutoCollectExceptions(defaultClient);
-        _performance = new AutoCollectPerformance(defaultClient);
-        _serverRequests = new AutoCollectHttpRequests(defaultClient);
-        _clientRequests = new AutoCollectHttpDependencies(defaultClient);
-    } else {
-        Logging.info("The default client is already setup");
+    if(defaultClient) {
+        Logging.info("setup was called previously. Overwriting existing defaultClient");
+        dispose();
     }
+    defaultClient = new TelemetryClient(instrumentationKey);
+    _console = new AutoCollectConsole(defaultClient);
+    _exceptions = new AutoCollectExceptions(defaultClient);
+    _performance = new AutoCollectPerformance(defaultClient);
+    _serverRequests = new AutoCollectHttpRequests(defaultClient);
+    _clientRequests = new AutoCollectHttpDependencies(defaultClient);
 
     if (defaultClient && defaultClient.channel) {
         defaultClient.channel.setUseDiskRetryCaching(_isDiskRetry, _diskRetryInterval, _diskRetryMaxBytes);
