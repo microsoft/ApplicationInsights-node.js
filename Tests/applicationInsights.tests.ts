@@ -59,25 +59,29 @@ describe("ApplicationInsights", () => {
         });
 
         it("should cancel [console] autocollection is setup called again", () => {
-            var warnStub = sinon.stub(console, "warn");
+            const version = process.versions.node.split(".");
+            if (parseInt(version[0]) > 0) {
+                // We only patch console version >= 4.0
+                var warnStub = sinon.stub(console, "warn");
 
-            AppInsights.defaultClient = null;
-            AppInsights.setup("key").setAutoCollectConsole(true, true).start();
+                AppInsights.defaultClient = null;
+                AppInsights.setup("key").setAutoCollectConsole(true, true).start();
 
-            var traceStub = sinon.stub(AppInsights.defaultClient, "trackTrace");
-            assert.ok(traceStub.notCalled);
-            console.log('test log');
-            assert.ok(traceStub.calledOnce);
-            assert.ok(traceStub.calledWith({message: "test log", severity: 1}));
+                var traceStub = sinon.stub(AppInsights.defaultClient, "trackTrace");
+                assert.ok(traceStub.notCalled);
+                console.log('test log');
+                assert.ok(traceStub.calledOnce);
+                assert.ok(traceStub.calledWith({message: "test log", severity: 1}));
 
-            traceStub.reset();
-            assert.ok(traceStub.notCalled);
-            AppInsights.setup("key").setAutoCollectConsole(false, false);
-            console.log('test log 2');
-            assert.ok(traceStub.notCalled);
+                traceStub.reset();
+                assert.ok(traceStub.notCalled);
+                AppInsights.setup("key").setAutoCollectConsole(false, false);
+                console.log('test log 2');
+                assert.ok(traceStub.notCalled);
 
-            warnStub.restore();
-            traceStub.restore();
+                warnStub.restore();
+                traceStub.restore();
+            }
         })
     });
 
