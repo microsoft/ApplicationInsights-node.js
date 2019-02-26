@@ -55,9 +55,20 @@ export let defaultClient: TelemetryClient;
 export function setup(instrumentationKey?: string) {
     if(defaultClient) {
         Logging.info("setup was called previously. Overwriting existing defaultClient");
-        dispose();
+
+        // The 'if checks' here aren't necessary, but guard against
+        // any potential abnormal setup
+        if (_console) _console.dispose();
+        if (_exceptions) _exceptions.dispose();
+        if (_performance) _performance.dispose();
+        if (_serverRequests) _serverRequests.dispose();
+        if (_clientRequests) _clientRequests.dispose();
+
+        defaultClient.config = new Config(instrumentationKey);
+    } else {
+        defaultClient = new TelemetryClient(instrumentationKey);
     }
-    defaultClient = new TelemetryClient(instrumentationKey);
+
     _console = new AutoCollectConsole(defaultClient);
     _exceptions = new AutoCollectExceptions(defaultClient);
     _performance = new AutoCollectPerformance(defaultClient);

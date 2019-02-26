@@ -43,18 +43,42 @@ describe("ApplicationInsights", () => {
             var warnStub = sinon.stub(console, "warn");
             AppInsights.defaultClient = undefined;
             AppInsights.setup("key");
-            var client = AppInsights.defaultClient;
-            AppInsights.setup("key");
-            assert.notStrictEqual(AppInsights.defaultClient, client, "client is overwritten #1");
-            client = AppInsights.defaultClient;
-            AppInsights.setup("key");
-            assert.notStrictEqual(AppInsights.defaultClient, client, "client is overwritten #2");
-            client = AppInsights.defaultClient;
+            var client = JSON.parse(JSON.stringify(AppInsights.defaultClient));
             AppInsights.setup("key2");
-            assert.equal(AppInsights.defaultClient.config.instrumentationKey, "key2");
-            assert.notStrictEqual(AppInsights.defaultClient, client, "client is overwritten #3");
+            assert.notDeepEqual(AppInsights.defaultClient, client, "client is overwritten #1");
+
+            client = JSON.parse(JSON.stringify(AppInsights.defaultClient));
+            AppInsights.setup("key3");
+            assert.notDeepEqual(AppInsights.defaultClient, client, "client is overwritten #2");
+
+            client = JSON.parse(JSON.stringify(AppInsights.defaultClient));
+            AppInsights.setup("key4");
+            assert.equal(AppInsights.defaultClient.config.instrumentationKey, "key4");
+            assert.notDeepEqual(AppInsights.defaultClient, client, "client is overwritten #3");
             warnStub.restore();
         });
+
+        it("should cancel [console] autocollection is setup called again", () => {
+            var warnStub = sinon.stub(console, "warn");
+
+            AppInsights.defaultClient = null;
+            AppInsights.setup("key").setAutoCollectConsole(true, true).start();
+
+            var traceStub = sinon.stub(AppInsights.defaultClient, "trackTrace");
+            assert.ok(traceStub.notCalled);
+            console.log('test log');
+            assert.ok(traceStub.calledOnce);
+            assert.ok(traceStub.calledWith({message: "test log", severity: 1}));
+
+            traceStub.reset();
+            assert.ok(traceStub.notCalled);
+            AppInsights.setup("key").setAutoCollectConsole(false, false);
+            console.log('test log 2');
+            assert.ok(traceStub.notCalled);
+
+            warnStub.restore();
+            traceStub.restore();
+        })
     });
 
     describe("#start()", () => {
