@@ -60,7 +60,7 @@ describe("ApplicationInsights", () => {
 
         it("should cancel [console] autocollection is setup called again", () => {
             const version = process.versions.node.split(".");
-            if (parseInt(version[0]) > 0) {
+            if (parseInt(version[0]) >= 4) {
                 // We only patch console version >= 4.0
                 var warnStub = sinon.stub(console, "warn");
 
