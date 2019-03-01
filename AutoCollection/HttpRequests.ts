@@ -10,6 +10,7 @@ import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import HttpRequestParser = require("./HttpRequestParser");
 import { CorrelationContextManager, CorrelationContext, PrivateCustomProperties } from "./CorrelationContextManager";
 import AutoCollectPerformance = require("./Performance");
+import Config = require("../Library/Config");
 
 class AutoCollectHttpRequests {
 
@@ -44,7 +45,7 @@ class AutoCollectHttpRequests {
     }
 
     public useAutoCorrelation(isEnabled:boolean, forceClsHooked?:boolean) {
-        if (isEnabled && !this._isAutoCorrelating) {
+        if (isEnabled && !this._isAutoCorrelating && !process.env[Config.ENV_disableDependencyCorrelation]) {
             CorrelationContextManager.enable(forceClsHooked);
         } else if (!isEnabled && this._isAutoCorrelating) {
             CorrelationContextManager.disable();

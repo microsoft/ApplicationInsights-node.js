@@ -12,6 +12,9 @@ class Config {
     public static legacy_ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
     public static ENV_profileQueryEndpoint = "APPINSIGHTS_PROFILE_QUERY_ENDPOINT";
 
+    // Disable dependency correlation
+    public static ENV_disableDependencyCorrelation = "APPINSIGHTS_DISABLE_DEPENDENCY_CORRELATION";
+
     public static ENV_http_proxy = "http_proxy";
     public static ENV_https_proxy = "https_proxy";
 
