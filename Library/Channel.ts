@@ -3,7 +3,7 @@ import Logging = require("./Logging");
 import Sender = require("./Sender");
 
 class Channel {
-    
+
     protected _lastSend: number;
     protected _timeoutHandle: any;
 
@@ -108,7 +108,7 @@ class Channel {
         }
     }
 
-    private _stringify(envelope: Contracts.Envelope) {
+    protected _stringify(envelope: Contracts.Envelope) {
         try {
             return JSON.stringify(envelope);
         } catch (error) {

@@ -2,8 +2,8 @@ import http = require("http");
 import os = require("os");
 
 import TelemetryClient = require("../Library/TelemetryClient");
-import Contracts = require("../Declarations/Contracts");
 import Logging = require("../Library/Logging");
+import Constants = require("../Declarations/Constants");
 
 class AutoCollectPerformance {
 
@@ -12,7 +12,13 @@ class AutoCollectPerformance {
     private static _totalRequestCount: number = 0;
     private static _totalFailedRequestCount: number = 0;
     private static _lastRequestExecutionTime: number = 0;
+    private static _totalDependencyCount: number = 0;
+    private static _totalFailedDependencyCount: number = 0;
+    private static _lastDependencyExecutionTime: number = 0;
+    private static _totalExceptionCount: number = 0;
 
+    private _enableLiveMetricsCounters: boolean;
+    private _collectionInterval: number;
     private _client: TelemetryClient;
     private _handle: NodeJS.Timer;
     private _isEnabled: boolean;
@@ -20,19 +26,25 @@ class AutoCollectPerformance {
     private _lastAppCpuUsage: { user: number, system: number };
     private _lastHrtime: number[];
     private _lastCpus: { model: string; speed: number; times: { user: number; nice: number; sys: number; idle: number; irq: number; }; }[];
+    private _lastDependencies: { totalDependencyCount: number; totalFailedDependencyCount: number; time: number; };
     private _lastRequests: { totalRequestCount: number; totalFailedRequestCount: number; time: number; };
+    private _lastExceptions: { totalExceptionCount: number, time: number };
 
-    constructor(client: TelemetryClient) {
-        if (!!AutoCollectPerformance.INSTANCE) {
-            throw new Error("Performance tracking should be configured from the applicationInsights object");
+    /**
+     * @param enableLiveMetricsCounters - enable sending additional live metrics information (dependency metrics, exception metrics, committed memory)
+     */
+    constructor(client: TelemetryClient, collectionInterval = 60000, enableLiveMetricsCounters = false) {
+        if (!AutoCollectPerformance.INSTANCE) {
+            AutoCollectPerformance.INSTANCE = this;
         }
 
-        AutoCollectPerformance.INSTANCE = this;
         this._isInitialized = false;
         this._client = client;
+        this._collectionInterval = collectionInterval;
+        this._enableLiveMetricsCounters = enableLiveMetricsCounters;
     }
 
-    public enable(isEnabled: boolean) {
+    public enable(isEnabled: boolean, collectionInterval?: number) {
         this._isEnabled = isEnabled;
         if (this._isEnabled && !this._isInitialized) {
             this._isInitialized = true;
@@ -46,12 +58,22 @@ class AutoCollectPerformance {
                     totalFailedRequestCount: AutoCollectPerformance._totalFailedRequestCount,
                     time: +new Date
                 };
+                this._lastDependencies = {
+                    totalDependencyCount: AutoCollectPerformance._totalDependencyCount,
+                    totalFailedDependencyCount: AutoCollectPerformance._totalFailedDependencyCount,
+                    time: +new Date
+                };
+                this._lastExceptions = {
+                    totalExceptionCount: AutoCollectPerformance._totalExceptionCount,
+                    time: +new Date
+                };
+
                 if (typeof (process as any).cpuUsage === 'function'){
                     this._lastAppCpuUsage = (process as any).cpuUsage();
                 }
                 this._lastHrtime = process.hrtime();
-
-                this._handle = setInterval(() => this.trackPerformance(), 60000);
+                this._collectionInterval = collectionInterval || this._collectionInterval;
+                this._handle = setInterval(() => this.trackPerformance(), this._collectionInterval);
                 this._handle.unref(); // Allow the app to terminate even while this loop is going on
             }
         } else {
@@ -86,6 +108,22 @@ class AutoCollectPerformance {
         }
     }
 
+    public static countException() {
+        AutoCollectPerformance._totalExceptionCount++;
+    }
+
+    public static countDependency(duration: number, success: boolean) {
+        if (!AutoCollectPerformance.isEnabled()) {
+            return;
+        }
+
+        AutoCollectPerformance._lastDependencyExecutionTime = duration;
+        if (success === false) {
+            AutoCollectPerformance._totalFailedDependencyCount++;
+        }
+        AutoCollectPerformance._totalDependencyCount++;
+    }
+
     public isInitialized() {
         return this._isInitialized;
     }
@@ -98,6 +136,8 @@ class AutoCollectPerformance {
         this._trackCpu();
         this._trackMemory();
         this._trackNetwork();
+        this._trackDependencyRate();
+        this._trackExceptionRate();
     }
 
     private _trackCpu() {
@@ -162,8 +202,8 @@ class AutoCollectPerformance {
 
             var combinedTotal = (totalUser + totalSys + totalNice + totalIdle + totalIrq) || 1;
 
-            this._client.trackMetric({name: "\\Processor(_Total)\\% Processor Time", value: ((combinedTotal - totalIdle) / combinedTotal) * 100});
-            this._client.trackMetric({name: "\\Process(??APP_WIN32_PROC??)\\% Processor Time", value: appCpuPercent || ((totalUser / combinedTotal) * 100)});
+            this._client.trackMetric({name: Constants.PerformanceCounter.PROCESSOR_TIME, value: ((combinedTotal - totalIdle) / combinedTotal) * 100});
+            this._client.trackMetric({name: Constants.PerformanceCounter.PROCESS_TIME, value: appCpuPercent || ((totalUser / combinedTotal) * 100)});
         }
 
         this._lastCpus = cpus;
@@ -172,8 +212,14 @@ class AutoCollectPerformance {
     private _trackMemory() {
         var freeMem = os.freemem();
         var usedMem = process.memoryUsage().rss;
-        this._client.trackMetric({name:"\\Process(??APP_WIN32_PROC??)\\Private Bytes", value: usedMem});
-        this._client.trackMetric({name: "\\Memory\\Available Bytes", value: freeMem});
+        var committedMemory = os.totalmem() - freeMem;
+        this._client.trackMetric({name: Constants.PerformanceCounter.PRIVATE_BYTES, value: usedMem});
+        this._client.trackMetric({name: Constants.PerformanceCounter.AVAILABLE_BYTES, value: freeMem});
+
+        // Only supported by quickpulse service
+        if (this._enableLiveMetricsCounters) {
+            this._client.trackMetric({name: Constants.QuickPulseCounter.COMMITTED_BYTES, value: committedMemory});
+        }
     }
 
     private _trackNetwork() {
@@ -194,11 +240,65 @@ class AutoCollectPerformance {
             var requestsPerSec = intervalRequests / elapsedSeconds;
             var failedRequestsPerSec = intervalFailedRequests / elapsedSeconds;
 
-            this._client.trackMetric({ name: "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Requests/Sec", value: requestsPerSec });
-            this._client.trackMetric({ name: "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Request Execution Time", value: AutoCollectPerformance._lastRequestExecutionTime });
+            this._client.trackMetric({ name: Constants.PerformanceCounter.REQUEST_RATE, value: requestsPerSec });
+            this._client.trackMetric({ name: Constants.PerformanceCounter.REQUEST_DURATION, value: AutoCollectPerformance._lastRequestExecutionTime });
+
+            // Only supported by quickpulse service
+            if (this._enableLiveMetricsCounters) {
+                this._client.trackMetric({name: Constants.QuickPulseCounter.REQUEST_FAILURE_RATE, value: failedRequestsPerSec});
+            }
         }
 
         this._lastRequests = requests;
+    }
+
+    // Static counter is accumulated externally. Report the rate to client here
+    // Note: This is currently only used with QuickPulse client
+    private _trackDependencyRate() {
+        if (this._enableLiveMetricsCounters) {
+            var lastDependencies = this._lastDependencies;
+            var dependencies = {
+                totalDependencyCount: AutoCollectPerformance._totalDependencyCount,
+                totalFailedDependenyCount: AutoCollectPerformance._totalFailedDependencyCount,
+                time: +new Date
+            };
+
+            var intervalDependencies = (dependencies.totalDependencyCount - lastDependencies.totalDependencyCount) || 0;
+            var intervalFailedDependencies = (dependencies.totalFailedDependenyCount - lastDependencies.totalFailedDependencyCount) || 0;
+            var elapsedMs = dependencies.time - lastDependencies.time;
+            var elapsedSeconds = elapsedMs / 1000;
+
+            if (elapsedMs > 0) {
+                var dependenciesPerSec = intervalDependencies / elapsedSeconds;
+                var failedDependenciesPerSec = intervalFailedDependencies / elapsedSeconds;
+
+                this._client.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_RATE, value: dependenciesPerSec});
+                this._client.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_FAILURE_RATE, value: failedDependenciesPerSec});
+                this._client.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_DURATION, value: AutoCollectPerformance._lastDependencyExecutionTime});
+            }
+        }
+    }
+
+    // Static counter is accumulated externally. Report the rate to client here
+    // Note: This is currently only used with QuickPulse client
+    private _trackExceptionRate() {
+        if (this._enableLiveMetricsCounters) {
+            var lastExceptions = this._lastExceptions;
+            var exceptions = {
+                totalExceptionCount: AutoCollectPerformance._totalExceptionCount,
+                time: +new Date
+            };
+
+            var intervalExceptions = (exceptions.totalExceptionCount - lastExceptions.totalExceptionCount) || 0;
+            var elapsedMs = exceptions.time - lastExceptions.time;
+            var elapsedSeconds = elapsedMs / 1000;
+
+            if (elapsedMs > 0) {
+                var exceptionsPerSec = intervalExceptions / elapsedSeconds;
+                this._client.trackMetric({ name: Constants.QuickPulseCounter.EXCEPTION_RATE, value: exceptionsPerSec});
+            }
+            this._lastExceptions = exceptions;
+        }
     }
 
     public dispose() {

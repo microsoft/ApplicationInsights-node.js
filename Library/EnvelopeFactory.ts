@@ -1,13 +1,163 @@
+import os = require("os");
 import Contracts = require("../Declarations/Contracts")
 import Util = require("./Util")
 import Config = require("./Config");
 import Context = require("./Context");
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
 
+var StreamId = Util.w3cTraceId(); // Create a guid
+
 /**
  * Manages the logic of creating envelopes from Telemetry objects
  */
 class EnvelopeFactory {
+    public static createQuickPulseEnvelope(metrics: Contracts.MetricQuickPulse[], documents: Contracts.DocumentQuickPulse[], config: Config, context: Context): Contracts.EnvelopeQuickPulse {
+        const machineName = os.hostname(); // Note: os.hostname() was added in node v0.3.3
+        const instance = (context.tags
+            && context.keys
+            && context.keys.cloudRoleInstance
+            && context.tags[context.keys.cloudRoleInstance]) || machineName;
+
+        var envelope: Contracts.EnvelopeQuickPulse = {
+            Documents: documents.length > 0 ? documents : null,
+            InstrumentationKey: config.instrumentationKey || "",
+            Metrics: metrics.length > 0 ? metrics : null,
+            InvariantVersion: 1, //  1 -> v1 QPS protocol
+            Timestamp: `\/Date(${Date.now()})\/`,
+            Version: context.tags[context.keys.internalSdkVersion],
+            StreamId: StreamId,
+            MachineName: machineName,
+            Instance: instance
+        }
+
+        return envelope;
+    }
+
+    public static createQuickPulseMetric(
+        telemetry: Contracts.MetricTelemetry
+    ): Contracts.MetricQuickPulse {
+        var data: Contracts.MetricQuickPulse;
+        data = {
+            Name: telemetry.name, // TODO: map from MetricTelemetry name to QuickPulse name
+            Value: telemetry.value,
+    Weight: telemetry.count || 1
+        };
+        return data;
+    }
+
+    public static telemetryEnvelopeToQuickPulseDocument(envelope: Contracts.Envelope): Contracts.DocumentQuickPulse {
+        switch (envelope.data.baseType) {
+            case "ExceptionData":
+                return EnvelopeFactory.createQuickPulseExceptionDocument(envelope);
+            case "MessageData":
+                return EnvelopeFactory.createQuickPulseTraceDocument(envelope);
+            case "RemoteDependencyData":
+                return EnvelopeFactory.createQuickPulseDependencyDocument(envelope);
+            case "RequestData":
+                return EnvelopeFactory.createQuickPulseRequestDocument(envelope);
+        }
+        return null;
+    }
+
+    private static createQuickPulseTraceDocument(envelope: Contracts.Envelope): Contracts.MessageDocumentQuickPulse {
+        const document = EnvelopeFactory.createQuickPulseDocument(envelope);
+
+        var traceDocument: Contracts.MessageDocumentQuickPulse = {
+            ...document,
+            Properties: [{key: 'my key', value: 'my value'}],
+            Message: ((envelope.data as any).baseData as Contracts.MessageData).message,
+            SeverityLevel: "Critical"
+        }
+
+        return traceDocument;
+    }
+
+    private static createQuickPulseExceptionDocument(envelope: Contracts.Envelope): Contracts.ExceptionDocumentQuickPulse {
+        const document = EnvelopeFactory.createQuickPulseDocument(envelope);
+
+        let exception = '';
+        ((envelope.data as any).baseData as Contracts.ExceptionData).exceptions[0].parsedStack.forEach(err => {
+            exception += err.assembly + "\n";
+        })
+        var exceptionDocument = {
+            ...document,
+            Exception: exception,
+            ExceptionMessage: ((envelope.data as any).baseData as Contracts.ExceptionData).exceptions[0].message,
+            ExceptionType: ((envelope.data as any).baseData as Contracts.ExceptionData).exceptions[0].typeName
+        };
+        return exceptionDocument;
+    }
+
+    private static createQuickPulseRequestDocument(envelope: Contracts.Envelope): Contracts.RequestDocumentQuickPulse {
+        const document = EnvelopeFactory.createQuickPulseDocument(envelope);
+        const baseData = (envelope.data as Contracts.Data<Contracts.RequestData>).baseData;
+        const requestDocument: Contracts.RequestDocumentQuickPulse = {
+            ...document,
+            Name: baseData.name,
+            Success: baseData.success,
+            Duration: baseData.duration,
+            ResponseCode: baseData.responseCode,
+            OperationName: baseData.name // TODO: is this correct?
+        };
+
+        return requestDocument;
+    }
+
+    private static createQuickPulseDependencyDocument(envelope: Contracts.Envelope): Contracts.DependencyDocumentQuickPulse {
+        const document = EnvelopeFactory.createQuickPulseDocument(envelope);
+        const baseData = (envelope.data as Contracts.Data<Contracts.RemoteDependencyData>).baseData;
+
+        const dependencyDocument: Contracts.DependencyDocumentQuickPulse = {
+            ...document,
+            Name: baseData.name,
+            Target: baseData.target,
+            Success: baseData.success,
+            Duration: baseData.duration,
+            ResultCode: baseData.resultCode,
+            CommandName: baseData.data,
+            OperationName: document.OperationId,
+            DependencyTypeName: baseData.type,
+        }
+        return dependencyDocument;
+    }
+
+    private static createQuickPulseDocument(envelope: Contracts.Envelope): Contracts.DocumentQuickPulse {
+        let documentType, __type, id, operationId;
+
+        switch (envelope.data.baseType) {
+            case "EventData":
+                documentType = "Event"
+                break;
+            case "ExceptionData":
+                documentType = "Exception";
+                break;
+            case "MessageData":
+                documentType = "Trace";
+                break;
+            case "MetricData":
+                documentType = "Metric";
+                break;
+            case "RequestData":
+                documentType = "Request";
+                break;
+            case "RemoteDependencyData":
+                documentType = "RemoteDependency";
+                __type = "DependencyTelemetryDocument";
+                break;
+        }
+        __type = __type || (documentType + "TelemetryDocument");
+        operationId = envelope.tags["ai.operation.id"];
+
+        var document: Contracts.DocumentQuickPulse = {
+            DocumentType: documentType,
+            __type: __type,
+            OperationId: operationId,
+            Version: "1.0",
+            Properties: []
+        };
+
+        return document;
+    }
 
     /**
      * Creates envelope ready to be sent by Channel
