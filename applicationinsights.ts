@@ -8,6 +8,7 @@ import Config = require("./Library/Config");
 import Context = require("./Library/Context");
 import Logging = require("./Library/Logging");
 import Util = require("./Library/Util");
+import QuickPulseClient = require("./Library/QuickPulseStateManager");
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
@@ -24,6 +25,7 @@ let _isDependencies = true;
 let _isDiskRetry = true;
 let _isCorrelating = true;
 let _forceClsHooked: boolean;
+let _isSendingLiveMetrics = false; // Off by default
 
 let _diskRetryInterval: number = undefined;
 let _diskRetryMaxBytes: number = undefined;
@@ -41,6 +43,8 @@ let _isStarted = false;
 * with its own configuration, use `new TelemetryClient(instrumentationKey?)`.
 */
 export let defaultClient: TelemetryClient;
+let liveMetricsClient: QuickPulseClient;
+let _performanceLiveMetrics: AutoCollectPerformance;
 
 /**
  * Initializes the default client. Should be called after setting
@@ -62,6 +66,15 @@ export function setup(instrumentationKey?: string) {
         _clientRequests = new AutoCollectHttpDependencies(defaultClient);
     } else {
         Logging.info("The default client is already setup");
+    }
+
+    if (!liveMetricsClient) {
+        liveMetricsClient = new QuickPulseClient(instrumentationKey);
+        _performanceLiveMetrics = new AutoCollectPerformance(liveMetricsClient as any, 1000, true);
+        liveMetricsClient.addCollector(_performanceLiveMetrics);
+        defaultClient.quickPulseClient = liveMetricsClient; // Need this so we can forward all manual tracks to live metrics via quickPulseTelemetryProcessor
+    } else {
+        Logging.info("The live metrics client is already setup");
     }
 
     if (defaultClient && defaultClient.channel) {
@@ -86,6 +99,9 @@ export function start() {
         _serverRequests.useAutoCorrelation(_isCorrelating, _forceClsHooked);
         _serverRequests.enable(_isRequests);
         _clientRequests.enable(_isDependencies);
+        if (liveMetricsClient && _isSendingLiveMetrics) {
+            liveMetricsClient.enable(_isSendingLiveMetrics);
+        }
     } else {
         Logging.warn("Start cannot be called before setup");
     }
@@ -249,6 +265,18 @@ export class Configuration {
     public static setInternalLogging(enableDebugLogging = false, enableWarningLogging = true) {
         Logging.enableDebug = enableDebugLogging;
         Logging.disableWarnings = !enableWarningLogging;
+        return Configuration;
+    }
+
+    /**
+     * Enables communication with Application Insights Live Metrics.
+     * @param enable if true, enables communication with the live metrics service
+     */
+    public static setSendLiveMetrics(enable = false) {
+        if (liveMetricsClient) {
+            _isSendingLiveMetrics = enable;
+        }
+
         return Configuration;
     }
 }

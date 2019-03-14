@@ -72,13 +72,6 @@ class QuickPulseStateManager {
     }
 
     /**
-     * Start communication with QuickPulseService
-     */
-    public start(): void {
-        this._goQuickPulse();
-    }
-
-    /**
      * Enable or disable all collectors in this instance
      * @param enable
      */
