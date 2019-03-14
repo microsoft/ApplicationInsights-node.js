@@ -79,6 +79,13 @@ describe("ApplicationInsights", () => {
             assert.ok(warnStub.notCalled, "warning was not raised");
             warnStub.restore();
         });
+
+        it("should not start live metrics", () => {
+            var qpsStub = sinon.stub(AppInsights.liveMetricsClient, "enable");
+            AppInsights.setup("key").start();
+            assert.ok(qpsStub.notCalled);
+            qpsStub.restore();
+        });
     });
 
     describe("#setAutoCollect", () => {

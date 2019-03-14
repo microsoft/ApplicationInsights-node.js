@@ -43,7 +43,7 @@ let _isStarted = false;
 * with its own configuration, use `new TelemetryClient(instrumentationKey?)`.
 */
 export let defaultClient: TelemetryClient;
-let liveMetricsClient: QuickPulseClient;
+export let liveMetricsClient: QuickPulseClient;
 let _performanceLiveMetrics: AutoCollectPerformance;
 
 /**
