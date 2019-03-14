@@ -241,7 +241,11 @@ class AutoCollectPerformance {
             var failedRequestsPerSec = intervalFailedRequests / elapsedSeconds;
 
             this._client.trackMetric({ name: Constants.PerformanceCounter.REQUEST_RATE, value: requestsPerSec });
-            this._client.trackMetric({ name: Constants.PerformanceCounter.REQUEST_DURATION, value: AutoCollectPerformance._lastRequestExecutionTime });
+
+            // Only send duration to live metrics if it has been updated!
+            if (!this._enableLiveMetricsCounters || intervalRequests > 0) {
+                this._client.trackMetric({ name: Constants.PerformanceCounter.REQUEST_DURATION, value: AutoCollectPerformance._lastRequestExecutionTime });
+            }
 
             // Only supported by quickpulse service
             if (this._enableLiveMetricsCounters) {
@@ -274,7 +278,12 @@ class AutoCollectPerformance {
 
                 this._client.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_RATE, value: dependenciesPerSec});
                 this._client.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_FAILURE_RATE, value: failedDependenciesPerSec});
-                this._client.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_DURATION, value: AutoCollectPerformance._lastDependencyExecutionTime});
+
+                // redundant check for livemetrics, but kept for consistency w/ requests
+                // Only send duration to live metrics if it has been updated!
+                if (!this._enableLiveMetricsCounters || intervalDependencies > 0) {
+                    this._client.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_DURATION, value: AutoCollectPerformance._lastDependencyExecutionTime});
+                }
             }
         }
     }

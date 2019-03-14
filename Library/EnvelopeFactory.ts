@@ -40,7 +40,7 @@ class EnvelopeFactory {
         data = {
             Name: telemetry.name, // TODO: map from MetricTelemetry name to QuickPulse name
             Value: telemetry.value,
-    Weight: telemetry.count || 1
+            Weight: telemetry.count || 1
         };
         return data;
     }

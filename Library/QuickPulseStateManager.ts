@@ -1,10 +1,12 @@
 import Logging = require("./Logging");
 import Config = require("./Config");
-import Contracts = require("../Declarations/Contracts");
 import EnvelopeFactory = require("./EnvelopeFactory");
 import QuickPulseSender = require("./QuickPulseSender");
 import Constants = require("../Declarations/Constants");
 import Context = require("./Context");
+
+import * as http from "http";
+import * as Contracts from "../Declarations/Contracts";
 
 /** State Container for sending to the QuickPulse Service */
 class QuickPulseStateManager {
@@ -14,7 +16,7 @@ class QuickPulseStateManager {
     private _sender: QuickPulseSender;
     private _isCollectingData: boolean;
     private _isEnabled: boolean;
-    private _previousTimeout: number;
+    private _lastSuccessTime: number = Date.now();
     private _handle: NodeJS.Timer;
     private _metrics: {[name: string]: Contracts.MetricQuickPulse} = {};
     private _documents: Contracts.DocumentQuickPulse[] = [];
@@ -63,6 +65,7 @@ class QuickPulseStateManager {
             this._isEnabled = true;
             this._goQuickPulse();
         } else if (!isEnabled && this._isEnabled) {
+            this._isEnabled = false;
             clearTimeout(this._handle);
             this._handle = undefined;
         }
@@ -126,27 +129,36 @@ class QuickPulseStateManager {
         }
 
         let currentTimeout = this._isCollectingData ? 1000 : 5000;
-        // TODO: use walkback for currentTimeout
-        this._previousTimeout = currentTimeout;
+        if (this._isCollectingData && Date.now() - this._lastSuccessTime >= 20000) {
+            // Haven't posted successfully in 20 seconds, so wait 60 seconds and ping
+            this._isCollectingData = false;
+            currentTimeout = 60000;
+        } else if (!this._isCollectingData && Date.now() - this._lastSuccessTime >= 60000) {
+            // Haven't pinged successfully in 60 seconds, so wait another 60 seconds
+            currentTimeout = 60000;
+        }
         this._handle = setTimeout(this._goQuickPulse.bind(this), currentTimeout);
+        this._handle.unref(); // Don't block apps from terminating
     }
 
     private _ping(envelope: Contracts.EnvelopeQuickPulse): void {
-        Logging.info("Sending ping");
         this._sender.ping(envelope, this._quickPulseDone.bind(this));
     }
 
     private _post(envelope: Contracts.EnvelopeQuickPulse): void {
-        Logging.info("Sending post");
         this._sender.post(envelope, this._quickPulseDone.bind(this));
     }
 
-    private _quickPulseDone(shouldPOST: boolean): void {
+    private _quickPulseDone(shouldPOST: boolean, res: http.IncomingMessage): void {
         if (this._isCollectingData !== shouldPOST) {
-            Logging.info("shouldPost updated value", shouldPOST);
+            Logging.info("Live Metrics sending data", shouldPOST);
             this.enableCollectors(shouldPOST);
         }
         this._isCollectingData = shouldPOST;
+
+        if (res.statusCode < 300 && res.statusCode >= 200) {
+            this._lastSuccessTime = Date.now();
+        }
     }
 
 }
