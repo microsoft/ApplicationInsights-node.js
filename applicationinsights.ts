@@ -68,15 +68,6 @@ export function setup(instrumentationKey?: string) {
         Logging.info("The default client is already setup");
     }
 
-    if (!liveMetricsClient) {
-        liveMetricsClient = new QuickPulseClient(instrumentationKey);
-        _performanceLiveMetrics = new AutoCollectPerformance(liveMetricsClient as any, 1000, true);
-        liveMetricsClient.addCollector(_performanceLiveMetrics);
-        defaultClient.quickPulseClient = liveMetricsClient; // Need this so we can forward all manual tracks to live metrics via quickPulseTelemetryProcessor
-    } else {
-        Logging.info("The live metrics client is already setup");
-    }
-
     if (defaultClient && defaultClient.channel) {
         defaultClient.channel.setUseDiskRetryCaching(_isDiskRetry, _diskRetryInterval, _diskRetryMaxBytes);
     }
@@ -273,8 +264,22 @@ export class Configuration {
      * @param enable if true, enables communication with the live metrics service
      */
     public static setSendLiveMetrics(enable = false) {
-        if (liveMetricsClient) {
+        if (!defaultClient) {
+            // Need a defaultClient so that we can add the QPS telemetry processor to it
+            Logging.warn("Live metrics client cannot be setup without the default client");
+            return Configuration;
+        }
+
+        if (!liveMetricsClient) {
+            // No qps client exists. Create one and prepare it to be enabled at .start()
+            liveMetricsClient = new QuickPulseClient(defaultClient.config.instrumentationKey);
+            _performanceLiveMetrics = new AutoCollectPerformance(liveMetricsClient as any, 1000, true);
+            liveMetricsClient.addCollector(_performanceLiveMetrics);
+            defaultClient.quickPulseClient = liveMetricsClient; // Need this so we can forward all manual tracks to live metrics via quickPulseTelemetryProcessor
             _isSendingLiveMetrics = enable;
+        } else {
+            // qps client already exists; enable/disable it
+            liveMetricsClient.enable(enable);
         }
 
         return Configuration;
