@@ -60,7 +60,7 @@ class QuickPulseEnvelopeFactory {
 
     private static createQuickPulseTraceDocument(envelope: Contracts.Envelope): Contracts.MessageDocumentQuickPulse {
         const document = QuickPulseEnvelopeFactory.createQuickPulseDocument(envelope);
-        const severityLevel = ((envelope.data as any).baseData as Contracts.MessageData).severityLevel;
+        const severityLevel = ((envelope.data as any).baseData as Contracts.MessageData).severityLevel || 0;
         var traceDocument: Contracts.MessageDocumentQuickPulse = {
             ...document,
             Message: ((envelope.data as any).baseData as Contracts.MessageData).message,
@@ -72,16 +72,32 @@ class QuickPulseEnvelopeFactory {
 
     private static createQuickPulseExceptionDocument(envelope: Contracts.Envelope): Contracts.ExceptionDocumentQuickPulse {
         const document = QuickPulseEnvelopeFactory.createQuickPulseDocument(envelope);
+        const exceptionDetails = ((envelope.data as any).baseData as Contracts.ExceptionData).exceptions;
 
         let exception = '';
-        ((envelope.data as any).baseData as Contracts.ExceptionData).exceptions[0].parsedStack.forEach(err => {
-            exception += err.assembly + "\n";
-        })
+        let exceptionMessage = '';
+        let exceptionType = '';
+
+        // Try to fill exception information from first error only
+        if (exceptionDetails && exceptionDetails.length > 0) {
+            // Try to grab the stack from parsedStack or stack
+            if (exceptionDetails[0].parsedStack && exceptionDetails[0].parsedStack.length > 0) {
+                exceptionDetails[0].parsedStack.forEach(err => {
+                    exception += err.assembly + "\n";
+                });
+            } else if (exceptionDetails[0].stack && exceptionDetails[0].stack.length > 0) {
+                exception = exceptionDetails[0].stack;
+            }
+
+            exceptionMessage = ((envelope.data as any).baseData as Contracts.ExceptionData).exceptions[0].message;
+            exceptionType = ((envelope.data as any).baseData as Contracts.ExceptionData).exceptions[0].typeName;
+        }
+
         var exceptionDocument = {
             ...document,
             Exception: exception,
-            ExceptionMessage: ((envelope.data as any).baseData as Contracts.ExceptionData).exceptions[0].message,
-            ExceptionType: ((envelope.data as any).baseData as Contracts.ExceptionData).exceptions[0].typeName
+            ExceptionMessage: exceptionMessage,
+            ExceptionType: exceptionType
         };
         return exceptionDocument;
     }
