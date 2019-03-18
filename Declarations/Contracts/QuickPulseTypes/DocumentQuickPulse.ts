@@ -7,5 +7,10 @@ export interface DocumentQuickPulse {
 
     OperationId: string;
 
-    Properties: {[key: string]: string}[];
+    Properties: IDocumentProperty[];
 }
+
+export interface IDocumentProperty {
+    key: string;
+    value: string;
+};

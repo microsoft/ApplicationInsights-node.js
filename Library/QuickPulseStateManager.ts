@@ -1,6 +1,6 @@
 import Logging = require("./Logging");
 import Config = require("./Config");
-import EnvelopeFactory = require("./EnvelopeFactory");
+import QuickPulseEnvelopeFactory = require("./QuickPulseEnvelopeFactory");
 import QuickPulseSender = require("./QuickPulseSender");
 import Constants = require("../Declarations/Constants");
 import Context = require("./Context");
@@ -50,7 +50,7 @@ class QuickPulseStateManager {
      * @param envelope
      */
     public addDocument(envelope: Contracts.Envelope): void {
-        const document = EnvelopeFactory.telemetryEnvelopeToQuickPulseDocument(envelope);
+        const document = QuickPulseEnvelopeFactory.telemetryEnvelopeToQuickPulseDocument(envelope);
         if (document) {
             this._documents.push(document);
         }
@@ -87,13 +87,13 @@ class QuickPulseStateManager {
      */
     private _addMetric(telemetry: Contracts.MetricTelemetry) {
         const {value, count} = telemetry;
-        let name = Constants.mapPerformanceCounterToQuickPulseCounter(telemetry.name as Constants.PerformanceCounter);
+        let name = Constants.PerformanceToQuickPulseCounter[telemetry.name];
         if (name) {
             if (this._metrics[name]) {
                 this._metrics[name].Value = (this._metrics[name].Value*this._metrics[name].Weight + value*count) / (this._metrics[name].Weight + count);
                 this._metrics[name].Weight += count;
             } else {
-                this._metrics[name] = EnvelopeFactory.createQuickPulseMetric(telemetry);
+                this._metrics[name] = QuickPulseEnvelopeFactory.createQuickPulseMetric(telemetry);
                 this._metrics[name].Name = name;
             }
         }
@@ -109,7 +109,7 @@ class QuickPulseStateManager {
     private _goQuickPulse(): void {
         // Create envelope from Documents and Metrics
         const metrics = Object.keys(this._metrics).map(k => this._metrics[k]);
-        const envelope = EnvelopeFactory.createQuickPulseEnvelope(metrics, this._documents.slice(), this.config, this.context);
+        const envelope = QuickPulseEnvelopeFactory.createQuickPulseEnvelope(metrics, this._documents.slice(), this.config, this.context);
 
         // Clear this document, metric buffer
         this._resetQuickPulseBuffer();
