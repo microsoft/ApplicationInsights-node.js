@@ -1,5 +1,12 @@
 import Logging = require("../Library/Logging");
 
+export const QuickPulseConfig = {
+    host: "rt.services.visualstudio.com",
+    method: "POST",
+    time: "x-ms-qps-transmission-time",
+    subscribed: "x-ms-qps-subscribed"
+};
+
 export enum QuickPulseCounter {
     // Memory
     COMMITTED_BYTES= "\\Memory\\Committed Bytes",
@@ -35,21 +42,19 @@ export enum PerformanceCounter {
     REQUEST_DURATION= "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Request Execution Time"
 };
 
-export function mapPerformanceCounterToQuickPulseCounter(inPerformance: PerformanceCounter): QuickPulseCounter {
-    for (let key in QuickPulseCounter) {
-        if (inPerformance == QuickPulseCounter[key]) {
-            return QuickPulseCounter[key] as QuickPulseCounter;
-        }
-    }
+/**
+ * Map a PerformanceCounter/QuickPulseCounter to a QuickPulseCounter. If no mapping exists, mapping is *undefined*
+ */
+export const PerformanceToQuickPulseCounter: {[key: string]: QuickPulseCounter} = {
+    [PerformanceCounter.PROCESSOR_TIME]: QuickPulseCounter.PROCESSOR_TIME,
+    [PerformanceCounter.REQUEST_RATE]: QuickPulseCounter.REQUEST_RATE,
+    [PerformanceCounter.REQUEST_DURATION]: QuickPulseCounter.REQUEST_DURATION,
 
-    switch (inPerformance) {
-        case PerformanceCounter.PROCESSOR_TIME:
-            return QuickPulseCounter.PROCESSOR_TIME;
-        case PerformanceCounter.REQUEST_RATE:
-            return QuickPulseCounter.REQUEST_RATE;
-        case PerformanceCounter.REQUEST_DURATION:
-            return QuickPulseCounter.REQUEST_DURATION;
-    }
-
-    return null;
-}
+    // Remap quick pulse only counters
+    [QuickPulseCounter.COMMITTED_BYTES]: QuickPulseCounter.COMMITTED_BYTES,
+    [QuickPulseCounter.REQUEST_FAILURE_RATE]: QuickPulseCounter.REQUEST_FAILURE_RATE,
+    [QuickPulseCounter.DEPENDENCY_RATE]: QuickPulseCounter.DEPENDENCY_RATE,
+    [QuickPulseCounter.DEPENDENCY_FAILURE_RATE]: QuickPulseCounter.DEPENDENCY_FAILURE_RATE,
+    [QuickPulseCounter.DEPENDENCY_DURATION]: QuickPulseCounter.DEPENDENCY_DURATION,
+    [QuickPulseCounter.EXCEPTION_RATE]: QuickPulseCounter.EXCEPTION_RATE
+};
