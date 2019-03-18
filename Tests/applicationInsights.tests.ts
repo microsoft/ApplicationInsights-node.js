@@ -81,10 +81,8 @@ describe("ApplicationInsights", () => {
         });
 
         it("should not start live metrics", () => {
-            var qpsStub = sinon.stub(AppInsights.liveMetricsClient, "enable");
             AppInsights.setup("key").start();
-            assert.ok(qpsStub.notCalled);
-            qpsStub.restore();
+            assert.equal(AppInsights.liveMetricsClient, undefined, "live metrics client is not defined");
         });
     });
 
