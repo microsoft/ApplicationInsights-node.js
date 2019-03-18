@@ -130,7 +130,7 @@ class QuickPulseStateManager {
             // Haven't pinged successfully in 60 seconds, so wait another 60 seconds
             currentTimeout = 60000;
         }
-        this._handle = setTimeout(this._goQuickPulse.bind(this), currentTimeout);
+        this._handle = <any>setTimeout(this._goQuickPulse.bind(this), currentTimeout);
         this._handle.unref(); // Don't block apps from terminating
     }
 
