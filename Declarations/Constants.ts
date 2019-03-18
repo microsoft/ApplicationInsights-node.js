@@ -1,7 +1,6 @@
 import Logging = require("../Library/Logging");
 
 export const QuickPulseConfig = {
-    host: "rt.services.visualstudio.com",
     method: "POST",
     time: "x-ms-qps-transmission-time",
     subscribed: "x-ms-qps-subscribed"

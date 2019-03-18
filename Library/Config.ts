@@ -11,6 +11,7 @@ class Config {
     public static ENV_iKey = "APPINSIGHTS_INSTRUMENTATIONKEY";
     public static legacy_ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
     public static ENV_profileQueryEndpoint = "APPINSIGHTS_PROFILE_QUERY_ENDPOINT";
+    public static ENV_quickPulseHost = "APPINSIGHTS_QUICKPULSE_HOST";
 
     public static ENV_http_proxy = "http_proxy";
     public static ENV_https_proxy = "https_proxy";
@@ -45,6 +46,8 @@ class Config {
     private endpointBase: string = "https://dc.services.visualstudio.com";
     private setCorrelationId: (v: string) => void;
     private _profileQueryEndpoint: string;
+    /** Host name for quickpulse service */
+    private _quickPulseHost: string;
 
 
     constructor(instrumentationKey?: string) {
@@ -68,6 +71,7 @@ class Config {
         this.proxyHttpsUrl = process.env[Config.ENV_https_proxy] || undefined;
         this.httpAgent = undefined;
         this.httpsAgent = undefined;
+        this._quickPulseHost = process.env[Config.ENV_quickPulseHost] || "rt.services.visualstudio.com";
     }
 
     public set profileQueryEndpoint(endpoint: string) {
@@ -79,6 +83,14 @@ class Config {
 
     public get profileQueryEndpoint() {
         return this._profileQueryEndpoint;
+    }
+
+    public set quickPulseHost(host: string) {
+        this._quickPulseHost = host;
+    }
+
+    public get quickPulseHost(): string {
+        return this._quickPulseHost;
     }
 
 

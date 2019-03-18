@@ -89,8 +89,8 @@ class QuickPulseEnvelopeFactory {
                 exception = exceptionDetails[0].stack;
             }
 
-            exceptionMessage = ((envelope.data as any).baseData as Contracts.ExceptionData).exceptions[0].message;
-            exceptionType = ((envelope.data as any).baseData as Contracts.ExceptionData).exceptions[0].typeName;
+            exceptionMessage = exceptionDetails[0].message;
+            exceptionType = exceptionDetails[0].typeName;
         }
 
         var exceptionDocument = {

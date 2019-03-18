@@ -28,7 +28,7 @@ class QuickPulseSender {
         const payload = JSON.stringify(envelope);
         var options = {
             [AutoCollectHttpDependencies.disableCollectionRequestOption]: true,
-            host: Constants.QuickPulseConfig.host,
+            host: this._config.quickPulseHost,
             method: Constants.QuickPulseConfig.method,
             path: `/QuickPulseService.svc/${postOrPing}?ikey=${this._config.instrumentationKey}`,
             headers:{
