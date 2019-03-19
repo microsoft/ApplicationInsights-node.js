@@ -42,13 +42,13 @@ export function baseTypeToTelemetryType(baseType: string): TelemetryType {
     return undefined;
 }
 
-export enum TelemetryTypeString {
-    Event = "EventData",
-    Exception = "ExceptionData",
-    Trace = "MessageData",
-    Metric = "MetricData",
-    Request = "RequestData",
-    Dependency = "RemoteDependencyData"
+export const TelemetryTypeString = {
+    Event: "EventData",
+    Exception: "ExceptionData",
+    Trace: "MessageData",
+    Metric: "MetricData",
+    Request: "RequestData",
+    Dependency: "RemoteDependencyData"
 }
 
 /**
@@ -62,7 +62,6 @@ export enum TelemetryType {
     Request,
     Dependency
 }
-
 
 export interface Identified {
     id?: string;
