@@ -1,8 +1,10 @@
 import os = require("os");
 import Contracts = require("../Declarations/Contracts")
+import Constants = require("../Declarations/Constants");
 import Util = require("./Util")
 import Config = require("./Config");
 import Context = require("./Context");
+import Logging = require("./Logging");
 
 var StreamId = Util.w3cTraceId(); // Create a guid
 
@@ -46,13 +48,13 @@ class QuickPulseEnvelopeFactory {
 
     public static telemetryEnvelopeToQuickPulseDocument(envelope: Contracts.Envelope): Contracts.DocumentQuickPulse {
         switch (envelope.data.baseType) {
-            case "ExceptionData":
+            case Contracts.TelemetryTypeString.Exception:
                 return QuickPulseEnvelopeFactory.createQuickPulseExceptionDocument(envelope);
-            case "MessageData":
+            case Contracts.TelemetryTypeString.Trace:
                 return QuickPulseEnvelopeFactory.createQuickPulseTraceDocument(envelope);
-            case "RemoteDependencyData":
+            case Contracts.TelemetryTypeString.Dependency:
                 return QuickPulseEnvelopeFactory.createQuickPulseDependencyDocument(envelope);
-            case "RequestData":
+            case Contracts.TelemetryTypeString.Request:
                 return QuickPulseEnvelopeFactory.createQuickPulseRequestDocument(envelope);
         }
         return null;
@@ -139,28 +141,15 @@ class QuickPulseEnvelopeFactory {
         let documentType, __type, operationId, properties;
 
 
-        switch (envelope.data.baseType) {
-            case "EventData":
-                documentType = "Event"
-                break;
-            case "ExceptionData":
-                documentType = "Exception";
-                break;
-            case "MessageData":
-                documentType = "Trace";
-                break;
-            case "MetricData":
-                documentType = "Metric";
-                break;
-            case "RequestData":
-                documentType = "Request";
-                break;
-            case "RemoteDependencyData":
-                documentType = "RemoteDependency";
-                __type = "DependencyTelemetryDocument";
-                break;
+        if (envelope.data.baseType) {
+            __type = Constants.TelemetryTypeStringToQuickPulseType[envelope.data.baseType];
+            documentType  = Constants.TelemetryTypeStringToQuickPulseDocumentType[envelope.data.baseType];
+        } else {
+            // Remark: This should never be hit because createQuickPulseDocument is only called within
+            // valid baseType values
+            Logging.warn("Document type invalid; not sending live metric document", envelope.data.baseType);
         }
-        __type = __type || (documentType + "TelemetryDocument");
+
         operationId = envelope.tags[QuickPulseEnvelopeFactory.keys.operationId];
         properties = QuickPulseEnvelopeFactory.aggregateProperties(envelope);
 

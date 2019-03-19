@@ -42,6 +42,15 @@ export function baseTypeToTelemetryType(baseType: string): TelemetryType {
     return undefined;
 }
 
+export enum TelemetryTypeString {
+    Event = "EventData",
+    Exception = "ExceptionData",
+    Trace = "MessageData",
+    Metric = "MetricData",
+    Request = "RequestData",
+    Dependency = "RemoteDependencyData"
+}
+
 /**
  * Telemetry types supported by this SDK
  */

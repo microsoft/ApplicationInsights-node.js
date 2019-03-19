@@ -1,4 +1,4 @@
-import Logging = require("../Library/Logging");
+import Contracts = require("../Declarations/Contracts")
 
 export const QuickPulseConfig = {
     method: "POST",
@@ -56,4 +56,40 @@ export const PerformanceToQuickPulseCounter: {[key: string]: QuickPulseCounter} 
     [QuickPulseCounter.DEPENDENCY_FAILURE_RATE]: QuickPulseCounter.DEPENDENCY_FAILURE_RATE,
     [QuickPulseCounter.DEPENDENCY_DURATION]: QuickPulseCounter.DEPENDENCY_DURATION,
     [QuickPulseCounter.EXCEPTION_RATE]: QuickPulseCounter.EXCEPTION_RATE
+};
+
+export enum QuickPulseType {
+    Event = "Event",
+    Exception = "Exception",
+    Trace = "Trace",
+    Metric = "Metric",
+    Request = "Request",
+    Dependency = "RemoteDependency"
+};
+
+export enum QuickPulseDocumentType {
+    Event = "EventTelemetryDocument",
+    Exception = "ExceptionTelemetryDocument",
+    Trace = "TraceTelemetryDocument",
+    Metric = "MetricTelemetryDocument",
+    Request = "RequestTelemetryDocument",
+    Dependency = "DependencyTelemetryDocument"
+};
+
+export const TelemetryTypeStringToQuickPulseType: {[key: string]: QuickPulseType}  = {
+    [Contracts.TelemetryTypeString.Event]: QuickPulseType.Event,
+    [Contracts.TelemetryTypeString.Exception]: QuickPulseType.Exception,
+    [Contracts.TelemetryTypeString.Trace]: QuickPulseType.Trace,
+    [Contracts.TelemetryTypeString.Metric]: QuickPulseType.Metric,
+    [Contracts.TelemetryTypeString.Request]: QuickPulseType.Request,
+    [Contracts.TelemetryTypeString.Dependency]: QuickPulseType.Dependency,
+};
+
+export const TelemetryTypeStringToQuickPulseDocumentType: {[key: string]: QuickPulseDocumentType}  = {
+    [Contracts.TelemetryTypeString.Event]: QuickPulseDocumentType.Event,
+    [Contracts.TelemetryTypeString.Exception]: QuickPulseDocumentType.Exception,
+    [Contracts.TelemetryTypeString.Trace]: QuickPulseDocumentType.Trace,
+    [Contracts.TelemetryTypeString.Metric]: QuickPulseDocumentType.Metric,
+    [Contracts.TelemetryTypeString.Request]: QuickPulseDocumentType.Request,
+    [Contracts.TelemetryTypeString.Dependency]: QuickPulseDocumentType.Dependency,
 };
