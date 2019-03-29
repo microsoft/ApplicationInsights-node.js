@@ -13,8 +13,9 @@ class QuickPulseStateManager {
     public config: Config;
     public context: Context;
 
+    private static _isCollectingData: boolean = false;
+
     private _sender: QuickPulseSender;
-    private _isCollectingData: boolean;
     private _isEnabled: boolean;
     private _lastSuccessTime: number = Date.now();
     private _handle: NodeJS.Timer;
@@ -27,7 +28,6 @@ class QuickPulseStateManager {
         this.context = context || new Context();
         this._sender = new QuickPulseSender(this.config);
         this._isEnabled = false;
-        this._isCollectingData = false;
     }
 
     /**
@@ -86,7 +86,9 @@ class QuickPulseStateManager {
      * @param telemetry
      */
     private _addMetric(telemetry: Contracts.MetricTelemetry) {
-        const {value, count} = telemetry;
+        const {value} = telemetry;
+        const count = telemetry.count || 1;
+
         let name = Constants.PerformanceToQuickPulseCounter[telemetry.name];
         if (name) {
             if (this._metrics[name]) {
@@ -95,12 +97,12 @@ class QuickPulseStateManager {
             } else {
                 this._metrics[name] = QuickPulseEnvelopeFactory.createQuickPulseMetric(telemetry);
                 this._metrics[name].Name = name;
+                this._metrics[name].Weight = 1;
             }
         }
     }
 
     private _resetQuickPulseBuffer(): void {
-        // TODO
         delete this._metrics;
         this._metrics = {};
         this._documents.length = 0;
@@ -115,18 +117,18 @@ class QuickPulseStateManager {
         this._resetQuickPulseBuffer();
 
         // Send it to QuickPulseService, if collecting
-        if (this._isCollectingData) {
+        if (QuickPulseStateManager._isCollectingData) {
             this._post(envelope);
         } else {
             this._ping(envelope);
         }
 
-        let currentTimeout = this._isCollectingData ? 1000 : 5000;
-        if (this._isCollectingData && Date.now() - this._lastSuccessTime >= 20000) {
+        let currentTimeout = QuickPulseStateManager._isCollectingData ? 1000 : 5000;
+        if (QuickPulseStateManager._isCollectingData && Date.now() - this._lastSuccessTime >= 20000) {
             // Haven't posted successfully in 20 seconds, so wait 60 seconds and ping
-            this._isCollectingData = false;
+            QuickPulseStateManager._isCollectingData = false;
             currentTimeout = 60000;
-        } else if (!this._isCollectingData && Date.now() - this._lastSuccessTime >= 60000) {
+        } else if (!QuickPulseStateManager._isCollectingData && Date.now() - this._lastSuccessTime >= 60000) {
             // Haven't pinged successfully in 60 seconds, so wait another 60 seconds
             currentTimeout = 60000;
         }
@@ -143,11 +145,11 @@ class QuickPulseStateManager {
     }
 
     private _quickPulseDone(shouldPOST: boolean, res: http.IncomingMessage): void {
-        if (this._isCollectingData !== shouldPOST) {
+        if (QuickPulseStateManager._isCollectingData !== shouldPOST) {
             Logging.info("Live Metrics sending data", shouldPOST);
             this.enableCollectors(shouldPOST);
         }
-        this._isCollectingData = shouldPOST;
+        QuickPulseStateManager._isCollectingData = shouldPOST;
 
         if (res.statusCode < 300 && res.statusCode >= 200) {
             this._lastSuccessTime = Date.now();

@@ -60,10 +60,10 @@ export const PerformanceToQuickPulseCounter: {[key: string]: QuickPulseCounter} 
 
 // Note: Explicitly define these types instead of using enum due to
 // potential 'export enum' issues with typescript < 2.0.
-export type QuickPulseType = "Event" | "Exception" | "Trace" | "Metric" | "Request" | "RemoteDependency";
-export type QuickPulseDocumentType = "EventTelemetryDocument" | "ExceptionTelemetryDocument" | "TraceTelemetryDocument" | "MetricTelemetryDocument" | "RequestTelemetryDocument" | "DependencyTelemetryDocument";
+export type QuickPulseDocumentType = "Event" | "Exception" | "Trace" | "Metric" | "Request" | "RemoteDependency";
+export type QuickPulseType = "EventTelemetryDocument" | "ExceptionTelemetryDocument" | "TraceTelemetryDocument" | "MetricTelemetryDocument" | "RequestTelemetryDocument" | "DependencyTelemetryDocument";
 
-export const QuickPulseType: {[key: string]: QuickPulseType} = {
+export const QuickPulseDocumentType: {[key: string]: QuickPulseDocumentType} = {
     Event: "Event",
     Exception: "Exception",
     Trace: "Trace",
@@ -72,7 +72,7 @@ export const QuickPulseType: {[key: string]: QuickPulseType} = {
     Dependency: "RemoteDependency"
 };
 
-export const QuickPulseDocumentType: {[key: string]: QuickPulseDocumentType} = {
+export const QuickPulseType: {[key: string]: QuickPulseType} = {
     Event: "EventTelemetryDocument",
     Exception: "ExceptionTelemetryDocument",
     Trace: "TraceTelemetryDocument",

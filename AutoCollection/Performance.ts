@@ -112,12 +112,22 @@ class AutoCollectPerformance {
         AutoCollectPerformance._totalExceptionCount++;
     }
 
-    public static countDependency(duration: number, success: boolean) {
+    public static countDependency(duration: number | string, success: boolean) {
+        let durationMs: number;
         if (!AutoCollectPerformance.isEnabled()) {
             return;
         }
 
-        AutoCollectPerformance._lastDependencyExecutionTime = duration;
+        if (typeof duration === 'string') {
+            // dependency duration is passed in as "00:00:00.123" by autocollectors
+            durationMs = +new Date('1970-01-01T' + duration + 'Z'); // convert to num ms, returns NaN if wrong
+        } else if (typeof duration === 'number') {
+            durationMs = duration;
+        } else {
+            return;
+        }
+
+        AutoCollectPerformance._lastDependencyExecutionTime = durationMs;
         if (success === false) {
             AutoCollectPerformance._totalFailedDependencyCount++;
         }
@@ -263,12 +273,12 @@ class AutoCollectPerformance {
             var lastDependencies = this._lastDependencies;
             var dependencies = {
                 totalDependencyCount: AutoCollectPerformance._totalDependencyCount,
-                totalFailedDependenyCount: AutoCollectPerformance._totalFailedDependencyCount,
+                totalFailedDependencyCount: AutoCollectPerformance._totalFailedDependencyCount,
                 time: +new Date
             };
 
             var intervalDependencies = (dependencies.totalDependencyCount - lastDependencies.totalDependencyCount) || 0;
-            var intervalFailedDependencies = (dependencies.totalFailedDependenyCount - lastDependencies.totalFailedDependencyCount) || 0;
+            var intervalFailedDependencies = (dependencies.totalFailedDependencyCount - lastDependencies.totalFailedDependencyCount) || 0;
             var elapsedMs = dependencies.time - lastDependencies.time;
             var elapsedSeconds = elapsedMs / 1000;
 
@@ -285,6 +295,7 @@ class AutoCollectPerformance {
                     this._client.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_DURATION, value: AutoCollectPerformance._lastDependencyExecutionTime});
                 }
             }
+            this._lastDependencies = dependencies;
         }
     }
 

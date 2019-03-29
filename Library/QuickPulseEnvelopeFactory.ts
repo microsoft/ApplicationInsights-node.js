@@ -48,6 +48,8 @@ class QuickPulseEnvelopeFactory {
 
     public static telemetryEnvelopeToQuickPulseDocument(envelope: Contracts.Envelope): Contracts.DocumentQuickPulse {
         switch (envelope.data.baseType) {
+            case Contracts.TelemetryTypeString.Event:
+                return QuickPulseEnvelopeFactory.createQuickPulseEventDocument(envelope);
             case Contracts.TelemetryTypeString.Exception:
                 return QuickPulseEnvelopeFactory.createQuickPulseExceptionDocument(envelope);
             case Contracts.TelemetryTypeString.Trace:
@@ -58,6 +60,17 @@ class QuickPulseEnvelopeFactory {
                 return QuickPulseEnvelopeFactory.createQuickPulseRequestDocument(envelope);
         }
         return null;
+    }
+
+    private static createQuickPulseEventDocument(envelope: Contracts.Envelope): Contracts.EventDocumentQuickPulse {
+        const document = QuickPulseEnvelopeFactory.createQuickPulseDocument(envelope);
+        const name = ((envelope.data as any).baseData as Contracts.EventData).name;
+        const eventDocument: Contracts.EventDocumentQuickPulse = {
+            ...document,
+            Name: name
+        };
+
+        return eventDocument;
     }
 
     private static createQuickPulseTraceDocument(envelope: Contracts.Envelope): Contracts.MessageDocumentQuickPulse {
@@ -190,8 +203,5 @@ class QuickPulseEnvelopeFactory {
         return properties;
     }
 }
-
-
-
 
 export = QuickPulseEnvelopeFactory;
