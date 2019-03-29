@@ -18,7 +18,7 @@ export function quickPulseTelemetryProcessor(envelope: Contracts.Envelope, clien
                 // here to avoid affecting existing autocollection metrics
                 break;
             case "RemoteDependencyData":
-                const baseData: Contracts.DependencyTelemetry = (envelope.data as any).baseData;
+                const baseData: Contracts.RemoteDependencyData = (envelope.data as any).baseData;
                 AutoCollectPerformance.countDependency(baseData.duration, baseData.success);
                 break;
         }
