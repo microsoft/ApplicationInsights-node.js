@@ -16,6 +16,8 @@ class AutoCollectPerformance {
     private static _totalFailedDependencyCount: number = 0;
     private static _lastDependencyExecutionTime: number = 0;
     private static _totalExceptionCount: number = 0;
+    private static _intervalDependencyExecutionTime: number = 0;
+    private static _intervalRequestExecutionTime: number = 0;
 
     private _enableLiveMetricsCounters: boolean;
     private _collectionInterval: number;
@@ -99,7 +101,7 @@ class AutoCollectPerformance {
         if (typeof response.once === "function") {
             response.once("finish", () => {
                 var end = +new Date;
-                this._lastRequestExecutionTime = end - start;
+                AutoCollectPerformance._intervalRequestExecutionTime += this._lastRequestExecutionTime = end - start;
                 AutoCollectPerformance._totalRequestCount++;
                 if (response.statusCode >= 400) {
                     AutoCollectPerformance._totalFailedRequestCount++;
@@ -127,7 +129,7 @@ class AutoCollectPerformance {
             return;
         }
 
-        AutoCollectPerformance._lastDependencyExecutionTime = durationMs;
+        AutoCollectPerformance._intervalDependencyExecutionTime += durationMs;
         if (success === false) {
             AutoCollectPerformance._totalFailedDependencyCount++;
         }
@@ -245,6 +247,8 @@ class AutoCollectPerformance {
         var intervalFailedRequests = (requests.totalFailedRequestCount - lastRequests.totalFailedRequestCount) || 0;
         var elapsedMs = requests.time - lastRequests.time;
         var elapsedSeconds = elapsedMs / 1000;
+        var averageRequestExecutionTime = AutoCollectPerformance._intervalRequestExecutionTime / intervalRequests;
+        AutoCollectPerformance._intervalRequestExecutionTime = 0; // reset
 
         if (elapsedMs > 0) {
             var requestsPerSec = intervalRequests / elapsedSeconds;
@@ -254,7 +258,7 @@ class AutoCollectPerformance {
 
             // Only send duration to live metrics if it has been updated!
             if (!this._enableLiveMetricsCounters || intervalRequests > 0) {
-                this._client.trackMetric({ name: Constants.PerformanceCounter.REQUEST_DURATION, value: AutoCollectPerformance._lastRequestExecutionTime });
+                this._client.trackMetric({ name: Constants.PerformanceCounter.REQUEST_DURATION, value: averageRequestExecutionTime });
             }
 
             // Only supported by quickpulse service
@@ -281,6 +285,8 @@ class AutoCollectPerformance {
             var intervalFailedDependencies = (dependencies.totalFailedDependencyCount - lastDependencies.totalFailedDependencyCount) || 0;
             var elapsedMs = dependencies.time - lastDependencies.time;
             var elapsedSeconds = elapsedMs / 1000;
+            var averageDependencyExecutionTime = AutoCollectPerformance._intervalDependencyExecutionTime / intervalDependencies;
+            AutoCollectPerformance._intervalDependencyExecutionTime = 0; // reset
 
             if (elapsedMs > 0) {
                 var dependenciesPerSec = intervalDependencies / elapsedSeconds;
@@ -292,7 +298,7 @@ class AutoCollectPerformance {
                 // redundant check for livemetrics, but kept for consistency w/ requests
                 // Only send duration to live metrics if it has been updated!
                 if (!this._enableLiveMetricsCounters || intervalDependencies > 0) {
-                    this._client.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_DURATION, value: AutoCollectPerformance._lastDependencyExecutionTime});
+                    this._client.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_DURATION, value: averageDependencyExecutionTime});
                 }
             }
             this._lastDependencies = dependencies;
