@@ -45,7 +45,7 @@ export function baseTypeToTelemetryType(baseType: TelemetryTypeValues): Telemetr
     return undefined;
 }
 
-export const TelemetryTypeString: {[key in TelemetryTypeKeys]: TelemetryTypeValues} = {
+export const TelemetryTypeString: {[key: string]: TelemetryTypeValues} = {
     Event: "EventData",
     Exception: "ExceptionData",
     Trace: "MessageData",
