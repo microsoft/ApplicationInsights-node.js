@@ -1,12 +1,17 @@
 import https = require("https");
 import Config = require("./Config");
-import Constants = require("../Declarations/Constants");
 import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
 import Logging = require("./Logging");
 
 // Types
 import * as http from "http";
 import * as Contracts from "../Declarations/Contracts";
+
+const QuickPulseConfig = {
+    method: "POST",
+    time: "x-ms-qps-transmission-time",
+    subscribed: "x-ms-qps-subscribed"
+};
 
 class QuickPulseSender {
     private _config: Config;
@@ -30,18 +35,18 @@ class QuickPulseSender {
         var options = {
             [AutoCollectHttpDependencies.disableCollectionRequestOption]: true,
             host: this._config.quickPulseHost,
-            method: Constants.QuickPulseConfig.method,
+            method: QuickPulseConfig.method,
             path: `/QuickPulseService.svc/${postOrPing}?ikey=${this._config.instrumentationKey}`,
             headers:{
                 'Expect': '100-continue',
-                [Constants.QuickPulseConfig.time]: 10000 * Date.now(), // unit = 100s of nanoseconds
+                [QuickPulseConfig.time]: 10000 * Date.now(), // unit = 100s of nanoseconds
                 'Content-Type': 'application\/json',
                 'Content-Length': Buffer.byteLength(payload)
             }
         };
 
         const req = https.request(options, (res: http.IncomingMessage) => {
-            const shouldPOSTData = res.headers[Constants.QuickPulseConfig.subscribed] === "true";
+            const shouldPOSTData = res.headers[QuickPulseConfig.subscribed] === "true";
             done(shouldPOSTData, res);
         });
         req.on("error", (error: Error) => {

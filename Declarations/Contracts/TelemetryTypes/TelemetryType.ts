@@ -1,8 +1,11 @@
+export type TelemetryTypeKeys = "Event" | "Exception" | "Trace" | "Metric" | "Request" | "Dependency";
+export type TelemetryTypeValues = "EventData" | "ExceptionData" | "MessageData" | "MetricData" | "RequestData" | "RemoteDependencyData";
+
 /**
  * Converts the user-friendly enumeration TelemetryType to the underlying schema baseType value
  * @param type Type to convert to BaseData string
  */
-export function telemetryTypeToBaseType(type: TelemetryType): string {
+export function telemetryTypeToBaseType(type: TelemetryType): TelemetryTypeValues {
     switch(type) {
         case TelemetryType.Event:
             return "EventData";
@@ -24,7 +27,7 @@ export function telemetryTypeToBaseType(type: TelemetryType): string {
  * Converts the schema baseType value to the user-friendly enumeration TelemetryType
  * @param baseType BaseData string to convert to TelemetryType
  */
-export function baseTypeToTelemetryType(baseType: string): TelemetryType {
+export function baseTypeToTelemetryType(baseType: TelemetryTypeValues): TelemetryType {
     switch(baseType) {
         case "EventData":
             return TelemetryType.Event;
@@ -42,7 +45,7 @@ export function baseTypeToTelemetryType(baseType: string): TelemetryType {
     return undefined;
 }
 
-export const TelemetryTypeString = {
+export const TelemetryTypeString: {[key in TelemetryTypeKeys]: TelemetryTypeValues} = {
     Event: "EventData",
     Exception: "ExceptionData",
     Trace: "MessageData",

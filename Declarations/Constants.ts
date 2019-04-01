@@ -1,10 +1,4 @@
-import Contracts = require("../Declarations/Contracts")
-
-export const QuickPulseConfig = {
-    method: "POST",
-    time: "x-ms-qps-transmission-time",
-    subscribed: "x-ms-qps-subscribed"
-};
+import Contracts = require("./Contracts")
 
 export enum QuickPulseCounter {
     // Memory
@@ -63,7 +57,7 @@ export const PerformanceToQuickPulseCounter: {[key: string]: QuickPulseCounter} 
 export type QuickPulseDocumentType = "Event" | "Exception" | "Trace" | "Metric" | "Request" | "RemoteDependency";
 export type QuickPulseType = "EventTelemetryDocument" | "ExceptionTelemetryDocument" | "TraceTelemetryDocument" | "MetricTelemetryDocument" | "RequestTelemetryDocument" | "DependencyTelemetryDocument";
 
-export const QuickPulseDocumentType: {[key: string]: QuickPulseDocumentType} = {
+export const QuickPulseDocumentType: {[key in Contracts.TelemetryTypeKeys]: QuickPulseDocumentType} = {
     Event: "Event",
     Exception: "Exception",
     Trace: "Trace",
@@ -72,7 +66,7 @@ export const QuickPulseDocumentType: {[key: string]: QuickPulseDocumentType} = {
     Dependency: "RemoteDependency"
 };
 
-export const QuickPulseType: {[key: string]: QuickPulseType} = {
+export const QuickPulseType: {[key in Contracts.TelemetryTypeKeys]: QuickPulseType} = {
     Event: "EventTelemetryDocument",
     Exception: "ExceptionTelemetryDocument",
     Trace: "TraceTelemetryDocument",
@@ -81,20 +75,20 @@ export const QuickPulseType: {[key: string]: QuickPulseType} = {
     Dependency: "DependencyTelemetryDocument"
 };
 
-export const TelemetryTypeStringToQuickPulseType: {[key: string]: QuickPulseType}  = {
-    [Contracts.TelemetryTypeString.Event]: QuickPulseType.Event,
-    [Contracts.TelemetryTypeString.Exception]: QuickPulseType.Exception,
-    [Contracts.TelemetryTypeString.Trace]: QuickPulseType.Trace,
-    [Contracts.TelemetryTypeString.Metric]: QuickPulseType.Metric,
-    [Contracts.TelemetryTypeString.Request]: QuickPulseType.Request,
-    [Contracts.TelemetryTypeString.Dependency]: QuickPulseType.Dependency,
+export const TelemetryTypeStringToQuickPulseType: {[key in Contracts.TelemetryTypeKeys]: QuickPulseType} = {
+    Event: QuickPulseType.Event,
+    Exception: QuickPulseType.Exception,
+    Trace: QuickPulseType.Trace,
+    Metric: QuickPulseType.Metric,
+    Request: QuickPulseType.Request,
+    Dependency: QuickPulseType.Dependency,
 };
 
-export const TelemetryTypeStringToQuickPulseDocumentType: {[key: string]: QuickPulseDocumentType}  = {
-    [Contracts.TelemetryTypeString.Event]: QuickPulseDocumentType.Event,
-    [Contracts.TelemetryTypeString.Exception]: QuickPulseDocumentType.Exception,
-    [Contracts.TelemetryTypeString.Trace]: QuickPulseDocumentType.Trace,
-    [Contracts.TelemetryTypeString.Metric]: QuickPulseDocumentType.Metric,
-    [Contracts.TelemetryTypeString.Request]: QuickPulseDocumentType.Request,
-    [Contracts.TelemetryTypeString.Dependency]: QuickPulseDocumentType.Dependency,
+export const TelemetryTypeStringToQuickPulseDocumentType: {[key in Contracts.TelemetryTypeKeys]: QuickPulseDocumentType} = {
+    Event: QuickPulseDocumentType.Event,
+    Exception: QuickPulseDocumentType.Exception,
+    Trace: QuickPulseDocumentType.Trace,
+    Metric: QuickPulseDocumentType.Metric,
+    Request: QuickPulseDocumentType.Request,
+    Dependency: QuickPulseDocumentType.Dependency,
 };

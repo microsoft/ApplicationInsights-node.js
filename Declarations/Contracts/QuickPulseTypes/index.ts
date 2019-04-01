@@ -1,5 +1,4 @@
 export * from "./MetricQuickPulse";
-export * from "./QuickPulseTypes";
 export * from "./EnvelopeQuickPulse";
 export * from "./DocumentQuickPulse";
 export * from "./ExceptionDocumentQuickPulse";

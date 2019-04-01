@@ -151,12 +151,14 @@ class QuickPulseEnvelopeFactory {
     }
 
     private static createQuickPulseDocument(envelope: Contracts.Envelope): Contracts.DocumentQuickPulse {
-        let documentType, __type, operationId, properties;
+        let documentType: Constants.QuickPulseDocumentType;
+        let __type: Constants.QuickPulseType;
+        let operationId, properties;
 
 
         if (envelope.data.baseType) {
-            __type = Constants.TelemetryTypeStringToQuickPulseType[envelope.data.baseType];
-            documentType  = Constants.TelemetryTypeStringToQuickPulseDocumentType[envelope.data.baseType];
+            __type = Constants.TelemetryTypeStringToQuickPulseType[envelope.data.baseType as Contracts.TelemetryTypeKeys];
+            documentType = Constants.TelemetryTypeStringToQuickPulseDocumentType[envelope.data.baseType as Contracts.TelemetryTypeKeys];
         } else {
             // Remark: This should never be hit because createQuickPulseDocument is only called within
             // valid baseType values
