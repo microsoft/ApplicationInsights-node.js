@@ -2,6 +2,7 @@ import https = require("https");
 import Config = require("./Config");
 import Constants = require("../Declarations/Constants");
 import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
+import Logging = require("./Logging");
 
 // Types
 import * as http from "http";
@@ -42,6 +43,11 @@ class QuickPulseSender {
         const req = https.request(options, (res: http.IncomingMessage) => {
             const shouldPOSTData = res.headers[Constants.QuickPulseConfig.subscribed] === "true";
             done(shouldPOSTData, res);
+        });
+        req.on("error", (error: Error) => {
+            // Unable to contact qps endpoint.
+            // Do nothing for now.
+            Logging.warn("Unable to contact qps endpoint", error);
         });
 
         req.write(payload);
