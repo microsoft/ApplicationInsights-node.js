@@ -157,8 +157,8 @@ class QuickPulseEnvelopeFactory {
 
 
         if (envelope.data.baseType) {
-            __type = Constants.TelemetryTypeStringToQuickPulseType[envelope.data.baseType as Contracts.TelemetryTypeKeys];
-            documentType = Constants.TelemetryTypeStringToQuickPulseDocumentType[envelope.data.baseType as Contracts.TelemetryTypeKeys];
+            __type = Constants.TelemetryTypeStringToQuickPulseType[envelope.data.baseType as Contracts.TelemetryTypeValues];
+            documentType = Constants.TelemetryTypeStringToQuickPulseDocumentType[envelope.data.baseType as Contracts.TelemetryTypeValues];
         } else {
             // Remark: This should never be hit because createQuickPulseDocument is only called within
             // valid baseType values

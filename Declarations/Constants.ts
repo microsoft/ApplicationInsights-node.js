@@ -75,20 +75,20 @@ export const QuickPulseType: {[key in Contracts.TelemetryTypeKeys]: QuickPulseTy
     Dependency: "DependencyTelemetryDocument"
 };
 
-export const TelemetryTypeStringToQuickPulseType: {[key in Contracts.TelemetryTypeKeys]: QuickPulseType} = {
-    Event: QuickPulseType.Event,
-    Exception: QuickPulseType.Exception,
-    Trace: QuickPulseType.Trace,
-    Metric: QuickPulseType.Metric,
-    Request: QuickPulseType.Request,
-    Dependency: QuickPulseType.Dependency,
+export const TelemetryTypeStringToQuickPulseType: {[key in Contracts.TelemetryTypeValues]: QuickPulseType} = {
+    EventData: QuickPulseType.Event,
+    ExceptionData: QuickPulseType.Exception,
+    MessageData: QuickPulseType.Trace,
+    MetricData: QuickPulseType.Metric,
+    RequestData: QuickPulseType.Request,
+    RemoteDependencyData: QuickPulseType.Dependency
 };
 
-export const TelemetryTypeStringToQuickPulseDocumentType: {[key in Contracts.TelemetryTypeKeys]: QuickPulseDocumentType} = {
-    Event: QuickPulseDocumentType.Event,
-    Exception: QuickPulseDocumentType.Exception,
-    Trace: QuickPulseDocumentType.Trace,
-    Metric: QuickPulseDocumentType.Metric,
-    Request: QuickPulseDocumentType.Request,
-    Dependency: QuickPulseDocumentType.Dependency,
+export const TelemetryTypeStringToQuickPulseDocumentType: {[key in Contracts.TelemetryTypeValues]: QuickPulseDocumentType} = {
+    EventData: QuickPulseDocumentType.Event,
+    ExceptionData: QuickPulseDocumentType.Exception,
+    MessageData: QuickPulseDocumentType.Trace,
+    MetricData: QuickPulseDocumentType.Metric,
+    RequestData: QuickPulseDocumentType.Request,
+    RemoteDependencyData: QuickPulseDocumentType.Dependency
 };
