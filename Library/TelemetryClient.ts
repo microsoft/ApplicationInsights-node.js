@@ -12,6 +12,7 @@ import Util = require("./Util");
 import Logging = require("./Logging");
 import FlushOptions = require("./FlushOptions");
 import EnvelopeFactory = require("./EnvelopeFactory");
+import QuickPulseStateManager = require("./QuickPulseStateManager");
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -24,6 +25,7 @@ class TelemetryClient {
     public context: Context;
     public commonProperties: { [key: string]: string; };
     public channel: Channel;
+    public quickPulseClient: QuickPulseStateManager;
 
     /**
      * Constructs a new client of the client
@@ -77,9 +79,9 @@ class TelemetryClient {
     }
 
     /**
-     * Log a request. Note that the default client will attempt to collect HTTP requests automatically so only use this for requests 
+     * Log a request. Note that the default client will attempt to collect HTTP requests automatically so only use this for requests
      * that aren't automatically captured or if you've disabled automatic request collection.
-     * 
+     *
      * @param telemetry      Object encapsulating tracking options
      */
     public trackRequest(telemetry: Contracts.RequestTelemetry): void {
@@ -87,9 +89,9 @@ class TelemetryClient {
     }
 
     /**
-     * Log a dependency. Note that the default client will attempt to collect dependencies automatically so only use this for dependencies 
+     * Log a dependency. Note that the default client will attempt to collect dependencies automatically so only use this for dependencies
      * that aren't automatically captured or if you've disabled automatic dependency collection.
-     * 
+     *
      * @param telemetry      Object encapsulating tracking option
      * */
     public trackDependency(telemetry: Contracts.DependencyTelemetry) {
@@ -132,6 +134,7 @@ class TelemetryClient {
             // Ideally we would have a central place for "internal" telemetry processors and users can configure which ones are in use.
             // This will do for now. Otherwise clearTelemetryProcessors() would be problematic.
             accepted = accepted && TelemetryProcessors.samplingTelemetryProcessor(envelope, { correlationContext: CorrelationContextManager.getCurrentContext() });
+            TelemetryProcessors.quickPulseTelemetryProcessor(envelope, this.quickPulseClient)
 
             if (accepted) {
                 this.channel.send(envelope);

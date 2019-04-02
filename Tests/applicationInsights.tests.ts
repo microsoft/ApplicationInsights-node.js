@@ -79,6 +79,11 @@ describe("ApplicationInsights", () => {
             assert.ok(warnStub.notCalled, "warning was not raised");
             warnStub.restore();
         });
+
+        it("should not start live metrics", () => {
+            AppInsights.setup("key").start();
+            assert.equal(AppInsights.liveMetricsClient, undefined, "live metrics client is not defined");
+        });
     });
 
     describe("#setAutoCollect", () => {
