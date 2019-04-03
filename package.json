@@ -2,7 +2,7 @@
   "name": "applicationinsights",
   "license": "MIT",
   "bugs": "https://github.com/Microsoft/ApplicationInsights-node.js/issues",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Microsoft Application Insights module for Node.js",
   "repository": {
     "type": "git",
@@ -48,14 +48,14 @@
     "backcompattest": "npm run build && npm pack && node --use_strict ./Tests/BackCompatibility/RunBackCompatTests.js"
   },
   "devDependencies": {
-    "@types/cls-hooked": "^4.2.1",
+    "@types/cls-hooked": "^4.3.0",
     "@types/mocha": "2.2.48",
     "@types/node": "4.2.4",
     "@types/sinon": "2.1.2",
-    "typescript": "2.4.2",
     "mocha": "3.5.2",
     "node-mocks-http": "1.2.3",
-    "sinon": "1.17.6"
+    "sinon": "1.17.6",
+    "typescript": "2.4.2"
   },
   "dependencies": {
     "cls-hooked": "^4.2.2",

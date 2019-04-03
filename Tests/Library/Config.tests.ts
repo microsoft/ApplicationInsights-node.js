@@ -57,6 +57,7 @@ describe("Library/Config", () => {
             assert(typeof config.samplingPercentage === "number");
             assert(typeof config.correlationIdRetryIntervalMs === "number");
             assert(typeof config.correlationHeaderExcludedDomains === "object");
+            assert(typeof config.quickPulseHost === "string");
         });
 
         it("should initialize values that we claim in README", () => {
@@ -68,6 +69,8 @@ describe("Library/Config", () => {
             assert(config.correlationIdRetryIntervalMs === 30000);
             assert(config.proxyHttpUrl === undefined);
             assert(config.proxyHttpsUrl === undefined);
+
+            assert(config.quickPulseHost === "rt.services.visualstudio.com");
         });
 
         it("should initialize values that we claim in README (2)", () => {

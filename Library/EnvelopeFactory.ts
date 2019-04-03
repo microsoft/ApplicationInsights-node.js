@@ -4,10 +4,12 @@ import Config = require("./Config");
 import Context = require("./Context");
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
 
+
 /**
  * Manages the logic of creating envelopes from Telemetry objects
  */
 class EnvelopeFactory {
+
 
     /**
      * Creates envelope ready to be sent by Channel

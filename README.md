@@ -111,6 +111,7 @@ appInsights.setup("<instrumentation_key>")
     .setAutoCollectDependencies(true)
     .setAutoCollectConsole(true)
     .setUseDiskRetryCaching(true)
+    .setSendLiveMetrics(false)
     .start();
 ```
 
@@ -166,6 +167,11 @@ for information about exactly which versions of these packages are patched.
 
 The `bunyan`, `winston`, and `console` patches will generate Application Insights Trace events based on whether `setAutoCollectConsole` is enabled.
 The rest will generate Application Insights Dependency events based on whether `setAutoCollectDependencies` is enabled.
+
+### Live Metrics
+>***Note:*** The ability to send to live metrics was added in version `1.3.0`.
+
+To enable sending live metrics of your app to Azure, use `setSendLiveMetrics(true)`. Filtering of live metrics in the Portal is currently not supported.
 
 ## Track custom telemetry
 
