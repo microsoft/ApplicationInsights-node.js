@@ -18,6 +18,7 @@ class QuickPulseStateManager {
     private _sender: QuickPulseSender;
     private _isEnabled: boolean;
     private _lastSuccessTime: number = Date.now();
+    private _lastSendSucceeded: boolean = true;
     private _handle: NodeJS.Timer;
     private _metrics: {[name: string]: Contracts.MetricQuickPulse} = {};
     private _documents: Contracts.DocumentQuickPulse[] = [];
@@ -124,14 +125,15 @@ class QuickPulseStateManager {
         }
 
         let currentTimeout = QuickPulseStateManager._isCollectingData ? 1000 : 5000;
-        if (QuickPulseStateManager._isCollectingData && Date.now() - this._lastSuccessTime >= 20000) {
+        if (QuickPulseStateManager._isCollectingData && Date.now() - this._lastSuccessTime >= 20000 && !this._lastSendSucceeded) {
             // Haven't posted successfully in 20 seconds, so wait 60 seconds and ping
             QuickPulseStateManager._isCollectingData = false;
             currentTimeout = 60000;
-        } else if (!QuickPulseStateManager._isCollectingData && Date.now() - this._lastSuccessTime >= 60000) {
+        } else if (!QuickPulseStateManager._isCollectingData && Date.now() - this._lastSuccessTime >= 60000 && !this._lastSendSucceeded) {
             // Haven't pinged successfully in 60 seconds, so wait another 60 seconds
             currentTimeout = 60000;
         }
+        this._lastSendSucceeded = null;
         this._handle = <any>setTimeout(this._goQuickPulse.bind(this), currentTimeout);
         this._handle.unref(); // Don't block apps from terminating
     }
@@ -144,7 +146,7 @@ class QuickPulseStateManager {
         this._sender.post(envelope, this._quickPulseDone.bind(this));
     }
 
-    private _quickPulseDone(shouldPOST: boolean, res: http.IncomingMessage): void {
+    private _quickPulseDone(shouldPOST: boolean, res: http.IncomingMessage | {statusCode: boolean}): void {
         if (QuickPulseStateManager._isCollectingData !== shouldPOST) {
             Logging.info("Live Metrics sending data", shouldPOST);
             this.enableCollectors(shouldPOST);
@@ -153,6 +155,9 @@ class QuickPulseStateManager {
 
         if (res.statusCode < 300 && res.statusCode >= 200) {
             this._lastSuccessTime = Date.now();
+            this._lastSendSucceeded = true;
+        } else {
+            this._lastSendSucceeded = false;
         }
     }
 
