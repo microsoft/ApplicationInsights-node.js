@@ -247,7 +247,7 @@ class AutoCollectPerformance {
         var intervalFailedRequests = (requests.totalFailedRequestCount - lastRequests.totalFailedRequestCount) || 0;
         var elapsedMs = requests.time - lastRequests.time;
         var elapsedSeconds = elapsedMs / 1000;
-        var averageRequestExecutionTime = AutoCollectPerformance._intervalRequestExecutionTime / intervalRequests;
+        var averageRequestExecutionTime = (AutoCollectPerformance._intervalRequestExecutionTime / intervalRequests) || 0; // default to 0 in case no requests in this interval
         AutoCollectPerformance._intervalRequestExecutionTime = 0; // reset
 
         if (elapsedMs > 0) {
@@ -285,7 +285,7 @@ class AutoCollectPerformance {
             var intervalFailedDependencies = (dependencies.totalFailedDependencyCount - lastDependencies.totalFailedDependencyCount) || 0;
             var elapsedMs = dependencies.time - lastDependencies.time;
             var elapsedSeconds = elapsedMs / 1000;
-            var averageDependencyExecutionTime = AutoCollectPerformance._intervalDependencyExecutionTime / intervalDependencies;
+            var averageDependencyExecutionTime = (AutoCollectPerformance._intervalDependencyExecutionTime / intervalDependencies) || 0;
             AutoCollectPerformance._intervalDependencyExecutionTime = 0; // reset
 
             if (elapsedMs > 0) {
