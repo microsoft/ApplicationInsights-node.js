@@ -20,17 +20,17 @@ class QuickPulseSender {
         this._config = config;
     }
 
-    public ping(envelope: Contracts.EnvelopeQuickPulse, done: (shouldPOST: boolean) => void): void {
+    public ping(envelope: Contracts.EnvelopeQuickPulse, done: (shouldPOST: boolean, res?: http.IncomingMessage) => void): void {
         this._submitData(envelope, done, "ping");
     }
 
-    public post(envelope: Contracts.EnvelopeQuickPulse, done: (shouldPOST: boolean, res: http.IncomingMessage) => void): void {
+    public post(envelope: Contracts.EnvelopeQuickPulse, done: (shouldPOST: boolean, res?: http.IncomingMessage) => void): void {
 
         // Important: When POSTing data, envelope must be an array
         this._submitData([envelope], done, "post");
     }
 
-    private _submitData(envelope: Contracts.EnvelopeQuickPulse | Contracts.EnvelopeQuickPulse[], done: (shouldPOST: boolean, res: http.IncomingMessage) => void, postOrPing: "post" | "ping"): void {
+    private _submitData(envelope: Contracts.EnvelopeQuickPulse | Contracts.EnvelopeQuickPulse[], done: (shouldPOST: boolean, res?: http.IncomingMessage) => void, postOrPing: "post" | "ping"): void {
         const payload = JSON.stringify(envelope);
         var options = {
             [AutoCollectHttpDependencies.disableCollectionRequestOption]: true,
@@ -52,7 +52,8 @@ class QuickPulseSender {
         req.on("error", (error: Error) => {
             // Unable to contact qps endpoint.
             // Do nothing for now.
-            Logging.warn("Unable to contact qps endpoint", error);
+            Logging.warn("Unable to contact qps endpoint, dropping this Live Metrics packet", error);
+            done(false); // Stop POSTing QPS data
         });
 
         req.write(payload);
