@@ -2,6 +2,7 @@ import CorrelationContextManager = require("./AutoCollection/CorrelationContextM
 import AutoCollectConsole = require("./AutoCollection/Console");
 import AutoCollectExceptions = require("./AutoCollection/Exceptions");
 import AutoCollectPerformance = require("./AutoCollection/Performance");
+import AutoCollectNativePerformance = require("./AutoCollection/NativePerformance");
 import AutoCollectHttpDependencies = require("./AutoCollection/HttpDependencies");
 import AutoCollectHttpRequests = require("./AutoCollection/HttpRequests");
 import Config = require("./Library/Config");
@@ -20,6 +21,7 @@ let _isConsole = true;
 let _isConsoleLog = false;
 let _isExceptions = true;
 let _isPerformance = true;
+let _isNativePerformance = false;
 let _isRequests = true;
 let _isDependencies = true;
 let _isDiskRetry = true;
@@ -87,6 +89,10 @@ export function start() {
         _console.enable(_isConsole, _isConsoleLog);
         _exceptions.enable(_isExceptions);
         _performance.enable(_isPerformance);
+        if (!AutoCollectNativePerformance.INSTANCE) {
+            AutoCollectNativePerformance.INSTANCE = new AutoCollectNativePerformance(defaultClient);
+        }
+        AutoCollectNativePerformance.INSTANCE.enable(_isNativePerformance);
         _serverRequests.useAutoCorrelation(_isCorrelating, _forceClsHooked);
         _serverRequests.enable(_isRequests);
         _clientRequests.enable(_isDependencies);
@@ -177,6 +183,20 @@ export class Configuration {
         _isPerformance = value;
         if (_isStarted){
             _performance.enable(value);
+        }
+
+        return Configuration;
+    }
+
+    /**
+     * Sets the state of native metrics tracking (enabled by default). Requires `applicationinsights-native-metrics` package to also be installed. If native metrics are not available, this configuration does nothing.
+     * @param value if true, native metrics counters will be collected every minute and sent Application Insights
+     * @returns {Configuration} this class
+     */
+    public static setAutoCollectNativeMetrics(value: boolean) {
+        _isNativePerformance = value;
+        if (_isStarted) {
+            AutoCollectNativePerformance.INSTANCE.enable(value);
         }
 
         return Configuration;
@@ -300,6 +320,9 @@ export function dispose() {
     }
     if (_performance) {
         _performance.dispose();
+    }
+    if (AutoCollectNativePerformance.INSTANCE) {
+        AutoCollectNativePerformance.INSTANCE.dispose();
     }
     if(_serverRequests) {
         _serverRequests.dispose();
