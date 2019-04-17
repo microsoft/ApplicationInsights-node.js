@@ -21,7 +21,7 @@ let _isConsole = true;
 let _isConsoleLog = false;
 let _isExceptions = true;
 let _isPerformance = true;
-let _isNativePerformance = false;
+let _isNativePerformance = true;
 let _isRequests = true;
 let _isDependencies = true;
 let _isDiskRetry = true;
@@ -35,6 +35,7 @@ let _diskRetryMaxBytes: number = undefined;
 let _console: AutoCollectConsole;
 let _exceptions: AutoCollectExceptions;
 let _performance: AutoCollectPerformance;
+let _nativePerformance: AutoCollectNativePerformance;
 let _serverRequests: AutoCollectHttpRequests;
 let _clientRequests: AutoCollectHttpDependencies;
 
@@ -66,6 +67,9 @@ export function setup(instrumentationKey?: string) {
         _performance = new AutoCollectPerformance(defaultClient);
         _serverRequests = new AutoCollectHttpRequests(defaultClient);
         _clientRequests = new AutoCollectHttpDependencies(defaultClient);
+        if (!_nativePerformance) {
+            _nativePerformance = new AutoCollectNativePerformance(defaultClient);
+        }
     } else {
         Logging.info("The default client is already setup");
     }
@@ -89,10 +93,10 @@ export function start() {
         _console.enable(_isConsole, _isConsoleLog);
         _exceptions.enable(_isExceptions);
         _performance.enable(_isPerformance);
-        if (!AutoCollectNativePerformance.INSTANCE) {
-            AutoCollectNativePerformance.INSTANCE = new AutoCollectNativePerformance(defaultClient);
-        }
-        AutoCollectNativePerformance.INSTANCE.enable(_isNativePerformance);
+        // if (!_nativePerformance) {
+        //     _nativePerformance = new AutoCollectNativePerformance(defaultClient);
+        // }
+        _nativePerformance.enable(_isNativePerformance);
         _serverRequests.useAutoCorrelation(_isCorrelating, _forceClsHooked);
         _serverRequests.enable(_isRequests);
         _clientRequests.enable(_isDependencies);
@@ -196,7 +200,7 @@ export class Configuration {
     public static setAutoCollectNativeMetrics(value: boolean) {
         _isNativePerformance = value;
         if (_isStarted) {
-            AutoCollectNativePerformance.INSTANCE.enable(value);
+            _nativePerformance.enable(value);
         }
 
         return Configuration;
@@ -321,8 +325,8 @@ export function dispose() {
     if (_performance) {
         _performance.dispose();
     }
-    if (AutoCollectNativePerformance.INSTANCE) {
-        AutoCollectNativePerformance.INSTANCE.dispose();
+    if (_nativePerformance) {
+        _nativePerformance.dispose();
     }
     if(_serverRequests) {
         _serverRequests.dispose();

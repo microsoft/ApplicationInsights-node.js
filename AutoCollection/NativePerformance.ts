@@ -2,17 +2,26 @@ import TelemetryClient= require("../Library/TelemetryClient");
 import Logging = require("../Library/Logging");
 import Constants = require("../Declarations/Constants");
 
+var sf = require("segfault-handler");
+sf.registerHandler("crash.log");
+
 class AutoCollectNativePerformance {
     public static INSTANCE: AutoCollectNativePerformance;
 
-    private _emitter: any;
-    private _metricsAvailable: boolean; // is the native metrics lib installed
+    private static _emitter: any;
+    private static _metricsAvailable: boolean; // is the native metrics lib installed
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _handle: NodeJS.Timer;
     private _client: TelemetryClient;
 
     constructor(client: TelemetryClient) {
+        // Note: Only 1 instance of this can exist. So when we reconstruct this object,
+        // just disable old native instance and reset JS member variables
+        if (AutoCollectNativePerformance.INSTANCE) {
+            AutoCollectNativePerformance.INSTANCE.dispose();
+        }
+        AutoCollectNativePerformance.INSTANCE = this;
         this._client = client;
     }
 
@@ -24,14 +33,15 @@ class AutoCollectNativePerformance {
      * @memberof AutoCollectNativePerformance
      */
     public enable(isEnabled: boolean, collectionInterval = 60000): void {
-        if (this._metricsAvailable == undefined && isEnabled && !this._isInitialized) {
+        if (AutoCollectNativePerformance._metricsAvailable == undefined && isEnabled && !this._isInitialized) {
+            // Try to require in the native-metrics library. If it's found initialize it, else do nothing and never try again.
             try {
                 const NativeMetricsEmitters = require("applicationinsights-native-metrics");
-                this._emitter = new NativeMetricsEmitters();
-                this._metricsAvailable = true;
+                AutoCollectNativePerformance._emitter = new NativeMetricsEmitters();
+                AutoCollectNativePerformance._metricsAvailable = true;
             } catch (err) {
-                // Package not available. Do nothing here
-                this._metricsAvailable = false;
+                // Package not available. Never try again
+                AutoCollectNativePerformance._metricsAvailable = false;
                 return;
             }
         }
@@ -41,16 +51,15 @@ class AutoCollectNativePerformance {
             this._isInitialized = true;
         }
 
-        if (isEnabled && this._emitter) {
+        // Enable the emitter if we were able to construct one
+        if (isEnabled && AutoCollectNativePerformance._emitter) {
             // enable self
-            this._emitter.enable(true, collectionInterval);
-            this._emitter.on("usage", (usage: any) => {
-                this._trackResourceUsage(usage);
-            });
+            AutoCollectNativePerformance._emitter.enable(true, collectionInterval);
             this._handle = setInterval(this._trackNativeMetrics, collectionInterval);
-        } else if (this._emitter) {
+            this._handle.unref();
+        } else if (AutoCollectNativePerformance._emitter) {
             // disable self
-            this._emitter.enable(false);
+            AutoCollectNativePerformance._emitter.enable(false);
             if (this._handle) {
                 clearInterval(this._handle);
                 this._handle = undefined;
@@ -64,11 +73,15 @@ class AutoCollectNativePerformance {
      * @memberof AutoCollectNativePerformance
      */
     public dispose(): void {
-        AutoCollectNativePerformance.INSTANCE = null;
         this.enable(false);
-        this._isInitialized = false;
     }
 
+    /**
+     * Trigger an iteration of native metrics collection
+     *
+     * @private
+     * @memberof AutoCollectNativePerformance
+     */
     private _trackNativeMetrics() {
         this._trackGarbageCollection();
         this._trackEventLoop();
@@ -82,7 +95,7 @@ class AutoCollectNativePerformance {
      * @memberof AutoCollectNativePerformance
      */
     private _trackGarbageCollection(): void {
-        const gcData = this._emitter.getGCData();
+        const gcData = AutoCollectNativePerformance._emitter.getGCData();
 
         for (let gc of gcData) {
             const metrics = gc.metrics;
@@ -106,7 +119,7 @@ class AutoCollectNativePerformance {
      * @memberof AutoCollectNativePerformance
      */
     private _trackEventLoop(): void {
-        const loopStats = this._emitter.getLoopData();
+        const loopStats = AutoCollectNativePerformance._emitter.getLoopData();
         if (loopStats.count == 0) {
             return;
         }
@@ -119,10 +132,6 @@ class AutoCollectNativePerformance {
             min: loopStats.min,
             max: loopStats.max
         });
-    }
-
-    private _trackResourceUsage(usage: any) {
-
     }
 }
 
