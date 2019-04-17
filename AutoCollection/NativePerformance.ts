@@ -2,9 +2,6 @@ import TelemetryClient= require("../Library/TelemetryClient");
 import Logging = require("../Library/Logging");
 import Constants = require("../Declarations/Constants");
 
-var sf = require("segfault-handler");
-sf.registerHandler("crash.log");
-
 class AutoCollectNativePerformance {
     public static INSTANCE: AutoCollectNativePerformance;
 
