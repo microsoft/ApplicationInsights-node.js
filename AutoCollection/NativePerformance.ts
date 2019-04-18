@@ -52,7 +52,7 @@ class AutoCollectNativePerformance {
         if (isEnabled && AutoCollectNativePerformance._emitter) {
             // enable self
             AutoCollectNativePerformance._emitter.enable(true, collectionInterval);
-            this._handle = setInterval(this._trackNativeMetrics, collectionInterval);
+            this._handle = setInterval(() => this._trackNativeMetrics(), collectionInterval);
             this._handle.unref();
         } else if (AutoCollectNativePerformance._emitter) {
             // disable self
@@ -94,9 +94,9 @@ class AutoCollectNativePerformance {
     private _trackGarbageCollection(): void {
         const gcData = AutoCollectNativePerformance._emitter.getGCData();
 
-        for (let gc of gcData) {
-            const metrics = gc.metrics;
-            const name = `${Constants.NativeMetrics.GARBAGE_COLLECTION}: ${gc.type}`;
+        for (let gc in gcData) {
+            const metrics = gcData[gc].metrics;
+            const name = `${Constants.NativeMetrics.GARBAGE_COLLECTION}: ${gc}`;
             this._client.trackMetric({
                 name: name,
                 value: metrics.total / metrics.count,
@@ -116,7 +116,8 @@ class AutoCollectNativePerformance {
      * @memberof AutoCollectNativePerformance
      */
     private _trackEventLoop(): void {
-        const loopStats = AutoCollectNativePerformance._emitter.getLoopData();
+        const loopData = AutoCollectNativePerformance._emitter.getLoopData();
+        const loopStats = loopData.loopUsage;
         if (loopStats.count == 0) {
             return;
         }
