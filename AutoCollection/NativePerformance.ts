@@ -104,12 +104,14 @@ class AutoCollectNativePerformance {
         for (let gc in gcData) {
             const metrics = gcData[gc].metrics;
             const name = `${Constants.NativeMetrics.GARBAGE_COLLECTION}: ${gc}`;
+            const stdDev = Math.sqrt(metrics.sumSquares / metrics.count - Math.pow(metrics.total / metrics.count, 2)) || 0;
             this._client.trackMetric({
                 name: name,
-                value: metrics.total / metrics.count,
+                value: metrics.total,
                 count: metrics.count,
                 max: metrics.max,
-                min: metrics.min
+                min: metrics.min,
+                stdDev: stdDev
             });
         }
     }
@@ -124,18 +126,20 @@ class AutoCollectNativePerformance {
      */
     private _trackEventLoop(): void {
         const loopData = AutoCollectNativePerformance._emitter.getLoopData();
-        const loopStats = loopData.loopUsage;
-        if (loopStats.count == 0) {
+        const metrics = loopData.loopUsage;
+        if (metrics.count == 0) {
             return;
         }
 
         const name = `${Constants.NativeMetrics.EVENT_LOOP}: total tick time (usecs)`
+        const stdDev = Math.sqrt(metrics.sumSquares / metrics.count - Math.pow(metrics.total / metrics.count, 2)) || 0;
         this._client.trackMetric({
             name: name,
-            value: loopStats.total,
-            count: loopStats.count,
-            min: loopStats.min,
-            max: loopStats.max
+            value: metrics.total,
+            count: metrics.count,
+            min: metrics.min,
+            max: metrics.max,
+            stdDev: stdDev
         });
     }
 
