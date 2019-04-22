@@ -93,8 +93,4 @@ export const TelemetryTypeStringToQuickPulseDocumentType: {[key in Contracts.Tel
     RemoteDependencyData: QuickPulseDocumentType.Dependency
 };
 
-export const NativeMetrics = {
-    GARBAGE_COLLECTION: "node.js-gc",
-    EVENT_LOOP: "node.js-eventloop",
-    RESOURCE_USAGE: "node.js-metrics"
-};
+export const NativeMetricsPrefix = "Node.js";

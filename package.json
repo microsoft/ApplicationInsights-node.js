@@ -52,7 +52,7 @@
     "@types/mocha": "2.2.48",
     "@types/node": "4.2.4",
     "@types/sinon": "2.1.2",
-    "applicationinsights-native-metrics": "0.0.1",
+    "applicationinsights-native-metrics": "^0.0.1",
     "mocha": "3.5.2",
     "node-mocks-http": "1.2.3",
     "sinon": "1.17.6",

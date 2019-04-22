@@ -103,7 +103,7 @@ class AutoCollectNativePerformance {
 
         for (let gc in gcData) {
             const metrics = gcData[gc].metrics;
-            const name = `${Constants.NativeMetrics.GARBAGE_COLLECTION}: ${gc}`;
+            const name = `${Constants.NativeMetricsPrefix}: GarbageCollection/${gc}`;
             const stdDev = Math.sqrt(metrics.sumSquares / metrics.count - Math.pow(metrics.total / metrics.count, 2)) || 0;
             this._client.trackMetric({
                 name: name,
@@ -131,7 +131,7 @@ class AutoCollectNativePerformance {
             return;
         }
 
-        const name = `${Constants.NativeMetrics.EVENT_LOOP}: total tick time (usecs)`
+        const name = `${Constants.NativeMetricsPrefix}: EventLoop/CPUTime (usecs)`
         const stdDev = Math.sqrt(metrics.sumSquares / metrics.count - Math.pow(metrics.total / metrics.count, 2)) || 0;
         this._client.trackMetric({
             name: name,
@@ -152,20 +152,20 @@ class AutoCollectNativePerformance {
     private _trackHeapUsage(): void {
         const memoryUsage = process.memoryUsage();
         const { heapUsed, heapTotal, rss } = memoryUsage;
-        const namePrefix = Constants.NativeMetrics.RESOURCE_USAGE;
+        const namePrefix = Constants.NativeMetricsPrefix;
 
         this._client.trackMetric({
-            name: `${namePrefix}: heap memory usage (KB)`,
+            name: `${namePrefix}: Memory/Heap/Usage (KB)`,
             value: heapUsed,
             count: 1
         });
         this._client.trackMetric({
-            name: `${namePrefix}: heap memory total (KB)`,
+            name: `${namePrefix}: Memory/Heap/Total (KB)`,
             value: heapTotal,
             count: 1
         });
         this._client.trackMetric({
-            name: `${namePrefix}: non-heap memory usage (KB)`,
+            name: `${namePrefix}: Memory/Nonheap/Usage (KB)`,
             value: rss - heapTotal,
             count: 1
         });
