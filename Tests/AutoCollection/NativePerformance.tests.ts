@@ -15,7 +15,7 @@ describe("AutoCollection/NativePerformance", () => {
             var setIntervalSpy = sinon.spy(global, "setInterval");
             var clearIntervalSpy = sinon.spy(global, "clearInterval");
 
-            AppInsights.setup("key").setAutoCollectNativeMetrics(true).start();
+            AppInsights.setup("key").setAutoCollectNativeMetrics(true).setAutoCollectPerformance(false).start();
             assert.equal(setIntervalSpy.callCount, 1, "setInterval should be called once as part of NativePerformance initialization");
 
             AppInsights.dispose();
