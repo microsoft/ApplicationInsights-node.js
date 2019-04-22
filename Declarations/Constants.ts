@@ -96,4 +96,5 @@ export const TelemetryTypeStringToQuickPulseDocumentType: {[key in Contracts.Tel
 export const NativeMetrics = {
     GARBAGE_COLLECTION: "node.js-gc",
     EVENT_LOOP: "node.js-eventloop",
+    RESOURCE_USAGE: "node.js-metrics"
 };

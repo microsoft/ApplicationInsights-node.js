@@ -80,8 +80,15 @@ class AutoCollectNativePerformance {
      * @memberof AutoCollectNativePerformance
      */
     private _trackNativeMetrics() {
-        this._trackGarbageCollection();
-        this._trackEventLoop();
+        if (!this._client.config.disableGarbageCollectionStats) {
+            this._trackGarbageCollection();
+        }
+        if (!this._client.config.disableEventLoopStats) {
+            this._trackEventLoop();
+        }
+        if (!this._client.config.disableHeapUsageStats) {
+            this._trackHeapUsage();
+        }
     }
 
     /**
@@ -122,13 +129,41 @@ class AutoCollectNativePerformance {
             return;
         }
 
-        const name = `${Constants.NativeMetrics.EVENT_LOOP}: average tick time (usecs)`
+        const name = `${Constants.NativeMetrics.EVENT_LOOP}: total tick time (usecs)`
         this._client.trackMetric({
             name: name,
-            value: loopStats.total / loopStats.count,
+            value: loopStats.total,
             count: loopStats.count,
             min: loopStats.min,
             max: loopStats.max
+        });
+    }
+
+    /**
+     * Track heap memory usage metrics as a custom metric.
+     *
+     * @private
+     * @memberof AutoCollectNativePerformance
+     */
+    private _trackHeapUsage(): void {
+        const memoryUsage = process.memoryUsage();
+        const { heapUsed, heapTotal, rss } = memoryUsage;
+        const namePrefix = Constants.NativeMetrics.RESOURCE_USAGE;
+
+        this._client.trackMetric({
+            name: `${namePrefix}: heap memory usage (KB)`,
+            value: heapUsed,
+            count: 1
+        });
+        this._client.trackMetric({
+            name: `${namePrefix}: heap memory total (KB)`,
+            value: heapTotal,
+            count: 1
+        });
+        this._client.trackMetric({
+            name: `${namePrefix}: non-heap memory usage (KB)`,
+            value: rss - heapTotal,
+            count: 1
         });
     }
 }

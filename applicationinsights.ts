@@ -93,9 +93,6 @@ export function start() {
         _console.enable(_isConsole, _isConsoleLog);
         _exceptions.enable(_isExceptions);
         _performance.enable(_isPerformance);
-        // if (!_nativePerformance) {
-        //     _nativePerformance = new AutoCollectNativePerformance(defaultClient);
-        // }
         _nativePerformance.enable(_isNativePerformance);
         _serverRequests.useAutoCorrelation(_isCorrelating, _forceClsHooked);
         _serverRequests.enable(_isRequests);
