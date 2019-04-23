@@ -13,10 +13,9 @@ class Config {
     public static ENV_profileQueryEndpoint = "APPINSIGHTS_PROFILE_QUERY_ENDPOINT";
     public static ENV_quickPulseHost = "APPINSIGHTS_QUICKPULSE_HOST";
 
-    //-- Native Metrics --//
-    public static ENV_disable_loopStats = "APPINSIGHTS_DISABLE_LOOP_COLLECTION";
-    public static ENV_disable_heapStats = "APPINSIGHTS_DISABLE_HEAP_COLLECTION";
-    public static ENV_disable_gcStats = "APPINSIGHTS_DISABLE_GC_COLLECTION";
+    // Native Metrics Opt Outs
+    public static ENV_nativeMetricsDisablers = "APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC";
+    public static ENV_nativeMetricsDisableAll = "APPLICATION_INSIGHTS_DISABLE_ALL_EXTENDED_METRICS"
 
     public static ENV_http_proxy = "http_proxy";
     public static ENV_https_proxy = "https_proxy";
@@ -54,14 +53,6 @@ class Config {
     /** Host name for quickpulse service */
     private _quickPulseHost: string;
 
-    //--- Native (Custom) Metrics Collection Options ---//
-    /** Send a custom metric for each type of garbage collection that occurred during this collection interval */
-    public disableGarbageCollectionStats: boolean;
-    /** Send a custom metric containing event loop cpu usage during this collection interval */
-    public disableEventLoopStats: boolean;
-    /** Send custom metrics detailing heap/non-heap memory usage */
-    public disableHeapUsageStats: boolean;
-
     constructor(instrumentationKey?: string) {
         this.instrumentationKey = instrumentationKey || Config._getInstrumentationKey();
         this.endpointUrl = `${this.endpointBase}/v2/track`;
@@ -77,9 +68,6 @@ class Config {
             "*.core.usgovcloudapi.net"];
 
         this.setCorrelationId = (correlationId) => this.correlationId = correlationId;
-        this.disableGarbageCollectionStats = process.env[Config.ENV_disable_gcStats] || undefined;
-        this.disableEventLoopStats = process.env[Config.ENV_disable_loopStats] || undefined;
-        this.disableHeapUsageStats = process.env[Config.ENV_disable_heapStats] || undefined;
 
         this.profileQueryEndpoint = process.env[Config.ENV_profileQueryEndpoint] || this.endpointBase;
         this.proxyHttpUrl = process.env[Config.ENV_http_proxy] || undefined;

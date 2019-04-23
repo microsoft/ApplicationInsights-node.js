@@ -2,7 +2,6 @@ import CorrelationContextManager = require("./AutoCollection/CorrelationContextM
 import AutoCollectConsole = require("./AutoCollection/Console");
 import AutoCollectExceptions = require("./AutoCollection/Exceptions");
 import AutoCollectPerformance = require("./AutoCollection/Performance");
-import AutoCollectNativePerformance = require("./AutoCollection/NativePerformance");
 import AutoCollectHttpDependencies = require("./AutoCollection/HttpDependencies");
 import AutoCollectHttpRequests = require("./AutoCollection/HttpRequests");
 import Config = require("./Library/Config");
@@ -10,6 +9,8 @@ import Context = require("./Library/Context");
 import Logging = require("./Library/Logging");
 import Util = require("./Library/Util");
 import QuickPulseClient = require("./Library/QuickPulseStateManager");
+
+import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCollection/NativePerformance";
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
@@ -21,7 +22,7 @@ let _isConsole = true;
 let _isConsoleLog = false;
 let _isExceptions = true;
 let _isPerformance = true;
-let _isNativePerformance = true;
+let _isNativePerformance: boolean | IDisabledExtendedMetrics = true;
 let _isRequests = true;
 let _isDependencies = true;
 let _isDiskRetry = true;
@@ -178,13 +179,17 @@ export class Configuration {
     /**
      * Sets the state of performance tracking (enabled by default)
      * @param value if true performance counters will be collected every second and sent to Application Insights
+     * @param collectExtendedMetrics if true, extended metrics counters will be collected every minute and sent to Application Insights
      * @returns {Configuration} this class
      */
-    public static setAutoCollectPerformance(value: boolean) {
+    public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: boolean | IDisabledExtendedMetrics = true) {
         _isPerformance = value;
-        if (_isStarted){
+        _isNativePerformance = collectExtendedMetrics;
+        if (_isStarted) {
             _performance.enable(value);
+            _nativePerformance.enable(collectExtendedMetrics);
         }
+
 
         return Configuration;
     }

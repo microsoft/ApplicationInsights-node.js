@@ -47,24 +47,6 @@ describe("Library/Config", () => {
             process.env = originalEnv;
         });
 
-        it("should read native metrics disablers from environment", () => {
-            var env = <{[id: string]: string}>{};
-            env[Config.ENV_azurePrefix + Config.ENV_iKey] = iKey;
-            env[Config.ENV_disable_gcStats] = "some string";
-            env[Config.ENV_disable_loopStats] = "true";
-            env[Config.ENV_disable_heapStats] = " ";
-            var originalEnv = process.env;
-
-            process.env = env;
-            var config = new Config();
-
-            assert(config.disableGarbageCollectionStats, "Accepts a string env var");
-            assert(config.disableEventLoopStats, "Accepts a string env var");
-            assert(config.disableHeapUsageStats, "Accepts a string env var");
-
-            process.env = originalEnv;
-        });
-
         it("should initialize valid values", () => {
             var config = new Config("iKey");
             assert(typeof config.instrumentationKey === "string");
@@ -89,9 +71,6 @@ describe("Library/Config", () => {
             assert(config.proxyHttpsUrl === undefined);
 
             assert(config.quickPulseHost === "rt.services.visualstudio.com");
-            assert(config.disableEventLoopStats === undefined);
-            assert(config.disableGarbageCollectionStats === undefined);
-            assert(config.disableHeapUsageStats === undefined);
         });
 
         it("should initialize values that we claim in README (2)", () => {

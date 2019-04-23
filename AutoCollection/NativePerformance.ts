@@ -1,13 +1,25 @@
 import TelemetryClient= require("../Library/TelemetryClient");
-import Logging = require("../Library/Logging");
 import Constants = require("../Declarations/Constants");
+import Config = require("../Library/Config");
 
-class AutoCollectNativePerformance {
+/**
+ * Interface which defines which specific extended metrics should be disabled
+ *
+ * @export
+ * @interface IDisabledExtendedMetrics
+ */
+export interface IDisabledExtendedMetrics {
+    gc?: boolean;
+    heap?: boolean;
+    loop?: boolean;
+}
+
+export class AutoCollectNativePerformance {
     public static INSTANCE: AutoCollectNativePerformance;
 
     private static _emitter: any;
     private static _metricsAvailable: boolean; // is the native metrics lib installed
-    private _isEnabled: boolean;
+    private _isEnabled: boolean | IDisabledExtendedMetrics;
     private _isInitialized: boolean;
     private _handle: NodeJS.Timer;
     private _client: TelemetryClient;
@@ -37,7 +49,7 @@ class AutoCollectNativePerformance {
      * @param {number} [collectionInterval=60000]
      * @memberof AutoCollectNativePerformance
      */
-    public enable(isEnabled: boolean, collectionInterval = 60000): void {
+    public enable(isEnabled: boolean | IDisabledExtendedMetrics, collectionInterval = 60000): void {
         if (!AutoCollectNativePerformance.isNodeVersionCompatible()) {
             return;
         }
@@ -55,13 +67,13 @@ class AutoCollectNativePerformance {
             }
         }
 
-        this._isEnabled = isEnabled;
+        this._isEnabled = AutoCollectNativePerformance._parseEnabled(isEnabled);
         if (this._isEnabled && !this._isInitialized) {
             this._isInitialized = true;
         }
 
         // Enable the emitter if we were able to construct one
-        if (isEnabled && AutoCollectNativePerformance._emitter) {
+        if (this._isEnabled && AutoCollectNativePerformance._emitter) {
             // enable self
             AutoCollectNativePerformance._emitter.enable(true, collectionInterval);
             this._handle = setInterval(() => this._trackNativeMetrics(), collectionInterval);
@@ -86,19 +98,55 @@ class AutoCollectNativePerformance {
     }
 
     /**
+     * Parse environment variable and overwrite isEnabled based on respective fields being set
+     *
+     * @private
+     * @static
+     * @param {(boolean | IDisabledExtendedMetrics)} isEnabled
+     * @returns {(boolean | IDisabledExtendedMetrics)}
+     * @memberof AutoCollectNativePerformance
+     */
+    private static _parseEnabled(isEnabled: boolean | IDisabledExtendedMetrics): boolean | IDisabledExtendedMetrics {
+        const disableAll = process.env[Config.ENV_nativeMetricsDisableAll];
+        const individualOptOuts = process.env[Config.ENV_nativeMetricsDisablers]
+
+        if (disableAll) {
+            return false;
+        }
+
+        if (individualOptOuts) {
+            const optOutsArr = individualOptOuts.split(",");
+            const disabledMetrics: any = {};
+            if (optOutsArr.length > 0) {
+                for (const opt of optOutsArr) {
+                    disabledMetrics[opt] = true;
+                }
+            }
+
+            if (typeof isEnabled === "object") {
+                return {...isEnabled, ...disabledMetrics};
+            }
+            return disabledMetrics;
+        }
+
+        return isEnabled;
+    }
+
+    /**
      * Trigger an iteration of native metrics collection
      *
      * @private
      * @memberof AutoCollectNativePerformance
      */
     private _trackNativeMetrics() {
-        if (!this._client.config.disableGarbageCollectionStats) {
+        let shouldSendAll = true;
+        if (typeof this._isEnabled !== "object") {
+            shouldSendAll = this._isEnabled;
+        }
+
+        if (shouldSendAll) {
             this._trackGarbageCollection();
-        }
-        if (!this._client.config.disableEventLoopStats) {
             this._trackEventLoop();
-        }
-        if (!this._client.config.disableHeapUsageStats) {
             this._trackHeapUsage();
         }
     }
@@ -111,6 +159,10 @@ class AutoCollectNativePerformance {
      * @memberof AutoCollectNativePerformance
      */
     private _trackGarbageCollection(): void {
+        if (typeof this._isEnabled === "object" && !this._isEnabled.gc) {
+            return;
+        }
+
         const gcData = AutoCollectNativePerformance._emitter.getGCData();
 
         for (let gc in gcData) {
@@ -137,6 +189,10 @@ class AutoCollectNativePerformance {
      * @memberof AutoCollectNativePerformance
      */
     private _trackEventLoop(): void {
+        if (typeof this._isEnabled === "object" && !this._isEnabled.loop) {
+            return;
+        }
+
         const loopData = AutoCollectNativePerformance._emitter.getLoopData();
         const metrics = loopData.loopUsage;
         if (metrics.count == 0) {
@@ -162,6 +218,10 @@ class AutoCollectNativePerformance {
      * @memberof AutoCollectNativePerformance
      */
     private _trackHeapUsage(): void {
+        if (typeof this._isEnabled === "object" && !this._isEnabled.heap) {
+            return;
+        }
+
         const memoryUsage = process.memoryUsage();
         const { heapUsed, heapTotal, rss } = memoryUsage;
         const namePrefix = Constants.NativeMetricsPrefix;
@@ -183,5 +243,3 @@ class AutoCollectNativePerformance {
         });
     }
 }
-
-export = AutoCollectNativePerformance;

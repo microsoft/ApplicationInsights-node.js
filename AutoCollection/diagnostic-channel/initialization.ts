@@ -13,8 +13,8 @@ if (IsInitialized) {
     const individualOptOuts = process.env["APPLICATION_INSIGHTS_NO_PATCH_MODULES"] || "";
     const unpatchedModules = individualOptOuts.split(",");
     const modules: {[key: string] : any} = {
-        bunyan: publishers.bunyan, 
-        console: publishers.console, 
+        bunyan: publishers.bunyan,
+        console: publishers.console,
         mongodb: publishers.mongodb,
         mongodbCore: publishers.mongodbCore,
         mysql: publishers.mysql,
