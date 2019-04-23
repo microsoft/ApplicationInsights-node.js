@@ -231,14 +231,27 @@ describe("Library/Util", () => {
             circObj.test = true;
             circObj.circular = circObj;
             circObj.arr = [0, 1, circObj.circular];
-            assert.deepEqual(
-                Util.validateStringMap(circObj),
-                {
-                    test: "true",
-                    circular: "Object (Error: Converting circular structure to JSON)",
-                    arr: "Array (Error: Converting circular structure to JSON)",
-                }
-            );
+            var nodeVer = process.versions.node.split(".");
+            if (parseInt(nodeVer[0]) >= 12) {
+                // node12 changed the error string
+                assert.deepEqual(
+                    Util.validateStringMap(circObj),
+                    {
+                        test: "true",
+                        circular: "Object (Error: Converting circular structure to JSON\n    --> starting at object with constructor 'Object'\n    --- property 'circular' closes the circle)",
+                        arr: "Array (Error: Converting circular structure to JSON\n    --> starting at object with constructor 'Object'\n    --- property 'circular' closes the circle)",
+                    }
+                );
+            } else {
+                assert.deepEqual(
+                    Util.validateStringMap(circObj),
+                    {
+                        test: "true",
+                        circular: "Object (Error: Converting circular structure to JSON)",
+                        arr: "Array (Error: Converting circular structure to JSON)",
+                    }
+                );
+            }
         });
     });
 

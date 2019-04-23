@@ -4,6 +4,7 @@ services:
   - docker
 node_js:
   - "node"
+  - "12"
   - "11"
   - "10"
   - "9"
@@ -24,7 +25,7 @@ before_script:
 script:
   - npm test
   # Run funcs for current release
-  - if [ "$TRAVIS_NODE_VERSION" = "11" ]; then npm run functionaltest; fi
+  - if [ "$TRAVIS_NODE_VERSION" = "12" ]; then npm run functionaltest; fi
   # Run funcs for LTS releases (currently 6, 8, 10)
   - if [ "$TRAVIS_NODE_VERSION" = "10" ]; then npm run functionaltest; fi
   - if [ "$TRAVIS_NODE_VERSION" = "8" ]; then npm run functionaltest; fi
