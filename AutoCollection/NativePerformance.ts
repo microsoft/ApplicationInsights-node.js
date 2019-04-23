@@ -27,7 +27,7 @@ class AutoCollectNativePerformance {
      */
     public static isNodeVersionCompatible() {
         var nodeVer = process.versions.node.split(".");
-        return parseInt(nodeVer[0]) >= 4;
+        return parseInt(nodeVer[0]) >= 6;
     }
 
     /**
