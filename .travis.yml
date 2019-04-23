@@ -21,6 +21,9 @@ node_js:
 before_install:
   - npm install -g npm@4.5.0
 before_script:
+  # Simulate optionalDevDependency for applicationinsights-native-metrics
+  - npm uninstall applicationinsights-native-metrics
+  - npm install -save-optional applicationinsights-native-metrics
   - npm install
 script:
   - npm test
