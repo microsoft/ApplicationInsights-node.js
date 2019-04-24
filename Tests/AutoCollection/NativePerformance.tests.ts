@@ -52,12 +52,12 @@ describe("AutoCollection/NativePerformance", () => {
         });
 
         describe("#_parseEnabled", () =>{
-            it("should return strictly equal input arg if no env vars are set", () => {
-                assert.equal(AutoCollectNativePerformance["_parseEnabled"](true), true);
-                assert.equal(AutoCollectNativePerformance["_parseEnabled"](false), false);
+            it("should return equal input arg if no env vars are set", () => {
+                assert.deepEqual(AutoCollectNativePerformance.parseEnabled(true), {isEnabled: true, disabledMetrics: {}});
+                assert.deepEqual(AutoCollectNativePerformance.parseEnabled(false), {isEnabled: false, disabledMetrics: {}});
 
                 const config = {gc: true, heap: true};
-                assert.strictEqual(AutoCollectNativePerformance["_parseEnabled"](config), config);
+                assert.deepEqual(AutoCollectNativePerformance.parseEnabled(config), {isEnabled: true, disabledMetrics: config});
             });
 
             it("should overwrite input arg if disable all extended metrics env var is set", () => {
@@ -67,9 +67,9 @@ describe("AutoCollection/NativePerformance", () => {
                 env[Config.ENV_nativeMetricsDisableAll] = "set";
                 process.env = env;
 
-                assert.deepEqual(AutoCollectNativePerformance["_parseEnabled"](true), false);
-                assert.deepEqual(AutoCollectNativePerformance["_parseEnabled"]({}), false);
-                assert.deepEqual(AutoCollectNativePerformance["_parseEnabled"]({gc: true}), false);
+                assert.deepEqual(AutoCollectNativePerformance.parseEnabled(true), {isEnabled: false, disabledMetrics: {}});
+                assert.deepEqual(AutoCollectNativePerformance.parseEnabled({}), {isEnabled: false, disabledMetrics: {}});
+                assert.deepEqual(AutoCollectNativePerformance.parseEnabled({gc: true}), {isEnabled: false, disabledMetrics: {}});
 
                 process.env = originalEnv;
             });
@@ -84,18 +84,21 @@ describe("AutoCollection/NativePerformance", () => {
 
                 let inConfig;
 
+                inConfig = false;
+                assert.deepEqual(AutoCollectNativePerformance.parseEnabled(inConfig), {isEnabled: false, disabledMetrics: expectation});
+
                 inConfig = true;
-                assert.deepEqual(AutoCollectNativePerformance["_parseEnabled"](inConfig), expectation);
+                assert.deepEqual(AutoCollectNativePerformance.parseEnabled(inConfig), {isEnabled: true, disabledMetrics: expectation});
 
                 inConfig = {};
-                assert.deepEqual(AutoCollectNativePerformance["_parseEnabled"](inConfig), expectation);
+                assert.deepEqual(AutoCollectNativePerformance.parseEnabled(inConfig), {isEnabled: true, disabledMetrics: expectation});
                 inConfig = {gc: true};
-                assert.deepEqual(AutoCollectNativePerformance["_parseEnabled"](inConfig), expectation);
+                assert.deepEqual(AutoCollectNativePerformance.parseEnabled(inConfig), {isEnabled: true, disabledMetrics: expectation});
                 inConfig = {loop: true};
 
-                assert.deepEqual(AutoCollectNativePerformance["_parseEnabled"](inConfig), {...inConfig, ...expectation});
+                assert.deepEqual(AutoCollectNativePerformance.parseEnabled(inConfig), {isEnabled: true, disabledMetrics: {...inConfig, ...expectation}});
                 inConfig = {gc: false, loop: true, heap: 'abc', something: 'else'};
-                assert.deepEqual(AutoCollectNativePerformance["_parseEnabled"](<any>inConfig), {...inConfig, ...expectation});
+                assert.deepEqual(AutoCollectNativePerformance.parseEnabled(<any>inConfig), {isEnabled: true, disabledMetrics: {...inConfig, ...expectation}});
 
                 process.env = originalEnv;
             });

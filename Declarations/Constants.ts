@@ -92,5 +92,3 @@ export const TelemetryTypeStringToQuickPulseDocumentType: {[key in Contracts.Tel
     RequestData: QuickPulseDocumentType.Request,
     RemoteDependencyData: QuickPulseDocumentType.Dependency
 };
-
-export const NativeMetricsPrefix = "Node.js";

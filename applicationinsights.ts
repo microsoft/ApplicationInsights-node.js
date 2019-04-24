@@ -22,13 +22,14 @@ let _isConsole = true;
 let _isConsoleLog = false;
 let _isExceptions = true;
 let _isPerformance = true;
-let _isNativePerformance: boolean | IDisabledExtendedMetrics = true;
 let _isRequests = true;
 let _isDependencies = true;
 let _isDiskRetry = true;
 let _isCorrelating = true;
 let _forceClsHooked: boolean;
 let _isSendingLiveMetrics = false; // Off by default
+let _isNativePerformance = true;
+let _disabledExtendedMetrics: IDisabledExtendedMetrics;
 
 let _diskRetryInterval: number = undefined;
 let _diskRetryMaxBytes: number = undefined;
@@ -94,7 +95,7 @@ export function start() {
         _console.enable(_isConsole, _isConsoleLog);
         _exceptions.enable(_isExceptions);
         _performance.enable(_isPerformance);
-        _nativePerformance.enable(_isNativePerformance);
+        _nativePerformance.enable(_isNativePerformance, _disabledExtendedMetrics);
         _serverRequests.useAutoCorrelation(_isCorrelating, _forceClsHooked);
         _serverRequests.enable(_isRequests);
         _clientRequests.enable(_isDependencies);
@@ -184,26 +185,14 @@ export class Configuration {
      */
     public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: boolean | IDisabledExtendedMetrics = true) {
         _isPerformance = value;
-        _isNativePerformance = collectExtendedMetrics;
+        const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(collectExtendedMetrics);
+        _isNativePerformance = extendedMetricsConfig.isEnabled;
+        _disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
         if (_isStarted) {
             _performance.enable(value);
-            _nativePerformance.enable(collectExtendedMetrics);
+            _nativePerformance.enable(extendedMetricsConfig.isEnabled, extendedMetricsConfig.disabledMetrics);
         }
 
-
-        return Configuration;
-    }
-
-    /**
-     * Sets the state of native metrics tracking (enabled by default). Requires `applicationinsights-native-metrics` package to also be installed. If native metrics are not available, this configuration does nothing.
-     * @param value if true, native metrics counters will be collected every minute and sent Application Insights
-     * @returns {Configuration} this class
-     */
-    public static setAutoCollectNativeMetrics(value: boolean) {
-        _isNativePerformance = value;
-        if (_isStarted) {
-            _nativePerformance.enable(value);
-        }
 
         return Configuration;
     }
