@@ -15,9 +15,11 @@ const QuickPulseConfig = {
 
 class QuickPulseSender {
     private _config: Config;
+    private _consecutiveErrors: number;
 
     constructor(config: Config) {
         this._config = config;
+        this._consecutiveErrors = 0;
     }
 
     public ping(envelope: Contracts.EnvelopeQuickPulse, done: (shouldPOST: boolean, res?: http.IncomingMessage) => void): void {
@@ -47,12 +49,20 @@ class QuickPulseSender {
 
         const req = https.request(options, (res: http.IncomingMessage) => {
             const shouldPOSTData = res.headers[QuickPulseConfig.subscribed] === "true";
+            this._consecutiveErrors = 0;
             done(shouldPOSTData, res);
         });
         req.on("error", (error: Error) => {
             // Unable to contact qps endpoint.
             // Do nothing for now.
-            Logging.warn("Unable to contact qps endpoint, dropping this Live Metrics packet", error);
+            this._consecutiveErrors++;
+            if (postOrPing === "post") {
+                if (this._consecutiveErrors > 20) {
+                    Logging.warn("Unable to contact qps endpoint, dropping this Live Metrics packet", error);
+                } else {
+                    Logging.info("Unable to contact qps endpoint, dropping this Live Metrics packet", error);
+                }
+            }
             done(false); // Stop POSTing QPS data
         });
 
