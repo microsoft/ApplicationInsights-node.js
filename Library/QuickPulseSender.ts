@@ -60,15 +60,10 @@ class QuickPulseSender {
             // Do nothing for now.
             this._consecutiveErrors++;
 
-            // Log every error, but instead warn when X number of consecutive errors occur
-            let shouldWarn = false;
-            let notice = `Live Metrics endpoint could not be reached ${this._consecutiveErrors} consecutive times. This packet will not appear in Live Metrics. Most recent error:`;
-
+            // LOG every error, but WARN instead when X number of consecutive errors occur
+            let notice = `Transient error connecting to the Live Metrics endpoint. This packet will not appear in your Live Metrics Stream. Error:`;
             if (this._consecutiveErrors % QuickPulseSender.MAX_QPS_FAILURES_BEFORE_WARN === 0) {
-                shouldWarn = !Logging.enableDebug;
-            }
-
-            if (shouldWarn) {
+                notice = `Live Metrics endpoint could not be reached ${this._consecutiveErrors} consecutive times. Most recent error:`;
                 Logging.warn(QuickPulseSender.TAG, notice, error);
             } else {
                 Logging.info(QuickPulseSender.TAG, notice, error);
