@@ -14,6 +14,9 @@ const QuickPulseConfig = {
 };
 
 class QuickPulseSender {
+    private static TAG = "QuickPulseSender";
+    private static MAX_QPS_FAILURES_BEFORE_WARN = 25;
+
     private _config: Config;
     private _consecutiveErrors: number;
 
@@ -56,13 +59,21 @@ class QuickPulseSender {
             // Unable to contact qps endpoint.
             // Do nothing for now.
             this._consecutiveErrors++;
-            if (postOrPing === "post") {
-                if (this._consecutiveErrors > 20) {
-                    Logging.warn("Unable to contact qps endpoint, dropping this Live Metrics packet", error);
-                } else {
-                    Logging.info("Unable to contact qps endpoint, dropping this Live Metrics packet", error);
-                }
+
+            // Log every error, but instead warn when X number of consecutive errors occur
+            let shouldWarn = false;
+            let notice = `Live Metrics endpoint could not be reached ${this._consecutiveErrors} consecutive times. This packet will not appear in Live Metrics. Most recent error:`;
+
+            if (this._consecutiveErrors % QuickPulseSender.MAX_QPS_FAILURES_BEFORE_WARN === 0) {
+                shouldWarn = !Logging.enableDebug;
             }
+
+            if (shouldWarn) {
+                Logging.warn(QuickPulseSender.TAG, notice, error);
+            } else {
+                Logging.info(QuickPulseSender.TAG, notice, error);
+            }
+
             done(false); // Stop POSTing QPS data
         });
 
