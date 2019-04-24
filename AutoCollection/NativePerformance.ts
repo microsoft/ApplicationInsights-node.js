@@ -2,6 +2,7 @@ import TelemetryClient= require("../Library/TelemetryClient");
 import Constants = require("../Declarations/Constants");
 import Config = require("../Library/Config");
 import Context = require("../Library/Context");
+import Logging= require("../Library/Logging");
 
 /**
  * Interface which defines which specific extended metrics should be disabled
@@ -62,6 +63,7 @@ export class AutoCollectNativePerformance {
                 const NativeMetricsEmitters = require("applicationinsights-native-metrics");
                 AutoCollectNativePerformance._emitter = new NativeMetricsEmitters();
                 AutoCollectNativePerformance._metricsAvailable = true;
+                Logging.info("Native metrics module successfully loaded!");
             } catch (err) {
                 // Package not available. Never try again
                 AutoCollectNativePerformance._metricsAvailable = false;
@@ -224,7 +226,10 @@ export class AutoCollectNativePerformance {
             count: metrics.count,
             min: metrics.min,
             max: metrics.max,
-            stdDev: stdDev
+            stdDev: stdDev,
+            tagOverrides: {
+                [this._client.context.keys.internalSdkVersion]: "node-nativeperf:" + Context.sdkVersion
+            }
         });
     }
 
@@ -245,17 +250,26 @@ export class AutoCollectNativePerformance {
         this._client.trackMetric({
             name: `Memory Usage (Heap)`,
             value: heapUsed,
-            count: 1
+            count: 1,
+            tagOverrides: {
+                [this._client.context.keys.internalSdkVersion]: "node-nativeperf:" + Context.sdkVersion
+            }
         });
         this._client.trackMetric({
             name: `Memory Total (Heap)`,
             value: heapTotal,
-            count: 1
+            count: 1,
+            tagOverrides: {
+                [this._client.context.keys.internalSdkVersion]: "node-nativeperf:" + Context.sdkVersion
+            }
         });
         this._client.trackMetric({
             name: `Memory Usage (Non-Heap)`,
             value: rss - heapTotal,
-            count: 1
+            count: 1,
+            tagOverrides: {
+                [this._client.context.keys.internalSdkVersion]: "node-nativeperf:" + Context.sdkVersion
+            }
         });
     }
 }
