@@ -362,6 +362,7 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | ------------------------------- |------------------------------------------------------------------------------------------------------------|
 | instrumentationKey              | An identifier for your Application Insights resource                                                       |
 | endpointUrl                     | The ingestion endpoint to send telemetry payloads to                                                       |
+| quickPulseHost                  | The Live Metrics Stream host to send live metrics telemetry to                                             |
 | proxyHttpUrl                    | A proxy server for SDK HTTP traffic (Optional, Default pulled from `http_proxy` environment variable)      |
 | proxyHttpsUrl                   | A proxy server for SDK HTTPS traffic (Optional, Default pulled from `https_proxy` environment variable)    |
 | httpAgent                       | An http.Agent to use for SDK HTTP traffic (Optional, Default undefined)                                    |
