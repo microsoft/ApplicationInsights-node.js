@@ -6,6 +6,7 @@ import AutoCollectHttpDependencies = require("./AutoCollection/HttpDependencies"
 import AutoCollectHttpRequests = require("./AutoCollection/HttpRequests");
 import Config = require("./Library/Config");
 import Context = require("./Library/Context");
+import CorrelationIdManager = require("./Library/CorrelationIdManager");
 import Logging = require("./Library/Logging");
 import Util = require("./Library/Util");
 import QuickPulseClient = require("./Library/QuickPulseStateManager");
@@ -14,6 +15,8 @@ import QuickPulseClient = require("./Library/QuickPulseStateManager");
 // They're exposed using "export import" so that types are passed along as expected
 export import TelemetryClient = require("./Library/NodeClient");
 export import Contracts = require("./Declarations/Contracts");
+
+export type DistributedTracingModes = "AI" | "W3C";
 
 // Default autocollection configuration
 let _isConsole = true;
@@ -137,6 +140,18 @@ export function wrapWithCorrelationContext<T extends Function>(fn: T): T {
 export class Configuration {
     // Convenience shortcut to ApplicationInsights.start
     public static start = start;
+
+     /**
+      * Sets the distributed tracing modes. If W3C mode is enabled, W3C trace context
+      * headers (traceparent/tracestate) will be parsed in all incoming requests, and included in outgoing
+      * requests. In W3C mode, existing back-compatibility AI headers will also be parsed and included.
+      * Enabling W3C mode will not break existing correlation with other Application Insights instrumented
+      * services. Default=AI
+     */
+    public static setDistributedTracingMode(value: DistributedTracingModes) {
+        CorrelationIdManager.w3cEnabled = value.toUpperCase() === "W3C";
+        return Configuration;
+    }
 
     /**
      * Sets the state of console and logger tracking (enabled by default for third-party loggers only)

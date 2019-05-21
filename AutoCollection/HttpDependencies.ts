@@ -9,6 +9,8 @@ import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import HttpDependencyParser = require("./HttpDependencyParser");
 import { CorrelationContextManager, CorrelationContext, PrivateCustomProperties } from "./CorrelationContextManager";
+import CorrelationIdManager = require("../Library/CorrelationIdManager");
+import TraceParent = require("../Library/TraceParent");
 
 import * as DiagChannel from "./diagnostic-channel/initialization";
 
@@ -114,7 +116,17 @@ class AutoCollectHttpDependencies {
         let requestParser = new HttpDependencyParser(telemetry.options, telemetry.request);
 
         const currentContext = CorrelationContextManager.getCurrentContext();
-        const uniqueRequestId = currentContext && currentContext.operation && (currentContext.operation.parentId + AutoCollectHttpDependencies.requestNumber++ + '.');
+        let uniqueRequestId: string;
+        if (currentContext && currentContext.operation && currentContext.operation.traceparent && TraceParent.isValidTraceId(currentContext.operation.traceparent.traceId)) {
+            currentContext.operation.traceparent.updateSpanId();
+            uniqueRequestId = currentContext.operation.traceparent.getBackCompatRequestId();
+        } else if (CorrelationIdManager.w3cEnabled) {
+            // Start an operation now so that we can include the w3c headers in the outgoing request
+            currentContext.operation.traceparent = new TraceParent();
+            uniqueRequestId = currentContext.operation.traceparent.getBackCompatRequestId();
+        } else {
+            uniqueRequestId = currentContext && currentContext.operation && (currentContext.operation.parentId + AutoCollectHttpDependencies.requestNumber++ + '.');
+        }
 
         // Add the source correlationId to the request headers, if a value was not already provided.
         // The getHeader/setHeader methods aren't available on very old Node versions, and
@@ -143,6 +155,21 @@ class AutoCollectHttpDependencies {
                 // Also set legacy headers
                 telemetry.request.setHeader(RequestResponseHeaders.parentIdHeader, currentContext.operation.id);
                 telemetry.request.setHeader(RequestResponseHeaders.rootIdHeader, uniqueRequestId);
+
+                // Set W3C headers, if available
+                if (currentContext.operation.traceparent) {
+                    telemetry.request.setHeader(RequestResponseHeaders.traceparentHeader, currentContext.operation.traceparent.toString());
+                } else if (CorrelationIdManager.w3cEnabled) {
+                    // should never get here since we set the currentContext operation above for the w3cEnabled scenario
+                    const traceparent = new TraceParent().toString();
+                    telemetry.request.setHeader(RequestResponseHeaders.traceparentHeader, traceparent);
+                }
+                if (currentContext.operation.tracestate) {
+                    const tracestate = currentContext.operation.tracestate.toString();
+                    if (tracestate) {
+                        telemetry.request.setHeader(RequestResponseHeaders.traceStateHeader, tracestate)
+                    }
+                }
 
                 const correlationContextHeader = (<PrivateCustomProperties>currentContext.customProperties).serializeToHeader();
                 if (correlationContextHeader) {

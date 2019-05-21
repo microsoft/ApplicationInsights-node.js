@@ -2,15 +2,101 @@ import assert = require("assert");
 import sinon = require("sinon");
 
 import HttpRequestParser = require("../../AutoCollection/HttpRequestParser");
+import CorrelationIdManager = require("../../Library/CorrelationIdManager");
+import TraceParent = require("../../Library/TraceParent");
 
 describe("AutoCollection/HttpRequestParser", () => {
-
     describe("#parseId()", () => {
         it("should extract guid out of cookie", () => {
             var cookieValue = "id|1234|1234";
             var actual = HttpRequestParser.parseId(cookieValue);
             assert.equal("id", actual, "id in cookie is parsed correctly");
         });
+    });
+
+    describe("#w3c", () => {
+        var backCompatFormat = /^\|[0-z]{32}\.[0-z]{16}\./g; // |traceId.spanId.
+        var request = {
+            method: "GET",
+            url: "/search?q=test",
+            connection: {
+                encrypted: false
+            },
+            headers: {
+                host: "bing.com"
+            }
+        };
+
+        var w3cRequest = {...request, headers: {...request.headers, traceparent: "00-26130040769d49c4826831c978e85131-96665a1c28c5482e-00"}};
+        var legacyRequest = {...request, headers: {...request.headers, "request-id": "|abc.def."}};
+        var legacyRequestW3C = {...request, headers: {...request.headers, "request-id": "|26130040769d49c4826831c978e85131.96665a1c28c5482e."}};
+        var legacyRequestUnique = {...request, headers: {...request.headers, "request-id": "abc"}};
+        var legacyRequestUniqueW3C = {...request, headers: {...request.headers, "request-id": "26130040769d49c4826831c978e85131"}};
+
+        before(() => {
+            CorrelationIdManager.w3cEnabled = true;
+        });
+
+        after(() => {
+            CorrelationIdManager.w3cEnabled = false;
+        });
+
+        it("should parse traceparent if it is available and w3c tracing is enabled", () => {
+            var helper = new HttpRequestParser(<any>w3cRequest);
+            var requestTags = helper.getRequestTags({});
+            assert.equal(requestTags[(<any>HttpRequestParser).keys.operationId], "26130040769d49c4826831c978e85131");
+            assert.equal(requestTags[(<any>HttpRequestParser).keys.operationParentId], "|26130040769d49c4826831c978e85131.96665a1c28c5482e.");
+            assert.ok(TraceParent.isValidSpanId(helper["traceparent"].spanId));
+        });
+
+        it("if w3c tracing is enabled and !traceparent && request-id ~ |X.Y., generate traceparent", () => {
+            var helper = new HttpRequestParser(<any>legacyRequest);
+            var requestTags = helper.getRequestTags({});
+            assert.equal(helper["legacyRootId"], "abc");
+            assert.equal(helper["parentId"], legacyRequest.headers["request-id"]);
+            assert.ok(helper["requestId"].match(backCompatFormat));
+            assert.ok(CorrelationIdManager.isValidW3CId(requestTags[(<any>HttpRequestParser).keys.operationId]));
+            assert.ok(CorrelationIdManager.isValidW3CId(helper["requestId"].substr(1, 32)));
+            const traceparent = helper["traceparent"];
+            assert.equal(traceparent.version, "00");
+            assert.ok(CorrelationIdManager.isValidW3CId(traceparent.traceId));
+            assert.ok(TraceParent.isValidSpanId(traceparent.spanId));
+            assert.notEqual(traceparent.traceId, traceparent.spanId);
+            assert.equal(traceparent.traceFlag, "00");
+        });
+
+        it("if w3c tracing is enabled and request-id in format of X", () => {
+            var helper = new HttpRequestParser(<any>legacyRequestUnique);
+            var requestTags = helper.getRequestTags({});
+            assert.equal(helper["parentId"], legacyRequestUnique.headers["request-id"], "parentId is same as request-id");
+            assert.ok(helper["requestId"].match(backCompatFormat));
+            assert.equal(helper["legacyRootId"], "abc");
+            assert.ok(CorrelationIdManager.isValidW3CId(requestTags[(<any>HttpRequestParser).keys.operationId]));
+            const traceparent = helper["traceparent"];
+            assert.equal(traceparent.version, "00");
+            assert.ok(CorrelationIdManager.isValidW3CId(traceparent.traceId));
+            assert.ok(TraceParent.isValidSpanId(traceparent.spanId));
+            assert.notEqual(traceparent.traceId, traceparent.spanId);
+            assert.equal(traceparent.traceFlag, "00");
+        });
+
+        it("should generate a traceparent if both tracing headers are not present (p4)", () => {
+            var helper = new HttpRequestParser(<any>request);
+            var requestTags = helper.getRequestTags({});
+            assert.ok(!helper["parentId"]);
+            assert.ok(helper["requestId"]);
+            assert.ok(helper["requestId"].match(backCompatFormat));
+            assert.ok(CorrelationIdManager.isValidW3CId(requestTags[(<any>HttpRequestParser).keys.operationId]));
+            const traceparent = helper["traceparent"];
+            assert.equal(traceparent.version, "00");
+            assert.ok(CorrelationIdManager.isValidW3CId(traceparent.traceId));
+            assert.ok(TraceParent.isValidSpanId(traceparent.spanId));
+            assert.notEqual(traceparent.traceId, traceparent.spanId);
+            assert.equal(traceparent.traceFlag, "00");
+
+            assert.equal(traceparent.traceId, helper["operationId"]);
+            assert.notEqual(traceparent.spanId, helper["operationId"]);
+        })
     });
 
     describe("#getRequestData()", () => {

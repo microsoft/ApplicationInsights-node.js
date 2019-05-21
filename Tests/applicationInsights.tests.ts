@@ -86,6 +86,24 @@ describe("ApplicationInsights", () => {
         });
     });
 
+    describe("#setDistributedTracingMode", () => {
+        var AppInsights = require("../applicationinsights");
+        var CorrelationIdManager = require("../Library/CorrelationIdManager");
+
+        beforeEach(() => {
+            AppInsights.dispose();
+        });
+
+        it("should enable AI tracing mode by default", () => {
+            AppInsights.setup("key").start();
+            assert.equal(CorrelationIdManager.w3cEnabled, false);
+        });
+        it("should be able to enable W3C tracing mode", () => {
+            AppInsights.setup("key").setDistributedTracingMode("W3C").start();
+            assert.ok(CorrelationIdManager.w3cEnabled);
+        });
+    });
+
     describe("#setAutoCollect", () => {
         var AppInsights = require("../applicationinsights");
         var Console = require("../AutoCollection/Console");

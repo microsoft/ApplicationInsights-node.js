@@ -9,6 +9,8 @@ import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import RequestParser = require("./RequestParser");
 import CorrelationIdManager = require("../Library/CorrelationIdManager");
+import TraceState = require("../Library/TraceState");
+import TraceParent = require("../Library/TraceParent");
 
 /**
  * Helper class to read data from the requst/response objects and convert them into the telemetry contract
@@ -25,6 +27,9 @@ class HttpRequestParser extends RequestParser {
     private parentId: string;
     private operationId: string;
     private requestId: string;
+    private traceparent: TraceParent;
+    private tracestate: TraceState;
+    private legacyRootId: string; // if original operationId is not w3c compat, move it here
 
     private correlationContextHeader: string;
 
@@ -137,6 +142,18 @@ class HttpRequestParser extends RequestParser {
         return this.correlationContextHeader;
     }
 
+    public getTraceParent() {
+        return this.traceparent;
+    }
+
+    public getTraceState() {
+        return this.tracestate;
+    }
+
+    public getLegacyRootId() {
+        return this.legacyRootId;
+    }
+
     private _getAbsoluteUrl(request: http.IncomingMessage): string {
         if (!request.headers) {
             return request.url;
@@ -196,6 +213,32 @@ class HttpRequestParser extends RequestParser {
         return value;
     }
 
+    private parseW3CTraceHeaders(request: http.IncomingMessage, requestId?: string) {
+        const tracestateHeader = request.headers[RequestResponseHeaders.traceStateHeader];
+        const traceparentHeader = request.headers[RequestResponseHeaders.traceparentHeader];
+        const requestIdHeader = request.headers[RequestResponseHeaders.requestIdHeader];
+
+
+        this.traceparent = new TraceParent(traceparentHeader, requestIdHeader);
+        this.tracestate = new TraceState(tracestateHeader);
+
+        // If !traceparent && tracestate, expectation is to discard tracestate and generate new traceparent
+        if (!traceparentHeader && tracestateHeader) {
+            this.tracestate = null;
+        }
+        this.operationId = this.traceparent.traceId;
+        if (this.traceparent.legacyRootId) {
+            this.legacyRootId = this.traceparent.legacyRootId;
+        }
+
+        // Set parentId with existing spanId
+        this.parentId = this.traceparent.parentId;
+
+        // Update the spanId and set the current requestId
+        this.traceparent.updateSpanId();
+        this.requestId = this.traceparent.getBackCompatRequestId();
+    }
+
     private parseHeaders(request: http.IncomingMessage, requestId?: string) {
         this.rawHeaders = request.headers || (<any>request).rawHeaders;
         this.userAgent = request.headers && request.headers["user-agent"];
@@ -204,23 +247,27 @@ class HttpRequestParser extends RequestParser {
         if (request.headers) {
             this.correlationContextHeader = request.headers[RequestResponseHeaders.correlationContextHeader];
 
-            if (request.headers[RequestResponseHeaders.requestIdHeader]) {
-                this.parentId = request.headers[RequestResponseHeaders.requestIdHeader];
-                this.requestId = CorrelationIdManager.generateRequestId(this.parentId);
-                this.correlationContextHeader = request.headers[RequestResponseHeaders.correlationContextHeader];
+            if (CorrelationIdManager.w3cEnabled) {
+                this.parseW3CTraceHeaders(request, requestId);
             } else {
-                // Legacy fallback
-                const rootId = request.headers[RequestResponseHeaders.rootIdHeader];
-                this.parentId = request.headers[RequestResponseHeaders.parentIdHeader];
-                this.requestId = CorrelationIdManager.generateRequestId(rootId || this.parentId);
-                this.correlationContextHeader = null;
+                if (request.headers[RequestResponseHeaders.requestIdHeader]) {
+                    this.parentId = request.headers[RequestResponseHeaders.requestIdHeader];
+                    this.requestId = CorrelationIdManager.generateRequestId(this.parentId);
+                    this.correlationContextHeader = request.headers[RequestResponseHeaders.correlationContextHeader];
+                } else {
+                    // Legacy fallback
+                    const rootId = request.headers[RequestResponseHeaders.rootIdHeader];
+                    this.parentId = request.headers[RequestResponseHeaders.parentIdHeader];
+                    this.requestId = CorrelationIdManager.generateRequestId(rootId || this.parentId);
+                    this.correlationContextHeader = null;
+                }
+                if (requestId) {
+                    // For the scenarios that don't guarantee an AI-created context,
+                    // override the requestId with the provided one.
+                    this.requestId = requestId;
+                }
+                this.operationId = CorrelationIdManager.getRootId(this.requestId);
             }
-            if (requestId) {
-                // For the scenarios that don't guarantee an AI-created context,
-                // override the requestId with the provided one.
-                this.requestId = requestId;
-            }
-            this.operationId = CorrelationIdManager.getRootId(this.requestId);
         }
     }
 
