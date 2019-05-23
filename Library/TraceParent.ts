@@ -45,7 +45,7 @@ class Traceparent {
                     this.traceId = Util.w3cTraceId();
                     this.spanId = Util.w3cTraceId().substr(0, 16);
                 }
-                if(this.version === "ff") { // 0xff is forbidden, generate new traceparent
+                if (this.version === "ff") { // 0xff is forbidden, generate new traceparent
                     this.version = Traceparent.DEFAULT_VERSION;
                     this.traceId = Util.w3cTraceId();
                     this.spanId = Util.w3cTraceId().substr(0, 16);
@@ -84,7 +84,7 @@ class Traceparent {
                 operationId = Util.w3cTraceId();
             }
             if (parentId.indexOf("|") !== -1) {
-                parentId = parentId.substring(1+parentId.substring(0, parentId.length-1).lastIndexOf("."), parentId.length-1);
+                parentId = parentId.substring(1 + parentId.substring(0, parentId.length - 1).lastIndexOf("."), parentId.length - 1);
             }
             this.traceId = operationId;
             this.spanId = parentId;
