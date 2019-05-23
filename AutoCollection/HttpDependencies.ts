@@ -122,31 +122,33 @@ class AutoCollectHttpDependencies {
         // methods exist before invoking them.
         if (Util.canIncludeCorrelationHeader(client, requestParser.getUrl()) && telemetry.request.getHeader && telemetry.request.setHeader) {
             if (client.config && client.config.correlationId) {
-                const correlationHeader = telemetry.request.getHeader(RequestResponseHeaders.requestContextHeader);
-                if (correlationHeader) {
-                    const components = correlationHeader.split(",");
-                    const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
-                    if (!components.some((value) => value.substring(0,key.length) === key)) {
-                        telemetry.request.setHeader(
-                            RequestResponseHeaders.requestContextHeader,
-                            `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
-                    }
+                // getHeader returns "any" type in newer versions of node. In basic scenarios, this will be <string | string[] | number>, but could be modified to anything else via middleware
+                const correlationHeader = <any>telemetry.request.getHeader(RequestResponseHeaders.requestContextHeader)
+                if (typeof correlationHeader === "string") {
+                    AutoCollectHttpDependencies.addRequestCorrelationIdHeaderFromString(client, telemetry, correlationHeader)
+                } else if (correlationHeader instanceof Array) { // string[]
+                    const headers = correlationHeader.join(",");
+                    AutoCollectHttpDependencies.addRequestCorrelationIdHeaderFromString(client, telemetry, headers)
+                } else if (correlationHeader && typeof (correlationHeader as any).toString === "function") {
+                    // best effort attempt: requires well-defined toString
+                    const header = (correlationHeader as any).toString();
+                    AutoCollectHttpDependencies.addRequestCorrelationIdHeaderFromString(client, telemetry, header);
                 } else {
                     telemetry.request.setHeader(
                         RequestResponseHeaders.requestContextHeader,
                         `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
                 }
-            }
 
-            if (currentContext && currentContext.operation) {
-                telemetry.request.setHeader(RequestResponseHeaders.requestIdHeader, uniqueRequestId);
-                // Also set legacy headers
-                telemetry.request.setHeader(RequestResponseHeaders.parentIdHeader, currentContext.operation.id);
-                telemetry.request.setHeader(RequestResponseHeaders.rootIdHeader, uniqueRequestId);
+                if (currentContext && currentContext.operation) {
+                    telemetry.request.setHeader(RequestResponseHeaders.requestIdHeader, uniqueRequestId);
+                    // Also set legacy headers
+                    telemetry.request.setHeader(RequestResponseHeaders.parentIdHeader, currentContext.operation.id);
+                    telemetry.request.setHeader(RequestResponseHeaders.rootIdHeader, uniqueRequestId);
 
-                const correlationContextHeader = (<PrivateCustomProperties>currentContext.customProperties).serializeToHeader();
-                if (correlationContextHeader) {
-                    telemetry.request.setHeader(RequestResponseHeaders.correlationContextHeader, correlationContextHeader);
+                    const correlationContextHeader = (<PrivateCustomProperties>currentContext.customProperties).serializeToHeader();
+                    if (correlationContextHeader) {
+                        telemetry.request.setHeader(RequestResponseHeaders.correlationContextHeader, correlationContextHeader);
+                    }
                 }
             }
         }
@@ -184,6 +186,18 @@ class AutoCollectHttpDependencies {
         AutoCollectHttpDependencies.INSTANCE = null;
         this.enable(false);
         this._isInitialized = false;
+    }
+
+    private static addRequestCorrelationIdHeaderFromString(client: TelemetryClient, telemetry: Contracts.NodeHttpDependencyTelemetry, correlationHeader: string) {
+        const components = correlationHeader.split(",");
+        const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
+        const found = components.some(value => value.substring(0,key.length) === key);
+
+        if (!found) {
+            telemetry.request.setHeader(
+                RequestResponseHeaders.requestContextHeader,
+                `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+        }
     }
 }
 

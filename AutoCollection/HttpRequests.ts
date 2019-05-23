@@ -232,21 +232,33 @@ class AutoCollectHttpRequests {
         }
     }
 
+    private static addResponseCorrelationIdHeaderFromString(client: TelemetryClient, response: http.ServerResponse, correlationHeader: string) {
+        const components = correlationHeader.split(",");
+        const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
+        const found = components.some((value) => value.substring(0,key.length) === key)
+
+        if (!found) {
+            response.setHeader(
+                RequestResponseHeaders.requestContextHeader,
+                `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+        }
+    }
+
     /**
      * Add the target correlationId to the response headers, if not already provided.
      */
     private static addResponseCorrelationIdHeader(client: TelemetryClient, response:http.ServerResponse) {
         if (client.config && client.config.correlationId &&
             response.getHeader && response.setHeader && !(<any>response).headersSent) {
-            const correlationHeader = response.getHeader(RequestResponseHeaders.requestContextHeader);
-            if (correlationHeader) {
-                const components = correlationHeader.split(",");
-                const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
-                if (!components.some((value) => value.substring(0,key.length) === key)) {
-                    response.setHeader(
-                        RequestResponseHeaders.requestContextHeader,
-                        `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
-                }
+            const correlationHeader = <any>response.getHeader(RequestResponseHeaders.requestContextHeader);
+            if (typeof correlationHeader === "string") {
+                AutoCollectHttpRequests.addResponseCorrelationIdHeaderFromString(client, response, correlationHeader)
+            } else if (correlationHeader instanceof Array) { // string[]
+                const headers = correlationHeader.join(",");
+                AutoCollectHttpRequests.addResponseCorrelationIdHeaderFromString(client, response, headers)
+            } else if (correlationHeader && typeof (correlationHeader as any).toString === "function") {
+                const header = (correlationHeader as any).toString();
+                AutoCollectHttpRequests.addResponseCorrelationIdHeaderFromString(client, response, header);
             } else {
                 response.setHeader(
                     RequestResponseHeaders.requestContextHeader,
