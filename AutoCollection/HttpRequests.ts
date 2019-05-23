@@ -251,13 +251,20 @@ class AutoCollectHttpRequests {
         if (client.config && client.config.correlationId &&
             response.getHeader && response.setHeader && !(<any>response).headersSent) {
             const correlationHeader = <any>response.getHeader(RequestResponseHeaders.requestContextHeader);
-            if (typeof correlationHeader === "string") {
-                AutoCollectHttpRequests.addResponseCorrelationIdHeaderFromString(client, response, correlationHeader)
+            let header: string;
+            if (typeof correlationHeader === "string") { // string
+                header = correlationHeader;
             } else if (correlationHeader instanceof Array) { // string[]
-                const headers = correlationHeader.join(",");
-                AutoCollectHttpRequests.addResponseCorrelationIdHeaderFromString(client, response, headers)
-            } else if (correlationHeader && typeof (correlationHeader as any).toString === "function") {
-                const header = (correlationHeader as any).toString();
+                header = correlationHeader.join(",");
+            } else if (correlationHeader && typeof (correlationHeader as any).toString === "function") { // number, anything else
+                try {
+                    header = (correlationHeader as any).toString();
+                } catch (err) {
+                    Logging.warn("Incoming request-context header could not be parsed. Correlation of requests may be lost.", err, correlationHeader);
+                }
+            }
+
+            if (header) {
                 AutoCollectHttpRequests.addResponseCorrelationIdHeaderFromString(client, response, header);
             } else {
                 response.setHeader(
