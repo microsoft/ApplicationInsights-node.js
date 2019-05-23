@@ -10,7 +10,7 @@ import child_process = require("child_process");
 import AppInsights = require("../applicationinsights");
 import Sender = require("../Library/Sender");
 import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
-import TraceParent = require("../Library/TraceParent");
+import Traceparent = require("../Library/TraceParent");
 import { EventEmitter } from "events";
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
 
@@ -308,7 +308,7 @@ describe("EndToEnd", () => {
 
             sandbox.stub(CorrelationContextManager, "getCurrentContext", () => ({
                 operation: {
-                    traceparent: new TraceParent("00-5e84aff3af474588a42dcbf3bd1db95f-1fc066fb77fa43a3-00"),
+                    traceparent: new Traceparent("00-5e84aff3af474588a42dcbf3bd1db95f-1fc066fb77fa43a3-00"),
                     tracestate: "sometracestate"
                 },
                 customProperties: {

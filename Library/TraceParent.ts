@@ -6,16 +6,16 @@ import CorrelationIdManager = require("./CorrelationIdManager");
  * back-compatibility headers generated from traceparent. W3C traceparent spec is documented at
  * https://www.w3.org/TR/trace-context/#traceparent-field
  */
-class TraceParent {
+class Traceparent {
     private static DEFAULT_TRACE_FLAG = "00";
     private static DEFAULT_VERSION = "00";
 
     public legacyRootId: string;
     public parentId: string;
     public spanId: string;
-    public traceFlag: string = TraceParent.DEFAULT_TRACE_FLAG;
+    public traceFlag: string = Traceparent.DEFAULT_TRACE_FLAG;
     public traceId: string;
-    public version: string = TraceParent.DEFAULT_VERSION;
+    public version: string = Traceparent.DEFAULT_VERSION;
 
     constructor(traceparent?: string, parentId?: string) {
         if (traceparent) { // traceparent constructor
@@ -38,7 +38,7 @@ class TraceParent {
 
                 // Version validation
                 if (!this.version.match(/^[0-9a-f]{2}$/g)) {
-                    this.version = TraceParent.DEFAULT_VERSION;
+                    this.version = Traceparent.DEFAULT_VERSION;
                     this.traceId = Util.w3cTraceId();
                 }
                 if (this.version === "00" && len !== 4) { // 0x00 (and perhaps future versions) require exactly 4 fields. This strict check  will need to be updated on each spec release
@@ -46,27 +46,27 @@ class TraceParent {
                     this.spanId = Util.w3cTraceId().substr(0, 16);
                 }
                 if(this.version === "ff") { // 0xff is forbidden, generate new traceparent
-                    this.version = TraceParent.DEFAULT_VERSION;
+                    this.version = Traceparent.DEFAULT_VERSION;
                     this.traceId = Util.w3cTraceId();
                     this.spanId = Util.w3cTraceId().substr(0, 16);
                 }
                 if (!this.version.match(/^0[0-9a-f]$/g)) {
-                    this.version = TraceParent.DEFAULT_VERSION;
+                    this.version = Traceparent.DEFAULT_VERSION;
                 }
 
                 // TraceFlag validation
                 if (!this.traceFlag.match(/^[0-9a-f]{2}$/g)) {
-                    this.traceFlag = TraceParent.DEFAULT_VERSION;
+                    this.traceFlag = Traceparent.DEFAULT_VERSION;
                     this.traceId = Util.w3cTraceId();
                 }
 
                 // Validate TraceId, regenerate new traceid if invalid
-                if (!TraceParent.isValidTraceId(this.traceId)) {
+                if (!Traceparent.isValidTraceId(this.traceId)) {
                     this.traceId = Util.w3cTraceId();
                 }
 
                 // Validate Span Id, discard entire traceparent if invalid
-                if (!TraceParent.isValidSpanId(this.spanId)) {
+                if (!Traceparent.isValidSpanId(this.spanId)) {
                     this.spanId = Util.w3cTraceId().substr(0, 16);
                     this.traceId = Util.w3cTraceId();
                 }
@@ -79,7 +79,7 @@ class TraceParent {
             // If incoming request contains only request-id, new traceid and spanid should be started, request-id value should be used as a parent. Root part of request-id should be stored in custom dimension on the request telemetry if root part is different from traceid. On the outgoing request side, request-id should be emitted in the |traceId.spanId. format.
             this.parentId = parentId.slice(); // copy
             let operationId = CorrelationIdManager.getRootId(parentId);
-            if (!TraceParent.isValidTraceId(operationId)) {
+            if (!Traceparent.isValidTraceId(operationId)) {
                 this.legacyRootId = operationId;
                 operationId = Util.w3cTraceId();
             }
@@ -118,4 +118,4 @@ class TraceParent {
     }
 }
 
-export = TraceParent;
+export = Traceparent;

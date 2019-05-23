@@ -10,7 +10,7 @@ import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import HttpDependencyParser = require("./HttpDependencyParser");
 import { CorrelationContextManager, CorrelationContext, PrivateCustomProperties } from "./CorrelationContextManager";
 import CorrelationIdManager = require("../Library/CorrelationIdManager");
-import TraceParent = require("../Library/TraceParent");
+import Traceparent = require("../Library/TraceParent");
 
 import * as DiagChannel from "./diagnostic-channel/initialization";
 
@@ -117,12 +117,12 @@ class AutoCollectHttpDependencies {
 
         const currentContext = CorrelationContextManager.getCurrentContext();
         let uniqueRequestId: string;
-        if (currentContext && currentContext.operation && currentContext.operation.traceparent && TraceParent.isValidTraceId(currentContext.operation.traceparent.traceId)) {
+        if (currentContext && currentContext.operation && currentContext.operation.traceparent && Traceparent.isValidTraceId(currentContext.operation.traceparent.traceId)) {
             currentContext.operation.traceparent.updateSpanId();
             uniqueRequestId = currentContext.operation.traceparent.getBackCompatRequestId();
         } else if (CorrelationIdManager.w3cEnabled) {
             // Start an operation now so that we can include the w3c headers in the outgoing request
-            currentContext.operation.traceparent = new TraceParent();
+            currentContext.operation.traceparent = new Traceparent();
             uniqueRequestId = currentContext.operation.traceparent.getBackCompatRequestId();
         } else {
             uniqueRequestId = currentContext && currentContext.operation && (currentContext.operation.parentId + AutoCollectHttpDependencies.requestNumber++ + '.');
@@ -161,7 +161,7 @@ class AutoCollectHttpDependencies {
                     telemetry.request.setHeader(RequestResponseHeaders.traceparentHeader, currentContext.operation.traceparent.toString());
                 } else if (CorrelationIdManager.w3cEnabled) {
                     // should never get here since we set the currentContext operation above for the w3cEnabled scenario
-                    const traceparent = new TraceParent().toString();
+                    const traceparent = new Traceparent().toString();
                     telemetry.request.setHeader(RequestResponseHeaders.traceparentHeader, traceparent);
                 }
                 if (currentContext.operation.tracestate) {

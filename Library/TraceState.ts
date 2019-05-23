@@ -3,7 +3,7 @@
  * is documented at https://www.w3.org/TR/trace-context/#header-value
  * @class TraceState
  */
-class TraceState {
+class Tracestate {
     public static strict = true;
 
     public fieldmap: string[] = [];
@@ -61,7 +61,7 @@ class TraceState {
             }
 
             // Validate length and charset of this key
-            if (!TraceState.validateKeyChars(pair[0])) {
+            if (!Tracestate.validateKeyChars(pair[0])) {
                 return null;
             }
 
@@ -80,4 +80,4 @@ class TraceState {
     }
 }
 
-export = TraceState;
+export = Tracestate;

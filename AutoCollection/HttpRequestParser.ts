@@ -9,8 +9,8 @@ import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import RequestParser = require("./RequestParser");
 import CorrelationIdManager = require("../Library/CorrelationIdManager");
-import TraceState = require("../Library/TraceState");
-import TraceParent = require("../Library/TraceParent");
+import Tracestate = require("../Library/TraceState");
+import Traceparent = require("../Library/TraceParent");
 
 /**
  * Helper class to read data from the requst/response objects and convert them into the telemetry contract
@@ -27,8 +27,8 @@ class HttpRequestParser extends RequestParser {
     private parentId: string;
     private operationId: string;
     private requestId: string;
-    private traceparent: TraceParent;
-    private tracestate: TraceState;
+    private traceparent: Traceparent;
+    private tracestate: Tracestate;
     private legacyRootId: string; // if original operationId is not w3c compat, move it here
 
     private correlationContextHeader: string;
@@ -219,8 +219,8 @@ class HttpRequestParser extends RequestParser {
         const requestIdHeader = request.headers[RequestResponseHeaders.requestIdHeader];
 
 
-        this.traceparent = new TraceParent(traceparentHeader, requestIdHeader);
-        this.tracestate = new TraceState(tracestateHeader);
+        this.traceparent = new Traceparent(traceparentHeader, requestIdHeader);
+        this.tracestate = new Tracestate(tracestateHeader);
 
         // If !traceparent && tracestate, expectation is to discard tracestate and generate new traceparent
         if (!traceparentHeader && tracestateHeader) {
