@@ -255,6 +255,7 @@ class Util {
         }
     }
 
+
     /**
      * Generate request
      *
@@ -331,5 +332,44 @@ class Util {
         }
 
     };
+
+    /**
+     * Parse standard <string | string[] | number> request-context header
+     */
+    public static safeIncludeCorrelationHeader(client: TelemetryClient, request: http.ClientRequest | http.ServerResponse, correlationHeader: any) {
+        let header: string; // attempt to cast correlationHeader to string
+        if (typeof correlationHeader === "string") {
+            header = correlationHeader;
+        } else if (correlationHeader instanceof Array) { // string[]
+            header = correlationHeader.join(",");
+        } else if (correlationHeader && typeof (correlationHeader as any).toString === "function") {
+            // best effort attempt: requires well-defined toString
+            try {
+                header = (correlationHeader as any).toString();
+            } catch (err) {
+                Logging.warn("Outgoing request-context header could not be read. Correlation of requests may be lost.", err, correlationHeader);
+            }
+        }
+
+        if (header) {
+            Util.addCorrelationIdHeaderFromString(client, request, header);
+        } else {
+            request.setHeader(
+                RequestResponseHeaders.requestContextHeader,
+                `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+        }
+    }
+
+    private static addCorrelationIdHeaderFromString(client: TelemetryClient, response: http.ClientRequest | http.ServerResponse, correlationHeader: string) {
+        const components = correlationHeader.split(",");
+        const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
+        const found = components.some(value => value.substring(0,key.length) === key);
+
+        if (!found) {
+            response.setHeader(
+                RequestResponseHeaders.requestContextHeader,
+                `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+        }
+    }
 }
 export = Util;

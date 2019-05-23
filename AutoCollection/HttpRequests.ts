@@ -232,18 +232,6 @@ class AutoCollectHttpRequests {
         }
     }
 
-    private static addResponseCorrelationIdHeaderFromString(client: TelemetryClient, response: http.ServerResponse, correlationHeader: string) {
-        const components = correlationHeader.split(",");
-        const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
-        const found = components.some((value) => value.substring(0,key.length) === key)
-
-        if (!found) {
-            response.setHeader(
-                RequestResponseHeaders.requestContextHeader,
-                `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
-        }
-    }
-
     /**
      * Add the target correlationId to the response headers, if not already provided.
      */
@@ -251,26 +239,7 @@ class AutoCollectHttpRequests {
         if (client.config && client.config.correlationId &&
             response.getHeader && response.setHeader && !(<any>response).headersSent) {
             const correlationHeader = <any>response.getHeader(RequestResponseHeaders.requestContextHeader);
-            let header: string;
-            if (typeof correlationHeader === "string") { // string
-                header = correlationHeader;
-            } else if (correlationHeader instanceof Array) { // string[]
-                header = correlationHeader.join(",");
-            } else if (correlationHeader && typeof (correlationHeader as any).toString === "function") { // number, anything else
-                try {
-                    header = (correlationHeader as any).toString();
-                } catch (err) {
-                    Logging.warn("Incoming request-context header could not be parsed. Correlation of requests may be lost.", err, correlationHeader);
-                }
-            }
-
-            if (header) {
-                AutoCollectHttpRequests.addResponseCorrelationIdHeaderFromString(client, response, header);
-            } else {
-                response.setHeader(
-                    RequestResponseHeaders.requestContextHeader,
-                    `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
-            }
+            Util.safeIncludeCorrelationHeader(client, response, correlationHeader);
         }
     }
 
