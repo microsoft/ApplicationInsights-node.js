@@ -315,7 +315,7 @@ describe("EndToEnd", () => {
                     serializeToHeader: (): null => null
                 }
             }));
-            https.request(<any>'https://httpbin.org/status/200', (c) => {
+            https.request(<any>'https://test.com', (c) => {
                 eventEmitter.emit("response", {});
                 assert.ok((eventEmitter as any).headers["request-id"].match(/^\|[0-z]{32}\.[0-z]{16}\./g));
                 assert.ok((eventEmitter as any).headers.traceparent.match(/^00-5e84aff3af474588a42dcbf3bd1db95f-[0-z]{16}-00$/));
@@ -353,7 +353,7 @@ describe("EndToEnd", () => {
                     serializeToHeader: (): null => null
                 }
             }));
-            https.request(<any>'https://httpbin.org/status/200', (c) => {
+            https.request(<any>'https://test.com', (c) => {
                 eventEmitter.emit("response", {});
                 assert.ok((eventEmitter as any).headers.traceparent.match(/^00-[0-z]{32}-[0-z]{16}-00/g), "traceparent header is passed, 00-W3C-W3C-00");
                 assert.ok((eventEmitter as any).headers["request-id"].match(/^\|[0-z]{32}\.[0-z]{16}\./g), "back compat header is also passed, |W3C.W3C." + (eventEmitter as any).headers["request-id"]);
