@@ -7,8 +7,8 @@ import * as DiagChannel from "./diagnostic-channel/initialization";
 
 // Don't reference modules from these directly. Use only for types.
 import * as cls from "cls-hooked";
-import Traceparent = require("../Library/TraceParent");
-import Tracestate = require("../Library/TraceState");
+import Traceparent = require("../Library/Traceparent");
+import Tracestate = require("../Library/Tracestate");
 
 export interface CustomProperties {
     /**

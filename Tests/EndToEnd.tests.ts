@@ -10,7 +10,7 @@ import child_process = require("child_process");
 import AppInsights = require("../applicationinsights");
 import Sender = require("../Library/Sender");
 import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
-import Traceparent = require("../Library/TraceParent");
+import Traceparent = require("../Library/Traceparent");
 import { EventEmitter } from "events";
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
 

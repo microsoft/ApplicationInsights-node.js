@@ -1,7 +1,7 @@
 /**
  * Helper class to manage parsing and strict-validation of tracestate header. W3C tracestate spec
  * is documented at https://www.w3.org/TR/trace-context/#header-value
- * @class TraceState
+ * @class Tracestate
  */
 class Tracestate {
     public static strict = true;

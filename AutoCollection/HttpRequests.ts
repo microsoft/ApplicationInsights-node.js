@@ -70,8 +70,8 @@ class AutoCollectHttpRequests {
             requestParser.getRequestId(),
             requestParser.getOperationName(this._client.context.tags),
             requestParser.getCorrelationContextHeader(),
-            requestParser.getTraceParent(),
-            requestParser.getTraceState()
+            requestParser.getTraceparent(),
+            requestParser.getTracestate()
         );
     }
 

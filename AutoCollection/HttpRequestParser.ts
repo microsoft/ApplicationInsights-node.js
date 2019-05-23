@@ -9,8 +9,8 @@ import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import RequestParser = require("./RequestParser");
 import CorrelationIdManager = require("../Library/CorrelationIdManager");
-import Tracestate = require("../Library/TraceState");
-import Traceparent = require("../Library/TraceParent");
+import Tracestate = require("../Library/Tracestate");
+import Traceparent = require("../Library/Traceparent");
 
 /**
  * Helper class to read data from the requst/response objects and convert them into the telemetry contract
@@ -142,11 +142,11 @@ class HttpRequestParser extends RequestParser {
         return this.correlationContextHeader;
     }
 
-    public getTraceParent() {
+    public getTraceparent() {
         return this.traceparent;
     }
 
-    public getTraceState() {
+    public getTracestate() {
         return this.tracestate;
     }
 

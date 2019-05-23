@@ -3,7 +3,7 @@ import sinon = require("sinon");
 
 import HttpRequestParser = require("../../AutoCollection/HttpRequestParser");
 import CorrelationIdManager = require("../../Library/CorrelationIdManager");
-import Traceparent = require("../../Library/TraceParent");
+import Traceparent = require("../../Library/Traceparent");
 
 describe("AutoCollection/HttpRequestParser", () => {
     describe("#parseId()", () => {
