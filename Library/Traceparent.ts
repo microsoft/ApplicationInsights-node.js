@@ -41,7 +41,7 @@ class Traceparent {
                     this.version = Traceparent.DEFAULT_VERSION;
                     this.traceId = Util.w3cTraceId();
                 }
-                if (this.version === "00" && len !== 4) { // 0x00 (and perhaps future versions) require exactly 4 fields. This strict check  will need to be updated on each spec release
+                if (this.version === "00" && len !== 4) { // 0x00 (and perhaps future versions) require exactly 4 fields. This strict check will need to be updated on each spec release
                     this.traceId = Util.w3cTraceId();
                     this.spanId = Util.w3cTraceId().substr(0, 16);
                 }

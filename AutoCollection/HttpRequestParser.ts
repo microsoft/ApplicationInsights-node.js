@@ -213,19 +213,8 @@ class HttpRequestParser extends RequestParser {
         return value;
     }
 
-    private parseW3CTraceHeaders(request: http.IncomingMessage, requestId?: string) {
-        const tracestateHeader = request.headers[RequestResponseHeaders.traceStateHeader];
-        const traceparentHeader = request.headers[RequestResponseHeaders.traceparentHeader];
-        const requestIdHeader = request.headers[RequestResponseHeaders.requestIdHeader];
-
-
-        this.traceparent = new Traceparent(traceparentHeader, requestIdHeader);
-        this.tracestate = new Tracestate(tracestateHeader);
-
-        // If !traceparent && tracestate, expectation is to discard tracestate and generate new traceparent
-        if (!traceparentHeader && tracestateHeader) {
-            this.tracestate = null;
-        }
+    private setBackCompatFromThisTraceContext() {
+        // Set operationId
         this.operationId = this.traceparent.traceId;
         if (this.traceparent.legacyRootId) {
             this.legacyRootId = this.traceparent.legacyRootId;
@@ -240,39 +229,65 @@ class HttpRequestParser extends RequestParser {
     }
 
     private parseHeaders(request: http.IncomingMessage, requestId?: string) {
+
         this.rawHeaders = request.headers || (<any>request).rawHeaders;
         this.userAgent = request.headers && request.headers["user-agent"];
         this.sourceCorrelationId = Util.getCorrelationContextTarget(request, RequestResponseHeaders.requestContextSourceKey);
 
         if (request.headers) {
+            const tracestateHeader = request.headers[RequestResponseHeaders.traceStateHeader]; // w3c header
+            const traceparentHeader = request.headers[RequestResponseHeaders.traceparentHeader]; // w3c header
+            const requestIdHeader = request.headers[RequestResponseHeaders.requestIdHeader]; // default AI header
+            const legacy_parentId = request.headers[RequestResponseHeaders.parentIdHeader]; // legacy AI header
+            const legacy_rootId = request.headers[RequestResponseHeaders.rootIdHeader]; // legacy AI header
+
             this.correlationContextHeader = request.headers[RequestResponseHeaders.correlationContextHeader];
 
-            if (CorrelationIdManager.w3cEnabled) {
-                this.parseW3CTraceHeaders(request, requestId);
+            if (CorrelationIdManager.w3cEnabled && (traceparentHeader || traceparentHeader)) {
+                // Parse W3C Trace Context headers
+                this.traceparent = new Traceparent(traceparentHeader); // new traceparent is always created from this
+                this.tracestate = traceparentHeader && new Tracestate(tracestateHeader); // discard tracestate if no traceparent is present
+                this.setBackCompatFromThisTraceContext();
+            } else if (requestIdHeader) {
+                // Parse AI headers
+                this.parentId = requestIdHeader;
+                this.requestId = CorrelationIdManager.generateRequestId(this.parentId);
+                this.operationId = CorrelationIdManager.getRootId(this.requestId);
+                if (CorrelationIdManager.w3cEnabled) {
+                    this.traceparent = new Traceparent(null, requestIdHeader);
+                    this.setBackCompatFromThisTraceContext();
+                }
             } else {
-                if (request.headers[RequestResponseHeaders.requestIdHeader]) {
-                    this.parentId = request.headers[RequestResponseHeaders.requestIdHeader];
-                    this.requestId = CorrelationIdManager.generateRequestId(this.parentId);
-                    this.correlationContextHeader = request.headers[RequestResponseHeaders.correlationContextHeader];
-                } else {
-                    // Legacy fallback
-                    const rootId = request.headers[RequestResponseHeaders.rootIdHeader];
-                    this.parentId = request.headers[RequestResponseHeaders.parentIdHeader];
-                    this.requestId = CorrelationIdManager.generateRequestId(rootId || this.parentId);
-                    this.correlationContextHeader = null;
+                // Legacy fallback
+                this.parentId = legacy_parentId;
+                this.requestId = CorrelationIdManager.generateRequestId(legacy_rootId || this.parentId);
+                this.correlationContextHeader = null;
+                this.operationId = CorrelationIdManager.getRootId(this.requestId);
+                if (CorrelationIdManager.w3cEnabled) {
+                    this.traceparent = new Traceparent();
+                    this.traceparent.parentId = legacy_parentId;
+                    this.traceparent.legacyRootId = legacy_rootId || legacy_parentId;
+                    this.setBackCompatFromThisTraceContext();
                 }
-                if (requestId) {
-                    // For the scenarios that don't guarantee an AI-created context,
-                    // override the requestId with the provided one.
-                    this.requestId = requestId;
-                }
+            }
+
+            if (requestId) {
+                // For the scenarios that don't guarantee an AI-created context,
+                // override the requestId with the provided one.
+                this.requestId = requestId;
                 this.operationId = CorrelationIdManager.getRootId(this.requestId);
             }
         }
     }
 
     public static parseId(cookieValue: string): string {
-        return cookieValue.substr(0, cookieValue.indexOf('|'));
+        const cookieParts = cookieValue.split("|");
+
+        if (cookieParts.length > 0) {
+            return cookieParts[0];
+        }
+
+        return ""; // old behavior was to return "" for incorrect parsing
     }
 }
 
