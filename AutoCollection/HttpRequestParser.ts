@@ -213,6 +213,9 @@ class HttpRequestParser extends RequestParser {
         return value;
     }
 
+    /**
+     * Sets this operation's operationId, parentId, requestId (and legacyRootId, if necessary) based on this operation's traceparent
+     */
     private setBackCompatFromThisTraceContext() {
         // Set operationId
         this.operationId = this.traceparent.traceId;
@@ -250,24 +253,26 @@ class HttpRequestParser extends RequestParser {
                 this.setBackCompatFromThisTraceContext();
             } else if (requestIdHeader) {
                 // Parse AI headers
-                this.parentId = requestIdHeader;
-                this.requestId = CorrelationIdManager.generateRequestId(this.parentId);
-                this.operationId = CorrelationIdManager.getRootId(this.requestId);
                 if (CorrelationIdManager.w3cEnabled) {
                     this.traceparent = new Traceparent(null, requestIdHeader);
                     this.setBackCompatFromThisTraceContext();
+                } else {
+                    this.parentId = requestIdHeader;
+                    this.requestId = CorrelationIdManager.generateRequestId(this.parentId);
+                    this.operationId = CorrelationIdManager.getRootId(this.requestId);
                 }
             } else {
                 // Legacy fallback
-                this.parentId = legacy_parentId;
-                this.requestId = CorrelationIdManager.generateRequestId(legacy_rootId || this.parentId);
-                this.correlationContextHeader = null;
-                this.operationId = CorrelationIdManager.getRootId(this.requestId);
                 if (CorrelationIdManager.w3cEnabled) {
                     this.traceparent = new Traceparent();
                     this.traceparent.parentId = legacy_parentId;
                     this.traceparent.legacyRootId = legacy_rootId || legacy_parentId;
                     this.setBackCompatFromThisTraceContext();
+                } else {
+                    this.parentId = legacy_parentId;
+                    this.requestId = CorrelationIdManager.generateRequestId(legacy_rootId || this.parentId);
+                    this.correlationContextHeader = null;
+                    this.operationId = CorrelationIdManager.getRootId(this.requestId);
                 }
             }
 
