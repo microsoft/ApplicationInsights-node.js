@@ -122,31 +122,24 @@ class AutoCollectHttpDependencies {
         // methods exist before invoking them.
         if (Util.canIncludeCorrelationHeader(client, requestParser.getUrl()) && telemetry.request.getHeader && telemetry.request.setHeader) {
             if (client.config && client.config.correlationId) {
-                const correlationHeader = telemetry.request.getHeader(RequestResponseHeaders.requestContextHeader);
-                if (correlationHeader) {
-                    const components = correlationHeader.split(",");
-                    const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
-                    if (!components.some((value) => value.substring(0,key.length) === key)) {
-                        telemetry.request.setHeader(
-                            RequestResponseHeaders.requestContextHeader,
-                            `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+                // getHeader returns "any" type in newer versions of node. In basic scenarios, this will be <string | string[] | number>, but could be modified to anything else via middleware
+                const correlationHeader = <any>telemetry.request.getHeader(RequestResponseHeaders.requestContextHeader)
+                Util.safeIncludeCorrelationHeader(client, telemetry.request, correlationHeader);
+
+                if (currentContext && currentContext.operation) {
+                    try {
+                        telemetry.request.setHeader(RequestResponseHeaders.requestIdHeader, uniqueRequestId);
+                        // Also set legacy headers
+                        telemetry.request.setHeader(RequestResponseHeaders.parentIdHeader, currentContext.operation.id);
+                        telemetry.request.setHeader(RequestResponseHeaders.rootIdHeader, uniqueRequestId);
+
+                        const correlationContextHeader = (<PrivateCustomProperties>currentContext.customProperties).serializeToHeader();
+                        if (correlationContextHeader) {
+                            telemetry.request.setHeader(RequestResponseHeaders.correlationContextHeader, correlationContextHeader);
+                        }
+                    } catch (err) {
+                        Logging.warn("Correlation headers could not be set. Correlation of requests may be lost.", err);
                     }
-                } else {
-                    telemetry.request.setHeader(
-                        RequestResponseHeaders.requestContextHeader,
-                        `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
-                }
-            }
-
-            if (currentContext && currentContext.operation) {
-                telemetry.request.setHeader(RequestResponseHeaders.requestIdHeader, uniqueRequestId);
-                // Also set legacy headers
-                telemetry.request.setHeader(RequestResponseHeaders.parentIdHeader, currentContext.operation.id);
-                telemetry.request.setHeader(RequestResponseHeaders.rootIdHeader, uniqueRequestId);
-
-                const correlationContextHeader = (<PrivateCustomProperties>currentContext.customProperties).serializeToHeader();
-                if (correlationContextHeader) {
-                    telemetry.request.setHeader(RequestResponseHeaders.correlationContextHeader, correlationContextHeader);
                 }
             }
         }
