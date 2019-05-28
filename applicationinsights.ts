@@ -11,6 +11,8 @@ import Logging = require("./Library/Logging");
 import Util = require("./Library/Util");
 import QuickPulseClient = require("./Library/QuickPulseStateManager");
 
+import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCollection/NativePerformance";
+
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
 export import TelemetryClient = require("./Library/NodeClient");
@@ -29,6 +31,8 @@ let _isDiskRetry = true;
 let _isCorrelating = true;
 let _forceClsHooked: boolean;
 let _isSendingLiveMetrics = false; // Off by default
+let _isNativePerformance = true;
+let _disabledExtendedMetrics: IDisabledExtendedMetrics;
 
 let _diskRetryInterval: number = undefined;
 let _diskRetryMaxBytes: number = undefined;
@@ -36,6 +40,7 @@ let _diskRetryMaxBytes: number = undefined;
 let _console: AutoCollectConsole;
 let _exceptions: AutoCollectExceptions;
 let _performance: AutoCollectPerformance;
+let _nativePerformance: AutoCollectNativePerformance;
 let _serverRequests: AutoCollectHttpRequests;
 let _clientRequests: AutoCollectHttpDependencies;
 
@@ -67,6 +72,9 @@ export function setup(instrumentationKey?: string) {
         _performance = new AutoCollectPerformance(defaultClient);
         _serverRequests = new AutoCollectHttpRequests(defaultClient);
         _clientRequests = new AutoCollectHttpDependencies(defaultClient);
+        if (!_nativePerformance) {
+            _nativePerformance = new AutoCollectNativePerformance(defaultClient);
+        }
     } else {
         Logging.info("The default client is already setup");
     }
@@ -90,6 +98,7 @@ export function start() {
         _console.enable(_isConsole, _isConsoleLog);
         _exceptions.enable(_isExceptions);
         _performance.enable(_isPerformance);
+        _nativePerformance.enable(_isNativePerformance, _disabledExtendedMetrics);
         _serverRequests.useAutoCorrelation(_isCorrelating, _forceClsHooked);
         _serverRequests.enable(_isRequests);
         _clientRequests.enable(_isDependencies);
@@ -186,13 +195,19 @@ export class Configuration {
     /**
      * Sets the state of performance tracking (enabled by default)
      * @param value if true performance counters will be collected every second and sent to Application Insights
+     * @param collectExtendedMetrics if true, extended metrics counters will be collected every minute and sent to Application Insights
      * @returns {Configuration} this class
      */
-    public static setAutoCollectPerformance(value: boolean) {
+    public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: boolean | IDisabledExtendedMetrics = true) {
         _isPerformance = value;
-        if (_isStarted){
+        const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(collectExtendedMetrics);
+        _isNativePerformance = extendedMetricsConfig.isEnabled;
+        _disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
+        if (_isStarted) {
             _performance.enable(value);
+            _nativePerformance.enable(extendedMetricsConfig.isEnabled, extendedMetricsConfig.disabledMetrics);
         }
+
 
         return Configuration;
     }
@@ -315,6 +330,9 @@ export function dispose() {
     }
     if (_performance) {
         _performance.dispose();
+    }
+    if (_nativePerformance) {
+        _nativePerformance.dispose();
     }
     if(_serverRequests) {
         _serverRequests.dispose();

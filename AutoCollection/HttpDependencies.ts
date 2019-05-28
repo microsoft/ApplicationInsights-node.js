@@ -134,46 +134,43 @@ class AutoCollectHttpDependencies {
         // methods exist before invoking them.
         if (Util.canIncludeCorrelationHeader(client, requestParser.getUrl()) && telemetry.request.getHeader && telemetry.request.setHeader) {
             if (client.config && client.config.correlationId) {
-                const correlationHeader = telemetry.request.getHeader(RequestResponseHeaders.requestContextHeader);
-                if (correlationHeader) {
-                    const components = correlationHeader.split(",");
-                    const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
-                    if (!components.some((value) => value.substring(0,key.length) === key)) {
+                // getHeader returns "any" type in newer versions of node. In basic scenarios, this will be <string | string[] | number>, but could be modified to anything else via middleware
+                const correlationHeader = <any>telemetry.request.getHeader(RequestResponseHeaders.requestContextHeader)
+                Util.safeIncludeCorrelationHeader(client, telemetry.request, correlationHeader);
+
+                try {
+                    if (currentContext && currentContext.operation) {
+                        telemetry.request.setHeader(RequestResponseHeaders.requestIdHeader, uniqueRequestId);
+                        // Also set legacy headers
+                        telemetry.request.setHeader(RequestResponseHeaders.parentIdHeader, currentContext.operation.id);
+                        telemetry.request.setHeader(RequestResponseHeaders.rootIdHeader, uniqueRequestId);
+
+                        // Set W3C headers, if available
+                        if (currentContext.operation.traceparent) {
+                            telemetry.request.setHeader(RequestResponseHeaders.traceparentHeader, currentContext.operation.traceparent.toString());
+                        } else if (CorrelationIdManager.w3cEnabled) {
+                            // should never get here since we set the currentContext operation above for the w3cEnabled scenario
+                            const traceparent = new Traceparent().toString();
+                            telemetry.request.setHeader(RequestResponseHeaders.traceparentHeader, traceparent);
+                        }
+                        if (currentContext.operation.tracestate) {
+                            const tracestate = currentContext.operation.tracestate.toString();
+                            if (tracestate) {
+                                telemetry.request.setHeader(RequestResponseHeaders.traceStateHeader, tracestate)
+                            }
+                        }
+
+                        const correlationContextHeader = (<PrivateCustomProperties>currentContext.customProperties).serializeToHeader();
+                        if (correlationContextHeader) {
+                            telemetry.request.setHeader(RequestResponseHeaders.correlationContextHeader, correlationContextHeader);
+                        }
+                    } else {
                         telemetry.request.setHeader(
                             RequestResponseHeaders.requestContextHeader,
-                            `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+                            `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
                     }
-                } else {
-                    telemetry.request.setHeader(
-                        RequestResponseHeaders.requestContextHeader,
-                        `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
-                }
-            }
-
-            if (currentContext && currentContext.operation) {
-                telemetry.request.setHeader(RequestResponseHeaders.requestIdHeader, uniqueRequestId);
-                // Also set legacy headers
-                telemetry.request.setHeader(RequestResponseHeaders.parentIdHeader, currentContext.operation.id);
-                telemetry.request.setHeader(RequestResponseHeaders.rootIdHeader, uniqueRequestId);
-
-                // Set W3C headers, if available
-                if (currentContext.operation.traceparent) {
-                    telemetry.request.setHeader(RequestResponseHeaders.traceparentHeader, currentContext.operation.traceparent.toString());
-                } else if (CorrelationIdManager.w3cEnabled) {
-                    // should never get here since we set the currentContext operation above for the w3cEnabled scenario
-                    const traceparent = new Traceparent().toString();
-                    telemetry.request.setHeader(RequestResponseHeaders.traceparentHeader, traceparent);
-                }
-                if (currentContext.operation.tracestate) {
-                    const tracestate = currentContext.operation.tracestate.toString();
-                    if (tracestate) {
-                        telemetry.request.setHeader(RequestResponseHeaders.traceStateHeader, tracestate)
-                    }
-                }
-
-                const correlationContextHeader = (<PrivateCustomProperties>currentContext.customProperties).serializeToHeader();
-                if (correlationContextHeader) {
-                    telemetry.request.setHeader(RequestResponseHeaders.correlationContextHeader, correlationContextHeader);
+                } catch (err) {
+                    Logging.warn("Correlation headers could not be set. Correlation of requests may be lost.", err);
                 }
             }
         }

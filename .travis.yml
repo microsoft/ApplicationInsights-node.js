@@ -2,6 +2,9 @@ sudo: required
 language: node_js
 services:
   - docker
+env:
+  - TRAVIS_EXTENDED_METRICS=true
+  - TRAVIS_EXTENDED_METRICS=false
 node_js:
   - "node"
   - "12"
@@ -20,20 +23,21 @@ node_js:
   - "iojs-v1.0.4"
 before_install:
   - npm install -g npm@4.5.0
-before_script:
-  - npm install
+  # Simulate optionalDevDependency for applicationinsights-native-metrics
+  - npm uninstall applicationinsights-native-metrics --save-dev
+  - if [ "$TRAVIS_EXTENDED_METRICS" = "true" ]; then npm install applicationinsights-native-metrics --save-optional || true; fi
 script:
   - npm test
-  # Run funcs for current release
+  # Run funcs for LTS releases (currently 6, 8, 10) + current release (12)
   - if [ "$TRAVIS_NODE_VERSION" = "12" ]; then npm run functionaltest; fi
-  # Run funcs for LTS releases (currently 6, 8, 10)
   - if [ "$TRAVIS_NODE_VERSION" = "10" ]; then npm run functionaltest; fi
   - if [ "$TRAVIS_NODE_VERSION" = "8" ]; then npm run functionaltest; fi
-  - if [ "$TRAVIS_NODE_VERSION" = "6" ]; then npm run functionaltest; fi
-  - if [ "$TRAVIS_NODE_VERSION" = "4" ]; then npm run functionaltest; fi
+  # Only run functionals on extended-metrics builds for 8, 10, 12
+  - if [ "$TRAVIS_NODE_VERSION" = "6" ] && [ "$TRAVIS_EXTENDED_METRICS" != "true" ]; then npm run functionaltest; fi
+  - if [ "$TRAVIS_NODE_VERSION" = "4" ] && [ "$TRAVIS_EXTENDED_METRICS" != "true" ]; then npm run functionaltest; fi
   # latest node8 uses cls-hooked for dependency correlation, while 8.0.0 uses
   # plain cls instead, so run funcs for 8.0.0 as well
-  - if [ "$TRAVIS_NODE_VERSION" = "8.0.0" ]; then npm run functionaltest; fi
+  - if [ "$TRAVIS_NODE_VERSION" = "8.0.0" ] && [ "$TRAVIS_EXTENDED_METRICS" != "true" ]; then npm run functionaltest; fi
 
   # Only run backcompat tests once
-  - if [ "$TRAVIS_NODE_VERSION" = "4" ]; then npm run backcompattest; fi
+  - if [ "$TRAVIS_NODE_VERSION" = "4" ] && [ "$TRAVIS_EXTENDED_METRICS" != "true" ]; then npm run backcompattest; fi
