@@ -25,17 +25,17 @@ class QuickPulseSender {
         this._consecutiveErrors = 0;
     }
 
-    public ping(envelope: Contracts.EnvelopeQuickPulse, done: (shouldPOST: boolean, res?: http.IncomingMessage) => void): void {
+    public ping(envelope: Contracts.EnvelopeQuickPulse, done: (shouldPOST?: boolean, res?: http.IncomingMessage) => void): void {
         this._submitData(envelope, done, "ping");
     }
 
-    public post(envelope: Contracts.EnvelopeQuickPulse, done: (shouldPOST: boolean, res?: http.IncomingMessage) => void): void {
+    public post(envelope: Contracts.EnvelopeQuickPulse, done: (shouldPOST?: boolean, res?: http.IncomingMessage) => void): void {
 
         // Important: When POSTing data, envelope must be an array
         this._submitData([envelope], done, "post");
     }
 
-    private _submitData(envelope: Contracts.EnvelopeQuickPulse | Contracts.EnvelopeQuickPulse[], done: (shouldPOST: boolean, res?: http.IncomingMessage) => void, postOrPing: "post" | "ping"): void {
+    private _submitData(envelope: Contracts.EnvelopeQuickPulse | Contracts.EnvelopeQuickPulse[], done: (shouldPOST?: boolean, res?: http.IncomingMessage) => void, postOrPing: "post" | "ping"): void {
         const payload = JSON.stringify(envelope);
         var options = {
             [AutoCollectHttpDependencies.disableCollectionRequestOption]: true,
@@ -65,11 +65,12 @@ class QuickPulseSender {
             if (this._consecutiveErrors % QuickPulseSender.MAX_QPS_FAILURES_BEFORE_WARN === 0) {
                 notice = `Live Metrics endpoint could not be reached ${this._consecutiveErrors} consecutive times. Most recent error:`;
                 Logging.warn(QuickPulseSender.TAG, notice, error);
+                done(false); // Stop POSTing QPS data
             } else {
+                // Potentially transient error, do not change the ping/post state yet.
                 Logging.info(QuickPulseSender.TAG, notice, error);
+                done();
             }
-
-            done(false); // Stop POSTing QPS data
         });
 
         req.write(payload);

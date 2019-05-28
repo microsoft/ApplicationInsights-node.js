@@ -152,21 +152,28 @@ class QuickPulseStateManager {
         this._sender.post(envelope, this._quickPulseDone.bind(this));
     }
 
-    private _quickPulseDone(shouldPOST: boolean, res?: http.IncomingMessage): void {
-        if (this._isCollectingData !== shouldPOST) {
-            Logging.info("Live Metrics sending data", shouldPOST);
-            this.enableCollectors(shouldPOST);
-        }
-        this._isCollectingData = shouldPOST;
+    /**
+     * Change the current QPS send state. (shouldPOST == undefined) --> error, but do not change the state yet.
+     */
+    private _quickPulseDone(shouldPOST?: boolean, res?: http.IncomingMessage): void {
+        if (shouldPOST != undefined) {
+            if (this._isCollectingData !== shouldPOST) {
+                Logging.info("Live Metrics sending data", shouldPOST);
+                this.enableCollectors(shouldPOST);
+            }
+            this._isCollectingData = shouldPOST;
 
-        if (res && res.statusCode < 300 && res.statusCode >= 200) {
-            this._lastSuccessTime = Date.now();
-            this._lastSendSucceeded = true;
+            if (res && res.statusCode < 300 && res.statusCode >= 200) {
+                this._lastSuccessTime = Date.now();
+                this._lastSendSucceeded = true;
+            } else {
+                this._lastSendSucceeded = false;
+            }
         } else {
+            // Received an error, keep the state as is
             this._lastSendSucceeded = false;
         }
     }
-
 }
 
 export = QuickPulseStateManager;
