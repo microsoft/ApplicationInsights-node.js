@@ -65,11 +65,10 @@ class QuickPulseSender {
             if (this._consecutiveErrors % QuickPulseSender.MAX_QPS_FAILURES_BEFORE_WARN === 0) {
                 notice = `Live Metrics endpoint could not be reached ${this._consecutiveErrors} consecutive times. Most recent error:`;
                 Logging.warn(QuickPulseSender.TAG, notice, error);
+                done(false); // Stop POSTing QPS data
             } else {
                 Logging.info(QuickPulseSender.TAG, notice, error);
             }
-
-            done(false); // Stop POSTing QPS data
         });
 
         req.write(payload);
