@@ -18,19 +18,19 @@ class Traceparent {
     public version: string = Traceparent.DEFAULT_VERSION;
 
     constructor(traceparent?: string, parentId?: string) {
-        if (traceparent) { // traceparent constructor
+        if (traceparent && typeof traceparent === "string") { // traceparent constructor
             // If incoming request contains traceparent: parse it, set operation, parent and telemetry id accordingly. traceparent should be injected into outgoing requests. request-id should be injected in back-compat format |traceId.spanId. so that older SDKs could understand it.
             if (traceparent.split(",").length > 1) { // If more than 1 traceparent is present, discard both
                 this.traceId = Util.w3cTraceId();
                 this.spanId = Util.w3cTraceId().substr(0, 16);
             } else {
-                const traceparentArr = traceparent.split("-");
+                const traceparentArr = traceparent.trim().split("-");
                 const len = traceparentArr.length;
                 if (len >= 4) { // traceparent must contain at least 4 fields
-                    this.version = traceparentArr[0].trim();
+                    this.version = traceparentArr[0];
                     this.traceId = traceparentArr[1];
                     this.spanId = traceparentArr[2];
-                    this.traceFlag = traceparentArr[3].trim();
+                    this.traceFlag = traceparentArr[3];
                 } else { // Discard traceparent if a field is missing
                     this.traceId = Util.w3cTraceId();
                     this.spanId = Util.w3cTraceId().substr(0, 16);
@@ -74,7 +74,6 @@ class Traceparent {
                 // Save backCompat parentId
                 this.parentId = this.getBackCompatRequestId();
             }
-            return;
         } else if (parentId) { // backcompat constructor
             // If incoming request contains only request-id, new traceid and spanid should be started, request-id value should be used as a parent. Root part of request-id should be stored in custom dimension on the request telemetry if root part is different from traceid. On the outgoing request side, request-id should be emitted in the |traceId.spanId. format.
             this.parentId = parentId.slice(); // copy
@@ -88,13 +87,13 @@ class Traceparent {
             }
             this.traceId = operationId;
             this.spanId = parentId;
-            return;
+        } else {
+            // Fallback default constructor
+            // if request does not contain any correlation headers, see case p2
+            this.traceId = Util.w3cTraceId();
+            this.spanId = Util.w3cTraceId().substr(0, 16);
         }
 
-        // Fallback default constructor
-        // if request does not contain any correlation headers, see case p2
-        this.traceId = Util.w3cTraceId();
-        this.spanId = Util.w3cTraceId().substr(0, 16);
     }
 
     public static isValidTraceId(id: string): boolean {
