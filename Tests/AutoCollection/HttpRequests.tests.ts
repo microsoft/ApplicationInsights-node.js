@@ -21,4 +21,45 @@ describe("AutoCollection/HttpRequests", () => {
             assert.equal(enableHttpRequestsSpy.getCall(1).args[0], false);
         });
     });
+
+    describe("#addResponseCorrelationIdHeader", () => {
+        var response = {
+            headers: <{[key: string]: any} >{},
+            getHeader: function (name: string) { return this.headers[name] },
+            setHeader: function (name: string, value: any) { this.headers[name] = value },
+            clearHeaders: function() { this.headers = {} }
+        }
+
+        afterEach(() => {
+            AppInsights.dispose();
+            response.clearHeaders();
+        });
+
+        it("should accept string request-context", () => {
+            var appInsights = AppInsights.setup("key").setAutoCollectRequests(true);
+            AppInsights.defaultClient.config.correlationId = "abcdefg";
+            appInsights.start();
+
+            response.setHeader("request-context", "appId=cid-v1:aaaaed48-297a-4ea2-af46-0a5a5d26aaaa");
+            assert.doesNotThrow(() => HttpRequests["addResponseCorrelationIdHeader"](AppInsights.defaultClient, response as any))
+        });
+
+        it("should accept nonstring request-context", () => {
+            var appInsights = AppInsights.setup("key").setAutoCollectDependencies(true);
+            AppInsights.defaultClient.config.correlationId = "abcdefg";
+            appInsights.start();
+
+            response.setHeader("request-context", ["appId=cid-v1:aaaaed48-297a-4ea2-af46-0a5a5d26aaaa"]);
+            assert.doesNotThrow(() => HttpRequests["addResponseCorrelationIdHeader"](AppInsights.defaultClient, response as any));
+            assert.deepEqual(response.getHeader("request-context"), ["appId=cid-v1:aaaaed48-297a-4ea2-af46-0a5a5d26aaaa"], "does not modify valid appId")
+
+            response.setHeader("request-context", 123);
+            assert.doesNotThrow(() => HttpRequests["addResponseCorrelationIdHeader"](AppInsights.defaultClient, response as any));
+            assert.ok(response.getHeader("request-context").indexOf("abcdefg") !== -1)
+
+            response.setHeader("request-context", {foo: 'bar'});
+            assert.doesNotThrow(() => HttpRequests["addResponseCorrelationIdHeader"](AppInsights.defaultClient, response as any));
+            assert.ok(response.getHeader("request-context").indexOf("abcdefg") !== -1)
+        })
+    });
 });

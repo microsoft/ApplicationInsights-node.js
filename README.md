@@ -68,7 +68,7 @@ appInsights.setup("_your_ikey_").start();
 
 Load the Application Insights library (i.e. `require("applicationinsights")`) as
 early as possible in your scripts, before loading other packages. This is needed
-so that the Application Insights libary can prepare later packages for tracking.
+so that the Application Insights library can prepare later packages for tracking.
 If you encounter conflicts with other libraries doing similar preparation, try
 loading the Application Insights library after those.
 
