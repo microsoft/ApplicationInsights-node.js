@@ -18,10 +18,15 @@ describe("AutoCollection/NativePerformance", () => {
                 var clearIntervalSpy = sinon.spy(global, "clearInterval");
 
                 AppInsights.setup("key").setAutoCollectPerformance(false, true).start();
-                assert.equal(setIntervalSpy.callCount, 1, "setInterval should be called once as part of NativePerformance initialization");
-
-                AppInsights.dispose();
-                assert.equal(clearIntervalSpy.callCount, 1, "clearInterval should be caleld once as part of NativePerformance shutdown");
+                if (AutoCollectNativePerformance["_metricsAvailable"]) {
+                    assert.equal(setIntervalSpy.callCount, 1, "setInterval should be called once as part of NativePerformance initialization");
+                    AppInsights.dispose();
+                    assert.equal(clearIntervalSpy.callCount, 1, "clearInterval should be called once as part of NativePerformance shutdown");
+                } else {
+                    assert.equal(setIntervalSpy.callCount, 0, "setInterval should not be called if NativePerformance package is not available");
+                    AppInsights.dispose();
+                    assert.equal(clearIntervalSpy.callCount, 0, "clearInterval should not be called if NativePerformance package is not available");
+                }
 
                 setIntervalSpy.restore();
                 clearIntervalSpy.restore();
