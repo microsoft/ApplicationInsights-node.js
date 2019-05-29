@@ -168,7 +168,7 @@ export class Configuration {
       * Enabling W3C mode will not break existing correlation with other Application Insights instrumented
       * services. Default=AI
      */
-    public static setDistributedTracingMode(value: DistributedTracingModes & string) {
+    public static setDistributedTracingMode(value: DistributedTracingModes) {
         CorrelationIdManager.w3cEnabled = value === DistributedTracingModes.AI_AND_W3C;
         return Configuration;
     }
