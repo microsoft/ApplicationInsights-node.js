@@ -18,7 +18,18 @@ import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCo
 export import TelemetryClient = require("./Library/NodeClient");
 export import Contracts = require("./Declarations/Contracts");
 
-export type DistributedTracingModes = "AI" | "W3C";
+export enum DistributedTracingModes {
+    /**
+     * (Default) Send Application Insights correlation headers
+     */
+
+    AI=0,
+
+    /**
+     * Send both W3C Trace Context headers and back-compatibility Application Insights headers
+     */
+    AI_AND_W3C
+}
 
 // Default autocollection configuration
 let _isConsole = true;
@@ -157,8 +168,8 @@ export class Configuration {
       * Enabling W3C mode will not break existing correlation with other Application Insights instrumented
       * services. Default=AI
      */
-    public static setDistributedTracingMode(value: DistributedTracingModes) {
-        CorrelationIdManager.w3cEnabled = value.toUpperCase() === "W3C";
+    public static setDistributedTracingMode(value: DistributedTracingModes & string) {
+        CorrelationIdManager.w3cEnabled = value === DistributedTracingModes.AI_AND_W3C;
         return Configuration;
     }
 

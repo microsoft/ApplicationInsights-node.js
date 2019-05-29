@@ -1,5 +1,6 @@
 import assert = require("assert");
 import sinon = require("sinon");
+import { DistributedTracingModes } from "../applicationinsights";
 
 describe("ApplicationInsights", () => {
 
@@ -93,13 +94,23 @@ describe("ApplicationInsights", () => {
         beforeEach(() => {
             AppInsights.dispose();
         });
+        afterEach(() => {
+            AppInsights.dispose();
+        })
 
         it("should enable AI tracing mode by default", () => {
             AppInsights.setup("key").start();
             assert.equal(CorrelationIdManager.w3cEnabled, false);
         });
-        it("should be able to enable W3C tracing mode", () => {
-            AppInsights.setup("key").setDistributedTracingMode("W3C").start();
+
+        it("should be able to enable W3C tracing mode via enum", () => {
+            AppInsights.setup("key").setDistributedTracingMode(DistributedTracingModes.AI_AND_W3C).start();
+            assert.ok(CorrelationIdManager.w3cEnabled);
+        });
+
+        it("should be able to enable W3C tracing mode via number", () => {
+            assert.equal(DistributedTracingModes.AI_AND_W3C, 1);
+            AppInsights.setup("key").setDistributedTracingMode(1).start();
             assert.ok(CorrelationIdManager.w3cEnabled);
         });
     });

@@ -55,6 +55,12 @@ describe("AutoCollection/HttpDependencies", () => {
             assert.doesNotThrow(() => HttpDependencies.trackRequest(AppInsights.defaultClient, telemetry as any));
             assert.deepEqual(telemetry.request.getHeader("request-context"), ["appId=cid-v1:aaaaed48-297a-4ea2-af46-0a5a5d26aaaa"], "does not modify valid appId header")
 
+            const myCustomObject = {foo: {bar: "appId=cid-v1:aaaaed48-297a-4ea2-af46-0a5a5d26aaaa"}};
+            myCustomObject.toString = () => myCustomObject.foo.bar;
+            telemetry.request.setHeader("request-context", myCustomObject);
+            assert.doesNotThrow(() => HttpDependencies.trackRequest(AppInsights.defaultClient, telemetry as any));
+            assert.equal(telemetry.request.getHeader("request-context"), myCustomObject.toString(), "does not modify valid appId header");
+
             telemetry.request.setHeader("request-context", 123);
             assert.doesNotThrow(() => HttpDependencies.trackRequest(AppInsights.defaultClient, telemetry as any));
             assert.ok(telemetry.request.getHeader("request-context").indexOf("abcdefg") !== -1)
