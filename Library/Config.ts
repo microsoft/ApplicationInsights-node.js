@@ -13,6 +13,10 @@ class Config {
     public static ENV_profileQueryEndpoint = "APPINSIGHTS_PROFILE_QUERY_ENDPOINT";
     public static ENV_quickPulseHost = "APPINSIGHTS_QUICKPULSE_HOST";
 
+    // Native Metrics Opt Outs
+    public static ENV_nativeMetricsDisablers = "APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC";
+    public static ENV_nativeMetricsDisableAll = "APPLICATION_INSIGHTS_DISABLE_ALL_EXTENDED_METRICS"
+
     public static ENV_http_proxy = "http_proxy";
     public static ENV_https_proxy = "https_proxy";
 
@@ -48,7 +52,6 @@ class Config {
     private _profileQueryEndpoint: string;
     /** Host name for quickpulse service */
     private _quickPulseHost: string;
-
 
     constructor(instrumentationKey?: string) {
         this.instrumentationKey = instrumentationKey || Config._getInstrumentationKey();
