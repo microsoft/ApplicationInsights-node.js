@@ -117,13 +117,15 @@ class AutoCollectHttpDependencies {
 
         const currentContext = CorrelationContextManager.getCurrentContext();
         let uniqueRequestId: string;
+        let uniqueTraceparent: string;
         if (currentContext && currentContext.operation && currentContext.operation.traceparent && Traceparent.isValidTraceId(currentContext.operation.traceparent.traceId)) {
             currentContext.operation.traceparent.updateSpanId();
             uniqueRequestId = currentContext.operation.traceparent.getBackCompatRequestId();
         } else if (CorrelationIdManager.w3cEnabled) {
             // Start an operation now so that we can include the w3c headers in the outgoing request
-            currentContext.operation.traceparent = new Traceparent();
-            uniqueRequestId = currentContext.operation.traceparent.getBackCompatRequestId();
+            const traceparent = new Traceparent();
+            uniqueTraceparent = traceparent.toString();
+            uniqueRequestId = traceparent.getBackCompatRequestId();
         } else {
             uniqueRequestId = currentContext && currentContext.operation && (currentContext.operation.parentId + AutoCollectHttpDependencies.requestNumber++ + '.');
         }
@@ -138,18 +140,18 @@ class AutoCollectHttpDependencies {
                 const correlationHeader = <any>telemetry.request.getHeader(RequestResponseHeaders.requestContextHeader)
                 Util.safeIncludeCorrelationHeader(client, telemetry.request, correlationHeader);
 
-                try {
-                    if (currentContext && currentContext.operation) {
+                if (currentContext && currentContext.operation) {
+                    try {
                         telemetry.request.setHeader(RequestResponseHeaders.requestIdHeader, uniqueRequestId);
                         // Also set legacy headers
                         telemetry.request.setHeader(RequestResponseHeaders.parentIdHeader, currentContext.operation.id);
                         telemetry.request.setHeader(RequestResponseHeaders.rootIdHeader, uniqueRequestId);
 
                         // Set W3C headers, if available
-                        if (currentContext.operation.traceparent) {
-                            telemetry.request.setHeader(RequestResponseHeaders.traceparentHeader, currentContext.operation.traceparent.toString());
+                        if (uniqueTraceparent || currentContext.operation.traceparent) {
+                            telemetry.request.setHeader(RequestResponseHeaders.traceparentHeader, uniqueTraceparent || currentContext.operation.traceparent.toString());
                         } else if (CorrelationIdManager.w3cEnabled) {
-                            // should never get here since we set the currentContext operation above for the w3cEnabled scenario
+                            // should never get here since we set uniqueTraceparent above for the w3cEnabled scenario
                             const traceparent = new Traceparent().toString();
                             telemetry.request.setHeader(RequestResponseHeaders.traceparentHeader, traceparent);
                         }
@@ -164,13 +166,9 @@ class AutoCollectHttpDependencies {
                         if (correlationContextHeader) {
                             telemetry.request.setHeader(RequestResponseHeaders.correlationContextHeader, correlationContextHeader);
                         }
-                    } else {
-                        telemetry.request.setHeader(
-                            RequestResponseHeaders.requestContextHeader,
-                            `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+                    } catch (err) {
+                        Logging.warn("Correlation headers could not be set. Correlation of requests may be lost.", err);
                     }
-                } catch (err) {
-                    Logging.warn("Correlation headers could not be set. Correlation of requests may be lost.", err);
                 }
             }
         }
