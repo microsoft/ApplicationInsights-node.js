@@ -3,6 +3,7 @@
         "target": "es5",
         "module": "commonjs",
         "moduleResolution": "node",
+        "inlineSources": true,
         "sourceMap": true,
         "declaration": true,
         "noImplicitAny": true,
