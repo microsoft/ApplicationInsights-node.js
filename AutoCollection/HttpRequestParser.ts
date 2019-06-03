@@ -246,10 +246,10 @@ class HttpRequestParser extends RequestParser {
 
             this.correlationContextHeader = request.headers[RequestResponseHeaders.correlationContextHeader];
 
-            if (CorrelationIdManager.w3cEnabled && (traceparentHeader || traceparentHeader)) {
+            if (CorrelationIdManager.w3cEnabled && (traceparentHeader || tracestateHeader)) {
                 // Parse W3C Trace Context headers
                 this.traceparent = new Traceparent(traceparentHeader); // new traceparent is always created from this
-                this.tracestate = traceparentHeader && new Tracestate(tracestateHeader); // discard tracestate if no traceparent is present
+                this.tracestate = traceparentHeader && tracestateHeader && new Tracestate(tracestateHeader); // discard tracestate if no traceparent is present
                 this.setBackCompatFromThisTraceContext();
             } else if (requestIdHeader) {
                 // Parse AI headers
