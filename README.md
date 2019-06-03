@@ -112,6 +112,7 @@ appInsights.setup("<instrumentation_key>")
     .setAutoCollectConsole(true)
     .setUseDiskRetryCaching(true)
     .setSendLiveMetrics(false)
+    .setDistributedTracingTracingMode(appInsights.DistributedTracingModes.AI)
     .start();
 ```
 
@@ -190,7 +191,7 @@ By default, this SDK will send headers understood by other applications/services
 const appInsights = require("applicationinsights");
 appInsights
   .setup("<your ikey>")
-  .setDistributedTracingMode(appInsights.DistributedTracingMode.AI_AND_W3C)
+  .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C)
   .start()
 ```
 
