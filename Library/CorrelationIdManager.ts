@@ -99,10 +99,6 @@ class CorrelationIdManager {
         }
     }
 
-    public static isValidW3CId(id: string): boolean {
-        return id.length === 32 && id !== "00000000000000000000000000000000";
-    }
-
     /**
      * Generate a request Id according to https://github.com/lmolkova/correlation/blob/master/hierarchical_request_id.md
      * @param parentId
