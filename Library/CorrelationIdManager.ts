@@ -10,6 +10,8 @@ class CorrelationIdManager {
     private static TAG = "CorrelationIdManager";
     public static correlationIdPrefix = "cid-v1:";
 
+    public static w3cEnabled = false;
+
     // To avoid extraneous HTTP requests, we maintain a queue of callbacks waiting on a particular appId lookup,
     // as well as a cache of completed lookups so future requests can be resolved immediately.
     private static pendingLookups: {[key: string]: Function[]} = {};

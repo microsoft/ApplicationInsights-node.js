@@ -69,7 +69,9 @@ class AutoCollectHttpRequests {
             requestParser.getOperationId(this._client.context.tags),
             requestParser.getRequestId(),
             requestParser.getOperationName(this._client.context.tags),
-            requestParser.getCorrelationContextHeader()
+            requestParser.getCorrelationContextHeader(),
+            requestParser.getTraceparent(),
+            requestParser.getTracestate()
         );
     }
 
@@ -257,6 +259,11 @@ class AutoCollectHttpRequests {
             for (let key in telemetry.tagOverrides) {
                 requestTelemetry.tagOverrides[key] = telemetry.tagOverrides[key];
             }
+        }
+
+        const legacyRootId = requestParser.getLegacyRootId();
+        if (legacyRootId) {
+            requestTelemetry.properties["ai_legacyRootId"] = legacyRootId;
         }
 
         requestTelemetry.contextObjects = requestTelemetry.contextObjects || {};

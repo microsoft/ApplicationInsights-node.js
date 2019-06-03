@@ -9,6 +9,8 @@ import events = require("events");
 import child_process = require("child_process");
 import AppInsights = require("../applicationinsights");
 import Sender = require("../Library/Sender");
+import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
+import Traceparent = require("../Library/Traceparent");
 import { EventEmitter } from "events";
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
 
@@ -268,6 +270,95 @@ describe("EndToEnd", () => {
                 assert.equal(track.callCount, 0);
                 eventEmitter.emit("response", {});
                 assert.equal(track.callCount, 1);
+                done();
+            });
+        });
+    });
+
+    describe("W3C mode", () => {
+        var sandbox: sinon.SinonSandbox;
+
+        beforeEach(() => {
+            sandbox = sinon.sandbox.create();
+        });
+
+        afterEach(() => {
+            // Dispose the default app insights client and auto collectors so that they can be reconfigured
+            // cleanly for each test
+            CorrelationContextManager.reset();
+            AppInsights.dispose();
+            sandbox.restore();
+        });
+
+        it("should pass along traceparent/tracestate header if present in current operation", (done) => {
+            var eventEmitter = new EventEmitter();
+            (eventEmitter as any).headers = {};
+            (eventEmitter as any)["getHeader"] = function (name: string) { return this.headers[name]; };
+            (eventEmitter as any)["setHeader"] = function (name: string, value: string) { this.headers[name] = value; };
+            (<any>eventEmitter).method = "GET";
+            sandbox.stub(https, 'request', (url: string, c: Function) => {
+                process.nextTick(c);
+                return eventEmitter;
+            });
+
+            AppInsights
+                .setup("ikey")
+                .setAutoCollectDependencies(true)
+                .start();
+
+            sandbox.stub(CorrelationContextManager, "getCurrentContext", () => ({
+                operation: {
+                    traceparent: new Traceparent("00-5e84aff3af474588a42dcbf3bd1db95f-1fc066fb77fa43a3-00"),
+                    tracestate: "sometracestate"
+                },
+                customProperties: {
+                    serializeToHeader: (): null => null
+                }
+            }));
+            https.request(<any>'https://test.com', (c) => {
+                eventEmitter.emit("response", {});
+                assert.ok((eventEmitter as any).headers["request-id"].match(/^\|[0-z]{32}\.[0-z]{16}\./g));
+                assert.ok((eventEmitter as any).headers.traceparent.match(/^00-5e84aff3af474588a42dcbf3bd1db95f-[0-z]{16}-00$/));
+                assert.notEqual((eventEmitter as any).headers.traceparent, "00-5e84aff3af474588a42dcbf3bd1db95f-1fc066fb77fa43a3-00");
+                assert.equal((eventEmitter as any).headers.tracestate, "sometracestate");
+                AppInsights.defaultClient.flush();
+                done();
+            });
+        });
+
+        it("should create and pass a traceparent header if w3c is enabled", (done) => {
+            var CorrelationIdManager = require("../Library/CorrelationIdManager");
+
+            var eventEmitter = new EventEmitter();
+            (eventEmitter as any).headers = {};
+            (eventEmitter as any)["getHeader"] = function (name: string) { return this.headers[name]; };
+            (eventEmitter as any)["setHeader"] = function (name: string, value: string) { this.headers[name] = value; };
+            (<any>eventEmitter).method = "GET";
+            sandbox.stub(https, 'request', (url: string, c: Function) => {
+                process.nextTick(c);
+                return eventEmitter;
+            });
+
+            AppInsights
+                .setup("ikey")
+                .setAutoCollectDependencies(true)
+                .start();
+
+            CorrelationIdManager.w3cEnabled = true;
+
+            sandbox.stub(CorrelationContextManager, "getCurrentContext", () => ({
+                operation: {
+                },
+                customProperties: {
+                    serializeToHeader: (): null => null
+                }
+            }));
+            https.request(<any>'https://test.com', (c) => {
+                eventEmitter.emit("response", {});
+                assert.ok((eventEmitter as any).headers.traceparent.match(/^00-[0-z]{32}-[0-z]{16}-00/g), "traceparent header is passed, 00-W3C-W3C-00");
+                assert.ok((eventEmitter as any).headers["request-id"].match(/^\|[0-z]{32}\.[0-z]{16}\./g), "back compat header is also passed, |W3C.W3C." + (eventEmitter as any).headers["request-id"]);
+                CorrelationIdManager.w3cEnabled = false;
+                AppInsights.defaultClient.flush();
                 done();
             });
         });

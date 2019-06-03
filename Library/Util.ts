@@ -104,6 +104,10 @@ class Util {
         return oct.substr(0, 8) + oct.substr(9, 4) + "4" + oct.substr(13, 3) + clockSequenceHi + oct.substr(16, 3) + oct.substr(19, 12);
     }
 
+    public static isValidW3CId(id: string): boolean {
+        return id.length === 32 && id !== "00000000000000000000000000000000";
+    }
+
     /**
      * Check if an object is of type Array
      */
