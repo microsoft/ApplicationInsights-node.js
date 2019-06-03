@@ -3,6 +3,7 @@ import sinon = require("sinon");
 
 import HttpRequestParser = require("../../AutoCollection/HttpRequestParser");
 import CorrelationIdManager = require("../../Library/CorrelationIdManager");
+import Util = require("../../Library/Util");
 import Traceparent = require("../../Library/Traceparent");
 
 describe("AutoCollection/HttpRequestParser", () => {
@@ -55,11 +56,11 @@ describe("AutoCollection/HttpRequestParser", () => {
             assert.equal(helper["legacyRootId"], "abc");
             assert.equal(helper["parentId"], legacyRequest.headers["request-id"]);
             assert.ok(helper["requestId"].match(backCompatFormat));
-            assert.ok(CorrelationIdManager.isValidW3CId(requestTags[(<any>HttpRequestParser).keys.operationId]));
-            assert.ok(CorrelationIdManager.isValidW3CId(helper["requestId"].substr(1, 32)));
+            assert.ok(Util.isValidW3CId(requestTags[(<any>HttpRequestParser).keys.operationId]));
+            assert.ok(Util.isValidW3CId(helper["requestId"].substr(1, 32)));
             const traceparent = helper["traceparent"];
             assert.equal(traceparent.version, "00");
-            assert.ok(CorrelationIdManager.isValidW3CId(traceparent.traceId));
+            assert.ok(Util.isValidW3CId(traceparent.traceId));
             assert.ok(Traceparent.isValidSpanId(traceparent.spanId));
             assert.notEqual(traceparent.traceId, traceparent.spanId);
             assert.equal(traceparent.traceFlag, "00");
@@ -71,10 +72,10 @@ describe("AutoCollection/HttpRequestParser", () => {
             assert.equal(helper["parentId"], legacyRequestUnique.headers["request-id"], "parentId is same as request-id");
             assert.ok(helper["requestId"].match(backCompatFormat));
             assert.equal(helper["legacyRootId"], "abc");
-            assert.ok(CorrelationIdManager.isValidW3CId(requestTags[(<any>HttpRequestParser).keys.operationId]));
+            assert.ok(Util.isValidW3CId(requestTags[(<any>HttpRequestParser).keys.operationId]));
             const traceparent = helper["traceparent"];
             assert.equal(traceparent.version, "00");
-            assert.ok(CorrelationIdManager.isValidW3CId(traceparent.traceId));
+            assert.ok(Util.isValidW3CId(traceparent.traceId));
             assert.ok(Traceparent.isValidSpanId(traceparent.spanId));
             assert.notEqual(traceparent.traceId, traceparent.spanId);
             assert.equal(traceparent.traceFlag, "00");
@@ -86,10 +87,10 @@ describe("AutoCollection/HttpRequestParser", () => {
             assert.ok(!helper["parentId"]);
             assert.ok(helper["requestId"]);
             assert.ok(helper["requestId"].match(backCompatFormat));
-            assert.ok(CorrelationIdManager.isValidW3CId(requestTags[(<any>HttpRequestParser).keys.operationId]));
+            assert.ok(Util.isValidW3CId(requestTags[(<any>HttpRequestParser).keys.operationId]));
             const traceparent = helper["traceparent"];
             assert.equal(traceparent.version, "00");
-            assert.ok(CorrelationIdManager.isValidW3CId(traceparent.traceId));
+            assert.ok(Util.isValidW3CId(traceparent.traceId));
             assert.ok(Traceparent.isValidSpanId(traceparent.spanId));
             assert.notEqual(traceparent.traceId, traceparent.spanId);
             assert.equal(traceparent.traceFlag, "00");
