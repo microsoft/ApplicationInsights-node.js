@@ -112,6 +112,7 @@ appInsights.setup("<instrumentation_key>")
     .setAutoCollectConsole(true)
     .setUseDiskRetryCaching(true)
     .setSendLiveMetrics(false)
+    .setDistributedTracingTracingMode(appInsights.DistributedTracingModes.AI)
     .start();
 ```
 
@@ -169,11 +170,9 @@ The `bunyan`, `winston`, and `console` patches will generate Application Insight
 The rest will generate Application Insights Dependency events based on whether `setAutoCollectDependencies` is enabled.
 
 ### Live Metrics
->***Note:*** The ability to send to live metrics was added in version `1.3.0`.
-
 To enable sending live metrics of your app to Azure, use `setSendLiveMetrics(true)`. Filtering of live metrics in the Portal is currently not supported.
 
-<!-- ### Extended Metrics
+### Extended Metrics
 >***Note:*** The ability to send extended native metrics was added in version `1.4.0`
 
 To enable sending extended native metrics of your app to Azure, simply install the separate native metrics package. The SDK will automatically load it when it is installed and start collecting Node.js native metrics.
@@ -183,7 +182,18 @@ npm install applicationinsights-native-metrics
 Currently, the native metrics package performs autocollection of Garbage Collection CPU time, Event Loop ticks, and heap usage:
 - **Garbage Collection:** The amount of CPU time spent on each type of garbage collection, and how many occurrences of each type.
 - **Event Loop:** How many ticks occurred and how much CPU time was spent in total.
-- **Heap vs Non-Heap:** How much of your app's memory usage is in the heap or non-heap. -->
+- **Heap vs Non-Heap:** How much of your app's memory usage is in the heap or non-heap.
+
+### Distributed Tracing Modes
+By default, this SDK will send headers understood by other applications/services instrumented with an Application Insights SDK. You can optionally enable sending/receiving of [W3C Trace Context](https://github.com/w3c/trace-context) headers in addition to the existing AI headers, so you will not break correlation with any of your existing legacy services. Enabling W3C headers will allow your app to correlate with other services not instrumented with Application Insights, but do adopt this W3C standard.
+
+```js
+const appInsights = require("applicationinsights");
+appInsights
+  .setup("<your ikey>")
+  .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C)
+  .start()
+```
 
 ## Track custom telemetry
 
