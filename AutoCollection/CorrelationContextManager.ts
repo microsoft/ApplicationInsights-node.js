@@ -7,6 +7,8 @@ import * as DiagChannel from "./diagnostic-channel/initialization";
 
 // Don't reference modules from these directly. Use only for types.
 import * as cls from "cls-hooked";
+import Traceparent = require("../Library/Traceparent");
+import Tracestate = require("../Library/Tracestate");
 
 export interface CustomProperties {
     /**
@@ -32,6 +34,8 @@ export interface CorrelationContext {
         name: string;
         id: string;
         parentId: string; // Always used for dependencies, may be ignored in favor of incoming headers for requests
+        traceparent?: Traceparent; // w3c context trace
+        tracestate?: Tracestate; // w3c context state
     };
 
     /** Do not store sensitive information here.
@@ -68,7 +72,7 @@ export class CorrelationContextManager {
     /**
      *  A helper to generate objects conforming to the CorrelationContext interface
      */
-    public static generateContextObject(operationId: string, parentId?: string, operationName?: string, correlationContextHeader?: string): CorrelationContext {
+    public static generateContextObject(operationId: string, parentId?: string, operationName?: string, correlationContextHeader?: string, traceparent?: Traceparent, tracestate?: Tracestate): CorrelationContext {
         parentId = parentId || operationId;
 
         if (this.enabled) {
@@ -76,7 +80,9 @@ export class CorrelationContextManager {
                 operation: {
                     name: operationName,
                     id: operationId,
-                    parentId: parentId
+                    parentId: parentId,
+                    traceparent,
+                    tracestate
                 },
                 customProperties: new CustomPropertiesImpl(correlationContextHeader)
             };

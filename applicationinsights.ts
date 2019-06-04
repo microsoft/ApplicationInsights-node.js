@@ -6,14 +6,30 @@ import AutoCollectHttpDependencies = require("./AutoCollection/HttpDependencies"
 import AutoCollectHttpRequests = require("./AutoCollection/HttpRequests");
 import Config = require("./Library/Config");
 import Context = require("./Library/Context");
+import CorrelationIdManager = require("./Library/CorrelationIdManager");
 import Logging = require("./Library/Logging");
 import Util = require("./Library/Util");
 import QuickPulseClient = require("./Library/QuickPulseStateManager");
+
+import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCollection/NativePerformance";
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
 export import TelemetryClient = require("./Library/NodeClient");
 export import Contracts = require("./Declarations/Contracts");
+
+export enum DistributedTracingModes {
+    /**
+     * (Default) Send Application Insights correlation headers
+     */
+
+    AI=0,
+
+    /**
+     * Send both W3C Trace Context headers and back-compatibility Application Insights headers
+     */
+    AI_AND_W3C
+}
 
 // Default autocollection configuration
 let _isConsole = true;
@@ -26,6 +42,8 @@ let _isDiskRetry = true;
 let _isCorrelating = true;
 let _forceClsHooked: boolean;
 let _isSendingLiveMetrics = false; // Off by default
+let _isNativePerformance = true;
+let _disabledExtendedMetrics: IDisabledExtendedMetrics;
 
 let _diskRetryInterval: number = undefined;
 let _diskRetryMaxBytes: number = undefined;
@@ -33,6 +51,7 @@ let _diskRetryMaxBytes: number = undefined;
 let _console: AutoCollectConsole;
 let _exceptions: AutoCollectExceptions;
 let _performance: AutoCollectPerformance;
+let _nativePerformance: AutoCollectNativePerformance;
 let _serverRequests: AutoCollectHttpRequests;
 let _clientRequests: AutoCollectHttpDependencies;
 
@@ -64,6 +83,9 @@ export function setup(instrumentationKey?: string) {
         _performance = new AutoCollectPerformance(defaultClient);
         _serverRequests = new AutoCollectHttpRequests(defaultClient);
         _clientRequests = new AutoCollectHttpDependencies(defaultClient);
+        if (!_nativePerformance) {
+            _nativePerformance = new AutoCollectNativePerformance(defaultClient);
+        }
     } else {
         Logging.info("The default client is already setup");
     }
@@ -87,6 +109,7 @@ export function start() {
         _console.enable(_isConsole, _isConsoleLog);
         _exceptions.enable(_isExceptions);
         _performance.enable(_isPerformance);
+        _nativePerformance.enable(_isNativePerformance, _disabledExtendedMetrics);
         _serverRequests.useAutoCorrelation(_isCorrelating, _forceClsHooked);
         _serverRequests.enable(_isRequests);
         _clientRequests.enable(_isDependencies);
@@ -138,6 +161,18 @@ export class Configuration {
     // Convenience shortcut to ApplicationInsights.start
     public static start = start;
 
+     /**
+      * Sets the distributed tracing modes. If W3C mode is enabled, W3C trace context
+      * headers (traceparent/tracestate) will be parsed in all incoming requests, and included in outgoing
+      * requests. In W3C mode, existing back-compatibility AI headers will also be parsed and included.
+      * Enabling W3C mode will not break existing correlation with other Application Insights instrumented
+      * services. Default=AI
+     */
+    public static setDistributedTracingMode(value: DistributedTracingModes) {
+        CorrelationIdManager.w3cEnabled = value === DistributedTracingModes.AI_AND_W3C;
+        return Configuration;
+    }
+
     /**
      * Sets the state of console and logger tracking (enabled by default for third-party loggers only)
      * @param value if true logger activity will be sent to Application Insights
@@ -171,13 +206,19 @@ export class Configuration {
     /**
      * Sets the state of performance tracking (enabled by default)
      * @param value if true performance counters will be collected every second and sent to Application Insights
+     * @param collectExtendedMetrics if true, extended metrics counters will be collected every minute and sent to Application Insights
      * @returns {Configuration} this class
      */
-    public static setAutoCollectPerformance(value: boolean) {
+    public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: boolean | IDisabledExtendedMetrics = true) {
         _isPerformance = value;
-        if (_isStarted){
+        const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(collectExtendedMetrics);
+        _isNativePerformance = extendedMetricsConfig.isEnabled;
+        _disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
+        if (_isStarted) {
             _performance.enable(value);
+            _nativePerformance.enable(extendedMetricsConfig.isEnabled, extendedMetricsConfig.disabledMetrics);
         }
+
 
         return Configuration;
     }
@@ -300,6 +341,9 @@ export function dispose() {
     }
     if (_performance) {
         _performance.dispose();
+    }
+    if (_nativePerformance) {
+        _nativePerformance.dispose();
     }
     if(_serverRequests) {
         _serverRequests.dispose();

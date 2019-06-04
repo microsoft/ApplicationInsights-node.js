@@ -35,8 +35,18 @@ export = {
 
     /**
      * Correlation-Context header
-     * 
+     *
      * Not currently actively used, but the contents should be passed from incoming to outgoing requests
      */
-    correlationContextHeader: "correlation-context"
+    correlationContextHeader: "correlation-context",
+
+    /**
+     * W3C distributed tracing protocol header
+     */
+    traceparentHeader: "traceparent",
+
+    /**
+     * W3C distributed tracing protocol state header
+     */
+    traceStateHeader: "tracestate"
 }

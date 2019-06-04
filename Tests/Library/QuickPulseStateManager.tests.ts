@@ -18,7 +18,7 @@ describe("Library/QuickPulseStateManager", () => {
             assert.equal(qps.config.instrumentationKey, "ikey");
             assert.ok(qps.context);
             assert.equal(qps["_isEnabled"], false);
-            assert.equal(QuickPulseClient["_isCollectingData"], false);
+            assert.equal(qps["_isCollectingData"], false);
             assert.ok(qps["_sender"]);
             assert.ok(Object.keys(qps["_metrics"]).length === 0);
             assert.ok(qps["_documents"].length === 0);
@@ -105,7 +105,7 @@ describe("Library/QuickPulseStateManager", () => {
             assert.ok(pingStub.notCalled);
             assert.ok(postStub.notCalled);
 
-            QuickPulseClient["_isCollectingData"] = true;
+            qps["_isCollectingData"] = true;
             qps.enable(true)
 
             assert.ok(postStub.calledOnce);

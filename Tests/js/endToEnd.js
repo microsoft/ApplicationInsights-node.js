@@ -21,7 +21,7 @@ describe('module', function () {
         });
     });
     describe('applicationinsights', function() {
-        if (/^0\.([0-9]\.)|(10\.)/.test(process.versions.node)) {
+        if (/^0\.(([0-9]\.)|(10\.))/.test(process.versions.node)) {
             // These tests aren't valid in Node 0.10
             return;
         }
@@ -37,7 +37,7 @@ describe('module', function () {
                 clearTimeout(timer);
                 done();
             });
-            
+
         });
         it('does not prevent the app from terminating if started and called track and flush', function (done) {
             this.timeout(5000);

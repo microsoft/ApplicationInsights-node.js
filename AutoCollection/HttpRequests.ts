@@ -69,7 +69,9 @@ class AutoCollectHttpRequests {
             requestParser.getOperationId(this._client.context.tags),
             requestParser.getRequestId(),
             requestParser.getOperationName(this._client.context.tags),
-            requestParser.getCorrelationContextHeader()
+            requestParser.getCorrelationContextHeader(),
+            requestParser.getTraceparent(),
+            requestParser.getTracestate()
         );
     }
 
@@ -238,20 +240,8 @@ class AutoCollectHttpRequests {
     private static addResponseCorrelationIdHeader(client: TelemetryClient, response:http.ServerResponse) {
         if (client.config && client.config.correlationId &&
             response.getHeader && response.setHeader && !(<any>response).headersSent) {
-            const correlationHeader = response.getHeader(RequestResponseHeaders.requestContextHeader);
-            if (correlationHeader) {
-                const components = correlationHeader.split(",");
-                const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
-                if (!components.some((value) => value.substring(0,key.length) === key)) {
-                    response.setHeader(
-                        RequestResponseHeaders.requestContextHeader,
-                        `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
-                }
-            } else {
-                response.setHeader(
-                    RequestResponseHeaders.requestContextHeader,
-                    `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
-            }
+            const correlationHeader = <any>response.getHeader(RequestResponseHeaders.requestContextHeader);
+            Util.safeIncludeCorrelationHeader(client, response, correlationHeader);
         }
     }
 
@@ -269,6 +259,11 @@ class AutoCollectHttpRequests {
             for (let key in telemetry.tagOverrides) {
                 requestTelemetry.tagOverrides[key] = telemetry.tagOverrides[key];
             }
+        }
+
+        const legacyRootId = requestParser.getLegacyRootId();
+        if (legacyRootId) {
+            requestTelemetry.properties["ai_legacyRootId"] = legacyRootId;
         }
 
         requestTelemetry.contextObjects = requestTelemetry.contextObjects || {};
