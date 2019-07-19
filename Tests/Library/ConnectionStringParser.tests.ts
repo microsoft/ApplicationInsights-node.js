@@ -13,10 +13,10 @@ describe("ConnectionStringParser", () => {
 
             const result = ConnectionStrinParser.parse(connectionString);
 
-            assert.deepStrictEqual(result.authorization, authorization);
-            assert.deepStrictEqual(result.instrumentationkey, instrumentationKey);
-            assert.deepStrictEqual(result.ingestionendpoint, ingestionEndpoint);
-            assert.deepStrictEqual(result.liveendpoint, liveEndpoint);
+            assert.deepEqual(result.authorization, authorization);
+            assert.deepEqual(result.instrumentationkey, instrumentationKey);
+            assert.deepEqual(result.ingestionendpoint, ingestionEndpoint);
+            assert.deepEqual(result.liveendpoint, liveEndpoint);
         });
 
         it("should parse ignore invalid fields", () => {
@@ -28,10 +28,10 @@ describe("ConnectionStringParser", () => {
 
             const result = ConnectionStrinParser.parse(connectionString);
 
-            assert.deepStrictEqual(result.authorization, undefined);
-            assert.deepStrictEqual(result.instrumentationkey, undefined);
-            assert.deepStrictEqual(result.ingestionendpoint, undefined);
-            assert.deepStrictEqual(result.liveendpoint, undefined);
+            assert.deepEqual(result.authorization, undefined);
+            assert.deepEqual(result.instrumentationkey, undefined);
+            assert.deepEqual(result.ingestionendpoint, undefined);
+            assert.deepEqual(result.liveendpoint, undefined);
         });
 
         it("should parse ignore invalid fields", () => {
@@ -43,10 +43,10 @@ describe("ConnectionStringParser", () => {
 
             const result = ConnectionStrinParser.parse(connectionString);
 
-            assert.deepStrictEqual(result.authorization, undefined);
-            assert.deepStrictEqual(result.instrumentationkey, undefined);
-            assert.deepStrictEqual(result.ingestionendpoint, undefined);
-            assert.deepStrictEqual(result.liveendpoint, undefined);
+            assert.deepEqual(result.authorization, undefined);
+            assert.deepEqual(result.instrumentationkey, undefined);
+            assert.deepEqual(result.ingestionendpoint, undefined);
+            assert.deepEqual(result.liveendpoint, undefined);
         });
     });
 });

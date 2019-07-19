@@ -17,7 +17,7 @@ describe("Library/Config", () => {
                 var originalEnv = process.env;
                 process.env = env;
                 const config = new Config("ikey.code", "InStruMenTatioNKey=cs.code");
-                assert.deepStrictEqual(config.instrumentationKey, "cs.code");
+                assert.deepEqual(config.instrumentationKey, "cs.code");
                 process.env = originalEnv;
             });
 
@@ -26,7 +26,7 @@ describe("Library/Config", () => {
                 var originalEnv = process.env;
                 process.env = env;
                 const config = new Config("ikey.code", null);
-                assert.deepStrictEqual(config.instrumentationKey, "ikey.code");
+                assert.deepEqual(config.instrumentationKey, "ikey.code");
                 process.env = originalEnv;
             });
 
@@ -35,7 +35,7 @@ describe("Library/Config", () => {
                 var originalEnv = process.env;
                 process.env = env;
                 const config = new Config(null, null);
-                assert.deepStrictEqual(config.instrumentationKey, "cs.env");
+                assert.deepEqual(config.instrumentationKey, "cs.env");
                 process.env = originalEnv;
             });
 
@@ -44,7 +44,7 @@ describe("Library/Config", () => {
                 var originalEnv = process.env;
                 process.env = env;
                 const config = new Config(null, null);
-                assert.deepStrictEqual(config.instrumentationKey, "ikey.env");
+                assert.deepEqual(config.instrumentationKey, "ikey.env");
                 process.env = originalEnv;
             });
         });
