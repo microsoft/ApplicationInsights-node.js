@@ -19,3 +19,17 @@ export function domainSupportsProperties(domain: Domain): domain is ISupportProp
         domain instanceof RemoteDependencyData ||
         domain instanceof RequestData;
 }
+
+/**
+ * Subset of Connection String fields which this SDK can parse. Lower-typecased to
+ * allow for case-insensitivity across field names
+ * @interface IConnectionStringFields
+ */
+export interface IConnectionStringFields {
+    authorization?: string;
+    instrumentationkey?: string;
+    ingestionendpoint?: string;
+    liveendpoint?: string;
+
+    [key: string]: string; // catch all for non-recognized fields
+}
