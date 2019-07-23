@@ -4,7 +4,11 @@ class ConnectionStringParser {
     private static _FIELDS_SEPARATOR = ";";
     private static _FIELD_KEY_VALUE_SEPARATOR = "=";
 
-    public static parse(connectionString: string): IConnectionStringFields {
+    public static parse(connectionString?: string): IConnectionStringFields {
+        if (!connectionString) {
+            return {};
+        }
+
         const kvPairs = connectionString.split(ConnectionStringParser._FIELDS_SEPARATOR);
 
         return kvPairs.reduce((fields: IConnectionStringFields, kv: string) => {

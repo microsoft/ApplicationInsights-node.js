@@ -29,10 +29,10 @@ class TelemetryClient {
 
     /**
      * Constructs a new client of the client
-     * @param iKey the instrumentation key to use (read from environment variable if not specified)
+     * @param setupString the Connection String or Instrumentation Key to use (read from environment variable if not specified)
      */
-    constructor(iKey?: string) {
-        var config = new Config(iKey);
+    constructor(setupString?: string) {
+        var config = new Config(setupString);
         this.config = config;
         this.context = new Context();
         this.commonProperties = {};

@@ -59,18 +59,15 @@ class Config {
     private _quickPulseHost: string;
 
 
-    constructor(instrumentationKey?: string, connectionStringCode?: string) {
-        const connectionStringEnv = process.env[Config.ENV_connectionString];
-        let csCode: IConnectionStringFields = {};
-        let csEnv: IConnectionStringFields = {}; // Create separate objects since we may grab different fields from different CS locations
-        if (connectionStringCode) {
-            csCode = ConnectionStringParser.parse(connectionStringCode);
-        }
-        if (connectionStringEnv) {
-            csEnv = ConnectionStringParser.parse(connectionStringEnv);
-        }
+    constructor(setupString?: string) {
+        const connectionStringEnv: string | undefined = process.env[Config.ENV_connectionString];
+        const csCode = ConnectionStringParser.parse(setupString);
+        const csEnv = ConnectionStringParser.parse(connectionStringEnv);
+        const iKeyCode = !csCode.instrumentationkey && Object.keys(csCode).length > 0
+            ? null // CS was valid but instrumentation key was not provided, null and grab from env var
+            : setupString; // CS was invalid, so it must be an ikey
 
-        this.instrumentationKey = csCode.instrumentationkey || instrumentationKey || csEnv.instrumentationkey || Config._getInstrumentationKey();
+        this.instrumentationKey = csCode.instrumentationkey || iKeyCode /* === instrumentationKey */ || csEnv.instrumentationkey || Config._getInstrumentationKey();
 
         this.endpointUrl = `${csCode.ingestionendpoint || csEnv.ingestionendpoint || this.endpointBase}/v2/track`;
         this.maxBatchSize = 250;
