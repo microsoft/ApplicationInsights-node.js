@@ -138,7 +138,11 @@ class AutoCollectHttpDependencies {
             if (client.config && client.config.correlationId) {
                 // getHeader returns "any" type in newer versions of node. In basic scenarios, this will be <string | string[] | number>, but could be modified to anything else via middleware
                 const correlationHeader = <any>telemetry.request.getHeader(RequestResponseHeaders.requestContextHeader)
-                Util.safeIncludeCorrelationHeader(client, telemetry.request, correlationHeader);
+                try {
+                    Util.safeIncludeCorrelationHeader(client, telemetry.request, correlationHeader);
+                } catch (err) {
+                    Logging.warn("Request-Context header could not be set. Correlation of requests may be lost", err);
+                }
 
                 if (currentContext && currentContext.operation) {
                     try {
