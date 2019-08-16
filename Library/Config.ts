@@ -1,5 +1,5 @@
 import CorrelationIdManager = require('./CorrelationIdManager');
-import { IConnectionStringFields } from '../Declarations/Contracts';
+import { ConnectionStringFields } from '../Declarations/Contracts';
 import ConnectionStringParser = require('./ConnectionStringParser');
 import Constants = require('../Declarations/Constants');
 import http = require('http');

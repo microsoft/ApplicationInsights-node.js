@@ -23,9 +23,9 @@ export function domainSupportsProperties(domain: Domain): domain is ISupportProp
 /**
  * Subset of Connection String fields which this SDK can parse. Lower-typecased to
  * allow for case-insensitivity across field names
- * @interface IConnectionStringFields
+ * @interface ConnectionStringFields
  */
-export interface IConnectionStringFields {
+export interface ConnectionStringFields {
     authorization?: string;
     instrumentationkey?: string;
     ingestionendpoint?: string;
