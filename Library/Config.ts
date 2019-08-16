@@ -1,11 +1,11 @@
 import CorrelationIdManager = require('./CorrelationIdManager');
 import { IConnectionStringFields } from '../Declarations/Contracts';
 import ConnectionStringParser = require('./ConnectionStringParser');
+import Constants = require('../Declarations/Constants');
 import http = require('http');
 import https = require('https');
 
 class Config {
-
     // Azure adds this prefix to all environment variables
     public static ENV_azurePrefix = "APPSETTING_";
 
@@ -16,7 +16,7 @@ class Config {
     public static ENV_quickPulseHost = "APPINSIGHTS_QUICKPULSE_HOST";
 
     // Azure Connection String
-    public static ENV_connectionString = "APPINSIGHTS_CONNECTIONSTRING";
+    public static ENV_connectionString = "APPINSIGHTS_CONNECTION_STRING";
 
     // Native Metrics Opt Outs
     public static ENV_nativeMetricsDisablers = "APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC";
@@ -52,7 +52,7 @@ class Config {
     /** An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined) */
     public httpsAgent: https.Agent;
 
-    private endpointBase: string = "https://dc.services.visualstudio.com";
+    private endpointBase: string = Constants.DEFAULT_BREEZE_ENDPOINT;
     private setCorrelationId: (v: string) => void;
     private _profileQueryEndpoint: string;
     /** Host name for quickpulse service */
@@ -88,7 +88,7 @@ class Config {
         this.proxyHttpsUrl = process.env[Config.ENV_https_proxy] || undefined;
         this.httpAgent = undefined;
         this.httpsAgent = undefined;
-        this._quickPulseHost = csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || "rt.services.visualstudio.com";
+        this._quickPulseHost = csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_ENDPOINT;
     }
 
     public set profileQueryEndpoint(endpoint: string) {

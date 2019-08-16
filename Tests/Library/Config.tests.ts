@@ -4,6 +4,7 @@ var http = require("http");
 var https = require("https");
 
 import Config = require("../../Library/Config");
+import Constants = require("../../Declarations/Constants");
 
 describe("Library/Config", () => {
 
@@ -109,7 +110,7 @@ describe("Library/Config", () => {
                 assert(config.proxyHttpUrl === undefined);
                 assert(config.proxyHttpsUrl === undefined);
 
-                assert(config.quickPulseHost === "rt.services.visualstudio.com");
+                assert(config.quickPulseHost === Constants.DEFAULT_LIVEMETRICS_ENDPOINT);
             });
 
             it("should initialize values that we claim in README (2)", () => {

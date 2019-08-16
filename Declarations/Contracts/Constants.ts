@@ -30,6 +30,9 @@ export interface IConnectionStringFields {
     instrumentationkey?: string;
     ingestionendpoint?: string;
     liveendpoint?: string;
+    location?: string;
+    endpointsuffix?: string;
+
 
     [key: string]: string; // catch all for non-recognized fields
 }
