@@ -16,7 +16,7 @@ class Config {
     public static ENV_quickPulseHost = "APPINSIGHTS_QUICKPULSE_HOST";
 
     // Azure Connection String
-    public static ENV_connectionString = "APPINSIGHTS_CONNECTION_STRING";
+    public static ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
 
     // Native Metrics Opt Outs
     public static ENV_nativeMetricsDisablers = "APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC";
