@@ -58,6 +58,7 @@ describe("AutoCollection/Performance", () => {
             assert.strictEqual(stub2.args[1][0].value, stub1.args[1][0].value);
             assert.strictEqual(stub1.args[1][0].value, (5000) / 1, "request duration average should be 5000");
 
+            Performance.INSTANCE.enable(false);
             stub1.restore()
             stub2.restore();
             setIntervalStub.restore();
