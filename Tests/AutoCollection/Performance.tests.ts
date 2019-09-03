@@ -25,8 +25,9 @@ describe("AutoCollection/Performance", () => {
 
     describe("#trackNetwork()", () => {
         it("should not produce incorrect metrics because of multiple instances of Performance class", () => {
-            AppInsights.setup("key").setAutoCollectPerformance(false).start();
             const setIntervalStub = sinon.stub(global, "setInterval", () => ({ unref: () => {}}));
+            const clearIntervalSpy = sinon.spy(global, "clearInterval");
+            const appInsights = AppInsights.setup("key").setAutoCollectPerformance(false).start();
             const performance1 = new Performance(new TelemetryClient("key"), 1234, false);
             const performance2 = new Performance(new TelemetryClient("key"), 4321, true);
             performance1.enable(true);
@@ -58,10 +59,14 @@ describe("AutoCollection/Performance", () => {
             assert.strictEqual(stub2.args[1][0].value, stub1.args[1][0].value);
             assert.strictEqual(stub1.args[1][0].value, (5000) / 1, "request duration average should be 5000");
 
-            Performance.INSTANCE.enable(false);
+            appInsights.setAutoCollectPerformance(true); // set back to default of true so tests expecting the default can pass
+            Performance.INSTANCE.dispose();
+            performance1.dispose();
+            performance2.dispose();
             stub1.restore()
             stub2.restore();
             setIntervalStub.restore();
+            clearIntervalSpy.restore();
         });
     });
 });
