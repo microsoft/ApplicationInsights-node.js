@@ -355,7 +355,7 @@ describe("EndToEnd", () => {
             }));
             https.request(<any>'https://test.com', (c) => {
                 eventEmitter.emit("response", {});
-                assert.ok((eventEmitter as any).headers.traceparent.match(/^00-[0-z]{32}-[0-z]{16}-00/g), "traceparent header is passed, 00-W3C-W3C-00");
+                assert.ok((eventEmitter as any).headers.traceparent.match(/^00-[0-z]{32}-[0-z]{16}-[0-9a-f]{2}/g), "traceparent header is passed, 00-W3C-W3C-00");
                 assert.ok((eventEmitter as any).headers["request-id"].match(/^\|[0-z]{32}\.[0-z]{16}\./g), "back compat header is also passed, |W3C.W3C." + (eventEmitter as any).headers["request-id"]);
                 CorrelationIdManager.w3cEnabled = false;
                 AppInsights.defaultClient.flush();
