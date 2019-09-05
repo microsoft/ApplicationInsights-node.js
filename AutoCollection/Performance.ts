@@ -19,6 +19,8 @@ class AutoCollectPerformance {
     private static _intervalDependencyExecutionTime: number = 0;
     private static _intervalRequestExecutionTime: number = 0;
 
+    private _lastIntervalRequestExecutionTime: number = 0; // the sum of durations which took place during from app start until last interval
+    private _lastIntervalDependencyExecutionTime: number = 0;
     private _enableLiveMetricsCounters: boolean;
     private _collectionInterval: number;
     private _client: TelemetryClient;
@@ -86,28 +88,27 @@ class AutoCollectPerformance {
         }
     }
 
-    public static countRequest(request: http.ServerRequest, response: http.ServerResponse) {
+
+    public static countRequest(duration: number | string, success: boolean) {
+        let durationMs: number;
         if (!AutoCollectPerformance.isEnabled()) {
             return;
         }
 
-        var start = +new Date;
-        if (!request || !response) {
-            Logging.warn("AutoCollectPerformance.countRequest was called with invalid parameters: ", !!request, !!response);
+        if (typeof duration === 'string') {
+            // dependency duration is passed in as "00:00:00.123" by autocollectors
+            durationMs = +new Date('1970-01-01T' + duration + 'Z'); // convert to num ms, returns NaN if wrong
+        } else if (typeof duration === 'number') {
+            durationMs = duration;
+        } else {
             return;
         }
 
-        // response listeners
-        if (typeof response.once === "function") {
-            response.once("finish", () => {
-                var end = +new Date;
-                AutoCollectPerformance._intervalRequestExecutionTime += this._lastRequestExecutionTime = end - start;
-                AutoCollectPerformance._totalRequestCount++;
-                if (response.statusCode >= 400) {
-                    AutoCollectPerformance._totalFailedRequestCount++;
-                }
-            });
+        AutoCollectPerformance._intervalRequestExecutionTime += durationMs;
+        if (success === false) {
+            AutoCollectPerformance._totalFailedRequestCount++;
         }
+        AutoCollectPerformance._totalRequestCount++;
     }
 
     public static countException() {
@@ -247,8 +248,8 @@ class AutoCollectPerformance {
         var intervalFailedRequests = (requests.totalFailedRequestCount - lastRequests.totalFailedRequestCount) || 0;
         var elapsedMs = requests.time - lastRequests.time;
         var elapsedSeconds = elapsedMs / 1000;
-        var averageRequestExecutionTime = (AutoCollectPerformance._intervalRequestExecutionTime / intervalRequests) || 0; // default to 0 in case no requests in this interval
-        AutoCollectPerformance._intervalRequestExecutionTime = 0; // reset
+        var averageRequestExecutionTime = ((AutoCollectPerformance._intervalRequestExecutionTime - this._lastIntervalRequestExecutionTime) / intervalRequests) || 0; // default to 0 in case no requests in this interval
+        this._lastIntervalRequestExecutionTime = AutoCollectPerformance._intervalRequestExecutionTime // reset
 
         if (elapsedMs > 0) {
             var requestsPerSec = intervalRequests / elapsedSeconds;
@@ -285,8 +286,8 @@ class AutoCollectPerformance {
             var intervalFailedDependencies = (dependencies.totalFailedDependencyCount - lastDependencies.totalFailedDependencyCount) || 0;
             var elapsedMs = dependencies.time - lastDependencies.time;
             var elapsedSeconds = elapsedMs / 1000;
-            var averageDependencyExecutionTime = (AutoCollectPerformance._intervalDependencyExecutionTime / intervalDependencies) || 0;
-            AutoCollectPerformance._intervalDependencyExecutionTime = 0; // reset
+            var averageDependencyExecutionTime = ((AutoCollectPerformance._intervalDependencyExecutionTime - this._lastIntervalDependencyExecutionTime) / intervalDependencies) || 0;
+            this._lastIntervalDependencyExecutionTime = AutoCollectPerformance._intervalDependencyExecutionTime // reset
 
             if (elapsedMs > 0) {
                 var dependenciesPerSec = intervalDependencies / elapsedSeconds;

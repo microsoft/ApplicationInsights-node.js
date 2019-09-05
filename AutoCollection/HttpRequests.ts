@@ -106,12 +106,6 @@ class AutoCollectHttpRequests {
                             AutoCollectHttpRequests.trackRequest(this._client, {request: request, response: response}, requestParser);
                         }
 
-                        // Add this request to the performance counter
-                        // Note: Check for if perf counters are enabled happens within this method.
-                        // TODO: Refactor common bits between trackRequest and countRequest so they can
-                        // be used together, even when perf counters are on, and request tracking is off
-                        AutoCollectPerformance.countRequest(request, response);
-
                         if (typeof onRequest === "function") {
                             onRequest(request, response);
                         }
