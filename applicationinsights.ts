@@ -316,7 +316,7 @@ export class Configuration {
             liveMetricsClient = new QuickPulseClient(defaultClient.config.instrumentationKey);
             _performanceLiveMetrics = new AutoCollectPerformance(liveMetricsClient as any, 1000, true);
             liveMetricsClient.addCollector(_performanceLiveMetrics);
-            defaultClient.quickPulseClient = liveMetricsClient; // Need this so we can forward all manual tracks to live metrics via quickPulseTelemetryProcessor
+            defaultClient.quickPulseClient = liveMetricsClient; // Need this so we can forward all manual tracks to live metrics via PerformanceMetricsTelemetryProcessor
             _isSendingLiveMetrics = enable;
         } else {
             // qps client already exists; enable/disable it
