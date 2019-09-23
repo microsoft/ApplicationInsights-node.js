@@ -23,7 +23,7 @@ const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
     const message = event.data.result as Error | string;
     clients.forEach((client) => {
         const AIlevel = bunyanToAILevelMap[event.data.level];
-        if ((message) instanceof Error) {
+        if (message instanceof Error) {
             client.trackException({ exception: (message) });
         } else {
             client.trackTrace({message: message, severity: AIlevel});
@@ -43,4 +43,9 @@ export function enable(enabled: boolean, client: TelemetryClient) {
             channel.unsubscribe("bunyan", subscriber);
         }
     }
+}
+
+export function dispose() {
+    channel.unsubscribe("bunyan", subscriber);
+    clients = [];
 }

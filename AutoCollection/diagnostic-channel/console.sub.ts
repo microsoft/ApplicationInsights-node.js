@@ -37,3 +37,8 @@ export function enable(enabled: boolean, client: TelemetryClient) {
         }
     }
 }
+
+export function dispose() {
+    channel.unsubscribe("console", subscriber);
+    clients = [];
+}

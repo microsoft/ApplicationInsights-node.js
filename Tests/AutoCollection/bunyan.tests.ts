@@ -2,10 +2,10 @@ import assert = require("assert");
 import sinon = require("sinon");
 import AppInsights = require("../../applicationinsights");
 import { channel, IStandardEvent } from "diagnostic-channel";
-import { enable, dispose as disable } from "../../AutoCollection/diagnostic-channel/winston.sub";
-import { winston } from "diagnostic-channel-publishers";
+import { enable, dispose as disable } from "../../AutoCollection/diagnostic-channel/bunyan.sub";
+import { bunyan } from "diagnostic-channel-publishers";
 
-describe("diagnostic-channel/winston", () => {
+describe("diagnostic-channel/bunyan", () => {
     afterEach(() => {
         AppInsights.dispose();
         disable();
@@ -19,28 +19,24 @@ describe("diagnostic-channel/winston", () => {
 
         disable();
         enable(true, AppInsights.defaultClient);
-        const logEvent: winston.IWinstonData = {
-            message: "test log",
-            meta: {},
-            level: "foo",
-            levelKind: "npm"
+        const logEvent: bunyan.IBunyanData = {
+            result: "test log",
+            level: 50 // Error should still log as MessageData
         };
         const dummyError = new Error("test error");
-        const errorEvent: winston.IWinstonData = {
-            message: dummyError as any,
-            meta: {},
-            level: "foo",
-            levelKind: "npm"
+        const errorEvent: bunyan.IBunyanData = {
+            result: dummyError as any,
+            level: 10, // Verbose should still log as ExceptionData
         };
 
-        channel.publish("winston", logEvent);
+        channel.publish("bunyan", logEvent);
         assert.ok(trackExceptionStub.notCalled);
         assert.ok(trackTraceStub.calledOnce);
         assert.deepEqual(trackTraceStub.args[0][0].message, "test log");
         trackExceptionStub.reset();
         trackTraceStub.reset();
 
-        channel.publish("winston", errorEvent);
+        channel.publish("bunyan", errorEvent);
         assert.ok(trackExceptionStub.calledOnce);
         assert.ok(trackTraceStub.notCalled);
         assert.deepEqual(trackExceptionStub.args[0][0].exception, dummyError);
