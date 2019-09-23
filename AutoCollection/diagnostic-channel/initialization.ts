@@ -25,7 +25,7 @@ if (IsInitialized) {
     };
     for (const mod in modules) {
         if (unpatchedModules.indexOf(mod) === -1) {
-           modules[mod].enable();
+            modules[mod].enable();
         }
     }
 }

@@ -33,7 +33,7 @@ const winstonToAILevelMap: { [key: string]: (og: string) => number } = {
             debug: SeverityLevel.Verbose,
             silly: SeverityLevel.Verbose
         };
-        
+
         return map[og] === undefined ? SeverityLevel.Information : map[og];
     },
     unknown(og: string) {
@@ -42,14 +42,21 @@ const winstonToAILevelMap: { [key: string]: (og: string) => number } = {
 };
 
 const subscriber = (event: IStandardEvent<winston.IWinstonData>) => {
+    const message = event.data.message as Error | string;
     clients.forEach((client) => {
-        const AIlevel = winstonToAILevelMap[event.data.levelKind](event.data.level);
-        client.trackTrace(
-            {
-                message: event.data.message,
+        if (message instanceof Error) {
+            client.trackException({
+                exception: message,
+                properties: event.data.meta
+            });
+        } else {
+            const AIlevel = winstonToAILevelMap[event.data.levelKind](event.data.level);
+            client.trackTrace({
+                message: message,
                 severity: AIlevel,
                 properties: event.data.meta
             });
+        }
     });
 };
 
@@ -65,4 +72,9 @@ export function enable(enabled: boolean, client: TelemetryClient) {
             channel.unsubscribe("winston", subscriber);
         }
     }
+}
+
+export function dispose() {
+    channel.unsubscribe("winston", subscriber);
+    clients = [];
 }
