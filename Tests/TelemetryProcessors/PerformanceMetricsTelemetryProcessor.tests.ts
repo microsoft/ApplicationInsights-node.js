@@ -1,13 +1,13 @@
 import assert = require("assert");
 import sinon = require("sinon");
 
-import QuickPulse = require("../../TelemetryProcessors/QuickPulseTelemetryProcessor");
+import QuickPulse = require("../../TelemetryProcessors/PerformanceMetricsTelemetryProcessor");
 import QuickPulseStateManager = require("../../Library/QuickPulseStateManager");
 import AutoCollectPerformance = require("../../AutoCollection/Performance");
 import { Contracts } from "../../applicationinsights";
 
-describe("TelemetryProcessors/QuickPulseTelemetryProcessor", () => {
-    describe("#quickPulseTelemetryProcessor()", () => {
+describe("TelemetryProcessors/PerformanceMetricsTelemetryProcessor", () => {
+    describe("#PerformanceMetricsTelemetryProcessor()", () => {
         var envelope: Contracts.Envelope = {
             ver: 2,
             name: "name",
@@ -23,9 +23,9 @@ describe("TelemetryProcessors/QuickPulseTelemetryProcessor", () => {
         var ikey = "ikey";
 
         it("should return true if no client provided", () => {
-            var qpSpy = sinon.spy(QuickPulse, "quickPulseTelemetryProcessor");
+            var qpSpy = sinon.spy(QuickPulse, "performanceMetricsTelemetryProcessor");
 
-            var res = QuickPulse.quickPulseTelemetryProcessor(envelope);
+            var res = QuickPulse.performanceMetricsTelemetryProcessor(envelope);
             assert.ok(qpSpy.calledOnce)
             assert.equal(res, true, "returns true");
 
@@ -33,12 +33,12 @@ describe("TelemetryProcessors/QuickPulseTelemetryProcessor", () => {
         });
 
         it("should add document to the provided client", () => {
-            var qpSpy = sinon.spy(QuickPulse, "quickPulseTelemetryProcessor");
+            var qpSpy = sinon.spy(QuickPulse, "performanceMetricsTelemetryProcessor");
             var client: QuickPulseStateManager = new QuickPulseStateManager(ikey);
             var addDocumentStub = sinon.stub(client, "addDocument");
 
             // Act
-            var res = QuickPulse.quickPulseTelemetryProcessor(envelope, client);
+            var res = QuickPulse.performanceMetricsTelemetryProcessor(envelope, client);
 
             // Test
             assert.ok(qpSpy.calledOnce);

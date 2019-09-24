@@ -10,13 +10,17 @@ import {console as consolePub} from "diagnostic-channel-publishers";
 let clients: TelemetryClient[] = [];
 
 const subscriber = (event: IStandardEvent<consolePub.IConsoleData>) => {
+    let message = event.data.message as Error | string;
     clients.forEach((client) => {
-        // Message can have a trailing newline
-        let message = event.data.message;
-        if (message.lastIndexOf("\n") == message.length - 1) {
-            message = message.substring(0, message.length - 1);
+        if (message instanceof Error) {
+            client.trackException({ exception: message});
+        } else {
+            // Message can have a trailing newline
+            if (message.lastIndexOf("\n") == message.length - 1) {
+                message = message.substring(0, message.length - 1);
+            }
+            client.trackTrace({message: message, severity: (event.data.stderr ? SeverityLevel.Warning : SeverityLevel.Information)});
         }
-        client.trackTrace({message: message, severity: (event.data.stderr ? SeverityLevel.Warning : SeverityLevel.Information)});
     });
 };
 
@@ -32,4 +36,9 @@ export function enable(enabled: boolean, client: TelemetryClient) {
             channel.unsubscribe("console", subscriber);
         }
     }
+}
+
+export function dispose() {
+    channel.unsubscribe("console", subscriber);
+    clients = [];
 }

@@ -59,11 +59,11 @@ describe("AutoCollection/HttpRequestParser", () => {
             assert.ok(Util.isValidW3CId(requestTags[(<any>HttpRequestParser).keys.operationId]));
             assert.ok(Util.isValidW3CId(helper["requestId"].substr(1, 32)));
             const traceparent = helper["traceparent"];
-            assert.equal(traceparent.version, "00");
+            assert.equal(traceparent.version, Traceparent["DEFAULT_VERSION"]);
             assert.ok(Util.isValidW3CId(traceparent.traceId));
             assert.ok(Traceparent.isValidSpanId(traceparent.spanId));
             assert.notEqual(traceparent.traceId, traceparent.spanId);
-            assert.equal(traceparent.traceFlag, "00");
+            assert.equal(traceparent.traceFlag, Traceparent["DEFAULT_TRACE_FLAG"]);
         });
 
         it("if w3c tracing is enabled and request-id in format of X", () => {
@@ -74,11 +74,11 @@ describe("AutoCollection/HttpRequestParser", () => {
             assert.equal(helper["legacyRootId"], "abc");
             assert.ok(Util.isValidW3CId(requestTags[(<any>HttpRequestParser).keys.operationId]));
             const traceparent = helper["traceparent"];
-            assert.equal(traceparent.version, "00");
+            assert.equal(traceparent.version, Traceparent["DEFAULT_VERSION"]);
             assert.ok(Util.isValidW3CId(traceparent.traceId));
             assert.ok(Traceparent.isValidSpanId(traceparent.spanId));
             assert.notEqual(traceparent.traceId, traceparent.spanId);
-            assert.equal(traceparent.traceFlag, "00");
+            assert.equal(traceparent.traceFlag, Traceparent["DEFAULT_TRACE_FLAG"]);
         });
 
         it("should generate a traceparent if both tracing headers are not present (p4)", () => {
@@ -89,11 +89,11 @@ describe("AutoCollection/HttpRequestParser", () => {
             assert.ok(helper["requestId"].match(backCompatFormat));
             assert.ok(Util.isValidW3CId(requestTags[(<any>HttpRequestParser).keys.operationId]));
             const traceparent = helper["traceparent"];
-            assert.equal(traceparent.version, "00");
+            assert.equal(traceparent.version, Traceparent["DEFAULT_VERSION"]);
             assert.ok(Util.isValidW3CId(traceparent.traceId));
             assert.ok(Traceparent.isValidSpanId(traceparent.spanId));
             assert.notEqual(traceparent.traceId, traceparent.spanId);
-            assert.equal(traceparent.traceFlag, "00");
+            assert.equal(traceparent.traceFlag, Traceparent["DEFAULT_TRACE_FLAG"]);
 
             assert.equal(traceparent.traceId, helper["operationId"]);
             assert.notEqual(traceparent.spanId, helper["operationId"]);

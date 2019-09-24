@@ -1,2 +1,2 @@
 export * from "./SamplingTelemetryProcessor";
-export * from "./QuickPulseTelemetryProcessor";
+export * from "./PerformanceMetricsTelemetryProcessor";
