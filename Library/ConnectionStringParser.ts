@@ -1,24 +1,24 @@
-import { ConnectionStringFields } from "../Declarations/Contracts";
+import { ConnectionString, ConnectionStringKey } from "../Declarations/Contracts";
 import Constants = require("../Declarations/Constants");
 
 class ConnectionStringParser {
     private static _FIELDS_SEPARATOR = ";";
     private static _FIELD_KEY_VALUE_SEPARATOR = "=";
 
-    public static parse(connectionString?: string): ConnectionStringFields {
+    public static parse(connectionString?: string): ConnectionString {
         if (!connectionString) {
             return {};
         }
 
         const kvPairs = connectionString.split(ConnectionStringParser._FIELDS_SEPARATOR);
 
-        const result: ConnectionStringFields = kvPairs.reduce((fields: ConnectionStringFields, kv: string) => {
+        const result: ConnectionString = kvPairs.reduce((fields: ConnectionString, kv: string) => {
             const kvParts = kv.split(ConnectionStringParser._FIELD_KEY_VALUE_SEPARATOR);
 
             if (kvParts.length === 2) { // only save fields with valid formats
-                const key = kvParts[0].toLowerCase();
+                const key = kvParts[0].toLowerCase() as ConnectionStringKey;
                 const value = kvParts[1];
-                fields[key] = value;
+                fields[key] = value as string;
             }
             return fields;
         }, {});
