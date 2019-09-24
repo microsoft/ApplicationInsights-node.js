@@ -8,12 +8,17 @@ import { mongodb } from "diagnostic-channel-publishers";
 let clients: TelemetryClient[] = [];
 
 export const subscriber = (event: IStandardEvent<mongodb.IMongoData>) => {
+    const dbName = (event.data.startedData && event.data.startedData.databaseName) || "Unknown database";
     clients.forEach((client) => {
-        const dbName = (event.data.startedData && event.data.startedData.databaseName) || "Unknown database";
+        const data = client.config.enhancedDependencyCollection
+            && event.data.startedData.command
+            && event.data.startedData.command[event.data.event.commandName]
+            ? JSON.stringify(event.data.startedData.command[event.data.event.commandName])
+            : event.data.event.commandName;
         client.trackDependency(
             {
                 target: dbName,
-                data: event.data.event.commandName,
+                data: data,
                 name: event.data.event.commandName,
                 duration: event.data.event.duration,
                 success: event.data.succeeded,
@@ -36,4 +41,9 @@ export function enable(enabled: boolean, client: TelemetryClient) {
             channel.unsubscribe("mongodb", subscriber);
         }
     }
+}
+
+export function dispose() {
+    channel.unsubscribe("mongodb", subscriber);
+    clients = [];
 }

@@ -46,6 +46,11 @@ class Config {
     public httpAgent: http.Agent;
     /** An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined) */
     public httpsAgent: https.Agent;
+    /** (Off by default) If true, when depdency telemetry is autocollected, more information about it
+     *  will be collected. E.g. what filters were used for a "find" MongoDB query. PII/secrets
+     *  are not scrubbed. This functionality is experimental and is subject to change across releases.
+     **/
+    public enhancedDependencyCollection = false;
 
     private endpointBase: string = "https://dc.services.visualstudio.com";
     private setCorrelationId: (v: string) => void;
