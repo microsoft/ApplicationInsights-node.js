@@ -48,6 +48,16 @@ describe("Library/Config", () => {
                 assert.deepEqual(config.instrumentationKey, "ikey.env");
                 process.env = originalEnv;
             });
+
+            it("should parse the host of livemetrics host, if provided", () => {
+                const config = new Config("InStruMenTatioNKey=ikey;LiveEndpoint=https://live.applicationinsights.io/foo/bar");
+                assert.deepEqual(config.quickPulseHost, "live.applicationinsights.io");
+            });
+
+            it("should parse the host of livemetrics host from location+suffix, if provided", () => {
+                const config = new Config("InStruMenTatioNKey=ikey;Location=wus2;EndpointSuffix=example.com");
+                assert.deepEqual(config.quickPulseHost, "wus2.live.example.com");
+            });
         });
 
         describe("constructor(ikey)", () => {
@@ -110,7 +120,7 @@ describe("Library/Config", () => {
                 assert(config.proxyHttpUrl === undefined);
                 assert(config.proxyHttpsUrl === undefined);
 
-                assert(config.quickPulseHost === Constants.DEFAULT_LIVEMETRICS_ENDPOINT);
+                assert(config.quickPulseHost === Constants.DEFAULT_LIVEMETRICS_HOST);
             });
 
             it("should initialize values that we claim in README (2)", () => {

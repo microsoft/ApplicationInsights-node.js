@@ -2,6 +2,7 @@ import Contracts = require("./Contracts")
 
 export const DEFAULT_BREEZE_ENDPOINT = "https://dc.services.visualstudio.com";
 export const DEFAULT_LIVEMETRICS_ENDPOINT = "https://rt.services.visualstudio.com";
+export const DEFAULT_LIVEMETRICS_HOST = "rt.services.visualstudio.com";
 
 export enum QuickPulseCounter {
     // Memory

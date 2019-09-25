@@ -87,7 +87,11 @@ class Config {
         this.proxyHttpsUrl = process.env[Config.ENV_https_proxy] || undefined;
         this.httpAgent = undefined;
         this.httpsAgent = undefined;
-        this._quickPulseHost = csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_ENDPOINT;
+        this._quickPulseHost = csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_HOST;
+        // Parse quickPulseHost if it startswith http(s)://
+        if (this._quickPulseHost.match(/^https?:\/\//)) {
+            this._quickPulseHost = new URL(this._quickPulseHost).host;
+        }
     }
 
     public set profileQueryEndpoint(endpoint: string) {
