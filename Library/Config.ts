@@ -3,6 +3,7 @@ import ConnectionStringParser = require('./ConnectionStringParser');
 import Constants = require('../Declarations/Constants');
 import http = require('http');
 import https = require('https');
+import url = require('url');
 
 class Config {
     // Azure adds this prefix to all environment variables
@@ -90,7 +91,7 @@ class Config {
         this._quickPulseHost = csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_HOST;
         // Parse quickPulseHost if it startswith http(s)://
         if (this._quickPulseHost.match(/^https?:\/\//)) {
-            this._quickPulseHost = new URL(this._quickPulseHost).host;
+            this._quickPulseHost = url.parse(this._quickPulseHost).host;
         }
     }
 
