@@ -69,15 +69,15 @@ let _performanceLiveMetrics: AutoCollectPerformance;
  * Initializes the default client. Should be called after setting
  * configuration options.
  *
- * @param instrumentationKey the instrumentation key to use. Optional, if
+ * @param setupString the Connection String or Instrumentation Key to use. Optional, if
  * this is not specified, the value will be read from the environment
- * variable APPINSIGHTS_INSTRUMENTATIONKEY.
+ * variable APPLICATIONINSIGHTS_CONNECTION_STRING or APPINSIGHTS_INSTRUMENTATIONKEY.
  * @returns {Configuration} the configuration class to initialize
  * and start the SDK.
  */
-export function setup(instrumentationKey?: string) {
+export function setup(setupString?: string) {
     if(!defaultClient) {
-        defaultClient = new TelemetryClient(instrumentationKey);
+        defaultClient = new TelemetryClient(setupString);
         _console = new AutoCollectConsole(defaultClient);
         _exceptions = new AutoCollectExceptions(defaultClient);
         _performance = new AutoCollectPerformance(defaultClient);
