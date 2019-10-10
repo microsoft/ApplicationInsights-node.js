@@ -90,5 +90,25 @@ describe("Library/EnvelopeFactory", () => {
 
             assert.deepEqual(actual, expected);
         });
+
+        it("fills 'severityLevel' with Error when not specified", () => {
+            var envelope = EnvelopeFactory.createEnvelope(<Contracts.ExceptionTelemetry>{ exception: simpleError }, Contracts.TelemetryType.Exception);
+            var exceptionData = <Contracts.Data<Contracts.ExceptionData>>envelope.data;
+
+            var actual = exceptionData.baseData.severityLevel;
+            var expected = Contracts.SeverityLevel.Error;
+
+            assert.deepEqual(actual, expected);
+        });
+
+        it("fills 'severityLevel' with the given value when specified", () => {
+            var envelope = EnvelopeFactory.createEnvelope(<Contracts.ExceptionTelemetry>{ exception: simpleError, severity: Contracts.SeverityLevel.Warning }, Contracts.TelemetryType.Exception);
+            var exceptionData = <Contracts.Data<Contracts.ExceptionData>>envelope.data;
+
+            var actual = exceptionData.baseData.severityLevel;
+            var expected = Contracts.SeverityLevel.Warning;
+
+            assert.deepEqual(actual, expected);
+        });
     });
 });

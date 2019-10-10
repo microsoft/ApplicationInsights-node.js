@@ -149,7 +149,11 @@ class EnvelopeFactory {
     private static createExceptionData(telemetry: Contracts.ExceptionTelemetry): Contracts.Data<Contracts.ExceptionData> {
         var exception = new Contracts.ExceptionData();
         exception.properties = telemetry.properties;
-        exception.severityLevel = Contracts.SeverityLevel.Error;
+        if (!isNaN(telemetry.severity)) {
+            exception.severityLevel = telemetry.severity;
+        } else {
+            exception.severityLevel = Contracts.SeverityLevel.Error;
+        }
         exception.measurements = telemetry.measurements;
         exception.exceptions = [];
 
