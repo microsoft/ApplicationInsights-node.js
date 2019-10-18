@@ -42,6 +42,14 @@ class TelemetryClient {
     }
 
     /**
+     * Log information about availability of an application
+     * @param telemetry      Object encapsulating tracking options
+     */
+    public trackAvailability(telemetry: Contracts.AvailabilityTelemetry): void {
+        this.track(telemetry, Contracts.TelemetryType.Availability);
+    }
+
+    /**
      * Log a trace message
      * @param telemetry      Object encapsulating tracking options
      */

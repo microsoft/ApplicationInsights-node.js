@@ -58,8 +58,15 @@ export const PerformanceToQuickPulseCounter: {[key: string]: QuickPulseCounter} 
 
 // Note: Explicitly define these types instead of using enum due to
 // potential 'export enum' issues with typescript < 2.0.
-export type QuickPulseDocumentType = "Event" | "Exception" | "Trace" | "Metric" | "Request" | "RemoteDependency";
-export type QuickPulseType = "EventTelemetryDocument" | "ExceptionTelemetryDocument" | "TraceTelemetryDocument" | "MetricTelemetryDocument" | "RequestTelemetryDocument" | "DependencyTelemetryDocument";
+export type QuickPulseDocumentType = "Event" | "Exception" | "Trace" | "Metric" | "Request" | "RemoteDependency" | "Availability";
+export type QuickPulseType =
+    | "EventTelemetryDocument"
+    | "ExceptionTelemetryDocument"
+    | "TraceTelemetryDocument"
+    | "MetricTelemetryDocument"
+    | "RequestTelemetryDocument"
+    | "DependencyTelemetryDocument"
+    | "AvailabilityTelemetryDocument";
 
 export const QuickPulseDocumentType: {[key in Contracts.TelemetryTypeKeys]: QuickPulseDocumentType} = {
     Event: "Event",
@@ -67,7 +74,8 @@ export const QuickPulseDocumentType: {[key in Contracts.TelemetryTypeKeys]: Quic
     Trace: "Trace",
     Metric: "Metric",
     Request: "Request",
-    Dependency: "RemoteDependency"
+    Dependency: "RemoteDependency",
+    Availability: "Availability"
 };
 
 export const QuickPulseType: {[key in Contracts.TelemetryTypeKeys]: QuickPulseType} = {
@@ -76,7 +84,8 @@ export const QuickPulseType: {[key in Contracts.TelemetryTypeKeys]: QuickPulseTy
     Trace: "TraceTelemetryDocument",
     Metric: "MetricTelemetryDocument",
     Request: "RequestTelemetryDocument",
-    Dependency: "DependencyTelemetryDocument"
+    Dependency: "DependencyTelemetryDocument",
+    Availability: "AvailabilityTelemetryDocument"
 };
 
 export const TelemetryTypeStringToQuickPulseType: {[key in Contracts.TelemetryTypeValues]: QuickPulseType} = {
@@ -85,7 +94,8 @@ export const TelemetryTypeStringToQuickPulseType: {[key in Contracts.TelemetryTy
     MessageData: QuickPulseType.Trace,
     MetricData: QuickPulseType.Metric,
     RequestData: QuickPulseType.Request,
-    RemoteDependencyData: QuickPulseType.Dependency
+    RemoteDependencyData: QuickPulseType.Dependency,
+    AvailabilityData: QuickPulseType.Availability
 };
 
 export const TelemetryTypeStringToQuickPulseDocumentType: {[key in Contracts.TelemetryTypeValues]: QuickPulseDocumentType} = {
@@ -94,5 +104,6 @@ export const TelemetryTypeStringToQuickPulseDocumentType: {[key in Contracts.Tel
     MessageData: QuickPulseDocumentType.Trace,
     MetricData: QuickPulseDocumentType.Metric,
     RequestData: QuickPulseDocumentType.Request,
-    RemoteDependencyData: QuickPulseDocumentType.Dependency
+    RemoteDependencyData: QuickPulseDocumentType.Dependency,
+    AvailabilityData: QuickPulseDocumentType.Availability
 };
