@@ -5,6 +5,7 @@ import http = require("http");
 import EnvelopeFactory = require("../../Library/EnvelopeFactory");
 import Contracts = require("../../Declarations/Contracts");
 import Client = require("../../Library/TelemetryClient");
+import Util = require("../../Library/Util");
 
 describe("Library/EnvelopeFactory", () => {
         
@@ -109,6 +110,48 @@ describe("Library/EnvelopeFactory", () => {
             var expected = Contracts.SeverityLevel.Warning;
 
             assert.deepEqual(actual, expected);
+        });
+    });
+
+    describe("AvailabilityData", () => {
+        let availabilityTelemetry: Contracts.AvailabilityTelemetry;
+        beforeEach(() => {
+            availabilityTelemetry  = {
+                success : true,
+                duration: 100,
+                measurements: { "m1" : 1},
+                runLocation: "west us",
+                properties: {
+                    "prop1" : "prop1 value"
+                },
+                message: "availability test message",
+                name: "availability test name",
+                id: "availability test id",
+            };
+        });
+
+        it("creates when id not set", () => {
+            availabilityTelemetry.id = undefined;
+
+            var envelope = EnvelopeFactory.createEnvelope(availabilityTelemetry, Contracts.TelemetryType.Availability);
+            var data =  <Contracts.Data<Contracts.AvailabilityData>>envelope.data;
+            assert.ok(data.baseData.id != null);
+        });
+
+        it("creates data with given content", () => {
+            var envelope = EnvelopeFactory.createEnvelope(availabilityTelemetry, Contracts.TelemetryType.Availability);
+            var data =  <Contracts.Data<Contracts.AvailabilityData>>envelope.data;
+            
+            assert.deepEqual(data.baseType, "AvailabilityData");
+            
+            assert.deepEqual(data.baseData.id, availabilityTelemetry.id);
+            assert.deepEqual(data.baseData.measurements, availabilityTelemetry.measurements);
+            assert.deepEqual(data.baseData.success, availabilityTelemetry.success);
+            assert.deepEqual(data.baseData.runLocation, availabilityTelemetry.runLocation);
+            assert.deepEqual(data.baseData.name, availabilityTelemetry.name);
+            assert.deepEqual(data.baseData.properties, availabilityTelemetry.properties);
+            assert.deepEqual(data.baseData.duration, Util.msToTimeSpan(availabilityTelemetry.duration));
+
         });
     });
 });

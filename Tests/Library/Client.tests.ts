@@ -135,6 +135,30 @@ describe("Library/TelemetryClient", () => {
         });
     });
 
+    
+    describe("#trackAvailability()", () => {
+        it("should track availability with correct data", () => {
+            trackStub.reset();
+            const expectedTelemetryData: Contracts.AvailabilityTelemetry =  { 
+                duration: 100, id: "id1", message: "message1",success : true, name: "name1", runLocation: "east us" 
+            };
+
+            client.trackAvailability(expectedTelemetryData);
+
+            assert.ok(trackStub.calledOnce);
+
+            const availabilityTelemetry = <Contracts.AvailabilityTelemetry>trackStub.firstCall.args[0];
+
+            assert.equal(availabilityTelemetry.message, expectedTelemetryData.message);
+            assert.equal(availabilityTelemetry.name, expectedTelemetryData.name);
+            assert.equal(availabilityTelemetry.runLocation, expectedTelemetryData.runLocation);
+        });
+
+        it("should not crash with invalid input", () => {
+            invalidInputHelper("trackAvailability");
+        });
+    });
+
     describe("#trackException()", () => {
         it("should track Exception with correct data - Error only", () => {
             trackStub.reset();

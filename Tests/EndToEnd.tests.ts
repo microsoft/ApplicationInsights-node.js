@@ -166,11 +166,18 @@ describe("EndToEnd", () => {
         });
 
         it("should send telemetry", (done) => {
+            const expectedTelemetryData: AppInsights.Contracts.AvailabilityTelemetry =  { 
+                duration: 100, id: "id1", message: "message1",success : true, name: "name1", runLocation: "east us" 
+            };
+
             var client = new AppInsights.TelemetryClient("iKey");
+            
             client.trackEvent({ name: "test event" });
             client.trackException({ exception: new Error("test error") });
             client.trackMetric({ name: "test metric", value: 3 });
             client.trackTrace({ message: "test trace" });
+            client.trackAvailability(expectedTelemetryData);
+            
             client.flush({
                 callback: (response) => {
                     assert.ok(response, "response should not be empty");

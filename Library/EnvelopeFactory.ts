@@ -48,6 +48,9 @@ class EnvelopeFactory {
             case Contracts.TelemetryType.Metric:
                 data = EnvelopeFactory.createMetricData(<Contracts.MetricTelemetry>telemetry);
                 break;
+            case Contracts.TelemetryType.Availability:
+                data = EnvelopeFactory.createAvailabilityData(<Contracts.AvailabilityTelemetry>telemetry);
+                break;
         }
 
         if (commonProperties && Contracts.domainSupportsProperties(data.baseData)) { // Do instanceof check. TS will automatically cast and allow the properties property
@@ -213,6 +216,31 @@ class EnvelopeFactory {
         var data = new Contracts.Data<Contracts.MetricData>();
         data.baseType = Contracts.telemetryTypeToBaseType(Contracts.TelemetryType.Metric);
         data.baseData = metrics;
+        return data;
+    }
+
+    private static createAvailabilityData(
+        telemetry: Contracts.AvailabilityTelemetry & Contracts.Identified,
+    ): Contracts.Data<Contracts.AvailabilityData> {
+        let availabilityData = new Contracts.AvailabilityData();
+        
+        if (telemetry.id) {
+            availabilityData.id = telemetry.id;
+        } else {
+            availabilityData.id = Util.w3cTraceId();
+        }
+        availabilityData.name = telemetry.name;
+        availabilityData.duration = Util.msToTimeSpan(telemetry.duration);
+        availabilityData.success = telemetry.success;
+        availabilityData.runLocation = telemetry.runLocation;
+        availabilityData.message = telemetry.message;
+        availabilityData.measurements = telemetry.measurements;
+        availabilityData.properties = telemetry.properties;
+
+        let data = new Contracts.Data<Contracts.AvailabilityData>();
+        data.baseType = Contracts.telemetryTypeToBaseType(Contracts.TelemetryType.Availability);
+        data.baseData = availabilityData;
+
         return data;
     }
 
