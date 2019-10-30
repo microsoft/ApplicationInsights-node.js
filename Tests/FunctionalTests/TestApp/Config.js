@@ -1,3 +1,5 @@
+var appInsights = require("../../../");
+
 var Config = {
     ServerPort: "9099",
     EndpointBaseAddress: "http://localhost:9091",
@@ -16,6 +18,7 @@ var Config = {
     UseAutoConsole: true,
     UseAutoConsoleLog: true,
     UseDiskCaching: false,
+    DistributedTracingMode: appInsights.DistributedTracingModes.AI_AND_W3C,
     SampleRate: "100",
 }
 

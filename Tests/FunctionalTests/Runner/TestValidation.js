@@ -23,6 +23,7 @@ module.exports.TestValidation = class TestValidation {
 
     validateTest(test, correlationId, silent) {
         const promise = silent ? Promise.resolve() : Utils.Logging.enterSubunit("Validating test " + test.path + "...");
+        let operationId;
         return promise
             .then(() => {
                 if (!correlationId) {
@@ -36,11 +37,12 @@ module.exports.TestValidation = class TestValidation {
                         return false;
                     }
 
-                    correlationId = requestTelemetry.tags["ai.operation.id"];
+                    correlationId = requestTelemetry.data.baseData.id;
+                    operationId = requestTelemetry.tags["ai.operation.id"];
                 }
 
                 // Work on a copy of the telemetry set
-                const dataSet = this.ingestion.correlatedTelemetry[correlationId].slice(0);
+                const dataSet = this.ingestion.correlatedTelemetry[operationId].slice(0);
                 let hadFailed = false;
 
                 // Helper fn for validator that runs on all telemetry items
@@ -50,16 +52,20 @@ module.exports.TestValidation = class TestValidation {
                 };
 
                 // Helper fn to find item in the datset
-                const findItem = (type, fn, stepName) => {
+                const findItem = (correlationId, type, fn, stepName, childContract) => {
+                    const _correlationId = correlationId;
                     if (!type) return true;
                     for (var i = 0; i<dataSet.length; i++) {
                         var item = dataSet[i];
                         try {
-                            if (item.data.baseType === type && item.tags['ai.operation.parentId'] === "|"+correlationId+"." && baseValidator(item) && fn(item)) {
+                            if (item.data.baseType === type && item.tags['ai.operation.parentId'] === (_correlationId) && baseValidator(item) && fn(item)) {
                                 // Remove this item from the dataset so we don't find it twice
                                 // The test is successful if we find all items we seek out and
                                 // no extras remain
                                 dataSet.splice(i, 1);
+                                if (childContract) {
+                                    return findItem(item.data.baseData.id, childContract.expectedTelemetryType, childContract.telemetryVerifier, stepName, childContract.childContract);
+                                }
                                 return true;
                             }
                         } catch (e) { }
@@ -73,7 +79,7 @@ module.exports.TestValidation = class TestValidation {
                 // Find all expected items
                 test.steps.forEach((step)=>{
                     const expectation = TaskExpectations[step];
-                    const success = findItem(expectation.expectedTelemetryType, expectation.telemetryVerifier, step);
+                    const success = findItem(correlationId, expectation.expectedTelemetryType, expectation.telemetryVerifier, step, expectation.childContract);
 
                     if (!success) {
                         hadFailed = true;
@@ -122,7 +128,7 @@ module.exports.TestValidation = class TestValidation {
                         success = false;
                     }
                 });
-                
+
                 // Report test status
                 if (success) {
                     Utils.Logging.success("Test PASSED!");
@@ -135,5 +141,3 @@ module.exports.TestValidation = class TestValidation {
             .then((success) => { Utils.Logging.exitSubunit(); return success; });
     }
 }
-
-

@@ -1,17 +1,38 @@
 // Keep these expecations in sync with what the tasks are in TestApp
 
-/** 
+/**
  * expectedTelemetryType = EnvelopeType,
  * telemetryVerifier = fn to validate matching telemetry item
  */
-var outputContract = (expectedTelemetryType, telemetryVerifier) => {
+var outputContract = (expectedTelemetryType, telemetryVerifier, childContract) => {
     return {
         expectedTelemetryType: expectedTelemetryType,
-        telemetryVerifier: telemetryVerifier
+        telemetryVerifier: telemetryVerifier,
+        childContract: childContract
     };
 };
 
 module.exports = {
+    "AzureSdkCreate": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "Azure.Storage.Blob.ContainerClient-create" &&
+                telemetry.data.baseData.success === true;
+        },
+        outputContract(
+            "RemoteDependencyData",
+            (telemetry) => {
+                return telemetry.data.baseData.name === "core-http" && telemetry.data.baseData.success === true;
+            }
+        )
+    ),
+    "AzureSdkDelete": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "Azure.Storage.Blob.ContainerClient-delete" &&
+                telemetry.data.baseData.success === true;
+        }
+    ),
     "HttpGet": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
