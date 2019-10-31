@@ -28,4 +28,4 @@ try {
     console.log(e.message);
 }
 
-module.exports = { ...module.exports }
+module.exports = Object.assign({}, module.exports);

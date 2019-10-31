@@ -53,9 +53,8 @@ module.exports = {
 // Run azure sdk tests for nodejs 8+ (but not 8.0.0)
 var version = process.versions.node.split(".");
 if (parseInt(version[0]) > 8 || (parseInt(version[0]) === 8 && (parseInt(version[1]) > 0 || parseInt(version[2]) > 0))) {
-    module.exports = {
-        ...module.exports,
+    Object.assign(module.exports, {
         AzureSdkCreate: AzureSDK.createContainer,
         AzureSdkDelete: AzureSDK.deleteContainer,
-    }
+    });
 }
