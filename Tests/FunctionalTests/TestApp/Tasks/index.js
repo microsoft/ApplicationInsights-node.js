@@ -10,8 +10,6 @@ var AzureSDK = require("./AzureSDK");
 
 module.exports = {
     HttpGet: require("./HttpGet"),
-    AzureSdkCreate: AzureSDK.createContainer,
-    AzureSdkDelete: AzureSDK.deleteContainer,
     MongoInsert: Mongo.insert,
     MongoInsertMany: Mongo.insertMany,
     MongoFind: Mongo.find,
@@ -50,4 +48,14 @@ module.exports = {
     AITrackExc: AISDK.trackException,
     Timeout: Utils.timeout,
     ThrowError: Utils.throwError
+}
+
+// Run azure sdk tests for nodejs 8+ (but not 8.0.0)
+var version = process.versions.node.split(".");
+if (parseInt(version[0]) > 8 || (parseInt(version[0]) === 8 && (parseInt(version[1]) > 0 || parseInt(version[2]) > 0))) {
+    module.exports = {
+        ...module.exports,
+        AzureSdkCreate: AzureSDK.createContainer,
+        AzureSdkDelete: AzureSDK.deleteContainer,
+    }
 }
