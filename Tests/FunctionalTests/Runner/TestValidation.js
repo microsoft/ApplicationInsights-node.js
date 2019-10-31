@@ -39,6 +39,10 @@ module.exports.TestValidation = class TestValidation {
 
                     correlationId = requestTelemetry.data.baseData.id;
                     operationId = requestTelemetry.tags["ai.operation.id"];
+                } else if (!operationId) {
+                    operationId = correlationId;
+                    const reqTel = this.ingestion.correlatedTelemetry[correlationId];
+                    correlationId = reqTel[reqTel.length - 1].data.baseData.id;
                 }
 
                 // Work on a copy of the telemetry set
