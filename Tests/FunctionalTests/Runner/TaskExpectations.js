@@ -31,7 +31,13 @@ module.exports = {
         (telemetry) => {
             return telemetry.data.baseData.name === "Azure.Storage.Blob.ContainerClient-delete" &&
                 telemetry.data.baseData.success === true;
-        }
+        },
+        outputContract(
+            "RemoteDependencyData",
+            (telemetry) => {
+                return telemetry.data.baseData.name === "core-http" && telemetry.data.baseData.success === true;
+            }
+        )
     ),
     "HttpGet": outputContract(
         "RemoteDependencyData",
