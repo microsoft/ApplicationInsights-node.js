@@ -3,7 +3,7 @@ var Config = {
     TestAppAddress: "http://localhost:9099",
     WaitTime: 20 * 1000,
     PerfCounterFrequency: 60 * 1000,
-    StressTestTime: 1.2 * 6 * 1000
+    StressTestTime: 1.2 * 60 * 1000
 }
 
 // Allow config overrides from env variables
