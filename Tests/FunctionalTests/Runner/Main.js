@@ -13,8 +13,8 @@ let startTime = null;
 let perfMode = process.argv.indexOf("-perfmode") !== -1;
 
 const skipAsyncHooksTests = () => {
-    const version = process.versions.node.split(".");
-    if (version[0] == 8 && version[1] == 0 && verison[2] == 0) return true;
+    var version = process.versions.node.split(".");
+    if (version[0] == 8 && version[1] == 0 && version[2] == 0) return true;
     return version[0] < 8;
 }
 
