@@ -9,9 +9,9 @@ var Postgres = require("./Postgres");
 var AzureSDK = require("./AzureSDK");
 
 module.exports = {
+    HttpGet: require("./HttpGet"),
     AzureSdkCreate: AzureSDK.createContainer,
     AzureSdkDelete: AzureSDK.deleteContainer,
-    HttpGet: require("./HttpGet"),
     MongoInsert: Mongo.insert,
     MongoInsertMany: Mongo.insertMany,
     MongoFind: Mongo.find,
