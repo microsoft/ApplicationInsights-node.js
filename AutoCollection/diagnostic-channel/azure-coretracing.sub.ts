@@ -5,7 +5,7 @@ import { channel, IStandardEvent } from "diagnostic-channel";
 
 import Traceparent = require("../../Library/Traceparent");
 import * as Contracts from "../../Declarations/Contracts";
-import { Span, AsyncScopeManager } from "../AsyncHooksScopeManager";
+import { Span, AsyncScopeManager, SpanKind } from "../AsyncHooksScopeManager";
 
 let clients: TelemetryClient[] = [];
 
@@ -29,8 +29,8 @@ export const subscriber = (event: IStandardEvent<Span>) => {
     }
     AsyncScopeManager.with(span, () => {
         clients.forEach((client) => {
-            if (span.kind === 1) {
-                // Server
+            if (span.kind === SpanKind.SERVER || span.kind === SpanKind.CONSUMER) {
+                // Server or Consumer
                 client.trackRequest({
                     id: id,
                     name: span.name,
@@ -41,7 +41,7 @@ export const subscriber = (event: IStandardEvent<Span>) => {
                     properties: properties,
                 } as Contracts.RequestTelemetry & Contracts.Identified);
             } else {
-                // Client
+                // Client or Producer or Internal
                 client.trackDependency({
                     id: id,
                     name: span.name,
