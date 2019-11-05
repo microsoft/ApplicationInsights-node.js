@@ -29,7 +29,7 @@ export const subscriber = (event: IStandardEvent<Span>) => {
     }
     AsyncScopeManager.with(span, () => {
         clients.forEach((client) => {
-            if (span.kind === SpanKind.SERVER || span.kind === SpanKind.CONSUMER) {
+            if (span.kind === SpanKind.SERVER) {
                 // Server or Consumer
                 client.trackRequest({
                     id: id,
@@ -40,7 +40,7 @@ export const subscriber = (event: IStandardEvent<Span>) => {
                     url: span.attributes.component,
                     properties: properties,
                 } as Contracts.RequestTelemetry & Contracts.Identified);
-            } else {
+            } else if (span.kind === SpanKind.CLIENT || span.kind === SpanKind.INTERNAL) {
                 // Client or Producer or Internal
                 client.trackDependency({
                     id: id,
@@ -53,6 +53,7 @@ export const subscriber = (event: IStandardEvent<Span>) => {
                     properties: properties
                 } as Contracts.DependencyTelemetry & Contracts.Identified);
             }
+            // else - ignore producer/consumer spans for now until it is clear how this sdk should interpret them
         });
     });
 };
