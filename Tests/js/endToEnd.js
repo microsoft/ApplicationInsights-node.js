@@ -57,10 +57,12 @@ describe('module', function () {
     describe('rejected promises', function () {
         it('should not crash on rejected promises containing no callstack', function () {
             var appInsights = require('../../');
-            appInsights.setup("ikey").start();
+            appInsights.setup('ikey').start();
             assert.ok(appInsights.defaultClient);
             assert.doesNotThrow(function () {
-                Promise.reject();
+                if (typeof Promise !== 'undefined') {
+                    Promise.reject();
+                }
             });
             appInsights.defaultClient.flush();
             appInsights.dispose();
