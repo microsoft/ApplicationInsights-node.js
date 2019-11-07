@@ -12,6 +12,7 @@ class AutoCollectExceptions {
     public static get UNCAUGHT_EXCEPTION_HANDLER_NAME(): string { return "uncaughtException"; }
     public static get UNHANDLED_REJECTION_HANDLER_NAME(): string { return "unhandledRejection"; }
 
+    private static _FALLBACK_ERROR_MESSAGE = "No error was provided. Application Insights generated this error stack for you.";
     private _exceptionListenerHandle: (reThrow: boolean, error: Error) => void;
     private _rejectionListenerHandle: (reThrow: boolean, error: Error) => void;
     private _client: TelemetryClient;
@@ -35,7 +36,9 @@ class AutoCollectExceptions {
             this._isInitialized = true;
             var self = this;
             if (!this._exceptionListenerHandle) {
-                var handle = (reThrow: boolean, error: Error) => {
+                // For scenarios like Promise.reject(), an error won't be passed to the handle. Create a placeholder
+                // error for these scenarios.
+                var handle = (reThrow: boolean, error: Error = new Error(AutoCollectExceptions._FALLBACK_ERROR_MESSAGE)) => {
                     this._client.trackException({ exception: error });
                     this._client.flush({ isAppCrashing: true });
                     if (reThrow) {

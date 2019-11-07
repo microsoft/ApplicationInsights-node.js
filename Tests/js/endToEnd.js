@@ -53,4 +53,17 @@ describe('module', function () {
             });
         });
     });
+
+    describe('rejected promises', () => {
+        it('should not crash on rejected promises containing no callstack', () => {
+            var appInsights = require('../../');
+            appInsights.setup("ikey").start();
+            assert.ok(appInsights.defaultClient);
+            assert.doesNotThrow(() => {
+                Promise.reject();
+            });
+            appInsights.defaultClient.flush();
+            appInsights.dispose();
+        });
+    });
 });
