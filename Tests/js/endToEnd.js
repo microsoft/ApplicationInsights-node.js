@@ -54,12 +54,12 @@ describe('module', function () {
         });
     });
 
-    describe('rejected promises', () => {
-        it('should not crash on rejected promises containing no callstack', () => {
+    describe('rejected promises', function () {
+        it('should not crash on rejected promises containing no callstack', function () {
             var appInsights = require('../../');
             appInsights.setup("ikey").start();
             assert.ok(appInsights.defaultClient);
-            assert.doesNotThrow(() => {
+            assert.doesNotThrow(function () {
                 Promise.reject();
             });
             appInsights.defaultClient.flush();
