@@ -12,7 +12,7 @@ class AutoCollectExceptions {
     public static get UNCAUGHT_EXCEPTION_HANDLER_NAME(): string { return "uncaughtException"; }
     public static get UNHANDLED_REJECTION_HANDLER_NAME(): string { return "unhandledRejection"; }
 
-    private static _FALLBACK_ERROR_MESSAGE = "No error was provided. Application Insights generated this error stack for you.";
+    private static _FALLBACK_ERROR_MESSAGE = "A promise was rejected without providing an error. Application Insights generated this error stack for you.";
     private _exceptionListenerHandle: (reThrow: boolean, error: Error) => void;
     private _rejectionListenerHandle: (reThrow: boolean, error: Error) => void;
     private _client: TelemetryClient;
