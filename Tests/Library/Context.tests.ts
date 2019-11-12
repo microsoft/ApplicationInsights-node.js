@@ -40,7 +40,7 @@ describe("Library/Context", () => {
         it("should set internalSdkVersion to 'node:<version>'", () => {
             var context = new Context();
             // todo: make this less fragile (will need updating on each minor version change)
-            assert.equal(context.tags[context.keys.internalSdkVersion].substring(0, 9), "node:1.5.");
+            assert.equal(context.tags[context.keys.internalSdkVersion].substring(0, 9), "node:1.6.");
         });
 
         it("should correctly set device context", () => {
