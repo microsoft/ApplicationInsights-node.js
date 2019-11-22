@@ -65,7 +65,7 @@ class HttpDependencyParser extends RequestParser {
         }
 
         if (urlObject.port) {
-            remoteDependencyTarget = remoteDependencyTarget + ":" + urlObject.port;
+            remoteDependencyTarget += ":" + urlObject.port;
         }
 
         var dependencyTelemetry: Contracts.DependencyTelemetry & Contracts.Identified = {
