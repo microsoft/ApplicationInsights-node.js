@@ -61,7 +61,7 @@ describe("AutoCollection/HttpDependencyParser", () => {
             assert.equal(dependencyTelemetry.success, true);
             assert.equal(dependencyTelemetry.name, "POST /search");
             assert.equal(dependencyTelemetry.data, "http://bing.com:8000/search?q=test");
-            assert.equal(dependencyTelemetry.target, "bing.com");
+            assert.equal(dependencyTelemetry.target, "bing.com:8000");
         });
 
         it("should return correct data for a request options object", () => {
