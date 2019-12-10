@@ -317,11 +317,11 @@ export class Configuration {
             _performanceLiveMetrics = new AutoCollectPerformance(liveMetricsClient as any, 1000, true);
             liveMetricsClient.addCollector(_performanceLiveMetrics);
             defaultClient.quickPulseClient = liveMetricsClient; // Need this so we can forward all manual tracks to live metrics via PerformanceMetricsTelemetryProcessor
-            _isSendingLiveMetrics = enable;
         } else {
             // qps client already exists; enable/disable it
             liveMetricsClient.enable(enable);
         }
+        _isSendingLiveMetrics = enable;
 
         return Configuration;
     }
@@ -350,5 +350,9 @@ export function dispose() {
     }
     if(_clientRequests) {
         _clientRequests.dispose();
+    }
+    if(liveMetricsClient) {
+        liveMetricsClient.enable(false);
+        _isSendingLiveMetrics = false;
     }
 }
