@@ -55,6 +55,7 @@ export function setUsagePrefix(prefix: string) {
  * @param setupString connection string or instrumentation key
  */
 export function setupAndStart(setupString = _setupString): typeof types | null {
+    console.log("Trying to setup Application Insights", setupString, _extensionEnabled);
     if (!_extensionEnabled && sdkAlreadyExists() === false) {
         return null;
     }
