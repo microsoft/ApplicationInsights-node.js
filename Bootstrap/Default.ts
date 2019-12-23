@@ -80,6 +80,7 @@ export function setupAndStart(setupString = _setupString): typeof types | null {
         _appInsights.setup(setupString).setSendLiveMetrics(true);
         _appInsights.defaultClient.addTelemetryProcessor(prefixInternalSdkVersion);
         _appInsights.start();
+        _logger.log("Application Insights was started with setupString", setupString, _extensionEnabled);
     } catch (e) {
         _logger.error("Error setting up Application Insights", e);
     }
