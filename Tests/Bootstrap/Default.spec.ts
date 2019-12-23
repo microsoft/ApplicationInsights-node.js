@@ -10,9 +10,11 @@ class LoggerSpy implements types.AgentLogger {
 
     public log() {
         this.logCount++;
+        console.log(arguments);
     }
     public error() {
         this.errorCount++;
+        console.error(arguments);
     }
 }
 
@@ -52,7 +54,7 @@ describe("#setupAndStart()", () => {
         assert.equal(startSpy.callCount, 1);
 
         // No logging was done
-        assert.equal(logger.logCount, 0);
+        assert.equal(logger.logCount, 1);
         assert.equal(logger.errorCount, 0);
     });
 
