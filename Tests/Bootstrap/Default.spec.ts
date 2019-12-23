@@ -10,11 +10,9 @@ class LoggerSpy implements types.AgentLogger {
 
     public log() {
         this.logCount++;
-        console.log(arguments);
     }
     public error() {
         this.errorCount++;
-        console.error(arguments);
     }
 }
 
@@ -85,7 +83,11 @@ describe("#setupAndStart()", () => {
         // Setup
         const logger = new LoggerSpy();
         const origEnv = process.env.APPLICATIONINSIGHTS_EXTENSION_VERSION;
+        const origIkey = process.env.APPINSIGHTS_INSTRUMENTATION_KEY;
+        const origCs = process.env.APPLICATIONINSIGHTS_CONNECTION_STRING;
         process.env.APPLICATIONINSIGHTS_EXTENSION_VERSION = "~2";
+        delete process.env.APPINSIGHTS_INSTRUMENTATION_KEY;
+        delete process.env.APPLICATIONINSIGHTS_CONNECTION_STRING;
 
         // Test
         const Default = require("../../Bootstrap/Default") as typeof types;
@@ -102,5 +104,8 @@ describe("#setupAndStart()", () => {
         // No logging was done
         assert.equal(logger.logCount, 0);
         assert.equal(logger.errorCount, 1, "Should log if attach is attempted");
+
+        process.env.APPINSIGHTS_INSTRUMENTATION_KEY = origIkey;
+        process.env.APPLICATIONINSIGHTS_CONNECTION_STRING = origCs;
     });
 });
