@@ -1,6 +1,6 @@
 // Keep these expecations in sync with what the tasks are in TestApp
 
-/** 
+/**
  * expectedTelemetryType = EnvelopeType,
  * telemetryVerifier = fn to validate matching telemetry item
  */
@@ -180,6 +180,15 @@ module.exports = {
             telemetry.data.baseData.data === "SELECT * FROM 'test_table'" &&
             telemetry.data.baseData.target.indexOf(":33060") > -1 &&
             telemetry.data.baseData.type == "mysql";
+        }
+    ),
+    "MSSQLQuery": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "SELECT * FROM 'test_table'" &&
+            telemetry.data.baseData.data === "SELECT * FROM 'test_table'" &&
+            telemetry.data.baseData.target.indexOf(":33060") > -1 &&
+            telemetry.data.baseData.type == "mssql";
         }
     ),
     "RedisGet": outputContract(

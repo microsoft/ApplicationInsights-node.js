@@ -8,6 +8,7 @@
 {"path": "/diagChannelBunyan", "steps": ["BunyanFatal", "BunyanError", "BunyanWarn", "BunyanInfo", "BunyanDebug", "BunyanTrace"]},
 {"path": "/diagChannelConsole", "steps": ["ConsoleLog", "ConsoleWarn", "ConsoleError", "ConsoleInfo"]},
 {"path": "/diagChannelMySql", "steps": ["MySQLQuery", "Timeout", "MySQLQuery"]},
+{"path": "/diagChannelMSSql", "steps": ["MSSQLQuery", "Timeout", "MSSQLQuery"]},
 {"path": "/diagChannelRedis", "steps": ["RedisGet", "RedisSet", "RedisSet2", "RedisHset", "RedisHkeys", "RedisHincrby"]},
 {"path": "/diagChannelWinston", "steps": ["WinstonError", "WinstonWarn", "WinstonInfo", "WinstonVerbose", "WinstonDebug", "WinstonSilly", "WinstonError2", "WinstonWarn2", "WinstonInfo2"]},
 {"path": "/diagChannelPostgres", "steps": ["PostgresQuery", "Timeout", "PostgresQuery"]},

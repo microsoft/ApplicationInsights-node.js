@@ -21,6 +21,7 @@ if (IsInitialized) {
         redis: publishers.redis,
         pg: publishers.pg,
         pgPool: publishers.pgPool,
+        tedious: publishers.tedious,
         winston: publishers.winston
     };
     for (const mod in modules) {
