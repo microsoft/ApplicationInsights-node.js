@@ -354,5 +354,6 @@ export function dispose() {
     if(liveMetricsClient) {
         liveMetricsClient.enable(false);
         _isSendingLiveMetrics = false;
+        liveMetricsClient = undefined;
     }
 }
