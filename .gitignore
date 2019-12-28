@@ -30,3 +30,5 @@ Tests/FunctionalTests/TestApp/node_modules/**
 # Ignore log files
 npm-debug.log
 
+node_modules
+node_modules

@@ -1,0 +1,29 @@
+{
+  "parser": "babel-eslint",
+  "parserOptions": {
+    "ecmaVersion": 2018
+  },
+  "plugins": [
+    "react"
+  ],
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "rules": {
+    "indent": ["error", 4],
+    "global-require": "off",
+    "class-methods-use-this": "off",
+    "import/no-unresolved": "off",
+    "import/no-extraneous-dependencies": "off"
+  },
+  "settings": {
+    "react": {
+      "version": "16.5"
+    }
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended"
+  ]
+}

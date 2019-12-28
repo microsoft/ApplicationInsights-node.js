@@ -1,0 +1,9 @@
+{
+  "verbose": true,
+  "execMap": {
+    "js": "babel-node"
+  },
+  "watch": [
+    "src/index.js"
+  ]
+}
