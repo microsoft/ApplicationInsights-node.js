@@ -11,21 +11,21 @@
       <stringProp name="TestPlan.user_define_classpath"></stringProp>
     </TestPlan>
     <hashTree>
-      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="25/60 With SDK" enabled="true">
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="500/120 With SDK" enabled="true">
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
           <boolProp name="LoopController.continue_forever">false</boolProp>
           <intProp name="LoopController.loops">-1</intProp>
         </elementProp>
-        <stringProp name="ThreadGroup.num_threads">10</stringProp>
+        <stringProp name="ThreadGroup.num_threads">50</stringProp>
         <stringProp name="ThreadGroup.ramp_time">1</stringProp>
         <longProp name="ThreadGroup.start_time">1373789594000</longProp>
         <longProp name="ThreadGroup.end_time">1373789594000</longProp>
         <boolProp name="ThreadGroup.scheduler">true</boolProp>
-        <stringProp name="ThreadGroup.duration">10</stringProp>
-        <stringProp name="ThreadGroup.delay">1</stringProp>
-        <stringProp name="TestPlan.comments">25 Concurrent users for 60 seconds</stringProp>
-        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <stringProp name="ThreadGroup.duration">120</stringProp>
+        <stringProp name="ThreadGroup.delay">0</stringProp>
+        <stringProp name="TestPlan.comments">500 Concurrent users for 120 seconds</stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">false</boolProp>
       </ThreadGroup>
       <hashTree>
         <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults" enabled="true">
@@ -72,7 +72,7 @@ Connect to 5s</stringProp>
           </collectionProp>
         </HeaderManager>
         <hashTree/>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Home Page" enabled="true">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET /" enabled="true">
           <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="Variables pré-définies" enabled="true">
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
@@ -111,10 +111,15 @@ Connect to 5s</stringProp>
             <stringProp name="Assertion.custom_message"></stringProp>
           </ResponseAssertion>
           <hashTree/>
-          <DurationAssertion guiclass="DurationAssertionGui" testclass="DurationAssertion" testname="Duration Assertion (&lt;1 second)" enabled="true">
-            <stringProp name="TestPlan.comments">Response is recieved in under 1 second</stringProp>
-            <stringProp name="DurationAssertion.duration">1000</stringProp>
+          <DurationAssertion guiclass="DurationAssertionGui" testclass="DurationAssertion" testname="Duration Assertion (&lt;5 second)" enabled="true">
+            <stringProp name="TestPlan.comments">Response is recieved in under 5 seconds</stringProp>
+            <stringProp name="DurationAssertion.duration">5000</stringProp>
           </DurationAssertion>
+          <hashTree/>
+          <GaussianRandomTimer guiclass="GaussianRandomTimerGui" testclass="GaussianRandomTimer" testname="Gaussian Random Timer" enabled="true">
+            <stringProp name="ConstantTimer.delay">1000</stringProp>
+            <stringProp name="RandomTimer.range">300.0</stringProp>
+          </GaussianRandomTimer>
           <hashTree/>
         </hashTree>
       </hashTree>
