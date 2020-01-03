@@ -107,3 +107,22 @@ export const TelemetryTypeStringToQuickPulseDocumentType: {[key in Contracts.Tel
     RemoteDependencyData: QuickPulseDocumentType.Dependency,
     AvailabilityData: QuickPulseDocumentType.Availability
 };
+
+// OpenTelemetry Span Attributes
+export const SpanAttribute = {
+    // HTTP
+    HttpMethod: "http.method",
+    HttpUrl: "http.url",
+    HttpHost: "http.host",
+    HttpPort: "http.port",
+
+    // GRPC
+    GrpcMethod: "grpc.method",
+    GrpcService: "rpc.service", // rpc not grpc
+};
+
+export const DependencyTypeName = {
+    Grpc: "GRPC",
+    Http: "HTTP",
+    InProc: "InProc",
+}
