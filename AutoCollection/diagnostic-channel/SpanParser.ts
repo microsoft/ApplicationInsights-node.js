@@ -5,10 +5,10 @@ import * as Contracts from "../../Declarations/Contracts";
 import * as Constants from "../../Declarations/Constants";
 
 export function spanToTelemetryContract(span: Span): (Contracts.DependencyTelemetry & Contracts.RequestTelemetry) & Contracts.Identified {
-    const id = `${span.context().traceId}.${span.context().spanId}`;
+    const id = `|${span.context().traceId}.${span.context().spanId}.`;
     const duration = Math.round(span._duration[0] * 1e3 + span._duration[1] / 1e6);
-    const isHttp: boolean = (span.attributes.component || "").toUpperCase() === Constants.DependencyTypeName.Http;
-    const isGrpc: boolean = (span.attributes.component || "").toLowerCase() === Constants.DependencyTypeName.Http;
+    const isHttp: boolean = ((span.attributes.component || "").toUpperCase() === Constants.DependencyTypeName.Http) || (!!span.attributes[Constants.SpanAttribute.HttpUrl]);
+    const isGrpc: boolean = (span.attributes.component || "").toLowerCase() === Constants.DependencyTypeName.Grpc;
     if (isHttp) {
         // Read http span attributes
         const method = span.attributes[Constants.SpanAttribute.HttpMethod] || "GET";
@@ -22,13 +22,14 @@ export function spanToTelemetryContract(span: Span): (Contracts.DependencyTeleme
         const dependencyTypeName = Constants.DependencyTypeName.Http;
         const target = port ? `${host}:${port}` : host;
         const data = url.toString();
-        const resultCode = span.status.code;
-        const success = span.status.code === 0; // Status.OK
+        const resultCode = span.attributes[Constants.SpanAttribute.HttpStatusCode] || span.status.code || 0;
+        const success = resultCode < 400; // Status.OK
         return {
             id, name, dependencyTypeName,
-            target, data, resultCode,
+            target, data,
             success, duration,
             url: data,
+            resultCode: String(resultCode),
             properties: span.attributes
         };
     } else if (isGrpc) {
@@ -40,9 +41,9 @@ export function spanToTelemetryContract(span: Span): (Contracts.DependencyTeleme
             data: service || name,
             url: service || name,
             dependencyTypeName: Constants.DependencyTypeName.Grpc,
-            resultCode: span.status.code,
+            resultCode: String(span.status.code || 0),
             success: span.status.code === 0,
-            properties: span.attributes
+            properties: span.attributes,
         }
     } else {
         const name = span.name;
@@ -51,7 +52,7 @@ export function spanToTelemetryContract(span: Span): (Contracts.DependencyTeleme
             data: name,
             url: name,
             dependencyTypeName: span.kind === SpanKind.INTERNAL ? Constants.DependencyTypeName.InProc : (span.attributes.component || span.name),
-            resultCode: span.status.code,
+            resultCode: String(span.status.code || 0),
             success: span.status.code === 0,
             properties: span.attributes,
         };

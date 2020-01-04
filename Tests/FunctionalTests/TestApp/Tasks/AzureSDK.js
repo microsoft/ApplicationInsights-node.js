@@ -1,7 +1,7 @@
 try {
     var storage = require("@azure/storage-blob");
 
-    const containerName = `newcontainer${new Date().getTime()}`;
+    const containerName = "newcontainer";
     const client = new storage.BlobServiceClient("https://not-a-real-account.blob.core.windows.net");
     const containerClient = client.getContainerClient(containerName);
 

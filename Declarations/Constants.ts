@@ -111,10 +111,11 @@ export const TelemetryTypeStringToQuickPulseDocumentType: {[key in Contracts.Tel
 // OpenTelemetry Span Attributes
 export const SpanAttribute = {
     // HTTP
-    HttpMethod: "http.method",
-    HttpUrl: "http.url",
     HttpHost: "http.host",
+    HttpMethod: "http.method",
     HttpPort: "http.port",
+    HttpStatusCode: "http.status_code",
+    HttpUrl: "http.url",
 
     // GRPC
     GrpcMethod: "grpc.method",

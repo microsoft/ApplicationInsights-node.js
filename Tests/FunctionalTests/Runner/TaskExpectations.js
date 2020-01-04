@@ -16,26 +16,33 @@ module.exports = {
     "AzureSdkCreate": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
-            return telemetry.data.baseData.name === "Azure.Storage.Blob.ContainerClient-create" &&
-                telemetry.data.baseData.success === true;
+            return telemetry.data.baseData.name === "Azure.Storage.Blob.ContainerClient-create";
+            // TODO: should also have baseData.type === "InProc"
         },
         outputContract(
             "RemoteDependencyData",
             (telemetry) => {
-                return telemetry.data.baseData.name === "core-http" && telemetry.data.baseData.success === true;
+                return telemetry.data.baseData.name === "PUT /newcontainer"
+                && telemetry.data.baseData.data === "https://not-a-real-account.blob.core.windows.net/newcontainer?restype=container"
+                && telemetry.data.baseData.type === "HTTP"
+                && telemetry.data.baseData.target === "not-a-real-account.blob.core.windows.net"
+                && telemetry.data.baseData.resultCode !== "";
             }
         )
     ),
     "AzureSdkDelete": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
-            return telemetry.data.baseData.name === "Azure.Storage.Blob.ContainerClient-delete" &&
-                telemetry.data.baseData.success === true;
+            return telemetry.data.baseData.name === "Azure.Storage.Blob.ContainerClient-delete";
         },
         outputContract(
             "RemoteDependencyData",
             (telemetry) => {
-                return telemetry.data.baseData.name === "core-http" && telemetry.data.baseData.success === true;
+                return telemetry.data.baseData.name === "DELETE /newcontainer"
+                && telemetry.data.baseData.data === "https://not-a-real-account.blob.core.windows.net/newcontainer?restype=container"
+                && telemetry.data.baseData.type === "HTTP"
+                && telemetry.data.baseData.target === "not-a-real-account.blob.core.windows.net"
+                && telemetry.data.baseData.resultCode !== "";
             }
         )
     ),
