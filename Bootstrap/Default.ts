@@ -60,7 +60,7 @@ export function setupAndStart(setupString = _setupString): typeof types | null {
     }
     if (!setupString) {
         _logger.error(
-            "Application Insights wanted to be started, but no Connection String was provided",
+            "Application Insights wanted to be started, but no Connection String or Instrumentation Key was provided",
             setupString
         );
         return null;
