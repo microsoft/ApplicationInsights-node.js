@@ -14,7 +14,8 @@ export interface StatusContract {
 }
 
 const _APP_TYPE = "node.js";
-const _FILE_PATH = `${os.homedir()}/LogFiles/ApplicationInsights/status/`;
+const _HOME_DIR = os.homedir ? os.homedir() :( process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME']);
+const _FILE_PATH = `${_HOME_DIR}/LogFiles/ApplicationInsights/status/`;
 const _FILE_NAME = `status_${os.hostname()}_${process.pid}.json`;
 export const FULL_PATH = _FILE_PATH + _FILE_NAME;
 
