@@ -13,10 +13,11 @@ export const subscriber = (event: IStandardEvent<pg.IPostgresData>) => {
         const sql = (q.preparable && q.preparable.text) || q.plan || q.text || "unknown query";
         const success = !event.data.error;
         const conn = `${event.data.database.host}:${event.data.database.port}`;
+        const name = sql.length > 1024 ? sql.slice(0, 1021) + '...' : sql;
         client.trackDependency({
             target: conn,
             data: sql,
-            name: sql,
+            name,
             duration: event.data.duration,
             success: success,
             resultCode: success ? "0" : "1",
