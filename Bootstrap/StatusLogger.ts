@@ -60,7 +60,12 @@ function mkDirByPathSync(targetDir: string, { isRelativeToScript = false } = {})
 
       return curDir;
     }, initDir);
-  }
+}
+
+export function isNodeVersionCompatible() {
+  const majVer = process.versions.node.split(".")[0];
+  return parseInt(majVer) >= 1;
+}
 
 export const DEFAULT_STATUS: StatusContract = {
     AgentInitializedSuccessfully: false,
