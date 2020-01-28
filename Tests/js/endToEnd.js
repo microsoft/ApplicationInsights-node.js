@@ -120,7 +120,7 @@ describe('module', function () {
         it('should not crash on uncaught exceptions if multiple handlers exist', function () {
             var appInsights = require('../../');
             appInsights.setup('ikey').setAutoCollectExceptions(true).start();
-            process.addListener(UNCAUGHT_EXCEPTION, () => {});
+            process.addListener(UNCAUGHT_EXCEPTION, function() {});
             assert.ok(appInsights.defaultClient);
 
             assert.doesNotThrow(function() {
