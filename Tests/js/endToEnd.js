@@ -70,8 +70,8 @@ describe('module', function () {
     });
 
     describe('uncaught exceptions', function() {
-        const uncaughtException = 'uncaughtException'
-        let mochaListener;
+        var uncaughtException = 'uncaughtException'
+        var mochaListener;
 
         before(function() {
             mochaListener = process.listeners(uncaughtException).pop();
