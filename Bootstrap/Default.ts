@@ -1,4 +1,5 @@
 import * as types from "../applicationinsights";
+import * as StatusLogger from "./StatusLogger";
 
 // Private configuration vars
 let _appInsights: typeof types | null;
@@ -6,8 +7,15 @@ let _logger: AgentLogger = console;
 let _prefix = "ad_"; // App Services, Default
 
 // Env var local constants
+const ENV_extensionVersion = "APPLICATIONINSIGHTS_EXTENSION_VERSION";
 const _setupString = process.env.APPLICATIONINSIGHTS_CONNECTION_STRING || process.env.APPINSIGHTS_INSTRUMENTATION_KEY;
-const _extensionEnabled = process.env.APPLICATIONINSIGHTS_EXTENSION_VERSION && process.env.APPLICATIONINSIGHTS_EXTENSION_VERSION !== "disabled";
+const _extensionEnabled = process.env[ENV_extensionVersion] && process.env[ENV_extensionVersion] !== "disabled";
+
+// Other local constants
+const defaultStatus: StatusLogger.StatusContract = {
+    ...StatusLogger.DEFAULT_STATUS,
+    Ikey: _setupString,
+};
 
 export interface AgentLogger {
     log(message?: any, ...optional: any[]): void;
@@ -51,18 +59,40 @@ export function setUsagePrefix(prefix: string) {
 }
 
 /**
- * Try to setup and start this app insights instance, if attach is enabled.
+ * Try to setup and start this app insights instance if attach is enabled.
  * @param setupString connection string or instrumentation key
  */
 export function setupAndStart(setupString = _setupString): typeof types | null {
-    if (!_extensionEnabled && sdkAlreadyExists() === false) {
+    StatusLogger.addCloseHandler();
+
+    if (!_extensionEnabled) {
+        StatusLogger.writeFile({
+            ...defaultStatus,
+            AgentInitializedSuccessfully: false,
+            Reason: `Extension is not enabled. env.${ENV_extensionVersion}=${process.env[ENV_extensionVersion]}`
+        });
         return null;
     }
+
+    // If app already contains SDK, skip agent attach
+    if (sdkAlreadyExists()) {
+        StatusLogger.writeFile({
+            ...defaultStatus,
+            AgentInitializedSuccessfully: false,
+            SDKPresent: true,
+            Reason: "SDK already exists. Instrumenting using Application Insights SDK"
+        })
+        return null;
+    }
+
     if (!setupString) {
-        _logger.error(
-            "Application Insights wanted to be started, but no Connection String or Instrumentation Key was provided",
-            setupString
-        );
+        const message = "Application Insights wanted to be started, but no Connection String or Instrumentation Key was provided";
+        _logger.error(message, setupString);
+        StatusLogger.writeFile({
+            ...defaultStatus,
+            AgentInitializedSuccessfully: false,
+            Reason: message,
+        });
         return null;
     }
 
@@ -77,12 +107,25 @@ export function setupAndStart(setupString = _setupString): typeof types | null {
             }
             return true;
         }
+
+        // Instrument the SDK
         _appInsights.setup(setupString).setSendLiveMetrics(true);
         _appInsights.defaultClient.addTelemetryProcessor(prefixInternalSdkVersion);
         _appInsights.start();
+
+        // Agent successfully instrumented the SDK
         _logger.log("Application Insights was started with setupString", setupString, _extensionEnabled);
+        StatusLogger.writeFile({
+            ...defaultStatus,
+            AgentInitializedSuccessfully: true
+        });
     } catch (e) {
         _logger.error("Error setting up Application Insights", e);
+        StatusLogger.writeFile({
+            ...defaultStatus,
+            AgentInitializedSuccessfully: false,
+            Reason: `Error setting up Application Insights: ${e && e.message}`
+        })
     }
     return _appInsights;
 }
