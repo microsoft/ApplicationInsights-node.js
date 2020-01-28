@@ -19,6 +19,8 @@ describe("AutoCollection/Exceptions", () => {
             assert.equal(processOnSpy.callCount, 2, "After enabling exception autocollection, there should be 2 calls to processOnSpy");
             assert.equal(processOnSpy.getCall(0).args[0], AutoCollectionExceptions.UNCAUGHT_EXCEPTION_HANDLER_NAME);
             assert.equal(processOnSpy.getCall(1).args[0], AutoCollectionExceptions.UNHANDLED_REJECTION_HANDLER_NAME);
+            processOnSpy.restore();
+            processRemoveListenerSpy.restore();
         });
     });
 });
