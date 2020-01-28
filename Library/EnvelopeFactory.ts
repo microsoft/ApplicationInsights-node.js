@@ -115,7 +115,7 @@ class EnvelopeFactory {
 
     private static createDependencyData(telemetry: Contracts.DependencyTelemetry & Contracts.Identified): Contracts.Data<Contracts.RemoteDependencyData> {
         var remoteDependency = new Contracts.RemoteDependencyData();
-        remoteDependency.name = telemetry.name;
+        remoteDependency.name = telemetry.name.length > 1024 ? telemetry.name.slice(0, 1021) + '...' : telemetry.name;
         remoteDependency.data = telemetry.data;
         remoteDependency.target = telemetry.target;
         remoteDependency.duration = Util.msToTimeSpan(telemetry.duration);
