@@ -68,4 +68,44 @@ describe('module', function () {
             appInsights.dispose();
         });
     });
+
+    describe('uncaught exceptions', function() {
+        const uncaughtException = 'uncaughtException'
+        let mochaListener;
+
+        before(function() {
+            mochaListener = process.listeners(uncaughtException).pop();
+            process.removeListener(uncaughtException, mochaListener);
+        });
+
+        after(function() {
+            process.addListener(uncaughtException, mochaListener);
+        });
+
+        it('should crash on uncaught exceptions', function () {
+            var appInsights = require('../../');
+            appInsights.setup('ikey').setAutoCollectExceptions(true).start();
+            assert.ok(appInsights.defaultClient);
+            assert.throws(function () {
+                process.listeners(uncaughtException)[0](new Error());
+            });
+            appInsights.defaultClient.flush();
+            appInsights.dispose();
+        });
+
+        it('should not crash on uncaught exceptions if multiple handlers exist', function () {
+            var appInsights = require('../../');
+            appInsights.setup('ikey').setAutoCollectExceptions(true).start();
+            process.addListener(uncaughtException, () => {});
+            assert.ok(appInsights.defaultClient);
+
+            assert.doesNotThrow(function() {
+                process.listeners(uncaughtException)[0](new Error());
+            });
+
+            appInsights.defaultClient.flush();
+            appInsights.dispose();
+            process.removeAllListeners(uncaughtException);
+        });
+    });
 });

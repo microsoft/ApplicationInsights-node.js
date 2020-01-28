@@ -38,16 +38,17 @@ class AutoCollectExceptions {
             if (!this._exceptionListenerHandle) {
                 // For scenarios like Promise.reject(), an error won't be passed to the handle. Create a placeholder
                 // error for these scenarios.
-                var handle = (reThrow: boolean, error: Error = new Error(AutoCollectExceptions._FALLBACK_ERROR_MESSAGE)) => {
+                var handle = (reThrow: boolean, name: string, error: Error = new Error(AutoCollectExceptions._FALLBACK_ERROR_MESSAGE)) => {
                     this._client.trackException({ exception: error });
                     this._client.flush({ isAppCrashing: true });
-                    if (reThrow) {
+                    // only rethrow when we are the only listener
+                    if (reThrow && process.listeners(name).length === 1) {
                         var THIS_IS_APPLICATION_INSIGHTS_RETHROWING_YOUR_EXCEPTION = error;
                         throw THIS_IS_APPLICATION_INSIGHTS_RETHROWING_YOUR_EXCEPTION; // Error originated somewhere else in your app
                     }
                 };
-                this._exceptionListenerHandle = handle.bind(this, true);
-                this._rejectionListenerHandle = handle.bind(this, false);
+                this._exceptionListenerHandle = handle.bind(this, true, AutoCollectExceptions.UNCAUGHT_EXCEPTION_HANDLER_NAME);
+                this._rejectionListenerHandle = handle.bind(this, false, AutoCollectExceptions.UNHANDLED_REJECTION_HANDLER_NAME);
 
                 process.on(AutoCollectExceptions.UNCAUGHT_EXCEPTION_HANDLER_NAME, this._exceptionListenerHandle);
                 process.on(AutoCollectExceptions.UNHANDLED_REJECTION_HANDLER_NAME, this._rejectionListenerHandle);
