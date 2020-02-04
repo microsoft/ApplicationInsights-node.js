@@ -13,6 +13,16 @@ var outputContract = (expectedTelemetryType, telemetryVerifier, childContract) =
 };
 
 module.exports = {
+    "AzureSdkEventHubsSend": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "Azure.EventHubs.send"
+                && telemetry.data.baseData.data === "sb://not-a-real-account.servicebus.windows.net/"
+                && telemetry.data.baseData.type === "InProc"
+                && telemetry.data.baseData.target === "not-a-real-account.servicebus.windows.net"
+                && telemetry.data.baseData.resultCode !== ""
+        }
+    ),
     "AzureSdkCreate": outputContract(
         "RemoteDependencyData",
         (telemetry) => {

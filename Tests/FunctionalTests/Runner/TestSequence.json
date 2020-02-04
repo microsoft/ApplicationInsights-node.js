@@ -12,5 +12,6 @@
 {"path": "/diagChannelWinston", "steps": ["WinstonError", "WinstonWarn", "WinstonInfo", "WinstonVerbose", "WinstonDebug", "WinstonSilly", "WinstonError2", "WinstonWarn2", "WinstonInfo2"]},
 {"path": "/diagChannelPostgres", "steps": ["PostgresQuery", "Timeout", "PostgresQuery"]},
 {"path": "/deepRequestDiagChannel", "steps": ["HttpGet", "RedisGet", "PostgresQuery", "RedisSet", "BunyanWarn", "AITrackTrace", "MongoInsert", "AITrackExc"]},
-{"path": "/~azSdkStorage", "steps": ["AzureSdkCreate", "AzureSdkDelete"]}
+{"path": "/~azSdkStorage", "steps": ["AzureSdkCreate", "AzureSdkDelete"]},
+{"path": "/~azSdkEventHubs", "steps": ["AzureSdkEventHubsSend"]}
 ]

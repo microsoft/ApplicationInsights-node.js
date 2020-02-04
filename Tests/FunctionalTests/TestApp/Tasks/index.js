@@ -6,12 +6,14 @@ var Winston = require("./Winston");
 var Redis = require("./Redis");
 var Utils = require("./Utils");
 var Postgres = require("./Postgres");
-var AzureSDK = require("./AzureSDK");
+var AzureSdkStorage = require("./AzureSDKStorage");
+var AzureSdkEventHubs = require("./AzureSdkEventHubs");
 
 module.exports = {
     HttpGet: require("./HttpGet"),
-    AzureSdkCreate: AzureSDK.createContainer,
-    AzureSdkDelete: AzureSDK.deleteContainer,
+    AzureSdkEventHubsSend: AzureSdkEventHubs.sendMessage,
+    AzureSdkCreate: AzureSdkStorage.createContainer,
+    AzureSdkDelete: AzureSdkStorage.deleteContainer,
     MongoInsert: Mongo.insert,
     MongoInsertMany: Mongo.insertMany,
     MongoFind: Mongo.find,
