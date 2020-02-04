@@ -38,6 +38,7 @@ export function spanToTelemetryContract(span: Span): (Contracts.DependencyTeleme
         const name = service ? `${method} ${service}` : span.name;
         return {
             id, duration, name,
+            target: service,
             data: service || name,
             url: service || name,
             dependencyTypeName: Constants.DependencyTypeName.Grpc,
@@ -47,14 +48,24 @@ export function spanToTelemetryContract(span: Span): (Contracts.DependencyTeleme
         }
     } else {
         const name = span.name;
+        const links = span.links && span.links.map(link => {
+            return {
+                operation_Id: link.spanContext.traceId,
+                id: link.spanContext.spanId
+            };
+        });
         return {
             id, duration, name,
-            data: name,
-            url: name,
+            target: span.attributes["peer.address"],
+            data: span.attributes["peer.address"] || name,
+            url: span.attributes["peer.address"] || name,
             dependencyTypeName: span.kind === SpanKind.INTERNAL ? Constants.DependencyTypeName.InProc : (span.attributes.component || span.name),
             resultCode: String(span.status.code || 0),
             success: span.status.code === 0,
-            properties: span.attributes,
+            properties: {
+                ...span.attributes,
+                "_MS.links": links || undefined
+            },
         };
     }
 }

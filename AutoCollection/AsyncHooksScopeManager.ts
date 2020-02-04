@@ -37,6 +37,20 @@ export enum SpanKind {
     CONSUMER = 4,
 }
 
+export interface Link {
+    /** The {@link SpanContext} of a linked span. */
+    spanContext: SpanContext;
+    /** A set of {@link Attributes} on the link. */
+    attributes?: Record<string, string>;
+}
+
+export interface SpanContext {
+    traceId: string;
+    spanId: string;
+    traceFlags?: { toString: () => string };
+    tracestate?: string;
+}
+
 export interface Span {
     _duration: [number, number]; // hrTime
     name: string;
@@ -44,12 +58,8 @@ export interface Span {
     status: { code: number, message?: string },
     attributes: Record<string, string>,
     kind: SpanKind;
-    context: () => {
-        traceId: string;
-        spanId: string;
-        traceFlags?: { toString: () => string };
-        tracestate?: string;
-    }
+    links: Link[];
+    context: () => SpanContext;
 }
 
 export class OpenTelemetryScopeManagerWrapper {
