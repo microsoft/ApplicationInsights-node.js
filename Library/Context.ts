@@ -26,7 +26,7 @@ class Context {
     private _loadApplicationContext(packageJsonPath?: string) {
         // note: this should return the host package.json
         packageJsonPath = packageJsonPath || path.resolve(__dirname, "../../../../package.json");
-        
+
         if (!Context.appVersion[packageJsonPath]) {
             Context.appVersion[packageJsonPath] = "unknown";
             try {
@@ -56,7 +56,7 @@ class Context {
     private _loadInternalContext() {
         // note: this should return the sdk package.json
         let packageJsonPath = path.resolve(__dirname, "../../package.json");
-        
+
         if (!Context.sdkVersion) {
             Context.sdkVersion = "unknown";
             try {

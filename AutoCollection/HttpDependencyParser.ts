@@ -64,6 +64,10 @@ class HttpDependencyParser extends RequestParser {
             remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
         }
 
+        if (urlObject.port) {
+            remoteDependencyTarget += ":" + urlObject.port;
+        }
+
         var dependencyTelemetry: Contracts.DependencyTelemetry & Contracts.Identified = {
             id: dependencyId,
             name: dependencyName,

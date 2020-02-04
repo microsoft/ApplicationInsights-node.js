@@ -112,7 +112,7 @@ appInsights.setup("<instrumentation_key>")
     .setAutoCollectConsole(true)
     .setUseDiskRetryCaching(true)
     .setSendLiveMetrics(false)
-    .setDistributedTracingTracingMode(appInsights.DistributedTracingModes.AI)
+    .setDistributedTracingMode(appInsights.DistributedTracingModes.AI)
     .start();
 ```
 
