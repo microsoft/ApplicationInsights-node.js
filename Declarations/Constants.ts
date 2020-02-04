@@ -116,6 +116,7 @@ export const SpanAttribute = {
     HttpPort: "http.port",
     HttpStatusCode: "http.status_code",
     HttpUrl: "http.url",
+    HttpUserAgent: "http.user_agent",
 
     // GRPC
     GrpcMethod: "grpc.method",

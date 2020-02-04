@@ -4,6 +4,14 @@ import { Span, SpanKind } from "../AsyncHooksScopeManager";
 import * as Contracts from "../../Declarations/Contracts";
 import * as Constants from "../../Declarations/Constants";
 
+function filterSpanAttributes(attributes: Record<string, string>) {
+    const newAttributes = { ...attributes };
+    Object.keys(Constants.SpanAttribute).forEach(key => {
+        delete newAttributes[key];
+    });
+    return newAttributes
+}
+
 export function spanToTelemetryContract(span: Span): (Contracts.DependencyTelemetry & Contracts.RequestTelemetry) & Contracts.Identified {
     const id = `|${span.context().traceId}.${span.context().spanId}.`;
     const duration = Math.round(span._duration[0] * 1e3 + span._duration[1] / 1e6);
@@ -30,7 +38,7 @@ export function spanToTelemetryContract(span: Span): (Contracts.DependencyTeleme
             success, duration,
             url: data,
             resultCode: String(resultCode),
-            properties: span.attributes
+            properties: filterSpanAttributes(span.attributes)
         };
     } else if (isGrpc) {
         const method = span.attributes[Constants.SpanAttribute.GrpcMethod] || "rpc";
@@ -44,7 +52,7 @@ export function spanToTelemetryContract(span: Span): (Contracts.DependencyTeleme
             dependencyTypeName: Constants.DependencyTypeName.Grpc,
             resultCode: String(span.status.code || 0),
             success: span.status.code === 0,
-            properties: span.attributes,
+            properties: filterSpanAttributes(span.attributes),
         }
     } else {
         const name = span.name;
@@ -63,7 +71,7 @@ export function spanToTelemetryContract(span: Span): (Contracts.DependencyTeleme
             resultCode: String(span.status.code || 0),
             success: span.status.code === 0,
             properties: {
-                ...span.attributes,
+                ...filterSpanAttributes(span.attributes),
                 "_MS.links": links || undefined
             },
         };
