@@ -1,6 +1,7 @@
 class Logging {
     public static enableDebug = false;
     public static disableWarnings = false;
+    public static disableErrors = false;
 
     private static TAG = "ApplicationInsights:";
 
