@@ -1,12 +1,14 @@
 import * as types from "../applicationinsights";
-import * as StatusLogger from "./StatusLogger";
 import * as Helpers from "./Helpers";
 import * as DataModel from "./DataModel";
+import { StatusLogger, StatusContract } from "./StatusLogger";
+import { ConsoleStatusLogger } from "./ConsoleStatusLogger";
 
 // Private configuration vars
 let _appInsights: typeof types | null;
 let _logger: DataModel.AgentLogger = console;
 let _prefix = "ad_"; // App Services, Default
+let _statusLogger: StatusLogger = new ConsoleStatusLogger();
 
 // Env var local constants
 const ENV_extensionVersion = "APPLICATIONINSIGHTS_EXTENSION_VERSION";
@@ -14,7 +16,7 @@ const _setupString = process.env.APPLICATIONINSIGHTS_CONNECTION_STRING || proces
 const _extensionEnabled = process.env[ENV_extensionVersion] && process.env[ENV_extensionVersion] !== "disabled";
 
 // Other local constants
-const defaultStatus: StatusLogger.StatusContract = {
+const defaultStatus: StatusContract = {
     ...StatusLogger.DEFAULT_STATUS,
     Ikey: _setupString,
 };
@@ -35,16 +37,20 @@ export function setUsagePrefix(prefix: string) {
     _prefix = prefix;
 }
 
+export function setStatusLogger(statusLogger: StatusLogger) {
+    _statusLogger = statusLogger;
+}
+
 /**
  * Try to setup and start this app insights instance if attach is enabled.
  * @param setupString connection string or instrumentation key
  */
 export function setupAndStart(setupString = _setupString): typeof types | null {
-    StatusLogger.makeStatusDirs();
-    StatusLogger.addCloseHandler();
+    _statusLogger.makeStatusDirs();
+    _statusLogger.addCloseHandler();
 
     if (!_extensionEnabled) {
-        StatusLogger.writeFile({
+        _statusLogger.writeFile({
             ...defaultStatus,
             AgentInitializedSuccessfully: false,
             Reason: `Extension is not enabled. env.${ENV_extensionVersion}=${process.env[ENV_extensionVersion]}`
@@ -54,7 +60,7 @@ export function setupAndStart(setupString = _setupString): typeof types | null {
 
     // If app already contains SDK, skip agent attach
     if (Helpers.sdkAlreadyExists(_logger)) {
-        StatusLogger.writeFile({
+        _statusLogger.writeFile({
             ...defaultStatus,
             AgentInitializedSuccessfully: false,
             SDKPresent: true,
@@ -66,7 +72,7 @@ export function setupAndStart(setupString = _setupString): typeof types | null {
     if (!setupString) {
         const message = "Application Insights wanted to be started, but no Connection String or Instrumentation Key was provided";
         _logger.error(message, setupString);
-        StatusLogger.writeFile({
+        _statusLogger.writeFile({
             ...defaultStatus,
             AgentInitializedSuccessfully: false,
             Reason: message,
@@ -93,13 +99,13 @@ export function setupAndStart(setupString = _setupString): typeof types | null {
 
         // Agent successfully instrumented the SDK
         _logger.log("Application Insights was started with setupString", setupString, _extensionEnabled);
-        StatusLogger.writeFile({
+        _statusLogger.writeFile({
             ...defaultStatus,
             AgentInitializedSuccessfully: true
         });
     } catch (e) {
         _logger.error("Error setting up Application Insights", e);
-        StatusLogger.writeFile({
+        _statusLogger.writeFile({
             ...defaultStatus,
             AgentInitializedSuccessfully: false,
             Reason: `Error setting up Application Insights: ${e && e.message}`
