@@ -1,10 +1,12 @@
 import assert = require("assert");
 import sinon = require("sinon");
-import * as types from "../../Bootstrap/Default";
+import * as DataModel from "../../Bootstrap/DataModel";
+import * as Helpers from "../../Bootstrap/Helpers";
+import * as DefaultTypes from "../../Bootstrap/Default";
 
 const appInsights = require("../../applicationinsights");
 
-class LoggerSpy implements types.AgentLogger {
+class LoggerSpy implements DataModel.AgentLogger {
     public logCount = 0
     public errorCount = 0;
 
@@ -37,14 +39,16 @@ describe("#setupAndStart()", () => {
         const logger = new LoggerSpy();
         const origEnv = process.env.APPLICATIONINSIGHTS_EXTENSION_VERSION;
         process.env.APPLICATIONINSIGHTS_EXTENSION_VERSION = "~2";
+        const alreadyExistsStub = sinon.stub(Helpers, "sdkAlreadyExists", () => false);
 
         // Test
-        const Default = require("../../Bootstrap/Default") as typeof types;
+        const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
         Default.setLogger(logger);
         const instance = Default.setupAndStart("abc");
         assert.deepEqual(instance, appInsights);
 
         // Cleanup
+        alreadyExistsStub.restore();
         instance.dispose();
         process.env.APPLICATIONINSIGHTS_EXTENSION_VERSION = origEnv;
 
@@ -61,14 +65,16 @@ describe("#setupAndStart()", () => {
         const logger = new LoggerSpy();
         const origEnv = process.env.APPLICATIONINSIGHTS_EXTENSION_VERSION;
         process.env.APPLICATIONINSIGHTS_EXTENSION_VERSION = "disabled";
+        const alreadyExistsStub = sinon.stub(Helpers, "sdkAlreadyExists", () => false);
 
         // Test
-        const Default = require("../../Bootstrap/Default") as typeof types;
+        const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
         Default.setLogger(logger);
         const instance = Default.setupAndStart("abc");
         assert.equal(instance, null);
 
         // Cleanup
+        alreadyExistsStub.restore();
         process.env.APPLICATIONINSIGHTS_EXTENSION_VERSION = origEnv;
 
         // start was never called
@@ -88,14 +94,16 @@ describe("#setupAndStart()", () => {
         process.env.APPLICATIONINSIGHTS_EXTENSION_VERSION = "~2";
         delete process.env.APPINSIGHTS_INSTRUMENTATION_KEY;
         delete process.env.APPLICATIONINSIGHTS_CONNECTION_STRING;
+        const alreadyExistsStub = sinon.stub(Helpers, "sdkAlreadyExists", () => false);
 
         // Test
-        const Default = require("../../Bootstrap/Default") as typeof types;
+        const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
         Default.setLogger(logger);
         const instance = Default.setupAndStart();
         assert.equal(instance, null);
 
         // Cleanup
+        alreadyExistsStub.restore();
         process.env.APPLICATIONINSIGHTS_EXTENSION_VERSION = origEnv;
 
         // start was never called

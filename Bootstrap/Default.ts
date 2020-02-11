@@ -1,10 +1,14 @@
 import * as types from "../applicationinsights";
-import * as StatusLogger from "./StatusLogger";
+import * as Helpers from "./Helpers";
+import * as DataModel from "./DataModel";
+import { StatusLogger, StatusContract } from "./StatusLogger";
+import { ConsoleStatusLogger } from "./ConsoleStatusLogger";
 
 // Private configuration vars
 let _appInsights: typeof types | null;
-let _logger: AgentLogger = console;
+let _logger: DataModel.AgentLogger = console;
 let _prefix = "ad_"; // App Services, Default
+let _statusLogger: StatusLogger = new ConsoleStatusLogger();
 
 // Env var local constants
 const ENV_extensionVersion = "APPLICATIONINSIGHTS_EXTENSION_VERSION";
@@ -12,41 +16,16 @@ const _setupString = process.env.APPLICATIONINSIGHTS_CONNECTION_STRING || proces
 const _extensionEnabled = process.env[ENV_extensionVersion] && process.env[ENV_extensionVersion] !== "disabled";
 
 // Other local constants
-const defaultStatus: StatusLogger.StatusContract = {
+const defaultStatus: StatusContract = {
     ...StatusLogger.DEFAULT_STATUS,
     Ikey: _setupString,
 };
-
-export interface AgentLogger {
-    log(message?: any, ...optional: any[]): void;
-    error(message?: any, ...optional: any[]): void;
-}
-
-function sdkAlreadyExists(): boolean {
-    try {
-        // appInstance should either resolve to user SDK or crash. If it resolves to attach SDK, user probably modified their NODE_PATH
-        const appInstance = require.resolve("applicationinsights"); // assumes that the cwd is near user's package.json
-        const attachInstance = require.resolve("../applicationinsights");
-        if (appInstance !== attachInstance) {
-            _logger.log(
-                "applicationinsights module is already installed in this application; not re-attaching. Installed SDK location:",
-                appInstance
-            );
-            return true;
-        }
-        // User probably modified their NODE_PATH to resolve to this instance. Attach appinsights
-        return false;
-    } catch (e) {
-        // crashed while trying to resolve "applicationinsights", so SDK does not exist. Attach appinsights
-        return false;
-    }
-}
 
 /**
  * Sets the attach-time logger
  * @param logger logger which implements the `AgentLogger` interface
  */
-export function setLogger(logger: AgentLogger) {
+export function setLogger(logger: DataModel.AgentLogger) {
     return _logger = logger;
 }
 
@@ -58,15 +37,20 @@ export function setUsagePrefix(prefix: string) {
     _prefix = prefix;
 }
 
+export function setStatusLogger(statusLogger: StatusLogger) {
+    _statusLogger = statusLogger;
+}
+
 /**
  * Try to setup and start this app insights instance if attach is enabled.
  * @param setupString connection string or instrumentation key
  */
 export function setupAndStart(setupString = _setupString): typeof types | null {
-    StatusLogger.addCloseHandler();
+    _statusLogger.makeStatusDirs();
+    _statusLogger.addCloseHandler();
 
     if (!_extensionEnabled) {
-        StatusLogger.writeFile({
+        _statusLogger.writeFile({
             ...defaultStatus,
             AgentInitializedSuccessfully: false,
             Reason: `Extension is not enabled. env.${ENV_extensionVersion}=${process.env[ENV_extensionVersion]}`
@@ -75,12 +59,12 @@ export function setupAndStart(setupString = _setupString): typeof types | null {
     }
 
     // If app already contains SDK, skip agent attach
-    if (sdkAlreadyExists()) {
-        StatusLogger.writeFile({
+    if (Helpers.sdkAlreadyExists(_logger)) {
+        _statusLogger.writeFile({
             ...defaultStatus,
             AgentInitializedSuccessfully: false,
             SDKPresent: true,
-            Reason: "SDK already exists. Instrumenting using Application Insights SDK"
+            Reason: "SDK already exists"
         })
         return null;
     }
@@ -88,7 +72,7 @@ export function setupAndStart(setupString = _setupString): typeof types | null {
     if (!setupString) {
         const message = "Application Insights wanted to be started, but no Connection String or Instrumentation Key was provided";
         _logger.error(message, setupString);
-        StatusLogger.writeFile({
+        _statusLogger.writeFile({
             ...defaultStatus,
             AgentInitializedSuccessfully: false,
             Reason: message,
@@ -115,13 +99,13 @@ export function setupAndStart(setupString = _setupString): typeof types | null {
 
         // Agent successfully instrumented the SDK
         _logger.log("Application Insights was started with setupString", setupString, _extensionEnabled);
-        StatusLogger.writeFile({
+        _statusLogger.writeFile({
             ...defaultStatus,
             AgentInitializedSuccessfully: true
         });
     } catch (e) {
         _logger.error("Error setting up Application Insights", e);
-        StatusLogger.writeFile({
+        _statusLogger.writeFile({
             ...defaultStatus,
             AgentInitializedSuccessfully: false,
             Reason: `Error setting up Application Insights: ${e && e.message}`
