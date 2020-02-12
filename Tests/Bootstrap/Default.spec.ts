@@ -37,8 +37,8 @@ describe("#setupAndStart()", () => {
     it("should setup and start the SDK", () => {
         // Setup env vars before requiring loader
         const logger = new LoggerSpy();
-        const origEnv = process.env.APPLICATIONINSIGHTS_EXTENSION_VERSION;
-        process.env.APPLICATIONINSIGHTS_EXTENSION_VERSION = "~2";
+        const origEnv = process.env.ApplicationInsightsAgent_EXTENSION_VERSION;
+        process.env.ApplicationInsightsAgent_EXTENSION_VERSION = "~2";
         const alreadyExistsStub = sinon.stub(Helpers, "sdkAlreadyExists", () => false);
 
         // Test
@@ -50,7 +50,7 @@ describe("#setupAndStart()", () => {
         // Cleanup
         alreadyExistsStub.restore();
         instance.dispose();
-        process.env.APPLICATIONINSIGHTS_EXTENSION_VERSION = origEnv;
+        process.env.ApplicationInsightsAgent_EXTENSION_VERSION = origEnv;
 
         // start was called once
         assert.equal(startSpy.callCount, 1);
@@ -63,8 +63,8 @@ describe("#setupAndStart()", () => {
     it("should not setup and start the SDK if it has been disabled", () => {
         // Setup
         const logger = new LoggerSpy();
-        const origEnv = process.env.APPLICATIONINSIGHTS_EXTENSION_VERSION;
-        process.env.APPLICATIONINSIGHTS_EXTENSION_VERSION = "disabled";
+        const origEnv = process.env.ApplicationInsightsAgent_EXTENSION_VERSION;
+        process.env.ApplicationInsightsAgent_EXTENSION_VERSION = "disabled";
         const alreadyExistsStub = sinon.stub(Helpers, "sdkAlreadyExists", () => false);
 
         // Test
@@ -75,7 +75,7 @@ describe("#setupAndStart()", () => {
 
         // Cleanup
         alreadyExistsStub.restore();
-        process.env.APPLICATIONINSIGHTS_EXTENSION_VERSION = origEnv;
+        process.env.ApplicationInsightsAgent_EXTENSION_VERSION = origEnv;
 
         // start was never called
         assert.equal(startSpy.callCount, 0);
@@ -88,10 +88,10 @@ describe("#setupAndStart()", () => {
     it("should not setup and start the SDK if no setupString is provided", () => {
         // Setup
         const logger = new LoggerSpy();
-        const origEnv = process.env.APPLICATIONINSIGHTS_EXTENSION_VERSION;
+        const origEnv = process.env.ApplicationInsightsAgent_EXTENSION_VERSION;
         const origIkey = process.env.APPINSIGHTS_INSTRUMENTATION_KEY;
         const origCs = process.env.APPLICATIONINSIGHTS_CONNECTION_STRING;
-        process.env.APPLICATIONINSIGHTS_EXTENSION_VERSION = "~2";
+        process.env.ApplicationInsightsAgent_EXTENSION_VERSION = "~2";
         delete process.env.APPINSIGHTS_INSTRUMENTATION_KEY;
         delete process.env.APPLICATIONINSIGHTS_CONNECTION_STRING;
         const alreadyExistsStub = sinon.stub(Helpers, "sdkAlreadyExists", () => false);
@@ -104,7 +104,7 @@ describe("#setupAndStart()", () => {
 
         // Cleanup
         alreadyExistsStub.restore();
-        process.env.APPLICATIONINSIGHTS_EXTENSION_VERSION = origEnv;
+        process.env.ApplicationInsightsAgent_EXTENSION_VERSION = origEnv;
 
         // start was never called
         assert.equal(startSpy.callCount, 0);

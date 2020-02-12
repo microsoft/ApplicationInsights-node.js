@@ -14,7 +14,7 @@ export interface StatusContract {
 }
 
 function readPackageVersion() {
-    let packageJsonPath = path.resolve(__dirname, "../package.json");
+    let packageJsonPath = path.resolve(__dirname, "../../package.json");
     try {
         let packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
         if (packageJson && typeof packageJson.version === "string") {

@@ -3,7 +3,14 @@ import { AgentLogger } from "./DataModel";
 export function sdkAlreadyExists(_logger: AgentLogger = console): boolean {
     try {
         // appInstance should either resolve to user SDK or crash. If it resolves to attach SDK, user probably modified their NODE_PATH
-        const appInstance = require.resolve("applicationinsights"); // assumes that the cwd is near user's package.json
+        let appInstance;
+        try {
+            // Node 8.9+
+            appInstance = (require.resolve as any)("applicationinsights", { paths: process.cwd() });
+        } catch (e) {
+            // Node <8.9
+            appInstance = require.resolve(process.cwd() + "/node_modules/applicationinsights");
+        }
         const attachInstance = require.resolve("../applicationinsights");
         if (appInstance !== attachInstance) {
             _logger.log(
