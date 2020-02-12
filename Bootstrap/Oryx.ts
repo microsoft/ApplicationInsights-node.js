@@ -1,4 +1,5 @@
+import * as types from "../applicationinsights";
 import appInsightsLoader = require('./Default');
 appInsightsLoader.setUsagePrefix("alr_"); // App Services Linux Attach
-appInsightsLoader.setupAndStart();
-export = appInsightsLoader;
+var appInsights = appInsightsLoader.setupAndStart();
+export = appInsights;
