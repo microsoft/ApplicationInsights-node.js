@@ -13,6 +13,7 @@
         ]
     },
     "include": [
+        "Bootstrap/*.ts",
         "*.ts",
         "AutoCollection/diagnostic-channel/*.ts",
         "Tests/**/*.ts"
