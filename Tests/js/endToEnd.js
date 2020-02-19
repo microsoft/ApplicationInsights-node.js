@@ -1,4 +1,5 @@
 const assert = require('assert');
+const sinon = require('sinon');
 
 // Special embedded test cases for testing if app can close
 if (process.argv.indexOf('embeddedTestCase-AppTerminates1') > -1) {
@@ -66,6 +67,71 @@ describe('module', function () {
             });
             appInsights.defaultClient.flush();
             appInsights.dispose();
+        });
+    });
+
+    describe('uncaught exceptions', function() {
+        var UNCAUGHT_EXCEPTION = 'uncaughtException';
+        var UNCAUGHT_EXCEPTION_MONITOR = 'uncaughtExceptionMonitor';
+        var exitStub;
+        var mochaListener;
+
+        var getLegacyHandler = function() {
+            return process.listeners(UNCAUGHT_EXCEPTION)[0];
+        }
+
+        var getMonitorHandler = function() {
+            return process.listeners(UNCAUGHT_EXCEPTION_MONITOR)[0];
+        }
+
+        before(function() {
+            mochaListener = process.listeners(UNCAUGHT_EXCEPTION).pop();
+            process.removeListener(UNCAUGHT_EXCEPTION, mochaListener);
+            exitStub = sinon.stub(process, 'exit');
+        });
+
+        beforeEach(function() {
+            exitStub.reset();
+        });
+
+        after(function() {
+            process.addListener(UNCAUGHT_EXCEPTION, mochaListener);
+            exitStub.restore();
+        });
+
+        it('should crash on uncaught exceptions', function () {
+            var appInsights = require('../../');
+            appInsights.setup('ikey').setAutoCollectExceptions(true).start();
+            assert.ok(appInsights.defaultClient);
+            var handler;
+            if (handler = getLegacyHandler()) {
+                handler(new Error('legacy error'));
+                assert.equal(exitStub.callCount, 1, 'Legacy handler rethrows when no');
+            } else if (handler = getMonitorHandler()) {
+                handler(new Error('monitor handler'));
+                assert.equal(exitStub.callCount, 0, 'Monitor handler does not cause the throw');
+            } else {
+                assert.ok(false, 'No handler found');
+            }
+            appInsights.defaultClient.flush();
+            appInsights.dispose();
+        });
+
+        it('should not crash on uncaught exceptions if multiple handlers exist', function () {
+            var appInsights = require('../../');
+            appInsights.setup('ikey').setAutoCollectExceptions(true).start();
+            process.addListener(UNCAUGHT_EXCEPTION, function() {});
+            assert.ok(appInsights.defaultClient);
+
+            assert.doesNotThrow(function() {
+                var handler = getMonitorHandler() || getLegacyHandler();
+                handler(new Error('existing handler error'));
+                assert.equal(exitStub.callCount, 0, 'Handler does not rethrow when other handles exist');
+            });
+
+            appInsights.defaultClient.flush();
+            appInsights.dispose();
+            process.removeAllListeners(UNCAUGHT_EXCEPTION);
         });
     });
 });
