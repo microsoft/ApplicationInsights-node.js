@@ -7,6 +7,10 @@ import { FileWriter } from "../../Bootstrap/FileWriter";
 import FileHelpers = require("../../Bootstrap/Helpers/FileHelpers");
 
 describe("FileWriter", () => {
+    if (!FileWriter.isNodeVersionCompatible()) {
+        return;
+    }
+
     const filedir = path.join(os.homedir(), "LogFiles/ApplicationInsights/test");
     describe("#constructor()", () => {
         it("should return a ready FileWriter", () => {

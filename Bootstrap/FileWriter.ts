@@ -30,10 +30,15 @@ export class FileWriter implements DataModel.AgentLogger {
         chmod: 0o644 // rw/r/r
     }
 
+    public static isNodeVersionCompatible() {
+        const majVer = process.versions.node.split(".")[0];
+        return parseInt(majVer) >= 1;
+    }
+
     // leave at "keep at single file only", "write up to certain size limit", "clear old file on process startup"
     constructor(private _filepath: string, private _filename: string, options?: Partial<FileWriterOptions>) {
         this._options = { ...FileWriter.DEFAULT_OPTIONS, ...options };
-        this._ready = this._isNodeVersionCompatible() && FileHelpers.makeStatusDirs(this._filepath);
+        this._ready = FileWriter.isNodeVersionCompatible() && FileHelpers.makeStatusDirs(this._filepath);
         if (this._options.deleteOnExit) {
             FileWriter._addCloseHandler();
             FileWriter._fullpathsToDelete.push(path.join(this._filepath, this._filename));
@@ -91,12 +96,6 @@ export class FileWriter implements DataModel.AgentLogger {
         const fullpath = path.join(this._filepath, this._filename);
         fs.writeFile(fullpath, message, { mode: this._options.chmod }, this.callback);
     }
-
-    private _isNodeVersionCompatible() {
-        const majVer = process.versions.node.split(".")[0];
-        return parseInt(majVer) >= 1;
-    }
-
 
     private static _addCloseHandler() {
         if (!FileWriter._listenerAttached) {
