@@ -106,7 +106,7 @@ describe('module', function () {
             var handler;
             if (handler = getLegacyHandler()) {
                 handler(new Error('legacy error'));
-                assert.equal(exitStub.callCount, 1, 'Legacy handler rethrows when no');
+                assert.equal(exitStub.callCount, 1, 'Legacy handler rethrows when no handlers exist');
             } else if (handler = getMonitorHandler()) {
                 handler(new Error('monitor handler'));
                 assert.equal(exitStub.callCount, 0, 'Monitor handler does not cause the throw');

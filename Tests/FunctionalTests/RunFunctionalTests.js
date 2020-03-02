@@ -67,7 +67,7 @@ function startDocker() {
         run("docker run -d -p 27017:27017 --name ainjsmongo mongo"),
         run("docker run -e MYSQL_ROOT_PASSWORD=dummypw -e MYSQL_DATABASE=testdb -d -p 33060:3306 --name ainjsmysql mysql:5"),
         run("docker run -d -p 63790:6379 --name ainjsredis redis:alpine"),
-        run("docker run -d -p 54320:5432 --name ainjspostgres postgres:alpine")
+        run("docker run -e POSTGRES_PASSWORD=dummypw -d -p 54320:5432 --name ainjspostgres postgres:alpine")
     ];
 
     for(let i = 0; i < tasks.length; i++) {
