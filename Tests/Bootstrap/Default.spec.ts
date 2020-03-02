@@ -1,5 +1,6 @@
 import assert = require("assert");
 import sinon = require("sinon");
+import { DiagnosticLogger } from "../../Bootstrap/DiagnosticLogger";
 import * as DataModel from "../../Bootstrap/DataModel";
 import * as Helpers from "../../Bootstrap/Helpers";
 import * as DefaultTypes from "../../Bootstrap/Default";
@@ -34,6 +35,29 @@ describe("#setupAndStart()", () => {
         startSpy.restore();
     });
 
+    it("should return the client if started multiple times", () => {
+        const logger = new LoggerSpy();
+        const origEnv = process.env.ApplicationInsightsAgent_EXTENSION_VERSION;
+        process.env.ApplicationInsightsAgent_EXTENSION_VERSION = "~2";
+        const alreadyExistsStub = sinon.stub(Helpers, "sdkAlreadyExists", () => false);
+
+        // Test
+        const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
+        Default.setLogger(new DiagnosticLogger(logger));
+        const instance1 = Default.setupAndStart("abc");
+        assert.ok(instance1.defaultClient);
+        const instance2 = Default.setupAndStart("abc");
+        assert.deepEqual(instance1.defaultClient, instance2.defaultClient);
+        assert.deepEqual(instance1.defaultClient["_telemetryProcessors"].length, 1)
+        assert.deepEqual(instance2.defaultClient["_telemetryProcessors"].length, 1)
+
+        // Cleanup
+        alreadyExistsStub.restore();
+        instance1.dispose();
+        instance2.dispose();
+        process.env.ApplicationInsightsAgent_EXTENSION_VERSION = origEnv;
+    })
+
     it("should setup and start the SDK", () => {
         // Setup env vars before requiring loader
         const logger = new LoggerSpy();
@@ -43,7 +67,7 @@ describe("#setupAndStart()", () => {
 
         // Test
         const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
-        Default.setLogger(logger);
+        Default.setLogger(new DiagnosticLogger(logger));
         const instance = Default.setupAndStart("abc");
         assert.deepEqual(instance, appInsights);
 
@@ -69,7 +93,7 @@ describe("#setupAndStart()", () => {
 
         // Test
         const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
-        Default.setLogger(logger);
+        Default.setLogger(new DiagnosticLogger(logger));
         const instance = Default.setupAndStart("abc");
         assert.equal(instance, null);
 
@@ -98,7 +122,7 @@ describe("#setupAndStart()", () => {
 
         // Test
         const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
-        Default.setLogger(logger);
+        Default.setLogger(new DiagnosticLogger(logger));
         const instance = Default.setupAndStart();
         assert.equal(instance, null);
 
