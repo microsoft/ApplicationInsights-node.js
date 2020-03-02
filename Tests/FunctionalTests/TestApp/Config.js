@@ -7,7 +7,7 @@ var Config = {
     MongoDbName: "testapp",
     MySqlConnectionString: "mysql://root:dummypw@localhost:33060/testdb",
     RedisConnectionString: "redis://localhost:63790",
-    PostgresConnectionString: "pg://postgres@localhost:54320/postgres",
+    PostgresConnectionString: "pg://postgres:dummypw@localhost:54320/postgres",
     InstrumentationKey: "TESTIKEY",
     AppInsightsEnabled: true,
     UseAutoCorrelation: true,

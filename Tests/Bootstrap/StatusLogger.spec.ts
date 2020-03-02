@@ -1,34 +1,41 @@
 import * as fs from "fs";
 import assert = require("assert");
 import sinon = require("sinon");
-import * as StatusLogger from "../../Bootstrap/StatusLogger";
+import path = require("path");
+import os = require("os");
+import { StatusLogger } from "../../Bootstrap/StatusLogger";
+import { FileWriter, homedir } from "../../Bootstrap/FileWriter";
 
-describe("#writeFile()", () => {
+describe("#logStatus()", () => {
     it("should write a status file to disk", (done) => {
-        if (!StatusLogger.isNodeVersionCompatible()) {
+        const filepath = path.join(homedir, "LogFiles/ApplicationInsights/status");
+        const filename = StatusLogger.DEFAULT_FILE_NAME;
+        const fileWriter = new FileWriter(filepath, filename);
+        if (!FileWriter.isNodeVersionCompatible()) {
             done();
         } else {
-            StatusLogger.makeStatusDirs();
-            StatusLogger.writeFile(StatusLogger.DEFAULT_STATUS, () => {
-                const buffer = JSON.parse(fs.readFileSync(StatusLogger.FULL_PATH, "utf8"));
+            const statusLogger = new StatusLogger(fileWriter);
+            statusLogger.logStatus(StatusLogger.DEFAULT_STATUS, (err: Error) => {
+                assert.equal(err, null);
+                const buffer = JSON.parse(fs.readFileSync(path.join(filepath, filename), "utf8"));
                 assert.deepEqual(buffer, StatusLogger.DEFAULT_STATUS);
                 done();
             });
         }
     });
-});
 
-describe("#addCloseHandler()", () => {
-    it("should add a process exit handler", () => {
-        if (StatusLogger.isNodeVersionCompatible()) {
-            const processSpy = sinon.spy(process, "on");
-            assert.ok(processSpy.notCalled);
+    it("should write status to console", () => {
+        const consoleStub = sinon.stub(console, "log");
 
-            StatusLogger.addCloseHandler();
-            assert.equal(processSpy.callCount, 1);
-            assert.equal(processSpy.args[0][0], "exit");
+        // Act
+        const statusLogger = new StatusLogger(console);
+        statusLogger.logStatus(StatusLogger.DEFAULT_STATUS);
 
-            processSpy.restore();
-        }
-    })
+        // Assert
+        assert.ok(consoleStub.calledOnce);
+        assert.deepEqual(consoleStub.args[0][0], StatusLogger.DEFAULT_STATUS);
+
+        // Cleanup
+        consoleStub.restore();
+    });
 });
