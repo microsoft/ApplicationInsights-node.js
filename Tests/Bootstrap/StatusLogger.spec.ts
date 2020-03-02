@@ -4,9 +4,7 @@ import sinon = require("sinon");
 import path = require("path");
 import os = require("os");
 import { StatusLogger } from "../../Bootstrap/StatusLogger";
-import { FileWriter } from "../../Bootstrap/FileWriter";
-
-var homedir = os.homedir ? os.homedir() : (process.env[(process.platform == "win32") ? "USERPROFILE" : "HOME"]);
+import { FileWriter, homedir } from "../../Bootstrap/FileWriter";
 
 describe("#logStatus()", () => {
     it("should write a status file to disk", (done) => {

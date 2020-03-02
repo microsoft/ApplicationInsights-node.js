@@ -3,7 +3,7 @@ import sinon = require("sinon");
 import path = require("path");
 import os = require("os");
 import fs = require("fs");
-import { FileWriter } from "../../Bootstrap/FileWriter";
+import { FileWriter, homedir } from "../../Bootstrap/FileWriter";
 import FileHelpers = require("../../Bootstrap/Helpers/FileHelpers");
 
 describe("FileWriter", () => {
@@ -11,7 +11,7 @@ describe("FileWriter", () => {
         return;
     }
 
-    const filedir = path.join(os.homedir(), "LogFiles/ApplicationInsights/test");
+    const filedir = path.join(homedir, "LogFiles/ApplicationInsights/test");
     describe("#constructor()", () => {
         it("should return a ready FileWriter", () => {
             if (parseInt(process.versions.node.split(".")[0]) >= 1) {
