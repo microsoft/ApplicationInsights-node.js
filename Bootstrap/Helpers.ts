@@ -1,9 +1,9 @@
-import { AgentLogger } from "./DataModel";
+import { DiagnosticLogger } from "./DiagnosticLogger";
 
-export function sdkAlreadyExists(_logger: AgentLogger = console): boolean {
+export function sdkAlreadyExists(_logger: DiagnosticLogger): boolean {
     try {
         // appInstance should either resolve to user SDK or crash. If it resolves to attach SDK, user probably modified their NODE_PATH
-        let appInstance;
+        let appInstance: string;
         try {
             // Node 8.9+
             appInstance = (require.resolve as any)("applicationinsights", { paths: [process.cwd()] });
@@ -13,8 +13,8 @@ export function sdkAlreadyExists(_logger: AgentLogger = console): boolean {
         }
         const attachInstance = require.resolve("../applicationinsights");
         if (appInstance !== attachInstance) {
-            _logger.log(
-                "applicationinsights module is already installed in this application; not re-attaching. Installed SDK location:",
+            _logger.logMessage(
+                "applicationinsights module is already installed in this application; not re-attaching. Installed SDK location: " +
                 appInstance
             );
             return true;
