@@ -67,7 +67,7 @@ class AutoCollectHttpDependencies {
 
             if (request && options && shouldCollect) {
                 CorrelationContextManager.wrapEmitter(request);
-                AutoCollectHttpDependencies.trackRequest(this._client, {options: options, request: request});
+                AutoCollectHttpDependencies.trackRequest(this._client, {options: options, request: request, time: new Date()});
             }
         };
 

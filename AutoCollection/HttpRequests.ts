@@ -103,7 +103,7 @@ class AutoCollectHttpRequests {
                             (<any>request)[AutoCollectHttpRequests.alreadyAutoCollectedFlag] = true;
 
                             // Auto collect request
-                            AutoCollectHttpRequests.trackRequest(this._client, {request: request, response: response}, requestParser);
+                            AutoCollectHttpRequests.trackRequest(this._client, {request: request, response: response, time: new Date()}, requestParser);
                         }
 
                         if (typeof onRequest === "function") {
