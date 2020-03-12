@@ -80,6 +80,12 @@ class HttpDependencyParser extends RequestParser {
             target: remoteDependencyTarget
         };
 
+        if (baseTelemetry && baseTelemetry.time) {
+            dependencyTelemetry.time = baseTelemetry.time;
+        } else if (this.startTime) {
+            dependencyTelemetry.time = new Date(this.startTime);
+        }
+
         // We should keep any parameters the user passed in
         // Except the fields defined above in requestTelemetry, which take priority
         // Except the properties field, where they're merged instead, with baseTelemetry taking priority
