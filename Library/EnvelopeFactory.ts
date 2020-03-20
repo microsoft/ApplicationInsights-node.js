@@ -115,7 +115,9 @@ class EnvelopeFactory {
 
     private static createDependencyData(telemetry: Contracts.DependencyTelemetry & Contracts.Identified): Contracts.Data<Contracts.RemoteDependencyData> {
         var remoteDependency = new Contracts.RemoteDependencyData();
-        remoteDependency.name = telemetry.name.length > 1024 ? telemetry.name.slice(0, 1021) + '...' : telemetry.name;
+        if (typeof telemetry.name === "string") {
+            remoteDependency.name = telemetry.name.length > 1024 ? telemetry.name.slice(0, 1021) + '...' : telemetry.name;
+        }
         remoteDependency.data = telemetry.data;
         remoteDependency.target = telemetry.target;
         remoteDependency.duration = Util.msToTimeSpan(telemetry.duration);
@@ -223,7 +225,7 @@ class EnvelopeFactory {
         telemetry: Contracts.AvailabilityTelemetry & Contracts.Identified,
     ): Contracts.Data<Contracts.AvailabilityData> {
         let availabilityData = new Contracts.AvailabilityData();
-        
+
         if (telemetry.id) {
             availabilityData.id = telemetry.id;
         } else {
