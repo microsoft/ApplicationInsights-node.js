@@ -83,11 +83,11 @@ class Config {
 
         this.setCorrelationId = (correlationId) => this.correlationId = correlationId;
 
-        this.profileQueryEndpoint = csCode.ingestionendpoint || csEnv.ingestionendpoint || process.env[Config.ENV_profileQueryEndpoint] || this.endpointBase;
         this.proxyHttpUrl = process.env[Config.ENV_http_proxy] || undefined;
         this.proxyHttpsUrl = process.env[Config.ENV_https_proxy] || undefined;
         this.httpAgent = undefined;
         this.httpsAgent = undefined;
+        this.profileQueryEndpoint = csCode.ingestionendpoint || csEnv.ingestionendpoint || process.env[Config.ENV_profileQueryEndpoint] || this.endpointBase;
         this._quickPulseHost = csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_HOST;
         // Parse quickPulseHost if it startswith http(s)://
         if (this._quickPulseHost.match(/^https?:\/\//)) {
