@@ -80,8 +80,8 @@ class Config {
             "*.core.chinacloudapi.cn",
             "*.core.cloudapi.de",
             "*.core.usgovcloudapi.net",
-            "*.cloudapp.microsoft.scloud",
-            "*.cloudapp.eaglex.ic.gov"
+            "*.core.microsoft.scloud",
+            "*.core.eaglex.ic.gov"
         ];
 
         this.setCorrelationId = (correlationId) => this.correlationId = correlationId;
