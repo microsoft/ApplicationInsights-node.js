@@ -1,3 +1,4 @@
+import * as types from "../applicationinsights"; // needed but unused
 import { StatusLogger } from "./StatusLogger";
 import { DiagnosticLogger } from "./DiagnosticLogger";
 import appInsightsLoader = require("./Default");
