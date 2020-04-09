@@ -64,7 +64,8 @@ export interface Span {
 
 export class OpenTelemetryScopeManagerWrapper {
     public active() {
-        return CorrelationContextManager.getCurrentContext();
+        const context = CorrelationContextManager.getCurrentContext() as any;
+        return { ...context, getValue: () => context, setValue: () => {} };
     }
 
     public with(span: Span, fn: () => any) {
