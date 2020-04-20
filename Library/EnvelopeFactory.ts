@@ -51,6 +51,9 @@ class EnvelopeFactory {
             case Contracts.TelemetryType.Availability:
                 data = EnvelopeFactory.createAvailabilityData(<Contracts.AvailabilityTelemetry>telemetry);
                 break;
+            case Contracts.TelemetryType.PageView:
+                data = EnvelopeFactory.createPageViewData(<Contracts.PageViewTelemetry>telemetry);
+                break;
         }
 
         if (commonProperties && Contracts.domainSupportsProperties(data.baseData)) { // Do instanceof check. TS will automatically cast and allow the properties property
@@ -242,6 +245,24 @@ class EnvelopeFactory {
         let data = new Contracts.Data<Contracts.AvailabilityData>();
         data.baseType = Contracts.telemetryTypeToBaseType(Contracts.TelemetryType.Availability);
         data.baseData = availabilityData;
+
+        return data;
+    }
+
+    private static createPageViewData(
+        telemetry: Contracts.PageViewTelemetry & Contracts.Identified,
+    ): Contracts.Data<Contracts.PageViewData> {
+        let pageViewData = new Contracts.PageViewData();
+
+        pageViewData.name = telemetry.name;
+        pageViewData.duration = Util.msToTimeSpan(telemetry.duration);
+        pageViewData.url = telemetry.url;
+        pageViewData.measurements = telemetry.measurements;
+        pageViewData.properties = telemetry.properties;
+
+        let data = new Contracts.Data<Contracts.PageViewData>();
+        data.baseType = Contracts.telemetryTypeToBaseType(Contracts.TelemetryType.PageView);
+        data.baseData = pageViewData;
 
         return data;
     }

@@ -170,4 +170,33 @@ describe("Library/EnvelopeFactory", () => {
 
         });
     });
+
+    describe("PageViewData", () => {
+        let pageViewTelemetry: Contracts.PageViewTelemetry;
+        beforeEach(() => {
+            pageViewTelemetry  = {
+                duration: 100,
+                measurements: { "m1" : 1},
+                properties: {
+                    "prop1" : "prop1 value"
+                },
+                url: "https://www.test.com",
+                name: "availability test name",
+            };
+        });
+
+        it("creates data with given content", () => {
+            var envelope = EnvelopeFactory.createEnvelope(pageViewTelemetry, Contracts.TelemetryType.PageView);
+            var data =  <Contracts.Data<Contracts.PageViewData>>envelope.data;
+
+            assert.deepEqual(data.baseType, "PageViewData");
+
+            assert.deepEqual(data.baseData.url, pageViewTelemetry.url);
+            assert.deepEqual(data.baseData.measurements, pageViewTelemetry.measurements);
+            assert.deepEqual(data.baseData.name, pageViewTelemetry.name);
+            assert.deepEqual(data.baseData.properties, pageViewTelemetry.properties);
+            assert.deepEqual(data.baseData.duration, Util.msToTimeSpan(pageViewTelemetry.duration));
+
+        });
+    });
 });
