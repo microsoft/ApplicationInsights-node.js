@@ -50,6 +50,14 @@ class TelemetryClient {
     }
 
     /**
+     * Log a page view
+     * @param telemetry      Object encapsulating tracking options
+     */
+    public trackPageView(telemetry: Contracts.PageViewTelemetry): void {
+        this.track(telemetry, Contracts.TelemetryType.PageView);
+    }
+
+    /**
      * Log a trace message
      * @param telemetry      Object encapsulating tracking options
      */
