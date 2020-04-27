@@ -109,6 +109,33 @@ describe("Library/TelemetryClient", () => {
         });
     });
 
+    describe("#trackPageView()", () => {
+        it("should track Page View with correct data", () => {
+            trackStub.reset();
+            client.trackPageView({ name: name });
+            client.trackPageView({ name: name, properties, measurements });
+            client.trackPageView({ name: name, url: "https://www.test.com", duration: 100 });
+
+            assert.ok(trackStub.calledThrice);
+
+            var eventTelemetry1 = <Contracts.PageViewTelemetry>trackStub.firstCall.args[0];
+            var eventTelemetry2 = <Contracts.PageViewTelemetry>trackStub.secondCall.args[0];
+            var eventTelemetry3 = <Contracts.PageViewTelemetry>trackStub.thirdCall.args[0];
+
+            assert.equal(eventTelemetry1.name, name);
+            assert.equal(eventTelemetry2.name, name);
+            assert.deepEqual(eventTelemetry2.properties, properties);
+            assert.deepEqual(eventTelemetry2.measurements, measurements);
+            assert.equal(eventTelemetry3.name, name);
+            assert.equal(eventTelemetry3.url, "https://www.test.com");
+            assert.equal(eventTelemetry3.duration, 100);
+        });
+
+        it("should not crash with invalid input", () => {
+            invalidInputHelper("trackPageView");
+        });
+    });
+
     describe("#trackTrace()", () => {
         it("should track Trace with correct data", () => {
             trackStub.reset();
