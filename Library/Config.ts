@@ -92,7 +92,7 @@ class Config {
         this.httpsAgent = undefined;
         this.profileQueryEndpoint = csCode.ingestionendpoint || csEnv.ingestionendpoint || process.env[Config.ENV_profileQueryEndpoint] || this.endpointBase;
         this._quickPulseHost = csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_HOST;
-        // Parse quickPulseHost if it startswith http(s)://
+        // Parse quickPulseHost if it starts with http(s)://
         if (this._quickPulseHost.match(/^https?:\/\//)) {
             this._quickPulseHost = url.parse(this._quickPulseHost).host;
         }

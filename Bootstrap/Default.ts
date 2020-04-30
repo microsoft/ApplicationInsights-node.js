@@ -31,7 +31,7 @@ export function setLogger(logger: DiagnosticLogger) {
 }
 
 /**
- * Sets the string which is prefixed to the exsting sdkVersion, e.g. `ad_`, `alr_`
+ * Sets the string which is prefixed to the existing sdkVersion, e.g. `ad_`, `alr_`
  * @param prefix string prefix, including underscore. Defaults to `ad_`
  */
 export function setUsagePrefix(prefix: string) {

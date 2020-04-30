@@ -13,7 +13,7 @@ import Tracestate = require("../Library/Tracestate");
 import Traceparent = require("../Library/Traceparent");
 
 /**
- * Helper class to read data from the requst/response objects and convert them into the telemetry contract
+ * Helper class to read data from the request/response objects and convert them into the telemetry contract
  */
 class HttpRequestParser extends RequestParser {
     private static keys = new Contracts.ContextTagKeys();
