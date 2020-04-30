@@ -107,6 +107,20 @@ export function setupAndStart(setupString = _setupString): typeof types | null {
             ...defaultStatus,
             AgentInitializedSuccessfully: true
         });
+
+        if(process.env.APPLICATIONINSIGHTS_ROLE_NAME){
+            _appInsights.defaultClient.addTelemetryProcessor(envelope => {
+                envelope.tags["ai.cloud.role"] = process.env.APPLICATIONINSIGHTS_ROLE_NAME;
+                return true;
+            });
+        }
+
+        if(process.env.APPLICATIONINSIGHTS_ROLE_INSTANCE){
+            _appInsights.defaultClient.addTelemetryProcessor(envelope => {
+                envelope.tags["ai.cloud.roleInstance"] = process.env.APPLICATIONINSIGHTS_ROLE_INSTANCE;
+                return true;
+            });
+        }
     } catch (e) {
         _logger.logError("Error setting up Application Insights", e);
         _statusLogger.logStatus({

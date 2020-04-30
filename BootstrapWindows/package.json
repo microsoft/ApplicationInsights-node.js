@@ -1,0 +1,30 @@
+{
+  "name": "applicationinsights-ipa-windows",
+  "version": "0.1.0-preview",
+  "description": "Application Insights InProc Agent for Windows",
+  "main": "build/index.js",
+  "scripts": {
+    "check": "gts check",
+    "clean": "gts clean",
+    "build": "tsc",
+    "fix": "gts fix",
+    "prepare": "npm.cmd run compile",
+    "pretest": "npm.cmd run compile",
+    "posttest": "npm.cmd run check"
+  },
+  "optionalDependencies": {
+    "@microsoft/typescript-etw": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/microsoft__typescript-etw": "^0.1.0",
+    "@types/node": "^10.0.3",
+    "applicationinsights": "file:../",
+    "gts": "^2.0.0",
+    "typescript": "~3.8.0"
+  },
+  "peerDependencies": {
+    "applicationinsights": "^1.7.5"
+  },
+  "author": "Microsoft Corporation",
+  "license": "MIT"
+}

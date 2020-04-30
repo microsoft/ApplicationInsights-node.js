@@ -19,7 +19,7 @@ export class DiagnosticLogger {
 
     constructor(private _writer: DataModel.AgentLogger = console) {}
 
-    logMessage(message: DataModel.DiagnosticLog | string, cb?: (err: Error) => void) {
+    logMessage(message: DataModel.DiagnosticLog | string, cb?: (err: Error | null) => void) {
         if (typeof cb === "function" && this._writer instanceof FileWriter) {
             this._writer.callback = cb;
         }
@@ -40,7 +40,7 @@ export class DiagnosticLogger {
         }
     }
 
-    logError(message: DataModel.DiagnosticLog | string, cb?: (err: Error) => void) {
+    logError(message: DataModel.DiagnosticLog | string, cb?: (err: Error | null) => void) {
         if (typeof cb === "function" && this._writer instanceof FileWriter) {
             this._writer.callback = cb;
         }

@@ -2,6 +2,9 @@
 obj
 *.tgz
 
+# Ignore separate package
+BootstrapWindows
+
 # Ignore Visual Studio files
 *.suo
 *.sln
