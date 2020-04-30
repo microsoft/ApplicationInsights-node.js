@@ -1,7 +1,7 @@
 import { Telemetry }  from "./Telemetry";
 
 /**
- * Telemetry about the incoming request processsed by the application
+ * Telemetry about the incoming request processed by the application
  */
 export interface RequestTelemetry extends Telemetry
 {

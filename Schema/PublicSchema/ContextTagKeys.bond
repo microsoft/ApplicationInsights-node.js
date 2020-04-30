@@ -82,7 +82,7 @@ struct ContextTagKeys
     [MaxStringLength("256")]
     705: string 	 CloudRole = "ai.cloud.role";
     
-    [Description("Name of the instance where the application is running. Computer name for on-premisis, instance name for Azure.")]
+    [Description("Name of the instance where the application is running. Computer name for on-premises, instance name for Azure.")]
     [MaxStringLength("256")]
     715: string 	 CloudRoleInstance = "ai.cloud.roleInstance";
     
