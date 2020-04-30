@@ -223,7 +223,7 @@ class Sender {
         if (Sender.ACL_IDENTITY) {
             return callback(null, Sender.ACL_IDENTITY);
         }
-        var psProc = child_process.spawn(Sender.POWERSHELL_PATH, 
+        var psProc = child_process.spawn(Sender.POWERSHELL_PATH,
             ["-Command", "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name"], <any>{
                 windowsHide: true,
                 stdio: ['ignore', 'pipe', 'pipe'] // Needed to prevent hanging on Win 7
@@ -245,7 +245,7 @@ class Sender {
         }
         // Some very old versions of Node (< 0.11) don't have this
         if (child_process.spawnSync) {
-            var psProc = child_process.spawnSync(Sender.POWERSHELL_PATH, 
+            var psProc = child_process.spawnSync(Sender.POWERSHELL_PATH,
                 ["-Command", "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name"], <any>{
                     windowsHide: true,
                     stdio: ['ignore', 'pipe', 'pipe'] // Needed to prevent hanging on Win 7

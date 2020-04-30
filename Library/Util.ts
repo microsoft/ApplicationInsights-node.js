@@ -326,7 +326,8 @@ class Util {
             options.agent = config.httpAgent;
         } else if (isHttps) {
             // HTTPS without a passed in agent. Use one that enforces our TLS rules
-            options.agent = Util.tlsRestrictedAgent;
+            // @todo: globalAgent is always defined (node0.5.9+), is tlsRestrictedAgent still required?
+            options.agent = https.globalAgent || Util.tlsRestrictedAgent;
         }
 
         if (isHttps) {
