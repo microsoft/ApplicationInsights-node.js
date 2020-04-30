@@ -8,8 +8,8 @@
     "clean": "gts clean",
     "build": "tsc",
     "fix": "gts fix",
-    "prepare": "npm.cmd run compile",
-    "pretest": "npm.cmd run compile",
+    "prepare": "npm.cmd run build",
+    "pretest": "npm.cmd run build",
     "posttest": "npm.cmd run check"
   },
   "optionalDependencies": {
