@@ -17,7 +17,7 @@ export class DiagnosticLogger {
         properties: {}
     }
 
-    constructor(private _writer: DataModel.AgentLogger = console) {}
+    constructor(protected _writer: DataModel.AgentLogger = console) {}
 
     logMessage(message: DataModel.DiagnosticLog | string, cb?: (err: Error | null) => void) {
         if (typeof cb === "function" && this._writer instanceof FileWriter) {
