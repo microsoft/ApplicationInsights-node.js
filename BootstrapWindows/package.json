@@ -1,6 +1,6 @@
 {
   "name": "applicationinsights-ipa-windows",
-  "version": "0.1.0-preview",
+  "version": "0.1.0-preview.1",
   "description": "Application Insights InProc Agent for Windows",
   "main": "build/index.js",
   "scripts": {

@@ -1,0 +1,8 @@
+# ignore everything
+*
+
+# Except...
+!build/**
+!src/**
+!package.json
+!tsconfig.json
