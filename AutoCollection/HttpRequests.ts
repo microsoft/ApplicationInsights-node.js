@@ -147,9 +147,9 @@ class AutoCollectHttpRequests {
         }
 
         const originalHttpServer = http.createServer;
-        http.createServer = (onRequest) => {
+        http.createServer = (options: https.ServerOptions, onRequest?: Function) => {
             // todo: get a pointer to the server so the IP address can be read from server.address
-            const server: http.Server = originalHttpServer(wrapOnRequestHandler(onRequest));
+            const server: http.Server = originalHttpServer(options, wrapOnRequestHandler(onRequest));
             wrapServerEventHandler(server);
             return server;
         }
