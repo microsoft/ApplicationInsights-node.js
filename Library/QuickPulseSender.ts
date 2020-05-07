@@ -55,7 +55,7 @@ class QuickPulseSender {
         if (this._config.httpsAgent) {
             (<any>options).agent = this._config.httpsAgent;
         } else {
-            (<any>options).agent = https.globalAgent || Util.tlsRestrictedAgent;
+            (<any>options).agent = Util.tlsRestrictedAgent;
         }
 
         const req = https.request(options, (res: http.IncomingMessage) => {
