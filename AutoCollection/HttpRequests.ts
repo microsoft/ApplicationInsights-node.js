@@ -146,13 +146,22 @@ class AutoCollectHttpRequests {
             server.on = server.addListener;
         }
 
-        const originalHttpServer = http.createServer;
+        const originalHttpServer = http.createServer;    
+        
+        http.createServer = (onRequest?: Function) => {
+            const server: http.Server = originalHttpServer(wrapOnRequestHandler(onRequest));
+            wrapServerEventHandler(server);
+            return server;
+        }
+
+        // Add override with optional parameter options
         http.createServer = (options: https.ServerOptions, onRequest?: Function) => {
             // todo: get a pointer to the server so the IP address can be read from server.address
             const server: http.Server = originalHttpServer(options, wrapOnRequestHandler(onRequest));
             wrapServerEventHandler(server);
             return server;
         }
+    
 
         const originalHttpsServer = https.createServer;
         https.createServer = (options: https.ServerOptions, onRequest?: Function) => {
