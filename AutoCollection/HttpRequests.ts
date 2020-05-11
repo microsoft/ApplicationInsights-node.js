@@ -147,20 +147,41 @@ class AutoCollectHttpRequests {
         }
 
         const originalHttpServer = http.createServer;    
-        
-        http.createServer = (onRequest?: Function) => {
-            const server: http.Server = originalHttpServer(wrapOnRequestHandler(onRequest));
-            wrapServerEventHandler(server);
-            return server;
+
+        // createServer(server);
+        // createServer();
+        // createServer({ options }, server);
+        // (options?, onrequest)
+        // ...vars
+
+        // function overloadedCreateServer(options?: Object, onRequest:Function): any[];
+        // function overloadedCreateServer (onRequest: Function): any[];
+        function createServer(onRequest?: Function): any;
+        function createServer(options?: Object, onRequest?: Function): any;
+        function createServer(...vars: any[]) {
+            if(typeof vars[0] === 'object') {
+                const options = vars[0];
+                const onRequest = vars[1];
+                const server: http.Server = originalHttpServer(options, wrapOnRequestHandler(onRequest));
+                wrapServerEventHandler(server);
+                return server
+            } else {
+                const onRequest = vars[0];
+                const server: http.Server = originalHttpServer(wrapOnRequestHandler(onRequest));
+                wrapServerEventHandler(server);
+                return server;
+            }          
         }
 
-        // Add override with optional parameter options
-        http.createServer = (options: https.ServerOptions, onRequest?: Function) => {
-            // todo: get a pointer to the server so the IP address can be read from server.address
-            const server: http.Server = originalHttpServer(options, wrapOnRequestHandler(onRequest));
-            wrapServerEventHandler(server);
-            return server;
-        }
+        http.createServer = createServer;
+
+        // // Add override with optional parameter options
+        // http.createServer = (options: https.ServerOptions, onRequest?: Function) => {
+        //     // todo: get a pointer to the server so the IP address can be read from server.address
+        //     const server: http.Server = originalHttpServer(options, wrapOnRequestHandler(onRequest));
+        //     wrapServerEventHandler(server);
+        //     return server;
+        // }
     
 
         const originalHttpsServer = https.createServer;
