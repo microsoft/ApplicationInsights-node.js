@@ -19,7 +19,7 @@ class Sender {
     private static ACLED_DIRECTORIES: {[id: string]: boolean} = {};
     private static ACL_IDENTITY: string = null;
 
-    // the amount of time the SDK will wait between resending cached data, this buffer is to avoid any throtelling from the service side
+    // the amount of time the SDK will wait between resending cached data, this buffer is to avoid any throttling from the service side
     public static WAIT_BETWEEN_RESEND = 60 * 1000;
     public static MAX_BYTES_ON_DISK = 50 * 1000 * 1000;
     public static MAX_CONNECTION_FAILURES_BEFORE_WARN = 5;
@@ -396,7 +396,7 @@ class Sender {
 
         // This will create the dir if it does not exist
         // Default permissions on *nix are directory listing from other users but no file creations
-        Logging.info(Sender.TAG, "Checking existance of data storage directory: " + directory);
+        Logging.info(Sender.TAG, "Checking existence of data storage directory: " + directory);
         this._confirmDirExists(directory, (error) => {
             if (error) {
                 Logging.warn(Sender.TAG, "Error while checking/creating directory: " + (error && error.message));
@@ -436,7 +436,7 @@ class Sender {
         var directory = path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + this._config.instrumentationKey);
 
         try {
-            Logging.info(Sender.TAG, "Checking existance of data storage directory: " + directory);
+            Logging.info(Sender.TAG, "Checking existence of data storage directory: " + directory);
             if (!fs.existsSync(directory)) {
                 fs.mkdirSync(directory);
             }

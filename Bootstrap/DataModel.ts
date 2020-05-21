@@ -36,7 +36,7 @@ export interface DiagnosticLog {
     exception?: string
 
     /**
-     * Any custom data related to the error/application/operation. Each field should havea string value
+     * Any custom data related to the error/application/operation. Each field should have a string value
      * Examples: operation, siteName, ikey, extensionVersion, sdkVersion, subscriptionId
      */
     properties: { [key: string]: string };
