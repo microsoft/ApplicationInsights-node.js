@@ -4,11 +4,13 @@ import Util = require("../Library/Util");
 import Logging = require("../Library/Logging");
 
 import * as DiagChannel from "./diagnostic-channel/initialization";
+import * as azureFunctionsTypes from "@azure/functions";
 
 // Don't reference modules from these directly. Use only for types.
 import * as cls from "cls-hooked";
 import Traceparent = require("../Library/Traceparent");
 import Tracestate = require("../Library/Tracestate");
+import HttpRequestParser = require("./HttpRequestParser");
 
 export interface CustomProperties {
     /**
@@ -57,7 +59,7 @@ export class CorrelationContextManager {
      *  The context is the most recent one entered into for the current
      *  logical chain of execution, including across asynchronous calls.
      */
-    public static getCurrentContext(): CorrelationContext {
+    public static getCurrentContext(): CorrelationContext | null {
         if (!CorrelationContextManager.enabled) {
             return null;
         }
@@ -120,9 +122,11 @@ export class CorrelationContextManager {
      *
      *  The supplied callback will be given the same context that was present for
      *  the call to wrapCallback.  */
-    public static wrapCallback<T extends Function>(fn: T): T {
+    public static wrapCallback<T extends Function>(fn: T, context?: CorrelationContext): T {
         if (CorrelationContextManager.enabled) {
-            return CorrelationContextManager.session.bind(fn);
+            return CorrelationContextManager.session.bind(fn, context ? {
+                [CorrelationContextManager.CONTEXT_NAME]: context
+            } : undefined);
         }
         return fn;
     }
@@ -159,6 +163,27 @@ export class CorrelationContextManager {
         }
 
         this.enabled = true;
+    }
+
+    public static startOperation(context: azureFunctionsTypes.Context, request: azureFunctionsTypes.HttpRequest): CorrelationContext | null {
+        if (typeof context === "object" && typeof context.traceContext === "object") {
+            const traceparent = new Traceparent(context.traceContext.traceparent);
+            const tracestate = new Tracestate(context.traceContext.tracestate);
+            const parser = new HttpRequestParser(request);
+            const correlationContext = CorrelationContextManager.generateContextObject(
+                traceparent.traceId,
+                traceparent.parentId,
+                parser.getOperationName({}),
+                parser.getCorrelationContextHeader(),
+                traceparent,
+                tracestate,
+            );
+
+            return correlationContext;
+        }
+
+        Logging.warn("startOperation was called with invalid arguments", arguments);
+        return null;
     }
 
     /**

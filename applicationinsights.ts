@@ -4,12 +4,10 @@ import AutoCollectExceptions = require("./AutoCollection/Exceptions");
 import AutoCollectPerformance = require("./AutoCollection/Performance");
 import AutoCollectHttpDependencies = require("./AutoCollection/HttpDependencies");
 import AutoCollectHttpRequests = require("./AutoCollection/HttpRequests");
-import Config = require("./Library/Config");
-import Context = require("./Library/Context");
 import CorrelationIdManager = require("./Library/CorrelationIdManager");
 import Logging = require("./Library/Logging");
-import Util = require("./Library/Util");
 import QuickPulseClient = require("./Library/QuickPulseStateManager");
+import * as azureFunctionsTypes from "@azure/functions";
 
 import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCollection/NativePerformance";
 
@@ -17,6 +15,9 @@ import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCo
 // They're exposed using "export import" so that types are passed along as expected
 export import TelemetryClient = require("./Library/NodeClient");
 export import Contracts = require("./Declarations/Contracts");
+import Traceparent = require("./Library/Traceparent");
+import Tracestate = require("./Library/Tracestate");
+import HttpRequestParser = require("./AutoCollection/HttpRequestParser");
 
 export enum DistributedTracingModes {
     /**
@@ -142,6 +143,14 @@ export function getCorrelationContext(): CorrelationContextManager.CorrelationCo
     }
 
     return null;
+}
+
+/**
+ * **(Experimental!)**
+ * Starts a fresh context or propagates the current internal one.
+ */
+export function startOperation(context: azureFunctionsTypes.Context, request: azureFunctionsTypes.HttpRequest) {
+    return CorrelationContextManager.CorrelationContextManager.startOperation.apply(context, request);
 }
 
 /**
