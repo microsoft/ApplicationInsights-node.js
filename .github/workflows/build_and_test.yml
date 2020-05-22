@@ -1,6 +1,12 @@
 name: Build & Test CI
 
-on: [push]
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ develop, master ]
+  pull_request:
+    branches: [ develop, master ]
 
 jobs:
   build:
