@@ -1,0 +1,25 @@
+name: Build & Test CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        node-version: [8.x, 10.x, 12.x, 14.x]
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: ${{ matrix.os }} | ${{ matrix.node-version }} Build & Test
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.os }}
+    - run: npm install
+    - run: npm run build
+    - run: npm test
+      env:
+        CI: true
