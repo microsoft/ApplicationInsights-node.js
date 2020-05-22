@@ -159,8 +159,8 @@ export function startOperation(context: azureFunctionsTypes.Context, request: az
  * Use this method if automatic dependency correlation is not propagating
  * correctly to an asynchronous callback.
  */
-export function wrapWithCorrelationContext<T extends Function>(fn: T): T {
-    return CorrelationContextManager.CorrelationContextManager.wrapCallback(fn);
+export function wrapWithCorrelationContext<T extends Function>(fn: T, context?: CorrelationContextManager.CorrelationContext): T {
+    return CorrelationContextManager.CorrelationContextManager.wrapCallback(fn, context);
 }
 
 /**
