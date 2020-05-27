@@ -2,6 +2,7 @@ import https = require("https");
 import Config = require("./Config");
 import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
 import Logging = require("./Logging");
+import Util = require("./Util");
 
 // Types
 import * as http from "http";
@@ -49,6 +50,13 @@ class QuickPulseSender {
                 'Content-Length': Buffer.byteLength(payload)
             }
         };
+
+        // HTTPS only
+        if (this._config.httpsAgent) {
+            (<any>options).agent = this._config.httpsAgent;
+        } else {
+            (<any>options).agent = Util.tlsRestrictedAgent;
+        }
 
         const req = https.request(options, (res: http.IncomingMessage) => {
             const shouldPOSTData = res.headers[QuickPulseConfig.subscribed] === "true";
