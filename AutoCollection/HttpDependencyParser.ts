@@ -11,7 +11,7 @@ import RequestParser = require("./RequestParser");
 import CorrelationIdManager = require("../Library/CorrelationIdManager");
 
 /**
- * Helper class to read data from the requst/response objects and convert them into the telemetry contract
+ * Helper class to read data from the request/response objects and convert them into the telemetry contract
  */
 class HttpDependencyParser extends RequestParser {
     private correlationId: string;
@@ -133,7 +133,7 @@ class HttpDependencyParser extends RequestParser {
             options.search = parsedQuery.search;
         }
 
-        // Simiarly, url.format ignores hostname and port if host is specified,
+        // Similarly, url.format ignores hostname and port if host is specified,
         // even if host doesn't have the port, but http.request does not work
         // this way. It will use the port if one is not specified in host,
         // effectively treating host as hostname, but will use the port specified

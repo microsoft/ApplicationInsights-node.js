@@ -10,6 +10,7 @@ let clients: TelemetryClient[] = [];
 export const subscriber = (event: IStandardEvent<mongodb.IMongoData>) => {
     if (event.data.event.commandName === "ismaster") {
         // suppress noisy ismaster commands
+        return;
     }
     clients.forEach((client) => {
         const dbName = (event.data.startedData && event.data.startedData.databaseName) || "Unknown database";

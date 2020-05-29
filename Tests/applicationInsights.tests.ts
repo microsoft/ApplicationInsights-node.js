@@ -85,6 +85,11 @@ describe("ApplicationInsights", () => {
             AppInsights.setup("key").start();
             assert.equal(AppInsights.liveMetricsClient, undefined, "live metrics client is not defined");
         });
+
+        it("should not start live metrics", () => {
+            AppInsights.setup("key").setSendLiveMetrics(false).start();
+            assert.equal(AppInsights.liveMetricsClient, undefined, "live metrics client is not defined");
+        });
     });
 
     describe("#setDistributedTracingMode", () => {

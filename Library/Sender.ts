@@ -19,7 +19,7 @@ class Sender {
     private static ACLED_DIRECTORIES: {[id: string]: boolean} = {};
     private static ACL_IDENTITY: string = null;
 
-    // the amount of time the SDK will wait between resending cached data, this buffer is to avoid any throtelling from the service side
+    // the amount of time the SDK will wait between resending cached data, this buffer is to avoid any throttling from the service side
     public static WAIT_BETWEEN_RESEND = 60 * 1000;
     public static MAX_BYTES_ON_DISK = 50 * 1000 * 1000;
     public static MAX_CONNECTION_FAILURES_BEFORE_WARN = 5;
@@ -33,6 +33,7 @@ class Sender {
     private _onError: (error: Error) => void;
     private _enableDiskRetryMode: boolean;
     private _numConsecutiveFailures: number;
+    private _resendTimer: NodeJS.Timer | null;
     protected _resendInterval: number;
     protected _maxBytesOnDisk: number;
 
@@ -44,6 +45,7 @@ class Sender {
         this._resendInterval = Sender.WAIT_BETWEEN_RESEND;
         this._maxBytesOnDisk = Sender.MAX_BYTES_ON_DISK;
         this._numConsecutiveFailures = 0;
+        this._resendTimer = null;
 
         if (!Sender.OS_PROVIDES_FILE_PROTECTION) {
             // Node's chmod levels do not appropriately restrict file access on Windows
@@ -135,7 +137,13 @@ class Sender {
                     if (this._enableDiskRetryMode) {
                         // try to send any cached events if the user is back online
                         if (res.statusCode === 200) {
-                            setTimeout(() => this._sendFirstFileOnDisk(), this._resendInterval).unref();
+                            if (!this._resendTimer) {
+                                this._resendTimer = setTimeout(() => {
+                                    this._resendTimer = null;
+                                    this._sendFirstFileOnDisk()
+                                }, this._resendInterval);
+                                this._resendTimer.unref();
+                            }
                             // store to disk in case of burst throttling
                         } else if (
                             res.statusCode === 408 || // Timeout
@@ -223,7 +231,7 @@ class Sender {
         if (Sender.ACL_IDENTITY) {
             return callback(null, Sender.ACL_IDENTITY);
         }
-        var psProc = child_process.spawn(Sender.POWERSHELL_PATH, 
+        var psProc = child_process.spawn(Sender.POWERSHELL_PATH,
             ["-Command", "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name"], <any>{
                 windowsHide: true,
                 stdio: ['ignore', 'pipe', 'pipe'] // Needed to prevent hanging on Win 7
@@ -245,7 +253,7 @@ class Sender {
         }
         // Some very old versions of Node (< 0.11) don't have this
         if (child_process.spawnSync) {
-            var psProc = child_process.spawnSync(Sender.POWERSHELL_PATH, 
+            var psProc = child_process.spawnSync(Sender.POWERSHELL_PATH,
                 ["-Command", "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name"], <any>{
                     windowsHide: true,
                     stdio: ['ignore', 'pipe', 'pipe'] // Needed to prevent hanging on Win 7
@@ -396,7 +404,7 @@ class Sender {
 
         // This will create the dir if it does not exist
         // Default permissions on *nix are directory listing from other users but no file creations
-        Logging.info(Sender.TAG, "Checking existance of data storage directory: " + directory);
+        Logging.info(Sender.TAG, "Checking existence of data storage directory: " + directory);
         this._confirmDirExists(directory, (error) => {
             if (error) {
                 Logging.warn(Sender.TAG, "Error while checking/creating directory: " + (error && error.message));
@@ -436,7 +444,7 @@ class Sender {
         var directory = path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + this._config.instrumentationKey);
 
         try {
-            Logging.info(Sender.TAG, "Checking existance of data storage directory: " + directory);
+            Logging.info(Sender.TAG, "Checking existence of data storage directory: " + directory);
             if (!fs.existsSync(directory)) {
                 fs.mkdirSync(directory);
             }

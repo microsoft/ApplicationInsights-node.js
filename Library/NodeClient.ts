@@ -15,7 +15,7 @@ import Contracts = require("../Declarations/Contracts");
 class NodeClient extends TelemetryClient {
 
     /**
-     * Log RequestTelemetry from HTTP request and response. This method will log immediately without waitng for request completion
+     * Log RequestTelemetry from HTTP request and response. This method will log immediately without waiting for request completion
      * and it requires duration parameter to be specified on NodeHttpRequestTelemetry object.
      * Use trackNodeHttpRequest function to log the telemetry after request completion
      * @param telemetry Object encapsulating incoming request, response and duration information 

@@ -1,5 +1,5 @@
 /**
- * Base class for helpers that read data from HTTP requst/response objects and convert them
+ * Base class for helpers that read data from HTTP request/response objects and convert them
  * into the telemetry contract objects.
  */
 abstract class RequestParser {

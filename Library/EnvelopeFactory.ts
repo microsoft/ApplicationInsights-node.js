@@ -51,6 +51,9 @@ class EnvelopeFactory {
             case Contracts.TelemetryType.Availability:
                 data = EnvelopeFactory.createAvailabilityData(<Contracts.AvailabilityTelemetry>telemetry);
                 break;
+            case Contracts.TelemetryType.PageView:
+                data = EnvelopeFactory.createPageViewData(<Contracts.PageViewTelemetry>telemetry);
+                break;
         }
 
         if (commonProperties && Contracts.domainSupportsProperties(data.baseData)) { // Do instanceof check. TS will automatically cast and allow the properties property
@@ -115,7 +118,9 @@ class EnvelopeFactory {
 
     private static createDependencyData(telemetry: Contracts.DependencyTelemetry & Contracts.Identified): Contracts.Data<Contracts.RemoteDependencyData> {
         var remoteDependency = new Contracts.RemoteDependencyData();
-        remoteDependency.name = telemetry.name.length > 1024 ? telemetry.name.slice(0, 1021) + '...' : telemetry.name;
+        if (typeof telemetry.name === "string") {
+            remoteDependency.name = telemetry.name.length > 1024 ? telemetry.name.slice(0, 1021) + '...' : telemetry.name;
+        }
         remoteDependency.data = telemetry.data;
         remoteDependency.target = telemetry.target;
         remoteDependency.duration = Util.msToTimeSpan(telemetry.duration);
@@ -223,7 +228,7 @@ class EnvelopeFactory {
         telemetry: Contracts.AvailabilityTelemetry & Contracts.Identified,
     ): Contracts.Data<Contracts.AvailabilityData> {
         let availabilityData = new Contracts.AvailabilityData();
-        
+
         if (telemetry.id) {
             availabilityData.id = telemetry.id;
         } else {
@@ -240,6 +245,24 @@ class EnvelopeFactory {
         let data = new Contracts.Data<Contracts.AvailabilityData>();
         data.baseType = Contracts.telemetryTypeToBaseType(Contracts.TelemetryType.Availability);
         data.baseData = availabilityData;
+
+        return data;
+    }
+
+    private static createPageViewData(
+        telemetry: Contracts.PageViewTelemetry & Contracts.Identified,
+    ): Contracts.Data<Contracts.PageViewData> {
+        let pageViewData = new Contracts.PageViewData();
+
+        pageViewData.name = telemetry.name;
+        pageViewData.duration = Util.msToTimeSpan(telemetry.duration);
+        pageViewData.url = telemetry.url;
+        pageViewData.measurements = telemetry.measurements;
+        pageViewData.properties = telemetry.properties;
+
+        let data = new Contracts.Data<Contracts.PageViewData>();
+        data.baseType = Contracts.telemetryTypeToBaseType(Contracts.TelemetryType.PageView);
+        data.baseData = pageViewData;
 
         return data;
     }

@@ -311,13 +311,13 @@ export class Configuration {
             return Configuration;
         }
 
-        if (!liveMetricsClient) {
+        if (!liveMetricsClient && enable) {
             // No qps client exists. Create one and prepare it to be enabled at .start()
             liveMetricsClient = new QuickPulseClient(defaultClient.config.instrumentationKey);
             _performanceLiveMetrics = new AutoCollectPerformance(liveMetricsClient as any, 1000, true);
             liveMetricsClient.addCollector(_performanceLiveMetrics);
             defaultClient.quickPulseClient = liveMetricsClient; // Need this so we can forward all manual tracks to live metrics via PerformanceMetricsTelemetryProcessor
-        } else {
+        } else if (liveMetricsClient) {
             // qps client already exists; enable/disable it
             liveMetricsClient.enable(enable);
         }

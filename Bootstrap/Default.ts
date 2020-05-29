@@ -12,7 +12,7 @@ let _statusLogger: StatusLogger = new StatusLogger(console);
 
 // Env var local constants
 const ENV_extensionVersion = "ApplicationInsightsAgent_EXTENSION_VERSION";
-const _setupString = process.env.APPLICATIONINSIGHTS_CONNECTION_STRING || process.env.APPINSIGHTS_INSTRUMENTATION_KEY;
+const _setupString = process.env.APPLICATIONINSIGHTS_CONNECTION_STRING || process.env.APPINSIGHTS_INSTRUMENTATIONKEY;
 const _extensionEnabled = process.env[ENV_extensionVersion] && process.env[ENV_extensionVersion] !== "disabled";
 const forceStart = process.env.APPLICATIONINSIGHTS_FORCE_START === "true";
 
@@ -31,7 +31,7 @@ export function setLogger(logger: DiagnosticLogger) {
 }
 
 /**
- * Sets the string which is prefixed to the exsting sdkVersion, e.g. `ad_`, `alr_`
+ * Sets the string which is prefixed to the existing sdkVersion, e.g. `ad_`, `alr_`
  * @param prefix string prefix, including underscore. Defaults to `ad_`
  */
 export function setUsagePrefix(prefix: string) {
