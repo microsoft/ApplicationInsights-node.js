@@ -50,6 +50,14 @@ class TelemetryClient {
     }
 
     /**
+     * Log a page view
+     * @param telemetry      Object encapsulating tracking options
+     */
+    public trackPageView(telemetry: Contracts.PageViewTelemetry): void {
+        this.track(telemetry, Contracts.TelemetryType.PageView);
+    }
+
+    /**
      * Log a trace message
      * @param telemetry      Object encapsulating tracking options
      */
@@ -142,9 +150,9 @@ class TelemetryClient {
             // Ideally we would have a central place for "internal" telemetry processors and users can configure which ones are in use.
             // This will do for now. Otherwise clearTelemetryProcessors() would be problematic.
             accepted = accepted && TelemetryProcessors.samplingTelemetryProcessor(envelope, { correlationContext: CorrelationContextManager.getCurrentContext() });
-            TelemetryProcessors.performanceMetricsTelemetryProcessor(envelope, this.quickPulseClient)
 
             if (accepted) {
+                TelemetryProcessors.performanceMetricsTelemetryProcessor(envelope, this.quickPulseClient);
                 this.channel.send(envelope);
             }
         }

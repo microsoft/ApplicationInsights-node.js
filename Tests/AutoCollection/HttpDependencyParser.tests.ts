@@ -29,6 +29,20 @@ describe("AutoCollection/HttpDependencyParser", () => {
             assert.equal(dependencyTelemetry.target, "bing.com");
         });
 
+        it("should propagate a custom timestamp", () => {
+            (<any>request)["method"] = "GET";
+            let parser = new HttpDependencyParser("http://bing.com/search", request);
+
+            response.statusCode = 200;
+            parser.onResponse(response);
+
+            const dependencyTelemetry1 = parser.getDependencyTelemetry({time: new Date(111111)});
+            const dependencyTelemetry2 = parser.getDependencyTelemetry({time: new Date(222222)});
+            assert.deepEqual(dependencyTelemetry1.time, new Date(111111)); 
+            assert.deepEqual(dependencyTelemetry2.time, new Date(222222)); 
+            assert.notDeepEqual(dependencyTelemetry1, dependencyTelemetry2); 
+        });
+
         it("should return correct data for a posted URL with query string", () => {
             (<any>request)["method"] = "POST";
             let parser = new HttpDependencyParser("http://bing.com/search?q=test", request);

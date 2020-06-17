@@ -13,7 +13,7 @@ import Tracestate = require("../Library/Tracestate");
 import Traceparent = require("../Library/Traceparent");
 
 /**
- * Helper class to read data from the requst/response objects and convert them into the telemetry contract
+ * Helper class to read data from the request/response objects and convert them into the telemetry contract
  */
 class HttpRequestParser extends RequestParser {
     private static keys = new Contracts.ContextTagKeys();
@@ -81,6 +81,12 @@ class HttpRequestParser extends RequestParser {
             success: this._isSuccess(),
             properties: this.properties
         };
+        
+        if (baseTelemetry && baseTelemetry.time) {
+            requestTelemetry.time = baseTelemetry.time;
+        } else if (this.startTime) {
+            requestTelemetry.time = new Date(this.startTime);
+        }
 
         // We should keep any parameters the user passed in
         // Except the fields defined above in requestTelemetry, which take priority

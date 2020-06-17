@@ -113,10 +113,10 @@ describe("#setupAndStart()", () => {
         // Setup
         const logger = new LoggerSpy();
         const origEnv = process.env.ApplicationInsightsAgent_EXTENSION_VERSION;
-        const origIkey = process.env.APPINSIGHTS_INSTRUMENTATION_KEY;
+        const origIkey = process.env.APPINSIGHTS_INSTRUMENTATIONKEY;
         const origCs = process.env.APPLICATIONINSIGHTS_CONNECTION_STRING;
         process.env.ApplicationInsightsAgent_EXTENSION_VERSION = "~2";
-        delete process.env.APPINSIGHTS_INSTRUMENTATION_KEY;
+        delete process.env.APPINSIGHTS_INSTRUMENTATIONKEY;
         delete process.env.APPLICATIONINSIGHTS_CONNECTION_STRING;
         const alreadyExistsStub = sinon.stub(Helpers, "sdkAlreadyExists", () => false);
 
@@ -137,7 +137,7 @@ describe("#setupAndStart()", () => {
         assert.equal(logger.logCount, 0);
         assert.equal(logger.errorCount, 1, "Should log if attach is attempted");
 
-        process.env.APPINSIGHTS_INSTRUMENTATION_KEY = origIkey;
+        process.env.APPINSIGHTS_INSTRUMENTATIONKEY = origIkey;
         process.env.APPLICATIONINSIGHTS_CONNECTION_STRING = origCs;
     });
 });

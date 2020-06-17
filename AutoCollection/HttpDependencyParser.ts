@@ -11,7 +11,7 @@ import RequestParser = require("./RequestParser");
 import CorrelationIdManager = require("../Library/CorrelationIdManager");
 
 /**
- * Helper class to read data from the requst/response objects and convert them into the telemetry contract
+ * Helper class to read data from the request/response objects and convert them into the telemetry contract
  */
 class HttpDependencyParser extends RequestParser {
     private correlationId: string;
@@ -80,6 +80,12 @@ class HttpDependencyParser extends RequestParser {
             target: remoteDependencyTarget
         };
 
+        if (baseTelemetry && baseTelemetry.time) {
+            dependencyTelemetry.time = baseTelemetry.time;
+        } else if (this.startTime) {
+            dependencyTelemetry.time = new Date(this.startTime);
+        }
+
         // We should keep any parameters the user passed in
         // Except the fields defined above in requestTelemetry, which take priority
         // Except the properties field, where they're merged instead, with baseTelemetry taking priority
@@ -127,7 +133,7 @@ class HttpDependencyParser extends RequestParser {
             options.search = parsedQuery.search;
         }
 
-        // Simiarly, url.format ignores hostname and port if host is specified,
+        // Similarly, url.format ignores hostname and port if host is specified,
         // even if host doesn't have the port, but http.request does not work
         // this way. It will use the port if one is not specified in host,
         // effectively treating host as hostname, but will use the port specified

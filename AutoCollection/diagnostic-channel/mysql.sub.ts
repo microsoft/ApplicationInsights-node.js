@@ -25,6 +25,7 @@ export const subscriber = (event: IStandardEvent<mysql.IMysqlData>) => {
                 success: success,
                 /* TODO: transmit result code from mysql */
                 resultCode: success? "0": "1",
+                time: event.data.time,
                 dependencyTypeName: "mysql"
             });
     });

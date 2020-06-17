@@ -1,9 +1,9 @@
 /**
- * Base telemetry interface encapsulating comming properties
+ * Base telemetry interface encapsulating coming properties
  */
 export interface Telemetry {
     /**
-     * Telemetry time stamp. When it is not specified, current tiestamp will be used.
+     * Telemetry time stamp. When it is not specified, current timestamp will be used.
      */
     time?: Date;
     /**
