@@ -1,7 +1,10 @@
 try {
     var eventhubs = require("@azure/event-hubs");
 
-    const client = new eventhubs.EventHubProducerClient("Endpoint=sb://not-a-real-account.servicebus.windows.net/");
+    const connectionString = "Endpoint=sb://my-servicebus-namespace.servicebus.windows.net/;SharedAccessKeyName=my-SA-name;SharedAccessKey=my-SA-key;";
+    const eventHubName = "my-event-hub"
+
+    const client = new eventhubs.EventHubProducerClient(connectionString, eventHubName);
 
     async function sendMessage() {
         try {
