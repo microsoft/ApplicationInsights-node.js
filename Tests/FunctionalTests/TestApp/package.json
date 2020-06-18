@@ -12,6 +12,7 @@
   "dependencies": {
     "@azure/event-hubs": "^5.2.1",
     "@azure/storage-blob": "^12.1.2",
+    "@opentelemetry/api": "^0.8.3",
     "@opentelemetry/tracing": "^0.8.3",
     "body-parser": "1.17.2",
     "bunyan": "1.8.12",
