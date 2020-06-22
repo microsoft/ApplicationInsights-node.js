@@ -52,6 +52,9 @@ class Config {
     /** An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined) */
     public httpsAgent: https.Agent;
 
+    /** Disable including legacy headers in outgoing requests, x-ms-request-id */
+    public ignoreLegacyHeaders?: boolean;
+
     private endpointBase: string = Constants.DEFAULT_BREEZE_ENDPOINT;
     private setCorrelationId: (v: string) => void;
     private _profileQueryEndpoint: string;

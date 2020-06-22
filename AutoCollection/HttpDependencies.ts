@@ -154,8 +154,10 @@ class AutoCollectHttpDependencies {
                     try {
                         telemetry.request.setHeader(RequestResponseHeaders.requestIdHeader, uniqueRequestId);
                         // Also set legacy headers
-                        telemetry.request.setHeader(RequestResponseHeaders.parentIdHeader, currentContext.operation.id);
-                        telemetry.request.setHeader(RequestResponseHeaders.rootIdHeader, uniqueRequestId);
+                        if (!client.config.ignoreLegacyHeaders) {
+                            telemetry.request.setHeader(RequestResponseHeaders.parentIdHeader, currentContext.operation.id);
+                            telemetry.request.setHeader(RequestResponseHeaders.rootIdHeader, uniqueRequestId);
+                        }
 
                         // Set W3C headers, if available
                         if (uniqueTraceparent || currentContext.operation.traceparent) {
