@@ -165,11 +165,32 @@ export class CorrelationContextManager {
         this.enabled = true;
     }
 
-    public static startOperation(context: azureFunctionsTypes.Context, request: azureFunctionsTypes.HttpRequest): CorrelationContext | null {
-        if (typeof context === "object" && typeof context.traceContext === "object") {
-            const traceparent = new Traceparent(context.traceContext.traceparent);
-            const tracestate = new Tracestate(context.traceContext.tracestate);
+    public static startOperation(context: azureFunctionsTypes.Context | (http.IncomingMessage | azureFunctionsTypes.HttpRequest), request?: azureFunctionsTypes.HttpRequest): CorrelationContext | null {
+        const traceContext = context && (context as azureFunctionsTypes.Context).traceContext || null;
+        const headers = context && (context as http.IncomingMessage | azureFunctionsTypes.HttpRequest).headers;
+
+        // AzFunction TraceContext available
+        if (traceContext) {
+            const traceparent = new Traceparent(traceContext.traceparent);
+            const tracestate = new Tracestate(traceContext.tracestate);
             const parser = new HttpRequestParser(request);
+            const correlationContext = CorrelationContextManager.generateContextObject(
+                traceparent.traceId,
+                traceparent.parentId,
+                parser.getOperationName({}),
+                parser.getCorrelationContextHeader(),
+                traceparent,
+                tracestate,
+            );
+
+            return correlationContext;
+        }
+
+        // No TraceContext available, parse as http.IncomingMessage
+        if (headers) {
+            const traceparent = new Traceparent(headers.traceparent);
+            const tracestate = new Tracestate(headers.tracestate);
+            const parser = new HttpRequestParser(context as http.IncomingMessage | azureFunctionsTypes.HttpRequest);
             const correlationContext = CorrelationContextManager.generateContextObject(
                 traceparent.traceId,
                 traceparent.parentId,

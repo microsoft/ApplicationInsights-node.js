@@ -18,6 +18,7 @@ export import Contracts = require("./Declarations/Contracts");
 import Traceparent = require("./Library/Traceparent");
 import Tracestate = require("./Library/Tracestate");
 import HttpRequestParser = require("./AutoCollection/HttpRequestParser");
+import { IncomingMessage } from "http";
 
 export enum DistributedTracingModes {
     /**
@@ -149,8 +150,10 @@ export function getCorrelationContext(): CorrelationContextManager.CorrelationCo
  * **(Experimental!)**
  * Starts a fresh context or propagates the current internal one.
  */
-export function startOperation(context: azureFunctionsTypes.Context, request: azureFunctionsTypes.HttpRequest) {
-    return CorrelationContextManager.CorrelationContextManager.startOperation.apply(context, request);
+export function startOperation(context: azureFunctionsTypes.Context, request: azureFunctionsTypes.HttpRequest): CorrelationContextManager.CorrelationContext | null;
+export function startOperation(context: IncomingMessage | azureFunctionsTypes.HttpRequest, request?: never): CorrelationContextManager.CorrelationContext | null;
+export function startOperation(context: azureFunctionsTypes.Context | (IncomingMessage | azureFunctionsTypes.HttpRequest), request?: azureFunctionsTypes.HttpRequest): CorrelationContextManager.CorrelationContext | null {
+    return CorrelationContextManager.CorrelationContextManager.startOperation(context, request);
 }
 
 /**
