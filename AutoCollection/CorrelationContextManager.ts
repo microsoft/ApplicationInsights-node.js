@@ -1,6 +1,4 @@
-import http = require("http");
 import events = require("events");
-import Util = require("../Library/Util");
 import Logging = require("../Library/Logging");
 
 import * as DiagChannel from "./diagnostic-channel/initialization";
@@ -11,6 +9,7 @@ import * as cls from "cls-hooked";
 import Traceparent = require("../Library/Traceparent");
 import Tracestate = require("../Library/Tracestate");
 import HttpRequestParser = require("./HttpRequestParser");
+import { ISpanContext } from "diagnostic-channel";
 
 export interface CustomProperties {
     /**
@@ -91,6 +90,15 @@ export class CorrelationContextManager {
         }
 
         return null;
+    }
+
+    public static spanToContextObject(spanContext: ISpanContext, parentId?: string, name?: string) {
+        const traceContext = new Traceparent();
+        traceContext.traceId = spanContext.traceId;
+        traceContext.spanId = spanContext.spanId;
+        traceContext.traceFlag = spanContext.traceFlags || Traceparent.DEFAULT_TRACE_FLAG;
+        traceContext.parentId = parentId;
+        return CorrelationContextManager.generateContextObject(traceContext.traceId, traceContext.parentId, name, null, traceContext);
     }
 
     /**

@@ -41,6 +41,7 @@ class AutoCollectHttpDependencies {
             this._initialize();
         }
         if (DiagChannel.IsInitialized) {
+            require("./diagnostic-channel/azure-coretracing.sub").enable(true, this._client);
             require("./diagnostic-channel/mongodb.sub").enable(isEnabled, this._client);
             require("./diagnostic-channel/mysql.sub").enable(isEnabled, this._client);
             require("./diagnostic-channel/redis.sub").enable(isEnabled, this._client);
@@ -62,6 +63,11 @@ class AutoCollectHttpDependencies {
         const clientRequestPatch = (request: http.ClientRequest, options: http.RequestOptions | https.RequestOptions) => {
             var shouldCollect = !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] &&
                 !(<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
+
+            // If someone else patched traceparent headers onto this request
+            if (options.headers && options.headers['user-agent'] && options.headers['user-agent'].toString().indexOf('azsdk-js') !== -1) {
+                shouldCollect = false;
+            }
 
             (<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag] = true;
 
@@ -148,8 +154,10 @@ class AutoCollectHttpDependencies {
                     try {
                         telemetry.request.setHeader(RequestResponseHeaders.requestIdHeader, uniqueRequestId);
                         // Also set legacy headers
-                        telemetry.request.setHeader(RequestResponseHeaders.parentIdHeader, currentContext.operation.id);
-                        telemetry.request.setHeader(RequestResponseHeaders.rootIdHeader, uniqueRequestId);
+                        if (!client.config.ignoreLegacyHeaders) {
+                            telemetry.request.setHeader(RequestResponseHeaders.parentIdHeader, currentContext.operation.id);
+                            telemetry.request.setHeader(RequestResponseHeaders.rootIdHeader, uniqueRequestId);
+                        }
 
                         // Set W3C headers, if available
                         if (uniqueTraceparent || currentContext.operation.traceparent) {

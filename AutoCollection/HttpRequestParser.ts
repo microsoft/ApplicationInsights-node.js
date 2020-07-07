@@ -82,6 +82,12 @@ class HttpRequestParser extends RequestParser {
             success: this._isSuccess(),
             properties: this.properties
         };
+        
+        if (baseTelemetry && baseTelemetry.time) {
+            requestTelemetry.time = baseTelemetry.time;
+        } else if (this.startTime) {
+            requestTelemetry.time = new Date(this.startTime);
+        }
 
         // We should keep any parameters the user passed in
         // Except the fields defined above in requestTelemetry, which take priority

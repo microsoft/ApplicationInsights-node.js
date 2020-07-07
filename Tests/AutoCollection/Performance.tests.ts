@@ -75,9 +75,8 @@ describe("AutoCollection/Performance", () => {
                     setIntervalStub.restore();
                     clearIntervalSpy.restore();
                     done();
-                }, 1);
-            }, 1)
-
+                }, 100);
+            }, 100);
         });
     });
 });
