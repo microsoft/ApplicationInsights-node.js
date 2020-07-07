@@ -6,6 +6,7 @@ import * as azureFunctionsTypes from "@azure/functions";
 
 // Don't reference modules from these directly. Use only for types.
 import * as cls from "cls-hooked";
+import * as http from "http";
 import Traceparent = require("../Library/Traceparent");
 import Tracestate = require("../Library/Tracestate");
 import HttpRequestParser = require("./HttpRequestParser");
