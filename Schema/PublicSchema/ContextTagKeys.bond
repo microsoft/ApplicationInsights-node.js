@@ -86,7 +86,7 @@ struct ContextTagKeys
     [MaxStringLength("256")]
     715: string 	 CloudRoleInstance = "ai.cloud.roleInstance";
     
-    [Description("SDK version. See https://github.com/Microsoft/ApplicationInsights-Home/blob/master/SDK-AUTHORING.md#sdk-version-specification for information.")]
+    [Description("SDK version. See https://github.com/microsoft/ApplicationInsights-Home/blob/master/SDK-AUTHORING.md#sdk-version-specification for information.")]
     [MaxStringLength("64")]
     1000: string 	 InternalSdkVersion = "ai.internal.sdkVersion";
     
