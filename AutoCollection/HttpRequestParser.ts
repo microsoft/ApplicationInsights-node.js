@@ -11,6 +11,7 @@ import RequestParser = require("./RequestParser");
 import CorrelationIdManager = require("../Library/CorrelationIdManager");
 import Tracestate = require("../Library/Tracestate");
 import Traceparent = require("../Library/Traceparent");
+import { HttpRequest } from "../Library/Functions";
 
 /**
  * Helper class to read data from the request/response objects and convert them into the telemetry contract
@@ -33,7 +34,7 @@ class HttpRequestParser extends RequestParser {
 
     private correlationContextHeader: string;
 
-    constructor(request: http.IncomingMessage, requestId?: string) {
+    constructor(request: http.IncomingMessage | HttpRequest, requestId?: string) {
         super();
         if (request) {
             this.method = request.method;
@@ -72,7 +73,7 @@ class HttpRequestParser extends RequestParser {
             name: this.method + " " + url.parse(this.url).pathname,
             url: this.url,
             /*
-            See https://github.com/Microsoft/ApplicationInsights-dotnet-server/blob/25d695e6a906fbe977f67be3966d25dbf1c50a79/Src/Web/Web.Shared.Net/RequestTrackingTelemetryModule.cs#L250
+            See https://github.com/microsoft/ApplicationInsights-dotnet-server/blob/25d695e6a906fbe977f67be3966d25dbf1c50a79/Src/Web/Web.Shared.Net/RequestTrackingTelemetryModule.cs#L250
             for reference
             */
             source: this.sourceCorrelationId,
@@ -81,6 +82,12 @@ class HttpRequestParser extends RequestParser {
             success: this._isSuccess(),
             properties: this.properties
         };
+
+        if (baseTelemetry && baseTelemetry.time) {
+            requestTelemetry.time = baseTelemetry.time;
+        } else if (this.startTime) {
+            requestTelemetry.time = new Date(this.startTime);
+        }
 
         // We should keep any parameters the user passed in
         // Except the fields defined above in requestTelemetry, which take priority
@@ -154,7 +161,7 @@ class HttpRequestParser extends RequestParser {
         return this.legacyRootId;
     }
 
-    private _getAbsoluteUrl(request: http.IncomingMessage): string {
+    private _getAbsoluteUrl(request: http.IncomingMessage | HttpRequest): string {
         if (!request.headers) {
             return request.url;
         }
@@ -231,7 +238,7 @@ class HttpRequestParser extends RequestParser {
         this.requestId = this.traceparent.getBackCompatRequestId();
     }
 
-    private parseHeaders(request: http.IncomingMessage, requestId?: string) {
+    private parseHeaders(request: http.IncomingMessage | HttpRequest, requestId?: string) {
 
         this.rawHeaders = request.headers || (<any>request).rawHeaders;
         this.userAgent = request.headers && request.headers["user-agent"];

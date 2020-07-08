@@ -162,12 +162,12 @@ describe("Library/TelemetryClient", () => {
         });
     });
 
-    
+
     describe("#trackAvailability()", () => {
         it("should track availability with correct data", () => {
             trackStub.reset();
-            const expectedTelemetryData: Contracts.AvailabilityTelemetry =  { 
-                duration: 100, id: "id1", message: "message1",success : true, name: "name1", runLocation: "east us" 
+            const expectedTelemetryData: Contracts.AvailabilityTelemetry =  {
+                duration: 100, id: "id1", message: "message1",success : true, name: "name1", runLocation: "east us"
             };
 
             client.trackAvailability(expectedTelemetryData);

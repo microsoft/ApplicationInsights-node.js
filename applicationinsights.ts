@@ -4,12 +4,10 @@ import AutoCollectExceptions = require("./AutoCollection/Exceptions");
 import AutoCollectPerformance = require("./AutoCollection/Performance");
 import AutoCollectHttpDependencies = require("./AutoCollection/HttpDependencies");
 import AutoCollectHttpRequests = require("./AutoCollection/HttpRequests");
-import Config = require("./Library/Config");
-import Context = require("./Library/Context");
 import CorrelationIdManager = require("./Library/CorrelationIdManager");
 import Logging = require("./Library/Logging");
-import Util = require("./Library/Util");
 import QuickPulseClient = require("./Library/QuickPulseStateManager");
+import * as azureFunctionsTypes from "./Library/Functions";
 
 import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCollection/NativePerformance";
 
@@ -17,6 +15,10 @@ import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCo
 // They're exposed using "export import" so that types are passed along as expected
 export import TelemetryClient = require("./Library/NodeClient");
 export import Contracts = require("./Declarations/Contracts");
+import Traceparent = require("./Library/Traceparent");
+import Tracestate = require("./Library/Tracestate");
+import HttpRequestParser = require("./AutoCollection/HttpRequestParser");
+import { IncomingMessage } from "http";
 
 export enum DistributedTracingModes {
     /**
@@ -145,13 +147,23 @@ export function getCorrelationContext(): CorrelationContextManager.CorrelationCo
 }
 
 /**
+ * **(Experimental!)**
+ * Starts a fresh context or propagates the current internal one.
+ */
+export function startOperation(context: azureFunctionsTypes.Context, request: azureFunctionsTypes.HttpRequest): CorrelationContextManager.CorrelationContext | null;
+export function startOperation(context: IncomingMessage | azureFunctionsTypes.HttpRequest, request?: never): CorrelationContextManager.CorrelationContext | null;
+export function startOperation(context: azureFunctionsTypes.Context | (IncomingMessage | azureFunctionsTypes.HttpRequest), request?: azureFunctionsTypes.HttpRequest): CorrelationContextManager.CorrelationContext | null {
+    return CorrelationContextManager.CorrelationContextManager.startOperation(context, request);
+}
+
+/**
  * Returns a function that will get the same correlation context within its
  * function body as the code executing this function.
  * Use this method if automatic dependency correlation is not propagating
  * correctly to an asynchronous callback.
  */
-export function wrapWithCorrelationContext<T extends Function>(fn: T): T {
-    return CorrelationContextManager.CorrelationContextManager.wrapCallback(fn);
+export function wrapWithCorrelationContext<T extends Function>(fn: T, context?: CorrelationContextManager.CorrelationContext): T {
+    return CorrelationContextManager.CorrelationContextManager.wrapCallback(fn, context);
 }
 
 /**

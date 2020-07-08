@@ -12,6 +12,12 @@ let startTime = null;
 
 let perfMode = process.argv.indexOf("-perfmode") !== -1;
 
+const skipAsyncHooksTests = () => {
+    var version = process.versions.node.split(".");
+    if (version[0] == 8 && version[1] == 0 && version[2] == 0) return true;
+    return version[0] < 8;
+}
+
 // Helpers
 const runTestSequence = (index) => {
     const testIndex = index || 0;
@@ -23,6 +29,9 @@ const runTestSequence = (index) => {
         Utils.Logging.exitSubunit();
         Utils.Logging.info("Waiting " + waitTime + "ms for telemetry...");
         return new Promise((resolve, reject) => setTimeout(resolve, waitTime));
+    } else if (skipAsyncHooksTests() && TestSequence[testIndex].path.indexOf("/~") === 0) {
+        console.log("Skipping test for", TestSequence[testIndex].path)
+        return runTestSequence(testIndex + 1);
     } else {
         // Underscores indicate internal sequences
         if (TestSequence[testIndex].path.indexOf("/_") === 0) {
@@ -39,6 +48,9 @@ const validateTestSequence = (index) => {
     if (TestSequence.length == testIndex) {
        Utils.Logging.exitSubunit();
        return Promise.resolve(true);
+    } else if (skipAsyncHooksTests() && TestSequence[testIndex].path.indexOf("/~") === 0) {
+        console.log("Skipping validation for", TestSequence[testIndex].path)
+        return validateTestSequence(testIndex + 1);
     } else {
         // Underscores indicate internal sequences
         if (TestSequence[testIndex].path.indexOf("/_") === 0) {
@@ -54,7 +66,7 @@ const validateTestSequence = (index) => {
 };
 const runAndValidateLongTest = () => {
     Utils.Logging.enterSubunit("Performing parallel requests test sequence for " + Config.StressTestTime + "ms");
-    
+
     // Find stress test
     let testSequence = null;
     for (let i = 0; i < TestSequence.length; i++) {
@@ -98,7 +110,7 @@ const runAndValidateLongTest = () => {
     // Run 10 stress loops in parallel
     // This is for higher load and to test correlation under non-sequential tasks
     const stressLoops = [stressLoop(),stressLoop(),stressLoop(),stressLoop(),stressLoop(),
-        stressLoop(),stressLoop(),stressLoop(),stressLoop(),stressLoop()];    
+        stressLoop(),stressLoop(),stressLoop(),stressLoop(),stressLoop()];
 
     return Promise.all(stressLoops).then((success) => {
         if (!success) {
@@ -146,8 +158,8 @@ const runAndValidateLongTest = () => {
     });
 }
 const validatePerfCounters = () => {
-    const perfTypes = ["\\Processor(_Total)\\% Processor Time", 
-        "\\Process(??APP_WIN32_PROC??)\\% Processor Time", 
+    const perfTypes = ["\\Processor(_Total)\\% Processor Time",
+        "\\Process(??APP_WIN32_PROC??)\\% Processor Time",
         "\\Process(??APP_WIN32_PROC??)\\Private Bytes",
         "\\Memory\\Available Bytes",
         "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Requests/Sec",
@@ -169,8 +181,8 @@ const getCPU = () => {
 
         for(let type in cpu.times) {
             totalTick += cpu.times[type];
-        }     
-        
+        }
+
         totalIdle += cpu.times.idle;
     }
     return {idle: totalIdle / cpus.length,  total: totalTick / cpus.length};
