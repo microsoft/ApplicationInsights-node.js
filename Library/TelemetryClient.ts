@@ -100,7 +100,7 @@ class TelemetryClient {
      *
      * @param telemetry      Object encapsulating tracking options
      */
-    public trackRequest(telemetry: Contracts.RequestTelemetry): void {
+    public trackRequest(telemetry: Contracts.RequestTelemetry & Contracts.Identified): void {
         this.track(telemetry, Contracts.TelemetryType.Request);
     }
 
@@ -110,7 +110,7 @@ class TelemetryClient {
      *
      * @param telemetry      Object encapsulating tracking option
      * */
-    public trackDependency(telemetry: Contracts.DependencyTelemetry) {
+    public trackDependency(telemetry: Contracts.DependencyTelemetry & Contracts.Identified) {
 
         if (telemetry && !telemetry.target && telemetry.data) {
             // url.parse().host returns null for non-urls,

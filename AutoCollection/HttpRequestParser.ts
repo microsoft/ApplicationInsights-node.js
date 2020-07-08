@@ -11,6 +11,7 @@ import RequestParser = require("./RequestParser");
 import CorrelationIdManager = require("../Library/CorrelationIdManager");
 import Tracestate = require("../Library/Tracestate");
 import Traceparent = require("../Library/Traceparent");
+import { HttpRequest } from "../Library/Functions";
 
 /**
  * Helper class to read data from the request/response objects and convert them into the telemetry contract
@@ -33,7 +34,7 @@ class HttpRequestParser extends RequestParser {
 
     private correlationContextHeader: string;
 
-    constructor(request: http.IncomingMessage, requestId?: string) {
+    constructor(request: http.IncomingMessage | HttpRequest, requestId?: string) {
         super();
         if (request) {
             this.method = request.method;
@@ -81,7 +82,7 @@ class HttpRequestParser extends RequestParser {
             success: this._isSuccess(),
             properties: this.properties
         };
-        
+
         if (baseTelemetry && baseTelemetry.time) {
             requestTelemetry.time = baseTelemetry.time;
         } else if (this.startTime) {
@@ -160,7 +161,7 @@ class HttpRequestParser extends RequestParser {
         return this.legacyRootId;
     }
 
-    private _getAbsoluteUrl(request: http.IncomingMessage): string {
+    private _getAbsoluteUrl(request: http.IncomingMessage | HttpRequest): string {
         if (!request.headers) {
             return request.url;
         }
@@ -237,7 +238,7 @@ class HttpRequestParser extends RequestParser {
         this.requestId = this.traceparent.getBackCompatRequestId();
     }
 
-    private parseHeaders(request: http.IncomingMessage, requestId?: string) {
+    private parseHeaders(request: http.IncomingMessage | HttpRequest, requestId?: string) {
 
         this.rawHeaders = request.headers || (<any>request).rawHeaders;
         this.userAgent = request.headers && request.headers["user-agent"];

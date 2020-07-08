@@ -81,43 +81,94 @@ this additional tracking is enabled; disable it by calling
 `setAutoDependencyCorrelation(false)` as described in the
 Configuration section below.
 
-## Migrating from versions prior to 0.22
+## Azure Functions
 
-There are breaking changes between releases prior to version 0.22 and after. These
-changes are designed to bring consistency with other Application Insights SDKs and
-allow future extensibility. Please review this README for new method and property names.
+Due to how Azure Functions (and other FaaS services) handle incoming requests, they are not seen as `http` requests to the Node.js runtime. For this reason, Request -> Dependency correlelation will **not** work out of the box.
+To enable tracking here, you simply need to grab the context from your Function request handler, and wrap your Function with that context.
 
-In general, you can migrate with the following:
-- Replace references to `appInsights.client` with `appInsights.defaultClient`
-- Replace references to `appInsights.getClient()` with `new appInsights.TelemetryClient()`
-- Replace all arguments to client.track* methods with a single object containing named
-properties as arguments. See your IDE's built-in type hinting, or [TelemetryTypes](https://github.com/microsoft/ApplicationInsights-node.js/tree/develop/Declarations/Contracts/TelemetryTypes), for
-the expected object for each type of telemetry.
+### Setting up Auto-Correlation for Azure Functions
 
-If you access SDK configuration functions without chaining them to `appInsights.setup()`,
-you can now find these functions at appInsights.Configuration
-(eg. `appInsights.Configuration.setAutoCollectDependencies(true)`).
-Take care to review the changes to the default configuration in the next section.
+You do not need to make any changes to your existing Function logic.
+Instead, you can update the `default` export of your `httpTrigger` to be wrapped with some Application Insights logic:
 
-## Migrating to [`applicationinsights@2.0.0`](https://github.com/microsoft/ApplicationInsights-node.js/tree/applicationinsights%402.0.0) (Beta)
+```js
+...
 
-An experimental / beta version of the SDK is also available, but not recommended for production. It is built on top of the [OpenTelemetry SDK + APIs](http://github.com/open-telemetry/opentelemetry-js), while keeping the API surface of this SDK the same.
+// Default export wrapped with Application Insights FaaS context propagation
+export default async function contextPropagatingHttpTrigger(context, req) {
+    // Start an AI Correlation Context using the provided Function context
+    const correlationContext = appInsights.startOperation(context, req);
 
-```zsh
-npm install applicationinsights@beta
+    // Wrap the Function runtime with correlationContext
+    return appInsights.wrapWithCorrelationContext(async () => {
+        const startTime = Date.now(); // Start trackRequest timer
+
+        // Run the Function
+        await httpTrigger(context, req);
+
+        // Track Request on completion
+        appInsights.defaultClient.trackRequest({
+            name: context.req.method + " " + context.req.url,
+            resultCode: context.res.status,
+            success: true,
+            url: req.url,
+            duration: Date.now() - startTime,
+            id: correlationContext.operation.parentId,
+        });
+        appInsights.defaultClient.flush();
+    }, correlationContext)();
+};
 ```
 
-### `applicationinsights@2.0.0` Overview
+### Azure Functions Example
 
-- Autocollection parity with `applicationinsights@1.x`
-- API parity with `applicationinsights@1.x`
-- "Getting Started" parity with `applicationinsights@1.x`
-- New autocollection scenarios out-of-the-box contribued by the [OpenTelemetry community](https://github.com/open-telemetry/opentelemetry-js#node-plugins), e.g. `gRPC`, `express`, `ioredis`
-- Built on top of an [Open Standard](https://github.com/open-telemetry/opentelemetry-specification) for Telemetry APIs and SDKs
+An example of making an `axios` call to <https://httpbin.org> and returning the reponse.
 
-Migrating from `1.x` to `2.x` is meant to be seamless and straightforward, there should be no breaking API changes at all. Please file a bug if something doesn't look right to you!
+```js
+const appInsights = require("applicationinsights");
+appInsights.setup("ikey")
+    .setAutoCollectPerformance(false)
+    .start();
 
-Included in `applicationinsights@2.0.0` is [every Node.js Plugin available in the default OpenTelemetry Node.js SDK](https://github.com/open-telemetry/opentelemetry-js#node-plugins). Please check out the [projects board](https://github.com/microsoft/ApplicationInsights-node.js/projects) for progress updates on `2.x`.
+const axios = require("axios");
+
+/**
+ * No changes required to your existing Function logic
+ */
+const httpTrigger = async function (context, req) {
+    const response = await axios.get("https://httpbin.org/status/200");
+
+    context.res = {
+        status: response.status,
+        body: response.statusText,
+    };
+};
+
+// Default export wrapped with Application Insights FaaS context propagation
+export default async function contextPropagatingHttpTrigger(context, req) {
+    // Start an AI Correlation Context using the provided Function context
+    const correlationContext = appInsights.startOperation(context, req);
+
+    // Wrap the Function runtime with correlationContext
+    return appInsights.wrapWithCorrelationContext(async () => {
+        const startTime = Date.now(); // Start trackRequest timer
+
+        // Run the Function
+        await httpTrigger(context, req);
+
+        // Track Request on completion
+        appInsights.defaultClient.trackRequest({
+            name: context.req.method + " " + context.req.url,
+            resultCode: context.res.status,
+            success: true,
+            url: req.url,
+            duration: Date.now() - startTime,
+            id: correlationContext.operation.parentId,
+        });
+        appInsights.defaultClient.flush();
+    }, correlationContext)();
+};
+```
 
 ## Configuration
 
@@ -420,6 +471,26 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | correlationHeaderExcludedDomains| A list of domains to exclude from cross-component correlation header injection (Default See [Config.ts][]) |
 
 [Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
+
+## Migrating to [`applicationinsights@2.0.0`](https://github.com/microsoft/ApplicationInsights-node.js/tree/applicationinsights%402.0.0) (Beta)
+
+An experimental / beta version of the SDK is also available, but not recommended for production. It is built on top of the [OpenTelemetry SDK + APIs](http://github.com/open-telemetry/opentelemetry-js), while keeping the API surface of this SDK the same.
+
+```zsh
+npm install applicationinsights@beta
+```
+
+### `applicationinsights@2.0.0` Overview
+
+- Autocollection parity with `applicationinsights@1.x`
+- API parity with `applicationinsights@1.x`
+- "Getting Started" parity with `applicationinsights@1.x`
+- New autocollection scenarios out-of-the-box contribued by the [OpenTelemetry community](https://github.com/open-telemetry/opentelemetry-js#node-plugins), e.g. `gRPC`, `express`, `ioredis`
+- Built on top of an [Open Standard](https://github.com/open-telemetry/opentelemetry-specification) for Telemetry APIs and SDKs
+
+Migrating from `1.x` to `2.x` is meant to be seamless and straightforward, there should be no breaking API changes at all. Please file a bug if something doesn't look right to you!
+
+Included in `applicationinsights@2.0.0` is [every Node.js Plugin available in the default OpenTelemetry Node.js SDK](https://github.com/open-telemetry/opentelemetry-js#node-plugins). Please check out the [projects board](https://github.com/microsoft/ApplicationInsights-node.js/projects) for progress updates on `2.x`.
 
 ## Branches
 
