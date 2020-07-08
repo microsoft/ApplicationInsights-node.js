@@ -73,7 +73,7 @@ class HttpRequestParser extends RequestParser {
             name: this.method + " " + url.parse(this.url).pathname,
             url: this.url,
             /*
-            See https://github.com/Microsoft/ApplicationInsights-dotnet-server/blob/25d695e6a906fbe977f67be3966d25dbf1c50a79/Src/Web/Web.Shared.Net/RequestTrackingTelemetryModule.cs#L250
+            See https://github.com/microsoft/ApplicationInsights-dotnet-server/blob/25d695e6a906fbe977f67be3966d25dbf1c50a79/Src/Web/Web.Shared.Net/RequestTrackingTelemetryModule.cs#L250
             for reference
             */
             source: this.sourceCorrelationId,

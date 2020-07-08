@@ -170,26 +170,6 @@ export default async function contextPropagatingHttpTrigger(context, req) {
 };
 ```
 
-## Migrating to [`applicationinsights@2.0.0`](https://github.com/microsoft/ApplicationInsights-node.js/tree/applicationinsights%402.0.0) (Beta)
-
-An experimental / beta version of the SDK is also available, but not recommended for production. It is built on top of the [OpenTelemetry SDK + APIs](http://github.com/open-telemetry/opentelemetry-js), while keeping the API surface of this SDK the same.
-
-```zsh
-npm install applicationinsights@beta
-```
-
-### `applicationinsights@2.0.0` Overview
-
-- Autocollection parity with `applicationinsights@1.x`
-- API parity with `applicationinsights@1.x`
-- "Getting Started" parity with `applicationinsights@1.x`
-- New autocollection scenarios out-of-the-box contribued by the [OpenTelemetry community](https://github.com/open-telemetry/opentelemetry-js#node-plugins), e.g. `gRPC`, `express`, `ioredis`
-- Built on top of an [Open Standard](https://github.com/open-telemetry/opentelemetry-specification) for Telemetry APIs and SDKs
-
-Migrating from `1.x` to `2.x` is meant to be seamless and straightforward, there should be no breaking API changes at all. Please file a bug if something doesn't look right to you!
-
-Included in `applicationinsights@2.0.0` is [every Node.js Plugin available in the default OpenTelemetry Node.js SDK](https://github.com/open-telemetry/opentelemetry-js#node-plugins). Please check out the [projects board](https://github.com/microsoft/ApplicationInsights-node.js/projects) for progress updates on `2.x`.
-
 ## Configuration
 
 The appInsights object provides a number of configuration methods. They are
@@ -210,7 +190,7 @@ appInsights.setup("<instrumentation_key>")
     .start();
 ```
 
-Please review their descriptions in your IDE's built-in type hinting, or [applicationinsights.ts](https://github.com/Microsoft/ApplicationInsights-node.js/tree/develop/applicationinsights.ts) for
+Please review their descriptions in your IDE's built-in type hinting, or [applicationinsights.ts](https://github.com/microsoft/ApplicationInsights-node.js/tree/develop/applicationinsights.ts) for
 detailed information on what these control, and optional secondary arguments.
 
 Note that by default `setAutoCollectConsole` is configured to *exclude* calls to `console.log`
@@ -249,7 +229,7 @@ appInsights.start();
 ### Automatic third-party instrumentation
 
 In order to track context across asynchronous calls, some changes are required in third party libraries such as mongodb and redis.
-By default ApplicationInsights will use [`diagnostic-channel-publishers`](https://github.com/Microsoft/node-diagnostic-channel/tree/master/src/diagnostic-channel-publishers)
+By default ApplicationInsights will use [`diagnostic-channel-publishers`](https://github.com/microsoft/node-diagnostic-channel/tree/master/src/diagnostic-channel-publishers)
 to monkey-patch some of these libraries.
 This can be disabled by setting the `APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL` environment variable. Note that by setting that
 environment variable, events may no longer be correctly associated with the right operation. Individual monkey-patches can be
@@ -257,7 +237,7 @@ disabled by setting the `APPLICATION_INSIGHTS_NO_PATCH_MODULES` environment vari
 disable, e.g. `APPLICATION_INSIGHTS_NO_PATCH_MODULES=console,redis` to avoid patching the `console` and `redis` packages.
 
 Currently there are 9 packages which are instrumented: `bunyan`, `console`, `mongodb`, `mongodb-core`, `mysql`, `redis`, `winston`,
-`pg`, and `pg-pool`. Visit the [diagnostic-channel-publishers' README](https://github.com/Microsoft/node-diagnostic-channel/blob/master/src/diagnostic-channel-publishers/README.md)
+`pg`, and `pg-pool`. Visit the [diagnostic-channel-publishers' README](https://github.com/microsoft/node-diagnostic-channel/blob/master/src/diagnostic-channel-publishers/README.md)
 for information about exactly which versions of these packages are patched.
 
 The `bunyan`, `winston`, and `console` patches will generate Application Insights Trace events based on whether `setAutoCollectConsole` is enabled.
@@ -490,7 +470,27 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | correlationIdRetryIntervalMs    | The time to wait before retrying to retrieve the id for cross-component correlation (Default `30000`)      |
 | correlationHeaderExcludedDomains| A list of domains to exclude from cross-component correlation header injection (Default See [Config.ts][]) |
 
-[Config.ts]: https://github.com/Microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
+[Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
+
+## Migrating to [`applicationinsights@2.0.0`](https://github.com/microsoft/ApplicationInsights-node.js/tree/applicationinsights%402.0.0) (Beta)
+
+An experimental / beta version of the SDK is also available, but not recommended for production. It is built on top of the [OpenTelemetry SDK + APIs](http://github.com/open-telemetry/opentelemetry-js), while keeping the API surface of this SDK the same.
+
+```zsh
+npm install applicationinsights@beta
+```
+
+### `applicationinsights@2.0.0` Overview
+
+- Autocollection parity with `applicationinsights@1.x`
+- API parity with `applicationinsights@1.x`
+- "Getting Started" parity with `applicationinsights@1.x`
+- New autocollection scenarios out-of-the-box contribued by the [OpenTelemetry community](https://github.com/open-telemetry/opentelemetry-js#node-plugins), e.g. `gRPC`, `express`, `ioredis`
+- Built on top of an [Open Standard](https://github.com/open-telemetry/opentelemetry-specification) for Telemetry APIs and SDKs
+
+Migrating from `1.x` to `2.x` is meant to be seamless and straightforward, there should be no breaking API changes at all. Please file a bug if something doesn't look right to you!
+
+Included in `applicationinsights@2.0.0` is [every Node.js Plugin available in the default OpenTelemetry Node.js SDK](https://github.com/open-telemetry/opentelemetry-js#node-plugins). Please check out the [projects board](https://github.com/microsoft/ApplicationInsights-node.js/projects) for progress updates on `2.x`.
 
 ## Branches
 
@@ -498,8 +498,8 @@ separately from clients created with `new appInsights.TelemetryClient()`.
   pull requests to this branch.**
 - Releases are merged to the [master][] branch and published to [npm][].
 
-[master]: https://github.com/Microsoft/ApplicationInsights-node.js/tree/master
-[develop]: https://github.com/Microsoft/ApplicationInsights-node.js/tree/develop
+[master]: https://github.com/microsoft/ApplicationInsights-node.js/tree/master
+[develop]: https://github.com/microsoft/ApplicationInsights-node.js/tree/develop
 [npm]: https://www.npmjs.com/package/applicationinsights
 
 ## Links
@@ -510,9 +510,9 @@ separately from clients created with `new appInsights.TelemetryClient()`.
   [ApplicationInsights-Announcements][] repo.
 * [SDK Release Schedule][]
 
-[ApplicationInsights-Announcements]: https://github.com/Microsoft/ApplicationInsights-Announcements
-[ApplicationInsights-Home]: https://github.com/Microsoft/ApplicationInsights-Home
-[SDK Release Schedule]: https://github.com/Microsoft/ApplicationInsights-Home/wiki/SDK-Release-Schedule
+[ApplicationInsights-Announcements]: https://github.com/microsoft/ApplicationInsights-Announcements
+[ApplicationInsights-Home]: https://github.com/microsoft/ApplicationInsights-Home
+[SDK Release Schedule]: https://github.com/microsoft/ApplicationInsights-Home/wiki/SDK-Release-Schedule
 
 ## Contributing
 
