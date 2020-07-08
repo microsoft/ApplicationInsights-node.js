@@ -11,9 +11,7 @@ let _logger: DiagnosticLogger = new DiagnosticLogger(console);
 let _statusLogger: StatusLogger = new StatusLogger(console);
 
 // Env var local constants
-const ENV_extensionVersion = "ApplicationInsightsAgent_EXTENSION_VERSION";
 const _setupString = process.env.APPLICATIONINSIGHTS_CONNECTION_STRING || process.env.APPINSIGHTS_INSTRUMENTATIONKEY;
-const _extensionEnabled = process.env[ENV_extensionVersion] && process.env[ENV_extensionVersion] !== "disabled";
 const forceStart = process.env.APPLICATIONINSIGHTS_FORCE_START === "true";
 
 // Other local constants
@@ -47,15 +45,6 @@ export function setStatusLogger(statusLogger: StatusLogger) {
  * @param setupString connection string or instrumentation key
  */
 export function setupAndStart(setupString = _setupString): typeof types | null {
-    if (!_extensionEnabled) {
-        _statusLogger.logStatus({
-            ...defaultStatus,
-            AgentInitializedSuccessfully: false,
-            Reason: `Extension is not enabled. env.${ENV_extensionVersion}=${process.env[ENV_extensionVersion]}`
-        });
-        return null;
-    }
-
     // If app already contains SDK, skip agent attach
     if (!forceStart && Helpers.sdkAlreadyExists(_logger)) {
         _statusLogger.logStatus({
@@ -102,7 +91,7 @@ export function setupAndStart(setupString = _setupString): typeof types | null {
         _appInsights.start();
 
         // Agent successfully instrumented the SDK
-        _logger.logMessage("Application Insights was started with setupString: " + setupString + ", extensionEnabled: " + _extensionEnabled);
+        _logger.logMessage("Application Insights was started with setupString: " + setupString);
         _statusLogger.logStatus({
             ...defaultStatus,
             AgentInitializedSuccessfully: true
