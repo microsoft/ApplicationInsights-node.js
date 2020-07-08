@@ -81,23 +81,94 @@ this additional tracking is enabled; disable it by calling
 `setAutoDependencyCorrelation(false)` as described in the
 Configuration section below.
 
-## Migrating from versions prior to 0.22
+## Azure Functions
 
-There are breaking changes between releases prior to version 0.22 and after. These
-changes are designed to bring consistency with other Application Insights SDKs and
-allow future extensibility. Please review this README for new method and property names.
+Due to how Azure Functions (and other FaaS services) handle incoming requests, they are not seen as `http` requests to the Node.js runtime. For this reason, Request -> Dependency correlelation will **not** work out of the box.
+To enable tracking here, you simply need to grab the context from your Function request handler, and wrap your Function with that context.
 
-In general, you can migrate with the following:
-- Replace references to `appInsights.client` with `appInsights.defaultClient`
-- Replace references to `appInsights.getClient()` with `new appInsights.TelemetryClient()`
-- Replace all arguments to client.track* methods with a single object containing named
-properties as arguments. See your IDE's built-in type hinting, or [TelemetryTypes](https://github.com/Microsoft/ApplicationInsights-node.js/tree/develop/Declarations/Contracts/TelemetryTypes), for
-the expected object for each type of telemetry.
+### Setting up Auto-Correlation for Azure Functions
 
-If you access SDK configuration functions without chaining them to `appInsights.setup()`,
-you can now find these functions at appInsights.Configuration
-(eg. `appInsights.Configuration.setAutoCollectDependencies(true)`).
-Take care to review the changes to the default configuration in the next section.
+You do not need to make any changes to your existing Function logic.
+Instead, you can update the `default` export of your `httpTrigger` to be wrapped with some Application Insights logic:
+
+```js
+...
+
+// Default export wrapped with Application Insights FaaS context propagation
+export default async function contextPropagatingHttpTrigger(context, req) {
+    // Start an AI Correlation Context using the provided Function context
+    const correlationContext = appInsights.startOperation(context, req);
+
+    // Wrap the Function runtime with correlationContext
+    return appInsights.wrapWithCorrelationContext(async () => {
+        const startTime = Date.now(); // Start trackRequest timer
+
+        // Run the Function
+        await httpTrigger(context, req);
+
+        // Track Request on completion
+        appInsights.defaultClient.trackRequest({
+            name: context.req.method + " " + context.req.url,
+            resultCode: context.res.status,
+            success: true,
+            url: req.url,
+            duration: Date.now() - startTime,
+            id: correlationContext.operation.parentId,
+        });
+        appInsights.defaultClient.flush();
+    }, correlationContext)();
+};
+```
+
+### Azure Functions Example
+
+An example of making an `axios` call to <https://httpbin.org> and returning the reponse.
+
+```js
+const appInsights = require("applicationinsights");
+appInsights.setup("ikey")
+    .setAutoCollectPerformance(false)
+    .start();
+
+const axios = require("axios");
+
+/**
+ * No changes required to your existing Function logic
+ */
+const httpTrigger = async function (context, req) {
+    const response = await axios.get("https://httpbin.org/status/200");
+
+    context.res = {
+        status: response.status,
+        body: response.statusText,
+    };
+};
+
+// Default export wrapped with Application Insights FaaS context propagation
+export default async function contextPropagatingHttpTrigger(context, req) {
+    // Start an AI Correlation Context using the provided Function context
+    const correlationContext = appInsights.startOperation(context, req);
+
+    // Wrap the Function runtime with correlationContext
+    return appInsights.wrapWithCorrelationContext(async () => {
+        const startTime = Date.now(); // Start trackRequest timer
+
+        // Run the Function
+        await httpTrigger(context, req);
+
+        // Track Request on completion
+        appInsights.defaultClient.trackRequest({
+            name: context.req.method + " " + context.req.url,
+            resultCode: context.res.status,
+            success: true,
+            url: req.url,
+            duration: Date.now() - startTime,
+            id: correlationContext.operation.parentId,
+        });
+        appInsights.defaultClient.flush();
+    }, correlationContext)();
+};
+```
 
 ## Migrating to [`applicationinsights@2.0.0`](https://github.com/microsoft/ApplicationInsights-node.js/tree/applicationinsights%402.0.0) (Beta)
 
