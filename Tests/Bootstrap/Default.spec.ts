@@ -84,31 +84,6 @@ describe("#setupAndStart()", () => {
         assert.equal(logger.errorCount, 0);
     });
 
-    it("should not setup and start the SDK if it has been disabled", () => {
-        // Setup
-        const logger = new LoggerSpy();
-        const origEnv = process.env.ApplicationInsightsAgent_EXTENSION_VERSION;
-        process.env.ApplicationInsightsAgent_EXTENSION_VERSION = "disabled";
-        const alreadyExistsStub = sinon.stub(Helpers, "sdkAlreadyExists", () => false);
-
-        // Test
-        const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
-        Default.setLogger(new DiagnosticLogger(logger));
-        const instance = Default.setupAndStart("abc");
-        assert.equal(instance, null);
-
-        // Cleanup
-        alreadyExistsStub.restore();
-        process.env.ApplicationInsightsAgent_EXTENSION_VERSION = origEnv;
-
-        // start was never called
-        assert.equal(startSpy.callCount, 0);
-
-        // No logging was done
-        assert.equal(logger.logCount, 0);
-        assert.equal(logger.errorCount, 0, "Do not log if attach is disabled");
-    });
-
     it("should not setup and start the SDK if no setupString is provided", () => {
         // Setup
         const logger = new LoggerSpy();
