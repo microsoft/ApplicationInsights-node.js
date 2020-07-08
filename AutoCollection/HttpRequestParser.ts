@@ -11,7 +11,7 @@ import RequestParser = require("./RequestParser");
 import CorrelationIdManager = require("../Library/CorrelationIdManager");
 import Tracestate = require("../Library/Tracestate");
 import Traceparent = require("../Library/Traceparent");
-import { HttpRequest } from "@azure/functions";
+import { HttpRequest } from "../Library/Functions";
 
 /**
  * Helper class to read data from the request/response objects and convert them into the telemetry contract
@@ -82,7 +82,7 @@ class HttpRequestParser extends RequestParser {
             success: this._isSuccess(),
             properties: this.properties
         };
-        
+
         if (baseTelemetry && baseTelemetry.time) {
             requestTelemetry.time = baseTelemetry.time;
         } else if (this.startTime) {

@@ -1,5 +1,5 @@
 import { CorrelationContextManager, CorrelationContext } from "../../AutoCollection/CorrelationContextManager";
-import * as azureFunctionTypes from "@azure/functions";
+import * as azureFunctionTypes from "../../Library/Functions";
 
 import assert = require("assert");
 import sinon = require("sinon");
@@ -239,7 +239,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             };
 
             const request = {
-                method: "GET" as azureFunctionTypes.HttpMethod,
+                method: "GET",
                 url: "/search",
                 connection: {
                     encrypted: false
