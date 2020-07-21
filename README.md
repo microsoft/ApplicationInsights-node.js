@@ -241,7 +241,8 @@ Currently there are 9 packages which are instrumented: `bunyan`, `console`, `mon
 for information about exactly which versions of these packages are patched.
 
 The `bunyan`, `winston`, and `console` patches will generate Application Insights Trace events based on whether `setAutoCollectConsole` is enabled.
-The rest will generate Application Insights Dependency events based on whether `setAutoCollectDependencies` is enabled.
+The rest will generate Application Insights Dependency events based on whether `setAutoCollectDependencies` is enabled. Make sure that `applicationinsights` is imported **before** any 3rd-party packages for them to be instrumented successfully.
+
 
 ### Live Metrics
 To enable sending live metrics of your app to Azure, use `setSendLiveMetrics(true)`. Filtering of live metrics in the Portal is currently not supported.
