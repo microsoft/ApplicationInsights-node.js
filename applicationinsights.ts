@@ -115,7 +115,7 @@ export function start() {
         _console.enable(_isConsole, _isConsoleLog);
         _exceptions.enable(_isExceptions);
         _performance.enable(_isPerformance);
-        _heartbeat.enable(_isHeartBeat);
+        _heartbeat.enable(_isHeartBeat, defaultClient.config);
         _nativePerformance.enable(_isNativePerformance, _disabledExtendedMetrics);
         _serverRequests.useAutoCorrelation(_isCorrelating, _forceClsHooked);
         _serverRequests.enable(_isRequests);
@@ -234,20 +234,6 @@ export class Configuration {
         if (_isStarted) {
             _performance.enable(value);
             _nativePerformance.enable(extendedMetricsConfig.isEnabled, extendedMetricsConfig.disabledMetrics);
-        }
-
-        return Configuration;
-    }
-
-    /**
-     * Sets the state of heartbeat tracking (enabled by default)
-     * @param value if true heartbeat counters will be collected every 15 minutes and sent to Application Insights
-     * @returns {Configuration} this class
-     */
-    public static setAutoCollectHeartbeat(value: boolean) {
-        _isHeartBeat = value;
-        if (_isStarted) {
-            _heartbeat.enable(value);
         }
 
         return Configuration;

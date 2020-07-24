@@ -1,16 +1,25 @@
 import os = require("os");
 import TelemetryClient = require("../Library/TelemetryClient");
 import Constants = require("../Declarations/Constants");
+import Util = require("../Library/Util");
+import Config = require("../Library/Config");
+import Context = require("../Library/Context");
 
 class HeartBeat {
 
     public static INSTANCE: HeartBeat;
 
-    private _collectionInterval: number = 900000;
+    private static AIMS_URI = "http://169.254.169.254/metadata/instance/compute";
+    private static AIMS_API_VERSION = "api-version=2017-12-01";
+    private static AIMS_FORMAT = "format=json";
+
+    private _collectionInterval: number = 1000; //900000
     private _client: TelemetryClient;
     private _handle: NodeJS.Timer;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
+    private _isVM: boolean = false;
+    private _vmData = <{[key: string]: string}>{};
 
     constructor(client: TelemetryClient) {
         if (!HeartBeat.INSTANCE) {
@@ -21,7 +30,7 @@ class HeartBeat {
         this._client = client;
     }
 
-    public enable(isEnabled: boolean) {
+    public enable(isEnabled: boolean, config?: Config) {
         this._isEnabled = isEnabled;
         if (this._isEnabled && !this._isInitialized) {
             this._isInitialized = true;
@@ -29,7 +38,7 @@ class HeartBeat {
 
         if (isEnabled) {
             if (!this._handle) {
-                this._handle = setInterval(() => this.trackHeartBeat(), this._collectionInterval);
+                this._handle = setInterval(() => this.trackHeartBeat(config), this._collectionInterval);
                 this._handle.unref(); // Allow the app to terminate even while this loop is going on
             }
         } else {
@@ -48,16 +57,24 @@ class HeartBeat {
         return HeartBeat.INSTANCE && HeartBeat.INSTANCE._isEnabled;
     }
 
-    public trackHeartBeat() {
-        // get all property values from envrionment to create properties bag
+    public trackHeartBeat(config: Config) {
         let properties: {[key: string]: string} = {};
-        properties["osType"] = os.type();
-        if (process.env.WEBSITE_SITE_NAME) {
-            properties["appSrv_SiteName"] = process.env.WEBSITE_SITE_NAME;
+        const sdkVersion = Context.sdkVersion; // "node" or "node-nativeperf"
+        properties["sdk"] = sdkVersion;
+        properties["osType"] = os.type();        
+        
+        if (process.env.WEBSITE_SITE_NAME) { // Web apps
+            properties["appSrv_SiteName"] = process.env.WEBSITE_SITE_NAME || "";
             properties["appSrv_wsStamp"] = process.env.WEBSITE_HOME_STAMPNAME || "";
             properties["appSrv_wsHost"] = process.env.WEBSITE_HOSTNAME || "";
-        } else if (process.env.FUNCTIONS_WORKER_RUNTIME) {
+        } else if (process.env.FUNCTIONS_WORKER_RUNTIME) { // Function apps
             properties["azfunction_appId"] = process.env.WEBSITE_HOSTNAME;
+        } else if (config && this._getAzureComputeMetadata(config)) { // VM
+            if (Object.keys(this._vmData).length > 0) {
+                properties["azInst_vmId"] = this._vmData["vmId"] || "";
+                properties["azInst_subscriptionId"] = this._vmData["subscriptionId"] || "";
+                properties["azInst_osType"] = this._vmData["osType"] || "";
+            }
         }
         this._client.trackMetric({name: Constants.HeartBeatMetricName, value: 0, properties: properties});
     }
@@ -66,6 +83,44 @@ class HeartBeat {
         HeartBeat.INSTANCE = null;
         this.enable(false);
         this._isInitialized = false;
+    }
+
+    private _getAzureComputeMetadata(config: Config): boolean {
+        const metadataRequestUrl = `${HeartBeat.AIMS_URI}?${HeartBeat.AIMS_API_VERSION}&${HeartBeat.AIMS_FORMAT}`;
+        const requestOptions = {
+            method: 'GET',
+            headers: {
+                "Metadata": "true"
+            }
+        };
+        const req = Util.makeRequest(config, metadataRequestUrl, requestOptions, (res) => {
+            if (res.statusCode === 200) {
+                // Success; VM
+                this._isVM = true;
+                let data = "";
+                res.on('data', (data: any) => {
+                    data += data;
+                });
+                res.on('end', () => {
+                    this._vmData = JSON.parse(data);
+                });
+            } else if (res.statusCode >= 400 && res.statusCode < 500) {
+                // Not found; Not in VM; Do not try again.
+                this._isVM = false;
+            }
+            // else Retry on next heartbeat metrics call
+        });
+        if (req) {
+            req.on('error', (error: Error) => {
+                console.log(error);
+                // Unable to contact endpoint.
+                // Do nothing for now.
+                this._isVM = false;
+            });
+            req.end();
+        }
+
+        return this._isVM;
     }
 }
 
