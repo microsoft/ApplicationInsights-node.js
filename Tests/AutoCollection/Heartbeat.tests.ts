@@ -13,10 +13,11 @@ import { stub } from "sinon";
 describe("AutoCollection/HeartBeat", () => {
     let heartbeat1: HeartBeat;
     let stub1: any;
+    const config = new Config("ikey");
     beforeEach(() => {
         heartbeat1 = new HeartBeat(new TelemetryClient("key"));
-        heartbeat1.enable(true);
-        HeartBeat.INSTANCE.enable(true);
+        heartbeat1.enable(true, config);
+        HeartBeat.INSTANCE.enable(true, config);
         stub1 = sinon.stub(heartbeat1["_client"], "trackMetric");
     });
 
@@ -45,7 +46,6 @@ describe("AutoCollection/HeartBeat", () => {
 
     describe("#trackHeartBeat()", () => {
         it("should read correct values from envrionment", () => {
-            const config = new Config("ikey");
             var env1 = <{[id: string]: string}>{};
             var env2 = <{[id: string]: string}>{};
 

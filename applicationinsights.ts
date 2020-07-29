@@ -247,7 +247,7 @@ export class Configuration {
     public static setAutoCollectHeartbeat(value: boolean) {
         _isHeartBeat = value;
         if (_isStarted) {
-            _heartbeat.enable(value);
+            _heartbeat.enable(value, defaultClient.config);
         }
 
         return Configuration;
