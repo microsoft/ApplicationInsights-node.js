@@ -112,7 +112,7 @@ class HeartBeat {
         });
         if (req) {
             req.on('error', (error: Error) => {
-                console.log(error);
+                // console.log(error);
                 // Unable to contact endpoint.
                 // Do nothing for now.
                 this._isVM = false;

@@ -241,6 +241,20 @@ export class Configuration {
 
     /**
      * Sets the state of request tracking (enabled by default)
+     * @param value if true HeartBeat metric data will be collected every 15 mintues and sent to Application Insights
+     * @returns {Configuration} this class
+     */
+    public static setAutoCollectHeartbeat(value: boolean) {
+        _isHeartBeat = value;
+        if (_isStarted) {
+            _heartbeat.enable(value);
+        }
+
+        return Configuration;
+    }
+
+    /**
+     * Sets the state of request tracking (enabled by default)
      * @param value if true requests will be sent to Application Insights
      * @returns {Configuration} this class
      */
