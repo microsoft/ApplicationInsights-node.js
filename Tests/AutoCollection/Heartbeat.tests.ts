@@ -5,19 +5,21 @@ import os = require("os");
 import AppInsights = require("../../applicationinsights");
 import HeartBeat = require("../../AutoCollection/HeartBeat");
 import TelemetryClient = require("../../Library/TelemetryClient");
-import Config = require("../../Library/Config");
 import Context = require("../../Library/Context");
 
 import { stub } from "sinon";
+import * as nock from 'nock';
+import Util = require("../../Library/Util");
 
 describe("AutoCollection/HeartBeat", () => {
+    const client = new TelemetryClient("key");
+    client.config.correlationId = "testicd";
     let heartbeat1: HeartBeat;
     let stub1: any;
-    const config = new Config("ikey");
     beforeEach(() => {
-        heartbeat1 = new HeartBeat(new TelemetryClient("key"));
-        heartbeat1.enable(true, config);
-        HeartBeat.INSTANCE.enable(true, config);
+        heartbeat1 = new HeartBeat(client);
+        heartbeat1.enable(true, client.config);
+        HeartBeat.INSTANCE.enable(true, client.config);
         stub1 = sinon.stub(heartbeat1["_client"], "trackMetric");
     });
 
@@ -25,6 +27,10 @@ describe("AutoCollection/HeartBeat", () => {
         AppInsights.dispose();
         stub1.restore();
         heartbeat1.dispose();
+    });
+
+    after(() => {
+        nock.cleanAll();
     });
 
     describe("#init and #dispose()", () => {
@@ -45,7 +51,7 @@ describe("AutoCollection/HeartBeat", () => {
     });
 
     describe("#trackHeartBeat()", () => {
-        it("should read correct values from envrionment", () => {
+        it("should read correct values from envrionment variable", () => {
             var env1 = <{[id: string]: string}>{};
             var env2 = <{[id: string]: string}>{};
 
@@ -59,7 +65,7 @@ describe("AutoCollection/HeartBeat", () => {
             var originalEnv = process.env;
             process.env = env1;
 
-            heartbeat1["trackHeartBeat"](config);
+            heartbeat1["trackHeartBeat"](client.config);
             assert.equal(stub1.callCount, 1, "calls trackMetric for the appSrv heartbeat metric");
             assert.equal(stub1.args[0][0].name, "HeartBeat", "uses correct name for heartbeat metric");
             assert.equal(stub1.args[0][0].value, 0, "checks value is 0");
@@ -79,7 +85,7 @@ describe("AutoCollection/HeartBeat", () => {
 
             process.env = env2;
             stub1.reset();
-            heartbeat1["trackHeartBeat"](config);
+            heartbeat1["trackHeartBeat"](client.config);
             assert.equal(stub1.callCount, 1, "calls trackMetric for the functionApp heartbeat metric");
             assert.equal(stub1.args[0][0].name, "HeartBeat", "uses correct name for heartbeat metric");
             assert.equal(stub1.args[0][0].value, 0, "checks value is 0");
@@ -94,6 +100,39 @@ describe("AutoCollection/HeartBeat", () => {
             assert.equal(properties2["azfunction_appId"], "host_name", "azfunction_appId is read from envrionment variable");
 
             process.env = originalEnv;
+        });
+
+        it("should get virtual machine information from response", () => {
+            nock.disableNetConnect();
+            const requestURL = "http://169.254.169.254";
+            const scope = nock(requestURL)
+                .persist()
+                .get('/metadata/instance/compute?api-version=2017-12-01&format=json', {headers: {"Metadata": "true"}})
+                .reply(
+                    200,
+                    {
+                        'vmId': 1,
+                        'subscriptionId': 2,
+                        'osType': 'Linux'
+                    }
+                );
+            heartbeat1["trackHeartBeat"](client.config);
+            //stub1 = sinon.stub(heartbeat1, "_getAzureComputeMetadata").callsFake(() => { heartbeat1["_vmData"] return true}) ;
+            assert.equal(stub1.callCount, 1, "calls trackMetric for the appSrv heartbeat metric");
+            assert.equal(stub1.args[0][0].name, "HeartBeat", "uses correct name for heartbeat metric");
+            assert.equal(stub1.args[0][0].value, 0, "checks value is 0");
+            const keys3 = Object.keys(stub1.args[0][0].properties);
+            assert.equal(keys3.length, 4, "makes sure 4 kv pairs are added when resource type is VM");
+            assert.equal(keys3[0], "sdk", "sdk is added as a key");
+            assert.equal(keys3[1], "azInst_vmId",  "azInst_vmId is added as a key");
+            assert.equal(keys3[2], "azInst_subscriptionId", "azInst_subscriptionId is added as a key");
+            assert.equal(keys3[3], "azInst_osType", "azInst_osType is added as a key");
+
+            const properties3 = stub1.args[0][0].properties;
+            assert.equal(properties3["sdk"], Context.sdkVersion, "sdk version is read from Context");
+            assert.equal(properties3["azInst_vmId"], 1, "azInst_vmId is read from response");
+            assert.equal(properties3["azInst_subscriptionId"], 2, "azInst_subscriptionId is read from response");
+            assert.equal(properties3["azInst_osType"], "Linux", "azInst_osType is read from response");
         });
     });
 });
