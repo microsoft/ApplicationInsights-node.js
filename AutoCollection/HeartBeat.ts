@@ -13,7 +13,7 @@ class HeartBeat {
     private static AIMS_API_VERSION = "api-version=2017-12-01";
     private static AIMS_FORMAT = "format=json";
 
-    private _collectionInterval: number = 1000; //900000
+    private _collectionInterval: number = 900000;
     private _client: TelemetryClient;
     private _handle: NodeJS.Timer;
     private _isEnabled: boolean;
@@ -38,7 +38,7 @@ class HeartBeat {
 
         if (isEnabled) {
             if (!this._handle) {
-                this._handle = setInterval(() => this.trackHeartBeat(config), this._collectionInterval);
+                this._handle = setInterval(() => this.trackHeartBeat(config, () => {}), this._collectionInterval);
                 this._handle.unref(); // Allow the app to terminate even while this loop is going on
             }
         } else {
@@ -57,26 +57,34 @@ class HeartBeat {
         return HeartBeat.INSTANCE && HeartBeat.INSTANCE._isEnabled;
     }
 
-    public trackHeartBeat(config: Config) {
+    public trackHeartBeat(config: Config, callback: () => void) {
+        let waiting: boolean = false;
         let properties: {[key: string]: string} = {};
         const sdkVersion = Context.sdkVersion; // "node" or "node-nativeperf"
         properties["sdk"] = sdkVersion;
-        properties["osType"] = os.type();        
-        
+        properties["osType"] = os.type();
         if (process.env.WEBSITE_SITE_NAME) { // Web apps
             properties["appSrv_SiteName"] = process.env.WEBSITE_SITE_NAME || "";
             properties["appSrv_wsStamp"] = process.env.WEBSITE_HOME_STAMPNAME || "";
             properties["appSrv_wsHost"] = process.env.WEBSITE_HOSTNAME || "";
         } else if (process.env.FUNCTIONS_WORKER_RUNTIME) { // Function apps
             properties["azfunction_appId"] = process.env.WEBSITE_HOSTNAME;
-        } else if (config && this._getAzureComputeMetadata(config)) { // VM
-            if (Object.keys(this._vmData).length > 0) {
-                properties["azInst_vmId"] = this._vmData["vmId"] || "";
-                properties["azInst_subscriptionId"] = this._vmData["subscriptionId"] || "";
-                properties["azInst_osType"] = this._vmData["osType"] || "";
-            }
+        } else if (config) { // VM
+            waiting = true;
+            this._getAzureComputeMetadata(config, () => {
+                if (this._isVM && Object.keys(this._vmData).length > 0) {
+                    properties["azInst_vmId"] = this._vmData["vmId"] || "";
+                    properties["azInst_subscriptionId"] = this._vmData["subscriptionId"] || "";
+                    properties["azInst_osType"] = this._vmData["osType"] || "";
+                }
+                this._client.trackMetric({name: Constants.HeartBeatMetricName, value: 0, properties: properties});
+                callback();
+            });
         }
-        this._client.trackMetric({name: Constants.HeartBeatMetricName, value: 0, properties: properties});
+        if (!waiting) {
+            this._client.trackMetric({name: Constants.HeartBeatMetricName, value: 0, properties: properties});
+            callback();
+        }
     }
 
     public dispose() {
@@ -85,7 +93,7 @@ class HeartBeat {
         this._isInitialized = false;
     }
 
-    private _getAzureComputeMetadata(config: Config): boolean {
+    private _getAzureComputeMetadata(config: Config, callback: () => void) {
         const metadataRequestUrl = `${HeartBeat.AIMS_URI}?${HeartBeat.AIMS_API_VERSION}&${HeartBeat.AIMS_FORMAT}`;
         const requestOptions = {
             method: 'GET',
@@ -93,6 +101,7 @@ class HeartBeat {
                 "Metadata": "true"
             }
         };
+
         const req = Util.makeRequest(config, metadataRequestUrl, requestOptions, (res) => {
             if (res.statusCode === 200) {
                 // Success; VM
@@ -103,24 +112,26 @@ class HeartBeat {
                 });
                 res.on('end', () => {
                     this._vmData = JSON.parse(data);
+                    callback();
                 });
             } else if (res.statusCode >= 400 && res.statusCode < 500) {
                 // Not found; Not in VM; Do not try again.
                 this._isVM = false;
+                callback();
+            } else {
+                // else Retry on next heartbeat metrics call
+                callback();
             }
-            // else Retry on next heartbeat metrics call
         });
         if (req) {
             req.on('error', (error: Error) => {
-                // console.log(error);
                 // Unable to contact endpoint.
                 // Do nothing for now.
                 this._isVM = false;
+                callback();
             });
             req.end();
         }
-
-        return this._isVM;
     }
 }
 
