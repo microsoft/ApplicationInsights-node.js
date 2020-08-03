@@ -29,20 +29,22 @@ describe("AutoCollection/HttpDependencyParser", () => {
             assert.equal(dependencyTelemetry.target, "bing.com");
         });
 
-        it("should return correct data for a URL instance", () => {
-            (<any>request)["method"] = "GET";
-            let parser = new HttpDependencyParser(new URL("http://bing.com/search"), request);
+        if (parseInt(process.versions.node.split(".")[0]) >= 10) {
+            it("should return correct data for a URL instance", () => {
+                (<any>request)["method"] = "GET";
+                let parser = new HttpDependencyParser(new URL("http://bing.com/search"), request);
 
-            response.statusCode = 200;
-            parser.onResponse(response);
+                response.statusCode = 200;
+                parser.onResponse(response);
 
-            let dependencyTelemetry = parser.getDependencyTelemetry();
-            assert.equal(dependencyTelemetry.dependencyTypeName, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
-            assert.equal(dependencyTelemetry.success, true);
-            assert.equal(dependencyTelemetry.name, "GET /search");
-            assert.equal(dependencyTelemetry.data, "http://bing.com/search");
-            assert.equal(dependencyTelemetry.target, "bing.com");
-        })
+                let dependencyTelemetry = parser.getDependencyTelemetry();
+                assert.equal(dependencyTelemetry.dependencyTypeName, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
+                assert.equal(dependencyTelemetry.success, true);
+                assert.equal(dependencyTelemetry.name, "GET /search");
+                assert.equal(dependencyTelemetry.data, "http://bing.com/search");
+                assert.equal(dependencyTelemetry.target, "bing.com");
+            });
+        }
 
         it("should propagate a custom timestamp", () => {
             (<any>request)["method"] = "GET";

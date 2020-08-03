@@ -16,7 +16,7 @@ import CorrelationIdManager = require("../Library/CorrelationIdManager");
 class HttpDependencyParser extends RequestParser {
     private correlationId: string;
 
-    constructor(requestOptions: URL | string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest) {
+    constructor(requestOptions: object | string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest) {
         super();
         if (request && (<any>request).method && requestOptions) {
             // The ClientRequest.method property isn't documented, but is always there.
@@ -114,7 +114,7 @@ class HttpDependencyParser extends RequestParser {
     private static _getUrlFromRequestOptions(options: any, request: http.ClientRequest) {
         if (typeof options === 'string') {
             options = url.parse(options);
-        } else if (options instanceof URL) {
+        } else if (options && typeof (url as any).URL === 'function' && options instanceof (url as any).URL) {
             return url.format(options);
         } else {
             // Avoid modifying the original options object.
