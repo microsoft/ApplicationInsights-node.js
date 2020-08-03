@@ -116,9 +116,6 @@ class HeartBeat {
                     this._vmData = JSON.parse(virtualMachineData);
                     callback();
                 });
-                if (this._isVM && Object.keys(this._vmData).length > 0) { // add this to make sure test call callback after return res with statusCode 200
-                    callback();
-                }
             } else if (res.statusCode >= 400 && res.statusCode < 500) {
                 // Not found; Not in VM; Do not try again.
                 this._isVM = false;

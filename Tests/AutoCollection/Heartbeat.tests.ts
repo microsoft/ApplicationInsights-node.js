@@ -1,7 +1,6 @@
 import assert = require("assert");
 import sinon = require("sinon");
 import os = require("os");
-import nock = require("nock");
 
 import AppInsights = require("../../applicationinsights");
 import HeartBeat = require("../../AutoCollection/HeartBeat");
@@ -108,99 +107,5 @@ describe("AutoCollection/HeartBeat", () => {
                 done();
             });
         });
-
-        it("should read correct VM information from response", (done) => {
-            const heartbeat3: HeartBeat = new HeartBeat(client);
-            heartbeat3.enable(true, client.config);
-            HeartBeat.INSTANCE.enable(true, client.config);
-            const stub3 = sinon.stub(heartbeat3["_client"], "trackMetric");
-            heartbeat3["_vmData"] = {
-                vmId: "1",
-                subscriptionId: "2",
-                osType: "Windows_NT"
-            };
-            heartbeat3["_isVM"] = true;
-            const requestURL = "http://169.254.169.254"
-            nock(requestURL, {
-                reqheaders: {
-                    "metadata": "true"
-                }
-            })
-            .get('/metadata/instance/compute')
-            .reply(200);
-
-            heartbeat3["trackHeartBeat"](client.config, () => {
-                assert.equal(stub3.callCount, 1, "calls trackMetric for the VM heartbeat metric");
-                assert.equal(stub3.args[0][0].name, "HeartBeat", "uses correct name for heartbeat metric");
-                assert.equal(stub3.args[0][0].value, 0, "checks value is 0");
-                const keys3 = Object.keys(stub3.args[0][0].properties);
-                assert.equal(keys3.length, 5, "makes sure 4 kv pairs are added when resource type is VM");
-                assert.equal(keys3[0], "sdk", "sdk is added as a key");
-                assert.equal(keys3[1], "osType",  "osType is added as a key");
-                assert.equal(keys3[2], "azInst_vmId",  "azInst_vmId is added as a key");
-                assert.equal(keys3[3], "azInst_subscriptionId", "azInst_subscriptionId is added as a key");
-                assert.equal(keys3[4], "azInst_osType", "azInst_osType is added as a key");
-
-                const properties3 = stub3.args[0][0].properties;
-                assert.equal(properties3["sdk"], Context.sdkVersion, "sdk version is read from Context");
-                assert.equal(properties3["osType"], os.type(), "osType is read from os library");
-                assert.equal(properties3["azInst_vmId"], 1, "azInst_vmId is read from response");
-                assert.equal(properties3["azInst_subscriptionId"], 2, "azInst_subscriptionId is read from response");
-                assert.equal(properties3["azInst_osType"], "Windows_NT", "azInst_osType is read from response");
-
-                stub3.restore();
-                heartbeat3.dispose();
-                nock.cleanAll();
-                done();
-            });
-        });
     });
 });
-
-/**
- * A fake response class that passes by default
- */
-class fakeResponse {
-    private callbacks: { [event: string]: (data?: any) => void } = Object.create(null);
-    public setEncoding(): void { };
-    public statusCode: number = 200;
-
-    constructor(private passImmediately: boolean = true) { }
-
-    public on(event: string, callback: () => void) {
-        if (!this.callbacks[event]) {
-            this.callbacks[event] = callback;
-        } else {
-            var lastCallback = this.callbacks[event];
-            this.callbacks[event] = () => {
-                callback();
-                lastCallback();
-            };
-        }
-
-        if (event == "end" && this.passImmediately) {
-            this.pass(true);
-        }
-    }
-
-    public emit(eventName: string, ...args: any[]): boolean {
-        return true;
-    }
-
-    public addListener(eventName: string, listener: () => void): void {
-        this.on(eventName, listener);
-    }
-
-    public removeListener(eventName: string, listener: () => void) {
-
-    }
-
-    public pass(test = false): void {
-        this.callbacks["data"] ? this.callbacks["data"]("data") : null;
-        this.callbacks["end"] ? this.callbacks["end"]() : null;
-        this.callbacks["finish"] ? this.callbacks["finish"]() : null;
-    }
-
-    public end = this.pass;
-    public once = this.on;
-}
