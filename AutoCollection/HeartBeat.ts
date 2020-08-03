@@ -4,18 +4,19 @@ import Constants = require("../Declarations/Constants");
 import Util = require("../Library/Util");
 import Config = require("../Library/Config");
 import Context = require("../Library/Context");
+import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
+
+const AIMS_URI = "http://169.254.169.254/metadata/instance/compute";
+const AIMS_API_VERSION = "api-version=2017-12-01";
+const AIMS_FORMAT = "format=json";
 
 class HeartBeat {
 
     public static INSTANCE: HeartBeat;
 
-    private static AIMS_URI = "http://169.254.169.254/metadata/instance/compute";
-    private static AIMS_API_VERSION = "api-version=2017-12-01";
-    private static AIMS_FORMAT = "format=json";
-
     private _collectionInterval: number = 900000;
     private _client: TelemetryClient;
-    private _handle: NodeJS.Timer;
+    private _handle: NodeJS.Timer | null;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _isVM: boolean = false;
@@ -44,7 +45,7 @@ class HeartBeat {
         } else {
             if (this._handle) {
                 clearInterval(this._handle);
-                this._handle = undefined;
+                this._handle = null;
             }
         }
     }
@@ -69,10 +70,10 @@ class HeartBeat {
             properties["appSrv_wsHost"] = process.env.WEBSITE_HOSTNAME || "";
         } else if (process.env.FUNCTIONS_WORKER_RUNTIME) { // Function apps
             properties["azfunction_appId"] = process.env.WEBSITE_HOSTNAME;
-        } else if (config) { // VM
+        } else if (config) {
             waiting = true;
             this._getAzureComputeMetadata(config, () => {
-                if (this._isVM && Object.keys(this._vmData).length > 0) {
+                if (this._isVM && Object.keys(this._vmData).length > 0) { // VM
                     properties["azInst_vmId"] = this._vmData["vmId"] || "";
                     properties["azInst_subscriptionId"] = this._vmData["subscriptionId"] || "";
                     properties["azInst_osType"] = this._vmData["osType"] || "";
@@ -94,11 +95,12 @@ class HeartBeat {
     }
 
     private _getAzureComputeMetadata(config: Config, callback: () => void) {
-        const metadataRequestUrl = `${HeartBeat.AIMS_URI}?${HeartBeat.AIMS_API_VERSION}&${HeartBeat.AIMS_FORMAT}`;
+        const metadataRequestUrl = `${AIMS_URI}?${AIMS_API_VERSION}&${AIMS_FORMAT}`;
         const requestOptions = {
             method: 'GET',
             headers: {
-                "Metadata": "true"
+                "Metadata": "true",
+                [AutoCollectHttpDependencies.disableCollectionRequestOption]: true,
             }
         };
 
@@ -106,14 +108,17 @@ class HeartBeat {
             if (res.statusCode === 200) {
                 // Success; VM
                 this._isVM = true;
-                let data = "";
+                let virtualMachineData = "";
                 res.on('data', (data: any) => {
-                    data += data;
+                    virtualMachineData += data;
                 });
                 res.on('end', () => {
-                    this._vmData = JSON.parse(data);
+                    this._vmData = JSON.parse(virtualMachineData);
                     callback();
                 });
+                if (this._isVM && Object.keys(this._vmData).length > 0) { // add this to make sure test call callback after return res with statusCode 200
+                    callback();
+                }
             } else if (res.statusCode >= 400 && res.statusCode < 500) {
                 // Not found; Not in VM; Do not try again.
                 this._isVM = false;

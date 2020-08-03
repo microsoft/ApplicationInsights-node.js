@@ -49,11 +49,11 @@
     "backcompattest": "npm run build && npm pack && node --use_strict ./Tests/BackCompatibility/RunBackCompatTests.js"
   },
   "devDependencies": {
-    "@types/cls-hooked": "^4.3.0",
+    "@types/cls-hooked": "^4.3.1",
     "@types/mocha": "2.2.48",
+    "@types/nock": "^10.0.3",
     "@types/node": "4.2.4",
     "@types/sinon": "2.1.2",
-    "@types/nock": "^10.0.3",
     "applicationinsights-native-metrics": "0.0.5",
     "mocha": "3.5.2",
     "nock": "^10.0.6",

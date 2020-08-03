@@ -7,7 +7,6 @@ import AppInsights = require("../../applicationinsights");
 import HeartBeat = require("../../AutoCollection/HeartBeat");
 import TelemetryClient = require("../../Library/TelemetryClient");
 import Context = require("../../Library/Context");
-import Util = require("../../Library/Util");
 
 describe("AutoCollection/HeartBeat", () => {
     const client = new TelemetryClient("key");
@@ -15,10 +14,6 @@ describe("AutoCollection/HeartBeat", () => {
 
     afterEach(() => {
         AppInsights.dispose();
-    });
-
-    after(() => {
-        nock.cleanAll();
     });
 
     describe("#init and #dispose()", () => {
@@ -119,81 +114,43 @@ describe("AutoCollection/HeartBeat", () => {
             heartbeat3.enable(true, client.config);
             HeartBeat.INSTANCE.enable(true, client.config);
             const stub3 = sinon.stub(heartbeat3["_client"], "trackMetric");
+            heartbeat3["_vmData"] = {
+                vmId: "1",
+                subscriptionId: "2",
+                osType: "Windows_NT"
+            };
+            heartbeat3["_isVM"] = true;
             const requestURL = "http://169.254.169.254"
             nock(requestURL, {
                 reqheaders: {
-                    "Metadata": "true"
+                    "metadata": "true"
                 }
             })
-            .get('/metadata/instance/compute?api-version=2017-12-01&format=json')
-            .reply(
-                200,
-                {
-                    'vmId': 1,
-                    'subscriptionId': 2,
-                    'osType': 'Linux'
-                }
-            );
+            .get('/metadata/instance/compute')
+            .reply(200);
 
             heartbeat3["trackHeartBeat"](client.config, () => {
                 assert.equal(stub3.callCount, 1, "calls trackMetric for the VM heartbeat metric");
                 assert.equal(stub3.args[0][0].name, "HeartBeat", "uses correct name for heartbeat metric");
                 assert.equal(stub3.args[0][0].value, 0, "checks value is 0");
                 const keys3 = Object.keys(stub3.args[0][0].properties);
-                assert.equal(keys3.length, 4, "makes sure 4 kv pairs are added when resource type is VM");
+                assert.equal(keys3.length, 5, "makes sure 4 kv pairs are added when resource type is VM");
                 assert.equal(keys3[0], "sdk", "sdk is added as a key");
-                assert.equal(keys3[1], "azInst_vmId",  "azInst_vmId is added as a key");
-                assert.equal(keys3[2], "azInst_subscriptionId", "azInst_subscriptionId is added as a key");
-                assert.equal(keys3[3], "azInst_osType", "azInst_osType is added as a key");
+                assert.equal(keys3[1], "osType",  "osType is added as a key");
+                assert.equal(keys3[2], "azInst_vmId",  "azInst_vmId is added as a key");
+                assert.equal(keys3[3], "azInst_subscriptionId", "azInst_subscriptionId is added as a key");
+                assert.equal(keys3[4], "azInst_osType", "azInst_osType is added as a key");
 
                 const properties3 = stub3.args[0][0].properties;
                 assert.equal(properties3["sdk"], Context.sdkVersion, "sdk version is read from Context");
+                assert.equal(properties3["osType"], os.type(), "osType is read from os library");
                 assert.equal(properties3["azInst_vmId"], 1, "azInst_vmId is read from response");
                 assert.equal(properties3["azInst_subscriptionId"], 2, "azInst_subscriptionId is read from response");
-                assert.equal(properties3["azInst_osType"], "Linux", "azInst_osType is read from response");
+                assert.equal(properties3["azInst_osType"], "Windows_NT", "azInst_osType is read from response");
 
                 stub3.restore();
                 heartbeat3.dispose();
-                done();
-            });
-        });
-
-        it("should read correct VM information from response", (done) => {
-            const heartbeat4: HeartBeat = new HeartBeat(client);
-            heartbeat4.enable(true, client.config);
-            HeartBeat.INSTANCE.enable(true, client.config);
-            const stub4 = sinon.stub(heartbeat4["_client"], "trackMetric");
-
-            heartbeat4["_vmData"] = {
-                vmId: "1",
-                subscriptionId: "2",
-                osType: "Linux"
-            };
-            heartbeat4["_isVM"] = true;
-            // sinon.stub(Util, "makeRequest").returns(new fakeResponse(false));
-            sinon.stub(Util, 'makeRequest', (config: any, requestUrl: string, requestOptions: any, requestCallback: Function) => {
-                process.nextTick(requestCallback);
-                return new fakeResponse(false);
-            });
-            heartbeat4["trackHeartBeat"](client.config, () => {
-                assert.equal(stub4.callCount, 1, "calls trackMetric for the VM heartbeat metric");
-                assert.equal(stub4.args[0][0].name, "HeartBeat", "uses correct name for heartbeat metric");
-                assert.equal(stub4.args[0][0].value, 0, "checks value is 0");
-                const keys4 = Object.keys(stub4.args[0][0].properties);
-                assert.equal(keys4.length, 4, "makes sure 4 kv pairs are added when resource type is VM");
-                assert.equal(keys4[0], "sdk", "sdk is added as a key");
-                assert.equal(keys4[1], "azInst_vmId",  "azInst_vmId is added as a key");
-                assert.equal(keys4[2], "azInst_subscriptionId", "azInst_subscriptionId is added as a key");
-                assert.equal(keys4[3], "azInst_osType", "azInst_osType is added as a key");
-
-                const properties4 = stub4.args[0][0].properties;
-                assert.equal(properties4["sdk"], Context.sdkVersion, "sdk version is read from Context");
-                assert.equal(properties4["azInst_vmId"], 1, "azInst_vmId is read from response");
-                assert.equal(properties4["azInst_subscriptionId"], 2, "azInst_subscriptionId is read from response");
-                assert.equal(properties4["azInst_osType"], "Linux", "azInst_osType is read from response");
-
-                stub4.restore();
-                heartbeat4.dispose();
+                nock.cleanAll();
                 done();
             });
         });
