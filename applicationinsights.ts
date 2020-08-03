@@ -343,6 +343,7 @@ export class Configuration {
  * Disposes the default client and all the auto collectors so they can be reinitialized with different configuration
 */
 export function dispose() {
+    CorrelationIdManager.w3cEnabled = true; // reset to default
     defaultClient = null;
     _isStarted = false;
     if (_console) {
