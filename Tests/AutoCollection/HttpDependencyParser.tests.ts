@@ -29,6 +29,23 @@ describe("AutoCollection/HttpDependencyParser", () => {
             assert.equal(dependencyTelemetry.target, "bing.com");
         });
 
+        if (parseInt(process.versions.node.split(".")[0]) >= 10) {
+            it("should return correct data for a URL instance", () => {
+                (<any>request)["method"] = "GET";
+                let parser = new HttpDependencyParser(new URL("http://bing.com/search"), request);
+
+                response.statusCode = 200;
+                parser.onResponse(response);
+
+                let dependencyTelemetry = parser.getDependencyTelemetry();
+                assert.equal(dependencyTelemetry.dependencyTypeName, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
+                assert.equal(dependencyTelemetry.success, true);
+                assert.equal(dependencyTelemetry.name, "GET /search");
+                assert.equal(dependencyTelemetry.data, "http://bing.com/search");
+                assert.equal(dependencyTelemetry.target, "bing.com");
+            });
+        }
+
         it("should propagate a custom timestamp", () => {
             (<any>request)["method"] = "GET";
             let parser = new HttpDependencyParser("http://bing.com/search", request);
@@ -38,9 +55,9 @@ describe("AutoCollection/HttpDependencyParser", () => {
 
             const dependencyTelemetry1 = parser.getDependencyTelemetry({time: new Date(111111)});
             const dependencyTelemetry2 = parser.getDependencyTelemetry({time: new Date(222222)});
-            assert.deepEqual(dependencyTelemetry1.time, new Date(111111)); 
-            assert.deepEqual(dependencyTelemetry2.time, new Date(222222)); 
-            assert.notDeepEqual(dependencyTelemetry1, dependencyTelemetry2); 
+            assert.deepEqual(dependencyTelemetry1.time, new Date(111111));
+            assert.deepEqual(dependencyTelemetry2.time, new Date(222222));
+            assert.notDeepEqual(dependencyTelemetry1, dependencyTelemetry2);
         });
 
         it("should return correct data for a posted URL with query string", () => {
