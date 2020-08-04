@@ -133,3 +133,5 @@ export const DependencyTypeName = {
     Http: "HTTP",
     InProc: "InProc",
 }
+
+export const HeartBeatMetricName = "HeartBeat";

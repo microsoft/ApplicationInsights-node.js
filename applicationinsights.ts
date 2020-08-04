@@ -2,6 +2,7 @@ import CorrelationContextManager = require("./AutoCollection/CorrelationContextM
 import AutoCollectConsole = require("./AutoCollection/Console");
 import AutoCollectExceptions = require("./AutoCollection/Exceptions");
 import AutoCollectPerformance = require("./AutoCollection/Performance");
+import HeartBeat = require("./AutoCollection/HeartBeat");
 import AutoCollectHttpDependencies = require("./AutoCollection/HttpDependencies");
 import AutoCollectHttpRequests = require("./AutoCollection/HttpRequests");
 import CorrelationIdManager = require("./Library/CorrelationIdManager");
@@ -38,6 +39,7 @@ let _isConsole = true;
 let _isConsoleLog = false;
 let _isExceptions = true;
 let _isPerformance = true;
+let _isHeartBeat = false; // off by default for now
 let _isRequests = true;
 let _isDependencies = true;
 let _isDiskRetry = true;
@@ -53,6 +55,7 @@ let _diskRetryMaxBytes: number = undefined;
 let _console: AutoCollectConsole;
 let _exceptions: AutoCollectExceptions;
 let _performance: AutoCollectPerformance;
+let _heartbeat: HeartBeat;
 let _nativePerformance: AutoCollectNativePerformance;
 let _serverRequests: AutoCollectHttpRequests;
 let _clientRequests: AutoCollectHttpDependencies;
@@ -83,6 +86,7 @@ export function setup(setupString?: string) {
         _console = new AutoCollectConsole(defaultClient);
         _exceptions = new AutoCollectExceptions(defaultClient);
         _performance = new AutoCollectPerformance(defaultClient);
+        _heartbeat = new HeartBeat(defaultClient);
         _serverRequests = new AutoCollectHttpRequests(defaultClient);
         _clientRequests = new AutoCollectHttpDependencies(defaultClient);
         if (!_nativePerformance) {
@@ -111,6 +115,7 @@ export function start() {
         _console.enable(_isConsole, _isConsoleLog);
         _exceptions.enable(_isExceptions);
         _performance.enable(_isPerformance);
+        _heartbeat.enable(_isHeartBeat, defaultClient.config);
         _nativePerformance.enable(_isNativePerformance, _disabledExtendedMetrics);
         _serverRequests.useAutoCorrelation(_isCorrelating, _forceClsHooked);
         _serverRequests.enable(_isRequests);
@@ -231,6 +236,19 @@ export class Configuration {
             _nativePerformance.enable(extendedMetricsConfig.isEnabled, extendedMetricsConfig.disabledMetrics);
         }
 
+        return Configuration;
+    }
+
+    /**
+     * Sets the state of request tracking (enabled by default)
+     * @param value if true HeartBeat metric data will be collected every 15 mintues and sent to Application Insights
+     * @returns {Configuration} this class
+     */
+    public static setAutoCollectHeartbeat(value: boolean) {
+        _isHeartBeat = value;
+        if (_isStarted) {
+            _heartbeat.enable(value, defaultClient.config);
+        }
 
         return Configuration;
     }
@@ -354,6 +372,9 @@ export function dispose() {
     }
     if (_performance) {
         _performance.dispose();
+    }
+    if (_heartbeat) {
+        _heartbeat.dispose();
     }
     if (_nativePerformance) {
         _nativePerformance.dispose();

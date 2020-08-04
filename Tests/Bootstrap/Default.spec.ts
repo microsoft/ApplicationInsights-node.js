@@ -48,8 +48,8 @@ describe("#setupAndStart()", () => {
         assert.ok(instance1.defaultClient);
         const instance2 = Default.setupAndStart("abc");
         assert.deepEqual(instance1.defaultClient, instance2.defaultClient);
-        assert.deepEqual(instance1.defaultClient["_telemetryProcessors"].length, 1)
-        assert.deepEqual(instance2.defaultClient["_telemetryProcessors"].length, 1)
+        assert.deepEqual(instance1.defaultClient["_telemetryProcessors"].length, 2)
+        assert.deepEqual(instance2.defaultClient["_telemetryProcessors"].length, 2)
 
         // Cleanup
         alreadyExistsStub.restore();

@@ -103,7 +103,7 @@ describe("ApplicationInsights", () => {
             AppInsights.dispose();
         })
 
-        it("should enable AI tracing mode by default", () => {
+        it("should enable W3C tracing mode by default", () => {
             AppInsights.setup("key").start();
             assert.equal(CorrelationIdManager.w3cEnabled, true);
         });

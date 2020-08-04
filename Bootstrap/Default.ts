@@ -1,6 +1,7 @@
 import * as types from "../applicationinsights";
 import * as Helpers from "./Helpers";
 import * as DataModel from "./DataModel";
+import Constants = require("../Declarations/Constants");
 import { StatusLogger, StatusContract } from "./StatusLogger";
 import { DiagnosticLogger } from "./DiagnosticLogger";
 
@@ -85,9 +86,21 @@ export function setupAndStart(setupString = _setupString): typeof types | null {
             return true;
         }
 
+        const copyOverPrefixInternalSdkVersionToHeartBeatMetric = function (envelope: types.Contracts.Envelope, _contextObjects: Object) {
+            var appInsightsSDKVersion = _appInsights.defaultClient.context.keys.internalSdkVersion;
+            const sdkVersion = envelope.tags[appInsightsSDKVersion] || "";
+            if (envelope.name === Constants.HeartBeatMetricName) {
+                ((envelope.data as any).baseData).properties = ((envelope.data as any).baseData).properties || {};
+                ((envelope.data as any).baseData).properties["sdk"] = sdkVersion;
+            }
+
+            return true;
+        }
+
         // Instrument the SDK
         _appInsights.setup(setupString).setSendLiveMetrics(true);
         _appInsights.defaultClient.addTelemetryProcessor(prefixInternalSdkVersion);
+        _appInsights.defaultClient.addTelemetryProcessor(copyOverPrefixInternalSdkVersionToHeartBeatMetric);
         _appInsights.start();
 
         // Agent successfully instrumented the SDK
