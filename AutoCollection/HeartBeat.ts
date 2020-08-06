@@ -1,8 +1,14 @@
 import os = require("os");
 import TelemetryClient = require("../Library/TelemetryClient");
 import Constants = require("../Declarations/Constants");
+import Util = require("../Library/Util");
 import Config = require("../Library/Config");
 import Context = require("../Library/Context");
+import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
+
+const AIMS_URI = "http://169.254.169.254/metadata/instance/compute";
+const AIMS_API_VERSION = "api-version=2017-12-01";
+const AIMS_FORMAT = "format=json";
 
 class HeartBeat {
 
@@ -13,6 +19,8 @@ class HeartBeat {
     private _handle: NodeJS.Timer | null;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
+    private _isVM: boolean;
+    private _vmData = <{[key: string]: string}>{};
 
     constructor(client: TelemetryClient) {
         if (!HeartBeat.INSTANCE) {
@@ -51,6 +59,7 @@ class HeartBeat {
     }
 
     public trackHeartBeat(config: Config, callback: () => void) {
+        let waiting: boolean = false;
         let properties: {[key: string]: string} = {};
         const sdkVersion = Context.sdkVersion; // "node" or "node-nativeperf"
         properties["sdk"] = sdkVersion;
@@ -61,15 +70,78 @@ class HeartBeat {
             properties["appSrv_wsHost"] = process.env.WEBSITE_HOSTNAME || "";
         } else if (process.env.FUNCTIONS_WORKER_RUNTIME) { // Function apps
             properties["azfunction_appId"] = process.env.WEBSITE_HOSTNAME;
-        } 
-        this._client.trackMetric({name: Constants.HeartBeatMetricName, value: 0, properties: properties});
-        callback();
+        } else if (config && this._isVM === undefined) {
+            waiting = true;
+            this._getAzureComputeMetadata(config, () => {
+                if (this._isVM && Object.keys(this._vmData).length > 0) { // VM
+                    properties["azInst_vmId"] = this._vmData["vmId"] || "";
+                    properties["azInst_subscriptionId"] = this._vmData["subscriptionId"] || "";
+                    properties["azInst_osType"] = this._vmData["osType"] || "";
+                }
+                this._client.trackMetric({name: Constants.HeartBeatMetricName, value: 0, properties: properties});
+                callback();
+            });
+        }
+        if (!waiting) {
+            this._client.trackMetric({name: Constants.HeartBeatMetricName, value: 0, properties: properties});
+            callback();
+        }
     }
 
     public dispose() {
         HeartBeat.INSTANCE = null;
         this.enable(false);
         this._isInitialized = false;
+    }
+
+    private _getAzureComputeMetadata(config: Config, callback: () => void) {
+        const metadataRequestUrl = `${AIMS_URI}?${AIMS_API_VERSION}&${AIMS_FORMAT}`;
+        const requestOptions = {
+            method: 'GET',
+            [AutoCollectHttpDependencies.disableCollectionRequestOption]: true,
+            headers: {
+                "Metadata": "true",
+            }
+        };
+
+        const req = Util.makeRequest(config, metadataRequestUrl, requestOptions, (res) => {
+            if (res.statusCode === 200) {
+                // Success; VM
+                this._isVM = true;
+                let virtualMachineData = "";
+                res.on('data', (data: any) => {
+                    virtualMachineData += data;
+                });
+                res.on('end', () => {
+                    this._vmData = this._isJSON(virtualMachineData) ? JSON.parse(virtualMachineData) : {};
+                    callback();
+                });
+            } else if (res.statusCode >= 400 && res.statusCode < 500) {
+                // Not found; Not in VM; Do not try again.
+                this._isVM = false;
+                callback();
+            } else {
+                // else Retry on next heartbeat metrics call
+                callback();
+            }
+        });
+        if (req) {
+            req.on('error', (error: Error) => {
+                // Unable to contact endpoint.
+                // Do nothing for now.
+                this._isVM = false;
+                callback();
+            });
+            req.end();
+        }
+    }
+
+    private _isJSON(str: string): boolean {
+        try {
+            return (JSON.parse(str) && !!str);
+        } catch (e) {
+            return false;
+        }
     }
 }
 
