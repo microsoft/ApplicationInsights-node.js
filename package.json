@@ -63,6 +63,6 @@
     "cls-hooked": "^4.2.2",
     "continuation-local-storage": "^3.2.1",
     "diagnostic-channel": "0.3.1",
-    "diagnostic-channel-publishers": "0.4.0"
+    "diagnostic-channel-publishers": "0.4.1"
   }
 }
