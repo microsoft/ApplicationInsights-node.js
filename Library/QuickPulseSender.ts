@@ -2,6 +2,7 @@ import https = require("https");
 import Config = require("./Config");
 import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
 import Logging = require("./Logging");
+import QuickPulseUtil = require("./QuickPulseUtil");
 import Util = require("./Util");
 
 // Types
@@ -45,7 +46,7 @@ class QuickPulseSender {
             path: `/QuickPulseService.svc/${postOrPing}?ikey=${this._config.instrumentationKey}`,
             headers:{
                 'Expect': '100-continue',
-                [QuickPulseConfig.time]: 10000 * Date.now(), // unit = 100s of nanoseconds
+                [QuickPulseConfig.time]: QuickPulseUtil.getTransmissionTime(), // unit = 100s of nanoseconds
                 'Content-Type': 'application\/json',
                 'Content-Length': Buffer.byteLength(payload)
             }
