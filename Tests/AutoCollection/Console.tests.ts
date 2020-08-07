@@ -15,7 +15,7 @@ describe("AutoCollection/Console", () => {
     describe("#init and #dispose()", () => {
         it("init should enable and dispose should stop console autocollection", () => {
 
-            var appInsights = AppInsights.setup("key").setAutoCollectConsole(true);
+            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setAutoCollectConsole(true);
             var enableConsoleRequestsSpy = sinon.spy(Console.INSTANCE, "enable");
             appInsights.start();
 
@@ -29,7 +29,7 @@ describe("AutoCollection/Console", () => {
 
     describe("#log and #error()", () => {
         it("should call trackException for errors and trackTrace for logs", () => {
-            var appInsights = AppInsights.setup("key");
+            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             appInsights.start();
 
             const trackExceptionStub = sinon.stub(AppInsights.defaultClient, "trackException");

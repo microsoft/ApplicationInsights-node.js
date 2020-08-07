@@ -4,11 +4,11 @@ const sinon = require('sinon');
 // Special embedded test cases for testing if app can close
 if (process.argv.indexOf('embeddedTestCase-AppTerminates1') > -1) {
     var appInsights = require('../..');
-    appInsights.setup("iKey").start();
+    appInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").start();
     return;
 } else if (process.argv.indexOf('embeddedTestCase-AppTerminates2') > -1) {
     var appInsights = require('../..');
-    appInsights.setup("iKey").start();
+    appInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").start();
     appInsights.defaultClient.trackEvent({name: 'testEvent'});
     appInsights.defaultClient.flush();
     return;
@@ -58,7 +58,7 @@ describe('module', function () {
     describe('rejected promises', function () {
         it('should not crash on rejected promises containing no callstack', function () {
             var appInsights = require('../../');
-            appInsights.setup('ikey').start();
+            appInsights.setup('1aa11111-bbbb-1ccc-8ddd-eeeeffff3333').start();
             assert.ok(appInsights.defaultClient);
             assert.doesNotThrow(function () {
                 if (typeof Promise !== 'undefined') {
@@ -101,7 +101,7 @@ describe('module', function () {
 
         it('should crash on uncaught exceptions', function () {
             var appInsights = require('../../');
-            appInsights.setup('ikey').setAutoCollectExceptions(true).start();
+            appInsights.setup('1aa11111-bbbb-1ccc-8ddd-eeeeffff3333').setAutoCollectExceptions(true).start();
             assert.ok(appInsights.defaultClient);
             var handler;
             if (handler = getLegacyHandler()) {
@@ -119,7 +119,7 @@ describe('module', function () {
 
         it('should not crash on uncaught exceptions if multiple handlers exist', function () {
             var appInsights = require('../../');
-            appInsights.setup('ikey').setAutoCollectExceptions(true).start();
+            appInsights.setup('1aa11111-bbbb-1ccc-8ddd-eeeeffff3333').setAutoCollectExceptions(true).start();
             process.addListener(UNCAUGHT_EXCEPTION, function() {});
             assert.ok(appInsights.defaultClient);
 

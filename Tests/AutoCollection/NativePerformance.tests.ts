@@ -17,7 +17,7 @@ describe("AutoCollection/NativePerformance", () => {
                 var setIntervalSpy = sinon.spy(global, "setInterval");
                 var clearIntervalSpy = sinon.spy(global, "clearInterval");
 
-                AppInsights.setup("key")
+                AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
                     .setAutoCollectHeartbeat(false)
                     .setAutoCollectPerformance(false, true)
                     .start();
@@ -36,7 +36,7 @@ describe("AutoCollection/NativePerformance", () => {
             });
 
             it("constructor should be safe to call multiple times", () => {
-                var client = new TelemetryClient("key");
+                var client = new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 var native = new AutoCollectNativePerformance(client);
                 var disposeSpy = sinon.spy(AutoCollectNativePerformance.INSTANCE, "dispose");
 
@@ -48,7 +48,7 @@ describe("AutoCollection/NativePerformance", () => {
             });
 
             it("Calling enable when metrics are not available should fail gracefully", () => {
-                var client = new TelemetryClient("key");
+                var client = new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 var native = new AutoCollectNativePerformance(client);
 
                 AutoCollectNativePerformance["_metricsAvailable"] = false;
