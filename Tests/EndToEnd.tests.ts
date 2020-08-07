@@ -979,28 +979,29 @@ describe("EndToEnd", () => {
 
     describe("Heartbeat metrics for VM", () => {
         var sandbox: sinon.SinonSandbox;
-        var stub: sinon.SinonStub;
 
         beforeEach(() => {
+            sandbox = sinon.sandbox.create();
+        });
+
+        afterEach(() => {
+            sandbox.restore();
+        });
+
+        it("should collect correct VM information from JSON response", (done) => {
+            // set up stub
             const vmDataJSON = `{
                 "vmId": "1",
                 "subscriptionId": "2",
                 "osType": "Windows_NT"
             }`;
-            sandbox = sinon.sandbox.create();
-            stub = sandbox.stub(http, "request", (options: any, callback: any) => {
+            var stub: sinon.SinonStub = sandbox.stub(http, "request", (options: any, callback: any) => {
                 var req = new fakeRequest(false, "http://169.254.169.254", vmDataJSON);
                 req.on("end", callback);
                 return req;
             });
-        });
 
-        afterEach(() => {
-            sandbox.restore();
-            stub.restore();
-        });
-
-        it("should collect http request telemetry", (done) => {
+            // set up sdk
             const client = new TelemetryClient("key");
             const heartbeat: HeartBeat = new HeartBeat(client);
             heartbeat.enable(true, client.config);
@@ -1027,6 +1028,40 @@ describe("EndToEnd", () => {
                 assert.equal(properties["azInst_osType"], "Windows_NT", "azInst_osType should be read from response");
                 trackMetricStub.restore();
                 heartbeat.dispose();
+                stub.restore();
+                done();
+            });
+        });
+
+        it("should only send name and value properties for heartbeat metric when get VM request fails", (done) => {
+            // set up stub
+            var stub: sinon.SinonStub = sandbox.stub(http, "request", (options: any, callback: any) => {
+                var req = new fakeRequest(true, "http://169.254.169.254");
+                return req;
+            });
+
+            // set up sdk
+            const client = new TelemetryClient("key");
+            const heartbeat: HeartBeat = new HeartBeat(client);
+            heartbeat.enable(true, client.config);
+            HeartBeat.INSTANCE.enable(true, client.config);
+            const trackMetricStub = sinon.stub(heartbeat["_client"], "trackMetric");
+            
+            heartbeat["trackHeartBeat"](client.config, () => {
+                assert.equal(trackMetricStub.callCount, 1, "should call trackMetric as heartbeat metric");	
+                assert.equal(trackMetricStub.args[0][0].name, "HeartBeat", "should use correct name for heartbeat metric");	
+                assert.equal(trackMetricStub.args[0][0].value, 0, "value should be 0");	
+                const keys = Object.keys(trackMetricStub.args[0][0].properties);	
+                assert.equal(keys.length, 2, "should have 2 kv pairs added when resource type is not web app, not function app, not VM");	
+                assert.equal(keys[0], "sdk", "sdk should be added as a key");	
+                assert.equal(keys[1], "osType", "osType should be added as a key");	
+
+                const properties = trackMetricStub.args[0][0].properties;	
+                assert.equal(properties["sdk"], Context.sdkVersion, "sdk version should be read from Context");	
+                assert.equal(properties["osType"], os.type(), "osType should be read from os library");
+                trackMetricStub.restore();
+                heartbeat.dispose();
+                stub.restore();
                 done();
             });
         });
