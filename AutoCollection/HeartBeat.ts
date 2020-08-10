@@ -9,6 +9,7 @@ import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies
 const AIMS_URI = "http://169.254.169.254/metadata/instance/compute";
 const AIMS_API_VERSION = "api-version=2017-12-01";
 const AIMS_FORMAT = "format=json";
+const ConnectionErrorMessage = "ENETUNREACH";
 
 class HeartBeat {
 
@@ -21,9 +22,6 @@ class HeartBeat {
     private _isInitialized: boolean;
     private _isVM: boolean;
     private _vmData = <{[key: string]: string}>{};
-    private _azInst_vmId: string = "";
-    private _azInst_subscriptionId: string = "";
-    private _azInst_osType: string = "";
 
     constructor(client: TelemetryClient) {
         if (!HeartBeat.INSTANCE) {
@@ -73,26 +71,17 @@ class HeartBeat {
             properties["appSrv_wsHost"] = process.env.WEBSITE_HOSTNAME || "";
         } else if (process.env.FUNCTIONS_WORKER_RUNTIME) { // Function apps
             properties["azfunction_appId"] = process.env.WEBSITE_HOSTNAME;
-        } else if (config) {
-            if (this._isVM === undefined) {
-                waiting = true;
-                this._getAzureComputeMetadata(config, () => {
-                    if (this._isVM && Object.keys(this._vmData).length > 0) { // VM
-                        properties["azInst_vmId"] = this._vmData["vmId"] || "";
-                        properties["azInst_subscriptionId"] = this._vmData["subscriptionId"] || "";
-                        properties["azInst_osType"] = this._vmData["osType"] || "";
-                        this._azInst_vmId = this._vmData["vmId"] || "";
-                        this._azInst_subscriptionId = this._vmData["subscriptionId"] || "";
-                        this._azInst_osType = this._vmData["osType"] || "";
-                    }
-                    this._client.trackMetric({name: Constants.HeartBeatMetricName, value: 0, properties: properties});
-                    callback();
-                });
-            } else if (this._isVM) {
-                properties["azInst_vmId"] = this._azInst_vmId;
-                properties["azInst_subscriptionId"] = this._azInst_subscriptionId;
-                properties["azInst_osType"] = this._azInst_osType;
-            }
+        } else if (config && this._isVM === undefined) {
+            waiting = true;
+            this._getAzureComputeMetadata(config, () => {
+                if (this._isVM && Object.keys(this._vmData).length > 0) { // VM
+                    properties["azInst_vmId"] = this._vmData["vmId"] || "";
+                    properties["azInst_subscriptionId"] = this._vmData["subscriptionId"] || "";
+                    properties["azInst_osType"] = this._vmData["osType"] || "";
+                }
+                this._client.trackMetric({name: Constants.HeartBeatMetricName, value: 0, properties: properties});
+                callback();
+            });
         }
         if (!waiting) {
             this._client.trackMetric({name: Constants.HeartBeatMetricName, value: 0, properties: properties});
@@ -128,10 +117,6 @@ class HeartBeat {
                     this._vmData = this._isJSON(virtualMachineData) ? JSON.parse(virtualMachineData) : {};
                     callback();
                 });
-            } else if (res.statusCode >= 400 && res.statusCode < 500) {
-                // Not found; Not in VM; Do not try again.
-                this._isVM = false;
-                callback();
             } else {
                 // else Retry on next heartbeat metrics call
                 callback();
@@ -141,7 +126,10 @@ class HeartBeat {
             req.on('error', (error: Error) => {
                 // Unable to contact endpoint.
                 // Do nothing for now.
-                this._isVM = false;
+                if (error.message && error.message.indexOf(ConnectionErrorMessage) > -1) {
+                    this._isVM = false; // confirm it's not in VM
+                }
+                // errors other than connect ENETUNREACH - retry
                 callback();
             });
             req.end();
