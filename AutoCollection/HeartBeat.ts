@@ -126,7 +126,7 @@ class HeartBeat {
             req.on('error', (error: Error) => {
                 // Unable to contact endpoint.
                 // Do nothing for now.
-                if (error.message && error.message.indexOf(ConnectionErrorMessage) > -1) {
+                if (error && error.message && error.message.indexOf(ConnectionErrorMessage) > -1) {
                     this._isVM = false; // confirm it's not in VM
                 }
                 // errors other than connect ENETUNREACH - retry
