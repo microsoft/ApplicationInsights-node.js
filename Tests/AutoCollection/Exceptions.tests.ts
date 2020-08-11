@@ -22,7 +22,7 @@ describe("AutoCollection/Exceptions", () => {
             var processOnSpy = sinon.spy(global.process, "on");
             var processRemoveListenerSpy = sinon.spy(global.process, "removeListener");
 
-            AppInsights.setup("key").setAutoCollectExceptions(true).start();
+            AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setAutoCollectExceptions(true).start();
 
             if (AutoCollectionExceptions["_canUseUncaughtExceptionMonitor"]) {
                 assert.equal(processOnSpy.callCount, 1, "After enabling exception autocollection, there should be 1 call to processOnSpy");

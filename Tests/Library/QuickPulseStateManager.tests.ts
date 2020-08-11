@@ -12,10 +12,10 @@ describe("Library/QuickPulseStateManager", () => {
         });
 
         it("should create a config with ikey", () => {
-            qps = new QuickPulseClient("ikey");
+            qps = new QuickPulseClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
 
             assert.ok(qps.config);
-            assert.equal(qps.config.instrumentationKey, "ikey");
+            assert.equal(qps.config.instrumentationKey, "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             assert.ok(qps.context);
             assert.equal(qps["_isEnabled"], false);
             assert.equal(qps["_isCollectingData"], false);
@@ -31,7 +31,7 @@ describe("Library/QuickPulseStateManager", () => {
         let qps: QuickPulseClient;
 
         beforeEach(() => {
-            qps = new QuickPulseClient("ikey");
+            qps = new QuickPulseClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
         })
         afterEach(() => {
             qps = null;
@@ -62,7 +62,7 @@ describe("Library/QuickPulseStateManager", () => {
 
     describe("#reset", () => {
         it("should reset metric and document buffers", () => {
-            let qps = new QuickPulseClient("ikey");
+            let qps = new QuickPulseClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             (<any>qps["_metrics"]) = {foo: "bar"};
             (<any>qps["_documents"]) = [{foo: "bar"}];
 
@@ -82,7 +82,7 @@ describe("Library/QuickPulseStateManager", () => {
         let pingStub: sinon.SinonStub;
 
         beforeEach(() => {
-            qps = new QuickPulseClient("ikey");
+            qps = new QuickPulseClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             postStub = sinon.stub(qps, "_post");
             pingStub = sinon.stub(qps, "_ping");
         })

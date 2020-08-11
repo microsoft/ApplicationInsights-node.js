@@ -13,7 +13,7 @@ describe("Library/Sender", () => {
     var sender:SenderMock;
 
     beforeEach(() => {
-        sender = new SenderMock(new Config("testikey"));
+        sender = new SenderMock(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
     });
 
     describe("#setOfflineMode(value, resendInterval)", () => {

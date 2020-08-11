@@ -8,7 +8,7 @@ import Constants = require("../../Declarations/Constants");
 
 describe("Library/Config", () => {
 
-    var iKey = "iKey";
+    var iKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
     var appVer = "appVer";
 
     describe("#constructor", () => {
@@ -98,7 +98,7 @@ describe("Library/Config", () => {
             });
 
             it("should initialize valid values", () => {
-                var config = new Config("iKey");
+                var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert(typeof config.instrumentationKey === "string");
                 assert(typeof config.endpointUrl === "string");
                 assert(typeof config.maxBatchSize === "number");
@@ -111,7 +111,7 @@ describe("Library/Config", () => {
             });
 
             it("should initialize values that we claim in README", () => {
-                var config = new Config("iKey");
+                var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert(config.maxBatchSize === 250);
                 assert(config.maxBatchIntervalMs === 15000);
                 assert(config.disableAppInsights === false);
@@ -126,15 +126,37 @@ describe("Library/Config", () => {
             it("should initialize values that we claim in README (2)", () => {
                 process.env.http_proxy = "test";
                 process.env.https_proxy = "test2";
-                var config = new Config("iKey");
+                var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert(config.proxyHttpUrl === "test");
                 assert(config.proxyHttpsUrl === "test2");
             });
 
             it("should add azure domain to excluded list", () => {
-                var config = new Config("iKey");
+                var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert.equal(config.correlationHeaderExcludedDomains[0].toString(), "*.core.windows.net");
             });
+
+            it("instrumentation key validation-valid key passed", () => {
+                var warnStub = sinon.stub(console, "warn");
+                var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+                assert.ok(warnStub.notCalled, "warning was not raised");
+                warnStub.restore();
+            });
+
+            it("instrumentation key validation-invalid key passed", () => {
+                var warnStub = sinon.stub(console, "warn");
+                var config = new Config("1aa11111bbbb1ccc8dddeeeeffff3333");
+                assert.ok(warnStub.calledOn, "warning was raised");
+                warnStub.restore();
+            });
+
+            it("instrumentation key validation-invalid key passed", () => {
+                var warnStub = sinon.stub(console, "warn");
+                var config = new Config("abc");
+                assert.ok(warnStub.calledOn, "warning was raised");
+                warnStub.restore();
+            });
+
         });
     });
 });
