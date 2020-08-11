@@ -141,7 +141,7 @@ class Config {
 
     /**
     * Validate UUID Format
-    * Specs taken from breeze repo(https://dev.azure.com/msazure/One/_git/Mgmt-AppInsights-Breeze)
+    * Specs taken from breeze repo
     * The definition of a VALID instrumentation key is as follows:
     * Not none
     * Not empty
