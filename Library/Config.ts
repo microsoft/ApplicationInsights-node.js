@@ -74,7 +74,7 @@ class Config {
         this.instrumentationKey = csCode.instrumentationkey || iKeyCode /* === instrumentationKey */ || csEnv.instrumentationkey || Config._getInstrumentationKey();
         // validate ikey. If fails throw a warning
         if(!Config._validateInstrumentationKey(this.instrumentationKey)) {
-            Logging.warn("instrumentation key validation failed");
+            Logging.warn("invalid instrumentation key - "+this.instrumentationKey);
         }
 
         this.endpointUrl = `${csCode.ingestionendpoint || csEnv.ingestionendpoint || this.endpointBase}/v2/track`;
@@ -144,11 +144,9 @@ class Config {
     * Specs taken from https://tools.ietf.org/html/rfc4122
     */    
     private static _validateInstrumentationKey(iKey:string): boolean {
-        const UUID_Regex = '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$';
-        const UUID_Regex_noDash = '^[0-9a-f]{8}[0-9a-f]{4}[1-5][0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}$';
+        const UUID_Regex = '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
         const regexp = new RegExp(UUID_Regex); 
-        const regexp_noDash = new RegExp(UUID_Regex_noDash);
-        return regexp.test(iKey) || regexp_noDash.test(iKey);
+        return regexp.test(iKey);
     }
 }
 

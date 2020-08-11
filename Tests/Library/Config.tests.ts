@@ -143,17 +143,17 @@ describe("Library/Config", () => {
                 warnStub.restore();
             });
 
-            it("instrumentation key validation-valid key passed", () => {
+            it("instrumentation key validation-invalid key passed", () => {
                 var warnStub = sinon.stub(console, "warn");
                 var config = new Config("1aa11111bbbb1ccc8dddeeeeffff3333");
-                assert.ok(warnStub.notCalled, "warning was not raised");
+                assert.ok(warnStub.calledOn, "warning was raised");
                 warnStub.restore();
             });
 
             it("instrumentation key validation-invalid key passed", () => {
                 var warnStub = sinon.stub(console, "warn");
                 var config = new Config("abc");
-                assert.ok(warnStub.calledOn, "warning was not raised");
+                assert.ok(warnStub.calledOn, "warning was raised");
                 warnStub.restore();
             });
 
