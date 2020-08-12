@@ -8,7 +8,7 @@ describe("ConnectionStringParser", () => {
     describe("#parse()", () => {
         it("should parse all valid fields", () => {
             const authorization = "ikey"
-            const instrumentationKey = "instr_key";
+            const instrumentationKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
             const ingestionEndpoint = "ingest";
             const liveEndpoint = "live";
             const connectionString = `Authorization=${authorization};InstrumentationKey=${instrumentationKey};IngestionEndpoint=${ingestionEndpoint};LiveEndpoint=${liveEndpoint}`;
@@ -23,7 +23,7 @@ describe("ConnectionStringParser", () => {
 
         it("should ignore invalid fields", () => {
             const authorization = "ikey"
-            const instrumentationKey = "ikey";
+            const instrumentationKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
             const ingestionEndpoint = "ingest";
             const liveEndpoint = "live";
             const connectionString = `Autho.rization=${authorization};Instrume.ntationKey=${instrumentationKey};Ingestion.Endpoint=${ingestionEndpoint};LiveEnd.point=${liveEndpoint}`;
@@ -53,9 +53,9 @@ describe("ConnectionStringParser", () => {
 
         it("should use correct default endpoints", () => {
             runTest({
-                connectionString: "InstrumentationKey=00000000-0000-0000-0000-000000000000",
+                connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
                 expectedAuthorization: undefined,
-                expectedInstrumentationKey: "00000000-0000-0000-0000-000000000000",
+                expectedInstrumentationKey: "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
                 expectedBreezeEndpoint: Constants.DEFAULT_BREEZE_ENDPOINT,
                 expectedLiveMetricsEndpoint: Constants.DEFAULT_LIVEMETRICS_ENDPOINT
             });

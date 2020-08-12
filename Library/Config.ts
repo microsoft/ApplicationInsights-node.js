@@ -1,5 +1,6 @@
 import CorrelationIdManager = require('./CorrelationIdManager');
 import ConnectionStringParser = require('./ConnectionStringParser');
+import Logging = require('./Logging');
 import Constants = require('../Declarations/Constants');
 import http = require('http');
 import https = require('https');
@@ -71,6 +72,10 @@ class Config {
             : setupString; // CS was invalid, so it must be an ikey
 
         this.instrumentationKey = csCode.instrumentationkey || iKeyCode /* === instrumentationKey */ || csEnv.instrumentationkey || Config._getInstrumentationKey();
+        // validate ikey. If fails throw a warning
+        if(!Config._validateInstrumentationKey(this.instrumentationKey)) {
+            Logging.warn("An invalid instrumentation key was provided. There may be resulting telemetry loss", this.instrumentationKey);
+        }
 
         this.endpointUrl = `${csCode.ingestionendpoint || csEnv.ingestionendpoint || this.endpointBase}/v2/track`;
         this.maxBatchSize = 250;
@@ -132,6 +137,26 @@ class Config {
         }
 
         return iKey;
+    }
+
+    /**
+    * Validate UUID Format
+    * Specs taken from breeze repo
+    * The definition of a VALID instrumentation key is as follows:
+    * Not none
+    * Not empty
+    * Every character is a hex character [0-9a-f]
+    * 32 characters are separated into 5 sections via 4 dashes
+    * First section has 8 characters
+    * Second section has 4 characters
+    * Third section has 4 characters
+    * Fourth section has 4 characters
+    * Fifth section has 12 characters                  
+    */    
+    private static _validateInstrumentationKey(iKey:string): boolean {
+        const UUID_Regex = '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
+        const regexp = new RegExp(UUID_Regex); 
+        return regexp.test(iKey);
     }
 }
 

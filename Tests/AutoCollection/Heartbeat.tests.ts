@@ -8,7 +8,7 @@ import TelemetryClient = require("../../Library/TelemetryClient");
 import Context = require("../../Library/Context");
 
 describe("AutoCollection/HeartBeat", () => {
-    const client = new TelemetryClient("key");
+    const client = new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
     client.config.correlationId = "testicd";
 
     afterEach(() => {
@@ -19,7 +19,7 @@ describe("AutoCollection/HeartBeat", () => {
         it("init should enable and dispose should stop autocollection interval", () => {
             var setIntervalSpy = sinon.spy(global, "setInterval");
             var clearIntervalSpy = sinon.spy(global, "clearInterval");
-            AppInsights.setup("key")
+            AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
                 .setAutoCollectPerformance(false, false)
                 .setAutoCollectHeartbeat(true)
                 .start();
