@@ -4,6 +4,7 @@ import * as azureFunctionTypes from "../../Library/Functions";
 import assert = require("assert");
 import sinon = require("sinon");
 import Traceparent = require("../../Library/Traceparent");
+import { ISpanContext } from "diagnostic-channel";
 
 const customProperties = {
     getProperty(prop: string) {return ""},
@@ -232,6 +233,10 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
         });
 
         describe("#startOperation()", () => {
+            const spanContext: ISpanContext = {
+                traceId: '5e84aff3af474588a42dcbf3bd1db95f',
+                spanId: '1fc066fb77fa43a3',
+            };
             const functionContext: azureFunctionTypes.TraceContext = {
                 traceparent: "00-5e84aff3af474588a42dcbf3bd1db95f-1fc066fb77fa43a3-00",
                 tracestate: "",
@@ -253,7 +258,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             };
 
             describe("#Azure Functions", () => {
-                it("should start a new context", () => {
+                it("should start a new context with 2nd arg http request", () => {
                     const context = CorrelationContextManager.startOperation({ traceContext: functionContext } as any, request)
                     const traceparent = new Traceparent(functionContext.traceparent);
 
@@ -262,6 +267,28 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
                     assert.deepEqual(context.operation.parentId, `|${traceparent.traceId}.${traceparent.spanId}.`);
                     assert.deepEqual(context.operation.traceparent, traceparent);
                     assert.deepEqual(context.operation.name, "GET /search");
+                });
+
+                it("should start a new context with 2nd arg string", () => {
+                    const context = CorrelationContextManager.startOperation({ traceContext: functionContext } as any, "GET /foo")
+                    const traceparent = new Traceparent(functionContext.traceparent);
+
+                    assert.ok(context.operation);
+                    assert.deepEqual(context.operation.id, traceparent.traceId);
+                    assert.deepEqual(context.operation.parentId, `|${traceparent.traceId}.${traceparent.spanId}.`);
+                    assert.deepEqual(context.operation.traceparent, traceparent);
+                    assert.deepEqual(context.operation.name, "GET /foo");
+                });
+            });
+
+            describe("#SpanContext", () => {
+                it("should start a new context", () => {
+                    const context = CorrelationContextManager.startOperation(spanContext, "GET /example");
+
+                    assert.ok(context.operation);
+                    assert.deepEqual(context.operation.id, spanContext.traceId);
+                    assert.deepEqual(context.operation.parentId, `|${spanContext.traceId}.${spanContext.spanId}.`);
+                    assert.deepEqual(context.operation.name, "GET /example");
                 });
             });
         });
