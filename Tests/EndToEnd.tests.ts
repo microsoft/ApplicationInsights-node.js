@@ -446,26 +446,9 @@ describe("EndToEnd", () => {
             }
         });
 
-        it("disabled by default for new clients", (done) => {
-            var req = new fakeRequest();
-
+        it("disabled by default for new clients", () => {
             var client = new AppInsights.TelemetryClient("key");
-
-            client.trackEvent({ name: "test event" });
-
-            this.request.returns(req);
-
-            setTimeout(() => {
-                client.flush({
-                    callback: (response: any) => {
-                        // yield for the caching behavior
-                        setTimeout(() => {
-                            assert.equal(writeFile.callCount, 0);
-                            done();
-                        }, 100);
-                    }
-                });
-            }, 100);
+            assert.equal(client.channel["_sender"]["_enableDiskRetryMode"], false);
         });
 
         it("enabled by default for default client", (done) => {
