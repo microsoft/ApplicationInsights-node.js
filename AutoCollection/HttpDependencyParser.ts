@@ -55,17 +55,18 @@ class HttpDependencyParser extends RequestParser {
         let remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
 
         let remoteDependencyTarget = urlObject.hostname;
-        if (this.correlationId) {
-            remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_AI;
-            if (this.correlationId !== CorrelationIdManager.correlationIdPrefix) {
-                remoteDependencyTarget = urlObject.hostname + " | " + this.correlationId;
-            }
-        } else {
-            remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
-        }
 
         if (urlObject.port) {
             remoteDependencyTarget += ":" + urlObject.port;
+        }
+
+        if (this.correlationId) {
+            remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_AI;
+            if (this.correlationId !== CorrelationIdManager.correlationIdPrefix) {
+                remoteDependencyTarget += " | " + this.correlationId;
+            }
+        } else {
+            remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
         }
 
         var dependencyTelemetry: Contracts.DependencyTelemetry & Contracts.Identified = {
