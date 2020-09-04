@@ -21,7 +21,6 @@ import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCo
 // They're exposed using "export import" so that types are passed along as expected
 export import TelemetryClient = require("./Library/NodeClient");
 export import Contracts = require("./Declarations/Contracts");
-export import Util = require("./Library/Util");
 
 export enum DistributedTracingModes {
     /**
