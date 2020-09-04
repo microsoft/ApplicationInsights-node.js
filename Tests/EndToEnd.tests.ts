@@ -452,28 +452,11 @@ describe("EndToEnd", () => {
         });
 
         it("enabled by default for default client", (done) => {
-            var req = new fakeRequest();
-
             AppInsights.setup("key").start();
             var client = AppInsights.defaultClient;
-
-            client.trackEvent({ name: "test event" });
-
-            this.request.returns(req);
-
-            setImmediate(() => {
-                client.flush({
-                    callback: (response: any) => {
-                        // yield for the caching behavior
-                        setImmediate(() => {
-                            assert.equal(writeFile.callCount, 1);
-                            assert.equal(spawn.callCount, os.type() === "Windows_NT" ? 2 : 0);
-                            done();
-                        });
-                    }
-                });
-            })
+            assert.equal(client.channel["_sender"]["_enableDiskRetryMode"], true);
         });
+
 
         it("stores data to disk when enabled", (done) => {
             var req = new fakeRequest();
