@@ -34,7 +34,7 @@ export function enable(enabled: boolean, client: TelemetryClient) {
     } else {
         clients = clients.filter((c) => c != client);
         if (clients.length === 0) {
-            channel.unsubscribe("tedious", subscriber);
+            channel.unsubscribe<ITediousData>("tedious", subscriber);
         }
     }
 }
