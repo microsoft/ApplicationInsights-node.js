@@ -451,7 +451,7 @@ describe("EndToEnd", () => {
             assert.equal(client.channel["_sender"]["_enableDiskRetryMode"], false);
         });
 
-        it("enabled by default for default client", (done) => {
+        it("enabled by default for default client", () => {
             AppInsights.setup("key").start();
             var client = AppInsights.defaultClient;
             assert.equal(client.channel["_sender"]["_enableDiskRetryMode"], true);
