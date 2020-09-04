@@ -29,6 +29,22 @@ describe("AutoCollection/HttpDependencyParser", () => {
             assert.equal(dependencyTelemetry.target, "bing.com");
         });
 
+        it("should return correct data for a URL string with correlationId", () => {
+            (<any>request)["method"] = "GET";
+            let parser = new HttpDependencyParser("http://bing.com:123/search", request);
+
+            response.statusCode = 200;
+            parser.onResponse(response);
+
+            parser["correlationId"] = "abcdefg";
+            let dependencyTelemetry = parser.getDependencyTelemetry();
+            assert.equal(dependencyTelemetry.dependencyTypeName, Contracts.RemoteDependencyDataConstants.TYPE_AI);
+            assert.equal(dependencyTelemetry.success, true);
+            assert.equal(dependencyTelemetry.name, "GET /search");
+            assert.equal(dependencyTelemetry.data, "http://bing.com:123/search");
+            assert.equal(dependencyTelemetry.target, "bing.com:123 | abcdefg");
+        });
+
         if (parseInt(process.versions.node.split(".")[0]) >= 10) {
             it("should return correct data for a URL instance", () => {
                 (<any>request)["method"] = "GET";
