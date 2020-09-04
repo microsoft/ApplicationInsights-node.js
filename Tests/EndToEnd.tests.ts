@@ -77,7 +77,7 @@ class fakeRequest {
     public agent = { protocol: 'http' };
     private _responseData: any;
 
-    constructor(private failImmediatly: boolean = true, public url: string = undefined, responseData?: any) { 
+    constructor(private failImmediatly: boolean = true, public url: string = undefined, responseData?: any) {
         this._responseData = responseData;
      }
 
@@ -455,17 +455,17 @@ describe("EndToEnd", () => {
 
             this.request.returns(req);
 
-            setImmediate(() => {
+            setTimeout(() => {
                 client.flush({
                     callback: (response: any) => {
                         // yield for the caching behavior
-                        setImmediate(() => {
-                            assert(writeFile.callCount === 0);
+                        setTimeout(() => {
+                            assert.equal(writeFile.callCount, 0);
                             done();
-                        });
+                        }, 100);
                     }
                 });
-            });
+            }, 100);
         });
 
         it("enabled by default for default client", (done) => {
@@ -1007,24 +1007,24 @@ describe("EndToEnd", () => {
             heartbeat.enable(true, client.config);
             HeartBeat.INSTANCE.enable(true, client.config);
             const trackMetricStub = sinon.stub(heartbeat["_client"], "trackMetric");
-            
-            heartbeat["trackHeartBeat"](client.config, () => {
-                assert.equal(trackMetricStub.callCount, 1, "should call trackMetric for the VM heartbeat metric");	
-                assert.equal(trackMetricStub.args[0][0].name, "HeartBeat", "should use correct name for heartbeat metric");	
-                assert.equal(trackMetricStub.args[0][0].value, 0, "value should be 0");	
-                const keys = Object.keys(trackMetricStub.args[0][0].properties);	
-                assert.equal(keys.length, 5, "should have 4 kv pairs added when resource type is VM");	
-                assert.equal(keys[0], "sdk", "sdk should be added as a key");	
-                assert.equal(keys[1], "osType", "osType should be added as a key");
-                assert.equal(keys[2], "azInst_vmId",  "azInst_vmId should be added as a key");	
-                assert.equal(keys[3], "azInst_subscriptionId", "azInst_subscriptionId should be added as a key");	
-                assert.equal(keys[4], "azInst_osType", "azInst_osType should be added as a key");	
 
-                const properties = trackMetricStub.args[0][0].properties;	
-                assert.equal(properties["sdk"], Context.sdkVersion, "sdk version should be read from Context");	
+            heartbeat["trackHeartBeat"](client.config, () => {
+                assert.equal(trackMetricStub.callCount, 1, "should call trackMetric for the VM heartbeat metric");
+                assert.equal(trackMetricStub.args[0][0].name, "HeartBeat", "should use correct name for heartbeat metric");
+                assert.equal(trackMetricStub.args[0][0].value, 0, "value should be 0");
+                const keys = Object.keys(trackMetricStub.args[0][0].properties);
+                assert.equal(keys.length, 5, "should have 4 kv pairs added when resource type is VM");
+                assert.equal(keys[0], "sdk", "sdk should be added as a key");
+                assert.equal(keys[1], "osType", "osType should be added as a key");
+                assert.equal(keys[2], "azInst_vmId",  "azInst_vmId should be added as a key");
+                assert.equal(keys[3], "azInst_subscriptionId", "azInst_subscriptionId should be added as a key");
+                assert.equal(keys[4], "azInst_osType", "azInst_osType should be added as a key");
+
+                const properties = trackMetricStub.args[0][0].properties;
+                assert.equal(properties["sdk"], Context.sdkVersion, "sdk version should be read from Context");
                 assert.equal(properties["osType"], os.type(), "osType should be read from os library");
-                assert.equal(properties["azInst_vmId"], "1", "azInst_vmId should be read from response");	
-                assert.equal(properties["azInst_subscriptionId"], "2", "azInst_subscriptionId should be read from response");	
+                assert.equal(properties["azInst_vmId"], "1", "azInst_vmId should be read from response");
+                assert.equal(properties["azInst_subscriptionId"], "2", "azInst_subscriptionId should be read from response");
                 assert.equal(properties["azInst_osType"], "Windows_NT", "azInst_osType should be read from response");
                 trackMetricStub.restore();
                 heartbeat.dispose();
@@ -1046,18 +1046,18 @@ describe("EndToEnd", () => {
             heartbeat.enable(true, client.config);
             HeartBeat.INSTANCE.enable(true, client.config);
             const trackMetricStub = sinon.stub(heartbeat["_client"], "trackMetric");
-            
-            heartbeat["trackHeartBeat"](client.config, () => {
-                assert.equal(trackMetricStub.callCount, 1, "should call trackMetric as heartbeat metric");	
-                assert.equal(trackMetricStub.args[0][0].name, "HeartBeat", "should use correct name for heartbeat metric");	
-                assert.equal(trackMetricStub.args[0][0].value, 0, "value should be 0");	
-                const keys = Object.keys(trackMetricStub.args[0][0].properties);	
-                assert.equal(keys.length, 2, "should have 2 kv pairs added when resource type is not web app, not function app, not VM");	
-                assert.equal(keys[0], "sdk", "sdk should be added as a key");	
-                assert.equal(keys[1], "osType", "osType should be added as a key");	
 
-                const properties = trackMetricStub.args[0][0].properties;	
-                assert.equal(properties["sdk"], Context.sdkVersion, "sdk version should be read from Context");	
+            heartbeat["trackHeartBeat"](client.config, () => {
+                assert.equal(trackMetricStub.callCount, 1, "should call trackMetric as heartbeat metric");
+                assert.equal(trackMetricStub.args[0][0].name, "HeartBeat", "should use correct name for heartbeat metric");
+                assert.equal(trackMetricStub.args[0][0].value, 0, "value should be 0");
+                const keys = Object.keys(trackMetricStub.args[0][0].properties);
+                assert.equal(keys.length, 2, "should have 2 kv pairs added when resource type is not web app, not function app, not VM");
+                assert.equal(keys[0], "sdk", "sdk should be added as a key");
+                assert.equal(keys[1], "osType", "osType should be added as a key");
+
+                const properties = trackMetricStub.args[0][0].properties;
+                assert.equal(properties["sdk"], Context.sdkVersion, "sdk version should be read from Context");
                 assert.equal(properties["osType"], os.type(), "osType should be read from os library");
                 trackMetricStub.restore();
                 heartbeat.dispose();
