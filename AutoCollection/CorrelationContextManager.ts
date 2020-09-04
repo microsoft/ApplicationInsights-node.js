@@ -174,20 +174,41 @@ export class CorrelationContextManager {
         this.enabled = true;
     }
 
-    public static startOperation(context: azureFunctionsTypes.Context | (http.IncomingMessage | azureFunctionsTypes.HttpRequest), request?: azureFunctionsTypes.HttpRequest): CorrelationContext | null {
+    public static startOperation(context: azureFunctionsTypes.Context | (http.IncomingMessage | azureFunctionsTypes.HttpRequest) | ISpanContext, request?: azureFunctionsTypes.HttpRequest | string): CorrelationContext | null {
         const traceContext = context && (context as azureFunctionsTypes.Context).traceContext || null;
+        const spanContext = context && (context as ISpanContext).traceId
+            ? context as ISpanContext
+            : null;
         const headers = context && (context as http.IncomingMessage | azureFunctionsTypes.HttpRequest).headers;
+
+        if (spanContext) {
+            const traceparent = new Traceparent(`00-${spanContext.traceId}-${spanContext.spanId}-01`);
+            const tracestate = new Tracestate(spanContext.tracestate);
+            const correlationContext = CorrelationContextManager.generateContextObject(
+                spanContext.traceId,
+                `|${spanContext.traceId}.${spanContext.spanId}.`,
+                typeof request === "string" ? request : "",
+                undefined,
+                traceparent,
+                tracestate,
+            );
+            return correlationContext;
+        }
 
         // AzFunction TraceContext available
         if (traceContext) {
             const traceparent = new Traceparent(traceContext.traceparent);
             const tracestate = new Tracestate(traceContext.tracestate);
-            const parser = new HttpRequestParser(request);
+            const parser = typeof request === "object"
+              ? new HttpRequestParser(request)
+              : null;
             const correlationContext = CorrelationContextManager.generateContextObject(
                 traceparent.traceId,
                 traceparent.parentId,
-                parser.getOperationName({}),
-                parser.getCorrelationContextHeader(),
+                typeof request === "string"
+                    ? request
+                    : parser.getOperationName({}),
+                parser && parser.getCorrelationContextHeader() || undefined,
                 traceparent,
                 tracestate,
             );
