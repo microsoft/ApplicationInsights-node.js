@@ -29,9 +29,6 @@ const runTestSequence = (index) => {
         Utils.Logging.exitSubunit();
         Utils.Logging.info("Waiting " + waitTime + "ms for telemetry...");
         return new Promise((resolve, reject) => setTimeout(resolve, waitTime));
-    } else if (TestSequence[testIndex].platform && TestSequence[testIndex].platform !== process.platform) {
-        console.log("(OS) Skipping test for", TestSequence[testIndex].path, process.platform);
-        return runTestSequence(testIndex + 1);
     } else if (skipAsyncHooksTests() && TestSequence[testIndex].path.indexOf("/~") === 0) {
         console.log("Skipping test for", TestSequence[testIndex].path)
         return runTestSequence(testIndex + 1);
