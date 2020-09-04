@@ -4,14 +4,58 @@
  * expectedTelemetryType = EnvelopeType,
  * telemetryVerifier = fn to validate matching telemetry item
  */
-var outputContract = (expectedTelemetryType, telemetryVerifier) => {
+var outputContract = (expectedTelemetryType, telemetryVerifier, childContract) => {
     return {
         expectedTelemetryType: expectedTelemetryType,
-        telemetryVerifier: telemetryVerifier
+        telemetryVerifier: telemetryVerifier,
+        childContract: childContract
     };
 };
 
 module.exports = {
+    "AzureSdkEventHubsSend": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "Azure.EventHubs.send"
+                && telemetry.data.baseData.data === "sb://not-a-real-account.servicebus.windows.net/"
+                && telemetry.data.baseData.type === "InProc"
+                && telemetry.data.baseData.target === "not-a-real-account.servicebus.windows.net"
+                && telemetry.data.baseData.resultCode !== ""
+        }
+    ),
+    "AzureSdkCreate": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "Azure.Storage.Blob.ContainerClient-create";
+            // TODO: should also have baseData.type === "InProc"
+        },
+        outputContract(
+            "RemoteDependencyData",
+            (telemetry) => {
+                return telemetry.data.baseData.name === "PUT /newcontainer"
+                && telemetry.data.baseData.data === "https://not-a-real-account.blob.core.windows.net/newcontainer?restype=container"
+                && telemetry.data.baseData.type === "HTTP"
+                && telemetry.data.baseData.target === "not-a-real-account.blob.core.windows.net"
+                && telemetry.data.baseData.resultCode !== "";
+            }
+        )
+    ),
+    "AzureSdkDelete": outputContract(
+        "RemoteDependencyData",
+        (telemetry) => {
+            return telemetry.data.baseData.name === "Azure.Storage.Blob.ContainerClient-delete";
+        },
+        outputContract(
+            "RemoteDependencyData",
+            (telemetry) => {
+                return telemetry.data.baseData.name === "DELETE /newcontainer"
+                && telemetry.data.baseData.data === "https://not-a-real-account.blob.core.windows.net/newcontainer?restype=container"
+                && telemetry.data.baseData.type === "HTTP"
+                && telemetry.data.baseData.target === "not-a-real-account.blob.core.windows.net"
+                && telemetry.data.baseData.resultCode !== "";
+            }
+        )
+    ),
     "HttpGet": outputContract(
         "RemoteDependencyData",
         (telemetry) => {

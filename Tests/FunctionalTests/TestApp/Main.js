@@ -13,6 +13,7 @@ if (Config.AppInsightsEnabled) {
     appInsights.Configuration.setAutoCollectDependencies(Config.UseAutoDependencies);
     appInsights.Configuration.setAutoCollectConsole(Config.UseAutoConsole, Config.UseAutoConsoleLog);
     appInsights.Configuration.setUseDiskRetryCaching(Config.UseDiskCaching);
+    appInsights.Configuration.setDistributedTracingMode(Config.DistributedTracingMode);
     appInsights.start();
 }
 
@@ -34,7 +35,7 @@ app.get("/", (req, res) => {
  * {path: "/dependencyTest", steps:["HttpGet", "Timeout", "MongoInsert"]},
  * ...
  * ]
- * 
+ *
  * This input will create routes on this server that perform those tasks.
  * The available tasks are defined in /Tasks/index.js
  */

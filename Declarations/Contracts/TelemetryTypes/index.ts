@@ -9,5 +9,6 @@ export * from "./Telemetry";
 export * from "./NodeHttpDependencyTelemetry";
 export * from "./NodeHttpRequestTelemetry";
 export * from "./AvailabilityTelemetry";
+export * from "./PageViewTelemetry";
 
 export * from "./TelemetryType";

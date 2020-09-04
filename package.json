@@ -1,12 +1,12 @@
 {
   "name": "applicationinsights",
   "license": "MIT",
-  "bugs": "https://github.com/Microsoft/ApplicationInsights-node.js/issues",
-  "version": "1.6.0",
+  "bugs": "https://github.com/microsoft/ApplicationInsights-node.js/issues",
+  "version": "1.8.5",
   "description": "Microsoft Application Insights module for Node.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Microsoft/ApplicationInsights-node.js"
+    "url": "https://github.com/microsoft/ApplicationInsights-node.js"
   },
   "main": "./out/applicationinsights.js",
   "types": "./out/applicationinsights.d.ts",
@@ -42,13 +42,14 @@
     "prepublishOnly": "npm run build",
     "pretest": "npm run build",
     "test": "npm run test:ts && npm run test:js",
+    "test:debug": "mocha ./out/Tests --inspect-brk --recursive --no-exit",
     "test:ts": "mocha ./out/Tests --recursive --no-exit",
     "test:js": "mocha ./Tests/js --recursive --no-exit",
     "functionaltest": "npm run build && npm pack && node --use_strict ./Tests/FunctionalTests/RunFunctionalTests.js",
     "backcompattest": "npm run build && npm pack && node --use_strict ./Tests/BackCompatibility/RunBackCompatTests.js"
   },
   "devDependencies": {
-    "@types/cls-hooked": "^4.3.0",
+    "@types/cls-hooked": "^4.3.1",
     "@types/mocha": "2.2.48",
     "@types/node": "4.2.4",
     "@types/sinon": "2.1.2",
@@ -61,7 +62,7 @@
   "dependencies": {
     "cls-hooked": "^4.2.2",
     "continuation-local-storage": "^3.2.1",
-    "diagnostic-channel": "0.2.0",
-    "diagnostic-channel-publishers": "^0.3.3"
+    "diagnostic-channel": "0.3.1",
+    "diagnostic-channel-publishers": "0.4.1"
   }
 }

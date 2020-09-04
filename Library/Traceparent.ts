@@ -7,8 +7,8 @@ import CorrelationIdManager = require("./CorrelationIdManager");
  * https://www.w3.org/TR/trace-context/#traceparent-field
  */
 class Traceparent {
-    private static DEFAULT_TRACE_FLAG = "01";
-    private static DEFAULT_VERSION = "00";
+    public static DEFAULT_TRACE_FLAG = "01";
+    public static DEFAULT_VERSION = "00";
 
     public legacyRootId: string;
     public parentId: string;

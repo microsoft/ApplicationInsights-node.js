@@ -58,7 +58,7 @@ export const PerformanceToQuickPulseCounter: {[key: string]: QuickPulseCounter} 
 
 // Note: Explicitly define these types instead of using enum due to
 // potential 'export enum' issues with typescript < 2.0.
-export type QuickPulseDocumentType = "Event" | "Exception" | "Trace" | "Metric" | "Request" | "RemoteDependency" | "Availability";
+export type QuickPulseDocumentType = "Event" | "Exception" | "Trace" | "Metric" | "Request" | "RemoteDependency" | "Availability" | "PageView";
 export type QuickPulseType =
     | "EventTelemetryDocument"
     | "ExceptionTelemetryDocument"
@@ -66,7 +66,8 @@ export type QuickPulseType =
     | "MetricTelemetryDocument"
     | "RequestTelemetryDocument"
     | "DependencyTelemetryDocument"
-    | "AvailabilityTelemetryDocument";
+    | "AvailabilityTelemetryDocument"
+    | "PageViewTelemetryDocument";
 
 export const QuickPulseDocumentType: {[key in Contracts.TelemetryTypeKeys]: QuickPulseDocumentType} = {
     Event: "Event",
@@ -75,7 +76,8 @@ export const QuickPulseDocumentType: {[key in Contracts.TelemetryTypeKeys]: Quic
     Metric: "Metric",
     Request: "Request",
     Dependency: "RemoteDependency",
-    Availability: "Availability"
+    Availability: "Availability",
+    PageView: "PageView",
 };
 
 export const QuickPulseType: {[key in Contracts.TelemetryTypeKeys]: QuickPulseType} = {
@@ -85,7 +87,8 @@ export const QuickPulseType: {[key in Contracts.TelemetryTypeKeys]: QuickPulseTy
     Metric: "MetricTelemetryDocument",
     Request: "RequestTelemetryDocument",
     Dependency: "DependencyTelemetryDocument",
-    Availability: "AvailabilityTelemetryDocument"
+    Availability: "AvailabilityTelemetryDocument",
+    PageView: "PageViewTelemetryDocument",
 };
 
 export const TelemetryTypeStringToQuickPulseType: {[key in Contracts.TelemetryTypeValues]: QuickPulseType} = {
@@ -95,7 +98,8 @@ export const TelemetryTypeStringToQuickPulseType: {[key in Contracts.TelemetryTy
     MetricData: QuickPulseType.Metric,
     RequestData: QuickPulseType.Request,
     RemoteDependencyData: QuickPulseType.Dependency,
-    AvailabilityData: QuickPulseType.Availability
+    AvailabilityData: QuickPulseType.Availability,
+    PageViewData: QuickPulseType.PageView
 };
 
 export const TelemetryTypeStringToQuickPulseDocumentType: {[key in Contracts.TelemetryTypeValues]: QuickPulseDocumentType} = {
@@ -105,5 +109,29 @@ export const TelemetryTypeStringToQuickPulseDocumentType: {[key in Contracts.Tel
     MetricData: QuickPulseDocumentType.Metric,
     RequestData: QuickPulseDocumentType.Request,
     RemoteDependencyData: QuickPulseDocumentType.Dependency,
-    AvailabilityData: QuickPulseDocumentType.Availability
+    AvailabilityData: QuickPulseDocumentType.Availability,
+    PageViewData: QuickPulseDocumentType.PageView
 };
+
+// OpenTelemetry Span Attributes
+export const SpanAttribute = {
+    // HTTP
+    HttpHost: "http.host",
+    HttpMethod: "http.method",
+    HttpPort: "http.port",
+    HttpStatusCode: "http.status_code",
+    HttpUrl: "http.url",
+    HttpUserAgent: "http.user_agent",
+
+    // GRPC
+    GrpcMethod: "grpc.method",
+    GrpcService: "rpc.service", // rpc not grpc
+};
+
+export const DependencyTypeName = {
+    Grpc: "GRPC",
+    Http: "HTTP",
+    InProc: "InProc",
+}
+
+export const HeartBeatMetricName = "HeartBeat";

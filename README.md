@@ -2,6 +2,9 @@
 
 [![npm version](https://badge.fury.io/js/applicationinsights.svg)](http://badge.fury.io/js/applicationinsights)
 [![Build Status](https://travis-ci.org/Microsoft/ApplicationInsights-node.js.svg?branch=master)](https://travis-ci.org/Microsoft/ApplicationInsights-node.js)
+![Integration Tests CI](https://github.com/microsoft/ApplicationInsights-node.js/workflows/Integration%20Tests%20CI/badge.svg)
+![Node.js CI](https://github.com/microsoft/ApplicationInsights-node.js/workflows/Node.js%20CI/badge.svg)
+![Back Compatability CI](https://github.com/microsoft/ApplicationInsights-node.js/workflows/Back%20Compatability%20CI/badge.svg)
 
 [Azure Application Insights][] monitors your backend services and components after
 you deploy them to help you [discover and rapidly diagnose performance and other
@@ -78,23 +81,94 @@ this additional tracking is enabled; disable it by calling
 `setAutoDependencyCorrelation(false)` as described in the
 Configuration section below.
 
-## Migrating from versions prior to 0.22
+## Azure Functions
 
-There are breaking changes between releases prior to version 0.22 and after. These
-changes are designed to bring consistency with other Application Insights SDKs and
-allow future extensibility. Please review this README for new method and property names.
+Due to how Azure Functions (and other FaaS services) handle incoming requests, they are not seen as `http` requests to the Node.js runtime. For this reason, Request -> Dependency correlelation will **not** work out of the box.
+To enable tracking here, you simply need to grab the context from your Function request handler, and wrap your Function with that context.
 
-In general, you can migrate with the following:
-- Replace references to `appInsights.client` with `appInsights.defaultClient`
-- Replace references to `appInsights.getClient()` with `new appInsights.TelemetryClient()`
-- Replace all arguments to client.track* methods with a single object containing named
-properties as arguments. See your IDE's built-in type hinting, or [TelemetryTypes](https://github.com/Microsoft/ApplicationInsights-node.js/tree/develop/Declarations/Contracts/TelemetryTypes), for
-the expected object for each type of telemetry.
+### Setting up Auto-Correlation for Azure Functions
 
-If you access SDK configuration functions without chaining them to `appInsights.setup()`,
-you can now find these functions at appInsights.Configuration
-(eg. `appInsights.Configuration.setAutoCollectDependencies(true)`).
-Take care to review the changes to the default configuration in the next section.
+You do not need to make any changes to your existing Function logic.
+Instead, you can update the `default` export of your `httpTrigger` to be wrapped with some Application Insights logic:
+
+```js
+...
+
+// Default export wrapped with Application Insights FaaS context propagation
+export default async function contextPropagatingHttpTrigger(context, req) {
+    // Start an AI Correlation Context using the provided Function context
+    const correlationContext = appInsights.startOperation(context, req);
+
+    // Wrap the Function runtime with correlationContext
+    return appInsights.wrapWithCorrelationContext(async () => {
+        const startTime = Date.now(); // Start trackRequest timer
+
+        // Run the Function
+        await httpTrigger(context, req);
+
+        // Track Request on completion
+        appInsights.defaultClient.trackRequest({
+            name: context.req.method + " " + context.req.url,
+            resultCode: context.res.status,
+            success: true,
+            url: req.url,
+            duration: Date.now() - startTime,
+            id: correlationContext.operation.parentId,
+        });
+        appInsights.defaultClient.flush();
+    }, correlationContext)();
+};
+```
+
+### Azure Functions Example
+
+An example of making an `axios` call to <https://httpbin.org> and returning the reponse.
+
+```js
+const appInsights = require("applicationinsights");
+appInsights.setup("ikey")
+    .setAutoCollectPerformance(false)
+    .start();
+
+const axios = require("axios");
+
+/**
+ * No changes required to your existing Function logic
+ */
+const httpTrigger = async function (context, req) {
+    const response = await axios.get("https://httpbin.org/status/200");
+
+    context.res = {
+        status: response.status,
+        body: response.statusText,
+    };
+};
+
+// Default export wrapped with Application Insights FaaS context propagation
+export default async function contextPropagatingHttpTrigger(context, req) {
+    // Start an AI Correlation Context using the provided Function context
+    const correlationContext = appInsights.startOperation(context, req);
+
+    // Wrap the Function runtime with correlationContext
+    return appInsights.wrapWithCorrelationContext(async () => {
+        const startTime = Date.now(); // Start trackRequest timer
+
+        // Run the Function
+        await httpTrigger(context, req);
+
+        // Track Request on completion
+        appInsights.defaultClient.trackRequest({
+            name: context.req.method + " " + context.req.url,
+            resultCode: context.res.status,
+            success: true,
+            url: req.url,
+            duration: Date.now() - startTime,
+            id: correlationContext.operation.parentId,
+        });
+        appInsights.defaultClient.flush();
+    }, correlationContext)();
+};
+```
 
 ## Configuration
 
@@ -112,11 +186,11 @@ appInsights.setup("<instrumentation_key>")
     .setAutoCollectConsole(true)
     .setUseDiskRetryCaching(true)
     .setSendLiveMetrics(false)
-    .setDistributedTracingMode(appInsights.DistributedTracingModes.AI)
+    .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C)
     .start();
 ```
 
-Please review their descriptions in your IDE's built-in type hinting, or [applicationinsights.ts](https://github.com/Microsoft/ApplicationInsights-node.js/tree/develop/applicationinsights.ts) for
+Please review their descriptions in your IDE's built-in type hinting, or [applicationinsights.ts](https://github.com/microsoft/ApplicationInsights-node.js/tree/develop/applicationinsights.ts) for
 detailed information on what these control, and optional secondary arguments.
 
 Note that by default `setAutoCollectConsole` is configured to *exclude* calls to `console.log`
@@ -155,19 +229,20 @@ appInsights.start();
 ### Automatic third-party instrumentation
 
 In order to track context across asynchronous calls, some changes are required in third party libraries such as mongodb and redis.
-By default ApplicationInsights will use [`diagnostic-channel-publishers`](https://github.com/Microsoft/node-diagnostic-channel/tree/master/src/diagnostic-channel-publishers)
+By default ApplicationInsights will use [`diagnostic-channel-publishers`](https://github.com/microsoft/node-diagnostic-channel/tree/master/src/diagnostic-channel-publishers)
 to monkey-patch some of these libraries.
 This can be disabled by setting the `APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL` environment variable. Note that by setting that
 environment variable, events may no longer be correctly associated with the right operation. Individual monkey-patches can be
 disabled by setting the `APPLICATION_INSIGHTS_NO_PATCH_MODULES` environment variable to a comma separated list of packages to
 disable, e.g. `APPLICATION_INSIGHTS_NO_PATCH_MODULES=console,redis` to avoid patching the `console` and `redis` packages.
 
-Currently there are 10 packages which are instrumented: `bunyan`, `console`, `mongodb`, `mongodb-core`, `mysql`, `redis`, `tedious`, `winston`,
-`pg`, and `pg-pool`. Visit the [diagnostic-channel-publishers' README](https://github.com/Microsoft/node-diagnostic-channel/blob/master/src/diagnostic-channel-publishers/README.md)
+Currently there are 9 packages which are instrumented: `bunyan`, `console`, `mongodb`, `mongodb-core`, `mysql`, `redis`, `winston`, `tedious`,
+`pg`, and `pg-pool`. Visit the [diagnostic-channel-publishers' README](https://github.com/microsoft/node-diagnostic-channel/blob/master/src/diagnostic-channel-publishers/README.md)
 for information about exactly which versions of these packages are patched.
 
 The `bunyan`, `winston`, and `console` patches will generate Application Insights Trace events based on whether `setAutoCollectConsole` is enabled.
-The rest will generate Application Insights Dependency events based on whether `setAutoCollectDependencies` is enabled.
+The rest will generate Application Insights Dependency events based on whether `setAutoCollectDependencies` is enabled. Make sure that `applicationinsights` is imported **before** any 3rd-party packages for them to be instrumented successfully.
+
 
 ### Live Metrics
 To enable sending live metrics of your app to Azure, use `setSendLiveMetrics(true)`. Filtering of live metrics in the Portal is currently not supported.
@@ -396,7 +471,27 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | correlationIdRetryIntervalMs    | The time to wait before retrying to retrieve the id for cross-component correlation (Default `30000`)      |
 | correlationHeaderExcludedDomains| A list of domains to exclude from cross-component correlation header injection (Default See [Config.ts][]) |
 
-[Config.ts]: https://github.com/Microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
+[Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
+
+## Migrating to [`applicationinsights@2.0.0`](https://github.com/microsoft/ApplicationInsights-node.js/tree/applicationinsights%402.0.0) (Beta)
+
+An experimental / beta version of the SDK is also available, but not recommended for production. It is built on top of the [OpenTelemetry SDK + APIs](http://github.com/open-telemetry/opentelemetry-js), while keeping the API surface of this SDK the same.
+
+```zsh
+npm install applicationinsights@beta
+```
+
+### `applicationinsights@2.0.0` Overview
+
+- Autocollection parity with `applicationinsights@1.x`
+- API parity with `applicationinsights@1.x`
+- "Getting Started" parity with `applicationinsights@1.x`
+- New autocollection scenarios out-of-the-box contribued by the [OpenTelemetry community](https://github.com/open-telemetry/opentelemetry-js#node-plugins), e.g. `gRPC`, `express`, `ioredis`
+- Built on top of an [Open Standard](https://github.com/open-telemetry/opentelemetry-specification) for Telemetry APIs and SDKs
+
+Migrating from `1.x` to `2.x` is meant to be seamless and straightforward, there should be no breaking API changes at all. Please file a bug if something doesn't look right to you!
+
+Included in `applicationinsights@2.0.0` is [every Node.js Plugin available in the default OpenTelemetry Node.js SDK](https://github.com/open-telemetry/opentelemetry-js#node-plugins). Please check out the [projects board](https://github.com/microsoft/ApplicationInsights-node.js/projects) for progress updates on `2.x`.
 
 ## Branches
 
@@ -404,8 +499,8 @@ separately from clients created with `new appInsights.TelemetryClient()`.
   pull requests to this branch.**
 - Releases are merged to the [master][] branch and published to [npm][].
 
-[master]: https://github.com/Microsoft/ApplicationInsights-node.js/tree/master
-[develop]: https://github.com/Microsoft/ApplicationInsights-node.js/tree/develop
+[master]: https://github.com/microsoft/ApplicationInsights-node.js/tree/master
+[develop]: https://github.com/microsoft/ApplicationInsights-node.js/tree/develop
 [npm]: https://www.npmjs.com/package/applicationinsights
 
 ## Links
@@ -416,9 +511,9 @@ separately from clients created with `new appInsights.TelemetryClient()`.
   [ApplicationInsights-Announcements][] repo.
 * [SDK Release Schedule][]
 
-[ApplicationInsights-Announcements]: https://github.com/Microsoft/ApplicationInsights-Announcements
-[ApplicationInsights-Home]: https://github.com/Microsoft/ApplicationInsights-Home
-[SDK Release Schedule]: https://github.com/Microsoft/ApplicationInsights-Home/wiki/SDK-Release-Schedule
+[ApplicationInsights-Announcements]: https://github.com/microsoft/ApplicationInsights-Announcements
+[ApplicationInsights-Home]: https://github.com/microsoft/ApplicationInsights-Home
+[SDK Release Schedule]: https://github.com/microsoft/ApplicationInsights-Home/wiki/SDK-Release-Schedule
 
 ## Contributing
 

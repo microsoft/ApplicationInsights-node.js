@@ -22,6 +22,7 @@ export const subscriber = (event: IStandardEvent<redis.IRedisData>) => {
                 success: !event.data.err,
                 /* TODO: transmit result code from redis */
                 resultCode: event.data.err ? "1" : "0",
+                time: event.data.time,
                 dependencyTypeName: "redis"
             });
 

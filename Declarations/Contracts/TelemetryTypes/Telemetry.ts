@@ -1,15 +1,15 @@
 /**
- * Base telemetry interface encapsulating comming properties
+ * Base telemetry interface encapsulating coming properties
  */
 export interface Telemetry {
     /**
-     * Telemetry time stamp. When it is not specified, current tiestamp will be used.
+     * Telemetry time stamp. When it is not specified, current timestamp will be used.
      */
     time?: Date;
     /**
      * Additional data used to filter events and metrics in the portal. Defaults to empty.
      */
-    properties?: { [key: string]: string; };
+    properties?: { [key: string]: any; };
     /**
      * An event-specific context that will be passed to telemetry processors handling this event before it is sent. For a context spanning your entire operation, consider appInsights.getCorrelationContext
      */

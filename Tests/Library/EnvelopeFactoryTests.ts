@@ -8,13 +8,13 @@ import Client = require("../../Library/TelemetryClient");
 import Util = require("../../Library/Util");
 
 describe("Library/EnvelopeFactory", () => {
-        
+
     var properties: { [key: string]: string; } = { p1: "p1", p2: "p2", common: "commonArg" };
     var mockData = <any>{ baseData: { properties: {} }, baseType: "BaseTestData" };
     describe("#createEnvelope()", () => {
         var commonproperties: { [key: string]: string } = { common1: "common1", common2: "common2", common: "common" };
         it("should assign common properties to the data", () => {
-            var client1 = new Client("key");
+            var client1 = new Client("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             client1.commonProperties = commonproperties;
             client1.config.samplingPercentage = 99;
             var eventTelemetry = <Contracts.EventTelemetry>{name:"name"};
@@ -39,8 +39,8 @@ describe("Library/EnvelopeFactory", () => {
         });
 
         it("should allow tags to be overwritten", () => {
-          
-            var client = new Client("key");
+
+            var client = new Client("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             var env = EnvelopeFactory.createEnvelope(<Contracts.EventTelemetry>{name:"name"}, Contracts.TelemetryType.Event, commonproperties, client.context, client.config);
             assert.deepEqual(env.tags, client.context.tags, "tags are set by default");
             var customTag = <{ [id: string]: string }>{ "ai.cloud.roleInstance": "override" };
@@ -58,6 +58,22 @@ describe("Library/EnvelopeFactory", () => {
             assert.equal(envelope.name, "Microsoft.ApplicationInsights.key.Event");
         });
     });
+
+    describe("#createDependencyData()", () => {
+        it("should accept a telemetry item without a name", () => {
+            assert.doesNotThrow(() => {
+                var envelope = EnvelopeFactory.createEnvelope(<Contracts.DependencyTelemetry>{
+                    name: null,
+                    data: "GET https://example.com",
+                    duration: 123,
+                    success: true,
+                    resultCode: 200
+                }, Contracts.TelemetryType.Dependency);
+                assert.equal((envelope.data as Contracts.Data<Contracts.RemoteDependencyData>).baseData.name, undefined);
+            });
+        });
+    });
+
     describe("#createExceptionData()", () => {
         var simpleError: Error;
 
@@ -141,9 +157,9 @@ describe("Library/EnvelopeFactory", () => {
         it("creates data with given content", () => {
             var envelope = EnvelopeFactory.createEnvelope(availabilityTelemetry, Contracts.TelemetryType.Availability);
             var data =  <Contracts.Data<Contracts.AvailabilityData>>envelope.data;
-            
+
             assert.deepEqual(data.baseType, "AvailabilityData");
-            
+
             assert.deepEqual(data.baseData.id, availabilityTelemetry.id);
             assert.deepEqual(data.baseData.measurements, availabilityTelemetry.measurements);
             assert.deepEqual(data.baseData.success, availabilityTelemetry.success);
@@ -151,6 +167,35 @@ describe("Library/EnvelopeFactory", () => {
             assert.deepEqual(data.baseData.name, availabilityTelemetry.name);
             assert.deepEqual(data.baseData.properties, availabilityTelemetry.properties);
             assert.deepEqual(data.baseData.duration, Util.msToTimeSpan(availabilityTelemetry.duration));
+
+        });
+    });
+
+    describe("PageViewData", () => {
+        let pageViewTelemetry: Contracts.PageViewTelemetry;
+        beforeEach(() => {
+            pageViewTelemetry  = {
+                duration: 100,
+                measurements: { "m1" : 1},
+                properties: {
+                    "prop1" : "prop1 value"
+                },
+                url: "https://www.test.com",
+                name: "availability test name",
+            };
+        });
+
+        it("creates data with given content", () => {
+            var envelope = EnvelopeFactory.createEnvelope(pageViewTelemetry, Contracts.TelemetryType.PageView);
+            var data =  <Contracts.Data<Contracts.PageViewData>>envelope.data;
+
+            assert.deepEqual(data.baseType, "PageViewData");
+
+            assert.deepEqual(data.baseData.url, pageViewTelemetry.url);
+            assert.deepEqual(data.baseData.measurements, pageViewTelemetry.measurements);
+            assert.deepEqual(data.baseData.name, pageViewTelemetry.name);
+            assert.deepEqual(data.baseData.properties, pageViewTelemetry.properties);
+            assert.deepEqual(data.baseData.duration, Util.msToTimeSpan(pageViewTelemetry.duration));
 
         });
     });

@@ -7,6 +7,7 @@ import Logging = require("./Logging");
 import Config = require("./Config");
 import TelemetryClient = require("../Library/TelemetryClient");
 import RequestResponseHeaders = require("./RequestResponseHeaders");
+import { HttpRequest } from "../Library/Functions";
 
 
 class Util {
@@ -246,7 +247,7 @@ class Util {
         return true;
     }
 
-    public static getCorrelationContextTarget(response: http.ClientResponse | http.ServerRequest, key: string) {
+    public static getCorrelationContextTarget(response: http.ClientResponse | http.ServerRequest | HttpRequest, key: string) {
         const contextHeaders = response.headers && response.headers[RequestResponseHeaders.requestContextHeader];
         if (contextHeaders) {
             const keyValues = contextHeaders.split(",");

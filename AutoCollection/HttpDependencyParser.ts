@@ -11,12 +11,12 @@ import RequestParser = require("./RequestParser");
 import CorrelationIdManager = require("../Library/CorrelationIdManager");
 
 /**
- * Helper class to read data from the requst/response objects and convert them into the telemetry contract
+ * Helper class to read data from the request/response objects and convert them into the telemetry contract
  */
 class HttpDependencyParser extends RequestParser {
     private correlationId: string;
 
-    constructor(requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest) {
+    constructor(requestOptions: object | string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest) {
         super();
         if (request && (<any>request).method && requestOptions) {
             // The ClientRequest.method property isn't documented, but is always there.
@@ -80,6 +80,12 @@ class HttpDependencyParser extends RequestParser {
             target: remoteDependencyTarget
         };
 
+        if (baseTelemetry && baseTelemetry.time) {
+            dependencyTelemetry.time = baseTelemetry.time;
+        } else if (this.startTime) {
+            dependencyTelemetry.time = new Date(this.startTime);
+        }
+
         // We should keep any parameters the user passed in
         // Except the fields defined above in requestTelemetry, which take priority
         // Except the properties field, where they're merged instead, with baseTelemetry taking priority
@@ -108,6 +114,8 @@ class HttpDependencyParser extends RequestParser {
     private static _getUrlFromRequestOptions(options: any, request: http.ClientRequest) {
         if (typeof options === 'string') {
             options = url.parse(options);
+        } else if (options && typeof (url as any).URL === 'function' && options instanceof (url as any).URL) {
+            return url.format(options);
         } else {
             // Avoid modifying the original options object.
             let originalOptions = options;
@@ -127,7 +135,7 @@ class HttpDependencyParser extends RequestParser {
             options.search = parsedQuery.search;
         }
 
-        // Simiarly, url.format ignores hostname and port if host is specified,
+        // Similarly, url.format ignores hostname and port if host is specified,
         // even if host doesn't have the port, but http.request does not work
         // this way. It will use the port if one is not specified in host,
         // effectively treating host as hostname, but will use the port specified

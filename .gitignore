@@ -12,6 +12,8 @@ Tests/BackCompatibility/OldTSC/node_modules/**
 Tests/BackCompatibility/Node10Types/node_modules/**
 Tests/FunctionalTests/Runner/node_modules/**
 Tests/FunctionalTests/TestApp/node_modules/**
+Tests/FunctionalTests/Runner/package-lock.json
+Tests/FunctionalTests/TestApp/package-lock.json
 
 # Ignore Visual Studio files
 *.suo
@@ -29,4 +31,3 @@ Tests/FunctionalTests/TestApp/node_modules/**
 
 # Ignore log files
 npm-debug.log
-

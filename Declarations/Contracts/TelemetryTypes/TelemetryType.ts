@@ -1,4 +1,4 @@
-export type TelemetryTypeKeys = "Event" | "Exception" | "Trace" | "Metric" | "Request" | "Dependency" | "Availability";
+export type TelemetryTypeKeys = "Event" | "Exception" | "Trace" | "Metric" | "Request" | "Dependency" | "Availability" | "PageView";
 export type TelemetryTypeValues =
     | "EventData"
     | "ExceptionData"
@@ -6,7 +6,8 @@ export type TelemetryTypeValues =
     | "MetricData"
     | "RequestData"
     | "RemoteDependencyData"
-    | "AvailabilityData";
+    | "AvailabilityData"
+    | "PageViewData";
 
 /**
  * Converts the user-friendly enumeration TelemetryType to the underlying schema baseType value
@@ -28,6 +29,8 @@ export function telemetryTypeToBaseType(type: TelemetryType): TelemetryTypeValue
             return "RemoteDependencyData";
         case TelemetryType.Availability:
             return "AvailabilityData";
+        case TelemetryType.PageView:
+            return "PageViewData";
     }
     return undefined;
 }
@@ -52,6 +55,8 @@ export function baseTypeToTelemetryType(baseType: TelemetryTypeValues): Telemetr
             return TelemetryType.Dependency;
         case "AvailabilityData":
             return TelemetryType.Availability;
+        case "PageViewData":
+            return TelemetryType.PageView;
     }
     return undefined;
 }
@@ -63,7 +68,8 @@ export const TelemetryTypeString: {[key: string]: TelemetryTypeValues} = {
     Metric: "MetricData",
     Request: "RequestData",
     Dependency: "RemoteDependencyData",
-    Availability: "AvailabilityData"
+    Availability: "AvailabilityData",
+    PageView: "PageViewData",
 }
 
 /**
@@ -76,7 +82,8 @@ export enum TelemetryType {
     Metric,
     Request,
     Dependency,
-    Availability
+    Availability,
+    PageView
 }
 
 export interface Identified {

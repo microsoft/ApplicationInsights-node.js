@@ -14,7 +14,7 @@ import EnvelopeFactory = require("../../Library/EnvelopeFactory");
 
 describe("Library/TelemetryClient", () => {
 
-    var iKey = "Instrumentation-Key-12345-6789A";
+    var iKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
     var appId = "Application-Key-12345-6789A";
     var name = "name";
     var value = 3;
@@ -61,24 +61,24 @@ describe("Library/TelemetryClient", () => {
 
     describe("#constructor()", () => {
         it("should initialize config", () => {
-            var client = new Client("key");
+            var client = new Client("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             assert.ok(client.config);
             assert.ok(client.config.instrumentationKey);
         });
 
         it("should initialize context", () => {
-            var client = new Client("key");
+            var client = new Client("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             assert.ok(client.context);
             assert.ok(client.context.tags);
         });
 
         it("should initialize common properties", () => {
-            var client = new Client("key");
+            var client = new Client("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             assert.ok(client.commonProperties);
         });
 
         it("should initialize channel", () => {
-            var client = new Client("key");
+            var client = new Client("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             assert.ok(client.channel);
         });
     });
@@ -109,6 +109,33 @@ describe("Library/TelemetryClient", () => {
         });
     });
 
+    describe("#trackPageView()", () => {
+        it("should track Page View with correct data", () => {
+            trackStub.reset();
+            client.trackPageView({ name: name });
+            client.trackPageView({ name: name, properties, measurements });
+            client.trackPageView({ name: name, url: "https://www.test.com", duration: 100 });
+
+            assert.ok(trackStub.calledThrice);
+
+            var eventTelemetry1 = <Contracts.PageViewTelemetry>trackStub.firstCall.args[0];
+            var eventTelemetry2 = <Contracts.PageViewTelemetry>trackStub.secondCall.args[0];
+            var eventTelemetry3 = <Contracts.PageViewTelemetry>trackStub.thirdCall.args[0];
+
+            assert.equal(eventTelemetry1.name, name);
+            assert.equal(eventTelemetry2.name, name);
+            assert.deepEqual(eventTelemetry2.properties, properties);
+            assert.deepEqual(eventTelemetry2.measurements, measurements);
+            assert.equal(eventTelemetry3.name, name);
+            assert.equal(eventTelemetry3.url, "https://www.test.com");
+            assert.equal(eventTelemetry3.duration, 100);
+        });
+
+        it("should not crash with invalid input", () => {
+            invalidInputHelper("trackPageView");
+        });
+    });
+
     describe("#trackTrace()", () => {
         it("should track Trace with correct data", () => {
             trackStub.reset();
@@ -135,12 +162,12 @@ describe("Library/TelemetryClient", () => {
         });
     });
 
-    
+
     describe("#trackAvailability()", () => {
         it("should track availability with correct data", () => {
             trackStub.reset();
-            const expectedTelemetryData: Contracts.AvailabilityTelemetry =  { 
-                duration: 100, id: "id1", message: "message1",success : true, name: "name1", runLocation: "east us" 
+            const expectedTelemetryData: Contracts.AvailabilityTelemetry =  {
+                duration: 100, id: "id1", message: "message1",success : true, name: "name1", runLocation: "east us"
             };
 
             client.trackAvailability(expectedTelemetryData);

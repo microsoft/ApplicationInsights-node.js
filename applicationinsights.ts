@@ -2,14 +2,13 @@ import CorrelationContextManager = require("./AutoCollection/CorrelationContextM
 import AutoCollectConsole = require("./AutoCollection/Console");
 import AutoCollectExceptions = require("./AutoCollection/Exceptions");
 import AutoCollectPerformance = require("./AutoCollection/Performance");
+import HeartBeat = require("./AutoCollection/HeartBeat");
 import AutoCollectHttpDependencies = require("./AutoCollection/HttpDependencies");
 import AutoCollectHttpRequests = require("./AutoCollection/HttpRequests");
-import Config = require("./Library/Config");
-import Context = require("./Library/Context");
 import CorrelationIdManager = require("./Library/CorrelationIdManager");
 import Logging = require("./Library/Logging");
-import Util = require("./Library/Util");
 import QuickPulseClient = require("./Library/QuickPulseStateManager");
+import * as azureFunctionsTypes from "./Library/Functions";
 
 import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCollection/NativePerformance";
 
@@ -17,6 +16,10 @@ import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCo
 // They're exposed using "export import" so that types are passed along as expected
 export import TelemetryClient = require("./Library/NodeClient");
 export import Contracts = require("./Declarations/Contracts");
+import Traceparent = require("./Library/Traceparent");
+import Tracestate = require("./Library/Tracestate");
+import HttpRequestParser = require("./AutoCollection/HttpRequestParser");
+import { IncomingMessage } from "http";
 
 export enum DistributedTracingModes {
     /**
@@ -36,6 +39,7 @@ let _isConsole = true;
 let _isConsoleLog = false;
 let _isExceptions = true;
 let _isPerformance = true;
+let _isHeartBeat = false; // off by default for now
 let _isRequests = true;
 let _isDependencies = true;
 let _isDiskRetry = true;
@@ -51,6 +55,7 @@ let _diskRetryMaxBytes: number = undefined;
 let _console: AutoCollectConsole;
 let _exceptions: AutoCollectExceptions;
 let _performance: AutoCollectPerformance;
+let _heartbeat: HeartBeat;
 let _nativePerformance: AutoCollectNativePerformance;
 let _serverRequests: AutoCollectHttpRequests;
 let _clientRequests: AutoCollectHttpDependencies;
@@ -81,6 +86,7 @@ export function setup(setupString?: string) {
         _console = new AutoCollectConsole(defaultClient);
         _exceptions = new AutoCollectExceptions(defaultClient);
         _performance = new AutoCollectPerformance(defaultClient);
+        _heartbeat = new HeartBeat(defaultClient);
         _serverRequests = new AutoCollectHttpRequests(defaultClient);
         _clientRequests = new AutoCollectHttpDependencies(defaultClient);
         if (!_nativePerformance) {
@@ -109,6 +115,7 @@ export function start() {
         _console.enable(_isConsole, _isConsoleLog);
         _exceptions.enable(_isExceptions);
         _performance.enable(_isPerformance);
+        _heartbeat.enable(_isHeartBeat, defaultClient.config);
         _nativePerformance.enable(_isNativePerformance, _disabledExtendedMetrics);
         _serverRequests.useAutoCorrelation(_isCorrelating, _forceClsHooked);
         _serverRequests.enable(_isRequests);
@@ -145,13 +152,23 @@ export function getCorrelationContext(): CorrelationContextManager.CorrelationCo
 }
 
 /**
+ * **(Experimental!)**
+ * Starts a fresh context or propagates the current internal one.
+ */
+export function startOperation(context: azureFunctionsTypes.Context, request: azureFunctionsTypes.HttpRequest): CorrelationContextManager.CorrelationContext | null;
+export function startOperation(context: IncomingMessage | azureFunctionsTypes.HttpRequest, request?: never): CorrelationContextManager.CorrelationContext | null;
+export function startOperation(context: azureFunctionsTypes.Context | (IncomingMessage | azureFunctionsTypes.HttpRequest), request?: azureFunctionsTypes.HttpRequest): CorrelationContextManager.CorrelationContext | null {
+    return CorrelationContextManager.CorrelationContextManager.startOperation(context, request);
+}
+
+/**
  * Returns a function that will get the same correlation context within its
  * function body as the code executing this function.
  * Use this method if automatic dependency correlation is not propagating
  * correctly to an asynchronous callback.
  */
-export function wrapWithCorrelationContext<T extends Function>(fn: T): T {
-    return CorrelationContextManager.CorrelationContextManager.wrapCallback(fn);
+export function wrapWithCorrelationContext<T extends Function>(fn: T, context?: CorrelationContextManager.CorrelationContext): T {
+    return CorrelationContextManager.CorrelationContextManager.wrapCallback(fn, context);
 }
 
 /**
@@ -219,6 +236,19 @@ export class Configuration {
             _nativePerformance.enable(extendedMetricsConfig.isEnabled, extendedMetricsConfig.disabledMetrics);
         }
 
+        return Configuration;
+    }
+
+    /**
+     * Sets the state of request tracking (enabled by default)
+     * @param value if true HeartBeat metric data will be collected every 15 mintues and sent to Application Insights
+     * @returns {Configuration} this class
+     */
+    public static setAutoCollectHeartbeat(value: boolean) {
+        _isHeartBeat = value;
+        if (_isStarted) {
+            _heartbeat.enable(value, defaultClient.config);
+        }
 
         return Configuration;
     }
@@ -311,17 +341,17 @@ export class Configuration {
             return Configuration;
         }
 
-        if (!liveMetricsClient) {
+        if (!liveMetricsClient && enable) {
             // No qps client exists. Create one and prepare it to be enabled at .start()
             liveMetricsClient = new QuickPulseClient(defaultClient.config.instrumentationKey);
             _performanceLiveMetrics = new AutoCollectPerformance(liveMetricsClient as any, 1000, true);
             liveMetricsClient.addCollector(_performanceLiveMetrics);
             defaultClient.quickPulseClient = liveMetricsClient; // Need this so we can forward all manual tracks to live metrics via PerformanceMetricsTelemetryProcessor
-            _isSendingLiveMetrics = enable;
-        } else {
+        } else if (liveMetricsClient) {
             // qps client already exists; enable/disable it
             liveMetricsClient.enable(enable);
         }
+        _isSendingLiveMetrics = enable;
 
         return Configuration;
     }
@@ -331,6 +361,7 @@ export class Configuration {
  * Disposes the default client and all the auto collectors so they can be reinitialized with different configuration
 */
 export function dispose() {
+    CorrelationIdManager.w3cEnabled = true; // reset to default
     defaultClient = null;
     _isStarted = false;
     if (_console) {
@@ -342,6 +373,9 @@ export function dispose() {
     if (_performance) {
         _performance.dispose();
     }
+    if (_heartbeat) {
+        _heartbeat.dispose();
+    }
     if (_nativePerformance) {
         _nativePerformance.dispose();
     }
@@ -350,5 +384,10 @@ export function dispose() {
     }
     if(_clientRequests) {
         _clientRequests.dispose();
+    }
+    if(liveMetricsClient) {
+        liveMetricsClient.enable(false);
+        _isSendingLiveMetrics = false;
+        liveMetricsClient = undefined;
     }
 }

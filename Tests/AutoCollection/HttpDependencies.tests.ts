@@ -11,7 +11,7 @@ describe("AutoCollection/HttpDependencies", () => {
     describe("#init and #dispose()", () => {
         it("init should enable and dispose should stop dependencies autocollection", () => {
 
-            var appInsights = AppInsights.setup("key").setAutoCollectDependencies(true);
+            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setAutoCollectDependencies(true);
             var enableHttpDependenciesSpy = sinon.spy(HttpDependencies.INSTANCE, "enable");
             appInsights.start();
 
@@ -38,7 +38,7 @@ describe("AutoCollection/HttpDependencies", () => {
             telemetry.request.clearHeaders();
         });
         it("should accept string request-context", () => {
-            var appInsights = AppInsights.setup("key").setAutoCollectDependencies(true);
+            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setAutoCollectDependencies(true);
             AppInsights.defaultClient.config.correlationId = "abcdefg";
             appInsights.start();
 
@@ -47,7 +47,7 @@ describe("AutoCollection/HttpDependencies", () => {
         });
 
         it ("should accept nonstring request-context", () => {
-            var appInsights = AppInsights.setup("key").setAutoCollectDependencies(true);
+            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setAutoCollectDependencies(true);
             AppInsights.defaultClient.config.correlationId = "abcdefg";
             appInsights.start();
 
