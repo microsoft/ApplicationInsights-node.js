@@ -477,7 +477,6 @@ describe("EndToEnd", () => {
                             path.dirname(writeFile.firstCall.args[0]),
                             path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
                         assert.equal(writeFile.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
-                        assert.equal(spawn.callCount, 0); // Should always be 0 because of caching after first call to ICACLS
                         done();
                     });
                 }
