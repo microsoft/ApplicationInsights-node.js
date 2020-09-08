@@ -2,7 +2,7 @@
   "name": "applicationinsights",
   "license": "MIT",
   "bugs": "https://github.com/microsoft/ApplicationInsights-node.js/issues",
-  "version": "1.8.5",
+  "version": "1.8.6",
   "description": "Microsoft Application Insights module for Node.js",
   "repository": {
     "type": "git",
