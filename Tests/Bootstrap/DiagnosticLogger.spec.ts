@@ -34,12 +34,13 @@ describe("DiagnosticLogger", () => {
 
     describe("#DiagnosticLogger.logMessage", () => {
         it("should log all required fields", () => {
+            const expectedDate = new Date().toISOString();
             logger.logMessage("Some message");
             assert.deepEqual(stub.args[0][0], {
                 level: DataModel.SeverityLevel.INFO,
                 message: "Some message",
                 logger: "applicationinsights.extension.diagnostics",
-                time: new Date().toISOString(),
+                time: expectedDate,
                 properties: {
                     language: "nodejs",
                     operation: "Startup",
