@@ -1,0 +1,14 @@
+{
+    "time": "2020-09-03T23:58:59.491Z",
+    "level": "INFO",
+    "logger": "applicationinsights.extension.diagnostics",
+    "message": "Application Insights Codeless Agent Attach Successful",
+    "properties": {
+        "operation": "Startup",
+        "siteName": "marwolff-java-attach",
+        "ikey": "25498541-2456-471a-bd73-c915ad18e7ef",
+        "extensionVersion": "disabled",
+        "sdkVersion": "3.0.0-PREVIEW.5",
+        "subscriptionId": "65b2f83e-7bf1-4be3-bafc-3a4163265a52"
+    }
+}
