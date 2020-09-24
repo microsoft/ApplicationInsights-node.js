@@ -16,10 +16,10 @@ describe("AutoCollection/WebSnippet", () => {
             var enableWebSnippetsSpy = sinon.spy(WebSnippet.INSTANCE, "enable");
             appInsights.start();
 
-            assert.equal(enableWebSnippetsSpy.callCount, 1, "enable should be called once as part of requests autocollection initialization");
-            assert.equal(enableWebSnippetsSpy.getCall(0).args[0], true);
+            assert.equal(enableWebSnippetsSpy.callCount, 1, "enable should be called once as part of autocollection initialization");
+            assert.equal(enableWebSnippetsSpy.getCall(0).args[0], false);
             AppInsights.dispose();
-            assert.equal(enableWebSnippetsSpy.callCount, 2, "enable(false) should be called once as part of requests autocollection shutdown");
+            assert.equal(enableWebSnippetsSpy.callCount, 2, "enable(false) should be called once as part of autocollection shutdown");
             assert.equal(enableWebSnippetsSpy.getCall(1).args[0], false);
         });
     });
