@@ -3,6 +3,7 @@ import AutoCollectConsole = require("./AutoCollection/Console");
 import AutoCollectExceptions = require("./AutoCollection/Exceptions");
 import AutoCollectPerformance = require("./AutoCollection/Performance");
 import HeartBeat = require("./AutoCollection/HeartBeat");
+import WebSnippet = require("./AutoCollection/WebSnippet");
 import AutoCollectHttpDependencies = require("./AutoCollection/HttpDependencies");
 import AutoCollectHttpRequests = require("./AutoCollection/HttpRequests");
 import CorrelationIdManager = require("./Library/CorrelationIdManager");
@@ -27,7 +28,7 @@ export enum DistributedTracingModes {
      * (Default) Send Application Insights correlation headers
      */
 
-    AI=0,
+    AI = 0,
 
     /**
      * Send both W3C Trace Context headers and back-compatibility Application Insights headers
@@ -41,6 +42,7 @@ let _isConsoleLog = false;
 let _isExceptions = true;
 let _isPerformance = true;
 let _isHeartBeat = false; // off by default for now
+let _isSnippetInjection = false
 let _isRequests = true;
 let _isDependencies = true;
 let _isDiskRetry = true;
@@ -57,6 +59,7 @@ let _console: AutoCollectConsole;
 let _exceptions: AutoCollectExceptions;
 let _performance: AutoCollectPerformance;
 let _heartbeat: HeartBeat;
+let _webSnippet: WebSnippet;
 let _nativePerformance: AutoCollectNativePerformance;
 let _serverRequests: AutoCollectHttpRequests;
 let _clientRequests: AutoCollectHttpDependencies;
@@ -82,12 +85,13 @@ let _performanceLiveMetrics: AutoCollectPerformance;
  * and start the SDK.
  */
 export function setup(setupString?: string) {
-    if(!defaultClient) {
+    if (!defaultClient) {
         defaultClient = new TelemetryClient(setupString);
         _console = new AutoCollectConsole(defaultClient);
         _exceptions = new AutoCollectExceptions(defaultClient);
         _performance = new AutoCollectPerformance(defaultClient);
         _heartbeat = new HeartBeat(defaultClient);
+        _webSnippet = new WebSnippet(defaultClient);
         _serverRequests = new AutoCollectHttpRequests(defaultClient);
         _clientRequests = new AutoCollectHttpDependencies(defaultClient);
         if (!_nativePerformance) {
@@ -111,12 +115,13 @@ export function setup(setupString?: string) {
  * @returns {ApplicationInsights} this class
  */
 export function start() {
-    if(!!defaultClient) {
+    if (!!defaultClient) {
         _isStarted = true;
         _console.enable(_isConsole, _isConsoleLog);
         _exceptions.enable(_isExceptions);
         _performance.enable(_isPerformance);
         _heartbeat.enable(_isHeartBeat, defaultClient.config);
+        _webSnippet.enable(process.env.APPINSIGHTS_JAVASCRIPT_ENABLED == "true"); // Use environment variable by default
         _nativePerformance.enable(_isNativePerformance, _disabledExtendedMetrics);
         _serverRequests.useAutoCorrelation(_isCorrelating, _forceClsHooked);
         _serverRequests.enable(_isRequests);
@@ -180,13 +185,13 @@ export class Configuration {
     // Convenience shortcut to ApplicationInsights.start
     public static start = start;
 
-     /**
-      * Sets the distributed tracing modes. If W3C mode is enabled, W3C trace context
-      * headers (traceparent/tracestate) will be parsed in all incoming requests, and included in outgoing
-      * requests. In W3C mode, existing back-compatibility AI headers will also be parsed and included.
-      * Enabling W3C mode will not break existing correlation with other Application Insights instrumented
-      * services. Default=AI
-     */
+    /**
+     * Sets the distributed tracing modes. If W3C mode is enabled, W3C trace context
+     * headers (traceparent/tracestate) will be parsed in all incoming requests, and included in outgoing
+     * requests. In W3C mode, existing back-compatibility AI headers will also be parsed and included.
+     * Enabling W3C mode will not break existing correlation with other Application Insights instrumented
+     * services. Default=AI
+    */
     public static setDistributedTracingMode(value: DistributedTracingModes) {
         CorrelationIdManager.w3cEnabled = value === DistributedTracingModes.AI_AND_W3C;
         return Configuration;
@@ -201,7 +206,7 @@ export class Configuration {
     public static setAutoCollectConsole(value: boolean, collectConsoleLog: boolean = false) {
         _isConsole = value;
         _isConsoleLog = collectConsoleLog;
-        if (_isStarted){
+        if (_isStarted) {
             _console.enable(value, collectConsoleLog);
         }
 
@@ -215,7 +220,7 @@ export class Configuration {
      */
     public static setAutoCollectExceptions(value: boolean) {
         _isExceptions = value;
-        if (_isStarted){
+        if (_isStarted) {
             _exceptions.enable(value);
         }
 
@@ -250,6 +255,20 @@ export class Configuration {
         _isHeartBeat = value;
         if (_isStarted) {
             _heartbeat.enable(value, defaultClient.config);
+        }
+
+        return Configuration;
+    }
+
+    /**
+     * Sets the state of Web snippet injection
+     * @param value if true Web snippet will be tried to be injected in server response
+     * @returns {Configuration} this class
+     */
+    public static setWebSnippetInjection(value: boolean) {
+        _isSnippetInjection = value;
+        if (_isStarted) {
+            _webSnippet.enable(value);
         }
 
         return Configuration;
@@ -313,7 +332,7 @@ export class Configuration {
         _isDiskRetry = value;
         _diskRetryInterval = resendInterval;
         _diskRetryMaxBytes = maxBytesOnDisk
-        if (defaultClient && defaultClient.channel){
+        if (defaultClient && defaultClient.channel) {
             defaultClient.channel.setUseDiskRetryCaching(value, resendInterval, maxBytesOnDisk);
         }
 
@@ -378,16 +397,19 @@ export function dispose() {
     if (_heartbeat) {
         _heartbeat.dispose();
     }
+    if (_webSnippet) {
+        _webSnippet.dispose();
+    }
     if (_nativePerformance) {
         _nativePerformance.dispose();
     }
-    if(_serverRequests) {
+    if (_serverRequests) {
         _serverRequests.dispose();
     }
-    if(_clientRequests) {
+    if (_clientRequests) {
         _clientRequests.dispose();
     }
-    if(liveMetricsClient) {
+    if (liveMetricsClient) {
         liveMetricsClient.enable(false);
         _isSendingLiveMetrics = false;
         liveMetricsClient = undefined;
