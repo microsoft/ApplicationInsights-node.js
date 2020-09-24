@@ -156,12 +156,6 @@ describe("ApplicationInsights", () => {
             assert.ok(!WebSnippet.INSTANCE.isInitialized());
         });
 
-        it("auto-collection web snippet initialization using environment variable", () => {
-            process.env.APPINSIGHTS_JAVASCRIPT_ENABLED = "true";
-            AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").start();
-            assert.ok(WebSnippet.INSTANCE.isInitialized());
-        });
-
         it("auto-collection is not initialized if disabled before 'start'", () => {
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
                 .setAutoCollectConsole(false)

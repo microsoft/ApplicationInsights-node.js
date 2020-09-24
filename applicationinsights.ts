@@ -42,7 +42,7 @@ let _isConsoleLog = false;
 let _isExceptions = true;
 let _isPerformance = true;
 let _isHeartBeat = false; // off by default for now
-let _isSnippetInjection = false
+let _isSnippetInjection = process.env.APPINSIGHTS_JAVASCRIPT_ENABLED == "true"; // default determined by environment variable
 let _isRequests = true;
 let _isDependencies = true;
 let _isDiskRetry = true;
@@ -121,7 +121,7 @@ export function start() {
         _exceptions.enable(_isExceptions);
         _performance.enable(_isPerformance);
         _heartbeat.enable(_isHeartBeat, defaultClient.config);
-        _webSnippet.enable(process.env.APPINSIGHTS_JAVASCRIPT_ENABLED == "true"); // Use environment variable by default
+        _webSnippet.enable(_isSnippetInjection);
         _nativePerformance.enable(_isNativePerformance, _disabledExtendedMetrics);
         _serverRequests.useAutoCorrelation(_isCorrelating, _forceClsHooked);
         _serverRequests.enable(_isRequests);
