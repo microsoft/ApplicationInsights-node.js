@@ -11,7 +11,7 @@ export interface Context {
  * HTTP request object. Provided to your function when using HTTP Bindings.
  */
 export interface HttpRequest {
-    method: string;
+    method: string | null;
     url: string;
     headers: {
         [key: string]: string;
