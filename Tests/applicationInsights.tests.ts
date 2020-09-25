@@ -141,7 +141,6 @@ describe("ApplicationInsights", () => {
             HttpRequests.INSTANCE = undefined;
             HttpDependencies.INSTANCE = undefined;
             WebSnippet.INSTANCE = undefined;
-            delete process.env.APPINSIGHTS_JAVASCRIPT_ENABLED;
         });
 
         it("auto-collection is initialized by default", () => {
@@ -153,7 +152,6 @@ describe("ApplicationInsights", () => {
             assert.ok(HttpRequests.INSTANCE.isInitialized());
             assert.ok(HttpRequests.INSTANCE.isAutoCorrelating());
             assert.ok(HttpDependencies.INSTANCE.isInitialized());
-            assert.ok(!WebSnippet.INSTANCE.isInitialized());
         });
 
         it("auto-collection is not initialized if disabled before 'start'", () => {
