@@ -42,7 +42,7 @@ let _isConsoleLog = false;
 let _isExceptions = true;
 let _isPerformance = true;
 let _isHeartBeat = false; // off by default for now
-let _isSnippetInjection = process.env.APPINSIGHTS_JAVASCRIPT_ENABLED == "true"; // default determined by environment variable
+let _isSnippetInjection = process.env.APPINSIGHTS_WEB_SNIPPET_ENABLED == "true"; // default determined by environment variable
 let _isRequests = true;
 let _isDependencies = true;
 let _isDiskRetry = true;

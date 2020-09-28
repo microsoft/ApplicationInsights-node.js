@@ -64,7 +64,7 @@ describe("AutoCollection/WebSnippet", () => {
             assert.ok(newHtml.indexOf("<html><head>") == 0);
             assert.ok(newHtml.indexOf('instrumentationKey: "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"') >= 0);
             assert.equal(newHtml.length, 4482);
-            assert.equal(response.getHeader("Content-Length"), "5266"); // Content length updated
+            assert.equal(response.getHeader("Content-Length"), "4482"); // Content length updated
         });
     });
 
