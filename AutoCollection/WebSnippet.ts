@@ -20,8 +20,13 @@ class WebSnippet {
         }
 
         WebSnippet.INSTANCE = this;
-        WebSnippet._aiUrl = "https://az416426.vo.msecnd.net/scripts/b/ai.2.min.js";
-        let snippetPath = path.resolve(__dirname, "../../AutoCollection/snippet.html");
+        // AI URL used to validate if snippet already included
+        WebSnippet._aiUrl = "https://az416426.vo.msecnd.net/scripts/b/ai.2";
+
+        let snippetPath = path.resolve(__dirname, "../../AutoCollection/WebSnippet/snippet.min.js");
+        if (client.config.isDebugWebSnippet) {
+            snippetPath = path.resolve(__dirname, "../../AutoCollection/WebSnippet/snippet.js");
+        }
         fs.readFile(snippetPath, function (err, snippet) {
             if (err) {
                 Logging.warn("Failed to load AI Web snippet. Ex:" + err);
@@ -62,7 +67,7 @@ class WebSnippet {
                     }
                     // Patch response end method for cases when HTML is added there
                     let originalResponseEnd = response.end;
-                    
+
                     response.end = function wrap(a?: Buffer | string | any, b?: Function | string, c?: Function) {
                         if (isEnabled) {
                             if (WebSnippet.ValidateInjection(response, a)) {
@@ -113,7 +118,7 @@ class WebSnippet {
             if (index >= 0) {
                 let subStart = html.substring(0, index);
                 let subEnd = html.substring(index);
-                input = subStart + WebSnippet._snippet + subEnd;
+                input = subStart + '<script type="text/javascript">' + WebSnippet._snippet + '</script>' + subEnd;
                 // Set headers
                 response.setHeader("Content-Length", input.length.toString());
             }
