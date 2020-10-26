@@ -74,7 +74,11 @@ class TelemetryClient {
     public trackMetric(telemetry: Contracts.MetricTelemetry): void {
         this.track(telemetry, Contracts.TelemetryType.Metric);
     }
-
+    
+    private _trackAggregation(telemetry: Contracts.MetricTelemetry, aggregation: Contracts.AggregatedMetricsProperties): void {
+        this.track(telemetry, Contracts.TelemetryType.Metric);
+    }
+    
     /**
      * Log an exception
      * @param telemetry      Object encapsulating tracking options

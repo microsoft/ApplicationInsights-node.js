@@ -5,6 +5,8 @@ import TelemetryClient = require("../Library/TelemetryClient");
 import Logging = require("../Library/Logging");
 import Constants = require("../Declarations/Constants");
 
+import * as Contracts from "../Declarations/Contracts";
+
 class AutoCollectPerformance {
 
     public static INSTANCE: AutoCollectPerformance;
@@ -215,8 +217,14 @@ class AutoCollectPerformance {
 
             var combinedTotal = (totalUser + totalSys + totalNice + totalIdle + totalIrq) || 1;
 
-            this._client.trackMetric({name: Constants.PerformanceCounter.PROCESSOR_TIME, value: ((combinedTotal - totalIdle) / combinedTotal) * 100});
-            this._client.trackMetric({name: Constants.PerformanceCounter.PROCESS_TIME, value: appCpuPercent || ((totalUser / combinedTotal) * 100)});
+            this._client.trackMetric({
+                name: Constants.PerformanceCounter.PROCESSOR_TIME,
+                 value: ((combinedTotal - totalIdle) / combinedTotal) * 100
+            });
+            this._client.trackMetric({
+                name: Constants.PerformanceCounter.PROCESS_TIME,
+                value: appCpuPercent || ((totalUser / combinedTotal) * 100)
+            });
         }
 
         this._lastCpus = cpus;
@@ -226,12 +234,21 @@ class AutoCollectPerformance {
         var freeMem = os.freemem();
         var usedMem = process.memoryUsage().rss;
         var committedMemory = os.totalmem() - freeMem;
-        this._client.trackMetric({name: Constants.PerformanceCounter.PRIVATE_BYTES, value: usedMem});
-        this._client.trackMetric({name: Constants.PerformanceCounter.AVAILABLE_BYTES, value: freeMem});
+        this._client.trackMetric({
+            name: Constants.PerformanceCounter.PRIVATE_BYTES,
+            value: usedMem
+        });
+        this._client.trackMetric({
+            name: Constants.PerformanceCounter.AVAILABLE_BYTES,
+            value: freeMem
+        });
 
         // Only supported by quickpulse service
         if (this._enableLiveMetricsCounters) {
-            this._client.trackMetric({name: Constants.QuickPulseCounter.COMMITTED_BYTES, value: committedMemory});
+            this._client.trackMetric({
+                name: Constants.QuickPulseCounter.COMMITTED_BYTES,
+                value: committedMemory
+            });
         }
     }
 
@@ -254,18 +271,37 @@ class AutoCollectPerformance {
         if (elapsedMs > 0) {
             var requestsPerSec = intervalRequests / elapsedSeconds;
             var failedRequestsPerSec = intervalFailedRequests / elapsedSeconds;
+            
+            const properties: Contracts.AggregatedMetricsProperties = {
+                "_MS.AggregationIntervalMs": String(elapsedMs),
+                "_MS.IsAutocollected": "True",
+                "_MS.MetricId": null,
+            }
 
-            this._client.trackMetric({ name: Constants.PerformanceCounter.REQUEST_RATE, value: requestsPerSec });
+            this._client.trackMetric({
+                name: Constants.PerformanceCounter.REQUEST_RATE,
+                value: requestsPerSec,
+            });
 
             // Only send duration to live metrics if it has been updated!
             if (!this._enableLiveMetricsCounters || intervalRequests > 0) {
-                this._client.trackMetric({ name: Constants.PerformanceCounter.REQUEST_DURATION, value: averageRequestExecutionTime });
+                this._client.trackMetric({
+                    name: Constants.PerformanceCounter.REQUEST_DURATION,
+                    value: averageRequestExecutionTime,
+                    count: intervalRequests,
+                    kind: "Aggregation",
+                    properties: {
+                        ...properties,
+                        "_MS.MetricId": Contracts.MetricId.Requests_Duration,
+                    }
+                });
             }
 
-            // Only supported by quickpulse service
-            if (this._enableLiveMetricsCounters) {
-                this._client.trackMetric({name: Constants.QuickPulseCounter.REQUEST_FAILURE_RATE, value: failedRequestsPerSec});
-            }
+            
+            this._client.trackMetric({
+                name: Constants.QuickPulseCounter.REQUEST_FAILURE_RATE,
+                value: failedRequestsPerSec,
+            });
         }
 
         this._lastRequests = requests;
@@ -293,13 +329,22 @@ class AutoCollectPerformance {
                 var dependenciesPerSec = intervalDependencies / elapsedSeconds;
                 var failedDependenciesPerSec = intervalFailedDependencies / elapsedSeconds;
 
-                this._client.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_RATE, value: dependenciesPerSec});
-                this._client.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_FAILURE_RATE, value: failedDependenciesPerSec});
+                this._client.trackMetric({
+                    name: Constants.QuickPulseCounter.DEPENDENCY_RATE,
+                    value: dependenciesPerSec
+                });
+                this._client.trackMetric({
+                    name: Constants.QuickPulseCounter.DEPENDENCY_FAILURE_RATE,
+                    value: failedDependenciesPerSec
+                });
 
                 // redundant check for livemetrics, but kept for consistency w/ requests
                 // Only send duration to live metrics if it has been updated!
                 if (!this._enableLiveMetricsCounters || intervalDependencies > 0) {
-                    this._client.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_DURATION, value: averageDependencyExecutionTime});
+                    this._client.trackMetric({
+                        name: Constants.QuickPulseCounter.DEPENDENCY_DURATION,
+                        value: averageDependencyExecutionTime
+                    });
                 }
             }
             this._lastDependencies = dependencies;
@@ -315,14 +360,34 @@ class AutoCollectPerformance {
                 totalExceptionCount: AutoCollectPerformance._totalExceptionCount,
                 time: +new Date
             };
-
+            
             var intervalExceptions = (exceptions.totalExceptionCount - lastExceptions.totalExceptionCount) || 0;
             var elapsedMs = exceptions.time - lastExceptions.time;
             var elapsedSeconds = elapsedMs / 1000;
+            
 
             if (elapsedMs > 0) {
+                const properties: Contracts.AggregatedMetricsProperties = {
+                    "_MS.AggregationIntervalMs": String(elapsedMs),
+                    "_MS.IsAutocollected": "True",
+                    "_MS.MetricId": null,
+                }
                 var exceptionsPerSec = intervalExceptions / elapsedSeconds;
-                this._client.trackMetric({ name: Constants.QuickPulseCounter.EXCEPTION_RATE, value: exceptionsPerSec});
+
+                this._client.trackMetric({
+                    name: Constants.QuickPulseCounter.EXCEPTION_RATE,
+                    value: exceptionsPerSec,
+                });
+                
+                this._client.trackMetric({
+                    name: "Exceptions Count",
+                    value: intervalExceptions,
+                    kind: "Aggregation",
+                    properties: {
+                        ...properties,
+                        "_MS.MetricId": Contracts.MetricId.Exceptions_Count,
+                    }
+                });
             }
             this._lastExceptions = exceptions;
         }

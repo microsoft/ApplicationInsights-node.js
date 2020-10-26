@@ -19,8 +19,20 @@ describe("Library/TelemetryClient", () => {
     var name = "name";
     var value = 3;
     var testEventTelemetry = <Contracts.EventTelemetry>{ name: "testEvent" };
-    var properties: { [key: string]: string; } = { p1: "p1", p2: "p2", common: "commonArg" };
-    var failedProperties: { [key: string]: string; } = { p1: "p1", p2: "p2", common: "commonArg", errorProp: "errorVal" };
+    var properties: { [key: string]: string; } = {
+        p1: "p1", p2: "p2", common: "commonArg"
+    };
+    const requestExpectedProperties = {
+        ...properties,
+        "_MS.ProcessedByMetricExtractors": "(Name:'Requests', Ver:'1.1')",
+    }
+    const dependencyExpectedProperties = {
+        ...properties,
+        "_MS.ProcessedByMetricExtractors": "(Name:'Dependencies', Ver:'1.1')",
+    }
+    var failedProperties: { [key: string]: string; } = {
+        p1: "p1", p2: "p2", common: "commonArg", errorProp: "errorVal"
+    };
     var measurements: { [key: string]: number; } = { m1: 1, m2: 2 };
     var client = new Client(iKey);
     client.config.correlationId = `cid-v1:${appId}`;
@@ -673,7 +685,7 @@ describe("Library/TelemetryClient", () => {
             assert.equal(obj0.baseData.duration, Util.msToTimeSpan(value));
             assert.equal(obj0.baseData.success, true);
             assert.equal(obj0.baseData.type, dependencyTypeName);
-            assert.deepEqual(obj0.baseData.properties, properties);
+            assert.deepEqual(obj0.baseData.properties, dependencyExpectedProperties);
         });
 
         it("should create envelope with correct properties (numeric result code)", () => {
@@ -695,7 +707,7 @@ describe("Library/TelemetryClient", () => {
             assert.equal(obj0.baseData.duration, Util.msToTimeSpan(value));
             assert.equal(obj0.baseData.success, true);
             assert.equal(obj0.baseData.type, dependencyTypeName);
-            assert.deepEqual(obj0.baseData.properties, properties);
+            assert.deepEqual(obj0.baseData.properties, dependencyExpectedProperties);
         });
 
         it("should process the id when specified", () => {
@@ -711,7 +723,7 @@ describe("Library/TelemetryClient", () => {
             var obj0 = <Contracts.Data<Contracts.RemoteDependencyData>>envelopeCreated.data;
             createEnvelopeSpy.restore();
             assert.equal(obj0.baseData.id, "testid");
-            assert.deepEqual(obj0.baseData.properties, properties);
+            assert.deepEqual(obj0.baseData.properties, dependencyExpectedProperties);
         });
 
         it("should auto-generate the id when not specified", () => {
@@ -727,7 +739,7 @@ describe("Library/TelemetryClient", () => {
             var obj0 = <Contracts.Data<Contracts.RemoteDependencyData>>envelopeCreated.data;
             createEnvelopeSpy.restore();
             assert.ok(!!obj0.baseData.id);
-            assert.deepEqual(obj0.baseData.properties, properties);
+            assert.deepEqual(obj0.baseData.properties, dependencyExpectedProperties);
         });
 
         it("should autopopulate target field for url data", () => {
@@ -780,7 +792,7 @@ describe("Library/TelemetryClient", () => {
             assert.equal(obj0.baseData.duration, Util.msToTimeSpan(value));
             assert.equal(obj0.baseData.success, true);
             assert.equal(obj0.baseData.responseCode, "200");
-            assert.deepEqual(obj0.baseData.properties, properties);
+            assert.deepEqual(obj0.baseData.properties, requestExpectedProperties);
         });
 
         it("should create envelope with correct properties (numeric resultCode)", () => {
@@ -801,7 +813,7 @@ describe("Library/TelemetryClient", () => {
             assert.equal(obj0.baseData.duration, Util.msToTimeSpan(value));
             assert.equal(obj0.baseData.success, true);
             assert.equal(obj0.baseData.responseCode, "200");
-            assert.deepEqual(obj0.baseData.properties, properties);
+            assert.deepEqual(obj0.baseData.properties, requestExpectedProperties);
         });
 
         it("should process the id when specified", () => {
@@ -817,7 +829,7 @@ describe("Library/TelemetryClient", () => {
             createEnvelopeSpy.restore();
 
             assert.equal(obj0.baseData.id, "testid");
-            assert.deepEqual(obj0.baseData.properties, properties);
+            assert.deepEqual(obj0.baseData.properties, requestExpectedProperties);
         });
 
         it("should auto-generate the id when not specified", () => {
@@ -833,7 +845,7 @@ describe("Library/TelemetryClient", () => {
             createEnvelopeSpy.restore();
 
             assert.ok(!!obj0.baseData.id);
-            assert.deepEqual(obj0.baseData.properties, properties);
+            assert.deepEqual(obj0.baseData.properties, requestExpectedProperties);
         });
     });
 

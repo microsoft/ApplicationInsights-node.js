@@ -4,6 +4,7 @@ import sinon = require("sinon");
 import AppInsights = require("../../applicationinsights");
 import Performance = require("../../AutoCollection/Performance");
 import TelemetryClient = require("../../Library/TelemetryClient");
+import * as Contracts from "../../Declarations/Contracts";
 
 describe("AutoCollection/Performance", () => {
     afterEach(() => {
@@ -52,9 +53,14 @@ describe("AutoCollection/Performance", () => {
             // Add to end of event loop
             setTimeout(() => {
                 assert.equal(Performance["_intervalRequestExecutionTime"], 1000 + 2000 + 5000);
-                assert.equal(stub1.callCount, 2, "calls trackMetric for the 2 standard metrics");
+                assert.equal(stub1.callCount, 3, "calls trackMetric for the 3 standard metrics");
                 assert.equal(stub2.callCount, 3, "calls trackMetric for the 3 live metric counters");
                 assert.equal(stub2.args[1][0].value, stub1.args[1][0].value);
+                assert.equal(stub1.args[1][0].kind, "Aggregation");
+                assert.ok(stub1.args[1][0].properties);
+                assert.ok(stub1.args[1][0].properties["_MS.AggregationIntervalMs"]);
+                assert.equal(stub1.args[1][0].properties["_MS.MetricId"], Contracts.MetricId.Requests_Duration);
+                assert.equal(stub1.args[1][0].properties["_MS.IsAutocollected"], "True");
                 assert.equal(stub1.args[1][0].value, (1000 + 2000) / 2, "request duration average should be 1500");
 
                 stub1.reset();
@@ -64,7 +70,7 @@ describe("AutoCollection/Performance", () => {
                     // need to wait at least 1 ms so trackNetwork has valid elapsedMs value
                     performance1["_trackNetwork"]();
                     performance2["_trackNetwork"]();
-                    assert.equal(stub1.callCount, 2, "calls trackMetric for the 2 standard metrics");
+                    assert.equal(stub1.callCount, 3, "calls trackMetric for the 3 standard metrics");
                     assert.equal(stub2.callCount, 3, "calls trackMetric for the 3 live metric counters");
                     assert.equal(stub2.args[1][0].value, stub1.args[1][0].value);
                     assert.equal(stub1.args[1][0].value, (5000) / 1, "request duration average should be 5000");

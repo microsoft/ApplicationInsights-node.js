@@ -9,6 +9,11 @@ export interface MetricTelemetry extends Telemetry {
      * A string that identifies the metric.
      */
     name: string;
+    
+    /**
+     * Type of metric being sent, e.g. Pre-agg metrics have kind=Aggregation
+     */
+    kind?: "Aggregation";
 
     /**
      * The value of the metric
@@ -35,3 +40,15 @@ export interface MetricTelemetry extends Telemetry {
      */
     stdDev?: number;
 }
+
+export enum MetricId {
+    Requests_Duration = "requests/duration",
+    Dependencies_Duration = "dependencies/duration",
+    Exceptions_Count = "exceptions/count",
+}
+
+export interface AggregatedMetricsProperties {
+    "_MS.AggregationIntervalMs": string;
+    "_MS.MetricId": MetricId;
+    "_MS.IsAutocollected": "True" | "False",
+};
