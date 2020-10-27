@@ -279,14 +279,19 @@ class AutoCollectPerformance {
             }
 
             this._client.trackMetric({
-                name: Constants.PerformanceCounter.REQUEST_RATE,
+                name: "Requests per second",
                 value: requestsPerSec,
+                kind: "Aggregation",
+                properties: {
+                    ...properties,
+                    "_MS.MetricId": Contracts.MetricId.Requests_Rate,
+                }
             });
 
             // Only send duration to live metrics if it has been updated!
             if (!this._enableLiveMetricsCounters || intervalRequests > 0) {
                 this._client.trackMetric({
-                    name: Constants.PerformanceCounter.REQUEST_DURATION,
+                    name: "Server response time",
                     value: averageRequestExecutionTime,
                     count: intervalRequests,
                     kind: "Aggregation",
@@ -325,13 +330,24 @@ class AutoCollectPerformance {
             var averageDependencyExecutionTime = ((AutoCollectPerformance._intervalDependencyExecutionTime - this._lastIntervalDependencyExecutionTime) / intervalDependencies) || 0;
             this._lastIntervalDependencyExecutionTime = AutoCollectPerformance._intervalDependencyExecutionTime // reset
 
+            const properties: Contracts.AggregatedMetricsProperties = {
+                "_MS.AggregationIntervalMs": String(elapsedMs),
+                "_MS.IsAutocollected": "True",
+                "_MS.MetricId": null,
+            }
+
             if (elapsedMs > 0) {
                 var dependenciesPerSec = intervalDependencies / elapsedSeconds;
                 var failedDependenciesPerSec = intervalFailedDependencies / elapsedSeconds;
 
                 this._client.trackMetric({
                     name: Constants.QuickPulseCounter.DEPENDENCY_RATE,
-                    value: dependenciesPerSec
+                    value: dependenciesPerSec,
+                    kind: "Aggregation",
+                    properties: {
+                        ...properties,
+                        "_MS.MetricId": Contracts.MetricId.Dependencies_Rate,
+                    }
                 });
                 this._client.trackMetric({
                     name: Constants.QuickPulseCounter.DEPENDENCY_FAILURE_RATE,
@@ -343,7 +359,13 @@ class AutoCollectPerformance {
                 if (!this._enableLiveMetricsCounters || intervalDependencies > 0) {
                     this._client.trackMetric({
                         name: Constants.QuickPulseCounter.DEPENDENCY_DURATION,
-                        value: averageDependencyExecutionTime
+                        value: averageDependencyExecutionTime,
+                        count: intervalDependencies,
+                        kind: "Aggregation",
+                        properties: {
+                            ...properties,
+                            "_MS.MetricId": Contracts.MetricId.Dependencies_Duration,
+                        }
                     });
                 }
             }

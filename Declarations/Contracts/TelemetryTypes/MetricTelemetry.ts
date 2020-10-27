@@ -43,7 +43,11 @@ export interface MetricTelemetry extends Telemetry {
 
 export enum MetricId {
     Requests_Duration = "requests/duration",
+    Requests_Count = "requests/count",
+    Requests_Rate = "requests/rate",
     Dependencies_Duration = "dependencies/duration",
+    Dependencies_Count = "dependencies/count",
+    Dependencies_Rate = "dependencies/rate",
     Exceptions_Count = "exceptions/count",
 }
 
