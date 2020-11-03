@@ -354,7 +354,7 @@ written and added as follows:
 
 ```javascript
 function removeStackTraces ( envelope, context ) {
-  if (envelope.data.baseType === "Microsoft.ApplicationInsights.ExceptionData") {
+  if (envelope.data.baseType === "ExceptionData") {
     var data = envelope.data.baseData;
     if (data.exceptions && data.exceptions.length > 0) {
       for (var i = 0; i < data.exceptions.length; i++) {

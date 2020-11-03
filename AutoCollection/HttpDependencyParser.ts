@@ -114,7 +114,18 @@ class HttpDependencyParser extends RequestParser {
      */
     private static _getUrlFromRequestOptions(options: any, request: http.ClientRequest) {
         if (typeof options === 'string') {
-            options = url.parse(options);
+            if (options.indexOf("http://") === 0 || options.indexOf("https://") === 0) {
+                // protocol exists, parse normally
+                options = url.parse(options);
+            } else {
+                // protocol not found, insert http/https where appropriate
+                const parsed = url.parse(options);
+                if (parsed.host === "443") {
+                    options = url.parse("https://" + options);
+                } else {
+                    options = url.parse("http://" + options)
+                }
+            }
         } else if (options && typeof (url as any).URL === 'function' && options instanceof (url as any).URL) {
             return url.format(options);
         } else {
