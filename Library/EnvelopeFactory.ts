@@ -356,7 +356,7 @@ class _StackFrame {
 
     // regex to match stack frames from ie/chrome/ff
     // methodName=$2, fileName=$4, lineNo=$5, column=$6
-    public static regex = /^([\s]+at)?(.*?)(\@|\s\(|\s)([^\(\@\n]+):([0-9]+):([0-9]+)(\)?)$/;
+    public static regex = /^(\s+at)?(.*?)(\@|\s\(|\s)([^\(\n]+):(\d+):(\d+)(\)?)$/;
     public static baseSize = 58; //'{"method":"","level":,"assembly":"","fileName":"","line":}'.length
     public sizeInBytes = 0;
     public level: number;

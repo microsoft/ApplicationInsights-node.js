@@ -107,6 +107,42 @@ describe("Library/EnvelopeFactory", () => {
 
             assert.deepEqual(actual, expected);
         });
+        
+        it("fills stack when provided a scoped package", () => {
+            simpleError.stack = "  at Context.foo (C:/@foo/bar/example.js:123:45)\n" + simpleError.stack;
+            
+            var envelope = EnvelopeFactory.createEnvelope(<Contracts.ExceptionTelemetry>{ exception: simpleError }, Contracts.TelemetryType.Exception);
+            var exceptionData = <Contracts.Data<Contracts.ExceptionData>>envelope.data;
+
+            var actual = exceptionData.baseData.exceptions[0].parsedStack[0];
+
+            assert.deepEqual(actual, {
+                fileName: "C:/@foo/bar/example.js",
+                line: 123,
+                level: 0,
+                sizeInBytes: 141,
+                assembly: "at Context.foo (C:/@foo/bar/example.js:123:45)",
+                method: "Context.foo"
+            });
+        });
+        
+        it("fills stack when provided a scoped package", () => {
+            simpleError.stack = "  at C:/@foo/bar/example.js:123:45\n" + simpleError.stack;
+            
+            var envelope = EnvelopeFactory.createEnvelope(<Contracts.ExceptionTelemetry>{ exception: simpleError }, Contracts.TelemetryType.Exception);
+            var exceptionData = <Contracts.Data<Contracts.ExceptionData>>envelope.data;
+
+            var actual = exceptionData.baseData.exceptions[0].parsedStack[0];
+
+            assert.deepEqual(actual, {
+                fileName: "C:/@foo/bar/example.js",
+                line: 123,
+                level: 0,
+                sizeInBytes: 127,
+                assembly: "at C:/@foo/bar/example.js:123:45",
+                method: "<no_method>"
+            });
+        });
 
         it("fills 'severityLevel' with Error when not specified", () => {
             var envelope = EnvelopeFactory.createEnvelope(<Contracts.ExceptionTelemetry>{ exception: simpleError }, Contracts.TelemetryType.Exception);
