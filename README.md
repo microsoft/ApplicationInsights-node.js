@@ -56,6 +56,8 @@ You can manually track more aspects of your app and system using the API describ
 
 ## Basic Usage
 
+> *Important:* `applicationinsights` must be setup *and* started *before* you import anything else. There may be resulting telemetry loss if other libraries are imported first.
+
 For out-of-the-box collection of HTTP requests, popular third-party library events,
 unhandled exceptions, and system metrics:
 
