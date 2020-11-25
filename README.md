@@ -56,6 +56,8 @@ You can manually track more aspects of your app and system using the API describ
 
 ## Basic Usage
 
+> *Important:* `applicationinsights` must be setup *and* started *before* you import anything else. There may be resulting telemetry loss if other libraries are imported first.
+
 For out-of-the-box collection of HTTP requests, popular third-party library events,
 unhandled exceptions, and system metrics:
 
@@ -354,7 +356,7 @@ written and added as follows:
 
 ```javascript
 function removeStackTraces ( envelope, context ) {
-  if (envelope.data.baseType === "Microsoft.ApplicationInsights.ExceptionData") {
+  if (envelope.data.baseType === "ExceptionData") {
     var data = envelope.data.baseData;
     if (data.exceptions && data.exceptions.length > 0) {
       for (var i = 0; i < data.exceptions.length; i++) {
