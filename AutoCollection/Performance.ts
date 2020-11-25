@@ -219,7 +219,7 @@ class AutoCollectPerformance {
 
             this._client.trackMetric({
                 name: Constants.PerformanceCounter.PROCESSOR_TIME,
-                 value: ((combinedTotal - totalIdle) / combinedTotal) * 100
+                value: ((combinedTotal - totalIdle) / combinedTotal) * 100
             });
             this._client.trackMetric({
                 name: Constants.PerformanceCounter.PROCESS_TIME,
@@ -278,7 +278,7 @@ class AutoCollectPerformance {
                 "_MS.MetricId": null,
             }
 
-            this._client.trackMetric({
+            this._trackMetric({
                 name: "Requests per second",
                 value: requestsPerSec,
                 kind: "Aggregation",
@@ -286,11 +286,11 @@ class AutoCollectPerformance {
                     ...properties,
                     "_MS.MetricId": Contracts.MetricId.Requests_Rate,
                 }
-            });
+            }, Constants.PerformanceCounter.REQUEST_RATE);
 
             // Only send duration to live metrics if it has been updated!
             if (!this._enableLiveMetricsCounters || intervalRequests > 0) {
-                this._client.trackMetric({
+                this._trackMetric({
                     name: "Server response time",
                     value: averageRequestExecutionTime,
                     count: intervalRequests,
@@ -299,7 +299,7 @@ class AutoCollectPerformance {
                         ...properties,
                         "_MS.MetricId": Contracts.MetricId.Requests_Duration,
                     }
-                });
+                }, Constants.PerformanceCounter.REQUEST_DURATION);
             }
 
             
@@ -419,6 +419,21 @@ class AutoCollectPerformance {
         AutoCollectPerformance.INSTANCE = null;
         this.enable(false);
         this._isInitialized = false;
+    }
+    
+    private _trackMetric(
+        telemetry: Contracts.MetricTelemetry,
+        perfCounterName?: Constants.PerformanceCounter | Constants.QuickPulseCounter
+    ) {
+        this._client.trackMetric(telemetry);
+        
+        if (perfCounterName) {
+            this._client.trackMetric({
+                ...telemetry,
+                name: perfCounterName, // 
+                properties: undefined, // Pre-agg Standard Metrics info is held in properties
+            });
+        }
     }
 }
 
