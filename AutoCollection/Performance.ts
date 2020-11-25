@@ -423,14 +423,14 @@ class AutoCollectPerformance {
     
     private _trackMetric(
         telemetry: Contracts.MetricTelemetry,
-        perfCounterName?: Constants.PerformanceCounter | Constants.QuickPulseCounter
+        perfCounterName?: Constants.PerformanceCounter
     ) {
         this._client.trackMetric(telemetry);
         
         if (perfCounterName) {
             this._client.trackMetric({
                 ...telemetry,
-                name: perfCounterName, // 
+                name: perfCounterName,
                 properties: undefined, // Pre-agg Standard Metrics info is held in properties
             });
         }
