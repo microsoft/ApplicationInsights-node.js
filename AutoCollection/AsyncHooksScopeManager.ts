@@ -63,9 +63,27 @@ export interface Span {
 }
 
 export class OpenTelemetryScopeManagerWrapper {
+    private _activeSymbol: symbol | undefined;
+    
     public active() {
         const context = CorrelationContextManager.getCurrentContext() as any;
-        return { ...context, getValue: () => context, setValue: () => {} };
+        return {
+            ...context,
+            getValue: (key: symbol) => {
+                // todo: lazy import activeSymbol from opentelemetry/api
+                if (!this._activeSymbol) {
+                    this._activeSymbol = key;
+                    return context;
+                }
+                
+                if (key === this._activeSymbol) {
+                    return context;
+                }
+                
+                return false;
+            },
+            setValue: () => {}
+        };
     }
 
     public with(span: Span, fn: () => any) {
