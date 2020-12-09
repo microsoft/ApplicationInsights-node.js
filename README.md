@@ -294,6 +294,8 @@ http.createServer( (req, res) => {
 });
 ```
 
+Note that custom properties are converted to their string representation before being sent, see [Using properties](https://docs.microsoft.com/azure/azure-monitor/app/api-custom-events-metrics#properties) for more information.
+
 An example utility using `trackMetric` to measure how long event loop scheduling takes:
 
 ```javascript
