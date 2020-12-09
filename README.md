@@ -56,6 +56,8 @@ You can manually track more aspects of your app and system using the API describ
 
 ## Basic Usage
 
+> *Important:* `applicationinsights` must be setup *and* started *before* you import anything else. There may be resulting telemetry loss if other libraries are imported first.
+
 For out-of-the-box collection of HTTP requests, popular third-party library events,
 unhandled exceptions, and system metrics:
 
@@ -291,6 +293,8 @@ http.createServer( (req, res) => {
   client.trackNodeHttpRequest({request: req, response: res}); // Place at the beginning of your request handler
 });
 ```
+
+Note that custom properties are converted to their string representation before being sent, see [Using properties](https://docs.microsoft.com/azure/azure-monitor/app/api-custom-events-metrics#properties) for more information.
 
 An example utility using `trackMetric` to measure how long event loop scheduling takes:
 
