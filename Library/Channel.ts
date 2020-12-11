@@ -38,7 +38,7 @@ class Channel {
     /**
      * Add a telemetry item to the send buffer
      */
-    public send(envelope: Contracts.Envelope) {
+    public send(envelope: Contracts.EnvelopeTelemetry) {
 
         // if master off switch is set, don't send any data
         if (this._isDisabled()) {
@@ -108,7 +108,7 @@ class Channel {
         }
     }
 
-    protected _stringify(envelope: Contracts.Envelope) {
+    protected _stringify(envelope: Contracts.EnvelopeTelemetry) {
         try {
             return JSON.stringify(envelope);
         } catch (error) {
