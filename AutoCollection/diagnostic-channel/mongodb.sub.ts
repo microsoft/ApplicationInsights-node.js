@@ -23,6 +23,7 @@ export const subscriber = (event: IStandardEvent<mongodb.IMongoData>) => {
                 success: event.data.succeeded,
                 /* TODO: transmit result code from mongo */
                 resultCode: event.data.succeeded ? "0" : "1",
+                time: event.data.startedData.time,
                 dependencyTypeName: 'mongodb'
             });
     });

@@ -20,7 +20,7 @@ describe("TelemetryProcessors/PerformanceMetricsTelemetryProcessor", () => {
             time: "",
             tags: []
         };
-        var ikey = "ikey";
+        var ikey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
 
         it("should return true if no client provided", () => {
             var qpSpy = sinon.spy(QuickPulse, "performanceMetricsTelemetryProcessor");

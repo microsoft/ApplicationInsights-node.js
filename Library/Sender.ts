@@ -33,6 +33,7 @@ class Sender {
     private _onError: (error: Error) => void;
     private _enableDiskRetryMode: boolean;
     private _numConsecutiveFailures: number;
+    private _resendTimer: NodeJS.Timer | null;
     protected _resendInterval: number;
     protected _maxBytesOnDisk: number;
 
@@ -44,6 +45,7 @@ class Sender {
         this._resendInterval = Sender.WAIT_BETWEEN_RESEND;
         this._maxBytesOnDisk = Sender.MAX_BYTES_ON_DISK;
         this._numConsecutiveFailures = 0;
+        this._resendTimer = null;
 
         if (!Sender.OS_PROVIDES_FILE_PROTECTION) {
             // Node's chmod levels do not appropriately restrict file access on Windows
@@ -135,7 +137,13 @@ class Sender {
                     if (this._enableDiskRetryMode) {
                         // try to send any cached events if the user is back online
                         if (res.statusCode === 200) {
-                            setTimeout(() => this._sendFirstFileOnDisk(), this._resendInterval).unref();
+                            if (!this._resendTimer) {
+                                this._resendTimer = setTimeout(() => {
+                                    this._resendTimer = null;
+                                    this._sendFirstFileOnDisk()
+                                }, this._resendInterval);
+                                this._resendTimer.unref();
+                            }
                             // store to disk in case of burst throttling
                         } else if (
                             res.statusCode === 408 || // Timeout
@@ -223,7 +231,7 @@ class Sender {
         if (Sender.ACL_IDENTITY) {
             return callback(null, Sender.ACL_IDENTITY);
         }
-        var psProc = child_process.spawn(Sender.POWERSHELL_PATH, 
+        var psProc = child_process.spawn(Sender.POWERSHELL_PATH,
             ["-Command", "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name"], <any>{
                 windowsHide: true,
                 stdio: ['ignore', 'pipe', 'pipe'] // Needed to prevent hanging on Win 7
@@ -245,7 +253,7 @@ class Sender {
         }
         // Some very old versions of Node (< 0.11) don't have this
         if (child_process.spawnSync) {
-            var psProc = child_process.spawnSync(Sender.POWERSHELL_PATH, 
+            var psProc = child_process.spawnSync(Sender.POWERSHELL_PATH,
                 ["-Command", "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name"], <any>{
                     windowsHide: true,
                     stdio: ['ignore', 'pipe', 'pipe'] // Needed to prevent hanging on Win 7

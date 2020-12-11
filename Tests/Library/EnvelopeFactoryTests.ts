@@ -14,7 +14,7 @@ describe("Library/EnvelopeFactory", () => {
     describe("#createEnvelope()", () => {
         var commonproperties: { [key: string]: string } = { common1: "common1", common2: "common2", common: "common" };
         it("should assign common properties to the data", () => {
-            var client1 = new Client("key");
+            var client1 = new Client("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             client1.commonProperties = commonproperties;
             client1.config.samplingPercentage = 99;
             var eventTelemetry = <Contracts.EventTelemetry>{name:"name"};
@@ -40,7 +40,7 @@ describe("Library/EnvelopeFactory", () => {
 
         it("should allow tags to be overwritten", () => {
 
-            var client = new Client("key");
+            var client = new Client("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             var env = EnvelopeFactory.createEnvelope(<Contracts.EventTelemetry>{name:"name"}, Contracts.TelemetryType.Event, commonproperties, client.context, client.config);
             assert.deepEqual(env.tags, client.context.tags, "tags are set by default");
             var customTag = <{ [id: string]: string }>{ "ai.cloud.roleInstance": "override" };
@@ -106,6 +106,42 @@ describe("Library/EnvelopeFactory", () => {
             var expected = "<no_filename>";
 
             assert.deepEqual(actual, expected);
+        });
+        
+        it("fills stack when provided a scoped package", () => {
+            simpleError.stack = "  at Context.foo (C:/@foo/bar/example.js:123:45)\n" + simpleError.stack;
+            
+            var envelope = EnvelopeFactory.createEnvelope(<Contracts.ExceptionTelemetry>{ exception: simpleError }, Contracts.TelemetryType.Exception);
+            var exceptionData = <Contracts.Data<Contracts.ExceptionData>>envelope.data;
+
+            var actual = exceptionData.baseData.exceptions[0].parsedStack[0];
+
+            assert.deepEqual(actual, {
+                fileName: "C:/@foo/bar/example.js",
+                line: 123,
+                level: 0,
+                sizeInBytes: 141,
+                assembly: "at Context.foo (C:/@foo/bar/example.js:123:45)",
+                method: "Context.foo"
+            });
+        });
+        
+        it("fills stack when provided a scoped package", () => {
+            simpleError.stack = "  at C:/@foo/bar/example.js:123:45\n" + simpleError.stack;
+            
+            var envelope = EnvelopeFactory.createEnvelope(<Contracts.ExceptionTelemetry>{ exception: simpleError }, Contracts.TelemetryType.Exception);
+            var exceptionData = <Contracts.Data<Contracts.ExceptionData>>envelope.data;
+
+            var actual = exceptionData.baseData.exceptions[0].parsedStack[0];
+
+            assert.deepEqual(actual, {
+                fileName: "C:/@foo/bar/example.js",
+                line: 123,
+                level: 0,
+                sizeInBytes: 127,
+                assembly: "at C:/@foo/bar/example.js:123:45",
+                method: "<no_method>"
+            });
         });
 
         it("fills 'severityLevel' with Error when not specified", () => {

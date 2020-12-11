@@ -7,13 +7,11 @@ env:
   - TRAVIS_EXTENDED_METRICS=false
 node_js:
   - "node"
+  - "13"
   - "12"
-  - "11"
   - "10"
-  - "9"
   - "8"
   - "8.0.0"
-  - "7"
   - "6"
   - "4"
   - "0.12"

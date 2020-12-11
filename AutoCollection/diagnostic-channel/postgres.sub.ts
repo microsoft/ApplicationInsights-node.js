@@ -20,6 +20,7 @@ export const subscriber = (event: IStandardEvent<pg.IPostgresData>) => {
             duration: event.data.duration,
             success: success,
             resultCode: success ? "0" : "1",
+            time: event.data.time,
             dependencyTypeName: "postgres"});
     });
 };

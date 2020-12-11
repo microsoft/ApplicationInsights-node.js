@@ -3,14 +3,14 @@ winston.level = 'silly';
 
 function logFn(type) {
     return (callback) => {
-        winston.log(type, "test %s", type);
+        winston.log(type, `test ${type}`);
         callback();
     }
 }
 
 function logFn2(type) {
     return (callback) => {
-        winston[type]("test %s", type);
+        winston[type](`test ${type}`);
         callback();
     }
 }

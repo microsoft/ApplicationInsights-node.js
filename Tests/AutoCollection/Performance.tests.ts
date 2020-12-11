@@ -13,7 +13,10 @@ describe("AutoCollection/Performance", () => {
         it("init should enable and dispose should stop autocollection interval", () => {
             var setIntervalSpy = sinon.spy(global, "setInterval");
             var clearIntervalSpy = sinon.spy(global, "clearInterval");
-            AppInsights.setup("key").setAutoCollectPerformance(true, false).start();
+            AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
+                .setAutoCollectHeartbeat(false)
+                .setAutoCollectPerformance(true, false)
+                .start();
             assert.equal(setIntervalSpy.callCount, 1, "setInteval should be called once as part of performance initialization");
             AppInsights.dispose();
             assert.equal(clearIntervalSpy.callCount, 1, "clearInterval should be called once as part of performance shutdown");
@@ -27,9 +30,9 @@ describe("AutoCollection/Performance", () => {
         it("should not produce incorrect metrics because of multiple instances of Performance class", (done) => {
             const setIntervalStub = sinon.stub(global, "setInterval", () => ({ unref: () => {}}));
             const clearIntervalSpy = sinon.spy(global, "clearInterval");
-            const appInsights = AppInsights.setup("key").setAutoCollectPerformance(false).start();
-            const performance1 = new Performance(new TelemetryClient("key"), 1234, false);
-            const performance2 = new Performance(new TelemetryClient("key"), 4321, true);
+            const appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setAutoCollectPerformance(false).start();
+            const performance1 = new Performance(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"), 1234, false);
+            const performance2 = new Performance(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"), 4321, true);
             performance1.enable(true);
             performance2.enable(true);
             Performance.INSTANCE.enable(true);
@@ -75,9 +78,8 @@ describe("AutoCollection/Performance", () => {
                     setIntervalStub.restore();
                     clearIntervalSpy.restore();
                     done();
-                }, 1);
-            }, 1)
-
+                }, 100);
+            }, 100);
         });
     });
 });

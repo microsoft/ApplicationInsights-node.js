@@ -48,7 +48,7 @@ export class FileWriter implements DataModel.AgentLogger {
     public log(message: any) {
         if (this._ready) {
             let data = typeof message === "object"
-                ? JSON.stringify(message, null, 2)
+                ? JSON.stringify(message)
                 : message.toString();
 
             // Check if existing file needs to be renamed

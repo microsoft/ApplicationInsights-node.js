@@ -1,13 +1,27 @@
 import assert = require("assert");
 import sinon = require("sinon");
-import http = require("http");
+import fs = require("fs");
 import os = require("os");
+import path = require("path");
 
 import Context = require("../../Library/Context");
 
 describe("Library/Context", () => {
     describe("#constructor()", () => {
         var stubs: Array<any> = [];
+
+        before(() => {
+            // Create custom package json
+            var jsonContent = JSON.stringify({ "version": "testVersion" });
+            var testFilePath = path.resolve(__dirname, "testpackage.json");
+            fs.writeFile(testFilePath, jsonContent, () => { });
+        });
+
+        after(() => {
+            var testFilePath = path.resolve(__dirname, "testpackage.json")
+            fs.unlink(testFilePath, (err) => { });
+        });
+
         beforeEach(() => {
             stubs = [
                 sinon.stub(os, "hostname", () => "host"),
@@ -28,7 +42,8 @@ describe("Library/Context", () => {
                 context.keys.cloudRoleInstance,
                 context.keys.deviceOSVersion,
                 context.keys.internalSdkVersion,
-                context.keys.cloudRole
+                context.keys.cloudRole,
+                context.keys.applicationVersion
             ];
 
             for (var i = 0; i < defaultkeys.length; i++) {
@@ -40,7 +55,7 @@ describe("Library/Context", () => {
         it("should set internalSdkVersion to 'node:<version>'", () => {
             var context = new Context();
             // todo: make this less fragile (will need updating on each minor version change)
-            assert.equal(context.tags[context.keys.internalSdkVersion].substring(0, 9), "node:1.7.");
+            assert.equal(context.tags[context.keys.internalSdkVersion].substring(0, 9), "node:1.8.");
         });
 
         it("should correctly set device context", () => {
@@ -51,6 +66,14 @@ describe("Library/Context", () => {
 
             assert.equal(context.tags["ai.device.osArchitecture"], "arch");
             assert.equal(context.tags["ai.device.osPlatform"], "platform");
+        });
+
+        it("should correctly set application version", () => {
+            var context = new Context();
+            assert.equal(context.tags[context.keys.applicationVersion], "unknown");
+            var testFilePath = path.resolve(__dirname, "testpackage.json")
+            context = new Context(testFilePath);
+            assert.equal(context.tags[context.keys.applicationVersion], "testVersion");
         });
     });
 });

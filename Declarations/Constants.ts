@@ -112,3 +112,26 @@ export const TelemetryTypeStringToQuickPulseDocumentType: {[key in Contracts.Tel
     AvailabilityData: QuickPulseDocumentType.Availability,
     PageViewData: QuickPulseDocumentType.PageView
 };
+
+// OpenTelemetry Span Attributes
+export const SpanAttribute = {
+    // HTTP
+    HttpHost: "http.host",
+    HttpMethod: "http.method",
+    HttpPort: "http.port",
+    HttpStatusCode: "http.status_code",
+    HttpUrl: "http.url",
+    HttpUserAgent: "http.user_agent",
+
+    // GRPC
+    GrpcMethod: "grpc.method",
+    GrpcService: "rpc.service", // rpc not grpc
+};
+
+export const DependencyTypeName = {
+    Grpc: "GRPC",
+    Http: "HTTP",
+    InProc: "InProc",
+}
+
+export const HeartBeatMetricName = "HeartBeat";

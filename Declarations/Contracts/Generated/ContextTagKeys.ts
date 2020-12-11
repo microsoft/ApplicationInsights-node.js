@@ -112,7 +112,7 @@ class ContextTagKeys {
 
 
     /**
-     * SDK version. See https://github.com/Microsoft/ApplicationInsights-Home/blob/master/SDK-AUTHORING.md#sdk-version-specification for information.
+     * SDK version. See https://github.com/microsoft/ApplicationInsights-Home/blob/master/SDK-AUTHORING.md#sdk-version-specification for information.
      */
     public internalSdkVersion: string;
 

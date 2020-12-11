@@ -16,7 +16,7 @@ import CorrelationIdManager = require("../Library/CorrelationIdManager");
 class HttpDependencyParser extends RequestParser {
     private correlationId: string;
 
-    constructor(requestOptions: string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest) {
+    constructor(requestOptions: object | string | http.RequestOptions | https.RequestOptions, request: http.ClientRequest) {
         super();
         if (request && (<any>request).method && requestOptions) {
             // The ClientRequest.method property isn't documented, but is always there.
@@ -55,17 +55,18 @@ class HttpDependencyParser extends RequestParser {
         let remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
 
         let remoteDependencyTarget = urlObject.hostname;
-        if (this.correlationId) {
-            remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_AI;
-            if (this.correlationId !== CorrelationIdManager.correlationIdPrefix) {
-                remoteDependencyTarget = urlObject.hostname + " | " + this.correlationId;
-            }
-        } else {
-            remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
-        }
 
         if (urlObject.port) {
             remoteDependencyTarget += ":" + urlObject.port;
+        }
+
+        if (this.correlationId) {
+            remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_AI;
+            if (this.correlationId !== CorrelationIdManager.correlationIdPrefix) {
+                remoteDependencyTarget += " | " + this.correlationId;
+            }
+        } else {
+            remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
         }
 
         var dependencyTelemetry: Contracts.DependencyTelemetry & Contracts.Identified = {
@@ -79,6 +80,12 @@ class HttpDependencyParser extends RequestParser {
             dependencyTypeName: remoteDependencyType,
             target: remoteDependencyTarget
         };
+
+        if (baseTelemetry && baseTelemetry.time) {
+            dependencyTelemetry.time = baseTelemetry.time;
+        } else if (this.startTime) {
+            dependencyTelemetry.time = new Date(this.startTime);
+        }
 
         // We should keep any parameters the user passed in
         // Except the fields defined above in requestTelemetry, which take priority
@@ -107,7 +114,20 @@ class HttpDependencyParser extends RequestParser {
      */
     private static _getUrlFromRequestOptions(options: any, request: http.ClientRequest) {
         if (typeof options === 'string') {
-            options = url.parse(options);
+            if (options.indexOf("http://") === 0 || options.indexOf("https://") === 0) {
+                // protocol exists, parse normally
+                options = url.parse(options);
+            } else {
+                // protocol not found, insert http/https where appropriate
+                const parsed = url.parse(options);
+                if (parsed.host === "443") {
+                    options = url.parse("https://" + options);
+                } else {
+                    options = url.parse("http://" + options)
+                }
+            }
+        } else if (options && typeof (url as any).URL === 'function' && options instanceof (url as any).URL) {
+            return url.format(options);
         } else {
             // Avoid modifying the original options object.
             let originalOptions = options;

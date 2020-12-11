@@ -14,7 +14,7 @@ import EnvelopeFactory = require("../../Library/EnvelopeFactory");
 
 describe("Library/TelemetryClient", () => {
 
-    var iKey = "Instrumentation-Key-12345-6789A";
+    var iKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
     var appId = "Application-Key-12345-6789A";
     var name = "name";
     var value = 3;
@@ -61,24 +61,24 @@ describe("Library/TelemetryClient", () => {
 
     describe("#constructor()", () => {
         it("should initialize config", () => {
-            var client = new Client("key");
+            var client = new Client("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             assert.ok(client.config);
             assert.ok(client.config.instrumentationKey);
         });
 
         it("should initialize context", () => {
-            var client = new Client("key");
+            var client = new Client("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             assert.ok(client.context);
             assert.ok(client.context.tags);
         });
 
         it("should initialize common properties", () => {
-            var client = new Client("key");
+            var client = new Client("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             assert.ok(client.commonProperties);
         });
 
         it("should initialize channel", () => {
-            var client = new Client("key");
+            var client = new Client("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             assert.ok(client.channel);
         });
     });
@@ -162,12 +162,12 @@ describe("Library/TelemetryClient", () => {
         });
     });
 
-    
+
     describe("#trackAvailability()", () => {
         it("should track availability with correct data", () => {
             trackStub.reset();
-            const expectedTelemetryData: Contracts.AvailabilityTelemetry =  { 
-                duration: 100, id: "id1", message: "message1",success : true, name: "name1", runLocation: "east us" 
+            const expectedTelemetryData: Contracts.AvailabilityTelemetry =  {
+                duration: 100, id: "id1", message: "message1",success : true, name: "name1", runLocation: "east us"
             };
 
             client.trackAvailability(expectedTelemetryData);

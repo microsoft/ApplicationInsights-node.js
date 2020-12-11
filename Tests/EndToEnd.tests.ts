@@ -9,10 +9,12 @@ import events = require("events");
 import child_process = require("child_process");
 import AppInsights = require("../applicationinsights");
 import Sender = require("../Library/Sender");
-import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
 import Traceparent = require("../Library/Traceparent");
 import { EventEmitter } from "events";
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
+import HeartBeat = require("../AutoCollection/HeartBeat");
+import TelemetryClient = require("../Library/TelemetryClient");
+import Context = require("../Library/Context");
 
 /**
  * A fake response class that passes by default
@@ -21,8 +23,11 @@ class fakeResponse {
     private callbacks: { [event: string]: (data?: any) => void } = Object.create(null);
     public setEncoding(): void { };
     public statusCode: number = 200;
+    private _responseData: any;
 
-    constructor(private passImmediately: boolean = true) { }
+    constructor(private passImmediately: boolean = true, responseData?: any) {
+        this._responseData = responseData ? responseData : "data";
+    }
 
     public on(event: string, callback: () => void) {
         if (!this.callbacks[event]) {
@@ -53,7 +58,7 @@ class fakeResponse {
     }
 
     public pass(test = false): void {
-        this.callbacks["data"] ? this.callbacks["data"]("data") : null;
+        this.callbacks["data"] ? this.callbacks["data"](this._responseData) : null;
         this.callbacks["end"] ? this.callbacks["end"]() : null;
         this.callbacks["finish"] ? this.callbacks["finish"]() : null;
     }
@@ -70,8 +75,11 @@ class fakeRequest {
     public write(): void { }
     public headers: { [id: string]: string } = {};
     public agent = { protocol: 'http' };
+    private _responseData: any;
 
-    constructor(private failImmediatly: boolean = true, public url: string = undefined) { }
+    constructor(private failImmediatly: boolean = true, public url: string = undefined, responseData?: any) { 
+        this._responseData = responseData;
+     }
 
     public on(event: string, callback: Function) {
         this.callbacks[event] = callback;
@@ -97,7 +105,7 @@ class fakeRequest {
     }
 
     public end(): void {
-        this.callbacks["end"] ? this.callbacks["end"](new fakeResponse(true)) : null;
+        this.callbacks["end"] ? this.callbacks["end"](new fakeResponse(true, this._responseData)) : null;
     }
 }
 
@@ -166,18 +174,18 @@ describe("EndToEnd", () => {
         });
 
         it("should send telemetry", (done) => {
-            const expectedTelemetryData: AppInsights.Contracts.AvailabilityTelemetry =  { 
-                duration: 100, id: "id1", message: "message1",success : true, name: "name1", runLocation: "east us" 
+            const expectedTelemetryData: AppInsights.Contracts.AvailabilityTelemetry =  {
+                duration: 100, id: "id1", message: "message1",success : true, name: "name1", runLocation: "east us"
             };
 
             var client = new AppInsights.TelemetryClient("iKey");
-            
+
             client.trackEvent({ name: "test event" });
             client.trackException({ exception: new Error("test error") });
             client.trackMetric({ name: "test metric", value: 3 });
             client.trackTrace({ message: "test trace" });
             client.trackAvailability(expectedTelemetryData);
-            
+
             client.flush({
                 callback: (response) => {
                     assert.ok(response, "response should not be empty");
@@ -447,14 +455,16 @@ describe("EndToEnd", () => {
 
             this.request.returns(req);
 
-            client.flush({
-                callback: (response: any) => {
-                    // yield for the caching behavior
-                    setImmediate(() => {
-                        assert(writeFile.callCount === 0);
-                        done();
-                    });
-                }
+            setImmediate(() => {
+                client.flush({
+                    callback: (response: any) => {
+                        // yield for the caching behavior
+                        setImmediate(() => {
+                            assert(writeFile.callCount === 0);
+                            done();
+                        });
+                    }
+                });
             });
         });
 
@@ -468,16 +478,18 @@ describe("EndToEnd", () => {
 
             this.request.returns(req);
 
-            client.flush({
-                callback: (response: any) => {
-                    // yield for the caching behavior
-                    setImmediate(() => {
-                        assert.equal(writeFile.callCount, 1);
-                        assert.equal(spawn.callCount, os.type() === "Windows_NT" ? 2 : 0);
-                        done();
-                    });
-                }
-            });
+            setImmediate(() => {
+                client.flush({
+                    callback: (response: any) => {
+                        // yield for the caching behavior
+                        setImmediate(() => {
+                            assert.equal(writeFile.callCount, 1);
+                            assert.equal(spawn.callCount, os.type() === "Windows_NT" ? 2 : 0);
+                            done();
+                        });
+                    }
+                });
+            })
         });
 
         it("stores data to disk when enabled", (done) => {
@@ -962,6 +974,96 @@ describe("EndToEnd", () => {
                 (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
                 tempSpawnSync.restore();
             }
+        });
+    });
+
+    describe("Heartbeat metrics for VM", () => {
+        var sandbox: sinon.SinonSandbox;
+
+        beforeEach(() => {
+            sandbox = sinon.sandbox.create();
+        });
+
+        afterEach(() => {
+            sandbox.restore();
+        });
+
+        it("should collect correct VM information from JSON response", (done) => {
+            // set up stub
+            const vmDataJSON = `{
+                "vmId": "1",
+                "subscriptionId": "2",
+                "osType": "Windows_NT"
+            }`;
+            var stub: sinon.SinonStub = sandbox.stub(http, "request", (options: any, callback: any) => {
+                var req = new fakeRequest(false, "http://169.254.169.254", vmDataJSON);
+                req.on("end", callback);
+                return req;
+            });
+
+            // set up sdk
+            const client = new TelemetryClient("key");
+            const heartbeat: HeartBeat = new HeartBeat(client);
+            heartbeat.enable(true, client.config);
+            HeartBeat.INSTANCE.enable(true, client.config);
+            const trackMetricStub = sinon.stub(heartbeat["_client"], "trackMetric");
+            
+            heartbeat["trackHeartBeat"](client.config, () => {
+                assert.equal(trackMetricStub.callCount, 1, "should call trackMetric for the VM heartbeat metric");	
+                assert.equal(trackMetricStub.args[0][0].name, "HeartBeat", "should use correct name for heartbeat metric");	
+                assert.equal(trackMetricStub.args[0][0].value, 0, "value should be 0");	
+                const keys = Object.keys(trackMetricStub.args[0][0].properties);	
+                assert.equal(keys.length, 5, "should have 4 kv pairs added when resource type is VM");	
+                assert.equal(keys[0], "sdk", "sdk should be added as a key");	
+                assert.equal(keys[1], "osType", "osType should be added as a key");
+                assert.equal(keys[2], "azInst_vmId",  "azInst_vmId should be added as a key");	
+                assert.equal(keys[3], "azInst_subscriptionId", "azInst_subscriptionId should be added as a key");	
+                assert.equal(keys[4], "azInst_osType", "azInst_osType should be added as a key");	
+
+                const properties = trackMetricStub.args[0][0].properties;	
+                assert.equal(properties["sdk"], Context.sdkVersion, "sdk version should be read from Context");	
+                assert.equal(properties["osType"], os.type(), "osType should be read from os library");
+                assert.equal(properties["azInst_vmId"], "1", "azInst_vmId should be read from response");	
+                assert.equal(properties["azInst_subscriptionId"], "2", "azInst_subscriptionId should be read from response");	
+                assert.equal(properties["azInst_osType"], "Windows_NT", "azInst_osType should be read from response");
+                trackMetricStub.restore();
+                heartbeat.dispose();
+                stub.restore();
+                done();
+            });
+        });
+
+        it("should only send name and value properties for heartbeat metric when get VM request fails", (done) => {
+            // set up stub
+            var stub: sinon.SinonStub = sandbox.stub(http, "request", (options: any, callback: any) => {
+                var req = new fakeRequest(true, "http://169.254.169.254");
+                return req;
+            });
+
+            // set up sdk
+            const client = new TelemetryClient("key");
+            const heartbeat: HeartBeat = new HeartBeat(client);
+            heartbeat.enable(true, client.config);
+            HeartBeat.INSTANCE.enable(true, client.config);
+            const trackMetricStub = sinon.stub(heartbeat["_client"], "trackMetric");
+            
+            heartbeat["trackHeartBeat"](client.config, () => {
+                assert.equal(trackMetricStub.callCount, 1, "should call trackMetric as heartbeat metric");	
+                assert.equal(trackMetricStub.args[0][0].name, "HeartBeat", "should use correct name for heartbeat metric");	
+                assert.equal(trackMetricStub.args[0][0].value, 0, "value should be 0");	
+                const keys = Object.keys(trackMetricStub.args[0][0].properties);	
+                assert.equal(keys.length, 2, "should have 2 kv pairs added when resource type is not web app, not function app, not VM");	
+                assert.equal(keys[0], "sdk", "sdk should be added as a key");	
+                assert.equal(keys[1], "osType", "osType should be added as a key");	
+
+                const properties = trackMetricStub.args[0][0].properties;	
+                assert.equal(properties["sdk"], Context.sdkVersion, "sdk version should be read from Context");	
+                assert.equal(properties["osType"], os.type(), "osType should be read from os library");
+                trackMetricStub.restore();
+                heartbeat.dispose();
+                stub.restore();
+                done();
+            });
         });
     });
 });

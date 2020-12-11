@@ -1,14 +1,16 @@
-import http = require("http");
 import events = require("events");
-import Util = require("../Library/Util");
 import Logging = require("../Library/Logging");
 
 import * as DiagChannel from "./diagnostic-channel/initialization";
+import * as azureFunctionsTypes from "../Library/Functions";
 
 // Don't reference modules from these directly. Use only for types.
 import * as cls from "cls-hooked";
+import * as http from "http";
 import Traceparent = require("../Library/Traceparent");
 import Tracestate = require("../Library/Tracestate");
+import HttpRequestParser = require("./HttpRequestParser");
+import { ISpanContext } from "diagnostic-channel";
 
 export interface CustomProperties {
     /**
@@ -57,7 +59,7 @@ export class CorrelationContextManager {
      *  The context is the most recent one entered into for the current
      *  logical chain of execution, including across asynchronous calls.
      */
-    public static getCurrentContext(): CorrelationContext {
+    public static getCurrentContext(): CorrelationContext | null {
         if (!CorrelationContextManager.enabled) {
             return null;
         }
@@ -91,6 +93,15 @@ export class CorrelationContextManager {
         return null;
     }
 
+    public static spanToContextObject(spanContext: ISpanContext, parentId?: string, name?: string) {
+        const traceContext = new Traceparent();
+        traceContext.traceId = spanContext.traceId;
+        traceContext.spanId = spanContext.spanId;
+        traceContext.traceFlag = spanContext.traceFlags || Traceparent.DEFAULT_TRACE_FLAG;
+        traceContext.parentId = parentId;
+        return CorrelationContextManager.generateContextObject(traceContext.traceId, traceContext.parentId, name, null, traceContext);
+    }
+
     /**
      *  Runs a function inside a given Context.
      *  All logical children of the execution path that entered this Context
@@ -120,9 +131,11 @@ export class CorrelationContextManager {
      *
      *  The supplied callback will be given the same context that was present for
      *  the call to wrapCallback.  */
-    public static wrapCallback<T extends Function>(fn: T): T {
+    public static wrapCallback<T extends Function>(fn: T, context?: CorrelationContext): T {
         if (CorrelationContextManager.enabled) {
-            return CorrelationContextManager.session.bind(fn);
+            return CorrelationContextManager.session.bind(fn, context ? {
+                [CorrelationContextManager.CONTEXT_NAME]: context
+            } : undefined);
         }
         return fn;
     }
@@ -159,6 +172,69 @@ export class CorrelationContextManager {
         }
 
         this.enabled = true;
+    }
+
+    public static startOperation(context: azureFunctionsTypes.Context | (http.IncomingMessage | azureFunctionsTypes.HttpRequest) | ISpanContext, request?: azureFunctionsTypes.HttpRequest | string): CorrelationContext | null {
+        const traceContext = context && (context as azureFunctionsTypes.Context).traceContext || null;
+        const spanContext = context && (context as ISpanContext).traceId
+            ? context as ISpanContext
+            : null;
+        const headers = context && (context as http.IncomingMessage | azureFunctionsTypes.HttpRequest).headers;
+
+        if (spanContext) {
+            const traceparent = new Traceparent(`00-${spanContext.traceId}-${spanContext.spanId}-01`);
+            const tracestate = new Tracestate(spanContext.tracestate);
+            const correlationContext = CorrelationContextManager.generateContextObject(
+                spanContext.traceId,
+                `|${spanContext.traceId}.${spanContext.spanId}.`,
+                typeof request === "string" ? request : "",
+                undefined,
+                traceparent,
+                tracestate,
+            );
+            return correlationContext;
+        }
+
+        // AzFunction TraceContext available
+        if (traceContext) {
+            const traceparent = new Traceparent(traceContext.traceparent);
+            const tracestate = new Tracestate(traceContext.tracestate);
+            const parser = typeof request === "object"
+              ? new HttpRequestParser(request)
+              : null;
+            const correlationContext = CorrelationContextManager.generateContextObject(
+                traceparent.traceId,
+                traceparent.parentId,
+                typeof request === "string"
+                    ? request
+                    : parser.getOperationName({}),
+                parser && parser.getCorrelationContextHeader() || undefined,
+                traceparent,
+                tracestate,
+            );
+
+            return correlationContext;
+        }
+
+        // No TraceContext available, parse as http.IncomingMessage
+        if (headers) {
+            const traceparent = new Traceparent(headers.traceparent);
+            const tracestate = new Tracestate(headers.tracestate);
+            const parser = new HttpRequestParser(context as http.IncomingMessage | azureFunctionsTypes.HttpRequest);
+            const correlationContext = CorrelationContextManager.generateContextObject(
+                traceparent.traceId,
+                traceparent.parentId,
+                parser.getOperationName({}),
+                parser.getCorrelationContextHeader(),
+                traceparent,
+                tracestate,
+            );
+
+            return correlationContext;
+        }
+
+        Logging.warn("startOperation was called with invalid arguments", arguments);
+        return null;
     }
 
     /**

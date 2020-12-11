@@ -7,6 +7,7 @@ import Logging = require("./Logging");
 import Config = require("./Config");
 import TelemetryClient = require("../Library/TelemetryClient");
 import RequestResponseHeaders = require("./RequestResponseHeaders");
+import { HttpRequest } from "../Library/Functions";
 
 
 class Util {
@@ -102,6 +103,10 @@ class Util {
         // "Set the two most significant bits (bits 6 and 7) of the clock_seq_hi_and_reserved to zero and one, respectively"
         var clockSequenceHi = hexValues[8 + (Math.random() * 4) | 0];
         return oct.substr(0, 8) + oct.substr(9, 4) + "4" + oct.substr(13, 3) + clockSequenceHi + oct.substr(16, 3) + oct.substr(19, 12);
+    }
+
+    public static w3cSpanId() {
+        return Util.w3cTraceId().substring(16);
     }
 
     public static isValidW3CId(id: string): boolean {
@@ -246,7 +251,7 @@ class Util {
         return true;
     }
 
-    public static getCorrelationContextTarget(response: http.ClientResponse | http.ServerRequest, key: string) {
+    public static getCorrelationContextTarget(response: http.ClientResponse | http.ServerRequest | HttpRequest, key: string) {
         const contextHeaders = response.headers && response.headers[RequestResponseHeaders.requestContextHeader];
         if (contextHeaders) {
             const keyValues = contextHeaders.split(",");

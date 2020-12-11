@@ -11,7 +11,7 @@ describe("diagnostic-channel/winston", () => {
         disable();
     });
     it("should call trackException for errors, trackTrace for logs", () => {
-        AppInsights.setup("key");
+        AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
         AppInsights.start();
 
         const trackExceptionStub = sinon.stub(AppInsights.defaultClient, "trackException");

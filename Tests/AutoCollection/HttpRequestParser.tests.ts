@@ -111,6 +111,19 @@ describe("AutoCollection/HttpRequestParser", () => {
                 host: "bing.com"
             }
         }
+        
+        it("should propagate a custom timestamp", () => {
+            var helper = new HttpRequestParser(<any>request);
+            helper["startTime"] = 321;
+            var requestData1 = helper.getRequestTelemetry({time: new Date(123)});
+            var requestData2 = helper.getRequestTelemetry({time: new Date(456)});
+            var requestData3 = helper.getRequestTelemetry();
+
+            assert.deepEqual(requestData1.time, new Date(123));
+            assert.deepEqual(requestData2.time, new Date(456));
+            assert.deepEqual(requestData3.time, new Date(321));
+            assert.notDeepEqual(requestData1, requestData2);
+        });
 
         it("should return an absolute url", () => {
             var helper = new HttpRequestParser(<any>request);
