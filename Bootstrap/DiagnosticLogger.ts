@@ -13,8 +13,16 @@ export class DiagnosticLogger {
         message: null,
         level: null,
         time: null,
-        logger: "nodejs.applicationinsights",
-        properties: {}
+        logger: "applicationinsights.extension.diagnostics",
+        properties: {
+            language: "nodejs",
+            operation: "Startup",
+            siteName: process.env.WEBSITE_SITE_NAME,
+            ikey: process.env.APPINSIGHTS_INSTRUMENTATIONKEY,
+            extensionVersion: process.env.ApplicationInsightsAgent_EXTENSION_VERSION,
+            sdkVersion: "1.8.8",
+            subscriptionId: process.env.WEBSITE_OWNER_NAME ? process.env.WEBSITE_OWNER_NAME.split("+")[0] : null,
+        }
     }
 
     constructor(private _writer: DataModel.AgentLogger = console) {}
@@ -28,7 +36,7 @@ export class DiagnosticLogger {
                 ...DiagnosticLogger.DefaultEnvelope,
                 message,
                 level: DataModel.SeverityLevel.INFO,
-                time: new Date().toUTCString()
+                time: new Date().toISOString(),
             };
             this._writer.log(diagnosticMessage);
         } else {
