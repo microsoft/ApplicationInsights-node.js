@@ -4,7 +4,7 @@ import { CorrelationContext } from "../AutoCollection/CorrelationContextManager"
 /**
  *  A telemetry processor that handles sampling.
  */
-export function samplingTelemetryProcessor(envelope: Contracts.Envelope, contextObjects: { correlationContext: CorrelationContext }): boolean {
+export function samplingTelemetryProcessor(envelope: Contracts.EnvelopeTelemetry, contextObjects: { correlationContext: CorrelationContext }): boolean {
     var samplingPercentage = envelope.sampleRate; // Set for us in Client.getEnvelope
     var isSampledIn = false;
 

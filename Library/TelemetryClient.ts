@@ -19,7 +19,7 @@ import QuickPulseStateManager = require("./QuickPulseStateManager");
  * and manually trigger immediate sending (flushing)
  */
 class TelemetryClient {
-    private _telemetryProcessors: { (envelope: Contracts.Envelope, contextObjects: { [name: string]: any; }): boolean; }[] = [];
+    private _telemetryProcessors: { (envelope: Contracts.EnvelopeTelemetry, contextObjects: { [name: string]: any; }): boolean; }[] = [];
 
     public config: Config;
     public context: Context;
@@ -167,7 +167,7 @@ class TelemetryClient {
      *
      * @param telemetryProcessor function, takes Envelope, and optional context object and returns boolean
      */
-    public addTelemetryProcessor(telemetryProcessor: (envelope: Contracts.Envelope, contextObjects?: { [name: string]: any; }) => boolean) {
+    public addTelemetryProcessor(telemetryProcessor: (envelope: Contracts.EnvelopeTelemetry, contextObjects?: { [name: string]: any; }) => boolean) {
         this._telemetryProcessors.push(telemetryProcessor);
     }
 
@@ -178,7 +178,7 @@ class TelemetryClient {
         this._telemetryProcessors = [];
     }
 
-    private runTelemetryProcessors(envelope: Contracts.Envelope, contextObjects: { [name: string]: any; }): boolean {
+    private runTelemetryProcessors(envelope: Contracts.EnvelopeTelemetry, contextObjects: { [name: string]: any; }): boolean {
         var accepted = true;
         var telemetryProcessorsCount = this._telemetryProcessors.length;
 

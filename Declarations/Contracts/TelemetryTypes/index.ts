@@ -11,4 +11,5 @@ export * from "./NodeHttpRequestTelemetry";
 export * from "./AvailabilityTelemetry";
 export * from "./PageViewTelemetry";
 
+export * from "./EnvelopeTelemetry";
 export * from "./TelemetryType";
