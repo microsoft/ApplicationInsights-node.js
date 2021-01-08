@@ -16,11 +16,26 @@ import { ISpanContext } from "diagnostic-channel";
 
 import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCollection/NativePerformance";
 
+import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCollection/NativePerformance";
+
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
 export import TelemetryClient = require("./Library/NodeClient");
 export import Contracts = require("./Declarations/Contracts");
 export import azureFunctionsTypes = require("./Library/Functions");
+
+export enum DistributedTracingModes {
+    /**
+     * (Default) Send Application Insights correlation headers
+     */
+
+    AI=0,
+
+    /**
+     * Send both W3C Trace Context headers and back-compatibility Application Insights headers
+     */
+    AI_AND_W3C
+}
 
 export enum DistributedTracingModes {
     /**
@@ -252,6 +267,7 @@ export class Configuration {
         if (_isStarted) {
             _heartbeat.enable(value, defaultClient.config);
         }
+
 
         return Configuration;
     }
