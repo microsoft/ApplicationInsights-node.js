@@ -31,7 +31,7 @@ class AutoCollectHttpRequests {
         this._client = client;
     }
 
-    public enable(isEnabled:boolean) {
+    public enable(isEnabled: boolean) {
         this._isEnabled = isEnabled;
 
         // Autocorrelation requires automatic monitoring of incoming server requests
@@ -43,7 +43,7 @@ class AutoCollectHttpRequests {
         }
     }
 
-    public useAutoCorrelation(isEnabled:boolean, forceClsHooked?:boolean) {
+    public useAutoCorrelation(isEnabled: boolean, forceClsHooked?: boolean) {
         if (isEnabled && !this._isAutoCorrelating) {
             CorrelationContextManager.enable(forceClsHooked);
         } else if (!isEnabled && this._isAutoCorrelating) {
@@ -60,7 +60,7 @@ class AutoCollectHttpRequests {
         return this._isAutoCorrelating;
     }
 
-    private _generateCorrelationContext(requestParser:HttpRequestParser): CorrelationContext {
+    private _generateCorrelationContext(requestParser: HttpRequestParser): CorrelationContext {
         if (!this._isAutoCorrelating) {
             return;
         }
@@ -85,7 +85,7 @@ class AutoCollectHttpRequests {
             if (typeof onRequest !== 'function') {
                 throw new Error('onRequest handler must be a function');
             }
-            return (request:http.ServerRequest, response:http.ServerResponse) => {
+            return (request: http.ServerRequest, response: http.ServerResponse) => {
                 CorrelationContextManager.wrapEmitter(request);
                 CorrelationContextManager.wrapEmitter(response);
                 const shouldCollect: boolean = request && !(<any>request)[AutoCollectHttpRequests.alreadyAutoCollectedFlag];
@@ -103,7 +103,7 @@ class AutoCollectHttpRequests {
                             (<any>request)[AutoCollectHttpRequests.alreadyAutoCollectedFlag] = true;
 
                             // Auto collect request
-                            AutoCollectHttpRequests.trackRequest(this._client, {request: request, response: response}, requestParser);
+                            AutoCollectHttpRequests.trackRequest(this._client, { request: request, response: response }, requestParser);
                         }
 
                         if (typeof onRequest === "function") {
@@ -146,43 +146,24 @@ class AutoCollectHttpRequests {
             server.on = server.addListener;
         }
 
-        const originalHttpServer = http.createServer;    
+        const originalHttpServer: any = http.createServer;
 
-        // createServer(server);
-        // createServer();
-        // createServer({ options }, server);
-        // (options?, onrequest)
-        // ...vars
-
-        // function overloadedCreateServer(options?: Object, onRequest:Function): any[];
-        // function overloadedCreateServer (onRequest: Function): any[];
-        function createServer(onRequest?: Function): any;
-        function createServer(options?: Object, onRequest?: Function): any;
-        function createServer(...vars: any[]) {
-            if(typeof vars[0] === 'object') {
-                const options = vars[0];
-                const onRequest = vars[1];
-                const server: http.Server = originalHttpServer(options, wrapOnRequestHandler(onRequest));
-                wrapServerEventHandler(server);
-                return server
-            } else {
-                const onRequest = vars[0];
-                const server: http.Server = originalHttpServer(wrapOnRequestHandler(onRequest));
+        // options parameter was added in Node.js v9.6.0, v8.12.0
+        // function createServer(requestListener?: RequestListener): Server;
+        // function createServer(options: ServerOptions, requestListener?: RequestListener): Server;
+        http.createServer = (param1?: Object, param2?: Function) => {
+            // todo: get a pointer to the server so the IP address can be read from server.address
+            if (param2 && typeof param2 === 'function') {
+                const server: http.Server = originalHttpServer(param1, wrapOnRequestHandler(param2));
                 wrapServerEventHandler(server);
                 return server;
-            }          
+            }
+            else {
+                const server: http.Server = originalHttpServer(wrapOnRequestHandler(param1));
+                wrapServerEventHandler(server);
+                return server;
+            }
         }
-
-        http.createServer = createServer;
-
-        // // Add override with optional parameter options
-        // http.createServer = (options: https.ServerOptions, onRequest?: Function) => {
-        //     // todo: get a pointer to the server so the IP address can be read from server.address
-        //     const server: http.Server = originalHttpServer(options, wrapOnRequestHandler(onRequest));
-        //     wrapServerEventHandler(server);
-        //     return server;
-        // }
-    
 
         const originalHttpsServer = https.createServer;
         https.createServer = (options: https.ServerOptions, onRequest?: Function) => {
@@ -221,7 +202,7 @@ class AutoCollectHttpRequests {
     /**
      * Tracks a request by listening to the response 'finish' event
      */
-    public static trackRequest(client: TelemetryClient, telemetry: Contracts.NodeHttpRequestTelemetry, _requestParser?:HttpRequestParser) {
+    public static trackRequest(client: TelemetryClient, telemetry: Contracts.NodeHttpRequestTelemetry, _requestParser?: HttpRequestParser) {
         if (!telemetry.request || !telemetry.response || !client) {
             Logging.info("AutoCollectHttpRequests.trackRequest was called with invalid parameters: ", !telemetry.request, !telemetry.response, !client);
             return;
@@ -252,7 +233,7 @@ class AutoCollectHttpRequests {
 
         // track a failed request if an error is emitted
         if (telemetry.request.on) {
-            telemetry.request.on("error", (error:any) => {
+            telemetry.request.on("error", (error: any) => {
                 AutoCollectHttpRequests.endRequest(client, requestParser, telemetry, null, error);
             });
         }
@@ -261,7 +242,7 @@ class AutoCollectHttpRequests {
     /**
      * Add the target correlationId to the response headers, if not already provided.
      */
-    private static addResponseCorrelationIdHeader(client: TelemetryClient, response:http.ServerResponse) {
+    private static addResponseCorrelationIdHeader(client: TelemetryClient, response: http.ServerResponse) {
         if (client.config && client.config.correlationId &&
             response.getHeader && response.setHeader && !(<any>response).headersSent) {
             const correlationHeader = <any>response.getHeader(RequestResponseHeaders.requestContextHeader);
@@ -298,11 +279,11 @@ class AutoCollectHttpRequests {
     }
 
     public dispose() {
-         AutoCollectHttpRequests.INSTANCE = null;
-         this.enable(false);
-         this._isInitialized = false;
-         CorrelationContextManager.disable();
-         this._isAutoCorrelating = false;
+        AutoCollectHttpRequests.INSTANCE = null;
+        this.enable(false);
+        this._isInitialized = false;
+        CorrelationContextManager.disable();
+        this._isAutoCorrelating = false;
     }
 }
 
