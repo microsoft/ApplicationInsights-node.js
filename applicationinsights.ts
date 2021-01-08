@@ -253,7 +253,6 @@ export class Configuration {
             _heartbeat.enable(value, defaultClient.config);
         }
 
-
         return Configuration;
     }
 
