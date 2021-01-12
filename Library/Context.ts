@@ -18,7 +18,7 @@ class Context {
         this.keys = new Contracts.ContextTagKeys();
         this.tags = <{ [key: string]: string}>{};
 
-        this._loadApplicationContext();
+        this._loadApplicationContext(packageJsonPath);
         this._loadDeviceContext();
         this._loadInternalContext();
     }
