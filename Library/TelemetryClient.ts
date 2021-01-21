@@ -150,9 +150,9 @@ class TelemetryClient {
             // Ideally we would have a central place for "internal" telemetry processors and users can configure which ones are in use.
             // This will do for now. Otherwise clearTelemetryProcessors() would be problematic.
             accepted = accepted && TelemetryProcessors.samplingTelemetryProcessor(envelope, { correlationContext: CorrelationContextManager.getCurrentContext() });
-
+            TelemetryProcessors.performanceMetricsTelemetryProcessor(envelope, this.quickPulseClient, accepted);
+            TelemetryProcessors.preAggregatedMetricsTelemetryProcessor(envelope);
             if (accepted) {
-                TelemetryProcessors.performanceMetricsTelemetryProcessor(envelope, this.quickPulseClient);
                 this.channel.send(envelope);
             }
         }

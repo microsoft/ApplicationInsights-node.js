@@ -1,12 +1,11 @@
 import Contracts = require("../Declarations/Contracts");
-import Logging = require("../Library/Logging");
 import QuickPulseStateManager = require("../Library/QuickPulseStateManager")
 import AutoCollectPerformance = require("../AutoCollection/Performance");
 import * as TelemetryType from "../Declarations/Contracts";
 
-export function performanceMetricsTelemetryProcessor(envelope: Contracts.EnvelopeTelemetry, client?: QuickPulseStateManager): boolean {
+export function performanceMetricsTelemetryProcessor(envelope: Contracts.EnvelopeTelemetry, client?: QuickPulseStateManager, accepted?: boolean): boolean {
     // If live metrics is enabled, forward all telemetry there
-    if (client) {
+    if (client && accepted) {
         client.addDocument(envelope);
     }
 
