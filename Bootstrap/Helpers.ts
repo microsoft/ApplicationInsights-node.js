@@ -11,16 +11,18 @@ export function sdkAlreadyExists(_logger: DiagnosticLogger): boolean {
             // Node <8.9
             appInstance = require.resolve(process.cwd() + "/node_modules/applicationinsights");
         }
-        const attachInstance = require.resolve("../applicationinsights");
-        if (appInstance !== attachInstance) {
+        // If loaded instance is in Azure machine home path do not attach the SDK, this means customer already instrumented their app
+        if (appInstance.indexOf("home") > -1) {
             _logger.logMessage(
                 "applicationinsights module is already installed in this application; not re-attaching. Installed SDK location: " +
                 appInstance
             );
             return true;
         }
-        // User probably modified their NODE_PATH to resolve to this instance. Attach appinsights
-        return false;
+        else {
+            // ApplicationInsights could be loaded outside of customer application, attach in this case
+            return false;
+        }
     } catch (e) {
         // crashed while trying to resolve "applicationinsights", so SDK does not exist. Attach appinsights
         return false;
