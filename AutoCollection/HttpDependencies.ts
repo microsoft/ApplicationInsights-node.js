@@ -63,11 +63,16 @@ class AutoCollectHttpDependencies {
         const clientRequestPatch = (request: http.ClientRequest, options: http.RequestOptions | https.RequestOptions) => {
             var shouldCollect = !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] &&
                 !(<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
+                
+            // If someone else patched traceparent headers onto this request
+            if (options.headers && options.headers['user-agent'] && options.headers['user-agent'].toString().indexOf('azsdk-js') !== -1) {
+                shouldCollect = false;
+            }
             (<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag] = true;
 
             if (request && options && shouldCollect) {
                 CorrelationContextManager.wrapEmitter(request);
-                AutoCollectHttpDependencies.trackRequest(this._client, {options: options, request: request});
+                AutoCollectHttpDependencies.trackRequest(this._client, { options: options, request: request });
             }
         };
 
