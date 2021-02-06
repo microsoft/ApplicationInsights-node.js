@@ -102,7 +102,7 @@ const runAndValidateLongTest = () => {
     };
 
     const waitForTelemetry = () => {
-        const waitTime = Config.WaitTime * 2;
+        const waitTime = Config.WaitTime * 4;
         Utils.Logging.info("Waiting " + waitTime + "ms for telemetry...");
         return new Promise((resolve, reject) => setTimeout(resolve, waitTime));
     }
