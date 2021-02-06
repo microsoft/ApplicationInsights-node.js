@@ -246,7 +246,7 @@ The `bunyan`, `winston`, and `console` patches will generate Application Insight
 The rest will generate Application Insights Dependency events based on whether `setAutoCollectDependencies` is enabled. Make sure that `applicationinsights` is imported **before** any 3rd-party packages for them to be instrumented successfully.
 
 Automatic instrumentation for several Azure SDKs is also available, you must manually install @opentelemetry/tracing to enable this automatic tracing. No additional configuration is required
-Currently Cognitive Search, Communication Common and Cosmos DB are not supported.
+Currently Cognitive Search, Communication Common and Cosmos DB SDKs are not supported.
 [Javascript Azure SDKs](https://azure.github.io/azure-sdk/releases/latest/index.html#javascript)
 
 

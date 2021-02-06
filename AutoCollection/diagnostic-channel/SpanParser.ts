@@ -15,8 +15,11 @@ function filterSpanAttributes(attributes: Attributes) {
 export function spanToTelemetryContract(span: Span): (Contracts.DependencyTelemetry & Contracts.RequestTelemetry) & Contracts.Identified {
     const id = `|${span.context().traceId}.${span.context().spanId}.`;
     const duration = Math.round(span._duration[0] * 1e3 + span._duration[1] / 1e6);
-    const isHttp: boolean = ((span.attributes.component || "").toString().toUpperCase() === Constants.DependencyTypeName.Http) || (!!span.attributes[Constants.SpanAttribute.HttpUrl]);
-    const isGrpc: boolean = (span.attributes.component || "").toString().toLowerCase() === Constants.DependencyTypeName.Grpc;
+    let peerAddress = span.attributes["peer.address"] ? span.attributes["peer.address"].toString() : "";
+    let component = span.attributes["component"] ? span.attributes["component"].toString() : "";
+
+    const isHttp: boolean = ((component).toUpperCase() === Constants.DependencyTypeName.Http) || (!!span.attributes[Constants.SpanAttribute.HttpUrl]);
+    const isGrpc: boolean = (component).toLowerCase() === Constants.DependencyTypeName.Grpc;
     if (isHttp) {
         // Read http span attributes
         const method = span.attributes[Constants.SpanAttribute.HttpMethod] || "GET";
@@ -64,10 +67,10 @@ export function spanToTelemetryContract(span: Span): (Contracts.DependencyTeleme
         });
         return {
             id, duration, name,
-            target: span.attributes["peer.address"].toString(),
-            data: span.attributes["peer.address"].toString() || name,
-            url: span.attributes["peer.address"].toString() || name,
-            dependencyTypeName: span.kind === SpanKind.INTERNAL ? Constants.DependencyTypeName.InProc : (span.attributes.component.toString() || span.name),
+            target: peerAddress,
+            data: peerAddress || name,
+            url: peerAddress || name,
+            dependencyTypeName: span.kind === SpanKind.INTERNAL ? Constants.DependencyTypeName.InProc : (component || span.name),
             resultCode: String(span.status.code || 0),
             success: span.status.code === 0,
             properties: {
