@@ -166,8 +166,8 @@ describe("Library/TelemetryClient", () => {
     describe("#trackAvailability()", () => {
         it("should track availability with correct data", () => {
             trackStub.reset();
-            const expectedTelemetryData: Contracts.AvailabilityTelemetry =  {
-                duration: 100, id: "id1", message: "message1",success : true, name: "name1", runLocation: "east us"
+            const expectedTelemetryData: Contracts.AvailabilityTelemetry = {
+                duration: 100, id: "id1", message: "message1", success: true, name: "name1", runLocation: "east us"
             };
 
             client.trackAvailability(expectedTelemetryData);
@@ -388,7 +388,7 @@ describe("Library/TelemetryClient", () => {
             it('should track request with tagOverrides on response finish event', () => {
                 trackStub.reset();
                 clock.reset();
-                client.trackNodeHttpRequest({ request: <any>request, response: <any>response, properties: properties, tagOverrides: {"custom": "A", "ai.device.id": "B"} });
+                client.trackNodeHttpRequest({ request: <any>request, response: <any>response, properties: properties, tagOverrides: { "custom": "A", "ai.device.id": "B" } });
 
                 // emit finish event
                 response.emitFinish();
@@ -492,7 +492,7 @@ describe("Library/TelemetryClient", () => {
             });
             it('should track request with correct data and tag overrides synchronously', () => {
                 trackStub.reset();
-                client.trackNodeHttpRequestSync({ request: <any>request, response: <any>response, duration: 100, properties: properties, tagOverrides: {"custom": "A", "ai.device.id": "B"}});
+                client.trackNodeHttpRequestSync({ request: <any>request, response: <any>response, duration: 100, properties: properties, tagOverrides: { "custom": "A", "ai.device.id": "B" } });
                 assert.ok(trackStub.calledOnce);
                 var requestTelemetry = <Contracts.RequestTelemetry>trackStub.firstCall.args[0];
 
@@ -533,7 +533,7 @@ describe("Library/TelemetryClient", () => {
                         path: '/search?q=test'
                     },
                     request: <any>request, properties: properties,
-                    tagOverrides: {"custom": "A", "ai.device.id": "B"}
+                    tagOverrides: { "custom": "A", "ai.device.id": "B" }
                 });
 
                 // response event was not emitted yet
@@ -553,7 +553,7 @@ describe("Library/TelemetryClient", () => {
                 assert.equal(dependencyTelemetry.target, "bing.com");
                 assert.equal(dependencyTelemetry.dependencyTypeName, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
                 assert.deepEqual(dependencyTelemetry.properties, properties);
-                assert.deepEqual(dependencyTelemetry.tagOverrides, {"custom": "A", "ai.device.id": "B"});
+                assert.deepEqual(dependencyTelemetry.tagOverrides, { "custom": "A", "ai.device.id": "B" });
             });
 
             it('should track request with correct data on response event', () => {
@@ -935,6 +935,20 @@ describe("Library/TelemetryClient", () => {
 
             var actualData = sendStub.firstCall.args[0] as Contracts.Envelope;
             assert.equal(actualData.name, expectedName, "envelope name should be changed by the processor");
+        });
+
+        it("setAutoPopulateAzureProperties", () => {
+            trackStub.restore();
+            const env = <{ [id: string]: string }>{};
+            const originalEnv = process.env;
+            env.WEBSITE_SITE_NAME = "testRole";
+            process.env = env;
+            client.setAutoPopulateAzureProperties(true);
+            client.track(testEventTelemetry, Contracts.TelemetryType.Event);
+            process.env = originalEnv;
+            assert.equal(sendStub.callCount, 1, "send called once");
+            var actualData = sendStub.firstCall.args[0] as Contracts.Envelope;
+            assert.equal(actualData.tags[client.context.keys.cloudRole], "testRole");
         });
 
         it("telemetry processor can access the context object", () => {

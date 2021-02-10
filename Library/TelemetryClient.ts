@@ -20,6 +20,7 @@ import QuickPulseStateManager = require("./QuickPulseStateManager");
  */
 class TelemetryClient {
     private _telemetryProcessors: { (envelope: Contracts.EnvelopeTelemetry, contextObjects: { [name: string]: any; }): boolean; }[] = [];
+    private _enableAzureProperties: boolean = false;
 
     public config: Config;
     public context: Context;
@@ -144,7 +145,9 @@ class TelemetryClient {
             if (telemetry.time) {
                 envelope.time = telemetry.time.toISOString();
             }
-
+            if (this._enableAzureProperties) {
+                TelemetryProcessors.azureRoleEnvironmentTelemetryProcessor(envelope, this.context);
+            }
             var accepted = this.runTelemetryProcessors(envelope, telemetry.contextObjects);
 
             // Ideally we would have a central place for "internal" telemetry processors and users can configure which ones are in use.
@@ -159,6 +162,15 @@ class TelemetryClient {
         else {
             Logging.warn("track() requires telemetry object and telemetryType to be specified.")
         }
+    }
+
+    /**
+     * Automatically populate telemetry properties like RoleName when running in Azure
+     *
+      * @param value if true properties will be populated
+     */
+    public setAutoPopulateAzureProperties(value: boolean) {
+        this._enableAzureProperties = value;
     }
 
     /**
