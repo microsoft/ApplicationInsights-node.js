@@ -228,6 +228,15 @@ appInsights.defaultClient.context.tags[appInsights.defaultClient.context.keys.cl
 appInsights.start();
 ```
 
+If running in Azure App service or Azure functions the SDK will automatically populate the cloud role when following code is added:
+```javascript
+const appInsights = require("applicationinsights");
+appInsights.setup("<instrumentation_key>");
+appInsights.defaultClient.setAutoPopulateAzureProperties(true);
+appInsights.start();
+```
+
+
 ### Automatic third-party instrumentation
 
 In order to track context across asynchronous calls, some changes are required in third party libraries such as mongodb and redis.
