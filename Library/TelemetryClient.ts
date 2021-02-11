@@ -13,6 +13,7 @@ import Logging = require("./Logging");
 import FlushOptions = require("./FlushOptions");
 import EnvelopeFactory = require("./EnvelopeFactory");
 import QuickPulseStateManager = require("./QuickPulseStateManager");
+import {Tags} from "../Declarations/Contracts";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -214,6 +215,15 @@ class TelemetryClient {
             } catch (error) {
                 accepted = true;
                 Logging.warn("One of telemetry processors failed, telemetry item will be sent.", error, envelope);
+            }
+        }
+
+        // Sanitize tags and properties after running telemetry processors
+        if (accepted) {
+            envelope.tags = Util.validateStringMap(envelope.data.baseData.properties) as Tags & Tags[];
+
+            if (envelope.data.baseData.properties) {
+                envelope.data.baseData.properties = Util.validateStringMap(envelope.data.baseData.properties);
             }
         }
 
