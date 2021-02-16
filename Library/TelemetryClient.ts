@@ -220,9 +220,10 @@ class TelemetryClient {
 
         // Sanitize tags and properties after running telemetry processors
         if (accepted) {
-            envelope.tags = Util.validateStringMap(envelope.data.baseData.properties) as Tags & Tags[];
-
-            if (envelope.data.baseData.properties) {
+            if (envelope && envelope.tags) {
+                envelope.tags = Util.validateStringMap(envelope.tags) as Tags & Tags[];
+            }
+            if (envelope && envelope.data && envelope.data.baseData && envelope.data.baseData.properties) {
                 envelope.data.baseData.properties = Util.validateStringMap(envelope.data.baseData.properties);
             }
         }
