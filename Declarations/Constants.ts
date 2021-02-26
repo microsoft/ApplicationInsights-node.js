@@ -41,12 +41,10 @@ export enum PerformanceCounter {
 
 export enum MetricId {
     REQUESTS_DURATION = "requests/duration",
-    REQUESTS_RATE = "requests/rate",
     DEPENDENCIES_DURATION = "dependencies/duration",
-    DEPENDENCIES_RATE = "dependencies/rate",
     EXCEPTIONS_COUNT = "exceptions/count",
     TRACES_COUNT = "traces/count",
-};
+}; 
 
 /**
  * Map a PerformanceCounter/QuickPulseCounter to a QuickPulseCounter. If no mapping exists, mapping is *undefined*

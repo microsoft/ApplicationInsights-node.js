@@ -151,7 +151,7 @@ class TelemetryClient {
             // This will do for now. Otherwise clearTelemetryProcessors() would be problematic.
             accepted = accepted && TelemetryProcessors.samplingTelemetryProcessor(envelope, { correlationContext: CorrelationContextManager.getCurrentContext() });
             TelemetryProcessors.performanceMetricsTelemetryProcessor(envelope, this.quickPulseClient, accepted);
-            TelemetryProcessors.preAggregatedMetricsTelemetryProcessor(envelope);
+            TelemetryProcessors.preAggregatedMetricsTelemetryProcessor(envelope, this.context);
             if (accepted) {
                 this.channel.send(envelope);
             }

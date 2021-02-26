@@ -1,28 +1,44 @@
 import TelemetryClient = require("../Library/TelemetryClient");
 import Constants = require("../Declarations/Constants");
 
-import { AggregatedMetric } from "../Declarations/AggregatedMetric";
+import { AggregatedMetric } from "../Declarations/Metrics/AggregatedMetric";
+import { AggregatedMetricCounter } from "../Declarations/Metrics/AggregatedMetricCounters";
+import {
+    MetricBaseDimensions,
+    MetricDependencyDimensions,
+    MetricExceptionDimensions,
+    MetricRequestDimensions,
+    MetricTraceDimensions,
+    PreaggregatedMetricPropertyNames,
+    MetricDimensionTypeKeys
+} from "../Declarations/Metrics/AggregatedMetricDimensions";
 import * as Contracts from "../Declarations/Contracts";
 
-class AutoCollecPreAggregatedMetrics {
 
-    public static INSTANCE: AutoCollecPreAggregatedMetrics;
+class AutoCollectPreAggregatedMetrics {
 
+    public static INSTANCE: AutoCollectPreAggregatedMetrics;
     private _collectionInterval: number;
-    private _client: TelemetryClient;
+    private static _client: TelemetryClient;
     private _handle: NodeJS.Timer;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
-    private _preAggregatedMetricsCollection: Array<AggregatedMetric>;
+    private static _dependencyCountersCollection: Array<AggregatedMetricCounter>;
+    private static _requestCountersCollection: Array<AggregatedMetricCounter>;
+    private static _exceptionCountersCollection: Array<AggregatedMetricCounter>;
+    private static _traceCountersCollection: Array<AggregatedMetricCounter>;
 
     constructor(client: TelemetryClient, collectionInterval = 60000) {
-        if (!AutoCollecPreAggregatedMetrics.INSTANCE) {
-            AutoCollecPreAggregatedMetrics.INSTANCE = this;
+        if (!AutoCollectPreAggregatedMetrics.INSTANCE) {
+            AutoCollectPreAggregatedMetrics.INSTANCE = this;
         }
 
         this._isInitialized = false;
-        this._preAggregatedMetricsCollection = [];
-        this._client = client;
+        AutoCollectPreAggregatedMetrics._dependencyCountersCollection = [];
+        AutoCollectPreAggregatedMetrics._requestCountersCollection = [];
+        AutoCollectPreAggregatedMetrics._exceptionCountersCollection = [];
+        AutoCollectPreAggregatedMetrics._traceCountersCollection = [];
+        AutoCollectPreAggregatedMetrics._client = client;
         this._collectionInterval = collectionInterval;
     }
 
@@ -34,8 +50,25 @@ class AutoCollecPreAggregatedMetrics {
 
         if (isEnabled) {
             if (!this._handle) {
+                for (let i = 0; i < AutoCollectPreAggregatedMetrics._dependencyCountersCollection.length; i++) {
+                    AutoCollectPreAggregatedMetrics._dependencyCountersCollection[i].lastTotalCount = AutoCollectPreAggregatedMetrics._dependencyCountersCollection[i].totalCount;
+                    AutoCollectPreAggregatedMetrics._dependencyCountersCollection[i].lastTime = +new Date;
+                }
+                for (let i = 0; i < AutoCollectPreAggregatedMetrics._requestCountersCollection.length; i++) {
+                    AutoCollectPreAggregatedMetrics._requestCountersCollection[i].lastTotalCount = AutoCollectPreAggregatedMetrics._requestCountersCollection[i].totalCount;
+                    AutoCollectPreAggregatedMetrics._requestCountersCollection[i].lastTime = +new Date;
+                }
+                for (let i = 0; i < AutoCollectPreAggregatedMetrics._exceptionCountersCollection.length; i++) {
+                    AutoCollectPreAggregatedMetrics._exceptionCountersCollection[i].lastTotalCount = AutoCollectPreAggregatedMetrics._exceptionCountersCollection[i].totalCount;
+                    AutoCollectPreAggregatedMetrics._exceptionCountersCollection[i].lastTime = +new Date;
+                }
+                for (let i = 0; i < AutoCollectPreAggregatedMetrics._traceCountersCollection.length; i++) {
+                    AutoCollectPreAggregatedMetrics._traceCountersCollection[i].lastTotalCount = AutoCollectPreAggregatedMetrics._traceCountersCollection[i].totalCount;
+                    AutoCollectPreAggregatedMetrics._traceCountersCollection[i].lastTime = +new Date;
+                }
+
                 this._collectionInterval = collectionInterval || this._collectionInterval;
-                this._handle = setInterval(() => this.trackPreAggregatedMetrics(), this._collectionInterval);
+                this._handle = setInterval(() => AutoCollectPreAggregatedMetrics.trackPreAggregatedMetrics(), this._collectionInterval);
                 this._handle.unref(); // Allow the app to terminate even while this loop is going on
             }
         } else {
@@ -46,17 +79,56 @@ class AutoCollecPreAggregatedMetrics {
         }
     }
 
-
-    public static countRequest(duration: number | string, success: boolean) {
-
+    public static countException(dimensions: MetricExceptionDimensions) {
+        if (!AutoCollectPreAggregatedMetrics.isEnabled()) {
+            return;
+        }
+        let counter: AggregatedMetricCounter = AutoCollectPreAggregatedMetrics._getAggregatedCounter(dimensions, this._exceptionCountersCollection);
+        counter.totalCount++;
     }
 
-    public static countException() {
-
+    public static countTrace(dimensions: MetricTraceDimensions) {
+        if (!AutoCollectPreAggregatedMetrics.isEnabled()) {
+            return;
+        }
+        let counter: AggregatedMetricCounter = AutoCollectPreAggregatedMetrics._getAggregatedCounter(dimensions, this._traceCountersCollection);
+        counter.totalCount++;
     }
 
-    public static countDependency(duration: number | string, success: boolean) {
+    public static countRequest(dimensions: MetricRequestDimensions) {
+        if (!AutoCollectPreAggregatedMetrics.isEnabled()) {
+            return;
+        }
+        let durationMs: number;
+        let counter: AggregatedMetricCounter = AutoCollectPreAggregatedMetrics._getAggregatedCounter(dimensions, this._requestCountersCollection);
+        if (typeof dimensions.duration === 'string') {
+            // dependency duration is passed in as "00:00:00.123" by autocollectors
+            durationMs = +new Date('1970-01-01T' + dimensions.duration + 'Z'); // convert to num ms, returns NaN if wrong
+        } else if (typeof dimensions.duration === 'number') {
+            durationMs = dimensions.duration;
+        } else {
+            return;
+        }
+        counter.intervalExecutionTime += durationMs;
+        counter.totalCount++;
+    }
 
+    public static countDependency(dimensions: MetricDependencyDimensions) {
+        if (!AutoCollectPreAggregatedMetrics.isEnabled()) {
+            return;
+        }
+        let counter: AggregatedMetricCounter = AutoCollectPreAggregatedMetrics._getAggregatedCounter(dimensions, this._dependencyCountersCollection);
+        let durationMs: number;
+        if (typeof dimensions.duration === 'string') {
+            // dependency duration is passed in as "00:00:00.123" by autocollectors
+            durationMs = +new Date('1970-01-01T' + dimensions.duration + 'Z'); // convert to num ms, returns NaN if wrong
+        } else if (typeof dimensions.duration === 'number') {
+            durationMs = dimensions.duration;
+        } else {
+            return;
+        }
+        counter.intervalExecutionTime += durationMs;
+        counter.totalCount++;
     }
 
     public isInitialized() {
@@ -64,55 +136,154 @@ class AutoCollecPreAggregatedMetrics {
     }
 
     public static isEnabled() {
-        return AutoCollecPreAggregatedMetrics.INSTANCE && AutoCollecPreAggregatedMetrics.INSTANCE._isEnabled;
+        return AutoCollectPreAggregatedMetrics.INSTANCE && AutoCollectPreAggregatedMetrics.INSTANCE._isEnabled;
     }
 
-    public trackPreAggregatedMetrics() {
-        this._trackRequestRate();
-        this._trackDependencyRate();
-        this._trackExceptionRate();
+    public static trackPreAggregatedMetrics() {
+        this._trackRequestMetrics();
+        this._trackDependencyMetrics();
+        this._trackExceptionMetrics();
+        this._trackTraceMetrics();
     }
 
-    private _getPreAggregatedMetric(metricType: Constants.MetricId, dimensions: { [key: string]: any; }) {
-        this._preAggregatedMetricsCollection
+    private static _getAggregatedCounter(dimensions: MetricBaseDimensions, counterCollection: Array<AggregatedMetricCounter>): AggregatedMetricCounter {
+        let notMatch = false;
+        // Check if counter with specified dimensions is available
+        for (let i = 0; i < counterCollection.length; i++) {
+            for (var prop in dimensions) {
+                if (dimensions[prop] != counterCollection[i].dimensions[prop]) {
+                    notMatch = true;
+                    break;
+                }
+            }
+            if (!notMatch) { // Found
+                return counterCollection[i];
+            }
+            notMatch = false;
+        }
+        // Create a new one if not found
+        return new AggregatedMetricCounter(dimensions);
     }
 
-
-
-    private _trackRequestRate() {
-
+    private static _trackRequestMetrics() {
+        for (let i = 0; i < this._requestCountersCollection.length; i++) {
+            var currentCounter = this._requestCountersCollection[i];
+            currentCounter.time = +new Date;
+            var intervalRequests = (currentCounter.totalCount - currentCounter.lastTotalCount) || 0;
+            var elapsedMs = currentCounter.time - currentCounter.lastTime;
+            var averageRequestExecutionTime = ((currentCounter.intervalExecutionTime - currentCounter.lastIntervalExecutionTime) / intervalRequests) || 0;
+            currentCounter.lastIntervalExecutionTime = currentCounter.intervalExecutionTime // reset
+            if (elapsedMs > 0) {
+                if (intervalRequests > 0) {
+                    this._trackPreAggregatedMetric({
+                        name: "Server response time",
+                        dimensions: currentCounter.dimensions,
+                        value: averageRequestExecutionTime,
+                        count: intervalRequests,
+                        aggregationInterval: elapsedMs,
+                        metricType: Constants.MetricId.REQUESTS_DURATION,
+                    });
+                }
+            }
+            // Set last counters
+            currentCounter.lastTotalCount = currentCounter.totalCount;
+            currentCounter.lastTime = currentCounter.time;
+        }
     }
 
-    private _trackDependencyRate() {
-
+    private static _trackDependencyMetrics() {
+        for (let i = 0; i < this._dependencyCountersCollection.length; i++) {
+            var currentCounter = this._dependencyCountersCollection[i];
+            currentCounter.time = +new Date;
+            var intervalDependencies = (currentCounter.totalCount - currentCounter.lastTotalCount) || 0;
+            var elapsedMs = currentCounter.time - currentCounter.lastTime;
+            var averageDependencyExecutionTime = ((currentCounter.intervalExecutionTime - currentCounter.lastIntervalExecutionTime) / intervalDependencies) || 0;
+            currentCounter.lastIntervalExecutionTime = currentCounter.intervalExecutionTime // reset
+            if (elapsedMs > 0) {
+                if (intervalDependencies > 0) {
+                    this._trackPreAggregatedMetric({
+                        name: "Dependency duration",
+                        dimensions: currentCounter.dimensions,
+                        value: averageDependencyExecutionTime,
+                        count: intervalDependencies,
+                        aggregationInterval: elapsedMs,
+                        metricType: Constants.MetricId.DEPENDENCIES_DURATION,
+                    });
+                }
+            }
+            // Set last counters
+            currentCounter.lastTotalCount = currentCounter.totalCount;
+            currentCounter.lastTime = currentCounter.time;
+        }
     }
 
-    private _trackExceptionRate() {
+    private static _trackExceptionMetrics() {
+        for (let i = 0; i < this._exceptionCountersCollection.length; i++) {
+            var currentCounter = this._exceptionCountersCollection[i];
+            var intervalExceptions = (currentCounter.totalCount - currentCounter.lastTotalCount) || 0;
+            var elapsedMs = currentCounter.time - currentCounter.lastTime;
+            this._trackPreAggregatedMetric({
+                name: "Exceptions",
+                dimensions: currentCounter.dimensions,
+                value: intervalExceptions,
+                count: intervalExceptions,
+                aggregationInterval: elapsedMs,
+                metricType: Constants.MetricId.DEPENDENCIES_DURATION,
+            });
 
+            // Set last counters
+            currentCounter.lastTotalCount = currentCounter.totalCount;
+            currentCounter.lastTime = currentCounter.time;
+        }
     }
 
-    private _trackPreAggregatedMetric(metric: AggregatedMetric) {
-        let telemetry: Contracts.MetricTelemetry = {
-            name: metric.name,
-            value: metric.value,
-            properties: metric.dimensions,
-            kind: "Aggregation",
-        };
-        telemetry.properties = {
-            ...telemetry.properties,
+    private static _trackTraceMetrics() {
+        for (let i = 0; i < this._traceCountersCollection.length; i++) {
+            var currentCounter = this._traceCountersCollection[i];
+            var intervalTraces = (currentCounter.totalCount - currentCounter.lastTotalCount) || 0;
+            var elapsedMs = currentCounter.time - currentCounter.lastTime;
+            this._trackPreAggregatedMetric({
+                name: "Traces",
+                dimensions: currentCounter.dimensions,
+                value: intervalTraces,
+                count: intervalTraces,
+                aggregationInterval: elapsedMs,
+                metricType: Constants.MetricId.DEPENDENCIES_DURATION,
+            });
+
+            // Set last counters
+            currentCounter.lastTotalCount = currentCounter.totalCount;
+            currentCounter.lastTime = currentCounter.time;
+        }
+    }
+
+    private static _trackPreAggregatedMetric(metric: AggregatedMetric) {
+        // Build metric properties
+        let metricProperties: any = {};
+        for (let dim in metric.dimensions) {
+            metricProperties[dim] = PreaggregatedMetricPropertyNames[dim as MetricDimensionTypeKeys];
+        }
+        metricProperties.properties = {
+            ...metricProperties.properties,
             "_MS.MetricId": metric.metricType,
             "_MS.AggregationIntervalMs": String(metric.aggregationInterval),
             "_MS.IsAutocollected": "True",
         };
 
-        this._client.trackMetric(telemetry);
+        let telemetry: Contracts.MetricTelemetry = {
+            name: metric.name,
+            value: metric.value,
+            properties: metricProperties,
+            kind: "Aggregation",
+        };
+        AutoCollectPreAggregatedMetrics._client.trackMetric(telemetry);
     }
 
     public dispose() {
-        AutoCollecPreAggregatedMetrics.INSTANCE = null;
+        AutoCollectPreAggregatedMetrics.INSTANCE = null;
         this.enable(false);
         this._isInitialized = false;
     }
 }
 
-export = AutoCollecPreAggregatedMetrics;
+export = AutoCollectPreAggregatedMetrics;

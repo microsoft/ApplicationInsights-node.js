@@ -84,7 +84,6 @@ class AutoCollectPerformance {
         }
     }
 
-
     public static countRequest(duration: number | string, success: boolean) {
         let durationMs: number;
         if (!AutoCollectPerformance.isEnabled()) {
