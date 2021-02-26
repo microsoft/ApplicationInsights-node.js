@@ -99,6 +99,7 @@ export function setupAndStart(setupString = _setupString): typeof types | null {
 
         // Instrument the SDK
         _appInsights.setup(setupString).setSendLiveMetrics(true);
+        _appInsights.defaultClient.setAutoPopulateAzureProperties(true);
         _appInsights.defaultClient.addTelemetryProcessor(prefixInternalSdkVersion);
         _appInsights.defaultClient.addTelemetryProcessor(copyOverPrefixInternalSdkVersionToHeartBeatMetric);
         _appInsights.start();
