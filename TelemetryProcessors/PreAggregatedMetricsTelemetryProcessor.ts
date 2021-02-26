@@ -31,24 +31,22 @@ export function preAggregatedMetricsTelemetryProcessor(envelope: Contracts.Envel
             let requestDimensions: MetricRequestDimensions = {
                 cloudRoleInstance: envelope.tags[context.keys.cloudRoleInstance],
                 cloudRoleName: envelope.tags[context.keys.cloudRole],
-                duration: requestData.duration,
-                success: requestData.success,
-                resultCode: requestData.responseCode,
+                requestSuccess: requestData.success,
+                requestResultCode: requestData.responseCode,
             };
-            AutoCollecPreAggregatedMetrics.countRequest(requestDimensions);
+            AutoCollecPreAggregatedMetrics.countRequest(requestData.duration, requestDimensions);
             break;
         case TelemetryType.TelemetryTypeString.Dependency:
             const remoteDependencyData: Contracts.RemoteDependencyData = (envelope.data as any).baseData;
             let dependencyDimensions: MetricDependencyDimensions = {
                 cloudRoleInstance: envelope.tags[context.keys.cloudRoleInstance],
                 cloudRoleName: envelope.tags[context.keys.cloudRole],
-                duration: remoteDependencyData.duration,
-                success: remoteDependencyData.success,
-                type: remoteDependencyData.type,
-                target: remoteDependencyData.target,
-                resultCode: remoteDependencyData.resultCode,
+                dependencySuccess: remoteDependencyData.success,
+                dependencyType: remoteDependencyData.type,
+                dependencyTarget: remoteDependencyData.target,
+                dependencyResultCode: remoteDependencyData.resultCode,
             };
-            AutoCollecPreAggregatedMetrics.countDependency(dependencyDimensions);
+            AutoCollecPreAggregatedMetrics.countDependency(remoteDependencyData.duration, dependencyDimensions);
             break;
     }
     return true;

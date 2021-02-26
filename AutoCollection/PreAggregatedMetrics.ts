@@ -95,17 +95,17 @@ class AutoCollectPreAggregatedMetrics {
         counter.totalCount++;
     }
 
-    public static countRequest(dimensions: MetricRequestDimensions) {
+    public static countRequest(duration: number | string, dimensions: MetricRequestDimensions) {
         if (!AutoCollectPreAggregatedMetrics.isEnabled()) {
             return;
         }
         let durationMs: number;
         let counter: AggregatedMetricCounter = AutoCollectPreAggregatedMetrics._getAggregatedCounter(dimensions, this._requestCountersCollection);
-        if (typeof dimensions.duration === 'string') {
+        if (typeof duration === 'string') {
             // dependency duration is passed in as "00:00:00.123" by autocollectors
-            durationMs = +new Date('1970-01-01T' + dimensions.duration + 'Z'); // convert to num ms, returns NaN if wrong
-        } else if (typeof dimensions.duration === 'number') {
-            durationMs = dimensions.duration;
+            durationMs = +new Date('1970-01-01T' + duration + 'Z'); // convert to num ms, returns NaN if wrong
+        } else if (typeof duration === 'number') {
+            durationMs = duration;
         } else {
             return;
         }
@@ -113,17 +113,17 @@ class AutoCollectPreAggregatedMetrics {
         counter.totalCount++;
     }
 
-    public static countDependency(dimensions: MetricDependencyDimensions) {
+    public static countDependency(duration: number | string, dimensions: MetricDependencyDimensions) {
         if (!AutoCollectPreAggregatedMetrics.isEnabled()) {
             return;
         }
         let counter: AggregatedMetricCounter = AutoCollectPreAggregatedMetrics._getAggregatedCounter(dimensions, this._dependencyCountersCollection);
         let durationMs: number;
-        if (typeof dimensions.duration === 'string') {
+        if (typeof duration === 'string') {
             // dependency duration is passed in as "00:00:00.123" by autocollectors
-            durationMs = +new Date('1970-01-01T' + dimensions.duration + 'Z'); // convert to num ms, returns NaN if wrong
-        } else if (typeof dimensions.duration === 'number') {
-            durationMs = dimensions.duration;
+            durationMs = +new Date('1970-01-01T' + duration + 'Z'); // convert to num ms, returns NaN if wrong
+        } else if (typeof duration === 'number') {
+            durationMs = duration;
         } else {
             return;
         }
@@ -150,8 +150,17 @@ class AutoCollectPreAggregatedMetrics {
         let notMatch = false;
         // Check if counter with specified dimensions is available
         for (let i = 0; i < counterCollection.length; i++) {
-            for (var prop in dimensions) {
-                if (dimensions[prop] != counterCollection[i].dimensions[prop]) {
+            // Same object
+            if (dimensions === counterCollection[i].dimensions) {
+                return counterCollection[i];
+            }
+            // Diferent number of keys skip
+            if (Object.keys(dimensions).length !== Object.keys(counterCollection[i].dimensions).length) {
+                continue;
+            }
+            // Check dimension values
+            for (let dim in dimensions) {
+                if ((<any>dimensions)[dim] != (<any>counterCollection[i].dimensions)[dim]) {
                     notMatch = true;
                     break;
                 }
@@ -162,7 +171,9 @@ class AutoCollectPreAggregatedMetrics {
             notMatch = false;
         }
         // Create a new one if not found
-        return new AggregatedMetricCounter(dimensions);
+        let newCounter = new AggregatedMetricCounter(dimensions);
+        counterCollection.push(newCounter);
+        return newCounter;
     }
 
     private static _trackRequestMetrics() {
@@ -261,7 +272,7 @@ class AutoCollectPreAggregatedMetrics {
         // Build metric properties
         let metricProperties: any = {};
         for (let dim in metric.dimensions) {
-            metricProperties[dim] = PreaggregatedMetricPropertyNames[dim as MetricDimensionTypeKeys];
+            metricProperties[PreaggregatedMetricPropertyNames[dim as MetricDimensionTypeKeys]] = metric.dimensions[dim];
         }
         metricProperties.properties = {
             ...metricProperties.properties,
