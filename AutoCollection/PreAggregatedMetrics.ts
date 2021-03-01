@@ -274,8 +274,8 @@ class AutoCollectPreAggregatedMetrics {
         for (let dim in metric.dimensions) {
             metricProperties[PreaggregatedMetricPropertyNames[dim as MetricDimensionTypeKeys]] = metric.dimensions[dim];
         }
-        metricProperties.properties = {
-            ...metricProperties.properties,
+        metricProperties = {
+            ...metricProperties,
             "_MS.MetricId": metric.metricType,
             "_MS.AggregationIntervalMs": String(metric.aggregationInterval),
             "_MS.IsAutocollected": "True",
@@ -284,6 +284,7 @@ class AutoCollectPreAggregatedMetrics {
         let telemetry: Contracts.MetricTelemetry = {
             name: metric.name,
             value: metric.value,
+            count: metric.count,
             properties: metricProperties,
             kind: "Aggregation",
         };

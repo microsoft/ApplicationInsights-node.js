@@ -19,8 +19,10 @@ export class AggregatedMetricCounter {
     constructor(dimensions: MetricBaseDimensions) {
         this.dimensions = dimensions;
         this.totalCount = 0;
+        this.lastTotalCount = 0;
         this.intervalExecutionTime = 0;
         this.lastIntervalExecutionTime = 0;
+        this.lastTime = +new Date;
     }
 }
 
