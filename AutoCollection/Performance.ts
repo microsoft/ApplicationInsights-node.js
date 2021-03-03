@@ -1,8 +1,6 @@
-import http = require("http");
 import os = require("os");
 
 import TelemetryClient = require("../Library/TelemetryClient");
-import Logging = require("../Library/Logging");
 import Constants = require("../Declarations/Constants");
 
 class AutoCollectPerformance {
@@ -11,10 +9,8 @@ class AutoCollectPerformance {
 
     private static _totalRequestCount: number = 0;
     private static _totalFailedRequestCount: number = 0;
-    private static _lastRequestExecutionTime: number = 0;
     private static _totalDependencyCount: number = 0;
     private static _totalFailedDependencyCount: number = 0;
-    private static _lastDependencyExecutionTime: number = 0;
     private static _totalExceptionCount: number = 0;
     private static _intervalDependencyExecutionTime: number = 0;
     private static _intervalRequestExecutionTime: number = 0;
@@ -87,7 +83,6 @@ class AutoCollectPerformance {
             }
         }
     }
-
 
     public static countRequest(duration: number | string, success: boolean) {
         let durationMs: number;

@@ -2,15 +2,13 @@ import CorrelationContextManager = require("./AutoCollection/CorrelationContextM
 import AutoCollectConsole = require("./AutoCollection/Console");
 import AutoCollectExceptions = require("./AutoCollection/Exceptions");
 import AutoCollectPerformance = require("./AutoCollection/Performance");
+import AutoCollecPreAggregatedMetrics = require("./AutoCollection/PreAggregatedMetrics");
 import HeartBeat = require("./AutoCollection/HeartBeat");
 import AutoCollectHttpDependencies = require("./AutoCollection/HttpDependencies");
 import AutoCollectHttpRequests = require("./AutoCollection/HttpRequests");
 import CorrelationIdManager = require("./Library/CorrelationIdManager");
 import Logging = require("./Library/Logging");
 import QuickPulseClient = require("./Library/QuickPulseStateManager");
-import Traceparent = require("./Library/Traceparent");
-import Tracestate = require("./Library/Tracestate");
-import HttpRequestParser = require("./AutoCollection/HttpRequestParser");
 import { IncomingMessage } from "http";
 import { ISpanContext } from "diagnostic-channel";
 
@@ -27,7 +25,7 @@ export enum DistributedTracingModes {
      * (Default) Send Application Insights correlation headers
      */
 
-    AI=0,
+    AI = 0,
 
     /**
      * Send both W3C Trace Context headers and back-compatibility Application Insights headers
@@ -40,6 +38,7 @@ let _isConsole = true;
 let _isConsoleLog = false;
 let _isExceptions = true;
 let _isPerformance = true;
+let _isPreAggregatedMetrics = true;
 let _isHeartBeat = false; // off by default for now
 let _isRequests = true;
 let _isDependencies = true;
@@ -56,6 +55,7 @@ let _diskRetryMaxBytes: number = undefined;
 let _console: AutoCollectConsole;
 let _exceptions: AutoCollectExceptions;
 let _performance: AutoCollectPerformance;
+let _preAggregatedMetrics: AutoCollecPreAggregatedMetrics;
 let _heartbeat: HeartBeat;
 let _nativePerformance: AutoCollectNativePerformance;
 let _serverRequests: AutoCollectHttpRequests;
@@ -82,11 +82,12 @@ let _performanceLiveMetrics: AutoCollectPerformance;
  * and start the SDK.
  */
 export function setup(setupString?: string) {
-    if(!defaultClient) {
+    if (!defaultClient) {
         defaultClient = new TelemetryClient(setupString);
         _console = new AutoCollectConsole(defaultClient);
         _exceptions = new AutoCollectExceptions(defaultClient);
         _performance = new AutoCollectPerformance(defaultClient);
+        _preAggregatedMetrics = new AutoCollecPreAggregatedMetrics(defaultClient);
         _heartbeat = new HeartBeat(defaultClient);
         _serverRequests = new AutoCollectHttpRequests(defaultClient);
         _clientRequests = new AutoCollectHttpDependencies(defaultClient);
@@ -111,11 +112,12 @@ export function setup(setupString?: string) {
  * @returns {ApplicationInsights} this class
  */
 export function start() {
-    if(!!defaultClient) {
+    if (!!defaultClient) {
         _isStarted = true;
         _console.enable(_isConsole, _isConsoleLog);
         _exceptions.enable(_isExceptions);
         _performance.enable(_isPerformance);
+        _preAggregatedMetrics.enable(_isPreAggregatedMetrics);
         _heartbeat.enable(_isHeartBeat, defaultClient.config);
         _nativePerformance.enable(_isNativePerformance, _disabledExtendedMetrics);
         _serverRequests.useAutoCorrelation(_isCorrelating, _forceClsHooked);
@@ -181,13 +183,13 @@ export class Configuration {
     // Convenience shortcut to ApplicationInsights.start
     public static start = start;
 
-     /**
-      * Sets the distributed tracing modes. If W3C mode is enabled, W3C trace context
-      * headers (traceparent/tracestate) will be parsed in all incoming requests, and included in outgoing
-      * requests. In W3C mode, existing back-compatibility AI headers will also be parsed and included.
-      * Enabling W3C mode will not break existing correlation with other Application Insights instrumented
-      * services. Default=AI
-     */
+    /**
+     * Sets the distributed tracing modes. If W3C mode is enabled, W3C trace context
+     * headers (traceparent/tracestate) will be parsed in all incoming requests, and included in outgoing
+     * requests. In W3C mode, existing back-compatibility AI headers will also be parsed and included.
+     * Enabling W3C mode will not break existing correlation with other Application Insights instrumented
+     * services. Default=AI
+    */
     public static setDistributedTracingMode(value: DistributedTracingModes) {
         CorrelationIdManager.w3cEnabled = value === DistributedTracingModes.AI_AND_W3C;
         return Configuration;
@@ -202,7 +204,7 @@ export class Configuration {
     public static setAutoCollectConsole(value: boolean, collectConsoleLog: boolean = false) {
         _isConsole = value;
         _isConsoleLog = collectConsoleLog;
-        if (_isStarted){
+        if (_isStarted) {
             _console.enable(value, collectConsoleLog);
         }
 
@@ -216,7 +218,7 @@ export class Configuration {
      */
     public static setAutoCollectExceptions(value: boolean) {
         _isExceptions = value;
-        if (_isStarted){
+        if (_isStarted) {
             _exceptions.enable(value);
         }
 
@@ -237,6 +239,20 @@ export class Configuration {
         if (_isStarted) {
             _performance.enable(value);
             _nativePerformance.enable(extendedMetricsConfig.isEnabled, extendedMetricsConfig.disabledMetrics);
+        }
+
+        return Configuration;
+    }
+
+    /**
+     * Sets the state of pre aggregated metrics tracking (enabled by default)
+     * @param value if true pre aggregated metrics will be collected every minute and sent to Application Insights
+     * @returns {Configuration} this class
+     */
+    public static setAutoCollectPreAggregatedMetrics(value: boolean) {
+        _isPreAggregatedMetrics = value;
+        if (_isStarted) {
+            _preAggregatedMetrics.enable(value);
         }
 
         return Configuration;
@@ -314,7 +330,7 @@ export class Configuration {
         _isDiskRetry = value;
         _diskRetryInterval = resendInterval;
         _diskRetryMaxBytes = maxBytesOnDisk
-        if (defaultClient && defaultClient.channel){
+        if (defaultClient && defaultClient.channel) {
             defaultClient.channel.setUseDiskRetryCaching(value, resendInterval, maxBytesOnDisk);
         }
 
@@ -376,19 +392,22 @@ export function dispose() {
     if (_performance) {
         _performance.dispose();
     }
+    if (_preAggregatedMetrics) {
+        _preAggregatedMetrics.dispose();
+    }
     if (_heartbeat) {
         _heartbeat.dispose();
     }
     if (_nativePerformance) {
         _nativePerformance.dispose();
     }
-    if(_serverRequests) {
+    if (_serverRequests) {
         _serverRequests.dispose();
     }
-    if(_clientRequests) {
+    if (_clientRequests) {
         _clientRequests.dispose();
     }
-    if(liveMetricsClient) {
+    if (liveMetricsClient) {
         liveMetricsClient.enable(false);
         _isSendingLiveMetrics = false;
         liveMetricsClient = undefined;

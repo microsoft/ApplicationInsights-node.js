@@ -1,5 +1,4 @@
 import Contracts = require("../Declarations/Contracts");
-import Logging = require("../Library/Logging");
 import QuickPulseStateManager = require("../Library/QuickPulseStateManager")
 import AutoCollectPerformance = require("../AutoCollection/Performance");
 import * as TelemetryType from "../Declarations/Contracts";
