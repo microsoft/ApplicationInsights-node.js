@@ -29,6 +29,8 @@ class QuickPulseStateManager {
     private _metrics: {[name: string]: Contracts.MetricQuickPulse} = {};
     private _documents: Contracts.DocumentQuickPulse[] = [];
     private _collectors: {enable: (enable: boolean) => void}[] = [];
+    private _rediectedHost: string = null;
+    private _poliingInterval: number = -1;
 
     constructor(iKey?: string, context?: Context) {
         this.config = new Config(iKey);
@@ -130,7 +132,8 @@ class QuickPulseStateManager {
             this._ping(envelope);
         }
 
-        let currentTimeout = this._isCollectingData ? QuickPulseStateManager.POST_INTERVAL : QuickPulseStateManager.PING_INTERVAL;
+        let pingInterval = this._poliingInterval > 0 ? this._poliingInterval : QuickPulseStateManager.PING_INTERVAL;
+        let currentTimeout = this._isCollectingData ? QuickPulseStateManager.POST_INTERVAL : pingInterval;
         if (this._isCollectingData && Date.now() - this._lastSuccessTime >= QuickPulseStateManager.MAX_POST_WAIT_TIME && !this._lastSendSucceeded) {
             // Haven't posted successfully in 20 seconds, so wait 60 seconds and ping
             this._isCollectingData = false;
@@ -145,23 +148,32 @@ class QuickPulseStateManager {
     }
 
     private _ping(envelope: Contracts.EnvelopeQuickPulse): void {
-        this._sender.ping(envelope, this._quickPulseDone.bind(this));
+        this._sender.ping(envelope, this._rediectedHost, this._quickPulseDone.bind(this));
     }
 
     private _post(envelope: Contracts.EnvelopeQuickPulse): void {
-        this._sender.post(envelope, this._quickPulseDone.bind(this));
+        this._sender.post(envelope, this._rediectedHost, this._quickPulseDone.bind(this));
     }
 
     /**
      * Change the current QPS send state. (shouldPOST == undefined) --> error, but do not change the state yet.
      */
-    private _quickPulseDone(shouldPOST?: boolean, res?: http.IncomingMessage): void {
+    private _quickPulseDone(shouldPOST?: boolean, res?: http.IncomingMessage, 
+            redirectedHost?: string, pollingIntervalHint?: number): void {
         if (shouldPOST != undefined) {
             if (this._isCollectingData !== shouldPOST) {
                 Logging.info("Live Metrics sending data", shouldPOST);
                 this.enableCollectors(shouldPOST);
             }
             this._isCollectingData = shouldPOST;
+
+            if (redirectedHost && redirectedHost.length > 0) {
+                this._rediectedHost = redirectedHost;
+            }
+
+            if (pollingIntervalHint && pollingIntervalHint > 0) {
+                this._poliingInterval = pollingIntervalHint;
+            }
 
             if (res && res.statusCode < 300 && res.statusCode >= 200) {
                 this._lastSuccessTime = Date.now();

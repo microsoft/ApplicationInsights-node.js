@@ -19,6 +19,11 @@ class QuickPulseEnvelopeFactory {
             && context.keys.cloudRoleInstance
             && context.tags[context.keys.cloudRoleInstance]) || machineName;
 
+        const roleName = (context.tags
+            && context.keys
+            && context.keys.cloudRole
+            && context.tags[context.keys.cloudRole]) || null;
+
         var envelope: Contracts.EnvelopeQuickPulse = {
             Documents: documents.length > 0 ? documents : null,
             InstrumentationKey: config.instrumentationKey || "",
@@ -28,7 +33,8 @@ class QuickPulseEnvelopeFactory {
             Version: context.tags[context.keys.internalSdkVersion],
             StreamId: StreamId,
             MachineName: machineName,
-            Instance: instance
+            Instance: instance,
+            RoleName: roleName
         }
 
         return envelope;
