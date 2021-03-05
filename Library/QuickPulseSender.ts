@@ -69,7 +69,7 @@ class QuickPulseSender {
         const payload = JSON.stringify(envelope);
         var options = {
             [AutoCollectHttpDependencies.disableCollectionRequestOption]: true,
-            host: (redirectedHostEndpoint && redirectedHostEndpoint.length) ? redirectedHostEndpoint : this._config.quickPulseHost,
+            host: (redirectedHostEndpoint && redirectedHostEndpoint.length > 0) ? redirectedHostEndpoint : this._config.quickPulseHost,
             method: QuickPulseConfig.method,
             path: `/QuickPulseService.svc/${postOrPing}?ikey=${this._config.instrumentationKey}`,
             headers:{
