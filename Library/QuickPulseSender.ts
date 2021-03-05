@@ -43,7 +43,7 @@ class QuickPulseSender {
         let pingHeaders: { name: string, value: string }[] = [
             { name: QuickPulseConfig.streamId, value: envelope.StreamId },
             { name: QuickPulseConfig.machineName, value: envelope.MachineName },
-            { name: QuickPulseConfig.roleName, value: envelope.Instance },
+            { name: QuickPulseConfig.roleName, value: envelope.RoleName },
             { name: QuickPulseConfig.instanceName, value: envelope.Instance },
             { name: QuickPulseConfig.invariantVersion, value: envelope.InvariantVersion && envelope.InvariantVersion.toString() }
         ];

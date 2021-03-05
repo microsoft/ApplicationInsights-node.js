@@ -120,7 +120,7 @@ describe("Library/Config", () => {
                 assert(config.proxyHttpUrl === undefined);
                 assert(config.proxyHttpsUrl === undefined);
 
-                assert(config.quickPulseHost === Constants.DEFAULT_LIVEMETRICS_HOST);
+                assert.equal(config.quickPulseHost, Constants.DEFAULT_LIVEMETRICS_HOST);
             });
 
             it("should initialize values that we claim in README (2)", () => {

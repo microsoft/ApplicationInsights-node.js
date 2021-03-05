@@ -30,7 +30,7 @@ class QuickPulseStateManager {
     private _documents: Contracts.DocumentQuickPulse[] = [];
     private _collectors: {enable: (enable: boolean) => void}[] = [];
     private _rediectedHost: string = null;
-    private _poliingInterval: number = -1;
+    private _poliingIntervalHint: number = -1;
 
     constructor(iKey?: string, context?: Context) {
         this.config = new Config(iKey);
@@ -132,7 +132,7 @@ class QuickPulseStateManager {
             this._ping(envelope);
         }
 
-        let pingInterval = this._poliingInterval > 0 ? this._poliingInterval : QuickPulseStateManager.PING_INTERVAL;
+        let pingInterval = this._poliingIntervalHint > 0 ? this._poliingIntervalHint : QuickPulseStateManager.PING_INTERVAL;
         let currentTimeout = this._isCollectingData ? QuickPulseStateManager.POST_INTERVAL : pingInterval;
         if (this._isCollectingData && Date.now() - this._lastSuccessTime >= QuickPulseStateManager.MAX_POST_WAIT_TIME && !this._lastSendSucceeded) {
             // Haven't posted successfully in 20 seconds, so wait 60 seconds and ping
@@ -172,7 +172,7 @@ class QuickPulseStateManager {
             }
 
             if (pollingIntervalHint && pollingIntervalHint > 0) {
-                this._poliingInterval = pollingIntervalHint;
+                this._poliingIntervalHint = pollingIntervalHint;
             }
 
             if (res && res.statusCode < 300 && res.statusCode >= 200) {
