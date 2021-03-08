@@ -145,7 +145,7 @@ describe("Library/QuickPulseStateManager", () => {
 
 
         it("should call _ping at a rate according to interval hint", () => {
-            qps["_poliingIntervalHint"] = 1000;
+            qps["_pollingIntervalHint"] = 1000;
             qps.enable(true);
 
             clock.tick(10000);
@@ -195,7 +195,7 @@ describe("Library/QuickPulseStateManager", () => {
 
         it("should call _ping with all expected headers set", () => {
             qps.enable(true);
-            qps['_rediectedHost'] = 'www.example.com';
+            qps['_redirectedHost'] = 'www.example.com';
 
             let callArgs = submitDataStub.args;
 
@@ -226,24 +226,24 @@ describe("Library/QuickPulseStateManager", () => {
             
             qps['_quickPulseDone'](true, { statusCode: 200} as IncomingMessage, 'www.example.com', 2000);
 
-            assert.equal(qps['_rediectedHost'], 'www.example.com');
-            assert.equal(qps['_poliingIntervalHint'], 2000);
+            assert.equal(qps['_redirectedHost'], 'www.example.com');
+            assert.equal(qps['_pollingIntervalHint'], 2000);
             assert.equal(qps['_isCollectingData'], true);
             assert.equal(qps['_lastSendSucceeded'], true);
         });
 
         it("should call _quickPulseDone and not set the _rediectedHost and pollingIntervalHint if the arguments are null", () => {
-            qps['_poliingIntervalHint'] = 2000;
-            qps['_rediectedHost'] = 'www.example.com';
+            qps['_pollingIntervalHint'] = 2000;
+            qps['_redirectedHost'] = 'www.example.com';
             qps['_quickPulseDone'](true, { statusCode: 200} as IncomingMessage, null, 0);
 
-            assert.equal(qps['_rediectedHost'], 'www.example.com');
-            assert.equal(qps['_poliingIntervalHint'], 2000);
+            assert.equal(qps['_redirectedHost'], 'www.example.com');
+            assert.equal(qps['_pollingIntervalHint'], 2000);
             
             qps['_quickPulseDone'](true, { statusCode: 200} as IncomingMessage, 'www.quickpulse.com', 5000);
 
-            assert.equal(qps['_rediectedHost'], 'www.quickpulse.com');
-            assert.equal(qps['_poliingIntervalHint'], 5000);
+            assert.equal(qps['_redirectedHost'], 'www.quickpulse.com');
+            assert.equal(qps['_pollingIntervalHint'], 5000);
         });
     });
 });
