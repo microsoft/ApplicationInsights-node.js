@@ -29,8 +29,8 @@ class QuickPulseStateManager {
     private _metrics: {[name: string]: Contracts.MetricQuickPulse} = {};
     private _documents: Contracts.DocumentQuickPulse[] = [];
     private _collectors: {enable: (enable: boolean) => void}[] = [];
-    private _rediectedHost: string = null;
-    private _poliingIntervalHint: number = -1;
+    private _redirectedHost: string = null;
+    private _pollingIntervalHint: number = -1;
 
     constructor(iKey?: string, context?: Context) {
         this.config = new Config(iKey);
@@ -132,7 +132,7 @@ class QuickPulseStateManager {
             this._ping(envelope);
         }
 
-        let pingInterval = this._poliingIntervalHint > 0 ? this._poliingIntervalHint : QuickPulseStateManager.PING_INTERVAL;
+        let pingInterval = this._pollingIntervalHint > 0 ? this._pollingIntervalHint : QuickPulseStateManager.PING_INTERVAL;
         let currentTimeout = this._isCollectingData ? QuickPulseStateManager.POST_INTERVAL : pingInterval;
         if (this._isCollectingData && Date.now() - this._lastSuccessTime >= QuickPulseStateManager.MAX_POST_WAIT_TIME && !this._lastSendSucceeded) {
             // Haven't posted successfully in 20 seconds, so wait 60 seconds and ping
@@ -148,11 +148,11 @@ class QuickPulseStateManager {
     }
 
     private _ping(envelope: Contracts.EnvelopeQuickPulse): void {
-        this._sender.ping(envelope, this._rediectedHost, this._quickPulseDone.bind(this));
+        this._sender.ping(envelope, this._redirectedHost, this._quickPulseDone.bind(this));
     }
 
     private _post(envelope: Contracts.EnvelopeQuickPulse): void {
-        this._sender.post(envelope, this._rediectedHost, this._quickPulseDone.bind(this));
+        this._sender.post(envelope, this._redirectedHost, this._quickPulseDone.bind(this));
     }
 
     /**
@@ -168,11 +168,12 @@ class QuickPulseStateManager {
             this._isCollectingData = shouldPOST;
 
             if (redirectedHost && redirectedHost.length > 0) {
-                this._rediectedHost = redirectedHost;
+                this._redirectedHost = redirectedHost;
+                Logging.info("Redirecting endpoint to: ", redirectedHost);
             }
 
             if (pollingIntervalHint && pollingIntervalHint > 0) {
-                this._poliingIntervalHint = pollingIntervalHint;
+                this._pollingIntervalHint = pollingIntervalHint;
             }
 
             if (res && res.statusCode < 300 && res.statusCode >= 200) {
