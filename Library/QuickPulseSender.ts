@@ -45,7 +45,7 @@ class QuickPulseSender {
             { name: QuickPulseConfig.machineName, value: envelope.MachineName },
             { name: QuickPulseConfig.roleName, value: envelope.RoleName },
             { name: QuickPulseConfig.instanceName, value: envelope.Instance },
-            { name: QuickPulseConfig.invariantVersion, value: envelope.InvariantVersion && envelope.InvariantVersion.toString() }
+            { name: QuickPulseConfig.invariantVersion, value: envelope.InvariantVersion.toString() }
         ];
         this._submitData(envelope, redirectedHostEndpoint, done, "ping", pingHeaders);
     }
