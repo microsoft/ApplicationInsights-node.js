@@ -1,11 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
+import { Span } from "@opentelemetry/tracing";
+import { SpanKind } from "@opentelemetry/api";
+
 import TelemetryClient = require("../../Library/TelemetryClient");
 import { channel, IStandardEvent } from "diagnostic-channel";
 
 import Traceparent = require("../../Library/Traceparent");
 import * as SpanParser from "./SpanParser";
-import { Span, AsyncScopeManager, SpanKind } from "../AsyncHooksScopeManager";
+import { AsyncScopeManager } from "../AsyncHooksScopeManager";
 
 let clients: TelemetryClient[] = [];
 
@@ -16,7 +19,7 @@ export const subscriber = (event: IStandardEvent<Span>) => {
     const traceparent = new Traceparent();
     traceparent.traceId = spanContext.traceId;
     traceparent.spanId = spanContext.spanId;
-    traceparent.traceFlag = spanContext.traceFlags.toString();
+    traceparent.traceFlag = spanContext.traceFlags;
     traceparent.parentId = span.parentSpanId ? `|${spanContext.traceId}.${span.parentSpanId}.` : null;
 
     AsyncScopeManager.with(span, () => {

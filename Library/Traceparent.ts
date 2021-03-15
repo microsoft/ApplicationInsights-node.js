@@ -1,3 +1,4 @@
+import { TraceFlags } from "@opentelemetry/api";
 import Util = require("./Util");
 import CorrelationIdManager = require("./CorrelationIdManager");
 
@@ -7,13 +8,13 @@ import CorrelationIdManager = require("./CorrelationIdManager");
  * https://www.w3.org/TR/trace-context/#traceparent-field
  */
 class Traceparent {
-    public static DEFAULT_TRACE_FLAG = "01";
+    public static DEFAULT_TRACE_FLAG = TraceFlags.NONE;
     public static DEFAULT_VERSION = "00";
 
     public legacyRootId: string;
     public parentId: string;
     public spanId: string;
-    public traceFlag: string = Traceparent.DEFAULT_TRACE_FLAG;
+    public traceFlag: number = Traceparent.DEFAULT_TRACE_FLAG;
     public traceId: string;
     public version: string = Traceparent.DEFAULT_VERSION;
 
@@ -30,7 +31,7 @@ class Traceparent {
                     this.version = traceparentArr[0];
                     this.traceId = traceparentArr[1];
                     this.spanId = traceparentArr[2];
-                    this.traceFlag = traceparentArr[3];
+                    this.traceFlag = Number(traceparentArr[3]);
                 } else { // Discard traceparent if a field is missing
                     this.traceId = Util.w3cTraceId();
                     this.spanId = Util.w3cTraceId().substr(0, 16);
@@ -55,7 +56,7 @@ class Traceparent {
                 }
 
                 // TraceFlag validation
-                if (!this.traceFlag.match(/^[0-9a-f]{2}$/g)) {
+                if (isNaN(this.traceFlag)) {
                     this.traceFlag = Traceparent.DEFAULT_TRACE_FLAG;
                     this.traceId = Util.w3cTraceId();
                 }

@@ -1,10 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
-import { Attributes, Span, SpanKind } from "../AsyncHooksScopeManager";
+import { SpanAttributes, SpanKind } from "@opentelemetry/api";
+import { Span } from "@opentelemetry/tracing";
 import * as Contracts from "../../Declarations/Contracts";
 import * as Constants from "../../Declarations/Constants";
 
-function filterSpanAttributes(attributes: Attributes) {
+function filterSpanAttributes(attributes: SpanAttributes) {
     const newAttributes = { ...attributes };
     Object.keys(Constants.SpanAttribute).forEach(key => {
         delete newAttributes[key];
@@ -14,7 +15,7 @@ function filterSpanAttributes(attributes: Attributes) {
 
 export function spanToTelemetryContract(span: Span): (Contracts.DependencyTelemetry & Contracts.RequestTelemetry) & Contracts.Identified {
     const id = `|${span.context().traceId}.${span.context().spanId}.`;
-    const duration = Math.round(span._duration[0] * 1e3 + span._duration[1] / 1e6);
+    const duration = Math.round(span["_duration"][0] * 1e3 + span["_duration"][1] / 1e6);
     let peerAddress = span.attributes["peer.address"] ? span.attributes["peer.address"].toString() : "";
     let component = span.attributes["component"] ? span.attributes["component"].toString() : "";
 

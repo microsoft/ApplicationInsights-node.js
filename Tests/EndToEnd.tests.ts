@@ -153,12 +153,14 @@ class fakeHttpsServer extends events.EventEmitter {
 
 describe("EndToEnd", () => {
 
+    var request: sinon.SinonStub;
+
     describe("Basic usage", () => {
         var sandbox: sinon.SinonSandbox;
 
         beforeEach(() => {
             sandbox = sinon.sandbox.create();
-            this.request = sandbox.stub(https, "request", (options: any, callback: any) => {
+            request = sandbox.stub(https, "request", (options: any, callback: any) => {
                 var req = new fakeRequest(false);
                 req.on("end", callback);
                 return req;
@@ -242,7 +244,7 @@ describe("EndToEnd", () => {
         });
 
         it("should collect http dependency telemetry", (done) => {
-            this.request.restore();
+            request.restore();
             var eventEmitter = new EventEmitter();
             (<any>eventEmitter).method = "GET";
             sandbox.stub(http, 'request', (url: string, c: Function) => {
@@ -266,7 +268,7 @@ describe("EndToEnd", () => {
         });
 
         it("should collect https dependency telemetry", (done) => {
-            this.request.restore();
+            request.restore();
             var eventEmitter = new EventEmitter();
             (<any>eventEmitter).method = "GET";
             sandbox.stub(https, 'request', (url: string, c: Function) => {
@@ -387,24 +389,31 @@ describe("EndToEnd", () => {
         var readFile: sinon.SinonStub;
         var lstat: sinon.SinonStub;
         var mkdir: sinon.SinonStub;
+        var exists: sinon.SinonStub;
+        var existsSync: sinon.SinonStub;
+        var readdir: sinon.SinonStub;
+        var readdirSync: sinon.SinonStub;
+        var stat: sinon.SinonStub;
+        var statSync: sinon.SinonStub;
+        var mkdirSync: sinon.SinonStub;
         var spawn: sinon.SinonStub;
         var spawnSync: sinon.SinonStub;
 
         beforeEach(() => {
             AppInsights.defaultClient = undefined;
             cidStub = sinon.stub(CorrelationIdManager, 'queryCorrelationId'); // TODO: Fix method of stubbing requests to allow CID to be part of E2E tests
-            this.request = sinon.stub(https, 'request');
+            request = sinon.stub(https, 'request');
             writeFile = sinon.stub(fs, 'writeFile');
             writeFileSync = sinon.stub(fs, 'writeFileSync');
-            this.exists = sinon.stub(fs, 'exists').yields(true);
-            this.existsSync = sinon.stub(fs, 'existsSync').returns(true);
-            this.readdir = sinon.stub(fs, 'readdir').yields(null, ['1.ai.json']);
-            this.readdirSync = sinon.stub(fs, 'readdirSync').returns(['1.ai.json']);
-            this.stat = sinon.stub(fs, 'stat').yields(null, {isFile: () => true, size: 8000});
-            this.statSync = sinon.stub(fs, 'statSync').returns({isFile: () => true, size: 8000});
+            exists = sinon.stub(fs, 'exists').yields(true);
+            existsSync = sinon.stub(fs, 'existsSync').returns(true);
+            readdir = sinon.stub(fs, 'readdir').yields(null, ['1.ai.json']);
+            readdirSync = sinon.stub(fs, 'readdirSync').returns(['1.ai.json']);
+            stat = sinon.stub(fs, 'stat').yields(null, {isFile: () => true, size: 8000});
+            statSync = sinon.stub(fs, 'statSync').returns({isFile: () => true, size: 8000});
             lstat = sinon.stub(fs, 'lstat').yields(null, {isDirectory: () => true});
             mkdir = sinon.stub(fs, 'mkdir').yields(null);
-            this.mkdirSync = sinon.stub(fs, 'mkdirSync').returns(null);
+            mkdirSync = sinon.stub(fs, 'mkdirSync').returns(null);
             readFile = sinon.stub(fs, 'readFile').yields(null, '');
             spawn = sinon.stub(child_process, 'spawn').returns({
                 on: (type: string, cb: any) => {
@@ -427,19 +436,19 @@ describe("EndToEnd", () => {
 
         afterEach(() => {
             cidStub.restore();
-            this.request.restore();
+            request.restore();
             writeFile.restore();
-            this.exists.restore();
-            this.readdir.restore();
+            exists.restore();
+            readdir.restore();
             readFile.restore();
             writeFileSync.restore();
-            this.existsSync.restore();
-            this.stat.restore();
+            existsSync.restore();
+            stat.restore();
             lstat.restore();
             mkdir.restore();
-            this.mkdirSync.restore();
-            this.readdirSync.restore();
-            this.statSync.restore();
+            mkdirSync.restore();
+            readdirSync.restore();
+            statSync.restore();
             spawn.restore();
             if (child_process.spawnSync) {
                 spawnSync.restore();
@@ -453,7 +462,7 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             setImmediate(() => {
                 client.flush({
@@ -476,7 +485,7 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             setImmediate(() => {
                 client.flush({
@@ -500,7 +509,7 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             client.flush({
                 callback: (response: any) => {
@@ -532,7 +541,7 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             client.flush({
                 callback: (response: any) => {
@@ -587,7 +596,7 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             client.flush({
                 callback: (response: any) => {
@@ -632,7 +641,7 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             client.flush({
                 callback: (response: any) => {
@@ -642,7 +651,7 @@ describe("EndToEnd", () => {
                         assert.equal(tempSpawn.callCount, 1);
 
                         client.trackEvent({ name: "test event" });
-                        this.request.returns(req);
+                        request.returns(req);
 
                         client.flush({
                             callback: (response: any) => {
@@ -689,7 +698,7 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             client.flush({
                 callback: (response: any) => {
@@ -699,7 +708,7 @@ describe("EndToEnd", () => {
                         assert.equal(tempSpawn.callCount, 1);
 
                         client.trackEvent({ name: "test event" });
-                        this.request.returns(req);
+                        request.returns(req);
 
                         client.flush({
                             callback: (response: any) => {
@@ -743,7 +752,7 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             client.flush({
                 callback: (response: any) => {
@@ -771,7 +780,7 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             client.flush({
                 callback: (response: any) => {
@@ -799,7 +808,7 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             client.flush({
                 callback: (response: any) => {
@@ -822,14 +831,14 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
-            this.request.yields(res);
+            request.returns(req);
+            request.yields(res);
 
             client.flush({
                 callback: (response: any) => {
                     // wait until sdk looks for offline files
                     setTimeout(() => {
-                        assert(this.readdir.callCount === 1);
+                        assert(readdir.callCount === 1);
                         assert(readFile.callCount === 1);
                         assert.equal(
                             path.dirname(readFile.firstCall.args[0]),
@@ -850,11 +859,11 @@ describe("EndToEnd", () => {
 
                 client.trackEvent({ name: "test event" });
 
-                this.request.returns(req);
+                request.returns(req);
 
                 client.channel.triggerSend(true);
 
-                assert(this.existsSync.callCount === 1);
+                assert(existsSync.callCount === 1);
                 assert(writeFileSync.callCount === 1);
                 assert.equal(spawnSync.callCount, os.type() === "Windows_NT" ? 1 : 0); // This is implicitly testing caching of ACL identity (otherwise call count would be 2 like it is the non-sync time)
                 assert.equal(
@@ -876,11 +885,11 @@ describe("EndToEnd", () => {
 
                 client.trackEvent({ name: "test event" });
 
-                this.request.returns(req);
+                request.returns(req);
 
                 client.channel.triggerSend(true);
 
-                assert(this.existsSync.callCount === 1);
+                assert(existsSync.callCount === 1);
                 assert(writeFileSync.callCount === 0);
                 (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
             }
@@ -898,11 +907,11 @@ describe("EndToEnd", () => {
 
                 client.trackEvent({ name: "test event" });
 
-                this.request.returns(req);
+                request.returns(req);
 
                 client.channel.triggerSend(true);
 
-                assert(this.existsSync.callCount === 1);
+                assert(existsSync.callCount === 1);
                 assert(writeFileSync.callCount === 1);
                 assert.equal(
                     path.dirname(writeFileSync.firstCall.args[0]),
@@ -927,7 +936,7 @@ describe("EndToEnd", () => {
 
                 client.trackEvent({ name: "test event" });
 
-                this.request.returns(req);
+                request.returns(req);
 
                 client.channel.triggerSend(true);
 
@@ -961,11 +970,11 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             client.channel.triggerSend(true);
 
-            assert(this.existsSync.callCount === 1);
+            assert(existsSync.callCount === 1);
             assert(writeFileSync.callCount === 0);
 
             if (child_process.spawnSync) {
