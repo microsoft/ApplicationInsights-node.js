@@ -33,7 +33,7 @@ describe('module', function () {
                 assert(false, "App failed to terminate!");
                 testCase.kill();
                 done();
-            }, 5000);
+            }, 10000);
             testCase.on("close", function() {
                 clearTimeout(timer);
                 done();
@@ -47,7 +47,7 @@ describe('module', function () {
                 assert(false, "App failed to terminate!");
                 testCase.kill();
                 done();
-            }, 5000);
+            }, 10000);
             testCase.on("close", function() {
                 clearTimeout(timer);
                 done();
