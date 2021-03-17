@@ -35,11 +35,11 @@ class QuickPulseSender {
         this._consecutiveErrors = 0;
     }
 
-    public ping(envelope: Contracts.EnvelopeQuickPulse, 
-            redirectedHostEndpoint: string,
-            done: (shouldPOST?: boolean, res?: http.IncomingMessage, redirectedHost?: string, pollingIntervalHint?: number) => void,
-        ): void {
-        
+    public ping(envelope: Contracts.EnvelopeQuickPulse,
+        redirectedHostEndpoint: string,
+        done: (shouldPOST?: boolean, res?: http.IncomingMessage, redirectedHost?: string, pollingIntervalHint?: number) => void,
+    ): void {
+
         let pingHeaders: { name: string, value: string }[] = [
             { name: QuickPulseConfig.streamId, value: envelope.StreamId },
             { name: QuickPulseConfig.machineName, value: envelope.MachineName },
@@ -50,21 +50,21 @@ class QuickPulseSender {
         this._submitData(envelope, redirectedHostEndpoint, done, "ping", pingHeaders);
     }
 
-    public post(envelope: Contracts.EnvelopeQuickPulse, 
-            redirectedHostEndpoint: string,
-            done: (shouldPOST?: boolean, res?: http.IncomingMessage, redirectedHost?: string, pollingIntervalHint?: number) => void,
-        ): void {
+    public post(envelope: Contracts.EnvelopeQuickPulse,
+        redirectedHostEndpoint: string,
+        done: (shouldPOST?: boolean, res?: http.IncomingMessage, redirectedHost?: string, pollingIntervalHint?: number) => void,
+    ): void {
 
         // Important: When POSTing data, envelope must be an array
         this._submitData([envelope], redirectedHostEndpoint, done, "post");
     }
 
-    private _submitData(envelope: Contracts.EnvelopeQuickPulse | Contracts.EnvelopeQuickPulse[], 
-            redirectedHostEndpoint: string,
-            done: (shouldPOST?: boolean, res?: http.IncomingMessage, redirectedHost?: string, pollingIntervalHint?: number) => void, 
-            postOrPing: "post" | "ping", 
-            additionalHeaders?: { name: string, value: string }[]
-        ): void {
+    private _submitData(envelope: Contracts.EnvelopeQuickPulse | Contracts.EnvelopeQuickPulse[],
+        redirectedHostEndpoint: string,
+        done: (shouldPOST?: boolean, res?: http.IncomingMessage, redirectedHost?: string, pollingIntervalHint?: number) => void,
+        postOrPing: "post" | "ping",
+        additionalHeaders?: { name: string, value: string }[]
+    ): void {
 
         const payload = JSON.stringify(envelope);
         var options = {
@@ -72,7 +72,7 @@ class QuickPulseSender {
             host: (redirectedHostEndpoint && redirectedHostEndpoint.length > 0) ? redirectedHostEndpoint : this._config.quickPulseHost,
             method: QuickPulseConfig.method,
             path: `/QuickPulseService.svc/${postOrPing}?ikey=${this._config.instrumentationKey}`,
-            headers:{
+            headers: {
                 'Expect': '100-continue',
                 [QuickPulseConfig.time]: QuickPulseUtil.getTransmissionTime(), // unit = 100s of nanoseconds
                 'Content-Type': 'application\/json',
@@ -93,8 +93,8 @@ class QuickPulseSender {
 
         const req = https.request(options, (res: http.IncomingMessage) => {
             const shouldPOSTData = res.headers[QuickPulseConfig.subscribed] === "true";
-            const redirectHeader = res.headers[QuickPulseConfig.endpointRedirect];
-            const pollingIntervalHint = res.headers[QuickPulseConfig.pollingIntervalHint] as number;
+            const redirectHeader = res.headers[QuickPulseConfig.endpointRedirect] ? res.headers[QuickPulseConfig.endpointRedirect].toString() : null;
+            const pollingIntervalHint = res.headers[QuickPulseConfig.pollingIntervalHint] ? parseInt(res.headers[QuickPulseConfig.pollingIntervalHint].toString()) : null;
             this._consecutiveErrors = 0;
             done(shouldPOSTData, res, redirectHeader, pollingIntervalHint);
         });
