@@ -19,7 +19,7 @@ export const subscriber = (event: IStandardEvent<Span>) => {
     const traceparent = new Traceparent();
     traceparent.traceId = spanContext.traceId;
     traceparent.spanId = spanContext.spanId;
-    traceparent.traceFlag = spanContext.traceFlags;
+    traceparent.traceFlag = Traceparent.formatOpenTelemetryTraceFlags(spanContext.traceFlags);
     traceparent.parentId = span.parentSpanId ? `|${spanContext.traceId}.${span.parentSpanId}.` : null;
 
     AsyncScopeManager.with(span, () => {

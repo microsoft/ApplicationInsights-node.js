@@ -97,7 +97,7 @@ export class CorrelationContextManager {
         const traceContext = new Traceparent();
         traceContext.traceId = spanContext.traceId;
         traceContext.spanId = spanContext.spanId;
-        traceContext.traceFlag = spanContext.traceFlags || Traceparent.DEFAULT_TRACE_FLAG;
+        traceContext.traceFlag = Traceparent.formatOpenTelemetryTraceFlags(spanContext.traceFlags) || Traceparent.DEFAULT_TRACE_FLAG;
         traceContext.parentId = parentId;
         return CorrelationContextManager.generateContextObject(traceContext.traceId, traceContext.parentId, name, null, traceContext);
     }
