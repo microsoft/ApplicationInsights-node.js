@@ -57,18 +57,18 @@ class AutoCollectHttpDependencies {
     private _initialize() {
         this._isInitialized = true;
 
-        const originalGet = http.get;
         const originalRequest = http.request;
         const originalHttpsRequest = https.request;
 
-        const clientRequestPatch = (request: http.ClientRequest, options: http.RequestOptions | https.RequestOptions) => {
+        const clientRequestPatch = (request: http.ClientRequest, options: string | URL | http.RequestOptions | https.RequestOptions) => {
             var shouldCollect = !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] &&
                 !(<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
-                
+
             // If someone else patched traceparent headers onto this request
-            if (options.headers && options.headers['user-agent'] && options.headers['user-agent'].toString().indexOf('azsdk-js') !== -1) {
+            if ((<any>options).headers && (<any>options).headers['user-agent'] && (<any>options).headers['user-agent'].toString().indexOf('azsdk-js') !== -1) {
                 shouldCollect = false;
             }
+
             (<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag] = true;
 
             if (request && options && shouldCollect) {
