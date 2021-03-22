@@ -6,6 +6,8 @@ export interface EnvelopeQuickPulse {
 
     Instance: string;
 
+    RoleName: string;
+
     InstrumentationKey: string;
 
     InvariantVersion: number;

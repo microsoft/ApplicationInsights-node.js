@@ -13,6 +13,7 @@ import Logging = require("./Logging");
 import FlushOptions = require("./FlushOptions");
 import EnvelopeFactory = require("./EnvelopeFactory");
 import QuickPulseStateManager = require("./QuickPulseStateManager");
+import {Tags} from "../Declarations/Contracts";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -20,6 +21,7 @@ import QuickPulseStateManager = require("./QuickPulseStateManager");
  */
 class TelemetryClient {
     private _telemetryProcessors: { (envelope: Contracts.EnvelopeTelemetry, contextObjects: { [name: string]: any; }): boolean; }[] = [];
+    private _enableAzureProperties: boolean = false;
 
     public config: Config;
     public context: Context;
@@ -144,13 +146,15 @@ class TelemetryClient {
             if (telemetry.time) {
                 envelope.time = telemetry.time.toISOString();
             }
-
+            if (this._enableAzureProperties) {
+                TelemetryProcessors.azureRoleEnvironmentTelemetryProcessor(envelope, this.context);
+            }
             var accepted = this.runTelemetryProcessors(envelope, telemetry.contextObjects);
 
             // Ideally we would have a central place for "internal" telemetry processors and users can configure which ones are in use.
             // This will do for now. Otherwise clearTelemetryProcessors() would be problematic.
             accepted = accepted && TelemetryProcessors.samplingTelemetryProcessor(envelope, { correlationContext: CorrelationContextManager.getCurrentContext() });
-
+            TelemetryProcessors.preAggregatedMetricsTelemetryProcessor(envelope, this.context);
             if (accepted) {
                 TelemetryProcessors.performanceMetricsTelemetryProcessor(envelope, this.quickPulseClient);
                 this.channel.send(envelope);
@@ -159,6 +163,15 @@ class TelemetryClient {
         else {
             Logging.warn("track() requires telemetry object and telemetryType to be specified.")
         }
+    }
+
+    /**
+     * Automatically populate telemetry properties like RoleName when running in Azure
+     *
+      * @param value if true properties will be populated
+     */
+    public setAutoPopulateAzureProperties(value: boolean) {
+        this._enableAzureProperties = value;
     }
 
     /**
@@ -202,6 +215,16 @@ class TelemetryClient {
             } catch (error) {
                 accepted = true;
                 Logging.warn("One of telemetry processors failed, telemetry item will be sent.", error, envelope);
+            }
+        }
+
+        // Sanitize tags and properties after running telemetry processors
+        if (accepted) {
+            if (envelope && envelope.tags) {
+                envelope.tags = Util.validateStringMap(envelope.tags) as Tags & Tags[];
+            }
+            if (envelope && envelope.data && envelope.data.baseData && envelope.data.baseData.properties) {
+                envelope.data.baseData.properties = Util.validateStringMap(envelope.data.baseData.properties);
             }
         }
 

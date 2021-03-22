@@ -228,6 +228,15 @@ appInsights.defaultClient.context.tags[appInsights.defaultClient.context.keys.cl
 appInsights.start();
 ```
 
+If running in Azure App service or Azure functions the SDK will automatically populate the cloud role when following code is added:
+```javascript
+const appInsights = require("applicationinsights");
+appInsights.setup("<instrumentation_key>");
+appInsights.defaultClient.setAutoPopulateAzureProperties(true);
+appInsights.start();
+```
+
+
 ### Automatic third-party instrumentation
 
 In order to track context across asynchronous calls, some changes are required in third party libraries such as mongodb and redis.
@@ -244,6 +253,10 @@ for information about exactly which versions of these packages are patched.
 
 The `bunyan`, `winston`, and `console` patches will generate Application Insights Trace events based on whether `setAutoCollectConsole` is enabled.
 The rest will generate Application Insights Dependency events based on whether `setAutoCollectDependencies` is enabled. Make sure that `applicationinsights` is imported **before** any 3rd-party packages for them to be instrumented successfully.
+
+Automatic instrumentation for several Azure SDKs is also available, you must manually install @opentelemetry/tracing to enable this automatic tracing. No additional configuration is required
+Currently Cognitive Search, Communication Common and Cosmos DB SDKs are not supported.
+[Javascript Azure SDKs](https://azure.github.io/azure-sdk/releases/latest/index.html#javascript)
 
 
 ### Live Metrics
@@ -506,18 +519,6 @@ Included in `applicationinsights@2.0.0` is [every Node.js Plugin available in th
 [master]: https://github.com/microsoft/ApplicationInsights-node.js/tree/master
 [develop]: https://github.com/microsoft/ApplicationInsights-node.js/tree/develop
 [npm]: https://www.npmjs.com/package/applicationinsights
-
-## Links
-
-* [ApplicationInsights-Home][] is our central repo for libraries and info for
-  all languages and platforms.
-* Follow the latest Application Insights changes and announcements on the
-  [ApplicationInsights-Announcements][] repo.
-* [SDK Release Schedule][]
-
-[ApplicationInsights-Announcements]: https://github.com/microsoft/ApplicationInsights-Announcements
-[ApplicationInsights-Home]: https://github.com/microsoft/ApplicationInsights-Home
-[SDK Release Schedule]: https://github.com/microsoft/ApplicationInsights-Home/wiki/SDK-Release-Schedule
 
 ## Contributing
 

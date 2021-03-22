@@ -44,7 +44,7 @@ describe("AutoCollection/HttpDependencyParser", () => {
             assert.equal(dependencyTelemetry.data, "http://bing.com:123/search");
             assert.equal(dependencyTelemetry.target, "bing.com:123 | abcdefg");
         });
-        
+
         it("should return correct data for a URL without a protocol (https)", () => {
             (<any>request)["method"] = "GET";
             let parser = new HttpDependencyParser("a.bing.com:443/search", request);
@@ -59,7 +59,7 @@ describe("AutoCollection/HttpDependencyParser", () => {
             assert.equal(dependencyTelemetry.data, "https://a.bing.com:443/search");
             assert.equal(dependencyTelemetry.target, "a.bing.com:443");
         });
-        
+
         it("should return correct data for a URL without a protocol (http)", () => {
             (<any>request)["method"] = "GET";
             let parser = new HttpDependencyParser("a.bing.com:123/search", request);
@@ -99,8 +99,8 @@ describe("AutoCollection/HttpDependencyParser", () => {
             response.statusCode = 200;
             parser.onResponse(response);
 
-            const dependencyTelemetry1 = parser.getDependencyTelemetry({time: new Date(111111)});
-            const dependencyTelemetry2 = parser.getDependencyTelemetry({time: new Date(222222)});
+            const dependencyTelemetry1 = parser.getDependencyTelemetry({ time: new Date(111111) });
+            const dependencyTelemetry2 = parser.getDependencyTelemetry({ time: new Date(222222) });
             assert.deepEqual(dependencyTelemetry1.time, new Date(111111));
             assert.deepEqual(dependencyTelemetry2.time, new Date(222222));
             assert.notDeepEqual(dependencyTelemetry1, dependencyTelemetry2);
@@ -138,6 +138,29 @@ describe("AutoCollection/HttpDependencyParser", () => {
             assert.equal(dependencyTelemetry.success, true);
             assert.equal(dependencyTelemetry.name, "POST /search");
             assert.equal(dependencyTelemetry.data, "http://bing.com:8000/search?q=test");
+            assert.equal(dependencyTelemetry.target, "bing.com:8000");
+        });
+
+        it("should return correct data for URL with protocol in request", () => {
+            let testRequest: http.ClientRequest = <any>{
+                agent: { protocol: undefined },
+                method: "GET",
+                protocol: "https:"
+            };
+            let requestOptions = {
+                host: "bing.com",
+                port: 8000,
+                path: "/search?q=test",
+            };
+
+            let parser = new HttpDependencyParser(requestOptions, testRequest);
+            response.statusCode = 200;
+            parser.onResponse(response);
+            let dependencyTelemetry = parser.getDependencyTelemetry();
+            assert.equal(dependencyTelemetry.dependencyTypeName, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
+            assert.equal(dependencyTelemetry.success, true);
+            assert.equal(dependencyTelemetry.name, "GET /search");
+            assert.equal(dependencyTelemetry.data, "https://bing.com:8000/search?q=test");
             assert.equal(dependencyTelemetry.target, "bing.com:8000");
         });
 

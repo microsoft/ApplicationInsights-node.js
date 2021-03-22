@@ -37,11 +37,25 @@ export enum SpanKind {
     CONSUMER = 4,
 }
 
+export type LinkContext = Pick<SpanContext, 'traceId' | 'spanId'>;
+
+export interface Attributes {
+    [attributeKey: string]: AttributeValue | undefined;
+  }
+
+  export type AttributeValue =
+    | string
+    | number
+    | boolean
+    | Array<null | undefined | string>
+    | Array<null | undefined | number>
+    | Array<null | undefined | boolean>;
+
 export interface Link {
     /** The {@link SpanContext} of a linked span. */
-    spanContext: SpanContext;
+    context: LinkContext;
     /** A set of {@link Attributes} on the link. */
-    attributes?: Record<string, string>;
+    attributes?: Attributes;
 }
 
 export interface SpanContext {
@@ -64,7 +78,7 @@ export interface Span {
 
 export class OpenTelemetryScopeManagerWrapper {
     private _activeSymbol: symbol | undefined;
-    
+
     public active() {
         const context = CorrelationContextManager.getCurrentContext() as any;
         return {
@@ -75,14 +89,14 @@ export class OpenTelemetryScopeManagerWrapper {
                     this._activeSymbol = key;
                     return context;
                 }
-                
+
                 if (key === this._activeSymbol) {
                     return context;
                 }
-                
+
                 return false;
             },
-            setValue: () => {}
+            setValue: () => { }
         };
     }
 
