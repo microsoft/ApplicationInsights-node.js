@@ -105,7 +105,7 @@ class Sender {
                 options.headers["Content-Length"] = payload.length.toString();
             } else {
                 options.headers["Content-Encoding"] = "gzip";
-                options.headers["Content-Length"] = buffer.length;
+                options.headers["Content-Length"] = buffer.length.toString();
             }
 
             Logging.info(Sender.TAG, options);

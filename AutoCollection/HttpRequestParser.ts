@@ -245,18 +245,18 @@ class HttpRequestParser extends RequestParser {
         this.sourceCorrelationId = Util.getCorrelationContextTarget(request, RequestResponseHeaders.requestContextSourceKey);
 
         if (request.headers) {
-            const tracestateHeader = request.headers[RequestResponseHeaders.traceStateHeader]; // w3c header
-            const traceparentHeader = request.headers[RequestResponseHeaders.traceparentHeader]; // w3c header
-            const requestIdHeader = request.headers[RequestResponseHeaders.requestIdHeader]; // default AI header
-            const legacy_parentId = request.headers[RequestResponseHeaders.parentIdHeader]; // legacy AI header
-            const legacy_rootId = request.headers[RequestResponseHeaders.rootIdHeader]; // legacy AI header
+            const tracestateHeader = request.headers[RequestResponseHeaders.traceStateHeader] ? request.headers[RequestResponseHeaders.traceStateHeader].toString() : null; // w3c header
+            const traceparentHeader = request.headers[RequestResponseHeaders.traceparentHeader] ? request.headers[RequestResponseHeaders.traceparentHeader].toString() : null; // w3c header
+            const requestIdHeader = request.headers[RequestResponseHeaders.requestIdHeader] ? request.headers[RequestResponseHeaders.requestIdHeader].toString() : null; // default AI header
+            const legacy_parentId = request.headers[RequestResponseHeaders.parentIdHeader] ? request.headers[RequestResponseHeaders.parentIdHeader].toString() : null; // legacy AI header
+            const legacy_rootId = request.headers[RequestResponseHeaders.rootIdHeader] ? request.headers[RequestResponseHeaders.rootIdHeader].toString() : null; // legacy AI header
 
-            this.correlationContextHeader = request.headers[RequestResponseHeaders.correlationContextHeader];
+            this.correlationContextHeader = request.headers[RequestResponseHeaders.correlationContextHeader] ? request.headers[RequestResponseHeaders.correlationContextHeader].toString() : null;
 
             if (CorrelationIdManager.w3cEnabled && (traceparentHeader || tracestateHeader)) {
                 // Parse W3C Trace Context headers
-                this.traceparent = new Traceparent(traceparentHeader); // new traceparent is always created from this
-                this.tracestate = traceparentHeader && tracestateHeader && new Tracestate(tracestateHeader); // discard tracestate if no traceparent is present
+                this.traceparent = new Traceparent(traceparentHeader ? traceparentHeader.toString() : null); // new traceparent is always created from this
+                this.tracestate = traceparentHeader && tracestateHeader && new Tracestate(tracestateHeader ? tracestateHeader.toString() : null); // discard tracestate if no traceparent is present
                 this.setBackCompatFromThisTraceContext();
             } else if (requestIdHeader) {
                 // Parse AI headers
