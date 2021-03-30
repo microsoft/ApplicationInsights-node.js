@@ -1,8 +1,8 @@
 import { Domain, EventData, ExceptionData, MessageData, MetricData, PageViewData, RemoteDependencyData, RequestData } from "./Generated";
 
 export class RemoteDependencyDataConstants {
-    public static TYPE_HTTP:string = "Http";
-    public static TYPE_AI:string = "Http (tracked component)";
+    public static TYPE_HTTP: string = "Http";
+    public static TYPE_AI: string = "Http (tracked component)";
 }
 
 export interface ISupportProperties extends Domain {
@@ -27,12 +27,12 @@ export function domainSupportsProperties(domain: Domain): domain is ISupportProp
  */
 export interface ConnectionString {
     authorization?: string;
-    appId?: string;
+    appid?: string;
     tenantId?: string;
-    certificateSubjectName?: string;
-    certificateThumbprint?: string;
-    certificateStoreLocation?: string;
-    appKey?: string;
+    certificatesubjectname?: string;
+    certificatethumbprint?: string;
+    certificatestorelocation?: string;
+    appkey?: string;
     instrumentationkey?: string;
     ingestionendpoint?: string;
     liveendpoint?: string;
@@ -43,4 +43,5 @@ export interface ConnectionString {
     // type ConnectionString = { [key in ConnectionStringKey]?: string }
 }
 
-export type ConnectionStringKey = "authorization" | "instrumentationkey" | "ingestionendpoint" | "liveendpoint" | "location" | "endpointsuffix";
+export type ConnectionStringKey = "authorization" | "instrumentationkey" | "ingestionendpoint" | "liveendpoint" | "location"
+    | "endpointsuffix" | "appid" | "tenantId" | "certificatesubjectname" | "certificatethumbprint" | "certificatestorelocation" | "appkey";

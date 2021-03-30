@@ -63,12 +63,12 @@ class QuickPulseSender {
         this._submitData([envelope], redirectedHostEndpoint, done, "post");
     }
 
-    private _submitData(envelope: Contracts.EnvelopeQuickPulse | Contracts.EnvelopeQuickPulse[],
+    private async _submitData(envelope: Contracts.EnvelopeQuickPulse | Contracts.EnvelopeQuickPulse[],
         redirectedHostEndpoint: string,
         done: (shouldPOST?: boolean, res?: http.IncomingMessage, redirectedHost?: string, pollingIntervalHint?: number) => void,
         postOrPing: "post" | "ping",
         additionalHeaders?: { name: string, value: string }[]
-    ): void {
+    ): Promise<void> {
 
         const payload = JSON.stringify(envelope);
         var options = {
@@ -91,7 +91,7 @@ class QuickPulseSender {
         if (this._authorizationHandler) {
             try {
                 // Add bearer token
-                this._authorizationHandler.addAuthorizationHeader(options);
+                await this._authorizationHandler.addAuthorizationHeader(options);
             }
             catch (authError) {
                 let notice = `Failed to get AAD bearer token for the Application. Error:`;

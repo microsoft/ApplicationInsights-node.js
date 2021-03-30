@@ -87,7 +87,7 @@ class Sender {
         }
     }
 
-    public send(payload: Buffer, callback?: (v: string) => void) {
+    public async send(payload: Buffer, callback?: (v: string) => void) {
         var endpointUrl = this._config.endpointUrl;
 
         // todo: investigate specifying an agent here: https://nodejs.org/api/http.html#http_class_http_agent
@@ -102,7 +102,7 @@ class Sender {
         if (this._authorizationHandler) {
             try {
                 // Add bearer token
-                this._authorizationHandler.addAuthorizationHeader(options);
+                await this._authorizationHandler.addAuthorizationHeader(options);
             }
             catch (authError) {
                 let errorMsg = "Failed to get AAD bearer token for the Application. Error:" + authError.toString();

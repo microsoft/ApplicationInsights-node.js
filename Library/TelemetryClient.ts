@@ -29,6 +29,7 @@ class TelemetryClient {
     public commonProperties: { [key: string]: string; };
     public channel: Channel;
     public quickPulseClient: QuickPulseStateManager;
+    public authHandler: AuthorizationHandler;
 
 
     /**
@@ -36,17 +37,17 @@ class TelemetryClient {
      * @param setupString the Connection String or Instrumentation Key to use (read from environment variable if not specified)
      * @param handler Handler to authenticate the application
      */
-    constructor(setupString?: string, handler?: AuthorizationHandler) {
+    constructor(setupString?: string) {
         var config = new Config(setupString);
         this.config = config;
         this.context = new Context();
         this.commonProperties = {};
 
-        let authHandler: AuthorizationHandler = handler;
+        this.authHandler = null;
         if (config.isAuthRequired) {
-            authHandler = authHandler || new AuthorizationHandler(config);
+            this.authHandler = new AuthorizationHandler(config);
         }
-        var sender = new Sender(this.config, authHandler);
+        var sender = new Sender(this.config, this.authHandler);
         this.channel = new Channel(() => config.disableAppInsights, () => config.maxBatchSize, () => config.maxBatchIntervalMs, sender);
     }
 

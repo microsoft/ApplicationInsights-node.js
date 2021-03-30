@@ -59,7 +59,7 @@ class AuthorizationHandler {
             credential = new azureIdentity.ClientCertificateCredential(authOptions.tenantId, authOptions.appId, authOptions.certificateStoreLocation);
         }
         else if (authOptions.isManagedIdentityAuth()) {
-            credential = new azureIdentity.ManagedIdentityCredential();
+            credential = new azureIdentity.ManagedIdentityCredential(authOptions.appId);
         }
         else {
             credential = new azureIdentity.DefaultAzureCredential(); // Env variables auth
@@ -84,19 +84,14 @@ class AuthorizationHandler {
     }
 
     private async _getToken(options: azureCore.GetTokenOptions): Promise<string | undefined> {
-        try {
-            // We reset the cached token some before it expires,
-            // after that point, we retry the refresh of the token only if the token refresher is ready.
-            let token = this._tokenCache.getCachedToken();
-            if (!token && this._tokenRefresher.isReady()) {
-                token = await this._tokenRefresher.refresh(options);
-                this._tokenCache.setCachedToken(token);
-            }
-            return token ? token.token : undefined;
+        // We reset the cached token some before it expires,
+        // after that point, we retry the refresh of the token only if the token refresher is ready.
+        let token = this._tokenCache.getCachedToken();
+        if (!token && this._tokenRefresher.isReady()) {
+            token = await this._tokenRefresher.refresh(options);
+            this._tokenCache.setCachedToken(token);
         }
-        catch (ex) {
-            throw ex;
-        }
+        return token ? token.token : undefined;
     }
 }
 

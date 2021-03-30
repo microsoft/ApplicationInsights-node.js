@@ -103,11 +103,12 @@ class Config {
 
         this.isAuthRequired = csCode.authorization && csCode.authorization === "aad";
         if (this.isAuthRequired) {
-            this.authAppId = csCode.appId;
+            this.authAppId = csCode.appid;
             this.authTenantId = csCode.tenantId;
-            this.authCertificateThumbprint = csCode.certificateThumbprint;
-            this.authCertificateStoreLocation = csCode.certificateStoreLocation;
-            this.authAppKey = csCode.appKey;
+            this.authCertificateThumbprint = csCode.certificatethumbprint;
+            this.authCertificateSubjectName = csCode.certificatesubjectname;
+            this.authCertificateStoreLocation = csCode.certificatestorelocation;
+            this.authAppKey = csCode.appkey;
         }
 
         this.setCorrelationId = (correlationId) => this.correlationId = correlationId;
