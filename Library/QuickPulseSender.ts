@@ -1,4 +1,6 @@
 import https = require("https");
+
+import AuthorizationHandler = require("./AuthorizationHandler");
 import Config = require("./Config");
 import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
 import Logging = require("./Logging");
@@ -29,10 +31,12 @@ class QuickPulseSender {
 
     private _config: Config;
     private _consecutiveErrors: number;
+    private _authorizationHandler: AuthorizationHandler;
 
-    constructor(config: Config) {
+    constructor(config: Config, authHandler?: AuthorizationHandler) {
         this._config = config;
         this._consecutiveErrors = 0;
+        this._authorizationHandler = authHandler;
     }
 
     public ping(envelope: Contracts.EnvelopeQuickPulse,
@@ -82,6 +86,19 @@ class QuickPulseSender {
 
         if (additionalHeaders && additionalHeaders.length > 0) {
             additionalHeaders.forEach(header => options.headers[header.name] = header.value);
+        }
+
+        if (this._authorizationHandler) {
+            try {
+                // Add bearer token
+                this._authorizationHandler.addAuthorizationHeader(options);
+            }
+            catch (authError) {
+                let notice = `Failed to get AAD bearer token for the Application. Error:`;
+                Logging.info(QuickPulseSender.TAG, notice, authError);
+                // Do not send request to Quickpulse if auth fails, data will be dropped
+                return;
+            }
         }
 
         // HTTPS only

@@ -56,6 +56,15 @@ class Config {
     /** Disable including legacy headers in outgoing requests, x-ms-request-id */
     public ignoreLegacyHeaders?: boolean;
 
+    /** Authentication related attributes */
+    public isAuthRequired = false;
+    public authAppId: string;
+    public authTenantId: string;
+    public authCertificateThumbprint: string;
+    public authCertificateSubjectName: string;
+    public authCertificateStoreLocation: string;
+    public authAppKey: string;
+
     private endpointBase: string = Constants.DEFAULT_BREEZE_ENDPOINT;
     private setCorrelationId: (v: string) => void;
     private _profileQueryEndpoint: string;
@@ -73,7 +82,7 @@ class Config {
 
         this.instrumentationKey = csCode.instrumentationkey || iKeyCode /* === instrumentationKey */ || csEnv.instrumentationkey || Config._getInstrumentationKey();
         // validate ikey. If fails throw a warning
-        if(!Config._validateInstrumentationKey(this.instrumentationKey)) {
+        if (!Config._validateInstrumentationKey(this.instrumentationKey)) {
             Logging.warn("An invalid instrumentation key was provided. There may be resulting telemetry loss", this.instrumentationKey);
         }
 
@@ -91,6 +100,15 @@ class Config {
             "*.core.microsoft.scloud",
             "*.core.eaglex.ic.gov"
         ];
+
+        this.isAuthRequired = csCode.authorization && csCode.authorization === "aad";
+        if (this.isAuthRequired) {
+            this.authAppId = csCode.appId;
+            this.authTenantId = csCode.tenantId;
+            this.authCertificateThumbprint = csCode.certificateThumbprint;
+            this.authCertificateStoreLocation = csCode.certificateStoreLocation;
+            this.authAppKey = csCode.appKey;
+        }
 
         this.setCorrelationId = (correlationId) => this.correlationId = correlationId;
 
@@ -152,10 +170,10 @@ class Config {
     * Third section has 4 characters
     * Fourth section has 4 characters
     * Fifth section has 12 characters                  
-    */    
-    private static _validateInstrumentationKey(iKey:string): boolean {
+    */
+    private static _validateInstrumentationKey(iKey: string): boolean {
         const UUID_Regex = '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
-        const regexp = new RegExp(UUID_Regex); 
+        const regexp = new RegExp(UUID_Regex);
         return regexp.test(iKey);
     }
 }

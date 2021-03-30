@@ -2,6 +2,7 @@ import url = require("url");
 import os = require("os");
 
 import Config = require("./Config");
+import AuthorizationHandler = require("./AuthorizationHandler");
 import Context = require("./Context");
 import Contracts = require("../Declarations/Contracts");
 import Channel = require("./Channel");
@@ -13,7 +14,7 @@ import Logging = require("./Logging");
 import FlushOptions = require("./FlushOptions");
 import EnvelopeFactory = require("./EnvelopeFactory");
 import QuickPulseStateManager = require("./QuickPulseStateManager");
-import {Tags} from "../Declarations/Contracts";
+import { Tags } from "../Declarations/Contracts";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -29,17 +30,23 @@ class TelemetryClient {
     public channel: Channel;
     public quickPulseClient: QuickPulseStateManager;
 
+
     /**
      * Constructs a new client of the client
      * @param setupString the Connection String or Instrumentation Key to use (read from environment variable if not specified)
+     * @param handler Handler to authenticate the application
      */
-    constructor(setupString?: string) {
+    constructor(setupString?: string, handler?: AuthorizationHandler) {
         var config = new Config(setupString);
         this.config = config;
         this.context = new Context();
         this.commonProperties = {};
 
-        var sender = new Sender(this.config);
+        let authHandler: AuthorizationHandler = handler;
+        if (config.isAuthRequired) {
+            authHandler = authHandler || new AuthorizationHandler(config);
+        }
+        var sender = new Sender(this.config, authHandler);
         this.channel = new Channel(() => config.disableAppInsights, () => config.maxBatchSize, () => config.maxBatchIntervalMs, sender);
     }
 

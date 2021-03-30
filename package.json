@@ -26,7 +26,7 @@
   ],
   "scripts": {
     "clean": "rm -rf ./out && rm -rf ./node_modules",
-    "build": "npm run build:deps && npm run build:compile",
+    "build": "npm run build:compile",
     "build:deps": "npm update --dev",
     "build:compile": "tsc --project ./tsconfig.json",
     "prepare": "npm run build:compile",
@@ -54,6 +54,8 @@
     "typescript": "4.1.2"
   },
   "dependencies": {
+    "@azure/core-http": "^1.2.0",
+    "@azure/identity": "^1.2.5",
     "@opentelemetry/api": "^1.0.0-rc.0",
     "@opentelemetry/tracing": "^0.18.0",
     "cls-hooked": "^4.2.2",

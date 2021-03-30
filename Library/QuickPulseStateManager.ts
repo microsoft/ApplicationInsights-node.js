@@ -1,3 +1,4 @@
+import AuthorizationHandler = require("./AuthorizationHandler");
 import Logging = require("./Logging");
 import Config = require("./Config");
 import QuickPulseEnvelopeFactory = require("./QuickPulseEnvelopeFactory");
@@ -26,16 +27,21 @@ class QuickPulseStateManager {
     private _lastSuccessTime: number = Date.now();
     private _lastSendSucceeded: boolean = true;
     private _handle: NodeJS.Timer;
-    private _metrics: {[name: string]: Contracts.MetricQuickPulse} = {};
+    private _metrics: { [name: string]: Contracts.MetricQuickPulse } = {};
     private _documents: Contracts.DocumentQuickPulse[] = [];
-    private _collectors: {enable: (enable: boolean) => void}[] = [];
+    private _collectors: { enable: (enable: boolean) => void }[] = [];
     private _redirectedHost: string = null;
     private _pollingIntervalHint: number = -1;
 
-    constructor(iKey?: string, context?: Context) {
-        this.config = new Config(iKey);
+    constructor(config: Config, context?: Context, handler?: AuthorizationHandler) {
+        this.config = config;
         this.context = context || new Context();
-        this._sender = new QuickPulseSender(this.config);
+        let authHandler: AuthorizationHandler = handler;
+        if (config.isAuthRequired) {
+            authHandler = authHandler || new AuthorizationHandler(config);
+        }
+
+        this._sender = new QuickPulseSender(this.config, authHandler);
         this._isEnabled = false;
     }
 
@@ -95,13 +101,13 @@ class QuickPulseStateManager {
      * @param telemetry
      */
     private _addMetric(telemetry: Contracts.MetricTelemetry) {
-        const {value} = telemetry;
+        const { value } = telemetry;
         const count = telemetry.count || 1;
 
         let name = Constants.PerformanceToQuickPulseCounter[telemetry.name];
         if (name) {
             if (this._metrics[name]) {
-                this._metrics[name].Value = (this._metrics[name].Value*this._metrics[name].Weight + value*count) / (this._metrics[name].Weight + count);
+                this._metrics[name].Value = (this._metrics[name].Value * this._metrics[name].Weight + value * count) / (this._metrics[name].Weight + count);
                 this._metrics[name].Weight += count;
             } else {
                 this._metrics[name] = QuickPulseEnvelopeFactory.createQuickPulseMetric(telemetry);
@@ -158,8 +164,8 @@ class QuickPulseStateManager {
     /**
      * Change the current QPS send state. (shouldPOST == undefined) --> error, but do not change the state yet.
      */
-    private _quickPulseDone(shouldPOST?: boolean, res?: http.IncomingMessage, 
-            redirectedHost?: string, pollingIntervalHint?: number): void {
+    private _quickPulseDone(shouldPOST?: boolean, res?: http.IncomingMessage,
+        redirectedHost?: string, pollingIntervalHint?: number): void {
         if (shouldPOST != undefined) {
             if (this._isCollectingData !== shouldPOST) {
                 Logging.info("Live Metrics sending data", shouldPOST);

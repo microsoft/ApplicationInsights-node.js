@@ -27,6 +27,12 @@ export function domainSupportsProperties(domain: Domain): domain is ISupportProp
  */
 export interface ConnectionString {
     authorization?: string;
+    appId?: string;
+    tenantId?: string;
+    certificateSubjectName?: string;
+    certificateThumbprint?: string;
+    certificateStoreLocation?: string;
+    appKey?: string;
     instrumentationkey?: string;
     ingestionendpoint?: string;
     liveendpoint?: string;

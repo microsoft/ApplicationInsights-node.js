@@ -3,6 +3,7 @@ import sinon = require("sinon");
 
 import QuickPulseClient = require("../../Library/QuickPulseStateManager");
 import { IncomingMessage } from "http";
+import Config = require("../../Library/Config");
 
 describe("Library/QuickPulseStateManager", () => {
     describe("#constructor", () => {
@@ -12,7 +13,7 @@ describe("Library/QuickPulseStateManager", () => {
         });
 
         it("should create a config with ikey", () => {
-            qps = new QuickPulseClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
 
             assert.ok(qps.config);
             assert.equal(qps.config.instrumentationKey, "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
@@ -31,7 +32,7 @@ describe("Library/QuickPulseStateManager", () => {
         let qps: QuickPulseClient;
 
         beforeEach(() => {
-            qps = new QuickPulseClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
         })
         afterEach(() => {
             qps = null;
@@ -50,7 +51,7 @@ describe("Library/QuickPulseStateManager", () => {
         it("should clear timeout handle when isEnabled == false", () => {
             assert.equal(qps["_handle"], undefined);
             qps["_isEnabled"] = true;
-            (<any>qps["_handle"]) = setTimeout(()=>{ throw new Error("this error should be cancelled") }, 1000);
+            (<any>qps["_handle"]) = setTimeout(() => { throw new Error("this error should be cancelled") }, 1000);
             <any>qps["_handle"].unref();
             assert.ok(qps["_handle"]);
 
@@ -62,9 +63,9 @@ describe("Library/QuickPulseStateManager", () => {
 
     describe("#reset", () => {
         it("should reset metric and document buffers", () => {
-            let qps = new QuickPulseClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-            (<any>qps["_metrics"]) = {foo: "bar"};
-            (<any>qps["_documents"]) = [{foo: "bar"}];
+            let qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+            (<any>qps["_metrics"]) = { foo: "bar" };
+            (<any>qps["_documents"]) = [{ foo: "bar" }];
 
             assert.ok(qps["_metrics"].foo);
             assert.ok(qps["_documents"].length > 0)
@@ -82,7 +83,7 @@ describe("Library/QuickPulseStateManager", () => {
         let pingStub: sinon.SinonStub;
 
         beforeEach(() => {
-            qps = new QuickPulseClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
             postStub = sinon.stub(qps, "_post");
             pingStub = sinon.stub(qps, "_ping");
         })
@@ -123,7 +124,7 @@ describe("Library/QuickPulseStateManager", () => {
 
         beforeEach(() => {
             clock = sinon.useFakeTimers();
-            qps = new QuickPulseClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
             postStub = sinon.stub(qps, "_post");
             pingStub = sinon.stub(qps, "_ping");
         })
@@ -162,7 +163,7 @@ describe("Library/QuickPulseStateManager", () => {
 
         beforeEach(() => {
             clock = sinon.useFakeTimers();
-            qps = new QuickPulseClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
             submitDataStub = sinon.stub(qps['_sender'], "_submitData");
         })
         afterEach(() => {
@@ -189,7 +190,7 @@ describe("Library/QuickPulseStateManager", () => {
             assert.equal((callArgs[0][4][4] as any)['value'], '1');
 
             assert.equal(submitDataStub.callCount, 1);
-            
+
             qps.enable(false);
         });
 
@@ -207,7 +208,7 @@ describe("Library/QuickPulseStateManager", () => {
             assert.equal(callArgs[0][1], undefined);
             assert.equal(callArgs[1][1], 'www.example.com');
             assert.equal(callArgs[2][1], 'www.example.com');
-            
+
         });
     });
 
@@ -215,7 +216,7 @@ describe("Library/QuickPulseStateManager", () => {
         let qps: QuickPulseClient;
 
         beforeEach(() => {
-            qps = new QuickPulseClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
 
         })
         afterEach(() => {
@@ -223,8 +224,8 @@ describe("Library/QuickPulseStateManager", () => {
         });
 
         it("should call _quickPulseDone and set the _rediectedHost and pollingIntervalHint", () => {
-            
-            qps['_quickPulseDone'](true, { statusCode: 200} as IncomingMessage, 'www.example.com', 2000);
+
+            qps['_quickPulseDone'](true, { statusCode: 200 } as IncomingMessage, 'www.example.com', 2000);
 
             assert.equal(qps['_redirectedHost'], 'www.example.com');
             assert.equal(qps['_pollingIntervalHint'], 2000);
@@ -235,12 +236,12 @@ describe("Library/QuickPulseStateManager", () => {
         it("should call _quickPulseDone and not set the _rediectedHost and pollingIntervalHint if the arguments are null", () => {
             qps['_pollingIntervalHint'] = 2000;
             qps['_redirectedHost'] = 'www.example.com';
-            qps['_quickPulseDone'](true, { statusCode: 200} as IncomingMessage, null, 0);
+            qps['_quickPulseDone'](true, { statusCode: 200 } as IncomingMessage, null, 0);
 
             assert.equal(qps['_redirectedHost'], 'www.example.com');
             assert.equal(qps['_pollingIntervalHint'], 2000);
-            
-            qps['_quickPulseDone'](true, { statusCode: 200} as IncomingMessage, 'www.quickpulse.com', 5000);
+
+            qps['_quickPulseDone'](true, { statusCode: 200 } as IncomingMessage, 'www.quickpulse.com', 5000);
 
             assert.equal(qps['_redirectedHost'], 'www.quickpulse.com');
             assert.equal(qps['_pollingIntervalHint'], 5000);
