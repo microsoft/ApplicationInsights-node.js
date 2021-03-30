@@ -2,8 +2,11 @@ import assert = require("assert");
 import sinon = require("sinon");
 
 import QuickPulseClient = require("../../Library/QuickPulseStateManager");
+import Contracts = require("../../Declarations/Contracts");
+import AuthHandler = require("../../Library/AuthHandler");
 import { IncomingMessage } from "http";
 import Config = require("../../Library/Config");
+import QuickPulseSender = require("../../Library/QuickPulseSender");
 
 describe("Library/QuickPulseStateManager", () => {
     describe("#constructor", () => {
@@ -24,6 +27,18 @@ describe("Library/QuickPulseStateManager", () => {
             assert.ok(Object.keys(qps["_metrics"]).length === 0);
             assert.ok(qps["_documents"].length === 0);
             assert.ok(qps["_collectors"].length === 0);
+        });
+
+        it("should initialize authentication handler", () => {
+            qps = new QuickPulseClient(new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;Authorization=aad;appId=testAppId;"));
+            assert.ok(qps.authHandler);
+        });
+
+        it("should reuse authentication handler if provided", () => {
+            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;");
+            var authHandler = new AuthHandler(config);
+            qps = new QuickPulseClient(config, null, authHandler);
+            assert.equal(qps.authHandler, authHandler);
         });
 
     });
@@ -245,6 +260,39 @@ describe("Library/QuickPulseStateManager", () => {
 
             assert.equal(qps['_redirectedHost'], 'www.quickpulse.com');
             assert.equal(qps['_pollingIntervalHint'], 5000);
+        });
+    });
+
+    describe("#authHandler", () => {
+        var sandbox: sinon.SinonSandbox;
+        let envelope: Contracts.EnvelopeQuickPulse = {
+            Documents: null,
+            Instance: "",
+            RoleName: "",
+            InstrumentationKey: "",
+            InvariantVersion: 1,
+            MachineName: "",
+            Metrics: null,
+            StreamId: "",
+            Timestamp: "",
+            Version: ""
+        };
+
+        beforeEach(() => {
+            sandbox = sinon.sandbox.create();
+        });
+
+        afterEach(() => {
+            sandbox.restore();
+        });
+
+        it("should add token if handler present", () => {
+            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;Authorization=aad;appId=testAppId;");
+            var authHandler = new AuthHandler(config);
+            var addHeaderStub = sandbox.stub(authHandler, "addAuthorizationHeader");
+            let sender = new QuickPulseSender(config, authHandler);
+            sender.post(envelope, "", () => { });
+            assert.ok(addHeaderStub.calledOnce);
         });
     });
 });

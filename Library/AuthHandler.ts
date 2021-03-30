@@ -36,7 +36,7 @@ class AuthorizationOptions {
     }
 }
 
-class AuthorizationHandler {
+class AuthHandler {
 
     private _tokenCache: azureCore.AccessTokenCache;
     private _tokenRefresher: azureCore.AccessTokenRefresher;
@@ -52,17 +52,11 @@ class AuthorizationHandler {
         authOptions.certificateStoreLocation = config.authCertificateStoreLocation ? config.authCertificateStoreLocation : "";
         authOptions.appKey = config.authAppKey ? config.authAppKey : "";
 
-        if (authOptions.isSecretAuth()) {
-            credential = new azureIdentity.ClientSecretCredential(authOptions.tenantId, authOptions.appId, authOptions.appKey);
-        }
-        else if (authOptions.isCertAuth()) {
-            credential = new azureIdentity.ClientCertificateCredential(authOptions.tenantId, authOptions.appId, authOptions.certificateStoreLocation);
-        }
-        else if (authOptions.isManagedIdentityAuth()) {
+        if (authOptions.isManagedIdentityAuth()) {
             credential = new azureIdentity.ManagedIdentityCredential(authOptions.appId);
         }
         else {
-            credential = new azureIdentity.DefaultAzureCredential(); // Env variables auth
+            credential = new azureIdentity.DefaultAzureCredential();
         }
 
         let scopes: string[] = [applicationInsightsResource];
@@ -77,10 +71,9 @@ class AuthorizationHandler {
     /**
        * Applies the Bearer token to the request through the Authorization header.
        */
-    public async addAuthorizationHeader(requestOptions: http.RequestOptions | https.RequestOptions): Promise<http.RequestOptions | https.RequestOptions> {
+    public async addAuthorizationHeader(requestOptions: http.RequestOptions | https.RequestOptions): Promise<void> {
         const token = await this._getToken({});
         requestOptions.headers[azureCore.Constants.HeaderConstants.AUTHORIZATION] = `Bearer ${token}`;
-        return requestOptions;
     }
 
     private async _getToken(options: azureCore.GetTokenOptions): Promise<string | undefined> {
@@ -95,4 +88,4 @@ class AuthorizationHandler {
     }
 }
 
-export = AuthorizationHandler;
+export = AuthHandler;

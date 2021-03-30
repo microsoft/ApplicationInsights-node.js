@@ -2,7 +2,7 @@ import url = require("url");
 import os = require("os");
 
 import Config = require("./Config");
-import AuthorizationHandler = require("./AuthorizationHandler");
+import AuthHandler = require("./AuthHandler");
 import Context = require("./Context");
 import Contracts = require("../Declarations/Contracts");
 import Channel = require("./Channel");
@@ -29,7 +29,7 @@ class TelemetryClient {
     public commonProperties: { [key: string]: string; };
     public channel: Channel;
     public quickPulseClient: QuickPulseStateManager;
-    public authHandler: AuthorizationHandler;
+    public authHandler: AuthHandler;
 
 
     /**
@@ -45,7 +45,7 @@ class TelemetryClient {
 
         this.authHandler = null;
         if (config.isAuthRequired) {
-            this.authHandler = new AuthorizationHandler(config);
+            this.authHandler = new AuthHandler(config);
         }
         var sender = new Sender(this.config, this.authHandler);
         this.channel = new Channel(() => config.disableAppInsights, () => config.maxBatchSize, () => config.maxBatchIntervalMs, sender);

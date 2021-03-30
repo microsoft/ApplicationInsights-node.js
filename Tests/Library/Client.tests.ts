@@ -100,6 +100,11 @@ describe("Library/TelemetryClient", () => {
             var client = new Client("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             assert.ok(client.channel);
         });
+
+        it("should initialize authentication handler", () => {
+            var client = new Client("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;Authorization=aad;appId=testAppId;");
+            assert.ok(client.authHandler);
+        });
     });
 
     describe("#trackEvent()", () => {

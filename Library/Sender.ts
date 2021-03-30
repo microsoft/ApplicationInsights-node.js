@@ -7,7 +7,7 @@ import url = require("url");
 import zlib = require("zlib");
 import child_process = require("child_process");
 
-import AuthorizationHandler = require("./AuthorizationHandler");
+import AuthHandler = require("./AuthHandler");
 import Logging = require("./Logging");
 import Config = require("./Config");
 import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
@@ -34,11 +34,11 @@ class Sender {
     private _enableDiskRetryMode: boolean;
     private _numConsecutiveFailures: number;
     private _resendTimer: NodeJS.Timer | null;
-    private _authorizationHandler: AuthorizationHandler;
+    private _authorizationHandler: AuthHandler;
     protected _resendInterval: number;
     protected _maxBytesOnDisk: number;
 
-    constructor(config: Config, authHandler?: AuthorizationHandler, onSuccess?: (response: string) => void, onError?: (error: Error) => void) {
+    constructor(config: Config, authHandler?: AuthHandler, onSuccess?: (response: string) => void, onError?: (error: Error) => void) {
         this._config = config;
         this._onSuccess = onSuccess;
         this._onError = onError;
@@ -165,6 +165,8 @@ class Sender {
                             }
                             // store to disk in case of burst throttling
                         } else if (
+                            res.statusCode === 401 || // Unauthorized
+                            res.statusCode === 403 || // Forbidden
                             res.statusCode === 408 || // Timeout
                             res.statusCode === 429 || // Throttle
                             res.statusCode === 439 || // Quota

@@ -1,4 +1,4 @@
-import AuthorizationHandler = require("./AuthorizationHandler");
+import AuthHandler = require("./AuthHandler");
 import Logging = require("./Logging");
 import Config = require("./Config");
 import QuickPulseEnvelopeFactory = require("./QuickPulseEnvelopeFactory");
@@ -14,6 +14,7 @@ import * as Contracts from "../Declarations/Contracts";
 class QuickPulseStateManager {
     public config: Config;
     public context: Context;
+    public authHandler: AuthHandler;
 
     private static MAX_POST_WAIT_TIME = 20000;
     private static MAX_PING_WAIT_TIME = 60000;
@@ -33,15 +34,15 @@ class QuickPulseStateManager {
     private _redirectedHost: string = null;
     private _pollingIntervalHint: number = -1;
 
-    constructor(config: Config, context?: Context, handler?: AuthorizationHandler) {
+    constructor(config: Config, context?: Context, handler?: AuthHandler) {
         this.config = config;
         this.context = context || new Context();
-        let authHandler: AuthorizationHandler = handler;
+        this.authHandler = handler;
         if (config.isAuthRequired) {
-            authHandler = authHandler || new AuthorizationHandler(config);
+            this.authHandler = this.authHandler || new AuthHandler(config);
         }
 
-        this._sender = new QuickPulseSender(this.config, authHandler);
+        this._sender = new QuickPulseSender(this.config, this.authHandler);
         this._isEnabled = false;
     }
 

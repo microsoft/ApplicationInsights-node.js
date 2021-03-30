@@ -1,6 +1,6 @@
 import https = require("https");
 
-import AuthorizationHandler = require("./AuthorizationHandler");
+import AuthHandler = require("./AuthHandler");
 import Config = require("./Config");
 import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
 import Logging = require("./Logging");
@@ -31,9 +31,9 @@ class QuickPulseSender {
 
     private _config: Config;
     private _consecutiveErrors: number;
-    private _authorizationHandler: AuthorizationHandler;
+    private _authorizationHandler: AuthHandler;
 
-    constructor(config: Config, authHandler?: AuthorizationHandler) {
+    constructor(config: Config, authHandler?: AuthHandler) {
         this._config = config;
         this._consecutiveErrors = 0;
         this._authorizationHandler = authHandler;

@@ -104,7 +104,7 @@ class Config {
         this.isAuthRequired = csCode.authorization && csCode.authorization === "aad";
         if (this.isAuthRequired) {
             this.authAppId = csCode.appid;
-            this.authTenantId = csCode.tenantId;
+            this.authTenantId = csCode.tenantid;
             this.authCertificateThumbprint = csCode.certificatethumbprint;
             this.authCertificateSubjectName = csCode.certificatesubjectname;
             this.authCertificateStoreLocation = csCode.certificatestorelocation;
