@@ -14,10 +14,10 @@ describe("ConnectionStringParser", () => {
             var connectionString = `Authorization=${authorization};InstrumentationKey=${instrumentationKey};IngestionEndpoint=${ingestionEndpoint};LiveEndpoint=${liveEndpoint};`;
             const result = ConnectionStringParser.parse(connectionString);
 
-            assert.equal(result.authorization, authorization);
-            assert.equal(result.instrumentationkey, instrumentationKey);
-            assert.equal(result.ingestionendpoint, ingestionEndpoint);
-            assert.equal(result.liveendpoint, liveEndpoint);
+            assert.deepEqual(result.authorization, authorization);
+            assert.deepEqual(result.instrumentationkey, instrumentationKey);
+            assert.deepEqual(result.ingestionendpoint, ingestionEndpoint);
+            assert.deepEqual(result.liveendpoint, liveEndpoint);
         });
 
         it("should ignore invalid fields", () => {

@@ -11,15 +11,6 @@ import RequestResponseHeaders = require("../../Library/RequestResponseHeaders");
 import Util = require("../../Library/Util");
 import EnvelopeFactory = require("../../Library/EnvelopeFactory");
 
-class TestTokenCredential implements azureCore.TokenCredential {
-    async getToken(scopes: string | string[], options?: any): Promise<any> {
-        return {
-            token: "testToken",
-            expiresOnTimestamp: new Date()
-        };
-    }
-}
-
 describe("Library/TelemetryClient", () => {
 
     var iKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
@@ -111,7 +102,11 @@ describe("Library/TelemetryClient", () => {
 
         it("should initialize authorization handler", () => {
             var client = new Client("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;");
-            client.config.aadTokenCredential = new TestTokenCredential();
+            client.config.aadTokenCredential = {
+                async getToken(scopes: string | string[], options?: any): Promise<any> {
+                    return { token: "testToken", };
+                }
+            };
             assert.ok(client.getAuthorizationHandler());
         });
     });

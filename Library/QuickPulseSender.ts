@@ -88,7 +88,7 @@ class QuickPulseSender {
             additionalHeaders.forEach(header => options.headers[header.name] = header.value);
         }
 
-        let authHandler = this._getAuthorizationHandler();
+        let authHandler = this._getAuthorizationHandler ? this._getAuthorizationHandler() : null;
         if (authHandler) {
             try {
                 // Add bearer token

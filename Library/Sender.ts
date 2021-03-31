@@ -99,7 +99,7 @@ class Sender {
             }
         };
 
-        let authHandler = this._getAuthorizationHandler();
+        let authHandler = this._getAuthorizationHandler ? this._getAuthorizationHandler() : null;
         if (authHandler) {
             try {
                 // Add bearer token
