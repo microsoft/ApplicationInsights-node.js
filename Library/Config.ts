@@ -1,3 +1,5 @@
+import azureCore = require("@azure/core-http");
+
 import CorrelationIdManager = require('./CorrelationIdManager');
 import ConnectionStringParser = require('./ConnectionStringParser');
 import Logging = require('./Logging');
@@ -56,14 +58,8 @@ class Config {
     /** Disable including legacy headers in outgoing requests, x-ms-request-id */
     public ignoreLegacyHeaders?: boolean;
 
-    /** Authentication related attributes */
-    public isAuthRequired = false;
-    public authAppId: string;
-    public authTenantId: string;
-    public authCertificateThumbprint: string;
-    public authCertificateSubjectName: string;
-    public authCertificateStoreLocation: string;
-    public authAppKey: string;
+    /** AAD TokenCredential to use to authenticate the app */
+    public aadTokenCredential?: azureCore.TokenCredential;
 
     private endpointBase: string = Constants.DEFAULT_BREEZE_ENDPOINT;
     private setCorrelationId: (v: string) => void;
@@ -100,16 +96,6 @@ class Config {
             "*.core.microsoft.scloud",
             "*.core.eaglex.ic.gov"
         ];
-
-        this.isAuthRequired = csCode.authorization && csCode.authorization === "aad";
-        if (this.isAuthRequired) {
-            this.authAppId = csCode.appid;
-            this.authTenantId = csCode.tenantid;
-            this.authCertificateThumbprint = csCode.certificatethumbprint;
-            this.authCertificateSubjectName = csCode.certificatesubjectname;
-            this.authCertificateStoreLocation = csCode.certificatestorelocation;
-            this.authAppKey = csCode.appkey;
-        }
 
         this.setCorrelationId = (correlationId) => this.correlationId = correlationId;
 

@@ -27,12 +27,6 @@ export function domainSupportsProperties(domain: Domain): domain is ISupportProp
  */
 export interface ConnectionString {
     authorization?: string;
-    appid?: string;
-    tenantid?: string;
-    certificatesubjectname?: string;
-    certificatethumbprint?: string;
-    certificatestorelocation?: string;
-    appkey?: string;
     instrumentationkey?: string;
     ingestionendpoint?: string;
     liveendpoint?: string;
@@ -43,5 +37,4 @@ export interface ConnectionString {
     // type ConnectionString = { [key in ConnectionStringKey]?: string }
 }
 
-export type ConnectionStringKey = "authorization" | "instrumentationkey" | "ingestionendpoint" | "liveendpoint" | "location"
-    | "endpointsuffix" | "appid" | "tenantid" | "certificatesubjectname" | "certificatethumbprint" | "certificatestorelocation" | "appkey";
+export type ConnectionStringKey = "authorization" | "instrumentationkey" | "ingestionendpoint" | "liveendpoint" | "location"| "endpointsuffix";

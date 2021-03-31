@@ -1,9 +1,8 @@
 import assert = require("assert");
-import crypto = require('crypto');
 import sinon = require("sinon");
 import Sinon = require("sinon");
-import http = require("http");
 import eventEmitter = require('events');
+import azureCore = require("@azure/core-http");
 
 import Client = require("../../Library/NodeClient");
 import Config = require("../../Library/Config");
@@ -11,6 +10,15 @@ import Contracts = require("../../Declarations/Contracts");
 import RequestResponseHeaders = require("../../Library/RequestResponseHeaders");
 import Util = require("../../Library/Util");
 import EnvelopeFactory = require("../../Library/EnvelopeFactory");
+
+class TestTokenCredential implements azureCore.TokenCredential {
+    async getToken(scopes: string | string[], options?: any): Promise<any> {
+        return {
+            token: "testToken",
+            expiresOnTimestamp: new Date()
+        };
+    }
+}
 
 describe("Library/TelemetryClient", () => {
 
@@ -101,9 +109,10 @@ describe("Library/TelemetryClient", () => {
             assert.ok(client.channel);
         });
 
-        it("should initialize authentication handler", () => {
-            var client = new Client("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;Authorization=aad;appId=testAppId;");
-            assert.ok(client.authHandler);
+        it("should initialize authorization handler", () => {
+            var client = new Client("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;");
+            client.config.aadTokenCredential = new TestTokenCredential();
+            assert.ok(client.getAuthorizationHandler());
         });
     });
 

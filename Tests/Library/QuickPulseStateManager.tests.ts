@@ -1,9 +1,10 @@
 import assert = require("assert");
 import sinon = require("sinon");
+import azureCore = require("@azure/core-http");
 
 import QuickPulseClient = require("../../Library/QuickPulseStateManager");
 import Contracts = require("../../Declarations/Contracts");
-import AuthHandler = require("../../Library/AuthHandler");
+import AuthorizationHandler = require("../../Library/AuthorizationHandler");
 import { IncomingMessage } from "http";
 import Config = require("../../Library/Config");
 import QuickPulseSender = require("../../Library/QuickPulseSender");
@@ -29,16 +30,18 @@ describe("Library/QuickPulseStateManager", () => {
             assert.ok(qps["_collectors"].length === 0);
         });
 
-        it("should initialize authentication handler", () => {
-            qps = new QuickPulseClient(new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;Authorization=aad;appId=testAppId;"));
-            assert.ok(qps.authHandler);
-        });
-
-        it("should reuse authentication handler if provided", () => {
+        it("should reuse authorization handler if provided", () => {
             var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;");
-            var authHandler = new AuthHandler(config);
-            qps = new QuickPulseClient(config, null, authHandler);
-            assert.equal(qps.authHandler, authHandler);
+            var handler = new AuthorizationHandler({
+                async getToken(scopes: string | string[], options?: any): Promise<any> {
+                    return { token: "testToken", };
+                }
+            });
+            var getAuthorizationHandler = () => {
+                return handler;
+            };
+            qps = new QuickPulseClient(config, null, getAuthorizationHandler);
+            assert.equal(qps["_sender"]["_getAuthorizationHandler"](), handler);
         });
 
     });
@@ -263,7 +266,7 @@ describe("Library/QuickPulseStateManager", () => {
         });
     });
 
-    describe("#authHandler", () => {
+    describe("#AuthorizationHandler ", () => {
         var sandbox: sinon.SinonSandbox;
         let envelope: Contracts.EnvelopeQuickPulse = {
             Documents: null,
@@ -287,10 +290,17 @@ describe("Library/QuickPulseStateManager", () => {
         });
 
         it("should add token if handler present", () => {
-            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;Authorization=aad;appId=testAppId;");
-            var authHandler = new AuthHandler(config);
-            var addHeaderStub = sandbox.stub(authHandler, "addAuthorizationHeader");
-            let sender = new QuickPulseSender(config, authHandler);
+            var handler = new AuthorizationHandler({
+                async getToken(scopes: string | string[], options?: any): Promise<any> {
+                    return { token: "testToken", };
+                }
+            });
+            var getAuthorizationHandler = () => {
+                return handler;
+            };
+            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;");
+            var addHeaderStub = sandbox.stub(handler, "addAuthorizationHeader");
+            let sender = new QuickPulseSender(config, getAuthorizationHandler);
             sender.post(envelope, "", () => { });
             assert.ok(addHeaderStub.calledOnce);
         });

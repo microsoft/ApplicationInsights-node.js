@@ -1,11 +1,18 @@
 import assert = require("assert");
 import sinon = require("sinon");
-
 import azureCore = require("@azure/core-http");
-import azureIdentity = require("@azure/identity");
 
-import AuthHandler = require("../../Library/AuthHandler");
+import AuthorizationHandler = require("../../Library/AuthorizationHandler");
 import Config = require("../../Library/Config");
+
+class TestTokenCredential implements azureCore.TokenCredential {
+    async getToken(scopes: string | string[], options?: any): Promise<any> {
+        return {
+            token: "testToken",
+            expiresOnTimestamp: new Date()
+        };
+    }
+}
 
 class TestTokenCache {
     private testToken: any = "";
@@ -43,24 +50,6 @@ describe("Library/AuthorizationHandler", () => {
         sandbox.restore();
     });
 
-    describe("#constructor()", () => {
-        it("should use Default azure credential when no extra settings in connection string", () => {
-            var credStub =  sandbox.stub(azureIdentity, "DefaultAzureCredential");
-            var config = new Config("");
-            var handler = new AuthHandler(config);
-            assert.ok(credStub.calledOnce);
-            assert.equal(credStub.firstCall.args.length, 0);
-        });
-
-        it("should use ManagedIdentity azure credential when client is provided in connection string", () => {
-            var credStub =  sandbox.stub(azureIdentity, "ManagedIdentityCredential");
-            var config = new Config("Authorization=aad;appId=testAppId;");
-            var handler = new AuthHandler(config);
-            assert.ok(credStub.calledOnce);
-            assert.equal(credStub.firstCall.args[0], "testAppId");
-        });
-    });
-
     describe("#addAuthorizationHeader()", () => {
         it("should add Authorization header to options", async () => {
             var testCache = new TestTokenCache();
@@ -69,7 +58,8 @@ describe("Library/AuthorizationHandler", () => {
             var cacheStub = sandbox.stub(azureCore, "ExpiringAccessTokenCache", () => { return testCache; });
             var refresherStub = sandbox.stub(azureCore, "AccessTokenRefresher", () => { return testRefresher; });
             var config = new Config("");
-            var handler = new AuthHandler(config);
+            config.aadTokenCredential = new TestTokenCredential();
+            var handler = new AuthorizationHandler(config.aadTokenCredential);
             var options = {
                 method: "POST",
                 headers: <{ [key: string]: string }>{
@@ -88,7 +78,8 @@ describe("Library/AuthorizationHandler", () => {
             var cacheStub = sandbox.stub(azureCore, "ExpiringAccessTokenCache", () => { return testCache; });
             var refresherStub = sandbox.stub(azureCore, "AccessTokenRefresher", () => { return testRefresher; });
             var config = new Config("");
-            var handler = new AuthHandler(config);
+            config.aadTokenCredential = new TestTokenCredential();
+            var handler = new AuthorizationHandler(config.aadTokenCredential);
             var options = {
                 method: "POST",
                 headers: <{ [key: string]: string }>{

@@ -4,7 +4,7 @@ import nock = require("nock");
 
 import Sender = require("../../Library/Sender");
 import Config = require("../../Library/Config");
-import AuthHandler = require("../../Library/AuthHandler");
+import AuthorizationHandler = require("../../Library/AuthorizationHandler");
 
 class SenderMock extends Sender {
     public getResendInterval() {
@@ -42,7 +42,7 @@ describe("Library/Sender", () => {
         });
     });
 
-    describe("#authHandler", () => {
+    describe("#AuthorizationHandler ", () => {
 
         nock("https://dc.services.visualstudio.com")
             .post("/v2/track", (body: string) => {
@@ -66,21 +66,35 @@ describe("Library/Sender", () => {
         });
 
         it("should add token if handler present", () => {
-            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;Authorization=aad;appId=testAppId;");
-            var authHandler = new AuthHandler(config);
-            var addHeaderStub = sandbox.stub(authHandler, "addAuthorizationHeader");
+            var handler = new AuthorizationHandler({
+                async getToken(scopes: string | string[], options?: any): Promise<any> {
+                    return { token: "testToken", };
+                }
+            });
+            var getAuthorizationHandler = () => {
+                return handler;
+            };
+            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            var addHeaderStub = sandbox.stub(handler, "addAuthorizationHeader");
 
-            var sender = new Sender(config, authHandler);
+            var sender = new Sender(config, getAuthorizationHandler);
             sender.send(new Buffer("test"));
             assert.ok(addHeaderStub.calledOnce);
         });
 
         it("should put telemetry to disk if auth fails", () => {
-            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;Authorization=aad;appId=testAppId;");
-            var authHandler = new AuthHandler(config);
-            var addHeaderStub = sandbox.stub(authHandler, "addAuthorizationHeader", () => { throw new Error(); });
+            var handler = new AuthorizationHandler({
+                async getToken(scopes: string | string[], options?: any): Promise<any> {
+                    return { token: "testToken", };
+                }
+            });
+            var getAuthorizationHandler = () => {
+                return handler;
+            };
+            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;");
+            var addHeaderStub = sandbox.stub(handler, "addAuthorizationHeader", () => { throw new Error(); });
 
-            var sender = new Sender(config, authHandler);
+            var sender = new Sender(config, getAuthorizationHandler);
             var storeToDiskStub = sandbox.stub(sender, "_storeToDisk");
             var buffer = new Buffer("test");
             sender.send(buffer);

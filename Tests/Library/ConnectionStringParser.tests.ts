@@ -11,27 +11,13 @@ describe("ConnectionStringParser", () => {
             const instrumentationKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
             const ingestionEndpoint = "ingest";
             const liveEndpoint = "live";
-            const appid = "testappid";
-            const tenantId = "testtenantId";
-            const certificatesubjectname = "testcertificatesubjectname";
-            const certificatethumbprint = "testcertificatethumbprint";
-            const certificatestorelocation = "testcertificatestorelocation";
-            const appkey = "testappkey";
             var connectionString = `Authorization=${authorization};InstrumentationKey=${instrumentationKey};IngestionEndpoint=${ingestionEndpoint};LiveEndpoint=${liveEndpoint};`;
-            connectionString += `AppId=${appid};TenantId=${tenantId};CertificateSubjectName=${certificatesubjectname};CertificateThumbprint=${certificatethumbprint};`;
-            connectionString += `CertificateStoreLocation=${certificatestorelocation};AppKey=${appkey};`;
             const result = ConnectionStringParser.parse(connectionString);
 
             assert.equal(result.authorization, authorization);
             assert.equal(result.instrumentationkey, instrumentationKey);
             assert.equal(result.ingestionendpoint, ingestionEndpoint);
             assert.equal(result.liveendpoint, liveEndpoint);
-            assert.equal(result.appid, appid);
-            assert.equal(result.tenantid, tenantId);
-            assert.equal(result.certificatesubjectname, certificatesubjectname);
-            assert.equal(result.certificatethumbprint, certificatethumbprint);
-            assert.equal(result.certificatestorelocation, certificatestorelocation);
-            assert.equal(result.appkey, appkey);
         });
 
         it("should ignore invalid fields", () => {

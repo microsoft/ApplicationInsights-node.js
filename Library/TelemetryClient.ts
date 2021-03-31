@@ -1,8 +1,9 @@
 import url = require("url");
 import os = require("os");
+import azureCore = require("@azure/core-http");
 
 import Config = require("./Config");
-import AuthHandler = require("./AuthHandler");
+import AuthorizationHandler = require("./AuthorizationHandler");
 import Context = require("./Context");
 import Contracts = require("../Declarations/Contracts");
 import Channel = require("./Channel");
@@ -29,25 +30,20 @@ class TelemetryClient {
     public commonProperties: { [key: string]: string; };
     public channel: Channel;
     public quickPulseClient: QuickPulseStateManager;
-    public authHandler: AuthHandler;
+    public authorizationHandler: AuthorizationHandler;
 
 
     /**
      * Constructs a new client of the client
      * @param setupString the Connection String or Instrumentation Key to use (read from environment variable if not specified)
-     * @param handler Handler to authenticate the application
      */
     constructor(setupString?: string) {
         var config = new Config(setupString);
         this.config = config;
         this.context = new Context();
         this.commonProperties = {};
-
-        this.authHandler = null;
-        if (config.isAuthRequired) {
-            this.authHandler = new AuthHandler(config);
-        }
-        var sender = new Sender(this.config, this.authHandler);
+        this.authorizationHandler = null;
+        var sender = new Sender(this.config,);
         this.channel = new Channel(() => config.disableAppInsights, () => config.maxBatchSize, () => config.maxBatchIntervalMs, sender);
     }
 
@@ -180,6 +176,16 @@ class TelemetryClient {
      */
     public setAutoPopulateAzureProperties(value: boolean) {
         this._enableAzureProperties = value;
+    }
+
+    /**
+     * Get Authorization handler
+     */
+    public getAuthorizationHandler(): AuthorizationHandler {
+        if (this.config.aadTokenCredential) {
+            return this.authorizationHandler || new AuthorizationHandler(this.config.aadTokenCredential);
+        }
+        return null;
     }
 
     /**

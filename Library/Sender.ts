@@ -7,7 +7,7 @@ import url = require("url");
 import zlib = require("zlib");
 import child_process = require("child_process");
 
-import AuthHandler = require("./AuthHandler");
+import AuthorizationHandler = require("./AuthorizationHandler");
 import Logging = require("./Logging");
 import Config = require("./Config");
 import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
@@ -31,14 +31,14 @@ class Sender {
     private _config: Config;
     private _onSuccess: (response: string) => void;
     private _onError: (error: Error) => void;
+    private _getAuthorizationHandler: () => AuthorizationHandler;
     private _enableDiskRetryMode: boolean;
     private _numConsecutiveFailures: number;
     private _resendTimer: NodeJS.Timer | null;
-    private _authorizationHandler: AuthHandler;
     protected _resendInterval: number;
     protected _maxBytesOnDisk: number;
 
-    constructor(config: Config, authHandler?: AuthHandler, onSuccess?: (response: string) => void, onError?: (error: Error) => void) {
+    constructor(config: Config, getAuthorizationHandler?: () => AuthorizationHandler, onSuccess?: (response: string) => void, onError?: (error: Error) => void) {
         this._config = config;
         this._onSuccess = onSuccess;
         this._onError = onError;
@@ -47,7 +47,7 @@ class Sender {
         this._maxBytesOnDisk = Sender.MAX_BYTES_ON_DISK;
         this._numConsecutiveFailures = 0;
         this._resendTimer = null;
-        this._authorizationHandler = authHandler;
+        this._getAuthorizationHandler = getAuthorizationHandler;
 
         if (!Sender.OS_PROVIDES_FILE_PROTECTION) {
             // Node's chmod levels do not appropriately restrict file access on Windows
@@ -99,10 +99,11 @@ class Sender {
             }
         };
 
-        if (this._authorizationHandler) {
+        let authHandler = this._getAuthorizationHandler();
+        if (authHandler) {
             try {
                 // Add bearer token
-                await this._authorizationHandler.addAuthorizationHeader(options);
+                await authHandler.addAuthorizationHeader(options);
             }
             catch (authError) {
                 let errorMsg = "Failed to get AAD bearer token for the Application. Error:" + authError.toString();
