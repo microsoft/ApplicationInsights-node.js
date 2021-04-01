@@ -1,9 +1,7 @@
 ﻿import fs = require("fs");
-import http = require("http");
-import https = require("https");
+import https = require("http");
 import os = require("os");
 import path = require("path");
-import url = require("url");
 import zlib = require("zlib");
 import child_process = require("child_process");
 
@@ -16,7 +14,7 @@ class Sender {
     private static TAG = "Sender";
     private static ICACLS_PATH = `${process.env.systemdrive}/windows/system32/icacls.exe`;
     private static POWERSHELL_PATH = `${process.env.systemdrive}/windows/system32/windowspowershell/v1.0/powershell.exe`;
-    private static ACLED_DIRECTORIES: {[id: string]: boolean} = {};
+    private static ACLED_DIRECTORIES: { [id: string]: boolean } = {};
     private static ACL_IDENTITY: string = null;
 
     // the amount of time the SDK will wait between resending cached data, this buffer is to avoid any throttling from the service side
@@ -28,12 +26,13 @@ class Sender {
     public static USE_ICACLS = os.type() === "Windows_NT";
 
     private _config: Config;
-    private _storageDirectory: string;
     private _onSuccess: (response: string) => void;
     private _onError: (error: Error) => void;
     private _enableDiskRetryMode: boolean;
     private _numConsecutiveFailures: number;
+    private _numConsecutiveRedirects: number;
     private _resendTimer: NodeJS.Timer | null;
+    private _redirectedHost: string = null;
     protected _resendInterval: number;
     protected _maxBytesOnDisk: number;
 
@@ -45,6 +44,7 @@ class Sender {
         this._resendInterval = Sender.WAIT_BETWEEN_RESEND;
         this._maxBytesOnDisk = Sender.MAX_BYTES_ON_DISK;
         this._numConsecutiveFailures = 0;
+        this._numConsecutiveRedirects = 0;
         this._resendTimer = null;
 
         if (!Sender.OS_PROVIDES_FILE_PROTECTION) {
@@ -56,7 +56,7 @@ class Sender {
                 // This guarantees we can immediately fail setDiskRetryMode if we need to
                 try {
                     Sender.OS_PROVIDES_FILE_PROTECTION = fs.existsSync(Sender.ICACLS_PATH);
-                } catch (e) {}
+                } catch (e) { }
                 if (!Sender.OS_PROVIDES_FILE_PROTECTION) {
                     Logging.warn(Sender.TAG, "Could not find ICACLS in expected location! This is necessary to use disk retry mode on Windows.")
                 }
@@ -86,7 +86,7 @@ class Sender {
     }
 
     public send(payload: Buffer, callback?: (v: string) => void) {
-        var endpointUrl = this._config.endpointUrl;
+        var endpointUrl = this._redirectedHost || this._config.endpointUrl;
 
         // todo: investigate specifying an agent here: https://nodejs.org/api/http.html#http_class_http_agent
         var options = {
@@ -113,7 +113,7 @@ class Sender {
             // Ensure this request is not captured by auto-collection.
             (<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] = true;
 
-            var requestCallback = (res: http.ClientResponse) => {
+            var requestCallback = (res: https.ClientResponse) => {
                 res.setEncoding("utf-8");
 
                 //returns empty if the data is accepted
@@ -124,16 +124,6 @@ class Sender {
 
                 res.on("end", () => {
                     this._numConsecutiveFailures = 0;
-
-                    Logging.info(Sender.TAG, responseString);
-                    if (typeof this._onSuccess === "function") {
-                        this._onSuccess(responseString);
-                    }
-
-                    if (typeof callback === "function") {
-                        callback(responseString);
-                    }
-
                     if (this._enableDiskRetryMode) {
                         // try to send any cached events if the user is back online
                         if (res.statusCode === 200) {
@@ -155,6 +145,27 @@ class Sender {
                             // TODO: Do not support partial success (206) until _sendFirstFileOnDisk checks payload age
                             this._storeToDisk(payload);
                         }
+                    }
+                    // Redirect handling
+                    if (res.statusCode === 301 || // Moved Permanently
+                        res.statusCode === 308) { // Permanent Redirect
+                        // Try to get redirect header
+                        const locationHeader = res.headers["location"] ? res.headers["location"].toString() : null;
+                        if (locationHeader) {
+                            this._handleRedirect(locationHeader);
+                        }
+                    }
+                    else {
+                        this._numConsecutiveRedirects = 0;
+                    }
+
+                    Logging.info(Sender.TAG, responseString);
+                    if (typeof this._onSuccess === "function") {
+                        this._onSuccess(responseString);
+                    }
+
+                    if (typeof callback === "function") {
+                        callback(responseString);
                     }
                 });
             };
@@ -205,8 +216,19 @@ class Sender {
         }
     }
 
+    private _handleRedirect(location: string) {
+        this._numConsecutiveRedirects++;
+        // To prevent circular redirects
+        if (this._numConsecutiveRedirects < 10) {
+            this._redirectedHost = location;
+        }
+        else {
+            //TODO: Add ?redirect=false to avoid further redirection when 2.1 endpoint available
+        }
+    }
+
     private _runICACLS(args: string[], callback: (err: Error) => void) {
-        var aclProc = child_process.spawn(Sender.ICACLS_PATH, args, <any>{windowsHide: true});
+        var aclProc = child_process.spawn(Sender.ICACLS_PATH, args, <any>{ windowsHide: true });
         aclProc.on("error", (e: Error) => callback(e));
         aclProc.on("close", (code: number, signal: string) => {
             return callback(code === 0 ? null : new Error(`Setting ACL restrictions did not succeed (ICACLS returned code ${code})`));
@@ -216,7 +238,7 @@ class Sender {
     private _runICACLSSync(args: string[]) {
         // Some very old versions of Node (< 0.11) don't have this
         if (child_process.spawnSync) {
-            var aclProc = child_process.spawnSync(Sender.ICACLS_PATH, args, <any>{windowsHide: true});
+            var aclProc = child_process.spawnSync(Sender.ICACLS_PATH, args, <any>{ windowsHide: true });
             if (aclProc.error) {
                 throw aclProc.error;
             } else if (aclProc.status !== 0) {
@@ -330,7 +352,7 @@ class Sender {
                         this._applyACLRules(directory, callback);
                     }
                 });
-            } else if (!err && stats.isDirectory()){
+            } else if (!err && stats.isDirectory()) {
                 this._applyACLRules(directory, callback);
             } else {
                 callback(err || new Error("Path existed but was not a directory"));
@@ -430,7 +452,7 @@ class Sender {
                 // Mode 600 is w/r for creator and no read access for others (only applies on *nix)
                 // For Windows, ACL rules are applied to the entire directory (see logic in _confirmDirExists and _applyACLRules)
                 Logging.info(Sender.TAG, "saving data to disk at: " + fileFullPath);
-                fs.writeFile(fileFullPath, payload, {mode: 0o600}, (error) => this._onErrorHelper(error));
+                fs.writeFile(fileFullPath, payload, { mode: 0o600 }, (error) => this._onErrorHelper(error));
             });
         });
     }
@@ -465,7 +487,7 @@ class Sender {
 
             // Mode 600 is w/r for creator and no access for anyone else (only applies on *nix)
             Logging.info(Sender.TAG, "saving data before crash to disk at: " + fileFullPath);
-            fs.writeFileSync(fileFullPath, payload, {mode: 0o600});
+            fs.writeFileSync(fileFullPath, payload, { mode: 0o600 });
 
         } catch (error) {
             Logging.warn(Sender.TAG, "Error while saving data to disk: " + (error && error.message));
