@@ -7,29 +7,23 @@ import ConnectionStringParser = require("../../Library/ConnectionStringParser");
 describe("ConnectionStringParser", () => {
     describe("#parse()", () => {
         it("should parse all valid fields", () => {
-            const authorization = "ikey"
             const instrumentationKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
             const ingestionEndpoint = "ingest";
             const liveEndpoint = "live";
-            var connectionString = `Authorization=${authorization};InstrumentationKey=${instrumentationKey};IngestionEndpoint=${ingestionEndpoint};LiveEndpoint=${liveEndpoint};`;
+            var connectionString = `InstrumentationKey=${instrumentationKey};IngestionEndpoint=${ingestionEndpoint};LiveEndpoint=${liveEndpoint};`;
             const result = ConnectionStringParser.parse(connectionString);
-
-            assert.deepEqual(result.authorization, authorization);
             assert.deepEqual(result.instrumentationkey, instrumentationKey);
             assert.deepEqual(result.ingestionendpoint, ingestionEndpoint);
             assert.deepEqual(result.liveendpoint, liveEndpoint);
         });
 
         it("should ignore invalid fields", () => {
-            const authorization = "ikey"
             const instrumentationKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
             const ingestionEndpoint = "ingest";
             const liveEndpoint = "live";
-            const connectionString = `Autho.rization=${authorization};Instrume.ntationKey=${instrumentationKey};Ingestion.Endpoint=${ingestionEndpoint};LiveEnd.point=${liveEndpoint}`;
+            const connectionString = `Instrume.ntationKey=${instrumentationKey};Ingestion.Endpoint=${ingestionEndpoint};LiveEnd.point=${liveEndpoint}`;
 
             const result = ConnectionStringParser.parse(connectionString);
-
-            assert.deepEqual(result.authorization, undefined);
             assert.deepEqual(result.instrumentationkey, undefined);
             assert.deepEqual(result.ingestionendpoint, Constants.DEFAULT_BREEZE_ENDPOINT);
             assert.deepEqual(result.liveendpoint, Constants.DEFAULT_LIVEMETRICS_ENDPOINT);
@@ -37,14 +31,11 @@ describe("ConnectionStringParser", () => {
 
         const runTest = (options: {
             connectionString: string,
-            expectedAuthorization?: string,
             expectedInstrumentationKey?: string,
             expectedBreezeEndpoint: string,
             expectedLiveMetricsEndpoint: string,
         }) => {
             const result = ConnectionStringParser.parse(options.connectionString);
-
-            if (options.expectedAuthorization) assert.deepEqual(result.authorization, options.expectedAuthorization);
             if (options.expectedInstrumentationKey) assert.deepEqual(result.instrumentationkey, options.expectedInstrumentationKey);
             assert.deepEqual(result.ingestionendpoint, options.expectedBreezeEndpoint);
             assert.deepEqual(result.liveendpoint, options.expectedLiveMetricsEndpoint);
@@ -53,7 +44,6 @@ describe("ConnectionStringParser", () => {
         it("should use correct default endpoints", () => {
             runTest({
                 connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
-                expectedAuthorization: undefined,
                 expectedInstrumentationKey: "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
                 expectedBreezeEndpoint: Constants.DEFAULT_BREEZE_ENDPOINT,
                 expectedLiveMetricsEndpoint: Constants.DEFAULT_LIVEMETRICS_ENDPOINT

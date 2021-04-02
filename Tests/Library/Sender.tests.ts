@@ -43,8 +43,8 @@ describe("Library/Sender", () => {
             assert.equal(Sender.WAIT_BETWEEN_RESEND, sender.getResendInterval());
         });
     });
-  
-  describe("#endpoint redirect", () => {
+
+    describe("#endpoint redirect", () => {
         var sandbox: sinon.SinonSandbox;
         let interceptor: nock.Interceptor;
 
@@ -54,7 +54,7 @@ describe("Library/Sender", () => {
                     return true;
                 });
         });
-    
+
         beforeEach(() => {
             sandbox = sinon.sandbox.create();
         });
@@ -62,7 +62,7 @@ describe("Library/Sender", () => {
         afterEach(() => {
             sandbox.restore();
         });
-    
+
         after(() => {
             nock.cleanAll();
         });
@@ -113,68 +113,69 @@ describe("Library/Sender", () => {
             });
         });
 
-    
-    
 
-    describe("#AuthorizationHandler ", () => {
 
-        nock("https://dc.services.visualstudio.com")
-            .post("/v2/track", (body: string) => {
-                return true;
-            })
-            .reply(200, {
-                itemsAccepted: 1,
-                itemsReceived: 1,
-                errors: []
-            })
-            .persist();
 
-        var sandbox: sinon.SinonSandbox;
+        describe("#AuthorizationHandler ", () => {
 
-        beforeEach(() => {
-            sandbox = sinon.sandbox.create();
-        });
+            nock("https://dc.services.visualstudio.com")
+                .post("/v2/track", (body: string) => {
+                    return true;
+                })
+                .reply(200, {
+                    itemsAccepted: 1,
+                    itemsReceived: 1,
+                    errors: []
+                })
+                .persist();
 
-        afterEach(() => {
-            sandbox.restore();
-        });
+            var sandbox: sinon.SinonSandbox;
 
-        it("should add token if handler present", () => {
-            var handler = new AuthorizationHandler({
-                async getToken(scopes: string | string[], options?: any): Promise<any> {
-                    return { token: "testToken", };
-                }
+            beforeEach(() => {
+                sandbox = sinon.sandbox.create();
             });
-            var getAuthorizationHandler = () => {
-                return handler;
-            };
-            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-            var addHeaderStub = sandbox.stub(handler, "addAuthorizationHeader");
 
-            var sender = new Sender(config, getAuthorizationHandler);
-            sender.send(new Buffer("test"));
-            assert.ok(addHeaderStub.calledOnce);
-        });
-
-        it("should put telemetry to disk if auth fails", () => {
-            var handler = new AuthorizationHandler({
-                async getToken(scopes: string | string[], options?: any): Promise<any> {
-                    return { token: "testToken", };
-                }
+            afterEach(() => {
+                sandbox.restore();
             });
-            var getAuthorizationHandler = () => {
-                return handler;
-            };
-            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;");
-            var addHeaderStub = sandbox.stub(handler, "addAuthorizationHeader", () => { throw new Error(); });
 
-            var sender = new Sender(config, getAuthorizationHandler);
-            var storeToDiskStub = sandbox.stub(sender, "_storeToDisk");
-            var buffer = new Buffer("test");
-            sender.send(buffer);
-            assert.ok(addHeaderStub.calledOnce);
-            assert.ok(storeToDiskStub.calledOnce);
-            assert.equal(storeToDiskStub.firstCall.args[0], buffer);
+            it("should add token if handler present", () => {
+                var handler = new AuthorizationHandler({
+                    async getToken(scopes: string | string[], options?: any): Promise<any> {
+                        return { token: "testToken", };
+                    }
+                });
+                var getAuthorizationHandler = () => {
+                    return handler;
+                };
+                var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+                var addHeaderStub = sandbox.stub(handler, "addAuthorizationHeader");
+
+                var sender = new Sender(config, getAuthorizationHandler);
+                sender.send(new Buffer("test"));
+                assert.ok(addHeaderStub.calledOnce);
+            });
+
+            it("should put telemetry to disk if auth fails", () => {
+                var handler = new AuthorizationHandler({
+                    async getToken(scopes: string | string[], options?: any): Promise<any> {
+                        return { token: "testToken", };
+                    }
+                });
+                var getAuthorizationHandler = () => {
+                    return handler;
+                };
+                var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;");
+                var addHeaderStub = sandbox.stub(handler, "addAuthorizationHeader", () => { throw new Error(); });
+
+                var sender = new Sender(config, getAuthorizationHandler);
+                var storeToDiskStub = sandbox.stub(sender, "_storeToDisk");
+                var buffer = new Buffer("test");
+                sender.send(buffer);
+                assert.ok(addHeaderStub.calledOnce);
+                assert.ok(storeToDiskStub.calledOnce);
+                assert.equal(storeToDiskStub.firstCall.args[0], buffer);
+            });
         });
     });
 });
