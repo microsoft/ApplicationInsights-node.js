@@ -1,5 +1,5 @@
 ﻿import fs = require("fs");
-import https = require("http");
+import https = require("https");
 import os = require("os");
 import path = require("path");
 import zlib = require("zlib");
