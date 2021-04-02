@@ -1,5 +1,5 @@
 ﻿import fs = require("fs");
-import https = require("https");
+import http = require("http");
 import os = require("os");
 import path = require("path");
 import zlib = require("zlib");
@@ -113,7 +113,7 @@ class Sender {
             // Ensure this request is not captured by auto-collection.
             (<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] = true;
 
-            var requestCallback = (res: https.ClientResponse) => {
+            var requestCallback = (res: http.ClientResponse) => {
                 res.setEncoding("utf-8");
 
                 //returns empty if the data is accepted
