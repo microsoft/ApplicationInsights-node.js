@@ -1,9 +1,7 @@
 ﻿import fs = require("fs");
 import http = require("http");
-import https = require("https");
 import os = require("os");
 import path = require("path");
-import url = require("url");
 import zlib = require("zlib");
 import child_process = require("child_process");
 
@@ -34,7 +32,9 @@ class Sender {
     private _getAuthorizationHandler: () => AuthorizationHandler;
     private _enableDiskRetryMode: boolean;
     private _numConsecutiveFailures: number;
+    private _numConsecutiveRedirects: number;
     private _resendTimer: NodeJS.Timer | null;
+    private _redirectedHost: string = null;
     protected _resendInterval: number;
     protected _maxBytesOnDisk: number;
 
@@ -46,6 +46,7 @@ class Sender {
         this._resendInterval = Sender.WAIT_BETWEEN_RESEND;
         this._maxBytesOnDisk = Sender.MAX_BYTES_ON_DISK;
         this._numConsecutiveFailures = 0;
+        this._numConsecutiveRedirects = 0;
         this._resendTimer = null;
         this._getAuthorizationHandler = getAuthorizationHandler;
 
@@ -88,7 +89,7 @@ class Sender {
     }
 
     public async send(payload: Buffer, callback?: (v: string) => void) {
-        var endpointUrl = this._config.endpointUrl;
+        var endpointUrl = this._redirectedHost || this._config.endpointUrl;
 
         // todo: investigate specifying an agent here: https://nodejs.org/api/http.html#http_class_http_agent
         var options = {
@@ -144,16 +145,6 @@ class Sender {
 
                 res.on("end", () => {
                     this._numConsecutiveFailures = 0;
-
-                    Logging.info(Sender.TAG, responseString);
-                    if (typeof this._onSuccess === "function") {
-                        this._onSuccess(responseString);
-                    }
-
-                    if (typeof callback === "function") {
-                        callback(responseString);
-                    }
-
                     if (this._enableDiskRetryMode) {
                         // try to send any cached events if the user is back online
                         if (res.statusCode === 200) {
@@ -177,6 +168,27 @@ class Sender {
                             // TODO: Do not support partial success (206) until _sendFirstFileOnDisk checks payload age
                             this._storeToDisk(payload);
                         }
+                    }
+                    // Redirect handling
+                    if (res.statusCode === 301 || // Moved Permanently
+                        res.statusCode === 308) { // Permanent Redirect
+                        // Try to get redirect header
+                        const locationHeader = res.headers["location"] ? res.headers["location"].toString() : null;
+                        if (locationHeader) {
+                            this._handleRedirect(locationHeader);
+                        }
+                    }
+                    else {
+                        this._numConsecutiveRedirects = 0;
+                    }
+
+                    Logging.info(Sender.TAG, responseString);
+                    if (typeof this._onSuccess === "function") {
+                        this._onSuccess(responseString);
+                    }
+
+                    if (typeof callback === "function") {
+                        callback(responseString);
                     }
                 });
             };
@@ -224,6 +236,17 @@ class Sender {
     public saveOnCrash(payload: string) {
         if (this._enableDiskRetryMode) {
             this._storeToDiskSync(payload);
+        }
+    }
+
+    private _handleRedirect(location: string) {
+        this._numConsecutiveRedirects++;
+        // To prevent circular redirects
+        if (this._numConsecutiveRedirects < 10) {
+            this._redirectedHost = location;
+        }
+        else {
+            //TODO: Add ?redirect=false to avoid further redirection when 2.1 endpoint available
         }
     }
 
