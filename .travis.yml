@@ -11,7 +11,6 @@ node_js:
   - "12"
   - "10"
   - "8"
-  - "8.0.0"
 before_install:
   - npm install -g npm
   # Simulate optionalDevDependency for applicationinsights-native-metrics
@@ -23,9 +22,6 @@ script:
   - if [ "$TRAVIS_NODE_VERSION" = "12" ]; then npm run functionaltest; fi
   - if [ "$TRAVIS_NODE_VERSION" = "10" ]; then npm run functionaltest; fi
   - if [ "$TRAVIS_NODE_VERSION" = "8" ]; then npm run functionaltest; fi
-  # latest node8 uses cls-hooked for dependency correlation, while 8.0.0 uses
-  # plain cls instead, so run funcs for 8.0.0 as well
-  - if [ "$TRAVIS_NODE_VERSION" = "8.0.0" ] && [ "$TRAVIS_EXTENDED_METRICS" != "true" ]; then npm run functionaltest; fi
 
   # Only run backcompat tests once
   - if [ "$TRAVIS_NODE_VERSION" = "8" ] && [ "$TRAVIS_EXTENDED_METRICS" != "true" ]; then npm run backcompattest; fi
