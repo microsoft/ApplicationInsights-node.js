@@ -59,7 +59,7 @@ export function setupAndStart(setupString = _setupString): typeof types | null {
 
     if (!setupString) {
         const message = "Application Insights wanted to be started, but no Connection String or Instrumentation Key was provided";
-        _logger.logError(message, setupString);
+        _logger.logError(message);
         _statusLogger.logStatus({
             ...defaultStatus,
             AgentInitializedSuccessfully: false,

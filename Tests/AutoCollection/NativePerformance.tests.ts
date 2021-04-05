@@ -47,6 +47,19 @@ describe("AutoCollection/NativePerformance", () => {
                 assert.ok(disposeSpy.calledOnce, "dispose is called when second instance is constructed");
             });
 
+            it("Calling enable multiple times shoud not create multiple timers", () => {
+                var client = new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+                var native = new AutoCollectNativePerformance(client);
+                var setIntervalSpy = sinon.spy(global, "setInterval");
+
+                assert.ok(native);
+                assert.doesNotThrow(() => native.enable(true), "Does not throw when tryinig to enable");
+                assert.doesNotThrow(() => native.enable(true), "Does not throw when trying to enable");
+                assert.equal(setIntervalSpy.callCount, 1, "setInterval should be singleton");
+
+                setIntervalSpy.restore();
+            });
+
             it("Calling enable when metrics are not available should fail gracefully", () => {
                 var client = new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 var native = new AutoCollectNativePerformance(client);
