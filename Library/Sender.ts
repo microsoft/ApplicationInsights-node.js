@@ -7,8 +7,10 @@ import child_process = require("child_process");
 
 import Logging = require("./Logging");
 import Config = require("./Config")
+import Contracts = require("../Declarations/Contracts");
 import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
 import Util = require("./Util");
+import { BreezeError } from "../Declarations/Contracts";
 
 class Sender {
     private static TAG = "Sender";
@@ -18,9 +20,11 @@ class Sender {
     private static ACL_IDENTITY: string = null;
 
     // the amount of time the SDK will wait between resending cached data, this buffer is to avoid any throttling from the service side
-    public static WAIT_BETWEEN_RESEND = 60 * 1000;
-    public static MAX_BYTES_ON_DISK = 50 * 1000 * 1000;
+    public static WAIT_BETWEEN_RESEND = 60 * 1000; // 1 minute
+    public static MAX_BYTES_ON_DISK = 50 * 1024 * 1024; // 50 mb
     public static MAX_CONNECTION_FAILURES_BEFORE_WARN = 5;
+    public static CLEANUP_TIMEOUT = 60 * 60 * 1000; // 1 hour
+    public static FILE_RETEMPTION_PERIOD = 7 * 24 * 60 * 60 * 1000; // 7 days
     public static TEMPDIR_PREFIX: string = "appInsights-node";
     public static OS_PROVIDES_FILE_PROTECTION = false;
     public static USE_ICACLS = os.type() === "Windows_NT";
@@ -32,7 +36,9 @@ class Sender {
     private _numConsecutiveFailures: number;
     private _numConsecutiveRedirects: number;
     private _resendTimer: NodeJS.Timer | null;
+    private _fileCleanupTimer: NodeJS.Timer;
     private _redirectedHost: string = null;
+    private _tempDir: string;
     protected _resendInterval: number;
     protected _maxBytesOnDisk: number;
 
@@ -46,6 +52,9 @@ class Sender {
         this._numConsecutiveFailures = 0;
         this._numConsecutiveRedirects = 0;
         this._resendTimer = null;
+        this._fileCleanupTimer = null;
+        // tmpdir is /tmp for *nix and USERDIR/AppData/Local/Temp for Windows
+        this._tempDir = path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + this._config.instrumentationKey);
 
         if (!Sender.OS_PROVIDES_FILE_PROTECTION) {
             // Node's chmod levels do not appropriately restrict file access on Windows
@@ -83,137 +92,177 @@ class Sender {
             this._enableDiskRetryMode = false;
             Logging.warn(Sender.TAG, "Ignoring request to enable disk retry mode. Sufficient file protection capabilities were not detected.")
         }
+        if (this._enableDiskRetryMode) {
+            // Starts file cleanup task
+            this._fileCleanupTimer = setTimeout(() => { this._fileCleanupTask(); }, Sender.CLEANUP_TIMEOUT);
+        }
+        else {
+            if (this._fileCleanupTimer) {
+                clearTimeout(this._fileCleanupTimer);
+            }
+        }
     }
 
-    public send(payload: Buffer, callback?: (v: string) => void) {
-        var endpointUrl = this._redirectedHost || this._config.endpointUrl;
+    public send(envelopes: Contracts.EnvelopeTelemetry[], callback?: (v: string) => void) {
+        if (envelopes) {
+            var endpointUrl = this._redirectedHost || this._config.endpointUrl;
 
-        // todo: investigate specifying an agent here: https://nodejs.org/api/http.html#http_class_http_agent
-        var options = {
-            method: "POST",
-            withCredentials: false,
-            headers: <{ [key: string]: string }>{
-                "Content-Type": "application/x-json-stream"
-            }
-        };
-
-        zlib.gzip(payload, (err, buffer) => {
-            var dataToSend = buffer;
-            if (err) {
-                Logging.warn(err);
-                dataToSend = payload; // something went wrong so send without gzip
-                options.headers["Content-Length"] = payload.length.toString();
-            } else {
-                options.headers["Content-Encoding"] = "gzip";
-                options.headers["Content-Length"] = buffer.length.toString();
-            }
-
-            Logging.info(Sender.TAG, options);
-
-            // Ensure this request is not captured by auto-collection.
-            (<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] = true;
-
-            var requestCallback = (res: http.ClientResponse) => {
-                res.setEncoding("utf-8");
-
-                //returns empty if the data is accepted
-                var responseString = "";
-                res.on("data", (data: string) => {
-                    responseString += data;
-                });
-
-                res.on("end", () => {
-                    this._numConsecutiveFailures = 0;
-                    if (this._enableDiskRetryMode) {
-                        // try to send any cached events if the user is back online
-                        if (res.statusCode === 200) {
-                            if (!this._resendTimer) {
-                                this._resendTimer = setTimeout(() => {
-                                    this._resendTimer = null;
-                                    this._sendFirstFileOnDisk()
-                                }, this._resendInterval);
-                                this._resendTimer.unref();
-                            }
-                            // store to disk in case of burst throttling
-                        } else if (
-                            res.statusCode === 408 || // Timeout
-                            res.statusCode === 429 || // Throttle
-                            res.statusCode === 439 || // Quota
-                            res.statusCode === 500 || // Server Error
-                            res.statusCode === 503) { // Service unavailable
-
-                            // TODO: Do not support partial success (206) until _sendFirstFileOnDisk checks payload age
-                            this._storeToDisk(payload);
-                        }
-                    }
-                    // Redirect handling
-                    if (res.statusCode === 301 || // Moved Permanently
-                        res.statusCode === 308) { // Permanent Redirect
-                        // Try to get redirect header
-                        const locationHeader = res.headers["location"] ? res.headers["location"].toString() : null;
-                        if (locationHeader) {
-                            this._handleRedirect(locationHeader);
-                        }
-                    }
-                    else {
-                        this._numConsecutiveRedirects = 0;
-                    }
-
-                    Logging.info(Sender.TAG, responseString);
-                    if (typeof this._onSuccess === "function") {
-                        this._onSuccess(responseString);
-                    }
-
-                    if (typeof callback === "function") {
-                        callback(responseString);
-                    }
-                });
+            // todo: investigate specifying an agent here: https://nodejs.org/api/http.html#http_class_http_agent
+            var options = {
+                method: "POST",
+                withCredentials: false,
+                headers: <{ [key: string]: string }>{
+                    "Content-Type": "application/x-json-stream"
+                }
             };
 
-            var req = Util.makeRequest(this._config, endpointUrl, options, requestCallback);
+            let batch: string = "";
 
-            req.on("error", (error: Error) => {
-                // todo: handle error codes better (group to recoverable/non-recoverable and persist)
-                this._numConsecutiveFailures++;
-
-                // Only use warn level if retries are disabled or we've had some number of consecutive failures sending data
-                // This is because warn level is printed in the console by default, and we don't want to be noisy for transient and self-recovering errors
-                // Continue informing on each failure if verbose logging is being used
-                if (!this._enableDiskRetryMode || this._numConsecutiveFailures > 0 && this._numConsecutiveFailures % Sender.MAX_CONNECTION_FAILURES_BEFORE_WARN === 0) {
-                    let notice = "Ingestion endpoint could not be reached. This batch of telemetry items has been lost. Use Disk Retry Caching to enable resending of failed telemetry. Error:";
-                    if (this._enableDiskRetryMode) {
-                        notice = `Ingestion endpoint could not be reached ${this._numConsecutiveFailures} consecutive times. There may be resulting telemetry loss. Most recent error:`;
-                    }
-                    Logging.warn(Sender.TAG, notice, error);
-                } else {
-                    let notice = "Transient failure to reach ingestion endpoint. This batch of telemetry items will be retried. Error:";
-                    Logging.info(Sender.TAG, notice, error)
+            envelopes.forEach(envelope => {
+                var payload: string = this._stringify(envelope);
+                if (typeof payload !== "string") {
+                    return;
                 }
-                this._onErrorHelper(error);
-
-                if (typeof callback === "function") {
-                    var errorMessage = "error sending telemetry";
-                    if (error && (typeof error.toString === "function")) {
-                        errorMessage = error.toString();
-                    }
-
-                    callback(errorMessage);
-                }
-
-                if (this._enableDiskRetryMode) {
-                    this._storeToDisk(payload);
-                }
+                batch += payload = "\n";
             });
 
-            req.write(dataToSend);
-            req.end();
-        });
+            let payload: Buffer = Buffer.from ? Buffer.from(batch) : new Buffer(batch);
+
+            zlib.gzip(payload, (err, buffer) => {
+                var dataToSend = buffer;
+                if (err) {
+                    Logging.warn(err);
+                    dataToSend = payload; // something went wrong so send without gzip
+                    options.headers["Content-Length"] = payload.length.toString();
+                } else {
+                    options.headers["Content-Encoding"] = "gzip";
+                    options.headers["Content-Length"] = buffer.length.toString();
+                }
+
+                Logging.info(Sender.TAG, options);
+
+                // Ensure this request is not captured by auto-collection.
+                (<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] = true;
+
+                var requestCallback = (res: http.ClientResponse) => {
+                    res.setEncoding("utf-8");
+
+                    //returns empty if the data is accepted
+                    var responseString = "";
+                    res.on("data", (data: string) => {
+                        responseString += data;
+                    });
+
+                    res.on("end", () => {
+                        this._numConsecutiveFailures = 0;
+                        if (this._enableDiskRetryMode) {
+                            // try to send any cached events if the user is back online
+                            if (res.statusCode === 200) {
+                                if (!this._resendTimer) {
+                                    this._resendTimer = setTimeout(() => {
+                                        this._resendTimer = null;
+                                        this._sendFirstFileOnDisk()
+                                    }, this._resendInterval);
+                                    this._resendTimer.unref();
+                                }
+                            } else if (this._isRetriable(res.statusCode)) {
+                                // If response from Breeze
+                                try {
+                                    const breezeResponse = JSON.parse(responseString) as Contracts.BreezeResponse;
+                                    let filteredEnvelopes: Contracts.EnvelopeTelemetry[] = [];
+                                    breezeResponse.errors.forEach(error => {
+                                        if (this._isRetriable(error.statusCode)) {
+                                            filteredEnvelopes.push(envelopes[error.index]);
+                                        }
+                                    });
+                                    if (filteredEnvelopes.length > 0) {
+                                        this._storeToDisk(filteredEnvelopes);
+                                    }
+                                }
+                                catch (ex) {
+                                    this._storeToDisk(envelopes); // Retriable status code with not valid Breeze response
+                                }
+                            }
+                        }
+                        // Redirect handling
+                        if (res.statusCode === 308) { // Permanent Redirect
+                            // Try to get redirect header
+                            const locationHeader = res.headers["location"] ? res.headers["location"].toString() : null;
+                            if (locationHeader) {
+                                this._handleRedirect(locationHeader);
+                            }
+                        }
+                        else {
+                            this._numConsecutiveRedirects = 0;
+                        }
+
+                        Logging.info(Sender.TAG, responseString);
+                        if (typeof this._onSuccess === "function") {
+                            this._onSuccess(responseString);
+                        }
+
+                        if (typeof callback === "function") {
+                            callback(responseString);
+                        }
+                    });
+                };
+
+                var req = Util.makeRequest(this._config, endpointUrl, options, requestCallback);
+
+                req.on("error", (error: Error) => {
+                    // todo: handle error codes better (group to recoverable/non-recoverable and persist)
+                    this._numConsecutiveFailures++;
+
+                    // Only use warn level if retries are disabled or we've had some number of consecutive failures sending data
+                    // This is because warn level is printed in the console by default, and we don't want to be noisy for transient and self-recovering errors
+                    // Continue informing on each failure if verbose logging is being used
+                    if (!this._enableDiskRetryMode || this._numConsecutiveFailures > 0 && this._numConsecutiveFailures % Sender.MAX_CONNECTION_FAILURES_BEFORE_WARN === 0) {
+                        let notice = "Ingestion endpoint could not be reached. This batch of telemetry items has been lost. Use Disk Retry Caching to enable resending of failed telemetry. Error:";
+                        if (this._enableDiskRetryMode) {
+                            notice = `Ingestion endpoint could not be reached ${this._numConsecutiveFailures} consecutive times. There may be resulting telemetry loss. Most recent error:`;
+                        }
+                        Logging.warn(Sender.TAG, notice, error);
+                    } else {
+                        let notice = "Transient failure to reach ingestion endpoint. This batch of telemetry items will be retried. Error:";
+                        Logging.info(Sender.TAG, notice, error)
+                    }
+                    this._onErrorHelper(error);
+
+                    if (typeof callback === "function") {
+                        var errorMessage = "error sending telemetry";
+                        if (error && (typeof error.toString === "function")) {
+                            errorMessage = error.toString();
+                        }
+
+                        callback(errorMessage);
+                    }
+
+                    if (this._enableDiskRetryMode) {
+                        this._storeToDisk(envelopes);
+                    }
+                });
+
+                req.write(dataToSend);
+                req.end();
+            });
+        }
     }
 
-    public saveOnCrash(payload: string) {
+    public saveOnCrash(envelopes: Contracts.EnvelopeTelemetry[]) {
         if (this._enableDiskRetryMode) {
-            this._storeToDiskSync(payload);
+            this._storeToDiskSync(this._stringify(envelopes));
         }
+    }
+
+    private _isRetriable(statusCode: number) {
+        return (
+            statusCode === 206 || // Retriable
+            statusCode === 408 || // Timeout
+            statusCode === 429 || // Throttle
+            statusCode === 439 || // Quota
+            statusCode === 500 || // Server Error
+            statusCode === 503 // Server Unavilable
+        );
     }
 
     private _handleRedirect(location: string) {
@@ -221,9 +270,6 @@ class Sender {
         // To prevent circular redirects
         if (this._numConsecutiveRedirects < 10) {
             this._redirectedHost = location;
-        }
-        else {
-            //TODO: Add ?redirect=false to avoid further redirection when 2.1 endpoint available
         }
     }
 
@@ -420,21 +466,18 @@ class Sender {
     /**
      * Stores the payload as a json file on disk in the temp directory
      */
-    private _storeToDisk(payload: any) {
-        // tmpdir is /tmp for *nix and USERDIR/AppData/Local/Temp for Windows
-        var directory = path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + this._config.instrumentationKey);
-
+    private _storeToDisk(envelopes: Contracts.EnvelopeTelemetry[]) {
         // This will create the dir if it does not exist
         // Default permissions on *nix are directory listing from other users but no file creations
-        Logging.info(Sender.TAG, "Checking existence of data storage directory: " + directory);
-        this._confirmDirExists(directory, (error) => {
+        Logging.info(Sender.TAG, "Checking existence of data storage directory: " + this._tempDir);
+        this._confirmDirExists(this._tempDir, (error) => {
             if (error) {
                 Logging.warn(Sender.TAG, "Error while checking/creating directory: " + (error && error.message));
                 this._onErrorHelper(error);
                 return;
             }
 
-            this._getShallowDirectorySize(directory, (err, size) => {
+            this._getShallowDirectorySize(this._tempDir, (err, size) => {
                 if (err || size < 0) {
                     Logging.warn(Sender.TAG, "Error while checking directory size: " + (err && err.message));
                     this._onErrorHelper(err);
@@ -447,12 +490,12 @@ class Sender {
                 //create file - file name for now is the timestamp, a better approach would be a UUID but that
                 //would require an external dependency
                 var fileName = new Date().getTime() + ".ai.json";
-                var fileFullPath = path.join(directory, fileName);
+                var fileFullPath = path.join(this._tempDir, fileName);
 
                 // Mode 600 is w/r for creator and no read access for others (only applies on *nix)
                 // For Windows, ACL rules are applied to the entire directory (see logic in _confirmDirExists and _applyACLRules)
                 Logging.info(Sender.TAG, "saving data to disk at: " + fileFullPath);
-                fs.writeFile(fileFullPath, payload, { mode: 0o600 }, (error) => this._onErrorHelper(error));
+                fs.writeFile(fileFullPath, JSON.stringify(envelopes), { mode: 0o600 }, (error) => this._onErrorHelper(error));
             });
         });
     }
@@ -462,19 +505,16 @@ class Sender {
      * this is used when storing data before crashes
      */
     private _storeToDiskSync(payload: any) {
-        // tmpdir is /tmp for *nix and USERDIR/AppData/Local/Temp for Windows
-        var directory = path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + this._config.instrumentationKey);
-
         try {
-            Logging.info(Sender.TAG, "Checking existence of data storage directory: " + directory);
-            if (!fs.existsSync(directory)) {
-                fs.mkdirSync(directory);
+            Logging.info(Sender.TAG, "Checking existence of data storage directory: " + this._tempDir);
+            if (!fs.existsSync(this._tempDir)) {
+                fs.mkdirSync(this._tempDir);
             }
 
             // Make sure permissions are valid
-            this._applyACLRulesSync(directory);
+            this._applyACLRulesSync(this._tempDir);
 
-            let dirSize = this._getShallowDirectorySizeSync(directory);
+            let dirSize = this._getShallowDirectorySizeSync(this._tempDir);
             if (dirSize > this._maxBytesOnDisk) {
                 Logging.info(Sender.TAG, "Not saving data due to max size limit being met. Directory size in bytes is: " + dirSize);
                 return;
@@ -483,7 +523,7 @@ class Sender {
             //create file - file name for now is the timestamp, a better approach would be a UUID but that
             //would require an external dependency
             var fileName = new Date().getTime() + ".ai.json";
-            var fileFullPath = path.join(directory, fileName);
+            var fileFullPath = path.join(this._tempDir, fileName);
 
             // Mode 600 is w/r for creator and no access for anyone else (only applies on *nix)
             Logging.info(Sender.TAG, "saving data before crash to disk at: " + fileFullPath);
@@ -500,22 +540,27 @@ class Sender {
      * reads the first file if exist, deletes it and tries to send its load
      */
     private _sendFirstFileOnDisk(): void {
-        var tempDir = path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + this._config.instrumentationKey);
 
-        fs.exists(tempDir, (exists: boolean) => {
+        fs.exists(this._tempDir, (exists: boolean) => {
             if (exists) {
-                fs.readdir(tempDir, (error, files) => {
+                fs.readdir(this._tempDir, (error, files) => {
                     if (!error) {
                         files = files.filter(f => path.basename(f).indexOf(".ai.json") > -1);
                         if (files.length > 0) {
                             var firstFile = files[0];
-                            var filePath = path.join(tempDir, firstFile);
-                            fs.readFile(filePath, (error, payload) => {
+                            var filePath = path.join(this._tempDir, firstFile);
+                            fs.readFile(filePath, (error, buffer) => {
                                 if (!error) {
                                     // delete the file first to prevent double sending
                                     fs.unlink(filePath, (error) => {
                                         if (!error) {
-                                            this.send(payload);
+                                            try {
+                                                let envelopes: Contracts.EnvelopeTelemetry[] = JSON.parse(buffer.toString("utf8"));
+                                                this.send(envelopes);
+                                            }
+                                            catch (error) {
+                                                Logging.warn("Failed to read persisted file", error);
+                                            }
                                         } else {
                                             this._onErrorHelper(error);
                                         }
@@ -537,6 +582,44 @@ class Sender {
         if (typeof this._onError === "function") {
             this._onError(error);
         }
+    }
+
+    private _stringify(payload: any) {
+        try {
+            return JSON.stringify(payload);
+        } catch (error) {
+            Logging.warn("Failed to serialize payload", error, payload);
+        }
+    }
+
+    private _fileCleanupTask() {
+        fs.exists(this._tempDir, (exists: boolean) => {
+            if (exists) {
+                fs.readdir(this._tempDir, (error, files) => {
+                    if (!error) {
+                        files = files.filter(f => path.basename(f).indexOf(".ai.json") > -1);
+                        if (files.length > 0) {
+
+                            files.forEach(file => {
+                                // Check expiration
+                                let fileCreationDate: Date = new Date(parseInt(file.split(".ai.json")[0]));
+                                let expired = new Date(+(new Date()) - Sender.FILE_RETEMPTION_PERIOD) > fileCreationDate;
+                                if (expired) {
+                                    var filePath = path.join(this._tempDir, file);
+                                    fs.unlink(filePath, (error) => {
+                                        if (error) {
+                                            this._onErrorHelper(error);
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    } else {
+                        this._onErrorHelper(error);
+                    }
+                });
+            }
+        });
     }
 }
 
