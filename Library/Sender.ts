@@ -10,7 +10,6 @@ import Config = require("./Config")
 import Contracts = require("../Declarations/Contracts");
 import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
 import Util = require("./Util");
-import { BreezeError } from "../Declarations/Contracts";
 
 class Sender {
     private static TAG = "Sender";
@@ -123,8 +122,12 @@ class Sender {
                 if (typeof payload !== "string") {
                     return;
                 }
-                batch += payload = "\n";
+                batch += payload + "\n";
             });
+            // Remove last \n
+            if (batch.length > 0) {
+                batch = batch.substring(0, batch.length - 1);
+            }
 
             let payload: Buffer = Buffer.from ? Buffer.from(batch) : new Buffer(batch);
 
@@ -221,20 +224,18 @@ class Sender {
                         if (this._enableDiskRetryMode) {
                             notice = `Ingestion endpoint could not be reached ${this._numConsecutiveFailures} consecutive times. There may be resulting telemetry loss. Most recent error:`;
                         }
-                        Logging.warn(Sender.TAG, notice, error);
+                        Logging.warn(Sender.TAG, notice, Util.dumpObj(error));
                     } else {
                         let notice = "Transient failure to reach ingestion endpoint. This batch of telemetry items will be retried. Error:";
-                        Logging.info(Sender.TAG, notice, error)
+                        Logging.info(Sender.TAG, notice, Util.dumpObj(error))
                     }
                     this._onErrorHelper(error);
 
                     if (typeof callback === "function") {
-                        var errorMessage = "error sending telemetry";
-                        if (error && (typeof error.toString === "function")) {
-                            errorMessage = error.toString();
+                        if (error) {
+                            callback(Util.dumpObj(error));
                         }
-
-                        callback(errorMessage);
+                        callback("Error sending telemetry");
                     }
 
                     if (this._enableDiskRetryMode) {
@@ -495,7 +496,7 @@ class Sender {
                 // Mode 600 is w/r for creator and no read access for others (only applies on *nix)
                 // For Windows, ACL rules are applied to the entire directory (see logic in _confirmDirExists and _applyACLRules)
                 Logging.info(Sender.TAG, "saving data to disk at: " + fileFullPath);
-                fs.writeFile(fileFullPath, JSON.stringify(envelopes), { mode: 0o600 }, (error) => this._onErrorHelper(error));
+                fs.writeFile(fileFullPath, this._stringify(envelopes), { mode: 0o600 }, (error) => this._onErrorHelper(error));
             });
         });
     }
@@ -555,7 +556,7 @@ class Sender {
                                     fs.unlink(filePath, (error) => {
                                         if (!error) {
                                             try {
-                                                let envelopes: Contracts.EnvelopeTelemetry[] = JSON.parse(buffer.toString("utf8"));
+                                                let envelopes: Contracts.EnvelopeTelemetry[] = JSON.parse(buffer.toString());
                                                 this.send(envelopes);
                                             }
                                             catch (error) {
