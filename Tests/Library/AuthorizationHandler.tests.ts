@@ -6,34 +6,18 @@ import AuthorizationHandler = require("../../Library/AuthorizationHandler");
 import Config = require("../../Library/Config");
 
 class TestTokenCredential implements azureCore.TokenCredential {
+    private _expiresOn: Date;
+    private _numberOfRefreshs = 0;
+
+    constructor(expiresOn?: Date) {
+        this._expiresOn = expiresOn || new Date();
+    }
+
     async getToken(scopes: string | string[], options?: any): Promise<any> {
+        this._numberOfRefreshs++;
         return {
-            token: "testToken",
-            expiresOnTimestamp: new Date()
-        };
-    }
-}
-
-class TestTokenCache {
-    private testToken: any = "";
-
-    getCachedToken() {
-        return this.testToken;
-    }
-
-    setCachedToken(token: any) {
-        this.testToken = token;
-    }
-}
-
-class TestTokenRefresher {
-    isReady() {
-        return true;
-    }
-
-    refresh(options: any) {
-        return {
-            token: "testRefreshedToken"
+            token: "testToken" + this._numberOfRefreshs,
+            expiresOnTimestamp: this._expiresOn
         };
     }
 }
@@ -52,11 +36,6 @@ describe("Library/AuthorizationHandler", () => {
 
     describe("#addAuthorizationHeader()", () => {
         it("should add Authorization header to options", async () => {
-            var testCache = new TestTokenCache();
-            var testRefresher = new TestTokenRefresher();
-            testCache.setCachedToken({ token: "testToken" });
-            var cacheStub = sandbox.stub(azureCore, "ExpiringAccessTokenCache", () => { return testCache; });
-            var refresherStub = sandbox.stub(azureCore, "AccessTokenRefresher", () => { return testRefresher; });
             var config = new Config("");
             config.aadTokenCredential = new TestTokenCredential();
             var handler = new AuthorizationHandler(config.aadTokenCredential);
@@ -67,18 +46,13 @@ describe("Library/AuthorizationHandler", () => {
                 }
             };
             await handler.addAuthorizationHeader(options);
-            assert.ok(cacheStub.calledOnce);
-            assert.ok(refresherStub.calledOnce);
-            assert.equal(options.headers["authorization"], "Bearer testToken");
+            assert.equal(options.headers["authorization"], "Bearer testToken1");
         });
 
-        it("should refresh token if not cached", async () => {
-            var testCache = new TestTokenCache();
-            var testRefresher = new TestTokenRefresher();
-            var cacheStub = sandbox.stub(azureCore, "ExpiringAccessTokenCache", () => { return testCache; });
-            var refresherStub = sandbox.stub(azureCore, "AccessTokenRefresher", () => { return testRefresher; });
+        it("should refresh token if expired", async () => {
             var config = new Config("");
-            config.aadTokenCredential = new TestTokenCredential();
+            var tokenCredential = new TestTokenCredential(new Date(new Date().getMilliseconds() - 500));
+            config.aadTokenCredential = tokenCredential;
             var handler = new AuthorizationHandler(config.aadTokenCredential);
             var options = {
                 method: "POST",
@@ -87,9 +61,10 @@ describe("Library/AuthorizationHandler", () => {
                 }
             };
             await handler.addAuthorizationHeader(options);
-            assert.ok(cacheStub.calledOnce);
-            assert.ok(refresherStub.calledOnce);
-            assert.equal(options.headers["authorization"], "Bearer testRefreshedToken");
+            assert.equal(options.headers["authorization"], "Bearer testToken1");
+            await handler.addAuthorizationHeader(options);
+            assert.equal(tokenCredential["_numberOfRefreshs"], 2);
+            assert.equal(options.headers["authorization"], "Bearer testToken2");
         });
     });
 });
