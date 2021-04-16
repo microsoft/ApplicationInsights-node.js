@@ -25,7 +25,7 @@ describe("Library/Channel", () => {
     var sendSpy = sinon.spy(sender, "send");
     var saveSpy = sinon.spy(sender, "saveOnCrash");
 
-    var channel:ChannelMock;
+    var channel: ChannelMock;
     var config: any;
     var clock: any;
     before(() => clock = sinon.useFakeTimers());
@@ -55,7 +55,7 @@ describe("Library/Channel", () => {
             channel.send(testEnvelope);
             clock.tick(config.batchInterval);
             assert.ok(sendSpy.calledOnce);
-            assert.equal(sendSpy.firstCall.args[0].toString(), JSON.stringify(testEnvelope));
+            assert.equal(sendSpy.firstCall.args[0][0], testEnvelope);
         });
 
         it("should do nothing if disabled", () => {
@@ -74,16 +74,6 @@ describe("Library/Channel", () => {
             warnStub.restore();
         });
 
-        it("should not crash JSON.stringify", () => {
-            var a = <any>{b: null};
-            a.b = a;
-
-            var warnStub = sinon.stub(console, "warn");
-            assert.doesNotThrow(() => channel.send(a));
-            assert.ok(warnStub.calledOnce);
-            warnStub.restore();
-        });
-
         it("should flush the buffer when full", () => {
             for (var i = 0; i < config.batchSize; i++) {
                 channel.send(testEnvelope);
@@ -96,7 +86,7 @@ describe("Library/Channel", () => {
         it("should add the payload to the buffer", () => {
             channel.send(testEnvelope);
             assert.ok(channel.getBuffer().length === 1);
-            assert.ok(channel.getBuffer()[0] === JSON.stringify(testEnvelope));
+            assert.ok(channel.getBuffer()[0] === testEnvelope);
         });
 
         it("should start the timer if not started", () => {
@@ -135,17 +125,6 @@ describe("Library/Channel", () => {
             assert.ok(saveSpy.calledOnce);
             assert.ok(channel.getBuffer().length === 0);
             assert.ok(!channel.getTimeoutHandle());
-        });
-
-        it("should format X-JSON by default", () => {
-            var first: any = { "first": true };
-            var second: any = { "second": true };
-            channel.send(first);
-            channel.send(second);
-            channel.triggerSend(true);
-            assert.ok(sendSpy.notCalled);
-            assert.ok(saveSpy.calledOnce);
-            assert.ok(saveSpy.calledWith(JSON.stringify(first) + "\n" + JSON.stringify(second)))
         });
 
         it("should not send if empty", () => {

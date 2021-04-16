@@ -1,8 +1,26 @@
 import { Domain, EventData, ExceptionData, MessageData, MetricData, PageViewData, RemoteDependencyData, RequestData } from "./Generated";
 
+/**
+ * Breeze response definition.
+ */
+export interface BreezeResponse {
+    itemsReceived: number;
+    itemsAccepted: number;
+    errors: BreezeError[];
+}
+
+/**
+* Breeze errors.
+*/
+export interface BreezeError {
+    index: number;
+    statusCode: number;
+    message: string;
+}
+
 export class RemoteDependencyDataConstants {
-    public static TYPE_HTTP:string = "Http";
-    public static TYPE_AI:string = "Http (tracked component)";
+    public static TYPE_HTTP: string = "Http";
+    public static TYPE_AI: string = "Http (tracked component)";
 }
 
 export interface ISupportProperties extends Domain {
