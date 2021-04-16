@@ -93,7 +93,10 @@ class Sender {
         }
         if (this._enableDiskRetryMode) {
             // Starts file cleanup task
-            this._fileCleanupTimer = setTimeout(() => { this._fileCleanupTask(); }, Sender.CLEANUP_TIMEOUT);
+            if(!this._fileCleanupTimer){
+                this._fileCleanupTimer = setTimeout(() => { this._fileCleanupTask(); }, Sender.CLEANUP_TIMEOUT);
+                this._fileCleanupTimer.unref();
+            }
         }
         else {
             if (this._fileCleanupTimer) {
