@@ -34,7 +34,7 @@ class QuickPulseStateManager {
     private _redirectedHost: string = null;
     private _pollingIntervalHint: number = -1;
 
-    constructor(config: Config, context?: Context, getAuthorizationHandler?: () => AuthorizationHandler) {
+    constructor(config: Config, context?: Context, getAuthorizationHandler?: (config: Config) => AuthorizationHandler) {
         this.config = config;
         this.context = context || new Context();
         this._sender = new QuickPulseSender(this.config, getAuthorizationHandler);
@@ -119,7 +119,7 @@ class QuickPulseStateManager {
         this._documents.length = 0;
     }
 
-    private _goQuickPulse(): void {
+    private async _goQuickPulse(): Promise<void> {
         // Create envelope from Documents and Metrics
         const metrics = Object.keys(this._metrics).map(k => this._metrics[k]);
         const envelope = QuickPulseEnvelopeFactory.createQuickPulseEnvelope(metrics, this._documents.slice(), this.config, this.context);
@@ -129,7 +129,7 @@ class QuickPulseStateManager {
 
         // Send it to QuickPulseService, if collecting
         if (this._isCollectingData) {
-            this._post(envelope);
+            await this._post(envelope);
         } else {
             this._ping(envelope);
         }
@@ -153,8 +153,8 @@ class QuickPulseStateManager {
         this._sender.ping(envelope, this._redirectedHost, this._quickPulseDone.bind(this));
     }
 
-    private _post(envelope: Contracts.EnvelopeQuickPulse): void {
-        this._sender.post(envelope, this._redirectedHost, this._quickPulseDone.bind(this));
+    private async _post(envelope: Contracts.EnvelopeQuickPulse): Promise<void> {
+        await this._sender.post(envelope, this._redirectedHost, this._quickPulseDone.bind(this));
     }
 
     /**

@@ -107,7 +107,7 @@ describe("Library/TelemetryClient", () => {
                     return { token: "testToken", };
                 }
             };
-            assert.ok(client.getAuthorizationHandler());
+            assert.ok(client.getAuthorizationHandler(client.config));
         });
     });
 

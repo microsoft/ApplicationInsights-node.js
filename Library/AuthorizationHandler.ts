@@ -2,7 +2,7 @@
 import https = require("https");
 import azureCore = require("@azure/core-http");
 
-const applicationInsightsResource = "https://monitor.azure.com";
+const applicationInsightsResource = "https://monitor.azure.com/.default";
 
 
 class AuthorizationHandler {

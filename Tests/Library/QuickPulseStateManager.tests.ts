@@ -41,7 +41,7 @@ describe("Library/QuickPulseStateManager", () => {
                 return handler;
             };
             qps = new QuickPulseClient(config, null, getAuthorizationHandler);
-            assert.equal(qps["_sender"]["_getAuthorizationHandler"](), handler);
+            assert.equal(qps["_sender"]["_getAuthorizationHandler"](config), handler);
         });
 
     });

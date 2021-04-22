@@ -181,9 +181,9 @@ class TelemetryClient {
     /**
      * Get Authorization handler
      */
-    public getAuthorizationHandler(): AuthorizationHandler {
-        if (this.config.aadTokenCredential) {
-            return this.authorizationHandler || new AuthorizationHandler(this.config.aadTokenCredential);
+    public getAuthorizationHandler(config: Config): AuthorizationHandler {
+        if (config && config.aadTokenCredential) {
+            return this.authorizationHandler || new AuthorizationHandler(config.aadTokenCredential);
         }
         return null;
     }
