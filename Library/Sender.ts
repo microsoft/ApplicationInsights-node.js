@@ -96,7 +96,7 @@ class Sender {
         }
         if (this._enableDiskRetryMode) {
             // Starts file cleanup task
-            if(!this._fileCleanupTimer){
+            if (!this._fileCleanupTimer) {
                 this._fileCleanupTimer = setTimeout(() => { this._fileCleanupTask(); }, Sender.CLEANUP_TIMEOUT);
                 this._fileCleanupTimer.unref();
             }
@@ -108,7 +108,7 @@ class Sender {
         }
     }
 
-    public send(envelopes: Contracts.EnvelopeTelemetry[], callback?: (v: string) => void) {
+    public async send(envelopes: Contracts.EnvelopeTelemetry[], callback?: (v: string) => void) {
         if (envelopes) {
             var endpointUrl = this._redirectedHost || this._config.endpointUrl;
 
@@ -121,33 +121,23 @@ class Sender {
                 }
             };
 
-        let authHandler = this._getAuthorizationHandler ? this._getAuthorizationHandler() : null;
-        if (authHandler) {
-            try {
-                // Add bearer token
-                await authHandler.addAuthorizationHeader(options);
-            }
-            catch (authError) {
-                let errorMsg = "Failed to get AAD bearer token for the Application. Error:" + authError.toString();
-                // If AAD auth fails do not send to Breeze
-                if (typeof callback === "function") {
-                    callback(errorMsg);
+            let authHandler = this._getAuthorizationHandler ? this._getAuthorizationHandler() : null;
+            if (authHandler) {
+                try {
+                    // Add bearer token
+                    await authHandler.addAuthorizationHeader(options);
                 }
-                this._storeToDisk(payload);
-                Logging.warn(Sender.TAG, errorMsg);
-                return;
+                catch (authError) {
+                    let errorMsg = "Failed to get AAD bearer token for the Application. Error:" + authError.toString();
+                    // If AAD auth fails do not send to Breeze
+                    if (typeof callback === "function") {
+                        callback(errorMsg);
+                    }
+                    this._storeToDisk(envelopes);
+                    Logging.warn(Sender.TAG, errorMsg);
+                    return;
+                }
             }
-        }
-
-        zlib.gzip(payload, (err, buffer) => {
-            var dataToSend = buffer;
-            if (err) {
-                Logging.warn(err);
-                dataToSend = payload; // something went wrong so send without gzip
-                options.headers["Content-Length"] = payload.length.toString();
-            } else {
-                options.headers["Content-Encoding"] = "gzip";
-                options.headers["Content-Length"] = buffer.length.toString();
 
             let batch: string = "";
 
@@ -220,17 +210,6 @@ class Sender {
                                     this._storeToDisk(envelopes); // Retriable status code with not valid Breeze response
                                 }
                             }
-                            // store to disk in case of burst throttling
-                        } else if (
-                            res.statusCode === 401 || // Unauthorized
-                            res.statusCode === 403 || // Forbidden
-                            res.statusCode === 408 || // Timeout
-                            res.statusCode === 429 || // Throttle
-                            res.statusCode === 439 || // Quota
-                            res.statusCode === 500 || // Server Error
-                            res.statusCode === 503) { // Service unavailable
-
-                            this._storeToDisk(payload);
                         }
                         // Redirect handling
                         if (res.statusCode === 308) { // Permanent Redirect
@@ -303,6 +282,7 @@ class Sender {
     private _isRetriable(statusCode: number) {
         return (
             statusCode === 206 || // Retriable
+            statusCode === 401 || // Unauthorized
             statusCode === 408 || // Timeout
             statusCode === 429 || // Throttle
             statusCode === 439 || // Quota

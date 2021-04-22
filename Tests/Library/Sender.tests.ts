@@ -269,7 +269,7 @@ describe("Library/Sender", () => {
             var addHeaderStub = sandbox.stub(handler, "addAuthorizationHeader");
 
             var sender = new Sender(config, getAuthorizationHandler);
-            sender.send(new Buffer("test"));
+            sender.send([testEnvelope]);
             assert.ok(addHeaderStub.calledOnce);
         });
 
@@ -287,11 +287,12 @@ describe("Library/Sender", () => {
 
             var sender = new Sender(config, getAuthorizationHandler);
             var storeToDiskStub = sandbox.stub(sender, "_storeToDisk");
-            var buffer = new Buffer("test");
-            sender.send(buffer);
+            let envelope = new Contracts.Envelope();
+            envelope.name = "TestEnvelope";
+            sender.send([envelope]);
             assert.ok(addHeaderStub.calledOnce);
             assert.ok(storeToDiskStub.calledOnce);
-            assert.equal(storeToDiskStub.firstCall.args[0], buffer);
+            assert.equal(storeToDiskStub.firstCall.args[0][0], "TestEnvelope");
         });
     });
 });
