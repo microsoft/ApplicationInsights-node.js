@@ -928,7 +928,8 @@ describe("Library/TelemetryClient", () => {
             triggerStub.restore();
 
             // fake something in the buffer
-            client.channel._buffer.push("");
+            var testEnvelope = new Contracts.Envelope();
+            client.channel._buffer.push(testEnvelope);
             client.flush({ isAppCrashing: true });
 
             assert.ok(saveOnCrashStub.calledOnce);
