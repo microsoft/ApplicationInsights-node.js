@@ -292,7 +292,7 @@ describe("Library/Sender", () => {
             sender.send([envelope]);
             assert.ok(addHeaderStub.calledOnce);
             assert.ok(storeToDiskStub.calledOnce);
-            assert.equal(storeToDiskStub.firstCall.args[0][0], "TestEnvelope");
+            assert.equal(storeToDiskStub.firstCall.args[0][0].name, "TestEnvelope");
         });
     });
 });
