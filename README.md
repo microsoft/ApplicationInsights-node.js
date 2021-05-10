@@ -300,7 +300,7 @@ client.trackMetric({name: "custom metric", value: 3});
 client.trackTrace({message: "trace message"});
 client.trackDependency({target:"http://dbname", name:"select customers proc", data:"SELECT * FROM Customers", duration:231, resultCode:0, success: true, dependencyTypeName: "ZSQL"});
 client.trackRequest({name:"GET /customers", url:"http://myserver/customers", duration:309, resultCode:200, success:true});
-
+ 
 let http = require("http");
 http.createServer( (req, res) => {
   client.trackNodeHttpRequest({request: req, response: res}); // Place at the beginning of your request handler
