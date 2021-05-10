@@ -25,6 +25,17 @@ This library tracks the following out-of-the-box:
 You can manually track more aspects of your app and system using the API described in the
 [Track custom telemetry](#track-custom-telemetry) section.
 
+## Supported Node.JS versions
+
+| Platform Version | Supported                                       |
+|------------------|-------------------------------------------------|
+| Node.JS `v15`    | ✅                                              |
+| Node.JS `v14`    | ✅                                              |
+| Node.JS `v12`    | ✅                                              |
+| Node.JS `v10`    | ✅                                              |
+| Node.JS `v8`     | ✅                                              |
+
+
 ## Getting Started
 
 1. Create an Application Insights resource in Azure by following [these instructions][].
@@ -254,8 +265,7 @@ for information about exactly which versions of these packages are patched.
 The `bunyan`, `winston`, and `console` patches will generate Application Insights Trace events based on whether `setAutoCollectConsole` is enabled.
 The rest will generate Application Insights Dependency events based on whether `setAutoCollectDependencies` is enabled. Make sure that `applicationinsights` is imported **before** any 3rd-party packages for them to be instrumented successfully.
 
-Automatic instrumentation for several Azure SDKs is also available, you must manually install @opentelemetry/tracing to enable this automatic tracing. No additional configuration is required
-Currently Cognitive Search, Communication Common and Cosmos DB SDKs are not supported.
+Automatic instrumentation for several Azure SDKs is also available, currently Cognitive Search, Communication Common and Cosmos DB SDKs are not supported.
 [Javascript Azure SDKs](https://azure.github.io/azure-sdk/releases/latest/index.html#javascript)
 
 
