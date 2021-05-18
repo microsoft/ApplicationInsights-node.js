@@ -25,6 +25,17 @@ This library tracks the following out-of-the-box:
 You can manually track more aspects of your app and system using the API described in the
 [Track custom telemetry](#track-custom-telemetry) section.
 
+## Supported Node.JS versions
+
+| Platform Version | Supported                                       |
+|------------------|-------------------------------------------------|
+| Node.JS `v15`    | ✅                                              |
+| Node.JS `v14`    | ✅                                              |
+| Node.JS `v12`    | ✅                                              |
+| Node.JS `v10`    | ✅                                              |
+| Node.JS `v8`     | ✅                                              |
+
+
 ## Getting Started
 
 1. Create an Application Insights resource in Azure by following [these instructions][].
@@ -254,8 +265,7 @@ for information about exactly which versions of these packages are patched.
 The `bunyan`, `winston`, and `console` patches will generate Application Insights Trace events based on whether `setAutoCollectConsole` is enabled.
 The rest will generate Application Insights Dependency events based on whether `setAutoCollectDependencies` is enabled. Make sure that `applicationinsights` is imported **before** any 3rd-party packages for them to be instrumented successfully.
 
-Automatic instrumentation for several Azure SDKs is also available, you must manually install @opentelemetry/tracing to enable this automatic tracing. No additional configuration is required
-Currently Cognitive Search, Communication Common and Cosmos DB SDKs are not supported.
+Automatic instrumentation for several Azure SDKs is also available, currently Cognitive Search, Communication Common and Cosmos DB SDKs are not supported.
 [Javascript Azure SDKs](https://azure.github.io/azure-sdk/releases/latest/index.html#javascript)
 
 
@@ -300,7 +310,7 @@ client.trackMetric({name: "custom metric", value: 3});
 client.trackTrace({message: "trace message"});
 client.trackDependency({target:"http://dbname", name:"select customers proc", data:"SELECT * FROM Customers", duration:231, resultCode:0, success: true, dependencyTypeName: "ZSQL"});
 client.trackRequest({name:"GET /customers", url:"http://myserver/customers", duration:309, resultCode:200, success:true});
-
+ 
 let http = require("http");
 http.createServer( (req, res) => {
   client.trackNodeHttpRequest({request: req, response: res}); // Place at the beginning of your request handler
@@ -521,29 +531,12 @@ Included in `applicationinsights@2.0.0` is [every Node.js Plugin available in th
 [npm]: https://www.npmjs.com/package/applicationinsights
 
 ## Contributing
+For details on contributing to this repository, see the [contributing guide](https://github.com/microsoft/ApplicationInsights-node.js/master/CONTRIBUTING.md).
 
-1. Install all dependencies with `npm install`.
-2. Set an environment variable to your instrumentation key (optional).
-    ```bash
-    // windows
-    set APPINSIGHTS_INSTRUMENTATIONKEY=<insert_your_instrumentation_key_here>
-    // linux/macos
-    export APPINSIGHTS_INSTRUMENTATIONKEY=<insert_your_instrumentation_key_here>
-    ```
-3. Run tests
-    ```bash
-    npm run test
-    npm run backcompattest
-    npm run functionaltest
-    ```
-    _Note: Functional tests require Docker_
+This project welcomes contributions and suggestions. Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit
+https://cla.microsoft.com.
 
----
+When you submit a pull request, a CLA-bot will automatically determine whether you need to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions provided by the bot. You will only need to do this once across all repositories using our CLA.
 
-This project has adopted the [Microsoft Open Source Code of Conduct][]. For more
-information see the [Code of Conduct FAQ][] or contact
-[opencode@microsoft.com][] with any additional questions or comments.
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
-[Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
-[Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
-[opencode@microsoft.com]: mailto:opencode@microsoft.com

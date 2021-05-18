@@ -257,7 +257,7 @@ class Util {
         const contextHeaders = response.headers && response.headers[RequestResponseHeaders.requestContextHeader];
         if (contextHeaders) {
             const keyValues = (<any>contextHeaders).split(",");
-            for(let i = 0; i < keyValues.length; ++i) {
+            for (let i = 0; i < keyValues.length; ++i) {
                 const keyValue = keyValues[i].split("=");
                 if (keyValue.length == 2 && keyValue[0] == key) {
                     return keyValue[1];
@@ -372,6 +372,21 @@ class Util {
                 RequestResponseHeaders.requestContextHeader,
                 `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
         }
+    }
+
+    /**
+     * Returns string representation of an object suitable for diagnostics logging.
+     */
+    public static dumpObj(object: any): string {
+        const objectTypeDump: string = Object["prototype"].toString.call(object);
+        let propertyValueDump: string = "";
+        if (objectTypeDump === "[object Error]") {
+            propertyValueDump = "{ stack: '" + object.stack + "', message: '" + object.message + "', name: '" + object.name + "'";
+        } else {
+            propertyValueDump = JSON.stringify(object);
+        }
+
+        return objectTypeDump + propertyValueDump;
     }
 
     private static addCorrelationIdHeaderFromString(client: TelemetryClient, response: http.ClientRequest | http.ServerResponse, correlationHeader: string) {
