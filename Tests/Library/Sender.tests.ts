@@ -23,7 +23,7 @@ describe("Library/Sender", () => {
 
     before(() => {
         interceptor = nock(Constants.DEFAULT_BREEZE_ENDPOINT)
-            .post("/v2/track", (body: string) => {
+            .post("/v2.1/track", (body: string) => {
                 return true;
             });
     });
@@ -182,10 +182,10 @@ describe("Library/Sender", () => {
 
         it("should use redirect URL for following requests", (done) => {
             let redirectHost = "https://testLocation";
-            let redirectLocation = redirectHost + "/v2/track";
+            let redirectLocation = redirectHost + "/v2.1/track";
             // Fake redirect endpoint
             nock(redirectHost)
-                .post("/v2/track", (body: string) => {
+                .post("/v2.1/track", (body: string) => {
                     return true;
                 }).reply(200, { "redirectProperty": true });
             interceptor.reply(308, {}, { "Location": redirectLocation });
@@ -231,7 +231,7 @@ describe("Library/Sender", () => {
   describe("#AuthorizationHandler ", () => {
         before(() => {
             nock("https://dc.services.visualstudio.com")
-                .post("/v2/track", (body: string) => {
+                .post("/v2.1/track", (body: string) => {
                     return true;
                 })
                 .reply(200, {
