@@ -32,7 +32,7 @@ class Sender {
     private _config: Config;
     private _onSuccess: (response: string) => void;
     private _onError: (error: Error) => void;
-    private _getAuthorizationHandler: () => AuthorizationHandler;
+    private _getAuthorizationHandler: (config: Config) => AuthorizationHandler;
     private _enableDiskRetryMode: boolean;
     private _numConsecutiveFailures: number;
     private _numConsecutiveRedirects: number;
@@ -43,7 +43,7 @@ class Sender {
     protected _resendInterval: number;
     protected _maxBytesOnDisk: number;
 
-    constructor(config: Config, getAuthorizationHandler?: () => AuthorizationHandler, onSuccess?: (response: string) => void, onError?: (error: Error) => void) {
+    constructor(config: Config, getAuthorizationHandler?: (config: Config) => AuthorizationHandler, onSuccess?: (response: string) => void, onError?: (error: Error) => void) {
         this._config = config;
         this._onSuccess = onSuccess;
         this._onError = onError;
@@ -121,7 +121,7 @@ class Sender {
                 }
             };
 
-            let authHandler = this._getAuthorizationHandler ? this._getAuthorizationHandler() : null;
+            let authHandler = this._getAuthorizationHandler ? this._getAuthorizationHandler(this._config) : null;
             if (authHandler) {
                 try {
                     // Add bearer token
@@ -283,6 +283,7 @@ class Sender {
         return (
             statusCode === 206 || // Retriable
             statusCode === 401 || // Unauthorized
+            statusCode === 403 || // Forbidden
             statusCode === 408 || // Timeout
             statusCode === 429 || // Throttle
             statusCode === 439 || // Quota

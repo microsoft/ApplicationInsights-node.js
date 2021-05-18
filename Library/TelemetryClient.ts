@@ -43,7 +43,7 @@ class TelemetryClient {
         this.context = new Context();
         this.commonProperties = {};
         this.authorizationHandler = null;
-        var sender = new Sender(this.config,);
+        var sender = new Sender(this.config, this.getAuthorizationHandler);
         this.channel = new Channel(() => config.disableAppInsights, () => config.maxBatchSize, () => config.maxBatchIntervalMs, sender);
     }
 

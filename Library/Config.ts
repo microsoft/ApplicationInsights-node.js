@@ -82,7 +82,7 @@ class Config {
             Logging.warn("An invalid instrumentation key was provided. There may be resulting telemetry loss", this.instrumentationKey);
         }
 
-        this.endpointUrl = `${csCode.ingestionendpoint || csEnv.ingestionendpoint || this.endpointBase}/v2/track`;
+        this.endpointUrl = `${csCode.ingestionendpoint || csEnv.ingestionendpoint || this.endpointBase}/v2.1/track`;
         this.maxBatchSize = 250;
         this.maxBatchIntervalMs = 15000;
         this.disableAppInsights = false;
