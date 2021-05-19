@@ -13,6 +13,8 @@ import { HttpRequest } from "../Library/Functions";
 class Util {
     public static MAX_PROPERTY_LENGTH = 8192;
     public static tlsRestrictedAgent: https.Agent = new https.Agent(<any>{
+        keepAlive: true,
+        maxSockets: 25,
         secureOptions: constants.SSL_OP_NO_SSLv2 | constants.SSL_OP_NO_SSLv3 |
             constants.SSL_OP_NO_TLSv1 | constants.SSL_OP_NO_TLSv1_1
     });
