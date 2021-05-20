@@ -1,5 +1,6 @@
 import assert = require("assert");
 import fs = require("fs");
+import https = require("https");
 import sinon = require("sinon");
 import nock = require("nock");
 
@@ -8,6 +9,7 @@ import Config = require("../../Library/Config");
 import Constants = require("../../Declarations/Constants");
 import Contracts = require("../../Declarations/Contracts");
 import AuthorizationHandler = require("../../Library/AuthorizationHandler");
+import Util = require("../../Library/Util");
 
 class SenderMock extends Sender {
     public getResendInterval() {
@@ -17,6 +19,7 @@ class SenderMock extends Sender {
 
 describe("Library/Sender", () => {
 
+    Util.tlsRestrictedAgent = new https.Agent();
     var testEnvelope = new Contracts.Envelope();
     var sandbox: sinon.SinonSandbox;
     let interceptor: nock.Interceptor;

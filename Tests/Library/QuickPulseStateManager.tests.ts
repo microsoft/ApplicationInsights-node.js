@@ -1,4 +1,5 @@
 import assert = require("assert");
+import https = require("https");
 import sinon = require("sinon");
 import azureCore = require("@azure/core-http");
 
@@ -8,8 +9,11 @@ import AuthorizationHandler = require("../../Library/AuthorizationHandler");
 import { IncomingMessage } from "http";
 import Config = require("../../Library/Config");
 import QuickPulseSender = require("../../Library/QuickPulseSender");
+import Util = require("../../Library/Util");
 
 describe("Library/QuickPulseStateManager", () => {
+    Util.tlsRestrictedAgent = new https.Agent();
+    
     describe("#constructor", () => {
         let qps;
         afterEach(() => {

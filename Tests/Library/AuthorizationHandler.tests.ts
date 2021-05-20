@@ -1,9 +1,11 @@
 import assert = require("assert");
+import https = require("https");
 import sinon = require("sinon");
 import azureCore = require("@azure/core-http");
 
 import AuthorizationHandler = require("../../Library/AuthorizationHandler");
 import Config = require("../../Library/Config");
+import Util = require("../../Library/Util");
 
 class TestTokenCredential implements azureCore.TokenCredential {
     private _expiresOn: Date;
@@ -25,6 +27,7 @@ class TestTokenCredential implements azureCore.TokenCredential {
 describe("Library/AuthorizationHandler", () => {
 
     var sandbox: sinon.SinonSandbox;
+    Util.tlsRestrictedAgent = new https.Agent();
 
     beforeEach(() => {
         sandbox = sinon.sandbox.create();

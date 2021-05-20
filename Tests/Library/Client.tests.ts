@@ -1,4 +1,5 @@
 import assert = require("assert");
+import https = require("https");
 import sinon = require("sinon");
 import Sinon = require("sinon");
 import eventEmitter = require('events');
@@ -12,6 +13,8 @@ import Util = require("../../Library/Util");
 import EnvelopeFactory = require("../../Library/EnvelopeFactory");
 
 describe("Library/TelemetryClient", () => {
+
+    Util.tlsRestrictedAgent = new https.Agent();
 
     var iKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
     var appId = "Application-Key-12345-6789A";
