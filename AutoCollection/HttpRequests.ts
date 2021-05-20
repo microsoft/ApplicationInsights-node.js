@@ -1,5 +1,6 @@
 import http = require("http");
 import https = require("https");
+import url = require("url");
 
 import Contracts = require("../Declarations/Contracts");
 import TelemetryClient = require("../Library/TelemetryClient");
