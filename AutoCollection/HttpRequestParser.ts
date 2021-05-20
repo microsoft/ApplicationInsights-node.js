@@ -172,13 +172,14 @@ class HttpRequestParser extends RequestParser {
         var pathName = requestUrl.pathname;
         var search = requestUrl.search;
 
+        var protocol = (encrypted || request.headers["x-forwarded-proto"] == "https") ? "https" : "http";
+
         var absoluteUrl = url.format({
-            protocol: encrypted ? "https" : "http",
+            protocol: protocol,
             host: request.headers.host,
             pathname: pathName,
             search: search
         });
-
         return absoluteUrl;
     }
 
