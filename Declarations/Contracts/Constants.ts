@@ -44,7 +44,6 @@ export function domainSupportsProperties(domain: Domain): domain is ISupportProp
  * @type ConnectionStringKey
  */
 export interface ConnectionString {
-    authorization?: string;
     instrumentationkey?: string;
     ingestionendpoint?: string;
     liveendpoint?: string;
@@ -55,4 +54,4 @@ export interface ConnectionString {
     // type ConnectionString = { [key in ConnectionStringKey]?: string }
 }
 
-export type ConnectionStringKey = "authorization" | "instrumentationkey" | "ingestionendpoint" | "liveendpoint" | "location" | "endpointsuffix";
+export type ConnectionStringKey = "instrumentationkey" | "ingestionendpoint" | "liveendpoint" | "location"| "endpointsuffix";

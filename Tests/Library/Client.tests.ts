@@ -1,9 +1,9 @@
 import assert = require("assert");
-import crypto = require('crypto');
+import https = require("https");
 import sinon = require("sinon");
 import Sinon = require("sinon");
-import http = require("http");
 import eventEmitter = require('events');
+import azureCore = require("@azure/core-http");
 
 import Client = require("../../Library/NodeClient");
 import Config = require("../../Library/Config");
@@ -13,6 +13,8 @@ import Util = require("../../Library/Util");
 import EnvelopeFactory = require("../../Library/EnvelopeFactory");
 
 describe("Library/TelemetryClient", () => {
+
+    Util.tlsRestrictedAgent = new https.Agent();
 
     var iKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
     var appId = "Application-Key-12345-6789A";
@@ -99,6 +101,16 @@ describe("Library/TelemetryClient", () => {
         it("should initialize channel", () => {
             var client = new Client("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             assert.ok(client.channel);
+        });
+
+        it("should initialize authorization handler", () => {
+            var client = new Client("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;");
+            client.config.aadTokenCredential = {
+                async getToken(scopes: string | string[], options?: any): Promise<any> {
+                    return { token: "testToken", };
+                }
+            };
+            assert.ok(client.getAuthorizationHandler(client.config));
         });
     });
 

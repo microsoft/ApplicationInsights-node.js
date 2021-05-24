@@ -1,3 +1,5 @@
+import azureCore = require("@azure/core-http");
+
 import CorrelationIdManager = require('./CorrelationIdManager');
 import ConnectionStringParser = require('./ConnectionStringParser');
 import Logging = require('./Logging');
@@ -56,6 +58,9 @@ class Config {
     /** Disable including legacy headers in outgoing requests, x-ms-request-id */
     public ignoreLegacyHeaders?: boolean;
 
+    /** AAD TokenCredential to use to authenticate the app */
+    public aadTokenCredential?: azureCore.TokenCredential;
+
     private endpointBase: string = Constants.DEFAULT_BREEZE_ENDPOINT;
     private setCorrelationId: (v: string) => void;
     private _profileQueryEndpoint: string;
@@ -73,11 +78,11 @@ class Config {
 
         this.instrumentationKey = csCode.instrumentationkey || iKeyCode /* === instrumentationKey */ || csEnv.instrumentationkey || Config._getInstrumentationKey();
         // validate ikey. If fails throw a warning
-        if(!Config._validateInstrumentationKey(this.instrumentationKey)) {
+        if (!Config._validateInstrumentationKey(this.instrumentationKey)) {
             Logging.warn("An invalid instrumentation key was provided. There may be resulting telemetry loss", this.instrumentationKey);
         }
 
-        this.endpointUrl = `${csCode.ingestionendpoint || csEnv.ingestionendpoint || this.endpointBase}/v2/track`;
+        this.endpointUrl = `${csCode.ingestionendpoint || csEnv.ingestionendpoint || this.endpointBase}/v2.1/track`;
         this.maxBatchSize = 250;
         this.maxBatchIntervalMs = 15000;
         this.disableAppInsights = false;
@@ -152,10 +157,10 @@ class Config {
     * Third section has 4 characters
     * Fourth section has 4 characters
     * Fifth section has 12 characters                  
-    */    
-    private static _validateInstrumentationKey(iKey:string): boolean {
+    */
+    private static _validateInstrumentationKey(iKey: string): boolean {
         const UUID_Regex = '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
-        const regexp = new RegExp(UUID_Regex); 
+        const regexp = new RegExp(UUID_Regex);
         return regexp.test(iKey);
     }
 }

@@ -497,6 +497,8 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | samplingPercentage              | The percentage of telemetry items tracked that should be transmitted (Default `100`)                       |
 | correlationIdRetryIntervalMs    | The time to wait before retrying to retrieve the id for cross-component correlation (Default `30000`)      |
 | correlationHeaderExcludedDomains| A list of domains to exclude from cross-component correlation header injection (Default See [Config.ts][]) |
+| aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Crendential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes) |
+
 
 [Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
 

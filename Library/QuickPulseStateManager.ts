@@ -1,3 +1,4 @@
+import AuthorizationHandler = require("./AuthorizationHandler");
 import Logging = require("./Logging");
 import Config = require("./Config");
 import QuickPulseEnvelopeFactory = require("./QuickPulseEnvelopeFactory");
@@ -13,6 +14,7 @@ import * as Contracts from "../Declarations/Contracts";
 class QuickPulseStateManager {
     public config: Config;
     public context: Context;
+    public authorizationHandler: AuthorizationHandler;
 
     private static MAX_POST_WAIT_TIME = 20000;
     private static MAX_PING_WAIT_TIME = 60000;
@@ -26,16 +28,16 @@ class QuickPulseStateManager {
     private _lastSuccessTime: number = Date.now();
     private _lastSendSucceeded: boolean = true;
     private _handle: NodeJS.Timer;
-    private _metrics: {[name: string]: Contracts.MetricQuickPulse} = {};
+    private _metrics: { [name: string]: Contracts.MetricQuickPulse } = {};
     private _documents: Contracts.DocumentQuickPulse[] = [];
-    private _collectors: {enable: (enable: boolean) => void}[] = [];
+    private _collectors: { enable: (enable: boolean) => void }[] = [];
     private _redirectedHost: string = null;
     private _pollingIntervalHint: number = -1;
 
-    constructor(iKey?: string, context?: Context) {
-        this.config = new Config(iKey);
+    constructor(config: Config, context?: Context, getAuthorizationHandler?: (config: Config) => AuthorizationHandler) {
+        this.config = config;
         this.context = context || new Context();
-        this._sender = new QuickPulseSender(this.config);
+        this._sender = new QuickPulseSender(this.config, getAuthorizationHandler);
         this._isEnabled = false;
     }
 
@@ -95,13 +97,13 @@ class QuickPulseStateManager {
      * @param telemetry
      */
     private _addMetric(telemetry: Contracts.MetricTelemetry) {
-        const {value} = telemetry;
+        const { value } = telemetry;
         const count = telemetry.count || 1;
 
         let name = Constants.PerformanceToQuickPulseCounter[telemetry.name];
         if (name) {
             if (this._metrics[name]) {
-                this._metrics[name].Value = (this._metrics[name].Value*this._metrics[name].Weight + value*count) / (this._metrics[name].Weight + count);
+                this._metrics[name].Value = (this._metrics[name].Value * this._metrics[name].Weight + value * count) / (this._metrics[name].Weight + count);
                 this._metrics[name].Weight += count;
             } else {
                 this._metrics[name] = QuickPulseEnvelopeFactory.createQuickPulseMetric(telemetry);
@@ -117,7 +119,7 @@ class QuickPulseStateManager {
         this._documents.length = 0;
     }
 
-    private _goQuickPulse(): void {
+    private async _goQuickPulse(): Promise<void> {
         // Create envelope from Documents and Metrics
         const metrics = Object.keys(this._metrics).map(k => this._metrics[k]);
         const envelope = QuickPulseEnvelopeFactory.createQuickPulseEnvelope(metrics, this._documents.slice(), this.config, this.context);
@@ -127,7 +129,7 @@ class QuickPulseStateManager {
 
         // Send it to QuickPulseService, if collecting
         if (this._isCollectingData) {
-            this._post(envelope);
+            await this._post(envelope);
         } else {
             this._ping(envelope);
         }
@@ -151,15 +153,15 @@ class QuickPulseStateManager {
         this._sender.ping(envelope, this._redirectedHost, this._quickPulseDone.bind(this));
     }
 
-    private _post(envelope: Contracts.EnvelopeQuickPulse): void {
-        this._sender.post(envelope, this._redirectedHost, this._quickPulseDone.bind(this));
+    private async _post(envelope: Contracts.EnvelopeQuickPulse): Promise<void> {
+        await this._sender.post(envelope, this._redirectedHost, this._quickPulseDone.bind(this));
     }
 
     /**
      * Change the current QPS send state. (shouldPOST == undefined) --> error, but do not change the state yet.
      */
-    private _quickPulseDone(shouldPOST?: boolean, res?: http.IncomingMessage, 
-            redirectedHost?: string, pollingIntervalHint?: number): void {
+    private _quickPulseDone(shouldPOST?: boolean, res?: http.IncomingMessage,
+        redirectedHost?: string, pollingIntervalHint?: number): void {
         if (shouldPOST != undefined) {
             if (this._isCollectingData !== shouldPOST) {
                 Logging.info("Live Metrics sending data", shouldPOST);

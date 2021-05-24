@@ -1,7 +1,9 @@
 import url = require("url");
 import os = require("os");
+import azureCore = require("@azure/core-http");
 
 import Config = require("./Config");
+import AuthorizationHandler = require("./AuthorizationHandler");
 import Context = require("./Context");
 import Contracts = require("../Declarations/Contracts");
 import Channel = require("./Channel");
@@ -13,7 +15,7 @@ import Logging = require("./Logging");
 import FlushOptions = require("./FlushOptions");
 import EnvelopeFactory = require("./EnvelopeFactory");
 import QuickPulseStateManager = require("./QuickPulseStateManager");
-import {Tags} from "../Declarations/Contracts";
+import { Tags } from "../Declarations/Contracts";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -28,6 +30,8 @@ class TelemetryClient {
     public commonProperties: { [key: string]: string; };
     public channel: Channel;
     public quickPulseClient: QuickPulseStateManager;
+    public authorizationHandler: AuthorizationHandler;
+
 
     /**
      * Constructs a new client of the client
@@ -38,8 +42,8 @@ class TelemetryClient {
         this.config = config;
         this.context = new Context();
         this.commonProperties = {};
-
-        var sender = new Sender(this.config);
+        this.authorizationHandler = null;
+        var sender = new Sender(this.config, this.getAuthorizationHandler);
         this.channel = new Channel(() => config.disableAppInsights, () => config.maxBatchSize, () => config.maxBatchIntervalMs, sender);
     }
 
@@ -172,6 +176,16 @@ class TelemetryClient {
      */
     public setAutoPopulateAzureProperties(value: boolean) {
         this._enableAzureProperties = value;
+    }
+
+    /**
+     * Get Authorization handler
+     */
+    public getAuthorizationHandler(config: Config): AuthorizationHandler {
+        if (config && config.aadTokenCredential) {
+            return this.authorizationHandler || new AuthorizationHandler(config.aadTokenCredential);
+        }
+        return null;
     }
 
     /**

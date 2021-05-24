@@ -10,7 +10,7 @@ import CorrelationIdManager = require("./Library/CorrelationIdManager");
 import Logging = require("./Library/Logging");
 import QuickPulseClient = require("./Library/QuickPulseStateManager");
 import { IncomingMessage } from "http";
-import { SpanContext} from "@opentelemetry/api";
+import { SpanContext } from "@opentelemetry/api";
 
 import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCollection/NativePerformance";
 
@@ -362,7 +362,7 @@ export class Configuration {
 
         if (!liveMetricsClient && enable) {
             // No qps client exists. Create one and prepare it to be enabled at .start()
-            liveMetricsClient = new QuickPulseClient(defaultClient.config.instrumentationKey);
+            liveMetricsClient = new QuickPulseClient(defaultClient.config, null, defaultClient.getAuthorizationHandler);
             _performanceLiveMetrics = new AutoCollectPerformance(liveMetricsClient as any, 1000, true);
             liveMetricsClient.addCollector(_performanceLiveMetrics);
             defaultClient.quickPulseClient = liveMetricsClient; // Need this so we can forward all manual tracks to live metrics via PerformanceMetricsTelemetryProcessor
