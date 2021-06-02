@@ -47,8 +47,7 @@ You can manually track more aspects of your app and system using the API describ
      ```bash
      npm install --save applicationinsights
      ```
-     > *Note:* If you're using TypeScript, do not install a separate "typings" package.
-     > This NPM package contains built-in typings.
+     > *Note:* If you're using TypeScript, please install @types/node package to prevent build issues, this npm package contains built-in typings.
 4. As early as possible in your app's code, load the Application Insights
    package:
      ```javascript
@@ -497,30 +496,18 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | samplingPercentage              | The percentage of telemetry items tracked that should be transmitted (Default `100`)                       |
 | correlationIdRetryIntervalMs    | The time to wait before retrying to retrieve the id for cross-component correlation (Default `30000`)      |
 | correlationHeaderExcludedDomains| A list of domains to exclude from cross-component correlation header injection (Default See [Config.ts][]) |
-| aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Crendential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes) |
 
 
 [Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
 
-## Migrating to [`applicationinsights@2.0.0`](https://github.com/microsoft/ApplicationInsights-node.js/tree/applicationinsights%402.0.0) (Beta)
+Following configuration is currently only available in beta version of the SDK.
 
-An experimental / beta version of the SDK is also available, but not recommended for production. It is built on top of the [OpenTelemetry SDK + APIs](http://github.com/open-telemetry/opentelemetry-js), while keeping the API surface of this SDK the same.
+| Property                        | Description                                                                                                |
+| ------------------------------- |------------------------------------------------------------------------------------------------------------|
+| aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Crendential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes) |
 
-```zsh
-npm install applicationinsights@beta
-```
 
-### `applicationinsights@2.0.0` Overview
 
-- Autocollection parity with `applicationinsights@1.x`
-- API parity with `applicationinsights@1.x`
-- "Getting Started" parity with `applicationinsights@1.x`
-- New autocollection scenarios out-of-the-box contribued by the [OpenTelemetry community](https://github.com/open-telemetry/opentelemetry-js#node-plugins), e.g. `gRPC`, `express`, `ioredis`
-- Built on top of an [Open Standard](https://github.com/open-telemetry/opentelemetry-specification) for Telemetry APIs and SDKs
-
-Migrating from `1.x` to `2.x` is meant to be seamless and straightforward, there should be no breaking API changes at all. Please file a bug if something doesn't look right to you!
-
-Included in `applicationinsights@2.0.0` is [every Node.js Plugin available in the default OpenTelemetry Node.js SDK](https://github.com/open-telemetry/opentelemetry-js#node-plugins). Please check out the [projects board](https://github.com/microsoft/ApplicationInsights-node.js/projects) for progress updates on `2.x`.
 
 ## Branches
 
