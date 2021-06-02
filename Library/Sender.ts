@@ -282,6 +282,7 @@ class Sender {
     private _isRetriable(statusCode: number) {
         return (
             statusCode === 206 || // Retriable
+            statusCode === 308 || // Permanent Redirect
             statusCode === 401 || // Unauthorized
             statusCode === 403 || // Forbidden
             statusCode === 408 || // Timeout
