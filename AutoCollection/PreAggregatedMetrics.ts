@@ -229,7 +229,7 @@ class AutoCollectPreAggregatedMetrics {
                 value: intervalExceptions,
                 count: intervalExceptions,
                 aggregationInterval: elapsedMs,
-                metricType: Constants.MetricId.DEPENDENCIES_DURATION,
+                metricType: Constants.MetricId.EXCEPTIONS_COUNT,
             });
 
             // Set last counters
@@ -249,7 +249,7 @@ class AutoCollectPreAggregatedMetrics {
                 value: intervalTraces,
                 count: intervalTraces,
                 aggregationInterval: elapsedMs,
-                metricType: Constants.MetricId.DEPENDENCIES_DURATION,
+                metricType: Constants.MetricId.TRACES_COUNT,
             });
 
             // Set last counters
