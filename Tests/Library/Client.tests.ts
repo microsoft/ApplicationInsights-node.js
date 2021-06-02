@@ -102,16 +102,6 @@ describe("Library/TelemetryClient", () => {
             var client = new Client("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             assert.ok(client.channel);
         });
-
-        it("should initialize authorization handler", () => {
-            var client = new Client("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;");
-            client.config.aadTokenCredential = {
-                async getToken(scopes: string | string[], options?: any): Promise<any> {
-                    return { token: "testToken", };
-                }
-            };
-            assert.ok(client.getAuthorizationHandler(client.config));
-        });
     });
 
     describe("#trackEvent()", () => {

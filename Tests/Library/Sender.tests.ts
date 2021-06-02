@@ -8,7 +8,6 @@ import Sender = require("../../Library/Sender");
 import Config = require("../../Library/Config");
 import Constants = require("../../Declarations/Constants");
 import Contracts = require("../../Declarations/Contracts");
-import AuthorizationHandler = require("../../Library/AuthorizationHandler");
 import Util = require("../../Library/Util");
 
 class SenderMock extends Sender {
@@ -231,74 +230,6 @@ describe("Library/Sender", () => {
                 assert.ok(deleteSpy.called);
                 done();
             }, 600);
-        });
-    });
-  
-  describe("#AuthorizationHandler ", () => {
-        before(() => {
-            nock("https://dc.services.visualstudio.com")
-                .post("/v2.1/track", (body: string) => {
-                    return true;
-                })
-                .reply(200, {
-                    itemsAccepted: 1,
-                    itemsReceived: 1,
-                    errors: []
-                })
-                .persist();
-        });
-
-        var sandbox: sinon.SinonSandbox;
-
-        beforeEach(() => {
-            sandbox = sinon.sandbox.create();
-        });
-
-        afterEach(() => {
-            sandbox.restore();
-        });
-
-        after(() => {
-            nock.cleanAll();
-        });
-
-        it("should add token if handler present", () => {
-            var handler = new AuthorizationHandler({
-                async getToken(scopes: string | string[], options?: any): Promise<any> {
-                    return { token: "testToken", };
-                }
-            });
-            var getAuthorizationHandler = () => {
-                return handler;
-            };
-            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-            var addHeaderStub = sandbox.stub(handler, "addAuthorizationHeader");
-
-            var sender = new Sender(config, getAuthorizationHandler);
-            sender.send([testEnvelope]);
-            assert.ok(addHeaderStub.calledOnce);
-        });
-
-        it("should put telemetry to disk if auth fails", () => {
-            var handler = new AuthorizationHandler({
-                async getToken(scopes: string | string[], options?: any): Promise<any> {
-                    return { token: "testToken", };
-                }
-            });
-            var getAuthorizationHandler = () => {
-                return handler;
-            };
-            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;");
-            var addHeaderStub = sandbox.stub(handler, "addAuthorizationHeader", () => { throw new Error(); });
-
-            var sender = new Sender(config, getAuthorizationHandler);
-            var storeToDiskStub = sandbox.stub(sender, "_storeToDisk");
-            let envelope = new Contracts.Envelope();
-            envelope.name = "TestEnvelope";
-            sender.send([envelope]);
-            assert.ok(addHeaderStub.calledOnce);
-            assert.ok(storeToDiskStub.calledOnce);
-            assert.equal(storeToDiskStub.firstCall.args[0][0].name, "TestEnvelope");
         });
     });
 });

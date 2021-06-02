@@ -58,9 +58,6 @@ class Config {
     /** Disable including legacy headers in outgoing requests, x-ms-request-id */
     public ignoreLegacyHeaders?: boolean;
 
-    /** AAD TokenCredential to use to authenticate the app */
-    public aadTokenCredential?: azureCore.TokenCredential;
-
     private endpointBase: string = Constants.DEFAULT_BREEZE_ENDPOINT;
     private setCorrelationId: (v: string) => void;
     private _profileQueryEndpoint: string;
