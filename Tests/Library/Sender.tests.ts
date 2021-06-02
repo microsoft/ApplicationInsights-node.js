@@ -168,8 +168,11 @@ describe("Library/Sender", () => {
         it("should change ingestion endpoint when redirect response code is returned (308)", (done) => {
             interceptor.reply(308, {}, { "Location": "testLocation" });
             var testSender = new Sender(new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333"));
+            testSender.setDiskRetryMode(true);
+            var storeStub = sandbox.stub(testSender, "_storeToDisk");
             testSender.send([testEnvelope], (responseText) => {
                 assert.equal(testSender["_redirectedHost"], "testLocation");
+                assert.ok(storeStub.calledOnce);
                 done();
             });
         });
