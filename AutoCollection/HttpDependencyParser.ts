@@ -43,6 +43,13 @@ class HttpDependencyParser extends RequestParser {
     }
 
     /**
+     * Called when the ClientRequest emits an abort event.
+     */
+     public onAbort() {
+        this._setStatus(undefined, undefined);
+    }
+
+    /**
      * Gets a dependency data contract object for a completed ClientRequest.
      */
     public getDependencyTelemetry(baseTelemetry?: Contracts.Telemetry, dependencyId?: string): Contracts.DependencyTelemetry {
