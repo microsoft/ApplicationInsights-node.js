@@ -212,7 +212,7 @@ describe("AutoCollection/HttpDependencyParser", () => {
         it("should return non-success for a request abort", () => {
             (<any>request)["method"] = "GET";
             let parser = new HttpDependencyParser("http://bing.com/search", request);
-            parser.onAbort();
+            parser.onError(new Error());
 
             let dependencyTelemetry = parser.getDependencyTelemetry();
             assert.equal(dependencyTelemetry.dependencyTypeName, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);

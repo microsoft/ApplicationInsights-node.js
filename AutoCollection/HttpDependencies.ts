@@ -211,7 +211,7 @@ class AutoCollectHttpDependencies {
                 client.trackDependency(dependencyTelemetry);
             });
             telemetry.request.on('abort', () => {
-                requestParser.onAbort();
+                requestParser.onError(new Error());
 
                 var dependencyTelemetry = requestParser.getDependencyTelemetry(telemetry, uniqueRequestId);
 
