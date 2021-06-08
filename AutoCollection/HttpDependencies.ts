@@ -218,7 +218,6 @@ class AutoCollectHttpDependencies {
                 dependencyTelemetry.contextObjects = dependencyTelemetry.contextObjects || {};
                 dependencyTelemetry.contextObjects["http.RequestOptions"] = telemetry.options;
                 dependencyTelemetry.contextObjects["http.ClientRequest"] = telemetry.request;
-                dependencyTelemetry.contextObjects["Abort"] = true;
 
                 client.trackDependency(dependencyTelemetry);
             });

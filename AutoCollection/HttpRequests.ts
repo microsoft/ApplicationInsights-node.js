@@ -245,7 +245,8 @@ class AutoCollectHttpRequests {
         if (telemetry.request.on) {
             telemetry.request.on("close", () => {
                 if (!isRequestEnd) {
-                    AutoCollectHttpRequests.endRequest(client, requestParser, telemetry, null, null);
+                    const errorMessage = "Request is canceled.";
+                    AutoCollectHttpRequests.endRequest(client, requestParser, telemetry, null, errorMessage);
                 }
             });
         }
