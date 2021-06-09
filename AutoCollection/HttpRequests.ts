@@ -224,10 +224,12 @@ class AutoCollectHttpRequests {
             (<PrivateCustomProperties>correlationContext.customProperties).addHeaderData(requestParser.getCorrelationContextHeader());
         }
 
+        let isRequestFinished  = false;
         // response listeners
         if (telemetry.response.once) {
             telemetry.response.once("finish", () => {
                 AutoCollectHttpRequests.endRequest(client, requestParser, telemetry, null, null);
+                isRequestFinished  = true;
             });
         }
 
@@ -235,6 +237,17 @@ class AutoCollectHttpRequests {
         if (telemetry.request.on) {
             telemetry.request.on("error", (error: any) => {
                 AutoCollectHttpRequests.endRequest(client, requestParser, telemetry, null, error);
+                isRequestFinished  = true;
+            });
+        }
+
+        // track a canceled request if an close is emitted
+        if (telemetry.request.on) {
+            telemetry.request.on("close", () => {
+                if (!isRequestFinished ) {
+                    const errorMessage = "Request is canceled.";
+                    AutoCollectHttpRequests.endRequest(client, requestParser, telemetry, null, errorMessage);
+                }
             });
         }
     }

@@ -210,6 +210,17 @@ class AutoCollectHttpDependencies {
 
                 client.trackDependency(dependencyTelemetry);
             });
+            telemetry.request.on('abort', () => {
+                requestParser.onError(new Error());
+
+                var dependencyTelemetry = requestParser.getDependencyTelemetry(telemetry, uniqueRequestId);
+
+                dependencyTelemetry.contextObjects = dependencyTelemetry.contextObjects || {};
+                dependencyTelemetry.contextObjects["http.RequestOptions"] = telemetry.options;
+                dependencyTelemetry.contextObjects["http.ClientRequest"] = telemetry.request;
+
+                client.trackDependency(dependencyTelemetry);
+            });
         }
     }
 
