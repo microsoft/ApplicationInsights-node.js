@@ -170,29 +170,41 @@ describe("Library/Sender", () => {
 
     describe("#endpoint redirect", () => {
         it("should change ingestion endpoint when redirect response code is returned (308)", (done) => {
-            nockScope = interceptor.reply(308, {}, { "Location": "testLocation" });
+            let redirectHost = "https://test";
+            let redirectLocation = redirectHost + "/v2.1/track";
+            // Fake redirect endpoint
+            let redirectInterceptor = nock(redirectHost)
+                .post("/v2.1/track", (body: string) => {
+                    return true;
+                });
+            redirectInterceptor.reply(200, {});
+
+            nockScope = interceptor.reply(308, {}, { "Location": redirectLocation });
             var testSender = new Sender(new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333"));
             var sendSpy = sandbox.spy(testSender, "send");
-            var callbackTimes = 0;
             testSender.send([testEnvelope], (responseText) => {
-                callbackTimes++;
-                assert.equal(testSender["_redirectedHost"], "testLocation");
+                assert.equal(testSender["_redirectedHost"], redirectLocation);
                 assert.ok(sendSpy.callCount === 2); // Original and redirect calls
-                console.log("sendSpy.count=" + sendSpy.callCount + ";callbackTimes=" + callbackTimes + ";responseText="+responseText);
                 done();
             });
         });
 
         it("should change ingestion endpoint when temporary redirect response code is returned (307)", (done) => {
-            nockScope = interceptor.reply(307, {}, { "Location": "testLocation" });
+            let redirectHost = "https://test";
+            let redirectLocation = redirectHost + "/v2.1/track";
+            // Fake redirect endpoint
+            let redirectInterceptor = nock(redirectHost)
+                .post("/v2.1/track", (body: string) => {
+                    return true;
+                });
+            redirectInterceptor.reply(200, {});
+
+            nockScope = interceptor.reply(307, {}, { "Location": redirectLocation });
             var testSender = new Sender(new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333"));
             var sendSpy = sandbox.spy(testSender, "send");
-            var callbackTimes = 0;
             testSender.send([testEnvelope], (responseText) => {
-                callbackTimes++;
-                assert.equal(testSender["_redirectedHost"], "testLocation");
+                assert.equal(testSender["_redirectedHost"], redirectLocation);
                 assert.ok(sendSpy.callCount === 2); // Original and redirect calls
-                console.log("sendSpy.count=" + sendSpy.callCount + ";callbackTimes=" + callbackTimes + ";responseText="+responseText);
                 done();
             });
         });
