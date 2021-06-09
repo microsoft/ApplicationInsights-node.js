@@ -22,6 +22,7 @@ describe("Library/Sender", () => {
     var testEnvelope = new Contracts.Envelope();
     var sandbox: sinon.SinonSandbox;
     let interceptor: nock.Interceptor;
+    let nockScope: nock.Scope;
 
     before(() => {
         interceptor = nock(Constants.DEFAULT_BREEZE_ENDPOINT)
@@ -36,6 +37,9 @@ describe("Library/Sender", () => {
 
     afterEach(() => {
         sandbox.restore();
+        if (nockScope && nockScope.restore) {
+            nockScope.restore();
+        }
     });
 
     after(() => {
@@ -75,7 +79,8 @@ describe("Library/Sender", () => {
             diskEnvelope.name = "DiskEnvelope";
             sender["_storeToDisk"]([diskEnvelope]);
             var sendSpy = sandbox.spy(sender, "send");
-            interceptor.reply(200, breezeResponse).persist();
+            nockScope = interceptor.reply(200, breezeResponse);
+            nockScope.persist();
             sender["_resendInterval"] = 100;
             sender.send([testEnvelope], (responseText) => {
                 // Wait for resend timer
@@ -91,7 +96,7 @@ describe("Library/Sender", () => {
         it("should put telemetry in disk when retryable code is returned", (done) => {
             var envelope = new Contracts.Envelope();
             envelope.name = "TestRetryable";
-            interceptor.reply(408, null);
+            nockScope = interceptor.reply(408, null);
             var storeStub = sandbox.stub(sender, "_storeToDisk");
             sender.send([envelope], (responseText) => {
                 assert.ok(storeStub.calledOnce);
@@ -120,7 +125,7 @@ describe("Library/Sender", () => {
                 newEnvelope.name = "TestPartial" + i;
                 envelopes.push(newEnvelope);
             }
-            interceptor.reply(206, breezeResponse);
+            nockScope = interceptor.reply(206, breezeResponse);
             var storeStub = sandbox.stub(sender, "_storeToDisk");
             sender.send(envelopes, () => {
                 assert.ok(storeStub.calledOnce);
@@ -165,7 +170,7 @@ describe("Library/Sender", () => {
 
     describe("#endpoint redirect", () => {
         it("should change ingestion endpoint when redirect response code is returned (308)", (done) => {
-            interceptor.reply(308, {}, { "Location": "testLocation" });
+            nockScope = interceptor.reply(308, {}, { "Location": "testLocation" });
             var testSender = new Sender(new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333"));
             var sendSpy = sandbox.spy(testSender, "send");
             testSender.send([testEnvelope], (responseText) => {
@@ -176,7 +181,7 @@ describe("Library/Sender", () => {
         });
 
         it("should change ingestion endpoint when temporary redirect response code is returned (307)", (done) => {
-            interceptor.reply(307, {}, { "Location": "testLocation" });
+            nockScope = interceptor.reply(307, {}, { "Location": "testLocation" });
             var testSender = new Sender(new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333"));
             var sendSpy = sandbox.spy(testSender, "send");
             testSender.send([testEnvelope], (responseText) => {
@@ -187,7 +192,7 @@ describe("Library/Sender", () => {
         });
 
         it("should not change ingestion endpoint if redirect is not triggered", (done) => {
-            interceptor.reply(200, {}, { "Location": "testLocation" });
+            nockScope = interceptor.reply(200, {}, { "Location": "testLocation" });
             var testSender = new Sender(new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333"));
             testSender.send([testEnvelope], (responseText) => {
                 assert.equal(testSender["_redirectedHost"], null);
@@ -206,7 +211,7 @@ describe("Library/Sender", () => {
 
             redirectInterceptor.reply(200, { "redirectProperty": true }).persist();
 
-            interceptor.reply(308, {}, { "Location": redirectLocation });
+            nockScope = interceptor.reply(308, {}, { "Location": redirectLocation });
             var testSender = new Sender(new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333"));
             var sendSpy = sandbox.spy(testSender, "send");
             testSender.send([testEnvelope], (resposneText) => {
@@ -230,7 +235,7 @@ describe("Library/Sender", () => {
                 });
             redirectInterceptor.reply(307, {}, { "Location": Constants.DEFAULT_BREEZE_ENDPOINT + "/v2.1/track" }).persist();
 
-            interceptor.reply(307, {}, { "Location": redirectHost + "/v2.1/track" });
+            nockScope = interceptor.reply(307, {}, { "Location": redirectHost + "/v2.1/track" });
             var testSender = new Sender(new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333"));
             var sendSpy = sandbox.spy(testSender, "send");
             testSender.send([testEnvelope], (responseText) => {
