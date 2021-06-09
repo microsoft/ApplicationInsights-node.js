@@ -137,7 +137,7 @@ describe("Library/Sender", () => {
             sender = new SenderMock(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
         });
 
-        after(()=>{
+        after(() => {
             sender.setDiskRetryMode(false);
         });
 
@@ -167,11 +167,21 @@ describe("Library/Sender", () => {
         it("should change ingestion endpoint when redirect response code is returned (308)", (done) => {
             interceptor.reply(308, {}, { "Location": "testLocation" });
             var testSender = new Sender(new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333"));
-            testSender.setDiskRetryMode(true);
-            var storeStub = sandbox.stub(testSender, "_storeToDisk");
+            var sendSpy = sandbox.spy(testSender, "send");
             testSender.send([testEnvelope], (responseText) => {
                 assert.equal(testSender["_redirectedHost"], "testLocation");
-                assert.ok(storeStub.calledOnce);
+                assert.ok(sendSpy.callCount === 2); // Original and redirect calls
+                done();
+            });
+        });
+
+        it("should change ingestion endpoint when temporary redirect response code is returned (307)", (done) => {
+            interceptor.reply(307, {}, { "Location": "testLocation" });
+            var testSender = new Sender(new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333"));
+            var sendSpy = sandbox.spy(testSender, "send");
+            testSender.send([testEnvelope], (responseText) => {
+                assert.equal(testSender["_redirectedHost"], "testLocation");
+                assert.ok(sendSpy.callCount === 2); // Original and redirect calls
                 done();
             });
         });
@@ -186,21 +196,47 @@ describe("Library/Sender", () => {
         });
 
         it("should use redirect URL for following requests", (done) => {
-            let redirectHost = "https://testLocation";
+            let redirectHost = "https://testlocation";
             let redirectLocation = redirectHost + "/v2.1/track";
             // Fake redirect endpoint
-            nock(redirectHost)
+            let redirectInterceptor = nock(redirectHost)
                 .post("/v2.1/track", (body: string) => {
                     return true;
-                }).reply(200, { "redirectProperty": true });
+                });
+
+            redirectInterceptor.reply(200, { "redirectProperty": true }).persist();
+
             interceptor.reply(308, {}, { "Location": redirectLocation });
             var testSender = new Sender(new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333"));
-            testSender.send([testEnvelope], () => {
+            var sendSpy = sandbox.spy(testSender, "send");
+            testSender.send([testEnvelope], (resposneText) => {
                 assert.equal(testSender["_redirectedHost"], redirectLocation);
-                testSender.send([testEnvelope], (responseText) => {
-                    assert.equal(responseText, '{"redirectProperty":true}');
+                assert.equal(resposneText, '{"redirectProperty":true}');
+                assert.ok(sendSpy.calledTwice);
+                testSender.send([testEnvelope], (secondResponseText) => {
+                    assert.equal(secondResponseText, '{"redirectProperty":true}');
+                    assert.ok(sendSpy.calledThrice);
                     done();
                 });
+            });
+        });
+
+        it("should stop redirecting when circular redirect is triggered", (done) => {
+            let redirectHost = "https://circularredirect";
+            // Fake redirect endpoint
+            let redirectInterceptor = nock(redirectHost)
+                .post("/v2.1/track", (body: string) => {
+                    return true;
+                });
+            redirectInterceptor.reply(307, {}, { "Location": Constants.DEFAULT_BREEZE_ENDPOINT + "/v2.1/track" }).persist();
+
+            interceptor.reply(307, {}, { "Location": redirectHost + "/v2.1/track" });
+            var testSender = new Sender(new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333"));
+            var sendSpy = sandbox.spy(testSender, "send");
+            testSender.send([testEnvelope], (responseText) => {
+                assert.equal(responseText, "Error sending telemetry because of circular redirects.");
+                assert.equal(sendSpy.callCount, 10);
+                done();
             });
         });
 

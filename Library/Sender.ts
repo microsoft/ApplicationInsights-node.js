@@ -34,6 +34,7 @@ class Sender {
     private _enableDiskRetryMode: boolean;
     private _numConsecutiveFailures: number;
     private _numConsecutiveRedirects: number;
+    private _retryAllowed: boolean;
     private _resendTimer: NodeJS.Timer | null;
     private _fileCleanupTimer: NodeJS.Timer;
     private _redirectedHost: string = null;
@@ -190,24 +191,36 @@ class Sender {
                             }
                         }
                         // Redirect handling
-                        if (res.statusCode === 308) { // Permanent Redirect
-                            // Try to get redirect header
-                            const locationHeader = res.headers["location"] ? res.headers["location"].toString() : null;
-                            if (locationHeader) {
-                                this._handleRedirect(locationHeader);
+                        if (res.statusCode === 307 || // Temporary Redirect
+                            res.statusCode === 308) { // Permanent Redirect
+                            this._numConsecutiveRedirects++;
+                            // To prevent circular redirects
+                            if (this._numConsecutiveRedirects < 10) {
+                                // Try to get redirect header
+                                const locationHeader = res.headers["location"] ? res.headers["location"].toString() : null;
+                                if (locationHeader) {
+                                    this._redirectedHost = locationHeader;
+                                    // Send to redirect endpoint as HTTPs library doesn't handle redirect automatically
+                                    this.send(envelopes, callback);
+                                }
                             }
+                            else {
+                                if (typeof callback === "function") {
+                                    callback("Error sending telemetry because of circular redirects.");
+                                }
+                            }
+
                         }
                         else {
                             this._numConsecutiveRedirects = 0;
-                        }
-
-                        Logging.info(Sender.TAG, responseString);
-                        if (typeof this._onSuccess === "function") {
-                            this._onSuccess(responseString);
-                        }
-
-                        if (typeof callback === "function") {
-                            callback(responseString);
+                            this._retryAllowed = true;
+                            if (typeof callback === "function") {
+                                callback(responseString);
+                            }
+                            Logging.info(Sender.TAG, responseString);
+                            if (typeof this._onSuccess === "function") {
+                                this._onSuccess(responseString);
+                            }
                         }
                     });
                 };
@@ -260,21 +273,12 @@ class Sender {
     private _isRetriable(statusCode: number) {
         return (
             statusCode === 206 || // Retriable
-            statusCode === 308 || // Permanent Redirect
             statusCode === 408 || // Timeout
             statusCode === 429 || // Throttle
             statusCode === 439 || // Quota
             statusCode === 500 || // Server Error
             statusCode === 503 // Server Unavilable
         );
-    }
-
-    private _handleRedirect(location: string) {
-        this._numConsecutiveRedirects++;
-        // To prevent circular redirects
-        if (this._numConsecutiveRedirects < 10) {
-            this._redirectedHost = location;
-        }
     }
 
     private _runICACLS(args: string[], callback: (err: Error) => void) {
