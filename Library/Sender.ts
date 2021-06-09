@@ -212,7 +212,6 @@ class Sender {
                         }
                         else {
                             this._numConsecutiveRedirects = 0;
-                            this._retryAllowed = true;
                             if (typeof callback === "function") {
                                 callback(responseString);
                             }
