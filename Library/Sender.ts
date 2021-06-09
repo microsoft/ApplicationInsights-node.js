@@ -34,7 +34,6 @@ class Sender {
     private _enableDiskRetryMode: boolean;
     private _numConsecutiveFailures: number;
     private _numConsecutiveRedirects: number;
-    private _retryAllowed: boolean;
     private _resendTimer: NodeJS.Timer | null;
     private _fileCleanupTimer: NodeJS.Timer;
     private _redirectedHost: string = null;
