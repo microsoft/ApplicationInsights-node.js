@@ -23,6 +23,7 @@ describe("Library/Sender", () => {
     var testEnvelope = new Contracts.Envelope();
     var sandbox: sinon.SinonSandbox;
     let interceptor: nock.Interceptor;
+    let nockScope: nock.Scope;
 
     before(() => {
         interceptor = nock(Constants.DEFAULT_BREEZE_ENDPOINT)
@@ -37,6 +38,9 @@ describe("Library/Sender", () => {
 
     afterEach(() => {
         sandbox.restore();
+        if (nockScope && nockScope.restore) {
+            nockScope.restore();
+        }
     });
 
     after(() => {
@@ -76,7 +80,8 @@ describe("Library/Sender", () => {
             diskEnvelope.name = "DiskEnvelope";
             sender["_storeToDisk"]([diskEnvelope]);
             var sendSpy = sandbox.spy(sender, "send");
-            interceptor.reply(200, breezeResponse).persist();
+            nockScope = interceptor.reply(200, breezeResponse);
+            nockScope.persist();
             sender["_resendInterval"] = 100;
             sender.send([testEnvelope], (responseText) => {
                 // Wait for resend timer
@@ -92,7 +97,7 @@ describe("Library/Sender", () => {
         it("should put telemetry in disk when retryable code is returned", (done) => {
             var envelope = new Contracts.Envelope();
             envelope.name = "TestRetryable";
-            interceptor.reply(408, null);
+            nockScope = interceptor.reply(408, null);
             var storeStub = sandbox.stub(sender, "_storeToDisk");
             sender.send([envelope], (responseText) => {
                 assert.ok(storeStub.calledOnce);
@@ -121,7 +126,7 @@ describe("Library/Sender", () => {
                 newEnvelope.name = "TestPartial" + i;
                 envelopes.push(newEnvelope);
             }
-            interceptor.reply(206, breezeResponse);
+            nockScope = interceptor.reply(206, breezeResponse);
             var storeStub = sandbox.stub(sender, "_storeToDisk");
             sender.send(envelopes, () => {
                 assert.ok(storeStub.calledOnce);
@@ -138,7 +143,7 @@ describe("Library/Sender", () => {
             sender = new SenderMock(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
         });
 
-        after(()=>{
+        after(() => {
             sender.setDiskRetryMode(false);
         });
 
@@ -166,19 +171,47 @@ describe("Library/Sender", () => {
 
     describe("#endpoint redirect", () => {
         it("should change ingestion endpoint when redirect response code is returned (308)", (done) => {
-            interceptor.reply(308, {}, { "Location": "testLocation" });
+            let redirectHost = "https://test";
+            let redirectLocation = redirectHost + "/v2.1/track";
+            // Fake redirect endpoint
+            let redirectInterceptor = nock(redirectHost)
+                .post("/v2.1/track", (body: string) => {
+                    return true;
+                });
+            redirectInterceptor.reply(200, {});
+
+            nockScope = interceptor.reply(308, {}, { "Location": redirectLocation });
             var testSender = new Sender(new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333"));
-            testSender.setDiskRetryMode(true);
-            var storeStub = sandbox.stub(testSender, "_storeToDisk");
+            var sendSpy = sandbox.spy(testSender, "send");
             testSender.send([testEnvelope], (responseText) => {
-                assert.equal(testSender["_redirectedHost"], "testLocation");
-                assert.ok(storeStub.calledOnce);
+                assert.equal(testSender["_redirectedHost"], redirectLocation);
+                assert.ok(sendSpy.callCount === 2); // Original and redirect calls
+                done();
+            });
+        });
+
+        it("should change ingestion endpoint when temporary redirect response code is returned (307)", (done) => {
+            let redirectHost = "https://test";
+            let redirectLocation = redirectHost + "/v2.1/track";
+            // Fake redirect endpoint
+            let redirectInterceptor = nock(redirectHost)
+                .post("/v2.1/track", (body: string) => {
+                    return true;
+                });
+            redirectInterceptor.reply(200, {});
+
+            nockScope = interceptor.reply(307, {}, { "Location": redirectLocation });
+            var testSender = new Sender(new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333"));
+            var sendSpy = sandbox.spy(testSender, "send");
+            testSender.send([testEnvelope], (responseText) => {
+                assert.equal(testSender["_redirectedHost"], redirectLocation);
+                assert.ok(sendSpy.callCount === 2); // Original and redirect calls
                 done();
             });
         });
 
         it("should not change ingestion endpoint if redirect is not triggered", (done) => {
-            interceptor.reply(200, {}, { "Location": "testLocation" });
+            nockScope = interceptor.reply(200, {}, { "Location": "testLocation" });
             var testSender = new Sender(new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333"));
             testSender.send([testEnvelope], (responseText) => {
                 assert.equal(testSender["_redirectedHost"], null);
@@ -187,21 +220,47 @@ describe("Library/Sender", () => {
         });
 
         it("should use redirect URL for following requests", (done) => {
-            let redirectHost = "https://testLocation";
+            let redirectHost = "https://testlocation";
             let redirectLocation = redirectHost + "/v2.1/track";
             // Fake redirect endpoint
-            nock(redirectHost)
+            let redirectInterceptor = nock(redirectHost)
                 .post("/v2.1/track", (body: string) => {
                     return true;
-                }).reply(200, { "redirectProperty": true });
-            interceptor.reply(308, {}, { "Location": redirectLocation });
+                });
+
+            redirectInterceptor.reply(200, { "redirectProperty": true }).persist();
+
+            nockScope = interceptor.reply(308, {}, { "Location": redirectLocation });
             var testSender = new Sender(new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333"));
-            testSender.send([testEnvelope], () => {
+            var sendSpy = sandbox.spy(testSender, "send");
+            testSender.send([testEnvelope], (resposneText) => {
                 assert.equal(testSender["_redirectedHost"], redirectLocation);
-                testSender.send([testEnvelope], (responseText) => {
-                    assert.equal(responseText, '{"redirectProperty":true}');
+                assert.equal(resposneText, '{"redirectProperty":true}');
+                assert.ok(sendSpy.calledTwice);
+                testSender.send([testEnvelope], (secondResponseText) => {
+                    assert.equal(secondResponseText, '{"redirectProperty":true}');
+                    assert.ok(sendSpy.calledThrice);
                     done();
                 });
+            });
+        });
+
+        it("should stop redirecting when circular redirect is triggered", (done) => {
+            let redirectHost = "https://circularredirect";
+            // Fake redirect endpoint
+            let redirectInterceptor = nock(redirectHost)
+                .post("/v2.1/track", (body: string) => {
+                    return true;
+                });
+            redirectInterceptor.reply(307, {}, { "Location": Constants.DEFAULT_BREEZE_ENDPOINT + "/v2.1/track" }).persist();
+
+            nockScope = interceptor.reply(307, {}, { "Location": redirectHost + "/v2.1/track" });
+            var testSender = new Sender(new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333"));
+            var sendSpy = sandbox.spy(testSender, "send");
+            testSender.send([testEnvelope], (responseText) => {
+                assert.equal(responseText, "Error sending telemetry because of circular redirects.");
+                assert.equal(sendSpy.callCount, 10);
+                done();
             });
         });
 
@@ -233,8 +292,8 @@ describe("Library/Sender", () => {
             }, 600);
         });
     });
-  
-  describe("#AuthorizationHandler ", () => {
+
+    describe("#AuthorizationHandler ", () => {
         before(() => {
             nock("https://dc.services.visualstudio.com")
                 .post("/v2.1/track", (body: string) => {
