@@ -21,7 +21,6 @@ export class OpenTelemetryScopeManagerWrapper {
                 if (key === this._activeSymbol) {
                     return context;
                 }
-
                 return false;
             },
             setValue: () => { }
