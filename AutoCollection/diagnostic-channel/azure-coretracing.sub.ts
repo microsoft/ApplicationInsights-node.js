@@ -38,7 +38,7 @@ export const subscriber = (event: IStandardEvent<Span>) => {
 };
 
 export function enable(enabled: boolean, client: TelemetryClient) {
-    let statsBeat = this._client.getStatsBeat();
+    let statsBeat = client.getStatsBeat();
     if (enabled) {
         if (clients.length === 0) {
             channel.subscribe<any>("azure-coretracing", subscriber);

@@ -33,7 +33,7 @@ export const subscriber = (event: IStandardEvent<mysql.IMysqlData>) => {
 };
 
 export function enable(enabled: boolean, client: TelemetryClient) {
-    let statsBeat = this._client.getStatsBeat();
+    let statsBeat = client.getStatsBeat();
     if (enabled) {
         if (clients.length === 0) {
             channel.subscribe<mysql.IMysqlData>("mysql", subscriber);

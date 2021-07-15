@@ -1,13 +1,14 @@
 import os = require("os");
-import TelemetryClient = require("../Library/TelemetryClient");
+import EnvelopeFactory = require("../Library/EnvelopeFactory");
+import Sender = require("../Library/Sender");
 import Constants = require("../Declarations/Constants");
+import Contracts = require("../Declarations/Contracts");
 import AzureVirtualMachine = require("../Library/AzureVirtualMachine");
 import Config = require("../Library/Config");
 import Context = require("../Library/Context");
-import { MetricTelemetry } from "../Declarations/Contracts";
 
 const STATS_BEAT_LANGUAGE = "node";
-const STATS_BEAT_IKEY = "";
+const STATS_BEAT_CONNECTIONSTRING = "{STATS BEAT CONNECTION STRING}}";
 
 
 export class StatsBeat {
@@ -24,11 +25,12 @@ export class StatsBeat {
     private _lastIntervalRequestExecutionTime: number = 0;
 
     private _collectionInterval: number = 900000; // 15 minutes
-    private _client: TelemetryClient;
+    private _sender: Sender;
     private _handle: NodeJS.Timer | null;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _config: Config;
+    private _statsBeatConfig: Config;
 
     // Custom dimensions
     private _resourceProvider: string;
@@ -44,7 +46,8 @@ export class StatsBeat {
     constructor(config?: Config) {
         this._isInitialized = false;
         this._config = config;
-        this._client = new TelemetryClient(STATS_BEAT_IKEY);
+        this._statsBeatConfig = new Config(STATS_BEAT_CONNECTIONSTRING);
+        this._sender = new Sender(this._statsBeatConfig);
     }
 
     public enable(isEnabled: boolean) {
@@ -55,6 +58,10 @@ export class StatsBeat {
         }
         if (isEnabled) {
             if (!this._handle) {
+                this._lastRequests = {
+                    totalRequestCount: this._totalRequestCount,
+                    time: +new Date
+                };
                 this._handle = setInterval(() => {
                     this.trackStatsBeatMetrics()
                 }, this._collectionInterval);
@@ -146,7 +153,7 @@ export class StatsBeat {
         var elapsedMs = requests.time - lastRequests.time;
         var averageRequestExecutionTime = ((this._intervalRequestExecutionTime - this._lastIntervalRequestExecutionTime) / intervalRequests) || 0; // default to 0 in case no requests in this interval
         this._lastIntervalRequestExecutionTime = this._intervalRequestExecutionTime; // reset
-        if (elapsedMs > 0) {
+        if (elapsedMs > 0 && intervalRequests > 0) {
             this._trackStatsBeat(Constants.StatsBeatCounter.REQUEST_DURATION, averageRequestExecutionTime);
         }
         this._lastRequests = requests;
@@ -176,7 +183,7 @@ export class StatsBeat {
     }
 
     private _trackStatsBeat(metricName: string, value: number) {
-        let statsBeat: MetricTelemetry = {
+        let statsBeat: Contracts.MetricTelemetry = {
             name: metricName,
             value: value,
             properties: {
@@ -191,7 +198,9 @@ export class StatsBeat {
                 "feature": this._features,
             }
         };
-        this._client.trackMetric(statsBeat);
+        let envelope = EnvelopeFactory.createEnvelope(statsBeat, Contracts.TelemetryType.Metric, null, null, this._statsBeatConfig);
+        envelope.name = Constants.StatsBeatMetricName;
+        this._sender.send([envelope]);
     }
 
     private _getCustomProperties() {

@@ -31,7 +31,7 @@ export const subscriber = (event: IStandardEvent<redis.IRedisData>) => {
 };
 
 export function enable(enabled: boolean, client: TelemetryClient) {
-    let statsBeat = this._client.getStatsBeat();
+    let statsBeat = client.getStatsBeat();
     if (enabled) {
         if (clients.length === 0) {
             channel.subscribe<redis.IRedisData>("redis", subscriber);

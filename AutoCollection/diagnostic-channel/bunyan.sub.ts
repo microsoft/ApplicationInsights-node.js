@@ -33,7 +33,7 @@ const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
 };
 
 export function enable(enabled: boolean, client: TelemetryClient) {
-    let statsBeat = this._client.getStatsBeat();
+    let statsBeat = client.getStatsBeat();
     if (enabled) {
         if (clients.length === 0) {
             channel.subscribe<bunyan.IBunyanData>("bunyan", subscriber);

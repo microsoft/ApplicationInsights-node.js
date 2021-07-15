@@ -1,5 +1,6 @@
 
 import Config = require("./Config");
+import Logging = require("./Logging");
 import Util = require("./Util");
 import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
 
@@ -8,6 +9,8 @@ const AIMS_API_VERSION = "api-version=2017-12-01";
 const AIMS_FORMAT = "format=json";
 
 class AzureVirtualMachine {
+
+    private static TAG = "AzureVirtualMachine";
 
     public isVM: boolean;
     public id: string;
@@ -51,10 +54,21 @@ class AzureVirtualMachine {
                         this.subscriptionId = data["subscriptionId"] || "";
                         this.osType = data["osType"] || "";
                     }
-                    catch (e) { }
+                    catch (error) { 
+                        // Failed to parse JSON
+                        Logging.warn(AzureVirtualMachine.TAG, error);
+                    }
                 });
             }
         });
+        if (req) {
+            req.on('error', (error: Error) => {
+                // Unable to contact endpoint.
+                // Do nothing for now.
+                Logging.warn(AzureVirtualMachine.TAG, error);
+            });
+            req.end();
+        }
     }
 }
 
