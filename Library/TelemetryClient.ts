@@ -8,7 +8,7 @@ import Contracts = require("../Declarations/Contracts");
 import Channel = require("./Channel");
 import TelemetryProcessors = require("../TelemetryProcessors");
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
-import { StatsBeat } from "../AutoCollection/StatsBeat";
+import { Statsbeat } from "../AutoCollection/Statsbeat";
 import Sender = require("./Sender");
 import Util = require("./Util");
 import Logging = require("./Logging");
@@ -24,7 +24,7 @@ import { Tags } from "../Declarations/Contracts";
 class TelemetryClient {
     private _telemetryProcessors: { (envelope: Contracts.EnvelopeTelemetry, contextObjects: { [name: string]: any; }): boolean; }[] = [];
     private _enableAzureProperties: boolean = false;
-    private _statsBeat: StatsBeat;
+    private _statsbeat: Statsbeat;
 
     public config: Config;
     public context: Context;
@@ -41,9 +41,9 @@ class TelemetryClient {
         this.config = config;
         this.context = new Context();
         this.commonProperties = {};
-        this._statsBeat = new StatsBeat(this.config);
-        this._statsBeat.enable(true);
-        var sender = new Sender(this.config, null, null, this._statsBeat);
+        this._statsbeat = new Statsbeat(this.config);
+        this._statsbeat.enable(true);
+        var sender = new Sender(this.config, null, null, this._statsbeat);
         this.channel = new Channel(() => config.disableAppInsights, () => config.maxBatchSize, () => config.maxBatchIntervalMs, sender);
     }
 
@@ -236,10 +236,10 @@ class TelemetryClient {
     }
 
     /*
-     * Get StatsBeat instance
+     * Get Statsbeat instance
      */
-    public getStatsBeat() {
-        return this._statsBeat;
+    public getStatsbeat() {
+        return this._statsbeat;
     }
 }
 

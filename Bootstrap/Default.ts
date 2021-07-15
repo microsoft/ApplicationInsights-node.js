@@ -103,10 +103,10 @@ export function setupAndStart(setupString = _setupString): typeof types | null {
         _appInsights.defaultClient.addTelemetryProcessor(prefixInternalSdkVersion);
         _appInsights.defaultClient.addTelemetryProcessor(copyOverPrefixInternalSdkVersionToHeartBeatMetric);
         _appInsights.start();
-        // Add attach flag in StatsBeat
-        let statsBeat = _appInsights.defaultClient.getStatsBeat();
-        if (statsBeat) {
-            statsBeat.setCodelessAttach();
+        // Add attach flag in Statsbeat
+        let statsbeat = _appInsights.defaultClient.getStatsbeat();
+        if (statsbeat) {
+            statsbeat.setCodelessAttach();
         }
 
         // Agent successfully instrumented the SDK

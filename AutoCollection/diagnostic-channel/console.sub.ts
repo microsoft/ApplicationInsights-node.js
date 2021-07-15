@@ -2,7 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 import TelemetryClient = require("../../Library/TelemetryClient");
 import { SeverityLevel } from "../../Declarations/Contracts";
-import { StatsBeatInstrumentation } from "../../Declarations/Constants";
+import { StatsbeatInstrumentation } from "../../Declarations/Constants";
 
 import { channel, IStandardEvent } from "diagnostic-channel";
 
@@ -26,12 +26,12 @@ const subscriber = (event: IStandardEvent<consolePub.IConsoleData>) => {
 };
 
 export function enable(enabled: boolean, client: TelemetryClient) {
-    let statsBeat = client.getStatsBeat();
+    let statsbeat = client.getStatsbeat();
     if (enabled) {
         if (clients.length === 0) {
             channel.subscribe<consolePub.IConsoleData>("console", subscriber);
-            if (statsBeat) {
-                statsBeat.addInstrumentation(StatsBeatInstrumentation.CONSOLE);
+            if (statsbeat) {
+                statsbeat.addInstrumentation(StatsbeatInstrumentation.CONSOLE);
             }
         };
         clients.push(client);
@@ -39,8 +39,8 @@ export function enable(enabled: boolean, client: TelemetryClient) {
         clients = clients.filter((c) => c != client);
         if (clients.length === 0) {
             channel.unsubscribe("console", subscriber);
-            if (statsBeat) {
-                statsBeat.removeInstrumentation(StatsBeatInstrumentation.CONSOLE);
+            if (statsbeat) {
+                statsbeat.removeInstrumentation(StatsbeatInstrumentation.CONSOLE);
             }
         }
     }

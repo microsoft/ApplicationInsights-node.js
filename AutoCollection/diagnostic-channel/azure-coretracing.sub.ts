@@ -4,7 +4,7 @@ import { Span } from "@opentelemetry/tracing";
 import { SpanKind } from "@opentelemetry/api";
 
 import TelemetryClient = require("../../Library/TelemetryClient");
-import { StatsBeatInstrumentation } from "../../Declarations/Constants";
+import { StatsbeatInstrumentation } from "../../Declarations/Constants";
 import { channel, IStandardEvent } from "diagnostic-channel";
 
 import Traceparent = require("../../Library/Traceparent");
@@ -38,12 +38,12 @@ export const subscriber = (event: IStandardEvent<Span>) => {
 };
 
 export function enable(enabled: boolean, client: TelemetryClient) {
-    let statsBeat = client.getStatsBeat();
+    let statsbeat = client.getStatsbeat();
     if (enabled) {
         if (clients.length === 0) {
             channel.subscribe<any>("azure-coretracing", subscriber);
-            if (statsBeat) {
-                statsBeat.addInstrumentation(StatsBeatInstrumentation.AZURE_CORE_TRACING);
+            if (statsbeat) {
+                statsbeat.addInstrumentation(StatsbeatInstrumentation.AZURE_CORE_TRACING);
             }
         };
         clients.push(client);
@@ -51,8 +51,8 @@ export function enable(enabled: boolean, client: TelemetryClient) {
         clients = clients.filter((c) => c != client);
         if (clients.length === 0) {
             channel.unsubscribe("azure-coretracing", subscriber);
-            if (statsBeat) {
-                statsBeat.removeInstrumentation(StatsBeatInstrumentation.AZURE_CORE_TRACING);
+            if (statsbeat) {
+                statsbeat.removeInstrumentation(StatsbeatInstrumentation.AZURE_CORE_TRACING);
             }
         }
     }
