@@ -4,7 +4,7 @@ import Logging = require("../Library/Logging");
 import Sender = require("../Library/Sender");
 import Constants = require("../Declarations/Constants");
 import Contracts = require("../Declarations/Contracts");
-import AzureVirtualMachine = require("../Library/AzureVirtualMachine");
+import Vm = require("../Library/AzureVirtualMachine");
 import Config = require("../Library/Config");
 import Context = require("../Library/Context");
 
@@ -66,7 +66,11 @@ export class Statsbeat {
                     time: +new Date
                 };
                 this._handle = setInterval(() => {
-                    this.trackStatsbeatMetrics()
+                    this.trackStatsbeatMetrics().catch((error) => {
+                        // Failed to send Statsbeat
+                        Logging.info(Statsbeat.TAG, error);
+                    }
+                    );
                 }, this._collectionInterval);
                 this._handle.unref(); // Allow the app to terminate even while this loop is going on
             }
@@ -141,15 +145,10 @@ export class Statsbeat {
         this._retryCount++;
     }
 
-    public trackStatsbeatMetrics() {
-        try {
-            this._trackRequestDuration();
-            this._trackRequestsCount();
-        }
-        catch (error) {
-            // Failed to send Statsbeat
-            Logging.info(Statsbeat.TAG, error);
-        }
+    public async trackStatsbeatMetrics() {
+
+        this._trackRequestDuration();
+        this._trackRequestsCount();
     }
 
     private async _trackRequestDuration() {
@@ -224,8 +223,8 @@ export class Statsbeat {
         } else if (process.env.FUNCTIONS_WORKER_RUNTIME) { // Function apps
             this._resourceProvider = Constants.StatsbeatResourceProvider.function;
         } else if (this._config) {
-            let vm = new AzureVirtualMachine(this._config);
-            if (vm.isVM) {
+            let vmInfo = Vm.AzureVirtualMachine.getAzureComputeMetadata(this._config);
+            if (vmInfo.isVM) {
                 this._resourceProvider = Constants.StatsbeatResourceProvider.vm;
             }
         } else {

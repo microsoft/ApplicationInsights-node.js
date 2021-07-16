@@ -1,5 +1,5 @@
 import os = require("os");
-import AzureVirtualMachine = require("../Library/AzureVirtualMachine");
+import Vm = require("../Library/AzureVirtualMachine");
 import TelemetryClient = require("../Library/TelemetryClient");
 import Constants = require("../Declarations/Constants");
 import Config = require("../Library/Config");
@@ -62,11 +62,11 @@ class HeartBeat {
         } else if (process.env.FUNCTIONS_WORKER_RUNTIME) { // Function apps
             properties["azfunction_appId"] = process.env.WEBSITE_HOSTNAME;
         } else if (config) {
-            let vm = new AzureVirtualMachine(config);
-            if (vm.isVM) {
-                properties["azInst_vmId"] = vm.id;
-                properties["azInst_subscriptionId"] = vm.subscriptionId;
-                properties["azInst_osType"] = vm.osType;
+            let vmInfo = Vm.AzureVirtualMachine.getAzureComputeMetadata(config);
+            if (vmInfo.isVM) {
+                properties["azInst_vmId"] = vmInfo.id;
+                properties["azInst_subscriptionId"] = vmInfo.subscriptionId;
+                properties["azInst_osType"] = vmInfo.osType;
             }
         }
         this._client.trackMetric({ name: Constants.HeartBeatMetricName, value: 0, properties: properties });
