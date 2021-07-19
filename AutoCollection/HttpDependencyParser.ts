@@ -123,7 +123,7 @@ class HttpDependencyParser extends RequestParser {
                     options = new url.URL("http://" + options);
                 }
             }
-        } else if (options && typeof url.URL === 'function' && options instanceof URL) {
+        } else if (options && typeof url.URL === 'function' && options instanceof url.URL) {
             return url.format(options);
         } else {
             // Avoid modifying the original options object.
