@@ -9,7 +9,7 @@ import Config = require("../Library/Config");
 import Context = require("../Library/Context");
 
 const STATSBEAT_LANGUAGE = "node";
-const STATSBEAT_CONNECTIONSTRING = "{STATS BEAT CONNECTION STRING}}";
+const STATSBEAT_CONNECTIONSTRING = "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://dc.services.visualstudio.com/";
 
 
 export class Statsbeat {
@@ -34,6 +34,7 @@ export class Statsbeat {
     private _isInitialized: boolean;
     private _config: Config;
     private _statsbeatConfig: Config;
+    private _isVM: boolean;
 
     // Custom dimensions
     private _resourceProvider: string;
@@ -69,8 +70,7 @@ export class Statsbeat {
                     this.trackStatsbeatMetrics().catch((error) => {
                         // Failed to send Statsbeat
                         Logging.info(Statsbeat.TAG, error);
-                    }
-                    );
+                    });
                 }, this._collectionInterval);
                 this._handle.unref(); // Allow the app to terminate even while this loop is going on
             }
@@ -146,9 +146,10 @@ export class Statsbeat {
     }
 
     public async trackStatsbeatMetrics() {
-
-        this._trackRequestDuration();
-        this._trackRequestsCount();
+        this._getResourceProvider(() => {
+            this._trackRequestDuration();
+            this._trackRequestsCount();
+        });
     }
 
     private async _trackRequestDuration() {
@@ -217,19 +218,30 @@ export class Statsbeat {
         this._sdkVersion = Context.sdkVersion; // "node" or "node-nativeperf"
         this._os = os.type();
         this._runtimeVersion = process.version;
+    }
+
+    private _getResourceProvider(callback: () => void) {
         // Check resource provider
+        let waiting: boolean = false;
         if (process.env.WEBSITE_SITE_NAME) { // Web apps
             this._resourceProvider = Constants.StatsbeatResourceProvider.appsvc;
         } else if (process.env.FUNCTIONS_WORKER_RUNTIME) { // Function apps
             this._resourceProvider = Constants.StatsbeatResourceProvider.function;
         } else if (this._config) {
-            let vmInfo = Vm.AzureVirtualMachine.getAzureComputeMetadata(this._config);
-            if (vmInfo.isVM) {
-                this._resourceProvider = Constants.StatsbeatResourceProvider.vm;
+            if (this._isVM === undefined) {
+                waiting = true;
+                Vm.AzureVirtualMachine.getAzureComputeMetadata(this._config, (vmInfo) => {
+                    this._isVM = vmInfo.isVM;
+                    if (this._isVM) {
+                        this._resourceProvider = Constants.StatsbeatResourceProvider.vm;
+                    }
+                    callback();
+                });
             }
         } else {
             this._resourceProvider = Constants.StatsbeatResourceProvider.unknown;
         }
+        callback();
     }
 }
 

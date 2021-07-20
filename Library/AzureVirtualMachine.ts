@@ -7,9 +7,10 @@ import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies
 const AIMS_URI = "http://169.254.169.254/metadata/instance/compute";
 const AIMS_API_VERSION = "api-version=2017-12-01";
 const AIMS_FORMAT = "format=json";
+const ConnectionErrorMessage = "ENETUNREACH";
 
 export interface IVirtualMachineInfo {
-    isVM: boolean;
+    isVM?: boolean;
     id?: string;
     subscriptionId?: string;
     osType?: string;
@@ -19,13 +20,8 @@ export class AzureVirtualMachine {
 
     private static TAG = "AzureVirtualMachine";
 
-    public static getAzureComputeMetadata(config: Config) {
-        let vmInfo: IVirtualMachineInfo = {
-            isVM: false,
-            id: "",
-            subscriptionId: "",
-            osType: "",
-        };
+    public static getAzureComputeMetadata(config: Config, callback: (vm: IVirtualMachineInfo) => void) {
+        let vmInfo: IVirtualMachineInfo = {};
         const metadataRequestUrl = `${AIMS_URI}?${AIMS_API_VERSION}&${AIMS_FORMAT}`;
         const requestOptions = {
             method: 'GET',
@@ -54,18 +50,24 @@ export class AzureVirtualMachine {
                         // Failed to parse JSON
                         Logging.warn(AzureVirtualMachine.TAG, error);
                     }
-                    return vmInfo;
+                    callback(vmInfo);
                 });
+            } else {
+                callback(vmInfo);
             }
         });
         if (req) {
             req.on('error', (error: Error) => {
                 // Unable to contact endpoint.
                 // Do nothing for now.
+                if (error && error.message && error.message.indexOf(ConnectionErrorMessage) > -1) {
+                    vmInfo.isVM = false; // confirm it's not in VM
+                }
                 Logging.warn(AzureVirtualMachine.TAG, error);
+                callback(vmInfo);
             });
             req.end();
-            return vmInfo;
+            
         }
     }
 }

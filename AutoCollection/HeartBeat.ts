@@ -14,6 +14,7 @@ class HeartBeat {
     private _handle: NodeJS.Timer | null;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
+    private _isVM: boolean;
 
     constructor(client: TelemetryClient) {
         if (!HeartBeat.INSTANCE) {
@@ -51,6 +52,7 @@ class HeartBeat {
     }
 
     public trackHeartBeat(config: Config, callback: () => void) {
+        let waiting: boolean = false;
         let properties: { [key: string]: string } = {};
         const sdkVersion = Context.sdkVersion; // "node" or "node-nativeperf"
         properties["sdk"] = sdkVersion;
@@ -62,15 +64,24 @@ class HeartBeat {
         } else if (process.env.FUNCTIONS_WORKER_RUNTIME) { // Function apps
             properties["azfunction_appId"] = process.env.WEBSITE_HOSTNAME;
         } else if (config) {
-            let vmInfo = Vm.AzureVirtualMachine.getAzureComputeMetadata(config);
-            if (vmInfo.isVM) {
-                properties["azInst_vmId"] = vmInfo.id;
-                properties["azInst_subscriptionId"] = vmInfo.subscriptionId;
-                properties["azInst_osType"] = vmInfo.osType;
+            if (this._isVM === undefined) {
+                waiting = true;
+                Vm.AzureVirtualMachine.getAzureComputeMetadata(config, (vmInfo) => {
+                    this._isVM = vmInfo.isVM;
+                    if (this._isVM) {
+                        properties["azInst_vmId"] = vmInfo.id;
+                        properties["azInst_subscriptionId"] = vmInfo.subscriptionId;
+                        properties["azInst_osType"] = vmInfo.osType;
+                    }
+                    this._client.trackMetric({ name: Constants.HeartBeatMetricName, value: 0, properties: properties });
+                    callback();
+                });
             }
         }
-        this._client.trackMetric({ name: Constants.HeartBeatMetricName, value: 0, properties: properties });
-        callback();
+        if (!waiting) {
+            this._client.trackMetric({ name: Constants.HeartBeatMetricName, value: 0, properties: properties });
+            callback();
+        }
     }
 
     public dispose() {
