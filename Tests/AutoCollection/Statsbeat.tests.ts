@@ -102,7 +102,7 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.enable(true);
             const spy = sandbox.spy(statsBeat["_sender"], "send");
             statsBeat.countRequest(123, true);
-            statsBeat.trackStatsbeatMetrics().then((val) => {
+            statsBeat.trackStatsbeatMetrics().then(() => {
                 assert.equal(spy.callCount, 1, "should call sender");
                 let envelope = spy.args[0][0][0];
                 assert.equal(envelope.name, "Statsbeat");
@@ -129,7 +129,7 @@ describe("AutoCollection/Statsbeat", () => {
             const spy = sandbox.spy(statsBeat["_sender"], "send");
             statsBeat.countRequest(1000, true);
             statsBeat.countRequest(500, false);
-            statsBeat.trackStatsbeatMetrics().then((val) => {
+            statsBeat.trackStatsbeatMetrics().then(() => {
                 assert.equal(spy.callCount, 1, "should call sender");
                 let envelope = spy.args[0][0][0];
                 let baseData: Contracts.MetricData = envelope.data.baseData;
@@ -155,7 +155,7 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.countRetry();
             statsBeat.countThrottle();
             statsBeat.countException();
-            statsBeat.trackStatsbeatMetrics().then((val) => {
+            statsBeat.trackStatsbeatMetrics().then(() => {
                 assert.equal(spy.callCount, 1, "should call sender");
                 let envelope = spy.args[0][0][1];
                 let baseData: Contracts.MetricData = envelope.data.baseData;

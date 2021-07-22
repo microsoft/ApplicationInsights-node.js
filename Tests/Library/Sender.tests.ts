@@ -294,7 +294,6 @@ describe("Library/Sender", () => {
     });
 
     describe("#Statsbeat counters", () => {
-
         var breezeResponse: Contracts.BreezeResponse = {
             itemsAccepted: 1,
             itemsReceived: 1,
@@ -308,7 +307,7 @@ describe("Library/Sender", () => {
         it("Succesful requests", (done) => {
             var statsbeatSpy = sandbox.spy(statsbeat, "countRequest");
             nockScope = interceptor.reply(200, breezeResponse);
-            statsbeatSender.send([testEnvelope], (responseText) => {
+            statsbeatSender.send([testEnvelope], () => {
                 assert.ok(statsbeatSpy.calledOnce);
                 assert.ok(!isNaN(statsbeatSpy.args[0][0])); // Duration
                 assert.equal(statsbeatSpy.args[0][1], true); // Success
@@ -320,7 +319,7 @@ describe("Library/Sender", () => {
         it("Failed requests", (done) => {
             var statsbeatSpy = sandbox.spy(statsbeat, "countRequest");
             nockScope = interceptor.reply(400, breezeResponse);
-            statsbeatSender.send([testEnvelope], (responseText) => {
+            statsbeatSender.send([testEnvelope], () => {
                 assert.ok(statsbeatSpy.calledOnce);
                 assert.ok(!isNaN(statsbeatSpy.args[0][0])); // Duration
                 assert.equal(statsbeatSpy.args[0][1], false); // Failed
@@ -333,7 +332,7 @@ describe("Library/Sender", () => {
             var statsbeatSpy = sandbox.spy(statsbeat, "countRequest");
             var retrySpy = sandbox.spy(statsbeat, "countRetry");
             nockScope = interceptor.reply(206, breezeResponse);
-            statsbeatSender.send([testEnvelope], (responseText) => {
+            statsbeatSender.send([testEnvelope], () => {
                 assert.ok(statsbeatSpy.calledOnce);
                 assert.ok(retrySpy.calledOnce);
                 done();
@@ -345,7 +344,7 @@ describe("Library/Sender", () => {
             var statsbeatSpy = sandbox.spy(statsbeat, "countRequest");
             var throttleSpy = sandbox.spy(statsbeat, "countThrottle");
             nockScope = interceptor.reply(429, breezeResponse);
-            statsbeatSender.send([testEnvelope], (responseText) => {
+            statsbeatSender.send([testEnvelope], () => {
                 assert.ok(statsbeatSpy.calledOnce);
                 assert.ok(throttleSpy.calledOnce);
                 done();
@@ -357,7 +356,7 @@ describe("Library/Sender", () => {
             var statsbeatSpy = sandbox.spy(statsbeat, "countRequest");
             var exceptionSpy = sandbox.spy(statsbeat, "countException");
             nockScope = interceptor.replyWithError("Test Error");
-            statsbeatSender.send([testEnvelope], (error) => {
+            statsbeatSender.send([testEnvelope], () => {
                 assert.equal(statsbeatSpy.callCount, 0);
                 assert.ok(exceptionSpy.calledOnce);
                 done();
