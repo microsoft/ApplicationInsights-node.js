@@ -12,7 +12,7 @@ const STATSBEAT_LANGUAGE = "node";
 const STATSBEAT_CONNECTIONSTRING = "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://dc.services.visualstudio.com/";
 
 
-export class Statsbeat {
+class Statsbeat {
 
     private static TAG = "Statsbeat";
 
@@ -35,6 +35,7 @@ export class Statsbeat {
     private _config: Config;
     private _statsbeatConfig: Config;
     private _isVM: boolean;
+    private _statbeatMetrics: Array<{ name: string; value: number }>;
 
     // Custom dimensions
     private _resourceProvider: string;
@@ -49,6 +50,7 @@ export class Statsbeat {
 
     constructor(config?: Config) {
         this._isInitialized = false;
+        this._statbeatMetrics = [];
         this._config = config;
         this._statsbeatConfig = new Config(STATSBEAT_CONNECTIONSTRING);
         this._sender = new Sender(this._statsbeatConfig);
@@ -146,13 +148,14 @@ export class Statsbeat {
     }
 
     public async trackStatsbeatMetrics() {
-        this._getResourceProvider(() => {
+        this._getResourceProvider(async () => {
             this._trackRequestDuration();
             this._trackRequestsCount();
+            await this._sendStatsbeats();
         });
     }
 
-    private async _trackRequestDuration() {
+    private _trackRequestDuration() {
         var lastRequests = this._lastRequests;
         var requests = {
             totalRequestCount: this._totalRequestCount,
@@ -163,53 +166,59 @@ export class Statsbeat {
         var averageRequestExecutionTime = ((this._intervalRequestExecutionTime - this._lastIntervalRequestExecutionTime) / intervalRequests) || 0; // default to 0 in case no requests in this interval
         this._lastIntervalRequestExecutionTime = this._intervalRequestExecutionTime; // reset
         if (elapsedMs > 0 && intervalRequests > 0) {
-            await this._trackStatsbeat(Constants.StatsbeatCounter.REQUEST_DURATION, averageRequestExecutionTime);
+            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_DURATION, value: averageRequestExecutionTime });
         }
         this._lastRequests = requests;
     }
 
-    private async _trackRequestsCount() {
+    private _trackRequestsCount() {
         if (this._totalSuccesfulRequestCount > 0) {
-            await this._trackStatsbeat(Constants.StatsbeatCounter.REQUEST_SUCCESS, this._totalSuccesfulRequestCount);
+            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_SUCCESS, value: this._totalSuccesfulRequestCount });
             this._totalSuccesfulRequestCount = 0; //Reset
         }
         if (this._totalFailedRequestCount > 0) {
-            await this._trackStatsbeat(Constants.StatsbeatCounter.REQUEST_FAILURE, this._totalFailedRequestCount);
+            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_FAILURE, value: this._totalFailedRequestCount });
             this._totalFailedRequestCount = 0; //Reset
         }
         if (this._retryCount > 0) {
-            await this._trackStatsbeat(Constants.StatsbeatCounter.RETRY_COUNT, this._retryCount);
+            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.RETRY_COUNT, value: this._retryCount });
             this._retryCount = 0; //Reset
         }
         if (this._throttleCount > 0) {
-            await this._trackStatsbeat(Constants.StatsbeatCounter.THROTTLE_COUNT, this._throttleCount);
+            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.THROTTLE_COUNT, value: this._throttleCount });
             this._throttleCount = 0; //Reset
         }
         if (this._exceptionCount > 0) {
-            await this._trackStatsbeat(Constants.StatsbeatCounter.EXCEPTION_COUNT, this._exceptionCount);
+            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.EXCEPTION_COUNT, value: this._exceptionCount });
             this._exceptionCount = 0; //Reset
         }
     }
 
-    private async _trackStatsbeat(metricName: string, value: number) {
-        let statsbeat: Contracts.MetricTelemetry = {
-            name: metricName,
-            value: value,
-            properties: {
-                "os": this._os,
-                "rp": this._resourceProvider,
-                "cikey": this._cikey,
-                "runtimeVersion": this._runtimeVersion,
-                "language": this._language,
-                "version": this._sdkVersion,
-                "attach": this._attach,
-                "instrumentation": this._instrumentations,
-                "feature": this._features,
-            }
-        };
-        let envelope = EnvelopeFactory.createEnvelope(statsbeat, Contracts.TelemetryType.Metric, null, null, this._statsbeatConfig);
-        envelope.name = Constants.StatsbeatTelemetryName;
-        await this._sender.send([envelope]);
+    private async _sendStatsbeats() {
+        let envelopes: Array<Contracts.Envelope> = [];
+        let properties = {
+            "os": this._os,
+            "rp": this._resourceProvider,
+            "cikey": this._cikey,
+            "runtimeVersion": this._runtimeVersion,
+            "language": this._language,
+            "version": this._sdkVersion,
+            "attach": this._attach,
+            "instrumentation": this._instrumentations,
+            "feature": this._features,
+        }
+        for (let i = 0; i < this._statbeatMetrics.length; i++) {
+            let statsbeat: Contracts.MetricTelemetry = {
+                name: this._statbeatMetrics[i].name,
+                value: this._statbeatMetrics[i].value,
+                properties: properties
+            };
+            let envelope = EnvelopeFactory.createEnvelope(statsbeat, Contracts.TelemetryType.Metric, null, null, this._statsbeatConfig);
+            envelope.name = Constants.StatsbeatTelemetryName;
+            envelopes.push(envelope);
+        }
+        this._statbeatMetrics = [];
+        await this._sender.send(envelopes);
     }
 
     private _getCustomProperties() {
@@ -228,20 +237,27 @@ export class Statsbeat {
         } else if (process.env.FUNCTIONS_WORKER_RUNTIME) { // Function apps
             this._resourceProvider = Constants.StatsbeatResourceProvider.function;
         } else if (this._config) {
-            if (this._isVM === undefined) {
+            if (this._isVM === undefined) { // First VM check
                 waiting = true;
                 Vm.AzureVirtualMachine.getAzureComputeMetadata(this._config, (vmInfo) => {
                     this._isVM = vmInfo.isVM;
                     if (this._isVM) {
                         this._resourceProvider = Constants.StatsbeatResourceProvider.vm;
+                    } else {
+                        this._resourceProvider = Constants.StatsbeatResourceProvider.unknown;
                     }
                     callback();
                 });
+            } else {
+                this._resourceProvider = Constants.StatsbeatResourceProvider.unknown;
             }
         } else {
             this._resourceProvider = Constants.StatsbeatResourceProvider.unknown;
         }
-        callback();
+        if (!waiting) {
+            callback();
+        }
     }
 }
 
+export = Statsbeat;

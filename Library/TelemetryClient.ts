@@ -8,7 +8,7 @@ import Contracts = require("../Declarations/Contracts");
 import Channel = require("./Channel");
 import TelemetryProcessors = require("../TelemetryProcessors");
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
-import { Statsbeat } from "../AutoCollection/Statsbeat";
+import Statsbeat = require("../AutoCollection/Statsbeat");
 import Sender = require("./Sender");
 import Util = require("./Util");
 import Logging = require("./Logging");

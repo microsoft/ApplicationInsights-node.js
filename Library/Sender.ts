@@ -8,10 +8,11 @@ import child_process = require("child_process");
 import Logging = require("./Logging");
 import Config = require("./Config")
 import Contracts = require("../Declarations/Contracts");
+import Constants = require("../Declarations/Constants");
 import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
+import Statsbeat = require("../AutoCollection/Statsbeat");
 import Util = require("./Util");
-import { Statsbeat } from "../AutoCollection/Statsbeat";
-import { StatsbeatFeature } from "../Declarations/Constants";
+
 
 class Sender {
     private static TAG = "Sender";
@@ -97,7 +98,7 @@ class Sender {
         }
         if (this._enableDiskRetryMode) {
             if (this._statsbeat) {
-                this._statsbeat.addFeature(StatsbeatFeature.DISK_RETRY);
+                this._statsbeat.addFeature(Constants.StatsbeatFeature.DISK_RETRY);
             }
             // Starts file cleanup task
             if (!this._fileCleanupTimer) {
@@ -107,7 +108,7 @@ class Sender {
         }
         else {
             if (this._statsbeat) {
-                this._statsbeat.removeFeature(StatsbeatFeature.DISK_RETRY);
+                this._statsbeat.removeFeature(Constants.StatsbeatFeature.DISK_RETRY);
             }
             if (this._fileCleanupTimer) {
                 clearTimeout(this._fileCleanupTimer);
@@ -276,7 +277,9 @@ class Sender {
                         if (error) {
                             callback(Util.dumpObj(error));
                         }
-                        callback("Error sending telemetry");
+                        else {
+                            callback("Error sending telemetry");
+                        }
                     }
 
                     if (this._enableDiskRetryMode) {
