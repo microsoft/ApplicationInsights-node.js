@@ -112,7 +112,6 @@ describe("AutoCollection/Statsbeat", () => {
                 let baseData: Contracts.MetricData = envelope.data.baseData;
                 assert.equal(baseData.properties["attach"], "sdk");
                 assert.equal(baseData.properties["cikey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-                assert.equal(baseData.properties["feature"], 0);
                 assert.equal(baseData.properties["instrumentation"], 0);
                 assert.equal(baseData.properties["language"], "node");
                 assert.equal(baseData.properties["rp"], "unknown");
