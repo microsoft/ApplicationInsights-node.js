@@ -12,6 +12,7 @@ import Config = require("../../Library/Config");
 describe("AutoCollection/Statsbeat", () => {
     var sandbox: sinon.SinonSandbox;
     const config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+    Statsbeat.CONNECTION_STRING= "InstrumentationKey=2aa22222-bbbb-1ccc-8ddd-eeeeffff3333;"
 
     beforeEach(() => {
         sandbox = sinon.sandbox.create();
@@ -106,7 +107,7 @@ describe("AutoCollection/Statsbeat", () => {
                 assert.equal(spy.callCount, 1, "should call sender");
                 let envelope = spy.args[0][0][0];
                 assert.equal(envelope.name, "Statsbeat");
-                assert.equal(envelope.iKey, "c4a29126-a7cb-47e5-b348-11414998b11e");
+                assert.equal(envelope.iKey, "2aa22222-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert.equal(envelope.data.baseType, "MetricData");
                 let baseData: Contracts.MetricData = envelope.data.baseData;
                 assert.equal(baseData.properties["attach"], "sdk");

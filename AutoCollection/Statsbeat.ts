@@ -9,10 +9,11 @@ import Config = require("../Library/Config");
 import Context = require("../Library/Context");
 
 const STATSBEAT_LANGUAGE = "node";
-const STATSBEAT_CONNECTIONSTRING = "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://dc.services.visualstudio.com/";
-
 
 class Statsbeat {
+
+    public static CONNECTION_STRING = "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://dc.services.visualstudio.com/";
+    public static NETWORK_STATS_COLLECTION_INTERVAL: number = 900000; // 15 minutes
 
     private static TAG = "Statsbeat";
 
@@ -27,7 +28,6 @@ class Statsbeat {
     private _intervalRequestExecutionTime: number = 0;
     private _lastIntervalRequestExecutionTime: number = 0;
 
-    private _collectionInterval: number = 900000; // 15 minutes
     private _sender: Sender;
     private _handle: NodeJS.Timer | null;
     private _isEnabled: boolean;
@@ -52,8 +52,9 @@ class Statsbeat {
         this._isInitialized = false;
         this._statbeatMetrics = [];
         this._config = config;
-        this._statsbeatConfig = new Config(STATSBEAT_CONNECTIONSTRING);
+        this._statsbeatConfig = new Config(Statsbeat.CONNECTION_STRING);
         this._sender = new Sender(this._statsbeatConfig);
+        this._lastRequests = { totalRequestCount: 0, time: 0 };
     }
 
     public enable(isEnabled: boolean) {
@@ -73,7 +74,7 @@ class Statsbeat {
                         // Failed to send Statsbeat
                         Logging.info(Statsbeat.TAG, error);
                     });
-                }, this._collectionInterval);
+                }, Statsbeat.NETWORK_STATS_COLLECTION_INTERVAL);
                 this._handle.unref(); // Allow the app to terminate even while this loop is going on
             }
         } else {
@@ -205,7 +206,6 @@ class Statsbeat {
             "version": this._sdkVersion,
             "attach": this._attach,
             "instrumentation": this._instrumentations,
-            "feature": this._features,
         }
         for (let i = 0; i < this._statbeatMetrics.length; i++) {
             let statsbeat: Contracts.MetricTelemetry = {
