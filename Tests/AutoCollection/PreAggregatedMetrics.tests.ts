@@ -6,27 +6,19 @@ import AutoCollectPreAggregatedMetrics = require("../../AutoCollection/PreAggreg
 import TelemetryClient = require("../../Library/TelemetryClient");
 
 describe("AutoCollection/PreAggregatedMetrics", () => {
-    var sandbox: sinon.SinonSandbox;
-
-    beforeEach(() => {
-        sandbox = sinon.sandbox.create();
-    });
-
     afterEach(() => {
         AppInsights.dispose();
-        sandbox.restore();
     });
-
     describe("#init and #dispose()", () => {
         it("init should enable and dispose should stop autocollection interval", () => {
-            var setIntervalSpy = sandbox.spy(global, "setInterval");
-            var clearIntervalSpy = sandbox.spy(global, "clearInterval");
+            var setIntervalSpy = sinon.spy(global, "setInterval");
+            var clearIntervalSpy = sinon.spy(global, "clearInterval");
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
                 .setAutoCollectHeartbeat(false)
                 .setAutoCollectPerformance(false, false)
                 .setAutoCollectPreAggregatedMetrics(true)
                 .start();
-            assert.equal(setIntervalSpy.callCount, 2, "setInteval should be called once as part of PreAggregatedMetrics initialization and other one for Statsbeat");
+            assert.equal(setIntervalSpy.callCount, 1, "setInteval should be called once as part of PreAggregatedMetrics initialization");
             AppInsights.dispose();
             assert.equal(clearIntervalSpy.callCount, 1, "clearInterval should be called once as part of PreAggregatedMetrics shutdown");
 
@@ -37,16 +29,16 @@ describe("AutoCollection/PreAggregatedMetrics", () => {
 
     describe("#trackRequestMetrics()", () => {
         it("should not produce incorrect metrics because of multiple instances of AutoCollectPreAggregatedMetrics class", (done) => {
-            const setIntervalStub = sandbox.stub(global, "setInterval", () => ({ unref: () => { } }));
-            const clearIntervalSpy = sandbox.spy(global, "clearInterval");
+            const setIntervalStub = sinon.stub(global, "setInterval", () => ({ unref: () => { } }));
+            const clearIntervalSpy = sinon.spy(global, "clearInterval");
             const appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setAutoCollectPerformance(false).start();
             const autoCollect1 = new AutoCollectPreAggregatedMetrics(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"), 1234);
             const autoCollect2 = new AutoCollectPreAggregatedMetrics(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"), 4321);
             autoCollect1.enable(true);
             autoCollect2.enable(true);
             AutoCollectPreAggregatedMetrics.INSTANCE.enable(true);
-            const stub1 = sandbox.stub(autoCollect1["_client"], "trackMetric");
-            const stub2 = sandbox.stub(autoCollect2["_client"], "trackMetric");
+            const stub1 = sinon.stub(autoCollect1["_client"], "trackMetric");
+            const stub2 = sinon.stub(autoCollect2["_client"], "trackMetric");
 
             AutoCollectPreAggregatedMetrics.countRequest(1000, {});
             AutoCollectPreAggregatedMetrics.countRequest(2000, {});
