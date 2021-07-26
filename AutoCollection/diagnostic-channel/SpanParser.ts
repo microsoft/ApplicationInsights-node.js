@@ -29,7 +29,7 @@ export function spanToTelemetryContract(span: Span): (Contracts.DependencyTeleme
         // Translate to AI Dependency format
         const name = `${method} ${pathname}`;
         const dependencyTypeName = Constants.DependencyTypeName.Http;
-        const target = span.attributes[Constants.SpanAttribute.HttpUrl].toString() || undefined;
+        const target = span.attributes[Constants.SpanAttribute.HttpUrl].toString() ? url.hostname : undefined;
         const data = url.toString();
         const resultCode = span.attributes[Constants.SpanAttribute.HttpStatusCode] || span.status.code || 0;
         const success = resultCode < 400; // Status.OK
@@ -65,7 +65,7 @@ export function spanToTelemetryContract(span: Span): (Contracts.DependencyTeleme
         });
         return {
             id, duration, name,
-            target: peerAddress,
+            target: span.attributes[Constants.SpanAttribute.HttpUrl].toString() || undefined,
             data: peerAddress || name,
             url: peerAddress || name,
             dependencyTypeName: span.kind === SpanKind.INTERNAL ? Constants.DependencyTypeName.InProc : span.name,
