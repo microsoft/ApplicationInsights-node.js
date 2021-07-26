@@ -14,6 +14,7 @@ class Statsbeat {
 
     public static CONNECTION_STRING = "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://dc.services.visualstudio.com/";
     public static NETWORK_STATS_COLLECTION_INTERVAL: number = 900000; // 15 minutes
+    public static LONG_STATS_COLLECTION_INTERVAL: number = 1440000; // 1 day
 
     private static TAG = "Statsbeat";
 
@@ -30,15 +31,17 @@ class Statsbeat {
 
     private _sender: Sender;
     private _handle: NodeJS.Timer | null;
+    private _longHandle: NodeJS.Timer | null;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _config: Config;
     private _statsbeatConfig: Config;
     private _isVM: boolean;
-    private _statbeatMetrics: Array<{ name: string; value: number }>;
+    private _statbeatMetrics: Array<{ name: string; value: number, properties: {} }>;
 
     // Custom dimensions
     private _resourceProvider: string;
+    private _resourceIdentifier: string;
     private _sdkVersion: string;
     private _runtimeVersion: string;
     private _os: string;
@@ -70,17 +73,30 @@ class Statsbeat {
                     time: +new Date
                 };
                 this._handle = setInterval(() => {
-                    this.trackStatsbeatMetrics().catch((error) => {
+                    this.trackNetworkStatsbeatMetrics().catch((error) => {
                         // Failed to send Statsbeat
                         Logging.info(Statsbeat.TAG, error);
                     });
                 }, Statsbeat.NETWORK_STATS_COLLECTION_INTERVAL);
                 this._handle.unref(); // Allow the app to terminate even while this loop is going on
             }
+            if (!this._longHandle) {
+                this._longHandle = setInterval(() => {
+                    this.trackStatsbeatMetrics().catch((error) => {
+                        // Failed to send Statsbeat
+                        Logging.info(Statsbeat.TAG, error);
+                    });
+                }, Statsbeat.LONG_STATS_COLLECTION_INTERVAL);
+                this._longHandle.unref(); // Allow the app to terminate even while this loop is going on
+            }
         } else {
             if (this._handle) {
                 clearInterval(this._handle);
                 this._handle = null;
+            }
+            if (this._longHandle) {
+                clearInterval(this._longHandle);
+                this._longHandle = null;
             }
         }
     }
@@ -148,15 +164,52 @@ class Statsbeat {
         this._retryCount++;
     }
 
-    public async trackStatsbeatMetrics() {
+    public async trackNetworkStatsbeatMetrics() {
         this._getResourceProvider(async () => {
-            this._trackRequestDuration();
-            this._trackRequestsCount();
+            let networkProperties = {
+                "os": this._os,
+                "rp": this._resourceProvider,
+                "cikey": this._cikey,
+                "runtimeVersion": this._runtimeVersion,
+                "language": this._language,
+                "version": this._sdkVersion,
+                "attach": this._attach,
+                "instrumentation": this._instrumentations,
+            }
+            this._trackRequestDuration(networkProperties);
+            this._trackRequestsCount(networkProperties);
             await this._sendStatsbeats();
         });
     }
 
-    private _trackRequestDuration() {
+    public async trackStatsbeatMetrics() {
+        this._getResourceProvider(async () => {
+            let attachProperties = {
+                "os": this._os,
+                "rp": this._resourceProvider,
+                "rpid": this._resourceIdentifier,
+                "cikey": this._cikey,
+                "runtimeVersion": this._runtimeVersion,
+                "language": this._language,
+                "version": this._sdkVersion
+            }
+            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.ATTACH, value: 1, properties: attachProperties });
+            let featureProperties = {
+                "os": this._os,
+                "rp": this._resourceProvider,
+                "cikey": this._cikey,
+                "runtimeVersion": this._runtimeVersion,
+                "language": this._language,
+                "version": this._sdkVersion,
+                "attach": this._attach,
+                "feature": this._features,
+            }
+            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: featureProperties });
+            await this._sendStatsbeats();
+        });
+    }
+
+    private _trackRequestDuration(properties: {}) {
         var lastRequests = this._lastRequests;
         var requests = {
             totalRequestCount: this._totalRequestCount,
@@ -167,51 +220,41 @@ class Statsbeat {
         var averageRequestExecutionTime = ((this._intervalRequestExecutionTime - this._lastIntervalRequestExecutionTime) / intervalRequests) || 0; // default to 0 in case no requests in this interval
         this._lastIntervalRequestExecutionTime = this._intervalRequestExecutionTime; // reset
         if (elapsedMs > 0 && intervalRequests > 0) {
-            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_DURATION, value: averageRequestExecutionTime });
+            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_DURATION, value: averageRequestExecutionTime, properties: properties });
         }
         this._lastRequests = requests;
     }
 
-    private _trackRequestsCount() {
+    private _trackRequestsCount(properties: {}) {
         if (this._totalSuccesfulRequestCount > 0) {
-            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_SUCCESS, value: this._totalSuccesfulRequestCount });
+            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_SUCCESS, value: this._totalSuccesfulRequestCount, properties: properties });
             this._totalSuccesfulRequestCount = 0; //Reset
         }
         if (this._totalFailedRequestCount > 0) {
-            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_FAILURE, value: this._totalFailedRequestCount });
+            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_FAILURE, value: this._totalFailedRequestCount, properties: properties });
             this._totalFailedRequestCount = 0; //Reset
         }
         if (this._retryCount > 0) {
-            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.RETRY_COUNT, value: this._retryCount });
+            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.RETRY_COUNT, value: this._retryCount, properties: properties });
             this._retryCount = 0; //Reset
         }
         if (this._throttleCount > 0) {
-            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.THROTTLE_COUNT, value: this._throttleCount });
+            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.THROTTLE_COUNT, value: this._throttleCount, properties: properties });
             this._throttleCount = 0; //Reset
         }
         if (this._exceptionCount > 0) {
-            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.EXCEPTION_COUNT, value: this._exceptionCount });
+            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.EXCEPTION_COUNT, value: this._exceptionCount, properties: properties });
             this._exceptionCount = 0; //Reset
         }
     }
 
     private async _sendStatsbeats() {
         let envelopes: Array<Contracts.Envelope> = [];
-        let properties = {
-            "os": this._os,
-            "rp": this._resourceProvider,
-            "cikey": this._cikey,
-            "runtimeVersion": this._runtimeVersion,
-            "language": this._language,
-            "version": this._sdkVersion,
-            "attach": this._attach,
-            "instrumentation": this._instrumentations,
-        }
         for (let i = 0; i < this._statbeatMetrics.length; i++) {
             let statsbeat: Contracts.MetricTelemetry = {
                 name: this._statbeatMetrics[i].name,
                 value: this._statbeatMetrics[i].value,
-                properties: properties
+                properties: this._statbeatMetrics[i].properties
             };
             let envelope = EnvelopeFactory.createEnvelope(statsbeat, Contracts.TelemetryType.Metric, null, null, this._statsbeatConfig);
             envelope.name = Constants.StatsbeatTelemetryName;
@@ -232,10 +275,15 @@ class Statsbeat {
     private _getResourceProvider(callback: () => void) {
         // Check resource provider
         let waiting: boolean = false;
+        this._resourceIdentifier = Constants.StatsbeatResourceProvider.unknown;
         if (process.env.WEBSITE_SITE_NAME) { // Web apps
             this._resourceProvider = Constants.StatsbeatResourceProvider.appsvc;
+            this._resourceIdentifier = process.env.WEBSITE_SITE_NAME;
         } else if (process.env.FUNCTIONS_WORKER_RUNTIME) { // Function apps
             this._resourceProvider = Constants.StatsbeatResourceProvider.function;
+            if (process.env.WEBSITE_HOSTNAME) {
+                this._resourceIdentifier = process.env.WEBSITE_HOSTNAME;
+            }
         } else if (this._config) {
             if (this._isVM === undefined) { // First VM check
                 waiting = true;
@@ -243,6 +291,7 @@ class Statsbeat {
                     this._isVM = vmInfo.isVM;
                     if (this._isVM) {
                         this._resourceProvider = Constants.StatsbeatResourceProvider.vm;
+                        this._resourceIdentifier = vmInfo.id + "/" + vmInfo.subscriptionId;
                     } else {
                         this._resourceProvider = Constants.StatsbeatResourceProvider.unknown;
                     }
