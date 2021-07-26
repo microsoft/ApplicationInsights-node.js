@@ -7,40 +7,42 @@ import Config = require("../../Library/Config");
 import { AutoCollectNativePerformance } from "../../AutoCollection/NativePerformance";
 
 describe("AutoCollection/NativePerformance", () => {
-    let sinonSpy: sinon.SinonSpy = null;
+    var sandbox: sinon.SinonSandbox;
+
+    beforeEach(() => {
+        sandbox = sinon.sandbox.create();
+    });
+
     afterEach(() => {
         AppInsights.dispose();
-        if (sinonSpy) {
-            sinonSpy.restore();
-        }
+        sandbox.restore();
     });
 
     if (AutoCollectNativePerformance.isNodeVersionCompatible()) {
         describe("#init and #dispose()", () => {
             it("init should enable and dispose should stop autocollection interval", () => {
-                sinonSpy = sinon.spy(global, "setInterval");
-                var clearIntervalSpy = sinon.spy(global, "clearInterval");
+                var setIntervalSpy = sandbox.spy(global, "setInterval");
+                var clearIntervalSpy = sandbox.spy(global, "clearInterval");
 
                 AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
                     .setAutoCollectHeartbeat(false)
                     .setAutoCollectPerformance(false, true)
                     .start();
                 if (AutoCollectNativePerformance["_metricsAvailable"]) {
-                    assert.equal(sinonSpy.callCount, 1, "setInterval should be called once as part of NativePerformance initialization");
+                    assert.equal(setIntervalSpy.callCount, 2, "setInterval should be called once as part of NativePerformance initialization as well as Statsbeat");
                     AppInsights.dispose();
                     assert.equal(clearIntervalSpy.callCount, 1, "clearInterval should be called once as part of NativePerformance shutdown");
                 } else {
-                    assert.equal(sinonSpy.callCount, 0, "setInterval should not be called if NativePerformance package is not available");
+                    assert.equal(setIntervalSpy.callCount, 1, "setInterval should not be called if NativePerformance package is not available, Statsbeat will be called");
                     AppInsights.dispose();
                     assert.equal(clearIntervalSpy.callCount, 0, "clearInterval should not be called if NativePerformance package is not available");
                 }
-                clearIntervalSpy.restore();
             });
 
             it("constructor should be safe to call multiple times", () => {
                 var client = new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 var native = new AutoCollectNativePerformance(client);
-                sinonSpy = sinon.spy(AutoCollectNativePerformance.INSTANCE, "dispose");
+                var sinonSpy = sandbox.spy(AutoCollectNativePerformance.INSTANCE, "dispose");
 
                 assert.ok(native);
                 assert.ok(sinonSpy.notCalled);
@@ -52,7 +54,7 @@ describe("AutoCollection/NativePerformance", () => {
             it("Calling enable multiple times shoud not create multiple timers", () => {
                 var client = new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 var native = new AutoCollectNativePerformance(client);
-                sinonSpy = sinon.spy(global, "setInterval");
+                var sinonSpy = sandbox.spy(global, "setInterval");
 
                 assert.ok(native);
                 assert.doesNotThrow(() => native.enable(true), "Does not throw when trying to enable");
