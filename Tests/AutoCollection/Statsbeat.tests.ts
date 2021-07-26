@@ -186,7 +186,7 @@ describe("AutoCollection/Statsbeat", () => {
         it("Track attach and feature", (done) => {
             const statsBeat: Statsbeat = new Statsbeat(config);
             statsBeat.enable(true);
-            statsBeat.addInstrumentation(Constants.StatsbeatInstrumentation.CONSOLE);
+            statsBeat.addFeature(Constants.StatsbeatFeature.DISK_RETRY);
             const spy = sandbox.spy(statsBeat["_sender"], "send");
             statsBeat.trackStatsbeatMetrics().then(() => {
                 assert.equal(spy.callCount, 1, "should call sender");
@@ -209,7 +209,7 @@ describe("AutoCollection/Statsbeat", () => {
                 assert.equal(baseData.properties["language"], "node");
                 assert.equal(baseData.properties["rp"], "unknown");
                 assert.equal(baseData.properties["attach"], "sdk");
-                assert.equal(baseData.properties["feature"], 4);
+                assert.equal(baseData.properties["feature"], 1);
                 assert.ok(baseData.properties["os"]);
                 assert.ok(baseData.properties["runtimeVersion"]);
                 assert.ok(baseData.properties["version"]);
