@@ -1,4 +1,5 @@
 import Contracts = require("./Contracts")
+import * as conventions from "@opentelemetry/semantic-conventions";
 
 export const DEFAULT_BREEZE_ENDPOINT = "https://dc.services.visualstudio.com";
 export const DEFAULT_LIVEMETRICS_ENDPOINT = "https://rt.services.visualstudio.com";
@@ -123,16 +124,15 @@ export const TelemetryTypeStringToQuickPulseDocumentType: { [key in Contracts.Te
 // OpenTelemetry Span Attributes
 export const SpanAttribute = {
     // HTTP
-    HttpHost: "http.host",
-    HttpMethod: "http.method",
-    HttpPort: "http.port",
-    HttpStatusCode: "http.status_code",
-    HttpUrl: "http.url",
-    HttpUserAgent: "http.user_agent",
+    HttpMethod: conventions.SemanticAttributes.HTTP_METHOD,
+    HttpStatusCode: conventions.SemanticAttributes.HTTP_STATUS_CODE,
+    HttpUrl: conventions.SemanticAttributes.HTTP_URL,
+    HttpUserAgent: conventions.SemanticAttributes.HTTP_USER_AGENT,
 
     // GRPC
-    GrpcMethod: "grpc.method",
-    GrpcService: "rpc.service", // rpc not grpc
+    GrpcStatusCode: conventions.SemanticAttributes.RPC_GRPC_STATUS_CODE,
+    GrpcMethod: conventions.SemanticAttributes.RPC_METHOD, // rpc not grpc
+    GrpcService: conventions.SemanticAttributes.RPC_SERVICE, // rpc not grpc
 };
 
 export const DependencyTypeName = {
