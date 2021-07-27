@@ -41,8 +41,10 @@ class TelemetryClient {
         this.config = config;
         this.context = new Context();
         this.commonProperties = {};
-        this._statsbeat = new Statsbeat(this.config);
-        this._statsbeat.enable(true);
+        if (!process.env["APPLICATION_INSIGHTS_NO_STATSBEAT"]) {
+            this._statsbeat = new Statsbeat(this.config);
+            this._statsbeat.enable(true);
+        }
         var sender = new Sender(this.config, null, null, this._statsbeat);
         this.channel = new Channel(() => config.disableAppInsights, () => config.maxBatchSize, () => config.maxBatchIntervalMs, sender);
     }
