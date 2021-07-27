@@ -73,7 +73,7 @@ class Statsbeat {
                     time: +new Date
                 };
                 this._handle = setInterval(() => {
-                    this.trackNetworkStatsbeatMetrics().catch((error) => {
+                    this.trackShortIntervalStatsbeats().catch((error) => {
                         // Failed to send Statsbeat
                         Logging.info(Statsbeat.TAG, error);
                     });
@@ -82,7 +82,7 @@ class Statsbeat {
             }
             if (!this._longHandle) {
                 this._longHandle = setInterval(() => {
-                    this.trackStatsbeatMetrics().catch((error) => {
+                    this.trackLongIntervalStatsbeats().catch((error) => {
                         // Failed to send Statsbeat
                         Logging.info(Statsbeat.TAG, error);
                     });
@@ -164,7 +164,7 @@ class Statsbeat {
         this._retryCount++;
     }
 
-    public async trackNetworkStatsbeatMetrics() {
+    public async trackShortIntervalStatsbeats() {
         this._getResourceProvider(async () => {
             let networkProperties = {
                 "os": this._os,
@@ -178,12 +178,6 @@ class Statsbeat {
             }
             this._trackRequestDuration(networkProperties);
             this._trackRequestsCount(networkProperties);
-            await this._sendStatsbeats();
-        });
-    }
-
-    public async trackStatsbeatMetrics() {
-        this._getResourceProvider(async () => {
             let attachProperties = {
                 "os": this._os,
                 "rp": this._resourceProvider,
@@ -194,6 +188,12 @@ class Statsbeat {
                 "version": this._sdkVersion
             }
             this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.ATTACH, value: 1, properties: attachProperties });
+            await this._sendStatsbeats();
+        });
+    }
+
+    public async trackLongIntervalStatsbeats() {
+        this._getResourceProvider(async () => {
             let featureProperties = {
                 "os": this._os,
                 "rp": this._resourceProvider,
@@ -275,33 +275,38 @@ class Statsbeat {
     private _getResourceProvider(callback: () => void) {
         // Check resource provider
         let waiting: boolean = false;
+        this._resourceProvider = Constants.StatsbeatResourceProvider.unknown;
         this._resourceIdentifier = Constants.StatsbeatResourceProvider.unknown;
+
         if (process.env.WEBSITE_SITE_NAME) { // Web apps
             this._resourceProvider = Constants.StatsbeatResourceProvider.appsvc;
             this._resourceIdentifier = process.env.WEBSITE_SITE_NAME;
+            if (process.env.WEBSITE_HOME_STAMPNAME) {
+                this._resourceIdentifier += "/" + process.env.WEBSITE_HOME_STAMPNAME;
+            }
         } else if (process.env.FUNCTIONS_WORKER_RUNTIME) { // Function apps
             this._resourceProvider = Constants.StatsbeatResourceProvider.function;
             if (process.env.WEBSITE_HOSTNAME) {
                 this._resourceIdentifier = process.env.WEBSITE_HOSTNAME;
             }
         } else if (this._config) {
-            if (this._isVM === undefined) { // First VM check
+            if (this._isVM === undefined || this._isVM == true) {
                 waiting = true;
                 Vm.AzureVirtualMachine.getAzureComputeMetadata(this._config, (vmInfo) => {
                     this._isVM = vmInfo.isVM;
                     if (this._isVM) {
                         this._resourceProvider = Constants.StatsbeatResourceProvider.vm;
                         this._resourceIdentifier = vmInfo.id + "/" + vmInfo.subscriptionId;
-                    } else {
-                        this._resourceProvider = Constants.StatsbeatResourceProvider.unknown;
+                        // Override OS as VM info have higher precedence
+                        if (vmInfo.osType) {
+                            this._os = vmInfo.osType;
+                        }
                     }
                     callback();
                 });
             } else {
                 this._resourceProvider = Constants.StatsbeatResourceProvider.unknown;
             }
-        } else {
-            this._resourceProvider = Constants.StatsbeatResourceProvider.unknown;
         }
         if (!waiting) {
             callback();

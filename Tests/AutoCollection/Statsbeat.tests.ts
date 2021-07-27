@@ -43,6 +43,7 @@ describe("AutoCollection/Statsbeat", () => {
             const statsBeat: Statsbeat = new Statsbeat(config);
             statsBeat["_getResourceProvider"](() => {
                 assert.equal(statsBeat["_resourceProvider"], "unknown");
+                assert.equal(statsBeat["_resourceIdentifier"], "unknown");
                 done();
             });
 
@@ -52,11 +53,13 @@ describe("AutoCollection/Statsbeat", () => {
             const statsBeat: Statsbeat = new Statsbeat(config);
             var newEnv = <{ [id: string]: string }>{};
             newEnv["WEBSITE_SITE_NAME"] = "Test Website";
+            newEnv["WEBSITE_HOME_STAMPNAME"] = "test_home";
             var originalEnv = process.env;
             process.env = newEnv;
             statsBeat["_getResourceProvider"](() => {
                 process.env = originalEnv;
                 assert.equal(statsBeat["_resourceProvider"], "appsvc");
+                assert.equal(statsBeat["_resourceIdentifier"], "Test Website/test_home");
                 done();
             });
 
@@ -65,12 +68,14 @@ describe("AutoCollection/Statsbeat", () => {
         it("Azure Function", (done) => {
             const statsBeat: Statsbeat = new Statsbeat(config);
             var newEnv = <{ [id: string]: string }>{};
-            newEnv["FUNCTIONS_WORKER_RUNTIME"] = "nodejs";
+            newEnv["FUNCTIONS_WORKER_RUNTIME"] = "test";
+            newEnv["WEBSITE_HOSTNAME"] = "test_host";
             var originalEnv = process.env;
             process.env = newEnv;
             statsBeat["_getResourceProvider"](() => {
                 process.env = originalEnv;
                 assert.equal(statsBeat["_resourceProvider"], "function");
+                assert.equal(statsBeat["_resourceIdentifier"], "test_host");
                 done();
             });
         });
@@ -92,19 +97,21 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat["_getResourceProvider"](() => {
                 process.env = originalEnv;
                 assert.equal(statsBeat["_resourceProvider"], "vm");
+                assert.equal(statsBeat["_resourceIdentifier"], "testId/testsubscriptionId");
+                assert.equal(statsBeat["_os"], "testOsType");
                 done();
             });
         });
     });
 
-    describe("#trackNetworkStatsbeatMetrics", () => {
+    describe("#trackShortIntervalStatsbeats", () => {
         it("It adds correct network properties to custom metric", (done) => {
             const statsBeat: Statsbeat = new Statsbeat(config);
             statsBeat.enable(true);
             const spy = sandbox.spy(statsBeat["_sender"], "send");
             statsBeat.countRequest(123, true);
             statsBeat.setCodelessAttach();
-            statsBeat.trackNetworkStatsbeatMetrics().then(() => {
+            statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.equal(spy.callCount, 1, "should call sender");
                 let envelope = spy.args[0][0][0];
                 assert.equal(envelope.name, "Statsbeat");
@@ -130,7 +137,7 @@ describe("AutoCollection/Statsbeat", () => {
             const spy = sandbox.spy(statsBeat["_sender"], "send");
             statsBeat.countRequest(1000, true);
             statsBeat.countRequest(500, false);
-            statsBeat.trackNetworkStatsbeatMetrics().then(() => {
+            statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.equal(spy.callCount, 1, "should call sender");
                 let envelope = spy.args[0][0][0];
                 let baseData: Contracts.MetricData = envelope.data.baseData;
@@ -156,7 +163,7 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.countRetry();
             statsBeat.countThrottle();
             statsBeat.countException();
-            statsBeat.trackNetworkStatsbeatMetrics().then(() => {
+            statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.equal(spy.callCount, 1, "should call sender");
                 let envelope = spy.args[0][0][1];
                 let baseData: Contracts.MetricData = envelope.data.baseData;
@@ -183,12 +190,11 @@ describe("AutoCollection/Statsbeat", () => {
             });
         });
 
-        it("Track attach and feature", (done) => {
+        it("Track attach", (done) => {
             const statsBeat: Statsbeat = new Statsbeat(config);
             statsBeat.enable(true);
-            statsBeat.addFeature(Constants.StatsbeatFeature.DISK_RETRY);
             const spy = sandbox.spy(statsBeat["_sender"], "send");
-            statsBeat.trackStatsbeatMetrics().then(() => {
+            statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.equal(spy.callCount, 1, "should call sender");
                 let envelope = spy.args[0][0][0];
                 let baseData: Contracts.MetricData = envelope.data.baseData;
@@ -201,8 +207,20 @@ describe("AutoCollection/Statsbeat", () => {
                 assert.ok(baseData.properties["os"]);
                 assert.ok(baseData.properties["runtimeVersion"]);
                 assert.ok(baseData.properties["version"]);
-                envelope = spy.args[0][0][1];
-                baseData = envelope.data.baseData;
+                statsBeat.enable(false);
+                done();
+            });
+        });
+
+        it("Track feature", (done) => {
+            const statsBeat: Statsbeat = new Statsbeat(config);
+            statsBeat.enable(true);
+            statsBeat.addFeature(Constants.StatsbeatFeature.DISK_RETRY);
+            const spy = sandbox.spy(statsBeat["_sender"], "send");
+            statsBeat.trackLongIntervalStatsbeats().then(() => {
+                assert.equal(spy.callCount, 1, "should call sender");
+                let envelope = spy.args[0][0][0];
+                let baseData: Contracts.MetricData = envelope.data.baseData;
                 assert.equal(baseData.metrics[0].name, "Feature");
                 assert.equal(baseData.metrics[0].value, 1);
                 assert.equal(baseData.properties["cikey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
