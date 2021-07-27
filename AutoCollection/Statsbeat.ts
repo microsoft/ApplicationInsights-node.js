@@ -13,8 +13,8 @@ const STATSBEAT_LANGUAGE = "node";
 class Statsbeat {
 
     public static CONNECTION_STRING = "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://dc.services.visualstudio.com/";
-    public static NETWORK_STATS_COLLECTION_INTERVAL: number = 900000; // 15 minutes
-    public static LONG_STATS_COLLECTION_INTERVAL: number = 1440000; // 1 day
+    public static STATS_COLLECTION_SHORT_INTERVAL: number = 900000; // 15 minutes
+    public static STATS_COLLECTION_LONG_INTERVAL: number = 1440000; // 1 day
 
     private static TAG = "Statsbeat";
 
@@ -77,7 +77,7 @@ class Statsbeat {
                         // Failed to send Statsbeat
                         Logging.info(Statsbeat.TAG, error);
                     });
-                }, Statsbeat.NETWORK_STATS_COLLECTION_INTERVAL);
+                }, Statsbeat.STATS_COLLECTION_SHORT_INTERVAL);
                 this._handle.unref(); // Allow the app to terminate even while this loop is going on
             }
             if (!this._longHandle) {
@@ -86,7 +86,7 @@ class Statsbeat {
                         // Failed to send Statsbeat
                         Logging.info(Statsbeat.TAG, error);
                     });
-                }, Statsbeat.LONG_STATS_COLLECTION_INTERVAL);
+                }, Statsbeat.STATS_COLLECTION_LONG_INTERVAL);
                 this._longHandle.unref(); // Allow the app to terminate even while this loop is going on
             }
         } else {
