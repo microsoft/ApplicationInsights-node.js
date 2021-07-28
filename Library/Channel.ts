@@ -3,7 +3,6 @@ import Logging = require("./Logging");
 import Sender = require("./Sender");
 import {AzureLogger, createClientLogger} from "@azure/logger";
 class Channel {
-
     protected _lastSend: number;
     protected _timeoutHandle: any;
     protected _logger: AzureLogger;
