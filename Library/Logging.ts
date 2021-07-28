@@ -9,23 +9,23 @@ class Logging {
 
     public static debug(message?: any, ...optionalParams: any[]) {
         if(Logging.enableDebug) {
-            this.logger.verbose((Logging.TAG + message, optionalParams);
+            this.logger.verbose(Logging.TAG + message, optionalParams);
         }
     }
 
     public static info(message?: any, ...optionalParams: any[]) {
-        this.logger.info((Logging.TAG + message, optionalParams);
+        this.logger.info(Logging.TAG + message, optionalParams);
     }
 
     public static warn(message?: any, ...optionalParams: any[]) {
         if(!Logging.disableWarnings) {
-            this.logger.warning( (Logging.TAG + message, optionalParams);
+            this.logger.warning(Logging.TAG + message, optionalParams);
         }
     }
 
     public static error(message?: any, ...optionalParams: any[]) {
         if(!Logging.disableErrors) {
-            this.logger.error((Logging.TAG + message, optionalParams);
+            this.logger.error(Logging.TAG + message, optionalParams);
         }
     }
 }
