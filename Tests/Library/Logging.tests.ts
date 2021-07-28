@@ -16,21 +16,30 @@ describe("Library/Logging", () => {
             Logging.enableDebug = originalSetting;
         });
 
-        it("should log 'info' if enabled", () => {
+        it("should log 'verbose' if enabled", () => {
             var originalSetting = Logging.enableDebug;
             Logging.enableDebug = true;
-            var infoStub = sinon.stub(Logging.logger, "info");
-            Logging.info("test");
+            var infoStub = sinon.stub(Logging.logger, "verbose");
+            Logging.debug("test");
             assert.ok(infoStub.calledOnce);
             infoStub.restore();
             Logging.enableDebug = originalSetting;
         });
     });
 
+    describe("#info(message, ...optionalParams: any)", () => {
+        it("should log 'info' if called", () => {
+            var infoStub = sinon.stub(Logging.logger, "info");
+            Logging.info("test");
+            assert.ok(infoStub.calledOnce);
+            infoStub.restore();
+        });
+    });
+
     describe("#warn(message, ...optionalParams: any)", () => {
         it("should do nothing if disabled", () => {
             var originalSetting = Logging.disableWarnings;
-            Logging.disableWarnings= true
+            Logging.disableWarnings = true
             var warnStub = sinon.stub(Logging.logger, "warning");
             Logging.warn("test");
             assert.ok(warnStub.notCalled);
@@ -46,6 +55,28 @@ describe("Library/Logging", () => {
             assert.ok(warnStub.calledOnce);
             warnStub.restore();
             Logging.enableDebug = originalSetting;
+        });
+    });
+
+    describe("#error(message, ...optionalParams: any)", () => {
+        it("should do nothing if disabled", () => {
+            var originalSetting = Logging.disableErrors;
+            Logging.disableErrors = true
+            var warnStub = sinon.stub(Logging.logger, "error");
+            Logging.error("test");
+            assert.ok(warnStub.notCalled);
+            warnStub.restore();
+            Logging.disableErrors = originalSetting;
+        });
+
+        it("should log 'error' if enabled", () => {
+            var originalSetting = Logging.disableErrors;
+            Logging.disableErrors = false;
+            var warnStub = sinon.stub(Logging.logger, "error");
+            Logging.error("test");
+            assert.ok(warnStub.calledOnce);
+            warnStub.restore();
+            Logging.disableErrors = originalSetting;
         });
     });
 });

@@ -14,7 +14,7 @@ class CorrelationIdManager {
 
     private static requestIdMaxLength = 1024;
     private static currentRootId = Util.randomu32();
-    private static _logger = createClientLogger('ApplicationInsights:CorrelationIdManager');
+    private static _logger: AzureLogger = createClientLogger('ApplicationInsights:CorrelationIdManager');
 
     public static queryCorrelationId(config: Config, callback: (correlationId: string) => void) {
         // GET request to `${this.endpointBase}/api/profiles/${this.instrumentationKey}/appId`

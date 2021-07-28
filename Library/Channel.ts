@@ -1,11 +1,12 @@
 ﻿import Contracts = require("../Declarations/Contracts");
 import Logging = require("./Logging");
 import Sender = require("./Sender");
-
+import {AzureLogger, createClientLogger} from "@azure/logger";
 class Channel {
 
     protected _lastSend: number;
     protected _timeoutHandle: any;
+    protected _logger: AzureLogger;
 
     protected _isDisabled: () => boolean;
     protected _getBatchSize: () => number;
@@ -21,6 +22,7 @@ class Channel {
         this._getBatchSize = getBatchSize;
         this._getBatchIntervalMs = getBatchIntervalMs;
         this._sender = sender;
+        this._logger = createClientLogger('ApplicationInsights:Channel') as AzureLogger;
     }
 
     /**
@@ -48,7 +50,7 @@ class Channel {
 
         // validate input
         if (!envelope) {
-            Logging.warn("Cannot send null/undefined telemetry");
+            this._logger.warning("Cannot send null/undefined telemetry");
             return;
         }
 

@@ -65,9 +65,10 @@ describe("Library/Sender", () => {
         it("should not crash JSON.stringify", () => {
             var a = <any>{ b: null };
             a.b = a;
-            var warnStub = sandbox.stub(console, "warn");
+            var warnStub = sandbox.stub(sender["_logger"], "warning");
             assert.doesNotThrow(() => sender.send([a]));
             assert.ok(warnStub.calledOnce);
+            warnStub.restore();
         });
 
         it("should try to send telemetry from disk when 200", (done) => {
