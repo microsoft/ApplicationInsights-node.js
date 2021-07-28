@@ -26,7 +26,7 @@ describe("AutoCollection/PreAggregatedMetrics", () => {
                 .setAutoCollectPerformance(false, false)
                 .setAutoCollectPreAggregatedMetrics(true)
                 .start();
-            assert.equal(setIntervalSpy.callCount, 2, "setInteval should be called once as part of PreAggregatedMetrics initialization and other one for Statsbeat");
+            assert.equal(setIntervalSpy.callCount, 3, "setInteval should be called three times as part of PreAggregatedMetrics initialization and other one for Statsbeat");
             AppInsights.dispose();
             assert.equal(clearIntervalSpy.callCount, 1, "clearInterval should be called once as part of PreAggregatedMetrics shutdown");
 
