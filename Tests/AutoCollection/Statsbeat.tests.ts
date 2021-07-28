@@ -12,7 +12,7 @@ import Config = require("../../Library/Config");
 describe("AutoCollection/Statsbeat", () => {
     var sandbox: sinon.SinonSandbox;
     const config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-    Statsbeat.CONNECTION_STRING= "InstrumentationKey=2aa22222-bbbb-1ccc-8ddd-eeeeffff3333;"
+    Statsbeat.CONNECTION_STRING = "InstrumentationKey=2aa22222-bbbb-1ccc-8ddd-eeeeffff3333;"
 
     beforeEach(() => {
         sandbox = sinon.sandbox.create();
@@ -32,9 +32,9 @@ describe("AutoCollection/Statsbeat", () => {
             var setIntervalSpy = sandbox.spy(global, "setInterval");
             var clearIntervalSpy = sandbox.spy(global, "clearInterval");
             let client = new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-            assert.equal(setIntervalSpy.callCount, 1, "setInterval should be called once as part of Statsbeat initialization");
+            assert.equal(setIntervalSpy.callCount, 2, "setInterval should be called twice as part of Statsbeat initialization");
             client.getStatsbeat().enable(false);
-            assert.equal(clearIntervalSpy.callCount, 1, "clearInterval should be called once as part of Statsbeat disable");
+            assert.equal(clearIntervalSpy.callCount, 2, "clearInterval should be called twice as part of Statsbeat disable");
         });
     });
 
@@ -43,6 +43,7 @@ describe("AutoCollection/Statsbeat", () => {
             const statsBeat: Statsbeat = new Statsbeat(config);
             statsBeat["_getResourceProvider"](() => {
                 assert.equal(statsBeat["_resourceProvider"], "unknown");
+                assert.equal(statsBeat["_resourceIdentifier"], "unknown");
                 done();
             });
 
@@ -52,11 +53,13 @@ describe("AutoCollection/Statsbeat", () => {
             const statsBeat: Statsbeat = new Statsbeat(config);
             var newEnv = <{ [id: string]: string }>{};
             newEnv["WEBSITE_SITE_NAME"] = "Test Website";
+            newEnv["WEBSITE_HOME_STAMPNAME"] = "test_home";
             var originalEnv = process.env;
             process.env = newEnv;
             statsBeat["_getResourceProvider"](() => {
                 process.env = originalEnv;
                 assert.equal(statsBeat["_resourceProvider"], "appsvc");
+                assert.equal(statsBeat["_resourceIdentifier"], "Test Website/test_home");
                 done();
             });
 
@@ -65,12 +68,14 @@ describe("AutoCollection/Statsbeat", () => {
         it("Azure Function", (done) => {
             const statsBeat: Statsbeat = new Statsbeat(config);
             var newEnv = <{ [id: string]: string }>{};
-            newEnv["FUNCTIONS_WORKER_RUNTIME"] = "nodejs";
+            newEnv["FUNCTIONS_WORKER_RUNTIME"] = "test";
+            newEnv["WEBSITE_HOSTNAME"] = "test_host";
             var originalEnv = process.env;
             process.env = newEnv;
             statsBeat["_getResourceProvider"](() => {
                 process.env = originalEnv;
                 assert.equal(statsBeat["_resourceProvider"], "function");
+                assert.equal(statsBeat["_resourceIdentifier"], "test_host");
                 done();
             });
         });
@@ -92,25 +97,28 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat["_getResourceProvider"](() => {
                 process.env = originalEnv;
                 assert.equal(statsBeat["_resourceProvider"], "vm");
+                assert.equal(statsBeat["_resourceIdentifier"], "testId/testsubscriptionId");
+                assert.equal(statsBeat["_os"], "testOsType");
                 done();
             });
         });
     });
 
-    describe("#trackStatsbeatMetrics", () => {
-        it("It adds correct properties to custom metric", (done) => {
+    describe("#trackShortIntervalStatsbeats", () => {
+        it("It adds correct network properties to custom metric", (done) => {
             const statsBeat: Statsbeat = new Statsbeat(config);
             statsBeat.enable(true);
             const spy = sandbox.spy(statsBeat["_sender"], "send");
             statsBeat.countRequest(123, true);
-            statsBeat.trackStatsbeatMetrics().then(() => {
+            statsBeat.setCodelessAttach();
+            statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.equal(spy.callCount, 1, "should call sender");
                 let envelope = spy.args[0][0][0];
                 assert.equal(envelope.name, "Statsbeat");
                 assert.equal(envelope.iKey, "2aa22222-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert.equal(envelope.data.baseType, "MetricData");
                 let baseData: Contracts.MetricData = envelope.data.baseData;
-                assert.equal(baseData.properties["attach"], "sdk");
+                assert.equal(baseData.properties["attach"], "codeless");
                 assert.equal(baseData.properties["cikey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert.equal(baseData.properties["instrumentation"], 0);
                 assert.equal(baseData.properties["language"], "node");
@@ -129,7 +137,7 @@ describe("AutoCollection/Statsbeat", () => {
             const spy = sandbox.spy(statsBeat["_sender"], "send");
             statsBeat.countRequest(1000, true);
             statsBeat.countRequest(500, false);
-            statsBeat.trackStatsbeatMetrics().then(() => {
+            statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.equal(spy.callCount, 1, "should call sender");
                 let envelope = spy.args[0][0][0];
                 let baseData: Contracts.MetricData = envelope.data.baseData;
@@ -155,7 +163,7 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.countRetry();
             statsBeat.countThrottle();
             statsBeat.countException();
-            statsBeat.trackStatsbeatMetrics().then(() => {
+            statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.equal(spy.callCount, 1, "should call sender");
                 let envelope = spy.args[0][0][1];
                 let baseData: Contracts.MetricData = envelope.data.baseData;
@@ -177,6 +185,52 @@ describe("AutoCollection/Statsbeat", () => {
                 baseData = envelope.data.baseData;
                 assert.equal(baseData.metrics[0].name, "Exception Count");
                 assert.equal(baseData.metrics[0].value, 1);
+                statsBeat.enable(false);
+                done();
+            });
+        });
+
+        it("Track attach", (done) => {
+            const statsBeat: Statsbeat = new Statsbeat(config);
+            statsBeat.enable(true);
+            const spy = sandbox.spy(statsBeat["_sender"], "send");
+            statsBeat.trackShortIntervalStatsbeats().then(() => {
+                assert.equal(spy.callCount, 1, "should call sender");
+                let envelope = spy.args[0][0][0];
+                let baseData: Contracts.MetricData = envelope.data.baseData;
+                assert.equal(baseData.metrics[0].name, "Attach");
+                assert.equal(baseData.metrics[0].value, 1);
+                assert.equal(baseData.properties["cikey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+                assert.equal(baseData.properties["language"], "node");
+                assert.equal(baseData.properties["rp"], "unknown");
+                assert.equal(baseData.properties["rpid"], "unknown");
+                assert.ok(baseData.properties["os"]);
+                assert.ok(baseData.properties["runtimeVersion"]);
+                assert.ok(baseData.properties["version"]);
+                statsBeat.enable(false);
+                done();
+            });
+        });
+
+        it("Track feature", (done) => {
+            const statsBeat: Statsbeat = new Statsbeat(config);
+            statsBeat.enable(true);
+            statsBeat.addFeature(Constants.StatsbeatFeature.DISK_RETRY);
+            const spy = sandbox.spy(statsBeat["_sender"], "send");
+            statsBeat.trackLongIntervalStatsbeats().then(() => {
+                assert.equal(spy.callCount, 1, "should call sender");
+                let envelope = spy.args[0][0][0];
+                let baseData: Contracts.MetricData = envelope.data.baseData;
+                assert.equal(baseData.metrics[0].name, "Feature");
+                assert.equal(baseData.metrics[0].value, 1);
+                assert.equal(baseData.properties["cikey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+                assert.equal(baseData.properties["language"], "node");
+                assert.equal(baseData.properties["rp"], "unknown");
+                assert.equal(baseData.properties["attach"], "sdk");
+                assert.equal(baseData.properties["feature"], 1);
+                assert.ok(baseData.properties["os"]);
+                assert.ok(baseData.properties["runtimeVersion"]);
+                assert.ok(baseData.properties["version"]);
                 statsBeat.enable(false);
                 done();
             });

@@ -29,11 +29,11 @@ describe("AutoCollection/NativePerformance", () => {
                     .setAutoCollectPerformance(false, true)
                     .start();
                 if (AutoCollectNativePerformance["_metricsAvailable"]) {
-                    assert.equal(setIntervalSpy.callCount, 2, "setInterval should be called once as part of NativePerformance initialization as well as Statsbeat");
+                    assert.equal(setIntervalSpy.callCount, 3, "setInteval should be called three times as part of NativePerformance initialization as well as Statsbeat");
                     AppInsights.dispose();
                     assert.equal(clearIntervalSpy.callCount, 1, "clearInterval should be called once as part of NativePerformance shutdown");
                 } else {
-                    assert.equal(setIntervalSpy.callCount, 1, "setInterval should not be called if NativePerformance package is not available, Statsbeat will be called");
+                    assert.equal(setIntervalSpy.callCount, 2, "setInterval should not be called if NativePerformance package is not available, Statsbeat will be called");
                     AppInsights.dispose();
                     assert.equal(clearIntervalSpy.callCount, 0, "clearInterval should not be called if NativePerformance package is not available");
                 }
@@ -53,8 +53,8 @@ describe("AutoCollection/NativePerformance", () => {
 
             it("Calling enable multiple times shoud not create multiple timers", () => {
                 var client = new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-                var native = new AutoCollectNativePerformance(client);
                 var sinonSpy = sandbox.spy(global, "setInterval");
+                var native = new AutoCollectNativePerformance(client);
 
                 assert.ok(native);
                 assert.doesNotThrow(() => native.enable(true), "Does not throw when trying to enable");

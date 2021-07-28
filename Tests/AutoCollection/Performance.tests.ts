@@ -25,7 +25,7 @@ describe("AutoCollection/Performance", () => {
                 .setAutoCollectHeartbeat(false)
                 .setAutoCollectPerformance(true, false)
                 .start();
-            assert.equal(setIntervalSpy.callCount, 2, "setInterval should be called once as part of performance initialization and also as part of Statsbeat");
+            assert.equal(setIntervalSpy.callCount, 3, "setInteval should be called three times as part of performance initialization and also as part of Statsbeat");
             AppInsights.dispose();
             assert.equal(clearIntervalSpy.callCount, 1, "clearInterval should be called once as part of performance shutdown");
 

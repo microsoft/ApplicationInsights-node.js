@@ -164,6 +164,8 @@ export const StatsbeatCounter = {
     RETRY_COUNT: "Retry Count",
     THROTTLE_COUNT: "Throttle Count",
     EXCEPTION_COUNT: "Exception Count",
+    ATTACH: "Attach",
+    FEATURE: "Feature",
 }
 
 export enum StatsbeatFeature {
