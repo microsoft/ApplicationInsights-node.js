@@ -50,7 +50,7 @@ class AutoCollectExceptions {
                     this._client.trackException({ exception: error });
                     this._client.flush({ isAppCrashing: true });
                     // only rethrow when we are the only listener
-                    if (reThrow && name && process.listeners(name).length === 1) {
+                    if (reThrow && name && (<any>process).listeners(name).length === 1) {
                         Logging.error(error);
                         process.exit(1);
                     }
@@ -59,12 +59,12 @@ class AutoCollectExceptions {
                 if (AutoCollectExceptions._canUseUncaughtExceptionMonitor) {
                     // Node.js >= 13.7.0, use uncaughtExceptionMonitor. It handles both promises and exceptions
                     this._exceptionListenerHandle = handle.bind(this, false, undefined); // never rethrows
-                    process.on(AutoCollectExceptions.UNCAUGHT_EXCEPTION_MONITOR_HANDLER_NAME, this._exceptionListenerHandle);
+                    (<any>process).on(AutoCollectExceptions.UNCAUGHT_EXCEPTION_MONITOR_HANDLER_NAME, this._exceptionListenerHandle);
                 } else {
                     this._exceptionListenerHandle = handle.bind(this, true, AutoCollectExceptions.UNCAUGHT_EXCEPTION_HANDLER_NAME);
                     this._rejectionListenerHandle = handle.bind(this, false, undefined); // never rethrows
-                    process.on(AutoCollectExceptions.UNCAUGHT_EXCEPTION_HANDLER_NAME, this._exceptionListenerHandle);
-                    process.on(AutoCollectExceptions.UNHANDLED_REJECTION_HANDLER_NAME, this._rejectionListenerHandle);
+                    (<any>process).on(AutoCollectExceptions.UNCAUGHT_EXCEPTION_HANDLER_NAME, this._exceptionListenerHandle);
+                    (<any>process).on(AutoCollectExceptions.UNHANDLED_REJECTION_HANDLER_NAME, this._rejectionListenerHandle);
                 }
             }
 

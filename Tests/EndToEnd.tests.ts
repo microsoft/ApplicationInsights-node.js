@@ -15,6 +15,7 @@ import { CorrelationContextManager } from "../AutoCollection/CorrelationContextM
 import HeartBeat = require("../AutoCollection/HeartBeat");
 import TelemetryClient = require("../Library/TelemetryClient");
 import Context = require("../Library/Context");
+import Util = require("../Library/Util");
 
 /**
  * A fake response class that passes by default
@@ -77,9 +78,9 @@ class fakeRequest {
     public agent = { protocol: 'http' };
     private _responseData: any;
 
-    constructor(private failImmediatly: boolean = true, public url: string = undefined, responseData?: any) { 
+    constructor(private failImmediatly: boolean = true, public url: string = undefined, responseData?: any) {
         this._responseData = responseData;
-     }
+    }
 
     public on(event: string, callback: Function) {
         this.callbacks[event] = callback;
@@ -153,12 +154,16 @@ class fakeHttpsServer extends events.EventEmitter {
 
 describe("EndToEnd", () => {
 
+    var request: sinon.SinonStub;
+
+    Util.tlsRestrictedAgent = new https.Agent();
+
     describe("Basic usage", () => {
         var sandbox: sinon.SinonSandbox;
 
         beforeEach(() => {
             sandbox = sinon.sandbox.create();
-            this.request = sandbox.stub(https, "request", (options: any, callback: any) => {
+            request = sandbox.stub(https, "request", (options: any, callback: any) => {
                 var req = new fakeRequest(false);
                 req.on("end", callback);
                 return req;
@@ -174,8 +179,8 @@ describe("EndToEnd", () => {
         });
 
         it("should send telemetry", (done) => {
-            const expectedTelemetryData: AppInsights.Contracts.AvailabilityTelemetry =  {
-                duration: 100, id: "id1", message: "message1",success : true, name: "name1", runLocation: "east us"
+            const expectedTelemetryData: AppInsights.Contracts.AvailabilityTelemetry = {
+                duration: 100, id: "id1", message: "message1", success: true, name: "name1", runLocation: "east us"
             };
 
             var client = new AppInsights.TelemetryClient("iKey");
@@ -242,7 +247,7 @@ describe("EndToEnd", () => {
         });
 
         it("should collect http dependency telemetry", (done) => {
-            this.request.restore();
+            request.restore();
             var eventEmitter = new EventEmitter();
             (<any>eventEmitter).method = "GET";
             sandbox.stub(http, 'request', (url: string, c: Function) => {
@@ -266,7 +271,7 @@ describe("EndToEnd", () => {
         });
 
         it("should collect https dependency telemetry", (done) => {
-            this.request.restore();
+            request.restore();
             var eventEmitter = new EventEmitter();
             (<any>eventEmitter).method = "GET";
             sandbox.stub(https, 'request', (url: string, c: Function) => {
@@ -387,24 +392,31 @@ describe("EndToEnd", () => {
         var readFile: sinon.SinonStub;
         var lstat: sinon.SinonStub;
         var mkdir: sinon.SinonStub;
+        var exists: sinon.SinonStub;
+        var existsSync: sinon.SinonStub;
+        var readdir: sinon.SinonStub;
+        var readdirSync: sinon.SinonStub;
+        var stat: sinon.SinonStub;
+        var statSync: sinon.SinonStub;
+        var mkdirSync: sinon.SinonStub;
         var spawn: sinon.SinonStub;
         var spawnSync: sinon.SinonStub;
 
         beforeEach(() => {
             AppInsights.defaultClient = undefined;
             cidStub = sinon.stub(CorrelationIdManager, 'queryCorrelationId'); // TODO: Fix method of stubbing requests to allow CID to be part of E2E tests
-            this.request = sinon.stub(https, 'request');
+            request = sinon.stub(https, 'request');
             writeFile = sinon.stub(fs, 'writeFile');
             writeFileSync = sinon.stub(fs, 'writeFileSync');
-            this.exists = sinon.stub(fs, 'exists').yields(true);
-            this.existsSync = sinon.stub(fs, 'existsSync').returns(true);
-            this.readdir = sinon.stub(fs, 'readdir').yields(null, ['1.ai.json']);
-            this.readdirSync = sinon.stub(fs, 'readdirSync').returns(['1.ai.json']);
-            this.stat = sinon.stub(fs, 'stat').yields(null, {isFile: () => true, size: 8000});
-            this.statSync = sinon.stub(fs, 'statSync').returns({isFile: () => true, size: 8000});
-            lstat = sinon.stub(fs, 'lstat').yields(null, {isDirectory: () => true});
+            exists = sinon.stub(fs, 'exists').yields(true);
+            existsSync = sinon.stub(fs, 'existsSync').returns(true);
+            readdir = sinon.stub(fs, 'readdir').yields(null, ['1.ai.json']);
+            readdirSync = sinon.stub(fs, 'readdirSync').returns(['1.ai.json']);
+            stat = sinon.stub(fs, 'stat').yields(null, { isFile: () => true, size: 8000 });
+            statSync = sinon.stub(fs, 'statSync').returns({ isFile: () => true, size: 8000 });
+            lstat = sinon.stub(fs, 'lstat').yields(null, { isDirectory: () => true });
             mkdir = sinon.stub(fs, 'mkdir').yields(null);
-            this.mkdirSync = sinon.stub(fs, 'mkdirSync').returns(null);
+            mkdirSync = sinon.stub(fs, 'mkdirSync').returns(null);
             readFile = sinon.stub(fs, 'readFile').yields(null, '');
             spawn = sinon.stub(child_process, 'spawn').returns({
                 on: (type: string, cb: any) => {
@@ -421,25 +433,25 @@ describe("EndToEnd", () => {
                 }
             });
             if (child_process.spawnSync) {
-                spawnSync = sinon.stub(child_process, 'spawnSync').returns({status: 0, stdout: 'stdoutmock'});
+                spawnSync = sinon.stub(child_process, 'spawnSync').returns({ status: 0, stdout: 'stdoutmock' });
             }
         });
 
         afterEach(() => {
             cidStub.restore();
-            this.request.restore();
+            request.restore();
             writeFile.restore();
-            this.exists.restore();
-            this.readdir.restore();
+            exists.restore();
+            readdir.restore();
             readFile.restore();
             writeFileSync.restore();
-            this.existsSync.restore();
-            this.stat.restore();
+            existsSync.restore();
+            stat.restore();
             lstat.restore();
             mkdir.restore();
-            this.mkdirSync.restore();
-            this.readdirSync.restore();
-            this.statSync.restore();
+            mkdirSync.restore();
+            readdirSync.restore();
+            statSync.restore();
             spawn.restore();
             if (child_process.spawnSync) {
                 spawnSync.restore();
@@ -453,7 +465,7 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             setImmediate(() => {
                 client.flush({
@@ -476,7 +488,7 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             setImmediate(() => {
                 client.flush({
@@ -500,7 +512,7 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             client.flush({
                 callback: (response: any) => {
@@ -532,7 +544,7 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             client.flush({
                 callback: (response: any) => {
@@ -587,7 +599,7 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             client.flush({
                 callback: (response: any) => {
@@ -632,7 +644,7 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             client.flush({
                 callback: (response: any) => {
@@ -642,7 +654,7 @@ describe("EndToEnd", () => {
                         assert.equal(tempSpawn.callCount, 1);
 
                         client.trackEvent({ name: "test event" });
-                        this.request.returns(req);
+                        request.returns(req);
 
                         client.flush({
                             callback: (response: any) => {
@@ -689,7 +701,7 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             client.flush({
                 callback: (response: any) => {
@@ -699,7 +711,7 @@ describe("EndToEnd", () => {
                         assert.equal(tempSpawn.callCount, 1);
 
                         client.trackEvent({ name: "test event" });
-                        this.request.returns(req);
+                        request.returns(req);
 
                         client.flush({
                             callback: (response: any) => {
@@ -743,7 +755,7 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             client.flush({
                 callback: (response: any) => {
@@ -762,7 +774,7 @@ describe("EndToEnd", () => {
 
         it("creates directory when nonexistent", (done) => {
             lstat.restore();
-            var tempLstat = sinon.stub(fs, 'lstat').yields({code: "ENOENT"}, null);
+            var tempLstat = sinon.stub(fs, 'lstat').yields({ code: "ENOENT" }, null);
 
             var req = new fakeRequest();
 
@@ -771,7 +783,7 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             client.flush({
                 callback: (response: any) => {
@@ -799,7 +811,7 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             client.flush({
                 callback: (response: any) => {
@@ -822,14 +834,14 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
-            this.request.yields(res);
+            request.returns(req);
+            request.yields(res);
 
             client.flush({
                 callback: (response: any) => {
                     // wait until sdk looks for offline files
                     setTimeout(() => {
-                        assert(this.readdir.callCount === 1);
+                        assert(readdir.callCount === 1);
                         assert(readFile.callCount === 1);
                         assert.equal(
                             path.dirname(readFile.firstCall.args[0]),
@@ -850,11 +862,11 @@ describe("EndToEnd", () => {
 
                 client.trackEvent({ name: "test event" });
 
-                this.request.returns(req);
+                request.returns(req);
 
                 client.channel.triggerSend(true);
 
-                assert(this.existsSync.callCount === 1);
+                assert(existsSync.callCount === 1);
                 assert(writeFileSync.callCount === 1);
                 assert.equal(spawnSync.callCount, os.type() === "Windows_NT" ? 1 : 0); // This is implicitly testing caching of ACL identity (otherwise call count would be 2 like it is the non-sync time)
                 assert.equal(
@@ -876,11 +888,11 @@ describe("EndToEnd", () => {
 
                 client.trackEvent({ name: "test event" });
 
-                this.request.returns(req);
+                request.returns(req);
 
                 client.channel.triggerSend(true);
 
-                assert(this.existsSync.callCount === 1);
+                assert(existsSync.callCount === 1);
                 assert(writeFileSync.callCount === 0);
                 (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
             }
@@ -898,11 +910,11 @@ describe("EndToEnd", () => {
 
                 client.trackEvent({ name: "test event" });
 
-                this.request.returns(req);
+                request.returns(req);
 
                 client.channel.triggerSend(true);
 
-                assert(this.existsSync.callCount === 1);
+                assert(existsSync.callCount === 1);
                 assert(writeFileSync.callCount === 1);
                 assert.equal(
                     path.dirname(writeFileSync.firstCall.args[0]),
@@ -927,7 +939,7 @@ describe("EndToEnd", () => {
 
                 client.trackEvent({ name: "test event" });
 
-                this.request.returns(req);
+                request.returns(req);
 
                 client.channel.triggerSend(true);
 
@@ -949,7 +961,7 @@ describe("EndToEnd", () => {
         it("refuses to cache payload when process crashes if ICACLS fails", () => {
             if (child_process.spawnSync) { // Doesn't exist in Node < 0.11.12
                 spawnSync.restore();
-                var tempSpawnSync = sinon.stub(child_process, 'spawnSync').returns({status: 2000});
+                var tempSpawnSync = sinon.stub(child_process, 'spawnSync').returns({ status: 2000 });
             }
 
             var req = new fakeRequest(true);
@@ -961,11 +973,11 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            this.request.returns(req);
+            request.returns(req);
 
             client.channel.triggerSend(true);
 
-            assert(this.existsSync.callCount === 1);
+            assert(existsSync.callCount === 1);
             assert(writeFileSync.callCount === 0);
 
             if (child_process.spawnSync) {
@@ -1007,24 +1019,24 @@ describe("EndToEnd", () => {
             heartbeat.enable(true, client.config);
             HeartBeat.INSTANCE.enable(true, client.config);
             const trackMetricStub = sinon.stub(heartbeat["_client"], "trackMetric");
-            
-            heartbeat["trackHeartBeat"](client.config, () => {
-                assert.equal(trackMetricStub.callCount, 1, "should call trackMetric for the VM heartbeat metric");	
-                assert.equal(trackMetricStub.args[0][0].name, "HeartBeat", "should use correct name for heartbeat metric");	
-                assert.equal(trackMetricStub.args[0][0].value, 0, "value should be 0");	
-                const keys = Object.keys(trackMetricStub.args[0][0].properties);	
-                assert.equal(keys.length, 5, "should have 4 kv pairs added when resource type is VM");	
-                assert.equal(keys[0], "sdk", "sdk should be added as a key");	
-                assert.equal(keys[1], "osType", "osType should be added as a key");
-                assert.equal(keys[2], "azInst_vmId",  "azInst_vmId should be added as a key");	
-                assert.equal(keys[3], "azInst_subscriptionId", "azInst_subscriptionId should be added as a key");	
-                assert.equal(keys[4], "azInst_osType", "azInst_osType should be added as a key");	
 
-                const properties = trackMetricStub.args[0][0].properties;	
-                assert.equal(properties["sdk"], Context.sdkVersion, "sdk version should be read from Context");	
+            heartbeat["trackHeartBeat"](client.config, () => {
+                assert.equal(trackMetricStub.callCount, 1, "should call trackMetric for the VM heartbeat metric");
+                assert.equal(trackMetricStub.args[0][0].name, "HeartBeat", "should use correct name for heartbeat metric");
+                assert.equal(trackMetricStub.args[0][0].value, 0, "value should be 0");
+                const keys = Object.keys(trackMetricStub.args[0][0].properties);
+                assert.equal(keys.length, 5, "should have 4 kv pairs added when resource type is VM");
+                assert.equal(keys[0], "sdk", "sdk should be added as a key");
+                assert.equal(keys[1], "osType", "osType should be added as a key");
+                assert.equal(keys[2], "azInst_vmId", "azInst_vmId should be added as a key");
+                assert.equal(keys[3], "azInst_subscriptionId", "azInst_subscriptionId should be added as a key");
+                assert.equal(keys[4], "azInst_osType", "azInst_osType should be added as a key");
+
+                const properties = trackMetricStub.args[0][0].properties;
+                assert.equal(properties["sdk"], Context.sdkVersion, "sdk version should be read from Context");
                 assert.equal(properties["osType"], os.type(), "osType should be read from os library");
-                assert.equal(properties["azInst_vmId"], "1", "azInst_vmId should be read from response");	
-                assert.equal(properties["azInst_subscriptionId"], "2", "azInst_subscriptionId should be read from response");	
+                assert.equal(properties["azInst_vmId"], "1", "azInst_vmId should be read from response");
+                assert.equal(properties["azInst_subscriptionId"], "2", "azInst_subscriptionId should be read from response");
                 assert.equal(properties["azInst_osType"], "Windows_NT", "azInst_osType should be read from response");
                 trackMetricStub.restore();
                 heartbeat.dispose();
@@ -1046,18 +1058,18 @@ describe("EndToEnd", () => {
             heartbeat.enable(true, client.config);
             HeartBeat.INSTANCE.enable(true, client.config);
             const trackMetricStub = sinon.stub(heartbeat["_client"], "trackMetric");
-            
-            heartbeat["trackHeartBeat"](client.config, () => {
-                assert.equal(trackMetricStub.callCount, 1, "should call trackMetric as heartbeat metric");	
-                assert.equal(trackMetricStub.args[0][0].name, "HeartBeat", "should use correct name for heartbeat metric");	
-                assert.equal(trackMetricStub.args[0][0].value, 0, "value should be 0");	
-                const keys = Object.keys(trackMetricStub.args[0][0].properties);	
-                assert.equal(keys.length, 2, "should have 2 kv pairs added when resource type is not web app, not function app, not VM");	
-                assert.equal(keys[0], "sdk", "sdk should be added as a key");	
-                assert.equal(keys[1], "osType", "osType should be added as a key");	
 
-                const properties = trackMetricStub.args[0][0].properties;	
-                assert.equal(properties["sdk"], Context.sdkVersion, "sdk version should be read from Context");	
+            heartbeat["trackHeartBeat"](client.config, () => {
+                assert.equal(trackMetricStub.callCount, 1, "should call trackMetric as heartbeat metric");
+                assert.equal(trackMetricStub.args[0][0].name, "HeartBeat", "should use correct name for heartbeat metric");
+                assert.equal(trackMetricStub.args[0][0].value, 0, "value should be 0");
+                const keys = Object.keys(trackMetricStub.args[0][0].properties);
+                assert.equal(keys.length, 2, "should have 2 kv pairs added when resource type is not web app, not function app, not VM");
+                assert.equal(keys[0], "sdk", "sdk should be added as a key");
+                assert.equal(keys[1], "osType", "osType should be added as a key");
+
+                const properties = trackMetricStub.args[0][0].properties;
+                assert.equal(properties["sdk"], Context.sdkVersion, "sdk version should be read from Context");
                 assert.equal(properties["osType"], os.type(), "osType should be read from os library");
                 trackMetricStub.restore();
                 heartbeat.dispose();

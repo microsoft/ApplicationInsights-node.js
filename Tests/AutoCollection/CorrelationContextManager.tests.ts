@@ -4,7 +4,7 @@ import * as azureFunctionTypes from "../../Library/Functions";
 import assert = require("assert");
 import sinon = require("sinon");
 import Traceparent = require("../../Library/Traceparent");
-import { ISpanContext } from "diagnostic-channel";
+import { SpanContext } from "@opentelemetry/api";
 
 const customProperties = {
     getProperty(prop: string) {return ""},
@@ -233,9 +233,10 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
         });
 
         describe("#startOperation()", () => {
-            const spanContext: ISpanContext = {
+            const spanContext: SpanContext = {
                 traceId: '5e84aff3af474588a42dcbf3bd1db95f',
                 spanId: '1fc066fb77fa43a3',
+                traceFlags: 0
             };
             const functionContext: azureFunctionTypes.TraceContext = {
                 traceparent: "00-5e84aff3af474588a42dcbf3bd1db95f-1fc066fb77fa43a3-00",

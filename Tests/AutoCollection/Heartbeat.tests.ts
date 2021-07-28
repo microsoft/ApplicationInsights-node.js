@@ -20,10 +20,11 @@ describe("AutoCollection/HeartBeat", () => {
             var setIntervalSpy = sinon.spy(global, "setInterval");
             var clearIntervalSpy = sinon.spy(global, "clearInterval");
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
+                .setAutoCollectPreAggregatedMetrics(false)
                 .setAutoCollectPerformance(false, false)
                 .setAutoCollectHeartbeat(true)
                 .start();
-            assert.equal(setIntervalSpy.callCount, 1, "setInteval should be called once as part of heartbeat initialization");
+            assert.equal(setIntervalSpy.callCount, 2, "setInteval should be called twice as part of heartbeat initialization, StatsBeat and Heartbeat");
             AppInsights.dispose();
             assert.equal(clearIntervalSpy.callCount, 1, "clearInterval should be called once as part of heartbeat shutdown");
 
@@ -39,10 +40,10 @@ describe("AutoCollection/HeartBeat", () => {
             HeartBeat.INSTANCE.enable(true, client.config);
             const stub1 = sinon.stub(heartbeat1["_client"], "trackMetric");
 
-            var env1 = <{[id: string]: string}>{};
+            var env1 = <{ [id: string]: string }>{};
 
             env1["WEBSITE_SITE_NAME"] = "site_name";
-            env1[ "WEBSITE_HOME_STAMPNAME"] = "stamp_name";
+            env1["WEBSITE_HOME_STAMPNAME"] = "stamp_name";
             env1["WEBSITE_HOSTNAME"] = "host_name";
 
             var originalEnv = process.env;
@@ -79,27 +80,27 @@ describe("AutoCollection/HeartBeat", () => {
             HeartBeat.INSTANCE.enable(true, client.config);
             const stub2 = sinon.stub(heartbeat2["_client"], "trackMetric");
 
-            var env2 = <{[id: string]: string}>{};
-            
+            var env2 = <{ [id: string]: string }>{};
+
             env2["FUNCTIONS_WORKER_RUNTIME"] = "nodejs";
             env2["WEBSITE_HOSTNAME"] = "host_name";
 
             var originalEnv = process.env;
             process.env = env2;
-        
+
             heartbeat2["trackHeartBeat"](client.config, () => {
                 assert.equal(stub2.callCount, 1, "should call trackMetric for the VM heartbeat metric");
                 assert.equal(stub2.args[0][0].name, "HeartBeat", "should use correct name for heartbeat metric");
                 assert.equal(stub2.args[0][0].value, 0, "value should be 0");
-                const keys2 = Object.keys(stub2.args[0][0].properties);
-                assert.equal(keys2.length, 3, "should have 3 kv pairs added when resource type is functiona app");
-                assert.equal(keys2[0], "sdk", "sdk should be added as a key");
-                assert.equal(keys2[1], "osType",  "osType should be added as a key");
-                assert.equal(keys2[2], "azfunction_appId", "azfunction_appId should be added as a key");
-                const properties2 = stub2.args[0][0].properties;
-                assert.equal(properties2["sdk"], Context.sdkVersion, "sdk version should be read from Context");
-                assert.equal(properties2["osType"], os.type(), "osType should be read from os library");
-                assert.equal(properties2["azfunction_appId"], "host_name", "azfunction_appId should be read from envrionment variable");
+                const keys2 = Object.keys(stub2.args[0][0].properties);
+                assert.equal(keys2.length, 3, "should have 3 kv pairs added when resource type is functiona app");
+                assert.equal(keys2[0], "sdk", "sdk should be added as a key");
+                assert.equal(keys2[1], "osType", "osType should be added as a key");
+                assert.equal(keys2[2], "azfunction_appId", "azfunction_appId should be added as a key");
+                const properties2 = stub2.args[0][0].properties;
+                assert.equal(properties2["sdk"], Context.sdkVersion, "sdk version should be read from Context");
+                assert.equal(properties2["osType"], os.type(), "osType should be read from os library");
+                assert.equal(properties2["azfunction_appId"], "host_name", "azfunction_appId should be read from envrionment variable");
 
                 process.env = originalEnv;
                 stub2.restore();

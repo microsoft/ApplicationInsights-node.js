@@ -25,6 +25,17 @@ This library tracks the following out-of-the-box:
 You can manually track more aspects of your app and system using the API described in the
 [Track custom telemetry](#track-custom-telemetry) section.
 
+## Supported Node.JS versions
+
+| Platform Version | Supported                                       |
+|------------------|-------------------------------------------------|
+| Node.JS `v15`    | ✅                                              |
+| Node.JS `v14`    | ✅                                              |
+| Node.JS `v12`    | ✅                                              |
+| Node.JS `v10`    | ✅                                              |
+| Node.JS `v8`     | ✅                                              |
+
+
 ## Getting Started
 
 1. Create an Application Insights resource in Azure by following [these instructions][].
@@ -36,8 +47,7 @@ You can manually track more aspects of your app and system using the API describ
      ```bash
      npm install --save applicationinsights
      ```
-     > *Note:* If you're using TypeScript, do not install a separate "typings" package.
-     > This NPM package contains built-in typings.
+     > *Note:* If you're using TypeScript, please install @types/node package to prevent build issues, this npm package contains built-in typings.
 4. As early as possible in your app's code, load the Application Insights
    package:
      ```javascript
@@ -247,16 +257,15 @@ environment variable, events may no longer be correctly associated with the righ
 disabled by setting the `APPLICATION_INSIGHTS_NO_PATCH_MODULES` environment variable to a comma separated list of packages to
 disable, e.g. `APPLICATION_INSIGHTS_NO_PATCH_MODULES=console,redis` to avoid patching the `console` and `redis` packages.
 
-Currently there are 9 packages which are instrumented: `bunyan`, `console`, `mongodb`, `mongodb-core`, `mysql`, `redis`, `winston`,
+The following modules are available: `azuresdk`, `bunyan`, `console`, `mongodb`, `mongodb-core`, `mysql`, `redis`, `winston`,
 `pg`, and `pg-pool`. Visit the [diagnostic-channel-publishers' README](https://github.com/microsoft/node-diagnostic-channel/blob/master/src/diagnostic-channel-publishers/README.md)
 for information about exactly which versions of these packages are patched.
 
+Automatic instrumentation for several Azure SDKs is also enabled, currently Cognitive Search, Communication Common and Cosmos DB SDKs are not supported.
+[Javascript Azure SDKs](https://azure.github.io/azure-sdk/releases/latest/index.html#javascript)
+
 The `bunyan`, `winston`, and `console` patches will generate Application Insights Trace events based on whether `setAutoCollectConsole` is enabled.
 The rest will generate Application Insights Dependency events based on whether `setAutoCollectDependencies` is enabled. Make sure that `applicationinsights` is imported **before** any 3rd-party packages for them to be instrumented successfully.
-
-Automatic instrumentation for several Azure SDKs is also available, you must manually install @opentelemetry/tracing to enable this automatic tracing. No additional configuration is required
-Currently Cognitive Search, Communication Common and Cosmos DB SDKs are not supported.
-[Javascript Azure SDKs](https://azure.github.io/azure-sdk/releases/latest/index.html#javascript)
 
 
 ### Live Metrics
@@ -300,7 +309,7 @@ client.trackMetric({name: "custom metric", value: 3});
 client.trackTrace({message: "trace message"});
 client.trackDependency({target:"http://dbname", name:"select customers proc", data:"SELECT * FROM Customers", duration:231, resultCode:0, success: true, dependencyTypeName: "ZSQL"});
 client.trackRequest({name:"GET /customers", url:"http://myserver/customers", duration:309, resultCode:200, success:true});
-
+ 
 let http = require("http");
 http.createServer( (req, res) => {
   client.trackNodeHttpRequest({request: req, response: res}); // Place at the beginning of your request handler
@@ -488,27 +497,17 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | correlationIdRetryIntervalMs    | The time to wait before retrying to retrieve the id for cross-component correlation (Default `30000`)      |
 | correlationHeaderExcludedDomains| A list of domains to exclude from cross-component correlation header injection (Default See [Config.ts][]) |
 
+
 [Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
 
-## Migrating to [`applicationinsights@2.0.0`](https://github.com/microsoft/ApplicationInsights-node.js/tree/applicationinsights%402.0.0) (Beta)
+Following configuration is currently only available in beta version of the SDK.
 
-An experimental / beta version of the SDK is also available, but not recommended for production. It is built on top of the [OpenTelemetry SDK + APIs](http://github.com/open-telemetry/opentelemetry-js), while keeping the API surface of this SDK the same.
+| Property                        | Description                                                                                                |
+| ------------------------------- |------------------------------------------------------------------------------------------------------------|
+| aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Crendential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes) |
 
-```zsh
-npm install applicationinsights@beta
-```
 
-### `applicationinsights@2.0.0` Overview
 
-- Autocollection parity with `applicationinsights@1.x`
-- API parity with `applicationinsights@1.x`
-- "Getting Started" parity with `applicationinsights@1.x`
-- New autocollection scenarios out-of-the-box contribued by the [OpenTelemetry community](https://github.com/open-telemetry/opentelemetry-js#node-plugins), e.g. `gRPC`, `express`, `ioredis`
-- Built on top of an [Open Standard](https://github.com/open-telemetry/opentelemetry-specification) for Telemetry APIs and SDKs
-
-Migrating from `1.x` to `2.x` is meant to be seamless and straightforward, there should be no breaking API changes at all. Please file a bug if something doesn't look right to you!
-
-Included in `applicationinsights@2.0.0` is [every Node.js Plugin available in the default OpenTelemetry Node.js SDK](https://github.com/open-telemetry/opentelemetry-js#node-plugins). Please check out the [projects board](https://github.com/microsoft/ApplicationInsights-node.js/projects) for progress updates on `2.x`.
 
 ## Branches
 
@@ -521,29 +520,12 @@ Included in `applicationinsights@2.0.0` is [every Node.js Plugin available in th
 [npm]: https://www.npmjs.com/package/applicationinsights
 
 ## Contributing
+For details on contributing to this repository, see the [contributing guide](https://github.com/microsoft/ApplicationInsights-node.js/master/CONTRIBUTING.md).
 
-1. Install all dependencies with `npm install`.
-2. Set an environment variable to your instrumentation key (optional).
-    ```bash
-    // windows
-    set APPINSIGHTS_INSTRUMENTATIONKEY=<insert_your_instrumentation_key_here>
-    // linux/macos
-    export APPINSIGHTS_INSTRUMENTATIONKEY=<insert_your_instrumentation_key_here>
-    ```
-3. Run tests
-    ```bash
-    npm run test
-    npm run backcompattest
-    npm run functionaltest
-    ```
-    _Note: Functional tests require Docker_
+This project welcomes contributions and suggestions. Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit
+https://cla.microsoft.com.
 
----
+When you submit a pull request, a CLA-bot will automatically determine whether you need to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions provided by the bot. You will only need to do this once across all repositories using our CLA.
 
-This project has adopted the [Microsoft Open Source Code of Conduct][]. For more
-information see the [Code of Conduct FAQ][] or contact
-[opencode@microsoft.com][] with any additional questions or comments.
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
-[Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
-[Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
-[opencode@microsoft.com]: mailto:opencode@microsoft.com

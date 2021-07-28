@@ -81,8 +81,10 @@ export class AutoCollectNativePerformance {
         if (this._isEnabled && AutoCollectNativePerformance._emitter) {
             // enable self
             AutoCollectNativePerformance._emitter.enable(true, collectionInterval);
-            this._handle = setInterval(() => this._trackNativeMetrics(), collectionInterval);
-            this._handle.unref();
+            if (!this._handle) {
+                this._handle = setInterval(() => this._trackNativeMetrics(), collectionInterval);
+                this._handle.unref();
+            }
         } else if (AutoCollectNativePerformance._emitter) {
             // disable self
             AutoCollectNativePerformance._emitter.enable(false);

@@ -1,6 +1,7 @@
 import assert = require("assert");
 import sinon = require("sinon");
 
+import Config = require("../../Library/Config");
 import QuickPulse = require("../../TelemetryProcessors/PerformanceMetricsTelemetryProcessor");
 import QuickPulseStateManager = require("../../Library/QuickPulseStateManager");
 import AutoCollectPerformance = require("../../AutoCollection/Performance");
@@ -34,7 +35,7 @@ describe("TelemetryProcessors/PerformanceMetricsTelemetryProcessor", () => {
 
         it("should add document to the provided client", () => {
             var qpSpy = sinon.spy(QuickPulse, "performanceMetricsTelemetryProcessor");
-            var client: QuickPulseStateManager = new QuickPulseStateManager(ikey);
+            var client: QuickPulseStateManager = new QuickPulseStateManager(new Config(ikey));
             var addDocumentStub = sinon.stub(client, "addDocument");
 
             // Act

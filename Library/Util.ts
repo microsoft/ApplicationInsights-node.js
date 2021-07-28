@@ -13,6 +13,8 @@ import { HttpRequest } from "../Library/Functions";
 class Util {
     public static MAX_PROPERTY_LENGTH = 8192;
     public static tlsRestrictedAgent: https.Agent = new https.Agent(<any>{
+        keepAlive: true,
+        maxSockets: 25,
         secureOptions: constants.SSL_OP_NO_SSLv2 | constants.SSL_OP_NO_SSLv3 |
             constants.SSL_OP_NO_TLSv1 | constants.SSL_OP_NO_TLSv1_1
     });
@@ -41,8 +43,8 @@ class Util {
     /**
      * helper method to trim strings (IE8 does not implement String.prototype.trim)
      */
-    public static trim(str:string):string {
-        if(typeof str === "string") {
+    public static trim(str: string): string {
+        if (typeof str === "string") {
             return str.replace(/^\s+|\s+$/g, "");
         } else {
             return "";
@@ -116,14 +118,14 @@ class Util {
     /**
      * Check if an object is of type Array
      */
-    public static isArray(obj:any):boolean {
+    public static isArray(obj: any): boolean {
         return Object.prototype.toString.call(obj) === "[object Array]";
     }
 
     /**
      * Check if an object is of type Error
      */
-    public static isError(obj:any):boolean {
+    public static isError(obj: any): boolean {
         return obj instanceof Error;
     }
 
@@ -135,14 +137,14 @@ class Util {
     /**
      * Check if an object is of type Date
      */
-    public static isDate(obj:any):boolean {
+    public static isDate(obj: any): boolean {
         return Object.prototype.toString.call(obj) === "[object Date]";
     }
 
     /**
      * Convert ms to c# time span format
      */
-    public static msToTimeSpan(totalms:number):string {
+    public static msToTimeSpan(totalms: number): string {
         if (isNaN(totalms) || totalms < 0) {
             totalms = 0;
         }
@@ -194,7 +196,7 @@ class Util {
      * Validate that an object is of type { [key: string]: string }
      */
     public static validateStringMap(obj: any): { [key: string]: string } {
-        if(typeof obj !== "object") {
+        if (typeof obj !== "object") {
             Logging.info("Invalid properties dropped from payload");
             return;
         }
@@ -242,8 +244,8 @@ class Util {
         }
 
         for (let i = 0; i < excludedDomains.length; i++) {
-            let regex = new RegExp(excludedDomains[i].replace(/\./g,"\.").replace(/\*/g,".*"));
-            if (regex.test(url.parse(requestUrl).hostname)) {
+            let regex = new RegExp(excludedDomains[i].replace(/\./g, "\.").replace(/\*/g, ".*"));
+            if (regex.test(new url.URL(requestUrl).hostname)) {
                 return false;
             }
         }
@@ -254,8 +256,8 @@ class Util {
     public static getCorrelationContextTarget(response: http.ClientResponse | http.ServerRequest | HttpRequest, key: string) {
         const contextHeaders = response.headers && response.headers[RequestResponseHeaders.requestContextHeader];
         if (contextHeaders) {
-            const keyValues = contextHeaders.split(",");
-            for(let i = 0; i < keyValues.length; ++i) {
+            const keyValues = (<any>contextHeaders).split(",");
+            for (let i = 0; i < keyValues.length; ++i) {
                 const keyValue = keyValues[i].split("=");
                 if (keyValue.length == 2 && keyValue[0] == key) {
                     return keyValue[1];
@@ -285,8 +287,9 @@ class Util {
             requestUrl = 'https:' + requestUrl;
         }
 
-        var requestUrlParsed = url.parse(requestUrl);
-        var options = {...requestOptions,
+        var requestUrlParsed = new url.URL(requestUrl);
+        var options = {
+            ...requestOptions,
             host: requestUrlParsed.hostname,
             port: requestUrlParsed.port,
             path: requestUrlParsed.pathname,
@@ -305,18 +308,20 @@ class Util {
             if (proxyUrl.indexOf('//') === 0) {
                 proxyUrl = 'http:' + proxyUrl;
             }
-            var proxyUrlParsed = url.parse(proxyUrl);
+            var proxyUrlParsed = new url.URL(proxyUrl);
 
             // https is not supported at the moment
             if (proxyUrlParsed.protocol === 'https:') {
                 Logging.info("Proxies that use HTTPS are not supported");
                 proxyUrl = undefined;
             } else {
-                options = {...options,
+                options = {
+                    ...options,
                     host: proxyUrlParsed.hostname,
                     port: proxyUrlParsed.port || "80",
                     path: requestUrl,
-                    headers: {...options.headers,
+                    headers: {
+                        ...options.headers,
                         Host: requestUrlParsed.hostname,
                     },
                 };
@@ -369,10 +374,25 @@ class Util {
         }
     }
 
+    /**
+     * Returns string representation of an object suitable for diagnostics logging.
+     */
+    public static dumpObj(object: any): string {
+        const objectTypeDump: string = Object["prototype"].toString.call(object);
+        let propertyValueDump: string = "";
+        if (objectTypeDump === "[object Error]") {
+            propertyValueDump = "{ stack: '" + object.stack + "', message: '" + object.message + "', name: '" + object.name + "'";
+        } else {
+            propertyValueDump = JSON.stringify(object);
+        }
+
+        return objectTypeDump + propertyValueDump;
+    }
+
     private static addCorrelationIdHeaderFromString(client: TelemetryClient, response: http.ClientRequest | http.ServerResponse, correlationHeader: string) {
         const components = correlationHeader.split(",");
         const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
-        const found = components.some(value => value.substring(0,key.length) === key);
+        const found = components.some(value => value.substring(0, key.length) === key);
 
         if (!found) {
             response.setHeader(

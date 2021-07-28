@@ -3,8 +3,6 @@ import url = require("url");
 import net = require("net");
 
 import Contracts = require("../Declarations/Contracts");
-import TelemetryClient = require("../Library/TelemetryClient");
-import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import RequestParser = require("./RequestParser");
@@ -70,7 +68,7 @@ class HttpRequestParser extends RequestParser {
     public getRequestTelemetry(baseTelemetry?: Contracts.Telemetry): Contracts.RequestTelemetry {
         var requestTelemetry: Contracts.RequestTelemetry & Contracts.Identified = {
             id: this.requestId,
-            name: this.method + " " + url.parse(this.url).pathname,
+            name: this.method + " " + new url.URL(this.url).pathname,
             url: this.url,
             /*
             See https://github.com/microsoft/ApplicationInsights-dotnet-server/blob/25d695e6a906fbe977f67be3966d25dbf1c50a79/Src/Web/Web.Shared.Net/RequestTrackingTelemetryModule.cs#L250
@@ -138,7 +136,7 @@ class HttpRequestParser extends RequestParser {
     }
 
     public getOperationName(tags: { [key: string]: string }) {
-        return tags[HttpRequestParser.keys.operationName] || this.method + " " + url.parse(this.url).pathname;
+        return tags[HttpRequestParser.keys.operationName] || this.method + " " + new url.URL(this.url).pathname;
     }
 
     public getRequestId() {
@@ -167,18 +165,21 @@ class HttpRequestParser extends RequestParser {
         }
 
         var encrypted = (<any>request).connection ? ((<any>request).connection as any).encrypted : null;
-        var requestUrl = url.parse(request.url);
+
+        var protocol = (encrypted || request.headers["x-forwarded-proto"] == "https") ? "https" : "http";
+
+        var baseUrl = protocol + '://' + request.headers.host + '/';
+        var requestUrl = new url.URL(request.url, baseUrl);
 
         var pathName = requestUrl.pathname;
         var search = requestUrl.search;
 
         var absoluteUrl = url.format({
-            protocol: encrypted ? "https" : "http",
+            protocol: protocol,
             host: request.headers.host,
             pathname: pathName,
             search: search
         });
-
         return absoluteUrl;
     }
 
@@ -245,18 +246,18 @@ class HttpRequestParser extends RequestParser {
         this.sourceCorrelationId = Util.getCorrelationContextTarget(request, RequestResponseHeaders.requestContextSourceKey);
 
         if (request.headers) {
-            const tracestateHeader = request.headers[RequestResponseHeaders.traceStateHeader]; // w3c header
-            const traceparentHeader = request.headers[RequestResponseHeaders.traceparentHeader]; // w3c header
-            const requestIdHeader = request.headers[RequestResponseHeaders.requestIdHeader]; // default AI header
-            const legacy_parentId = request.headers[RequestResponseHeaders.parentIdHeader]; // legacy AI header
-            const legacy_rootId = request.headers[RequestResponseHeaders.rootIdHeader]; // legacy AI header
+            const tracestateHeader = request.headers[RequestResponseHeaders.traceStateHeader] ? request.headers[RequestResponseHeaders.traceStateHeader].toString() : null; // w3c header
+            const traceparentHeader = request.headers[RequestResponseHeaders.traceparentHeader] ? request.headers[RequestResponseHeaders.traceparentHeader].toString() : null; // w3c header
+            const requestIdHeader = request.headers[RequestResponseHeaders.requestIdHeader] ? request.headers[RequestResponseHeaders.requestIdHeader].toString() : null; // default AI header
+            const legacy_parentId = request.headers[RequestResponseHeaders.parentIdHeader] ? request.headers[RequestResponseHeaders.parentIdHeader].toString() : null; // legacy AI header
+            const legacy_rootId = request.headers[RequestResponseHeaders.rootIdHeader] ? request.headers[RequestResponseHeaders.rootIdHeader].toString() : null; // legacy AI header
 
-            this.correlationContextHeader = request.headers[RequestResponseHeaders.correlationContextHeader];
+            this.correlationContextHeader = request.headers[RequestResponseHeaders.correlationContextHeader] ? request.headers[RequestResponseHeaders.correlationContextHeader].toString() : null;
 
             if (CorrelationIdManager.w3cEnabled && (traceparentHeader || tracestateHeader)) {
                 // Parse W3C Trace Context headers
-                this.traceparent = new Traceparent(traceparentHeader); // new traceparent is always created from this
-                this.tracestate = traceparentHeader && tracestateHeader && new Tracestate(tracestateHeader); // discard tracestate if no traceparent is present
+                this.traceparent = new Traceparent(traceparentHeader ? traceparentHeader.toString() : null); // new traceparent is always created from this
+                this.tracestate = traceparentHeader && tracestateHeader && new Tracestate(tracestateHeader ? tracestateHeader.toString() : null); // discard tracestate if no traceparent is present
                 this.setBackCompatFromThisTraceContext();
             } else if (requestIdHeader) {
                 // Parse AI headers

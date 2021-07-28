@@ -1,5 +1,6 @@
 import url = require("url");
 import os = require("os");
+import azureCore = require("@azure/core-http");
 
 import Config = require("./Config");
 import Context = require("./Context");
@@ -7,13 +8,14 @@ import Contracts = require("../Declarations/Contracts");
 import Channel = require("./Channel");
 import TelemetryProcessors = require("../TelemetryProcessors");
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
+import Statsbeat = require("../AutoCollection/Statsbeat");
 import Sender = require("./Sender");
 import Util = require("./Util");
 import Logging = require("./Logging");
 import FlushOptions = require("./FlushOptions");
 import EnvelopeFactory = require("./EnvelopeFactory");
 import QuickPulseStateManager = require("./QuickPulseStateManager");
-import {Tags} from "../Declarations/Contracts";
+import { Tags } from "../Declarations/Contracts";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -22,6 +24,7 @@ import {Tags} from "../Declarations/Contracts";
 class TelemetryClient {
     private _telemetryProcessors: { (envelope: Contracts.EnvelopeTelemetry, contextObjects: { [name: string]: any; }): boolean; }[] = [];
     private _enableAzureProperties: boolean = false;
+    private _statsbeat: Statsbeat;
 
     public config: Config;
     public context: Context;
@@ -38,8 +41,9 @@ class TelemetryClient {
         this.config = config;
         this.context = new Context();
         this.commonProperties = {};
-
-        var sender = new Sender(this.config);
+        this._statsbeat = new Statsbeat(this.config);
+        this._statsbeat.enable(true);
+        var sender = new Sender(this.config, null, null, this._statsbeat);
         this.channel = new Channel(() => config.disableAppInsights, () => config.maxBatchSize, () => config.maxBatchIntervalMs, sender);
     }
 
@@ -118,7 +122,14 @@ class TelemetryClient {
             // url.parse().host returns null for non-urls,
             // making this essentially a no-op in those cases
             // If this logic is moved, update jsdoc in DependencyTelemetry.target
-            telemetry.target = url.parse(telemetry.data).host;
+            // url.parse() is deprecated, update to use WHATWG URL API instead
+            try {
+                telemetry.target = new url.URL(telemetry.data).host;
+            } catch (error) {
+                // set target as null to be compliant with previous behavior
+                telemetry.target = null;
+                Logging.warn("The URL object is failed to create.", error);
+            }
         }
         this.track(telemetry, Contracts.TelemetryType.Dependency);
     }
@@ -154,7 +165,7 @@ class TelemetryClient {
             // Ideally we would have a central place for "internal" telemetry processors and users can configure which ones are in use.
             // This will do for now. Otherwise clearTelemetryProcessors() would be problematic.
             accepted = accepted && TelemetryProcessors.samplingTelemetryProcessor(envelope, { correlationContext: CorrelationContextManager.getCurrentContext() });
-
+            TelemetryProcessors.preAggregatedMetricsTelemetryProcessor(envelope, this.context);
             if (accepted) {
                 TelemetryProcessors.performanceMetricsTelemetryProcessor(envelope, this.quickPulseClient);
                 this.channel.send(envelope);
@@ -229,6 +240,13 @@ class TelemetryClient {
         }
 
         return accepted;
+    }
+
+    /*
+     * Get Statsbeat instance
+     */
+    public getStatsbeat() {
+        return this._statsbeat;
     }
 }
 

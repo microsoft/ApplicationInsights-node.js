@@ -120,7 +120,7 @@ describe("Library/Config", () => {
                 assert(config.proxyHttpUrl === undefined);
                 assert(config.proxyHttpsUrl === undefined);
 
-                assert(config.quickPulseHost === Constants.DEFAULT_LIVEMETRICS_HOST);
+                assert.equal(config.quickPulseHost, Constants.DEFAULT_LIVEMETRICS_HOST);
             });
 
             it("should initialize values that we claim in README (2)", () => {
@@ -129,6 +129,8 @@ describe("Library/Config", () => {
                 var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert(config.proxyHttpUrl === "test");
                 assert(config.proxyHttpsUrl === "test2");
+                delete process.env.http_proxy;
+                delete process.env.https_proxy;
             });
 
             it("should add azure domain to excluded list", () => {

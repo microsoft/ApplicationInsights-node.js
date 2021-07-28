@@ -70,7 +70,7 @@ function main() {
     console.log("Using SDK package at " + path);
 
     // OldTSC
-    console.info("Testing compilation in app with TSC 2.0.0 and node 0.12 types...");
+    console.info("Testing compilation in app with TSC 4.0.0 and node 8 types...");
     run("npm uninstall applicationinsights", "./OldTSC");
     if (run("npm install", "./OldTSC").code !== 0) {
         console.error("Could not install OldTSC dependencies!")
@@ -85,8 +85,8 @@ function main() {
         return 1;
     }
 
-    // Node10Types
-    console.info("Testing compilation in app with TSC 3.1.0 and node 10 types...");
+    // Latest node types
+    console.info("Testing compilation in app with TSC 4 and latest node types...");
     run("npm uninstall applicationinsights", "./Node10Types");
     if (run("npm install", "./Node10Types").code !== 0) {
         console.error("Could not install OldTSC dependencies!")
