@@ -81,7 +81,11 @@ class Statsbeat {
                 this._handle.unref(); // Allow the app to terminate even while this loop is going on
             }
             if (!this._longHandle) {
-                this.trackLongIntervalStatsbeats(); // On first enablement
+                // On first enablement
+                this.trackLongIntervalStatsbeats().catch((error) => {
+                    // Failed to send Statsbeat
+                    Logging.info(Statsbeat.TAG, error);
+                });
                 this._longHandle = setInterval(() => {
                     this.trackLongIntervalStatsbeats().catch((error) => {
                         // Failed to send Statsbeat
