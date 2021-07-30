@@ -166,6 +166,7 @@ export const StatsbeatCounter = {
     EXCEPTION_COUNT: "Exception Count",
     ATTACH: "Attach",
     FEATURE: "Feature",
+    INSTRUMENTATION: "Instrumentation",
 }
 
 export enum StatsbeatFeature {
