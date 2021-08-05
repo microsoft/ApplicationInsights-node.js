@@ -36,7 +36,7 @@ class Statsbeat {
     private _isInitialized: boolean;
     private _config: Config;
     private _statsbeatConfig: Config;
-    private _isVM: boolean;
+    private _isVM: boolean | undefined;
     private _statbeatMetrics: Array<{ name: string; value: number, properties: {} }>;
 
     // Custom dimensions
@@ -48,10 +48,10 @@ class Statsbeat {
     private _language: string;
     private _cikey: string;
     private _attach: string = Constants.StatsbeatAttach.sdk; // Default is SDK
-    private _features: number = Constants.StatsbeatFeature.NONE;
-    private _instrumentations: number = Constants.StatsbeatInstrumentation.NONE;
+    private _feature: number = Constants.StatsbeatFeature.NONE;
+    private _instrumentation: number = Constants.StatsbeatInstrumentation.NONE;
 
-    constructor(config?: Config) {
+    constructor(config: Config) {
         this._isInitialized = false;
         this._statbeatMetrics = [];
         this._config = config;
@@ -81,6 +81,11 @@ class Statsbeat {
                 this._handle.unref(); // Allow the app to terminate even while this loop is going on
             }
             if (!this._longHandle) {
+                // On first enablement
+                this.trackLongIntervalStatsbeats().catch((error) => {
+                    // Failed to send Statsbeat
+                    Logging.info(Statsbeat.TAG, error);
+                });
                 this._longHandle = setInterval(() => {
                     this.trackLongIntervalStatsbeats().catch((error) => {
                         // Failed to send Statsbeat
@@ -114,19 +119,19 @@ class Statsbeat {
     }
 
     public addFeature(feature: Constants.StatsbeatFeature) {
-        this._features |= feature;
+        this._feature |= feature;
     }
 
     public removeFeature(feature: Constants.StatsbeatFeature) {
-        this._features &= ~feature;
+        this._feature &= ~feature;
     }
 
     public addInstrumentation(instrumentation: Constants.StatsbeatInstrumentation) {
-        this._instrumentations |= instrumentation;
+        this._instrumentation |= instrumentation;
     }
 
     public removeInstrumentation(instrumentation: Constants.StatsbeatInstrumentation) {
-        this._instrumentations &= ~instrumentation;
+        this._instrumentation &= ~instrumentation;
     }
 
     public countRequest(duration: number, success: boolean) {
@@ -174,27 +179,16 @@ class Statsbeat {
                 "language": this._language,
                 "version": this._sdkVersion,
                 "attach": this._attach,
-                "instrumentation": this._instrumentations,
             }
             this._trackRequestDuration(networkProperties);
             this._trackRequestsCount(networkProperties);
-            let attachProperties = {
-                "os": this._os,
-                "rp": this._resourceProvider,
-                "rpid": this._resourceIdentifier,
-                "cikey": this._cikey,
-                "runtimeVersion": this._runtimeVersion,
-                "language": this._language,
-                "version": this._sdkVersion
-            }
-            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.ATTACH, value: 1, properties: attachProperties });
             await this._sendStatsbeats();
         });
     }
 
     public async trackLongIntervalStatsbeats() {
         this._getResourceProvider(async () => {
-            let featureProperties = {
+            let commonProperties = {
                 "os": this._os,
                 "rp": this._resourceProvider,
                 "cikey": this._cikey,
@@ -202,8 +196,14 @@ class Statsbeat {
                 "language": this._language,
                 "version": this._sdkVersion,
                 "attach": this._attach,
-                "feature": this._features,
-            }
+            };
+            let attachProperties = Object.assign({
+                "rpid": this._resourceIdentifier,
+            }, commonProperties);
+            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.ATTACH, value: 1, properties: attachProperties });
+            let featureProperties = Object.assign({ "feature": this._feature, "type": Constants.StatsbeatFeatureType.Feature }, commonProperties);
+            let instrumentationProperties = Object.assign({ "feature": this._instrumentation, "type": Constants.StatsbeatFeatureType.Instrumentation }, commonProperties);
+            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: instrumentationProperties });
             this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: featureProperties });
             await this._sendStatsbeats();
         });

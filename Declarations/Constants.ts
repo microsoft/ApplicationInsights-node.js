@@ -185,3 +185,8 @@ export enum StatsbeatInstrumentation {
     WINSTON = 64,
     CONSOLE = 128,
 }
+
+export enum StatsbeatFeatureType {
+    Feature,
+    Instrumentation,
+}

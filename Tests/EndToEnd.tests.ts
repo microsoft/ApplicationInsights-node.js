@@ -153,6 +153,18 @@ class fakeHttpsServer extends events.EventEmitter {
 }
 
 describe("EndToEnd", () => {
+    var originalEnv = {};
+
+    before(() => {
+        var newEnv = <{ [id: string]: string }>{};
+        newEnv["APPLICATION_INSIGHTS_NO_STATSBEAT"] = "true";
+        originalEnv = process.env;
+        process.env = newEnv;
+    });
+
+    after(() => {
+        process.env = originalEnv;
+    });
 
     var request: sinon.SinonStub;
 
