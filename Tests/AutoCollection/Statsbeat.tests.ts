@@ -265,25 +265,25 @@ describe("AutoCollection/Statsbeat", () => {
         it("Instrumentations", () => {
             const statsBeat: Statsbeat = new Statsbeat(config);
             statsBeat.addInstrumentation(Constants.StatsbeatInstrumentation.AZURE_CORE_TRACING);
-            assert.equal(statsBeat["_instrumentations"], 1);
+            assert.equal(statsBeat["_instrumentation"], 1);
             statsBeat.addInstrumentation(Constants.StatsbeatInstrumentation.MONGODB);
-            assert.equal(statsBeat["_instrumentations"], 3);
+            assert.equal(statsBeat["_instrumentation"], 3);
             statsBeat.addInstrumentation(Constants.StatsbeatInstrumentation.MYSQL);
-            assert.equal(statsBeat["_instrumentations"], 7);
+            assert.equal(statsBeat["_instrumentation"], 7);
             statsBeat.removeInstrumentation(Constants.StatsbeatInstrumentation.AZURE_CORE_TRACING);
-            assert.equal(statsBeat["_instrumentations"], 6);
+            assert.equal(statsBeat["_instrumentation"], 6);
             statsBeat.removeInstrumentation(Constants.StatsbeatInstrumentation.MYSQL);
-            assert.equal(statsBeat["_instrumentations"], 2);
+            assert.equal(statsBeat["_instrumentation"], 2);
         });
 
         it("Features", () => {
             const statsBeat: Statsbeat = new Statsbeat(config);
             statsBeat.addFeature(Constants.StatsbeatFeature.DISK_RETRY);
-            assert.equal(statsBeat["_features"], 1);
+            assert.equal(statsBeat["_feature"], 1);
             statsBeat.addFeature(Constants.StatsbeatFeature.AAD_HANDLING);
-            assert.equal(statsBeat["_features"], 3);
+            assert.equal(statsBeat["_feature"], 3);
             statsBeat.removeFeature(Constants.StatsbeatFeature.DISK_RETRY);
-            assert.equal(statsBeat["_features"], 2);
+            assert.equal(statsBeat["_feature"], 2);
         });
     });
 });

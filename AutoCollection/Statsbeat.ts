@@ -48,8 +48,8 @@ class Statsbeat {
     private _language: string;
     private _cikey: string;
     private _attach: string = Constants.StatsbeatAttach.sdk; // Default is SDK
-    private _features: number = Constants.StatsbeatFeature.NONE;
-    private _instrumentations: number = Constants.StatsbeatInstrumentation.NONE;
+    private _feature: number = Constants.StatsbeatFeature.NONE;
+    private _instrumentation: number = Constants.StatsbeatInstrumentation.NONE;
 
     constructor(config: Config) {
         this._isInitialized = false;
@@ -119,19 +119,19 @@ class Statsbeat {
     }
 
     public addFeature(feature: Constants.StatsbeatFeature) {
-        this._features |= feature;
+        this._feature |= feature;
     }
 
     public removeFeature(feature: Constants.StatsbeatFeature) {
-        this._features &= ~feature;
+        this._feature &= ~feature;
     }
 
     public addInstrumentation(instrumentation: Constants.StatsbeatInstrumentation) {
-        this._instrumentations |= instrumentation;
+        this._instrumentation |= instrumentation;
     }
 
     public removeInstrumentation(instrumentation: Constants.StatsbeatInstrumentation) {
-        this._instrumentations &= ~instrumentation;
+        this._instrumentation &= ~instrumentation;
     }
 
     public countRequest(duration: number, success: boolean) {
@@ -201,13 +201,13 @@ class Statsbeat {
                 "rpid": this._resourceIdentifier,
             }, commonProperties);
             this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.ATTACH, value: 1, properties: attachProperties });
-            let featureProperties = Object.assign({ "feature": this._features, "type": Constants.StatsbeatFeatureType.Features }, commonProperties);
-            let instrumentationProperties = Object.assign({ "feature": this._instrumentations, "type": Constants.StatsbeatFeatureType.Instrumentations }, commonProperties);
+            let featureProperties = Object.assign({ "feature": this._feature, "type": Constants.StatsbeatFeatureType.Feature }, commonProperties);
+            let instrumentationProperties = Object.assign({ "feature": this._instrumentation, "type": Constants.StatsbeatFeatureType.Instrumentation }, commonProperties);
             this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: instrumentationProperties });
             this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: featureProperties });
             await this._sendStatsbeats();
         });
-    }       
+    }
 
     private _trackRequestDuration(properties: {}) {
         var lastRequests = this._lastRequests;

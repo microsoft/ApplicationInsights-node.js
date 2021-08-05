@@ -187,6 +187,6 @@ export enum StatsbeatInstrumentation {
 }
 
 export enum StatsbeatFeatureType {
-    Features,
-    Instrumentations ,
+    Feature,
+    Instrumentation,
 }
