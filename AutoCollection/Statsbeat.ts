@@ -197,17 +197,17 @@ class Statsbeat {
                 "version": this._sdkVersion,
                 "attach": this._attach,
             };
-            let featureProperties = Object.assign({ "feature": this._features }, commonProperties);
-            let instrumentationProperties = Object.assign({ "instrumentation": this._instrumentations }, commonProperties);
             let attachProperties = Object.assign({
                 "rpid": this._resourceIdentifier,
             }, commonProperties);
             this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.ATTACH, value: 1, properties: attachProperties });
-            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.INSTRUMENTATION, value: 1, properties: instrumentationProperties });
+            let featureProperties = Object.assign({ "feature": this._features, "type": Constants.StatsbeatFeatureType.Features }, commonProperties);
+            let instrumentationProperties = Object.assign({ "feature": this._instrumentations, "type": Constants.StatsbeatFeatureType.Instrumentations }, commonProperties);
+            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: instrumentationProperties });
             this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: featureProperties });
             await this._sendStatsbeats();
         });
-    }
+    }       
 
     private _trackRequestDuration(properties: {}) {
         var lastRequests = this._lastRequests;

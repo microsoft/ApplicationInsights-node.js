@@ -224,6 +224,7 @@ describe("AutoCollection/Statsbeat", () => {
                 let baseData: Contracts.MetricData = envelope.data.baseData;
                 assert.equal(baseData.metrics[0].name, "Feature");
                 assert.equal(baseData.metrics[0].value, 1);
+                assert.equal(baseData.properties["type"], 0);
                 assert.equal(baseData.properties["cikey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert.equal(baseData.properties["language"], "node");
                 assert.equal(baseData.properties["rp"], "unknown");
@@ -245,13 +246,14 @@ describe("AutoCollection/Statsbeat", () => {
             setTimeout(() => {
                 let envelope = spy.args[0][0][1];
                 let baseData: Contracts.MetricData = envelope.data.baseData;
-                assert.equal(baseData.metrics[0].name, "Instrumentation");
+                assert.equal(baseData.metrics[0].name, "Feature");
                 assert.equal(baseData.metrics[0].value, 1);
+                assert.equal(baseData.properties["type"], 1);
                 assert.equal(baseData.properties["cikey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert.equal(baseData.properties["language"], "node");
                 assert.equal(baseData.properties["rp"], "unknown");
                 assert.equal(baseData.properties["attach"], "sdk");
-                assert.equal(baseData.properties["instrumentation"], 1);
+                assert.equal(baseData.properties["feature"], 1);
                 assert.ok(baseData.properties["os"]);
                 assert.ok(baseData.properties["runtimeVersion"]);
                 assert.ok(baseData.properties["version"]);
