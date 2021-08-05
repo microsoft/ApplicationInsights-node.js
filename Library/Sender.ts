@@ -12,6 +12,7 @@ import Constants = require("../Declarations/Constants");
 import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
 import Statsbeat = require("../AutoCollection/Statsbeat");
 import Util = require("./Util");
+import { URL } from "url";
 
 
 class Sender {
@@ -120,6 +121,8 @@ class Sender {
         if (envelopes) {
             var endpointUrl = this._redirectedHost || this._config.endpointUrl;
 
+            var endpointHost = new URL(endpointUrl).hostname;
+
             // todo: investigate specifying an agent here: https://nodejs.org/api/http.html#http_class_http_agent
             var options = {
                 method: "POST",
@@ -188,9 +191,9 @@ class Sender {
                             } else if (this._isRetriable(res.statusCode)) {
                                 try {
                                     if (this._statsbeat) {
-                                        this._statsbeat.countRetry();
+                                        this._statsbeat.countRetry(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
                                         if (res.statusCode === 429) {
-                                            this._statsbeat.countThrottle();
+                                            this._statsbeat.countThrottle(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
                                         }
                                     }
                                     const breezeResponse = JSON.parse(responseString) as Contracts.BreezeResponse;
@@ -225,7 +228,7 @@ class Sender {
                             }
                             else {
                                 if (this._statsbeat) {
-                                    this._statsbeat.countException();
+                                    this._statsbeat.countException(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
                                 }
                                 if (typeof callback === "function") {
                                     callback("Error sending telemetry because of circular redirects.");
@@ -235,7 +238,7 @@ class Sender {
                         }
                         else {
                             if (this._statsbeat) {
-                                this._statsbeat.countRequest(duration, res.statusCode === 200);
+                                this._statsbeat.countRequest(Constants.StatsbeatNetworkCategory.Breeze, endpointHost,duration, res.statusCode === 200);
                             }
                             this._numConsecutiveRedirects = 0;
                             if (typeof callback === "function") {
@@ -255,7 +258,7 @@ class Sender {
                     // todo: handle error codes better (group to recoverable/non-recoverable and persist)
                     this._numConsecutiveFailures++;
                     if (this._statsbeat) {
-                        this._statsbeat.countException();
+                        this._statsbeat.countException(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
                     }
 
                     // Only use warn level if retries are disabled or we've had some number of consecutive failures sending data

@@ -109,7 +109,7 @@ describe("AutoCollection/Statsbeat", () => {
             const statsBeat: Statsbeat = new Statsbeat(config);
             statsBeat.enable(true);
             const spy = sandbox.spy(statsBeat["_sender"], "send");
-            statsBeat.countRequest(123, true);
+            statsBeat.countRequest(123, "testEndpointHost", 123, true);
             statsBeat.setCodelessAttach();
             statsBeat.trackShortIntervalStatsbeats();
             setTimeout(() => {
@@ -123,6 +123,8 @@ describe("AutoCollection/Statsbeat", () => {
                 assert.equal(baseData.properties["cikey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert.equal(baseData.properties["language"], "node");
                 assert.equal(baseData.properties["rp"], "unknown");
+                assert.equal(baseData.properties["category"], 123);
+                assert.equal(baseData.properties["endpoint"], "testEndpointHost");
                 assert.ok(baseData.properties["os"]);
                 assert.ok(baseData.properties["runtimeVersion"]);
                 assert.ok(baseData.properties["version"]);
@@ -135,8 +137,8 @@ describe("AutoCollection/Statsbeat", () => {
             const statsBeat: Statsbeat = new Statsbeat(config);
             statsBeat.enable(true);
             const spy = sandbox.spy(statsBeat["_sender"], "send");
-            statsBeat.countRequest(1000, true);
-            statsBeat.countRequest(500, false);
+            statsBeat.countRequest(0, "test", 1000, true);
+            statsBeat.countRequest(0, "test", 500, false);
             statsBeat.trackShortIntervalStatsbeats();
             setTimeout(() => {
                 assert.equal(spy.callCount, 2, "should call sender");
@@ -153,17 +155,17 @@ describe("AutoCollection/Statsbeat", () => {
             const statsBeat: Statsbeat = new Statsbeat(config);
             statsBeat.enable(true);
             const spy = sandbox.spy(statsBeat["_sender"], "send");
-            statsBeat.countRequest(1, true);
-            statsBeat.countRequest(1, true);
-            statsBeat.countRequest(1, true);
-            statsBeat.countRequest(1, true);
-            statsBeat.countRequest(1, false);
-            statsBeat.countRequest(1, false);
-            statsBeat.countRequest(1, false);
-            statsBeat.countRetry();
-            statsBeat.countRetry();
-            statsBeat.countThrottle();
-            statsBeat.countException();
+            statsBeat.countRequest(0, "test", 1, true);
+            statsBeat.countRequest(0, "test", 1, true);
+            statsBeat.countRequest(0, "test", 1, true);
+            statsBeat.countRequest(0, "test", 1, true);
+            statsBeat.countRequest(0, "test", 1, false);
+            statsBeat.countRequest(0, "test", 1, false);
+            statsBeat.countRequest(0, "test", 1, false);
+            statsBeat.countRetry(0, "test");
+            statsBeat.countRetry(0, "test");
+            statsBeat.countThrottle(0, "test");
+            statsBeat.countException(0, "test");
             statsBeat.trackShortIntervalStatsbeats();
             setTimeout(() => {
                 assert.equal(spy.callCount, 2, "should call sender");
@@ -284,6 +286,39 @@ describe("AutoCollection/Statsbeat", () => {
             assert.equal(statsBeat["_feature"], 3);
             statsBeat.removeFeature(Constants.StatsbeatFeature.DISK_RETRY);
             assert.equal(statsBeat["_feature"], 2);
+        });
+
+        it("Multiple network categories and endpoints", (done) => {
+            const statsBeat: Statsbeat = new Statsbeat(config);
+            statsBeat.enable(true);
+            const spy = sandbox.spy(statsBeat["_sender"], "send");
+            statsBeat.countRequest(0, "breezeFirstEndpoint", 100, true);
+            statsBeat.countRequest(1, "quickpulseEndpoint", 200, true);
+            statsBeat.countRequest(0, "breezeSecondEndpoint", 400, true);
+            statsBeat.trackShortIntervalStatsbeats();
+            setTimeout(() => {
+                assert.equal(spy.callCount, 2, "should call sender");
+                let envelope = spy.args[1][0][0];
+                let baseData: Contracts.MetricData = envelope.data.baseData;
+                assert.equal(baseData.metrics[0].name, "Request Duration");
+                assert.equal(baseData.metrics[0].value, 100);
+                assert.equal(baseData.properties["category"], 0);
+                assert.equal(baseData.properties["endpoint"], "breezeFirstEndpoint");
+                envelope = spy.args[1][0][1];
+                baseData = envelope.data.baseData;
+                assert.equal(baseData.metrics[0].name, "Request Duration");
+                assert.equal(baseData.metrics[0].value, 200);
+                assert.equal(baseData.properties["category"], 1);
+                assert.equal(baseData.properties["endpoint"], "quickpulseEndpoint");
+                envelope = spy.args[1][0][2];
+                baseData = envelope.data.baseData;
+                assert.equal(baseData.metrics[0].name, "Request Duration");
+                assert.equal(baseData.metrics[0].value, 400);
+                assert.equal(baseData.properties["category"], 0);
+                assert.equal(baseData.properties["endpoint"], "breezeSecondEndpoint");
+                statsBeat.enable(false);
+                done();
+            }, 10);
         });
     });
 });
