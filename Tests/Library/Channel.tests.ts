@@ -66,7 +66,7 @@ describe("Library/Channel", () => {
         });
 
         it("should log warning if invalid input is passed", () => {
-            var warnStub = sinon.stub(console, "warn");
+            var warnStub = sinon.stub(channel["_logger"], "warning");
             channel.send(undefined);
             channel.send(null);
             channel.send(<any>"");

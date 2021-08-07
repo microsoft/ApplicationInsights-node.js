@@ -1,10 +1,6 @@
-import https = require('https');
-import http = require('http');
-import url = require('url');
-
 import Util = require("./Util");
-import Logging = require("./Logging");
 import Config = require("./Config");
+import {AzureLogger, createClientLogger} from "@azure/logger";
 
 class CorrelationIdManager {
     private static TAG = "CorrelationIdManager";
@@ -19,6 +15,7 @@ class CorrelationIdManager {
 
     private static requestIdMaxLength = 1024;
     private static currentRootId = Util.randomu32();
+    private static _logger: AzureLogger = createClientLogger('ApplicationInsights:CorrelationIdManager');
 
     public static queryCorrelationId(config: Config, callback: (correlationId: string) => void) {
         // GET request to `${this.endpointBase}/api/profiles/${this.instrumentationKey}/appId`
@@ -49,7 +46,7 @@ class CorrelationIdManager {
                 disableAppInsightsAutoCollection: true
             };
 
-            Logging.info(CorrelationIdManager.TAG, requestOptions);
+            this._logger.verbose(CorrelationIdManager.TAG, requestOptions);
             const req = Util.makeRequest(config, appIdUrlString, requestOptions, (res) => {
                 if (res.statusCode === 200) {
                     // Success; extract the appId from the body
@@ -59,7 +56,7 @@ class CorrelationIdManager {
                         appId += data;
                     });
                     res.on('end', () => {
-                        Logging.info(CorrelationIdManager.TAG, appId);
+                        this._logger.info(CorrelationIdManager.TAG, appId)
                         const result = CorrelationIdManager.correlationIdPrefix + appId;
                         CorrelationIdManager.completedLookups[appIdUrlString] = result;
                         if (CorrelationIdManager.pendingLookups[appIdUrlString]) {
@@ -80,7 +77,7 @@ class CorrelationIdManager {
                 req.on('error', (error: Error) => {
                     // Unable to contact endpoint.
                     // Do nothing for now.
-                    Logging.warn(CorrelationIdManager.TAG, error);
+                    this._logger.warning(CorrelationIdManager.TAG, error);
                 });
                 req.end();
             }

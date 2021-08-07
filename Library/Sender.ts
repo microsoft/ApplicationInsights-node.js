@@ -5,17 +5,18 @@ import path = require("path");
 import zlib = require("zlib");
 import child_process = require("child_process");
 
-import Logging = require("./Logging");
 import Config = require("./Config")
 import Contracts = require("../Declarations/Contracts");
 import Constants = require("../Declarations/Constants");
 import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
 import Statsbeat = require("../AutoCollection/Statsbeat");
 import Util = require("./Util");
+import {AzureLogger, createClientLogger} from "@azure/logger";
 
 
 class Sender {
     private static TAG = "Sender";
+    private _logger: AzureLogger;
     private static ICACLS_PATH = `${process.env.systemdrive}/windows/system32/icacls.exe`;
     private static POWERSHELL_PATH = `${process.env.systemdrive}/windows/system32/windowspowershell/v1.0/powershell.exe`;
     private static ACLED_DIRECTORIES: { [id: string]: boolean } = {};
@@ -46,6 +47,7 @@ class Sender {
     protected _maxBytesOnDisk: number;
 
     constructor(config: Config, onSuccess?: (response: string) => void, onError?: (error: Error) => void, statsbeat?: Statsbeat) {
+        this._logger = createClientLogger('ApplicationInsights:Sender');
         this._config = config;
         this._onSuccess = onSuccess;
         this._onError = onError;
@@ -71,7 +73,7 @@ class Sender {
                     Sender.OS_PROVIDES_FILE_PROTECTION = fs.existsSync(Sender.ICACLS_PATH);
                 } catch (e) { }
                 if (!Sender.OS_PROVIDES_FILE_PROTECTION) {
-                    Logging.warn(Sender.TAG, "Could not find ICACLS in expected location! This is necessary to use disk retry mode on Windows.")
+                    this._logger.warning(Sender.TAG, "Could not find ICACLS in expected location! This is necessary to use disk retry mode on Windows.")
                 }
             } else {
                 // chmod works everywhere else
@@ -94,7 +96,7 @@ class Sender {
 
         if (value && !Sender.OS_PROVIDES_FILE_PROTECTION) {
             this._enableDiskRetryMode = false;
-            Logging.warn(Sender.TAG, "Ignoring request to enable disk retry mode. Sufficient file protection capabilities were not detected.")
+            this._logger.warning(Sender.TAG, "Ignoring request to enable disk retry mode. Sufficient file protection capabilities were not detected.")
         }
         if (this._enableDiskRetryMode) {
             if (this._statsbeat) {
@@ -147,7 +149,7 @@ class Sender {
             zlib.gzip(payload, (err, buffer) => {
                 var dataToSend = buffer;
                 if (err) {
-                    Logging.warn(err);
+                    this._logger.warning(Sender.TAG, err);
                     dataToSend = payload; // something went wrong so send without gzip
                     options.headers["Content-Length"] = payload.length.toString();
                 } else {
@@ -155,7 +157,7 @@ class Sender {
                     options.headers["Content-Length"] = buffer.length.toString();
                 }
 
-                Logging.info(Sender.TAG, options);
+                this._logger.verbose(Sender.TAG, options);
 
                 // Ensure this request is not captured by auto-collection.
                 (<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] = true;
@@ -241,7 +243,7 @@ class Sender {
                             if (typeof callback === "function") {
                                 callback(responseString);
                             }
-                            Logging.info(Sender.TAG, responseString);
+                            this._logger.verbose(Sender.TAG, responseString);
                             if (typeof this._onSuccess === "function") {
                                 this._onSuccess(responseString);
                             }
@@ -266,10 +268,10 @@ class Sender {
                         if (this._enableDiskRetryMode) {
                             notice = `Ingestion endpoint could not be reached ${this._numConsecutiveFailures} consecutive times. There may be resulting telemetry loss. Most recent error:`;
                         }
-                        Logging.warn(Sender.TAG, notice, Util.dumpObj(error));
+                        this._logger.error(Sender.TAG, notice, error);
                     } else {
                         let notice = "Transient failure to reach ingestion endpoint. This batch of telemetry items will be retried. Error:";
-                        Logging.info(Sender.TAG, notice, Util.dumpObj(error))
+                        this._logger.warning(Sender.TAG, notice, error);
                     }
                     this._onErrorHelper(error);
 
@@ -506,21 +508,21 @@ class Sender {
     private _storeToDisk(envelopes: Contracts.EnvelopeTelemetry[]) {
         // This will create the dir if it does not exist
         // Default permissions on *nix are directory listing from other users but no file creations
-        Logging.info(Sender.TAG, "Checking existence of data storage directory: " + this._tempDir);
+        this._logger.verbose(Sender.TAG, "Checking existence of data storage directory: " + this._tempDir);
         this._confirmDirExists(this._tempDir, (error) => {
             if (error) {
-                Logging.warn(Sender.TAG, "Error while checking/creating directory: " + (error && error.message));
+                this._logger.warning(Sender.TAG, "Error while checking/creating directory: " + (error && error.message));
                 this._onErrorHelper(error);
                 return;
             }
 
             this._getShallowDirectorySize(this._tempDir, (err, size) => {
                 if (err || size < 0) {
-                    Logging.warn(Sender.TAG, "Error while checking directory size: " + (err && err.message));
+                    this._logger.warning(Sender.TAG, "Error while checking directory size: " + (err && err.message));
                     this._onErrorHelper(err);
                     return;
                 } else if (size > this._maxBytesOnDisk) {
-                    Logging.warn(Sender.TAG, "Not saving data due to max size limit being met. Directory size in bytes is: " + size);
+                    this._logger.warning(Sender.TAG, "Not saving data due to max size limit being met. Directory size in bytes is: " + size);
                     return;
                 }
 
@@ -531,7 +533,7 @@ class Sender {
 
                 // Mode 600 is w/r for creator and no read access for others (only applies on *nix)
                 // For Windows, ACL rules are applied to the entire directory (see logic in _confirmDirExists and _applyACLRules)
-                Logging.info(Sender.TAG, "saving data to disk at: " + fileFullPath);
+                this._logger.info(Sender.TAG, "saving data to disk at: " + fileFullPath);
                 fs.writeFile(fileFullPath, this._stringify(envelopes), { mode: 0o600 }, (error) => this._onErrorHelper(error));
             });
         });
@@ -543,7 +545,7 @@ class Sender {
      */
     private _storeToDiskSync(payload: any) {
         try {
-            Logging.info(Sender.TAG, "Checking existence of data storage directory: " + this._tempDir);
+            this._logger.info(Sender.TAG, "Checking existence of data storage directory: " + this._tempDir);
             if (!fs.existsSync(this._tempDir)) {
                 fs.mkdirSync(this._tempDir);
             }
@@ -553,7 +555,7 @@ class Sender {
 
             let dirSize = this._getShallowDirectorySizeSync(this._tempDir);
             if (dirSize > this._maxBytesOnDisk) {
-                Logging.info(Sender.TAG, "Not saving data due to max size limit being met. Directory size in bytes is: " + dirSize);
+                this._logger.info(Sender.TAG, "Not saving data due to max size limit being met. Directory size in bytes is: " + dirSize);
                 return;
             }
 
@@ -563,11 +565,11 @@ class Sender {
             var fileFullPath = path.join(this._tempDir, fileName);
 
             // Mode 600 is w/r for creator and no access for anyone else (only applies on *nix)
-            Logging.info(Sender.TAG, "saving data before crash to disk at: " + fileFullPath);
+            this._logger.info(Sender.TAG, "saving data before crash to disk at: " + fileFullPath);
             fs.writeFileSync(fileFullPath, payload, { mode: 0o600 });
 
         } catch (error) {
-            Logging.warn(Sender.TAG, "Error while saving data to disk: " + (error && error.message));
+            this._logger.error(Sender.TAG, "Error while saving data to disk: " + (error && error.message));
             this._onErrorHelper(error);
         }
     }
@@ -596,7 +598,7 @@ class Sender {
                                                 this.send(envelopes);
                                             }
                                             catch (error) {
-                                                Logging.warn("Failed to read persisted file", error);
+                                                this._logger.warning(Sender.TAG, "Failed to read persisted file", error)
                                             }
                                         } else {
                                             this._onErrorHelper(error);
@@ -625,7 +627,7 @@ class Sender {
         try {
             return JSON.stringify(payload);
         } catch (error) {
-            Logging.warn("Failed to serialize payload", error, payload);
+            this._logger.warning(Sender.TAG, "Failed to serialize payload", error, payload);
         }
     }
 
