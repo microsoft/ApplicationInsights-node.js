@@ -201,17 +201,17 @@ class Statsbeat {
         });
     }
 
-    private _getNetworkStatsbeatCounter(endpoint: number, url: string): Network.NetworkStatsbeat {
+    private _getNetworkStatsbeatCounter(endpoint: number, host: string): Network.NetworkStatsbeat {
         // Check if counter is available
         for (let i = 0; i < this._networkStatsbeatCollection.length; i++) {
             // Same object
             if (endpoint === this._networkStatsbeatCollection[i].endpoint &&
-                url === this._networkStatsbeatCollection[i].url) {
+                host === this._networkStatsbeatCollection[i].host) {
                 return this._networkStatsbeatCollection[i];
             }
         }
         // Create a new one if not found
-        let newCounter = new Network.NetworkStatsbeat(endpoint, url);
+        let newCounter = new Network.NetworkStatsbeat(endpoint, host);
         this._networkStatsbeatCollection.push(newCounter);
         return newCounter;
     }
@@ -238,7 +238,7 @@ class Statsbeat {
     private _trackRequestsCount(commonProperties: {}) {
         for (let i = 0; i < this._networkStatsbeatCollection.length; i++) {
             var currentCounter = this._networkStatsbeatCollection[i];
-            let properties = Object.assign({ "endpoint": currentCounter.endpoint, "url": currentCounter.url }, commonProperties);
+            let properties = Object.assign({ "endpoint": currentCounter.endpoint, "host": currentCounter.host }, commonProperties);
             if (currentCounter.totalSuccesfulRequestCount > 0) {
                 this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_SUCCESS, value: currentCounter.totalSuccesfulRequestCount, properties: properties });
                 currentCounter.totalSuccesfulRequestCount = 0; //Reset

@@ -6,7 +6,7 @@ export class NetworkStatsbeat {
 
     public endpoint: number;
 
-    public url: string;
+    public host: string;
 
     public totalRequestCount: number;
 
@@ -26,9 +26,9 @@ export class NetworkStatsbeat {
 
     public lastIntervalRequestExecutionTime: number;
 
-    constructor(endpoint: number, url: string) {
+    constructor(endpoint: number, host: string) {
         this.endpoint = endpoint;
-        this.url = url;
+        this.host = host;
         this.totalRequestCount = 0;
         this.totalSuccesfulRequestCount = 0;
         this.totalFailedRequestCount = 0;
