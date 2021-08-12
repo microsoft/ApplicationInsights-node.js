@@ -318,7 +318,7 @@ describe("AutoCollection/Statsbeat", () => {
                 assert.equal(baseData.properties["host"], "breezeSecondEndpoint");
                 statsBeat.enable(false);
                 done();
-            }, 10);
+            }, 100);
         });
     });
 });
