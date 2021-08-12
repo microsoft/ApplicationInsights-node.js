@@ -4,9 +4,9 @@ export class NetworkStatsbeat {
 
     public lastTime: number;
 
-    public category: number;
+    public endpoint: number;
 
-    public endpoint: string;
+    public url: string;
 
     public totalRequestCount: number;
 
@@ -26,9 +26,9 @@ export class NetworkStatsbeat {
 
     public lastIntervalRequestExecutionTime: number;
 
-    constructor(category: number, endpoint: string) {
-        this.category = category;
+    constructor(endpoint: number, url: string) {
         this.endpoint = endpoint;
+        this.url = url;
         this.totalRequestCount = 0;
         this.totalSuccesfulRequestCount = 0;
         this.totalFailedRequestCount = 0;

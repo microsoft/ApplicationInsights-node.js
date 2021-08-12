@@ -201,17 +201,17 @@ class Statsbeat {
         });
     }
 
-    private _getNetworkStatsbeatCounter(category: number, endpoint: string): Network.NetworkStatsbeat {
+    private _getNetworkStatsbeatCounter(endpoint: number, url: string): Network.NetworkStatsbeat {
         // Check if counter is available
         for (let i = 0; i < this._networkStatsbeatCollection.length; i++) {
             // Same object
-            if (category === this._networkStatsbeatCollection[i].category &&
-                endpoint === this._networkStatsbeatCollection[i].endpoint) {
+            if (endpoint === this._networkStatsbeatCollection[i].endpoint &&
+                url === this._networkStatsbeatCollection[i].url) {
                 return this._networkStatsbeatCollection[i];
             }
         }
         // Create a new one if not found
-        let newCounter = new Network.NetworkStatsbeat(category, endpoint);
+        let newCounter = new Network.NetworkStatsbeat(endpoint, url);
         this._networkStatsbeatCollection.push(newCounter);
         return newCounter;
     }
@@ -226,7 +226,7 @@ class Statsbeat {
             currentCounter.lastIntervalRequestExecutionTime = currentCounter.intervalRequestExecutionTime; // reset
             if (elapsedMs > 0 && intervalRequests > 0) {
                 // Add extra properties
-                let properties = Object.assign({ "category": this._networkStatsbeatCollection[i].category, "endpoint": this._networkStatsbeatCollection[i].endpoint }, commonProperties);
+                let properties = Object.assign({ "endpoint": this._networkStatsbeatCollection[i].endpoint, "host": this._networkStatsbeatCollection[i].host }, commonProperties);
                 this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_DURATION, value: averageRequestExecutionTime, properties: properties });
             }
             // Set last counters
@@ -238,7 +238,7 @@ class Statsbeat {
     private _trackRequestsCount(commonProperties: {}) {
         for (let i = 0; i < this._networkStatsbeatCollection.length; i++) {
             var currentCounter = this._networkStatsbeatCollection[i];
-            let properties = Object.assign({ "category": currentCounter.category, "endpoint": currentCounter.endpoint }, commonProperties);
+            let properties = Object.assign({ "endpoint": currentCounter.endpoint, "url": currentCounter.url }, commonProperties);
             if (currentCounter.totalSuccesfulRequestCount > 0) {
                 this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_SUCCESS, value: currentCounter.totalSuccesfulRequestCount, properties: properties });
                 currentCounter.totalSuccesfulRequestCount = 0; //Reset
