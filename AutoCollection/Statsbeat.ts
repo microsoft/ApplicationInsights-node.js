@@ -7,6 +7,7 @@ import Contracts = require("../Declarations/Contracts");
 import Vm = require("../Library/AzureVirtualMachine");
 import Config = require("../Library/Config");
 import Context = require("../Library/Context");
+import Network = require("./NetworkStatsbeat");
 
 const STATSBEAT_LANGUAGE = "node";
 
@@ -18,17 +19,7 @@ class Statsbeat {
 
     private static TAG = "Statsbeat";
 
-    // Counters
-    private _lastRequests: { totalRequestCount: number; time: number; };
-    private _totalRequestCount: number = 0;
-    private _totalSuccesfulRequestCount: number = 0;
-    private _totalFailedRequestCount: number = 0;
-    private _retryCount: number = 0;
-    private _exceptionCount: number = 0;
-    private _throttleCount: number = 0;
-    private _intervalRequestExecutionTime: number = 0;
-    private _lastIntervalRequestExecutionTime: number = 0;
-
+    private _networkStatsbeatCollection: Array<Network.NetworkStatsbeat>;
     private _sender: Sender;
     private _handle: NodeJS.Timer | null;
     private _longHandle: NodeJS.Timer | null;
@@ -54,10 +45,10 @@ class Statsbeat {
     constructor(config: Config) {
         this._isInitialized = false;
         this._statbeatMetrics = [];
+        this._networkStatsbeatCollection = [];
         this._config = config;
         this._statsbeatConfig = new Config(Statsbeat.CONNECTION_STRING);
         this._sender = new Sender(this._statsbeatConfig);
-        this._lastRequests = { totalRequestCount: 0, time: 0 };
     }
 
     public enable(isEnabled: boolean) {
@@ -68,10 +59,6 @@ class Statsbeat {
         }
         if (isEnabled) {
             if (!this._handle) {
-                this._lastRequests = {
-                    totalRequestCount: this._totalRequestCount,
-                    time: +new Date
-                };
                 this._handle = setInterval(() => {
                     this.trackShortIntervalStatsbeats().catch((error) => {
                         // Failed to send Statsbeat
@@ -134,39 +121,44 @@ class Statsbeat {
         this._instrumentation &= ~instrumentation;
     }
 
-    public countRequest(duration: number, success: boolean) {
+    public countRequest(category: number, endpoint: string, duration: number, success: boolean) {
         if (!this.isEnabled()) {
             return;
         }
-        this._totalRequestCount++;
-        this._intervalRequestExecutionTime += duration;
+        let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(category, endpoint);
+        counter.totalRequestCount++;
+        counter.intervalRequestExecutionTime += duration;
         if (success === false) {
-            this._totalFailedRequestCount++;
+            counter.totalFailedRequestCount++;
         }
         else {
-            this._totalSuccesfulRequestCount++;
+            counter.totalSuccesfulRequestCount++;
         }
+
     }
 
-    public countException() {
+    public countException(category: number, endpoint: string) {
         if (!this.isEnabled()) {
             return;
         }
-        this._exceptionCount++;
+        let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(category, endpoint);
+        counter.exceptionCount++;
     }
 
-    public countThrottle() {
+    public countThrottle(category: number, endpoint: string) {
         if (!this.isEnabled()) {
             return;
         }
-        this._throttleCount++;
+        let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(category, endpoint);
+        counter.throttleCount++;
     }
 
-    public countRetry() {
+    public countRetry(category: number, endpoint: string) {
         if (!this.isEnabled()) {
             return;
         }
-        this._retryCount++;
+        let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(category, endpoint);
+        counter.retryCount++;
     }
 
     public async trackShortIntervalStatsbeats() {
@@ -209,42 +201,64 @@ class Statsbeat {
         });
     }
 
-    private _trackRequestDuration(properties: {}) {
-        var lastRequests = this._lastRequests;
-        var requests = {
-            totalRequestCount: this._totalRequestCount,
-            time: +new Date
-        };
-        var intervalRequests = (requests.totalRequestCount - lastRequests.totalRequestCount) || 0;
-        var elapsedMs = requests.time - lastRequests.time;
-        var averageRequestExecutionTime = ((this._intervalRequestExecutionTime - this._lastIntervalRequestExecutionTime) / intervalRequests) || 0; // default to 0 in case no requests in this interval
-        this._lastIntervalRequestExecutionTime = this._intervalRequestExecutionTime; // reset
-        if (elapsedMs > 0 && intervalRequests > 0) {
-            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_DURATION, value: averageRequestExecutionTime, properties: properties });
+    private _getNetworkStatsbeatCounter(endpoint: number, host: string): Network.NetworkStatsbeat {
+        // Check if counter is available
+        for (let i = 0; i < this._networkStatsbeatCollection.length; i++) {
+            // Same object
+            if (endpoint === this._networkStatsbeatCollection[i].endpoint &&
+                host === this._networkStatsbeatCollection[i].host) {
+                return this._networkStatsbeatCollection[i];
+            }
         }
-        this._lastRequests = requests;
+        // Create a new one if not found
+        let newCounter = new Network.NetworkStatsbeat(endpoint, host);
+        this._networkStatsbeatCollection.push(newCounter);
+        return newCounter;
     }
 
-    private _trackRequestsCount(properties: {}) {
-        if (this._totalSuccesfulRequestCount > 0) {
-            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_SUCCESS, value: this._totalSuccesfulRequestCount, properties: properties });
-            this._totalSuccesfulRequestCount = 0; //Reset
+    private _trackRequestDuration(commonProperties: {}) {
+        for (let i = 0; i < this._networkStatsbeatCollection.length; i++) {
+            var currentCounter = this._networkStatsbeatCollection[i];
+            currentCounter.time = +new Date;
+            var intervalRequests = (currentCounter.totalRequestCount - currentCounter.lastRequestCount) || 0;
+            var elapsedMs = currentCounter.time - currentCounter.lastTime;
+            var averageRequestExecutionTime = ((currentCounter.intervalRequestExecutionTime - currentCounter.lastIntervalRequestExecutionTime) / intervalRequests) || 0;
+            currentCounter.lastIntervalRequestExecutionTime = currentCounter.intervalRequestExecutionTime; // reset
+            if (elapsedMs > 0 && intervalRequests > 0) {
+                // Add extra properties
+                let properties = Object.assign({ "endpoint": this._networkStatsbeatCollection[i].endpoint, "host": this._networkStatsbeatCollection[i].host }, commonProperties);
+                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_DURATION, value: averageRequestExecutionTime, properties: properties });
+            }
+            // Set last counters
+            currentCounter.lastRequestCount = currentCounter.totalRequestCount;
+            currentCounter.lastTime = currentCounter.time;
         }
-        if (this._totalFailedRequestCount > 0) {
-            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_FAILURE, value: this._totalFailedRequestCount, properties: properties });
-            this._totalFailedRequestCount = 0; //Reset
-        }
-        if (this._retryCount > 0) {
-            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.RETRY_COUNT, value: this._retryCount, properties: properties });
-            this._retryCount = 0; //Reset
-        }
-        if (this._throttleCount > 0) {
-            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.THROTTLE_COUNT, value: this._throttleCount, properties: properties });
-            this._throttleCount = 0; //Reset
-        }
-        if (this._exceptionCount > 0) {
-            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.EXCEPTION_COUNT, value: this._exceptionCount, properties: properties });
-            this._exceptionCount = 0; //Reset
+    }
+
+    private _trackRequestsCount(commonProperties: {}) {
+        for (let i = 0; i < this._networkStatsbeatCollection.length; i++) {
+            var currentCounter = this._networkStatsbeatCollection[i];
+            let properties = Object.assign({ "endpoint": currentCounter.endpoint, "host": currentCounter.host }, commonProperties);
+            if (currentCounter.totalSuccesfulRequestCount > 0) {
+                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_SUCCESS, value: currentCounter.totalSuccesfulRequestCount, properties: properties });
+                currentCounter.totalSuccesfulRequestCount = 0; //Reset
+            }
+            if (currentCounter.totalFailedRequestCount > 0) {
+                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_FAILURE, value: currentCounter.totalFailedRequestCount, properties: properties });
+                currentCounter.totalFailedRequestCount = 0; //Reset
+            }
+            if (currentCounter.retryCount > 0) {
+                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.RETRY_COUNT, value: currentCounter.retryCount, properties: properties });
+                currentCounter.retryCount = 0; //Reset
+            }
+            if (currentCounter.throttleCount > 0) {
+                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.THROTTLE_COUNT, value: currentCounter.throttleCount, properties: properties });
+                currentCounter.throttleCount = 0; //Reset
+            }
+            if (currentCounter.exceptionCount > 0) {
+                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.EXCEPTION_COUNT, value: currentCounter.exceptionCount, properties: properties });
+                currentCounter.exceptionCount = 0; //Reset
+            }
         }
     }
 

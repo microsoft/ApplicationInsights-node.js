@@ -294,7 +294,7 @@ describe("Library/Sender", () => {
     });
 
     describe("#Statsbeat counters", () => {
-        Statsbeat.CONNECTION_STRING= "InstrumentationKey=2aa22222-bbbb-1ccc-8ddd-eeeeffff3333;"
+        Statsbeat.CONNECTION_STRING = "InstrumentationKey=2aa22222-bbbb-1ccc-8ddd-eeeeffff3333;"
         var breezeResponse: Contracts.BreezeResponse = {
             itemsAccepted: 1,
             itemsReceived: 1,
@@ -310,8 +310,10 @@ describe("Library/Sender", () => {
             nockScope = interceptor.reply(200, breezeResponse);
             statsbeatSender.send([testEnvelope], () => {
                 assert.ok(statsbeatSpy.calledOnce);
-                assert.ok(!isNaN(statsbeatSpy.args[0][0])); // Duration
-                assert.equal(statsbeatSpy.args[0][1], true); // Success
+                assert.equal(statsbeatSpy.args[0][0], 0); // Category
+                assert.equal(statsbeatSpy.args[0][1], "dc.services.visualstudio.com"); // Endpoint
+                assert.ok(!isNaN(statsbeatSpy.args[0][2])); // Duration
+                assert.equal(statsbeatSpy.args[0][3], true); // Success
                 done();
 
             });
@@ -322,8 +324,10 @@ describe("Library/Sender", () => {
             nockScope = interceptor.reply(400, breezeResponse);
             statsbeatSender.send([testEnvelope], () => {
                 assert.ok(statsbeatSpy.calledOnce);
-                assert.ok(!isNaN(statsbeatSpy.args[0][0])); // Duration
-                assert.equal(statsbeatSpy.args[0][1], false); // Failed
+                assert.equal(statsbeatSpy.args[0][0], 0); // Category
+                assert.equal(statsbeatSpy.args[0][1], "dc.services.visualstudio.com"); // Endpoint
+                assert.ok(!isNaN(statsbeatSpy.args[0][2])); // Duration
+                assert.equal(statsbeatSpy.args[0][3], false); // Failed
                 done();
             });
         });
