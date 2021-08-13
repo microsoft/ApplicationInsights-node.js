@@ -23,13 +23,13 @@ export function spanToTelemetryContract(span: Span): (Contracts.DependencyTeleme
     if (isHttp) {
         // Read http span attributes
         const method = span.attributes[Constants.SpanAttribute.HttpMethod] || "GET";
-        const url = new URL(span.attributes[Constants.SpanAttribute.HttpUrl].toString());
+        const url = new URL(span.attributes[Constants.SpanAttribute.HttpUrl] as string);
         const pathname = url.pathname || "/";
 
         // Translate to AI Dependency format
         const name = `${method} ${pathname}`;
         const dependencyTypeName = Constants.DependencyTypeName.Http;
-        const target = span.attributes[Constants.SpanAttribute.HttpUrl].toString() ? url.hostname : undefined;
+        const target = span.attributes[Constants.SpanAttribute.HttpUrl] ? url.hostname : undefined;
         const data = url.toString();
         const resultCode = span.attributes[Constants.SpanAttribute.HttpStatusCode] || span.status.code || 0;
         const success = resultCode < 400; // Status.OK
@@ -65,12 +65,12 @@ export function spanToTelemetryContract(span: Span): (Contracts.DependencyTeleme
         });
         return {
             id, duration, name,
-            target: span.attributes[Constants.SpanAttribute.HttpUrl].toString() || undefined,
+            target: (span.attributes[Constants.SpanAttribute.HttpUrl] as string) || undefined,
             data: peerAddress || name,
             url: peerAddress || name,
             dependencyTypeName: span.kind === SpanKind.INTERNAL ? Constants.DependencyTypeName.InProc : span.name,
             resultCode: String(span.status.code || 0),
-            success: span.status.code === SpanStatusCode.OK,
+            success: span.status.code !== SpanStatusCode.ERROR,
             properties: {
                 ...filterSpanAttributes(span.attributes),
                 "_MS.links": links || undefined
