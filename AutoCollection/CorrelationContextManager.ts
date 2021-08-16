@@ -197,8 +197,24 @@ export class CorrelationContextManager {
 
         // AzFunction TraceContext available
         if (traceContext) {
-            const traceparent = new Traceparent(traceContext.traceparent);
-            const tracestate = new Tracestate(traceContext.tracestate);
+            let traceparent = null;
+            let tracestate = null;
+            if ( (request as azureFunctionsTypes.HttpRequest).headers ) {
+                if( (request as azureFunctionsTypes.HttpRequest).headers.traceparent ) {
+                    traceparent = new Traceparent((request as azureFunctionsTypes.HttpRequest).headers.traceparent);
+                } else if ( (request as azureFunctionsTypes.HttpRequest).headers["request-id"] ) {
+                    traceparent = new Traceparent(null, (request as azureFunctionsTypes.HttpRequest).headers["request-id"]);
+                }
+                if( (request as azureFunctionsTypes.HttpRequest).headers.tracestate ) {
+                    tracestate = new Tracestate((request as azureFunctionsTypes.HttpRequest).headers.tracestate);
+                }
+            }
+            if( !traceparent ) {
+                traceparent = new Traceparent(traceContext.traceparent);
+            }
+            if( !tracestate ) {
+                tracestate = new Tracestate(traceContext.tracestate);
+            }
             const parser = typeof request === "object"
                 ? new HttpRequestParser(request)
                 : null;
