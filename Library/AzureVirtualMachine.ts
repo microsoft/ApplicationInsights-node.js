@@ -63,7 +63,10 @@ export class AzureVirtualMachine {
                 if (error && error.message && error.message.indexOf(ConnectionErrorMessage) > -1) {
                     vmInfo.isVM = false; // confirm it's not in VM
                 }
-                Logging.warn(AzureVirtualMachine.TAG, error);
+                else{
+                    // Only log when is not determined if VM or not to avoid noise outside of Azure VMs
+                    Logging.warn(AzureVirtualMachine.TAG, error);
+                }
                 callback(vmInfo);
             });
             req.end();
