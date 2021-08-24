@@ -85,7 +85,7 @@ class fakeRequest {
     public on(event: string, callback: Function) {
         this.callbacks[event] = callback;
         if (event === "error" && this.failImmediatly) {
-            setImmediate(() => this.fail());
+            setTimeout(() => this.fail(), 100);
         }
     }
 
@@ -454,17 +454,17 @@ describe("EndToEnd", () => {
 
             request.returns(req);
 
-            setImmediate(() => {
+            setTimeout(() => {
                 client.flush({
                     callback: (response: any) => {
                         // yield for the caching behavior
-                        setImmediate(() => {
+                        setTimeout(() => {
                             assert(writeFile.callCount === 0);
                             done();
-                        });
+                        }, 100);
                     }
                 });
-            });
+            }, 100);
         });
 
         it("enabled by default for default client", (done) => {
@@ -481,14 +481,14 @@ describe("EndToEnd", () => {
                 client.flush({
                     callback: (response: any) => {
                         // yield for the caching behavior
-                        setImmediate(() => {
+                        setTimeout(() => {
                             assert.equal(writeFile.callCount, 1);
                             assert.equal(spawn.callCount, os.type() === "Windows_NT" ? 2 : 0);
                             done();
-                        });
+                        }, 100);
                     }
                 });
-            }, 300)
+            }, 100)
         });
 
         it("stores data to disk when enabled", (done) => {
@@ -512,7 +512,7 @@ describe("EndToEnd", () => {
                         assert.equal(writeFile.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
                         assert.equal(spawn.callCount, 0); // Should always be 0 because of caching after first call to ICACLS
                         done();
-                    }, 300);
+                    }, 100);
                 }
             });
         });
@@ -553,7 +553,7 @@ describe("EndToEnd", () => {
 
                         (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
                         done();
-                    }, 300);
+                    }, 100);
                 }
             });
         });
@@ -596,7 +596,7 @@ describe("EndToEnd", () => {
                         assert.equal(tempSpawn.callCount, 1);
                         (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
                         done();
-                    }, 300);
+                    }, 100);
                 }
             });
         });
@@ -634,7 +634,7 @@ describe("EndToEnd", () => {
             client.flush({
                 callback: (response: any) => {
                     // yield for the caching behavior
-                    setImmediate(() => {
+                    setTimeout(() => {
                         assert(writeFile.callCount === 0);
                         assert.equal(tempSpawn.callCount, 1);
 
@@ -644,16 +644,16 @@ describe("EndToEnd", () => {
                         client.flush({
                             callback: (response: any) => {
                                 // yield for the caching behavior
-                                setImmediate(() => {
+                                setTimeout(() => {
                                     // The call counts shouldnt have changed
                                     assert(writeFile.callCount === 0);
                                     assert.equal(tempSpawn.callCount, 1);
                                     (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
                                     done();
-                                });
+                                }, 100);
                             }
                         });
-                    });
+                    }, 100);
                 }
             });
         });
@@ -689,7 +689,7 @@ describe("EndToEnd", () => {
             client.flush({
                 callback: (response: any) => {
                     // yield for the caching behavior
-                    setImmediate(() => {
+                    setTimeout(() => {
                         assert(writeFile.callCount === 0);
                         assert.equal(tempSpawn.callCount, 1);
 
@@ -699,16 +699,16 @@ describe("EndToEnd", () => {
                         client.flush({
                             callback: (response: any) => {
                                 // yield for the caching behavior
-                                setImmediate(() => {
+                                setTimeout(() => {
                                     // The call counts shouldnt have changed
                                     assert(writeFile.callCount === 0);
                                     assert.equal(tempSpawn.callCount, 1);
                                     (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
                                     done();
-                                });
+                                }, 100);
                             }
                         });
-                    });
+                    }, 100);
                 }
             });
         });
@@ -741,12 +741,12 @@ describe("EndToEnd", () => {
             client.flush({
                 callback: (response: any) => {
                     // yield for the caching behavior
-                    setImmediate(() => {
+                    setTimeout(() => {
                         assert(writeFile.callCount === 0);
                         assert.equal(tempSpawn.callCount, 1);
                         (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
                         done();
-                    });
+                    }, 100);
                 }
             });
         });
@@ -766,7 +766,7 @@ describe("EndToEnd", () => {
 
             client.flush({
                 callback: (response: any) => {
-                    setImmediate(() => {
+                    setTimeout(() => {
                         assert.equal(mkdir.callCount, 1);
                         assert.equal(mkdir.firstCall.args[0], path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
                         assert.equal(writeFile.callCount, 1);
@@ -775,7 +775,7 @@ describe("EndToEnd", () => {
                             path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
                         assert.equal(writeFile.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
                         done();
-                    });
+                    }, 100);
                 }
             });
         });
@@ -793,10 +793,10 @@ describe("EndToEnd", () => {
             client.flush({
                 callback: (response: any) => {
                     // yield for the caching behavior
-                    setImmediate(() => {
+                    setTimeout(() => {
                         assert(writeFile.callCount === 0);
                         done();
-                    });
+                    }, 100);
                 }
             });
         });
