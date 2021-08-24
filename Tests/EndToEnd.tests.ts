@@ -16,7 +16,6 @@ import HeartBeat = require("../AutoCollection/HeartBeat");
 import TelemetryClient = require("../Library/TelemetryClient");
 import Context = require("../Library/Context");
 import Util = require("../Library/Util");
-import { sandbox } from "sinon";
 
 /**
  * A fake response class that passes by default
