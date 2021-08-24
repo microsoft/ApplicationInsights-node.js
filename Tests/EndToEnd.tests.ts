@@ -173,7 +173,7 @@ describe("EndToEnd", () => {
     Util.tlsRestrictedAgent = new https.Agent();
 
     describe("Basic usage", () => {
-        beforeEach(() => { 
+        beforeEach(() => {
             request = sandbox.stub(https, "request", (options: any, callback: any) => {
                 var req = new fakeRequest(false);
                 req.on("end", callback);
@@ -187,7 +187,7 @@ describe("EndToEnd", () => {
             sandbox.restore();
             CorrelationContextManager.reset();
             AppInsights.dispose();
-            
+
         });
 
         it("should send telemetry", (done) => {
@@ -830,81 +830,29 @@ describe("EndToEnd", () => {
             });
         });
 
-        it("cache payload synchronously when process crashes (Node >= 0.11.12)", () => {
-            var nodeVer = process.versions.node.split(".");
-            if (parseInt(nodeVer[0]) > 0 || parseInt(nodeVer[1]) > 11 || (parseInt(nodeVer[1]) == 11) && parseInt(nodeVer[2]) > 11) {
-                var req = new fakeRequest(true);
+        it("cache payload synchronously when process crashes", () => {
+            var req = new fakeRequest(true);
 
-                var client = new AppInsights.TelemetryClient("key2");
-                client.channel.setUseDiskRetryCaching(true);
+            var client = new AppInsights.TelemetryClient("key2");
+            client.channel.setUseDiskRetryCaching(true);
 
-                client.trackEvent({ name: "test event" });
+            client.trackEvent({ name: "test event" });
 
-                request.returns(req);
+            request.returns(req);
 
-                client.channel.triggerSend(true);
+            client.channel.triggerSend(true);
 
-                assert(existsSync.callCount === 1);
-                assert(writeFileSync.callCount === 1);
-                assert.equal(spawnSync.callCount, os.type() === "Windows_NT" ? 1 : 0); // This is implicitly testing caching of ACL identity (otherwise call count would be 2 like it is the non-sync time)
-                assert.equal(
-                    path.dirname(writeFileSync.firstCall.args[0]),
-                    path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key2"));
-                assert.equal(writeFileSync.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
-            }
+            assert(existsSync.callCount === 1);
+            assert(writeFileSync.callCount === 1);
+            assert.equal(spawnSync.callCount, os.type() === "Windows_NT" ? 1 : 0); // This is implicitly testing caching of ACL identity (otherwise call count would be 2 like it is the non-sync time)
+            assert.equal(
+                path.dirname(writeFileSync.firstCall.args[0]),
+                path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key2"));
+            assert.equal(writeFileSync.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
         });
 
-        it("cache payload synchronously when process crashes (Node < 0.11.12, ICACLS)", () => {
-            var nodeVer = process.versions.node.split(".");
-            if (!(parseInt(nodeVer[0]) > 0 || parseInt(nodeVer[1]) > 11 || (parseInt(nodeVer[1]) == 11) && parseInt(nodeVer[2]) > 11)) {
-                var req = new fakeRequest(true);
-
-                var client = new AppInsights.TelemetryClient("key22");
-                client.channel.setUseDiskRetryCaching(true);
-                var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
-                (<any>client.channel._sender.constructor).USE_ICACLS = true; // Simulate ICACLS environment even on *nix
-
-                client.trackEvent({ name: "test event" });
-
-                request.returns(req);
-
-                client.channel.triggerSend(true);
-
-                assert(existsSync.callCount === 1);
-                assert(writeFileSync.callCount === 0);
-                (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
-            }
-        });
-
-        it("cache payload synchronously when process crashes (Node < 0.11.12, Non-ICACLS)", () => {
-            var nodeVer = process.versions.node.split(".");
-            if (!(parseInt(nodeVer[0]) > 0 || parseInt(nodeVer[1]) > 11 || (parseInt(nodeVer[1]) == 11) && parseInt(nodeVer[2]) > 11)) {
-                var req = new fakeRequest(true);
-
-                var client = new AppInsights.TelemetryClient("key23");
-                client.channel.setUseDiskRetryCaching(true);
-                var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
-                (<any>client.channel._sender.constructor).USE_ICACLS = false; // Simulate Non-ICACLS environment even on Windows
-
-                client.trackEvent({ name: "test event" });
-
-                request.returns(req);
-
-                client.channel.triggerSend(true);
-
-                assert(existsSync.callCount === 1);
-                assert(writeFileSync.callCount === 1);
-                assert.equal(
-                    path.dirname(writeFileSync.firstCall.args[0]),
-                    path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key23"));
-                assert.equal(writeFileSync.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
-            }
-        });
-
-        it("use WindowsIdentity to get ACL identity when process crashes (Node > 0.11.12, ICACLS)", () => {
-            var nodeVer = process.versions.node.split(".");
-            if ((parseInt(nodeVer[0]) > 0 || parseInt(nodeVer[1]) > 11 || (parseInt(nodeVer[1]) == 11) && parseInt(nodeVer[2]) > 11)) {
-                var req = new fakeRequest(true);
+        it("use WindowsIdentity to get ACL identity when process crashes (ICACLS)", () => {
+            var req = new fakeRequest(true);
 
                 var client = new AppInsights.TelemetryClient("key22");
                 client.channel.setUseDiskRetryCaching(true);
@@ -933,7 +881,6 @@ describe("EndToEnd", () => {
                 assert.equal(spawnSync.lastCall.args[1][4], "stdoutmock:(OI)(CI)F");
 
                 (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
-            }
         });
 
         it("refuses to cache payload when process crashes if ICACLS fails", () => {
