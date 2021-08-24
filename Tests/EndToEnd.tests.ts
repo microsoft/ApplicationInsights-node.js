@@ -458,10 +458,10 @@ describe("EndToEnd", () => {
                 client.flush({
                     callback: (response: any) => {
                         // yield for the caching behavior
-                        setTimeout(() => {
+                        setImmediate(() => {
                             assert(writeFile.callCount === 0);
                             done();
-                        }, 100);
+                        });
                     }
                 });
             }, 100);
