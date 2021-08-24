@@ -16,6 +16,7 @@ import HeartBeat = require("../AutoCollection/HeartBeat");
 import TelemetryClient = require("../Library/TelemetryClient");
 import Context = require("../Library/Context");
 import Util = require("../Library/Util");
+import { sandbox } from "sinon";
 
 /**
  * A fake response class that passes by default
@@ -153,9 +154,11 @@ class fakeHttpsServer extends events.EventEmitter {
 }
 
 describe("EndToEnd", () => {
+    var sandbox: sinon.SinonSandbox;
     var originalEnv = {};
 
     before(() => {
+        sandbox = sinon.sandbox.create();
         var newEnv = <{ [id: string]: string }>{};
         newEnv["APPLICATION_INSIGHTS_NO_STATSBEAT"] = "true";
         originalEnv = process.env;
@@ -171,10 +174,7 @@ describe("EndToEnd", () => {
     Util.tlsRestrictedAgent = new https.Agent();
 
     describe("Basic usage", () => {
-        var sandbox: sinon.SinonSandbox;
-
-        beforeEach(() => {
-            sandbox = sinon.sandbox.create();
+        beforeEach(() => { 
             request = sandbox.stub(https, "request", (options: any, callback: any) => {
                 var req = new fakeRequest(false);
                 req.on("end", callback);
@@ -185,9 +185,10 @@ describe("EndToEnd", () => {
         afterEach(() => {
             // Dispose the default app insights client and auto collectors so that they can be reconfigured
             // cleanly for each test
+            sandbox.restore();
             CorrelationContextManager.reset();
             AppInsights.dispose();
-            sandbox.restore();
+            
         });
 
         it("should send telemetry", (done) => {
@@ -259,7 +260,6 @@ describe("EndToEnd", () => {
         });
 
         it("should collect http dependency telemetry", (done) => {
-            request.restore();
             var eventEmitter = new EventEmitter();
             (<any>eventEmitter).method = "GET";
             sandbox.stub(http, 'request', (url: string, c: Function) => {
@@ -283,7 +283,7 @@ describe("EndToEnd", () => {
         });
 
         it("should collect https dependency telemetry", (done) => {
-            request.restore();
+            sandbox.restore();
             var eventEmitter = new EventEmitter();
             (<any>eventEmitter).method = "GET";
             sandbox.stub(https, 'request', (url: string, c: Function) => {
@@ -308,12 +308,6 @@ describe("EndToEnd", () => {
     });
 
     describe("W3C mode", () => {
-        var sandbox: sinon.SinonSandbox;
-
-        beforeEach(() => {
-            sandbox = sinon.sandbox.create();
-        });
-
         afterEach(() => {
             // Dispose the default app insights client and auto collectors so that they can be reconfigured
             // cleanly for each test
@@ -416,21 +410,21 @@ describe("EndToEnd", () => {
 
         beforeEach(() => {
             AppInsights.defaultClient = undefined;
-            cidStub = sinon.stub(CorrelationIdManager, 'queryCorrelationId'); // TODO: Fix method of stubbing requests to allow CID to be part of E2E tests
-            request = sinon.stub(https, 'request');
-            writeFile = sinon.stub(fs, 'writeFile');
-            writeFileSync = sinon.stub(fs, 'writeFileSync');
-            exists = sinon.stub(fs, 'exists').yields(true);
-            existsSync = sinon.stub(fs, 'existsSync').returns(true);
-            readdir = sinon.stub(fs, 'readdir').yields(null, ['1.ai.json']);
-            readdirSync = sinon.stub(fs, 'readdirSync').returns(['1.ai.json']);
-            stat = sinon.stub(fs, 'stat').yields(null, { isFile: () => true, size: 8000 });
-            statSync = sinon.stub(fs, 'statSync').returns({ isFile: () => true, size: 8000 });
-            lstat = sinon.stub(fs, 'lstat').yields(null, { isDirectory: () => true });
-            mkdir = sinon.stub(fs, 'mkdir').yields(null);
-            mkdirSync = sinon.stub(fs, 'mkdirSync').returns(null);
-            readFile = sinon.stub(fs, 'readFile').yields(null, '');
-            spawn = sinon.stub(child_process, 'spawn').returns({
+            cidStub = sandbox.stub(CorrelationIdManager, 'queryCorrelationId'); // TODO: Fix method of stubbing requests to allow CID to be part of E2E tests
+            request = sandbox.stub(https, 'request');
+            writeFile = sandbox.stub(fs, 'writeFile');
+            writeFileSync = sandbox.stub(fs, 'writeFileSync');
+            exists = sandbox.stub(fs, 'exists').yields(true);
+            existsSync = sandbox.stub(fs, 'existsSync').returns(true);
+            readdir = sandbox.stub(fs, 'readdir').yields(null, ['1.ai.json']);
+            readdirSync = sandbox.stub(fs, 'readdirSync').returns(['1.ai.json']);
+            stat = sandbox.stub(fs, 'stat').yields(null, { isFile: () => true, size: 8000 });
+            statSync = sandbox.stub(fs, 'statSync').returns({ isFile: () => true, size: 8000 });
+            lstat = sandbox.stub(fs, 'lstat').yields(null, { isDirectory: () => true });
+            mkdir = sandbox.stub(fs, 'mkdir').yields(null);
+            mkdirSync = sandbox.stub(fs, 'mkdirSync').returns(null);
+            readFile = sandbox.stub(fs, 'readFile').yields(null, '');
+            spawn = sandbox.stub(child_process, 'spawn').returns({
                 on: (type: string, cb: any) => {
                     if (type === 'close') {
                         cb(0);
@@ -445,29 +439,12 @@ describe("EndToEnd", () => {
                 }
             });
             if (child_process.spawnSync) {
-                spawnSync = sinon.stub(child_process, 'spawnSync').returns({ status: 0, stdout: 'stdoutmock' });
+                spawnSync = sandbox.stub(child_process, 'spawnSync').returns({ status: 0, stdout: 'stdoutmock' });
             }
         });
 
         afterEach(() => {
-            cidStub.restore();
-            request.restore();
-            writeFile.restore();
-            exists.restore();
-            readdir.restore();
-            readFile.restore();
-            writeFileSync.restore();
-            existsSync.restore();
-            stat.restore();
-            lstat.restore();
-            mkdir.restore();
-            mkdirSync.restore();
-            readdirSync.restore();
-            statSync.restore();
-            spawn.restore();
-            if (child_process.spawnSync) {
-                spawnSync.restore();
-            }
+            sandbox.restore();
         });
 
         it("disabled by default for new clients", (done) => {
@@ -585,7 +562,7 @@ describe("EndToEnd", () => {
 
         it("refuses to store data if ACL identity fails", (done) => {
             spawn.restore();
-            var tempSpawn = sinon.stub(child_process, 'spawn').returns({
+            var tempSpawn = sandbox.stub(child_process, 'spawn').returns({
                 on: (type: string, cb: any) => {
                     if (type == 'close') {
                         cb(2000); // return non-zero status code
@@ -619,8 +596,6 @@ describe("EndToEnd", () => {
                     setImmediate(() => {
                         assert(writeFile.callCount === 0);
                         assert.equal(tempSpawn.callCount, 1);
-
-                        tempSpawn.restore();
                         (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
                         done();
                     });
@@ -630,7 +605,7 @@ describe("EndToEnd", () => {
 
         it("refuses to query for ACL identity twice", (done) => {
             spawn.restore();
-            var tempSpawn = sinon.stub(child_process, 'spawn').returns({
+            var tempSpawn = sandbox.stub(child_process, 'spawn').returns({
                 on: (type: string, cb: any) => {
                     if (type == 'close') {
                         cb(2000); // return non-zero status code
@@ -675,8 +650,6 @@ describe("EndToEnd", () => {
                                     // The call counts shouldnt have changed
                                     assert(writeFile.callCount === 0);
                                     assert.equal(tempSpawn.callCount, 1);
-
-                                    tempSpawn.restore();
                                     (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
                                     done();
                                 });
@@ -689,7 +662,7 @@ describe("EndToEnd", () => {
 
         it("refuses to query for ACL identity twice (process never returned)", (done) => {
             spawn.restore();
-            var tempSpawn = sinon.stub(child_process, 'spawn').returns({
+            var tempSpawn = sandbox.stub(child_process, 'spawn').returns({
                 on: (type: string, cb: any) => {
                     return; // do nothing
                 },
@@ -732,8 +705,6 @@ describe("EndToEnd", () => {
                                     // The call counts shouldnt have changed
                                     assert(writeFile.callCount === 0);
                                     assert.equal(tempSpawn.callCount, 1);
-
-                                    tempSpawn.restore();
                                     (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
                                     done();
                                 });
@@ -746,7 +717,7 @@ describe("EndToEnd", () => {
 
         it("refuses to store data if ICACLS fails", (done) => {
             spawn.restore();
-            var tempSpawn = sinon.stub(child_process, 'spawn').returns({
+            var tempSpawn = sandbox.stub(child_process, 'spawn').returns({
                 on: (type: string, cb: any) => {
                     if (type == 'close') {
                         cb(2000); // return non-zero status code
@@ -775,8 +746,6 @@ describe("EndToEnd", () => {
                     setImmediate(() => {
                         assert(writeFile.callCount === 0);
                         assert.equal(tempSpawn.callCount, 1);
-
-                        tempSpawn.restore();
                         (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
                         done();
                     });
@@ -786,7 +755,7 @@ describe("EndToEnd", () => {
 
         it("creates directory when nonexistent", (done) => {
             lstat.restore();
-            var tempLstat = sinon.stub(fs, 'lstat').yields({ code: "ENOENT" }, null);
+            var tempLstat = sandbox.stub(fs, 'lstat').yields({ code: "ENOENT" }, null);
 
             var req = new fakeRequest();
 
@@ -807,8 +776,6 @@ describe("EndToEnd", () => {
                             path.dirname(writeFile.firstCall.args[0]),
                             path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
                         assert.equal(writeFile.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
-
-                        tempLstat.restore();
                         done();
                     });
                 }
@@ -971,10 +938,8 @@ describe("EndToEnd", () => {
         });
 
         it("refuses to cache payload when process crashes if ICACLS fails", () => {
-            if (child_process.spawnSync) { // Doesn't exist in Node < 0.11.12
-                spawnSync.restore();
-                var tempSpawnSync = sinon.stub(child_process, 'spawnSync').returns({ status: 2000 });
-            }
+            spawnSync.restore();
+            var tempSpawnSync = sandbox.stub(child_process, 'spawnSync').returns({ status: 2000 });
 
             var req = new fakeRequest(true);
 
@@ -994,20 +959,12 @@ describe("EndToEnd", () => {
 
             if (child_process.spawnSync) {
                 assert.equal(tempSpawnSync.callCount, 1);
-
                 (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
-                tempSpawnSync.restore();
             }
         });
     });
 
     describe("Heartbeat metrics for VM", () => {
-        var sandbox: sinon.SinonSandbox;
-
-        beforeEach(() => {
-            sandbox = sinon.sandbox.create();
-        });
-
         afterEach(() => {
             sandbox.restore();
         });
@@ -1030,7 +987,7 @@ describe("EndToEnd", () => {
             const heartbeat: HeartBeat = new HeartBeat(client);
             heartbeat.enable(true, client.config);
             HeartBeat.INSTANCE.enable(true, client.config);
-            const trackMetricStub = sinon.stub(heartbeat["_client"], "trackMetric");
+            const trackMetricStub = sandbox.stub(heartbeat["_client"], "trackMetric");
 
             heartbeat["trackHeartBeat"](client.config, () => {
                 assert.equal(trackMetricStub.callCount, 1, "should call trackMetric for the VM heartbeat metric");
@@ -1050,9 +1007,6 @@ describe("EndToEnd", () => {
                 assert.equal(properties["azInst_vmId"], "1", "azInst_vmId should be read from response");
                 assert.equal(properties["azInst_subscriptionId"], "2", "azInst_subscriptionId should be read from response");
                 assert.equal(properties["azInst_osType"], "Windows_NT", "azInst_osType should be read from response");
-                trackMetricStub.restore();
-                heartbeat.dispose();
-                stub.restore();
                 done();
             });
         });
@@ -1069,7 +1023,7 @@ describe("EndToEnd", () => {
             const heartbeat: HeartBeat = new HeartBeat(client);
             heartbeat.enable(true, client.config);
             HeartBeat.INSTANCE.enable(true, client.config);
-            const trackMetricStub = sinon.stub(heartbeat["_client"], "trackMetric");
+            const trackMetricStub = sandbox.stub(heartbeat["_client"], "trackMetric");
 
             heartbeat["trackHeartBeat"](client.config, () => {
                 assert.equal(trackMetricStub.callCount, 1, "should call trackMetric as heartbeat metric");
@@ -1083,9 +1037,6 @@ describe("EndToEnd", () => {
                 const properties = trackMetricStub.args[0][0].properties;
                 assert.equal(properties["sdk"], Context.sdkVersion, "sdk version should be read from Context");
                 assert.equal(properties["osType"], os.type(), "osType should be read from os library");
-                trackMetricStub.restore();
-                heartbeat.dispose();
-                stub.restore();
                 done();
             });
         });
