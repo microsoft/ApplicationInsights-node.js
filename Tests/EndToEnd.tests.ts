@@ -447,51 +447,53 @@ describe("EndToEnd", () => {
 
         it("disabled by default for new clients", (done) => {
             var req = new fakeRequest();
-
-            var client = new AppInsights.TelemetryClient("key");
-
-            client.trackEvent({ name: "test event" });
             request.returns(req);
+            var client = new AppInsights.TelemetryClient("key");
+            client.trackEvent({ name: "test event" });
+
             client.flush({
                 callback: (response: any) => {
-                    assert(writeFile.callCount === 0);
-                    done();
+                    // yield for the caching behavior
+                    setImmediate(() => {
+                        assert(writeFile.callCount === 0);
+                        done();
+                    });
                 }
             });
         });
 
         it("enabled by default for default client", (done) => {
             var req = new fakeRequest();
+            request.returns(req);
 
             AppInsights.setup("key").start();
             var client = AppInsights.defaultClient;
-
             client.trackEvent({ name: "test event" });
-
-            request.returns(req);
             client.flush({
                 callback: (response: any) => {
-                    assert.equal(writeFile.callCount, 1);
-                    assert.equal(spawn.callCount, os.type() === "Windows_NT" ? 2 : 0);
-                    done();
+                    // yield for the caching behavior
+                    setImmediate(() => {
+                        assert.equal(writeFile.callCount, 1);
+                        assert.equal(spawn.callCount, os.type() === "Windows_NT" ? 2 : 0);
+                        done();
+                    });
                 }
             });
         });
 
         it("stores data to disk when enabled", (done) => {
             var req = new fakeRequest();
+            request.returns(req);
 
             var client = new AppInsights.TelemetryClient("key");
             client.channel.setUseDiskRetryCaching(true);
 
             client.trackEvent({ name: "test event" });
 
-            request.returns(req);
-
             client.flush({
                 callback: (response: any) => {
                     // yield for the caching behavior
-                    setTimeout(() => {
+                    setImmediate(() => {
                         assert(writeFile.callCount === 1);
                         assert.equal(
                             path.dirname(writeFile.firstCall.args[0]),
@@ -499,7 +501,7 @@ describe("EndToEnd", () => {
                         assert.equal(writeFile.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
                         assert.equal(spawn.callCount, 0); // Should always be 0 because of caching after first call to ICACLS
                         done();
-                    }, 100);
+                    });
                 }
             });
         });
@@ -523,7 +525,7 @@ describe("EndToEnd", () => {
             client.flush({
                 callback: (response: any) => {
                     // yield for the caching behavior
-                    setTimeout(() => {
+                    setImmediate(() => {
                         assert.equal(writeFile.callCount, 1);
                         assert.equal(spawn.callCount, 2);
 
@@ -540,7 +542,7 @@ describe("EndToEnd", () => {
 
                         (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
                         done();
-                    }, 100);
+                    });
                 }
             });
         });
@@ -578,12 +580,12 @@ describe("EndToEnd", () => {
             client.flush({
                 callback: (response: any) => {
                     // yield for the caching behavior
-                    setTimeout(() => {
+                    setImmediate(() => {
                         assert(writeFile.callCount === 0);
                         assert.equal(tempSpawn.callCount, 1);
                         (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
                         done();
-                    }, 100);
+                    });
                 }
             });
         });
@@ -631,13 +633,13 @@ describe("EndToEnd", () => {
                         client.flush({
                             callback: (response: any) => {
                                 // yield for the caching behavior
-                                setTimeout(() => {
+                                setImmediate(() => {
                                     // The call counts shouldnt have changed
                                     assert(writeFile.callCount === 0);
                                     assert.equal(tempSpawn.callCount, 1);
                                     (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
                                     done();
-                                }, 100);
+                                });
                             }
                         });
                     }, 100);
@@ -659,6 +661,7 @@ describe("EndToEnd", () => {
             });
 
             var req = new fakeRequest();
+            request.returns(req);
 
             var client = new AppInsights.TelemetryClient("uniquekey");
             client.channel.setUseDiskRetryCaching(true);
@@ -670,32 +673,27 @@ describe("EndToEnd", () => {
             (<any>client.channel._sender.constructor).ACLED_DIRECTORIES = {};
 
             client.trackEvent({ name: "test event" });
-
-            request.returns(req);
-
             client.flush({
                 callback: (response: any) => {
                     // yield for the caching behavior
-                    setTimeout(() => {
+                    setImmediate(() => {
                         assert(writeFile.callCount === 0);
                         assert.equal(tempSpawn.callCount, 1);
-
-                        client.trackEvent({ name: "test event" });
                         request.returns(req);
-
+                        client.trackEvent({ name: "test event" });
                         client.flush({
                             callback: (response: any) => {
                                 // yield for the caching behavior
-                                setTimeout(() => {
+                                setImmediate(() => {
                                     // The call counts shouldnt have changed
                                     assert(writeFile.callCount === 0);
                                     assert.equal(tempSpawn.callCount, 1);
                                     (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
                                     done();
-                                }, 100);
+                                });
                             }
                         });
-                    }, 100);
+                    });
                 }
             });
         });
@@ -711,6 +709,7 @@ describe("EndToEnd", () => {
             });
 
             var req = new fakeRequest();
+            request.returns(req);
 
             var client = new AppInsights.TelemetryClient("uniquekey");
             client.channel.setUseDiskRetryCaching(true);
@@ -722,18 +721,15 @@ describe("EndToEnd", () => {
             (<any>client.channel._sender.constructor).ACLED_DIRECTORIES = {};
 
             client.trackEvent({ name: "test event" });
-
-            request.returns(req);
-
             client.flush({
                 callback: (response: any) => {
                     // yield for the caching behavior
-                    setTimeout(() => {
+                    setImmediate(() => {
                         assert(writeFile.callCount === 0);
                         assert.equal(tempSpawn.callCount, 1);
                         (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
                         done();
-                    }, 100);
+                    });
                 }
             });
         });
@@ -743,17 +739,15 @@ describe("EndToEnd", () => {
             var tempLstat = sandbox.stub(fs, 'lstat').yields({ code: "ENOENT" }, null);
 
             var req = new fakeRequest();
+            request.returns(req);
 
             var client = new AppInsights.TelemetryClient("key");
             client.channel.setUseDiskRetryCaching(true);
 
             client.trackEvent({ name: "test event" });
-
-            request.returns(req);
-
             client.flush({
                 callback: (response: any) => {
-                    setTimeout(() => {
+                    setImmediate(() => {
                         assert.equal(mkdir.callCount, 1);
                         assert.equal(mkdir.firstCall.args[0], path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
                         assert.equal(writeFile.callCount, 1);
@@ -762,28 +756,27 @@ describe("EndToEnd", () => {
                             path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
                         assert.equal(writeFile.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
                         done();
-                    }, 100);
+                    });
                 }
             });
         });
 
         it("does not store data when limit is below directory size", (done) => {
             var req = new fakeRequest();
+            request.returns(req);
 
             var client = new AppInsights.TelemetryClient("key");
             client.channel.setUseDiskRetryCaching(true, null, 10); // 10 bytes is less than synthetic directory size (see file size in stat mock)
 
             client.trackEvent({ name: "test event" });
 
-            request.returns(req);
-
             client.flush({
                 callback: (response: any) => {
                     // yield for the caching behavior
-                    setTimeout(() => {
+                    setImmediate(() => {
                         assert(writeFile.callCount === 0);
                         done();
-                    }, 100);
+                    });
                 }
             });
         });
@@ -792,14 +785,12 @@ describe("EndToEnd", () => {
             var req = new fakeRequest(false);
             var res = new fakeResponse();
             res.statusCode = 200;
+            request.returns(req);
+            request.yields(res);
 
             var client = new AppInsights.TelemetryClient("key");
             client.channel.setUseDiskRetryCaching(true, 0);
-
             client.trackEvent({ name: "test event" });
-
-            request.returns(req);
-            request.yields(res);
 
             client.flush({
                 callback: (response: any) => {
@@ -811,21 +802,19 @@ describe("EndToEnd", () => {
                             path.dirname(readFile.firstCall.args[0]),
                             path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
                         done();
-                    }, 10);
+                    }, 100);
                 }
             });
         });
 
         it("cache payload synchronously when process crashes", () => {
             var req = new fakeRequest(true);
+            request.returns(req);
 
             var client = new AppInsights.TelemetryClient("key2");
             client.channel.setUseDiskRetryCaching(true);
 
             client.trackEvent({ name: "test event" });
-
-            request.returns(req);
-
             client.channel.triggerSend(true);
 
             assert(existsSync.callCount === 1);
@@ -839,6 +828,7 @@ describe("EndToEnd", () => {
 
         it("use WindowsIdentity to get ACL identity when process crashes (ICACLS)", () => {
             var req = new fakeRequest(true);
+            request.returns(req);
 
             var client = new AppInsights.TelemetryClient("key22");
             client.channel.setUseDiskRetryCaching(true);
@@ -850,9 +840,6 @@ describe("EndToEnd", () => {
             (<any>client.channel._sender.constructor).ACLED_DIRECTORIES = {};
 
             client.trackEvent({ name: "test event" });
-
-            request.returns(req);
-
             client.channel.triggerSend(true);
 
             // First external call should be to powershell to query WindowsIdentity
