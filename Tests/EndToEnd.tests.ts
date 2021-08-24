@@ -451,19 +451,12 @@ describe("EndToEnd", () => {
             var client = new AppInsights.TelemetryClient("key");
 
             client.trackEvent({ name: "test event" });
-
             request.returns(req);
-
-            setImmediate(() => {
-                client.flush({
-                    callback: (response: any) => {
-                        // yield for the caching behavior
-                        setImmediate(() => {
-                            assert(writeFile.callCount === 0);
-                            done();
-                        });
-                    }
-                });
+            client.flush({
+                callback: (response: any) => {
+                    assert(writeFile.callCount === 0);
+                    done();
+                }
             });
         });
 
@@ -476,19 +469,13 @@ describe("EndToEnd", () => {
             client.trackEvent({ name: "test event" });
 
             request.returns(req);
-
-            setTimeout(() => {
-                client.flush({
-                    callback: (response: any) => {
-                        // yield for the caching behavior
-                        setTimeout(() => {
-                            assert.equal(writeFile.callCount, 1);
-                            assert.equal(spawn.callCount, os.type() === "Windows_NT" ? 2 : 0);
-                            done();
-                        }, 100);
-                    }
-                });
-            }, 100)
+            client.flush({
+                callback: (response: any) => {
+                    assert.equal(writeFile.callCount, 1);
+                    assert.equal(spawn.callCount, os.type() === "Windows_NT" ? 2 : 0);
+                    done();
+                }
+            });
         });
 
         it("stores data to disk when enabled", (done) => {
