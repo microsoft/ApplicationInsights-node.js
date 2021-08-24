@@ -310,9 +310,9 @@ describe("EndToEnd", () => {
         afterEach(() => {
             // Dispose the default app insights client and auto collectors so that they can be reconfigured
             // cleanly for each test
+            sandbox.restore();
             CorrelationContextManager.reset();
             AppInsights.dispose();
-            sandbox.restore();
         });
 
         it("should pass along traceparent/tracestate header if present in current operation", (done) => {
@@ -352,8 +352,6 @@ describe("EndToEnd", () => {
         });
 
         it("should create and pass a traceparent header if w3c is enabled", (done) => {
-            var CorrelationIdManager = require("../Library/CorrelationIdManager");
-
             var eventEmitter = new EventEmitter();
             (eventEmitter as any).headers = {};
             (eventEmitter as any)["getHeader"] = function (name: string) { return this.headers[name]; };
@@ -363,6 +361,7 @@ describe("EndToEnd", () => {
                 process.nextTick(c);
                 return eventEmitter;
             });
+            var CorrelationIdManager = require("../Library/CorrelationIdManager");
 
             AppInsights
                 .setup("ikey")
