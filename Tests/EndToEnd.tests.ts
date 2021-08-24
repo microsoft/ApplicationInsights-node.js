@@ -454,7 +454,7 @@ describe("EndToEnd", () => {
 
             request.returns(req);
 
-            setTimeout(() => {
+            setImmediate(() => {
                 client.flush({
                     callback: (response: any) => {
                         // yield for the caching behavior
@@ -464,7 +464,7 @@ describe("EndToEnd", () => {
                         });
                     }
                 });
-            }, 100);
+            });
         });
 
         it("enabled by default for default client", (done) => {
