@@ -85,7 +85,7 @@ class fakeRequest {
     public on(event: string, callback: Function) {
         this.callbacks[event] = callback;
         if (event === "error" && this.failImmediatly) {
-            setTimeout(() => this.fail(), 100);
+            setImmediate(() => this.fail());
         }
     }
 
