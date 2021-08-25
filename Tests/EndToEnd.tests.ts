@@ -179,21 +179,13 @@ describe("EndToEnd", () => {
             .post("/v2.1/track", (body: string) => {
                 return true;
             });
-
-        let vmInterceptor = nock("http://169.254.169.254")
-            .get("/metadata/instance/compute", (body: string) => {
-                return true;
-            });
-        vmInterceptor.reply(200, {
-            "vmId": "testId",
-            "subscriptionId": "testsubscriptionId",
-            "osType": "testOsType"
-        }).persist();
+        nock.disableNetConnect();
     });
 
     after(() => {
         process.env = originalEnv;
         nock.cleanAll();
+        nock.enableNetConnect();
     });
 
     describe("Basic usage", () => {
@@ -436,7 +428,7 @@ describe("EndToEnd", () => {
         let nockScope: nock.Scope;
 
         beforeEach(() => {
-            nockScope = interceptor.replyWithError("test error").persist();
+            nockScope = interceptor.reply(503, {});
             AppInsights.defaultClient = undefined;
             sandbox.stub(CorrelationIdManager, 'queryCorrelationId'); // TODO: Fix method of stubbing requests to allow CID to be part of E2E tests
             writeFile = sandbox.stub(fs, 'writeFile');
@@ -773,28 +765,30 @@ describe("EndToEnd", () => {
         });
 
         it("checks for files when connection is back online", (done) => {
-            var req = new fakeRequest(false);
-            var res = new fakeResponse();
-            res.statusCode = 200;
-            let requestStub = sandbox.stub(https, 'request');
-            requestStub.returns(req);
-            requestStub.yields(res);
-
             var client = new AppInsights.TelemetryClient("key");
             client.channel.setUseDiskRetryCaching(true, 0);
             client.trackEvent({ name: "test event" });
-
             client.flush({
                 callback: (response: any) => {
-                    // wait until sdk looks for offline files
-                    setTimeout(() => {
-                        assert(readdir.callCount === 1);
-                        assert(readFile.callCount === 1);
-                        assert.equal(
-                            path.dirname(readFile.firstCall.args[0]),
-                            path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
-                        done();
-                    }, 100);
+                    // yield for the caching behavior
+                    setImmediate(() => {
+                        assert.equal(writeFile.callCount, 1);
+                        interceptor.reply(200, breezeResponse);
+                        client.trackEvent({ name: "test event" });
+                        client.flush({
+                            callback: (response: any) => {
+                                // wait until sdk looks for offline files
+                                setTimeout(() => {
+                                    assert.equal(readdir.callCount, 2);
+                                    assert.equal(readFile.callCount, 1);
+                                    assert.equal(
+                                        path.dirname(readFile.firstCall.args[0]),
+                                        path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
+                                    done();
+                                }, 100);
+                            }
+                        });
+                    });
                 }
             });
         });
