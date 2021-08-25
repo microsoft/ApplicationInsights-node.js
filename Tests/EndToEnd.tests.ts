@@ -7,11 +7,14 @@ import fs = require('fs');
 import sinon = require("sinon");
 import events = require("events");
 import child_process = require("child_process");
+import nock = require("nock");
 import AppInsights = require("../applicationinsights");
 import Sender = require("../Library/Sender");
 import Traceparent = require("../Library/Traceparent");
 import { EventEmitter } from "events";
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
+import Constants = require("../Declarations/Constants");
+import Contracts = require("../Declarations/Contracts");
 import HeartBeat = require("../AutoCollection/HeartBeat");
 import TelemetryClient = require("../Library/TelemetryClient");
 import Context = require("../Library/Context");
@@ -152,42 +155,61 @@ class fakeHttpsServer extends events.EventEmitter {
     }
 }
 
+
 describe("EndToEnd", () => {
     var sandbox: sinon.SinonSandbox;
     var originalEnv = {};
+    let interceptor: nock.Interceptor;
+
+    var breezeResponse: Contracts.BreezeResponse = {
+        itemsAccepted: 1,
+        itemsReceived: 1,
+        errors: []
+    };
 
     before(() => {
         sandbox = sinon.sandbox.create();
         var newEnv = <{ [id: string]: string }>{};
+        Util.tlsRestrictedAgent = new https.Agent();
         newEnv["APPLICATION_INSIGHTS_NO_STATSBEAT"] = "true";
         originalEnv = process.env;
         process.env = newEnv;
+
+        interceptor = nock(Constants.DEFAULT_BREEZE_ENDPOINT)
+            .post("/v2.1/track", (body: string) => {
+                return true;
+            });
+
+        let vmInterceptor = nock("http://169.254.169.254")
+            .get("/metadata/instance/compute", (body: string) => {
+                return true;
+            });
+        vmInterceptor.reply(200, {
+            "vmId": "testId",
+            "subscriptionId": "testsubscriptionId",
+            "osType": "testOsType"
+        }).persist();
     });
 
     after(() => {
         process.env = originalEnv;
+        nock.cleanAll();
     });
 
-    var request: sinon.SinonStub;
-
-    Util.tlsRestrictedAgent = new https.Agent();
-
     describe("Basic usage", () => {
-        beforeEach(() => {
-            request = sandbox.stub(https, "request", (options: any, callback: any) => {
-                var req = new fakeRequest(false);
-                req.on("end", callback);
-                return req;
-            });
+        let nockScope: nock.Scope;
+
+        before(() => {
+            nockScope = interceptor.reply(200, breezeResponse).persist();
         });
 
         afterEach(() => {
             // Dispose the default app insights client and auto collectors so that they can be reconfigured
             // cleanly for each test
             sandbox.restore();
+
             CorrelationContextManager.reset();
             AppInsights.dispose();
-
         });
 
         it("should send telemetry", (done) => {
@@ -307,6 +329,12 @@ describe("EndToEnd", () => {
     });
 
     describe("W3C mode", () => {
+        let nockScope: nock.Scope;
+
+        before(() => {
+            nockScope = interceptor.reply(200, breezeResponse).persist();
+        });
+
         afterEach(() => {
             // Dispose the default app insights client and auto collectors so that they can be reconfigured
             // cleanly for each test
@@ -390,7 +418,6 @@ describe("EndToEnd", () => {
 
     describe("Disk retry mode", () => {
         var CorrelationIdManager = require("../Library/CorrelationIdManager");
-        var cidStub: sinon.SinonStub = null;
         var writeFile: sinon.SinonStub;
         var writeFileSync: sinon.SinonStub;
         var readFile: sinon.SinonStub;
@@ -406,10 +433,12 @@ describe("EndToEnd", () => {
         var spawn: sinon.SinonStub;
         var spawnSync: sinon.SinonStub;
 
+        let nockScope: nock.Scope;
+
         beforeEach(() => {
+            nockScope = interceptor.replyWithError("test error").persist();
             AppInsights.defaultClient = undefined;
-            cidStub = sandbox.stub(CorrelationIdManager, 'queryCorrelationId'); // TODO: Fix method of stubbing requests to allow CID to be part of E2E tests
-            request = sandbox.stub(https, 'request');
+            sandbox.stub(CorrelationIdManager, 'queryCorrelationId'); // TODO: Fix method of stubbing requests to allow CID to be part of E2E tests
             writeFile = sandbox.stub(fs, 'writeFile');
             writeFileSync = sandbox.stub(fs, 'writeFileSync');
             exists = sandbox.stub(fs, 'exists').yields(true);
@@ -443,11 +472,10 @@ describe("EndToEnd", () => {
 
         afterEach(() => {
             sandbox.restore();
+            AppInsights.dispose();
         });
 
         it("disabled by default for new clients", (done) => {
-            var req = new fakeRequest();
-            request.returns(req);
             var client = new AppInsights.TelemetryClient("key");
             client.trackEvent({ name: "test event" });
 
@@ -463,9 +491,6 @@ describe("EndToEnd", () => {
         });
 
         it("enabled by default for default client", (done) => {
-            var req = new fakeRequest();
-            request.returns(req);
-
             AppInsights.setup("key").start();
             var client = AppInsights.defaultClient;
             client.trackEvent({ name: "test event" });
@@ -482,9 +507,6 @@ describe("EndToEnd", () => {
         });
 
         it("stores data to disk when enabled", (done) => {
-            var req = new fakeRequest();
-            request.returns(req);
-
             var client = new AppInsights.TelemetryClient("key");
             client.channel.setUseDiskRetryCaching(true);
 
@@ -507,8 +529,6 @@ describe("EndToEnd", () => {
         });
 
         it("uses WindowsIdentity to get the identity for ICACLS", (done) => {
-            var req = new fakeRequest();
-
             var client = new AppInsights.TelemetryClient("uniquekey");
             client.channel.setUseDiskRetryCaching(true);
             var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
@@ -519,9 +539,6 @@ describe("EndToEnd", () => {
             (<any>client.channel._sender.constructor).ACLED_DIRECTORIES = {};
 
             client.trackEvent({ name: "test event" });
-
-            request.returns(req);
-
             client.flush({
                 callback: (response: any) => {
                     // yield for the caching behavior
@@ -561,9 +578,6 @@ describe("EndToEnd", () => {
                     }
                 }
             });
-
-            var req = new fakeRequest();
-
             var client = new AppInsights.TelemetryClient("uniquekey");
             client.channel.setUseDiskRetryCaching(true);
             var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
@@ -574,9 +588,6 @@ describe("EndToEnd", () => {
             (<any>client.channel._sender.constructor).ACLED_DIRECTORIES = {};
 
             client.trackEvent({ name: "test event" });
-
-            request.returns(req);
-
             client.flush({
                 callback: (response: any) => {
                     // yield for the caching behavior
@@ -604,9 +615,6 @@ describe("EndToEnd", () => {
                     }
                 }
             });
-
-            var req = new fakeRequest();
-
             var client = new AppInsights.TelemetryClient("uniquekey");
             client.channel.setUseDiskRetryCaching(true);
             var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
@@ -618,8 +626,6 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
 
-            request.returns(req);
-
             client.flush({
                 callback: (response: any) => {
                     // yield for the caching behavior
@@ -628,7 +634,6 @@ describe("EndToEnd", () => {
                         assert.equal(tempSpawn.callCount, 1);
 
                         client.trackEvent({ name: "test event" });
-                        request.returns(req);
 
                         client.flush({
                             callback: (response: any) => {
@@ -660,9 +665,6 @@ describe("EndToEnd", () => {
                 }
             });
 
-            var req = new fakeRequest();
-            request.returns(req);
-
             var client = new AppInsights.TelemetryClient("uniquekey");
             client.channel.setUseDiskRetryCaching(true);
             var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
@@ -679,7 +681,6 @@ describe("EndToEnd", () => {
                     setImmediate(() => {
                         assert(writeFile.callCount === 0);
                         assert.equal(tempSpawn.callCount, 1);
-                        request.returns(req);
                         client.trackEvent({ name: "test event" });
                         client.flush({
                             callback: (response: any) => {
@@ -708,9 +709,6 @@ describe("EndToEnd", () => {
                 }
             });
 
-            var req = new fakeRequest();
-            request.returns(req);
-
             var client = new AppInsights.TelemetryClient("uniquekey");
             client.channel.setUseDiskRetryCaching(true);
             var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
@@ -736,11 +734,7 @@ describe("EndToEnd", () => {
 
         it("creates directory when nonexistent", (done) => {
             lstat.restore();
-            var tempLstat = sandbox.stub(fs, 'lstat').yields({ code: "ENOENT" }, null);
-
-            var req = new fakeRequest();
-            request.returns(req);
-
+            sandbox.stub(fs, 'lstat').yields({ code: "ENOENT" }, null);
             var client = new AppInsights.TelemetryClient("key");
             client.channel.setUseDiskRetryCaching(true);
 
@@ -756,15 +750,12 @@ describe("EndToEnd", () => {
                             path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
                         assert.equal(writeFile.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
                         done();
-                    },100);
+                    }, 100);
                 }
             });
         });
 
         it("does not store data when limit is below directory size", (done) => {
-            var req = new fakeRequest();
-            request.returns(req);
-
             var client = new AppInsights.TelemetryClient("key");
             client.channel.setUseDiskRetryCaching(true, null, 10); // 10 bytes is less than synthetic directory size (see file size in stat mock)
 
@@ -785,8 +776,9 @@ describe("EndToEnd", () => {
             var req = new fakeRequest(false);
             var res = new fakeResponse();
             res.statusCode = 200;
-            request.returns(req);
-            request.yields(res);
+            let requestStub = sandbox.stub(https, 'request');
+            requestStub.returns(req);
+            requestStub.yields(res);
 
             var client = new AppInsights.TelemetryClient("key");
             client.channel.setUseDiskRetryCaching(true, 0);
@@ -808,9 +800,6 @@ describe("EndToEnd", () => {
         });
 
         it("cache payload synchronously when process crashes", () => {
-            var req = new fakeRequest(true);
-            request.returns(req);
-
             var client = new AppInsights.TelemetryClient("key2");
             client.channel.setUseDiskRetryCaching(true);
 
@@ -827,9 +816,6 @@ describe("EndToEnd", () => {
         });
 
         it("use WindowsIdentity to get ACL identity when process crashes (ICACLS)", () => {
-            var req = new fakeRequest(true);
-            request.returns(req);
-
             var client = new AppInsights.TelemetryClient("key22");
             client.channel.setUseDiskRetryCaching(true);
             var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
@@ -859,18 +845,12 @@ describe("EndToEnd", () => {
         it("refuses to cache payload when process crashes if ICACLS fails", () => {
             spawnSync.restore();
             var tempSpawnSync = sandbox.stub(child_process, 'spawnSync').returns({ status: 2000 });
-
-            var req = new fakeRequest(true);
-
             var client = new AppInsights.TelemetryClient("key3"); // avoid icacls cache by making key unique
             client.channel.setUseDiskRetryCaching(true);
             var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
             (<any>client.channel._sender.constructor).USE_ICACLS = true; // Simulate ICACLS environment even on *nix
 
             client.trackEvent({ name: "test event" });
-
-            request.returns(req);
-
             client.channel.triggerSend(true);
 
             assert(existsSync.callCount === 1);
