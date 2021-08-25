@@ -747,7 +747,7 @@ describe("EndToEnd", () => {
             client.trackEvent({ name: "test event" });
             client.flush({
                 callback: (response: any) => {
-                    setImmediate(() => {
+                    setTimeout(() => {
                         assert.equal(mkdir.callCount, 1);
                         assert.equal(mkdir.firstCall.args[0], path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
                         assert.equal(writeFile.callCount, 1);
@@ -756,7 +756,7 @@ describe("EndToEnd", () => {
                             path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
                         assert.equal(writeFile.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
                         done();
-                    });
+                    },100);
                 }
             });
         });
