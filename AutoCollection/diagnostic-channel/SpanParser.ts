@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
-import { SpanAttributes, SpanKind } from "@opentelemetry/api";
+import { SpanAttributes, SpanKind, SpanStatusCode } from "@opentelemetry/api";
 import { Span } from "@opentelemetry/tracing";
 import * as Contracts from "../../Declarations/Contracts";
 import * as Constants from "../../Declarations/Constants";
@@ -14,25 +14,23 @@ function filterSpanAttributes(attributes: SpanAttributes) {
 }
 
 export function spanToTelemetryContract(span: Span): (Contracts.DependencyTelemetry & Contracts.RequestTelemetry) & Contracts.Identified {
-    const id = `|${span.context().traceId}.${span.context().spanId}.`;
+    const spanContext = span.spanContext ? span.spanContext() : (<any>span).context(); // context is available in OT API <v0.19.0
+    const id = `|${spanContext.traceId}.${spanContext.spanId}.`;
     const duration = Math.round(span["_duration"][0] * 1e3 + span["_duration"][1] / 1e6);
     let peerAddress = span.attributes["peer.address"] ? span.attributes["peer.address"].toString() : "";
-    let component = span.attributes["component"] ? span.attributes["component"].toString() : "";
 
-    const isHttp: boolean = ((component).toUpperCase() === Constants.DependencyTypeName.Http) || (!!span.attributes[Constants.SpanAttribute.HttpUrl]);
-    const isGrpc: boolean = (component).toLowerCase() === Constants.DependencyTypeName.Grpc;
+    const isHttp: boolean = (!!span.attributes[Constants.SpanAttribute.HttpStatusCode]) || (!!span.attributes[Constants.SpanAttribute.HttpUrl]);
+    const isGrpc: boolean = (!!span.attributes[Constants.SpanAttribute.GrpcStatusCode]);
     if (isHttp) {
         // Read http span attributes
         const method = span.attributes[Constants.SpanAttribute.HttpMethod] || "GET";
-        const url = new URL(span.attributes[Constants.SpanAttribute.HttpUrl].toString());
-        const host = span.attributes[Constants.SpanAttribute.HttpHost] || url.host;
-        const port = span.attributes[Constants.SpanAttribute.HttpPort] || url.port || null;
+        const url = new URL(span.attributes[Constants.SpanAttribute.HttpUrl] as string);
         const pathname = url.pathname || "/";
 
         // Translate to AI Dependency format
         const name = `${method} ${pathname}`;
         const dependencyTypeName = Constants.DependencyTypeName.Http;
-        const target = port ? `${host}:${port}`.toString() : host.toString();
+        const target = span.attributes[Constants.SpanAttribute.HttpUrl] ? url.hostname : undefined;
         const data = url.toString();
         const resultCode = span.attributes[Constants.SpanAttribute.HttpStatusCode] || span.status.code || 0;
         const success = resultCode < 400; // Status.OK
@@ -50,12 +48,12 @@ export function spanToTelemetryContract(span: Span): (Contracts.DependencyTeleme
         const name = service ? `${method} ${service}` : span.name;
         return {
             id, duration, name,
-            target: service.toString(),
+            target: method.toString(),
             data: service.toString() || name,
             url: service.toString() || name,
             dependencyTypeName: Constants.DependencyTypeName.Grpc,
-            resultCode: String(span.status.code || 0),
-            success: span.status.code === 0,
+            resultCode: String(span.attributes[Constants.SpanAttribute.GrpcStatusCode] || span.status.code || 0),
+            success: span.status.code === SpanStatusCode.OK,
             properties: filterSpanAttributes(span.attributes),
         }
     } else {
@@ -68,12 +66,12 @@ export function spanToTelemetryContract(span: Span): (Contracts.DependencyTeleme
         });
         return {
             id, duration, name,
-            target: peerAddress,
+            target: (span.attributes[Constants.SpanAttribute.HttpUrl] as string) || undefined,
             data: peerAddress || name,
             url: peerAddress || name,
-            dependencyTypeName: span.kind === SpanKind.INTERNAL ? Constants.DependencyTypeName.InProc : (component || span.name),
+            dependencyTypeName: span.kind === SpanKind.INTERNAL ? Constants.DependencyTypeName.InProc : span.name,
             resultCode: String(span.status.code || 0),
-            success: span.status.code === 0,
+            success: span.status.code !== SpanStatusCode.ERROR,
             properties: {
                 ...filterSpanAttributes(span.attributes),
                 "_MS.links": links || undefined

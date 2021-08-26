@@ -54,10 +54,8 @@ class Config {
     public httpAgent: http.Agent;
     /** An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined) */
     public httpsAgent: https.Agent;
-
     /** Disable including legacy headers in outgoing requests, x-ms-request-id */
     public ignoreLegacyHeaders?: boolean;
-
     /** AAD TokenCredential to use to authenticate the app */
     public aadTokenCredential?: azureCore.TokenCredential;
 
@@ -107,7 +105,7 @@ class Config {
         this._quickPulseHost = csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_HOST;
         // Parse quickPulseHost if it starts with http(s)://
         if (this._quickPulseHost.match(/^https?:\/\//)) {
-            this._quickPulseHost = url.parse(this._quickPulseHost).host;
+            this._quickPulseHost = new url.URL(this._quickPulseHost).host;
         }
     }
 

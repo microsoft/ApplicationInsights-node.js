@@ -1,4 +1,5 @@
 import Contracts = require("./Contracts")
+import * as conventions from "@opentelemetry/semantic-conventions";
 
 export const DEFAULT_BREEZE_ENDPOINT = "https://dc.services.visualstudio.com";
 export const DEFAULT_LIVEMETRICS_ENDPOINT = "https://rt.services.visualstudio.com";
@@ -6,37 +7,37 @@ export const DEFAULT_LIVEMETRICS_HOST = "rt.services.visualstudio.com";
 
 export enum QuickPulseCounter {
     // Memory
-    COMMITTED_BYTES= "\\Memory\\Committed Bytes",
+    COMMITTED_BYTES = "\\Memory\\Committed Bytes",
 
     // CPU
-    PROCESSOR_TIME= "\\Processor(_Total)\\% Processor Time",
+    PROCESSOR_TIME = "\\Processor(_Total)\\% Processor Time",
 
     // Request
-    REQUEST_RATE= "\\ApplicationInsights\\Requests\/Sec",
-    REQUEST_FAILURE_RATE= "\\ApplicationInsights\\Requests Failed\/Sec",
-    REQUEST_DURATION= "\\ApplicationInsights\\Request Duration",
+    REQUEST_RATE = "\\ApplicationInsights\\Requests\/Sec",
+    REQUEST_FAILURE_RATE = "\\ApplicationInsights\\Requests Failed\/Sec",
+    REQUEST_DURATION = "\\ApplicationInsights\\Request Duration",
 
     // Dependency
-    DEPENDENCY_RATE= "\\ApplicationInsights\\Dependency Calls\/Sec",
-    DEPENDENCY_FAILURE_RATE= "\\ApplicationInsights\\Dependency Calls Failed\/Sec",
-    DEPENDENCY_DURATION= "\\ApplicationInsights\\Dependency Call Duration",
+    DEPENDENCY_RATE = "\\ApplicationInsights\\Dependency Calls\/Sec",
+    DEPENDENCY_FAILURE_RATE = "\\ApplicationInsights\\Dependency Calls Failed\/Sec",
+    DEPENDENCY_DURATION = "\\ApplicationInsights\\Dependency Call Duration",
 
     // Exception
-    EXCEPTION_RATE= "\\ApplicationInsights\\Exceptions\/Sec"
+    EXCEPTION_RATE = "\\ApplicationInsights\\Exceptions\/Sec"
 }
 
 export enum PerformanceCounter {
     // Memory
-    PRIVATE_BYTES= "\\Process(??APP_WIN32_PROC??)\\Private Bytes",
-    AVAILABLE_BYTES= "\\Memory\\Available Bytes",
+    PRIVATE_BYTES = "\\Process(??APP_WIN32_PROC??)\\Private Bytes",
+    AVAILABLE_BYTES = "\\Memory\\Available Bytes",
 
     // CPU
-    PROCESSOR_TIME= "\\Processor(_Total)\\% Processor Time",
-    PROCESS_TIME= "\\Process(??APP_WIN32_PROC??)\\% Processor Time",
+    PROCESSOR_TIME = "\\Processor(_Total)\\% Processor Time",
+    PROCESS_TIME = "\\Process(??APP_WIN32_PROC??)\\% Processor Time",
 
     // Requests
-    REQUEST_RATE= "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Requests/Sec",
-    REQUEST_DURATION= "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Request Execution Time"
+    REQUEST_RATE = "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Requests/Sec",
+    REQUEST_DURATION = "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Request Execution Time"
 };
 
 export enum MetricId {
@@ -44,12 +45,12 @@ export enum MetricId {
     DEPENDENCIES_DURATION = "dependencies/duration",
     EXCEPTIONS_COUNT = "exceptions/count",
     TRACES_COUNT = "traces/count",
-}; 
+};
 
 /**
  * Map a PerformanceCounter/QuickPulseCounter to a QuickPulseCounter. If no mapping exists, mapping is *undefined*
  */
-export const PerformanceToQuickPulseCounter: {[key: string]: QuickPulseCounter} = {
+export const PerformanceToQuickPulseCounter: { [key: string]: QuickPulseCounter } = {
     [PerformanceCounter.PROCESSOR_TIME]: QuickPulseCounter.PROCESSOR_TIME,
     [PerformanceCounter.REQUEST_RATE]: QuickPulseCounter.REQUEST_RATE,
     [PerformanceCounter.REQUEST_DURATION]: QuickPulseCounter.REQUEST_DURATION,
@@ -76,7 +77,7 @@ export type QuickPulseType =
     | "AvailabilityTelemetryDocument"
     | "PageViewTelemetryDocument";
 
-export const QuickPulseDocumentType: {[key in Contracts.TelemetryTypeKeys]: QuickPulseDocumentType} = {
+export const QuickPulseDocumentType: { [key in Contracts.TelemetryTypeKeys]: QuickPulseDocumentType } = {
     Event: "Event",
     Exception: "Exception",
     Trace: "Trace",
@@ -87,7 +88,7 @@ export const QuickPulseDocumentType: {[key in Contracts.TelemetryTypeKeys]: Quic
     PageView: "PageView",
 };
 
-export const QuickPulseType: {[key in Contracts.TelemetryTypeKeys]: QuickPulseType} = {
+export const QuickPulseType: { [key in Contracts.TelemetryTypeKeys]: QuickPulseType } = {
     Event: "EventTelemetryDocument",
     Exception: "ExceptionTelemetryDocument",
     Trace: "TraceTelemetryDocument",
@@ -98,7 +99,7 @@ export const QuickPulseType: {[key in Contracts.TelemetryTypeKeys]: QuickPulseTy
     PageView: "PageViewTelemetryDocument",
 };
 
-export const TelemetryTypeStringToQuickPulseType: {[key in Contracts.TelemetryTypeValues]: QuickPulseType} = {
+export const TelemetryTypeStringToQuickPulseType: { [key in Contracts.TelemetryTypeValues]: QuickPulseType } = {
     EventData: QuickPulseType.Event,
     ExceptionData: QuickPulseType.Exception,
     MessageData: QuickPulseType.Trace,
@@ -109,7 +110,7 @@ export const TelemetryTypeStringToQuickPulseType: {[key in Contracts.TelemetryTy
     PageViewData: QuickPulseType.PageView
 };
 
-export const TelemetryTypeStringToQuickPulseDocumentType: {[key in Contracts.TelemetryTypeValues]: QuickPulseDocumentType} = {
+export const TelemetryTypeStringToQuickPulseDocumentType: { [key in Contracts.TelemetryTypeValues]: QuickPulseDocumentType } = {
     EventData: QuickPulseDocumentType.Event,
     ExceptionData: QuickPulseDocumentType.Exception,
     MessageData: QuickPulseDocumentType.Trace,
@@ -123,16 +124,15 @@ export const TelemetryTypeStringToQuickPulseDocumentType: {[key in Contracts.Tel
 // OpenTelemetry Span Attributes
 export const SpanAttribute = {
     // HTTP
-    HttpHost: "http.host",
-    HttpMethod: "http.method",
-    HttpPort: "http.port",
-    HttpStatusCode: "http.status_code",
-    HttpUrl: "http.url",
-    HttpUserAgent: "http.user_agent",
+    HttpMethod: conventions.SemanticAttributes.HTTP_METHOD,
+    HttpStatusCode: conventions.SemanticAttributes.HTTP_STATUS_CODE,
+    HttpUrl: conventions.SemanticAttributes.HTTP_URL,
+    HttpUserAgent: conventions.SemanticAttributes.HTTP_USER_AGENT,
 
     // GRPC
-    GrpcMethod: "grpc.method",
-    GrpcService: "rpc.service", // rpc not grpc
+    GrpcStatusCode: conventions.SemanticAttributes.RPC_GRPC_STATUS_CODE,
+    GrpcMethod: conventions.SemanticAttributes.RPC_METHOD, // rpc not grpc
+    GrpcService: conventions.SemanticAttributes.RPC_SERVICE, // rpc not grpc
 };
 
 export const DependencyTypeName = {
@@ -142,3 +142,56 @@ export const DependencyTypeName = {
 }
 
 export const HeartBeatMetricName = "HeartBeat";
+
+export const StatsbeatTelemetryName = "Statsbeat";
+
+export const StatsbeatResourceProvider = {
+    appsvc: "appsvc",
+    function: "function",
+    vm: "vm",
+    unknown: "unknown",
+}
+
+export const StatsbeatAttach = {
+    codeless: "codeless",
+    sdk: "sdk",
+}
+
+export const StatsbeatCounter = {
+    REQUEST_SUCCESS: "Request Success Count",
+    REQUEST_FAILURE: "Requests Failure Count",
+    REQUEST_DURATION: "Request Duration",
+    RETRY_COUNT: "Retry Count",
+    THROTTLE_COUNT: "Throttle Count",
+    EXCEPTION_COUNT: "Exception Count",
+    ATTACH: "Attach",
+    FEATURE: "Feature",
+}
+
+export enum StatsbeatFeature {
+    NONE = 0,
+    DISK_RETRY = 1,
+    AAD_HANDLING = 2,
+}
+
+export enum StatsbeatInstrumentation {
+    NONE = 0,
+    AZURE_CORE_TRACING = 1,
+    MONGODB = 2,
+    MYSQL = 4,
+    REDIS = 8,
+    POSTGRES = 16,
+    BUNYAN = 32,
+    WINSTON = 64,
+    CONSOLE = 128,
+}
+
+export enum StatsbeatFeatureType {
+    Feature,
+    Instrumentation,
+}
+
+export enum StatsbeatNetworkCategory {
+    Breeze,
+    Quickpulse,
+}

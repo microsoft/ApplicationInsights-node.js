@@ -47,7 +47,11 @@ class AutoCollectExceptions {
                 // For scenarios like Promise.reject(), an error won't be passed to the handle. Create a placeholder
                 // error for these scenarios.
                 var handle = (reThrow: boolean, name: string, error: Error = new Error(AutoCollectExceptions._FALLBACK_ERROR_MESSAGE)) => {
-                    this._client.trackException({ exception: error });
+                    let exceptionTelemetry: Contracts.ExceptionTelemetry = { exception: error };
+                    // Add full error in context so it could used in telemetryProcessors
+                    exceptionTelemetry.contextObjects = {};
+                    exceptionTelemetry.contextObjects["Error"] = error;
+                    this._client.trackException(exceptionTelemetry);
                     this._client.flush({ isAppCrashing: true });
                     // only rethrow when we are the only listener
                     if (reThrow && name && (<any>process).listeners(name).length === 1) {

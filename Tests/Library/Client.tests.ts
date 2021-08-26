@@ -5,6 +5,7 @@ import Sinon = require("sinon");
 import eventEmitter = require('events');
 import azureCore = require("@azure/core-http");
 
+import AutoCollecPreAggregatedMetrics = require("../../AutoCollection/PreAggregatedMetrics");
 import Client = require("../../Library/NodeClient");
 import Config = require("../../Library/Config");
 import Contracts = require("../../Declarations/Contracts");
@@ -685,6 +686,12 @@ describe("Library/TelemetryClient", () => {
     });
 
     describe("#ProcessedByMetricExtractors()", () => {
+
+        before(() => {
+            let preAggregatedMetrics = new AutoCollecPreAggregatedMetrics(client);
+            preAggregatedMetrics.enable(true);
+        });
+
         it("exception telemetry", () => {
             trackStub.restore();
             var createEnvelopeSpy = sinon.spy(EnvelopeFactory, "createEnvelope");

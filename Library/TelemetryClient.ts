@@ -9,6 +9,7 @@ import Contracts = require("../Declarations/Contracts");
 import Channel = require("./Channel");
 import TelemetryProcessors = require("../TelemetryProcessors");
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
+import Statsbeat = require("../AutoCollection/Statsbeat");
 import Sender = require("./Sender");
 import Util = require("./Util");
 import Logging = require("./Logging");
@@ -24,6 +25,7 @@ import { Tags } from "../Declarations/Contracts";
 class TelemetryClient {
     private _telemetryProcessors: { (envelope: Contracts.EnvelopeTelemetry, contextObjects: { [name: string]: any; }): boolean; }[] = [];
     private _enableAzureProperties: boolean = false;
+    private _statsbeat: Statsbeat;
 
     public config: Config;
     public context: Context;
@@ -31,7 +33,6 @@ class TelemetryClient {
     public channel: Channel;
     public quickPulseClient: QuickPulseStateManager;
     public authorizationHandler: AuthorizationHandler;
-
 
     /**
      * Constructs a new client of the client
@@ -43,7 +44,11 @@ class TelemetryClient {
         this.context = new Context();
         this.commonProperties = {};
         this.authorizationHandler = null;
-        var sender = new Sender(this.config, this.getAuthorizationHandler);
+        if (!process.env["APPLICATION_INSIGHTS_NO_STATSBEAT"]) {
+            this._statsbeat = new Statsbeat(this.config);
+            this._statsbeat.enable(true);
+        }
+        var sender = new Sender(this.config, this.getAuthorizationHandler, null, null, this._statsbeat);
         this.channel = new Channel(() => config.disableAppInsights, () => config.maxBatchSize, () => config.maxBatchIntervalMs, sender);
     }
 
@@ -122,7 +127,14 @@ class TelemetryClient {
             // url.parse().host returns null for non-urls,
             // making this essentially a no-op in those cases
             // If this logic is moved, update jsdoc in DependencyTelemetry.target
-            telemetry.target = url.parse(telemetry.data).host;
+            // url.parse() is deprecated, update to use WHATWG URL API instead
+            try {
+                telemetry.target = new url.URL(telemetry.data).host;
+            } catch (error) {
+                // set target as null to be compliant with previous behavior
+                telemetry.target = null;
+                Logging.warn("The URL object is failed to create.", error);
+            }
         }
         this.track(telemetry, Contracts.TelemetryType.Dependency);
     }
@@ -243,6 +255,13 @@ class TelemetryClient {
         }
 
         return accepted;
+    }
+
+    /*
+     * Get Statsbeat instance
+     */
+    public getStatsbeat() {
+        return this._statsbeat;
     }
 }
 
