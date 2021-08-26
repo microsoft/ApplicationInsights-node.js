@@ -10,6 +10,7 @@ import Constants = require("../../Declarations/Constants");
 import Contracts = require("../../Declarations/Contracts");
 import AuthorizationHandler = require("../../Library/AuthorizationHandler");
 import Util = require("../../Library/Util");
+import Statsbeat = require("../../AutoCollection/Statsbeat");
 
 class SenderMock extends Sender {
     public getResendInterval() {
@@ -359,5 +360,82 @@ describe("Library/Sender", () => {
             assert.ok(storeToDiskStub.calledOnce);
             assert.equal(storeToDiskStub.firstCall.args[0][0].name, "TestEnvelope");
         });
+    });
+
+    describe("#Statsbeat counters", () => {
+        Statsbeat.CONNECTION_STRING = "InstrumentationKey=2aa22222-bbbb-1ccc-8ddd-eeeeffff3333;"
+        var breezeResponse: Contracts.BreezeResponse = {
+            itemsAccepted: 1,
+            itemsReceived: 1,
+            errors: []
+        };
+
+        let config = new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333");
+        let statsbeat = new Statsbeat(config);
+        let statsbeatSender = new Sender(config, null, null, null, statsbeat);
+
+        it("Succesful requests", (done) => {
+            var statsbeatSpy = sandbox.spy(statsbeat, "countRequest");
+            nockScope = interceptor.reply(200, breezeResponse);
+            statsbeatSender.send([testEnvelope], () => {
+                assert.ok(statsbeatSpy.calledOnce);
+                assert.equal(statsbeatSpy.args[0][0], 0); // Category
+                assert.equal(statsbeatSpy.args[0][1], "dc.services.visualstudio.com"); // Endpoint
+                assert.ok(!isNaN(statsbeatSpy.args[0][2])); // Duration
+                assert.equal(statsbeatSpy.args[0][3], true); // Success
+                done();
+
+            });
+        });
+
+        it("Failed requests", (done) => {
+            var statsbeatSpy = sandbox.spy(statsbeat, "countRequest");
+            nockScope = interceptor.reply(400, breezeResponse);
+            statsbeatSender.send([testEnvelope], () => {
+                assert.ok(statsbeatSpy.calledOnce);
+                assert.equal(statsbeatSpy.args[0][0], 0); // Category
+                assert.equal(statsbeatSpy.args[0][1], "dc.services.visualstudio.com"); // Endpoint
+                assert.ok(!isNaN(statsbeatSpy.args[0][2])); // Duration
+                assert.equal(statsbeatSpy.args[0][3], false); // Failed
+                done();
+            });
+        });
+
+        it("Retry counts", (done) => {
+            statsbeatSender.setDiskRetryMode(true);
+            var statsbeatSpy = sandbox.spy(statsbeat, "countRequest");
+            var retrySpy = sandbox.spy(statsbeat, "countRetry");
+            nockScope = interceptor.reply(206, breezeResponse);
+            statsbeatSender.send([testEnvelope], () => {
+                assert.ok(statsbeatSpy.calledOnce);
+                assert.ok(retrySpy.calledOnce);
+                done();
+            });
+        });
+
+        it("Throttle counts", (done) => {
+            statsbeatSender.setDiskRetryMode(true);
+            var statsbeatSpy = sandbox.spy(statsbeat, "countRequest");
+            var throttleSpy = sandbox.spy(statsbeat, "countThrottle");
+            nockScope = interceptor.reply(429, breezeResponse);
+            statsbeatSender.send([testEnvelope], () => {
+                assert.ok(statsbeatSpy.calledOnce);
+                assert.ok(throttleSpy.calledOnce);
+                done();
+            });
+        });
+
+        it("Exception counts", (done) => {
+            statsbeatSender.setDiskRetryMode(false);
+            var statsbeatSpy = sandbox.spy(statsbeat, "countRequest");
+            var exceptionSpy = sandbox.spy(statsbeat, "countException");
+            nockScope = interceptor.replyWithError("Test Error");
+            statsbeatSender.send([testEnvelope], () => {
+                assert.equal(statsbeatSpy.callCount, 0);
+                assert.ok(exceptionSpy.calledOnce);
+                done();
+            });
+        });
+
     });
 });

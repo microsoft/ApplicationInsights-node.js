@@ -257,15 +257,15 @@ environment variable, events may no longer be correctly associated with the righ
 disabled by setting the `APPLICATION_INSIGHTS_NO_PATCH_MODULES` environment variable to a comma separated list of packages to
 disable, e.g. `APPLICATION_INSIGHTS_NO_PATCH_MODULES=console,redis` to avoid patching the `console` and `redis` packages.
 
-Currently there are 9 packages which are instrumented: `bunyan`, `console`, `mongodb`, `mongodb-core`, `mysql`, `redis`, `winston`,
+The following modules are available: `azuresdk`, `bunyan`, `console`, `mongodb`, `mongodb-core`, `mysql`, `redis`, `winston`,
 `pg`, and `pg-pool`. Visit the [diagnostic-channel-publishers' README](https://github.com/microsoft/node-diagnostic-channel/blob/master/src/diagnostic-channel-publishers/README.md)
 for information about exactly which versions of these packages are patched.
 
+Automatic instrumentation for several Azure SDKs is also enabled, currently Cognitive Search, Communication Common and Cosmos DB SDKs are not supported.
+[Javascript Azure SDKs](https://azure.github.io/azure-sdk/releases/latest/index.html#javascript)
+
 The `bunyan`, `winston`, and `console` patches will generate Application Insights Trace events based on whether `setAutoCollectConsole` is enabled.
 The rest will generate Application Insights Dependency events based on whether `setAutoCollectDependencies` is enabled. Make sure that `applicationinsights` is imported **before** any 3rd-party packages for them to be instrumented successfully.
-
-Automatic instrumentation for several Azure SDKs is also available, currently Cognitive Search, Communication Common and Cosmos DB SDKs are not supported.
-[Javascript Azure SDKs](https://azure.github.io/azure-sdk/releases/latest/index.html#javascript)
 
 
 ### Live Metrics
@@ -353,7 +353,7 @@ function startMeasuringEventLoop() {
 ## Preprocess data with Telemetry Processors
 
 ```javascript
-public addTelemetryProcessor(telemetryProcessor: (envelope: Contracts.Envelope, context: { http.RequestOptions, http.ClientRequest, http.ClientResponse, correlationContext }) => boolean)
+public addTelemetryProcessor(telemetryProcessor: (envelope: Contracts.Envelope, context: { http.RequestOptions, http.ClientRequest, http.ClientResponse, Error, correlationContext }) => boolean)
 ```
 
 You can process and filter collected data before it is sent for retention using
@@ -372,7 +372,7 @@ automatic dependency correlation is enabled).
 The TypeScript type for a telemetry processor is:
 
 ```typescript
-telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope, context: { http.RequestOptions, http.ClientRequest, http.ClientResponse, correlationContext }) => boolean;
+telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope, context: { http.RequestOptions, http.ClientRequest, http.ClientResponse, Error, correlationContext }) => boolean;
 ```
 
 For example, a processor that removes stack trace data from exceptions might be
@@ -388,6 +388,12 @@ function removeStackTraces ( envelope, context ) {
         exception.parsedStack = null;
         exception.hasFullStack = false;
       }
+    }
+    // Add extra properties
+    var originalError = context["Error"];
+    if(originalError && originalError.prop){
+      data.properties = data.properties || {};
+      data.properties.customProperty = originalError.prop;
     }
   }
   return true;

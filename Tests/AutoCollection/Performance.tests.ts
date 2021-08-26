@@ -6,38 +6,45 @@ import Performance = require("../../AutoCollection/Performance");
 import TelemetryClient = require("../../Library/TelemetryClient");
 
 describe("AutoCollection/Performance", () => {
+    var sandbox: sinon.SinonSandbox;
+
+    beforeEach(() => {
+        sandbox = sinon.sandbox.create();
+    });
+
     afterEach(() => {
         AppInsights.dispose();
+        sandbox.restore();
     });
+
     describe("#init and #dispose()", () => {
         it("init should enable and dispose should stop autocollection interval", () => {
-            var setIntervalSpy = sinon.spy(global, "setInterval");
-            var clearIntervalSpy = sinon.spy(global, "clearInterval");
+            var setIntervalSpy = sandbox.spy(global, "setInterval");
+            var clearIntervalSpy = sandbox.spy(global, "clearInterval");
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
                 .setAutoCollectHeartbeat(false)
                 .setAutoCollectPerformance(true, false)
                 .start();
-            assert.equal(setIntervalSpy.callCount, 1, "setInteval should be called once as part of performance initialization");
+            assert.equal(setIntervalSpy.callCount, 3, "setInteval should be called three times as part of performance initialization and also as part of Statsbeat");
             AppInsights.dispose();
             assert.equal(clearIntervalSpy.callCount, 1, "clearInterval should be called once as part of performance shutdown");
 
-            setIntervalSpy.restore();
-            clearIntervalSpy.restore();
+
         });
     });
 
     describe("#trackNetwork()", () => {
         it("should not produce incorrect metrics because of multiple instances of Performance class", (done) => {
-            const setIntervalStub = sinon.stub(global, "setInterval", () => ({ unref: () => {}}));
-            const clearIntervalSpy = sinon.spy(global, "clearInterval");
+            const setIntervalStub = sandbox.stub(global, "setInterval", () => ({ unref: () => { } }));
+            const clearIntervalSpy = sandbox.spy(global, "clearInterval");
             const appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setAutoCollectPerformance(false).start();
             const performance1 = new Performance(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"), 1234, false);
             const performance2 = new Performance(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"), 4321, true);
             performance1.enable(true);
             performance2.enable(true);
             Performance.INSTANCE.enable(true);
-            const stub1 = sinon.stub(performance1["_client"], "trackMetric");
-            const stub2 = sinon.stub(performance2["_client"], "trackMetric");
+            const stub1 = sandbox.stub(performance1["_client"], "trackMetric");
+            const stub2 = sandbox.stub(performance2["_client"], "trackMetric");
 
             Performance.countRequest(1000, true);
             Performance.countRequest(2000, true);
@@ -73,10 +80,6 @@ describe("AutoCollection/Performance", () => {
                     Performance.INSTANCE.dispose();
                     performance1.dispose();
                     performance2.dispose();
-                    stub1.restore()
-                    stub2.restore();
-                    setIntervalStub.restore();
-                    clearIntervalSpy.restore();
                     done();
                 }, 100);
             }, 100);

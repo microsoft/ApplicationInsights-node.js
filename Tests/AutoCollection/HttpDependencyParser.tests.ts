@@ -56,8 +56,8 @@ describe("AutoCollection/HttpDependencyParser", () => {
             assert.equal(dependencyTelemetry.dependencyTypeName, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
             assert.equal(dependencyTelemetry.success, true);
             assert.equal(dependencyTelemetry.name, "GET /search");
-            assert.equal(dependencyTelemetry.data, "https://a.bing.com:443/search");
-            assert.equal(dependencyTelemetry.target, "a.bing.com:443");
+            assert.equal(dependencyTelemetry.data, "https://a.bing.com/search");
+            assert.equal(dependencyTelemetry.target, "a.bing.com");
         });
 
         it("should return correct data for a URL without a protocol (http)", () => {
@@ -207,6 +207,17 @@ describe("AutoCollection/HttpDependencyParser", () => {
             let dependencyTelemetry = parser.getDependencyTelemetry();
             assert.equal(dependencyTelemetry.dependencyTypeName, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
             assert.equal(dependencyTelemetry.success, false);
+        });
+
+        it("should return non-success for a request abort", () => {
+            (<any>request)["method"] = "GET";
+            let parser = new HttpDependencyParser("http://bing.com/search", request);
+            parser.onError(new Error());
+
+            let dependencyTelemetry = parser.getDependencyTelemetry();
+            assert.equal(dependencyTelemetry.dependencyTypeName, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
+            assert.equal(dependencyTelemetry.success, false);
+            assert.ok(dependencyTelemetry.properties);
         });
     });
 });

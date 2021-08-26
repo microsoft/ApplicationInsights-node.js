@@ -237,6 +237,14 @@ class AutoCollectHttpRequests {
                 AutoCollectHttpRequests.endRequest(client, requestParser, telemetry, null, error);
             });
         }
+
+        // track an aborted request if an aborted event is emitted
+        if (telemetry.request.on) {
+            telemetry.request.on("aborted", () => {
+                const errorMessage = "The request has been aborted and the network socket has closed.";
+                    AutoCollectHttpRequests.endRequest(client, requestParser, telemetry, null, errorMessage);
+            });
+        }
     }
 
     /**
