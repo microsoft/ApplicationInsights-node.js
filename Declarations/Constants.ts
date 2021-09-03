@@ -121,24 +121,12 @@ export const TelemetryTypeStringToQuickPulseDocumentType: { [key in Contracts.Te
     PageViewData: QuickPulseDocumentType.PageView
 };
 
-// OpenTelemetry Span Attributes
-export const SpanAttribute = {
-    // HTTP
-    HttpMethod: conventions.SemanticAttributes.HTTP_METHOD,
-    HttpStatusCode: conventions.SemanticAttributes.HTTP_STATUS_CODE,
-    HttpUrl: conventions.SemanticAttributes.HTTP_URL,
-    HttpUserAgent: conventions.SemanticAttributes.HTTP_USER_AGENT,
-
-    // GRPC
-    GrpcStatusCode: conventions.SemanticAttributes.RPC_GRPC_STATUS_CODE,
-    GrpcMethod: conventions.SemanticAttributes.RPC_METHOD, // rpc not grpc
-    GrpcService: conventions.SemanticAttributes.RPC_SERVICE, // rpc not grpc
-};
-
 export const DependencyTypeName = {
     Grpc: "GRPC",
     Http: "HTTP",
     InProc: "InProc",
+    Sql: "SQL",
+    QueueMessage: "Queue Message",
 }
 
 export const HeartBeatMetricName = "HeartBeat";
@@ -195,3 +183,19 @@ export enum StatsbeatNetworkCategory {
     Breeze,
     Quickpulse,
 }
+
+//Azure SDK Span Attributes
+export const AzNamespace = "az.namespace";
+export const MicrosoftEventHub = "Microsoft.EventHub";
+export const MessageBusDestination = "message_bus.destination";
+
+/**
+ * AI enqueued time attribute.
+ * @internal
+ */
+ export const ENQUEUED_TIME = "enqueuedTime";
+ /**
+  * AI time since enqueued attribute.
+  * @internal
+  */
+ export const TIME_SINCE_ENQUEUED = "timeSinceEnqueued";
