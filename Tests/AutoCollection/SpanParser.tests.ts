@@ -238,17 +238,17 @@ describe("diagnostic-channel/azure-coretracing", () => {
         span.attributes[SemanticAttributes.HTTP_METHOD] = "GET";
         span.attributes[SemanticAttributes.NET_PEER_IP] = "https://127.0.0.0:443"; // Default ports
         let dependency: DependencyTelemetry & Identified = <DependencyTelemetry>spanToTelemetryContract(span);
-        assert.equal(dependency.target, "https://127.0.0.0/");
-        span.attributes[SemanticAttributes.NET_PEER_NAME] = "http://test.com:80"; // Default ports
+        assert.equal(dependency.target, "https://127.0.0.0");
+        span.attributes[SemanticAttributes.NET_PEER_NAME] = "https://test.com:80"; // Wrong Default port
         dependency = <DependencyTelemetry>spanToTelemetryContract(span);
-        assert.equal(dependency.target, "http://test.com/");
+        assert.equal(dependency.target, "https://test.com:80");
         span.attributes[SemanticAttributes.HTTP_URL] = "http://test.com:22"; // Non default ports
         dependency = <DependencyTelemetry>spanToTelemetryContract(span);
-        assert.equal(dependency.target, "http://test.com:22/");
+        assert.equal(dependency.target, "http://test.com:22");
         span.attributes[SemanticAttributes.HTTP_HOST] = "www.test.com"; // Wrong URL
         dependency = <DependencyTelemetry>spanToTelemetryContract(span);
         assert.equal(dependency.target, "www.test.com");
-        span.attributes[SemanticAttributes.PEER_SERVICE] = "http://test.com"; // No port
+        span.attributes[SemanticAttributes.PEER_SERVICE] = "http://test.com/"; // No port
         dependency = <DependencyTelemetry>spanToTelemetryContract(span);
         assert.equal(dependency.target, "http://test.com/");
     });

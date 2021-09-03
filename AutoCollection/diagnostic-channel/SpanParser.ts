@@ -118,17 +118,22 @@ function createDependencyData(span: ReadableSpan): Contracts.DependencyTelemetry
         let target = getDependencyTarget(span);
         if (target) {
             try {
-                let url = new URL(target);
-                // Ignore port if it is a default port
-                if (url.port === "80" || url.port === "443") {
-                    url.port = "";
+                // Remove default port
+                let portRegex = new RegExp(/(https?)(:\/\/.*)(:\d+)(\S*)/);
+                let res = portRegex.exec(target);
+                if (res != null) {
+                    let protocol = res[1];
+                    let port = res[3];
+                    if ((protocol == "https" && port == ":443") ||
+                        (protocol == "http" && port == ":80")) {
+                        // Drop port
+                        target = res[1] + res[2] + res[4];
+                    }
                 }
-                remoteDependency.target = `${url}`;
+
             }
-            // Only remove port for valid URLs
-            catch (error) {
-                remoteDependency.target = `${target}`;
-            }
+            catch (error) { }
+            remoteDependency.target = `${target}`;
         }
     }
     // DB Dependency
