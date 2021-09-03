@@ -2,7 +2,6 @@ import assert = require("assert");
 import sinon = require("sinon");
 import { Span, BasicTracerProvider, TracerConfig } from "@opentelemetry/tracing";
 import { Link, SpanKind, SpanContext, ROOT_CONTEXT, SpanStatus, SpanStatusCode } from "@opentelemetry/api";
-import { Resource } from "@opentelemetry/resources";
 import {
     SemanticAttributes,
     SemanticResourceAttributes
@@ -15,15 +14,7 @@ import { DependencyTelemetry, Identified, RequestTelemetry } from "../../Declara
 describe("diagnostic-channel/azure-coretracing", () => {
     var sandbox: sinon.SinonSandbox;
 
-    const tracerProviderConfig: TracerConfig = {
-        resource: new Resource({
-            [SemanticResourceAttributes.SERVICE_INSTANCE_ID]: "testServiceInstanceID",
-            [SemanticResourceAttributes.SERVICE_NAME]: "testServiceName",
-            [SemanticResourceAttributes.SERVICE_NAMESPACE]: "testServiceNamespace"
-        })
-    };
-
-    const tracer = new BasicTracerProvider(tracerProviderConfig).getTracer("default");
+    const tracer = new BasicTracerProvider().getTracer("default");
 
     before(() => {
         sandbox = sinon.sandbox.create();
@@ -403,6 +394,6 @@ describe("diagnostic-channel/azure-coretracing", () => {
         span.attributes["message_bus.destination"] = "messageBusDestination";
         let request: RequestTelemetry & Identified = <RequestTelemetry>spanToTelemetryContract(span);
         assert.equal(request.source, "testPeerAddress/messageBusDestination");
-        assert.ok(request.measurements["timeSinceEnqueued"] > 148);
+        assert.ok(!isNaN(request.measurements["timeSinceEnqueued"]));
     });
 });

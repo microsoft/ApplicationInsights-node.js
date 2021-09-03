@@ -44,7 +44,6 @@
   },
   "devDependencies": {
     "@opentelemetry/semantic-conventions": "^0.24.0",
-    "@opentelemetry/resources": "^0.22.0",
     "@types/cls-hooked": "^4.3.3",
     "@types/mocha": "^7.0.2",
     "@types/node": "^8.0.0",
