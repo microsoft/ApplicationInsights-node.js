@@ -52,7 +52,7 @@ describe("diagnostic-channel/azure-coretracing", () => {
         span.links.push(link);
         let dependency: DependencyTelemetry & Identified = <DependencyTelemetry>spanToTelemetryContract(span);
         assert.equal(dependency.name, "test span");
-        assert.equal(dependency.id, "|traceid.spanId.");
+        assert.equal(dependency.id, "spanId");
         assert.equal(dependency.success, false);
         assert.equal(dependency.resultCode, "404");
         assert.equal(dependency.dependencyTypeName, "HTTP");
@@ -72,7 +72,7 @@ describe("diagnostic-channel/azure-coretracing", () => {
             SpanKind.INTERNAL,
             "parentSpanId"
         );
-        span.attributes[SemanticAttributes.DB_SYSTEM] = "MySQL";
+        span.attributes[SemanticAttributes.DB_SYSTEM] = "mysql";
         span.attributes[SemanticAttributes.DB_STATEMENT] = "SELECT * FROM Test";
         span.attributes[SemanticAttributes.DB_NAME] = "TestDB";
         span.attributes[SemanticAttributes.NET_PEER_NAME] = "Test Net peer name";
@@ -81,10 +81,10 @@ describe("diagnostic-channel/azure-coretracing", () => {
         span.setStatus(status);
         let dependency: DependencyTelemetry & Identified = <DependencyTelemetry>spanToTelemetryContract(span);
         assert.equal(dependency.name, "test span");
-        assert.equal(dependency.id, "|traceid.spanId.");
+        assert.equal(dependency.id, "spanId");
         assert.equal(dependency.success, true);
         assert.equal(dependency.resultCode, "0");
-        assert.equal(dependency.dependencyTypeName, "MySQL");
+        assert.equal(dependency.dependencyTypeName, "SQL");
         assert.equal(dependency.target, "Test Net peer name/TestDB");
         assert.equal(dependency.data, "SELECT * FROM Test");
         assert.ok(dependency.duration);
@@ -108,7 +108,7 @@ describe("diagnostic-channel/azure-coretracing", () => {
         span.setStatus(status);
         let dependency: DependencyTelemetry & Identified = <DependencyTelemetry>spanToTelemetryContract(span);
         assert.equal(dependency.name, "test span");
-        assert.equal(dependency.id, "|traceid.spanId.");
+        assert.equal(dependency.id, "spanId");
         assert.equal(dependency.success, true);
         assert.equal(dependency.resultCode, "202");
         assert.equal(dependency.dependencyTypeName, "GRPC");
@@ -144,7 +144,7 @@ describe("diagnostic-channel/azure-coretracing", () => {
         span.links.push(link);
         let request: RequestTelemetry & Identified = <RequestTelemetry>spanToTelemetryContract(span);
         assert.equal(request.name, "test span");
-        assert.equal(request.id, "|traceid.spanId.");
+        assert.equal(request.id, "spanId");
         assert.equal(request.success, false);
         assert.equal(request.resultCode, "500");
         assert.equal(request.url, "http://test.com/");
@@ -169,7 +169,7 @@ describe("diagnostic-channel/azure-coretracing", () => {
         span.setStatus(status);
         let request: RequestTelemetry & Identified = <RequestTelemetry>spanToTelemetryContract(span);
         assert.equal(request.name, "test span");
-        assert.equal(request.id, "|traceid.spanId.");
+        assert.equal(request.id, "spanId");
         assert.equal(request.success, false);
         assert.equal(request.resultCode, "505");
         assert.equal(request.url, "");

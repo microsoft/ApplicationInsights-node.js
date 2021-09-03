@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 import { SpanKind, SpanStatusCode, Link } from "@opentelemetry/api";
-import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
+import { SemanticAttributes, DbSystemValues } from "@opentelemetry/semantic-conventions";
 import { ReadableSpan } from "@opentelemetry/tracing";
 
 import * as Contracts from "../../Declarations/Contracts";
@@ -32,6 +32,22 @@ function createPropertiesFromSpan(span: ReadableSpan): { [key: string]: any; } {
         properties["_MS.links"] = JSON.stringify(links);
     }
     return properties;
+}
+
+function isSqlDB(dbSystem: string) {
+    return (
+        dbSystem === DbSystemValues.DB2 ||
+        dbSystem === DbSystemValues.DERBY ||
+        dbSystem === DbSystemValues.MARIADB ||
+        dbSystem === DbSystemValues.MYSQL ||
+        dbSystem === DbSystemValues.MSSQL ||
+        dbSystem === DbSystemValues.ORACLE ||
+        dbSystem === DbSystemValues.POSTGRESQL ||
+        dbSystem === DbSystemValues.SQLITE ||
+        dbSystem === DbSystemValues.OTHER_SQL ||
+        dbSystem === DbSystemValues.HSQLDB ||
+        dbSystem === DbSystemValues.H2
+    );
 }
 
 function getUrl(span: ReadableSpan): string {
@@ -87,10 +103,9 @@ function getDependencyTarget(span: ReadableSpan): string {
     return "";
 }
 
-function createDependencyData(span: ReadableSpan): Contracts.DependencyTelemetry & Contracts.Identified {
-    const remoteDependency: Contracts.DependencyTelemetry & Contracts.Identified = {
+function createDependencyData(span: ReadableSpan): Contracts.DependencyTelemetry {
+    const remoteDependency: Contracts.DependencyTelemetry = {
         name: span.name,
-        id: `|${span.spanContext().traceId}.${span.spanContext().spanId}.`,
         success: span.status.code != SpanStatusCode.ERROR,
         resultCode: "0",
         duration: 0,
@@ -138,7 +153,12 @@ function createDependencyData(span: ReadableSpan): Contracts.DependencyTelemetry
     }
     // DB Dependency
     else if (dbSystem) {
-        remoteDependency.dependencyTypeName = String(dbSystem);
+        if (isSqlDB(String(dbSystem))) {
+            remoteDependency.dependencyTypeName = "SQL";
+        }
+        else {
+            remoteDependency.dependencyTypeName = String(dbSystem);
+        }
         const dbStatement = span.attributes[SemanticAttributes.DB_STATEMENT];
         if (dbStatement) {
             remoteDependency.data = String(dbStatement);
@@ -168,10 +188,9 @@ function createDependencyData(span: ReadableSpan): Contracts.DependencyTelemetry
     return remoteDependency;
 }
 
-function createRequestData(span: ReadableSpan): Contracts.RequestTelemetry & Contracts.Identified {
-    const requestData: Contracts.RequestTelemetry & Contracts.Identified = {
+function createRequestData(span: ReadableSpan): Contracts.RequestTelemetry {
+    const requestData: Contracts.RequestTelemetry = {
         name: span.name,
-        id: `|${span.spanContext().traceId}.${span.spanContext().spanId}.`,
         success: span.status.code != SpanStatusCode.ERROR,
         resultCode: "0",
         duration: 0,
@@ -208,7 +227,7 @@ export function spanToTelemetryContract(span: ReadableSpan): (Contracts.Dependen
     }
 
     const spanContext = span.spanContext ? span.spanContext() : (<any>span).context(); // context is available in OT API <v0.19.0
-    const id = `|${spanContext.traceId}.${spanContext.spanId}.`;
+    const id = `${spanContext.spanId}`;
     const duration = Math.round(span.duration[0] * 1e3 + span.duration[1] / 1e6);
     telemetry.id = id;
     telemetry.duration = duration;
