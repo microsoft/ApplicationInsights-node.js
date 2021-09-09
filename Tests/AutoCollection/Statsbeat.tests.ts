@@ -74,7 +74,7 @@ describe("AutoCollection/Statsbeat", () => {
             process.env = newEnv;
             statsBeat["_getResourceProvider"](() => {
                 process.env = originalEnv;
-                assert.equal(statsBeat["_resourceProvider"], "function");
+                assert.equal(statsBeat["_resourceProvider"], "functions");
                 assert.equal(statsBeat["_resourceIdentifier"], "test_host");
                 done();
             });
@@ -206,7 +206,7 @@ describe("AutoCollection/Statsbeat", () => {
                 assert.equal(baseData.properties["cikey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert.equal(baseData.properties["language"], "node");
                 assert.equal(baseData.properties["rp"], "unknown");
-                assert.equal(baseData.properties["rpid"], "unknown");
+                assert.equal(baseData.properties["rpId"], "unknown");
                 assert.equal(baseData.properties["attach"], "sdk");
                 assert.ok(baseData.properties["os"]);
                 assert.ok(baseData.properties["runtimeVersion"]);
