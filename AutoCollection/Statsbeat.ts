@@ -190,7 +190,7 @@ class Statsbeat {
                 "attach": this._attach,
             };
             let attachProperties = Object.assign({
-                "rpid": this._resourceIdentifier,
+                "rpId": this._resourceIdentifier,
             }, commonProperties);
             this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.ATTACH, value: 1, properties: attachProperties });
             let featureProperties = Object.assign({ "feature": this._feature, "type": Constants.StatsbeatFeatureType.Feature }, commonProperties);
