@@ -74,7 +74,7 @@ describe("AutoCollection/Statsbeat", () => {
             process.env = newEnv;
             statsBeat["_getResourceProvider"](() => {
                 process.env = originalEnv;
-                assert.equal(statsBeat["_resourceProvider"], "function");
+                assert.equal(statsBeat["_resourceProvider"], "functions");
                 assert.equal(statsBeat["_resourceIdentifier"], "test_host");
                 done();
             });

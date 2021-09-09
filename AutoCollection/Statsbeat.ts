@@ -299,7 +299,7 @@ class Statsbeat {
                 this._resourceIdentifier += "/" + process.env.WEBSITE_HOME_STAMPNAME;
             }
         } else if (process.env.FUNCTIONS_WORKER_RUNTIME) { // Function apps
-            this._resourceProvider = Constants.StatsbeatResourceProvider.function;
+            this._resourceProvider = Constants.StatsbeatResourceProvider.functions;
             if (process.env.WEBSITE_HOSTNAME) {
                 this._resourceIdentifier = process.env.WEBSITE_HOSTNAME;
             }

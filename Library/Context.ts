@@ -44,7 +44,7 @@ class Context {
 
     private _loadDeviceContext() {
         this.tags[this.keys.deviceId] = "";
-        this.tags[this.keys.cloudRoleInstance] = os && e;
+        this.tags[this.keys.cloudRoleInstance] = os && os.hostname();
         this.tags[this.keys.deviceOSVersion] = os && (os.type() + " " + os.release());
         this.tags[this.keys.cloudRole] = Context.DefaultRoleName;
 
