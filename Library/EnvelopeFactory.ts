@@ -194,6 +194,7 @@ class EnvelopeFactory {
         requestData.responseCode = (telemetry.resultCode ? telemetry.resultCode + '' : '');
         requestData.success = telemetry.success
         requestData.properties = telemetry.properties;
+        requestData.measurements = telemetry.measurements;
 
         var data = new Contracts.Data<Contracts.RequestData>();
         data.baseType = Contracts.telemetryTypeToBaseType(Contracts.TelemetryType.Request);
