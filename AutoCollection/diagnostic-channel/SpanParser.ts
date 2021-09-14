@@ -234,11 +234,13 @@ export function spanToTelemetryContract(span: ReadableSpan): (Contracts.Dependen
     telemetry.properties = createPropertiesFromSpan(span);
 
     // Azure SDK
-    if (span.attributes[Constants.AzNamespace] === Constants.MicrosoftEventHub) {
-        parseEventHubSpan(span, telemetry);
-    } else if (span.attributes[Constants.AzNamespace] && span.kind === SpanKind.INTERNAL) {
-        (<DependencyTelemetry>telemetry).dependencyTypeName = `${Constants.DependencyTypeName.InProc} | ${span.attributes[Constants.AzNamespace]}`
+    if (span.attributes[Constants.AzNamespace]) {
+        if (span.kind === SpanKind.INTERNAL) {
+            (<DependencyTelemetry>telemetry).dependencyTypeName = `${Constants.DependencyTypeName.InProc} | ${span.attributes[Constants.AzNamespace]}`
+        }
+        if (span.attributes[Constants.AzNamespace] === Constants.MicrosoftEventHub) {
+            parseEventHubSpan(span, telemetry);
+        }
     }
-
     return telemetry;
 }
