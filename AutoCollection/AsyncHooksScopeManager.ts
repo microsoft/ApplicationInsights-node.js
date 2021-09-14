@@ -54,7 +54,8 @@ export class OpenTelemetryScopeManagerWrapper {
     }
 
     private static _spanToContext(span: Span, parentSpanId?: string, name?: string): CorrelationContext {
-        const _parentId = parentSpanId ? `|${span.spanContext().traceId}.${parentSpanId}.` : span.spanContext().traceId;
+        const spanContext = span.spanContext ? span.spanContext() : (<any>span).context(); // context is available in OT API <v0.19.0
+        const _parentId = parentSpanId ? `|${spanContext.traceId}.${parentSpanId}.` : spanContext.traceId;
         const context: SpanContext = {
             ...span.spanContext(),
             traceFlags: span.spanContext().traceFlags

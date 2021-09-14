@@ -7,9 +7,9 @@ import TelemetryClient = require("../../Library/TelemetryClient");
 import { StatsbeatInstrumentation } from "../../Declarations/Constants";
 import { channel, IStandardEvent } from "diagnostic-channel";
 
-import Traceparent = require("../../Library/Traceparent");
 import * as SpanParser from "./SpanParser";
 import { AsyncScopeManager } from "../AsyncHooksScopeManager";
+import { DependencyTelemetry, RequestTelemetry } from "../../Declarations/Contracts";
 
 let clients: TelemetryClient[] = [];
 
@@ -17,22 +17,13 @@ export const subscriber = (event: IStandardEvent<Span>) => {
     try {
         const span = event.data;
         const telemetry = SpanParser.spanToTelemetryContract(span);
-        const spanContext = span.spanContext ? span.spanContext() : (<any>span).context(); // context is available in OT API <v0.19.0
-        const traceparent = new Traceparent();
-        traceparent.traceId = spanContext.traceId;
-        traceparent.spanId = spanContext.spanId;
-        traceparent.traceFlag = Traceparent.formatOpenTelemetryTraceFlags(spanContext.traceFlags);
-        traceparent.parentId = span.parentSpanId ? `|${spanContext.traceId}.${span.parentSpanId}.` : null;
         AsyncScopeManager.with(span, () => {
             clients.forEach((client) => {
-                if (span.kind === SpanKind.SERVER) {
-                    // Server or Consumer
-                    client.trackRequest(telemetry);
-                } else if (span.kind === SpanKind.CLIENT || span.kind === SpanKind.INTERNAL) {
-                    // Client or Producer or Internal
-                    client.trackDependency(telemetry);
+                if (span.kind === SpanKind.SERVER || span.kind === SpanKind.CONSUMER) {
+                    client.trackRequest(<RequestTelemetry>telemetry);
+                } else if (span.kind === SpanKind.CLIENT || span.kind === SpanKind.INTERNAL || span.kind === SpanKind.PRODUCER) {
+                    client.trackDependency(<DependencyTelemetry>telemetry);
                 }
-                // else - ignore producer/consumer spans for now until it is clear how this sdk should interpret them
             });
         });
     }
