@@ -105,7 +105,6 @@ export function setupAndStart(setupString = _setupString, aadTokenCredential?: a
         _appInsights.defaultClient.addTelemetryProcessor(copyOverPrefixInternalSdkVersionToHeartBeatMetric);
         if (aadTokenCredential) {
             _logger.logMessage("Using AAD Token Credential");
-            // TODO: Add Statsbeat property
             _appInsights.defaultClient.config.aadTokenCredential = aadTokenCredential;
         }
         
