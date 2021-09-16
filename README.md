@@ -510,7 +510,7 @@ Following configuration is currently only available in beta version of the SDK.
 
 | Property                        | Description                                                                                                |
 | ------------------------------- |------------------------------------------------------------------------------------------------------------|
-| aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Crendential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes) |
+| aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Crendential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes) | 
 
 
 
