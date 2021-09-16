@@ -136,24 +136,26 @@ describe("AutoCollection/Statsbeat", () => {
         it("Track duration", (done) => {
             const statsBeat: Statsbeat = new Statsbeat(config);
             statsBeat.enable(true);
-            const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
+            const spy = sandbox.spy(statsBeat["_sender"], "send");
             statsBeat.countRequest(0, "test", 1000, true);
             statsBeat.countRequest(0, "test", 500, false);
             statsBeat.trackShortIntervalStatsbeats();
             setTimeout(() => {
-                assert.equal(sendStub.callCount, 2, "should call sender");
-                assert.equal(statsBeat["_statbeatMetrics"].length, 6); // trackLongIntervalStatsbeats is called on init, generate 3 metrics
-                assert.equal(statsBeat["_statbeatMetrics"][3].name, "Request Duration");
-                assert.equal(statsBeat["_statbeatMetrics"][3].value, 750);
+                assert.equal(spy.callCount, 2, "should call sender");
+                let envelope = spy.args[1][0][0];
+                assert.equal(JSON.stringify(spy.args[1][0]), "TEST");
+                let baseData: Contracts.MetricData = envelope.data.baseData;
+                assert.equal(baseData.metrics[0].name, "Request Duration");
+                assert.equal(baseData.metrics[0].value, 750);
                 statsBeat.enable(false);
                 done();
-            }, 100);
+            }, 10);
         });
 
         it("Track counts", (done) => {
             const statsBeat: Statsbeat = new Statsbeat(config);
             statsBeat.enable(true);
-            const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
+            const spy = sandbox.spy(statsBeat["_sender"], "send");
             statsBeat.countRequest(0, "test", 1, true);
             statsBeat.countRequest(0, "test", 1, true);
             statsBeat.countRequest(0, "test", 1, true);
@@ -167,18 +169,28 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.countException(0, "test");
             statsBeat.trackShortIntervalStatsbeats();
             setTimeout(() => {
-                assert.equal(sendStub.callCount, 2, "should call sender");
-                assert.equal(statsBeat["_statbeatMetrics"].length, 9); // trackLongIntervalStatsbeats is called on init, generate 3 metrics
-                assert.equal(statsBeat["_statbeatMetrics"][4].name, "Request Success Count");
-                assert.equal(statsBeat["_statbeatMetrics"][4].value, 4);
-                assert.equal(statsBeat["_statbeatMetrics"][5].name, "Requests Failure Count");
-                assert.equal(statsBeat["_statbeatMetrics"][5].value, 3);
-                assert.equal(statsBeat["_statbeatMetrics"][6].name, "Retry Count");
-                assert.equal(statsBeat["_statbeatMetrics"][6].value, 2);
-                assert.equal(statsBeat["_statbeatMetrics"][7].name, "Throttle Count");
-                assert.equal(statsBeat["_statbeatMetrics"][7].value, 1);
-                assert.equal(statsBeat["_statbeatMetrics"][8].name, "Exception Count");
-                assert.equal(statsBeat["_statbeatMetrics"][8].value, 1);
+                assert.equal(spy.callCount, 2, "should call sender");
+                assert.equal(JSON.stringify(spy.args[1][0]), "TEST2");
+                let envelope = spy.args[1][0][1];
+                let baseData: Contracts.MetricData = envelope.data.baseData;
+                assert.equal(baseData.metrics[0].name, "Request Success Count");
+                assert.equal(baseData.metrics[0].value, 4);
+                envelope = spy.args[1][0][2];
+                baseData = envelope.data.baseData;
+                assert.equal(baseData.metrics[0].name, "Requests Failure Count");
+                assert.equal(baseData.metrics[0].value, 3);
+                envelope = spy.args[1][0][3];
+                baseData = envelope.data.baseData;
+                assert.equal(baseData.metrics[0].name, "Retry Count");
+                assert.equal(baseData.metrics[0].value, 2);
+                envelope = spy.args[1][0][4];
+                baseData = envelope.data.baseData;
+                assert.equal(baseData.metrics[0].name, "Throttle Count");
+                assert.equal(baseData.metrics[0].value, 1);
+                envelope = spy.args[1][0][5];
+                baseData = envelope.data.baseData;
+                assert.equal(baseData.metrics[0].name, "Exception Count");
+                assert.equal(baseData.metrics[0].value, 1);
                 statsBeat.enable(false);
                 done();
             }, 10);
