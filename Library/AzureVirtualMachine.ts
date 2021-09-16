@@ -7,7 +7,7 @@ import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies
 const AIMS_URI = "http://169.254.169.254/metadata/instance/compute";
 const AIMS_API_VERSION = "api-version=2017-12-01";
 const AIMS_FORMAT = "format=json";
-const ConnectionErrorMessage = "ENETUNREACH";
+const ConnectionErrorMessage = "UNREACH"; // EHOSTUNREACH, ENETUNREACH
 
 export interface IVirtualMachineInfo {
     isVM?: boolean;
@@ -48,7 +48,7 @@ export class AzureVirtualMachine {
                     }
                     catch (error) {
                         // Failed to parse JSON
-                        Logging.warn(AzureVirtualMachine.TAG, error);
+                        Logging.info(AzureVirtualMachine.TAG, error);
                     }
                     callback(vmInfo);
                 });
@@ -65,7 +65,7 @@ export class AzureVirtualMachine {
                 }
                 else{
                     // Only log when is not determined if VM or not to avoid noise outside of Azure VMs
-                    Logging.warn(AzureVirtualMachine.TAG, error);
+                    Logging.info(AzureVirtualMachine.TAG, error);
                 }
                 callback(vmInfo);
             });
