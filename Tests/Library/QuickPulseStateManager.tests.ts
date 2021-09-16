@@ -4,6 +4,7 @@ import sinon = require("sinon");
 
 import QuickPulseClient = require("../../Library/QuickPulseStateManager");
 import Contracts = require("../../Declarations/Contracts");
+import AuthorizationHandler = require("../../Library/AuthorizationHandler");
 import { IncomingMessage } from "http";
 import Config = require("../../Library/Config");
 import QuickPulseSender = require("../../Library/QuickPulseSender");
@@ -30,6 +31,20 @@ describe("Library/QuickPulseStateManager", () => {
             assert.ok(Object.keys(qps["_metrics"]).length === 0);
             assert.ok(qps["_documents"].length === 0);
             assert.ok(qps["_collectors"].length === 0);
+        });
+
+        it("should reuse authorization handler if provided", () => {
+            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;");
+            var handler = new AuthorizationHandler({
+                async getToken(scopes: string | string[], options?: any): Promise<any> {
+                    return { token: "testToken", };
+                }
+            });
+            var getAuthorizationHandler = () => {
+                return handler;
+            };
+            qps = new QuickPulseClient(config, null, getAuthorizationHandler);
+            assert.equal(qps["_sender"]["_getAuthorizationHandler"](config), handler);
         });
     });
 
@@ -250,6 +265,46 @@ describe("Library/QuickPulseStateManager", () => {
 
             assert.equal(qps['_redirectedHost'], 'www.quickpulse.com');
             assert.equal(qps['_pollingIntervalHint'], 5000);
+        });
+    });
+
+    describe("#AuthorizationHandler ", () => {
+        var sandbox: sinon.SinonSandbox;
+        let envelope: Contracts.EnvelopeQuickPulse = {
+            Documents: null,
+            Instance: "",
+            RoleName: "",
+            InstrumentationKey: "",
+            InvariantVersion: 1,
+            MachineName: "",
+            Metrics: null,
+            StreamId: "",
+            Timestamp: "",
+            Version: ""
+        };
+
+        beforeEach(() => {
+            sandbox = sinon.sandbox.create();
+        });
+
+        afterEach(() => {
+            sandbox.restore();
+        });
+
+        it("should add token if handler present", () => {
+            var handler = new AuthorizationHandler({
+                async getToken(scopes: string | string[], options?: any): Promise<any> {
+                    return { token: "testToken", };
+                }
+            });
+            var getAuthorizationHandler = () => {
+                return handler;
+            };
+            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;");
+            var addHeaderStub = sandbox.stub(handler, "addAuthorizationHeader");
+            let sender = new QuickPulseSender(config, getAuthorizationHandler);
+            sender.post(envelope, "", () => { });
+            assert.ok(addHeaderStub.calledOnce);
         });
     });
 });
