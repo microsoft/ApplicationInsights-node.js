@@ -198,7 +198,7 @@ describe("AutoCollection/Statsbeat", () => {
             const statsBeat: Statsbeat = new Statsbeat(config);
             statsBeat.enable(true);
             const spy = sandbox.spy(statsBeat["_sender"], "send");
-            setTimeout(() => {
+            setImmediate(() => {
                 let envelope = spy.args[0][0][0];
                 let baseData: Contracts.MetricData = envelope.data.baseData;
                 assert.equal(baseData.metrics[0].name, "Attach");
@@ -213,7 +213,7 @@ describe("AutoCollection/Statsbeat", () => {
                 assert.ok(baseData.properties["version"]);
                 statsBeat.enable(false);
                 done();
-            }, 10)
+            })
         });
 
         it("Track feature Statbeat", (done) => {
@@ -221,7 +221,7 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.enable(true);
             statsBeat.addFeature(Constants.StatsbeatFeature.DISK_RETRY);
             const spy = sandbox.spy(statsBeat["_sender"], "send");
-            setTimeout(() => {
+            setImmediate(() => {
                 let envelope = spy.args[0][0][2];
                 let baseData: Contracts.MetricData = envelope.data.baseData;
                 assert.equal(baseData.metrics[0].name, "Feature");
@@ -237,7 +237,7 @@ describe("AutoCollection/Statsbeat", () => {
                 assert.ok(baseData.properties["version"]);
                 statsBeat.enable(false);
                 done();
-            }, 10)
+            })
         });
 
         it("Track instrumentation Statbeat", (done) => {
@@ -245,7 +245,7 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.enable(true);
             statsBeat.addInstrumentation(Constants.StatsbeatInstrumentation.AZURE_CORE_TRACING);
             const spy = sandbox.spy(statsBeat["_sender"], "send");
-            setTimeout(() => {
+            setImmediate(() => {
                 let envelope = spy.args[0][0][1];
                 let baseData: Contracts.MetricData = envelope.data.baseData;
                 assert.equal(baseData.metrics[0].name, "Feature");
@@ -261,7 +261,7 @@ describe("AutoCollection/Statsbeat", () => {
                 assert.ok(baseData.properties["version"]);
                 statsBeat.enable(false);
                 done();
-            }, 10)
+            })
         });
 
         it("Instrumentations", () => {
@@ -296,7 +296,7 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.countRequest(1, "quickpulseEndpoint", 200, true);
             statsBeat.countRequest(0, "breezeSecondEndpoint", 400, true);
             statsBeat.trackShortIntervalStatsbeats();
-            setTimeout(() => {
+            setImmediate(() => {
                 assert.equal(spy.callCount, 2, "should call sender");
                 let envelope = spy.args[1][0][0];
                 let baseData: Contracts.MetricData = envelope.data.baseData;
@@ -318,7 +318,7 @@ describe("AutoCollection/Statsbeat", () => {
                 assert.equal(baseData.properties["host"], "breezeSecondEndpoint");
                 statsBeat.enable(false);
                 done();
-            }, 100);
+            });
         });
     });
 });
