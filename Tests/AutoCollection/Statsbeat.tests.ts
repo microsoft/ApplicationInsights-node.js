@@ -140,7 +140,7 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.countRequest(0, "test", 1000, true);
             statsBeat.countRequest(0, "test", 500, false);
             statsBeat.trackShortIntervalStatsbeats();
-            setTimeout(() => {
+            setImmediate(() => {
                 assert.equal(spy.callCount, 2, "should call sender");
                 let envelope = spy.args[1][0][0];
                 let baseData: Contracts.MetricData = envelope.data.baseData;
@@ -148,7 +148,7 @@ describe("AutoCollection/Statsbeat", () => {
                 assert.equal(baseData.metrics[0].value, 750);
                 statsBeat.enable(false);
                 done();
-            }, 10);
+            });
         });
 
         it("Track counts", (done) => {
@@ -167,7 +167,7 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.countThrottle(0, "test");
             statsBeat.countException(0, "test");
             statsBeat.trackShortIntervalStatsbeats();
-            setTimeout(() => {
+            setImmediate(() => {
                 assert.equal(spy.callCount, 2, "should call sender");
                 let envelope = spy.args[1][0][1];
                 let baseData: Contracts.MetricData = envelope.data.baseData;
@@ -191,7 +191,7 @@ describe("AutoCollection/Statsbeat", () => {
                 assert.equal(baseData.metrics[0].value, 1);
                 statsBeat.enable(false);
                 done();
-            }, 10);
+            });
         });
 
         it("Track attach Statbeat", (done) => {
