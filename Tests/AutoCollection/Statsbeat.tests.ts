@@ -111,8 +111,7 @@ describe("AutoCollection/Statsbeat", () => {
             const spy = sandbox.spy(statsBeat["_sender"], "send");
             statsBeat.countRequest(123, "testEndpointHost", 123, true);
             statsBeat.setCodelessAttach();
-            statsBeat.trackShortIntervalStatsbeats();
-            setTimeout(() => {
+            statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.equal(spy.callCount, 2, "should call sender");
                 let envelope = spy.args[1][0][0];
                 assert.equal(envelope.name, "Statsbeat");
@@ -130,7 +129,7 @@ describe("AutoCollection/Statsbeat", () => {
                 assert.ok(baseData.properties["version"]);
                 statsBeat.enable(false);
                 done();
-            }, 10);
+            });
         });
 
         it("Track duration", (done) => {
@@ -139,8 +138,7 @@ describe("AutoCollection/Statsbeat", () => {
             const spy = sandbox.spy(statsBeat["_sender"], "send");
             statsBeat.countRequest(0, "test", 1000, true);
             statsBeat.countRequest(0, "test", 500, false);
-            statsBeat.trackShortIntervalStatsbeats();
-            setImmediate(() => {
+            statsBeat.trackShortIntervalStatsbeats().then((error) => {
                 assert.equal(spy.callCount, 2, "should call sender");
                 let envelope = spy.args[1][0][0];
                 let baseData: Contracts.MetricData = envelope.data.baseData;
@@ -166,8 +164,7 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.countRetry(0, "test");
             statsBeat.countThrottle(0, "test");
             statsBeat.countException(0, "test");
-            statsBeat.trackShortIntervalStatsbeats();
-            setImmediate(() => {
+            statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.equal(spy.callCount, 2, "should call sender");
                 let envelope = spy.args[1][0][1];
                 let baseData: Contracts.MetricData = envelope.data.baseData;
@@ -295,8 +292,7 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.countRequest(0, "breezeFirstEndpoint", 100, true);
             statsBeat.countRequest(1, "quickpulseEndpoint", 200, true);
             statsBeat.countRequest(0, "breezeSecondEndpoint", 400, true);
-            statsBeat.trackShortIntervalStatsbeats();
-            setImmediate(() => {
+            statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.equal(spy.callCount, 2, "should call sender");
                 let envelope = spy.args[1][0][0];
                 let baseData: Contracts.MetricData = envelope.data.baseData;
