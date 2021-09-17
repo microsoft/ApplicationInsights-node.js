@@ -1,6 +1,7 @@
+import azureCore = require("@azure/core-http");
+
 import * as types from "../applicationinsights";
 import * as Helpers from "./Helpers";
-import * as DataModel from "./DataModel";
 import Constants = require("../Declarations/Constants");
 import { StatusLogger, StatusContract } from "./StatusLogger";
 import { DiagnosticLogger } from "./DiagnosticLogger";
@@ -45,7 +46,7 @@ export function setStatusLogger(statusLogger: StatusLogger) {
  * Try to setup and start this app insights instance if attach is enabled.
  * @param setupString connection string or instrumentation key
  */
-export function setupAndStart(setupString = _setupString): typeof types | null {
+export function setupAndStart(setupString = _setupString, aadTokenCredential?: azureCore.TokenCredential): typeof types | null {
     // If app already contains SDK, skip agent attach
     if (!forceStart && Helpers.sdkAlreadyExists(_logger)) {
         _statusLogger.logStatus({
@@ -102,6 +103,11 @@ export function setupAndStart(setupString = _setupString): typeof types | null {
         _appInsights.defaultClient.setAutoPopulateAzureProperties(true);
         _appInsights.defaultClient.addTelemetryProcessor(prefixInternalSdkVersion);
         _appInsights.defaultClient.addTelemetryProcessor(copyOverPrefixInternalSdkVersionToHeartBeatMetric);
+        if (aadTokenCredential) {
+            _logger.logMessage("Using AAD Token Credential");
+            _appInsights.defaultClient.config.aadTokenCredential = aadTokenCredential;
+        }
+        
         _appInsights.start();
         // Add attach flag in Statsbeat
         let statsbeat = _appInsights.defaultClient.getStatsbeat();
