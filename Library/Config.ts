@@ -59,6 +59,8 @@ class Config {
     /** AAD TokenCredential to use to authenticate the app */
     public aadTokenCredential?: azureCore.TokenCredential;
 
+    public isDebugWebSnippet?: boolean;
+
     private endpointBase: string = Constants.DEFAULT_BREEZE_ENDPOINT;
     private setCorrelationId: (v: string) => void;
     private _profileQueryEndpoint: string;
@@ -101,6 +103,7 @@ class Config {
         this.proxyHttpsUrl = process.env[Config.ENV_https_proxy] || undefined;
         this.httpAgent = undefined;
         this.httpsAgent = undefined;
+        this.isDebugWebSnippet = false;
         this.profileQueryEndpoint = csCode.ingestionendpoint || csEnv.ingestionendpoint || process.env[Config.ENV_profileQueryEndpoint] || this.endpointBase;
         this._quickPulseHost = csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_HOST;
         // Parse quickPulseHost if it starts with http(s)://
