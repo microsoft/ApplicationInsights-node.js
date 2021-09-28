@@ -315,6 +315,6 @@ describe("AutoCollection/Statsbeat", () => {
                 statsBeat.enable(false);
                 done();
             });
-        });
+        }).timeout(5000);
     });
 });
