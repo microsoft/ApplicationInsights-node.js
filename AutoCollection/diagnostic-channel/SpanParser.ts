@@ -39,10 +39,8 @@ function isSqlDB(dbSystem: string) {
         dbSystem === DbSystemValues.DB2 ||
         dbSystem === DbSystemValues.DERBY ||
         dbSystem === DbSystemValues.MARIADB ||
-        dbSystem === DbSystemValues.MYSQL ||
         dbSystem === DbSystemValues.MSSQL ||
         dbSystem === DbSystemValues.ORACLE ||
-        dbSystem === DbSystemValues.POSTGRESQL ||
         dbSystem === DbSystemValues.SQLITE ||
         dbSystem === DbSystemValues.OTHER_SQL ||
         dbSystem === DbSystemValues.HSQLDB ||
@@ -125,6 +123,14 @@ function createDependencyData(span: ReadableSpan): Contracts.DependencyTelemetry
     // HTTP Dependency
     if (httpMethod) {
         remoteDependency.dependencyTypeName = Constants.DependencyTypeName.Http;
+        const httpUrl = span.attributes[SemanticAttributes.HTTP_URL];
+        if (httpUrl) {
+            try {
+                let dependencyUrl = new URL(String(httpUrl));
+                remoteDependency.name = `${httpMethod} ${dependencyUrl.pathname}`;
+            }
+            catch (ex) { }
+        }
         remoteDependency.data = getUrl(span);
         const httpStatusCode = span.attributes[SemanticAttributes.HTTP_STATUS_CODE];
         if (httpStatusCode) {
@@ -139,34 +145,43 @@ function createDependencyData(span: ReadableSpan): Contracts.DependencyTelemetry
                 if (res != null) {
                     let protocol = res[1];
                     let port = res[3];
-                    if ((protocol == "https" && port == ":443") ||
-                        (protocol == "http" && port == ":80")) {
+                    if ((protocol == "https" && port == ":443") || (protocol == "http" && port == ":80")) {
                         // Drop port
                         target = res[1] + res[2] + res[4];
                     }
                 }
-
-            }
-            catch (error) { }
+            } catch (error) { }
             remoteDependency.target = `${target}`;
         }
     }
     // DB Dependency
     else if (dbSystem) {
-        if (isSqlDB(String(dbSystem))) {
+        // TODO: Remove special logic when Azure UX supports OpenTelemetry dbSystem
+        if (String(dbSystem) === DbSystemValues.MYSQL) {
+            remoteDependency.dependencyTypeName = "mysql";
+        } else if (String(dbSystem) === DbSystemValues.POSTGRESQL) {
+            remoteDependency.dependencyTypeName = "postgresql";
+        } else if (String(dbSystem) === DbSystemValues.MONGODB) {
+            remoteDependency.dependencyTypeName = "mongodb";
+        } else if (String(dbSystem) === DbSystemValues.REDIS) {
+            remoteDependency.dependencyTypeName = "redis";
+        } else if (isSqlDB(String(dbSystem))) {
             remoteDependency.dependencyTypeName = "SQL";
-        }
-        else {
+        } else {
             remoteDependency.dependencyTypeName = String(dbSystem);
         }
         const dbStatement = span.attributes[SemanticAttributes.DB_STATEMENT];
+        const dbOperation = span.attributes[SemanticAttributes.DB_OPERATION];
         if (dbStatement) {
             remoteDependency.data = String(dbStatement);
+        }
+        else if (dbOperation) {
+            remoteDependency.data = String(dbOperation);
         }
         let target = getDependencyTarget(span);
         const dbName = span.attributes[SemanticAttributes.DB_NAME];
         if (target) {
-            remoteDependency.target = dbName ? `${target}/${dbName}` : `${target}`;
+            remoteDependency.target = dbName ? `${target}|${dbName}` : `${target}`;
         } else {
             remoteDependency.target = dbName ? `${dbName}` : `${dbSystem}`;
         }
@@ -197,10 +212,24 @@ function createRequestData(span: ReadableSpan): Contracts.RequestTelemetry {
         url: "",
         source: undefined
     };
-
     const httpMethod = span.attributes[SemanticAttributes.HTTP_METHOD];
     const grpcStatusCode = span.attributes[SemanticAttributes.RPC_GRPC_STATUS_CODE];
     if (httpMethod) {
+        // Try to get request name for server spans
+        if (span.kind == SpanKind.SERVER) {
+            const httpRoute = span.attributes[SemanticAttributes.HTTP_ROUTE];
+            const httpUrl = span.attributes[SemanticAttributes.HTTP_URL];
+            if (httpRoute) {
+                requestData.name = `${httpMethod as string} ${httpRoute as string}`;
+            }
+            else if (httpUrl) {
+                try {
+                    let url = new URL(String(httpUrl));
+                    requestData.name = `${httpMethod} ${url.pathname}`;
+                }
+                catch (ex) { }
+            }
+        }
         requestData.url = getUrl(span);
         const httpStatusCode = span.attributes[SemanticAttributes.HTTP_STATUS_CODE];
         if (httpStatusCode) {
