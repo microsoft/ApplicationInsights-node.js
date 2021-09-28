@@ -36,7 +36,7 @@ describe("diagnostic-channel/azure-coretracing", () => {
         );
         span.attributes[SemanticAttributes.HTTP_METHOD] = "POST";
         span.attributes[SemanticAttributes.HTTP_STATUS_CODE] = "404";
-        span.attributes[SemanticAttributes.HTTP_URL] = "http://test.com/";
+        span.attributes[SemanticAttributes.HTTP_URL] = "http://test.com/path/";
         span.attributes[SemanticAttributes.PEER_SERVICE] = "http://testpeer.com/";
         span.attributes["TestAttribute"] = "test";
         let status: SpanStatus = { code: SpanStatusCode.ERROR, message: "test error" };
@@ -51,12 +51,12 @@ describe("diagnostic-channel/azure-coretracing", () => {
         };
         span.links.push(link);
         let dependency: DependencyTelemetry & Identified = <DependencyTelemetry>spanToTelemetryContract(span);
-        assert.equal(dependency.name, "test span");
+        assert.equal(dependency.name, "POST /path/");
         assert.equal(dependency.id, "spanId");
         assert.equal(dependency.success, false);
         assert.equal(dependency.resultCode, "404");
         assert.equal(dependency.dependencyTypeName, "HTTP");
-        assert.equal(dependency.data, "http://test.com/");
+        assert.equal(dependency.data, "http://test.com/path/");
         assert.equal(dependency.target, "http://testpeer.com/");
         assert.ok(dependency.duration);
         assert.equal(dependency.properties["TestAttribute"], "test");
@@ -84,8 +84,8 @@ describe("diagnostic-channel/azure-coretracing", () => {
         assert.equal(dependency.id, "spanId");
         assert.equal(dependency.success, true);
         assert.equal(dependency.resultCode, "0");
-        assert.equal(dependency.dependencyTypeName, "SQL");
-        assert.equal(dependency.target, "Test Net peer name/TestDB");
+        assert.equal(dependency.dependencyTypeName, "mysql");
+        assert.equal(dependency.target, "Test Net peer name|TestDB");
         assert.equal(dependency.data, "SELECT * FROM Test");
         assert.ok(dependency.duration);
         assert.equal(dependency.properties["TestAttribute"], "test");
@@ -143,7 +143,7 @@ describe("diagnostic-channel/azure-coretracing", () => {
         };
         span.links.push(link);
         let request: RequestTelemetry & Identified = <RequestTelemetry>spanToTelemetryContract(span);
-        assert.equal(request.name, "test span");
+        assert.equal(request.name, "POST /");
         assert.equal(request.id, "spanId");
         assert.equal(request.success, false);
         assert.equal(request.resultCode, "500");
@@ -270,7 +270,7 @@ describe("diagnostic-channel/azure-coretracing", () => {
         assert.equal(dependency.target, "TestDB");
         span.attributes[SemanticAttributes.PEER_SERVICE] = "testPeerService";
         dependency = <DependencyTelemetry>spanToTelemetryContract(span);
-        assert.equal(dependency.target, "testPeerService/TestDB");
+        assert.equal(dependency.target, "testPeerService|TestDB");
     });
 
     it("RPC Dependency Target", () => {
