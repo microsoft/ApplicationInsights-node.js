@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
+import { URL } from "url";
 import { SpanKind, SpanStatusCode, Link } from "@opentelemetry/api";
 import { SemanticAttributes, DbSystemValues } from "@opentelemetry/semantic-conventions";
 import { ReadableSpan } from "@opentelemetry/tracing";
