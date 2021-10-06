@@ -21,6 +21,7 @@ class Statsbeat {
 
     private _networkStatsbeatCollection: Array<Network.NetworkStatsbeat>;
     private _sender: Sender;
+    private _context: Context;
     private _handle: NodeJS.Timer | null;
     private _longHandle: NodeJS.Timer | null;
     private _isEnabled: boolean;
@@ -42,11 +43,12 @@ class Statsbeat {
     private _feature: number = Constants.StatsbeatFeature.NONE;
     private _instrumentation: number = Constants.StatsbeatInstrumentation.NONE;
 
-    constructor(config: Config) {
+    constructor(config: Config, context?: Context) {
         this._isInitialized = false;
         this._statbeatMetrics = [];
         this._networkStatsbeatCollection = [];
         this._config = config;
+        this._context = context || new Context();
         this._statsbeatConfig = new Config(Statsbeat.CONNECTION_STRING);
         this._sender = new Sender(this._statsbeatConfig);
     }
@@ -270,7 +272,7 @@ class Statsbeat {
                 value: this._statbeatMetrics[i].value,
                 properties: this._statbeatMetrics[i].properties
             };
-            let envelope = EnvelopeFactory.createEnvelope(statsbeat, Contracts.TelemetryType.Metric, null, null, this._statsbeatConfig);
+            let envelope = EnvelopeFactory.createEnvelope(statsbeat, Contracts.TelemetryType.Metric, null, this._context, this._statsbeatConfig);
             envelope.name = Constants.StatsbeatTelemetryName;
             envelopes.push(envelope);
         }
