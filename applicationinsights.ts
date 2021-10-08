@@ -11,6 +11,8 @@ import Logging = require("./Library/Logging");
 import QuickPulseClient = require("./Library/QuickPulseStateManager");
 import { IncomingMessage } from "http";
 import { SpanContext } from "@opentelemetry/api";
+import fs = require("fs");
+import { ICustomConfig } from "./Library/ICustomConfig";
 
 import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCollection/NativePerformance";
 
@@ -111,8 +113,9 @@ export function setup(setupString?: string) {
  * is enabled.
  * @returns {ApplicationInsights} this class
  */
-export function start() {
+export function start(configPath?: string) {
     if (!!defaultClient) {
+        _generateConfigurationObject(configPath);
         _isStarted = true;
         _console.enable(_isConsole, _isConsoleLog);
         _exceptions.enable(_isExceptions);
@@ -131,6 +134,102 @@ export function start() {
     }
 
     return Configuration;
+}
+
+function _generateConfigurationObject(configPath?: string) {
+    if (!configPath) {
+        return;
+    }
+    fs.readFile(configPath, "utf8", (err, jsonString) => {
+        if (err) {
+            Logging.warn("Configuration file read failed");
+            return;
+        }
+        try{
+            const customConfig = JSON.parse(jsonString) as ICustomConfig;
+            if (customConfig.setDistributedTracingMode !== undefined) {
+                CorrelationIdManager.w3cEnabled = customConfig.setDistributedTracingMode === DistributedTracingModes.AI_AND_W3C;
+            }
+            if (customConfig.setAutoCollectConsole !== undefined) {
+                _isConsole = customConfig.setAutoCollectConsole;
+            }
+            if (customConfig.setAutoCollectConsoleLog !== undefined) {
+                _isConsoleLog = customConfig.setAutoCollectConsoleLog;
+            }
+            if (customConfig.setAutoCollectExceptions !== undefined) {
+                _isExceptions = customConfig.setAutoCollectExceptions;
+            }
+            if (customConfig.setAutoCollectPerformance !== undefined) {
+                _isPerformance = customConfig.setAutoCollectPerformance;
+            }
+            if (customConfig.setAutoCollectExtendedMetrics !== undefined) {
+                const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(customConfig.setAutoCollectExtendedMetrics);
+                _isNativePerformance = extendedMetricsConfig.isEnabled;
+                _disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
+            }
+            if (customConfig.setAutoCollectPreAggregatedMetrics !== undefined) {
+                _isPreAggregatedMetrics = customConfig.setAutoCollectPreAggregatedMetrics;
+            }
+            if (customConfig.setAutoCollectHeartbeat !== undefined) {
+                _isHeartBeat = customConfig.setAutoCollectHeartbeat;
+            }
+            if (customConfig.setAutoCollectRequests !== undefined) {
+                _isRequests = customConfig.setAutoCollectRequests;
+            }
+            if (customConfig.setAutoCollectDependencies !== undefined) {
+                _isDependencies = customConfig.setAutoCollectDependencies;
+            }
+            if (customConfig.setAutoDependencyCorrelation !== undefined) {
+                _isCorrelating = customConfig.setAutoDependencyCorrelation;
+            }
+            if (customConfig.setUseAsyncHooks !== undefined) {
+                _forceClsHooked = customConfig.setUseAsyncHooks;
+            }
+            if (customConfig.setUseDiskRetryCaching !== undefined) {
+                _setRetry(customConfig.setUseDiskRetryCaching, customConfig.setResendInterval, customConfig.setMaxBytesOnDisk);
+            }
+            if (customConfig.setInternalDebugLogging !== undefined) {
+                Logging.enableDebug = customConfig.setInternalDebugLogging;
+            }
+            if (customConfig.setInternalWarningLogging !== undefined) {
+                Logging.disableWarnings = !customConfig.setInternalWarningLogging;
+            }
+            if (customConfig.setSendLiveMetrics !== undefined) {
+                _setLiveMetricsFlag(customConfig.setSendLiveMetrics);
+            }
+        } catch (err) {
+            Logging.warn("Error parsing JSON string: ", err);
+        }
+    });
+}
+
+function _setRetry(setUseDiskRetryCaching: boolean, setResendInterval: number, setMaxBytesOnDisk: number) {
+    _isDiskRetry = setUseDiskRetryCaching;
+    _diskRetryInterval = setResendInterval;
+    _diskRetryMaxBytes = setMaxBytesOnDisk;
+    if (defaultClient && defaultClient.channel) {
+        defaultClient.channel.setUseDiskRetryCaching(_isDiskRetry, _diskRetryInterval, _diskRetryMaxBytes);
+    }
+}
+
+function _setLiveMetricsFlag(setSendLiveMetrics: boolean) {
+    if (!defaultClient) {
+        // Need a defaultClient so that we can add the QPS telemetry processor to it
+        Logging.warn("Live metrics client cannot be setup without the default client");
+        return Configuration;
+    }
+
+    if (!liveMetricsClient && setSendLiveMetrics) {
+        // No qps client exists. Create one and prepare it to be enabled at .start()
+        liveMetricsClient = new QuickPulseClient(defaultClient.config, defaultClient.context, defaultClient.getAuthorizationHandler);
+        _performanceLiveMetrics = new AutoCollectPerformance(liveMetricsClient as any, 1000, true);
+        liveMetricsClient.addCollector(_performanceLiveMetrics);
+        defaultClient.quickPulseClient = liveMetricsClient; // Need this so we can forward all manual tracks to live metrics via PerformanceMetricsTelemetryProcessor
+    } else if (liveMetricsClient) {
+        // qps client already exists; enable/disable it
+        liveMetricsClient.enable(setSendLiveMetrics);
+    }
+    _isSendingLiveMetrics = setSendLiveMetrics;
 }
 
 /**
@@ -327,13 +426,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setUseDiskRetryCaching(value: boolean, resendInterval?: number, maxBytesOnDisk?: number) {
-        _isDiskRetry = value;
-        _diskRetryInterval = resendInterval;
-        _diskRetryMaxBytes = maxBytesOnDisk
-        if (defaultClient && defaultClient.channel) {
-            defaultClient.channel.setUseDiskRetryCaching(value, resendInterval, maxBytesOnDisk);
-        }
-
+        _setRetry(value, resendInterval, maxBytesOnDisk);
         return Configuration;
     }
 
@@ -354,24 +447,7 @@ export class Configuration {
      * @param enable if true, enables communication with the live metrics service
      */
     public static setSendLiveMetrics(enable = false) {
-        if (!defaultClient) {
-            // Need a defaultClient so that we can add the QPS telemetry processor to it
-            Logging.warn("Live metrics client cannot be setup without the default client");
-            return Configuration;
-        }
-
-        if (!liveMetricsClient && enable) {
-            // No qps client exists. Create one and prepare it to be enabled at .start()
-            liveMetricsClient = new QuickPulseClient(defaultClient.config, defaultClient.context, defaultClient.getAuthorizationHandler);
-            _performanceLiveMetrics = new AutoCollectPerformance(liveMetricsClient as any, 1000, true);
-            liveMetricsClient.addCollector(_performanceLiveMetrics);
-            defaultClient.quickPulseClient = liveMetricsClient; // Need this so we can forward all manual tracks to live metrics via PerformanceMetricsTelemetryProcessor
-        } else if (liveMetricsClient) {
-            // qps client already exists; enable/disable it
-            liveMetricsClient.enable(enable);
-        }
-        _isSendingLiveMetrics = enable;
-
+        _setLiveMetricsFlag(enable);
         return Configuration;
     }
 }
