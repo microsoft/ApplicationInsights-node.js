@@ -38,13 +38,13 @@ class TelemetryClient {
      * Constructs a new client of the client
      * @param setupString the Connection String or Instrumentation Key to use (read from environment variable if not specified)
      */
-    constructor(setupString?: string) {
-        var config = new Config(setupString);
+    constructor(setupString?: string, configPath?: string) {
+        var config = new Config(setupString, configPath);
         this.config = config;
         this.context = new Context();
         this.commonProperties = {};
         this.authorizationHandler = null;
-        if (!process.env["APPLICATION_INSIGHTS_NO_STATSBEAT"]) {
+        if ((this.config && this.config.disableStatsbeat) || !process.env["APPLICATION_INSIGHTS_NO_STATSBEAT"]) {
             this._statsbeat = new Statsbeat(this.config);
             this._statsbeat.enable(true);
         }

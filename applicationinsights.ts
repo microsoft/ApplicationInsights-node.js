@@ -11,8 +11,6 @@ import Logging = require("./Library/Logging");
 import QuickPulseClient = require("./Library/QuickPulseStateManager");
 import { IncomingMessage } from "http";
 import { SpanContext } from "@opentelemetry/api";
-import fs = require("fs");
-import { ICustomConfig } from "./Library/ICustomConfig";
 
 import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCollection/NativePerformance";
 
@@ -36,20 +34,38 @@ export enum DistributedTracingModes {
 }
 
 // Default autocollection configuration
-let _isConsole = true;
-let _isConsoleLog = false;
-let _isExceptions = true;
-let _isPerformance = true;
-let _isPreAggregatedMetrics = true;
-let _isHeartBeat = false; // off by default for now
-let _isRequests = true;
-let _isDependencies = true;
-let _isDiskRetry = true;
-let _isCorrelating = true;
+let defaultConfig = _getDefaultAutoCollectConfig();
+let _isConsole = defaultConfig.isConsole();
+let _isConsoleLog = defaultConfig.isConsoleLog();
+let _isExceptions = defaultConfig.isExceptions();
+let _isPerformance = defaultConfig.isPerformance();
+let _isPreAggregatedMetrics = defaultConfig.isPreAggregatedMetrics();
+let _isHeartBeat = defaultConfig.isHeartBeat(); // off by default for now
+let _isRequests = defaultConfig.isRequests();
+let _isDependencies = defaultConfig.isDependencies();
+let _isDiskRetry = defaultConfig.isDiskRetry();
+let _isCorrelating = defaultConfig.isCorrelating();
 let _forceClsHooked: boolean;
-let _isSendingLiveMetrics = false; // Off by default
-let _isNativePerformance = true;
+let _isSendingLiveMetrics = defaultConfig.isSendingLiveMetrics(); // Off by default
+let _isNativePerformance = defaultConfig.isNativePerformance();
 let _disabledExtendedMetrics: IDisabledExtendedMetrics;
+
+function _getDefaultAutoCollectConfig() {
+    return {
+        isConsole: () => true,
+        isConsoleLog: () => false,
+        isExceptions: () => true,
+        isPerformance: () => true,
+        isPreAggregatedMetrics: () => true,
+        isHeartBeat: () => false, // off by default for now
+        isRequests: () => true,
+        isDependencies: () => true,
+        isDiskRetry: () => true,
+        isCorrelating: () => true,
+        isSendingLiveMetrics: () => false, // Off by default
+        isNativePerformance: () => true
+    }
+}
 
 let _diskRetryInterval: number = undefined;
 let _diskRetryMaxBytes: number = undefined;
@@ -83,9 +99,10 @@ let _performanceLiveMetrics: AutoCollectPerformance;
  * @returns {Configuration} the configuration class to initialize
  * and start the SDK.
  */
-export function setup(setupString?: string) {
+export function setup(setupString?: string, configPath?: string) {
     if (!defaultClient) {
-        defaultClient = new TelemetryClient(setupString);
+        defaultClient = new TelemetryClient(setupString, configPath);
+        _configureFromConfigFile();
         _console = new AutoCollectConsole(defaultClient);
         _exceptions = new AutoCollectExceptions(defaultClient);
         _performance = new AutoCollectPerformance(defaultClient);
@@ -107,15 +124,29 @@ export function setup(setupString?: string) {
     return Configuration;
 }
 
+function _configureFromConfigFile() {
+    _isConsole = defaultClient.config.enableAutoCollectConsole !== undefined ? defaultClient.config.enableAutoCollectConsole : defaultConfig.isConsole();
+    _isConsoleLog = defaultClient.config.enableAutoCollectConsoleLog !== undefined ? defaultClient.config.enableAutoCollectConsoleLog : defaultConfig.isConsoleLog();
+    _isExceptions = defaultClient.config.enableAutoCollectExceptions !== undefined ? defaultClient.config.enableAutoCollectConsole : defaultConfig.isExceptions();
+    _isPerformance = defaultClient.config.enableAutoCollectPerformance !== undefined ? defaultClient.config.enableAutoCollectPerformance : defaultConfig.isPerformance();
+    _isPreAggregatedMetrics = defaultClient.config.enableAutoCollectPreAggregatedMetrics !== undefined ? defaultClient.config.enableAutoCollectPreAggregatedMetrics : defaultConfig.isPreAggregatedMetrics();
+    _isHeartBeat = defaultClient.config.enableAutoCollectHeartbeat !== undefined ? defaultClient.config.enableAutoCollectHeartbeat : defaultConfig.isHeartBeat();
+    _isRequests = defaultClient.config.enableAutoCollectRequests !== undefined ? defaultClient.config.enableAutoCollectRequests : defaultConfig.isRequests();
+    _isDependencies = defaultClient.config.enableAutoDependencyCorrelation !== undefined ? defaultClient.config.enableAutoDependencyCorrelation : defaultConfig.isDependencies();
+    _isCorrelating = defaultClient.config.enableAutoDependencyCorrelation !== undefined ? defaultClient.config.enableAutoDependencyCorrelation : defaultConfig.isCorrelating();
+    _forceClsHooked = defaultClient.config.enableUseAsyncHooks !== undefined ? defaultClient.config.enableUseAsyncHooks : undefined;
+    _isNativePerformance = defaultClient.config.enableNativePerformance !== undefined ? defaultClient.config.enableNativePerformance : defaultConfig.isNativePerformance();
+    _disabledExtendedMetrics = defaultClient.config.disabledExtendedMetrics !== undefined ? defaultClient.config.disabledExtendedMetrics : undefined;
+}
+
 /**
  * Starts automatic collection of telemetry. Prior to calling start no
  * telemetry will be *automatically* collected, though manual collection
  * is enabled.
  * @returns {ApplicationInsights} this class
  */
-export function start(configPath?: string) {
+export function start() {
     if (!!defaultClient) {
-        _generateConfigurationObject(configPath);
         _isStarted = true;
         _console.enable(_isConsole, _isConsoleLog);
         _exceptions.enable(_isExceptions);
@@ -136,74 +167,7 @@ export function start(configPath?: string) {
     return Configuration;
 }
 
-function _generateConfigurationObject(configPath?: string) {
-    if (!configPath) {
-        return;
-    }
-    fs.readFile(configPath, "utf8", (err, jsonString) => {
-        if (err) {
-            Logging.warn("Configuration file read failed");
-            return;
-        }
-        try{
-            const customConfig = JSON.parse(jsonString) as ICustomConfig;
-            if (customConfig.setDistributedTracingMode !== undefined) {
-                CorrelationIdManager.w3cEnabled = customConfig.setDistributedTracingMode === DistributedTracingModes.AI_AND_W3C;
-            }
-            if (customConfig.setAutoCollectConsole !== undefined) {
-                _isConsole = customConfig.setAutoCollectConsole;
-            }
-            if (customConfig.setAutoCollectConsoleLog !== undefined) {
-                _isConsoleLog = customConfig.setAutoCollectConsoleLog;
-            }
-            if (customConfig.setAutoCollectExceptions !== undefined) {
-                _isExceptions = customConfig.setAutoCollectExceptions;
-            }
-            if (customConfig.setAutoCollectPerformance !== undefined) {
-                _isPerformance = customConfig.setAutoCollectPerformance;
-            }
-            if (customConfig.setAutoCollectExtendedMetrics !== undefined) {
-                const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(customConfig.setAutoCollectExtendedMetrics);
-                _isNativePerformance = extendedMetricsConfig.isEnabled;
-                _disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
-            }
-            if (customConfig.setAutoCollectPreAggregatedMetrics !== undefined) {
-                _isPreAggregatedMetrics = customConfig.setAutoCollectPreAggregatedMetrics;
-            }
-            if (customConfig.setAutoCollectHeartbeat !== undefined) {
-                _isHeartBeat = customConfig.setAutoCollectHeartbeat;
-            }
-            if (customConfig.setAutoCollectRequests !== undefined) {
-                _isRequests = customConfig.setAutoCollectRequests;
-            }
-            if (customConfig.setAutoCollectDependencies !== undefined) {
-                _isDependencies = customConfig.setAutoCollectDependencies;
-            }
-            if (customConfig.setAutoDependencyCorrelation !== undefined) {
-                _isCorrelating = customConfig.setAutoDependencyCorrelation;
-            }
-            if (customConfig.setUseAsyncHooks !== undefined) {
-                _forceClsHooked = customConfig.setUseAsyncHooks;
-            }
-            if (customConfig.setUseDiskRetryCaching !== undefined) {
-                _setRetry(customConfig.setUseDiskRetryCaching, customConfig.setResendInterval, customConfig.setMaxBytesOnDisk);
-            }
-            if (customConfig.setInternalDebugLogging !== undefined) {
-                Logging.enableDebug = customConfig.setInternalDebugLogging;
-            }
-            if (customConfig.setInternalWarningLogging !== undefined) {
-                Logging.disableWarnings = !customConfig.setInternalWarningLogging;
-            }
-            if (customConfig.setSendLiveMetrics !== undefined) {
-                _setLiveMetricsFlag(customConfig.setSendLiveMetrics);
-            }
-        } catch (err) {
-            Logging.warn("Error parsing JSON string: ", err);
-        }
-    });
-}
-
-function _setRetry(setUseDiskRetryCaching: boolean, setResendInterval: number, setMaxBytesOnDisk: number) {
+export function setRetry(setUseDiskRetryCaching: boolean, setResendInterval: number, setMaxBytesOnDisk: number) {
     _isDiskRetry = setUseDiskRetryCaching;
     _diskRetryInterval = setResendInterval;
     _diskRetryMaxBytes = setMaxBytesOnDisk;
@@ -212,7 +176,7 @@ function _setRetry(setUseDiskRetryCaching: boolean, setResendInterval: number, s
     }
 }
 
-function _setLiveMetricsFlag(setSendLiveMetrics: boolean) {
+export function setLiveMetricsFlag(setSendLiveMetrics: boolean) {
     if (!defaultClient) {
         // Need a defaultClient so that we can add the QPS telemetry processor to it
         Logging.warn("Live metrics client cannot be setup without the default client");
@@ -426,7 +390,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setUseDiskRetryCaching(value: boolean, resendInterval?: number, maxBytesOnDisk?: number) {
-        _setRetry(value, resendInterval, maxBytesOnDisk);
+        setRetry(value, resendInterval, maxBytesOnDisk);
         return Configuration;
     }
 
@@ -447,7 +411,7 @@ export class Configuration {
      * @param enable if true, enables communication with the live metrics service
      */
     public static setSendLiveMetrics(enable = false) {
-        _setLiveMetricsFlag(enable);
+        setLiveMetricsFlag(enable);
         return Configuration;
     }
 }
