@@ -12,13 +12,20 @@ import { HttpRequest } from "../Library/Functions";
 
 class Util {
     private static _useKeepAlive = !process.env["APPLICATION_INSIGHTS_NO_HTTP_AGENT_KEEP_ALIVE"];
+    private static _listenerAttached = false;
+
     public static MAX_PROPERTY_LENGTH = 8192;
-    public static tlsRestrictedAgent: https.Agent = new https.Agent(<any>{
-        keepAlive: Util._useKeepAlive,
-        maxSockets: Util._useKeepAlive ? 25 : Infinity,
+    public static keepAliveAgent: http.Agent = new https.Agent(<any>{
+        keepAlive: true,
+        maxSockets: 25,
         secureOptions: constants.SSL_OP_NO_SSLv2 | constants.SSL_OP_NO_SSLv3 |
             constants.SSL_OP_NO_TLSv1 | constants.SSL_OP_NO_TLSv1_1
     });
+    public static tlsRestrictedAgent: http.Agent = new https.Agent(<any>{
+        secureOptions: constants.SSL_OP_NO_SSLv2 | constants.SSL_OP_NO_SSLv3 |
+            constants.SSL_OP_NO_TLSv1 | constants.SSL_OP_NO_TLSv1_1
+    });
+    public static isNodeExit = false;
 
     /**
      * helper method to access userId and sessionId cookie
@@ -337,7 +344,7 @@ class Util {
             options.agent = config.httpAgent;
         } else if (isHttps) {
             // HTTPS without a passed in agent. Use one that enforces our TLS rules
-            options.agent = Util.tlsRestrictedAgent;
+            options.agent = Util._useKeepAlive ? Util.keepAliveAgent : Util.tlsRestrictedAgent;
         }
 
         if (isHttps) {
@@ -399,6 +406,16 @@ class Util {
             response.setHeader(
                 RequestResponseHeaders.requestContextHeader,
                 `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+        }
+    }
+
+    private static addCloseHandler() {
+        if (!Util._listenerAttached) {
+            process.on("exit", () => {
+                Util.isNodeExit = true;
+                Util._useKeepAlive = false;
+            });
+            Util._listenerAttached = true;
         }
     }
 }
