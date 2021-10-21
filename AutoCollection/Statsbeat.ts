@@ -190,7 +190,7 @@ class Statsbeat {
                 "attach": this._attach,
             };
             let attachProperties = Object.assign({
-                "rpid": this._resourceIdentifier,
+                "rpId": this._resourceIdentifier,
             }, commonProperties);
             this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.ATTACH, value: 1, properties: attachProperties });
             let featureProperties = Object.assign({ "feature": this._feature, "type": Constants.StatsbeatFeatureType.Feature }, commonProperties);
@@ -299,7 +299,7 @@ class Statsbeat {
                 this._resourceIdentifier += "/" + process.env.WEBSITE_HOME_STAMPNAME;
             }
         } else if (process.env.FUNCTIONS_WORKER_RUNTIME) { // Function apps
-            this._resourceProvider = Constants.StatsbeatResourceProvider.function;
+            this._resourceProvider = Constants.StatsbeatResourceProvider.functions;
             if (process.env.WEBSITE_HOSTNAME) {
                 this._resourceIdentifier = process.env.WEBSITE_HOSTNAME;
             }

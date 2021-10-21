@@ -5,6 +5,7 @@ import path = require("path");
 import zlib = require("zlib");
 import child_process = require("child_process");
 
+import AuthorizationHandler = require("./AuthorizationHandler");
 import Logging = require("./Logging");
 import Config = require("./Config")
 import Contracts = require("../Declarations/Contracts");
@@ -36,6 +37,7 @@ class Sender {
     private _statsbeat: Statsbeat;
     private _onSuccess: (response: string) => void;
     private _onError: (error: Error) => void;
+    private _getAuthorizationHandler: (config: Config) => AuthorizationHandler;
     private _enableDiskRetryMode: boolean;
     private _numConsecutiveFailures: number;
     private _numConsecutiveRedirects: number;
@@ -46,7 +48,7 @@ class Sender {
     protected _resendInterval: number;
     protected _maxBytesOnDisk: number;
 
-    constructor(config: Config, onSuccess?: (response: string) => void, onError?: (error: Error) => void, statsbeat?: Statsbeat) {
+    constructor(config: Config, getAuthorizationHandler?: (config: Config) => AuthorizationHandler, onSuccess?: (response: string) => void, onError?: (error: Error) => void, statsbeat?: Statsbeat) {
         this._config = config;
         this._onSuccess = onSuccess;
         this._onError = onError;
@@ -57,6 +59,7 @@ class Sender {
         this._numConsecutiveFailures = 0;
         this._numConsecutiveRedirects = 0;
         this._resendTimer = null;
+        this._getAuthorizationHandler = getAuthorizationHandler;
         this._fileCleanupTimer = null;
         // tmpdir is /tmp for *nix and USERDIR/AppData/Local/Temp for Windows
         this._tempDir = path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + this._config.instrumentationKey);
@@ -131,6 +134,27 @@ class Sender {
                     "Content-Type": "application/x-json-stream"
                 }
             };
+
+            let authHandler = this._getAuthorizationHandler ? this._getAuthorizationHandler(this._config) : null;
+            if (authHandler) {
+                if (this._statsbeat) {
+                    this._statsbeat.addFeature(Constants.StatsbeatFeature.AAD_HANDLING);
+                }
+                try {
+                    // Add bearer token
+                    await authHandler.addAuthorizationHeader(options);
+                }
+                catch (authError) {
+                    let errorMsg = "Failed to get AAD bearer token for the Application. Error:" + authError.toString();
+                    // If AAD auth fails do not send to Breeze
+                    if (typeof callback === "function") {
+                        callback(errorMsg);
+                    }
+                    this._storeToDisk(envelopes);
+                    Logging.warn(Sender.TAG, errorMsg);
+                    return;
+                }
+            }
 
             let batch: string = "";
             envelopes.forEach(envelope => {
@@ -238,7 +262,7 @@ class Sender {
                         }
                         else {
                             if (this._statsbeat) {
-                                this._statsbeat.countRequest(Constants.StatsbeatNetworkCategory.Breeze, endpointHost,duration, res.statusCode === 200);
+                                this._statsbeat.countRequest(Constants.StatsbeatNetworkCategory.Breeze, endpointHost, duration, res.statusCode === 200);
                             }
                             this._numConsecutiveRedirects = 0;
                             if (typeof callback === "function") {
@@ -305,6 +329,8 @@ class Sender {
     private _isRetriable(statusCode: number) {
         return (
             statusCode === 206 || // Retriable
+            statusCode === 401 || // Unauthorized
+            statusCode === 403 || // Forbidden
             statusCode === 408 || // Timeout
             statusCode === 429 || // Throttle
             statusCode === 439 || // Quota

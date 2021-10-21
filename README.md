@@ -353,7 +353,7 @@ function startMeasuringEventLoop() {
 ## Preprocess data with Telemetry Processors
 
 ```javascript
-public addTelemetryProcessor(telemetryProcessor: (envelope: Contracts.Envelope, context: { http.RequestOptions, http.ClientRequest, http.ClientResponse, correlationContext }) => boolean)
+public addTelemetryProcessor(telemetryProcessor: (envelope: Contracts.Envelope, context: { http.RequestOptions, http.ClientRequest, http.ClientResponse, Error, correlationContext }) => boolean)
 ```
 
 You can process and filter collected data before it is sent for retention using
@@ -372,7 +372,7 @@ automatic dependency correlation is enabled).
 The TypeScript type for a telemetry processor is:
 
 ```typescript
-telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope, context: { http.RequestOptions, http.ClientRequest, http.ClientResponse, correlationContext }) => boolean;
+telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope, context: { http.RequestOptions, http.ClientRequest, http.ClientResponse, Error, correlationContext }) => boolean;
 ```
 
 For example, a processor that removes stack trace data from exceptions might be
@@ -388,6 +388,12 @@ function removeStackTraces ( envelope, context ) {
         exception.parsedStack = null;
         exception.hasFullStack = false;
       }
+    }
+    // Add extra properties
+    var originalError = context["Error"];
+    if(originalError && originalError.prop){
+      data.properties = data.properties || {};
+      data.properties.customProperty = originalError.prop;
     }
   }
   return true;
@@ -504,7 +510,7 @@ Following configuration is currently only available in beta version of the SDK.
 
 | Property                        | Description                                                                                                |
 | ------------------------------- |------------------------------------------------------------------------------------------------------------|
-| aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Crendential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes) |
+| aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Crendential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes) | 
 
 
 

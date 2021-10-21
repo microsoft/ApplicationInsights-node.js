@@ -172,17 +172,15 @@ class AutoCollectPreAggregatedMetrics {
             var elapsedMs = currentCounter.time - currentCounter.lastTime;
             var averageRequestExecutionTime = ((currentCounter.intervalExecutionTime - currentCounter.lastIntervalExecutionTime) / intervalRequests) || 0;
             currentCounter.lastIntervalExecutionTime = currentCounter.intervalExecutionTime; // reset
-            if (elapsedMs > 0) {
-                if (intervalRequests > 0) {
-                    this._trackPreAggregatedMetric({
-                        name: "Server response time",
-                        dimensions: currentCounter.dimensions,
-                        value: averageRequestExecutionTime,
-                        count: intervalRequests,
-                        aggregationInterval: elapsedMs,
-                        metricType: Constants.MetricId.REQUESTS_DURATION,
-                    });
-                }
+            if (elapsedMs > 0 && intervalRequests > 0) {
+                this._trackPreAggregatedMetric({
+                    name: "Server response time",
+                    dimensions: currentCounter.dimensions,
+                    value: averageRequestExecutionTime,
+                    count: intervalRequests,
+                    aggregationInterval: elapsedMs,
+                    metricType: Constants.MetricId.REQUESTS_DURATION,
+                });
             }
             // Set last counters
             currentCounter.lastTotalCount = currentCounter.totalCount;
@@ -198,17 +196,15 @@ class AutoCollectPreAggregatedMetrics {
             var elapsedMs = currentCounter.time - currentCounter.lastTime;
             var averageDependencyExecutionTime = ((currentCounter.intervalExecutionTime - currentCounter.lastIntervalExecutionTime) / intervalDependencies) || 0;
             currentCounter.lastIntervalExecutionTime = currentCounter.intervalExecutionTime; // reset
-            if (elapsedMs > 0) {
-                if (intervalDependencies > 0) {
-                    this._trackPreAggregatedMetric({
-                        name: "Dependency duration",
-                        dimensions: currentCounter.dimensions,
-                        value: averageDependencyExecutionTime,
-                        count: intervalDependencies,
-                        aggregationInterval: elapsedMs,
-                        metricType: Constants.MetricId.DEPENDENCIES_DURATION,
-                    });
-                }
+            if (elapsedMs > 0 && intervalDependencies > 0) {
+                this._trackPreAggregatedMetric({
+                    name: "Dependency duration",
+                    dimensions: currentCounter.dimensions,
+                    value: averageDependencyExecutionTime,
+                    count: intervalDependencies,
+                    aggregationInterval: elapsedMs,
+                    metricType: Constants.MetricId.DEPENDENCIES_DURATION,
+                });
             }
             // Set last counters
             currentCounter.lastTotalCount = currentCounter.totalCount;
@@ -219,17 +215,19 @@ class AutoCollectPreAggregatedMetrics {
     private _trackExceptionMetrics() {
         for (let i = 0; i < AutoCollectPreAggregatedMetrics._exceptionCountersCollection.length; i++) {
             var currentCounter = AutoCollectPreAggregatedMetrics._exceptionCountersCollection[i];
+            currentCounter.time = +new Date;
             var intervalExceptions = (currentCounter.totalCount - currentCounter.lastTotalCount) || 0;
             var elapsedMs = currentCounter.time - currentCounter.lastTime;
-            this._trackPreAggregatedMetric({
-                name: "Exceptions",
-                dimensions: currentCounter.dimensions,
-                value: intervalExceptions,
-                count: intervalExceptions,
-                aggregationInterval: elapsedMs,
-                metricType: Constants.MetricId.EXCEPTIONS_COUNT,
-            });
-
+            if (elapsedMs > 0 && intervalExceptions > 0) {
+                this._trackPreAggregatedMetric({
+                    name: "Exceptions",
+                    dimensions: currentCounter.dimensions,
+                    value: intervalExceptions,
+                    count: intervalExceptions,
+                    aggregationInterval: elapsedMs,
+                    metricType: Constants.MetricId.EXCEPTIONS_COUNT,
+                });
+            }
             // Set last counters
             currentCounter.lastTotalCount = currentCounter.totalCount;
             currentCounter.lastTime = currentCounter.time;
@@ -239,17 +237,19 @@ class AutoCollectPreAggregatedMetrics {
     private _trackTraceMetrics() {
         for (let i = 0; i < AutoCollectPreAggregatedMetrics._traceCountersCollection.length; i++) {
             var currentCounter = AutoCollectPreAggregatedMetrics._traceCountersCollection[i];
+            currentCounter.time = +new Date;
             var intervalTraces = (currentCounter.totalCount - currentCounter.lastTotalCount) || 0;
             var elapsedMs = currentCounter.time - currentCounter.lastTime;
-            this._trackPreAggregatedMetric({
-                name: "Traces",
-                dimensions: currentCounter.dimensions,
-                value: intervalTraces,
-                count: intervalTraces,
-                aggregationInterval: elapsedMs,
-                metricType: Constants.MetricId.TRACES_COUNT,
-            });
-
+            if (elapsedMs > 0 && intervalTraces > 0) {
+                this._trackPreAggregatedMetric({
+                    name: "Traces",
+                    dimensions: currentCounter.dimensions,
+                    value: intervalTraces,
+                    count: intervalTraces,
+                    aggregationInterval: elapsedMs,
+                    metricType: Constants.MetricId.TRACES_COUNT,
+                });
+            }
             // Set last counters
             currentCounter.lastTotalCount = currentCounter.totalCount;
             currentCounter.lastTime = currentCounter.time;

@@ -198,15 +198,15 @@ class AutoCollectHttpDependencies {
 
                 client.trackDependency(dependencyTelemetry);
             });
-            telemetry.request.on('error', (e: Error) => {
-                requestParser.onError(e);
+            telemetry.request.on('error', (error: Error) => {
+                requestParser.onError(error);
 
                 var dependencyTelemetry = requestParser.getDependencyTelemetry(telemetry, uniqueRequestId);
 
                 dependencyTelemetry.contextObjects = dependencyTelemetry.contextObjects || {};
                 dependencyTelemetry.contextObjects["http.RequestOptions"] = telemetry.options;
                 dependencyTelemetry.contextObjects["http.ClientRequest"] = telemetry.request;
-                dependencyTelemetry.contextObjects["Error"] = e;
+                dependencyTelemetry.contextObjects["Error"] = error;
 
                 client.trackDependency(dependencyTelemetry);
             });

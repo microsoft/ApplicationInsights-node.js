@@ -54,8 +54,10 @@ describe("Library/Context", () => {
 
         it("should set internalSdkVersion to 'node:<version>'", () => {
             var context = new Context();
-            // todo: make this less fragile (will need updating on each minor version change)
-            assert.equal(context.tags[context.keys.internalSdkVersion].substring(0, 9), "node:2.1.");
+            const packageJsonPath = path.resolve(__dirname, "../../../", "./package.json");
+            let packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+            assert.strictEqual(context.tags[context.keys.internalSdkVersion], "node:" + packageJson.version);
+            assert.strictEqual(Context.sdkVersion, packageJson.version);
         });
 
         it("should correctly set device context", () => {
