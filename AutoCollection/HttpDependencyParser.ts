@@ -43,20 +43,22 @@ class HttpDependencyParser extends RequestParser {
      * Gets a dependency data contract object for a completed ClientRequest.
      */
     public getDependencyTelemetry(baseTelemetry?: Contracts.Telemetry, dependencyId?: string): Contracts.DependencyTelemetry {
-        let urlObject = new url.URL(this.url);
-        urlObject.search = undefined;
-        urlObject.hash = undefined;
-        let dependencyName = this.method.toUpperCase() + " " + urlObject.pathname;
-
-
+        let dependencyName = this.method.toUpperCase();
         let remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_HTTP;
+        let remoteDependencyTarget = "";
+        try {
+            let urlObject = new url.URL(this.url);
+            urlObject.search = undefined;
+            urlObject.hash = undefined;
+            dependencyName += " " + urlObject.pathname;
+            remoteDependencyTarget = urlObject.hostname;
+            if (urlObject.port) {
+                remoteDependencyTarget += ":" + urlObject.port;
+            }
 
-        let remoteDependencyTarget = urlObject.hostname;
-
-        if (urlObject.port) {
-            remoteDependencyTarget += ":" + urlObject.port;
         }
-
+        catch (ex) { // Invalid URL
+        }
         if (this.correlationId) {
             remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_AI;
             if (this.correlationId !== CorrelationIdManager.correlationIdPrefix) {
@@ -113,15 +115,21 @@ class HttpDependencyParser extends RequestParser {
         if (typeof options === 'string') {
             if (options.indexOf("http://") === 0 || options.indexOf("https://") === 0) {
                 // protocol exists, parse normally
-                options = new url.URL(options);
+                try {
+                    options = new url.URL(options);
+                }
+                catch (ex) { }
             } else {
                 // protocol not found, insert http/https where appropriate
-                const parsed = new url.URL("http://" + options);
-                if (parsed.port === "443") {
-                    options = new url.URL("https://" + options);
-                } else {
-                    options = new url.URL("http://" + options);
+                try {
+                    const parsed = new url.URL("http://" + options);
+                    if (parsed.port === "443") {
+                        options = new url.URL("https://" + options);
+                    } else {
+                        options = new url.URL("http://" + options);
+                    }
                 }
+                catch (ex) { }
             }
         } else if (options && typeof url.URL === 'function' && options instanceof url.URL) {
             return url.format(options);
@@ -140,9 +148,12 @@ class HttpDependencyParser extends RequestParser {
         // so create them from the path, if path was specified
         if (options.path && options.host) {
             // need to force a protocol to make parameter valid - base url is required when input is a relative url
-            const parsedQuery = new url.URL(options.path, 'http://' + options.host + options.path);
-            options.pathname = parsedQuery.pathname;
-            options.search = parsedQuery.search;
+            try {
+                const parsedQuery = new url.URL(options.path, 'http://' + options.host + options.path);
+                options.pathname = parsedQuery.pathname;
+                options.search = parsedQuery.search;
+            }
+            catch (ex) { }
         }
 
         // Similarly, url.format ignores hostname and port if host is specified,
@@ -153,11 +164,14 @@ class HttpDependencyParser extends RequestParser {
         if (options.host && options.port) {
             // Force a protocol so it will parse the host as the host, not path.
             // It is discarded and not used, so it doesn't matter if it doesn't match
-            const parsedHost = new url.URL(`http://${options.host}`);
-            if (!parsedHost.port && options.port) {
-                options.hostname = options.host;
-                delete options.host;
+            try {
+                const parsedHost = new url.URL(`http://${options.host}`);
+                if (!parsedHost.port && options.port) {
+                    options.hostname = options.host;
+                    delete options.host;
+                }
             }
+            catch (ex) { }
         }
 
         // Mix in default values used by http.request and others

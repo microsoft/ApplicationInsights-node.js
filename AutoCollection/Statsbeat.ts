@@ -21,6 +21,7 @@ class Statsbeat {
 
     private _networkStatsbeatCollection: Array<Network.NetworkStatsbeat>;
     private _sender: Sender;
+    private _context: Context;
     private _handle: NodeJS.Timer | null;
     private _longHandle: NodeJS.Timer | null;
     private _isEnabled: boolean;
@@ -42,11 +43,12 @@ class Statsbeat {
     private _feature: number = Constants.StatsbeatFeature.NONE;
     private _instrumentation: number = Constants.StatsbeatInstrumentation.NONE;
 
-    constructor(config: Config) {
+    constructor(config: Config, context?: Context) {
         this._isInitialized = false;
         this._statbeatMetrics = [];
         this._networkStatsbeatCollection = [];
         this._config = config;
+        this._context = context || new Context();
         this._statsbeatConfig = new Config(Statsbeat.CONNECTION_STRING);
         this._sender = new Sender(this._statsbeatConfig);
     }
@@ -193,10 +195,14 @@ class Statsbeat {
                 "rpId": this._resourceIdentifier,
             }, commonProperties);
             this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.ATTACH, value: 1, properties: attachProperties });
-            let featureProperties = Object.assign({ "feature": this._feature, "type": Constants.StatsbeatFeatureType.Feature }, commonProperties);
-            let instrumentationProperties = Object.assign({ "feature": this._instrumentation, "type": Constants.StatsbeatFeatureType.Instrumentation }, commonProperties);
-            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: instrumentationProperties });
-            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: featureProperties });
+            if (this._instrumentation != Constants.StatsbeatInstrumentation.NONE) {// Only send if there are some instrumentations enabled
+                let instrumentationProperties = Object.assign({ "feature": this._instrumentation, "type": Constants.StatsbeatFeatureType.Instrumentation }, commonProperties);
+                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: instrumentationProperties });
+            }
+            if (this._feature != Constants.StatsbeatFeature.NONE) {// Only send if there are some features enabled
+                let featureProperties = Object.assign({ "feature": this._feature, "type": Constants.StatsbeatFeatureType.Feature }, commonProperties);
+                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: featureProperties });
+            }
             await this._sendStatsbeats();
         });
     }
@@ -270,7 +276,7 @@ class Statsbeat {
                 value: this._statbeatMetrics[i].value,
                 properties: this._statbeatMetrics[i].properties
             };
-            let envelope = EnvelopeFactory.createEnvelope(statsbeat, Contracts.TelemetryType.Metric, null, null, this._statsbeatConfig);
+            let envelope = EnvelopeFactory.createEnvelope(statsbeat, Contracts.TelemetryType.Metric, null, this._context, this._statsbeatConfig);
             envelope.name = Constants.StatsbeatTelemetryName;
             envelopes.push(envelope);
         }

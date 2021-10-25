@@ -126,11 +126,13 @@ function createDependencyData(span: ReadableSpan): Contracts.DependencyTelemetry
         remoteDependency.dependencyTypeName = Constants.DependencyTypeName.Http;
         const httpUrl = span.attributes[SemanticAttributes.HTTP_URL];
         if (httpUrl) {
+            var pathName = "";
             try {
                 let dependencyUrl = new URL(String(httpUrl));
-                remoteDependency.name = `${httpMethod} ${dependencyUrl.pathname}`;
+                pathName = dependencyUrl.pathname;
             }
             catch (ex) { }
+            remoteDependency.name = `${httpMethod} ${pathName}`;
         }
         remoteDependency.data = getUrl(span);
         const httpStatusCode = span.attributes[SemanticAttributes.HTTP_STATUS_CODE];
