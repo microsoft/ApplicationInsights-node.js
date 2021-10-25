@@ -30,6 +30,10 @@ export const subscriber = (event: IStandardEvent<pg.IPostgresData>) => {
 export function enable(enabled: boolean, client: TelemetryClient) {
     let statsbeat = client.getStatsbeat();
     if (enabled) {
+        let clientFound = clients.find(c => c == client);
+        if (clientFound) {
+            return;
+        }
         if (clients.length === 0) {
             channel.subscribe<pg.IPostgresData>("postgres", subscriber);
             if (statsbeat) {
