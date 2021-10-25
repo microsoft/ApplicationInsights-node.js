@@ -21,14 +21,19 @@ const bunyanToAILevelMap: { [key: number]: number } = {
 };
 
 const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
-    const message = event.data.result as Error | string;
+    let message = event.data.result as string;
     clients.forEach((client) => {
-        const AIlevel = bunyanToAILevelMap[event.data.level];
-        if (message instanceof Error) {
-            client.trackException({ exception: (message) });
-        } else {
-            client.trackTrace({ message: message, severity: AIlevel });
+        try {
+            // Try to parse message as Bunyan log is JSON
+            let log: any = JSON.parse(message);
+            if (log.err) {
+                client.trackException({ exception: log.err });
+                return;
+            }
         }
+        catch (err) { }
+        const AIlevel = bunyanToAILevelMap[event.data.level];
+        client.trackTrace({ message: message, severity: AIlevel });
     });
 };
 
