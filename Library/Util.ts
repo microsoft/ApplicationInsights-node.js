@@ -27,6 +27,10 @@ class Util {
     });
     public static isNodeExit = false;
 
+    public constructor() {
+        Util._addCloseHandler();
+    }
+
     /**
      * helper method to access userId and sessionId cookie
      */
@@ -417,7 +421,7 @@ class Util {
         }
     }
 
-    private static addCloseHandler() {
+    private static _addCloseHandler() {
         if (!Util._listenerAttached) {
             process.on("exit", () => {
                 Util.isNodeExit = true;
