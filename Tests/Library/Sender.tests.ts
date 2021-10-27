@@ -66,7 +66,7 @@ describe("Library/Sender", () => {
         it("should not crash JSON.stringify", () => {
             var a = <any>{ b: null };
             a.b = a;
-            var warnStub = sandbox.stub(sender["_logger"], "warning");
+            var warnStub = sandbox.stub(Sender["_logger"], "warning");
             assert.doesNotThrow(() => sender.send([a]));
             assert.ok(warnStub.calledOnce);
             warnStub.restore();
