@@ -3,6 +3,7 @@ import sinon = require("sinon");
 
 import Channel = require("../../Library/Channel");
 import Contracts = require("../../Declarations/Contracts");
+import Logging = require("../../Library/Logging");
 
 class ChannelMock extends Channel {
     public getBuffer() {
@@ -66,7 +67,7 @@ describe("Library/Channel", () => {
         });
 
         it("should log warning if invalid input is passed", () => {
-            var warnStub = sinon.stub(channel["_logger"], "warning");
+            var warnStub = sinon.stub(Logging, "warn");
             channel.send(undefined);
             channel.send(null);
             channel.send(<any>"");

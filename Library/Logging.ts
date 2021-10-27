@@ -14,7 +14,9 @@ class Logging {
     }
 
     public static info(message?: any, ...optionalParams: any[]) {
-        this.logger.info(Logging.TAG + message, optionalParams);
+        if(Logging.enableDebug) {
+            this.logger.info(Logging.TAG + message, optionalParams);
+        }
     }
 
     public static warn(message?: any, ...optionalParams: any[]) {

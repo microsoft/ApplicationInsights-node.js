@@ -29,10 +29,13 @@ describe("Library/Logging", () => {
 
     describe("#info(message, ...optionalParams: any)", () => {
         it("should log 'info' if called", () => {
+            var originalSetting = Logging.enableDebug;
+            Logging.enableDebug = true;
             var infoStub = sinon.stub(Logging.logger, "info");
             Logging.info("test");
             assert.ok(infoStub.calledOnce);
             infoStub.restore();
+            Logging.enableDebug = originalSetting;
         });
     });
 

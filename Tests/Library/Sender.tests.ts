@@ -11,6 +11,7 @@ import Contracts = require("../../Declarations/Contracts");
 import AuthorizationHandler = require("../../Library/AuthorizationHandler");
 import Util = require("../../Library/Util");
 import Statsbeat = require("../../AutoCollection/Statsbeat");
+import Logging = require("../../Library/Logging");
 
 class SenderMock extends Sender {
     public getResendInterval() {
@@ -66,7 +67,7 @@ describe("Library/Sender", () => {
         it("should not crash JSON.stringify", () => {
             var a = <any>{ b: null };
             a.b = a;
-            var warnStub = sandbox.stub(Sender["_logger"], "warning");
+            var warnStub = sandbox.stub(Logging, "warn");
             assert.doesNotThrow(() => sender.send([a]));
             assert.ok(warnStub.calledOnce);
             warnStub.restore();
