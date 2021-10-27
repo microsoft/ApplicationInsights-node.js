@@ -326,13 +326,14 @@ describe("EndToEnd", () => {
                 process.nextTick(c);
                 return eventEmitter;
             });
-            sandbox.stub(AppInsights.defaultClient, 'track');
+            
             let generateContextSpy = sandbox.spy(CorrelationContextManager, "generateContextObject");
             AppInsights
                 .setup("ikey")
                 .setAutoCollectDependencies(true)
                 .setAutoDependencyCorrelation(true);
             AppInsights.start();
+            sandbox.stub(AppInsights.defaultClient, 'track');
 
             http.request(<any>'http://test.com', (c) => {
                 assert.equal(generateContextSpy.callCount, 1);
