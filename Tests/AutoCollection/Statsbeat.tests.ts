@@ -219,7 +219,7 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.addFeature(Constants.StatsbeatFeature.DISK_RETRY);
             const spy = sandbox.spy(statsBeat["_sender"], "send");
             setImmediate(() => {
-                let envelope = spy.args[0][0][2];
+                let envelope = spy.args[0][0][1];
                 let baseData: Contracts.MetricData = envelope.data.baseData;
                 assert.equal(baseData.metrics[0].name, "Feature");
                 assert.equal(baseData.metrics[0].value, 1);

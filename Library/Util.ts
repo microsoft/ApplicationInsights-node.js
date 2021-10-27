@@ -27,6 +27,10 @@ class Util {
     });
     public static isNodeExit = false;
 
+    public constructor() {
+        Util._addCloseHandler();
+    }
+
     /**
      * helper method to access userId and sessionId cookie
      */
@@ -253,9 +257,12 @@ class Util {
 
         for (let i = 0; i < excludedDomains.length; i++) {
             let regex = new RegExp(excludedDomains[i].replace(/\./g, "\.").replace(/\*/g, ".*"));
-            if (regex.test(new url.URL(requestUrl).hostname)) {
-                return false;
+            try {
+                if (regex.test(new url.URL(requestUrl).hostname)) {
+                    return false;
+                }
             }
+            catch (ex) { }
         }
 
         return true;
@@ -316,24 +323,29 @@ class Util {
             if (proxyUrl.indexOf('//') === 0) {
                 proxyUrl = 'http:' + proxyUrl;
             }
-            var proxyUrlParsed = new url.URL(proxyUrl);
-
-            // https is not supported at the moment
-            if (proxyUrlParsed.protocol === 'https:') {
-                Logging.info("Proxies that use HTTPS are not supported");
-                proxyUrl = undefined;
-            } else {
-                options = {
-                    ...options,
-                    host: proxyUrlParsed.hostname,
-                    port: proxyUrlParsed.port || "80",
-                    path: requestUrl,
-                    headers: {
-                        ...options.headers,
-                        Host: requestUrlParsed.hostname,
-                    },
-                };
+            try {
+                var proxyUrlParsed = new url.URL(proxyUrl);
+                // https is not supported at the moment
+                if (proxyUrlParsed.protocol === 'https:') {
+                    Logging.info("Proxies that use HTTPS are not supported");
+                    proxyUrl = undefined;
+                } else {
+                    options = {
+                        ...options,
+                        host: proxyUrlParsed.hostname,
+                        port: proxyUrlParsed.port || "80",
+                        path: requestUrl,
+                        headers: {
+                            ...options.headers,
+                            Host: requestUrlParsed.hostname,
+                        },
+                    };
+                }
             }
+            catch (err) {
+                Logging.warn("Wrong proxy URL provided");
+            }
+
         }
 
         var isHttps = requestUrlParsed.protocol === 'https:' && !proxyUrl;
@@ -409,7 +421,7 @@ class Util {
         }
     }
 
-    private static addCloseHandler() {
+    private static _addCloseHandler() {
         if (!Util._listenerAttached) {
             process.on("exit", () => {
                 Util.isNodeExit = true;

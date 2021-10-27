@@ -66,9 +66,17 @@ class HttpRequestParser extends RequestParser {
     }
 
     public getRequestTelemetry(baseTelemetry?: Contracts.Telemetry): Contracts.RequestTelemetry {
+
+        let name = this.method;
+        try {
+            name += " " + new url.URL(this.url).pathname;
+        }
+        catch (ex) { // Invalid URL
+        }
+
         var requestTelemetry: Contracts.RequestTelemetry & Contracts.Identified = {
             id: this.requestId,
-            name: this.method + " " + new url.URL(this.url).pathname,
+            name: name,
             url: this.url,
             /*
             See https://github.com/microsoft/ApplicationInsights-dotnet-server/blob/25d695e6a906fbe977f67be3966d25dbf1c50a79/Src/Web/Web.Shared.Net/RequestTrackingTelemetryModule.cs#L250
@@ -136,7 +144,20 @@ class HttpRequestParser extends RequestParser {
     }
 
     public getOperationName(tags: { [key: string]: string }) {
-        return tags[HttpRequestParser.keys.operationName] || this.method + " " + new url.URL(this.url).pathname;
+        if(tags[HttpRequestParser.keys.operationName]){
+            return tags[HttpRequestParser.keys.operationName];
+        }
+        let pathName = "";
+        try {
+            pathName = new url.URL(this.url).pathname;
+        }
+        catch (ex) { // Invalid URL
+        }
+        let operationName = this.method;
+        if (pathName) {
+            operationName += " " + pathName;
+        }
+        return operationName;
     }
 
     public getRequestId() {
@@ -169,11 +190,15 @@ class HttpRequestParser extends RequestParser {
         var protocol = (encrypted || request.headers["x-forwarded-proto"] == "https") ? "https" : "http";
 
         var baseUrl = protocol + '://' + request.headers.host + '/';
-        var requestUrl = new url.URL(request.url, baseUrl);
 
-        var pathName = requestUrl.pathname;
-        var search = requestUrl.search;
-
+        var pathName = "";
+        var search = "";
+        try {
+            var requestUrl = new url.URL(request.url, baseUrl);
+            pathName = requestUrl.pathname;
+            search = requestUrl.search;
+        }
+        catch (ex) { }
         var absoluteUrl = url.format({
             protocol: protocol,
             host: request.headers.host,
