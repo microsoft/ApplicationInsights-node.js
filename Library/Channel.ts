@@ -2,6 +2,8 @@
 import Logging = require("./Logging");
 import Sender = require("./Sender");
 import {AzureLogger, createClientLogger} from "@azure/logger";
+import Util = require("./Util");
+
 class Channel {
     protected _lastSend: number;
     protected _timeoutHandle: any;
@@ -10,7 +12,7 @@ class Channel {
     protected _isDisabled: () => boolean;
     protected _getBatchSize: () => number;
     protected _getBatchIntervalMs: () => number;
-
+    
     public _sender: Sender;
     public _buffer: Contracts.EnvelopeTelemetry[];
 
@@ -78,7 +80,7 @@ class Channel {
         let bufferIsEmpty = this._buffer.length < 1;
         if (!bufferIsEmpty) {
             // invoke send
-            if (isNodeCrashing) {
+            if (isNodeCrashing || Util.isNodeExit) {
                 this._sender.saveOnCrash(this._buffer);
                 if (typeof callback === "function") {
                     callback("data saved on crash");
@@ -98,7 +100,7 @@ class Channel {
         if (bufferIsEmpty && typeof callback === "function") {
             callback("no data to send");
         }
-    }
+    }    
 }
 
 export = Channel;

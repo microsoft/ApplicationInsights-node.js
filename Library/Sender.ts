@@ -4,23 +4,25 @@ import os = require("os");
 import path = require("path");
 import zlib = require("zlib");
 import child_process = require("child_process");
-
+import AuthorizationHandler = require("./AuthorizationHandler");
+import {AzureLogger, createClientLogger} from "@azure/logger";
 import Config = require("./Config")
 import Contracts = require("../Declarations/Contracts");
 import Constants = require("../Declarations/Constants");
 import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
 import Statsbeat = require("../AutoCollection/Statsbeat");
 import Util = require("./Util");
-import {AzureLogger, createClientLogger} from "@azure/logger";
+import { URL } from "url";
 
 
 class Sender {
     private static TAG = "Sender";
-    private _logger: AzureLogger;
+    private static _logger: AzureLogger;
     private static ICACLS_PATH = `${process.env.systemdrive}/windows/system32/icacls.exe`;
     private static POWERSHELL_PATH = `${process.env.systemdrive}/windows/system32/windowspowershell/v1.0/powershell.exe`;
     private static ACLED_DIRECTORIES: { [id: string]: boolean } = {};
     private static ACL_IDENTITY: string = null;
+    private static OS_FILE_PROTECTION_CHECKED = false;
 
     // the amount of time the SDK will wait between resending cached data, this buffer is to avoid any throttling from the service side
     public static WAIT_BETWEEN_RESEND = 60 * 1000; // 1 minute
@@ -36,6 +38,7 @@ class Sender {
     private _statsbeat: Statsbeat;
     private _onSuccess: (response: string) => void;
     private _onError: (error: Error) => void;
+    private _getAuthorizationHandler: (config: Config) => AuthorizationHandler;
     private _enableDiskRetryMode: boolean;
     private _numConsecutiveFailures: number;
     private _numConsecutiveRedirects: number;
@@ -46,8 +49,8 @@ class Sender {
     protected _resendInterval: number;
     protected _maxBytesOnDisk: number;
 
-    constructor(config: Config, onSuccess?: (response: string) => void, onError?: (error: Error) => void, statsbeat?: Statsbeat) {
-        this._logger = createClientLogger('ApplicationInsights:Sender');
+constructor(config: Config, getAuthorizationHandler?: (config: Config) => AuthorizationHandler, onSuccess?: (response: string) => void, onError?: (error: Error) => void, statsbeat?: Statsbeat) {
+        Sender._logger = createClientLogger('ApplicationInsights:Sender');
         this._config = config;
         this._onSuccess = onSuccess;
         this._onError = onError;
@@ -58,11 +61,15 @@ class Sender {
         this._numConsecutiveFailures = 0;
         this._numConsecutiveRedirects = 0;
         this._resendTimer = null;
+        this._getAuthorizationHandler = getAuthorizationHandler;
         this._fileCleanupTimer = null;
         // tmpdir is /tmp for *nix and USERDIR/AppData/Local/Temp for Windows
         this._tempDir = path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + this._config.instrumentationKey);
+    }
 
-        if (!Sender.OS_PROVIDES_FILE_PROTECTION) {
+    private static _checkFileProtection() {
+        if (!Sender.OS_PROVIDES_FILE_PROTECTION && !Sender.OS_FILE_PROTECTION_CHECKED) {
+            Sender.OS_FILE_PROTECTION_CHECKED = true;
             // Node's chmod levels do not appropriately restrict file access on Windows
             // Use the built-in command line tool ICACLS on Windows to properly restrict
             // access to the temporary directory used for disk retry mode.
@@ -73,7 +80,7 @@ class Sender {
                     Sender.OS_PROVIDES_FILE_PROTECTION = fs.existsSync(Sender.ICACLS_PATH);
                 } catch (e) { }
                 if (!Sender.OS_PROVIDES_FILE_PROTECTION) {
-                    this._logger.warning(Sender.TAG, "Could not find ICACLS in expected location! This is necessary to use disk retry mode on Windows.")
+                    Sender._logger.warning(Sender.TAG, "Could not find ICACLS in expected location! This is necessary to use disk retry mode on Windows.")
                 }
             } else {
                 // chmod works everywhere else
@@ -86,6 +93,9 @@ class Sender {
     * Enable or disable offline mode
     */
     public setDiskRetryMode(value: boolean, resendInterval?: number, maxBytesOnDisk?: number) {
+        if (!Sender.OS_FILE_PROTECTION_CHECKED && value) {
+            Sender._checkFileProtection(); // Only check file protection when disk retry is enabled
+        }
         this._enableDiskRetryMode = Sender.OS_PROVIDES_FILE_PROTECTION && value;
         if (typeof resendInterval === 'number' && resendInterval >= 0) {
             this._resendInterval = Math.floor(resendInterval);
@@ -96,7 +106,7 @@ class Sender {
 
         if (value && !Sender.OS_PROVIDES_FILE_PROTECTION) {
             this._enableDiskRetryMode = false;
-            this._logger.warning(Sender.TAG, "Ignoring request to enable disk retry mode. Sufficient file protection capabilities were not detected.")
+            Sender._logger.warning(Sender.TAG, "Ignoring request to enable disk retry mode. Sufficient file protection capabilities were not detected.")
         }
         if (this._enableDiskRetryMode) {
             if (this._statsbeat) {
@@ -122,6 +132,8 @@ class Sender {
         if (envelopes) {
             var endpointUrl = this._redirectedHost || this._config.endpointUrl;
 
+            var endpointHost = new URL(endpointUrl).hostname;
+
             // todo: investigate specifying an agent here: https://nodejs.org/api/http.html#http_class_http_agent
             var options = {
                 method: "POST",
@@ -130,6 +142,27 @@ class Sender {
                     "Content-Type": "application/x-json-stream"
                 }
             };
+
+            let authHandler = this._getAuthorizationHandler ? this._getAuthorizationHandler(this._config) : null;
+            if (authHandler) {
+                if (this._statsbeat) {
+                    this._statsbeat.addFeature(Constants.StatsbeatFeature.AAD_HANDLING);
+                }
+                try {
+                    // Add bearer token
+                    await authHandler.addAuthorizationHeader(options);
+                }
+                catch (authError) {
+                    let errorMsg = "Failed to get AAD bearer token for the Application. Error:" + authError.toString();
+                    // If AAD auth fails do not send to Breeze
+                    if (typeof callback === "function") {
+                        callback(errorMsg);
+                    }
+                    this._storeToDisk(envelopes);
+                    Sender._logger.warning(Sender.TAG, errorMsg);
+                    return;
+                }
+            }
 
             let batch: string = "";
             envelopes.forEach(envelope => {
@@ -149,7 +182,7 @@ class Sender {
             zlib.gzip(payload, (err, buffer) => {
                 var dataToSend = buffer;
                 if (err) {
-                    this._logger.warning(Sender.TAG, err);
+                    Sender._logger.warning(Sender.TAG, err);
                     dataToSend = payload; // something went wrong so send without gzip
                     options.headers["Content-Length"] = payload.length.toString();
                 } else {
@@ -157,7 +190,7 @@ class Sender {
                     options.headers["Content-Length"] = buffer.length.toString();
                 }
 
-                this._logger.verbose(Sender.TAG, options);
+                Sender._logger.verbose(Sender.TAG, options);
 
                 // Ensure this request is not captured by auto-collection.
                 (<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] = true;
@@ -190,9 +223,9 @@ class Sender {
                             } else if (this._isRetriable(res.statusCode)) {
                                 try {
                                     if (this._statsbeat) {
-                                        this._statsbeat.countRetry();
+                                        this._statsbeat.countRetry(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
                                         if (res.statusCode === 429) {
-                                            this._statsbeat.countThrottle();
+                                            this._statsbeat.countThrottle(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
                                         }
                                     }
                                     const breezeResponse = JSON.parse(responseString) as Contracts.BreezeResponse;
@@ -227,7 +260,7 @@ class Sender {
                             }
                             else {
                                 if (this._statsbeat) {
-                                    this._statsbeat.countException();
+                                    this._statsbeat.countException(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
                                 }
                                 if (typeof callback === "function") {
                                     callback("Error sending telemetry because of circular redirects.");
@@ -237,13 +270,13 @@ class Sender {
                         }
                         else {
                             if (this._statsbeat) {
-                                this._statsbeat.countRequest(duration, res.statusCode === 200);
+                                this._statsbeat.countRequest(Constants.StatsbeatNetworkCategory.Breeze, endpointHost, duration, res.statusCode === 200);
                             }
                             this._numConsecutiveRedirects = 0;
                             if (typeof callback === "function") {
                                 callback(responseString);
                             }
-                            this._logger.verbose(Sender.TAG, responseString);
+                            Sender._logger.verbose(Sender.TAG, responseString);
                             if (typeof this._onSuccess === "function") {
                                 this._onSuccess(responseString);
                             }
@@ -257,7 +290,7 @@ class Sender {
                     // todo: handle error codes better (group to recoverable/non-recoverable and persist)
                     this._numConsecutiveFailures++;
                     if (this._statsbeat) {
-                        this._statsbeat.countException();
+                        this._statsbeat.countException(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
                     }
 
                     // Only use warn level if retries are disabled or we've had some number of consecutive failures sending data
@@ -268,10 +301,10 @@ class Sender {
                         if (this._enableDiskRetryMode) {
                             notice = `Ingestion endpoint could not be reached ${this._numConsecutiveFailures} consecutive times. There may be resulting telemetry loss. Most recent error:`;
                         }
-                        this._logger.error(Sender.TAG, notice, error);
+                        Sender._logger.error(Sender.TAG, notice, error);
                     } else {
                         let notice = "Transient failure to reach ingestion endpoint. This batch of telemetry items will be retried. Error:";
-                        this._logger.warning(Sender.TAG, notice, error);
+                        Sender._logger.warning(Sender.TAG, notice, error);
                     }
                     this._onErrorHelper(error);
 
@@ -304,6 +337,8 @@ class Sender {
     private _isRetriable(statusCode: number) {
         return (
             statusCode === 206 || // Retriable
+            statusCode === 401 || // Unauthorized
+            statusCode === 403 || // Forbidden
             statusCode === 408 || // Timeout
             statusCode === 429 || // Throttle
             statusCode === 439 || // Quota
@@ -508,21 +543,21 @@ class Sender {
     private _storeToDisk(envelopes: Contracts.EnvelopeTelemetry[]) {
         // This will create the dir if it does not exist
         // Default permissions on *nix are directory listing from other users but no file creations
-        this._logger.verbose(Sender.TAG, "Checking existence of data storage directory: " + this._tempDir);
+        Sender._logger.verbose(Sender.TAG, "Checking existence of data storage directory: " + this._tempDir);
         this._confirmDirExists(this._tempDir, (error) => {
             if (error) {
-                this._logger.warning(Sender.TAG, "Error while checking/creating directory: " + (error && error.message));
+                Sender._logger.warning(Sender.TAG, "Error while checking/creating directory: " + (error && error.message));
                 this._onErrorHelper(error);
                 return;
             }
 
             this._getShallowDirectorySize(this._tempDir, (err, size) => {
                 if (err || size < 0) {
-                    this._logger.warning(Sender.TAG, "Error while checking directory size: " + (err && err.message));
+                    Sender._logger.warning(Sender.TAG, "Error while checking directory size: " + (err && err.message));
                     this._onErrorHelper(err);
                     return;
                 } else if (size > this._maxBytesOnDisk) {
-                    this._logger.warning(Sender.TAG, "Not saving data due to max size limit being met. Directory size in bytes is: " + size);
+                    Sender._logger.warning(Sender.TAG, "Not saving data due to max size limit being met. Directory size in bytes is: " + size);
                     return;
                 }
 
@@ -533,7 +568,7 @@ class Sender {
 
                 // Mode 600 is w/r for creator and no read access for others (only applies on *nix)
                 // For Windows, ACL rules are applied to the entire directory (see logic in _confirmDirExists and _applyACLRules)
-                this._logger.info(Sender.TAG, "saving data to disk at: " + fileFullPath);
+                Sender._logger.info(Sender.TAG, "saving data to disk at: " + fileFullPath);
                 fs.writeFile(fileFullPath, this._stringify(envelopes), { mode: 0o600 }, (error) => this._onErrorHelper(error));
             });
         });
@@ -545,7 +580,7 @@ class Sender {
      */
     private _storeToDiskSync(payload: any) {
         try {
-            this._logger.info(Sender.TAG, "Checking existence of data storage directory: " + this._tempDir);
+            Sender._logger.info(Sender.TAG, "Checking existence of data storage directory: " + this._tempDir);
             if (!fs.existsSync(this._tempDir)) {
                 fs.mkdirSync(this._tempDir);
             }
@@ -555,7 +590,7 @@ class Sender {
 
             let dirSize = this._getShallowDirectorySizeSync(this._tempDir);
             if (dirSize > this._maxBytesOnDisk) {
-                this._logger.info(Sender.TAG, "Not saving data due to max size limit being met. Directory size in bytes is: " + dirSize);
+                Sender._logger.info(Sender.TAG, "Not saving data due to max size limit being met. Directory size in bytes is: " + dirSize);
                 return;
             }
 
@@ -565,11 +600,11 @@ class Sender {
             var fileFullPath = path.join(this._tempDir, fileName);
 
             // Mode 600 is w/r for creator and no access for anyone else (only applies on *nix)
-            this._logger.info(Sender.TAG, "saving data before crash to disk at: " + fileFullPath);
+            Sender._logger.info(Sender.TAG, "saving data before crash to disk at: " + fileFullPath);
             fs.writeFileSync(fileFullPath, payload, { mode: 0o600 });
 
         } catch (error) {
-            this._logger.error(Sender.TAG, "Error while saving data to disk: " + (error && error.message));
+            Sender._logger.error(Sender.TAG, "Error while saving data to disk: " + (error && error.message));
             this._onErrorHelper(error);
         }
     }
@@ -598,7 +633,7 @@ class Sender {
                                                 this.send(envelopes);
                                             }
                                             catch (error) {
-                                                this._logger.warning(Sender.TAG, "Failed to read persisted file", error)
+                                                Sender._logger.warning(Sender.TAG, "Failed to read persisted file", error)
                                             }
                                         } else {
                                             this._onErrorHelper(error);
@@ -627,7 +662,7 @@ class Sender {
         try {
             return JSON.stringify(payload);
         } catch (error) {
-            this._logger.warning(Sender.TAG, "Failed to serialize payload", error, payload);
+            Sender._logger.warning(Sender.TAG, "Failed to serialize payload", error, payload);
         }
     }
 

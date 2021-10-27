@@ -1,6 +1,6 @@
 import Contracts = require("./Contracts")
-import * as conventions from "@opentelemetry/semantic-conventions";
 
+export const APPLICATION_INSIGHTS_SDK_VERSION = "2.1.8";
 export const DEFAULT_BREEZE_ENDPOINT = "https://dc.services.visualstudio.com";
 export const DEFAULT_LIVEMETRICS_ENDPOINT = "https://rt.services.visualstudio.com";
 export const DEFAULT_LIVEMETRICS_HOST = "rt.services.visualstudio.com";
@@ -121,24 +121,12 @@ export const TelemetryTypeStringToQuickPulseDocumentType: { [key in Contracts.Te
     PageViewData: QuickPulseDocumentType.PageView
 };
 
-// OpenTelemetry Span Attributes
-export const SpanAttribute = {
-    // HTTP
-    HttpMethod: conventions.SemanticAttributes.HTTP_METHOD,
-    HttpStatusCode: conventions.SemanticAttributes.HTTP_STATUS_CODE,
-    HttpUrl: conventions.SemanticAttributes.HTTP_URL,
-    HttpUserAgent: conventions.SemanticAttributes.HTTP_USER_AGENT,
-
-    // GRPC
-    GrpcStatusCode: conventions.SemanticAttributes.RPC_GRPC_STATUS_CODE,
-    GrpcMethod: conventions.SemanticAttributes.RPC_METHOD, // rpc not grpc
-    GrpcService: conventions.SemanticAttributes.RPC_SERVICE, // rpc not grpc
-};
-
 export const DependencyTypeName = {
     Grpc: "GRPC",
     Http: "HTTP",
     InProc: "InProc",
+    Sql: "SQL",
+    QueueMessage: "Queue Message",
 }
 
 export const HeartBeatMetricName = "HeartBeat";
@@ -147,7 +135,7 @@ export const StatsbeatTelemetryName = "Statsbeat";
 
 export const StatsbeatResourceProvider = {
     appsvc: "appsvc",
-    function: "function",
+    functions: "functions",
     vm: "vm",
     unknown: "unknown",
 }
@@ -185,3 +173,29 @@ export enum StatsbeatInstrumentation {
     WINSTON = 64,
     CONSOLE = 128,
 }
+
+export enum StatsbeatFeatureType {
+    Feature,
+    Instrumentation,
+}
+
+export enum StatsbeatNetworkCategory {
+    Breeze,
+    Quickpulse,
+}
+
+//Azure SDK Span Attributes
+export const AzNamespace = "az.namespace";
+export const MicrosoftEventHub = "Microsoft.EventHub";
+export const MessageBusDestination = "message_bus.destination";
+
+/**
+ * AI enqueued time attribute.
+ * @internal
+ */
+ export const ENQUEUED_TIME = "enqueuedTime";
+ /**
+  * AI time since enqueued attribute.
+  * @internal
+  */
+ export const TIME_SINCE_ENQUEUED = "timeSinceEnqueued";

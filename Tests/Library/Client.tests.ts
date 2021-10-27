@@ -5,6 +5,7 @@ import Sinon = require("sinon");
 import eventEmitter = require('events');
 import azureCore = require("@azure/core-http");
 
+import AutoCollecPreAggregatedMetrics = require("../../AutoCollection/PreAggregatedMetrics");
 import Client = require("../../Library/NodeClient");
 import Config = require("../../Library/Config");
 import Contracts = require("../../Declarations/Contracts");
@@ -101,6 +102,16 @@ describe("Library/TelemetryClient", () => {
         it("should initialize channel", () => {
             var client = new Client("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             assert.ok(client.channel);
+        });
+
+        it("should initialize authorization handler", () => {
+            var client = new Client("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;");
+            client.config.aadTokenCredential = {
+                async getToken(scopes: string | string[], options?: any): Promise<any> {
+                    return { token: "testToken", };
+                }
+            };
+            assert.ok(client.getAuthorizationHandler(client.config));
         });
     });
 
@@ -675,6 +686,12 @@ describe("Library/TelemetryClient", () => {
     });
 
     describe("#ProcessedByMetricExtractors()", () => {
+
+        before(() => {
+            let preAggregatedMetrics = new AutoCollecPreAggregatedMetrics(client);
+            preAggregatedMetrics.enable(true);
+        });
+
         it("exception telemetry", () => {
             trackStub.restore();
             var createEnvelopeSpy = sinon.spy(EnvelopeFactory, "createEnvelope");
@@ -991,6 +1008,7 @@ describe("Library/TelemetryClient", () => {
             const env = <{ [id: string]: string }>{};
             const originalEnv = process.env;
             env.WEBSITE_SITE_NAME = "testRole";
+            env.WEBSITE_INSTANCE_ID = "627cc493-f310-47de-96bd-71410b7dec09";
             process.env = env;
             client.setAutoPopulateAzureProperties(true);
             client.track(testEventTelemetry, Contracts.TelemetryType.Event);
@@ -998,6 +1016,7 @@ describe("Library/TelemetryClient", () => {
             assert.equal(sendStub.callCount, 1, "send called once");
             var actualData = sendStub.firstCall.args[0] as Contracts.Envelope;
             assert.equal(actualData.tags[client.context.keys.cloudRole], "testRole");
+            assert.equal(actualData.tags[client.context.keys.cloudRoleInstance], "627cc493-f310-47de-96bd-71410b7dec09");
         });
 
         it("telemetry processor can access the context object", () => {

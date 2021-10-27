@@ -54,9 +54,10 @@ class Config {
     public httpAgent: http.Agent;
     /** An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined) */
     public httpsAgent: https.Agent;
-
     /** Disable including legacy headers in outgoing requests, x-ms-request-id */
     public ignoreLegacyHeaders?: boolean;
+    /** AAD TokenCredential to use to authenticate the app */
+    public aadTokenCredential?: azureCore.TokenCredential;
 
     private endpointBase: string = Constants.DEFAULT_BREEZE_ENDPOINT;
     private setCorrelationId: (v: string) => void;

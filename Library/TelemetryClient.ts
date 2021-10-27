@@ -3,6 +3,7 @@ import os = require("os");
 import azureCore = require("@azure/core-http");
 
 import Config = require("./Config");
+import AuthorizationHandler = require("./AuthorizationHandler");
 import Context = require("./Context");
 import Contracts = require("../Declarations/Contracts");
 import Channel = require("./Channel");
@@ -31,6 +32,7 @@ class TelemetryClient {
     public commonProperties: { [key: string]: string; };
     public channel: Channel;
     public quickPulseClient: QuickPulseStateManager;
+    public authorizationHandler: AuthorizationHandler;
 
     /**
      * Constructs a new client of the client
@@ -41,11 +43,12 @@ class TelemetryClient {
         this.config = config;
         this.context = new Context();
         this.commonProperties = {};
+        this.authorizationHandler = null;
         if (!process.env["APPLICATION_INSIGHTS_NO_STATSBEAT"]) {
-            this._statsbeat = new Statsbeat(this.config);
+            this._statsbeat = new Statsbeat(this.config, this.context);
             this._statsbeat.enable(true);
         }
-        var sender = new Sender(this.config, null, null, this._statsbeat);
+        var sender = new Sender(this.config, this.getAuthorizationHandler, null, null, this._statsbeat);
         this.channel = new Channel(() => config.disableAppInsights, () => config.maxBatchSize, () => config.maxBatchIntervalMs, sender);
     }
 
@@ -185,6 +188,16 @@ class TelemetryClient {
      */
     public setAutoPopulateAzureProperties(value: boolean) {
         this._enableAzureProperties = value;
+    }
+
+    /**
+     * Get Authorization handler
+     */
+    public getAuthorizationHandler(config: Config): AuthorizationHandler {
+        if (config && config.aadTokenCredential) {
+            return this.authorizationHandler || new AuthorizationHandler(config.aadTokenCredential);
+        }
+        return null;
     }
 
     /**

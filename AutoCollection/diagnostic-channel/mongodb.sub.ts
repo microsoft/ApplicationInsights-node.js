@@ -33,6 +33,10 @@ export const subscriber = (event: IStandardEvent<mongodb.IMongoData>) => {
 export function enable(enabled: boolean, client: TelemetryClient) {
     let statsbeat = client.getStatsbeat();
     if (enabled) {
+        let clientFound = clients.find(c => c == client);
+        if (clientFound) {
+            return;
+        }
         if (clients.length === 0) {
             channel.subscribe<mongodb.IMongoData>("mongodb", subscriber);
             if (statsbeat) {

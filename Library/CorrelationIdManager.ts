@@ -4,14 +4,14 @@ import {AzureLogger, createClientLogger} from "@azure/logger";
 
 class CorrelationIdManager {
     private static TAG = "CorrelationIdManager";
+    private static _handle: NodeJS.Timer;
     public static correlationIdPrefix = "cid-v1:";
-
     public static w3cEnabled = true;
 
     // To avoid extraneous HTTP requests, we maintain a queue of callbacks waiting on a particular appId lookup,
     // as well as a cache of completed lookups so future requests can be resolved immediately.
-    private static pendingLookups: {[key: string]: Function[]} = {};
-    private static completedLookups: {[key: string]: string} = {};
+    private static pendingLookups: { [key: string]: Function[] } = {};
+    private static completedLookups: { [key: string]: string } = {};
 
     private static requestIdMaxLength = 1024;
     private static currentRootId = Util.randomu32();
@@ -68,9 +68,15 @@ class CorrelationIdManager {
                     // Not found, probably a bad key. Do not try again.
                     CorrelationIdManager.completedLookups[appIdUrlString] = undefined;
                     delete CorrelationIdManager.pendingLookups[appIdUrlString];
-                } else {
-                    // Retry after timeout.
-                    setTimeout(fetchAppId, config.correlationIdRetryIntervalMs);
+                }
+                else {
+                    // Keep retrying
+                    return;
+                }
+                // Do not retry
+                if (CorrelationIdManager._handle) {
+                    clearTimeout(CorrelationIdManager._handle);
+                    CorrelationIdManager._handle = undefined;
                 }
             });
             if (req) {
@@ -78,11 +84,20 @@ class CorrelationIdManager {
                     // Unable to contact endpoint.
                     // Do nothing for now.
                     this._logger.warning(CorrelationIdManager.TAG, error);
+                    if (this._handle) {
+                        clearTimeout(CorrelationIdManager._handle);
+                        CorrelationIdManager._handle = undefined;
+                    }
                 });
                 req.end();
             }
         };
-        setTimeout(fetchAppId, 0);
+        if (!CorrelationIdManager._handle) {
+            CorrelationIdManager._handle = <any>setTimeout(fetchAppId, config.correlationIdRetryIntervalMs);
+            CorrelationIdManager._handle.unref(); // Don't block apps from terminating
+        }
+        // Initial fetch
+        setImmediate(fetchAppId);
     }
 
     public static cancelCorrelationIdQuery(config: Config, callback: (correlationId: string) => void) {
@@ -103,7 +118,7 @@ class CorrelationIdManager {
     public static generateRequestId(parentId: string): string {
         if (parentId) {
             parentId = parentId[0] == '|' ? parentId : '|' + parentId;
-            if (parentId[parentId.length -1] !== '.') {
+            if (parentId[parentId.length - 1] !== '.') {
                 parentId += '.';
             }
 
@@ -144,8 +159,8 @@ class CorrelationIdManager {
         // overflow delimiter '#'
         let trimPosition = CorrelationIdManager.requestIdMaxLength - 9;
         if (parentId.length > trimPosition) {
-            for(; trimPosition > 1; --trimPosition) {
-                const c = parentId[trimPosition-1];
+            for (; trimPosition > 1; --trimPosition) {
+                const c = parentId[trimPosition - 1];
                 if (c === '.' || c === '_') {
                     break;
                 }
@@ -161,7 +176,7 @@ class CorrelationIdManager {
         while (suffix.length < 8) {
             suffix = '0' + suffix;
         }
-        return parentId.substring(0,trimPosition) + suffix + '#';
+        return parentId.substring(0, trimPosition) + suffix + '#';
     }
 }
 
