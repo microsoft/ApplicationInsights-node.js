@@ -188,7 +188,7 @@ constructor(config: Config, getAuthorizationHandler?: (config: Config) => Author
                     options.headers["Content-Length"] = buffer.length.toString();
                 }
 
-                Logging.debug(Sender.TAG, options);
+                Logging.info(Sender.TAG, options);
 
                 // Ensure this request is not captured by auto-collection.
                 (<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] = true;
@@ -274,7 +274,7 @@ constructor(config: Config, getAuthorizationHandler?: (config: Config) => Author
                             if (typeof callback === "function") {
                                 callback(responseString);
                             }
-                            Logging.debug(Sender.TAG, responseString);
+                            Logging.info(Sender.TAG, responseString);
                             if (typeof this._onSuccess === "function") {
                                 this._onSuccess(responseString);
                             }
@@ -299,10 +299,10 @@ constructor(config: Config, getAuthorizationHandler?: (config: Config) => Author
                         if (this._enableDiskRetryMode) {
                             notice = `Ingestion endpoint could not be reached ${this._numConsecutiveFailures} consecutive times. There may be resulting telemetry loss. Most recent error:`;
                         }
-                        Logging.error(Sender.TAG, notice, error);
+                        Logging.warn(Sender.TAG, notice, Util.dumpObj(error));
                     } else {
                         let notice = "Transient failure to reach ingestion endpoint. This batch of telemetry items will be retried. Error:";
-                        Logging.warn(Sender.TAG, notice, error);
+                        Logging.info(Sender.TAG, notice, Util.dumpObj(error));
                     }
                     this._onErrorHelper(error);
 
@@ -541,7 +541,7 @@ constructor(config: Config, getAuthorizationHandler?: (config: Config) => Author
     private _storeToDisk(envelopes: Contracts.EnvelopeTelemetry[]) {
         // This will create the dir if it does not exist
         // Default permissions on *nix are directory listing from other users but no file creations
-        Logging.debug(Sender.TAG, "Checking existence of data storage directory: " + this._tempDir);
+        Logging.info(Sender.TAG, "Checking existence of data storage directory: " + this._tempDir);
         this._confirmDirExists(this._tempDir, (error) => {
             if (error) {
                 Logging.warn(Sender.TAG, "Error while checking/creating directory: " + (error && error.message));
@@ -602,7 +602,7 @@ constructor(config: Config, getAuthorizationHandler?: (config: Config) => Author
             fs.writeFileSync(fileFullPath, payload, { mode: 0o600 });
 
         } catch (error) {
-            Logging.error(Sender.TAG, "Error while saving data to disk: " + (error && error.message));
+            Logging.warn(Sender.TAG, "Error while saving data to disk: " + (error && error.message));
             this._onErrorHelper(error);
         }
     }
@@ -631,7 +631,7 @@ constructor(config: Config, getAuthorizationHandler?: (config: Config) => Author
                                                 this.send(envelopes);
                                             }
                                             catch (error) {
-                                                Logging.warn(Sender.TAG, "Failed to read persisted file", error)
+                                                Logging.warn(Sender.TAG, "Failed to read persisted file", error);
                                             }
                                         } else {
                                             this._onErrorHelper(error);

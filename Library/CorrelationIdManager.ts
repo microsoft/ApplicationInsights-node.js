@@ -1,6 +1,6 @@
 import Util = require("./Util");
 import Config = require("./Config");
-import {AzureLogger, createClientLogger} from "@azure/logger";
+import Logging = require("./Logging");
 
 class CorrelationIdManager {
     private static TAG = "CorrelationIdManager";
@@ -15,7 +15,6 @@ class CorrelationIdManager {
 
     private static requestIdMaxLength = 1024;
     private static currentRootId = Util.randomu32();
-    private static _logger: AzureLogger = createClientLogger('ApplicationInsights:CorrelationIdManager');
 
     public static queryCorrelationId(config: Config, callback: (correlationId: string) => void) {
         // GET request to `${this.endpointBase}/api/profiles/${this.instrumentationKey}/appId`
@@ -46,7 +45,7 @@ class CorrelationIdManager {
                 disableAppInsightsAutoCollection: true
             };
 
-            this._logger.verbose(CorrelationIdManager.TAG, requestOptions);
+            Logging.info(CorrelationIdManager.TAG, requestOptions);
             const req = Util.makeRequest(config, appIdUrlString, requestOptions, (res) => {
                 if (res.statusCode === 200) {
                     // Success; extract the appId from the body
@@ -56,7 +55,7 @@ class CorrelationIdManager {
                         appId += data;
                     });
                     res.on('end', () => {
-                        this._logger.info(CorrelationIdManager.TAG, appId)
+                        Logging.info(CorrelationIdManager.TAG, appId);
                         const result = CorrelationIdManager.correlationIdPrefix + appId;
                         CorrelationIdManager.completedLookups[appIdUrlString] = result;
                         if (CorrelationIdManager.pendingLookups[appIdUrlString]) {
@@ -83,7 +82,7 @@ class CorrelationIdManager {
                 req.on('error', (error: Error) => {
                     // Unable to contact endpoint.
                     // Do nothing for now.
-                    this._logger.warning(CorrelationIdManager.TAG, error);
+                    Logging.warn(CorrelationIdManager.TAG, error);
                     if (this._handle) {
                         clearTimeout(CorrelationIdManager._handle);
                         CorrelationIdManager._handle = undefined;

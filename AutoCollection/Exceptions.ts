@@ -1,7 +1,6 @@
 import http = require("http");
 
 import Contracts = require("../Declarations/Contracts");
-import Logging = require("../Library/Logging");
 import TelemetryClient = require("../Library/TelemetryClient");
 import Sender = require("../Library/Sender");
 import Queue = require("../Library/Channel");
@@ -55,7 +54,7 @@ class AutoCollectExceptions {
                     this._client.flush({ isAppCrashing: true });
                     // only rethrow when we are the only listener
                     if (reThrow && name && (<any>process).listeners(name).length === 1) {
-                        Logging.error(error);
+                        console.error(error);
                         process.exit(1);
                     }
                 };
