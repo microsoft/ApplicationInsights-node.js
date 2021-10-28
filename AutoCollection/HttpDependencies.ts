@@ -72,7 +72,26 @@ class AutoCollectHttpDependencies {
 
             if (request && options && shouldCollect) {
                 CorrelationContextManager.wrapEmitter(request);
-                AutoCollectHttpDependencies.trackRequest(this._client, { options: options, request: request });
+                // If there is no context create one, this apply when no request is triggering the dependency
+                if (!CorrelationContextManager.getCurrentContext()) {
+                    // Create correlation context and wrap execution
+                    let operationId = null;
+                    if (CorrelationIdManager.w3cEnabled) {
+                        let traceparent = new Traceparent();
+                        operationId = traceparent.traceId;
+                    }
+                    else {
+                        let requestId = CorrelationIdManager.generateRequestId(null);
+                        operationId = CorrelationIdManager.getRootId(requestId);
+                    }
+                    let correlationContext = CorrelationContextManager.generateContextObject(operationId);
+                    CorrelationContextManager.runWithContext(correlationContext, () => {
+                        AutoCollectHttpDependencies.trackRequest(this._client, { options: options, request: request });
+                    });
+                }
+                else {
+                    AutoCollectHttpDependencies.trackRequest(this._client, { options: options, request: request });
+                }
             }
         };
 
@@ -169,7 +188,7 @@ class AutoCollectHttpDependencies {
                         if (currentContext.operation.tracestate) {
                             const tracestate = currentContext.operation.tracestate.toString();
                             if (tracestate) {
-                                telemetry.request.setHeader(RequestResponseHeaders.traceStateHeader, tracestate)
+                                telemetry.request.setHeader(RequestResponseHeaders.traceStateHeader, tracestate);
                             }
                         }
 

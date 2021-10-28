@@ -4,9 +4,7 @@ import os = require("os");
 import path = require("path");
 import zlib = require("zlib");
 import child_process = require("child_process");
-
 import AuthorizationHandler = require("./AuthorizationHandler");
-import Logging = require("./Logging");
 import Config = require("./Config")
 import Contracts = require("../Declarations/Contracts");
 import Constants = require("../Declarations/Constants");
@@ -14,6 +12,7 @@ import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies
 import Statsbeat = require("../AutoCollection/Statsbeat");
 import Util = require("./Util");
 import { URL } from "url";
+import Logging = require("./Logging");
 
 
 class Sender {
@@ -49,7 +48,7 @@ class Sender {
     protected _resendInterval: number;
     protected _maxBytesOnDisk: number;
 
-    constructor(config: Config, getAuthorizationHandler?: (config: Config) => AuthorizationHandler, onSuccess?: (response: string) => void, onError?: (error: Error) => void, statsbeat?: Statsbeat) {
+constructor(config: Config, getAuthorizationHandler?: (config: Config) => AuthorizationHandler, onSuccess?: (response: string) => void, onError?: (error: Error) => void, statsbeat?: Statsbeat) {
         this._config = config;
         this._onSuccess = onSuccess;
         this._onError = onError;
@@ -181,7 +180,7 @@ class Sender {
             zlib.gzip(payload, (err, buffer) => {
                 var dataToSend = buffer;
                 if (err) {
-                    Logging.warn(err);
+                    Logging.warn(Sender.TAG, err);
                     dataToSend = payload; // something went wrong so send without gzip
                     options.headers["Content-Length"] = payload.length.toString();
                 } else {
@@ -303,7 +302,7 @@ class Sender {
                         Logging.warn(Sender.TAG, notice, Util.dumpObj(error));
                     } else {
                         let notice = "Transient failure to reach ingestion endpoint. This batch of telemetry items will be retried. Error:";
-                        Logging.info(Sender.TAG, notice, Util.dumpObj(error))
+                        Logging.info(Sender.TAG, notice, Util.dumpObj(error));
                     }
                     this._onErrorHelper(error);
 
@@ -632,7 +631,7 @@ class Sender {
                                                 this.send(envelopes);
                                             }
                                             catch (error) {
-                                                Logging.warn("Failed to read persisted file", error);
+                                                Logging.warn(Sender.TAG, "Failed to read persisted file", error);
                                             }
                                         } else {
                                             this._onErrorHelper(error);
@@ -661,7 +660,7 @@ class Sender {
         try {
             return JSON.stringify(payload);
         } catch (error) {
-            Logging.warn("Failed to serialize payload", error, payload);
+            Logging.warn(Sender.TAG, "Failed to serialize payload", error, payload);
         }
     }
 

@@ -4,7 +4,6 @@ import Sender = require("./Sender");
 import Util = require("./Util");
 
 class Channel {
-
     protected _lastSend: number;
     protected _timeoutHandle: any;
 
