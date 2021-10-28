@@ -1,10 +1,6 @@
-import https = require('https');
-import http = require('http');
-import url = require('url');
-
 import Util = require("./Util");
-import Logging = require("./Logging");
 import Config = require("./Config");
+import Logging = require("./Logging");
 
 class CorrelationIdManager {
     private static TAG = "CorrelationIdManager";
