@@ -318,6 +318,28 @@ describe("EndToEnd", () => {
                 done();
             });
         });
+
+        it("should add correlation context if not available", (done) => {
+            var eventEmitter = new EventEmitter();
+            (<any>eventEmitter).method = "GET";
+            sandbox.stub(http, 'request', (url: string, c: Function) => {
+                process.nextTick(c);
+                return eventEmitter;
+            });
+            
+            let generateContextSpy = sandbox.spy(CorrelationContextManager, "generateContextObject");
+            AppInsights
+                .setup("ikey")
+                .setAutoCollectDependencies(true)
+                .setAutoDependencyCorrelation(true);
+            AppInsights.start();
+            sandbox.stub(AppInsights.defaultClient, 'track');
+
+            http.request(<any>'http://test.com', (c) => {
+                assert.equal(generateContextSpy.callCount, 1);
+                done();
+            });
+        });
     });
 
     describe("W3C mode", () => {
