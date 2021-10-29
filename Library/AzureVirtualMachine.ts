@@ -55,7 +55,7 @@ export class AzureVirtualMachine {
             } else {
                 callback(vmInfo);
             }
-        });
+        }, false, false);
         if (req) {
             req.on('error', (error: Error) => {
                 // Unable to contact endpoint.

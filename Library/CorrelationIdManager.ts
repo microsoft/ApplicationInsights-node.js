@@ -77,7 +77,7 @@ class CorrelationIdManager {
                     clearTimeout(CorrelationIdManager._handle);
                     CorrelationIdManager._handle = undefined;
                 }
-            });
+            }, true, false);
             if (req) {
                 req.on('error', (error: Error) => {
                     // Unable to contact endpoint.
