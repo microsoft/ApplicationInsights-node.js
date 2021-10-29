@@ -290,13 +290,17 @@ class Util {
      * @param {string} requestUrl url endpoint
      * @param {Object} requestOptions Request option
      * @param {Function} requestCallback callback on request
+     * @param {boolean} useProxy Use proxy URL from config
+     * @param {boolean} useAgent Set Http Agent in request
      * @returns {http.ClientRequest} request object
      */
     public static makeRequest(
         config: Config,
         requestUrl: string,
         requestOptions: http.RequestOptions | https.RequestOptions,
-        requestCallback: (res: http.IncomingMessage) => void): http.ClientRequest {
+        requestCallback: (res: http.IncomingMessage) => void,
+        useProxy= true,
+        useAgent= true): http.ClientRequest {
 
         if (requestUrl && requestUrl.indexOf('//') === 0) {
             requestUrl = 'https:' + requestUrl;
@@ -311,54 +315,53 @@ class Util {
         };
 
         var proxyUrl: string = undefined;
-
-        if (requestUrlParsed.protocol === 'https:') {
-            proxyUrl = config.proxyHttpsUrl || undefined;
-        }
-        if (requestUrlParsed.protocol === 'http:') {
-            proxyUrl = config.proxyHttpUrl || undefined;
-        }
-
-        if (proxyUrl) {
-            if (proxyUrl.indexOf('//') === 0) {
-                proxyUrl = 'http:' + proxyUrl;
+        if (useProxy) {
+            if (requestUrlParsed.protocol === 'https:') {
+                proxyUrl = config.proxyHttpsUrl || undefined;
             }
-            try {
-                var proxyUrlParsed = new url.URL(proxyUrl);
-                // https is not supported at the moment
-                if (proxyUrlParsed.protocol === 'https:') {
-                    Logging.info("Proxies that use HTTPS are not supported");
-                    proxyUrl = undefined;
-                } else {
-                    options = {
-                        ...options,
-                        host: proxyUrlParsed.hostname,
-                        port: proxyUrlParsed.port || "80",
-                        path: requestUrl,
-                        headers: {
-                            ...options.headers,
-                            Host: requestUrlParsed.hostname,
-                        },
-                    };
+            if (requestUrlParsed.protocol === 'http:') {
+                proxyUrl = config.proxyHttpUrl || undefined;
+            }
+            if (proxyUrl) {
+                if (proxyUrl.indexOf('//') === 0) {
+                    proxyUrl = 'http:' + proxyUrl;
+                }
+                try {
+                    var proxyUrlParsed = new url.URL(proxyUrl);
+                    // https is not supported at the moment
+                    if (proxyUrlParsed.protocol === 'https:') {
+                        Logging.info("Proxies that use HTTPS are not supported");
+                        proxyUrl = undefined;
+                    } else {
+                        options = {
+                            ...options,
+                            host: proxyUrlParsed.hostname,
+                            port: proxyUrlParsed.port || "80",
+                            path: requestUrl,
+                            headers: {
+                                ...options.headers,
+                                Host: requestUrlParsed.hostname,
+                            },
+                        };
+                    }
+                }
+                catch (err) {
+                    Logging.warn("Wrong proxy URL provided");
                 }
             }
-            catch (err) {
-                Logging.warn("Wrong proxy URL provided");
-            }
-
         }
 
         var isHttps = requestUrlParsed.protocol === 'https:' && !proxyUrl;
-
-        if (isHttps && config.httpsAgent !== undefined) {
-            options.agent = config.httpsAgent;
-        } else if (!isHttps && config.httpAgent !== undefined) {
-            options.agent = config.httpAgent;
-        } else if (isHttps) {
-            // HTTPS without a passed in agent. Use one that enforces our TLS rules
-            options.agent = Util._useKeepAlive ? Util.keepAliveAgent : Util.tlsRestrictedAgent;
+        if (useAgent) {
+            if (isHttps && config.httpsAgent !== undefined) {
+                options.agent = config.httpsAgent;
+            } else if (!isHttps && config.httpAgent !== undefined) {
+                options.agent = config.httpAgent;
+            } else if (isHttps) {
+                // HTTPS without a passed in agent. Use one that enforces our TLS rules
+                options.agent = Util._useKeepAlive ? Util.keepAliveAgent : Util.tlsRestrictedAgent;
+            }
         }
-
         if (isHttps) {
             return https.request(<any>options, requestCallback);
         } else {
