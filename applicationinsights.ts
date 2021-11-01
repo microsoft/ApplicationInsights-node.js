@@ -99,9 +99,9 @@ let _performanceLiveMetrics: AutoCollectPerformance;
  * @returns {Configuration} the configuration class to initialize
  * and start the SDK.
  */
-export function setup(setupString?: string, configPath?: string) {
+export function setup(setupString?: string) {
     if (!defaultClient) {
-        defaultClient = new TelemetryClient(setupString, configPath);
+        defaultClient = new TelemetryClient(setupString);
         _configureFromConfigFile();
         _console = new AutoCollectConsole(defaultClient);
         _exceptions = new AutoCollectExceptions(defaultClient);

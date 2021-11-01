@@ -12,7 +12,7 @@ import { ICustomConfig } from "../Library/ICustomConfig";
 import { DistributedTracingModes, setRetry, setLiveMetricsFlag } from "../applicationinsights";
 import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";
 
-class Config {
+class Config implements ICustomConfig {
     // Azure adds this prefix to all environment variables
     public static ENV_azurePrefix = "APPSETTING_";
 
@@ -85,30 +85,30 @@ class Config {
     public enableUseAsyncHooks: boolean;
     public disableStatsbeat: boolean;
 
-    constructor(setupString?: string, configPath?: string) {
-        this._generateConfigurationObject(configPath);
+    constructor(setupString?: string) {
+        this._generateConfigurationObjectFromEnvVars();
 
-        const connectionStringEnv: string | undefined = (this.customConfig && this.customConfig.connectionString) || process.env[Config.ENV_connectionString];
+        const connectionStringEnv: string | undefined = this.customConfig.connectionString || process.env[Config.ENV_connectionString];
         const csCode = ConnectionStringParser.parse(setupString);
         const csEnv = ConnectionStringParser.parse(connectionStringEnv);
         const iKeyCode = !csCode.instrumentationkey && Object.keys(csCode).length > 0
             ? null // CS was valid but instrumentation key was not provided, null and grab from env var
             : setupString; // CS was invalid, so it must be an ikey
 
-        this.instrumentationKey = (this.customConfig && this.customConfig.instrumentationKey) || csCode.instrumentationkey || iKeyCode /* === instrumentationKey */ || csEnv.instrumentationkey || Config._getInstrumentationKey();
+        this.instrumentationKey = this.customConfig.instrumentationKey || csCode.instrumentationkey || iKeyCode /* === instrumentationKey */ || csEnv.instrumentationkey || Config._getInstrumentationKey();
         // validate ikey. If fails throw a warning
         if (!Config._validateInstrumentationKey(this.instrumentationKey)) {
             Logging.warn("An invalid instrumentation key was provided. There may be resulting telemetry loss", this.instrumentationKey);
         }
 
-        this.endpointUrl = `${(this.customConfig && this.customConfig.endpointUrl) || csCode.ingestionendpoint || csEnv.ingestionendpoint || this.endpointBase}/v2.1/track`;
-        this.maxBatchSize = (this.customConfig && this.customConfig.maxBatchSize) || 250;
-        this.maxBatchIntervalMs = (this.customConfig && this.customConfig.maxBatchIntervalMs) || 15000;
-        this.disableAppInsights = (this.customConfig && this.customConfig.disableAppInsights) || false;
-        this.samplingPercentage = (this.customConfig.samplingPercentage && this.customConfig.samplingPercentage) || 100;
-        this.correlationIdRetryIntervalMs = (this.customConfig && this.customConfig.correlationIdRetryIntervalMs) || 30 * 1000;
+        this.endpointUrl = `${this.customConfig.endpointUrl || csCode.ingestionendpoint || csEnv.ingestionendpoint || this.endpointBase}/v2.1/track`;
+        this.maxBatchSize = this.customConfig.maxBatchSize || 250;
+        this.maxBatchIntervalMs = this.customConfig.maxBatchIntervalMs || 15000;
+        this.disableAppInsights = this.customConfig.disableAppInsights || false;
+        this.samplingPercentage = this.customConfig.samplingPercentage || 100;
+        this.correlationIdRetryIntervalMs = this.customConfig.correlationIdRetryIntervalMs || 30 * 1000;
         this.correlationHeaderExcludedDomains =
-        (this.customConfig && this.customConfig.correlationHeaderExcludedDomains) ||
+        this.customConfig.correlationHeaderExcludedDomains ||
         [
             "*.core.windows.net",
             "*.core.chinacloudapi.cn",
@@ -120,11 +120,11 @@ class Config {
 
         this.setCorrelationId = (correlationId) => this.correlationId = correlationId;
 
-        this.proxyHttpUrl = (this.customConfig && this.customConfig.proxyHttpUrl) || process.env[Config.ENV_http_proxy] || undefined;
-        this.proxyHttpsUrl = (this.customConfig && this.customConfig.proxyHttpsUrl) || process.env[Config.ENV_https_proxy] || undefined;
-        this.httpAgent = (this.customConfig && this.customConfig.httpAgent) || undefined;
-        this.httpsAgent = (this.customConfig && this.customConfig.httpsAgent) || undefined;
-        this.ignoreLegacyHeaders = (this.customConfig && this.customConfig.ignoreLegacyHeaders) || false;
+        this.proxyHttpUrl = this.customConfig.proxyHttpUrl || process.env[Config.ENV_http_proxy] || undefined;
+        this.proxyHttpsUrl = this.customConfig.proxyHttpsUrl || process.env[Config.ENV_https_proxy] || undefined;
+        this.httpAgent = this.customConfig.httpAgent || undefined;
+        this.httpsAgent = this.customConfig.httpsAgent || undefined;
+        this.ignoreLegacyHeaders = this.customConfig.ignoreLegacyHeaders || false;
         this.profileQueryEndpoint = csCode.ingestionendpoint || csEnv.ingestionendpoint || process.env[Config.ENV_profileQueryEndpoint] || this.endpointBase;
         this._quickPulseHost = csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_HOST;
         // Parse quickPulseHost if it starts with http(s)://
@@ -133,74 +133,68 @@ class Config {
         }
     }
 
-    _generateConfigurationObject(configPath?: string) {
-        if (!configPath) {
-            return;
+    _generateConfigurationObjectFromEnvVars() {
+        const customConfigStr = process.env.APPLICATION_INSIGHTS_CONFIG || "{}";
+        try {
+            this.customConfig = JSON.parse(customConfigStr) as ICustomConfig;
+        if (this.customConfig.distributedTracingMode !== undefined) {
+            CorrelationIdManager.w3cEnabled = this.customConfig.distributedTracingMode === DistributedTracingModes.AI_AND_W3C;
         }
-        fs.readFile(configPath, "utf8", (err, jsonString) => {
-            if (err) {
-                Logging.warn("Configuration file read failed");
-                return;
-            }
-            try{
-                this.customConfig = JSON.parse(jsonString) as ICustomConfig;
-                if (this.customConfig.enableDistributedTracingMode !== undefined) {
-                    CorrelationIdManager.w3cEnabled = this.customConfig.enableDistributedTracingMode === DistributedTracingModes.AI_AND_W3C;
-                }
-                if (this.customConfig.enableAutoCollectConsole !== undefined) {
-                    this.enableAutoCollectConsole = this.customConfig.enableAutoCollectConsole;
-                }
-                if (this.customConfig.enableAutoCollectConsoleLog !== undefined) {
-                    this.enableAutoCollectConsoleLog = this.customConfig.enableAutoCollectConsoleLog;
-                }
-                if (this.customConfig.enableAutoCollectExceptions !== undefined) {
-                    this.enableAutoCollectExceptions = this.customConfig.enableAutoCollectExceptions;
-                }
-                if (this.customConfig.enableAutoCollectPerformance !== undefined) {
-                    this.enableAutoCollectPerformance = this.customConfig.enableAutoCollectPerformance;
-                }
-                if (this.customConfig.enableAutoCollectExtendedMetrics !== undefined) {
-                    const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(this.customConfig.enableAutoCollectExtendedMetrics, this.customConfig);
-                    this.enableNativePerformance = extendedMetricsConfig.isEnabled;
-                    this.disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
-                }
-                if (this.customConfig.enableAutoCollectPreAggregatedMetrics !== undefined) {
-                    this.enableAutoCollectPreAggregatedMetrics = this.customConfig.enableAutoCollectPreAggregatedMetrics;
-                }
-                if (this.customConfig.enableAutoCollectHeartbeat !== undefined) {
-                    this.enableAutoCollectHeartbeat = this.customConfig.enableAutoCollectHeartbeat;
-                }
-                if (this.customConfig.enableAutoCollectRequests !== undefined) {
-                    this.enableAutoCollectRequests = this.customConfig.enableAutoCollectRequests;
-                }
-                if (this.customConfig.enableAutoCollectDependencies !== undefined) {
-                    this.enableAutoCollectDependencies = this.customConfig.enableAutoCollectDependencies;
-                }
-                if (this.customConfig.enableAutoDependencyCorrelation !== undefined) {
-                    this.enableAutoDependencyCorrelation = this.customConfig.enableAutoDependencyCorrelation;
-                }
-                if (this.customConfig.enableUseAsyncHooks !== undefined) {
-                    this.enableUseAsyncHooks = this.customConfig.enableUseAsyncHooks;
-                }
-                if (this.customConfig.enableUseDiskRetryCaching !== undefined) {
-                    setRetry(this.customConfig.enableUseDiskRetryCaching, this.customConfig.enableResendInterval, this.customConfig.enableMaxBytesOnDisk);
-                }
-                if (this.customConfig.enableInternalDebugLogging !== undefined) {
-                    Logging.enableDebug = this.customConfig.enableInternalDebugLogging;
-                }
-                if (this.customConfig.enableInternalWarningLogging !== undefined) {
-                    Logging.disableWarnings = !this.customConfig.enableInternalWarningLogging;
-                }
-                if (this.customConfig.enableSendLiveMetrics !== undefined) {
-                    setLiveMetricsFlag(this.customConfig.enableSendLiveMetrics);
-                }
-                if (this.customConfig.disableStatsbeat !== undefined) {
-                    this.disableStatsbeat = this.customConfig.disableStatsbeat;
-                }
-            } catch (err) {
-                Logging.warn("Error parsing JSON string: ", err);
-            }
-        });
+        if (this.customConfig.enableAutoCollectConsole !== undefined) {
+            this.enableAutoCollectConsole = this.customConfig.enableAutoCollectConsole;
+        }
+        if (this.customConfig.enableAutoCollectConsoleLog !== undefined) {
+            this.enableAutoCollectConsoleLog = this.customConfig.enableAutoCollectConsoleLog;
+        }
+        if (this.customConfig.enableAutoCollectExceptions !== undefined) {
+            this.enableAutoCollectExceptions = this.customConfig.enableAutoCollectExceptions;
+        }
+        if (this.customConfig.enableAutoCollectPerformance !== undefined) {
+            this.enableAutoCollectPerformance = this.customConfig.enableAutoCollectPerformance;
+        }
+        if (this.customConfig.enableAutoCollectExtendedMetrics !== undefined) {
+            const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(this.customConfig.enableAutoCollectExtendedMetrics, this.customConfig);
+            this.enableNativePerformance = extendedMetricsConfig.isEnabled;
+            this.disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
+        }
+        if (this.customConfig.enableAutoCollectPreAggregatedMetrics !== undefined) {
+            this.enableAutoCollectPreAggregatedMetrics = this.customConfig.enableAutoCollectPreAggregatedMetrics;
+        }
+        if (this.customConfig.enableAutoCollectHeartbeat !== undefined) {
+            this.enableAutoCollectHeartbeat = this.customConfig.enableAutoCollectHeartbeat;
+        }
+        if (this.customConfig.enableAutoCollectRequests !== undefined) {
+            this.enableAutoCollectRequests = this.customConfig.enableAutoCollectRequests;
+        }
+        if (this.customConfig.enableAutoCollectDependencies !== undefined) {
+            this.enableAutoCollectDependencies = this.customConfig.enableAutoCollectDependencies;
+        }
+        if (this.customConfig.enableAutoDependencyCorrelation !== undefined) {
+            this.enableAutoDependencyCorrelation = this.customConfig.enableAutoDependencyCorrelation;
+        }
+        if (this.customConfig.enableUseAsyncHooks !== undefined) {
+            this.enableUseAsyncHooks = this.customConfig.enableUseAsyncHooks;
+        }
+        if (this.customConfig.enableUseDiskRetryCaching !== undefined) {
+            setRetry(this.customConfig.enableUseDiskRetryCaching, this.customConfig.enableResendInterval, this.customConfig.enableMaxBytesOnDisk);
+        }
+        if (this.customConfig.enableInternalDebugLogging !== undefined) {
+            Logging.enableDebug = this.customConfig.enableInternalDebugLogging;
+        }
+        if (this.customConfig.enableInternalWarningLogging !== undefined) {
+            Logging.disableWarnings = !this.customConfig.enableInternalWarningLogging;
+        }
+        if (this.customConfig.enableSendLiveMetrics !== undefined) {
+            setLiveMetricsFlag(this.customConfig.enableSendLiveMetrics);
+        }
+        if (this.customConfig.disableStatsbeat !== undefined) {
+            this.disableStatsbeat = this.customConfig.disableStatsbeat;
+        }
+        }
+        catch (error) {
+            // Failed to parse JSON
+            Logging.warn("Error parsing JSON string: ", error);
+        }
     }
 
     public set profileQueryEndpoint(endpoint: string) {

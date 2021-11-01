@@ -46,7 +46,7 @@ export interface ICustomConfig {
      * Enabling W3C mode will not break existing correlation with other Application Insights instrumented
      * services. Default=AI
     */
-    enableDistributedTracingMode?: DistributedTracingModes;
+    distributedTracingMode?: DistributedTracingModes;
 
     /**
      * Sets the state of console
