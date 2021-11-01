@@ -409,7 +409,7 @@ describe("Library/Util", () => {
                 const callback = sinon.spy();
                 const expectedOptions = {
                     ...options,
-                    agent: Util.tlsRestrictedAgent,
+                    agent: Util.keepAliveAgent,
                     host: requestUrlParsed.hostname,
                     port: requestUrlParsed.port,
                     path: requestUrlParsed.pathname,
@@ -432,7 +432,7 @@ describe("Library/Util", () => {
                 const callback = sinon.spy();
                 const expectedOptions = {
                     ...options,
-                    agent: Util.tlsRestrictedAgent,
+                    agent: Util.keepAliveAgent,
                     host: requestUrlParsed.hostname,
                     port: requestUrlParsed.port,
                     path: requestUrlParsed.pathname,
@@ -469,7 +469,7 @@ describe("Library/Util", () => {
                 const callback = sinon.spy();
                 const expectedOptions = {
                     ...options,
-                    agent: Util.tlsRestrictedAgent,
+                    agent: Util.keepAliveAgent,
                     host: requestUrlParsed.hostname,
                     port: requestUrlParsed.port,
                     path: requestUrlParsed.pathname,
@@ -508,7 +508,7 @@ describe("Library/Util", () => {
                 const callback = sinon.spy();
                 const expectedOptions = {
                     ...options,
-                    agent: Util.tlsRestrictedAgent,
+                    agent: Util.keepAliveAgent,
                     host: requestUrlParsed.hostname,
                     port: requestUrlParsed.port,
                     path: requestUrlParsed.pathname,

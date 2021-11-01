@@ -45,7 +45,7 @@ class TelemetryClient {
         this.commonProperties = {};
         this.authorizationHandler = null;
         if ((this.config && this.config.disableStatsbeat) || !process.env["APPLICATION_INSIGHTS_NO_STATSBEAT"]) {
-            this._statsbeat = new Statsbeat(this.config);
+            this._statsbeat = new Statsbeat(this.config, this.context);
             this._statsbeat.enable(true);
         }
         var sender = new Sender(this.config, this.getAuthorizationHandler, null, null, this._statsbeat);

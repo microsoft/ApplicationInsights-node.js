@@ -23,9 +23,11 @@ describe("diagnostic-channel/bunyan", () => {
             result: "test log",
             level: 50 // Error should still log as MessageData
         };
-        const dummyError = new Error("test error");
+
+        const dummyError = { stack: "Test error" };
+        const bunyanJson = JSON.stringify({ err: dummyError });
         const errorEvent: bunyan.IBunyanData = {
-            result: dummyError as any,
+            result: bunyanJson,
             level: 10, // Verbose should still log as ExceptionData
         };
 

@@ -12,13 +12,24 @@ import { HttpRequest } from "../Library/Functions";
 
 class Util {
     private static _useKeepAlive = !process.env["APPLICATION_INSIGHTS_NO_HTTP_AGENT_KEEP_ALIVE"];
+    private static _listenerAttached = false;
+
     public static MAX_PROPERTY_LENGTH = 8192;
-    public static tlsRestrictedAgent: https.Agent = new https.Agent(<any>{
-        keepAlive: Util._useKeepAlive,
-        maxSockets: Util._useKeepAlive ? 25 : Infinity,
+    public static keepAliveAgent: http.Agent = new https.Agent(<any>{
+        keepAlive: true,
+        maxSockets: 25,
         secureOptions: constants.SSL_OP_NO_SSLv2 | constants.SSL_OP_NO_SSLv3 |
             constants.SSL_OP_NO_TLSv1 | constants.SSL_OP_NO_TLSv1_1
     });
+    public static tlsRestrictedAgent: http.Agent = new https.Agent(<any>{
+        secureOptions: constants.SSL_OP_NO_SSLv2 | constants.SSL_OP_NO_SSLv3 |
+            constants.SSL_OP_NO_TLSv1 | constants.SSL_OP_NO_TLSv1_1
+    });
+    public static isNodeExit = false;
+
+    public constructor() {
+        Util._addCloseHandler();
+    }
 
     /**
      * helper method to access userId and sessionId cookie
@@ -246,9 +257,12 @@ class Util {
 
         for (let i = 0; i < excludedDomains.length; i++) {
             let regex = new RegExp(excludedDomains[i].replace(/\./g, "\.").replace(/\*/g, ".*"));
-            if (regex.test(new url.URL(requestUrl).hostname)) {
-                return false;
+            try {
+                if (regex.test(new url.URL(requestUrl).hostname)) {
+                    return false;
+                }
             }
+            catch (ex) { }
         }
 
         return true;
@@ -276,13 +290,17 @@ class Util {
      * @param {string} requestUrl url endpoint
      * @param {Object} requestOptions Request option
      * @param {Function} requestCallback callback on request
+     * @param {boolean} useProxy Use proxy URL from config
+     * @param {boolean} useAgent Set Http Agent in request
      * @returns {http.ClientRequest} request object
      */
     public static makeRequest(
         config: Config,
         requestUrl: string,
         requestOptions: http.RequestOptions | https.RequestOptions,
-        requestCallback: (res: http.IncomingMessage) => void): http.ClientRequest {
+        requestCallback: (res: http.IncomingMessage) => void,
+        useProxy= true,
+        useAgent= true): http.ClientRequest {
 
         if (requestUrl && requestUrl.indexOf('//') === 0) {
             requestUrl = 'https:' + requestUrl;
@@ -297,49 +315,53 @@ class Util {
         };
 
         var proxyUrl: string = undefined;
-
-        if (requestUrlParsed.protocol === 'https:') {
-            proxyUrl = config.proxyHttpsUrl || undefined;
-        }
-        if (requestUrlParsed.protocol === 'http:') {
-            proxyUrl = config.proxyHttpUrl || undefined;
-        }
-
-        if (proxyUrl) {
-            if (proxyUrl.indexOf('//') === 0) {
-                proxyUrl = 'http:' + proxyUrl;
+        if (useProxy) {
+            if (requestUrlParsed.protocol === 'https:') {
+                proxyUrl = config.proxyHttpsUrl || undefined;
             }
-            var proxyUrlParsed = new url.URL(proxyUrl);
-
-            // https is not supported at the moment
-            if (proxyUrlParsed.protocol === 'https:') {
-                Logging.info("Proxies that use HTTPS are not supported");
-                proxyUrl = undefined;
-            } else {
-                options = {
-                    ...options,
-                    host: proxyUrlParsed.hostname,
-                    port: proxyUrlParsed.port || "80",
-                    path: requestUrl,
-                    headers: {
-                        ...options.headers,
-                        Host: requestUrlParsed.hostname,
-                    },
-                };
+            if (requestUrlParsed.protocol === 'http:') {
+                proxyUrl = config.proxyHttpUrl || undefined;
+            }
+            if (proxyUrl) {
+                if (proxyUrl.indexOf('//') === 0) {
+                    proxyUrl = 'http:' + proxyUrl;
+                }
+                try {
+                    var proxyUrlParsed = new url.URL(proxyUrl);
+                    // https is not supported at the moment
+                    if (proxyUrlParsed.protocol === 'https:') {
+                        Logging.info("Proxies that use HTTPS are not supported");
+                        proxyUrl = undefined;
+                    } else {
+                        options = {
+                            ...options,
+                            host: proxyUrlParsed.hostname,
+                            port: proxyUrlParsed.port || "80",
+                            path: requestUrl,
+                            headers: {
+                                ...options.headers,
+                                Host: requestUrlParsed.hostname,
+                            },
+                        };
+                    }
+                }
+                catch (err) {
+                    Logging.warn("Wrong proxy URL provided");
+                }
             }
         }
 
         var isHttps = requestUrlParsed.protocol === 'https:' && !proxyUrl;
-
-        if (isHttps && config.httpsAgent !== undefined) {
-            options.agent = config.httpsAgent;
-        } else if (!isHttps && config.httpAgent !== undefined) {
-            options.agent = config.httpAgent;
-        } else if (isHttps) {
-            // HTTPS without a passed in agent. Use one that enforces our TLS rules
-            options.agent = Util.tlsRestrictedAgent;
+        if (useAgent) {
+            if (isHttps && config.httpsAgent !== undefined) {
+                options.agent = config.httpsAgent;
+            } else if (!isHttps && config.httpAgent !== undefined) {
+                options.agent = config.httpAgent;
+            } else if (isHttps) {
+                // HTTPS without a passed in agent. Use one that enforces our TLS rules
+                options.agent = Util._useKeepAlive ? Util.keepAliveAgent : Util.tlsRestrictedAgent;
+            }
         }
-
         if (isHttps) {
             return https.request(<any>options, requestCallback);
         } else {
@@ -399,6 +421,16 @@ class Util {
             response.setHeader(
                 RequestResponseHeaders.requestContextHeader,
                 `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+        }
+    }
+
+    private static _addCloseHandler() {
+        if (!Util._listenerAttached) {
+            process.on("exit", () => {
+                Util.isNodeExit = true;
+                Util._useKeepAlive = false;
+            });
+            Util._listenerAttached = true;
         }
     }
 }
