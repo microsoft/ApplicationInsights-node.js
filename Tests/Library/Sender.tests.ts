@@ -12,6 +12,7 @@ import AuthorizationHandler = require("../../Library/AuthorizationHandler");
 import Util = require("../../Library/Util");
 import Statsbeat = require("../../AutoCollection/Statsbeat");
 import Logging = require("../../Library/Logging");
+import { FileAccessControl } from "../../Library/FileAccessControl";
 
 class SenderMock extends Sender {
     public getResendInterval() {
@@ -55,12 +56,12 @@ describe("Library/Sender", () => {
 
         before(() => {
             sender = new Sender(new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333"));
-            (<any>sender.constructor).USE_ICACLS = false;
+            FileAccessControl.USE_ICACLS = false;
             sender.setDiskRetryMode(true);
         });
 
         after(() => {
-            (<any>sender.constructor).USE_ICACLS = true;
+            FileAccessControl["USE_ICACLS"] = true;
             sender.setDiskRetryMode(false);
         });
 
@@ -70,7 +71,6 @@ describe("Library/Sender", () => {
             var warnStub = sandbox.stub(Logging, "warn");
             assert.doesNotThrow(() => sender.send([a]));
             assert.ok(warnStub.calledOnce);
-            warnStub.restore();
         });
 
         it("should try to send telemetry from disk when 200", (done) => {
@@ -273,14 +273,14 @@ describe("Library/Sender", () => {
         var sender: Sender;
 
         after(() => {
-            (<any>sender.constructor).USE_ICACLS = true;
+            FileAccessControl["USE_ICACLS"] = true;
             sender.setDiskRetryMode(false);
         });
 
         it("must clean old files from temp location", (done) => {
             var deleteSpy = sandbox.spy(fs, "unlink");
             sender = new Sender(new Config("3bb33333-bbbb-1ccc-8ddd-eeeeffff3333"));
-            (<any>sender.constructor).USE_ICACLS = false;
+            FileAccessControl["USE_ICACLS"] = false;
             (<any>sender.constructor).CLEANUP_TIMEOUT = 500;
             (<any>sender.constructor).FILE_RETEMPTION_PERIOD = 1;
             var taskSpy = sandbox.spy(sender, "_fileCleanupTask");

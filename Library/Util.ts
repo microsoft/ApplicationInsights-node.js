@@ -299,8 +299,8 @@ class Util {
         requestUrl: string,
         requestOptions: http.RequestOptions | https.RequestOptions,
         requestCallback: (res: http.IncomingMessage) => void,
-        useProxy= true,
-        useAgent= true): http.ClientRequest {
+        useProxy = true,
+        useAgent = true): http.ClientRequest {
 
         if (requestUrl && requestUrl.indexOf('//') === 0) {
             requestUrl = 'https:' + requestUrl;
@@ -410,6 +410,14 @@ class Util {
         }
 
         return objectTypeDump + propertyValueDump;
+    }
+
+    public static stringify(payload: any) {
+        try {
+            return JSON.stringify(payload);
+        } catch (error) {
+            Logging.warn("Failed to serialize payload", error, payload);
+        }
     }
 
     private static addCorrelationIdHeaderFromString(client: TelemetryClient, response: http.ClientRequest | http.ServerResponse, correlationHeader: string) {

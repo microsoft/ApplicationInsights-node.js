@@ -19,6 +19,7 @@ import HeartBeat = require("../AutoCollection/HeartBeat");
 import TelemetryClient = require("../Library/TelemetryClient");
 import Context = require("../Library/Context");
 import Util = require("../Library/Util");
+import { FileAccessControl } from "../Library/FileAccessControl";
 
 /**
  * A fake response class that passes by default
@@ -326,7 +327,7 @@ describe("EndToEnd", () => {
                 process.nextTick(c);
                 return eventEmitter;
             });
-            
+
             let generateContextSpy = sandbox.spy(CorrelationContextManager, "generateContextObject");
             AppInsights
                 .setup("ikey")
@@ -450,7 +451,7 @@ describe("EndToEnd", () => {
         let nockScope: nock.Scope;
 
         beforeEach(() => {
-            nockScope = interceptor.reply(503, {});
+            nockScope = interceptor.reply(503, { "errors": [{ "index": 0, "statusCode": 503 }] });
             AppInsights.defaultClient = undefined;
             sandbox.stub(CorrelationIdManager, 'queryCorrelationId'); // TODO: Fix method of stubbing requests to allow CID to be part of E2E tests
             writeFile = sandbox.stub(fs, 'writeFile');
@@ -513,7 +514,6 @@ describe("EndToEnd", () => {
                     // yield for the caching behavior
                     setImmediate(() => {
                         assert.equal(writeFile.callCount, 1);
-                        assert.equal(spawn.callCount, os.type() === "Windows_NT" ? 2 : 0);
                         done();
                     });
                 }
@@ -530,12 +530,12 @@ describe("EndToEnd", () => {
                 callback: (response: any) => {
                     // yield for the caching behavior
                     setImmediate(() => {
-                        assert(writeFile.callCount === 1);
+                        assert.equal(writeFile.callCount, 1);
                         assert.equal(
                             path.dirname(writeFile.firstCall.args[0]),
                             path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
                         assert.equal(writeFile.firstCall.args[2].mode, 0o600, "File must not have weak permissions");
-                        assert.equal(spawn.callCount, 0); // Should always be 0 because of caching after first call to ICACLS
+                        assert.equal(spawn.callCount, 0);
                         done();
                     });
                 }
@@ -545,12 +545,12 @@ describe("EndToEnd", () => {
         it("uses WindowsIdentity to get the identity for ICACLS", (done) => {
             var client = new AppInsights.TelemetryClient("uniquekey");
             client.channel.setUseDiskRetryCaching(true);
-            var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
-            (<any>client.channel._sender.constructor).USE_ICACLS = true; // Simulate ICACLS environment even on *nix
+            var origICACLS = FileAccessControl.USE_ICACLS;
+            FileAccessControl.USE_ICACLS = true; // Simulate ICACLS environment even on *nix
 
             // Clear ICACLS caches for test purposes
-            (<any>client.channel._sender.constructor).ACL_IDENTITY = null;
-            (<any>client.channel._sender.constructor).ACLED_DIRECTORIES = {};
+            FileAccessControl["ACLED_DIRECTORIES"] = {};
+            FileAccessControl["ACL_IDENTITY"] = null;
 
             client.trackEvent({ name: "test event" });
             client.flush({
@@ -564,14 +564,14 @@ describe("EndToEnd", () => {
                         assert(spawn.firstCall.args[0].indexOf('powershell.exe'));
                         assert.equal(spawn.firstCall.args[1][0], "-Command");
                         assert.equal(spawn.firstCall.args[1][1], "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name");
-                        assert.equal((<any>client.channel._sender.constructor).ACL_IDENTITY, 'stdoutmock');
+                        assert.equal(FileAccessControl["ACL_IDENTITY"], 'stdoutmock');
 
                         // Next call should be to ICACLS (with the acquired identity)
                         assert(spawn.lastCall.args[0].indexOf('icacls.exe'));
                         assert.equal(spawn.lastCall.args[1][3], "/grant");
                         assert.equal(spawn.lastCall.args[1][4], "stdoutmock:(OI)(CI)F");
 
-                        (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
+                        FileAccessControl["USE_ICACLS"] = origICACLS;
                         done();
                     });
                 }
@@ -594,12 +594,11 @@ describe("EndToEnd", () => {
             });
             var client = new AppInsights.TelemetryClient("uniquekey");
             client.channel.setUseDiskRetryCaching(true);
-            var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
-            (<any>client.channel._sender.constructor).USE_ICACLS = true; // Simulate ICACLS environment even on *nix
-
-            // Set ICACLS caches for test purposes
-            (<any>client.channel._sender.constructor).ACL_IDENTITY = null;
-            (<any>client.channel._sender.constructor).ACLED_DIRECTORIES = {};
+            var origICACLS = FileAccessControl.USE_ICACLS;
+            FileAccessControl.USE_ICACLS = true; // Simulate ICACLS environment even on *nix
+            // Clear ICACLS caches for test purposes
+            FileAccessControl["ACLED_DIRECTORIES"] = {};
+            FileAccessControl["ACL_IDENTITY"] = null;
 
             client.trackEvent({ name: "test event" });
             client.flush({
@@ -608,7 +607,7 @@ describe("EndToEnd", () => {
                     setImmediate(() => {
                         assert(writeFile.callCount === 0);
                         assert.equal(tempSpawn.callCount, 1);
-                        (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
+                        FileAccessControl.USE_ICACLS = origICACLS;
                         done();
                     });
                 }
@@ -631,12 +630,12 @@ describe("EndToEnd", () => {
             });
             var client = new AppInsights.TelemetryClient("uniquekey");
             client.channel.setUseDiskRetryCaching(true);
-            var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
-            (<any>client.channel._sender.constructor).USE_ICACLS = true; // Simulate ICACLS environment even on *nix
+            var origICACLS = FileAccessControl.USE_ICACLS;
+            FileAccessControl.USE_ICACLS = true; // Simulate ICACLS environment even on *nix
 
-            // Set ICACLS caches for test purposes
-            (<any>client.channel._sender.constructor).ACL_IDENTITY = null;
-            (<any>client.channel._sender.constructor).ACLED_DIRECTORIES = {};
+            // Clear ICACLS caches for test purposes
+            FileAccessControl["ACLED_DIRECTORIES"] = {};
+            FileAccessControl["ACL_IDENTITY"] = null;
 
             client.trackEvent({ name: "test event" });
 
@@ -656,7 +655,7 @@ describe("EndToEnd", () => {
                                     // The call counts shouldnt have changed
                                     assert(writeFile.callCount === 0);
                                     assert.equal(tempSpawn.callCount, 1);
-                                    (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
+                                    FileAccessControl.USE_ICACLS = origICACLS;
                                     done();
                                 });
                             }
@@ -681,12 +680,12 @@ describe("EndToEnd", () => {
 
             var client = new AppInsights.TelemetryClient("uniquekey");
             client.channel.setUseDiskRetryCaching(true);
-            var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
-            (<any>client.channel._sender.constructor).USE_ICACLS = true; // Simulate ICACLS environment even on *nix
+            var origICACLS = FileAccessControl.USE_ICACLS;
+            FileAccessControl.USE_ICACLS = true; // Simulate ICACLS environment even on *nix
 
-            // Set ICACLS caches for test purposes
-            (<any>client.channel._sender.constructor).ACL_IDENTITY = null;
-            (<any>client.channel._sender.constructor).ACLED_DIRECTORIES = {};
+            // Clear ICACLS caches for test purposes
+            FileAccessControl["ACLED_DIRECTORIES"] = {};
+            FileAccessControl["ACL_IDENTITY"] = null;
 
             client.trackEvent({ name: "test event" });
             client.flush({
@@ -703,7 +702,7 @@ describe("EndToEnd", () => {
                                     // The call counts shouldnt have changed
                                     assert(writeFile.callCount === 0);
                                     assert.equal(tempSpawn.callCount, 1);
-                                    (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
+                                    FileAccessControl.USE_ICACLS = origICACLS;
                                     done();
                                 });
                             }
@@ -725,12 +724,12 @@ describe("EndToEnd", () => {
 
             var client = new AppInsights.TelemetryClient("uniquekey");
             client.channel.setUseDiskRetryCaching(true);
-            var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
-            (<any>client.channel._sender.constructor).USE_ICACLS = true; // Simulate ICACLS environment even on *nix
+            var origICACLS = FileAccessControl.USE_ICACLS;
+            FileAccessControl.USE_ICACLS = true; // Simulate ICACLS environment even on *nix
 
-            // Set ICACLS caches for test purposes
-            (<any>client.channel._sender.constructor).ACL_IDENTITY = 'testidentity'; // Don't use spawn for identity
-            (<any>client.channel._sender.constructor).ACLED_DIRECTORIES = {};
+            // Clear ICACLS caches for test purposes
+            FileAccessControl["ACLED_DIRECTORIES"] = {};
+            FileAccessControl["ACL_IDENTITY"] = null;
 
             client.trackEvent({ name: "test event" });
             client.flush({
@@ -739,7 +738,7 @@ describe("EndToEnd", () => {
                     setImmediate(() => {
                         assert(writeFile.callCount === 0);
                         assert.equal(tempSpawn.callCount, 1);
-                        (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
+                        FileAccessControl.USE_ICACLS = origICACLS;
                         done();
                     });
                 }
@@ -834,12 +833,12 @@ describe("EndToEnd", () => {
         it("use WindowsIdentity to get ACL identity when process crashes (ICACLS)", () => {
             var client = new AppInsights.TelemetryClient("key22");
             client.channel.setUseDiskRetryCaching(true);
-            var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
-            (<any>client.channel._sender.constructor).USE_ICACLS = true; // Simulate ICACLS environment even on *nix
+            var origICACLS = FileAccessControl.USE_ICACLS;
+            FileAccessControl.USE_ICACLS = true; // Simulate ICACLS environment even on *nix
 
-            // Set ICACLS caches for test purposes
-            (<any>client.channel._sender.constructor).ACL_IDENTITY = null;
-            (<any>client.channel._sender.constructor).ACLED_DIRECTORIES = {};
+            // Clear ICACLS caches for test purposes
+            FileAccessControl["ACLED_DIRECTORIES"] = {};
+            FileAccessControl["ACL_IDENTITY"] = null;
 
             client.trackEvent({ name: "test event" });
             client.channel.triggerSend(true);
@@ -848,14 +847,14 @@ describe("EndToEnd", () => {
             assert(spawnSync.firstCall.args[0].indexOf('powershell.exe'));
             assert.equal(spawnSync.firstCall.args[1][0], "-Command");
             assert.equal(spawnSync.firstCall.args[1][1], "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name");
-            assert.equal((<any>client.channel._sender.constructor).ACL_IDENTITY, 'stdoutmock');
+            assert.equal(FileAccessControl["ACL_IDENTITY"], 'stdoutmock');
 
             // Next call should be to ICACLS (with the acquired identity)
             assert(spawnSync.lastCall.args[0].indexOf('icacls.exe'));
             assert.equal(spawnSync.lastCall.args[1][3], "/grant");
             assert.equal(spawnSync.lastCall.args[1][4], "stdoutmock:(OI)(CI)F");
 
-            (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
+            FileAccessControl.USE_ICACLS = origICACLS;
         });
 
         it("refuses to cache payload when process crashes if ICACLS fails", () => {
@@ -863,8 +862,8 @@ describe("EndToEnd", () => {
             var tempSpawnSync = sandbox.stub(child_process, 'spawnSync').returns({ status: 2000 });
             var client = new AppInsights.TelemetryClient("key3"); // avoid icacls cache by making key unique
             client.channel.setUseDiskRetryCaching(true);
-            var origICACLS = (<any>client.channel._sender.constructor).USE_ICACLS;
-            (<any>client.channel._sender.constructor).USE_ICACLS = true; // Simulate ICACLS environment even on *nix
+            var origICACLS = FileAccessControl.USE_ICACLS;
+            FileAccessControl.USE_ICACLS = true; // Simulate ICACLS environment even on *nix
 
             client.trackEvent({ name: "test event" });
             client.channel.triggerSend(true);
@@ -874,7 +873,7 @@ describe("EndToEnd", () => {
 
             if (child_process.spawnSync) {
                 assert.equal(tempSpawnSync.callCount, 1);
-                (<any>client.channel._sender.constructor).USE_ICACLS = origICACLS;
+                FileAccessControl.USE_ICACLS = origICACLS;
             }
         });
     });
