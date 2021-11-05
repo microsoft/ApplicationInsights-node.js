@@ -184,20 +184,20 @@ describe("AutoCollection/Statsbeat", () => {
         it("Track attach Statbeat", (done) => {
             statsBeat["_longHandle"] = setInterval(() => { }, 0); // Prevent long interval metrics to be send
             statsBeat.enable(true);
-            const spy = sandbox.spy(statsBeat["_sender"], "send");
+            const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
             statsBeat.trackLongIntervalStatsbeats().then(() => {
-                let envelope = spy.args[0][0][0];
-                let baseData: Contracts.MetricData = envelope.data.baseData;
-                assert.equal(baseData.metrics[0].name, "Attach");
-                assert.equal(baseData.metrics[0].value, 1);
-                assert.equal(baseData.properties["cikey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-                assert.equal(baseData.properties["language"], "node");
-                assert.equal(baseData.properties["rp"], "unknown");
-                assert.equal(baseData.properties["rpId"], "unknown");
-                assert.equal(baseData.properties["attach"], "sdk");
-                assert.ok(baseData.properties["os"]);
-                assert.ok(baseData.properties["runtimeVersion"]);
-                assert.ok(baseData.properties["version"]);
+                assert.ok(sendStub.called, "should call _sendStatsbeats");
+                let metric = statsBeat["_statbeatMetrics"][0];
+                assert.equal(metric.name, "Attach");
+                assert.equal(metric.value, 1);
+                assert.equal((<any>(metric.properties))["cikey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+                assert.equal((<any>(metric.properties))["language"], "node");
+                assert.equal((<any>(metric.properties))["rp"], "unknown");
+                assert.equal((<any>(metric.properties))["rpId"], "unknown");
+                assert.equal((<any>(metric.properties))["attach"], "sdk");
+                assert.ok((<any>(metric.properties))["os"]);
+                assert.ok((<any>(metric.properties))["runtimeVersion"]);
+                assert.ok((<any>(metric.properties))["version"]);
                 done();
             })
         });
@@ -206,21 +206,21 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat["_longHandle"] = setInterval(() => { }, 0); // Prevent long interval metrics to be send
             statsBeat.enable(true);
             statsBeat.addFeature(Constants.StatsbeatFeature.DISK_RETRY);
-            const spy = sandbox.spy(statsBeat["_sender"], "send");
+            const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
             statsBeat.trackLongIntervalStatsbeats().then(() => {
-                let envelope = spy.args[0][0][1];
-                let baseData: Contracts.MetricData = envelope.data.baseData;
-                assert.equal(baseData.metrics[0].name, "Feature");
-                assert.equal(baseData.metrics[0].value, 1);
-                assert.equal(baseData.properties["type"], 0);
-                assert.equal(baseData.properties["cikey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-                assert.equal(baseData.properties["language"], "node");
-                assert.equal(baseData.properties["rp"], "unknown");
-                assert.equal(baseData.properties["attach"], "sdk");
-                assert.equal(baseData.properties["feature"], 1);
-                assert.ok(baseData.properties["os"]);
-                assert.ok(baseData.properties["runtimeVersion"]);
-                assert.ok(baseData.properties["version"]);
+                assert.ok(sendStub.called, "should call _sendStatsbeats");
+                let metric = statsBeat["_statbeatMetrics"][1];
+                assert.equal(metric.name, "Feature");
+                assert.equal(metric.value, 1);
+                assert.equal((<any>(metric.properties))["type"], 0);
+                assert.equal((<any>(metric.properties))["cikey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+                assert.equal((<any>(metric.properties))["language"], "node");
+                assert.equal((<any>(metric.properties))["rp"], "unknown");
+                assert.equal((<any>(metric.properties))["attach"], "sdk");
+                assert.equal((<any>(metric.properties))["feature"], 1);
+                assert.ok((<any>(metric.properties))["os"]);
+                assert.ok((<any>(metric.properties))["runtimeVersion"]);
+                assert.ok((<any>(metric.properties))["version"]);
                 done();
             })
         });
@@ -229,21 +229,21 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat["_longHandle"] = setInterval(() => { }, 0); // Prevent long interval metrics to be send
             statsBeat.enable(true);
             statsBeat.addInstrumentation(Constants.StatsbeatInstrumentation.AZURE_CORE_TRACING);
-            const spy = sandbox.spy(statsBeat["_sender"], "send");
+            const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
             statsBeat.trackLongIntervalStatsbeats().then(() => {
-                let envelope = spy.args[0][0][1];
-                let baseData: Contracts.MetricData = envelope.data.baseData;
-                assert.equal(baseData.metrics[0].name, "Feature");
-                assert.equal(baseData.metrics[0].value, 1);
-                assert.equal(baseData.properties["type"], 1);
-                assert.equal(baseData.properties["cikey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-                assert.equal(baseData.properties["language"], "node");
-                assert.equal(baseData.properties["rp"], "unknown");
-                assert.equal(baseData.properties["attach"], "sdk");
-                assert.equal(baseData.properties["feature"], 1);
-                assert.ok(baseData.properties["os"]);
-                assert.ok(baseData.properties["runtimeVersion"]);
-                assert.ok(baseData.properties["version"]);
+                assert.ok(sendStub.called, "should call _sendStatsbeats");
+                let metric = statsBeat["_statbeatMetrics"][1];
+                assert.equal(metric.name, "Feature");
+                assert.equal(metric.value, 1);
+                assert.equal((<any>(metric.properties))["type"], 1);
+                assert.equal((<any>(metric.properties))["cikey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+                assert.equal((<any>(metric.properties))["language"], "node");
+                assert.equal((<any>(metric.properties))["rp"], "unknown");
+                assert.equal((<any>(metric.properties))["attach"], "sdk");
+                assert.equal((<any>(metric.properties))["feature"], 1);
+                assert.ok((<any>(metric.properties))["os"]);
+                assert.ok((<any>(metric.properties))["runtimeVersion"]);
+                assert.ok((<any>(metric.properties))["version"]);
                 done();
             })
         });
@@ -273,30 +273,27 @@ describe("AutoCollection/Statsbeat", () => {
         it("Multiple network categories and endpoints", (done) => {
             statsBeat["_longHandle"] = setInterval(() => { }, 0); // Prevent long interval metrics to be send
             statsBeat.enable(true);
-            const sendStub = sandbox.stub(statsBeat["_sender"], "send");
+            const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
             statsBeat.countRequest(0, "breezeFirstEndpoint", 100, true);
             statsBeat.countRequest(1, "quickpulseEndpoint", 200, true);
             statsBeat.countRequest(0, "breezeSecondEndpoint", 400, true);
             statsBeat.trackShortIntervalStatsbeats().then(() => {
-                assert.equal(sendStub.callCount, 1, "should call sender");
-                let envelope = sendStub.args[0][0][0];
-                let baseData: Contracts.MetricData = envelope.data.baseData;
-                assert.equal(baseData.metrics[0].name, "Request Duration");
-                assert.equal(baseData.metrics[0].value, 100);
-                assert.equal(baseData.properties["endpoint"], 0);
-                assert.equal(baseData.properties["host"], "breezeFirstEndpoint");
-                envelope = sendStub.args[0][0][1];
-                baseData = envelope.data.baseData;
-                assert.equal(baseData.metrics[0].name, "Request Duration");
-                assert.equal(baseData.metrics[0].value, 200);
-                assert.equal(baseData.properties["endpoint"], 1);
-                assert.equal(baseData.properties["host"], "quickpulseEndpoint");
-                envelope = sendStub.args[0][0][2];
-                baseData = envelope.data.baseData;
-                assert.equal(baseData.metrics[0].name, "Request Duration");
-                assert.equal(baseData.metrics[0].value, 400);
-                assert.equal(baseData.properties["endpoint"], 0);
-                assert.equal(baseData.properties["host"], "breezeSecondEndpoint");
+                assert.ok(sendStub.called, "should call _sendStatsbeats");
+                let metric = statsBeat["_statbeatMetrics"][0];
+                assert.equal(metric.name, "Request Duration");
+                assert.equal(metric.value, 100);
+                assert.equal((<any>(metric.properties))["endpoint"], 0);
+                assert.equal((<any>(metric.properties))["host"], "breezeFirstEndpoint");
+                metric = statsBeat["_statbeatMetrics"][1];
+                assert.equal(metric.name, "Request Duration");
+                assert.equal(metric.value, 200);
+                assert.equal((<any>(metric.properties))["endpoint"], 1);
+                assert.equal((<any>(metric.properties))["host"], "quickpulseEndpoint");
+                metric = statsBeat["_statbeatMetrics"][2];
+                assert.equal(metric.name, "Request Duration");
+                assert.equal(metric.value, 400);
+                assert.equal((<any>(metric.properties))["endpoint"], 0);
+                assert.equal((<any>(metric.properties))["host"], "breezeSecondEndpoint");
                 done();
             });
         });
