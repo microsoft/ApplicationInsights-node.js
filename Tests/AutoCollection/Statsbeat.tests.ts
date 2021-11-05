@@ -270,19 +270,16 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.countRequest(0, "breezeSecondEndpoint", 400, true);
             statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
-                let metric = statsBeat["_statbeatMetrics"][0];
-                assert.equal(metric.name, "Request Duration");
-                assert.equal(metric.value, 100);
+                let metric: any = statsBeat["_statbeatMetrics"].find(f => f.name === "Request Success Count"
+                    && f.value === 100);
                 assert.equal((<any>(metric.properties))["endpoint"], 0);
                 assert.equal((<any>(metric.properties))["host"], "breezeFirstEndpoint");
-                metric = statsBeat["_statbeatMetrics"][1];
-                assert.equal(metric.name, "Request Duration");
-                assert.equal(metric.value, 200);
+                metric = statsBeat["_statbeatMetrics"].find(f => f.name === "Request Success Count"
+                    && f.value === 200);
                 assert.equal((<any>(metric.properties))["endpoint"], 1);
                 assert.equal((<any>(metric.properties))["host"], "quickpulseEndpoint");
-                metric = statsBeat["_statbeatMetrics"][2];
-                assert.equal(metric.name, "Request Duration");
-                assert.equal(metric.value, 400);
+                metric = statsBeat["_statbeatMetrics"].find(f => f.name === "Request Success Count"
+                    && f.value === 300);
                 assert.equal((<any>(metric.properties))["endpoint"], 0);
                 assert.equal((<any>(metric.properties))["host"], "breezeSecondEndpoint");
                 done();
