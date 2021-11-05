@@ -10,13 +10,8 @@ import http = require('http');
 import https = require('https');
 export interface ICustomConfig {
     connectionString?: string;
-
-    /** An identifier for your Application Insights resource */
-    instrumentationKey: string;
-    /** The id for cross-component correlation. READ ONLY. */
-    correlationId: string;
     /** The ingestion endpoint to send telemetry payloads to */
-    endpointUrl: string;
+    endpointUrl: string; // lxiao - should we allow user to config endpointUrl?
     /** The maximum number of telemetry items to include in a payload to the ingestion endpoint (Default 250) */
     maxBatchSize: number;
     /** The maximum amount of time to wait for a payload to reach maxBatchSize (Default 15000) */
@@ -52,13 +47,13 @@ export interface ICustomConfig {
      * Sets the state of console
      * if true logger activity will be sent to Application Insights
      */
-    enableAutoCollectConsole?: boolean;
+    enableAutoCollectExternalLoggers?: boolean;
 
     /**
      * Sets the state of logger tracking (enabled by default for third-party loggers only)
      * if true, logger autocollection will include console.log calls (default false)
      */
-    enableAutoCollectConsoleLog?: boolean;
+    enableAutoCollectConsole?: boolean;
 
     /**
      * Sets the state of exception tracking (enabled by default)
@@ -151,4 +146,8 @@ export interface ICustomConfig {
     extendedMetricDisablers?: string;
 
     disableStatsbeat?: boolean;
+
+    noDiagnosticChannel?: boolean;
+    noPatchModules?: string; // eg. "bunyan,console,mongodb,mongodbCore,mysql,redis,pg,pgPool,winston,azuresdk" -> lxiao: need update
+    noHttpAgentKeepAlive?: boolean;
 }

@@ -114,9 +114,9 @@ export class AutoCollectNativePerformance {
      * @returns {(boolean | IDisabledExtendedMetrics)}
      * @memberof AutoCollectNativePerformance
      */
-    public static parseEnabled(collectExtendedMetrics: boolean | IDisabledExtendedMetrics, customConfig?: ICustomConfig ): { isEnabled: boolean, disabledMetrics: IDisabledExtendedMetrics } {
-        const disableAll = (customConfig && customConfig.disableAllExtendedMetrics !== undefined) ? customConfig.disableAllExtendedMetrics : process.env[Config.ENV_nativeMetricsDisableAll];
-        const individualOptOuts = (customConfig && customConfig.extendedMetricDisablers !== undefined) ? customConfig.extendedMetricDisablers : process.env[Config.ENV_nativeMetricsDisablers];
+    public static parseEnabled(collectExtendedMetrics: boolean | IDisabledExtendedMetrics, customConfig: ICustomConfig ): { isEnabled: boolean, disabledMetrics: IDisabledExtendedMetrics } {
+        const disableAll = customConfig.disableAllExtendedMetrics;
+        const individualOptOuts = customConfig.extendedMetricDisablers;
 
         // case 1: disable all env var set, RETURN with isEnabled=false
         if (disableAll) {

@@ -5,6 +5,7 @@ import * as Helpers from "./Helpers";
 import Constants = require("../Declarations/Constants");
 import { StatusLogger, StatusContract } from "./StatusLogger";
 import { DiagnosticLogger } from "./DiagnosticLogger";
+import { CustomConfig } from "../Library/CustomConfig";
 
 // Private configuration vars
 let _appInsights: typeof types | null;
@@ -13,7 +14,7 @@ let _logger: DiagnosticLogger = new DiagnosticLogger(console);
 let _statusLogger: StatusLogger = new StatusLogger(console);
 
 // Env var local constants
-const _setupString = process.env.APPLICATIONINSIGHTS_CONNECTION_STRING || process.env.APPINSIGHTS_INSTRUMENTATIONKEY;
+const _setupString = CustomConfig.generateConfigurationObject().connectionString || process.env.APPLICATIONINSIGHTS_CONNECTION_STRING || process.env.APPINSIGHTS_INSTRUMENTATIONKEY;
 const forceStart = process.env.APPLICATIONINSIGHTS_FORCE_START === "true";
 
 // Other local constants

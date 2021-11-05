@@ -19,6 +19,7 @@ import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCo
 export import TelemetryClient = require("./Library/NodeClient");
 export import Contracts = require("./Declarations/Contracts");
 export import azureFunctionsTypes = require("./Library/Functions");
+import { CustomConfig } from "./Library/CustomConfig";
 
 export enum DistributedTracingModes {
     /**
@@ -125,8 +126,8 @@ export function setup(setupString?: string) {
 }
 
 function _configureFromConfigFile() {
-    _isConsole = defaultClient.config.enableAutoCollectConsole !== undefined ? defaultClient.config.enableAutoCollectConsole : defaultConfig.isConsole();
-    _isConsoleLog = defaultClient.config.enableAutoCollectConsoleLog !== undefined ? defaultClient.config.enableAutoCollectConsoleLog : defaultConfig.isConsoleLog();
+    _isConsole = defaultClient.config.enableAutoCollectExternalLoggers !== undefined ? defaultClient.config.enableAutoCollectExternalLoggers : defaultConfig.isConsole();
+    _isConsoleLog = defaultClient.config.enableAutoCollectConsole !== undefined ? defaultClient.config.enableAutoCollectConsole : defaultConfig.isConsoleLog();
     _isExceptions = defaultClient.config.enableAutoCollectExceptions !== undefined ? defaultClient.config.enableAutoCollectConsole : defaultConfig.isExceptions();
     _isPerformance = defaultClient.config.enableAutoCollectPerformance !== undefined ? defaultClient.config.enableAutoCollectPerformance : defaultConfig.isPerformance();
     _isPreAggregatedMetrics = defaultClient.config.enableAutoCollectPreAggregatedMetrics !== undefined ? defaultClient.config.enableAutoCollectPreAggregatedMetrics : defaultConfig.isPreAggregatedMetrics();
@@ -296,7 +297,7 @@ export class Configuration {
      */
     public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: boolean | IDisabledExtendedMetrics = true) {
         _isPerformance = value;
-        const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(collectExtendedMetrics);
+        const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(collectExtendedMetrics, CustomConfig.generateConfigurationObject());
         _isNativePerformance = extendedMetricsConfig.isEnabled;
         _disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
         if (_isStarted) {

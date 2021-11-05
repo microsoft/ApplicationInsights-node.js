@@ -8,10 +8,11 @@ import Config = require("./Config");
 import TelemetryClient = require("../Library/TelemetryClient");
 import RequestResponseHeaders = require("./RequestResponseHeaders");
 import { HttpRequest } from "../Library/Functions";
+import { CustomConfig } from "./CustomConfig";
 
 
 class Util {
-    private static _useKeepAlive = !process.env["APPLICATION_INSIGHTS_NO_HTTP_AGENT_KEEP_ALIVE"];
+    private static _useKeepAlive = !CustomConfig.generateConfigurationObject().noHttpAgentKeepAlive;
     private static _listenerAttached = false;
 
     public static MAX_PROPERTY_LENGTH = 8192;

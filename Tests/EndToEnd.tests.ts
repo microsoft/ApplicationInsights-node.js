@@ -19,6 +19,7 @@ import HeartBeat = require("../AutoCollection/HeartBeat");
 import TelemetryClient = require("../Library/TelemetryClient");
 import Context = require("../Library/Context");
 import Util = require("../Library/Util");
+import { CustomConfig } from "../Library/CustomConfig";
 
 /**
  * A fake response class that passes by default
@@ -155,7 +156,6 @@ class fakeHttpsServer extends events.EventEmitter {
     }
 }
 
-
 describe("EndToEnd", () => {
     var sandbox: sinon.SinonSandbox;
     var originalEnv = {};
@@ -194,6 +194,10 @@ describe("EndToEnd", () => {
         before(() => {
             nockScope = interceptor.reply(200, breezeResponse).persist();
         });
+
+        // beforeEach(() => {
+        //     CustomConfig._config = undefined;
+        // });
 
         afterEach(() => {
             // Dispose the default app insights client and auto collectors so that they can be reconfigured
@@ -349,6 +353,10 @@ describe("EndToEnd", () => {
             nockScope = interceptor.reply(200, breezeResponse).persist();
         });
 
+        beforeEach(() => {
+            CustomConfig._config = undefined;
+        });
+
         afterEach(() => {
             // Dispose the default app insights client and auto collectors so that they can be reconfigured
             // cleanly for each test
@@ -482,6 +490,7 @@ describe("EndToEnd", () => {
             if (child_process.spawnSync) {
                 spawnSync = sandbox.stub(child_process, 'spawnSync').returns({ status: 0, stdout: 'stdoutmock' });
             }
+            CustomConfig._config = undefined;
         });
 
         afterEach(() => {
@@ -880,6 +889,10 @@ describe("EndToEnd", () => {
     });
 
     describe("Heartbeat metrics for VM", () => {
+        beforeEach(() => {
+            CustomConfig._config = undefined;
+        });
+
         afterEach(() => {
             sandbox.restore();
         });

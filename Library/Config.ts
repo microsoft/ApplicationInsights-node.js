@@ -7,12 +7,12 @@ import Constants = require('../Declarations/Constants');
 import http = require('http');
 import https = require('https');
 import url = require('url');
-import fs = require("fs");
+import { CustomConfig } from "./CustomConfig";
 import { ICustomConfig } from "../Library/ICustomConfig";
 import { DistributedTracingModes, setRetry, setLiveMetricsFlag } from "../applicationinsights";
 import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";
 
-class Config implements ICustomConfig {
+class Config {
     // Azure adds this prefix to all environment variables
     public static ENV_azurePrefix = "APPSETTING_";
 
@@ -21,16 +21,6 @@ class Config implements ICustomConfig {
     public static legacy_ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
     public static ENV_profileQueryEndpoint = "APPINSIGHTS_PROFILE_QUERY_ENDPOINT";
     public static ENV_quickPulseHost = "APPINSIGHTS_QUICKPULSE_HOST";
-
-    // Azure Connection String
-    public static ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
-
-    // Native Metrics Opt Outs
-    public static ENV_nativeMetricsDisablers = "APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC";
-    public static ENV_nativeMetricsDisableAll = "APPLICATION_INSIGHTS_DISABLE_ALL_EXTENDED_METRICS"
-
-    public static ENV_http_proxy = "http_proxy";
-    public static ENV_https_proxy = "https_proxy";
 
     /** An identifier for your Application Insights resource */
     public instrumentationKey: string;
@@ -63,19 +53,20 @@ class Config implements ICustomConfig {
     /** AAD TokenCredential to use to authenticate the app */
     public aadTokenCredential?: azureCore.TokenCredential;
 
-    public customConfig : ICustomConfig;
-
     private endpointBase: string = Constants.DEFAULT_BREEZE_ENDPOINT;
     private setCorrelationId: (v: string) => void;
     private _profileQueryEndpoint: string;
     /** Host name for quickpulse service */
     private _quickPulseHost: string;
+    
+    /** private config object that is populated from config json file */
+    private _config : ICustomConfig = CustomConfig.generateConfigurationObject();
 
-    public enableAutoCollectConsoleLog: boolean;
+    public enableAutoCollectConsole: boolean; // enable auto collect console
     public enableAutoCollectExceptions: boolean;
     public enableAutoCollectPerformance: boolean;
     public enableNativePerformance: boolean;
-    public enableAutoCollectConsole: boolean;
+    public enableAutoCollectExternalLoggers: boolean; // enable auto collect bunyan & winston
     public disabledExtendedMetrics: IDisabledExtendedMetrics;
     public enableAutoCollectPreAggregatedMetrics: boolean;
     public enableAutoCollectHeartbeat: boolean;
@@ -88,27 +79,27 @@ class Config implements ICustomConfig {
     constructor(setupString?: string) {
         this._generateConfigurationObjectFromEnvVars();
 
-        const connectionStringEnv: string | undefined = this.customConfig.connectionString || process.env[Config.ENV_connectionString];
+        const connectionStringEnv: string | undefined = this._config.connectionString;
         const csCode = ConnectionStringParser.parse(setupString);
         const csEnv = ConnectionStringParser.parse(connectionStringEnv);
         const iKeyCode = !csCode.instrumentationkey && Object.keys(csCode).length > 0
             ? null // CS was valid but instrumentation key was not provided, null and grab from env var
             : setupString; // CS was invalid, so it must be an ikey
 
-        this.instrumentationKey = this.customConfig.instrumentationKey || csCode.instrumentationkey || iKeyCode /* === instrumentationKey */ || csEnv.instrumentationkey || Config._getInstrumentationKey();
+        this.instrumentationKey = csCode.instrumentationkey || iKeyCode /* === instrumentationKey */ || csEnv.instrumentationkey || Config._getInstrumentationKey();
         // validate ikey. If fails throw a warning
         if (!Config._validateInstrumentationKey(this.instrumentationKey)) {
             Logging.warn("An invalid instrumentation key was provided. There may be resulting telemetry loss", this.instrumentationKey);
         }
 
-        this.endpointUrl = `${this.customConfig.endpointUrl || csCode.ingestionendpoint || csEnv.ingestionendpoint || this.endpointBase}/v2.1/track`;
-        this.maxBatchSize = this.customConfig.maxBatchSize || 250;
-        this.maxBatchIntervalMs = this.customConfig.maxBatchIntervalMs || 15000;
-        this.disableAppInsights = this.customConfig.disableAppInsights || false;
-        this.samplingPercentage = this.customConfig.samplingPercentage || 100;
-        this.correlationIdRetryIntervalMs = this.customConfig.correlationIdRetryIntervalMs || 30 * 1000;
+        this.endpointUrl = `${this._config.endpointUrl || csCode.ingestionendpoint || csEnv.ingestionendpoint || this.endpointBase}/v2.1/track`;
+        this.maxBatchSize = this._config.maxBatchSize || 250;
+        this.maxBatchIntervalMs = this._config.maxBatchIntervalMs || 15000;
+        this.disableAppInsights = this._config.disableAppInsights || false;
+        this.samplingPercentage = this._config.samplingPercentage || 100;
+        this.correlationIdRetryIntervalMs = this._config.correlationIdRetryIntervalMs || 30 * 1000;
         this.correlationHeaderExcludedDomains =
-        this.customConfig.correlationHeaderExcludedDomains ||
+        this._config.correlationHeaderExcludedDomains ||
         [
             "*.core.windows.net",
             "*.core.chinacloudapi.cn",
@@ -120,11 +111,11 @@ class Config implements ICustomConfig {
 
         this.setCorrelationId = (correlationId) => this.correlationId = correlationId;
 
-        this.proxyHttpUrl = this.customConfig.proxyHttpUrl || process.env[Config.ENV_http_proxy] || undefined;
-        this.proxyHttpsUrl = this.customConfig.proxyHttpsUrl || process.env[Config.ENV_https_proxy] || undefined;
-        this.httpAgent = this.customConfig.httpAgent || undefined;
-        this.httpsAgent = this.customConfig.httpsAgent || undefined;
-        this.ignoreLegacyHeaders = this.customConfig.ignoreLegacyHeaders || false;
+        this.proxyHttpUrl = this._config.proxyHttpUrl;
+        this.proxyHttpsUrl = this._config.proxyHttpsUrl;
+        this.httpAgent = this._config.httpAgent;
+        this.httpsAgent = this._config.httpsAgent;
+        this.ignoreLegacyHeaders = this._config.ignoreLegacyHeaders || false;
         this.profileQueryEndpoint = csCode.ingestionendpoint || csEnv.ingestionendpoint || process.env[Config.ENV_profileQueryEndpoint] || this.endpointBase;
         this._quickPulseHost = csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_HOST;
         // Parse quickPulseHost if it starts with http(s)://
@@ -133,67 +124,59 @@ class Config implements ICustomConfig {
         }
     }
 
-    _generateConfigurationObjectFromEnvVars() {
-        const customConfigStr = process.env.APPLICATION_INSIGHTS_CONFIG || "{}";
-        try {
-            this.customConfig = JSON.parse(customConfigStr) as ICustomConfig;
-        if (this.customConfig.distributedTracingMode !== undefined) {
-            CorrelationIdManager.w3cEnabled = this.customConfig.distributedTracingMode === DistributedTracingModes.AI_AND_W3C;
+    private _generateConfigurationObjectFromEnvVars() {
+        if (this._config.distributedTracingMode !== undefined) {
+            CorrelationIdManager.w3cEnabled = this._config.distributedTracingMode === DistributedTracingModes.AI_AND_W3C;
         }
-        if (this.customConfig.enableAutoCollectConsole !== undefined) {
-            this.enableAutoCollectConsole = this.customConfig.enableAutoCollectConsole;
+        if (this._config.enableAutoCollectConsole !== undefined) {
+            this.enableAutoCollectConsole = this._config.enableAutoCollectConsole;
         }
-        if (this.customConfig.enableAutoCollectConsoleLog !== undefined) {
-            this.enableAutoCollectConsoleLog = this.customConfig.enableAutoCollectConsoleLog;
+        if (this._config.enableAutoCollectExternalLoggers !== undefined) {
+            this.enableAutoCollectExternalLoggers = this._config.enableAutoCollectExternalLoggers;
         }
-        if (this.customConfig.enableAutoCollectExceptions !== undefined) {
-            this.enableAutoCollectExceptions = this.customConfig.enableAutoCollectExceptions;
+        if (this._config.enableAutoCollectExceptions !== undefined) {
+            this.enableAutoCollectExceptions = this._config.enableAutoCollectExceptions;
         }
-        if (this.customConfig.enableAutoCollectPerformance !== undefined) {
-            this.enableAutoCollectPerformance = this.customConfig.enableAutoCollectPerformance;
+        if (this._config.enableAutoCollectPerformance !== undefined) {
+            this.enableAutoCollectPerformance = this._config.enableAutoCollectPerformance;
         }
-        if (this.customConfig.enableAutoCollectExtendedMetrics !== undefined) {
-            const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(this.customConfig.enableAutoCollectExtendedMetrics, this.customConfig);
+        if (this._config.enableAutoCollectExtendedMetrics !== undefined) {
+            const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(this._config.enableAutoCollectExtendedMetrics, this._config);
             this.enableNativePerformance = extendedMetricsConfig.isEnabled;
             this.disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
         }
-        if (this.customConfig.enableAutoCollectPreAggregatedMetrics !== undefined) {
-            this.enableAutoCollectPreAggregatedMetrics = this.customConfig.enableAutoCollectPreAggregatedMetrics;
+        if (this._config.enableAutoCollectPreAggregatedMetrics !== undefined) {
+            this.enableAutoCollectPreAggregatedMetrics = this._config.enableAutoCollectPreAggregatedMetrics;
         }
-        if (this.customConfig.enableAutoCollectHeartbeat !== undefined) {
-            this.enableAutoCollectHeartbeat = this.customConfig.enableAutoCollectHeartbeat;
+        if (this._config.enableAutoCollectHeartbeat !== undefined) {
+            this.enableAutoCollectHeartbeat = this._config.enableAutoCollectHeartbeat;
         }
-        if (this.customConfig.enableAutoCollectRequests !== undefined) {
-            this.enableAutoCollectRequests = this.customConfig.enableAutoCollectRequests;
+        if (this._config.enableAutoCollectRequests !== undefined) {
+            this.enableAutoCollectRequests = this._config.enableAutoCollectRequests;
         }
-        if (this.customConfig.enableAutoCollectDependencies !== undefined) {
-            this.enableAutoCollectDependencies = this.customConfig.enableAutoCollectDependencies;
+        if (this._config.enableAutoCollectDependencies !== undefined) {
+            this.enableAutoCollectDependencies = this._config.enableAutoCollectDependencies;
         }
-        if (this.customConfig.enableAutoDependencyCorrelation !== undefined) {
-            this.enableAutoDependencyCorrelation = this.customConfig.enableAutoDependencyCorrelation;
+        if (this._config.enableAutoDependencyCorrelation !== undefined) {
+            this.enableAutoDependencyCorrelation = this._config.enableAutoDependencyCorrelation;
         }
-        if (this.customConfig.enableUseAsyncHooks !== undefined) {
-            this.enableUseAsyncHooks = this.customConfig.enableUseAsyncHooks;
+        if (this._config.enableUseAsyncHooks !== undefined) {
+            this.enableUseAsyncHooks = this._config.enableUseAsyncHooks;
         }
-        if (this.customConfig.enableUseDiskRetryCaching !== undefined) {
-            setRetry(this.customConfig.enableUseDiskRetryCaching, this.customConfig.enableResendInterval, this.customConfig.enableMaxBytesOnDisk);
+        if (this._config.enableUseDiskRetryCaching !== undefined) {
+            setRetry(this._config.enableUseDiskRetryCaching, this._config.enableResendInterval, this._config.enableMaxBytesOnDisk);
         }
-        if (this.customConfig.enableInternalDebugLogging !== undefined) {
-            Logging.enableDebug = this.customConfig.enableInternalDebugLogging;
+        if (this._config.enableInternalDebugLogging !== undefined) {
+            Logging.enableDebug = this._config.enableInternalDebugLogging;
         }
-        if (this.customConfig.enableInternalWarningLogging !== undefined) {
-            Logging.disableWarnings = !this.customConfig.enableInternalWarningLogging;
+        if (this._config.enableInternalWarningLogging !== undefined) {
+            Logging.disableWarnings = !this._config.enableInternalWarningLogging;
         }
-        if (this.customConfig.enableSendLiveMetrics !== undefined) {
-            setLiveMetricsFlag(this.customConfig.enableSendLiveMetrics);
+        if (this._config.enableSendLiveMetrics !== undefined) {
+            setLiveMetricsFlag(this._config.enableSendLiveMetrics);
         }
-        if (this.customConfig.disableStatsbeat !== undefined) {
-            this.disableStatsbeat = this.customConfig.disableStatsbeat;
-        }
-        }
-        catch (error) {
-            // Failed to parse JSON
-            Logging.warn("Error parsing JSON string: ", error);
+        if (this._config.disableStatsbeat !== undefined) {
+            this.disableStatsbeat = this._config.disableStatsbeat;
         }
     }
 
