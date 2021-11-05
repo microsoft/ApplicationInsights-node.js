@@ -70,7 +70,7 @@ class QuickPulseSender {
         additionalHeaders?: { name: string, value: string }[]
     ): Promise<void> {
 
-        const payload = JSON.stringify(envelope);
+        const payload = Util.stringify(envelope);
         var options = {
             [AutoCollectHttpDependencies.disableCollectionRequestOption]: true,
             host: (redirectedHostEndpoint && redirectedHostEndpoint.length > 0) ? redirectedHostEndpoint : this._config.quickPulseHost,

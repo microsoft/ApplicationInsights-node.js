@@ -9,6 +9,7 @@ import * as Contracts from "../../Declarations/Contracts";
 import * as Constants from "../../Declarations/Constants";
 import { parseEventHubSpan } from "./Azure/EventHub";
 import { DependencyTelemetry } from "../../Declarations/Contracts";
+import Util = require ("../../Library/Util");
 
 function createPropertiesFromSpan(span: ReadableSpan): { [key: string]: any; } {
     const properties: { [key: string]: any; } = {};
@@ -30,7 +31,7 @@ function createPropertiesFromSpan(span: ReadableSpan): { [key: string]: any; } {
         id: link.context.spanId
     }));
     if (links.length > 0) {
-        properties["_MS.links"] = JSON.stringify(links);
+        properties["_MS.links"] = Util.stringify(links);
     }
     return properties;
 }
