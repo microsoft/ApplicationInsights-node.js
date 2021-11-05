@@ -5,7 +5,6 @@ import nock = require("nock");
 import AppInsights = require("../../applicationinsights");
 import Statsbeat = require("../../AutoCollection/Statsbeat");
 import Constants = require("../../Declarations/Constants");
-import Contracts = require("../../Declarations/Contracts");
 import TelemetryClient = require("../../Library/TelemetryClient");
 import Config = require("../../Library/Config");
 
@@ -113,8 +112,7 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.setCodelessAttach();
             statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
-                let requestDurationMetric = statsBeat["_statbeatMetrics"][0];
-                assert.equal(requestDurationMetric.name, "Request Duration");
+                let requestDurationMetric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Request Duration")[0];
                 assert.equal(requestDurationMetric.value, 123);
                 assert.equal((<any>(requestDurationMetric.properties))["attach"], "codeless");
                 assert.equal((<any>(requestDurationMetric.properties))["cikey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
@@ -127,7 +125,7 @@ describe("AutoCollection/Statsbeat", () => {
                 assert.ok((<any>(requestDurationMetric.properties))["version"]);
 
                 done();
-            });
+            }).catch((error) => { done(error); });
         });
 
         it("Track duration", (done) => {
@@ -138,11 +136,10 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.countRequest(0, "test", 500, false);
             statsBeat.trackShortIntervalStatsbeats().then((error) => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
-                let requestDurationMetric = statsBeat["_statbeatMetrics"][0];
-                assert.equal(requestDurationMetric.name, "Request Duration");
+                let requestDurationMetric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Request Duration")[0];
                 assert.equal(requestDurationMetric.value, 750);
                 done();
-            });
+            }).catch((error) => { done(error); });
         });
 
         it("Track counts", (done) => {
@@ -162,23 +159,18 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.countException(0, "test");
             statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
-                let metric = statsBeat["_statbeatMetrics"][1];
-                assert.equal(metric.name, "Request Success Count");
+                let metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Request Success Count")[0];
                 assert.equal(metric.value, 4);
-                metric = statsBeat["_statbeatMetrics"][2];
-                assert.equal(metric.name, "Requests Failure Count");
+                metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Requests Failure Count")[0];
                 assert.equal(metric.value, 3);
-                metric = statsBeat["_statbeatMetrics"][3];
-                assert.equal(metric.name, "Retry Count");
+                metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Retry Count")[0];
                 assert.equal(metric.value, 2);
-                metric = statsBeat["_statbeatMetrics"][4];
-                assert.equal(metric.name, "Throttle Count");
+                metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Throttle Count")[0];
                 assert.equal(metric.value, 1);
-                metric = statsBeat["_statbeatMetrics"][5];
-                assert.equal(metric.name, "Exception Count");
+                metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Exception Count")[0];
                 assert.equal(metric.value, 1);
                 done();
-            });
+            }).catch((error) => { done(error); });
         });
 
         it("Track attach Statbeat", (done) => {
@@ -187,8 +179,7 @@ describe("AutoCollection/Statsbeat", () => {
             const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
             statsBeat.trackLongIntervalStatsbeats().then(() => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
-                let metric = statsBeat["_statbeatMetrics"][0];
-                assert.equal(metric.name, "Attach");
+                let metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Attach")[0];
                 assert.equal(metric.value, 1);
                 assert.equal((<any>(metric.properties))["cikey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert.equal((<any>(metric.properties))["language"], "node");
@@ -199,7 +190,7 @@ describe("AutoCollection/Statsbeat", () => {
                 assert.ok((<any>(metric.properties))["runtimeVersion"]);
                 assert.ok((<any>(metric.properties))["version"]);
                 done();
-            })
+            }).catch((error) => { done(error); });
         });
 
         it("Track feature Statbeat", (done) => {
@@ -209,7 +200,7 @@ describe("AutoCollection/Statsbeat", () => {
             const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
             statsBeat.trackLongIntervalStatsbeats().then(() => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
-                let metric = statsBeat["_statbeatMetrics"][1];
+                let metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Feature")[0];
                 assert.equal(metric.name, "Feature");
                 assert.equal(metric.value, 1);
                 assert.equal((<any>(metric.properties))["type"], 0);
@@ -222,7 +213,7 @@ describe("AutoCollection/Statsbeat", () => {
                 assert.ok((<any>(metric.properties))["runtimeVersion"]);
                 assert.ok((<any>(metric.properties))["version"]);
                 done();
-            })
+            }).catch((error) => { done(error); });
         });
 
         it("Track instrumentation Statbeat", (done) => {
@@ -232,7 +223,7 @@ describe("AutoCollection/Statsbeat", () => {
             const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
             statsBeat.trackLongIntervalStatsbeats().then(() => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
-                let metric = statsBeat["_statbeatMetrics"][1];
+                let metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Feature")[0];
                 assert.equal(metric.name, "Feature");
                 assert.equal(metric.value, 1);
                 assert.equal((<any>(metric.properties))["type"], 1);
@@ -245,7 +236,7 @@ describe("AutoCollection/Statsbeat", () => {
                 assert.ok((<any>(metric.properties))["runtimeVersion"]);
                 assert.ok((<any>(metric.properties))["version"]);
                 done();
-            })
+            }).catch((error) => { done(error); });
         });
 
         it("Instrumentations", () => {
@@ -295,7 +286,7 @@ describe("AutoCollection/Statsbeat", () => {
                 assert.equal((<any>(metric.properties))["endpoint"], 0);
                 assert.equal((<any>(metric.properties))["host"], "breezeSecondEndpoint");
                 done();
-            });
+            }).catch((error) => { done(error); });
         });
     });
 });
