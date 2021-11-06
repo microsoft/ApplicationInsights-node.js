@@ -22,7 +22,7 @@ export class CustomConfig {
             return this._config;
         }
         this._config = {} as ICustomConfig;
-        this._config.connectionString = process.env[ENV_connectionString]; // lxiao - undefined?
+        this._config.connectionString = process.env[ENV_connectionString];
         this._config.disableAllExtendedMetrics = !!process.env[ENV_nativeMetricsDisableAll];
         this._config.extendedMetricDisablers = process.env[ENV_nativeMetricsDisablers];
         this._config.proxyHttpUrl = process.env[ENV_http_proxy];

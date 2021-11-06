@@ -195,9 +195,9 @@ describe("EndToEnd", () => {
             nockScope = interceptor.reply(200, breezeResponse).persist();
         });
 
-        // beforeEach(() => {
-        //     CustomConfig._config = undefined;
-        // });
+        beforeEach(() => {
+            CustomConfig._config = undefined;
+        });
 
         afterEach(() => {
             // Dispose the default app insights client and auto collectors so that they can be reconfigured

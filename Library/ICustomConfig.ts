@@ -11,7 +11,7 @@ import https = require('https');
 export interface ICustomConfig {
     connectionString?: string;
     /** The ingestion endpoint to send telemetry payloads to */
-    endpointUrl: string; // lxiao - should we allow user to config endpointUrl?
+    endpointUrl: string;
     /** The maximum number of telemetry items to include in a payload to the ingestion endpoint (Default 250) */
     maxBatchSize: number;
     /** The maximum amount of time to wait for a payload to reach maxBatchSize (Default 15000) */

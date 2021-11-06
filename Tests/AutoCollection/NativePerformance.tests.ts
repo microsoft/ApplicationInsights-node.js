@@ -28,9 +28,9 @@ describe("AutoCollection/NativePerformance", () => {
                 AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
                     .setAutoCollectHeartbeat(false)
                     .setAutoCollectPerformance(false, true)
+                    .setAutoCollectPreAggregatedMetrics(false)
                     .start();
                 if (AutoCollectNativePerformance["_metricsAvailable"]) {
-                    // lxiao - why 3 times?
                     assert.equal(setIntervalSpy.callCount, 3, "setInteval should be called three times as part of NativePerformance initialization as well as Statsbeat");
                     AppInsights.dispose();
                     assert.equal(clearIntervalSpy.callCount, 1, "clearInterval should be called once as part of NativePerformance shutdown");
