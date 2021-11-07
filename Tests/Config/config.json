@@ -1,0 +1,27 @@
+{
+    "connectionString": "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/",
+    "endpointUrl": "testEndpointUrl",
+    "disableAllExtendedMetrics": false,
+    "maxBatchSize": 150,
+    "maxBatchIntervalMs": 12000,
+    "disableAppInsights": false,
+    "samplingPercentage": 30,
+    "correlationIdRetryIntervalMs": 15000,
+    "correlationHeaderExcludedDomains": ["domain1", "domain2"],
+    "proxyHttpUrl": "testProxyHttpUrl",
+    "proxyHttpsUrl": "testProxyHttpsUrl",
+    "ignoreLegacyHeaders": true,
+    "enableAutoCollectExternalLoggers": false,
+    "enableAutoCollectConsole": false,
+    "enableAutoCollectExceptions": false,
+    "enableAutoCollectPerformance": false,
+    "enableAutoCollectPreAggregatedMetrics": false,
+    "enableAutoCollectHeartbeat": false,
+    "enableAutoCollectRequests": false,
+    "enableAutoCollectDependencies": false,
+    "enableAutoDependencyCorrelation": false,
+    "enableUseAsyncHooks": false,
+    "disableStatsbeat": false,
+    "noHttpAgentKeepAlive": true
+}
+  

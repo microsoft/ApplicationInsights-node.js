@@ -101,7 +101,6 @@ describe("AutoCollection/NativePerformance", () => {
                 assert.deepEqual(AutoCollectNativePerformance.parseEnabled({ gc: true }, _customConfig), { isEnabled: false, disabledMetrics: {} });
 
                 process.env = originalEnv;
-                // CustomConfig._config = undefined;
             });
 
             it("should overwrite input arg if individual env vars are set", () => {
