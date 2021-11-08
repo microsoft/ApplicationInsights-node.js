@@ -1,9 +1,10 @@
 import assert = require("assert");
 import sinon = require("sinon");
 import AppInsights = require("../../applicationinsights");
-import { channel, IStandardEvent } from "diagnostic-channel";
+import { channel } from "diagnostic-channel";
 import { enable, dispose as disable } from "../../AutoCollection/diagnostic-channel/bunyan.sub";
 import { bunyan } from "diagnostic-channel-publishers";
+import Util = require("../../Library/Util");
 
 describe("diagnostic-channel/bunyan", () => {
     afterEach(() => {
@@ -25,7 +26,7 @@ describe("diagnostic-channel/bunyan", () => {
         };
 
         const dummyError = { stack: "Test error" };
-        const bunyanJson = JSON.stringify({ err: dummyError });
+        const bunyanJson = Util.stringify({ err: dummyError });
         const errorEvent: bunyan.IBunyanData = {
             result: bunyanJson,
             level: 10, // Verbose should still log as ExceptionData
