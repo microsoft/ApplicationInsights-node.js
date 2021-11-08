@@ -1,5 +1,7 @@
 import assert = require("assert");
 import fs = require("fs");
+import os = require("os");
+import path = require("path");
 import sinon = require("sinon");
 
 import InternalAzureLogger = require("../../Library/InternalAzureLogger");
@@ -16,6 +18,23 @@ describe("Library/InternalAzureLogger", () => {
     afterEach(() => {
         sandbox.restore();
     });
+
+    after(() => {
+        // Clean files
+        try {
+            let tempDir = path.join(os.tmpdir(), "appInsights-node");
+            if (fs.existsSync(tempDir)) {
+                let files = fs.readdirSync(tempDir);
+                if (files) {
+                    files.forEach(file => {
+                        var filePath = path.join(tempDir, file);
+                        fs.unlinkSync(filePath);
+                    });
+                }
+            }
+        }
+        catch (ex) { }
+    })
 
     describe("Write to file", () => {
         let internalLogger: InternalAzureLogger = null;
