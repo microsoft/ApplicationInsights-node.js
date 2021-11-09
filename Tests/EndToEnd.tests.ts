@@ -20,6 +20,7 @@ import TelemetryClient = require("../Library/TelemetryClient");
 import Context = require("../Library/Context");
 import Util = require("../Library/Util");
 import { FileAccessControl } from "../Library/FileAccessControl";
+import FileSystemHelper = require("../Library/FileSystemHelper");
 
 /**
  * A fake response class that passes by default
@@ -173,6 +174,9 @@ describe("EndToEnd", () => {
         var newEnv = <{ [id: string]: string }>{};
         Util.tlsRestrictedAgent = new https.Agent();
         newEnv["APPLICATION_INSIGHTS_NO_STATSBEAT"] = "true";
+        newEnv["TMP"] = process.env.TMP;
+        newEnv["TMPDIR"] = process.env.TMPDIR;
+        newEnv["TEMP"] = process.env.TEMP;
         originalEnv = process.env;
         process.env = newEnv;
 
@@ -438,7 +442,6 @@ describe("EndToEnd", () => {
         var readFile: sinon.SinonStub;
         var lstat: sinon.SinonStub;
         var mkdir: sinon.SinonStub;
-        var exists: sinon.SinonStub;
         var existsSync: sinon.SinonStub;
         var readdir: sinon.SinonStub;
         var readdirSync: sinon.SinonStub;
@@ -454,18 +457,17 @@ describe("EndToEnd", () => {
             nockScope = interceptor.reply(503, { "errors": [{ "index": 0, "statusCode": 503 }] });
             AppInsights.defaultClient = undefined;
             sandbox.stub(CorrelationIdManager, 'queryCorrelationId'); // TODO: Fix method of stubbing requests to allow CID to be part of E2E tests
-            writeFile = sandbox.stub(fs, 'writeFile');
+            writeFile = sandbox.stub(FileSystemHelper, 'writeFileAsync');
             writeFileSync = sandbox.stub(fs, 'writeFileSync');
-            exists = sandbox.stub(fs, 'exists').yields(true);
             existsSync = sandbox.stub(fs, 'existsSync').returns(true);
-            readdir = sandbox.stub(fs, 'readdir').yields(null, ['1.ai.json']);
+            readdir = sandbox.stub(FileSystemHelper, 'readdirAsync').returns(['1.ai.json']);
             readdirSync = sandbox.stub(fs, 'readdirSync').returns(['1.ai.json']);
-            stat = sandbox.stub(fs, 'stat').yields(null, { isFile: () => true, size: 8000 });
+            stat = sandbox.stub(FileSystemHelper, 'statAsync').returns({ isFile: () => true, size: 8000 });
             statSync = sandbox.stub(fs, 'statSync').returns({ isFile: () => true, size: 8000 });
-            lstat = sandbox.stub(fs, 'lstat').yields(null, { isDirectory: () => true });
-            mkdir = sandbox.stub(fs, 'mkdir').yields(null);
+            lstat = sandbox.stub(FileSystemHelper, 'lstatAsync').returns({ isDirectory: () => true });
+            mkdir = sandbox.stub(FileSystemHelper, 'mkdirAsync').returns(null);
             mkdirSync = sandbox.stub(fs, 'mkdirSync').returns(null);
-            readFile = sandbox.stub(fs, 'readFile').yields(null, '');
+            readFile = sandbox.stub(FileSystemHelper, 'readFileAsync').returns('');
             spawn = sandbox.stub(child_process, 'spawn').returns({
                 on: (type: string, cb: any) => {
                     if (type === 'close') {
@@ -747,7 +749,7 @@ describe("EndToEnd", () => {
 
         it("creates directory when nonexistent", (done) => {
             lstat.restore();
-            sandbox.stub(fs, 'lstat').yields({ code: "ENOENT" }, null);
+            sandbox.stub(FileSystemHelper, 'lstatAsync').throws({ code: "ENOENT" });
             var client = new AppInsights.TelemetryClient("key");
             client.channel.setUseDiskRetryCaching(true);
 

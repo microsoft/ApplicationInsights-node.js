@@ -1,87 +1,56 @@
 import * as fs from "fs";
 import path = require("path");
+import { promisify } from "util";
+
+export const statAsync = promisify(fs.stat);
+export const lstatAsync = promisify(fs.lstat);
+export const mkdirAsync = promisify(fs.mkdir);
+export const accessAsync = promisify(fs.access);
+export const appendFileAsync = promisify(fs.appendFile);
+export const writeFileAsync = promisify(fs.writeFile);
+export const readFileAsync = promisify(fs.readFile);
+export const readdirAsync = promisify(fs.readdir);
+export const unlinkAsync = promisify(fs.unlink);
 
 /**
  * Validate directory exists.
  */
-export const confirmDirExists = (directory: string, callback: (err: NodeJS.ErrnoException) => void) => {
-    fs.lstat(directory, (err, stats) => {
-        if (err && err.code === 'ENOENT') {
-            fs.mkdir(directory, (createDirErr) => {
-                if (createDirErr && createDirErr.code !== 'EEXIST') { // Handle race condition by ignoring EEXIST
-                    callback(createDirErr);
-
+export const confirmDirExists = async (directory: string): Promise<void> => {
+    try {
+        const stats = await lstatAsync(directory);
+        if (!stats.isDirectory()) {
+            throw new Error("Path existed but was not a directory");
+        }
+    } catch (err) {
+        if (err && err.code === "ENOENT") {
+            try {
+                await mkdirAsync(directory);
+            } catch (mkdirErr) {
+                if (mkdirErr && mkdirErr.code !== "EEXIST") {
+                    // Handle race condition by ignoring EEXIST
+                    throw mkdirErr;
                 }
-            });
-        } else if (!err && !stats.isDirectory()) {
-            callback(err || new Error("Path existed but was not a directory"));
-        }
-        callback(null);
-    });
-}
-
-/**
-     * Computes the size (in bytes) of all files in a directory at the root level. Asynchronously.
-     */
-export const getShallowDirectorySize = (directory: string, callback: (err: NodeJS.ErrnoException, size: number) => void) => {
-    // Get the directory listing
-    fs.readdir(directory, (err, files) => {
-        if (err) {
-            return callback(err, -1);
-        }
-
-        let error: NodeJS.ErrnoException = null;
-        let totalSize = 0;
-        let count = 0;
-
-        if (files.length === 0) {
-            callback(null, 0);
-            return;
-        }
-
-        // Query all file sizes
-        for (let i = 0; i < files.length; i++) {
-            fs.stat(path.join(directory, files[i]), (err, fileStats) => {
-                count++;
-
-                if (err) {
-                    error = err;
-                } else {
-                    if (fileStats.isFile()) {
-                        totalSize += fileStats.size;
-                    }
-                }
-
-                if (count === files.length) {
-                    // Did we get an error?
-                    if (error) {
-                        callback(error, -1);
-                    } else {
-                        callback(error, totalSize);
-                    }
-                }
-            });
-        }
-    });
-}
-
-/**
-* Computes the size (in bytes) of a file asynchronously.
-*/
-export const getShallowFileSize = (file: string, callback: (err: NodeJS.ErrnoException, size: number) => void) => {
-    // Get the file stats
-    fs.stat(file, (err, fileStats) => {
-        let totalSize = 0;
-        if (err) {
-            return callback(err, -1);
-        } else {
-            if (fileStats.isFile()) {
-                totalSize += fileStats.size;
             }
         }
-        callback(null, totalSize);
-    });
-}
+    }
+};
+
+/**
+ * Computes the size (in bytes) of all files in a directory at the root level. Asynchronously.
+ */
+export const getShallowDirectorySize = async (directory: string): Promise<number> => {
+    // Get the directory listing
+    const files = await readdirAsync(directory);
+    let totalSize = 0;
+    // Query all file sizes
+    for (const file of files) {
+        const fileStats = await statAsync(path.join(directory, file));
+        if (fileStats.isFile()) {
+            totalSize += fileStats.size;
+        }
+    }
+    return totalSize;
+};
 
 /**
 * Computes the size (in bytes) of all files in a directory at the root level. Synchronously.
@@ -94,3 +63,14 @@ export const getShallowDirectorySizeSync = (directory: string): number => {
     }
     return totalSize;
 }
+
+/**
+* Computes the size (in bytes) of a file asynchronously.
+*/
+export const getShallowFileSize = async (filePath: string): Promise<number> => {
+    const fileStats = await statAsync(filePath);
+    if (fileStats.isFile()) {
+        return fileStats.size;
+    }
+}
+

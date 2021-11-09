@@ -15,6 +15,8 @@ import Util = require("./Util");
 import { URL } from "url";
 import Logging = require("./Logging");
 import { FileAccessControl } from "./FileAccessControl";
+import { Envelope } from "../Declarations/Contracts";
+
 
 class Sender {
     private static TAG = "Sender";
@@ -322,46 +324,45 @@ class Sender {
     /**
      * Stores the payload as a json file on disk in the temp directory
      */
-    private _storeToDisk(envelopes: Contracts.EnvelopeTelemetry[]) {
-        // This will create the dir if it does not exist
-        // Default permissions on *nix are directory listing from other users but no file creations
-        Logging.info(Sender.TAG, "Checking existence of data storage directory: " + this._tempDir);
-        FileSystemHelper.confirmDirExists(this._tempDir, (directoryError) => {
-            if (directoryError) {
-                Logging.warn(Sender.TAG, "Error while checking/creating directory: " + (directoryError && directoryError.message));
-                this._onErrorHelper(directoryError);
+    private async _storeToDisk(envelopes: Contracts.EnvelopeTelemetry[]): Promise<void> {
+        try {
+            Logging.info(Sender.TAG, "Checking existence of data storage directory: " + this._tempDir);
+            await FileSystemHelper.confirmDirExists(this._tempDir);
+        }
+        catch (ex) {
+            Logging.warn(Sender.TAG, "Failed to create folder to put telemetry: " + (ex && ex.message));
+            this._onErrorHelper(ex);
+            return;
+        }
+        try {
+            await FileAccessControl.applyACLRules(this._tempDir);
+        }
+        catch (ex) {
+            Logging.warn(Sender.TAG, "Failed to apply file access control to folder: " + (ex && ex.message));
+            this._onErrorHelper(ex);
+            return;
+        }
+        try {
+            let size = await FileSystemHelper.getShallowDirectorySize(this._tempDir);
+            if (size > this._maxBytesOnDisk) {
+                Logging.warn(Sender.TAG, "Not saving data due to max size limit being met. Directory size in bytes is: " + size);
                 return;
             }
+            //create file - file name for now is the timestamp, a better approach would be a UUID but that
+            //would require an external dependency
+            var fileName = new Date().getTime() + ".ai.json";
+            var fileFullPath = path.join(this._tempDir, fileName);
 
-            // Make sure permissions are valid
-            FileAccessControl.applyACLRules(this._tempDir, (accessError) => {
-                if (accessError) {
-                    Logging.warn(Sender.TAG, "Error applying ACL rules in directory: " + (accessError && accessError.message));
-                    this._onErrorHelper(accessError);
-                    return;
-                }
-                FileSystemHelper.getShallowDirectorySize(this._tempDir, (err, size) => {
-                    if (err || size < 0) {
-                        Logging.warn(Sender.TAG, "Error while checking directory size: " + (err && err.message));
-                        this._onErrorHelper(err);
-                        return;
-                    } else if (size > this._maxBytesOnDisk) {
-                        Logging.warn(Sender.TAG, "Not saving data due to max size limit being met. Directory size in bytes is: " + size);
-                        return;
-                    }
-
-                    //create file - file name for now is the timestamp, a better approach would be a UUID but that
-                    //would require an external dependency
-                    var fileName = new Date().getTime() + ".ai.json";
-                    var fileFullPath = path.join(this._tempDir, fileName);
-
-                    // Mode 600 is w/r for creator and no read access for others (only applies on *nix)
-                    // For Windows, ACL rules are applied to the entire directory (see logic in _confirmDirExists and _applyACLRules)
-                    Logging.info(Sender.TAG, "saving data to disk at: " + fileFullPath);
-                    fs.writeFile(fileFullPath, Util.stringify(envelopes), { mode: 0o600 }, (error) => this._onErrorHelper(error));
-                });
-            });
-        });
+            // Mode 600 is w/r for creator and no read access for others (only applies on *nix)
+            // For Windows, ACL rules are applied to the entire directory (see logic in _confirmDirExists and _applyACLRules)
+            Logging.info(Sender.TAG, "saving data to disk at: " + fileFullPath);
+            FileSystemHelper.writeFileAsync(fileFullPath, Util.stringify(envelopes), { mode: 0o600 });
+        }
+        catch (ex) {
+            Logging.warn(Sender.TAG, "Failed to persist telemetry to disk: " + (ex && ex.message));
+            this._onErrorHelper(ex);
+            return;
+        }
     }
 
     /**
@@ -403,43 +404,23 @@ class Sender {
      * Check for temp telemetry files
      * reads the first file if exist, deletes it and tries to send its load
      */
-    private _sendFirstFileOnDisk(): void {
-
-        fs.exists(this._tempDir, (exists: boolean) => {
-            if (exists) {
-                fs.readdir(this._tempDir, (error, files) => {
-                    if (!error) {
-                        files = files.filter(f => path.basename(f).indexOf(".ai.json") > -1);
-                        if (files.length > 0) {
-                            var firstFile = files[0];
-                            var filePath = path.join(this._tempDir, firstFile);
-                            fs.readFile(filePath, (error, buffer) => {
-                                if (!error) {
-                                    // delete the file first to prevent double sending
-                                    fs.unlink(filePath, (error) => {
-                                        if (!error) {
-                                            try {
-                                                let envelopes: Contracts.EnvelopeTelemetry[] = JSON.parse(buffer.toString());
-                                                this.send(envelopes);
-                                            }
-                                            catch (error) {
-                                                Logging.warn(Sender.TAG, "Failed to read persisted file", error);
-                                            }
-                                        } else {
-                                            this._onErrorHelper(error);
-                                        }
-                                    });
-                                } else {
-                                    this._onErrorHelper(error);
-                                }
-                            });
-                        }
-                    } else {
-                        this._onErrorHelper(error);
-                    }
-                });
+    private async _sendFirstFileOnDisk(): Promise<void> {
+        try {
+            let files = await FileSystemHelper.readdirAsync(this._tempDir);
+            files = files.filter(f => path.basename(f).indexOf(".ai.json") > -1);
+            if (files.length > 0) {
+                var firstFile = files[0];
+                var filePath = path.join(this._tempDir, firstFile);
+                let buffer = await FileSystemHelper.readFileAsync(filePath);
+                // delete the file first to prevent double sending
+                await FileSystemHelper.unlinkAsync(filePath);
+                let envelopes: Contracts.EnvelopeTelemetry[] = JSON.parse(buffer.toString());
+                await this.send(envelopes);
             }
-        });
+        }
+        catch (err) {
+            this._onErrorHelper(err);
+        }
     }
 
     private _onErrorHelper(error: Error): void {
@@ -448,34 +429,29 @@ class Sender {
         }
     }
 
-    private _fileCleanupTask() {
-        fs.exists(this._tempDir, (exists: boolean) => {
-            if (exists) {
-                fs.readdir(this._tempDir, (error, files) => {
-                    if (!error) {
-                        files = files.filter(f => path.basename(f).indexOf(".ai.json") > -1);
-                        if (files.length > 0) {
-
-                            files.forEach(file => {
-                                // Check expiration
-                                let fileCreationDate: Date = new Date(parseInt(file.split(".ai.json")[0]));
-                                let expired = new Date(+(new Date()) - Sender.FILE_RETEMPTION_PERIOD) > fileCreationDate;
-                                if (expired) {
-                                    var filePath = path.join(this._tempDir, file);
-                                    fs.unlink(filePath, (error) => {
-                                        if (error) {
-                                            this._onErrorHelper(error);
-                                        }
-                                    });
-                                }
-                            });
-                        }
-                    } else {
-                        this._onErrorHelper(error);
+    private async _fileCleanupTask(): Promise<void> {
+        try {
+            let files = await FileSystemHelper.readdirAsync(this._tempDir);
+            files = files.filter(f => path.basename(f).indexOf(".ai.json") > -1);
+            if (files.length > 0) {
+                for (let i = 0; i < files.length; i++) {
+                    // Check expiration
+                    let fileCreationDate: Date = new Date(parseInt(files[i].split(".ai.json")[0]));
+                    let expired = new Date(+(new Date()) - Sender.FILE_RETEMPTION_PERIOD) > fileCreationDate;
+                    if (expired) {
+                        var filePath = path.join(this._tempDir, files[i]);
+                        await FileSystemHelper.unlinkAsync(filePath).catch((err) => {
+                            this._onErrorHelper(err);
+                        });
                     }
-                });
+                }
             }
-        });
+        }
+        catch (err) {
+            if (err.code != "ENOENT") {
+                this._onErrorHelper(err);
+            }
+        }
     }
 }
 

@@ -13,9 +13,10 @@ class InternalAzureLogger {
     public maxSizeBytes: number;
 
     private TAG = "Logger";
+    private _cleanupTimeOut = 60 * 30 * 1000; // 30 minutes;
+    private static _fileCleanupTimer: NodeJS.Timer = null;
     private _tempDir: string;
     public _logFileName: string;
-    private _fileBackupsCount: number;
     private _fileFullPath: string;
     private _backUpNameFormat: string;
 
@@ -31,10 +32,8 @@ class InternalAzureLogger {
             logToFile = true;
             logToConsole = false;
         }
-
         this.maxSizeBytes = 50000;
         this.maxHistory = 1;
-        this._fileBackupsCount = 0;
         this._logFileName = "applicationinsights.log";
 
         // If custom path not provided use temp folder, /tmp for *nix and USERDIR/AppData/Local/Temp for Windows
@@ -62,9 +61,13 @@ class InternalAzureLogger {
                 console.log(...args);
             }
         };
-
         this.logger = createClientLogger('ApplicationInsights');
-        this._getCurrentLogsCount();
+        if (logToFile) {
+            if (!InternalAzureLogger._fileCleanupTimer) {
+                InternalAzureLogger._fileCleanupTimer = setInterval(() => { this._fileCleanupTask(); }, this._cleanupTimeOut);
+                InternalAzureLogger._fileCleanupTimer.unref();
+            }
+        }
     }
 
     static getInstance() {
@@ -74,154 +77,82 @@ class InternalAzureLogger {
         return InternalAzureLogger._instance;
     }
 
-    private _getCurrentLogsCount() {
-        // Get the directory listing
-        fs.readdir(this._tempDir, (readErr, files) => {
-            if (!readErr) {
-                files = files.filter(f => path.basename(f).indexOf(this._backUpNameFormat) > -1);
-                this._fileBackupsCount = files.length;
+    private async _storeToDisk(args: any): Promise<void> {
+        let data = args + "\r\n";
+
+        try {
+            await FileSystemHelper.confirmDirExists(this._tempDir);
+        }
+        catch (err) {
+            console.log(this.TAG, "Failed to create directory for log file: " + (err && err.message));
+            return;
+        }
+        try {
+            await FileSystemHelper.accessAsync(this._fileFullPath, fs.constants.F_OK);
+        }
+        catch (err) {
+            // No file create one  
+            await FileSystemHelper.appendFileAsync(this._fileFullPath, data).catch((appendError) => {
+                console.log(this.TAG, "Failed to put log into file: " + (appendError && appendError.message));
+            });
+            return;
+        }
+        try {
+            // Check size
+            let size = await FileSystemHelper.getShallowFileSize(this._fileFullPath);
+            if (size > this.maxSizeBytes) {
+                await this._createBackupFile(data);
             }
-        });
+            else {
+                await FileSystemHelper.appendFileAsync(this._fileFullPath, data);
+            }
+        }
+        catch (err) {
+            console.log(this.TAG, "Failed to create backup file: " + (err && err.message));
+        }
     }
 
-    private _storeToDisk(args: any, cb?: (err: NodeJS.ErrnoException) => void) {
-        let data = args + "\r\n";
-        let callback = cb ? cb : (err: NodeJS.ErrnoException) => {
-            if (err) {
-                console.log(this.TAG, "Error saving log to disk: " + (err && err.message));
-            }
-        };
-        FileSystemHelper.confirmDirExists(this._tempDir, (error) => {
-            if (error) {
-                callback(error);
-                return;
-            }
+    private async _createBackupFile(data: string): Promise<void> {
+        try {
+            let buffer = await FileSystemHelper.readFileAsync(this._fileFullPath);
+            let backupPath = path.join(this._tempDir, new Date().getTime() + "." + this._logFileName);
+            await FileSystemHelper.writeFileAsync(backupPath, buffer);
+        }
+        catch (err) {
+            console.log(`Failed to generate backup log file`, err);
+        }
+        finally {
+            // Store logs
+            FileSystemHelper.writeFileAsync(this._fileFullPath, data);
+        }
+    }
 
-            fs.access(this._fileFullPath, fs.constants.F_OK, (accessErr) => {
-                if (accessErr) {
-                    //No file create one  
-                    fs.appendFile(this._fileFullPath, data, (writeError) => {
-                        callback(writeError);
-                    });
+    private async _fileCleanupTask(): Promise<void> {
+        try {
+            let files = await FileSystemHelper.readdirAsync(this._tempDir);
+            // Filter only backup files
+            files = files.filter(f => path.basename(f).indexOf(this._backUpNameFormat) > -1);
+            // Sort by creation date
+            files.sort((a: string, b: String) => {
+                // Check expiration
+                let aCreationDate: Date = new Date(parseInt(a.split(this._backUpNameFormat)[0]));
+                let bCreationDate: Date = new Date(parseInt(b.split(this._backUpNameFormat)[0]));
+                if (aCreationDate < bCreationDate) {
+                    return -1;
                 }
-                else {
-                    FileSystemHelper.getShallowFileSize(this._fileFullPath, (sizeError, size) => {
-                        if (sizeError || size < 0) {
-                            callback(sizeError);
-                            return;
-                        }
-                        // File limit reached 
-                        else if (size > this.maxSizeBytes) {
-                            // Backup file
-                            if (this.maxHistory > 0) {
-
-                                this._createBackupFile(data, (backupErr) => {
-                                    if (backupErr) {
-                                        callback(backupErr);
-                                    }
-                                    else {
-                                        if (this._fileBackupsCount > this.maxHistory) {
-                                            this._fileCleanupTask((deleteError) => {
-                                                callback(deleteError);
-                                            });
-                                        }else{
-                                            callback(null);
-                                        }
-                                    }
-                                });
-                            }
-                            else {
-                                // No backups overwrite file
-                                fs.writeFile(this._fileFullPath, data, (writeError) => {
-                                    callback(writeError);
-                                });
-                            }
-                        }
-                        // No limit reached append to file
-                        else {
-                            fs.appendFile(this._fileFullPath, data, (writeError) => {
-                                callback(writeError);
-                            });
-                        }
-                    });
+                if (aCreationDate >= bCreationDate) {
+                    return 1;
                 }
             });
-        });
-    }
-
-    private _createBackupFile(data: string, callback: (err: NodeJS.ErrnoException) => void) {
-        this._fileBackupsCount++;
-        let backupPath = new Date().getTime() + "." + this._logFileName;
-        fs.rename(this._fileFullPath, path.join(this._tempDir, backupPath), (renameError) => {
-            if (renameError) {
-                callback(renameError);
-                return;
+            let totalFiles = files.length;
+            for (let i = 0; i < totalFiles - this.maxHistory; i++) {
+                let pathToDelete = path.join(this._tempDir, files[i]);
+                await FileSystemHelper.unlinkAsync(pathToDelete);
             }
-            if (this._fileBackupsCount > this.maxHistory) {
-                // Delete older file
-                this._fileCleanupTask((cleanUpError) => {
-                    if (cleanUpError) {
-                        fs.writeFile(this._fileFullPath, data, (writeError) => {
-                            if (writeError) {
-                                callback(writeError);
-                                return;
-                            }
-                            callback(null);
-                        });
-                    }
-                });
-            } else {
-                fs.writeFile(this._fileFullPath, data, (writeError) => {
-                    if (writeError) {
-                        callback(writeError);
-                        return;
-                    }
-                    callback(null);
-                });
-            }
-        });
-    }
-
-    private _fileCleanupTask(callback: (err: NodeJS.ErrnoException) => void) {
-        fs.exists(this._tempDir, (exists: boolean) => {
-            if (exists) {
-                fs.readdir(this._tempDir, (readError, files) => {
-                    if (!readError) {
-                        files = files.filter(f => path.basename(f).indexOf(this._backUpNameFormat) > -1);
-                        if (files.length > 0) {
-                            let oldestFile = "";
-                            let oldestDate = new Date();
-
-                            files.forEach(file => {
-                                // Check expiration
-                                let fileCreationDate: Date = new Date(parseInt(file.split(this._backUpNameFormat)[0]));
-                                if (fileCreationDate < oldestDate) {
-                                    oldestDate = fileCreationDate;
-                                    oldestFile = file;
-                                }
-                            });
-                            if (oldestFile) {
-                                var filePath = path.join(this._tempDir, oldestFile);
-                                fs.unlink(filePath, (deleteError) => {
-                                    if (deleteError) {
-                                        console.log(this.TAG, "Failed to delete backup log file: " + deleteError);
-                                    } else {
-                                        this._fileBackupsCount--;
-                                    }
-                                    callback(deleteError);
-                                });
-                            } else {
-                                callback(null);
-                            }
-
-                        }
-                    } else {
-                        console.log(this.TAG, "Failed to read backup files folder: " + readError);
-                        callback(readError);
-                    }
-                });
-            }
-        });
+        }
+        catch (err) {
+            console.log(this.TAG, "Failed to cleanup log files: " + (err && err.message));
+        }
     }
 }
 

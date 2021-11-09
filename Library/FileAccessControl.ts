@@ -40,33 +40,28 @@ export class FileAccessControl {
         }
     }
 
-    public static applyACLRules(directory: string, callback: (err: Error) => void) {
-        if (!FileAccessControl.USE_ICACLS) {
-            return callback(null);
-        }
-
-        // For performance, only run ACL rules if we haven't already during this session
-        if (FileAccessControl.ACLED_DIRECTORIES[directory] === undefined) {
-            // Avoid multiple calls race condition by setting ACLED_DIRECTORIES to false for this directory immediately
-            // If batches are being failed faster than the processes spawned below return, some data won't be stored to disk
-            // This is better than the alternative of potentially infinitely spawned processes
-            FileAccessControl.ACLED_DIRECTORIES[directory] = false;
-
-            // Restrict this directory to only current user and administrator access
-            this._getACLIdentity((err, identity) => {
-                if (err) {
-                    FileAccessControl.ACLED_DIRECTORIES[directory] = false; // false is used to cache failed (vs undefined which is "not yet tried")
-                    return callback(err);
-                } else {
-                    this._runICACLS(this._getACLArguments(directory, identity), (err) => {
-                        FileAccessControl.ACLED_DIRECTORIES[directory] = !err;
-                        return callback(err);
-                    });
+    public static async applyACLRules(directory: string): Promise<void> {
+        if (FileAccessControl.USE_ICACLS) {
+            if (FileAccessControl.ACLED_DIRECTORIES[directory] === undefined) {
+                // Avoid multiple calls race condition by setting ACLED_DIRECTORIES to false for this directory immediately
+                // If batches are being failed faster than the processes spawned below return, some data won't be stored to disk
+                // This is better than the alternative of potentially infinitely spawned processes
+                FileAccessControl.ACLED_DIRECTORIES[directory] = false;
+                try {
+                    // Restrict this directory to only current user and administrator access
+                    let identity = await this._getACLIdentity();
+                    await this._runICACLS(this._getACLArguments(directory, identity));
+                    FileAccessControl.ACLED_DIRECTORIES[directory] = true;
                 }
-            });
-        } else {
-            return callback(FileAccessControl.ACLED_DIRECTORIES[directory] ? null :
-                new Error("Setting ACL restrictions did not succeed (cached result)"));
+                catch (ex) {
+                    FileAccessControl.ACLED_DIRECTORIES[directory] = false; // false is used to cache failed (vs undefined which is "not yet tried")
+                    throw ex;
+                }
+            } else {
+                if (!FileAccessControl.ACLED_DIRECTORIES[directory]) {
+                    throw new Error("Setting ACL restrictions did not succeed (cached result)");
+                }
+            }
         }
     }
 
@@ -83,11 +78,18 @@ export class FileAccessControl {
         }
     }
 
-    private static _runICACLS(args: string[], callback: (err: Error) => void) {
-        var aclProc = child_process.spawn(FileAccessControl.ICACLS_PATH, args, <any>{ windowsHide: true });
-        aclProc.on("error", (e: Error) => callback(e));
-        aclProc.on("close", (code: number, signal: string) => {
-            return callback(code === 0 ? null : new Error(`Setting ACL restrictions did not succeed (ICACLS returned code ${code})`));
+    private static _runICACLS(args: string[]): Promise<void> {
+        return new Promise((resolve, reject) => {
+            var aclProc = child_process.spawn(FileAccessControl.ICACLS_PATH, args, <any>{ windowsHide: true });
+            aclProc.on("error", (e: Error) => reject(e));
+            aclProc.on("close", (code: number, signal: string) => {
+                if (code === 0) {
+                    resolve();
+                }
+                else {
+                    reject(new Error(`Setting ACL restrictions did not succeed (ICACLS returned code ${code})`));
+                }
+            });
         });
     }
 
@@ -105,23 +107,28 @@ export class FileAccessControl {
         }
     }
 
-    private static _getACLIdentity(callback: (error: Error, identity: string) => void) {
-        if (FileAccessControl.ACL_IDENTITY) {
-            return callback(null, FileAccessControl.ACL_IDENTITY);
-        }
-        var psProc = child_process.spawn(FileAccessControl.POWERSHELL_PATH,
-            ["-Command", "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name"], <any>{
-                windowsHide: true,
-                stdio: ['ignore', 'pipe', 'pipe'] // Needed to prevent hanging on Win 7
+    private static _getACLIdentity(): Promise<string> {
+        return new Promise((resolve, reject) => {
+            if (FileAccessControl.ACL_IDENTITY) {
+                resolve(FileAccessControl.ACL_IDENTITY);
+            }
+            var psProc = child_process.spawn(FileAccessControl.POWERSHELL_PATH,
+                ["-Command", "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name"], <any>{
+                    windowsHide: true,
+                    stdio: ['ignore', 'pipe', 'pipe'] // Needed to prevent hanging on Win 7
+                });
+            let data = "";
+            psProc.stdout.on("data", (d: string) => data += d);
+            psProc.on("error", (e: Error) => reject(e));
+            psProc.on("close", (code: number, signal: string) => {
+                FileAccessControl.ACL_IDENTITY = data && data.trim();
+                if (code === 0) {
+                    resolve(FileAccessControl.ACL_IDENTITY);
+                }
+                else {
+                    reject(new Error(`Getting ACL identity did not succeed (PS returned code ${code})`));
+                }
             });
-        let data = "";
-        psProc.stdout.on("data", (d: string) => data += d);
-        psProc.on("error", (e: Error) => callback(e, null));
-        psProc.on("close", (code: number, signal: string) => {
-            FileAccessControl.ACL_IDENTITY = data && data.trim();
-            return callback(
-                code === 0 ? null : new Error(`Getting ACL identity did not succeed (PS returned code ${code})`),
-                FileAccessControl.ACL_IDENTITY);
         });
     }
 

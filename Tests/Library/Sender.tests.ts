@@ -1,5 +1,4 @@
 import assert = require("assert");
-import fs = require("fs");
 import https = require("https");
 import sinon = require("sinon");
 import nock = require("nock");
@@ -13,6 +12,7 @@ import Util = require("../../Library/Util");
 import Statsbeat = require("../../AutoCollection/Statsbeat");
 import Logging = require("../../Library/Logging");
 import { FileAccessControl } from "../../Library/FileAccessControl";
+import FileSystemHelper = require("../../Library/FileSystemHelper");
 
 class SenderMock extends Sender {
     public getResendInterval() {
@@ -278,7 +278,7 @@ describe("Library/Sender", () => {
         });
 
         it("must clean old files from temp location", (done) => {
-            var deleteSpy = sandbox.spy(fs, "unlink");
+            var deleteSpy = sandbox.spy(FileSystemHelper, "unlinkAsync");
             sender = new Sender(new Config("3bb33333-bbbb-1ccc-8ddd-eeeeffff3333"));
             FileAccessControl["USE_ICACLS"] = false;
             (<any>sender.constructor).CLEANUP_TIMEOUT = 500;

@@ -1,10 +1,9 @@
 import assert = require("assert");
 import fs = require("fs");
-import os = require("os");
-import path = require("path");
 import sinon = require("sinon");
 
 import InternalAzureLogger = require("../../Library/InternalAzureLogger");
+import FileSystemHelper = require("../../Library/FileSystemHelper");
 
 describe("Library/InternalAzureLogger", () => {
 
@@ -12,33 +11,22 @@ describe("Library/InternalAzureLogger", () => {
 
     before(() => {
         sandbox = sinon.sandbox.create();
+    });
+
+    beforeEach(() => {
         InternalAzureLogger["_instance"] = null;
+        InternalAzureLogger["_fileCleanupTimer"] = setInterval(() => { }, 0);
     });
 
     afterEach(() => {
         sandbox.restore();
     });
 
-    after(() => {
-        // Clean files
-        try {
-            let tempDir = path.join(os.tmpdir(), "appInsights-node");
-            if (fs.existsSync(tempDir)) {
-                let files = fs.readdirSync(tempDir);
-                if (files) {
-                    files.forEach(file => {
-                        var filePath = path.join(tempDir, file);
-                        fs.unlinkSync(filePath);
-                    });
-                }
-            }
-        }
-        catch (ex) { }
-    })
-
     describe("Write to file", () => {
+
         let internalLogger: InternalAzureLogger = null;
         var originalEnv = process.env["APPLICATIONINSIGHTS_LOG_DESTINATION"];
+
         before(() => {
             process.env["APPLICATIONINSIGHTS_LOG_DESTINATION"] = "file";
             internalLogger = InternalAzureLogger.getInstance();
@@ -49,53 +37,78 @@ describe("Library/InternalAzureLogger", () => {
         })
 
         it("should log message to file", (done) => {
-            var writeSpy = sandbox.spy(fs, "appendFile");
-            internalLogger["_storeToDisk"]("testMessage", (error) => {
-                assert.equal(error, null);
+            var writeSpy = sandbox.spy(FileSystemHelper, "appendFileAsync");
+            internalLogger["_storeToDisk"]("testMessage").then(() => {
                 assert.ok(writeSpy.called);
+                assert.ok(writeSpy.lastCall.args[0].indexOf("applicationinsights.log") > 0);
+                assert.equal(writeSpy.lastCall.args[1], "testMessage\r\n");
                 done();
-            });
+            }).catch((error) => { done(error); });
         });
 
         it("should create backup file", (done) => {
-            var writeSpy = sandbox.spy(fs, "writeFile");
-            var renameSpy = sandbox.spy(fs, "rename");
+            var writeSpy = sandbox.spy(FileSystemHelper, "writeFileAsync");
+            var readSpy = sandbox.spy(FileSystemHelper, "readFileAsync");
             internalLogger.maxSizeBytes = 0;
-            internalLogger["_storeToDisk"]("testMessage", (error) => {
-                assert.equal(error, null);
-                assert.ok(writeSpy.calledOnce);
-                assert.ok(renameSpy.calledOnce);
-                assert.equal(writeSpy.lastCall.args[0], renameSpy.lastCall.args[0]);
-                assert.notEqual(writeSpy.lastCall.args[0], renameSpy.lastCall.args[1]);
+            internalLogger["_storeToDisk"]("backupTestMessage").then(() => {
+                assert.ok(readSpy.calledOnce);
+                assert.ok(writeSpy.calledTwice);
+                //assert.equal(writeSpy.args[0][0], "C:\Users\hectorh\AppData\Local\Temp\appInsights-node\1636481017787.applicationinsights.log"); // Backup file format
+                assert.ok(typeof writeSpy.args[0][1]);
+                //assert.equal(writeSpy.args[1][0], "C:\Users\hectorh\AppData\Local\Temp\appInsights-node\applicationinsights.log"); // Main file format
+                assert.equal(writeSpy.args[1][1], "backupTestMessage\r\n");
                 done();
-            });
+            }).catch((error) => { done(error); });
         });
 
         it("should create multiple backup files", (done) => {
-            var writeSpy = sandbox.spy(fs, "writeFile");
-            var renameSpy = sandbox.spy(fs, "rename");
-            internalLogger["_fileBackupsCount"] = 0;
+            var writeSpy = sandbox.spy(FileSystemHelper, "writeFileAsync");
+            var readSpy = sandbox.spy(FileSystemHelper, "readFileAsync");
             internalLogger.maxSizeBytes = 0;
             internalLogger.maxHistory = 2;
-            internalLogger["_storeToDisk"]("testMessage", (error) => {
-                internalLogger["_storeToDisk"]("testMessage", (error) => {
-                    assert.equal(error, null);
-                    assert.ok(writeSpy.calledTwice);
-                    assert.ok(renameSpy.calledTwice);
+            internalLogger["_storeToDisk"]("testMessage").then(() => {
+                internalLogger["_storeToDisk"]("testMessage").then(() => {
+                    assert.equal(writeSpy.callCount, 4);
+                    assert.ok(readSpy.calledTwice);
+                    done();
+                }).catch((error) => { done(error); });
+            }).catch((error) => { done(error); });
+        });
+
+        it("should start file cleanup task", () => {
+            InternalAzureLogger["_fileCleanupTimer"] = null;
+            var setIntervalSpy = sandbox.spy(global, "setInterval");
+            internalLogger = InternalAzureLogger.getInstance();
+            assert.ok(setIntervalSpy.called);
+        });
+
+        it("should remove backup files", (done) => {
+            var unlinkSpy = sandbox.spy(FileSystemHelper, "unlinkAsync");
+            internalLogger.maxHistory = 0;
+            internalLogger["_fileCleanupTask"]().then(() => {
+                assert.ok(unlinkSpy.called);
+                FileSystemHelper.readdirAsync(internalLogger["_tempDir"]).then((files) => {
+                    assert.equal(files.length, 1);
                     done();
                 });
             });
         });
 
-        it("should remove backup file", (done) => {
-            var unlinkSpy = sandbox.spy(fs, "unlink");
-            internalLogger["_fileCleanupTask"]((error) => {
-                assert.equal(error, null);
-                assert.ok(unlinkSpy.called);
-                done();
-            });
+        it("cleanup should keep configured number of backups", (done) => {
+            var unlinkSpy = sandbox.spy(FileSystemHelper, "unlinkAsync");
+            internalLogger.maxHistory = 1;
+            internalLogger.maxSizeBytes = 0;
+            internalLogger["_storeToDisk"]("testMessage").then(() => {
+                internalLogger["_storeToDisk"]("testMessage").then(() => {
+                    internalLogger["_fileCleanupTask"]().then(() => {
+                        assert.ok(unlinkSpy.called);
+                        FileSystemHelper.readdirAsync(internalLogger["_tempDir"]).then((files) => {
+                            assert.equal(files.length, 2);
+                            done();
+                        }).catch((error) => { done(error); });
+                    }).catch((error) => { done(error); });
+                }).catch((error) => { done(error); });
+            }).catch((error) => { done(error); });
         });
-
     });
-
 });
