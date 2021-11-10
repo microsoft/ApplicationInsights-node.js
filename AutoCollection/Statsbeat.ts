@@ -164,47 +164,45 @@ class Statsbeat {
     }
 
     public async trackShortIntervalStatsbeats() {
-        this._getResourceProvider(async () => {
-            let networkProperties = {
-                "os": this._os,
-                "rp": this._resourceProvider,
-                "cikey": this._cikey,
-                "runtimeVersion": this._runtimeVersion,
-                "language": this._language,
-                "version": this._sdkVersion,
-                "attach": this._attach,
-            }
-            this._trackRequestDuration(networkProperties);
-            this._trackRequestsCount(networkProperties);
-            await this._sendStatsbeats();
-        });
+        await this._getResourceProvider();
+        let networkProperties = {
+            "os": this._os,
+            "rp": this._resourceProvider,
+            "cikey": this._cikey,
+            "runtimeVersion": this._runtimeVersion,
+            "language": this._language,
+            "version": this._sdkVersion,
+            "attach": this._attach,
+        }
+        this._trackRequestDuration(networkProperties);
+        this._trackRequestsCount(networkProperties);
+        await this._sendStatsbeats();
     }
 
     public async trackLongIntervalStatsbeats() {
-        this._getResourceProvider(async () => {
-            let commonProperties = {
-                "os": this._os,
-                "rp": this._resourceProvider,
-                "cikey": this._cikey,
-                "runtimeVersion": this._runtimeVersion,
-                "language": this._language,
-                "version": this._sdkVersion,
-                "attach": this._attach,
-            };
-            let attachProperties = Object.assign({
-                "rpId": this._resourceIdentifier,
-            }, commonProperties);
-            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.ATTACH, value: 1, properties: attachProperties });
-            if (this._instrumentation != Constants.StatsbeatInstrumentation.NONE) {// Only send if there are some instrumentations enabled
-                let instrumentationProperties = Object.assign({ "feature": this._instrumentation, "type": Constants.StatsbeatFeatureType.Instrumentation }, commonProperties);
-                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: instrumentationProperties });
-            }
-            if (this._feature != Constants.StatsbeatFeature.NONE) {// Only send if there are some features enabled
-                let featureProperties = Object.assign({ "feature": this._feature, "type": Constants.StatsbeatFeatureType.Feature }, commonProperties);
-                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: featureProperties });
-            }
-            await this._sendStatsbeats();
-        });
+        await this._getResourceProvider();
+        let commonProperties = {
+            "os": this._os,
+            "rp": this._resourceProvider,
+            "cikey": this._cikey,
+            "runtimeVersion": this._runtimeVersion,
+            "language": this._language,
+            "version": this._sdkVersion,
+            "attach": this._attach,
+        };
+        let attachProperties = Object.assign({
+            "rpId": this._resourceIdentifier,
+        }, commonProperties);
+        this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.ATTACH, value: 1, properties: attachProperties });
+        if (this._instrumentation != Constants.StatsbeatInstrumentation.NONE) {// Only send if there are some instrumentations enabled
+            let instrumentationProperties = Object.assign({ "feature": this._instrumentation, "type": Constants.StatsbeatFeatureType.Instrumentation }, commonProperties);
+            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: instrumentationProperties });
+        }
+        if (this._feature != Constants.StatsbeatFeature.NONE) {// Only send if there are some features enabled
+            let featureProperties = Object.assign({ "feature": this._feature, "type": Constants.StatsbeatFeatureType.Feature }, commonProperties);
+            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: featureProperties });
+        }
+        await this._sendStatsbeats();
     }
 
     private _getNetworkStatsbeatCounter(endpoint: number, host: string): Network.NetworkStatsbeat {
@@ -227,10 +225,9 @@ class Statsbeat {
             var currentCounter = this._networkStatsbeatCollection[i];
             currentCounter.time = +new Date;
             var intervalRequests = (currentCounter.totalRequestCount - currentCounter.lastRequestCount) || 0;
-            var elapsedMs = currentCounter.time - currentCounter.lastTime;
             var averageRequestExecutionTime = ((currentCounter.intervalRequestExecutionTime - currentCounter.lastIntervalRequestExecutionTime) / intervalRequests) || 0;
             currentCounter.lastIntervalRequestExecutionTime = currentCounter.intervalRequestExecutionTime; // reset
-            if (elapsedMs > 0 && intervalRequests > 0) {
+            if (intervalRequests > 0) {
                 // Add extra properties
                 let properties = Object.assign({ "endpoint": this._networkStatsbeatCollection[i].endpoint, "host": this._networkStatsbeatCollection[i].host }, commonProperties);
                 this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_DURATION, value: averageRequestExecutionTime, properties: properties });
@@ -292,45 +289,46 @@ class Statsbeat {
         this._runtimeVersion = process.version;
     }
 
-    private _getResourceProvider(callback: () => void) {
-        // Check resource provider
-        let waiting: boolean = false;
-        this._resourceProvider = Constants.StatsbeatResourceProvider.unknown;
-        this._resourceIdentifier = Constants.StatsbeatResourceProvider.unknown;
-
-        if (process.env.WEBSITE_SITE_NAME) { // Web apps
-            this._resourceProvider = Constants.StatsbeatResourceProvider.appsvc;
-            this._resourceIdentifier = process.env.WEBSITE_SITE_NAME;
-            if (process.env.WEBSITE_HOME_STAMPNAME) {
-                this._resourceIdentifier += "/" + process.env.WEBSITE_HOME_STAMPNAME;
-            }
-        } else if (process.env.FUNCTIONS_WORKER_RUNTIME) { // Function apps
-            this._resourceProvider = Constants.StatsbeatResourceProvider.functions;
-            if (process.env.WEBSITE_HOSTNAME) {
-                this._resourceIdentifier = process.env.WEBSITE_HOSTNAME;
-            }
-        } else if (this._config) {
-            if (this._isVM === undefined || this._isVM == true) {
-                waiting = true;
-                Vm.AzureVirtualMachine.getAzureComputeMetadata(this._config, (vmInfo) => {
-                    this._isVM = vmInfo.isVM;
-                    if (this._isVM) {
-                        this._resourceProvider = Constants.StatsbeatResourceProvider.vm;
-                        this._resourceIdentifier = vmInfo.id + "/" + vmInfo.subscriptionId;
-                        // Override OS as VM info have higher precedence
-                        if (vmInfo.osType) {
-                            this._os = vmInfo.osType;
+    private _getResourceProvider(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            // Check resource provider
+            let waiting: boolean = false;
+            this._resourceProvider = Constants.StatsbeatResourceProvider.unknown;
+            this._resourceIdentifier = Constants.StatsbeatResourceProvider.unknown;
+            if (process.env.WEBSITE_SITE_NAME) { // Web apps
+                this._resourceProvider = Constants.StatsbeatResourceProvider.appsvc;
+                this._resourceIdentifier = process.env.WEBSITE_SITE_NAME;
+                if (process.env.WEBSITE_HOME_STAMPNAME) {
+                    this._resourceIdentifier += "/" + process.env.WEBSITE_HOME_STAMPNAME;
+                }
+            } else if (process.env.FUNCTIONS_WORKER_RUNTIME) { // Function apps
+                this._resourceProvider = Constants.StatsbeatResourceProvider.functions;
+                if (process.env.WEBSITE_HOSTNAME) {
+                    this._resourceIdentifier = process.env.WEBSITE_HOSTNAME;
+                }
+            } else if (this._config) {
+                if (this._isVM === undefined || this._isVM == true) {
+                    waiting = true;
+                    Vm.AzureVirtualMachine.getAzureComputeMetadata(this._config, (vmInfo) => {
+                        this._isVM = vmInfo.isVM;
+                        if (this._isVM) {
+                            this._resourceProvider = Constants.StatsbeatResourceProvider.vm;
+                            this._resourceIdentifier = vmInfo.id + "/" + vmInfo.subscriptionId;
+                            // Override OS as VM info have higher precedence
+                            if (vmInfo.osType) {
+                                this._os = vmInfo.osType;
+                            }
                         }
-                    }
-                    callback();
-                });
-            } else {
-                this._resourceProvider = Constants.StatsbeatResourceProvider.unknown;
+                        resolve();
+                    });
+                } else {
+                    this._resourceProvider = Constants.StatsbeatResourceProvider.unknown;
+                }
             }
-        }
-        if (!waiting) {
-            callback();
-        }
+            if (!waiting) {
+                resolve();
+            }
+        });
     }
 }
 

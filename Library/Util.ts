@@ -413,6 +413,14 @@ class Util {
         return objectTypeDump + propertyValueDump;
     }
 
+    public static stringify(payload: any) {
+        try {
+            return JSON.stringify(payload);
+        } catch (error) {
+            Logging.warn("Failed to serialize payload", error, payload);
+        }
+    }
+
     private static addCorrelationIdHeaderFromString(client: TelemetryClient, response: http.ClientRequest | http.ServerResponse, correlationHeader: string) {
         const components = correlationHeader.split(",");
         const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
