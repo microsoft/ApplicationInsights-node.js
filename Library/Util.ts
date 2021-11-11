@@ -299,8 +299,8 @@ class Util {
         requestUrl: string,
         requestOptions: http.RequestOptions | https.RequestOptions,
         requestCallback: (res: http.IncomingMessage) => void,
-        useProxy= true,
-        useAgent= true): http.ClientRequest {
+        useProxy = true,
+        useAgent = true): http.ClientRequest {
 
         if (requestUrl && requestUrl.indexOf('//') === 0) {
             requestUrl = 'https:' + requestUrl;
