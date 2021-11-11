@@ -1,0 +1,159 @@
+import fs = require("fs");
+import os = require("os");
+import path = require("path");
+import { AzureLogger, setLogLevel, createClientLogger } from "@azure/logger";
+import FileSystemHelper = require("./FileSystemHelper");
+
+
+class InternalAzureLogger {
+
+    private static _instance: InternalAzureLogger;
+    public logger: AzureLogger;
+    public maxHistory: number;
+    public maxSizeBytes: number;
+
+    private TAG = "Logger";
+    private _cleanupTimeOut = 60 * 30 * 1000; // 30 minutes;
+    private static _fileCleanupTimer: NodeJS.Timer = null;
+    private _tempDir: string;
+    public _logFileName: string;
+    private _fileFullPath: string;
+    private _backUpNameFormat: string;
+
+    constructor() {
+        setLogLevel("verbose"); // Verbose so we can control log level in our side
+        let logDestination = process.env.APPLICATIONINSIGHTS_LOG_DESTINATION; // destination can be one of file, console or file+console
+        let logToFile = false;
+        let logToConsole = true;
+        if (logDestination == "file+console") {
+            logToFile = true;
+        }
+        if (logDestination == "file") {
+            logToFile = true;
+            logToConsole = false;
+        }
+        this.maxSizeBytes = 50000;
+        this.maxHistory = 1;
+        this._logFileName = "applicationinsights.log";
+
+        // If custom path not provided use temp folder, /tmp for *nix and USERDIR/AppData/Local/Temp for Windows
+        let logFilePath = process.env.APPLICATIONINSIGHTS_LOGDIR;
+        if (!logFilePath) {
+            this._tempDir = path.join(os.tmpdir(), "appInsights-node");
+        }
+        else {
+            if (path.isAbsolute(logFilePath)) {
+                this._tempDir = logFilePath;
+            }
+            else {
+                this._tempDir = path.join(process.cwd(), logFilePath);
+            }
+        }
+        this._fileFullPath = path.join(this._tempDir, this._logFileName);
+        this._backUpNameFormat = "." + this._logFileName; // {currentime}.applicationinsights.log
+
+        // Override AzureLogger to also enable logs to be stored in disk
+        AzureLogger.log = (...args) => {
+            if (logToFile) {
+                this._storeToDisk(args);
+            }
+            if (logToConsole) {
+                console.log(...args);
+            }
+        };
+        this.logger = createClientLogger('ApplicationInsights');
+        if (logToFile) {
+            if (!InternalAzureLogger._fileCleanupTimer) {
+                InternalAzureLogger._fileCleanupTimer = setInterval(() => { this._fileCleanupTask(); }, this._cleanupTimeOut);
+                InternalAzureLogger._fileCleanupTimer.unref();
+            }
+        }
+    }
+
+    static getInstance() {
+        if (!InternalAzureLogger._instance) {
+            InternalAzureLogger._instance = new InternalAzureLogger();
+        }
+        return InternalAzureLogger._instance;
+    }
+
+    private async _storeToDisk(args: any): Promise<void> {
+        let data = args + "\r\n";
+
+        try {
+            await FileSystemHelper.confirmDirExists(this._tempDir);
+        }
+        catch (err) {
+            console.log(this.TAG, "Failed to create directory for log file: " + (err && err.message));
+            return;
+        }
+        try {
+            await FileSystemHelper.accessAsync(this._fileFullPath, fs.constants.F_OK);
+        }
+        catch (err) {
+            // No file create one  
+            await FileSystemHelper.appendFileAsync(this._fileFullPath, data).catch((appendError) => {
+                console.log(this.TAG, "Failed to put log into file: " + (appendError && appendError.message));
+            });
+            return;
+        }
+        try {
+            // Check size
+            let size = await FileSystemHelper.getShallowFileSize(this._fileFullPath);
+            if (size > this.maxSizeBytes) {
+                await this._createBackupFile(data);
+            }
+            else {
+                await FileSystemHelper.appendFileAsync(this._fileFullPath, data);
+            }
+        }
+        catch (err) {
+            console.log(this.TAG, "Failed to create backup file: " + (err && err.message));
+        }
+    }
+
+    private async _createBackupFile(data: string): Promise<void> {
+        try {
+            let buffer = await FileSystemHelper.readFileAsync(this._fileFullPath);
+            let backupPath = path.join(this._tempDir, new Date().getTime() + "." + this._logFileName);
+            await FileSystemHelper.writeFileAsync(backupPath, buffer);
+        }
+        catch (err) {
+            console.log(`Failed to generate backup log file`, err);
+        }
+        finally {
+            // Store logs
+            FileSystemHelper.writeFileAsync(this._fileFullPath, data);
+        }
+    }
+
+    private async _fileCleanupTask(): Promise<void> {
+        try {
+            let files = await FileSystemHelper.readdirAsync(this._tempDir);
+            // Filter only backup files
+            files = files.filter(f => path.basename(f).indexOf(this._backUpNameFormat) > -1);
+            // Sort by creation date
+            files.sort((a: string, b: String) => {
+                // Check expiration
+                let aCreationDate: Date = new Date(parseInt(a.split(this._backUpNameFormat)[0]));
+                let bCreationDate: Date = new Date(parseInt(b.split(this._backUpNameFormat)[0]));
+                if (aCreationDate < bCreationDate) {
+                    return -1;
+                }
+                if (aCreationDate >= bCreationDate) {
+                    return 1;
+                }
+            });
+            let totalFiles = files.length;
+            for (let i = 0; i < totalFiles - this.maxHistory; i++) {
+                let pathToDelete = path.join(this._tempDir, files[i]);
+                await FileSystemHelper.unlinkAsync(pathToDelete);
+            }
+        }
+        catch (err) {
+            console.log(this.TAG, "Failed to cleanup log files: " + (err && err.message));
+        }
+    }
+}
+
+export = InternalAzureLogger;
