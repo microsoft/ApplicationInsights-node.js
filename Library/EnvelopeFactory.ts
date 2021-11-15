@@ -214,6 +214,7 @@ class EnvelopeFactory {
         metric.name = telemetry.name;
         metric.stdDev = !isNaN(telemetry.stdDev) ? telemetry.stdDev : 0;
         metric.value = telemetry.value;
+        metric.ns = telemetry.namespace;
 
         metrics.metrics.push(metric);
 
