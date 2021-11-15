@@ -16,6 +16,11 @@ export interface MetricTelemetry extends Telemetry {
     value: number;
 
     /**
+     * A string that identifies the metric namespace.
+     */
+    namespace?: string;
+
+    /**
      * Type of metric being sent, e.g. Pre-agg metrics have kind=Aggregation
      */
     kind?: string;
