@@ -7,14 +7,14 @@ import * as DiagChannelPublishers from "diagnostic-channel-publishers";
 import * as DiagChannel from "diagnostic-channel";
 import { AsyncScopeManager } from "../AsyncHooksScopeManager";
 import Logging = require("../../Library/Logging");
-import { CustomConfig } from "../../Library/CustomConfig";
+import jsonConfig from "../../Library/JsonConfig";
 
-export const IsInitialized = !CustomConfig.generateConfigurationObject().noDiagnosticChannel;
+export const IsInitialized = !jsonConfig.noDiagnosticChannel;
 const TAG = "DiagnosticChannel";
 
 if (IsInitialized) {
     const publishers: typeof DiagChannelPublishers = require("diagnostic-channel-publishers");
-    const individualOptOuts: string = CustomConfig.generateConfigurationObject().noPatchModules;
+    const individualOptOuts: string = jsonConfig.noPatchModules;
     const unpatchedModules = individualOptOuts.split(",");
     const modules: {[key: string] : any} = {
         bunyan: publishers.bunyan,

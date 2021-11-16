@@ -7,8 +7,8 @@ import Constants = require('../Declarations/Constants');
 import http = require('http');
 import https = require('https');
 import url = require('url');
-import { CustomConfig } from "./CustomConfig";
-import { ICustomConfig } from "../Library/ICustomConfig";
+import jsonConfig from "./JsonConfig";
+import { IJsonConfig } from "./IJsonConfig";
 import { DistributedTracingModes, setRetry, setLiveMetricsFlag } from "../applicationinsights";
 import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";
 
@@ -60,7 +60,7 @@ class Config {
     private _quickPulseHost: string;
     
     /** private config object that is populated from config json file */
-    private _config : ICustomConfig = CustomConfig.generateConfigurationObject();
+    private _config : IJsonConfig = jsonConfig;
 
     public enableAutoCollectConsole: boolean; // enable auto collect console
     public enableAutoCollectExceptions: boolean;

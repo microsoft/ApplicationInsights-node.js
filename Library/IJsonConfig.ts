@@ -1,14 +1,14 @@
 /**
  * Configuration settings
  * @export
- * @interface ICustomConfig
+ * @interface IJsonConfig
  */
 
 import { DistributedTracingModes } from "../applicationinsights";
 import { IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";
 import http = require('http');
 import https = require('https');
-export interface ICustomConfig {
+export interface IJsonConfig {
     connectionString?: string;
     /** The ingestion endpoint to send telemetry payloads to */
     endpointUrl: string;
@@ -64,8 +64,6 @@ export interface ICustomConfig {
     /**
      * Sets the state of performance tracking (enabled by default)
      * if true performance counters will be collected every second and sent to Application Insights
-     * @param collectExtendedMetrics if true, extended metrics counters will be collected every minute and sent to Application Insights
-     * @returns {Configuration} this class
      */
     enableAutoCollectPerformance?: boolean;
 
@@ -116,9 +114,9 @@ export interface ICustomConfig {
      * Note that this method only applies to the default client. Disk-backed retry caching is disabled by default for additional clients.
      * For enable for additional clients, use client.channel.setUseDiskRetryCaching(true).
      * These cached events are stored in your system or user's temporary directory and access restricted to your user when possible.
-     * @param enableUseDiskRetryCaching if true events that occured while client is offline will be cached on disk
-     * @param enableResendInterval The wait interval for resending cached events.
-     * @param enableMaxBytesOnDisk The maximum size (in bytes) that the created temporary directory for cache events can grow to, before caching is disabled.
+     * enableUseDiskRetryCaching if true events that occured while client is offline will be cached on disk
+     * enableResendInterval The wait interval for resending cached events.
+     * enableMaxBytesOnDisk The maximum size (in bytes) that the created temporary directory for cache events can grow to, before caching is disabled.
      */
     enableUseDiskRetryCaching?: boolean;
     enableResendInterval?: number;
@@ -136,10 +134,10 @@ export interface ICustomConfig {
      */
     enableInternalWarningLogging?: boolean;
 
-     /**
-     * Enables communication with Application Insights Live Metrics.
-     * if true, enables communication with the live metrics service
-     */
+    /**
+    * Enables communication with Application Insights Live Metrics.
+    * if true, enables communication with the live metrics service
+    */
     enableSendLiveMetrics?: boolean;
 
     disableAllExtendedMetrics?: boolean;

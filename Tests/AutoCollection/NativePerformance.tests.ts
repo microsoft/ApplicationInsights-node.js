@@ -4,14 +4,15 @@ import sinon = require("sinon");
 import AppInsights = require("../../applicationinsights");
 import TelemetryClient = require("../../Library/TelemetryClient");
 import { AutoCollectNativePerformance } from "../../AutoCollection/NativePerformance";
-import { CustomConfig, ENV_nativeMetricsDisableAll, ENV_nativeMetricsDisablers } from "../../Library/CustomConfig";
+import { ENV_nativeMetricsDisableAll, ENV_nativeMetricsDisablers, JsonConfig } from "../../Library/JsonConfig";
 
 describe("AutoCollection/NativePerformance", () => {
     var sandbox: sinon.SinonSandbox;
 
     beforeEach(() => {
         sandbox = sinon.sandbox.create();
-        CustomConfig._config = undefined;
+        // lxiao
+        // JsonConfig["_jsonConfig"] = undefined;
     });
 
     afterEach(() => {
@@ -78,13 +79,12 @@ describe("AutoCollection/NativePerformance", () => {
 
         describe("#_parseEnabled", () => {
             it("should return equal input arg if no env vars are set", () => {
-                const _customConfig = CustomConfig.generateConfigurationObject();
+                const _customConfig = new JsonConfig();
                 assert.deepEqual(AutoCollectNativePerformance.parseEnabled(true, _customConfig), { isEnabled: true, disabledMetrics: {} });
                 assert.deepEqual(AutoCollectNativePerformance.parseEnabled(false, _customConfig), { isEnabled: false, disabledMetrics: {} });
 
                 const config = { gc: true, heap: true };
                 assert.deepEqual(AutoCollectNativePerformance.parseEnabled(config, _customConfig), { isEnabled: true, disabledMetrics: config });
-                // CustomConfig._config = undefined;
             });
 
             it("should overwrite input arg if disable all extended metrics env var is set", () => {
@@ -94,7 +94,7 @@ describe("AutoCollection/NativePerformance", () => {
                 env[ENV_nativeMetricsDisableAll] = "set";
                 process.env = env;
 
-                const _customConfig = CustomConfig.generateConfigurationObject();
+                const _customConfig = new JsonConfig();
 
                 assert.deepEqual(AutoCollectNativePerformance.parseEnabled(true, _customConfig), { isEnabled: false, disabledMetrics: {} });
                 assert.deepEqual(AutoCollectNativePerformance.parseEnabled({}, _customConfig), { isEnabled: false, disabledMetrics: {} });
@@ -111,7 +111,7 @@ describe("AutoCollection/NativePerformance", () => {
                 env[ENV_nativeMetricsDisablers] = "gc,heap";
                 process.env = env;
 
-                const _customConfig = CustomConfig.generateConfigurationObject();
+                const _customConfig = new JsonConfig();
 
                 let inConfig;
 
@@ -132,7 +132,6 @@ describe("AutoCollection/NativePerformance", () => {
                 assert.deepEqual(AutoCollectNativePerformance.parseEnabled(<any>inConfig, _customConfig), { isEnabled: true, disabledMetrics: { ...inConfig, ...expectation } });
 
                 process.env = originalEnv;
-                // CustomConfig._config = undefined;
             });
         });
     }

@@ -2,7 +2,7 @@ import assert = require("assert");
 import sinon = require("sinon");
 import path = require("path");
 import AppInsights = require("../../applicationinsights");
-import { CustomConfig, ENV_connectionString, ENV_http_proxy, ENV_https_proxy, ENV_noStatsbeat } from "../../Library/CustomConfig";
+import { ENV_connectionString, ENV_http_proxy, ENV_https_proxy, ENV_noStatsbeat, JsonConfig } from "../../Library/JsonConfig";
 import Config = require("../../Library/Config");
 
 const APPLICATION_INSIGHTS_CONFIG_PATH = "APPLICATION_INSIGHTS_CONFIG_PATH";
@@ -12,7 +12,9 @@ describe("Custom Config", () => {
 
     beforeEach(() => {
         sandbox = sinon.sandbox.create();
-        CustomConfig._config = undefined;
+        AppInsights.setup("tempikey");
+        // lxiao
+        // JsonConfig["_jsonConfig"] = undefined;
     });
 
     afterEach(() => {
@@ -28,7 +30,9 @@ describe("Custom Config", () => {
             const customConfigJSONPath = path.resolve(__dirname, "../../../Tests/Config", "./config.json");
             env[APPLICATION_INSIGHTS_CONFIG_PATH] = customConfigJSONPath;
             process.env = env;
-            AppInsights.setup().start();
+            
+            sandbox.stub(AppInsights['defaultClient'].config, '_config').returns(new JsonConfig());
+            AppInsights.start();
 
             const config = new Config();
             assert.deepEqual(config.instrumentationKey, "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
@@ -68,7 +72,9 @@ describe("Custom Config", () => {
             env[ENV_https_proxy] = "testProxyHttpsUrl2";
             env[ENV_noStatsbeat] = "true";
             process.env = env;
-            AppInsights.setup().start();
+
+            sandbox.stub(AppInsights['defaultClient'].config, '_config').returns(new JsonConfig());
+            AppInsights.start();
 
             const config = new Config();
             assert.deepEqual(config.instrumentationKey, "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");

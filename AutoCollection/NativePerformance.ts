@@ -3,7 +3,7 @@ import Constants = require("../Declarations/Constants");
 import Config = require("../Library/Config");
 import Context = require("../Library/Context");
 import Logging= require("../Library/Logging");
-import { ICustomConfig } from "../Library/ICustomConfig";
+import { IJsonConfig } from "../Library/IJsonConfig";
 
 /**
  * Interface which defines which specific extended metrics should be disabled
@@ -114,7 +114,7 @@ export class AutoCollectNativePerformance {
      * @returns {(boolean | IDisabledExtendedMetrics)}
      * @memberof AutoCollectNativePerformance
      */
-    public static parseEnabled(collectExtendedMetrics: boolean | IDisabledExtendedMetrics, customConfig: ICustomConfig ): { isEnabled: boolean, disabledMetrics: IDisabledExtendedMetrics } {
+    public static parseEnabled(collectExtendedMetrics: boolean | IDisabledExtendedMetrics, customConfig: IJsonConfig ): { isEnabled: boolean, disabledMetrics: IDisabledExtendedMetrics } {
         const disableAll = customConfig.disableAllExtendedMetrics;
         const individualOptOuts = customConfig.extendedMetricDisablers;
 

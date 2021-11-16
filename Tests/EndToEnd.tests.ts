@@ -19,7 +19,7 @@ import HeartBeat = require("../AutoCollection/HeartBeat");
 import TelemetryClient = require("../Library/TelemetryClient");
 import Context = require("../Library/Context");
 import Util = require("../Library/Util");
-import { CustomConfig } from "../Library/CustomConfig";
+import jsonConfig from "../Library/JsonConfig";
 import { FileAccessControl } from "../Library/FileAccessControl";
 import FileSystemHelper = require("../Library/FileSystemHelper");
 
@@ -200,9 +200,10 @@ describe("EndToEnd", () => {
             nockScope = interceptor.reply(200, breezeResponse).persist();
         });
 
-        beforeEach(() => {
-            CustomConfig._config = undefined;
-        });
+        // lxiao
+        // beforeEach(() => {
+        //     JsonConfig["_jsonConfig"] = undefined;
+        // });
 
         afterEach(() => {
             // Dispose the default app insights client and auto collectors so that they can be reconfigured
@@ -358,9 +359,10 @@ describe("EndToEnd", () => {
             nockScope = interceptor.reply(200, breezeResponse).persist();
         });
 
-        beforeEach(() => {
-            CustomConfig._config = undefined;
-        });
+        // lxiao
+        // beforeEach(() => {
+        //     JsonConfig["_jsonConfig"] = undefined;
+        // });
 
         afterEach(() => {
             // Dispose the default app insights client and auto collectors so that they can be reconfigured
@@ -493,7 +495,8 @@ describe("EndToEnd", () => {
             if (child_process.spawnSync) {
                 spawnSync = sandbox.stub(child_process, 'spawnSync').returns({ status: 0, stdout: 'stdoutmock' });
             }
-            CustomConfig._config = undefined;
+            // lxiao
+            // JsonConfig["_jsonConfig"] = undefined;
         });
 
         afterEach(() => {
@@ -890,9 +893,10 @@ describe("EndToEnd", () => {
     });
 
     describe("Heartbeat metrics for VM", () => {
-        beforeEach(() => {
-            CustomConfig._config = undefined;
-        });
+        // lxiao
+        // beforeEach(() => {
+        //     JsonConfig["_jsonConfig"] = undefined;
+        // });
 
         afterEach(() => {
             sandbox.restore();
