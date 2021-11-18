@@ -331,9 +331,9 @@ Configuration options:
 | enableInternalDebugLogging    | Enables debug and warning logging for AppInsights itself. If true, enables debug logging |
 | enableInternalWarningLogging  | Enables debug and warning logging for AppInsights itself. If true, enables warning logging |
 | enableSendLiveMetrics         | Enables communication with Application Insights Live Metrics. If true, enables communication with the live metrics service |
-| disableAllExtendedMetrics     | Sets the distributed tracing modes (Default=AI) |
-| extendedMetricDisablers       | Sets the distributed tracing modes (Default=AI) |
-| disableStatsbeat              | Sets the distributed tracing modes (Default=AI) |
+| disableAllExtendedMetrics     | Disable all environment variables set |
+| extendedMetricDisablers       | Disable individual environment variables set. `"extendedMetricDisablers": "..."` |
+| disableStatsbeat              | Disable Statsbeat |
 | noDiagnosticChannel           | In order to track context across asynchronous calls, some changes are required in third party libraries such as mongodb and redis. By default ApplicationInsights will use diagnostic-channel-publishers to monkey-patch some of these libraries. This property is to disable the feature. Note that by setting this flag, events may no longer be correctly associated with the right operation.  |
 | noPatchModules                | Disable individual monkey-patches. Set `noPatchModules` to a comma separated list of packages to disable. e.g. `"noPatchModules": "console,redis"` to avoid patching the console and redis packages. The following modules are available: `azuresdk, bunyan, console, mongodb, mongodb-core, mysql, redis, winston, pg`, and `pg-pool`. Visit the [diagnostic-channel-publishers' README](https://github.com/microsoft/node-diagnostic-channel/blob/master/src/diagnostic-channel-publishers/README.md) for information about exactly which versions of these packages are patched. |
 | noHttpAgentKeepAlive          | HTTPS without a passed in agent |
@@ -342,11 +342,12 @@ An example of setting configuration path through environment variable:
 Create a file named `config.json`:
 ```javascript
 {
-    "connectionString": <YOUR_CONNECTION_STRING>,
+    "connectionString": "<YOUR_CONNECTION_STRING>",
     "enableAutoCollectExternalLoggers": true,
     "enableAutoCollectExceptions": true,
     "enableAutoCollectHeartbeat": true,
-    "disableStatsbeat": true
+    "disableStatsbeat": true,
+    ...
 }
   
 ```
