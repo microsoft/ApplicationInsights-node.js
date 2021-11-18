@@ -159,7 +159,7 @@ export function start() {
 function _initializeConfig() {
     _isConsole = defaultClient.config.enableAutoCollectExternalLoggers !== undefined ? defaultClient.config.enableAutoCollectExternalLoggers : _isConsole;
     _isConsoleLog = defaultClient.config.enableAutoCollectConsole !== undefined ? defaultClient.config.enableAutoCollectConsole : _isConsoleLog;
-    _isExceptions = defaultClient.config.enableAutoCollectExceptions !== undefined ? defaultClient.config.enableAutoCollectConsole : _isExceptions;
+    _isExceptions = defaultClient.config.enableAutoCollectExceptions !== undefined ? defaultClient.config.enableAutoCollectExceptions : _isExceptions;
     _isPerformance = defaultClient.config.enableAutoCollectPerformance !== undefined ? defaultClient.config.enableAutoCollectPerformance : _isPerformance;
     _isPreAggregatedMetrics = defaultClient.config.enableAutoCollectPreAggregatedMetrics !== undefined ? defaultClient.config.enableAutoCollectPreAggregatedMetrics : _isPreAggregatedMetrics;
     _isHeartBeat = defaultClient.config.enableAutoCollectHeartbeat !== undefined ? defaultClient.config.enableAutoCollectHeartbeat : _isHeartBeat;

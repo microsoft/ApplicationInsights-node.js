@@ -297,7 +297,46 @@ appInsights
 ### Configure settings through json file
 The appInsights object provides a way to make configurations through a configuration json file, by setting the config json file path through the environment variable `APPLICATION_INSIGHTS_CONFIG_PATH`.
 
-Configuration options:
+>***Note:*** configuration json file takes the highest priority over set APIs. 
+
+**Scenario 1** : `enableAutoCollectExceptions` in config.json file overrides `setAutoCollectExceptions(true)`.
+In `config.json` file:
+```javacript
+{
+    "connectionString": "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/",
+    "enableAutoCollectExceptions": false
+}
+```
+Where you start appInsights object:
+```javascript
+process.env["APPLICATION_INSIGHTS_CONFIG_PATH"] = "./config.json";
+let appInsights = require('applicationinsights');
+appInsights.setup()
+    .setAutoCollectExceptions(true)
+    .start();
+```
+Thus `autoCollectExceptions` is disabled.
+
+**Scenario 2** : You can modify `appInsights.defaultClient.config.enableAutoCollectExceptions` before appInsights calls start.
+In `config.json` file:
+```javacript
+{
+    "connectionString": "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/",
+    "enableAutoCollectExceptions": false
+}
+```
+Where you start appInsights object:
+```javascript
+process.env["APPLICATION_INSIGHTS_CONFIG_PATH"] = "./config.json";
+let appInsights = require('applicationinsights');
+appInsights.setup()
+    .setAutoCollectExceptions(true);
+appInsights.defaultClient.config.enableAutoCollectExceptions = true;
+appInsights.start();
+```
+Thus `autoCollectExceptions` is enabled.
+
+***Configuration options:***
 | Property                        | Description                                                                                                |
 | ------------------------------- |------------------------------------------------------------------------------------------------------------|
 | connectionString                | An identifier for your Application Insights resource                                                       |
