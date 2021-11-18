@@ -12,9 +12,7 @@ describe("Custom Config", () => {
 
     beforeEach(() => {
         sandbox = sinon.sandbox.create();
-        AppInsights.setup("tempikey");
-        // lxiao
-        // JsonConfig["_jsonConfig"] = undefined;
+        JsonConfig["_jsonConfig"] = undefined;
     });
 
     afterEach(() => {
@@ -30,9 +28,7 @@ describe("Custom Config", () => {
             const customConfigJSONPath = path.resolve(__dirname, "../../../Tests/Config", "./config.json");
             env[APPLICATION_INSIGHTS_CONFIG_PATH] = customConfigJSONPath;
             process.env = env;
-            
-            sandbox.stub(AppInsights['defaultClient'].config, '_config').returns(new JsonConfig());
-            AppInsights.start();
+            AppInsights.setup().start();
 
             const config = new Config();
             assert.deepEqual(config.instrumentationKey, "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
@@ -73,8 +69,8 @@ describe("Custom Config", () => {
             env[ENV_noStatsbeat] = "true";
             process.env = env;
 
-            sandbox.stub(AppInsights['defaultClient'].config, '_config').returns(new JsonConfig());
-            AppInsights.start();
+            // sandbox.stub(AppInsights['defaultClient'].config, '_jsonConfig').returns(new JsonConfig());
+            AppInsights.setup().start();
 
             const config = new Config();
             assert.deepEqual(config.instrumentationKey, "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");

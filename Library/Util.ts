@@ -8,11 +8,11 @@ import Config = require("./Config");
 import TelemetryClient = require("../Library/TelemetryClient");
 import RequestResponseHeaders = require("./RequestResponseHeaders");
 import { HttpRequest } from "../Library/Functions";
-import jsonConfig from "./JsonConfig";
+import { JsonConfig } from "./JsonConfig";
 
 
 class Util {
-    private static _useKeepAlive = !jsonConfig.noHttpAgentKeepAlive;
+    private static _useKeepAlive = !JsonConfig.getJsonConfig().noHttpAgentKeepAlive;
     private static _listenerAttached = false;
 
     public static MAX_PROPERTY_LENGTH = 8192;

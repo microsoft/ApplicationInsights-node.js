@@ -19,7 +19,7 @@ import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCo
 export import TelemetryClient = require("./Library/NodeClient");
 export import Contracts = require("./Declarations/Contracts");
 export import azureFunctionsTypes = require("./Library/Functions");
-import jsonConfig from "./Library/JsonConfig";
+import { JsonConfig } from "./Library/JsonConfig";
 
 export enum DistributedTracingModes {
     /**
@@ -133,6 +133,9 @@ export function setup(setupString?: string) {
  */
 export function start() {
     if (!!defaultClient) {
+        if (!_isStarted) {
+            _initializeConfig();
+        }
         _isStarted = true;
         _console.enable(_isConsole, _isConsoleLog);
         _exceptions.enable(_isExceptions);
@@ -154,18 +157,18 @@ export function start() {
 }
 
 function _initializeConfig() {
-    _isConsole = defaultClient.config.enableAutoCollectExternalLoggers !== undefined ? defaultClient.config.enableAutoCollectExternalLoggers : defaultConfig.isConsole();
-    _isConsoleLog = defaultClient.config.enableAutoCollectConsole !== undefined ? defaultClient.config.enableAutoCollectConsole : defaultConfig.isConsoleLog();
-    _isExceptions = defaultClient.config.enableAutoCollectExceptions !== undefined ? defaultClient.config.enableAutoCollectConsole : defaultConfig.isExceptions();
-    _isPerformance = defaultClient.config.enableAutoCollectPerformance !== undefined ? defaultClient.config.enableAutoCollectPerformance : defaultConfig.isPerformance();
-    _isPreAggregatedMetrics = defaultClient.config.enableAutoCollectPreAggregatedMetrics !== undefined ? defaultClient.config.enableAutoCollectPreAggregatedMetrics : defaultConfig.isPreAggregatedMetrics();
-    _isHeartBeat = defaultClient.config.enableAutoCollectHeartbeat !== undefined ? defaultClient.config.enableAutoCollectHeartbeat : defaultConfig.isHeartBeat();
-    _isRequests = defaultClient.config.enableAutoCollectRequests !== undefined ? defaultClient.config.enableAutoCollectRequests : defaultConfig.isRequests();
-    _isDependencies = defaultClient.config.enableAutoDependencyCorrelation !== undefined ? defaultClient.config.enableAutoDependencyCorrelation : defaultConfig.isDependencies();
-    _isCorrelating = defaultClient.config.enableAutoDependencyCorrelation !== undefined ? defaultClient.config.enableAutoDependencyCorrelation : defaultConfig.isCorrelating();
-    _forceClsHooked = defaultClient.config.enableUseAsyncHooks !== undefined ? defaultClient.config.enableUseAsyncHooks : undefined;
-    _isNativePerformance = defaultClient.config.enableNativePerformance !== undefined ? defaultClient.config.enableNativePerformance : defaultConfig.isNativePerformance();
-    _disabledExtendedMetrics = defaultClient.config.disabledExtendedMetrics !== undefined ? defaultClient.config.disabledExtendedMetrics : undefined;
+    _isConsole = defaultClient.config.enableAutoCollectExternalLoggers !== undefined ? defaultClient.config.enableAutoCollectExternalLoggers : _isConsole;
+    _isConsoleLog = defaultClient.config.enableAutoCollectConsole !== undefined ? defaultClient.config.enableAutoCollectConsole : _isConsoleLog;
+    _isExceptions = defaultClient.config.enableAutoCollectExceptions !== undefined ? defaultClient.config.enableAutoCollectConsole : _isExceptions;
+    _isPerformance = defaultClient.config.enableAutoCollectPerformance !== undefined ? defaultClient.config.enableAutoCollectPerformance : _isPerformance;
+    _isPreAggregatedMetrics = defaultClient.config.enableAutoCollectPreAggregatedMetrics !== undefined ? defaultClient.config.enableAutoCollectPreAggregatedMetrics : _isPreAggregatedMetrics;
+    _isHeartBeat = defaultClient.config.enableAutoCollectHeartbeat !== undefined ? defaultClient.config.enableAutoCollectHeartbeat : _isHeartBeat;
+    _isRequests = defaultClient.config.enableAutoCollectRequests !== undefined ? defaultClient.config.enableAutoCollectRequests : _isRequests;
+    _isDependencies = defaultClient.config.enableAutoDependencyCorrelation !== undefined ? defaultClient.config.enableAutoDependencyCorrelation : _isDependencies;
+    _isCorrelating = defaultClient.config.enableAutoDependencyCorrelation !== undefined ? defaultClient.config.enableAutoDependencyCorrelation : _isCorrelating;
+    _forceClsHooked = defaultClient.config.enableUseAsyncHooks !== undefined ? defaultClient.config.enableUseAsyncHooks : _forceClsHooked;
+    _isNativePerformance = defaultClient.config.enableNativePerformance !== undefined ? defaultClient.config.enableNativePerformance : _isNativePerformance;
+    _disabledExtendedMetrics = defaultClient.config.disabledExtendedMetrics !== undefined ? defaultClient.config.disabledExtendedMetrics : _disabledExtendedMetrics;
 }
 
 export function setRetry(setUseDiskRetryCaching: boolean, setResendInterval: number, setMaxBytesOnDisk: number) {
@@ -297,7 +300,7 @@ export class Configuration {
      */
     public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: boolean | IDisabledExtendedMetrics = true) {
         _isPerformance = value;
-        const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(collectExtendedMetrics, jsonConfig);
+        const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(collectExtendedMetrics, JsonConfig.getJsonConfig());
         _isNativePerformance = extendedMetricsConfig.isEnabled;
         _disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
         if (_isStarted) {

@@ -6,7 +6,7 @@ var https = require("https");
 import Config = require("../../Library/Config");
 import Constants = require("../../Declarations/Constants");
 
-import { ENV_connectionString  } from "../../Library/JsonConfig";
+import { ENV_connectionString, JsonConfig } from "../../Library/JsonConfig";
 
 
 describe("Library/Config", () => {
@@ -14,10 +14,9 @@ describe("Library/Config", () => {
     var iKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
     var appVer = "appVer";
 
-    // lxiao
-    // beforeEach(() => {
-    //     JsonConfig["_jsonConfig"] = undefined;
-    // });
+    beforeEach(() => {
+        JsonConfig["_jsonConfig"] = undefined;
+    });
 
     describe("#constructor", () => {
         describe("connection string && API && environment variable prioritization", () => {
@@ -134,7 +133,7 @@ describe("Library/Config", () => {
             it("should initialize values that we claim in README (2)", () => {
                 process.env.http_proxy = "test";
                 process.env.https_proxy = "test2";
-                // JsonConfig["_jsonConfig"] = undefined; lxiao
+                JsonConfig["_jsonConfig"] = undefined;
                 var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert(config.proxyHttpUrl === "test");
                 assert(config.proxyHttpsUrl === "test2");
