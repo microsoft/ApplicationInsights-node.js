@@ -4,8 +4,10 @@ import sinon = require("sinon");
 import AppInsights = require("../../applicationinsights");
 import TelemetryClient = require("../../Library/TelemetryClient");
 import { AutoCollectNativePerformance } from "../../AutoCollection/NativePerformance";
-import { ENV_nativeMetricsDisableAll, ENV_nativeMetricsDisablers, JsonConfig } from "../../Library/JsonConfig";
+import { JsonConfig } from "../../Library/JsonConfig";
 
+const ENV_nativeMetricsDisablers = "APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC";
+const ENV_nativeMetricsDisableAll = "APPLICATION_INSIGHTS_DISABLE_ALL_EXTENDED_METRICS";
 describe("AutoCollection/NativePerformance", () => {
     var sandbox: sinon.SinonSandbox;
 

@@ -6,8 +6,9 @@ var https = require("https");
 import Config = require("../../Library/Config");
 import Constants = require("../../Declarations/Constants");
 
-import { ENV_connectionString, JsonConfig } from "../../Library/JsonConfig";
+import { JsonConfig } from "../../Library/JsonConfig";
 
+const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
 
 describe("Library/Config", () => {
 

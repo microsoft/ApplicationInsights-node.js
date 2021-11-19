@@ -2,10 +2,14 @@ import assert = require("assert");
 import sinon = require("sinon");
 import path = require("path");
 import AppInsights = require("../../applicationinsights");
-import { ENV_connectionString, ENV_http_proxy, ENV_https_proxy, ENV_noStatsbeat, JsonConfig } from "../../Library/JsonConfig";
+import { JsonConfig } from "../../Library/JsonConfig";
 import Config = require("../../Library/Config");
 
 const APPLICATION_INSIGHTS_CONFIG_PATH = "APPLICATION_INSIGHTS_CONFIG_PATH";
+const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
+const ENV_http_proxy = "http_proxy";
+const ENV_https_proxy = "https_proxy";
+const ENV_noStatsbeat = "APPLICATION_INSIGHTS_NO_STATSBEAT";
 
 describe("Custom Config", () => {
     var sandbox: sinon.SinonSandbox;
