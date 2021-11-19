@@ -23,6 +23,7 @@ import { Tags } from "../Declarations/Contracts";
  * and manually trigger immediate sending (flushing)
  */
 class TelemetryClient {
+    private static TAG = "TelemetryClient";
     private _telemetryProcessors: { (envelope: Contracts.EnvelopeTelemetry, contextObjects: { [name: string]: any; }): boolean; }[] = [];
     private _enableAzureProperties: boolean = false;
     private _statsbeat: Statsbeat;
@@ -133,7 +134,7 @@ class TelemetryClient {
             } catch (error) {
                 // set target as null to be compliant with previous behavior
                 telemetry.target = null;
-                Logging.warn("The URL object is failed to create.", error);
+                Logging.warn(TelemetryClient.TAG, "The URL object is failed to create.", error);
             }
         }
         this.track(telemetry, Contracts.TelemetryType.Dependency);
@@ -177,7 +178,7 @@ class TelemetryClient {
             }
         }
         else {
-            Logging.warn("track() requires telemetry object and telemetryType to be specified.")
+            Logging.warn(TelemetryClient.TAG, "track() requires telemetry object and telemetryType to be specified.")
         }
     }
 
@@ -195,7 +196,11 @@ class TelemetryClient {
      */
     public getAuthorizationHandler(config: Config): AuthorizationHandler {
         if (config && config.aadTokenCredential) {
-            return this.authorizationHandler || new AuthorizationHandler(config.aadTokenCredential);
+            if (!this.authorizationHandler) {
+                Logging.info(TelemetryClient.TAG, "Adding authorization handler");
+                this.authorizationHandler = new AuthorizationHandler(config.aadTokenCredential)
+            }
+            return this.authorizationHandler;
         }
         return null;
     }
@@ -240,7 +245,7 @@ class TelemetryClient {
 
             } catch (error) {
                 accepted = true;
-                Logging.warn("One of telemetry processors failed, telemetry item will be sent.", error, envelope);
+                Logging.warn(TelemetryClient.TAG, "One of telemetry processors failed, telemetry item will be sent.", error, envelope);
             }
         }
 
