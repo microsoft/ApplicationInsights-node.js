@@ -168,8 +168,8 @@ describe("AutoCollection/Statsbeat", () => {
                 let metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Request Success Count")[0];
                 assert.ok(metric, "Request Success Count metric not found");
                 assert.equal(metric.value, 4);
-                metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Requests Failure Count")[0];
-                assert.ok(metric, "Requests Failure Count metric not found");
+                metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Request Failure Count")[0];
+                assert.ok(metric, "Request Failure Count metric not found");
                 assert.equal(metric.value, 3);
                 metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Retry Count")[0];
                 assert.ok(metric, "Retry Count metric not found");
