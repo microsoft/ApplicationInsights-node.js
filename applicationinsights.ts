@@ -19,6 +19,7 @@ import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCo
 export import TelemetryClient = require("./Library/NodeClient");
 export import Contracts = require("./Declarations/Contracts");
 export import azureFunctionsTypes = require("./Library/Functions");
+import { JsonConfig } from "./Library/JsonConfig";
 
 export enum DistributedTracingModes {
     /**
@@ -34,20 +35,38 @@ export enum DistributedTracingModes {
 }
 
 // Default autocollection configuration
-let _isConsole = true;
-let _isConsoleLog = false;
-let _isExceptions = true;
-let _isPerformance = true;
-let _isPreAggregatedMetrics = true;
-let _isHeartBeat = false; // off by default for now
-let _isRequests = true;
-let _isDependencies = true;
-let _isDiskRetry = true;
-let _isCorrelating = true;
+let defaultConfig = _getDefaultAutoCollectConfig();
+let _isConsole = defaultConfig.isConsole();
+let _isConsoleLog = defaultConfig.isConsoleLog();
+let _isExceptions = defaultConfig.isExceptions();
+let _isPerformance = defaultConfig.isPerformance();
+let _isPreAggregatedMetrics = defaultConfig.isPreAggregatedMetrics();
+let _isHeartBeat = defaultConfig.isHeartBeat(); // off by default for now
+let _isRequests = defaultConfig.isRequests();
+let _isDependencies = defaultConfig.isDependencies();
+let _isDiskRetry = defaultConfig.isDiskRetry();
+let _isCorrelating = defaultConfig.isCorrelating();
 let _forceClsHooked: boolean;
-let _isSendingLiveMetrics = false; // Off by default
-let _isNativePerformance = true;
+let _isSendingLiveMetrics = defaultConfig.isSendingLiveMetrics(); // Off by default
+let _isNativePerformance = defaultConfig.isNativePerformance();
 let _disabledExtendedMetrics: IDisabledExtendedMetrics;
+
+function _getDefaultAutoCollectConfig() {
+    return {
+        isConsole: () => true,
+        isConsoleLog: () => false,
+        isExceptions: () => true,
+        isPerformance: () => true,
+        isPreAggregatedMetrics: () => true,
+        isHeartBeat: () => false, // off by default for now
+        isRequests: () => true,
+        isDependencies: () => true,
+        isDiskRetry: () => true,
+        isCorrelating: () => true,
+        isSendingLiveMetrics: () => false, // Off by default
+        isNativePerformance: () => true
+    }
+}
 
 let _diskRetryInterval: number = undefined;
 let _diskRetryMaxBytes: number = undefined;
@@ -84,6 +103,7 @@ let _performanceLiveMetrics: AutoCollectPerformance;
 export function setup(setupString?: string) {
     if (!defaultClient) {
         defaultClient = new TelemetryClient(setupString);
+        _initializeConfig();
         _console = new AutoCollectConsole(defaultClient);
         _exceptions = new AutoCollectExceptions(defaultClient);
         _performance = new AutoCollectPerformance(defaultClient);
@@ -113,6 +133,9 @@ export function setup(setupString?: string) {
  */
 export function start() {
     if (!!defaultClient) {
+        if (!_isStarted) {
+            _initializeConfig();
+        }
         _isStarted = true;
         _console.enable(_isConsole, _isConsoleLog);
         _exceptions.enable(_isExceptions);
@@ -131,6 +154,50 @@ export function start() {
     }
 
     return Configuration;
+}
+
+function _initializeConfig() {
+    _isConsole = defaultClient.config.enableAutoCollectExternalLoggers !== undefined ? defaultClient.config.enableAutoCollectExternalLoggers : _isConsole;
+    _isConsoleLog = defaultClient.config.enableAutoCollectConsole !== undefined ? defaultClient.config.enableAutoCollectConsole : _isConsoleLog;
+    _isExceptions = defaultClient.config.enableAutoCollectExceptions !== undefined ? defaultClient.config.enableAutoCollectExceptions : _isExceptions;
+    _isPerformance = defaultClient.config.enableAutoCollectPerformance !== undefined ? defaultClient.config.enableAutoCollectPerformance : _isPerformance;
+    _isPreAggregatedMetrics = defaultClient.config.enableAutoCollectPreAggregatedMetrics !== undefined ? defaultClient.config.enableAutoCollectPreAggregatedMetrics : _isPreAggregatedMetrics;
+    _isHeartBeat = defaultClient.config.enableAutoCollectHeartbeat !== undefined ? defaultClient.config.enableAutoCollectHeartbeat : _isHeartBeat;
+    _isRequests = defaultClient.config.enableAutoCollectRequests !== undefined ? defaultClient.config.enableAutoCollectRequests : _isRequests;
+    _isDependencies = defaultClient.config.enableAutoDependencyCorrelation !== undefined ? defaultClient.config.enableAutoDependencyCorrelation : _isDependencies;
+    _isCorrelating = defaultClient.config.enableAutoDependencyCorrelation !== undefined ? defaultClient.config.enableAutoDependencyCorrelation : _isCorrelating;
+    _forceClsHooked = defaultClient.config.enableUseAsyncHooks !== undefined ? defaultClient.config.enableUseAsyncHooks : _forceClsHooked;
+    _isNativePerformance = defaultClient.config.enableNativePerformance !== undefined ? defaultClient.config.enableNativePerformance : _isNativePerformance;
+    _disabledExtendedMetrics = defaultClient.config.disabledExtendedMetrics !== undefined ? defaultClient.config.disabledExtendedMetrics : _disabledExtendedMetrics;
+}
+
+export function setRetry(setUseDiskRetryCaching: boolean, setResendInterval: number, setMaxBytesOnDisk: number) {
+    _isDiskRetry = setUseDiskRetryCaching;
+    _diskRetryInterval = setResendInterval;
+    _diskRetryMaxBytes = setMaxBytesOnDisk;
+    if (defaultClient && defaultClient.channel) {
+        defaultClient.channel.setUseDiskRetryCaching(_isDiskRetry, _diskRetryInterval, _diskRetryMaxBytes);
+    }
+}
+
+export function setLiveMetricsFlag(setSendLiveMetrics: boolean) {
+    if (!defaultClient) {
+        // Need a defaultClient so that we can add the QPS telemetry processor to it
+        Logging.warn("Live metrics client cannot be setup without the default client");
+        return Configuration;
+    }
+
+    if (!liveMetricsClient && setSendLiveMetrics) {
+        // No qps client exists. Create one and prepare it to be enabled at .start()
+        liveMetricsClient = new QuickPulseClient(defaultClient.config, defaultClient.context, defaultClient.getAuthorizationHandler);
+        _performanceLiveMetrics = new AutoCollectPerformance(liveMetricsClient as any, 1000, true);
+        liveMetricsClient.addCollector(_performanceLiveMetrics);
+        defaultClient.quickPulseClient = liveMetricsClient; // Need this so we can forward all manual tracks to live metrics via PerformanceMetricsTelemetryProcessor
+    } else if (liveMetricsClient) {
+        // qps client already exists; enable/disable it
+        liveMetricsClient.enable(setSendLiveMetrics);
+    }
+    _isSendingLiveMetrics = setSendLiveMetrics;
 }
 
 /**
@@ -233,7 +300,7 @@ export class Configuration {
      */
     public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: boolean | IDisabledExtendedMetrics = true) {
         _isPerformance = value;
-        const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(collectExtendedMetrics);
+        const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(collectExtendedMetrics, JsonConfig.getJsonConfig());
         _isNativePerformance = extendedMetricsConfig.isEnabled;
         _disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
         if (_isStarted) {
@@ -327,13 +394,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setUseDiskRetryCaching(value: boolean, resendInterval?: number, maxBytesOnDisk?: number) {
-        _isDiskRetry = value;
-        _diskRetryInterval = resendInterval;
-        _diskRetryMaxBytes = maxBytesOnDisk
-        if (defaultClient && defaultClient.channel) {
-            defaultClient.channel.setUseDiskRetryCaching(value, resendInterval, maxBytesOnDisk);
-        }
-
+        setRetry(value, resendInterval, maxBytesOnDisk);
         return Configuration;
     }
 
@@ -354,24 +415,7 @@ export class Configuration {
      * @param enable if true, enables communication with the live metrics service
      */
     public static setSendLiveMetrics(enable = false) {
-        if (!defaultClient) {
-            // Need a defaultClient so that we can add the QPS telemetry processor to it
-            Logging.warn("Live metrics client cannot be setup without the default client");
-            return Configuration;
-        }
-
-        if (!liveMetricsClient && enable) {
-            // No qps client exists. Create one and prepare it to be enabled at .start()
-            liveMetricsClient = new QuickPulseClient(defaultClient.config, defaultClient.context, defaultClient.getAuthorizationHandler);
-            _performanceLiveMetrics = new AutoCollectPerformance(liveMetricsClient as any, 1000, true);
-            liveMetricsClient.addCollector(_performanceLiveMetrics);
-            defaultClient.quickPulseClient = liveMetricsClient; // Need this so we can forward all manual tracks to live metrics via PerformanceMetricsTelemetryProcessor
-        } else if (liveMetricsClient) {
-            // qps client already exists; enable/disable it
-            liveMetricsClient.enable(enable);
-        }
-        _isSendingLiveMetrics = enable;
-
+        setLiveMetricsFlag(enable);
         return Configuration;
     }
 }

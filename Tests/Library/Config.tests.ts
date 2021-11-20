@@ -6,15 +6,23 @@ var https = require("https");
 import Config = require("../../Library/Config");
 import Constants = require("../../Declarations/Constants");
 
+import { JsonConfig } from "../../Library/JsonConfig";
+
+const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
+
 describe("Library/Config", () => {
 
     var iKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
     var appVer = "appVer";
 
+    beforeEach(() => {
+        JsonConfig["_jsonConfig"] = undefined;
+    });
+
     describe("#constructor", () => {
         describe("connection string && API && environment variable prioritization", () => {
             it ("connection string set via in code setup", () => {
-                var env = { [Config.ENV_connectionString]: "InStruMenTatioNKey=cs.env", [Config.ENV_iKey]: "ikey.env"};
+                var env = { [ENV_connectionString]: "InStruMenTatioNKey=cs.env", [Config.ENV_iKey]: "ikey.env"};
                 var originalEnv = process.env;
                 process.env = env;
                 const config = new Config("InStruMenTatioNKey=cs.code");
@@ -23,7 +31,7 @@ describe("Library/Config", () => {
             });
 
             it("instrumentation key set via in code setup", () => {
-                var env = { [Config.ENV_connectionString]: "InStruMenTatioNKey=CS.env", [Config.ENV_iKey]: "ikey.env"};
+                var env = { [ENV_connectionString]: "InStruMenTatioNKey=CS.env", [Config.ENV_iKey]: "ikey.env"};
                 var originalEnv = process.env;
                 process.env = env;
                 const config = new Config("ikey.code");
@@ -32,7 +40,7 @@ describe("Library/Config", () => {
             });
 
             it("connection string set via environment variable", () => {
-                var env = { [Config.ENV_connectionString]: "InStruMenTatioNKey=cs.env", [Config.ENV_iKey]: "ikey.env"};
+                var env = { [ENV_connectionString]: "InStruMenTatioNKey=cs.env", [Config.ENV_iKey]: "ikey.env"};
                 var originalEnv = process.env;
                 process.env = env;
                 const config = new Config();
@@ -126,6 +134,7 @@ describe("Library/Config", () => {
             it("should initialize values that we claim in README (2)", () => {
                 process.env.http_proxy = "test";
                 process.env.https_proxy = "test2";
+                JsonConfig["_jsonConfig"] = undefined;
                 var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert(config.proxyHttpUrl === "test");
                 assert(config.proxyHttpsUrl === "test2");

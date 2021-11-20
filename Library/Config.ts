@@ -7,6 +7,10 @@ import Constants = require('../Declarations/Constants');
 import http = require('http');
 import https = require('https');
 import url = require('url');
+import { JsonConfig } from "./JsonConfig";
+import { IJsonConfig } from "./IJsonConfig";
+import { DistributedTracingModes, setRetry, setLiveMetricsFlag } from "../applicationinsights";
+import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";
 
 class Config {
     // Azure adds this prefix to all environment variables
@@ -17,16 +21,6 @@ class Config {
     public static legacy_ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
     public static ENV_profileQueryEndpoint = "APPINSIGHTS_PROFILE_QUERY_ENDPOINT";
     public static ENV_quickPulseHost = "APPINSIGHTS_QUICKPULSE_HOST";
-
-    // Azure Connection String
-    public static ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
-
-    // Native Metrics Opt Outs
-    public static ENV_nativeMetricsDisablers = "APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC";
-    public static ENV_nativeMetricsDisableAll = "APPLICATION_INSIGHTS_DISABLE_ALL_EXTENDED_METRICS"
-
-    public static ENV_http_proxy = "http_proxy";
-    public static ENV_https_proxy = "https_proxy";
 
     /** An identifier for your Application Insights resource */
     public instrumentationKey: string;
@@ -64,10 +58,28 @@ class Config {
     private _profileQueryEndpoint: string;
     /** Host name for quickpulse service */
     private _quickPulseHost: string;
+    
+    /** private config object that is populated from config json file */
+    private _jsonConfig: IJsonConfig = JsonConfig.getJsonConfig();
 
+    public enableAutoCollectConsole: boolean; // enable auto collect console
+    public enableAutoCollectExceptions: boolean;
+    public enableAutoCollectPerformance: boolean;
+    public enableNativePerformance: boolean;
+    public enableAutoCollectExternalLoggers: boolean; // enable auto collect bunyan & winston
+    public disabledExtendedMetrics: IDisabledExtendedMetrics;
+    public enableAutoCollectPreAggregatedMetrics: boolean;
+    public enableAutoCollectHeartbeat: boolean;
+    public enableAutoCollectRequests: boolean;
+    public enableAutoCollectDependencies: boolean;
+    public enableAutoDependencyCorrelation: boolean;
+    public enableUseAsyncHooks: boolean;
+    public disableStatsbeat: boolean;
 
     constructor(setupString?: string) {
-        const connectionStringEnv: string | undefined = process.env[Config.ENV_connectionString];
+        this._generateConfigurationObjectFromEnvVars();
+
+        const connectionStringEnv: string | undefined = this._jsonConfig.connectionString;
         const csCode = ConnectionStringParser.parse(setupString);
         const csEnv = ConnectionStringParser.parse(connectionStringEnv);
         const iKeyCode = !csCode.instrumentationkey && Object.keys(csCode).length > 0
@@ -80,13 +92,15 @@ class Config {
             Logging.warn("An invalid instrumentation key was provided. There may be resulting telemetry loss", this.instrumentationKey);
         }
 
-        this.endpointUrl = `${csCode.ingestionendpoint || csEnv.ingestionendpoint || this.endpointBase}/v2.1/track`;
-        this.maxBatchSize = 250;
-        this.maxBatchIntervalMs = 15000;
-        this.disableAppInsights = false;
-        this.samplingPercentage = 100;
-        this.correlationIdRetryIntervalMs = 30 * 1000;
-        this.correlationHeaderExcludedDomains = [
+        this.endpointUrl = `${this._jsonConfig.endpointUrl || csCode.ingestionendpoint || csEnv.ingestionendpoint || this.endpointBase}/v2.1/track`;
+        this.maxBatchSize = this._jsonConfig.maxBatchSize || 250;
+        this.maxBatchIntervalMs = this._jsonConfig.maxBatchIntervalMs || 15000;
+        this.disableAppInsights = this._jsonConfig.disableAppInsights || false;
+        this.samplingPercentage = this._jsonConfig.samplingPercentage || 100;
+        this.correlationIdRetryIntervalMs = this._jsonConfig.correlationIdRetryIntervalMs || 30 * 1000;
+        this.correlationHeaderExcludedDomains =
+        this._jsonConfig.correlationHeaderExcludedDomains ||
+        [
             "*.core.windows.net",
             "*.core.chinacloudapi.cn",
             "*.core.cloudapi.de",
@@ -97,15 +111,72 @@ class Config {
 
         this.setCorrelationId = (correlationId) => this.correlationId = correlationId;
 
-        this.proxyHttpUrl = process.env[Config.ENV_http_proxy] || undefined;
-        this.proxyHttpsUrl = process.env[Config.ENV_https_proxy] || undefined;
-        this.httpAgent = undefined;
-        this.httpsAgent = undefined;
+        this.proxyHttpUrl = this._jsonConfig.proxyHttpUrl;
+        this.proxyHttpsUrl = this._jsonConfig.proxyHttpsUrl;
+        this.httpAgent = this._jsonConfig.httpAgent;
+        this.httpsAgent = this._jsonConfig.httpsAgent;
+        this.ignoreLegacyHeaders = this._jsonConfig.ignoreLegacyHeaders || false;
         this.profileQueryEndpoint = csCode.ingestionendpoint || csEnv.ingestionendpoint || process.env[Config.ENV_profileQueryEndpoint] || this.endpointBase;
         this._quickPulseHost = csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_HOST;
         // Parse quickPulseHost if it starts with http(s)://
         if (this._quickPulseHost.match(/^https?:\/\//)) {
             this._quickPulseHost = new url.URL(this._quickPulseHost).host;
+        }
+    }
+
+    private _generateConfigurationObjectFromEnvVars() {
+        if (this._jsonConfig.distributedTracingMode !== undefined) {
+            CorrelationIdManager.w3cEnabled = this._jsonConfig.distributedTracingMode === DistributedTracingModes.AI_AND_W3C;
+        }
+        if (this._jsonConfig.enableAutoCollectConsole !== undefined) {
+            this.enableAutoCollectConsole = this._jsonConfig.enableAutoCollectConsole;
+        }
+        if (this._jsonConfig.enableAutoCollectExternalLoggers !== undefined) {
+            this.enableAutoCollectExternalLoggers = this._jsonConfig.enableAutoCollectExternalLoggers;
+        }
+        if (this._jsonConfig.enableAutoCollectExceptions !== undefined) {
+            this.enableAutoCollectExceptions = this._jsonConfig.enableAutoCollectExceptions;
+        }
+        if (this._jsonConfig.enableAutoCollectPerformance !== undefined) {
+            this.enableAutoCollectPerformance = this._jsonConfig.enableAutoCollectPerformance;
+        }
+        if (this._jsonConfig.enableAutoCollectExtendedMetrics !== undefined) {
+            const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(this._jsonConfig.enableAutoCollectExtendedMetrics, this._jsonConfig);
+            this.enableNativePerformance = extendedMetricsConfig.isEnabled;
+            this.disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
+        }
+        if (this._jsonConfig.enableAutoCollectPreAggregatedMetrics !== undefined) {
+            this.enableAutoCollectPreAggregatedMetrics = this._jsonConfig.enableAutoCollectPreAggregatedMetrics;
+        }
+        if (this._jsonConfig.enableAutoCollectHeartbeat !== undefined) {
+            this.enableAutoCollectHeartbeat = this._jsonConfig.enableAutoCollectHeartbeat;
+        }
+        if (this._jsonConfig.enableAutoCollectRequests !== undefined) {
+            this.enableAutoCollectRequests = this._jsonConfig.enableAutoCollectRequests;
+        }
+        if (this._jsonConfig.enableAutoCollectDependencies !== undefined) {
+            this.enableAutoCollectDependencies = this._jsonConfig.enableAutoCollectDependencies;
+        }
+        if (this._jsonConfig.enableAutoDependencyCorrelation !== undefined) {
+            this.enableAutoDependencyCorrelation = this._jsonConfig.enableAutoDependencyCorrelation;
+        }
+        if (this._jsonConfig.enableUseAsyncHooks !== undefined) {
+            this.enableUseAsyncHooks = this._jsonConfig.enableUseAsyncHooks;
+        }
+        if (this._jsonConfig.enableUseDiskRetryCaching !== undefined) {
+            setRetry(this._jsonConfig.enableUseDiskRetryCaching, this._jsonConfig.enableResendInterval, this._jsonConfig.enableMaxBytesOnDisk);
+        }
+        if (this._jsonConfig.enableInternalDebugLogging !== undefined) {
+            Logging.enableDebug = this._jsonConfig.enableInternalDebugLogging;
+        }
+        if (this._jsonConfig.enableInternalWarningLogging !== undefined) {
+            Logging.disableWarnings = !this._jsonConfig.enableInternalWarningLogging;
+        }
+        if (this._jsonConfig.enableSendLiveMetrics !== undefined) {
+            setLiveMetricsFlag(this._jsonConfig.enableSendLiveMetrics);
+        }
+        if (this._jsonConfig.disableStatsbeat !== undefined) {
+            this.disableStatsbeat = this._jsonConfig.disableStatsbeat;
         }
     }
 

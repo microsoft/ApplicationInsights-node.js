@@ -294,6 +294,109 @@ appInsights
   .start()
 ```
 
+### Configure settings through json file
+The appInsights object provides a way to make configurations through a configuration json file, by setting the config json file path through the environment variable `APPLICATION_INSIGHTS_CONFIG_PATH`.
+
+>***Note:*** configuration json file takes the highest priority over set APIs. 
+
+**Scenario 1** : `enableAutoCollectExceptions` in config.json file overrides `setAutoCollectExceptions(true)`.
+In `config.json` file:
+```javacript
+{
+    "connectionString": "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/",
+    "enableAutoCollectExceptions": false
+}
+```
+Where you start appInsights object:
+```javascript
+process.env["APPLICATION_INSIGHTS_CONFIG_PATH"] = "./config.json";
+let appInsights = require('applicationinsights');
+appInsights.setup()
+    .setAutoCollectExceptions(true)
+    .start();
+```
+Thus `autoCollectExceptions` is disabled.
+
+**Scenario 2** : You can modify `appInsights.defaultClient.config.enableAutoCollectExceptions` before appInsights calls start.
+In `config.json` file:
+```javacript
+{
+    "connectionString": "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/",
+    "enableAutoCollectExceptions": false
+}
+```
+Where you start appInsights object:
+```javascript
+process.env["APPLICATION_INSIGHTS_CONFIG_PATH"] = "./config.json";
+let appInsights = require('applicationinsights');
+appInsights.setup()
+    .setAutoCollectExceptions(true);
+appInsights.defaultClient.config.enableAutoCollectExceptions = true;
+appInsights.start();
+```
+Thus `autoCollectExceptions` is enabled.
+
+***Configuration options:***
+| Property                        | Description                                                                                                |
+| ------------------------------- |------------------------------------------------------------------------------------------------------------|
+| connectionString                | An identifier for your Application Insights resource                                                       |
+| endpointUrl                     | The ingestion endpoint to send telemetry payloads to                                                       |
+| proxyHttpUrl                    | A proxy server for SDK HTTP traffic (Optional, Default pulled from `http_proxy` environment variable)      |
+| proxyHttpsUrl                   | A proxy server for SDK HTTPS traffic (Optional, Default pulled from `https_proxy` environment variable)    |
+| httpAgent                       | An http.Agent to use for SDK HTTP traffic (Optional, Default undefined)                                    |
+| httpsAgent                      | An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined)                                  |
+| maxBatchSize                    | The maximum number of telemetry items to include in a payload to the ingestion endpoint (Default `250`)    |
+| maxBatchIntervalMs              | The maximum amount of time to wait to for a payload to reach maxBatchSize (Default `15000`)                |
+| disableAppInsights              | A flag indicating if telemetry transmission is disabled (Default `false`)                                  |
+| samplingPercentage              | The percentage of telemetry items tracked that should be transmitted (Default `100`)                       |
+| correlationIdRetryIntervalMs    | The time to wait before retrying to retrieve the id for cross-component correlation (Default `30000`)      |
+| correlationHeaderExcludedDomains| A list of domains to exclude from cross-component correlation header injection (Default See [Config.ts][]) |
+| ignoreLegacyHeaders             | Disable including legacy headers in outgoing requests, x-ms-request-id |
+| distributedTracingMode          | Sets the distributed tracing modes (Default=AI) |
+| enableAutoCollectExternalLoggers| Sets the state of console. If true logger activity will be sent to Application Insights |
+| enableAutoCollectConsole        | Sets the state of logger tracking (enabled by default for third-party loggers only). If true, logger autocollection will include console.log calls (default false) |
+| enableAutoCollectExceptions     | Sets the state of exception tracking (enabled by default). If true uncaught exceptions will be sent to Application Insights |
+| enableAutoCollectPerformance    | Sets the state of performance tracking (enabled by default). If true performance counters will be collected every second and sent to Application Insights |
+| enableAutoCollectExtendedMetrics| Sets the state of performance tracking (enabled by default). If true, extended metrics counters will be collected every minute and sent to Application Insights |
+| enableAutoCollectPreAggregatedMetrics | Sets the state of pre aggregated metrics tracking (enabled by default). If true pre aggregated metrics will be collected every minute and sent to Application Insights |
+| enableAutoCollectHeartbeat      | Sets the state of request tracking (enabled by default). If true HeartBeat metric data will be collected every 15 mintues and sent to Application Insights |
+| enableAutoCollectRequests      | Sets the state of request tracking (enabled by default). If true requests will be sent to Application Insights |
+| enableAutoCollectDependencies  | Sets the state of dependency tracking (enabled by default). If true dependencies will be sent to Application Insights |
+| enableAutoDependencyCorrelation| Sets the state of automatic dependency correlation (enabled by default). If true dependencies will be correlated with requests |
+| enableUseAsyncHooks            | Sets the state of automatic dependency correlation (enabled by default). If true, forces use of experimental async_hooks module to provide correlation. If false, instead uses only patching-based techniques. If left blank, the best option is chosen for you based on your version of Node.js. |
+| enableUseDiskRetryCaching      | If true events that occured while client is offline will be cached on disk |
+| enableResendInterval          | The wait interval for resending cached events. |
+| enableMaxBytesOnDisk          | The maximum size (in bytes) that the created temporary directory for cache events can grow to, before caching is disabled. |
+| enableInternalDebugLogging    | Enables debug and warning logging for AppInsights itself. If true, enables debug logging |
+| enableInternalWarningLogging  | Enables debug and warning logging for AppInsights itself. If true, enables warning logging |
+| enableSendLiveMetrics         | Enables communication with Application Insights Live Metrics. If true, enables communication with the live metrics service |
+| disableAllExtendedMetrics     | Disable all environment variables set |
+| extendedMetricDisablers       | Disable individual environment variables set. `"extendedMetricDisablers": "..."` |
+| disableStatsbeat              | Disable Statsbeat |
+| noDiagnosticChannel           | In order to track context across asynchronous calls, some changes are required in third party libraries such as mongodb and redis. By default ApplicationInsights will use diagnostic-channel-publishers to monkey-patch some of these libraries. This property is to disable the feature. Note that by setting this flag, events may no longer be correctly associated with the right operation.  |
+| noPatchModules                | Disable individual monkey-patches. Set `noPatchModules` to a comma separated list of packages to disable. e.g. `"noPatchModules": "console,redis"` to avoid patching the console and redis packages. The following modules are available: `azuresdk, bunyan, console, mongodb, mongodb-core, mysql, redis, winston, pg`, and `pg-pool`. Visit the [diagnostic-channel-publishers' README](https://github.com/microsoft/node-diagnostic-channel/blob/master/src/diagnostic-channel-publishers/README.md) for information about exactly which versions of these packages are patched. |
+| noHttpAgentKeepAlive          | HTTPS without a passed in agent |
+
+An example of setting configuration path through environment variable:
+Create a file named `config.json`:
+```javascript
+{
+    "connectionString": "<YOUR_CONNECTION_STRING>",
+    "enableAutoCollectExternalLoggers": true,
+    "enableAutoCollectExceptions": true,
+    "enableAutoCollectHeartbeat": true,
+    "disableStatsbeat": true,
+    ...
+}
+  
+```
+Then set the configuration file path in your environment variable before initialzing the appInsights object:
+```javascript
+process.env["APPLICATION_INSIGHTS_CONFIG_PATH"] = "./config.json";
+let appInsights = require('applicationinsights');
+appInsights.setup().start();
+```
+
 ## Track custom telemetry
 
 You can track any request, event, metric or exception using the Application

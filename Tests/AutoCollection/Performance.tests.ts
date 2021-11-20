@@ -24,6 +24,7 @@ describe("AutoCollection/Performance", () => {
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
                 .setAutoCollectHeartbeat(false)
                 .setAutoCollectPerformance(true, false)
+                .setAutoCollectPreAggregatedMetrics(false)
                 .start();
             assert.equal(setIntervalSpy.callCount, 3, "setInteval should be called three times as part of performance initialization and also as part of Statsbeat");
             AppInsights.dispose();
