@@ -227,7 +227,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoDependencyCorrelation(value: boolean, useAsyncHooks?: boolean) {
-        _defaultAutoCollector.setAutoDependencyCorrelation(value);
+        _defaultAutoCollector.setAutoDependencyCorrelation(value, useAsyncHooks);
         return Configuration;
     }
 
@@ -296,7 +296,6 @@ export function dispose() {
     CorrelationIdManager.w3cEnabled = true; // reset to default
     defaultClient = null;
     _defaultAutoCollector.dispose();
-    _defaultAutoCollector = null;
     if (liveMetricsClient) {
         liveMetricsClient.enable(false);
         _isSendingLiveMetrics = false;

@@ -37,8 +37,8 @@ class AutoCollector {
     private _isStarted = false;
 
     public setup(client: TelemetryClient) {
-        this._initializeFlagsFromConfig();
         this._client = client;
+        this._initializeFlagsFromConfig();
         this._console = new AutoCollectConsole(client);
         this._exceptions = new AutoCollectExceptions(client);
         this._performance = new AutoCollectPerformance(client);
