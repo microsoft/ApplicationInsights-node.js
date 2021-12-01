@@ -914,8 +914,8 @@ describe("EndToEnd", () => {
             // set up sdk
             const client = new TelemetryClient("key");
             const heartbeat: HeartBeat = new HeartBeat(client);
-            heartbeat.enable(true, client.config);
-            HeartBeat.INSTANCE.enable(true, client.config);
+            heartbeat.enable(true);
+            HeartBeat.INSTANCE.enable(true);
             const trackMetricStub = sandbox.stub(heartbeat["_client"], "trackMetric");
 
             heartbeat["trackHeartBeat"](client.config, () => {
@@ -950,8 +950,8 @@ describe("EndToEnd", () => {
             // set up sdk
             const client = new TelemetryClient("key");
             const heartbeat: HeartBeat = new HeartBeat(client);
-            heartbeat.enable(true, client.config);
-            HeartBeat.INSTANCE.enable(true, client.config);
+            heartbeat.enable(true);
+            HeartBeat.INSTANCE.enable(true);
             const trackMetricStub = sandbox.stub(heartbeat["_client"], "trackMetric");
 
             heartbeat["trackHeartBeat"](client.config, () => {

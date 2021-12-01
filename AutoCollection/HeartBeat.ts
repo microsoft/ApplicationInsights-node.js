@@ -24,7 +24,7 @@ class HeartBeat {
         this._client = client;
     }
 
-    public enable(isEnabled: boolean, config?: Config) {
+    public enable(isEnabled: boolean) {
         this._isEnabled = isEnabled;
         if (this._isEnabled && !this._isInitialized) {
             this._isInitialized = true;
@@ -32,7 +32,7 @@ class HeartBeat {
 
         if (isEnabled) {
             if (!this._handle) {
-                this._handle = setInterval(() => this.trackHeartBeat(config, () => { }), this._collectionInterval);
+                this._handle = setInterval(() => this.trackHeartBeat(this._client.config, () => { }), this._collectionInterval);
                 this._handle.unref(); // Allow the app to terminate even while this loop is going on
             }
         } else {

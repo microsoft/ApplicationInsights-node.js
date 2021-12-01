@@ -9,7 +9,7 @@ import https = require('https');
 import url = require('url');
 import { JsonConfig } from "./JsonConfig";
 import { IJsonConfig } from "./IJsonConfig";
-import { DistributedTracingModes, setRetry, setLiveMetricsFlag } from "../applicationinsights";
+import { DistributedTracingModes } from "../applicationinsights";
 import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";
 
 class Config {
@@ -58,7 +58,7 @@ class Config {
     private _profileQueryEndpoint: string;
     /** Host name for quickpulse service */
     private _quickPulseHost: string;
-    
+
     /** private config object that is populated from config json file */
     private _jsonConfig: IJsonConfig = JsonConfig.getJsonConfig();
 
@@ -73,6 +73,8 @@ class Config {
     public enableAutoCollectRequests: boolean;
     public enableAutoCollectDependencies: boolean;
     public enableAutoDependencyCorrelation: boolean;
+    public enableSendLiveMetrics: boolean;
+    public enableUseDiskRetryCaching: boolean;
     public enableUseAsyncHooks: boolean;
     public disableStatsbeat: boolean;
 
@@ -99,15 +101,15 @@ class Config {
         this.samplingPercentage = this._jsonConfig.samplingPercentage || 100;
         this.correlationIdRetryIntervalMs = this._jsonConfig.correlationIdRetryIntervalMs || 30 * 1000;
         this.correlationHeaderExcludedDomains =
-        this._jsonConfig.correlationHeaderExcludedDomains ||
-        [
-            "*.core.windows.net",
-            "*.core.chinacloudapi.cn",
-            "*.core.cloudapi.de",
-            "*.core.usgovcloudapi.net",
-            "*.core.microsoft.scloud",
-            "*.core.eaglex.ic.gov"
-        ];
+            this._jsonConfig.correlationHeaderExcludedDomains ||
+            [
+                "*.core.windows.net",
+                "*.core.chinacloudapi.cn",
+                "*.core.cloudapi.de",
+                "*.core.usgovcloudapi.net",
+                "*.core.microsoft.scloud",
+                "*.core.eaglex.ic.gov"
+            ];
 
         this.setCorrelationId = (correlationId) => this.correlationId = correlationId;
 
@@ -164,7 +166,7 @@ class Config {
             this.enableUseAsyncHooks = this._jsonConfig.enableUseAsyncHooks;
         }
         if (this._jsonConfig.enableUseDiskRetryCaching !== undefined) {
-            setRetry(this._jsonConfig.enableUseDiskRetryCaching, this._jsonConfig.enableResendInterval, this._jsonConfig.enableMaxBytesOnDisk);
+            this.enableUseDiskRetryCaching = this._jsonConfig.enableUseDiskRetryCaching;
         }
         if (this._jsonConfig.enableInternalDebugLogging !== undefined) {
             Logging.enableDebug = this._jsonConfig.enableInternalDebugLogging;
@@ -173,7 +175,7 @@ class Config {
             Logging.disableWarnings = !this._jsonConfig.enableInternalWarningLogging;
         }
         if (this._jsonConfig.enableSendLiveMetrics !== undefined) {
-            setLiveMetricsFlag(this._jsonConfig.enableSendLiveMetrics);
+            this.enableSendLiveMetrics = this._jsonConfig.enableSendLiveMetrics;
         }
         if (this._jsonConfig.disableStatsbeat !== undefined) {
             this.disableStatsbeat = this._jsonConfig.disableStatsbeat;

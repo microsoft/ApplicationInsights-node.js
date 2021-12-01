@@ -36,8 +36,8 @@ describe("AutoCollection/HeartBeat", () => {
     describe("#trackHeartBeat()", () => {
         it("should read correct web app values from envrionment variable", (done) => {
             const heartbeat1: HeartBeat = new HeartBeat(client);
-            heartbeat1.enable(true, client.config);
-            HeartBeat.INSTANCE.enable(true, client.config);
+            heartbeat1.enable(true);
+            HeartBeat.INSTANCE.enable(true);
             const stub1 = sinon.stub(heartbeat1["_client"], "trackMetric");
 
             var env1 = <{ [id: string]: string }>{};
@@ -76,8 +76,8 @@ describe("AutoCollection/HeartBeat", () => {
 
         it("should read correct function app values from envrionment variable", (done) => {
             const heartbeat2: HeartBeat = new HeartBeat(client);
-            heartbeat2.enable(true, client.config);
-            HeartBeat.INSTANCE.enable(true, client.config);
+            heartbeat2.enable(true);
+            HeartBeat.INSTANCE.enable(true);
             const stub2 = sinon.stub(heartbeat2["_client"], "trackMetric");
 
             var env2 = <{ [id: string]: string }>{};
