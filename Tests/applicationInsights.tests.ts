@@ -137,7 +137,7 @@ describe("ApplicationInsights", () => {
             HttpDependencies.INSTANCE = undefined;
         });
 
-        it("auto-collection is initialized by default", (done) => {
+        it("auto-collection is initialized by default", () => {
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").start();
 
             //assert.ok(Console.INSTANCE.isInitialized());
@@ -147,8 +147,7 @@ describe("ApplicationInsights", () => {
                 assert.ok(HttpRequests.INSTANCE.isInitialized());
                 assert.ok(HttpRequests.INSTANCE.isAutoCorrelating());
                 assert.ok(HttpDependencies.INSTANCE.isInitialized());
-                done();
-            }, 1000);
+            }, 5000);
         });
 
         it("auto-collection is not initialized if disabled before 'start'", () => {
