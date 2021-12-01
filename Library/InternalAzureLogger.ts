@@ -1,14 +1,12 @@
 import fs = require("fs");
 import os = require("os");
 import path = require("path");
-import { AzureLogger, setLogLevel, createClientLogger } from "@azure/logger";
 import FileSystemHelper = require("./FileSystemHelper");
 
 
 class InternalAzureLogger {
 
     private static _instance: InternalAzureLogger;
-    public logger: AzureLogger;
     public maxHistory: number;
     public maxSizeBytes: number;
 
@@ -19,18 +17,18 @@ class InternalAzureLogger {
     public _logFileName: string;
     private _fileFullPath: string;
     private _backUpNameFormat: string;
+    private _logToFile = false;
+    private _logToConsole = true;
+
 
     constructor() {
-        setLogLevel("verbose"); // Verbose so we can control log level in our side
         let logDestination = process.env.APPLICATIONINSIGHTS_LOG_DESTINATION; // destination can be one of file, console or file+console
-        let logToFile = false;
-        let logToConsole = true;
         if (logDestination == "file+console") {
-            logToFile = true;
+            this._logToFile = true;
         }
         if (logDestination == "file") {
-            logToFile = true;
-            logToConsole = false;
+            this._logToFile = true;
+            this._logToConsole = false;
         }
         this.maxSizeBytes = 50000;
         this.maxHistory = 1;
@@ -52,21 +50,31 @@ class InternalAzureLogger {
         this._fileFullPath = path.join(this._tempDir, this._logFileName);
         this._backUpNameFormat = "." + this._logFileName; // {currentime}.applicationinsights.log
 
-        // Override AzureLogger to also enable logs to be stored in disk
-        AzureLogger.log = (...args) => {
-            if (logToFile) {
-                this._storeToDisk(args);
-            }
-            if (logToConsole) {
-                console.log(...args);
-            }
-        };
-        this.logger = createClientLogger('ApplicationInsights');
-        if (logToFile) {
+        if (this._logToFile) {
             if (!InternalAzureLogger._fileCleanupTimer) {
                 InternalAzureLogger._fileCleanupTimer = setInterval(() => { this._fileCleanupTask(); }, this._cleanupTimeOut);
                 InternalAzureLogger._fileCleanupTimer.unref();
             }
+        }
+    }
+
+    public info(message?: any, ...optionalParams: any[]) {
+        let args = message ? [message, ...optionalParams] : optionalParams;
+        if (this._logToFile) {
+            this._storeToDisk(args);
+        }
+        if (this._logToConsole) {
+            console.info(...args);
+        }
+    }
+
+    public warning(message?: any, ...optionalParams: any[]) {
+        let args = message ? [message, ...optionalParams] : optionalParams;
+        if (this._logToFile) {
+            this._storeToDisk(args);
+        }
+        if (this._logToConsole) {
+            console.warn(...args);
         }
     }
 

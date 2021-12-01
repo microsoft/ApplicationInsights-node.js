@@ -140,14 +140,12 @@ describe("ApplicationInsights", () => {
         it("auto-collection is initialized by default", () => {
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").start();
 
-            setTimeout(() => {
-                //assert.ok(Console.INSTANCE.isInitialized());
-                assert.ok(Exceptions.INSTANCE.isInitialized());
-                assert.ok(Performance.INSTANCE.isInitialized());
-                assert.ok(HttpRequests.INSTANCE.isInitialized());
-                assert.ok(HttpRequests.INSTANCE.isAutoCorrelating());
-                assert.ok(HttpDependencies.INSTANCE.isInitialized());
-            }, 1000)
+            //assert.ok(Console.INSTANCE.isInitialized());
+            assert.ok(Exceptions.INSTANCE.isInitialized());
+            assert.ok(Performance.INSTANCE.isInitialized());
+            assert.ok(HttpRequests.INSTANCE.isInitialized());
+            assert.ok(HttpRequests.INSTANCE.isAutoCorrelating());
+            assert.ok(HttpDependencies.INSTANCE.isInitialized());
         });
 
         it("auto-collection is not initialized if disabled before 'start'", () => {

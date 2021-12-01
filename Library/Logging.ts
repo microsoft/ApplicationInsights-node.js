@@ -8,13 +8,13 @@ class Logging {
 
     public static info(message?: any, ...optionalParams: any[]) {
         if (this.enableDebug) {
-            InternalAzureLogger.getInstance().logger.info(this.TAG + message, optionalParams);
+            InternalAzureLogger.getInstance().info(this.TAG + message, optionalParams);
         }
     }
 
     public static warn(message?: any, ...optionalParams: any[]) {
         if (!this.disableWarnings) {
-            InternalAzureLogger.getInstance().logger.warning(this.TAG + message, optionalParams);
+            InternalAzureLogger.getInstance().warning(this.TAG + message, optionalParams);
         }
     }
 }
