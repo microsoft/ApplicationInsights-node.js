@@ -2,7 +2,6 @@ import assert = require("assert");
 import sinon = require("sinon");
 var http = require("http");
 var https = require("https");
-
 import Config = require("../../Library/Config");
 import Constants = require("../../Declarations/Constants");
 
@@ -14,9 +13,19 @@ describe("Library/Config", () => {
 
     var iKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
     var appVer = "appVer";
+    
+    var sandbox: sinon.SinonSandbox;
+
+    before(() => {
+        sandbox = sinon.sandbox.create();
+    });
 
     beforeEach(() => {
         JsonConfig["_instance"] = undefined;
+    });
+
+    afterEach(() => {
+        sandbox.restore();
     });
 
     describe("#constructor", () => {
@@ -148,24 +157,21 @@ describe("Library/Config", () => {
             });
 
             it("instrumentation key validation-valid key passed", () => {
-                var warnStub = sinon.stub(console, "warn");
+                var warnStub = sandbox.stub(console, "warn");
                 var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-                assert.ok(warnStub.notCalled, "warning was not raised");
-                warnStub.restore();
+                assert.ok(warnStub.calledOnce, "warning was not raised due to ikey checking, warning is called once since config json path is not configured");
             });
 
             it("instrumentation key validation-invalid key passed", () => {
-                var warnStub = sinon.stub(console, "warn");
+                var warnStub = sandbox.stub(console, "warn");
                 var config = new Config("1aa11111bbbb1ccc8dddeeeeffff3333");
-                assert.ok(warnStub.calledOn, "warning was raised");
-                warnStub.restore();
+                assert.ok(warnStub.calledTwice, "warning was raised once due to ikey checking, the second call is caused by config json path is not configured");
             });
 
             it("instrumentation key validation-invalid key passed", () => {
-                var warnStub = sinon.stub(console, "warn");
+                var warnStub = sandbox.stub(console, "warn");
                 var config = new Config("abc");
-                assert.ok(warnStub.calledOn, "warning was raised");
-                warnStub.restore();
+                assert.ok(warnStub.calledTwice, "warning was raised due to ikey checking, the second call is caused by config json path is not configured");
             });
 
         });
