@@ -24,7 +24,7 @@ export interface IJsonConfig {
     /** A list of domains to exclude from cross-component header injection */
     correlationHeaderExcludedDomains: string[];
     /** A proxy server for SDK HTTP traffic (Optional, Default pulled from `http_proxy` environment variable) */
-    proxyHttpUrl?: string;
+    proxyHttpUrl: string;
     /** A proxy server for SDK HTTPS traffic (Optional, Default pulled from `https_proxy` environment variable) */
     proxyHttpsUrl: string;
     /** Disable including legacy headers in outgoing requests, x-ms-request-id */

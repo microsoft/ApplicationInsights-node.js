@@ -295,7 +295,7 @@ appInsights
 ```
 
 ### Configure settings through json file
-The appInsights object provides a way to make configurations through a configuration json file, by setting the config json file path through the environment variable `APPLICATION_INSIGHTS_CONFIG_PATH`.
+The appInsights object provides a way to make configurations through a configuration json file, by setting the config json file path through the environment variable `APPLICATIONINSIGHTS_CONFIGURATION_FILE`.
 
 >***Note:*** configuration json file takes the highest priority over set APIs. 
 
@@ -309,7 +309,7 @@ In `config.json` file:
 ```
 Where you start appInsights object:
 ```javascript
-process.env["APPLICATION_INSIGHTS_CONFIG_PATH"] = "./config.json";
+process.env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = "./config.json";
 let appInsights = require('applicationinsights');
 appInsights.setup()
     .setAutoCollectExceptions(true)
@@ -327,7 +327,7 @@ In `config.json` file:
 ```
 Where you start appInsights object:
 ```javascript
-process.env["APPLICATION_INSIGHTS_CONFIG_PATH"] = "./config.json";
+process.env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = "./config.json";
 let appInsights = require('applicationinsights');
 appInsights.setup()
     .setAutoCollectExceptions(true);
@@ -392,7 +392,7 @@ Create a file named `config.json`:
 ```
 Then set the configuration file path in your environment variable before initialzing the appInsights object:
 ```javascript
-process.env["APPLICATION_INSIGHTS_CONFIG_PATH"] = "./config.json";
+process.env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = "./config.json";
 let appInsights = require('applicationinsights');
 appInsights.setup().start();
 ```

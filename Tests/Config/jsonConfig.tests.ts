@@ -1,9 +1,10 @@
 import assert = require("assert");
 import sinon = require("sinon");
+import fs = require("fs");
 import path = require("path");
 import AppInsights = require("../../applicationinsights");
+import Logging = require("../../Library/Logging");
 import { JsonConfig } from "../../Library/JsonConfig";
-import Config = require("../../Library/Config");
 
 
 describe("Custom Config", () => {
@@ -22,11 +23,43 @@ describe("Custom Config", () => {
         sandbox.restore();
     });
 
+
     describe("config path", () => {
-        it("Should take configurations from custom config file", () => {
+        it("Default file path", () => {
+            let fileSpy = sandbox.spy(fs, "readFileSync");
+            let loggerSpy = sandbox.spy(Logging, "info");
+            const config = JsonConfig.getInstance();
+            assert.equal(loggerSpy.callCount, 0);
+            assert.equal(fileSpy.called, 1);
+            let defaultPath = path.resolve(process.cwd(), "applicationinsights.json");
+            assert.equal(fileSpy.args[0][0], defaultPath);
+            assert.equal(config.proxyHttpUrl, undefined);
+        });
+
+        it("Absolute file path", () => {
             const env = <{ [id: string]: string }>{};
-            const customConfigJSONPath = path.resolve(__dirname, "../../../Tests/Config", "./config.json");
-            env["APPLICATION_INSIGHTS_CONFIG_PATH"] = customConfigJSONPath;
+            const customConfigJSONPath = path.resolve(__dirname, "../../../Tests/Config/config.json");
+            env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath;
+            process.env = env;
+            const config = JsonConfig.getInstance();
+            assert.equal(config.connectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+        });
+
+        it("Relative file path", () => {
+            const env = <{ [id: string]: string }>{};
+            const customConfigJSONPath = "./Tests/Config/config.json";
+            env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath;
+            process.env = env;
+            const config = JsonConfig.getInstance();
+            assert.equal(config.connectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+        });
+    });
+
+    describe("configuration values", () => {
+        it("Should take configurations from JSON config file", () => {
+            const env = <{ [id: string]: string }>{};
+            const customConfigJSONPath = path.resolve(__dirname, "../../../Tests/Config/config.json");
+            env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath;
             process.env = env;
             const config = JsonConfig.getInstance();
             assert.equal(config.connectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
@@ -54,10 +87,10 @@ describe("Custom Config", () => {
             assert.equal(config.disableStatsbeat, false);
         });
 
-        it("Should take configurations from custom config file over environment variable if both are configured", () => {
+        it("Should take configurations from JSON config file over environment variables if both are configured", () => {
             const env = <{ [id: string]: string }>{};
-            const customConfigJSONPath = path.resolve(__dirname, "../../../Tests/Config", "./config.json");
-            env["APPLICATION_INSIGHTS_CONFIG_PATH"] = customConfigJSONPath;
+            const customConfigJSONPath = path.resolve(__dirname, "../../../Tests/Config/config.json");
+            env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath;
             env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "InstrumentationKey=2bb22222-cccc-2ddd-9eee-ffffgggg4444;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/";
             env["http_proxy"] = "testProxyHttpUrl2";
             env["https_proxy"] = "testProxyHttpsUrl2";

@@ -13,7 +13,7 @@ describe("Library/Config", () => {
 
     var iKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
     var appVer = "appVer";
-    
+
     var sandbox: sinon.SinonSandbox;
 
     before(() => {
@@ -30,8 +30,8 @@ describe("Library/Config", () => {
 
     describe("#constructor", () => {
         describe("connection string && API && environment variable prioritization", () => {
-            it ("connection string set via in code setup", () => {
-                var env = { [ENV_connectionString]: "InStruMenTatioNKey=cs.env", [Config.ENV_iKey]: "ikey.env"};
+            it("connection string set via in code setup", () => {
+                var env = { [ENV_connectionString]: "InStruMenTatioNKey=cs.env", [Config.ENV_iKey]: "ikey.env" };
                 var originalEnv = process.env;
                 process.env = env;
                 const config = new Config("InStruMenTatioNKey=cs.code");
@@ -40,7 +40,7 @@ describe("Library/Config", () => {
             });
 
             it("instrumentation key set via in code setup", () => {
-                var env = { [ENV_connectionString]: "InStruMenTatioNKey=CS.env", [Config.ENV_iKey]: "ikey.env"};
+                var env = { [ENV_connectionString]: "InStruMenTatioNKey=CS.env", [Config.ENV_iKey]: "ikey.env" };
                 var originalEnv = process.env;
                 process.env = env;
                 const config = new Config("ikey.code");
@@ -49,7 +49,7 @@ describe("Library/Config", () => {
             });
 
             it("connection string set via environment variable", () => {
-                var env = { [ENV_connectionString]: "InStruMenTatioNKey=cs.env", [Config.ENV_iKey]: "ikey.env"};
+                var env = { [ENV_connectionString]: "InStruMenTatioNKey=cs.env", [Config.ENV_iKey]: "ikey.env" };
                 var originalEnv = process.env;
                 process.env = env;
                 const config = new Config();
@@ -58,7 +58,7 @@ describe("Library/Config", () => {
             });
 
             it("instrumentation key set via environment variable", () => {
-                var env = { [Config.ENV_iKey]: "ikey.env"};
+                var env = { [Config.ENV_iKey]: "ikey.env" };
                 var originalEnv = process.env;
                 process.env = env;
                 const config = new Config();
@@ -78,7 +78,7 @@ describe("Library/Config", () => {
         });
 
         describe("constructor(ikey)", () => {
-            beforeEach(()=> {
+            beforeEach(() => {
                 sinon.stub(http, 'request');
                 sinon.stub(https, 'request');
             });
@@ -95,7 +95,7 @@ describe("Library/Config", () => {
             });
 
             it("should read iKey from environment", () => {
-                var env = <{[id: string]: string}>{};
+                var env = <{ [id: string]: string }>{};
                 env[Config.ENV_iKey] = iKey;
                 var originalEnv = process.env;
                 process.env = env;
@@ -105,7 +105,7 @@ describe("Library/Config", () => {
             });
 
             it("should read iKey from azure environment", () => {
-                var env = <{[id: string]: string}>{};
+                var env = <{ [id: string]: string }>{};
                 env[Config.ENV_azurePrefix + Config.ENV_iKey] = iKey;
                 var originalEnv = process.env;
                 process.env = env;
@@ -159,19 +159,19 @@ describe("Library/Config", () => {
             it("instrumentation key validation-valid key passed", () => {
                 var warnStub = sandbox.stub(console, "warn");
                 var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-                assert.ok(warnStub.calledOnce, "warning was not raised due to ikey checking, warning is called once since config json path is not configured");
+                assert.ok(warnStub.notCalled, "warning was not raised");
             });
 
             it("instrumentation key validation-invalid key passed", () => {
                 var warnStub = sandbox.stub(console, "warn");
                 var config = new Config("1aa11111bbbb1ccc8dddeeeeffff3333");
-                assert.ok(warnStub.calledTwice, "warning was raised once due to ikey checking, the second call is caused by config json path is not configured");
+                assert.ok(warnStub.calledOn, "warning was raised");
             });
 
             it("instrumentation key validation-invalid key passed", () => {
                 var warnStub = sandbox.stub(console, "warn");
                 var config = new Config("abc");
-                assert.ok(warnStub.calledTwice, "warning was raised due to ikey checking, the second call is caused by config json path is not configured");
+                assert.ok(warnStub.calledOn, "warning was raised");
             });
 
         });
