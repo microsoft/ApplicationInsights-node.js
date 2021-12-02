@@ -54,6 +54,15 @@ export function setup(setupString?: string) {
     if (!defaultClient) {
         defaultClient = new TelemetryClient(setupString);
         _defaultAutoCollector.setup(defaultClient);
+        if (defaultClient.config.distributedTracingMode) {
+            Configuration.setDistributedTracingMode(defaultClient.config.distributedTracingMode);
+        }
+        if (defaultClient.config.enableInternalDebugLogging) {
+            Logging.enableDebug = defaultClient.config.enableInternalDebugLogging;
+        }
+        if (defaultClient.config.enableInternalWarningLogging) {
+            Logging.disableWarnings = !defaultClient.config.enableInternalWarningLogging;
+        }
         if (defaultClient.config.enableSendLiveMetrics) {
             Configuration.setSendLiveMetrics(defaultClient.config.enableSendLiveMetrics);
         }

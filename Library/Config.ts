@@ -8,66 +8,37 @@ import http = require('http');
 import https = require('https');
 import url = require('url');
 import { JsonConfig } from "./JsonConfig";
-import { IJsonConfig } from "./IJsonConfig";
+import { IConfig } from "../Declarations/Interfaces";
 import { DistributedTracingModes } from "../applicationinsights";
-import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";
+import { IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";
 
-class Config {
-    // Azure adds this prefix to all environment variables
-    public static ENV_azurePrefix = "APPSETTING_";
+class Config implements IConfig {
 
-    // This key is provided in the readme
-    public static ENV_iKey = "APPINSIGHTS_INSTRUMENTATIONKEY";
+    public static ENV_azurePrefix = "APPSETTING_"; // Azure adds this prefix to all environment variables
+    public static ENV_iKey = "APPINSIGHTS_INSTRUMENTATIONKEY"; // This key is provided in the readme
     public static legacy_ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
     public static ENV_profileQueryEndpoint = "APPINSIGHTS_PROFILE_QUERY_ENDPOINT";
     public static ENV_quickPulseHost = "APPINSIGHTS_QUICKPULSE_HOST";
 
-    /** An identifier for your Application Insights resource */
-    public instrumentationKey: string;
-    /** The id for cross-component correlation. READ ONLY. */
-    public correlationId: string;
-    /** The ingestion endpoint to send telemetry payloads to */
+    // IConfig properties
+    public connectionString: string;
     public endpointUrl: string;
-    /** The maximum number of telemetry items to include in a payload to the ingestion endpoint (Default 250) */
     public maxBatchSize: number;
-    /** The maximum amount of time to wait for a payload to reach maxBatchSize (Default 15000) */
     public maxBatchIntervalMs: number;
-    /** A flag indicating if telemetry transmission is disabled (Default false) */
     public disableAppInsights: boolean;
-    /** The percentage of telemetry items tracked that should be transmitted (Default 100) */
     public samplingPercentage: number;
-    /** The time to wait before retrying to retrieve the id for cross-component correlation (Default 30000) */
     public correlationIdRetryIntervalMs: number;
-    /** A list of domains to exclude from cross-component header injection */
     public correlationHeaderExcludedDomains: string[];
-    /** A proxy server for SDK HTTP traffic (Optional, Default pulled from `http_proxy` environment variable) */
     public proxyHttpUrl: string;
-    /** A proxy server for SDK HTTPS traffic (Optional, Default pulled from `https_proxy` environment variable) */
     public proxyHttpsUrl: string;
-    /** An http.Agent to use for SDK HTTP traffic (Optional, Default undefined) */
     public httpAgent: http.Agent;
-    /** An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined) */
     public httpsAgent: https.Agent;
-    /** Disable including legacy headers in outgoing requests, x-ms-request-id */
-    public ignoreLegacyHeaders?: boolean;
-    /** AAD TokenCredential to use to authenticate the app */
+    public ignoreLegacyHeaders: boolean;
     public aadTokenCredential?: azureCore.TokenCredential;
-
-    private endpointBase: string = Constants.DEFAULT_BREEZE_ENDPOINT;
-    private setCorrelationId: (v: string) => void;
-    private _profileQueryEndpoint: string;
-    /** Host name for quickpulse service */
-    private _quickPulseHost: string;
-
-    /** private config object that is populated from config json file */
-    private _jsonConfig: IJsonConfig = JsonConfig.getJsonConfig();
-
-    public enableAutoCollectConsole: boolean; // enable auto collect console
+    public enableAutoCollectConsole: boolean;
     public enableAutoCollectExceptions: boolean;
     public enableAutoCollectPerformance: boolean;
-    public enableNativePerformance: boolean;
-    public enableAutoCollectExternalLoggers: boolean; // enable auto collect bunyan & winston
-    public disabledExtendedMetrics: IDisabledExtendedMetrics;
+    public enableAutoCollectExternalLoggers: boolean;
     public enableAutoCollectPreAggregatedMetrics: boolean;
     public enableAutoCollectHeartbeat: boolean;
     public enableAutoCollectRequests: boolean;
@@ -77,11 +48,30 @@ class Config {
     public enableUseDiskRetryCaching: boolean;
     public enableUseAsyncHooks: boolean;
     public disableStatsbeat: boolean;
+    public distributedTracingMode: DistributedTracingModes;
+    public enableAutoCollectExtendedMetrics: boolean | IDisabledExtendedMetrics;
+    public enableResendInterval: number;
+    public enableMaxBytesOnDisk: number;
+    public enableInternalDebugLogging: boolean;
+    public enableInternalWarningLogging: boolean;
+    public disableAllExtendedMetrics: boolean;
+    public extendedMetricDisablers: string;
+    public noDiagnosticChannel: boolean;
+    public noPatchModules: string;
+    public noHttpAgentKeepAlive: boolean;
+    public quickPulseHost: string;
+
+    public correlationId: string; // TODO: Should be private
+    private _endpointBase: string = Constants.DEFAULT_BREEZE_ENDPOINT;
+    private _setCorrelationId: (v: string) => void;
+    private _profileQueryEndpoint: string;
+    private _instrumentationKey: string;
+
 
     constructor(setupString?: string) {
-        this._generateConfigurationObjectFromEnvVars();
-
-        const connectionStringEnv: string | undefined = this._jsonConfig.connectionString;
+        // Load config values from env variables and JSON if available
+        this._mergeConfig();
+        const connectionStringEnv: string | undefined = this.connectionString;
         const csCode = ConnectionStringParser.parse(setupString);
         const csEnv = ConnectionStringParser.parse(connectionStringEnv);
         const iKeyCode = !csCode.instrumentationkey && Object.keys(csCode).length > 0
@@ -89,19 +79,14 @@ class Config {
             : setupString; // CS was invalid, so it must be an ikey
 
         this.instrumentationKey = csCode.instrumentationkey || iKeyCode /* === instrumentationKey */ || csEnv.instrumentationkey || Config._getInstrumentationKey();
-        // validate ikey. If fails throw a warning
-        if (!Config._validateInstrumentationKey(this.instrumentationKey)) {
-            Logging.warn("An invalid instrumentation key was provided. There may be resulting telemetry loss", this.instrumentationKey);
-        }
-
-        this.endpointUrl = `${this._jsonConfig.endpointUrl || csCode.ingestionendpoint || csEnv.ingestionendpoint || this.endpointBase}/v2.1/track`;
-        this.maxBatchSize = this._jsonConfig.maxBatchSize || 250;
-        this.maxBatchIntervalMs = this._jsonConfig.maxBatchIntervalMs || 15000;
-        this.disableAppInsights = this._jsonConfig.disableAppInsights || false;
-        this.samplingPercentage = this._jsonConfig.samplingPercentage || 100;
-        this.correlationIdRetryIntervalMs = this._jsonConfig.correlationIdRetryIntervalMs || 30 * 1000;
+        this.endpointUrl = `${this.endpointUrl || csCode.ingestionendpoint || csEnv.ingestionendpoint || this._endpointBase}/v2.1/track`;
+        this.maxBatchSize = this.maxBatchSize || 250;
+        this.maxBatchIntervalMs = this.maxBatchIntervalMs || 15000;
+        this.disableAppInsights = this.disableAppInsights || false;
+        this.samplingPercentage = this.samplingPercentage || 100;
+        this.correlationIdRetryIntervalMs = this.correlationIdRetryIntervalMs || 30 * 1000;
         this.correlationHeaderExcludedDomains =
-            this._jsonConfig.correlationHeaderExcludedDomains ||
+            this.correlationHeaderExcludedDomains ||
             [
                 "*.core.windows.net",
                 "*.core.chinacloudapi.cn",
@@ -111,96 +96,76 @@ class Config {
                 "*.core.eaglex.ic.gov"
             ];
 
-        this.setCorrelationId = (correlationId) => this.correlationId = correlationId;
-
-        this.proxyHttpUrl = this._jsonConfig.proxyHttpUrl;
-        this.proxyHttpsUrl = this._jsonConfig.proxyHttpsUrl;
-        this.httpAgent = this._jsonConfig.httpAgent;
-        this.httpsAgent = this._jsonConfig.httpsAgent;
-        this.ignoreLegacyHeaders = this._jsonConfig.ignoreLegacyHeaders || false;
-        this.profileQueryEndpoint = csCode.ingestionendpoint || csEnv.ingestionendpoint || process.env[Config.ENV_profileQueryEndpoint] || this.endpointBase;
-        this._quickPulseHost = csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_HOST;
+        this._setCorrelationId = (correlationId) => this.correlationId = correlationId;
+        this.ignoreLegacyHeaders = this.ignoreLegacyHeaders || false;
+        this.profileQueryEndpoint = csCode.ingestionendpoint || csEnv.ingestionendpoint || process.env[Config.ENV_profileQueryEndpoint] || this._endpointBase;
+        this.quickPulseHost = this.quickPulseHost || csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_HOST;
         // Parse quickPulseHost if it starts with http(s)://
-        if (this._quickPulseHost.match(/^https?:\/\//)) {
-            this._quickPulseHost = new url.URL(this._quickPulseHost).host;
-        }
-    }
-
-    private _generateConfigurationObjectFromEnvVars() {
-        if (this._jsonConfig.distributedTracingMode !== undefined) {
-            CorrelationIdManager.w3cEnabled = this._jsonConfig.distributedTracingMode === DistributedTracingModes.AI_AND_W3C;
-        }
-        if (this._jsonConfig.enableAutoCollectConsole !== undefined) {
-            this.enableAutoCollectConsole = this._jsonConfig.enableAutoCollectConsole;
-        }
-        if (this._jsonConfig.enableAutoCollectExternalLoggers !== undefined) {
-            this.enableAutoCollectExternalLoggers = this._jsonConfig.enableAutoCollectExternalLoggers;
-        }
-        if (this._jsonConfig.enableAutoCollectExceptions !== undefined) {
-            this.enableAutoCollectExceptions = this._jsonConfig.enableAutoCollectExceptions;
-        }
-        if (this._jsonConfig.enableAutoCollectPerformance !== undefined) {
-            this.enableAutoCollectPerformance = this._jsonConfig.enableAutoCollectPerformance;
-        }
-        if (this._jsonConfig.enableAutoCollectExtendedMetrics !== undefined) {
-            const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(this._jsonConfig.enableAutoCollectExtendedMetrics, this._jsonConfig);
-            this.enableNativePerformance = extendedMetricsConfig.isEnabled;
-            this.disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
-        }
-        if (this._jsonConfig.enableAutoCollectPreAggregatedMetrics !== undefined) {
-            this.enableAutoCollectPreAggregatedMetrics = this._jsonConfig.enableAutoCollectPreAggregatedMetrics;
-        }
-        if (this._jsonConfig.enableAutoCollectHeartbeat !== undefined) {
-            this.enableAutoCollectHeartbeat = this._jsonConfig.enableAutoCollectHeartbeat;
-        }
-        if (this._jsonConfig.enableAutoCollectRequests !== undefined) {
-            this.enableAutoCollectRequests = this._jsonConfig.enableAutoCollectRequests;
-        }
-        if (this._jsonConfig.enableAutoCollectDependencies !== undefined) {
-            this.enableAutoCollectDependencies = this._jsonConfig.enableAutoCollectDependencies;
-        }
-        if (this._jsonConfig.enableAutoDependencyCorrelation !== undefined) {
-            this.enableAutoDependencyCorrelation = this._jsonConfig.enableAutoDependencyCorrelation;
-        }
-        if (this._jsonConfig.enableUseAsyncHooks !== undefined) {
-            this.enableUseAsyncHooks = this._jsonConfig.enableUseAsyncHooks;
-        }
-        if (this._jsonConfig.enableUseDiskRetryCaching !== undefined) {
-            this.enableUseDiskRetryCaching = this._jsonConfig.enableUseDiskRetryCaching;
-        }
-        if (this._jsonConfig.enableInternalDebugLogging !== undefined) {
-            Logging.enableDebug = this._jsonConfig.enableInternalDebugLogging;
-        }
-        if (this._jsonConfig.enableInternalWarningLogging !== undefined) {
-            Logging.disableWarnings = !this._jsonConfig.enableInternalWarningLogging;
-        }
-        if (this._jsonConfig.enableSendLiveMetrics !== undefined) {
-            this.enableSendLiveMetrics = this._jsonConfig.enableSendLiveMetrics;
-        }
-        if (this._jsonConfig.disableStatsbeat !== undefined) {
-            this.disableStatsbeat = this._jsonConfig.disableStatsbeat;
+        if (this.quickPulseHost.match(/^https?:\/\//)) {
+            this.quickPulseHost = new url.URL(this.quickPulseHost).host;
         }
     }
 
     public set profileQueryEndpoint(endpoint: string) {
-        CorrelationIdManager.cancelCorrelationIdQuery(this, this.setCorrelationId);
+        CorrelationIdManager.cancelCorrelationIdQuery(this, this._setCorrelationId);
         this._profileQueryEndpoint = endpoint;
         this.correlationId = CorrelationIdManager.correlationIdPrefix; // Reset the correlationId while we wait for the new query
-        CorrelationIdManager.queryCorrelationId(this, this.setCorrelationId);
+        CorrelationIdManager.queryCorrelationId(this, this._setCorrelationId);
     }
 
     public get profileQueryEndpoint() {
         return this._profileQueryEndpoint;
     }
 
-    public set quickPulseHost(host: string) {
-        this._quickPulseHost = host;
+    public set instrumentationKey(iKey: string) {
+        if (!Config._validateInstrumentationKey(iKey)) {
+            Logging.warn("An invalid instrumentation key was provided. There may be resulting telemetry loss", this.instrumentationKey);
+        }
+        this._instrumentationKey = iKey;
     }
 
-    public get quickPulseHost(): string {
-        return this._quickPulseHost;
+    public get instrumentationKey(): string {
+        return this._instrumentationKey;
     }
 
+    private _mergeConfig() {
+        let jsonConfig = JsonConfig.getInstance();
+        this.connectionString = jsonConfig.connectionString;
+        this.correlationHeaderExcludedDomains = jsonConfig.correlationHeaderExcludedDomains;
+        this.correlationIdRetryIntervalMs = jsonConfig.correlationIdRetryIntervalMs;
+        this.disableAllExtendedMetrics = jsonConfig.disableAllExtendedMetrics;
+        this.disableAppInsights = jsonConfig.disableAppInsights;
+        this.disableStatsbeat = jsonConfig.disableStatsbeat;
+        this.distributedTracingMode = jsonConfig.distributedTracingMode;
+        this.enableAutoCollectConsole = jsonConfig.enableAutoCollectConsole;
+        this.enableAutoCollectDependencies = jsonConfig.enableAutoCollectDependencies;
+        this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
+        this.enableAutoCollectExtendedMetrics = jsonConfig.enableAutoCollectExtendedMetrics;
+        this.enableAutoCollectExternalLoggers = jsonConfig.enableAutoCollectExternalLoggers;
+        this.enableAutoCollectHeartbeat = jsonConfig.enableAutoCollectHeartbeat;
+        this.enableAutoCollectPerformance = jsonConfig.enableAutoCollectPerformance;
+        this.enableAutoCollectPreAggregatedMetrics = jsonConfig.enableAutoCollectPreAggregatedMetrics;
+        this.enableAutoCollectRequests = jsonConfig.enableAutoCollectRequests;
+        this.enableAutoDependencyCorrelation = jsonConfig.enableAutoDependencyCorrelation;
+        this.enableInternalDebugLogging = jsonConfig.enableInternalDebugLogging;
+        this.enableInternalWarningLogging = jsonConfig.enableInternalWarningLogging;
+        this.enableMaxBytesOnDisk = jsonConfig.enableMaxBytesOnDisk;
+        this.enableSendLiveMetrics = jsonConfig.enableSendLiveMetrics;
+        this.enableUseAsyncHooks = jsonConfig.enableUseAsyncHooks;
+        this.enableUseDiskRetryCaching = jsonConfig.enableUseDiskRetryCaching;
+        this.endpointUrl = jsonConfig.endpointUrl;
+        this.extendedMetricDisablers = jsonConfig.extendedMetricDisablers;
+        this.ignoreLegacyHeaders = jsonConfig.ignoreLegacyHeaders;
+        this.maxBatchIntervalMs = jsonConfig.maxBatchIntervalMs;
+        this.maxBatchSize = jsonConfig.maxBatchSize;
+        this.noDiagnosticChannel = jsonConfig.noDiagnosticChannel;
+        this.noHttpAgentKeepAlive = jsonConfig.noHttpAgentKeepAlive;
+        this.noPatchModules = jsonConfig.noPatchModules;
+        this.proxyHttpUrl = jsonConfig.proxyHttpUrl;
+        this.proxyHttpsUrl = jsonConfig.proxyHttpsUrl;
+        this.quickPulseHost = jsonConfig.quickPulseHost;
+        this.samplingPercentage = jsonConfig.samplingPercentage;
+    }
 
     private static _getInstrumentationKey(): string {
         // check for both the documented env variable and the azure-prefixed variable

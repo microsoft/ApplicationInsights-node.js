@@ -108,10 +108,11 @@ class AutoCollector {
 
     public setAutoCollectPerformance(value: boolean, collectExtendedMetrics: boolean | IDisabledExtendedMetrics = true) {
         this.isPerformance = value;
-        const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(collectExtendedMetrics, JsonConfig.getJsonConfig());
+        const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(collectExtendedMetrics, this._client.config);
         this.isNativePerformance = extendedMetricsConfig.isEnabled;
         this.disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
         if (this._isStarted) {
+
             this._performance.enable(value);
             this._nativePerformance.enable(extendedMetricsConfig.isEnabled, extendedMetricsConfig.disabledMetrics);
         }
@@ -164,8 +165,6 @@ class AutoCollector {
         this.isDependencies = this._client.config.enableAutoDependencyCorrelation !== undefined ? this._client.config.enableAutoDependencyCorrelation : this.isDependencies;
         this.isCorrelating = this._client.config.enableAutoDependencyCorrelation !== undefined ? this._client.config.enableAutoDependencyCorrelation : this.isCorrelating;
         this.forceClsHooked = this._client.config.enableUseAsyncHooks !== undefined ? this._client.config.enableUseAsyncHooks : this.forceClsHooked;
-        this.isNativePerformance = this._client.config.enableNativePerformance !== undefined ? this._client.config.enableNativePerformance : this.isNativePerformance;
-        this.disabledExtendedMetrics = this._client.config.disabledExtendedMetrics !== undefined ? this._client.config.disabledExtendedMetrics : this.disabledExtendedMetrics;
     }
 }
 

@@ -16,7 +16,7 @@ describe("Library/Config", () => {
     var appVer = "appVer";
 
     beforeEach(() => {
-        JsonConfig["_jsonConfig"] = undefined;
+        JsonConfig["_instance"] = undefined;
     });
 
     describe("#constructor", () => {
@@ -134,7 +134,7 @@ describe("Library/Config", () => {
             it("should initialize values that we claim in README (2)", () => {
                 process.env.http_proxy = "test";
                 process.env.https_proxy = "test2";
-                JsonConfig["_jsonConfig"] = undefined;
+                JsonConfig["_instance"] = undefined;
                 var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert(config.proxyHttpUrl === "test");
                 assert(config.proxyHttpsUrl === "test2");

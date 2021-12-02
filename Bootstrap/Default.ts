@@ -14,7 +14,7 @@ let _logger: DiagnosticLogger = new DiagnosticLogger(console);
 let _statusLogger: StatusLogger = new StatusLogger(console);
 
 // Env var local constants
-const _setupString = JsonConfig.getJsonConfig().connectionString || process.env.APPINSIGHTS_INSTRUMENTATIONKEY;
+const _setupString = JsonConfig.getInstance().connectionString || process.env.APPINSIGHTS_INSTRUMENTATIONKEY;
 const forceStart = process.env.APPLICATIONINSIGHTS_FORCE_START === "true";
 
 // Other local constants

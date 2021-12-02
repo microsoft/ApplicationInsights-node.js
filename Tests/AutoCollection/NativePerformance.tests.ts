@@ -13,7 +13,7 @@ describe("AutoCollection/NativePerformance", () => {
 
     beforeEach(() => {
         sandbox = sinon.sandbox.create();
-        JsonConfig["_jsonConfig"] = undefined;
+        JsonConfig["_instance"] = undefined;
     });
 
     afterEach(() => {
@@ -80,7 +80,7 @@ describe("AutoCollection/NativePerformance", () => {
 
         describe("#_parseEnabled", () => {
             it("should return equal input arg if no env vars are set", () => {
-                const _customConfig = JsonConfig.getJsonConfig();
+                const _customConfig = JsonConfig.getInstance();
                 assert.deepEqual(AutoCollectNativePerformance.parseEnabled(true, _customConfig), { isEnabled: true, disabledMetrics: {} });
                 assert.deepEqual(AutoCollectNativePerformance.parseEnabled(false, _customConfig), { isEnabled: false, disabledMetrics: {} });
 
@@ -95,7 +95,7 @@ describe("AutoCollection/NativePerformance", () => {
                 env[ENV_nativeMetricsDisableAll] = "set";
                 process.env = env;
 
-                const _customConfig = JsonConfig.getJsonConfig();
+                const _customConfig = JsonConfig.getInstance();
 
                 assert.deepEqual(AutoCollectNativePerformance.parseEnabled(true, _customConfig), { isEnabled: false, disabledMetrics: {} });
                 assert.deepEqual(AutoCollectNativePerformance.parseEnabled({}, _customConfig), { isEnabled: false, disabledMetrics: {} });
@@ -112,7 +112,7 @@ describe("AutoCollection/NativePerformance", () => {
                 env[ENV_nativeMetricsDisablers] = "gc,heap";
                 process.env = env;
 
-                const _customConfig = JsonConfig.getJsonConfig();
+                const _customConfig = JsonConfig.getInstance();
 
                 let inConfig;
 

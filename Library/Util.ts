@@ -12,7 +12,7 @@ import { JsonConfig } from "./JsonConfig";
 
 
 class Util {
-    private static _useKeepAlive = !JsonConfig.getJsonConfig().noHttpAgentKeepAlive;
+    private static _useKeepAlive = !JsonConfig.getInstance().noHttpAgentKeepAlive;
     private static _listenerAttached = false;
 
     public static MAX_PROPERTY_LENGTH = 8192;
