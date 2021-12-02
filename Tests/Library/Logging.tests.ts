@@ -24,7 +24,7 @@ describe("Library/Logging", () => {
             var originalEnv = process.env;
             process.env = env1;
             Logging.enableDebug = true;
-            var consoleStub = sandbox.stub(console, "log");
+            var consoleStub = sandbox.stub(console, "info");
             Logging.info("test");
             process.env = originalEnv;
             assert.ok(consoleStub.called);
@@ -36,7 +36,7 @@ describe("Library/Logging", () => {
             var originalEnv = process.env;
             process.env = env1;
             Logging.enableDebug = true;
-            var consoleStub = sandbox.stub(console, "log");
+            var consoleStub = sandbox.stub(console, "info");
             Logging.info("test");
             process.env = originalEnv;
             assert.ok(consoleStub.notCalled);
@@ -47,7 +47,7 @@ describe("Library/Logging", () => {
         it("should do nothing if disabled", () => {
             var originalSetting = Logging.disableWarnings;
             Logging.enableDebug = false;
-            var infoStub = sandbox.stub(InternalAzureLogger.getInstance().logger, "info");
+            var infoStub = sandbox.stub(InternalAzureLogger.getInstance(), "info");
             Logging.info("test");
             assert.ok(infoStub.notCalled);
             Logging.enableDebug = originalSetting;
@@ -56,7 +56,7 @@ describe("Library/Logging", () => {
         it("should log 'info' if called", () => {
             var originalSetting = Logging.enableDebug;
             Logging.enableDebug = true;
-            var infoStub = sandbox.stub(InternalAzureLogger.getInstance().logger, "info");
+            var infoStub = sandbox.stub(InternalAzureLogger.getInstance(), "info");
             Logging.info("test");
             assert.ok(infoStub.calledOnce);
             Logging.enableDebug = originalSetting;
@@ -67,7 +67,7 @@ describe("Library/Logging", () => {
         it("should do nothing if disabled", () => {
             var originalSetting = Logging.disableWarnings;
             Logging.disableWarnings = true
-            var warnStub = sandbox.stub(InternalAzureLogger.getInstance().logger, "warning");
+            var warnStub = sandbox.stub(InternalAzureLogger.getInstance(), "warning");
             Logging.warn("test");
             assert.ok(warnStub.notCalled);
             Logging.enableDebug = originalSetting;
@@ -76,7 +76,7 @@ describe("Library/Logging", () => {
         it("should log 'warn' if enabled", () => {
             var originalSetting = Logging.disableWarnings;
             Logging.disableWarnings = false;
-            var warnStub = sandbox.stub(InternalAzureLogger.getInstance().logger, "warning");
+            var warnStub = sandbox.stub(InternalAzureLogger.getInstance(), "warning");
             Logging.warn("test");
             assert.ok(warnStub.calledOnce);
             Logging.enableDebug = originalSetting;
