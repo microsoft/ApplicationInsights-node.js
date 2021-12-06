@@ -5,7 +5,6 @@ import Logging = require('./Logging');
 import { IConfig, IJsonConfig } from "../Declarations/Interfaces";
 import { DistributedTracingModes } from "../applicationinsights";
 import { IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";
-import FileSystemHelper = require("../Library/FileSystemHelper");
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 // Azure Connection String
@@ -96,7 +95,7 @@ export class JsonConfig implements IJsonConfig {
             }
         }
         try {
-            const jsonConfig = JSON.parse(fs.readFileSync(tempDir, "utf8"));
+            const jsonConfig: IJsonConfig = JSON.parse(fs.readFileSync(tempDir, "utf8"));
             if (jsonConfig.disableStatsbeat != undefined) {
                 this.disableStatsbeat = jsonConfig.disableStatsbeat;
             }
@@ -156,6 +155,7 @@ export class JsonConfig implements IJsonConfig {
             this.enableInternalDebugLogging = jsonConfig.enableInternalDebugLogging;
             this.enableInternalWarningLogging = jsonConfig.enableInternalWarningLogging;
             this.enableSendLiveMetrics = jsonConfig.enableSendLiveMetrics;
+            this.quickPulseHost = jsonConfig.quickPulseHost;
         }
         catch (err) {
             Logging.info("Missing or invalid JSON config file: ", err);

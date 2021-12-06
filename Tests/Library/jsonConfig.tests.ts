@@ -7,7 +7,7 @@ import Logging = require("../../Library/Logging");
 import { JsonConfig } from "../../Library/JsonConfig";
 
 
-describe("Custom Config", () => {
+describe("Json Config", () => {
     var sandbox: sinon.SinonSandbox;
     let originalEnv: NodeJS.ProcessEnv;
 
@@ -21,6 +21,10 @@ describe("Custom Config", () => {
         process.env = originalEnv;
         AppInsights.dispose();
         sandbox.restore();
+    });
+
+    after(()=>{
+        JsonConfig["_instance"] = undefined;
     });
 
 
@@ -38,7 +42,7 @@ describe("Custom Config", () => {
 
         it("Absolute file path", () => {
             const env = <{ [id: string]: string }>{};
-            const customConfigJSONPath = path.resolve(__dirname, "../../../Tests/Config/config.json");
+            const customConfigJSONPath = path.resolve(__dirname, "../../../Tests/Library/config.json");
             env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath;
             process.env = env;
             const config = JsonConfig.getInstance();
@@ -47,7 +51,7 @@ describe("Custom Config", () => {
 
         it("Relative file path", () => {
             const env = <{ [id: string]: string }>{};
-            const customConfigJSONPath = "./Tests/Config/config.json";
+            const customConfigJSONPath = "./Tests/Library/config.json";
             env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath;
             process.env = env;
             const config = JsonConfig.getInstance();
@@ -58,7 +62,7 @@ describe("Custom Config", () => {
     describe("configuration values", () => {
         it("Should take configurations from JSON config file", () => {
             const env = <{ [id: string]: string }>{};
-            const customConfigJSONPath = path.resolve(__dirname, "../../../Tests/Config/config.json");
+            const customConfigJSONPath = path.resolve(__dirname, "../../../Tests/Library/config.json");
             env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath;
             process.env = env;
             const config = JsonConfig.getInstance();
@@ -73,7 +77,7 @@ describe("Custom Config", () => {
             assert.equal(config.correlationHeaderExcludedDomains[1], "domain2");
             assert.equal(config.proxyHttpUrl, "testProxyHttpUrl");
             assert.equal(config.proxyHttpsUrl, "testProxyHttpsUrl");
-            assert.equal(config.ignoreLegacyHeaders, true);
+            assert.equal(config.ignoreLegacyHeaders, false);
             assert.equal(config.enableAutoCollectExternalLoggers, false);
             assert.equal(config.enableAutoCollectConsole, false);
             assert.equal(config.enableAutoCollectExceptions, false);
@@ -85,21 +89,69 @@ describe("Custom Config", () => {
             assert.equal(config.enableAutoDependencyCorrelation, false);
             assert.equal(config.enableUseAsyncHooks, false);
             assert.equal(config.disableStatsbeat, false);
+            assert.equal(config.enableAutoCollectExtendedMetrics, false);
+            assert.equal(config.noHttpAgentKeepAlive, false);
+            assert.equal(config.distributedTracingMode, 0);
+            assert.equal(config.enableUseDiskRetryCaching, false);
+            assert.equal(config.enableResendInterval, 123);
+            assert.equal(config.enableMaxBytesOnDisk, 456);
+            assert.equal(config.enableInternalDebugLogging, false);
+            assert.equal(config.disableStatsbeat, false);
+            assert.equal(config.enableInternalWarningLogging, false);
+            assert.equal(config.enableSendLiveMetrics, false);
+            assert.equal(config.extendedMetricDisablers, "gc,heap");
+            assert.equal(config.noDiagnosticChannel, false);
+            assert.equal(config.noPatchModules, "console,redis");
+            assert.equal(config.quickPulseHost, "testquickpulsehost.com");
+        });
+
+        it("Should take configurations from environment variables", () => {
+            const env = <{ [id: string]: string }>{};
+            env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "TestConnectionString";
+            env["APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC"] = "gc";
+            env["APPLICATION_INSIGHTS_NO_PATCH_MODULES"] = "azuresdk";
+            env["APPLICATION_INSIGHTS_DISABLE_ALL_EXTENDED_METRICS"] = "true";
+            env["APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL"] = "true";
+            env["APPLICATION_INSIGHTS_NO_STATSBEAT"] = "true";
+            env["APPLICATION_INSIGHTS_NO_HTTP_AGENT_KEEP_ALIVE"] = "true";
+            env["http_proxy"] = "testProxyHttpUrl2";
+            env["https_proxy"] = "testProxyHttpsUrl2";
+            process.env = env;
+            const config = JsonConfig.getInstance();
+            assert.equal(config.connectionString, "TestConnectionString");
+            assert.equal(config.proxyHttpUrl, "testProxyHttpUrl2");
+            assert.equal(config.proxyHttpsUrl, "testProxyHttpsUrl2");
+            assert.equal(config.extendedMetricDisablers, "gc");
+            assert.equal(config.disableAllExtendedMetrics, true);
+            assert.equal(config.noDiagnosticChannel, true);
+            assert.equal(config.noHttpAgentKeepAlive, true);
+            assert.equal(config.noPatchModules, "azuresdk");
+            assert.equal(config.disableStatsbeat, true);
         });
 
         it("Should take configurations from JSON config file over environment variables if both are configured", () => {
             const env = <{ [id: string]: string }>{};
-            const customConfigJSONPath = path.resolve(__dirname, "../../../Tests/Config/config.json");
+            const customConfigJSONPath = path.resolve(__dirname, "../../../Tests/Library/config.json");
             env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath;
-            env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "InstrumentationKey=2bb22222-cccc-2ddd-9eee-ffffgggg4444;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/";
+            env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "TestConnectionString";
+            env["APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC"] = "gc";
+            env["APPLICATION_INSIGHTS_NO_PATCH_MODULES"] = "azuresdk";
+            env["APPLICATION_INSIGHTS_DISABLE_ALL_EXTENDED_METRICS"] = "true";
+            env["APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL"] = "true";
+            env["APPLICATION_INSIGHTS_NO_STATSBEAT"] = "true";
+            env["APPLICATION_INSIGHTS_NO_HTTP_AGENT_KEEP_ALIVE"] = "true";
             env["http_proxy"] = "testProxyHttpUrl2";
             env["https_proxy"] = "testProxyHttpsUrl2";
-            env["APPLICATION_INSIGHTS_NO_STATSBEAT"] = "true";
             process.env = env;
             const config = JsonConfig.getInstance();
             assert.equal(config.connectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
             assert.equal(config.proxyHttpUrl, "testProxyHttpUrl");
             assert.equal(config.proxyHttpsUrl, "testProxyHttpsUrl");
+            assert.equal(config.extendedMetricDisablers, "gc,heap");
+            assert.equal(config.disableAllExtendedMetrics, false);
+            assert.equal(config.noDiagnosticChannel, false);
+            assert.equal(config.noHttpAgentKeepAlive, false);
+            assert.equal(config.noPatchModules, "console,redis");
             assert.equal(config.disableStatsbeat, false);
         });
     });

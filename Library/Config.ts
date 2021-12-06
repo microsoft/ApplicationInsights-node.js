@@ -47,7 +47,6 @@ class Config implements IConfig {
     public enableSendLiveMetrics: boolean;
     public enableUseDiskRetryCaching: boolean;
     public enableUseAsyncHooks: boolean;
-    public disableStatsbeat: boolean;
     public distributedTracingMode: DistributedTracingModes;
     public enableAutoCollectExtendedMetrics: boolean | IDisabledExtendedMetrics;
     public enableResendInterval: number;
@@ -55,10 +54,8 @@ class Config implements IConfig {
     public enableInternalDebugLogging: boolean;
     public enableInternalWarningLogging: boolean;
     public disableAllExtendedMetrics: boolean;
+    public disableStatsbeat: boolean;
     public extendedMetricDisablers: string;
-    public noDiagnosticChannel: boolean;
-    public noPatchModules: string;
-    public noHttpAgentKeepAlive: boolean;
     public quickPulseHost: string;
 
     public correlationId: string; // TODO: Should be private
@@ -149,6 +146,7 @@ class Config implements IConfig {
         this.enableAutoDependencyCorrelation = jsonConfig.enableAutoDependencyCorrelation;
         this.enableInternalDebugLogging = jsonConfig.enableInternalDebugLogging;
         this.enableInternalWarningLogging = jsonConfig.enableInternalWarningLogging;
+        this.enableResendInterval = jsonConfig.enableResendInterval;
         this.enableMaxBytesOnDisk = jsonConfig.enableMaxBytesOnDisk;
         this.enableSendLiveMetrics = jsonConfig.enableSendLiveMetrics;
         this.enableUseAsyncHooks = jsonConfig.enableUseAsyncHooks;
@@ -158,9 +156,6 @@ class Config implements IConfig {
         this.ignoreLegacyHeaders = jsonConfig.ignoreLegacyHeaders;
         this.maxBatchIntervalMs = jsonConfig.maxBatchIntervalMs;
         this.maxBatchSize = jsonConfig.maxBatchSize;
-        this.noDiagnosticChannel = jsonConfig.noDiagnosticChannel;
-        this.noHttpAgentKeepAlive = jsonConfig.noHttpAgentKeepAlive;
-        this.noPatchModules = jsonConfig.noPatchModules;
         this.proxyHttpUrl = jsonConfig.proxyHttpUrl;
         this.proxyHttpsUrl = jsonConfig.proxyHttpsUrl;
         this.quickPulseHost = jsonConfig.quickPulseHost;

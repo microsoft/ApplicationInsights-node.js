@@ -4,11 +4,14 @@ import Client = require("../../Library/TelemetryClient");
 import TelemetryProcessor = require("../../TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor");
 import AutoCollecPreAggregatedMetrics = require("../../AutoCollection/PreAggregatedMetrics");
 import { Contracts } from "../../applicationinsights";
-import { env } from "process";
 
 describe("TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor", () => {
-    describe("#preAggregatedMetricsTelemetryProcessor()", () => {
-        var envelope: Contracts.Envelope = {
+
+    let envelope: Contracts.Envelope;
+    let client: Client;
+    before(() => {
+        var ikey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
+        envelope = {
             ver: 2,
             name: "name",
             data: {
@@ -20,9 +23,12 @@ describe("TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor", () => {
             time: "",
             tags: []
         };
-        var ikey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
-        var client = new Client(ikey);
+        client = new Client(ikey);
+        let preagg = new AutoCollecPreAggregatedMetrics(client);
+        preagg.enable(true);
+    });
 
+    describe("#preAggregatedMetricsTelemetryProcessor()", () => {
         it("Exception telemetry", () => {
             var pgSpy = sinon.spy(AutoCollecPreAggregatedMetrics, "countException");
             var exception = new Contracts.ExceptionData();

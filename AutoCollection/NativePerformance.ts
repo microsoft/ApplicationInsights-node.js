@@ -2,7 +2,7 @@ import TelemetryClient = require("../Library/TelemetryClient");
 import Constants = require("../Declarations/Constants");
 import Context = require("../Library/Context");
 import Logging = require("../Library/Logging");
-import { IJsonConfig } from "../Declarations/Interfaces";
+import { IBaseConfig } from "../Declarations/Interfaces";
 
 /**
  * Interface which defines which specific extended metrics should be disabled
@@ -110,11 +110,11 @@ export class AutoCollectNativePerformance {
      * @private
      * @static
      * @param {(boolean | IDisabledExtendedMetrics)} collectExtendedMetrics
-     * @param {(Config)} Configuration
+     * @param {(IBaseConfig)} customConfig
      * @returns {(boolean | IDisabledExtendedMetrics)}
      * @memberof AutoCollectNativePerformance
      */
-    public static parseEnabled(collectExtendedMetrics: boolean | IDisabledExtendedMetrics, customConfig: IJsonConfig): { isEnabled: boolean, disabledMetrics: IDisabledExtendedMetrics } {
+    public static parseEnabled(collectExtendedMetrics: boolean | IDisabledExtendedMetrics, customConfig: IBaseConfig): { isEnabled: boolean, disabledMetrics: IDisabledExtendedMetrics } {
         const disableAll = customConfig.disableAllExtendedMetrics;
         const individualOptOuts = customConfig.extendedMetricDisablers;
 

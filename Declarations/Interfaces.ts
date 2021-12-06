@@ -5,8 +5,7 @@ import { DistributedTracingModes } from "../applicationinsights";
 import { IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";
 
 
-
-export interface IJsonConfig {
+export interface IBaseConfig {
     /** Connection String used to send telemetry payloads to */
     connectionString: string;
     /** The ingestion endpoint to send telemetry payloads to */
@@ -114,7 +113,6 @@ export interface IJsonConfig {
      * if true, enables warning logging
      */
     enableInternalWarningLogging: boolean;
-
     /**
     * Enables communication with Application Insights Live Metrics.
     * if true, enables communication with the live metrics service
@@ -132,6 +130,13 @@ export interface IJsonConfig {
     * Disable Statsbeat
     */
     disableStatsbeat: boolean;
+    /**
+    * Live Metrics custom host
+    */
+    quickPulseHost: string;
+}
+
+export interface IEnvironmentConfig {
     /**
     * In order to track context across asynchronous calls, 
     * some changes are required in third party libraries such as mongodb and redis. 
@@ -151,13 +156,11 @@ export interface IJsonConfig {
     * HTTPS without a passed in agent
     */
     noHttpAgentKeepAlive: boolean;
-    /**
-    * Live Metrics custom host
-    */
-    quickPulseHost: string;
 }
 
-export interface IConfig extends IJsonConfig {
+export interface IJsonConfig extends IBaseConfig, IEnvironmentConfig { };
+
+export interface IConfig extends IBaseConfig {
     /** An http.Agent to use for SDK HTTP traffic (Optional, Default undefined) */
     httpAgent: http.Agent;
     /** An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined) */
