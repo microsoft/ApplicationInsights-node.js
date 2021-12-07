@@ -1,4 +1,5 @@
 import assert = require("assert");
+import path = require("path");
 import sinon = require("sinon");
 var http = require("http");
 var https = require("https");
@@ -12,58 +13,48 @@ const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
 describe("Library/Config", () => {
 
     var iKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
-    var appVer = "appVer";
-    
+    let originalEnv: NodeJS.ProcessEnv;
     var sandbox: sinon.SinonSandbox;
 
-    before(() => {
+    beforeEach(() => {
+        originalEnv = process.env;
         sandbox = sinon.sandbox.create();
     });
 
-    beforeEach(() => {
-        JsonConfig["_jsonConfig"] = undefined;
-    });
-
     afterEach(() => {
+        process.env = originalEnv;
         sandbox.restore();
+        JsonConfig["_instance"] = undefined;
     });
 
     describe("#constructor", () => {
         describe("connection string && API && environment variable prioritization", () => {
-            it ("connection string set via in code setup", () => {
-                var env = { [ENV_connectionString]: "InStruMenTatioNKey=cs.env", [Config.ENV_iKey]: "ikey.env"};
-                var originalEnv = process.env;
+            it("connection string set via in code setup", () => {
+                var env = { [ENV_connectionString]: "InStruMenTatioNKey=cs.env", [Config.ENV_iKey]: "ikey.env" };
                 process.env = env;
                 const config = new Config("InStruMenTatioNKey=cs.code");
                 assert.deepEqual(config.instrumentationKey, "cs.code");
-                process.env = originalEnv;
             });
 
             it("instrumentation key set via in code setup", () => {
-                var env = { [ENV_connectionString]: "InStruMenTatioNKey=CS.env", [Config.ENV_iKey]: "ikey.env"};
-                var originalEnv = process.env;
+                var env = { [ENV_connectionString]: "InStruMenTatioNKey=CS.env", [Config.ENV_iKey]: "ikey.env" };
                 process.env = env;
                 const config = new Config("ikey.code");
                 assert.deepEqual(config.instrumentationKey, "ikey.code");
-                process.env = originalEnv;
             });
 
             it("connection string set via environment variable", () => {
-                var env = { [ENV_connectionString]: "InStruMenTatioNKey=cs.env", [Config.ENV_iKey]: "ikey.env"};
-                var originalEnv = process.env;
+                var env = { [ENV_connectionString]: "InStruMenTatioNKey=cs.env", [Config.ENV_iKey]: "ikey.env" };
                 process.env = env;
                 const config = new Config();
                 assert.deepEqual(config.instrumentationKey, "cs.env");
-                process.env = originalEnv;
             });
 
             it("instrumentation key set via environment variable", () => {
-                var env = { [Config.ENV_iKey]: "ikey.env"};
-                var originalEnv = process.env;
+                var env = { [Config.ENV_iKey]: "ikey.env" };
                 process.env = env;
                 const config = new Config();
                 assert.deepEqual(config.instrumentationKey, "ikey.env");
-                process.env = originalEnv;
             });
 
             it("should parse the host of livemetrics host, if provided", () => {
@@ -75,10 +66,53 @@ describe("Library/Config", () => {
                 const config = new Config("InStruMenTatioNKey=ikey;Location=wus2;EndpointSuffix=example.com");
                 assert.deepEqual(config.quickPulseHost, "wus2.live.example.com");
             });
+
+            it("merge JSON config", () => {
+                JsonConfig["_instance"] = undefined;
+                const env = <{ [id: string]: string }>{};
+                const customConfigJSONPath = path.resolve(__dirname, "../../../Tests/Library/config.json");
+                env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath; // Load JSON config
+                process.env = env;
+                const config = new Config();
+                assert.equal(config.connectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+                assert.equal(config.endpointUrl, "testEndpointUrl/v2.1/track");
+                assert.equal(config.maxBatchSize, 150);
+                assert.equal(config.maxBatchIntervalMs, 12000);
+                assert.equal(config.disableAppInsights, false);
+                assert.equal(config.samplingPercentage, 30);
+                assert.equal(config.correlationIdRetryIntervalMs, 15000);
+                assert.equal(config.correlationHeaderExcludedDomains[0], "domain1");
+                assert.equal(config.correlationHeaderExcludedDomains[1], "domain2");
+                assert.equal(config.proxyHttpUrl, "testProxyHttpUrl");
+                assert.equal(config.proxyHttpsUrl, "testProxyHttpsUrl");
+                assert.equal(config.ignoreLegacyHeaders, false);
+                assert.equal(config.enableAutoCollectExternalLoggers, false);
+                assert.equal(config.enableAutoCollectConsole, false);
+                assert.equal(config.enableAutoCollectExceptions, false);
+                assert.equal(config.enableAutoCollectPerformance, false);
+                assert.equal(config.enableAutoCollectPreAggregatedMetrics, false);
+                assert.equal(config.enableAutoCollectHeartbeat, false);
+                assert.equal(config.enableAutoCollectRequests, false);
+                assert.equal(config.enableAutoCollectDependencies, false);
+                assert.equal(config.enableAutoDependencyCorrelation, false);
+                assert.equal(config.enableUseAsyncHooks, false);
+                assert.equal(config.disableStatsbeat, false);
+                assert.equal(config.enableAutoCollectExtendedMetrics, false);
+                assert.equal(config.distributedTracingMode, 0);
+                assert.equal(config.enableUseDiskRetryCaching, false);
+                assert.equal(config.enableResendInterval, 123);
+                assert.equal(config.enableMaxBytesOnDisk, 456);
+                assert.equal(config.enableInternalDebugLogging, false);
+                assert.equal(config.disableStatsbeat, false);
+                assert.equal(config.enableInternalWarningLogging, false);
+                assert.equal(config.enableSendLiveMetrics, false);
+                assert.equal(config.extendedMetricDisablers, "gc,heap");
+                assert.equal(config.quickPulseHost, "testquickpulsehost.com");
+            });
         });
 
         describe("constructor(ikey)", () => {
-            beforeEach(()=> {
+            beforeEach(() => {
                 sinon.stub(http, 'request');
                 sinon.stub(https, 'request');
             });
@@ -88,30 +122,24 @@ describe("Library/Config", () => {
             });
             it("should throw if no iKey is available", () => {
                 var env = {};
-                var originalEnv = process.env;
                 process.env = env;
                 assert.throws(() => new Config());
-                process.env = originalEnv;
             });
 
             it("should read iKey from environment", () => {
-                var env = <{[id: string]: string}>{};
+                var env = <{ [id: string]: string }>{};
                 env[Config.ENV_iKey] = iKey;
-                var originalEnv = process.env;
                 process.env = env;
                 var config = new Config();
                 assert.equal(config.instrumentationKey, iKey);
-                process.env = originalEnv;
             });
 
             it("should read iKey from azure environment", () => {
-                var env = <{[id: string]: string}>{};
+                var env = <{ [id: string]: string }>{};
                 env[Config.ENV_azurePrefix + Config.ENV_iKey] = iKey;
-                var originalEnv = process.env;
                 process.env = env;
                 var config = new Config();
                 assert.equal(config.instrumentationKey, iKey);
-                process.env = originalEnv;
             });
 
             it("should initialize valid values", () => {
@@ -143,7 +171,7 @@ describe("Library/Config", () => {
             it("should initialize values that we claim in README (2)", () => {
                 process.env.http_proxy = "test";
                 process.env.https_proxy = "test2";
-                JsonConfig["_jsonConfig"] = undefined;
+                JsonConfig["_instance"] = undefined;
                 var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert(config.proxyHttpUrl === "test");
                 assert(config.proxyHttpsUrl === "test2");
@@ -159,19 +187,19 @@ describe("Library/Config", () => {
             it("instrumentation key validation-valid key passed", () => {
                 var warnStub = sandbox.stub(console, "warn");
                 var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-                assert.ok(warnStub.calledOnce, "warning was not raised due to ikey checking, warning is called once since config json path is not configured");
+                assert.ok(warnStub.notCalled, "warning was not raised");
             });
 
             it("instrumentation key validation-invalid key passed", () => {
                 var warnStub = sandbox.stub(console, "warn");
                 var config = new Config("1aa11111bbbb1ccc8dddeeeeffff3333");
-                assert.ok(warnStub.calledTwice, "warning was raised once due to ikey checking, the second call is caused by config json path is not configured");
+                assert.ok(warnStub.calledOn, "warning was raised");
             });
 
             it("instrumentation key validation-invalid key passed", () => {
                 var warnStub = sandbox.stub(console, "warn");
                 var config = new Config("abc");
-                assert.ok(warnStub.calledTwice, "warning was raised due to ikey checking, the second call is caused by config json path is not configured");
+                assert.ok(warnStub.calledOn, "warning was raised");
             });
 
         });

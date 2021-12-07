@@ -201,7 +201,7 @@ describe("EndToEnd", () => {
         });
 
         beforeEach(() => {
-            JsonConfig["_jsonConfig"] = undefined;
+            JsonConfig["_instance"] = undefined;
         });
 
         afterEach(() => {
@@ -359,7 +359,7 @@ describe("EndToEnd", () => {
         });
 
         beforeEach(() => {
-            JsonConfig["_jsonConfig"] = undefined;
+            JsonConfig["_instance"] = undefined;
         });
 
         afterEach(() => {
@@ -493,7 +493,7 @@ describe("EndToEnd", () => {
             if (child_process.spawnSync) {
                 spawnSync = sandbox.stub(child_process, 'spawnSync').returns({ status: 0, stdout: 'stdoutmock' });
             }
-            JsonConfig["_jsonConfig"] = undefined;
+            JsonConfig["_instance"] = undefined;
         });
 
         afterEach(() => {
@@ -891,7 +891,7 @@ describe("EndToEnd", () => {
 
     describe("Heartbeat metrics for VM", () => {
         beforeEach(() => {
-            JsonConfig["_jsonConfig"] = undefined;
+            JsonConfig["_instance"] = undefined;
         });
 
         afterEach(() => {
@@ -914,8 +914,8 @@ describe("EndToEnd", () => {
             // set up sdk
             const client = new TelemetryClient("key");
             const heartbeat: HeartBeat = new HeartBeat(client);
-            heartbeat.enable(true, client.config);
-            HeartBeat.INSTANCE.enable(true, client.config);
+            heartbeat.enable(true);
+            HeartBeat.INSTANCE.enable(true);
             const trackMetricStub = sandbox.stub(heartbeat["_client"], "trackMetric");
 
             heartbeat["trackHeartBeat"](client.config, () => {
@@ -950,8 +950,8 @@ describe("EndToEnd", () => {
             // set up sdk
             const client = new TelemetryClient("key");
             const heartbeat: HeartBeat = new HeartBeat(client);
-            heartbeat.enable(true, client.config);
-            HeartBeat.INSTANCE.enable(true, client.config);
+            heartbeat.enable(true);
+            HeartBeat.INSTANCE.enable(true);
             const trackMetricStub = sandbox.stub(heartbeat["_client"], "trackMetric");
 
             heartbeat["trackHeartBeat"](client.config, () => {

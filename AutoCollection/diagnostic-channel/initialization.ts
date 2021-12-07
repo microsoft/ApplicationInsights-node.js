@@ -9,12 +9,12 @@ import { AsyncScopeManager } from "../AsyncHooksScopeManager";
 import Logging = require("../../Library/Logging");
 import { JsonConfig } from "../../Library/JsonConfig";
 
-export const IsInitialized = !JsonConfig.getJsonConfig().noDiagnosticChannel;
+export const IsInitialized = !JsonConfig.getInstance().noDiagnosticChannel;
 const TAG = "DiagnosticChannel";
 
 if (IsInitialized) {
     const publishers: typeof DiagChannelPublishers = require("diagnostic-channel-publishers");
-    const individualOptOuts: string = JsonConfig.getJsonConfig().noPatchModules;
+    const individualOptOuts: string = JsonConfig.getInstance().noPatchModules;
     const unpatchedModules = individualOptOuts.split(",");
     const modules: {[key: string] : any} = {
         bunyan: publishers.bunyan,

@@ -4,6 +4,17 @@ import { DistributedTracingModes } from "../applicationinsights";
 
 describe("ApplicationInsights", () => {
 
+    var sandbox: sinon.SinonSandbox;
+
+    before(() => {
+        sandbox = sinon.sandbox.create();
+    });
+
+    afterEach(() => {
+        sandbox.restore();
+    });
+
+
     describe("#setup()", () => {
         var AppInsights = require("../applicationinsights");
         var Console = require("../AutoCollection/Console");
@@ -20,24 +31,22 @@ describe("ApplicationInsights", () => {
         });
 
         it("should not warn if setup is called once", () => {
-            var warnStub = sinon.stub(console, "warn");
+            var warnStub = sandbox.stub(console, "warn");
             AppInsights.defaultClient = undefined;
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             assert.ok(warnStub.notCalled, "warning was not raised");
-            warnStub.restore();
         });
 
         it("should warn if setup is called twice", () => {
-            var warnStub = sinon.stub(console, "warn");
+            var warnStub = sandbox.stub(console, "warn");
             AppInsights.defaultClient = undefined;
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             assert.ok(warnStub.calledOn, "warning was raised");
-            warnStub.restore();
         });
 
         it("should not overwrite default client if called more than once", () => {
-            var warnStub = sinon.stub(console, "warn");
+            var warnStub = sandbox.stub(console, "warn");
             AppInsights.defaultClient = undefined;
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             var client = AppInsights.defaultClient;
@@ -45,7 +54,6 @@ describe("ApplicationInsights", () => {
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             assert.ok(client === AppInsights.defaultClient, "client is not overwritten");
-            warnStub.restore();
         });
     });
 
@@ -68,17 +76,15 @@ describe("ApplicationInsights", () => {
         afterEach(() => AppInsights.defaultClient = undefined);
 
         it("should warn if start is called before setup", () => {
-            var warnStub = sinon.stub(console, "warn");
+            var warnStub = sandbox.stub(console, "warn");
             AppInsights.start();
             assert.ok(warnStub.calledOn, "warning was raised");
-            warnStub.restore();
         });
 
         it("should not warn if start is called after setup", () => {
-            var warnStub = sinon.stub(console, "warn");
+            var warnStub = sandbox.stub(console, "warn");
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").start();
             assert.ok(warnStub.notCalled, "warning was not raised");
-            warnStub.restore();
         });
 
         it("should not start live metrics", () => {
@@ -139,15 +145,12 @@ describe("ApplicationInsights", () => {
 
         it("auto-collection is initialized by default", () => {
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").start();
-
             //assert.ok(Console.INSTANCE.isInitialized());
-            setTimeout(() => {
-                assert.ok(Exceptions.INSTANCE.isInitialized());
-                assert.ok(Performance.INSTANCE.isInitialized());
-                assert.ok(HttpRequests.INSTANCE.isInitialized());
-                assert.ok(HttpRequests.INSTANCE.isAutoCorrelating());
-                assert.ok(HttpDependencies.INSTANCE.isInitialized());
-            }, 5000);
+            assert.ok(Exceptions.INSTANCE.isInitialized());
+            assert.ok(Performance.INSTANCE.isInitialized());
+            assert.ok(HttpRequests.INSTANCE.isInitialized());
+            assert.ok(HttpRequests.INSTANCE.isAutoCorrelating());
+            assert.ok(HttpDependencies.INSTANCE.isInitialized());
         });
 
         it("auto-collection is not initialized if disabled before 'start'", () => {
@@ -198,16 +201,16 @@ describe("ApplicationInsights", () => {
 
         it("should provide a context if correlating", () => {
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
-            .setAutoDependencyCorrelation(true)
-            .start();
+                .setAutoDependencyCorrelation(true)
+                .start();
             assert.equal(AppInsights.getCorrelationContext(), 'context');
         });
 
         it("should provide a cls-hooked context if force flag set to true", () => {
             if (CCM.canUseClsHooked()) {
                 AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
-                .setAutoDependencyCorrelation(true, true)
-                .start();
+                    .setAutoDependencyCorrelation(true, true)
+                    .start();
                 assert.equal(AppInsights.getCorrelationContext(), 'context');
                 if (CCM.isNodeVersionCompatible()) {
                     assert.equal(CCM.cls, require('cls-hooked'));
@@ -217,8 +220,8 @@ describe("ApplicationInsights", () => {
 
         it("should provide a continuation-local-storage context if force flag set to false", () => {
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
-            .setAutoDependencyCorrelation(true, false)
-            .start();
+                .setAutoDependencyCorrelation(true, false)
+                .start();
             assert.equal(AppInsights.getCorrelationContext(), 'context');
             if (CCM.isNodeVersionCompatible()) {
                 assert.equal(CCM.cls, require('continuation-local-storage'));
@@ -227,8 +230,8 @@ describe("ApplicationInsights", () => {
 
         it("should not provide a context if not correlating", () => {
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
-            .setAutoDependencyCorrelation(false)
-            .start();
+                .setAutoDependencyCorrelation(false)
+                .start();
             assert.equal(AppInsights.getCorrelationContext(), null);
         });
     });

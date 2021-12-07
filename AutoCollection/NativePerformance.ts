@@ -1,9 +1,8 @@
-import TelemetryClient= require("../Library/TelemetryClient");
+import TelemetryClient = require("../Library/TelemetryClient");
 import Constants = require("../Declarations/Constants");
-import Config = require("../Library/Config");
 import Context = require("../Library/Context");
-import Logging= require("../Library/Logging");
-import { IJsonConfig } from "../Library/IJsonConfig";
+import Logging = require("../Library/Logging");
+import { IBaseConfig } from "../Declarations/Interfaces";
 
 /**
  * Interface which defines which specific extended metrics should be disabled
@@ -111,10 +110,11 @@ export class AutoCollectNativePerformance {
      * @private
      * @static
      * @param {(boolean | IDisabledExtendedMetrics)} collectExtendedMetrics
+     * @param {(IBaseConfig)} customConfig
      * @returns {(boolean | IDisabledExtendedMetrics)}
      * @memberof AutoCollectNativePerformance
      */
-    public static parseEnabled(collectExtendedMetrics: boolean | IDisabledExtendedMetrics, customConfig: IJsonConfig ): { isEnabled: boolean, disabledMetrics: IDisabledExtendedMetrics } {
+    public static parseEnabled(collectExtendedMetrics: boolean | IDisabledExtendedMetrics, customConfig: IBaseConfig): { isEnabled: boolean, disabledMetrics: IDisabledExtendedMetrics } {
         const disableAll = customConfig.disableAllExtendedMetrics;
         const individualOptOuts = customConfig.extendedMetricDisablers;
 
@@ -135,11 +135,11 @@ export class AutoCollectNativePerformance {
 
             // case 2a: collectExtendedMetrics is an object, overwrite existing ones if they exist
             if (typeof collectExtendedMetrics === "object") {
-                return {isEnabled: true, disabledMetrics: {...collectExtendedMetrics, ...disabledMetrics}};
+                return { isEnabled: true, disabledMetrics: { ...collectExtendedMetrics, ...disabledMetrics } };
             }
 
             // case 2b: collectExtendedMetrics is a boolean, set disabledMetrics as is
-            return {isEnabled: collectExtendedMetrics, disabledMetrics};
+            return { isEnabled: collectExtendedMetrics, disabledMetrics };
         }
 
         // case 4: no env vars set, input arg is a boolean, RETURN with isEnabled=collectExtendedMetrics, disabledMetrics={}
@@ -147,7 +147,7 @@ export class AutoCollectNativePerformance {
             return { isEnabled: collectExtendedMetrics, disabledMetrics: {} };
         } else { // use else so we don't need to force typing on collectExtendedMetrics
             // case 5: no env vars set, input arg is object, RETURN with isEnabled=true, disabledMetrics=collectExtendedMetrics
-            return { isEnabled: true, disabledMetrics: collectExtendedMetrics};
+            return { isEnabled: true, disabledMetrics: collectExtendedMetrics };
         }
     }
 

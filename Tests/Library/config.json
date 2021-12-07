@@ -7,14 +7,18 @@
     "disableAppInsights": false,
     "samplingPercentage": 30,
     "correlationIdRetryIntervalMs": 15000,
-    "correlationHeaderExcludedDomains": ["domain1", "domain2"],
+    "correlationHeaderExcludedDomains": [
+        "domain1",
+        "domain2"
+    ],
     "proxyHttpUrl": "testProxyHttpUrl",
     "proxyHttpsUrl": "testProxyHttpsUrl",
-    "ignoreLegacyHeaders": true,
+    "ignoreLegacyHeaders": false,
     "enableAutoCollectExternalLoggers": false,
     "enableAutoCollectConsole": false,
     "enableAutoCollectExceptions": false,
     "enableAutoCollectPerformance": false,
+    "enableAutoCollectExtendedMetrics": false,
     "enableAutoCollectPreAggregatedMetrics": false,
     "enableAutoCollectHeartbeat": false,
     "enableAutoCollectRequests": false,
@@ -22,6 +26,16 @@
     "enableAutoDependencyCorrelation": false,
     "enableUseAsyncHooks": false,
     "disableStatsbeat": false,
-    "noHttpAgentKeepAlive": true
+    "noHttpAgentKeepAlive": false,
+    "distributedTracingMode": 0,
+    "enableUseDiskRetryCaching": false,
+    "enableResendInterval": 123,
+    "enableMaxBytesOnDisk": 456,
+    "enableInternalDebugLogging": false,
+    "enableInternalWarningLogging": false,
+    "enableSendLiveMetrics": false,
+    "extendedMetricDisablers": "gc,heap",
+    "noDiagnosticChannel": false,
+    "noPatchModules": "console,redis",
+    "quickPulseHost": "testquickpulsehost.com"
 }
-  
