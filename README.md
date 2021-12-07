@@ -502,18 +502,37 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | samplingPercentage              | The percentage of telemetry items tracked that should be transmitted (Default `100`)                       |
 | correlationIdRetryIntervalMs    | The time to wait before retrying to retrieve the id for cross-component correlation (Default `30000`)      |
 | correlationHeaderExcludedDomains| A list of domains to exclude from cross-component correlation header injection (Default See [Config.ts][]) |
-
+| aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Crendential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes) | 
 
 [Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
 
-Following configuration is currently only available in beta version of the SDK.
-
-| Property                        | Description                                                                                                |
-| ------------------------------- |------------------------------------------------------------------------------------------------------------|
-| aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Crendential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes) | 
 
 
 
+## Self-diagnostics
+
+"Self-diagnostics" refers to internal logging from Application Insights Node.js SDK.
+
+This functionality can be helpful for spotting and diagnosing issues with Application Insights itself.
+
+By default, Application Insights Node.js SDK logs at warning level to console, following code demonstrate how to enable debug logging as well and generate telemetry for internal logs:
+
+```javascript
+let appInsights = require("applicationinsights");
+appInsights.setup("<instrumentation_key>")
+    .setInternalLogging(true, true) // Enable both debug and warning logging
+    .setAutoCollectConsole(true, true) // Generate Trace telemetry for winston/bunyan and console logs
+    .start();
+```
+
+Logs could be put into local file using `APPLICATIONINSIGHTS_LOG_DESTINATION` environment variable, supported values are `file` and `file+console`, a file named `applicationinsights.log` will be generated on tmp folder by default, including all logs,  `/tmp` for *nix and `USERDIR/AppData/Local/Temp` for Windows. Log directory could be configured using `APPLICATIONINSIGHTS_LOGDIR` environment variable.
+
+```javascript
+process.env.APPLICATIONINSIGHTS_LOG_DESTINATION = "file";
+process.env.APPLICATIONINSIGHTS_LOGDIR = "C:/applicationinsights/logs"
+
+// Application Insights SDK setup....
+```
 
 ## Branches
 
