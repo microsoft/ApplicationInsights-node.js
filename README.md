@@ -54,7 +54,7 @@ You can manually track more aspects of your app and system using the API describ
      let appInsights = require('applicationinsights');
      ```
 5. Configure the local SDK by calling `appInsights.setup('YOUR_CONNECTION_STRING');`, using
-   the ikey you grabbed in step 2. Or put this ikey in the
+   the connection string you grabbed in step 2. Or put it in the
    `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable and call
    `appInsights.setup()` without parameters.
    > For more configuration options see below.
@@ -78,7 +78,7 @@ appInsights.setup("YOUR_CONNECTION_STRING").start();
 
 * If the instrumentation key is set in the environment variable
   APPLICATIONINSIGHTS\_CONNECTION\_STRING, `.setup()` can be called with no
-  arguments. This makes it easy to use different ikeys for different
+  arguments. This makes it easy to use different connection strings for different
   environments.
 
 Load the Application Insights library (i.e. `require("applicationinsights")`) as
@@ -138,7 +138,7 @@ An example of making an `axios` call to <https://httpbin.org> and returning the 
 
 ```js
 const appInsights = require("applicationinsights");
-appInsights.setup("ikey")
+appInsights.setup("<YOUR_CONNECTION_STRING>")
     .setAutoCollectPerformance(false)
     .start();
 
@@ -365,7 +365,7 @@ By default, this SDK will send headers understood by other applications/services
 ```js
 const appInsights = require("applicationinsights");
 appInsights
-  .setup("<your ikey>")
+  .setup("<YOUR_CONNECTION_STRING>")
   .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C)
   .start()
 ```
@@ -377,7 +377,7 @@ Insights client. Examples follow:
 
 ```javascript
 let appInsights = require("applicationinsights");
-appInsights.setup().start(); // assuming ikey in env var. start() can be omitted to disable any non-custom data
+appInsights.setup().start(); // assuming connection string is in environment variables. start() can be omitted to disable any non-custom data
 let client = appInsights.defaultClient;
 client.trackEvent({name: "my custom event", properties: {customProperty: "custom property value"}});
 client.trackException({exception: new Error("handled exceptions can be logged with this method")});
@@ -482,20 +482,20 @@ More info on the telemetry API is available in [the docs][].
 
 [the docs]: https://azure.microsoft.com/documentation/articles/app-insights-api-custom-events-metrics/
 
-## Use multiple instrumentation keys
+## Use multiple Application Insights resources
 
 You can create multiple Azure Application Insights resources and send different
-data to each by using their respective instrumentation keys ("ikey"). For
+data to each by using their respective connection string. For
 example:
 
 ```javascript
 let appInsights = require("applicationinsights");
 
-// configure auto-collection under one ikey
-appInsights.setup("_ikey-A_").start();
+// configure auto-collection under one Connection String
+appInsights.setup("<YOUR_CONNECTION_STRING>").start();
 
-// track some events manually under another ikey
-let otherClient = new appInsights.TelemetryClient("_ikey-B_");
+// track some events manually under another connection string
+let otherClient = new appInsights.TelemetryClient("<YOUR_CONNECTION_STRING>");
 otherClient.trackEvent({name: "my custom event"});
 ```
 
