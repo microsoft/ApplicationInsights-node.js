@@ -68,7 +68,7 @@ export interface IBaseConfig {
     enableAutoCollectPreAggregatedMetrics: boolean;
     /**
      * Sets the state of request tracking (enabled by default)
-     * if true HeartBeat metric data will be collected every 15 mintues and sent to Application Insights
+     * if true HeartBeat metric data will be collected every 15 minutes and sent to Application Insights
      */
     enableAutoCollectHeartbeat: boolean;
     /**
