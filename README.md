@@ -222,8 +222,7 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 
 | Property                        | Description                                                                                                |
 | ------------------------------- |------------------------------------------------------------------------------------------------------------|
-| connectionString                | Application Insights Connection String                                                       |
-| instrumentationKey              | Application Insights Instrumentation Key                                                       |
+| instrumentationKey              | Application Insights Instrumentation Key                                                                   |
 | endpointUrl                     | The ingestion endpoint to send telemetry payloads to                                                       |
 | proxyHttpUrl                    | A proxy server for SDK HTTP traffic (Optional, Default pulled from `http_proxy` environment variable)      |
 | proxyHttpsUrl                   | A proxy server for SDK HTTPS traffic (Optional, Default pulled from `https_proxy` environment variable)    |
@@ -233,8 +232,8 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | samplingPercentage              | The percentage of telemetry items tracked that should be transmitted (Default `100`)                       |
 | correlationIdRetryIntervalMs    | The time to wait before retrying to retrieve the id for cross-component correlation (Default `30000`)      |
 | correlationHeaderExcludedDomains| A list of domains to exclude from cross-component correlation header injection (Default See [Config.ts][]) |
-| ignoreLegacyHeaders             | Disable including legacy headers in outgoing requests, x-ms-request-id |
-| distributedTracingMode          | Sets the distributed tracing modes (Default=AI) |
+| ignoreLegacyHeaders             | Disable including legacy headers in outgoing requests, x-ms-request-id                                     |
+| distributedTracingMode          | Sets the distributed tracing modes (Default=AI)                                                            |
 | enableAutoCollectExternalLoggers| Sets the state of console. If true logger activity will be sent to Application Insights |
 | enableAutoCollectConsole        | Sets the state of logger tracking (enabled by default for third-party loggers only). If true, logger auto collection will include console.log calls (default false) |
 | enableAutoCollectExceptions     | Sets the state of exception tracking (enabled by default). If true uncaught exceptions will be sent to Application Insights |
@@ -268,7 +267,7 @@ All these properties except httpAgent, httpsAgent and aadTokenCredential could b
 
 ```javascript
 {
-    "connectionString": "<YOUR_CONNECTION_STRING>",
+    "samplingPercentage": 80,
     "enableAutoCollectExternalLoggers": true,
     "enableAutoCollectExceptions": true,
     "enableAutoCollectHeartbeat": true,

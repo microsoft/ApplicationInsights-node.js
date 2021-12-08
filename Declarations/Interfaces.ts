@@ -6,8 +6,8 @@ import { IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";
 
 
 export interface IBaseConfig {
-    /** Connection String used to send telemetry payloads to */
-    connectionString: string;
+    /** Application Insights resource instrumentation key */
+    instrumentationKey: string;
     /** The ingestion endpoint to send telemetry payloads to */
     endpointUrl: string;
     /** The maximum number of telemetry items to include in a payload to the ingestion endpoint (Default 250) */
@@ -137,6 +137,8 @@ export interface IBaseConfig {
 }
 
 export interface IEnvironmentConfig {
+    /** Connection String used to send telemetry payloads to */
+    connectionString: string;
     /**
     * In order to track context across asynchronous calls, 
     * some changes are required in third party libraries such as mongodb and redis. 
