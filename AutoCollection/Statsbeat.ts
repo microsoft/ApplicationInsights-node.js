@@ -50,6 +50,7 @@ class Statsbeat {
         this._config = config;
         this._context = context || new Context();
         this._statsbeatConfig = new Config(Statsbeat.CONNECTION_STRING);
+        this._statsbeatConfig.samplingPercentage = 100; // Do not sample
         this._sender = new Sender(this._statsbeatConfig);
     }
 
