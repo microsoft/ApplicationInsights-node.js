@@ -74,7 +74,7 @@ describe("Library/Config", () => {
                 env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath; // Load JSON config
                 process.env = env;
                 const config = new Config();
-                assert.equal(config.connectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+                assert.equal(config["_connectionString"], "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
                 assert.equal(config.endpointUrl, "testEndpointUrl/v2.1/track");
                 assert.equal(config.maxBatchSize, 150);
                 assert.equal(config.maxBatchIntervalMs, 12000);

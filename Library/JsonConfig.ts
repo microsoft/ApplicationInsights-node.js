@@ -2,7 +2,7 @@ import fs = require("fs");
 import path = require("path");
 
 import Logging = require('./Logging');
-import { IConfig, IJsonConfig } from "../Declarations/Interfaces";
+import { IJsonConfig } from "../Declarations/Interfaces";
 import { DistributedTracingModes } from "../applicationinsights";
 import { IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";
 
@@ -23,6 +23,7 @@ export class JsonConfig implements IJsonConfig {
     private static _instance: JsonConfig;
 
     public connectionString: string;
+    public instrumentationKey: string;
     public endpointUrl: string;
     public maxBatchSize: number;
     public maxBatchIntervalMs: number;

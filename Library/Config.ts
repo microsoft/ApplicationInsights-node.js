@@ -21,7 +21,6 @@ class Config implements IConfig {
     public static ENV_quickPulseHost = "APPINSIGHTS_QUICKPULSE_HOST";
 
     // IConfig properties
-    public connectionString: string;
     public endpointUrl: string;
     public maxBatchSize: number;
     public maxBatchIntervalMs: number;
@@ -59,6 +58,7 @@ class Config implements IConfig {
     public quickPulseHost: string;
 
     public correlationId: string; // TODO: Should be private
+    private _connectionString: string;
     private _endpointBase: string = Constants.DEFAULT_BREEZE_ENDPOINT;
     private _setCorrelationId: (v: string) => void;
     private _profileQueryEndpoint: string;
@@ -68,7 +68,7 @@ class Config implements IConfig {
     constructor(setupString?: string) {
         // Load config values from env variables and JSON if available
         this._mergeConfig();
-        const connectionStringEnv: string | undefined = this.connectionString;
+        const connectionStringEnv: string | undefined = this._connectionString;
         const csCode = ConnectionStringParser.parse(setupString);
         const csEnv = ConnectionStringParser.parse(connectionStringEnv);
         const iKeyCode = !csCode.instrumentationkey && Object.keys(csCode).length > 0
@@ -127,7 +127,7 @@ class Config implements IConfig {
 
     private _mergeConfig() {
         let jsonConfig = JsonConfig.getInstance();
-        this.connectionString = jsonConfig.connectionString;
+        this._connectionString = jsonConfig.connectionString;
         this.correlationHeaderExcludedDomains = jsonConfig.correlationHeaderExcludedDomains;
         this.correlationIdRetryIntervalMs = jsonConfig.correlationIdRetryIntervalMs;
         this.disableAllExtendedMetrics = jsonConfig.disableAllExtendedMetrics;
