@@ -5,7 +5,6 @@
 // This is to avoid requiring the actual module if the NO_DIAGNOSTIC_CHANNEL env is present
 import * as DiagChannelPublishers from "diagnostic-channel-publishers";
 import * as DiagChannel from "diagnostic-channel";
-import { AsyncScopeManager } from "../AsyncHooksScopeManager";
 import Logging = require("../../Library/Logging");
 import { JsonConfig } from "../../Library/JsonConfig";
 
@@ -16,7 +15,7 @@ if (IsInitialized) {
     const publishers: typeof DiagChannelPublishers = require("diagnostic-channel-publishers");
     const individualOptOuts: string = JsonConfig.getInstance().noPatchModules;
     const unpatchedModules = individualOptOuts.split(",");
-    const modules: {[key: string] : any} = {
+    const modules: { [key: string]: any } = {
         bunyan: publishers.bunyan,
         console: publishers.console,
         mongodb: publishers.mongodb,
@@ -38,14 +37,6 @@ if (IsInitialized) {
         Logging.info(TAG, "Some modules will not be patched", unpatchedModules);
     }
 } else {
-    Logging.info(TAG, "Not subscribing to dependency autocollection because APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL was set");
+    Logging.info(TAG, "Not subscribing to dependency auto collection because APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL was set");
 }
 
-export function registerContextPreservation(cb: (cb: Function) => Function) {
-    if (!IsInitialized) {
-        return;
-    }
-    const diagChannel = (require("diagnostic-channel") as typeof DiagChannel);
-    diagChannel.channel.addContextPreservation(cb);
-    diagChannel.channel.spanContextPropagator = AsyncScopeManager;
-}

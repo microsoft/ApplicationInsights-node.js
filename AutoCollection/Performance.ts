@@ -5,16 +5,13 @@ import Constants = require("../Declarations/Constants");
 
 class AutoCollectPerformance {
 
-    public static INSTANCE: AutoCollectPerformance;
-
-    private static _totalRequestCount: number = 0;
-    private static _totalFailedRequestCount: number = 0;
-    private static _totalDependencyCount: number = 0;
-    private static _totalFailedDependencyCount: number = 0;
-    private static _totalExceptionCount: number = 0;
-    private static _intervalDependencyExecutionTime: number = 0;
-    private static _intervalRequestExecutionTime: number = 0;
-
+    private _totalRequestCount: number = 0;
+    private _totalFailedRequestCount: number = 0;
+    private _totalDependencyCount: number = 0;
+    private _totalFailedDependencyCount: number = 0;
+    private _totalExceptionCount: number = 0;
+    private _intervalDependencyExecutionTime: number = 0;
+    private _intervalRequestExecutionTime: number = 0;
     private _lastIntervalRequestExecutionTime: number = 0; // the sum of durations which took place during from app start until last interval
     private _lastIntervalDependencyExecutionTime: number = 0;
     private _enableLiveMetricsCounters: boolean;
@@ -22,7 +19,6 @@ class AutoCollectPerformance {
     private _client: TelemetryClient;
     private _handle: NodeJS.Timer;
     private _isEnabled: boolean;
-    private _isInitialized: boolean;
     private _lastAppCpuUsage: { user: number, system: number };
     private _lastHrtime: number[];
     private _lastCpus: { model: string; speed: number; times: { user: number; nice: number; sys: number; idle: number; irq: number; }; }[];
@@ -34,14 +30,9 @@ class AutoCollectPerformance {
      * @param enableLiveMetricsCounters - enable sending additional live metrics information (dependency metrics, exception metrics, committed memory)
      */
     constructor(client: TelemetryClient, collectionInterval = 60000, enableLiveMetricsCounters = false) {
-        if (!AutoCollectPerformance.INSTANCE) {
-            AutoCollectPerformance.INSTANCE = this;
-        }
-
         this._lastRequests = { totalRequestCount: 0, totalFailedRequestCount: 0, time: 0 };
         this._lastDependencies = { totalDependencyCount: 0, totalFailedDependencyCount: 0, time: 0 };
-        this._lastExceptions = { totalExceptionCount: 0,time: 0 };
-        this._isInitialized = false;
+        this._lastExceptions = { totalExceptionCount: 0, time: 0 };
         this._client = client;
         this._collectionInterval = collectionInterval;
         this._enableLiveMetricsCounters = enableLiveMetricsCounters;
@@ -49,25 +40,21 @@ class AutoCollectPerformance {
 
     public enable(isEnabled: boolean, collectionInterval?: number) {
         this._isEnabled = isEnabled;
-        if (this._isEnabled && !this._isInitialized) {
-            this._isInitialized = true;
-        }
-
         if (isEnabled) {
             if (!this._handle) {
                 this._lastCpus = os.cpus();
                 this._lastRequests = {
-                    totalRequestCount: AutoCollectPerformance._totalRequestCount,
-                    totalFailedRequestCount: AutoCollectPerformance._totalFailedRequestCount,
+                    totalRequestCount: this._totalRequestCount,
+                    totalFailedRequestCount: this._totalFailedRequestCount,
                     time: +new Date
                 };
                 this._lastDependencies = {
-                    totalDependencyCount: AutoCollectPerformance._totalDependencyCount,
-                    totalFailedDependencyCount: AutoCollectPerformance._totalFailedDependencyCount,
+                    totalDependencyCount: this._totalDependencyCount,
+                    totalFailedDependencyCount: this._totalFailedDependencyCount,
                     time: +new Date
                 };
                 this._lastExceptions = {
-                    totalExceptionCount: AutoCollectPerformance._totalExceptionCount,
+                    totalExceptionCount: this._totalExceptionCount,
                     time: +new Date
                 };
 
@@ -76,7 +63,7 @@ class AutoCollectPerformance {
                 }
                 this._lastHrtime = process.hrtime();
                 this._collectionInterval = collectionInterval || this._collectionInterval;
-                this._handle = setInterval(() => this.trackPerformance(), this._collectionInterval);
+                this._handle = setInterval(() => this._trackPerformance(), this._collectionInterval);
                 this._handle.unref(); // Allow the app to terminate even while this loop is going on
             }
         } else {
@@ -87,9 +74,9 @@ class AutoCollectPerformance {
         }
     }
 
-    public static countRequest(duration: number | string, success: boolean) {
+    public countRequest(duration: number | string, success: boolean) {
         let durationMs: number;
-        if (!AutoCollectPerformance.isEnabled()) {
+        if (!this._isEnabled) {
             return;
         }
 
@@ -102,20 +89,20 @@ class AutoCollectPerformance {
             return;
         }
 
-        AutoCollectPerformance._intervalRequestExecutionTime += durationMs;
+        this._intervalRequestExecutionTime += durationMs;
         if (success === false) {
-            AutoCollectPerformance._totalFailedRequestCount++;
+            this._totalFailedRequestCount++;
         }
-        AutoCollectPerformance._totalRequestCount++;
+        this._totalRequestCount++;
     }
 
-    public static countException() {
-        AutoCollectPerformance._totalExceptionCount++;
+    public countException() {
+        this._totalExceptionCount++;
     }
 
-    public static countDependency(duration: number | string, success: boolean) {
+    public countDependency(duration: number | string, success: boolean) {
         let durationMs: number;
-        if (!AutoCollectPerformance.isEnabled()) {
+        if (!this._isEnabled) {
             return;
         }
 
@@ -128,22 +115,14 @@ class AutoCollectPerformance {
             return;
         }
 
-        AutoCollectPerformance._intervalDependencyExecutionTime += durationMs;
+        this._intervalDependencyExecutionTime += durationMs;
         if (success === false) {
-            AutoCollectPerformance._totalFailedDependencyCount++;
+            this._totalFailedDependencyCount++;
         }
-        AutoCollectPerformance._totalDependencyCount++;
+        this._totalDependencyCount++;
     }
 
-    public isInitialized() {
-        return this._isInitialized;
-    }
-
-    public static isEnabled() {
-        return AutoCollectPerformance.INSTANCE && AutoCollectPerformance.INSTANCE._isEnabled;
-    }
-
-    public trackPerformance() {
+    private _trackPerformance() {
         this._trackCpu();
         this._trackMemory();
         this._trackNetwork();
@@ -226,7 +205,6 @@ class AutoCollectPerformance {
         var committedMemory = os.totalmem() - freeMem;
         this._client.trackMetric({ name: Constants.PerformanceCounter.PRIVATE_BYTES, value: usedMem });
         this._client.trackMetric({ name: Constants.PerformanceCounter.AVAILABLE_BYTES, value: freeMem });
-
         // Only supported by quickpulse service
         if (this._enableLiveMetricsCounters) {
             this._client.trackMetric({ name: Constants.QuickPulseCounter.COMMITTED_BYTES, value: committedMemory });
@@ -237,17 +215,16 @@ class AutoCollectPerformance {
         // track total request counters
         var lastRequests = this._lastRequests;
         var requests = {
-            totalRequestCount: AutoCollectPerformance._totalRequestCount,
-            totalFailedRequestCount: AutoCollectPerformance._totalFailedRequestCount,
+            totalRequestCount: this._totalRequestCount,
+            totalFailedRequestCount: this._totalFailedRequestCount,
             time: +new Date
         };
-
         var intervalRequests = (requests.totalRequestCount - lastRequests.totalRequestCount) || 0;
         var intervalFailedRequests = (requests.totalFailedRequestCount - lastRequests.totalFailedRequestCount) || 0;
         var elapsedMs = requests.time - lastRequests.time;
         var elapsedSeconds = elapsedMs / 1000;
-        var averageRequestExecutionTime = ((AutoCollectPerformance._intervalRequestExecutionTime - this._lastIntervalRequestExecutionTime) / intervalRequests) || 0; // default to 0 in case no requests in this interval
-        this._lastIntervalRequestExecutionTime = AutoCollectPerformance._intervalRequestExecutionTime // reset
+        var averageRequestExecutionTime = ((this._intervalRequestExecutionTime - this._lastIntervalRequestExecutionTime) / intervalRequests) || 0; // default to 0 in case no requests in this interval
+        this._lastIntervalRequestExecutionTime = this._intervalRequestExecutionTime // reset
 
         if (elapsedMs > 0) {
             var requestsPerSec = intervalRequests / elapsedSeconds;
@@ -275,8 +252,8 @@ class AutoCollectPerformance {
         if (this._enableLiveMetricsCounters) {
             var lastDependencies = this._lastDependencies;
             var dependencies = {
-                totalDependencyCount: AutoCollectPerformance._totalDependencyCount,
-                totalFailedDependencyCount: AutoCollectPerformance._totalFailedDependencyCount,
+                totalDependencyCount: this._totalDependencyCount,
+                totalFailedDependencyCount: this._totalFailedDependencyCount,
                 time: +new Date
             };
 
@@ -284,8 +261,8 @@ class AutoCollectPerformance {
             var intervalFailedDependencies = (dependencies.totalFailedDependencyCount - lastDependencies.totalFailedDependencyCount) || 0;
             var elapsedMs = dependencies.time - lastDependencies.time;
             var elapsedSeconds = elapsedMs / 1000;
-            var averageDependencyExecutionTime = ((AutoCollectPerformance._intervalDependencyExecutionTime - this._lastIntervalDependencyExecutionTime) / intervalDependencies) || 0;
-            this._lastIntervalDependencyExecutionTime = AutoCollectPerformance._intervalDependencyExecutionTime // reset
+            var averageDependencyExecutionTime = ((this._intervalDependencyExecutionTime - this._lastIntervalDependencyExecutionTime) / intervalDependencies) || 0;
+            this._lastIntervalDependencyExecutionTime = this._intervalDependencyExecutionTime // reset
 
             if (elapsedMs > 0) {
                 var dependenciesPerSec = intervalDependencies / elapsedSeconds;
@@ -310,7 +287,7 @@ class AutoCollectPerformance {
         if (this._enableLiveMetricsCounters) {
             var lastExceptions = this._lastExceptions;
             var exceptions = {
-                totalExceptionCount: AutoCollectPerformance._totalExceptionCount,
+                totalExceptionCount: this._totalExceptionCount,
                 time: +new Date
             };
 
@@ -324,12 +301,6 @@ class AutoCollectPerformance {
             }
             this._lastExceptions = exceptions;
         }
-    }
-
-    public dispose() {
-        AutoCollectPerformance.INSTANCE = null;
-        this.enable(false);
-        this._isInitialized = false;
     }
 }
 

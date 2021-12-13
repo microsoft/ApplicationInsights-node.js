@@ -1,10 +1,10 @@
 import Contracts = require("../Declarations/Contracts");
-import { CorrelationContext } from "../AutoCollection/CorrelationContextManager";
+import { ICorrelationContext } from "../Declarations/Interfaces";
 
 /**
  *  A telemetry processor that handles sampling.
  */
-export function samplingTelemetryProcessor(envelope: Contracts.EnvelopeTelemetry, contextObjects: { correlationContext: CorrelationContext }): boolean {
+export function samplingTelemetryProcessor(envelope: Contracts.EnvelopeTelemetry, contextObjects: { correlationContext: ICorrelationContext }): boolean {
     var samplingPercentage = envelope.sampleRate; // Set for us in Client.getEnvelope
     var isSampledIn = false;
 

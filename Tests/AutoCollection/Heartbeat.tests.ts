@@ -48,7 +48,6 @@ describe("AutoCollection/HeartBeat", () => {
         it("should read correct web app values from envrionment variable", (done) => {
             const heartbeat1: HeartBeat = new HeartBeat(client);
             heartbeat1.enable(true);
-            HeartBeat.INSTANCE.enable(true);
             const stub1 = sandbox.stub(heartbeat1["_client"], "trackMetric");
 
             var env1 = <{ [id: string]: string }>{};
@@ -72,17 +71,16 @@ describe("AutoCollection/HeartBeat", () => {
                 const properties1 = stub1.args[0][0].properties;
                 assert.equal(properties1["sdk"], Context.sdkVersion, "sdk version should be read from Context");
                 assert.equal(properties1["osType"], os.type(), "osType should be read from os library");
-                assert.equal(properties1["appSrv_SiteName"], "site_name", "appSrv_SiteName should be read from envrionment variable");
-                assert.equal(properties1["appSrv_wsStamp"], "stamp_name", "appSrv_wsStamp should be read from envrionment variable");
-                assert.equal(properties1["appSrv_wsHost"], "host_name", "appSrv_wsHost should be read from envrionment variable");
+                assert.equal(properties1["appSrv_SiteName"], "site_name", "appSrv_SiteName should be read from environment variable");
+                assert.equal(properties1["appSrv_wsStamp"], "stamp_name", "appSrv_wsStamp should be read from environment variable");
+                assert.equal(properties1["appSrv_wsHost"], "host_name", "appSrv_wsHost should be read from environment variable");
                 done();
             });
         });
 
-        it("should read correct function app values from envrionment variable", (done) => {
+        it("should read correct function app values from environment variable", (done) => {
             const heartbeat2: HeartBeat = new HeartBeat(client);
             heartbeat2.enable(true);
-            HeartBeat.INSTANCE.enable(true);
             const stub2 = sandbox.stub(heartbeat2["_client"], "trackMetric");
             var env2 = <{ [id: string]: string }>{};
             env2["FUNCTIONS_WORKER_RUNTIME"] = "nodejs";
@@ -94,14 +92,14 @@ describe("AutoCollection/HeartBeat", () => {
                 assert.equal(stub2.args[0][0].name, "HeartBeat", "should use correct name for heartbeat metric");
                 assert.equal(stub2.args[0][0].value, 0, "value should be 0");
                 const keys2 = Object.keys(stub2.args[0][0].properties);
-                assert.equal(keys2.length, 3, "should have 3 kv pairs added when resource type is functiona app");
+                assert.equal(keys2.length, 3, "should have 3 kv pairs added when resource type is function app");
                 assert.equal(keys2[0], "sdk", "sdk should be added as a key");
                 assert.equal(keys2[1], "osType", "osType should be added as a key");
                 assert.equal(keys2[2], "azfunction_appId", "azfunction_appId should be added as a key");
                 const properties2 = stub2.args[0][0].properties;
                 assert.equal(properties2["sdk"], Context.sdkVersion, "sdk version should be read from Context");
                 assert.equal(properties2["osType"], os.type(), "osType should be read from os library");
-                assert.equal(properties2["azfunction_appId"], "host_name", "azfunction_appId should be read from envrionment variable");
+                assert.equal(properties2["azfunction_appId"], "host_name", "azfunction_appId should be read from environment variable");
                 done();
             });
         });

@@ -1,28 +1,27 @@
 import assert = require("assert");
 import sinon = require("sinon");
-import Console = require("../../AutoCollection/Console")
+import { channel } from "diagnostic-channel";
+import { console } from "diagnostic-channel-publishers";
 
 import AppInsights = require("../../applicationinsights");
-
-import { channel, IStandardEvent } from "diagnostic-channel";
 import { enable, dispose as disable } from "../../AutoCollection/diagnostic-channel/console.sub";
-import { console } from "diagnostic-channel-publishers";
+
 
 describe("AutoCollection/Console", () => {
     afterEach(() => {
         AppInsights.dispose();
     });
     describe("#init and #dispose()", () => {
-        it("init should enable and dispose should stop console autocollection", () => {
+        it("init should enable and dispose should stop console auto collection", () => {
 
             var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setAutoCollectConsole(true);
-            var enableConsoleRequestsSpy = sinon.spy(Console.INSTANCE, "enable");
+            var enableConsoleRequestsSpy = sinon.spy(AppInsights.defaultClient.autoCollector["_console"], "enable");
             appInsights.start();
 
-            assert.equal(enableConsoleRequestsSpy.callCount, 1, "enable should be called once as part of console autocollection initialization");
+            assert.equal(enableConsoleRequestsSpy.callCount, 1, "enable should be called once as part of console auto collection initialization");
             assert.equal(enableConsoleRequestsSpy.getCall(0).args[0], true);
             AppInsights.dispose();
-            assert.equal(enableConsoleRequestsSpy.callCount, 2, "enable(false) should be called once as part of console autocollection shutdown");
+            assert.equal(enableConsoleRequestsSpy.callCount, 2, "enable(false) should be called once as part of console auto collection shutdown");
             assert.equal(enableConsoleRequestsSpy.getCall(1).args[0], false);
         });
     });

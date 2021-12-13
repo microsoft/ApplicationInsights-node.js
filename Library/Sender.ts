@@ -8,7 +8,6 @@ import AuthorizationHandler = require("./AuthorizationHandler");
 import Config = require("./Config")
 import Contracts = require("../Declarations/Contracts");
 import Constants = require("../Declarations/Constants");
-import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
 import Statsbeat = require("../AutoCollection/Statsbeat");
 import FileSystemHelper = require("./FileSystemHelper");
 import Util = require("./Util");
@@ -164,7 +163,8 @@ class Sender {
                 Logging.info(Sender.TAG, options);
 
                 // Ensure this request is not captured by auto-collection.
-                (<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] = true;
+                // TODO:
+                // (<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] = true;
 
                 let startTime = +new Date();
 

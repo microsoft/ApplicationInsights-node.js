@@ -2,9 +2,8 @@ import fs = require("fs");
 import path = require("path");
 
 import Logging = require('./Logging');
-import { IJsonConfig } from "../Declarations/Interfaces";
-import { DistributedTracingModes } from "../applicationinsights";
-import { IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";
+import { IDisabledExtendedMetrics, IJsonConfig } from "../Declarations/Interfaces";
+import { DistributedTracingModes } from "../Declarations/Enumerators";
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 // Azure Connection String

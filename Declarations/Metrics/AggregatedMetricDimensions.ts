@@ -1,9 +1,9 @@
-export interface MetricBaseDimensions {
+export interface IMetricBaseDimensions {
     cloudRoleInstance?: string;
     cloudRoleName?: string
 }
 
-export interface MetricDependencyDimensions extends MetricBaseDimensions {
+export interface IMetricDependencyDimensions extends IMetricBaseDimensions {
     dependencyType?: string;
     dependencyTarget?: string;
     dependencySuccess?: boolean;
@@ -11,32 +11,20 @@ export interface MetricDependencyDimensions extends MetricBaseDimensions {
     operationSynthetic?: string;
 }
 
-export interface MetricRequestDimensions extends MetricBaseDimensions {
+export interface IMetricRequestDimensions extends IMetricBaseDimensions {
     requestSuccess?: boolean;
     requestResultCode?: string;
     operationSynthetic?: string;
 }
 
-export interface MetricExceptionDimensions extends MetricBaseDimensions {
+export interface IMetricExceptionDimensions extends IMetricBaseDimensions {
 }
 
-export interface MetricTraceDimensions extends MetricBaseDimensions {
+export interface IMetricTraceDimensions extends IMetricBaseDimensions {
     traceSeverityLevel?: string;
 }
 
 export type MetricDimensionTypeKeys = "cloudRoleInstance" | "cloudRoleName" | "requestSuccess" | "requestResultCode"
     | "dependencyType" | "dependencyTarget" | "dependencySuccess" | "dependencyResultCode" | "traceSeverityLevel" | "operationSynthetic";
 
-// Names expected in Breeze side for dimensions
-export const PreaggregatedMetricPropertyNames: { [key in MetricDimensionTypeKeys]: string } = {
-    cloudRoleInstance: "cloud/roleInstance",
-    cloudRoleName: "cloud/roleName",
-    operationSynthetic: "operation/synthetic",
-    requestSuccess: "Request.Success",
-    requestResultCode: "request/resultCode",
-    dependencyType: "Dependency.Type",
-    dependencyTarget: "dependency/target",
-    dependencySuccess: "Dependency.Success",
-    dependencyResultCode: "dependency/resultCode",
-    traceSeverityLevel: "trace/severityLevel",
-};
+

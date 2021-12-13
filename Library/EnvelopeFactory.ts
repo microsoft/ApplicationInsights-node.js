@@ -9,8 +9,6 @@ import { CorrelationContextManager } from "../AutoCollection/CorrelationContextM
  * Manages the logic of creating envelopes from Telemetry objects
  */
 class EnvelopeFactory {
-
-
     /**
      * Creates envelope ready to be sent by Channel
      * @param telemetry Telemetry data
@@ -25,10 +23,7 @@ class EnvelopeFactory {
         commonProperties?: { [key: string]: string; },
         context?: Context,
         config?: Config): Contracts.Envelope {
-
         var data = null;
-
-
         switch (telemetryType) {
             case Contracts.TelemetryType.Trace:
                 data = EnvelopeFactory.createTraceData(<Contracts.TraceTelemetry>telemetry);

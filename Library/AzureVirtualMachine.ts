@@ -2,7 +2,6 @@
 import Config = require("./Config");
 import Logging = require("./Logging");
 import Util = require("./Util");
-import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
 
 const AIMS_URI = "http://169.254.169.254/metadata/instance/compute";
 const AIMS_API_VERSION = "api-version=2017-12-01";
@@ -25,7 +24,8 @@ export class AzureVirtualMachine {
         const metadataRequestUrl = `${AIMS_URI}?${AIMS_API_VERSION}&${AIMS_FORMAT}`;
         const requestOptions = {
             method: 'GET',
-            [AutoCollectHttpDependencies.disableCollectionRequestOption]: true,
+            // [AutoCollectHttpDependencies.disableCollectionRequestOption]: true,
+            // TODO: disable tracking of this HTTP call
             headers: {
                 "Metadata": "True",
             }
@@ -63,14 +63,14 @@ export class AzureVirtualMachine {
                 if (error && error.message && error.message.indexOf(ConnectionErrorMessage) > -1) {
                     vmInfo.isVM = false; // confirm it's not in VM
                 }
-                else{
+                else {
                     // Only log when is not determined if VM or not to avoid noise outside of Azure VMs
                     Logging.info(AzureVirtualMachine.TAG, error);
                 }
                 callback(vmInfo);
             });
             req.end();
-            
+
         }
     }
 }
