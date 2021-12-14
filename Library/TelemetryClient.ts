@@ -1,6 +1,4 @@
 import url = require("url");
-import os = require("os");
-import azureCore = require("@azure/core-http");
 
 import Config = require("./Config");
 import AuthorizationHandler = require("./AuthorizationHandler");
@@ -9,6 +7,7 @@ import Contracts = require("../Declarations/Contracts");
 import Channel = require("./Channel");
 import TelemetryProcessors = require("../TelemetryProcessors");
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
+import AutoCollector = require("../AutoCollection/AutoCollector");
 import Statsbeat = require("../AutoCollection/Statsbeat");
 import Sender = require("./Sender");
 import Util = require("./Util");
@@ -29,6 +28,7 @@ class TelemetryClient {
     private _statsbeat: Statsbeat;
 
     public config: Config;
+    public autoCollector: AutoCollector;
     public context: Context;
     public commonProperties: { [key: string]: string; };
     public channel: Channel;
@@ -42,6 +42,7 @@ class TelemetryClient {
     constructor(setupString?: string) {
         var config = new Config(setupString);
         this.config = config;
+        this.autoCollector = new AutoCollector();
         this.context = new Context();
         this.commonProperties = {};
         this.authorizationHandler = null;
@@ -171,9 +172,9 @@ class TelemetryClient {
             // Ideally we would have a central place for "internal" telemetry processors and users can configure which ones are in use.
             // This will do for now. Otherwise clearTelemetryProcessors() would be problematic.
             accepted = accepted && TelemetryProcessors.samplingTelemetryProcessor(envelope, { correlationContext: CorrelationContextManager.getCurrentContext() });
-            TelemetryProcessors.preAggregatedMetricsTelemetryProcessor(envelope, this.context);
+            TelemetryProcessors.preAggregatedMetricsTelemetryProcessor(envelope, this);
             if (accepted) {
-                TelemetryProcessors.performanceMetricsTelemetryProcessor(envelope, this.quickPulseClient);
+                TelemetryProcessors.performanceMetricsTelemetryProcessor(envelope, this);
                 this.channel.send(envelope);
             }
         }

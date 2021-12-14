@@ -2,7 +2,6 @@ import https = require("https");
 
 import AuthorizationHandler = require("./AuthorizationHandler");
 import Config = require("./Config");
-import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies");
 import Logging = require("./Logging");
 import QuickPulseUtil = require("./QuickPulseUtil");
 import Util = require("./Util");
@@ -72,7 +71,8 @@ class QuickPulseSender {
 
         const payload = Util.stringify(envelope);
         var options = {
-            [AutoCollectHttpDependencies.disableCollectionRequestOption]: true,
+            // [AutoCollectHttpDependencies.disableCollectionRequestOption]: true,
+            // TODO: disable tracking of this HTTP call
             host: (redirectedHostEndpoint && redirectedHostEndpoint.length > 0) ? redirectedHostEndpoint : this._config.quickPulseHost,
             method: QuickPulseConfig.method,
             path: `/QuickPulseService.svc/${postOrPing}?ikey=${this._config.instrumentationKey}`,

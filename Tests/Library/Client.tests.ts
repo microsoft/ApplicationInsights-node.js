@@ -3,10 +3,9 @@ import https = require("https");
 import sinon = require("sinon");
 import Sinon = require("sinon");
 import eventEmitter = require('events');
-import azureCore = require("@azure/core-http");
 
-import AutoCollecPreAggregatedMetrics = require("../../AutoCollection/PreAggregatedMetrics");
-import Client = require("../../Library/NodeClient");
+import AutoCollectPreAggregatedMetrics = require("../../AutoCollection/PreAggregatedMetrics");
+import Client = require("../../Library/TelemetryClient");
 import Config = require("../../Library/Config");
 import Contracts = require("../../Declarations/Contracts");
 import RequestResponseHeaders = require("../../Library/RequestResponseHeaders");
@@ -335,360 +334,55 @@ describe("Library/TelemetryClient", () => {
             it("should not crash with invalid input", () => {
                 invalidInputHelper("trackRequest");
             });
-
-            it('should track request with correct data on response finish event ', () => {
-                trackStub.reset();
-                clock.reset();
-                client.trackNodeHttpRequest({ request: <any>request, response: <any>response, properties: properties });
-
-                // finish event was not emitted yet
-                assert.ok(trackStub.notCalled);
-
-                // emit finish event
-                clock.tick(10);
-                response.emitFinish();
-
-                assert.ok(trackStub.calledOnce);
-                var requestTelemetry = <Contracts.RequestTelemetry>trackStub.firstCall.args[0];
-
-                assert.equal(requestTelemetry.resultCode, "200");
-                assert.deepEqual(requestTelemetry.properties, properties);
-                assert.equal(requestTelemetry.duration, 10);
-            });
-
-            it('should track request with correct tags on response finish event', () => {
-                trackStub.reset();
-                clock.reset();
-                client.trackNodeHttpRequest({ request: <any>request, response: <any>response, properties: properties });
-
-                // emit finish event
-                response.emitFinish();
-
-                // validate
-                var args = trackStub.args;
-                assert.ok(trackStub.calledOnce);
-                var requestTelemetry = <Contracts.RequestTelemetry>trackStub.firstCall.args[0];
-                var tags = requestTelemetry.tagOverrides;
-
-                assert.equal(tags["ai.operation.name"], "GET /search");
-                assert.equal(tags["ai.device.id"], "");
-                assert.equal(tags["ai.device.type"], null);
-            });
-
-            it('should track request with tagOverrides on response finish event', () => {
-                trackStub.reset();
-                clock.reset();
-                client.trackNodeHttpRequest({ request: <any>request, response: <any>response, properties: properties, tagOverrides: { "custom": "A", "ai.device.id": "B" } });
-
-                // emit finish event
-                response.emitFinish();
-
-                // validate
-                var args = trackStub.args;
-                assert.ok(trackStub.calledOnce);
-                var requestTelemetry = <Contracts.RequestTelemetry>trackStub.firstCall.args[0];
-                var tags = requestTelemetry.tagOverrides;
-
-                assert.equal(tags["ai.operation.name"], "GET /search");
-                assert.equal(tags["ai.device.id"], "B");
-                assert.equal(tags["custom"], "A");
-                assert.equal(tags["ai.device.type"], null);
-            });
-
-            it('should track request with correct data on request error event #1', () => {
-                trackStub.reset();
-                clock.reset();
-                client.trackNodeHttpRequest({ request: <any>request, response: <any>response, properties: properties });
-
-                // finish event was not emitted yet
-                assert.ok(trackStub.notCalled);
-
-                // emit finish event
-                clock.tick(10);
-                request.emitError();
-                assert.ok(trackStub.calledOnce);
-                var requestTelemetry = <Contracts.RequestTelemetry>trackStub.firstCall.args[0];
-
-                assert.equal(requestTelemetry.success, false);
-                assert.deepEqual(requestTelemetry.properties, failedProperties);
-                assert.equal(requestTelemetry.duration, 10);
-            });
-
-            it('should use source and target correlationId headers', () => {
-                trackStub.reset();
-                clock.reset();
-
-                // Simulate an incoming request that has a different source correlationId header.
-                let testCorrelationId = 'cid-v1:Application-Id-98765-4321A';
-                request.headers[RequestResponseHeaders.requestContextHeader] = `${RequestResponseHeaders.requestContextSourceKey}=${testCorrelationId}`;
-
-                client.trackNodeHttpRequest({ request: <any>request, response: <any>response, properties: properties });
-
-                // finish event was not emitted yet
-                assert.ok(trackStub.notCalled);
-
-                // emit finish event
-                clock.tick(10);
-                response.emitFinish();
-                assert.ok(trackStub.calledOnce);
-                var requestTelemetry = <Contracts.RequestTelemetry>trackStub.firstCall.args[0];
-                assert.equal(requestTelemetry.source, testCorrelationId);
-
-                // The client's correlationId should have been added as the response target correlationId header.
-                assert.equal(response.headers[RequestResponseHeaders.requestContextHeader],
-                    `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
-            });
-
-            it('should NOT use source and target correlationId headers when url is on the excluded list', () => {
-                trackStub.reset();
-                clock.reset();
-
-                client.config.correlationHeaderExcludedDomains = ["bing.com"];
-
-                // Simulate an incoming request that has a different source ikey hash header.
-                let testCorrelationId = 'cid-v1:Application-Id-98765-4321A';
-                request.headers[RequestResponseHeaders.requestContextHeader] = `${RequestResponseHeaders.requestContextSourceKey}=${testCorrelationId}`;
-
-                client.trackNodeHttpRequest({ request: <any>request, response: <any>response, properties: properties });
-
-                // finish event was not emitted yet
-                assert.ok(trackStub.notCalled);
-
-                // emit finish event
-                clock.tick(10);
-                response.emitFinish();
-                assert.ok(trackStub.calledOnce);
-
-                assert.equal(response.headers[RequestResponseHeaders.requestContextHeader], undefined);
-            });
         });
 
-        describe("#trackNodeHttpRequestSync()", () => {
-            it('should track request with correct data synchronously', () => {
+        describe("#trackException()", () => {
+            it("should track Exception with correct data - Error only", () => {
                 trackStub.reset();
-                client.trackNodeHttpRequestSync({ request: <any>request, response: <any>response, duration: 100, properties: properties });
+                client.trackException({ exception: new Error(name) });
+
                 assert.ok(trackStub.calledOnce);
-                var requestTelemetry = <Contracts.RequestTelemetry>trackStub.firstCall.args[0];
 
-                assert.equal(requestTelemetry.resultCode, "200");
-                assert.equal(requestTelemetry.duration, 100);
-                assert.deepEqual(requestTelemetry.properties, properties);
+                var exceptionTelemetry = <Contracts.ExceptionTelemetry>trackStub.firstCall.args[0];
 
-                var tags = requestTelemetry.tagOverrides;
 
-                assert.equal(tags["ai.operation.name"], "GET /search");
-                assert.equal(tags["ai.device.id"], "");
-                assert.equal(tags["ai.device.type"], null);
+                assert.equal(exceptionTelemetry.exception.message, name);
             });
-            it('should track request with correct data and tag overrides synchronously', () => {
+
+            it("should track Exception with correct data - Error and properties", () => {
                 trackStub.reset();
-                client.trackNodeHttpRequestSync({ request: <any>request, response: <any>response, duration: 100, properties: properties, tagOverrides: { "custom": "A", "ai.device.id": "B" } });
+                client.trackException({ exception: new Error(name), properties: properties });
+
                 assert.ok(trackStub.calledOnce);
-                var requestTelemetry = <Contracts.RequestTelemetry>trackStub.firstCall.args[0];
 
-                assert.equal(requestTelemetry.resultCode, "200");
-                assert.equal(requestTelemetry.duration, 100);
-                assert.deepEqual(requestTelemetry.properties, properties);
-
-                var tags = requestTelemetry.tagOverrides;
-
-                assert.equal(tags["ai.operation.name"], "GET /search");
-                assert.equal(tags["ai.device.id"], "B");
-                assert.equal(tags["custom"], "A");
-                assert.equal(tags["ai.device.type"], null);
-            });
-        });
-
-        describe("#trackNodeHttpDependency()", () => {
-            var clock: Sinon.SinonFakeTimers;
-
-            before(() => {
-                clock = sinon.useFakeTimers();
+                var exceptionTelemetry = <Contracts.ExceptionTelemetry>trackStub.firstCall.args[0];
+                assert.equal(exceptionTelemetry.exception.message, name);
+                assert.deepEqual(exceptionTelemetry.properties, properties);
             });
 
-            after(() => {
-                clock.restore();
+            it("should track Exception with correct data - Error, properties and measurements", () => {
+                trackStub.reset();
+                client.trackException({ exception: new Error(name), properties: properties, measurements: measurements });
+
+                assert.ok(trackStub.calledOnce);
+
+                var exceptionTelemetry = <Contracts.ExceptionTelemetry>trackStub.firstCall.args[0];
+
+                assert.equal(exceptionTelemetry.exception.message, name);
+                assert.deepEqual(exceptionTelemetry.properties, properties);
+                assert.deepEqual(exceptionTelemetry.measurements, measurements);
             });
 
             it("should not crash with invalid input", () => {
-                invalidInputHelper("trackNodeHttpDependency");
+                invalidInputHelper("trackException");
             });
-
-            it('should track request with correct data from request options', () => {
-                trackStub.reset();
-                clock.reset();
-                client.trackNodeHttpDependency({
-                    options: {
-                        host: 'bing.com',
-                        path: '/search?q=test'
-                    },
-                    request: <any>request, properties: properties,
-                    tagOverrides: { "custom": "A", "ai.device.id": "B" }
-                });
-
-                // response event was not emitted yet
-                assert.ok(trackStub.notCalled);
-
-                // emit response event
-                clock.tick(10);
-                request.emitResponse();
-                assert.ok(trackStub.calledOnce);
-                var dependencyTelemetry = <Contracts.DependencyTelemetry>trackStub.firstCall.args[0];
-
-
-                assert.equal(dependencyTelemetry.success, true);
-                assert.equal(dependencyTelemetry.duration, 10);
-                assert.equal(dependencyTelemetry.name, "GET /search");
-                assert.equal(dependencyTelemetry.data, "http://bing.com/search?q=test");
-                assert.equal(dependencyTelemetry.target, "bing.com");
-                assert.equal(dependencyTelemetry.dependencyTypeName, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
-                assert.deepEqual(dependencyTelemetry.properties, properties);
-                assert.deepEqual(dependencyTelemetry.tagOverrides, { "custom": "A", "ai.device.id": "B" });
-            });
-
-            it('should track request with correct data on response event', () => {
-                trackStub.reset();
-                clock.reset();
-                client.trackNodeHttpDependency({ options: 'http://bing.com/search?q=test', request: <any>request, properties: properties });
-
-                // response event was not emitted yet
-                assert.ok(trackStub.notCalled);
-
-                // emit response event
-                clock.tick(10);
-                request.emitResponse();
-                assert.ok(trackStub.calledOnce);
-                var dependencyTelemetry = <Contracts.DependencyTelemetry>trackStub.firstCall.args[0];
-
-                assert.equal(dependencyTelemetry.success, true);
-                assert.equal(dependencyTelemetry.duration, 10);
-                assert.equal(dependencyTelemetry.name, "GET /search");
-                assert.equal(dependencyTelemetry.data, "http://bing.com/search?q=test");
-                assert.equal(dependencyTelemetry.target, "bing.com");
-                assert.equal(dependencyTelemetry.dependencyTypeName, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
-                assert.deepEqual(dependencyTelemetry.properties, properties);
-            });
-
-            it('should track request with correct data on request error event #2', () => {
-                trackStub.reset();
-                clock.reset();
-                client.trackNodeHttpDependency({ options: 'http://bing.com/search?q=test', request: <any>request, properties: properties });
-
-                // error event was not emitted yet
-                assert.ok(trackStub.notCalled);
-
-                // emit error event
-                clock.tick(10);
-                request.emitError();
-                assert.ok(trackStub.calledOnce);
-                var dependencyTelemetry = <Contracts.DependencyTelemetry>trackStub.firstCall.args[0];
-
-                assert.equal(dependencyTelemetry.success, false);
-                assert.equal(dependencyTelemetry.duration, 10);
-                assert.equal(dependencyTelemetry.name, "GET /search");
-                assert.equal(dependencyTelemetry.data, "http://bing.com/search?q=test");
-                assert.equal(dependencyTelemetry.target, "bing.com");
-                assert.deepEqual(dependencyTelemetry.properties, failedProperties);
-            });
-
-            it('should use source and target correlationId headers', () => {
-                trackStub.reset();
-                clock.reset();
-                client.trackNodeHttpDependency({
-                    options: {
-                        host: 'bing.com',
-                        path: '/search?q=test'
-                    },
-                    request: <any>request, properties: properties
-                });
-
-                // The client's correlationId should have been added as the request source correlationId header.
-                assert.equal(request.headers[RequestResponseHeaders.requestContextHeader],
-                    `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
-
-                // response event was not emitted yet
-                assert.ok(trackStub.notCalled);
-
-                // Simulate a response from another service that includes a target correlationId header.
-                const targetCorrelationId = "cid-v1:Application-Key-98765-4321A";
-                response.headers[RequestResponseHeaders.requestContextHeader] =
-                    `${RequestResponseHeaders.requestContextTargetKey}=${targetCorrelationId}`;
-
-                // emit response event
-                clock.tick(10);
-                request.emitResponse();
-                assert.ok(trackStub.calledOnce);
-                var dependencyTelemetry = <Contracts.DependencyTelemetry>trackStub.firstCall.args[0];
-
-                assert.equal(dependencyTelemetry.target, "bing.com | " + targetCorrelationId);
-                assert.equal(dependencyTelemetry.dependencyTypeName, "Http (tracked component)");
-            });
-
-            it('should not set source correlationId headers when the host is on a excluded domain list', () => {
-                trackStub.reset();
-                clock.reset();
-
-                client.config.correlationHeaderExcludedDomains = ["*.domain.com"]
-                client.trackNodeHttpDependency({
-                    options: {
-                        host: 'excluded.domain.com',
-                        path: '/search?q=test'
-                    },
-                    request: <any>request, properties: properties
-                });
-
-                // The client's correlationId should NOT have been added for excluded domains
-                assert.equal(request.headers[RequestResponseHeaders.requestContextHeader], null);
-            });
-        });
-    });
-
-    describe("#trackException()", () => {
-        it("should track Exception with correct data - Error only", () => {
-            trackStub.reset();
-            client.trackException({ exception: new Error(name) });
-
-            assert.ok(trackStub.calledOnce);
-
-            var exceptionTelemetry = <Contracts.ExceptionTelemetry>trackStub.firstCall.args[0];
-
-
-            assert.equal(exceptionTelemetry.exception.message, name);
-        });
-
-        it("should track Exception with correct data - Error and properties", () => {
-            trackStub.reset();
-            client.trackException({ exception: new Error(name), properties: properties });
-
-            assert.ok(trackStub.calledOnce);
-
-            var exceptionTelemetry = <Contracts.ExceptionTelemetry>trackStub.firstCall.args[0];
-            assert.equal(exceptionTelemetry.exception.message, name);
-            assert.deepEqual(exceptionTelemetry.properties, properties);
-        });
-
-        it("should track Exception with correct data - Error, properties and measurements", () => {
-            trackStub.reset();
-            client.trackException({ exception: new Error(name), properties: properties, measurements: measurements });
-
-            assert.ok(trackStub.calledOnce);
-
-            var exceptionTelemetry = <Contracts.ExceptionTelemetry>trackStub.firstCall.args[0];
-
-            assert.equal(exceptionTelemetry.exception.message, name);
-            assert.deepEqual(exceptionTelemetry.properties, properties);
-            assert.deepEqual(exceptionTelemetry.measurements, measurements);
-        });
-
-        it("should not crash with invalid input", () => {
-            invalidInputHelper("trackException");
         });
     });
 
     describe("#ProcessedByMetricExtractors()", () => {
 
         before(() => {
-            let preAggregatedMetrics = new AutoCollecPreAggregatedMetrics(client);
+            let preAggregatedMetrics = new AutoCollectPreAggregatedMetrics(client);
             preAggregatedMetrics.enable(true);
         });
 

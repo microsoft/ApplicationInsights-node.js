@@ -1,6 +1,5 @@
 import azureCore = require("@azure/core-http");
 
-import CorrelationIdManager = require('./CorrelationIdManager');
 import ConnectionStringParser = require('./ConnectionStringParser');
 import Logging = require('./Logging');
 import Constants = require('../Declarations/Constants');
@@ -8,16 +7,14 @@ import http = require('http');
 import https = require('https');
 import url = require('url');
 import { JsonConfig } from "./JsonConfig";
-import { IConfig } from "../Declarations/Interfaces";
-import { DistributedTracingModes } from "../applicationinsights";
-import { IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";
+import { IConfig, IDisabledExtendedMetrics } from "../Declarations/Interfaces";
+import { DistributedTracingModes } from "../Declarations/Enumerators";
 
 class Config implements IConfig {
 
     public static ENV_azurePrefix = "APPSETTING_"; // Azure adds this prefix to all environment variables
     public static ENV_iKey = "APPINSIGHTS_INSTRUMENTATIONKEY"; // This key is provided in the readme
     public static legacy_ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
-    public static ENV_profileQueryEndpoint = "APPINSIGHTS_PROFILE_QUERY_ENDPOINT";
     public static ENV_quickPulseHost = "APPINSIGHTS_QUICKPULSE_HOST";
 
     // IConfig properties
@@ -60,8 +57,6 @@ class Config implements IConfig {
     public correlationId: string; // TODO: Should be private
     private _connectionString: string;
     private _endpointBase: string = Constants.DEFAULT_BREEZE_ENDPOINT;
-    private _setCorrelationId: (v: string) => void;
-    private _profileQueryEndpoint: string;
     private _instrumentationKey: string;
 
 
@@ -92,26 +87,12 @@ class Config implements IConfig {
                 "*.core.microsoft.scloud",
                 "*.core.eaglex.ic.gov"
             ];
-
-        this._setCorrelationId = (correlationId) => this.correlationId = correlationId;
         this.ignoreLegacyHeaders = this.ignoreLegacyHeaders || false;
-        this.profileQueryEndpoint = csCode.ingestionendpoint || csEnv.ingestionendpoint || process.env[Config.ENV_profileQueryEndpoint] || this._endpointBase;
         this.quickPulseHost = this.quickPulseHost || csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_HOST;
         // Parse quickPulseHost if it starts with http(s)://
         if (this.quickPulseHost.match(/^https?:\/\//)) {
             this.quickPulseHost = new url.URL(this.quickPulseHost).host;
         }
-    }
-
-    public set profileQueryEndpoint(endpoint: string) {
-        CorrelationIdManager.cancelCorrelationIdQuery(this, this._setCorrelationId);
-        this._profileQueryEndpoint = endpoint;
-        this.correlationId = CorrelationIdManager.correlationIdPrefix; // Reset the correlationId while we wait for the new query
-        CorrelationIdManager.queryCorrelationId(this, this._setCorrelationId);
-    }
-
-    public get profileQueryEndpoint() {
-        return this._profileQueryEndpoint;
     }
 
     public set instrumentationKey(iKey: string) {

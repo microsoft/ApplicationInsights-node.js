@@ -6,30 +6,16 @@ import Config = require("../Library/Config");
 import Context = require("../Library/Context");
 
 class HeartBeat {
-
-    public static INSTANCE: HeartBeat;
-
     private _collectionInterval: number = 900000;
     private _client: TelemetryClient;
     private _handle: NodeJS.Timer | null;
-    private _isEnabled: boolean;
-    private _isInitialized: boolean;
     private _isVM: boolean;
 
     constructor(client: TelemetryClient) {
-        if (!HeartBeat.INSTANCE) {
-            HeartBeat.INSTANCE = this;
-        }
-        this._isInitialized = false;
         this._client = client;
     }
 
     public enable(isEnabled: boolean) {
-        this._isEnabled = isEnabled;
-        if (this._isEnabled && !this._isInitialized) {
-            this._isInitialized = true;
-        }
-
         if (isEnabled) {
             if (!this._handle) {
                 this._handle = setInterval(() => this.trackHeartBeat(this._client.config, () => { }), this._collectionInterval);
@@ -41,14 +27,6 @@ class HeartBeat {
                 this._handle = null;
             }
         }
-    }
-
-    public isInitialized() {
-        return this._isInitialized;
-    }
-
-    public static isEnabled() {
-        return HeartBeat.INSTANCE && HeartBeat.INSTANCE._isEnabled;
     }
 
     public trackHeartBeat(config: Config, callback: () => void) {
@@ -82,12 +60,6 @@ class HeartBeat {
             this._client.trackMetric({ name: Constants.HeartBeatMetricName, value: 0, properties: properties });
             callback();
         }
-    }
-
-    public dispose() {
-        HeartBeat.INSTANCE = null;
-        this.enable(false);
-        this._isInitialized = false;
     }
 }
 

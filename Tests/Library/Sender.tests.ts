@@ -365,7 +365,6 @@ describe("Library/Sender", () => {
     });
 
     describe("#Statsbeat counters", () => {
-        Statsbeat.CONNECTION_STRING = "InstrumentationKey=2aa22222-bbbb-1ccc-8ddd-eeeeffff3333;"
         var breezeResponse: Contracts.BreezeResponse = {
             itemsAccepted: 1,
             itemsReceived: 1,
@@ -374,6 +373,7 @@ describe("Library/Sender", () => {
 
         let config = new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333");
         let statsbeat = new Statsbeat(config);
+        statsbeat["_connectionString"] = "InstrumentationKey=2aa22222-bbbb-1ccc-8ddd-eeeeffff3333;"
         let statsbeatSender = new Sender(config, null, null, null, statsbeat);
 
         it("Succesful requests", (done) => {

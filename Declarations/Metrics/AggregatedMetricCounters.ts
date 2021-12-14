@@ -1,4 +1,4 @@
-import { MetricBaseDimensions } from "./AggregatedMetricDimensions";
+import { IMetricBaseDimensions } from "./AggregatedMetricDimensions";
 
 export class AggregatedMetricCounter {
 
@@ -14,9 +14,9 @@ export class AggregatedMetricCounter {
 
     public lastIntervalExecutionTime: number;
 
-    public dimensions: MetricBaseDimensions;
+    public dimensions: IMetricBaseDimensions;
 
-    constructor(dimensions: MetricBaseDimensions) {
+    constructor(dimensions: IMetricBaseDimensions) {
         this.dimensions = dimensions;
         this.totalCount = 0;
         this.lastTotalCount = 0;

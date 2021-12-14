@@ -1,85 +1,18 @@
-import CorrelationContextManager = require("./AutoCollection/CorrelationContextManager"); // Keep this first
-import AutoCollectConsole = require("./AutoCollection/Console");
-import AutoCollectExceptions = require("./AutoCollection/Exceptions");
-import AutoCollectPerformance = require("./AutoCollection/Performance");
-import AutoCollecPreAggregatedMetrics = require("./AutoCollection/PreAggregatedMetrics");
-import HeartBeat = require("./AutoCollection/HeartBeat");
-import AutoCollectHttpDependencies = require("./AutoCollection/HttpDependencies");
-import AutoCollectHttpRequests = require("./AutoCollection/HttpRequests");
-import CorrelationIdManager = require("./Library/CorrelationIdManager");
-import Logging = require("./Library/Logging");
-import QuickPulseClient = require("./Library/QuickPulseStateManager");
 import { IncomingMessage } from "http";
 import { SpanContext } from "@opentelemetry/api";
-import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCollection/NativePerformance";
+
+import AutoCollectPerformance = require("./AutoCollection/Performance");
+import Logging = require("./Library/Logging");
+import QuickPulseClient = require("./Library/QuickPulseStateManager");
+import { ICorrelationContext, IDisabledExtendedMetrics, } from "./Declarations/Interfaces";
+import { DistributedTracingModes } from "./Declarations/Enumerators";
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
-export import TelemetryClient = require("./Library/NodeClient");
+export import TelemetryClient = require("./Library/TelemetryClient");
 export import Contracts = require("./Declarations/Contracts");
 export import azureFunctionsTypes = require("./Library/Functions");
-
-
-export enum DistributedTracingModes {
-    /**
-     * (Default) Send Application Insights correlation headers
-     */
-
-    AI = 0,
-
-    /**
-     * Send both W3C Trace Context headers and back-compatibility Application Insights headers
-     */
-    AI_AND_W3C
-}
-
-// Default autocollection configuration
-let defaultConfig = _getDefaultAutoCollectConfig();
-let _isConsole = defaultConfig.isConsole();
-let _isConsoleLog = defaultConfig.isConsoleLog();
-let _isExceptions = defaultConfig.isExceptions();
-let _isPerformance = defaultConfig.isPerformance();
-let _isPreAggregatedMetrics = defaultConfig.isPreAggregatedMetrics();
-let _isHeartBeat = defaultConfig.isHeartBeat(); // off by default for now
-let _isRequests = defaultConfig.isRequests();
-let _isDependencies = defaultConfig.isDependencies();
-let _isDiskRetry = defaultConfig.isDiskRetry();
-let _isCorrelating = defaultConfig.isCorrelating();
-let _forceClsHooked: boolean;
-let _isSendingLiveMetrics = defaultConfig.isSendingLiveMetrics(); // Off by default
-let _isNativePerformance = defaultConfig.isNativePerformance();
-let _disabledExtendedMetrics: IDisabledExtendedMetrics;
-
-function _getDefaultAutoCollectConfig() {
-    return {
-        isConsole: () => true,
-        isConsoleLog: () => false,
-        isExceptions: () => true,
-        isPerformance: () => true,
-        isPreAggregatedMetrics: () => true,
-        isHeartBeat: () => false, // off by default for now
-        isRequests: () => true,
-        isDependencies: () => true,
-        isDiskRetry: () => true,
-        isCorrelating: () => true,
-        isSendingLiveMetrics: () => false, // Off by default
-        isNativePerformance: () => true
-    }
-}
-
-let _diskRetryInterval: number = undefined;
-let _diskRetryMaxBytes: number = undefined;
-
-let _console: AutoCollectConsole;
-let _exceptions: AutoCollectExceptions;
-let _performance: AutoCollectPerformance;
-let _preAggregatedMetrics: AutoCollecPreAggregatedMetrics;
-let _heartbeat: HeartBeat;
-let _nativePerformance: AutoCollectNativePerformance;
-let _serverRequests: AutoCollectHttpRequests;
-let _clientRequests: AutoCollectHttpDependencies;
-
-let _isStarted = false;
+export { DistributedTracingModes };
 
 /**
 * The default client, initialized when setup was called. To initialize a different client
@@ -88,6 +21,10 @@ let _isStarted = false;
 export let defaultClient: TelemetryClient;
 export let liveMetricsClient: QuickPulseClient;
 let _performanceLiveMetrics: AutoCollectPerformance;
+let _isSendingLiveMetrics = false;
+let _isDiskRetry = true;
+let _diskRetryInterval: number = undefined;
+let _diskRetryMaxBytes: number = undefined;
 
 /**
  * Initializes the default client. Should be called after setting
@@ -102,25 +39,26 @@ let _performanceLiveMetrics: AutoCollectPerformance;
 export function setup(setupString?: string) {
     if (!defaultClient) {
         defaultClient = new TelemetryClient(setupString);
-        _initializeConfig();
-        _console = new AutoCollectConsole(defaultClient);
-        _exceptions = new AutoCollectExceptions(defaultClient);
-        _performance = new AutoCollectPerformance(defaultClient);
-        _preAggregatedMetrics = new AutoCollecPreAggregatedMetrics(defaultClient);
-        _heartbeat = new HeartBeat(defaultClient);
-        _serverRequests = new AutoCollectHttpRequests(defaultClient);
-        _clientRequests = new AutoCollectHttpDependencies(defaultClient);
-        if (!_nativePerformance) {
-            _nativePerformance = new AutoCollectNativePerformance(defaultClient);
+        defaultClient.autoCollector.setup(defaultClient);
+        if (defaultClient.config.distributedTracingMode) {
+            Configuration.setDistributedTracingMode(defaultClient.config.distributedTracingMode);
         }
+        if (defaultClient.config.enableInternalDebugLogging) {
+            Logging.enableDebug = defaultClient.config.enableInternalDebugLogging;
+        }
+        if (defaultClient.config.enableInternalWarningLogging) {
+            Logging.disableWarnings = !defaultClient.config.enableInternalWarningLogging;
+        }
+        if (defaultClient.config.enableSendLiveMetrics) {
+            Configuration.setSendLiveMetrics(defaultClient.config.enableSendLiveMetrics);
+        }
+        if (defaultClient.config.enableUseDiskRetryCaching) {
+            _isDiskRetry = defaultClient.config.enableUseDiskRetryCaching;
+        }
+        Configuration.setUseDiskRetryCaching(_isDiskRetry, _diskRetryInterval, _diskRetryMaxBytes);
     } else {
         Logging.info("The default client is already setup");
     }
-
-    if (defaultClient && defaultClient.channel) {
-        defaultClient.channel.setUseDiskRetryCaching(_isDiskRetry, _diskRetryInterval, _diskRetryMaxBytes);
-    }
-
     return Configuration;
 }
 
@@ -132,16 +70,7 @@ export function setup(setupString?: string) {
  */
 export function start() {
     if (!!defaultClient) {
-        _isStarted = true;
-        _console.enable(_isConsole, _isConsoleLog);
-        _exceptions.enable(_isExceptions);
-        _performance.enable(_isPerformance);
-        _preAggregatedMetrics.enable(_isPreAggregatedMetrics);
-        _heartbeat.enable(_isHeartBeat);
-        _nativePerformance.enable(_isNativePerformance, _disabledExtendedMetrics);
-        _serverRequests.useAutoCorrelation(_isCorrelating, _forceClsHooked);
-        _serverRequests.enable(_isRequests);
-        _clientRequests.enable(_isDependencies);
+        defaultClient.autoCollector.start();
         if (liveMetricsClient && _isSendingLiveMetrics) {
             liveMetricsClient.enable(_isSendingLiveMetrics);
         }
@@ -150,22 +79,6 @@ export function start() {
     }
 
     return Configuration;
-}
-
-function _initializeConfig() {
-    _isConsole = defaultClient.config.enableAutoCollectExternalLoggers !== undefined ? defaultClient.config.enableAutoCollectExternalLoggers : _isConsole;
-    _isConsoleLog = defaultClient.config.enableAutoCollectConsole !== undefined ? defaultClient.config.enableAutoCollectConsole : _isConsoleLog;
-    _isExceptions = defaultClient.config.enableAutoCollectExceptions !== undefined ? defaultClient.config.enableAutoCollectExceptions : _isExceptions;
-    _isPerformance = defaultClient.config.enableAutoCollectPerformance !== undefined ? defaultClient.config.enableAutoCollectPerformance : _isPerformance;
-    _isPreAggregatedMetrics = defaultClient.config.enableAutoCollectPreAggregatedMetrics !== undefined ? defaultClient.config.enableAutoCollectPreAggregatedMetrics : _isPreAggregatedMetrics;
-    _isHeartBeat = defaultClient.config.enableAutoCollectHeartbeat !== undefined ? defaultClient.config.enableAutoCollectHeartbeat : _isHeartBeat;
-    _isRequests = defaultClient.config.enableAutoCollectRequests !== undefined ? defaultClient.config.enableAutoCollectRequests : _isRequests;
-    _isDependencies = defaultClient.config.enableAutoDependencyCorrelation !== undefined ? defaultClient.config.enableAutoDependencyCorrelation : _isDependencies;
-    _isCorrelating = defaultClient.config.enableAutoDependencyCorrelation !== undefined ? defaultClient.config.enableAutoDependencyCorrelation : _isCorrelating;
-    _forceClsHooked = defaultClient.config.enableUseAsyncHooks !== undefined ? defaultClient.config.enableUseAsyncHooks : _forceClsHooked;
-    const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(defaultClient.config.enableAutoCollectExtendedMetrics, defaultClient.config);
-    _isNativePerformance = extendedMetricsConfig.isEnabled;
-    _disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
 }
 
 /**
@@ -181,9 +94,10 @@ function _initializeConfig() {
  * This method will return null if automatic dependency correlation is disabled.
  * @returns A plain object for request storage or null if automatic dependency correlation is disabled.
  */
-export function getCorrelationContext(): CorrelationContextManager.CorrelationContext {
-    if (_isCorrelating) {
-        return CorrelationContextManager.CorrelationContextManager.getCurrentContext();
+export function getCorrelationContext(): ICorrelationContext {
+    if (defaultClient.autoCollector.isCorrelating) {
+        // TODO
+        return null;
     }
 
     return null;
@@ -193,12 +107,13 @@ export function getCorrelationContext(): CorrelationContextManager.CorrelationCo
  * **(Experimental!)**
  * Starts a fresh context or propagates the current internal one.
  */
-export function startOperation(context: SpanContext, name: string): CorrelationContextManager.CorrelationContext | null;
-export function startOperation(context: azureFunctionsTypes.Context, request: azureFunctionsTypes.HttpRequest): CorrelationContextManager.CorrelationContext | null;
-export function startOperation(context: azureFunctionsTypes.Context, name: string): CorrelationContextManager.CorrelationContext | null;
-export function startOperation(context: IncomingMessage | azureFunctionsTypes.HttpRequest, request?: never): CorrelationContextManager.CorrelationContext | null;
-export function startOperation(context: azureFunctionsTypes.Context | (IncomingMessage | azureFunctionsTypes.HttpRequest) | (SpanContext), request?: azureFunctionsTypes.HttpRequest | string): CorrelationContextManager.CorrelationContext | null {
-    return CorrelationContextManager.CorrelationContextManager.startOperation(context, request);
+export function startOperation(context: SpanContext, name: string): ICorrelationContext | null;
+export function startOperation(context: azureFunctionsTypes.Context, request: azureFunctionsTypes.HttpRequest): ICorrelationContext | null;
+export function startOperation(context: azureFunctionsTypes.Context, name: string): ICorrelationContext | null;
+export function startOperation(context: IncomingMessage | azureFunctionsTypes.HttpRequest, request?: never): ICorrelationContext | null;
+export function startOperation(context: azureFunctionsTypes.Context | (IncomingMessage | azureFunctionsTypes.HttpRequest) | (SpanContext), request?: azureFunctionsTypes.HttpRequest | string): ICorrelationContext | null {
+    // TODO
+    return null;
 }
 
 /**
@@ -207,12 +122,13 @@ export function startOperation(context: azureFunctionsTypes.Context | (IncomingM
  * Use this method if automatic dependency correlation is not propagating
  * correctly to an asynchronous callback.
  */
-export function wrapWithCorrelationContext<T extends Function>(fn: T, context?: CorrelationContextManager.CorrelationContext): T {
-    return CorrelationContextManager.CorrelationContextManager.wrapCallback(fn, context);
+export function wrapWithCorrelationContext<T extends Function>(fn: T, context?: ICorrelationContext): T {
+    // TODO
+    return null;
 }
 
 /**
- * The active configuration for global SDK behaviors, such as autocollection.
+ * The active configuration for global SDK behaviors, such as auto collection.
  */
 export class Configuration {
     // Convenience shortcut to ApplicationInsights.start
@@ -226,7 +142,7 @@ export class Configuration {
      * services. Default=AI
     */
     public static setDistributedTracingMode(value: DistributedTracingModes) {
-        CorrelationIdManager.w3cEnabled = value === DistributedTracingModes.AI_AND_W3C;
+        // TODO
         return Configuration;
     }
 
@@ -237,12 +153,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectConsole(value: boolean, collectConsoleLog: boolean = false) {
-        _isConsole = value;
-        _isConsoleLog = collectConsoleLog;
-        if (_isStarted) {
-            _console.enable(value, collectConsoleLog);
-        }
-
+        defaultClient.autoCollector.setAutoCollectConsole(value, collectConsoleLog);
         return Configuration;
     }
 
@@ -252,11 +163,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectExceptions(value: boolean) {
-        _isExceptions = value;
-        if (_isStarted) {
-            _exceptions.enable(value);
-        }
-
+        defaultClient.autoCollector.setAutoCollectExceptions(value);
         return Configuration;
     }
 
@@ -267,15 +174,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: boolean | IDisabledExtendedMetrics = true) {
-        _isPerformance = value;
-        const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(collectExtendedMetrics, defaultClient.config);
-        _isNativePerformance = extendedMetricsConfig.isEnabled;
-        _disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
-        if (_isStarted) {
-            _performance.enable(value);
-            _nativePerformance.enable(extendedMetricsConfig.isEnabled, extendedMetricsConfig.disabledMetrics);
-        }
-
+        defaultClient.autoCollector.setAutoCollectPerformance(value, collectExtendedMetrics);
         return Configuration;
     }
 
@@ -285,25 +184,17 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectPreAggregatedMetrics(value: boolean) {
-        _isPreAggregatedMetrics = value;
-        if (_isStarted) {
-            _preAggregatedMetrics.enable(value);
-        }
-
+        defaultClient.autoCollector.setAutoCollectPreAggregatedMetrics(value);
         return Configuration;
     }
 
     /**
      * Sets the state of request tracking (enabled by default)
-     * @param value if true HeartBeat metric data will be collected every 15 mintues and sent to Application Insights
+     * @param value if true HeartBeat metric data will be collected every 15 minutes and sent to Application Insights
      * @returns {Configuration} this class
      */
     public static setAutoCollectHeartbeat(value: boolean) {
-        _isHeartBeat = value;
-        if (_isStarted) {
-            _heartbeat.enable(value);
-        }
-
+        defaultClient.autoCollector.setAutoCollectHeartbeat(value);
         return Configuration;
     }
 
@@ -313,11 +204,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectRequests(value: boolean) {
-        _isRequests = value;
-        if (_isStarted) {
-            _serverRequests.enable(value);
-        }
-
+        defaultClient.autoCollector.setAutoCollectRequests(value);
         return Configuration;
     }
 
@@ -327,11 +214,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectDependencies(value: boolean) {
-        _isDependencies = value;
-        if (_isStarted) {
-            _clientRequests.enable(value);
-        }
-
+        defaultClient.autoCollector.setAutoCollectDependencies(value);
         return Configuration;
     }
 
@@ -342,12 +225,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoDependencyCorrelation(value: boolean, useAsyncHooks?: boolean) {
-        _isCorrelating = value;
-        _forceClsHooked = useAsyncHooks;
-        if (_isStarted) {
-            _serverRequests.useAutoCorrelation(value, useAsyncHooks);
-        }
-
+        defaultClient.autoCollector.setAutoDependencyCorrelation(value, useAsyncHooks);
         return Configuration;
     }
 
@@ -413,33 +291,8 @@ export class Configuration {
  * Disposes the default client and all the auto collectors so they can be reinitialized with different configuration
 */
 export function dispose() {
-    CorrelationIdManager.w3cEnabled = true; // reset to default
+    defaultClient.autoCollector.dispose();
     defaultClient = null;
-    _isStarted = false;
-    if (_console) {
-        _console.dispose();
-    }
-    if (_exceptions) {
-        _exceptions.dispose();
-    }
-    if (_performance) {
-        _performance.dispose();
-    }
-    if (_preAggregatedMetrics) {
-        _preAggregatedMetrics.dispose();
-    }
-    if (_heartbeat) {
-        _heartbeat.dispose();
-    }
-    if (_nativePerformance) {
-        _nativePerformance.dispose();
-    }
-    if (_serverRequests) {
-        _serverRequests.dispose();
-    }
-    if (_clientRequests) {
-        _clientRequests.dispose();
-    }
     if (liveMetricsClient) {
         liveMetricsClient.enable(false);
         _isSendingLiveMetrics = false;

@@ -6,12 +6,12 @@ import os = require("os")
 import fs = require('fs');
 import sinon = require("sinon");
 import events = require("events");
+import { EventEmitter } from "events";
 import child_process = require("child_process");
 import nock = require("nock");
+
 import AppInsights = require("../applicationinsights");
 import Sender = require("../Library/Sender");
-import Traceparent = require("../Library/Traceparent");
-import { EventEmitter } from "events";
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
 import Constants = require("../Declarations/Constants");
 import Contracts = require("../Declarations/Contracts");
@@ -388,7 +388,7 @@ describe("EndToEnd", () => {
 
             sandbox.stub(CorrelationContextManager, "getCurrentContext", () => ({
                 operation: {
-                    traceparent: new Traceparent("00-5e84aff3af474588a42dcbf3bd1db95f-1fc066fb77fa43a3-00"),
+                    traceparent: "",
                     tracestate: "sometracestate"
                 },
                 customProperties: {
@@ -915,7 +915,6 @@ describe("EndToEnd", () => {
             const client = new TelemetryClient("key");
             const heartbeat: HeartBeat = new HeartBeat(client);
             heartbeat.enable(true);
-            HeartBeat.INSTANCE.enable(true);
             const trackMetricStub = sandbox.stub(heartbeat["_client"], "trackMetric");
 
             heartbeat["trackHeartBeat"](client.config, () => {
@@ -951,7 +950,6 @@ describe("EndToEnd", () => {
             const client = new TelemetryClient("key");
             const heartbeat: HeartBeat = new HeartBeat(client);
             heartbeat.enable(true);
-            HeartBeat.INSTANCE.enable(true);
             const trackMetricStub = sandbox.stub(heartbeat["_client"], "trackMetric");
 
             heartbeat["trackHeartBeat"](client.config, () => {

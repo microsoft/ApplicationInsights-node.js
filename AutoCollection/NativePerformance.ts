@@ -2,25 +2,12 @@ import TelemetryClient = require("../Library/TelemetryClient");
 import Constants = require("../Declarations/Constants");
 import Context = require("../Library/Context");
 import Logging = require("../Library/Logging");
-import { IBaseConfig } from "../Declarations/Interfaces";
+import { IBaseConfig, IDisabledExtendedMetrics } from "../Declarations/Interfaces";
 
-/**
- * Interface which defines which specific extended metrics should be disabled
- *
- * @export
- * @interface IDisabledExtendedMetrics
- */
-export interface IDisabledExtendedMetrics {
-    gc?: boolean;
-    heap?: boolean;
-    loop?: boolean;
-}
 
 export class AutoCollectNativePerformance {
-    public static INSTANCE: AutoCollectNativePerformance;
-
-    private static _emitter: any;
-    private static _metricsAvailable: boolean; // is the native metrics lib installed
+    private _emitter: any;
+    private _metricsAvailable: boolean; // is the native metrics lib installed
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _handle: NodeJS.Timer;
@@ -28,21 +15,7 @@ export class AutoCollectNativePerformance {
     private _disabledMetrics: IDisabledExtendedMetrics = {};
 
     constructor(client: TelemetryClient) {
-        // Note: Only 1 instance of this can exist. So when we reconstruct this object,
-        // just disable old native instance and reset JS member variables
-        if (AutoCollectNativePerformance.INSTANCE) {
-            AutoCollectNativePerformance.INSTANCE.dispose();
-        }
-        AutoCollectNativePerformance.INSTANCE = this;
         this._client = client;
-    }
-
-    /**
-     *  Reports if NativePerformance is able to run in this environment
-     */
-    public static isNodeVersionCompatible() {
-        var nodeVer = process.versions.node.split(".");
-        return parseInt(nodeVer[0]) >= 6;
     }
 
     /**
@@ -53,20 +26,16 @@ export class AutoCollectNativePerformance {
      * @memberof AutoCollectNativePerformance
      */
     public enable(isEnabled: boolean, disabledMetrics: IDisabledExtendedMetrics = {}, collectionInterval = 60000): void {
-        if (!AutoCollectNativePerformance.isNodeVersionCompatible()) {
-            return;
-        }
-
-        if (AutoCollectNativePerformance._metricsAvailable == undefined && isEnabled && !this._isInitialized) {
+        if (this._metricsAvailable == undefined && isEnabled && !this._isInitialized) {
             // Try to require in the native-metrics library. If it's found initialize it, else do nothing and never try again.
             try {
                 const NativeMetricsEmitters = require("applicationinsights-native-metrics");
-                AutoCollectNativePerformance._emitter = new NativeMetricsEmitters();
-                AutoCollectNativePerformance._metricsAvailable = true;
+                this._emitter = new NativeMetricsEmitters();
+                this._metricsAvailable = true;
                 Logging.info("Native metrics module successfully loaded!");
             } catch (err) {
                 // Package not available. Never try again
-                AutoCollectNativePerformance._metricsAvailable = false;
+                this._metricsAvailable = false;
                 return;
             }
         }
@@ -78,30 +47,21 @@ export class AutoCollectNativePerformance {
         }
 
         // Enable the emitter if we were able to construct one
-        if (this._isEnabled && AutoCollectNativePerformance._emitter) {
+        if (this._isEnabled && this._emitter) {
             // enable self
-            AutoCollectNativePerformance._emitter.enable(true, collectionInterval);
+            this._emitter.enable(true, collectionInterval);
             if (!this._handle) {
                 this._handle = setInterval(() => this._trackNativeMetrics(), collectionInterval);
                 this._handle.unref();
             }
-        } else if (AutoCollectNativePerformance._emitter) {
+        } else if (this._emitter) {
             // disable self
-            AutoCollectNativePerformance._emitter.enable(false);
+            this._emitter.enable(false);
             if (this._handle) {
                 clearInterval(this._handle);
                 this._handle = undefined;
             }
         }
-    }
-
-    /**
-     * Cleanup this instance of AutoCollectNativePerformance
-     *
-     * @memberof AutoCollectNativePerformance
-     */
-    public dispose(): void {
-        this.enable(false);
     }
 
     /**
@@ -114,7 +74,7 @@ export class AutoCollectNativePerformance {
      * @returns {(boolean | IDisabledExtendedMetrics)}
      * @memberof AutoCollectNativePerformance
      */
-    public static parseEnabled(collectExtendedMetrics: boolean | IDisabledExtendedMetrics, customConfig: IBaseConfig): { isEnabled: boolean, disabledMetrics: IDisabledExtendedMetrics } {
+    public parseEnabled(collectExtendedMetrics: boolean | IDisabledExtendedMetrics, customConfig: IBaseConfig): { isEnabled: boolean, disabledMetrics: IDisabledExtendedMetrics } {
         const disableAll = customConfig.disableAllExtendedMetrics;
         const individualOptOuts = customConfig.extendedMetricDisablers;
 
@@ -182,7 +142,7 @@ export class AutoCollectNativePerformance {
             return;
         }
 
-        const gcData = AutoCollectNativePerformance._emitter.getGCData();
+        const gcData = this._emitter.getGCData();
 
         for (let gc in gcData) {
             const metrics = gcData[gc].metrics;
@@ -215,7 +175,7 @@ export class AutoCollectNativePerformance {
             return;
         }
 
-        const loopData = AutoCollectNativePerformance._emitter.getLoopData();
+        const loopData = this._emitter.getLoopData();
         const metrics = loopData.loopUsage;
         if (metrics.count == 0) {
             return;

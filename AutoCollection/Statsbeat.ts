@@ -10,15 +10,14 @@ import Context = require("../Library/Context");
 import Network = require("./NetworkStatsbeat");
 
 const STATSBEAT_LANGUAGE = "node";
+const STATSBEAT_TAG = "Statsbeat";
+const STATSBEAT_CONNECTION_STRING = "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://dc.services.visualstudio.com/";
+
 
 class Statsbeat {
-
-    public static CONNECTION_STRING = "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://dc.services.visualstudio.com/";
-    public static STATS_COLLECTION_SHORT_INTERVAL: number = 900000; // 15 minutes
-    public static STATS_COLLECTION_LONG_INTERVAL: number = 1440000; // 1 day
-
-    private static TAG = "Statsbeat";
-
+    private _connectionString: string = STATSBEAT_CONNECTION_STRING;
+    private _shortInterval: number = 900000; // 15 minutes
+    private _longInterval: number = 1440000; // 1 day
     private _networkStatsbeatCollection: Array<Network.NetworkStatsbeat>;
     private _sender: Sender;
     private _context: Context;
@@ -26,10 +25,10 @@ class Statsbeat {
     private _longHandle: NodeJS.Timer | null;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
-    private _config: Config;
+    private _clientConfig: Config;
     private _statsbeatConfig: Config;
     private _isVM: boolean | undefined;
-    private _statbeatMetrics: Array<{ name: string; value: number, properties: {} }>;
+    private _metrics: Array<{ name: string; value: number, properties: {} }>;
 
     // Custom dimensions
     private _resourceProvider: string;
@@ -44,12 +43,11 @@ class Statsbeat {
     private _instrumentation: number = Constants.StatsbeatInstrumentation.NONE;
 
     constructor(config: Config, context?: Context) {
-        this._isInitialized = false;
-        this._statbeatMetrics = [];
+        this._metrics = [];
         this._networkStatsbeatCollection = [];
-        this._config = config;
+        this._clientConfig = config;
         this._context = context || new Context();
-        this._statsbeatConfig = new Config(Statsbeat.CONNECTION_STRING);
+        this._statsbeatConfig = new Config(this._connectionString);
         this._statsbeatConfig.samplingPercentage = 100; // Do not sample
         this._sender = new Sender(this._statsbeatConfig);
     }
@@ -63,25 +61,25 @@ class Statsbeat {
         if (isEnabled) {
             if (!this._handle) {
                 this._handle = setInterval(() => {
-                    this.trackShortIntervalStatsbeats().catch((error) => {
+                    this._trackShortIntervalStatsbeats().catch((error) => {
                         // Failed to send Statsbeat
-                        Logging.info(Statsbeat.TAG, error);
+                        Logging.info(STATSBEAT_TAG, error);
                     });
-                }, Statsbeat.STATS_COLLECTION_SHORT_INTERVAL);
+                }, this._shortInterval);
                 this._handle.unref(); // Allow the app to terminate even while this loop is going on
             }
             if (!this._longHandle) {
                 // On first enablement
-                this.trackLongIntervalStatsbeats().catch((error) => {
+                this._trackLongIntervalStatsbeats().catch((error) => {
                     // Failed to send Statsbeat
-                    Logging.info(Statsbeat.TAG, error);
+                    Logging.info(STATSBEAT_TAG, error);
                 });
                 this._longHandle = setInterval(() => {
-                    this.trackLongIntervalStatsbeats().catch((error) => {
+                    this._trackLongIntervalStatsbeats().catch((error) => {
                         // Failed to send Statsbeat
-                        Logging.info(Statsbeat.TAG, error);
+                        Logging.info(STATSBEAT_TAG, error);
                     });
-                }, Statsbeat.STATS_COLLECTION_LONG_INTERVAL);
+                }, this._longInterval);
                 this._longHandle.unref(); // Allow the app to terminate even while this loop is going on
             }
         } else {
@@ -94,14 +92,6 @@ class Statsbeat {
                 this._longHandle = null;
             }
         }
-    }
-
-    public isInitialized() {
-        return this._isInitialized;
-    }
-
-    public isEnabled() {
-        return this._isEnabled;
     }
 
     public setCodelessAttach() {
@@ -125,7 +115,7 @@ class Statsbeat {
     }
 
     public countRequest(category: number, endpoint: string, duration: number, success: boolean) {
-        if (!this.isEnabled()) {
+        if (!this._isEnabled) {
             return;
         }
         let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(category, endpoint);
@@ -135,13 +125,13 @@ class Statsbeat {
             counter.totalFailedRequestCount++;
         }
         else {
-            counter.totalSuccesfulRequestCount++;
+            counter.totalSuccessfulRequestCount++;
         }
 
     }
 
     public countException(category: number, endpoint: string) {
-        if (!this.isEnabled()) {
+        if (!this._isEnabled) {
             return;
         }
         let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(category, endpoint);
@@ -149,7 +139,7 @@ class Statsbeat {
     }
 
     public countThrottle(category: number, endpoint: string) {
-        if (!this.isEnabled()) {
+        if (!this._isEnabled) {
             return;
         }
         let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(category, endpoint);
@@ -157,14 +147,14 @@ class Statsbeat {
     }
 
     public countRetry(category: number, endpoint: string) {
-        if (!this.isEnabled()) {
+        if (!this._isEnabled) {
             return;
         }
         let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(category, endpoint);
         counter.retryCount++;
     }
 
-    public async trackShortIntervalStatsbeats() {
+    private async _trackShortIntervalStatsbeats() {
         await this._getResourceProvider();
         let networkProperties = {
             "os": this._os,
@@ -180,7 +170,7 @@ class Statsbeat {
         await this._sendStatsbeats();
     }
 
-    public async trackLongIntervalStatsbeats() {
+    private async _trackLongIntervalStatsbeats() {
         await this._getResourceProvider();
         let commonProperties = {
             "os": this._os,
@@ -194,14 +184,14 @@ class Statsbeat {
         let attachProperties = Object.assign({
             "rpId": this._resourceIdentifier,
         }, commonProperties);
-        this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.ATTACH, value: 1, properties: attachProperties });
+        this._metrics.push({ name: Constants.StatsbeatCounter.ATTACH, value: 1, properties: attachProperties });
         if (this._instrumentation != Constants.StatsbeatInstrumentation.NONE) {// Only send if there are some instrumentations enabled
             let instrumentationProperties = Object.assign({ "feature": this._instrumentation, "type": Constants.StatsbeatFeatureType.Instrumentation }, commonProperties);
-            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: instrumentationProperties });
+            this._metrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: instrumentationProperties });
         }
         if (this._feature != Constants.StatsbeatFeature.NONE) {// Only send if there are some features enabled
             let featureProperties = Object.assign({ "feature": this._feature, "type": Constants.StatsbeatFeatureType.Feature }, commonProperties);
-            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: featureProperties });
+            this._metrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: featureProperties });
         }
         await this._sendStatsbeats();
     }
@@ -231,7 +221,7 @@ class Statsbeat {
             if (intervalRequests > 0) {
                 // Add extra properties
                 let properties = Object.assign({ "endpoint": this._networkStatsbeatCollection[i].endpoint, "host": this._networkStatsbeatCollection[i].host }, commonProperties);
-                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_DURATION, value: averageRequestExecutionTime, properties: properties });
+                this._metrics.push({ name: Constants.StatsbeatCounter.REQUEST_DURATION, value: averageRequestExecutionTime, properties: properties });
             }
             // Set last counters
             currentCounter.lastRequestCount = currentCounter.totalRequestCount;
@@ -243,24 +233,24 @@ class Statsbeat {
         for (let i = 0; i < this._networkStatsbeatCollection.length; i++) {
             var currentCounter = this._networkStatsbeatCollection[i];
             let properties = Object.assign({ "endpoint": currentCounter.endpoint, "host": currentCounter.host }, commonProperties);
-            if (currentCounter.totalSuccesfulRequestCount > 0) {
-                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_SUCCESS, value: currentCounter.totalSuccesfulRequestCount, properties: properties });
-                currentCounter.totalSuccesfulRequestCount = 0; //Reset
+            if (currentCounter.totalSuccessfulRequestCount > 0) {
+                this._metrics.push({ name: Constants.StatsbeatCounter.REQUEST_SUCCESS, value: currentCounter.totalSuccessfulRequestCount, properties: properties });
+                currentCounter.totalSuccessfulRequestCount = 0; //Reset
             }
             if (currentCounter.totalFailedRequestCount > 0) {
-                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_FAILURE, value: currentCounter.totalFailedRequestCount, properties: properties });
+                this._metrics.push({ name: Constants.StatsbeatCounter.REQUEST_FAILURE, value: currentCounter.totalFailedRequestCount, properties: properties });
                 currentCounter.totalFailedRequestCount = 0; //Reset
             }
             if (currentCounter.retryCount > 0) {
-                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.RETRY_COUNT, value: currentCounter.retryCount, properties: properties });
+                this._metrics.push({ name: Constants.StatsbeatCounter.RETRY_COUNT, value: currentCounter.retryCount, properties: properties });
                 currentCounter.retryCount = 0; //Reset
             }
             if (currentCounter.throttleCount > 0) {
-                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.THROTTLE_COUNT, value: currentCounter.throttleCount, properties: properties });
+                this._metrics.push({ name: Constants.StatsbeatCounter.THROTTLE_COUNT, value: currentCounter.throttleCount, properties: properties });
                 currentCounter.throttleCount = 0; //Reset
             }
             if (currentCounter.exceptionCount > 0) {
-                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.EXCEPTION_COUNT, value: currentCounter.exceptionCount, properties: properties });
+                this._metrics.push({ name: Constants.StatsbeatCounter.EXCEPTION_COUNT, value: currentCounter.exceptionCount, properties: properties });
                 currentCounter.exceptionCount = 0; //Reset
             }
         }
@@ -268,23 +258,23 @@ class Statsbeat {
 
     private async _sendStatsbeats() {
         let envelopes: Array<Contracts.Envelope> = [];
-        for (let i = 0; i < this._statbeatMetrics.length; i++) {
+        for (let i = 0; i < this._metrics.length; i++) {
             let statsbeat: Contracts.MetricTelemetry = {
-                name: this._statbeatMetrics[i].name,
-                value: this._statbeatMetrics[i].value,
-                properties: this._statbeatMetrics[i].properties
+                name: this._metrics[i].name,
+                value: this._metrics[i].value,
+                properties: this._metrics[i].properties
             };
             let envelope = EnvelopeFactory.createEnvelope(statsbeat, Contracts.TelemetryType.Metric, null, this._context, this._statsbeatConfig);
             envelope.name = Constants.StatsbeatTelemetryName;
             envelopes.push(envelope);
         }
-        this._statbeatMetrics = [];
+        this._metrics = [];
         await this._sender.send(envelopes);
     }
 
     private _getCustomProperties() {
         this._language = STATSBEAT_LANGUAGE;
-        this._cikey = this._config.instrumentationKey;
+        this._cikey = this._clientConfig.instrumentationKey;
         this._sdkVersion = Context.sdkVersion; // "node" or "node-nativeperf"
         this._os = os.type();
         this._runtimeVersion = process.version;
@@ -307,10 +297,10 @@ class Statsbeat {
                 if (process.env.WEBSITE_HOSTNAME) {
                     this._resourceIdentifier = process.env.WEBSITE_HOSTNAME;
                 }
-            } else if (this._config) {
+            } else {
                 if (this._isVM === undefined || this._isVM == true) {
                     waiting = true;
-                    Vm.AzureVirtualMachine.getAzureComputeMetadata(this._config, (vmInfo) => {
+                    Vm.AzureVirtualMachine.getAzureComputeMetadata(this._clientConfig, (vmInfo) => {
                         this._isVM = vmInfo.isVM;
                         if (this._isVM) {
                             this._resourceProvider = Constants.StatsbeatResourceProvider.vm;
@@ -322,8 +312,6 @@ class Statsbeat {
                         }
                         resolve();
                     });
-                } else {
-                    this._resourceProvider = Constants.StatsbeatResourceProvider.unknown;
                 }
             }
             if (!waiting) {
