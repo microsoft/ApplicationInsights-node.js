@@ -12,7 +12,7 @@ import Util = require("../../Library/Util");
 
 describe("Library/QuickPulseStateManager", () => {
     Util.tlsRestrictedAgent = new https.Agent();
-    
+
     describe("#constructor", () => {
         let qps;
         afterEach(() => {
@@ -265,6 +265,41 @@ describe("Library/QuickPulseStateManager", () => {
 
             assert.equal(qps['_redirectedHost'], 'www.quickpulse.com');
             assert.equal(qps['_pollingIntervalHint'], 5000);
+        });
+    });
+
+    describe("#addDocuments", () => {
+        var sandbox: sinon.SinonSandbox;
+        let qps: QuickPulseClient;
+
+        beforeEach(() => {
+            sandbox = sinon.sandbox.create();
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+        });
+
+        afterEach(() => {
+            sandbox.restore();
+            qps = null;
+        });
+
+        it("should add document if sending data", () => {
+            sandbox.stub(qps, "_goQuickPulse");
+            var testEnvelope: any = { name:"Test", tags:[]};
+            testEnvelope.data = { baseType: "ExceptionData", baseData: {} };
+            qps.enable(true);
+            qps["_isCollectingData"] = true;
+            assert.equal(qps['_documents'].length, 0);
+            qps.addDocument(testEnvelope);
+            assert.equal(qps['_documents'].length, 1);
+        });
+
+        it("should not add document if not sending data", () => {
+            sandbox.stub(qps, "_goQuickPulse");
+            var testEnvelope = new Contracts.Envelope();
+            qps.enable(true);
+            assert.equal(qps['_documents'].length, 0);
+            qps.addDocument(testEnvelope);
+            assert.equal(qps['_documents'].length, 0);
         });
     });
 
