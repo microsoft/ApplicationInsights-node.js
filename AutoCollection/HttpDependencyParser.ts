@@ -144,8 +144,6 @@ class HttpDependencyParser extends RequestParser {
             }
         }
 
-        
-
         // Oddly, url.format ignores path and only uses pathname and search,
         // so create them from the path, if path was specified
         if (options.path && options.host) {
