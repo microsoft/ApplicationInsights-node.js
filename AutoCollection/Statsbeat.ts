@@ -8,6 +8,7 @@ import Vm = require("../Library/AzureVirtualMachine");
 import Config = require("../Library/Config");
 import Context = require("../Library/Context");
 import Network = require("./NetworkStatsbeat");
+import Util = require("../Library/Util");
 
 const STATSBEAT_LANGUAGE = "node";
 
@@ -63,24 +64,15 @@ class Statsbeat {
         if (isEnabled) {
             if (!this._handle) {
                 this._handle = setInterval(() => {
-                    this.trackShortIntervalStatsbeats().catch((error) => {
-                        // Failed to send Statsbeat
-                        Logging.info(Statsbeat.TAG, error);
-                    });
+                    this.trackShortIntervalStatsbeats();
                 }, Statsbeat.STATS_COLLECTION_SHORT_INTERVAL);
                 this._handle.unref(); // Allow the app to terminate even while this loop is going on
             }
             if (!this._longHandle) {
                 // On first enablement
-                this.trackLongIntervalStatsbeats().catch((error) => {
-                    // Failed to send Statsbeat
-                    Logging.info(Statsbeat.TAG, error);
-                });
+                this.trackLongIntervalStatsbeats();
                 this._longHandle = setInterval(() => {
-                    this.trackLongIntervalStatsbeats().catch((error) => {
-                        // Failed to send Statsbeat
-                        Logging.info(Statsbeat.TAG, error);
-                    });
+                    this.trackLongIntervalStatsbeats();
                 }, Statsbeat.STATS_COLLECTION_LONG_INTERVAL);
                 this._longHandle.unref(); // Allow the app to terminate even while this loop is going on
             }
@@ -124,11 +116,11 @@ class Statsbeat {
         this._instrumentation &= ~instrumentation;
     }
 
-    public countRequest(category: number, endpoint: string, duration: number, success: boolean) {
+    public countRequest(endpoint: number, host: string, duration: number, success: boolean) {
         if (!this.isEnabled()) {
             return;
         }
-        let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(category, endpoint);
+        let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
         counter.totalRequestCount++;
         counter.intervalRequestExecutionTime += duration;
         if (success === false) {
@@ -137,73 +129,82 @@ class Statsbeat {
         else {
             counter.totalSuccesfulRequestCount++;
         }
-
     }
 
-    public countException(category: number, endpoint: string) {
+    public countException(endpoint: number, host: string) {
         if (!this.isEnabled()) {
             return;
         }
-        let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(category, endpoint);
+        let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
         counter.exceptionCount++;
     }
 
-    public countThrottle(category: number, endpoint: string) {
+    public countThrottle(endpoint: number, host: string) {
         if (!this.isEnabled()) {
             return;
         }
-        let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(category, endpoint);
+        let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
         counter.throttleCount++;
     }
 
-    public countRetry(category: number, endpoint: string) {
+    public countRetry(endpoint: number, host: string) {
         if (!this.isEnabled()) {
             return;
         }
-        let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(category, endpoint);
+        let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
         counter.retryCount++;
     }
 
     public async trackShortIntervalStatsbeats() {
-        await this._getResourceProvider();
-        let networkProperties = {
-            "os": this._os,
-            "rp": this._resourceProvider,
-            "cikey": this._cikey,
-            "runtimeVersion": this._runtimeVersion,
-            "language": this._language,
-            "version": this._sdkVersion,
-            "attach": this._attach,
+        try {
+            await this._getResourceProvider();
+            let networkProperties = {
+                "os": this._os,
+                "rp": this._resourceProvider,
+                "cikey": this._cikey,
+                "runtimeVersion": this._runtimeVersion,
+                "language": this._language,
+                "version": this._sdkVersion,
+                "attach": this._attach,
+            }
+            this._trackRequestDuration(networkProperties);
+            this._trackRequestsCount(networkProperties);
+            await this._sendStatsbeats();
         }
-        this._trackRequestDuration(networkProperties);
-        this._trackRequestsCount(networkProperties);
-        await this._sendStatsbeats();
+        catch (error) {
+            Logging.info(Statsbeat.TAG, "Failed to send Statsbeat metrics: " + Util.dumpObj(error));
+        }
     }
 
     public async trackLongIntervalStatsbeats() {
-        await this._getResourceProvider();
-        let commonProperties = {
-            "os": this._os,
-            "rp": this._resourceProvider,
-            "cikey": this._cikey,
-            "runtimeVersion": this._runtimeVersion,
-            "language": this._language,
-            "version": this._sdkVersion,
-            "attach": this._attach,
-        };
-        let attachProperties = Object.assign({
-            "rpId": this._resourceIdentifier,
-        }, commonProperties);
-        this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.ATTACH, value: 1, properties: attachProperties });
-        if (this._instrumentation != Constants.StatsbeatInstrumentation.NONE) {// Only send if there are some instrumentations enabled
-            let instrumentationProperties = Object.assign({ "feature": this._instrumentation, "type": Constants.StatsbeatFeatureType.Instrumentation }, commonProperties);
-            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: instrumentationProperties });
+        try {
+            await this._getResourceProvider();
+            let commonProperties = {
+                "os": this._os,
+                "rp": this._resourceProvider,
+                "cikey": this._cikey,
+                "runtimeVersion": this._runtimeVersion,
+                "language": this._language,
+                "version": this._sdkVersion,
+                "attach": this._attach,
+            };
+            let attachProperties = Object.assign({
+                "rpId": this._resourceIdentifier,
+            }, commonProperties);
+            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.ATTACH, value: 1, properties: attachProperties });
+            if (this._instrumentation != Constants.StatsbeatInstrumentation.NONE) {// Only send if there are some instrumentations enabled
+                let instrumentationProperties = Object.assign({ "feature": this._instrumentation, "type": Constants.StatsbeatFeatureType.Instrumentation }, commonProperties);
+                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: instrumentationProperties });
+            }
+            if (this._feature != Constants.StatsbeatFeature.NONE) {// Only send if there are some features enabled
+                let featureProperties = Object.assign({ "feature": this._feature, "type": Constants.StatsbeatFeatureType.Feature }, commonProperties);
+                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: featureProperties });
+            }
+            await this._sendStatsbeats();
         }
-        if (this._feature != Constants.StatsbeatFeature.NONE) {// Only send if there are some features enabled
-            let featureProperties = Object.assign({ "feature": this._feature, "type": Constants.StatsbeatFeatureType.Feature }, commonProperties);
-            this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.FEATURE, value: 1, properties: featureProperties });
+        catch (error) {
+            Logging.info(Statsbeat.TAG, "Failed to send Statsbeat metrics: " + Util.dumpObj(error));
         }
-        await this._sendStatsbeats();
     }
 
     private _getNetworkStatsbeatCounter(endpoint: number, host: string): Network.NetworkStatsbeat {
