@@ -144,12 +144,26 @@ class HttpDependencyParser extends RequestParser {
             }
         }
 
+        
+
         // Oddly, url.format ignores path and only uses pathname and search,
         // so create them from the path, if path was specified
         if (options.path && options.host) {
             // need to force a protocol to make parameter valid - base url is required when input is a relative url
             try {
                 const parsedQuery = new url.URL(options.path, 'http://' + options.host + options.path);
+                options.pathname = parsedQuery.pathname;
+                options.search = parsedQuery.search;
+            }
+            catch (ex) { }
+        }
+
+        // Sometimes the hostname is provided but not the host
+        // Add in the path when this occurs
+        if (options.path && options.hostname && !options.host) {
+            // need to force a protocol to make parameter valid - base url is required when input is a relative url
+            try {
+                const parsedQuery = new url.URL(options.path, 'http://' + options.hostname + options.path);
                 options.pathname = parsedQuery.pathname;
                 options.search = parsedQuery.search;
             }
