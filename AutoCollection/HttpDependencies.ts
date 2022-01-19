@@ -56,16 +56,15 @@ class AutoCollectHttpDependencies {
     private _initialize() {
         this._isInitialized = true;
 
-        const originalGet = http.get;
         const originalRequest = http.request;
         const originalHttpsRequest = https.request;
 
-        const clientRequestPatch = (request: http.ClientRequest, options: http.RequestOptions | https.RequestOptions) => {
+        const clientRequestPatch = (request: http.ClientRequest, options: string | URL | http.RequestOptions | https.RequestOptions) => {
             var shouldCollect = !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] &&
                 !(<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
 
             // If someone else patched traceparent headers onto this request
-            if (options.headers && options.headers['user-agent'] && options.headers['user-agent'].toString().indexOf('azsdk-js') !== -1) {
+            if ((<any>options).headers && (<any>options).headers['user-agent'] && (<any>options).headers['user-agent'].toString().indexOf('azsdk-js') !== -1) {
                 shouldCollect = false;
             }
 
@@ -73,7 +72,26 @@ class AutoCollectHttpDependencies {
 
             if (request && options && shouldCollect) {
                 CorrelationContextManager.wrapEmitter(request);
-                AutoCollectHttpDependencies.trackRequest(this._client, {options: options, request: request});
+                // If there is no context create one, this apply when no request is triggering the dependency
+                if (!CorrelationContextManager.getCurrentContext()) {
+                    // Create correlation context and wrap execution
+                    let operationId = null;
+                    if (CorrelationIdManager.w3cEnabled) {
+                        let traceparent = new Traceparent();
+                        operationId = traceparent.traceId;
+                    }
+                    else {
+                        let requestId = CorrelationIdManager.generateRequestId(null);
+                        operationId = CorrelationIdManager.getRootId(requestId);
+                    }
+                    let correlationContext = CorrelationContextManager.generateContextObject(operationId);
+                    CorrelationContextManager.runWithContext(correlationContext, () => {
+                        AutoCollectHttpDependencies.trackRequest(this._client, { options: options, request: request });
+                    });
+                }
+                else {
+                    AutoCollectHttpDependencies.trackRequest(this._client, { options: options, request: request });
+                }
             }
         };
 
@@ -170,7 +188,7 @@ class AutoCollectHttpDependencies {
                         if (currentContext.operation.tracestate) {
                             const tracestate = currentContext.operation.tracestate.toString();
                             if (tracestate) {
-                                telemetry.request.setHeader(RequestResponseHeaders.traceStateHeader, tracestate)
+                                telemetry.request.setHeader(RequestResponseHeaders.traceStateHeader, tracestate);
                             }
                         }
 
@@ -199,15 +217,26 @@ class AutoCollectHttpDependencies {
 
                 client.trackDependency(dependencyTelemetry);
             });
-            telemetry.request.on('error', (e: Error) => {
-                requestParser.onError(e);
+            telemetry.request.on('error', (error: Error) => {
+                requestParser.onError(error);
 
                 var dependencyTelemetry = requestParser.getDependencyTelemetry(telemetry, uniqueRequestId);
 
                 dependencyTelemetry.contextObjects = dependencyTelemetry.contextObjects || {};
                 dependencyTelemetry.contextObjects["http.RequestOptions"] = telemetry.options;
                 dependencyTelemetry.contextObjects["http.ClientRequest"] = telemetry.request;
-                dependencyTelemetry.contextObjects["Error"] = e;
+                dependencyTelemetry.contextObjects["Error"] = error;
+
+                client.trackDependency(dependencyTelemetry);
+            });
+            telemetry.request.on('abort', () => {
+                requestParser.onError(new Error());
+
+                var dependencyTelemetry = requestParser.getDependencyTelemetry(telemetry, uniqueRequestId);
+
+                dependencyTelemetry.contextObjects = dependencyTelemetry.contextObjects || {};
+                dependencyTelemetry.contextObjects["http.RequestOptions"] = telemetry.options;
+                dependencyTelemetry.contextObjects["http.ClientRequest"] = telemetry.request;
 
                 client.trackDependency(dependencyTelemetry);
             });

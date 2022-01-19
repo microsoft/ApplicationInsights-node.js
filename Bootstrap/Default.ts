@@ -1,9 +1,11 @@
+import azureCore = require("@azure/core-http");
+
 import * as types from "../applicationinsights";
 import * as Helpers from "./Helpers";
-import * as DataModel from "./DataModel";
 import Constants = require("../Declarations/Constants");
 import { StatusLogger, StatusContract } from "./StatusLogger";
 import { DiagnosticLogger } from "./DiagnosticLogger";
+import { JsonConfig } from "../Library/JsonConfig";
 
 // Private configuration vars
 let _appInsights: typeof types | null;
@@ -12,7 +14,7 @@ let _logger: DiagnosticLogger = new DiagnosticLogger(console);
 let _statusLogger: StatusLogger = new StatusLogger(console);
 
 // Env var local constants
-const _setupString = process.env.APPLICATIONINSIGHTS_CONNECTION_STRING || process.env.APPINSIGHTS_INSTRUMENTATIONKEY;
+const _setupString = JsonConfig.getInstance().connectionString || process.env.APPINSIGHTS_INSTRUMENTATIONKEY;
 const forceStart = process.env.APPLICATIONINSIGHTS_FORCE_START === "true";
 
 // Other local constants
@@ -45,7 +47,7 @@ export function setStatusLogger(statusLogger: StatusLogger) {
  * Try to setup and start this app insights instance if attach is enabled.
  * @param setupString connection string or instrumentation key
  */
-export function setupAndStart(setupString = _setupString): typeof types | null {
+export function setupAndStart(setupString = _setupString, aadTokenCredential?: azureCore.TokenCredential): typeof types | null {
     // If app already contains SDK, skip agent attach
     if (!forceStart && Helpers.sdkAlreadyExists(_logger)) {
         _statusLogger.logStatus({
@@ -59,7 +61,7 @@ export function setupAndStart(setupString = _setupString): typeof types | null {
 
     if (!setupString) {
         const message = "Application Insights wanted to be started, but no Connection String or Instrumentation Key was provided";
-        _logger.logError(message, setupString);
+        _logger.logError(message);
         _statusLogger.logStatus({
             ...defaultStatus,
             AgentInitializedSuccessfully: false,
@@ -99,9 +101,20 @@ export function setupAndStart(setupString = _setupString): typeof types | null {
 
         // Instrument the SDK
         _appInsights.setup(setupString).setSendLiveMetrics(true);
+        _appInsights.defaultClient.setAutoPopulateAzureProperties(true);
         _appInsights.defaultClient.addTelemetryProcessor(prefixInternalSdkVersion);
         _appInsights.defaultClient.addTelemetryProcessor(copyOverPrefixInternalSdkVersionToHeartBeatMetric);
+        if (aadTokenCredential) {
+            _logger.logMessage("Using AAD Token Credential");
+            _appInsights.defaultClient.config.aadTokenCredential = aadTokenCredential;
+        }
+        
         _appInsights.start();
+        // Add attach flag in Statsbeat
+        let statsbeat = _appInsights.defaultClient.getStatsbeat();
+        if (statsbeat) {
+            statsbeat.setCodelessAttach();
+        }
 
         // Agent successfully instrumented the SDK
         _logger.logMessage("Application Insights was started with setupString: " + setupString);

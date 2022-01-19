@@ -25,10 +25,21 @@ This library tracks the following out-of-the-box:
 You can manually track more aspects of your app and system using the API described in the
 [Track custom telemetry](#track-custom-telemetry) section.
 
+## Supported Node.JS versions
+
+| Platform Version | Supported                                       |
+|------------------|-------------------------------------------------|
+| Node.JS `v15`    | ✅                                              |
+| Node.JS `v14`    | ✅                                              |
+| Node.JS `v12`    | ✅                                              |
+| Node.JS `v10`    | ✅                                              |
+| Node.JS `v8`     | ✅                                              |
+
+
 ## Getting Started
 
 1. Create an Application Insights resource in Azure by following [these instructions][].
-2. Grab the _Instrumentation Key_ (aka "ikey") from the resource you created in
+2. Grab the _Connection String_ from the resource you created in
    step 1. Later, you'll either add it to your app's environment variables or
    use it directly in your scripts.
 3. Add the Application Insights Node.js SDK to your app's dependencies and
@@ -36,16 +47,15 @@ You can manually track more aspects of your app and system using the API describ
      ```bash
      npm install --save applicationinsights
      ```
-     > *Note:* If you're using TypeScript, do not install a separate "typings" package.
-     > This NPM package contains built-in typings.
+     > *Note:* If you're using TypeScript, please install @types/node package to prevent build issues, this npm package contains built-in typings.
 4. As early as possible in your app's code, load the Application Insights
    package:
      ```javascript
      let appInsights = require('applicationinsights');
      ```
-5. Configure the local SDK by calling `appInsights.setup('_your_ikey_');`, using
-   the ikey you grabbed in step 2. Or put this ikey in the
-   `APPINSIGHTS_INSTRUMENTATIONKEY` environment variable and call
+5. Configure the local SDK by calling `appInsights.setup('YOUR_CONNECTION_STRING');`, using
+   the connection string you grabbed in step 2. Or put it in the
+   `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable and call
    `appInsights.setup()` without parameters.
    > For more configuration options see below.
 6. Finally, start automatically collecting and sending data by calling
@@ -56,17 +66,19 @@ You can manually track more aspects of your app and system using the API describ
 
 ## Basic Usage
 
+> *Important:* `applicationinsights` must be setup *and* started *before* you import anything else. There may be resulting telemetry loss if other libraries are imported first.
+
 For out-of-the-box collection of HTTP requests, popular third-party library events,
 unhandled exceptions, and system metrics:
 
 ```javascript
 let appInsights = require("applicationinsights");
-appInsights.setup("_your_ikey_").start();
+appInsights.setup("YOUR_CONNECTION_STRING").start();
 ```
 
 * If the instrumentation key is set in the environment variable
-  APPINSIGHTS\_INSTRUMENTATIONKEY, `.setup()` can be called with no
-  arguments. This makes it easy to use different ikeys for different
+  APPLICATIONINSIGHTS\_CONNECTION\_STRING, `.setup()` can be called with no
+  arguments. This makes it easy to use different connection strings for different
   environments.
 
 Load the Application Insights library (i.e. `require("applicationinsights")`) as
@@ -126,7 +138,7 @@ An example of making an `axios` call to <https://httpbin.org> and returning the 
 
 ```js
 const appInsights = require("applicationinsights");
-appInsights.setup("ikey")
+appInsights.setup("<YOUR_CONNECTION_STRING>")
     .setAutoCollectPerformance(false)
     .start();
 
@@ -172,20 +184,23 @@ export default async function contextPropagatingHttpTrigger(context, req) {
 
 ## Configuration
 
-The appInsights object provides a number of configuration methods. They are
+The appInsights object provides a number of methods to setup SDK behavior. They are
 listed in the following snippet with their default values.
 
 ```javascript
 let appInsights = require("applicationinsights");
-appInsights.setup("<instrumentation_key>")
+appInsights.setup("<YOUR_CONNECTION_STRING>")
     .setAutoDependencyCorrelation(true)
     .setAutoCollectRequests(true)
     .setAutoCollectPerformance(true, true)
     .setAutoCollectExceptions(true)
     .setAutoCollectDependencies(true)
-    .setAutoCollectConsole(true)
+    .setAutoCollectConsole(true, false)
     .setUseDiskRetryCaching(true)
+    .setAutoCollectPreAggregatedMetrics(true)
     .setSendLiveMetrics(false)
+    .setAutoCollectHeartbeat(false)
+    .setInternalLogging(false, true)
     .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C)
     .start();
 ```
@@ -198,6 +213,78 @@ Note that by default `setAutoCollectConsole` is configured to *exclude* calls to
 (e.g. `winston`, `bunyan`) will be collected. You can change this behavior to *include* calls
 to `console` methods by using `setAutoCollectConsole(true, true)`.
 
+The TelemetryClient object contains a `config` property with many optional settings. These can be set as follows:
+```
+client.config.PROPERTYNAME = VALUE;
+```
+These properties are client specific, so you can configure `appInsights.defaultClient`
+separately from clients created with `new appInsights.TelemetryClient()`.
+
+| Property                        | Description                                                                                                |
+| ------------------------------- |------------------------------------------------------------------------------------------------------------|
+| instrumentationKey              | Application Insights Instrumentation Key                                                                   |
+| endpointUrl                     | The ingestion endpoint to send telemetry payloads to                                                       |
+| proxyHttpUrl                    | A proxy server for SDK HTTP traffic (Optional, Default pulled from `http_proxy` environment variable)      |
+| proxyHttpsUrl                   | A proxy server for SDK HTTPS traffic (Optional, Default pulled from `https_proxy` environment variable)    |
+| maxBatchSize                    | The maximum number of telemetry items to include in a payload to the ingestion endpoint (Default `250`)    |
+| maxBatchIntervalMs              | The maximum amount of time to wait to for a payload to reach maxBatchSize (Default `15000`)                |
+| disableAppInsights              | A flag indicating if telemetry transmission is disabled (Default `false`)                                  |
+| samplingPercentage              | The percentage of telemetry items tracked that should be transmitted (Default `100`)                       |
+| correlationIdRetryIntervalMs    | The time to wait before retrying to retrieve the id for cross-component correlation (Default `30000`)      |
+| correlationHeaderExcludedDomains| A list of domains to exclude from cross-component correlation header injection (Default See [Config.ts][]) |
+| ignoreLegacyHeaders             | Disable including legacy headers in outgoing requests, x-ms-request-id                                     |
+| distributedTracingMode          | Sets the distributed tracing modes (Default=AI)                                                            |
+| enableAutoCollectExternalLoggers| Sets the state of console. If true logger activity will be sent to Application Insights |
+| enableAutoCollectConsole        | Sets the state of logger tracking (enabled by default for third-party loggers only). If true, logger auto collection will include console.log calls (default false) |
+| enableAutoCollectExceptions     | Sets the state of exception tracking (enabled by default). If true uncaught exceptions will be sent to Application Insights |
+| enableAutoCollectPerformance    | Sets the state of performance tracking (enabled by default). If true performance counters will be collected every second and sent to Application Insights |
+| enableAutoCollectExtendedMetrics| Sets the state of performance tracking (enabled by default). If true, extended metrics counters will be collected every minute and sent to Application Insights |
+| enableAutoCollectPreAggregatedMetrics | Sets the state of pre aggregated metrics tracking (enabled by default). If true pre aggregated metrics will be collected every minute and sent to Application Insights |
+| enableAutoCollectHeartbeat      | Sets the state of request tracking (enabled by default). If true HeartBeat metric data will be collected every 15 minutes and sent to Application Insights |
+| enableAutoCollectRequests      | Sets the state of request tracking (enabled by default). If true requests will be sent to Application Insights |
+| enableAutoCollectDependencies  | Sets the state of dependency tracking (enabled by default). If true dependencies will be sent to Application Insights |
+| enableAutoDependencyCorrelation| Sets the state of automatic dependency correlation (enabled by default). If true dependencies will be correlated with requests |
+| enableUseAsyncHooks            | Sets the state of automatic dependency correlation (enabled by default). If true, forces use of experimental async_hooks module to provide correlation. If false, instead uses only patching-based techniques. If left blank, the best option is chosen for you based on your version of Node.js. |
+| enableUseDiskRetryCaching     | If true events that occurred while client is offline will be cached on disk |
+| enableResendInterval          | The wait interval for resending cached events. |
+| enableMaxBytesOnDisk          | The maximum size (in bytes) that the created temporary directory for cache events can grow to, before caching is disabled. |
+| enableInternalDebugLogging    | Enables debug and warning logging for AppInsights itself. If true, enables debug logging |
+| enableInternalWarningLogging  | Enables debug and warning logging for AppInsights itself. If true, enables warning logging |
+| enableSendLiveMetrics         | Enables communication with Application Insights Live Metrics. If true, enables communication with the live metrics service |
+| disableAllExtendedMetrics     | Disable all environment variables set |
+| extendedMetricDisablers       | Disable individual environment variables set. `"extendedMetricDisablers": "..."` |
+| noDiagnosticChannel           | In order to track context across asynchronous calls, some changes are required in third party libraries such as mongodb and redis. By default ApplicationInsights will use diagnostic-channel-publishers to monkey-patch some of these libraries. This property is to disable the feature. Note that by setting this flag, events may no longer be correctly associated with the right operation.  |
+| noPatchModules                | Disable individual monkey-patches. Set `noPatchModules` to a comma separated list of packages to disable. e.g. `"noPatchModules": "console,redis"` to avoid patching the console and redis packages. The following modules are available: `azuresdk, bunyan, console, mongodb, mongodb-core, mysql, redis, winston, pg`, and `pg-pool`. Visit the [diagnostic-channel-publishers' README](https://github.com/microsoft/node-diagnostic-channel/blob/master/src/diagnostic-channel-publishers/README.md) for information about exactly which versions of these packages are patched. |
+| noHttpAgentKeepAlive          | HTTPS without a passed in agent |
+| httpAgent                       | An http.Agent to use for SDK HTTP traffic (Optional, Default undefined)                                    |
+| httpsAgent                      | An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined)       
+| aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Credential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes) |                            |
+
+[Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
+
+All these properties except httpAgent, httpsAgent and aadTokenCredential could be configured using configuration file `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. These configuration values will be applied to all TelemetryClients created in the SDK. 
+
+
+```javascript
+{
+    "samplingPercentage": 80,
+    "enableAutoCollectExternalLoggers": true,
+    "enableAutoCollectExceptions": true,
+    "enableAutoCollectHeartbeat": true,
+    "enableSendLiveMetrics": true,
+    ...
+}
+  
+```
+
+Custom JSON file could be provided using `APPLICATIONINSIGHTS_CONFIGURATION_FILE` environment variable.
+
+```javascript
+process.env.APPLICATIONINSIGHTS_CONFIGURATION_FILE = "C:/applicationinsights/config/customConfig.json"
+
+// Application Insights SDK setup....
+```
+
 ### Sampling
 
 By default, the SDK will send all collected data to the Application Insights service. If you collect a lot of data, you might want to enable sampling to reduce the amount of data sent. Set the `samplingPercentage` field on the Config object of a Client to accomplish this. Setting `samplingPercentage` to 100 (the default) means all data will be sent, and 0 means nothing will be sent.
@@ -208,7 +295,7 @@ Add code such as the following to enable sampling:
 
 ```javascript
 const appInsights = require("applicationinsights");
-appInsights.setup("<instrumentation_key>");
+appInsights.setup("<YOUR_CONNECTION_STRING>");
 appInsights.defaultClient.config.samplingPercentage = 33; // 33% of all telemetry will be sent to Application Insights
 appInsights.start();
 ```
@@ -221,10 +308,19 @@ Use the following to set the RoleName field:
 
 ```javascript
 const appInsights = require("applicationinsights");
-appInsights.setup("<instrumentation_key>");
+appInsights.setup("<YOUR_CONNECTION_STRING>");
 appInsights.defaultClient.context.tags[appInsights.defaultClient.context.keys.cloudRole] = "MyRoleName";
 appInsights.start();
 ```
+
+If running in Azure App service or Azure functions the SDK will automatically populate the cloud role when following code is added:
+```javascript
+const appInsights = require("applicationinsights");
+appInsights.setup("<YOUR_CONNECTION_STRING>");
+appInsights.defaultClient.setAutoPopulateAzureProperties(true);
+appInsights.start();
+```
+
 
 ### Automatic third-party instrumentation
 
@@ -236,9 +332,12 @@ environment variable, events may no longer be correctly associated with the righ
 disabled by setting the `APPLICATION_INSIGHTS_NO_PATCH_MODULES` environment variable to a comma separated list of packages to
 disable, e.g. `APPLICATION_INSIGHTS_NO_PATCH_MODULES=console,redis` to avoid patching the `console` and `redis` packages.
 
-Currently there are 9 packages which are instrumented: `bunyan`, `console`, `mongodb`, `mongodb-core`, `mysql`, `redis`, `winston`,
+The following modules are available: `azuresdk`, `bunyan`, `console`, `mongodb`, `mongodb-core`, `mysql`, `redis`, `winston`,
 `pg`, and `pg-pool`. Visit the [diagnostic-channel-publishers' README](https://github.com/microsoft/node-diagnostic-channel/blob/master/src/diagnostic-channel-publishers/README.md)
 for information about exactly which versions of these packages are patched.
+
+Automatic instrumentation for several Azure SDKs is also enabled, currently Cognitive Search, Communication Common and Cosmos DB SDKs are not supported.
+[Javascript Azure SDKs](https://azure.github.io/azure-sdk/releases/latest/index.html#javascript)
 
 The `bunyan`, `winston`, and `console` patches will generate Application Insights Trace events based on whether `setAutoCollectConsole` is enabled.
 The rest will generate Application Insights Dependency events based on whether `setAutoCollectDependencies` is enabled. Make sure that `applicationinsights` is imported **before** any 3rd-party packages for them to be instrumented successfully.
@@ -265,7 +364,7 @@ By default, this SDK will send headers understood by other applications/services
 ```js
 const appInsights = require("applicationinsights");
 appInsights
-  .setup("<your ikey>")
+  .setup("<YOUR_CONNECTION_STRING>")
   .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C)
   .start()
 ```
@@ -277,7 +376,7 @@ Insights client. Examples follow:
 
 ```javascript
 let appInsights = require("applicationinsights");
-appInsights.setup().start(); // assuming ikey in env var. start() can be omitted to disable any non-custom data
+appInsights.setup().start(); // assuming connection string is in environment variables. start() can be omitted to disable any non-custom data
 let client = appInsights.defaultClient;
 client.trackEvent({name: "my custom event", properties: {customProperty: "custom property value"}});
 client.trackException({exception: new Error("handled exceptions can be logged with this method")});
@@ -285,12 +384,14 @@ client.trackMetric({name: "custom metric", value: 3});
 client.trackTrace({message: "trace message"});
 client.trackDependency({target:"http://dbname", name:"select customers proc", data:"SELECT * FROM Customers", duration:231, resultCode:0, success: true, dependencyTypeName: "ZSQL"});
 client.trackRequest({name:"GET /customers", url:"http://myserver/customers", duration:309, resultCode:200, success:true});
-
+ 
 let http = require("http");
 http.createServer( (req, res) => {
   client.trackNodeHttpRequest({request: req, response: res}); // Place at the beginning of your request handler
 });
 ```
+
+Note that custom properties are converted to their string representation before being sent, see [Using properties](https://docs.microsoft.com/azure/azure-monitor/app/api-custom-events-metrics#properties) for more information.
 
 An example utility using `trackMetric` to measure how long event loop scheduling takes:
 
@@ -327,7 +428,7 @@ function startMeasuringEventLoop() {
 ## Preprocess data with Telemetry Processors
 
 ```javascript
-public addTelemetryProcessor(telemetryProcessor: (envelope: Contracts.Envelope, context: { http.RequestOptions, http.ClientRequest, http.ClientResponse, correlationContext }) => boolean)
+public addTelemetryProcessor(telemetryProcessor: (envelope: Contracts.Envelope, context: { http.RequestOptions, http.ClientRequest, http.ClientResponse, Error, correlationContext }) => boolean)
 ```
 
 You can process and filter collected data before it is sent for retention using
@@ -346,7 +447,7 @@ automatic dependency correlation is enabled).
 The TypeScript type for a telemetry processor is:
 
 ```typescript
-telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope, context: { http.RequestOptions, http.ClientRequest, http.ClientResponse, correlationContext }) => boolean;
+telemetryProcessor: (envelope: ContractsModule.Contracts.Envelope, context: { http.RequestOptions, http.ClientRequest, http.ClientResponse, Error, correlationContext }) => boolean;
 ```
 
 For example, a processor that removes stack trace data from exceptions might be
@@ -354,7 +455,7 @@ written and added as follows:
 
 ```javascript
 function removeStackTraces ( envelope, context ) {
-  if (envelope.data.baseType === "Microsoft.ApplicationInsights.ExceptionData") {
+  if (envelope.data.baseType === "ExceptionData") {
     var data = envelope.data.baseData;
     if (data.exceptions && data.exceptions.length > 0) {
       for (var i = 0; i < data.exceptions.length; i++) {
@@ -362,6 +463,12 @@ function removeStackTraces ( envelope, context ) {
         exception.parsedStack = null;
         exception.hasFullStack = false;
       }
+    }
+    // Add extra properties
+    var originalError = context["Error"];
+    if(originalError && originalError.prop){
+      data.properties = data.properties || {};
+      data.properties.customProperty = originalError.prop;
     }
   }
   return true;
@@ -374,20 +481,20 @@ More info on the telemetry API is available in [the docs][].
 
 [the docs]: https://azure.microsoft.com/documentation/articles/app-insights-api-custom-events-metrics/
 
-## Use multiple instrumentation keys
+## Use multiple Application Insights resources
 
 You can create multiple Azure Application Insights resources and send different
-data to each by using their respective instrumentation keys ("ikey"). For
+data to each by using their respective connection string. For
 example:
 
 ```javascript
 let appInsights = require("applicationinsights");
 
-// configure auto-collection under one ikey
-appInsights.setup("_ikey-A_").start();
+// configure auto-collection under one Connection String
+appInsights.setup("<YOUR_CONNECTION_STRING>").start();
 
-// track some events manually under another ikey
-let otherClient = new appInsights.TelemetryClient("_ikey-B_");
+// track some events manually under another connection string
+let otherClient = new appInsights.TelemetryClient("<YOUR_CONNECTION_STRING>");
 otherClient.trackEvent({name: "my custom event"});
 ```
 
@@ -446,52 +553,30 @@ otherClient.trackEvent({name: "my custom event"});
     });
     ```
 
-## Advanced configuration options
-The Client object contains a `config` property with many optional settings for
-advanced scenarios. These can be set as follows:
-```
-client.config.PROPERTYNAME = VALUE;
-```
-These properties are client specific, so you can configure `appInsights.defaultClient`
-separately from clients created with `new appInsights.TelemetryClient()`.
+## Self-diagnostics
 
-| Property                        | Description                                                                                                |
-| ------------------------------- |------------------------------------------------------------------------------------------------------------|
-| instrumentationKey              | An identifier for your Application Insights resource                                                       |
-| endpointUrl                     | The ingestion endpoint to send telemetry payloads to                                                       |
-| quickPulseHost                  | The Live Metrics Stream host to send live metrics telemetry to                                             |
-| proxyHttpUrl                    | A proxy server for SDK HTTP traffic (Optional, Default pulled from `http_proxy` environment variable)      |
-| proxyHttpsUrl                   | A proxy server for SDK HTTPS traffic (Optional, Default pulled from `https_proxy` environment variable)    |
-| httpAgent                       | An http.Agent to use for SDK HTTP traffic (Optional, Default undefined)                                    |
-| httpsAgent                      | An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined)                                  |
-| maxBatchSize                    | The maximum number of telemetry items to include in a payload to the ingestion endpoint (Default `250`)    |
-| maxBatchIntervalMs              | The maximum amount of time to wait to for a payload to reach maxBatchSize (Default `15000`)                |
-| disableAppInsights              | A flag indicating if telemetry transmission is disabled (Default `false`)                                  |
-| samplingPercentage              | The percentage of telemetry items tracked that should be transmitted (Default `100`)                       |
-| correlationIdRetryIntervalMs    | The time to wait before retrying to retrieve the id for cross-component correlation (Default `30000`)      |
-| correlationHeaderExcludedDomains| A list of domains to exclude from cross-component correlation header injection (Default See [Config.ts][]) |
+"Self-diagnostics" refers to internal logging from Application Insights Node.js SDK.
 
-[Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
+This functionality can be helpful for spotting and diagnosing issues with Application Insights itself.
 
-## Migrating to [`applicationinsights@2.0.0`](https://github.com/microsoft/ApplicationInsights-node.js/tree/applicationinsights%402.0.0) (Beta)
+By default, Application Insights Node.js SDK logs at warning level to console, following code demonstrate how to enable debug logging as well and generate telemetry for internal logs:
 
-An experimental / beta version of the SDK is also available, but not recommended for production. It is built on top of the [OpenTelemetry SDK + APIs](http://github.com/open-telemetry/opentelemetry-js), while keeping the API surface of this SDK the same.
-
-```zsh
-npm install applicationinsights@beta
+```javascript
+let appInsights = require("applicationinsights");
+appInsights.setup("<YOUR_CONNECTION_STRING>")
+    .setInternalLogging(true, true) // Enable both debug and warning logging
+    .setAutoCollectConsole(true, true) // Generate Trace telemetry for winston/bunyan and console logs
+    .start();
 ```
 
-### `applicationinsights@2.0.0` Overview
+Logs could be put into local file using `APPLICATIONINSIGHTS_LOG_DESTINATION` environment variable, supported values are `file` and `file+console`, a file named `applicationinsights.log` will be generated on tmp folder by default, including all logs,  `/tmp` for *nix and `USERDIR/AppData/Local/Temp` for Windows. Log directory could be configured using `APPLICATIONINSIGHTS_LOGDIR` environment variable.
 
-- Autocollection parity with `applicationinsights@1.x`
-- API parity with `applicationinsights@1.x`
-- "Getting Started" parity with `applicationinsights@1.x`
-- New autocollection scenarios out-of-the-box contribued by the [OpenTelemetry community](https://github.com/open-telemetry/opentelemetry-js#node-plugins), e.g. `gRPC`, `express`, `ioredis`
-- Built on top of an [Open Standard](https://github.com/open-telemetry/opentelemetry-specification) for Telemetry APIs and SDKs
+```javascript
+process.env.APPLICATIONINSIGHTS_LOG_DESTINATION = "file";
+process.env.APPLICATIONINSIGHTS_LOGDIR = "C:/applicationinsights/logs"
 
-Migrating from `1.x` to `2.x` is meant to be seamless and straightforward, there should be no breaking API changes at all. Please file a bug if something doesn't look right to you!
-
-Included in `applicationinsights@2.0.0` is [every Node.js Plugin available in the default OpenTelemetry Node.js SDK](https://github.com/open-telemetry/opentelemetry-js#node-plugins). Please check out the [projects board](https://github.com/microsoft/ApplicationInsights-node.js/projects) for progress updates on `2.x`.
+// Application Insights SDK setup....
+```
 
 ## Branches
 
@@ -503,42 +588,13 @@ Included in `applicationinsights@2.0.0` is [every Node.js Plugin available in th
 [develop]: https://github.com/microsoft/ApplicationInsights-node.js/tree/develop
 [npm]: https://www.npmjs.com/package/applicationinsights
 
-## Links
-
-* [ApplicationInsights-Home][] is our central repo for libraries and info for
-  all languages and platforms.
-* Follow the latest Application Insights changes and announcements on the
-  [ApplicationInsights-Announcements][] repo.
-* [SDK Release Schedule][]
-
-[ApplicationInsights-Announcements]: https://github.com/microsoft/ApplicationInsights-Announcements
-[ApplicationInsights-Home]: https://github.com/microsoft/ApplicationInsights-Home
-[SDK Release Schedule]: https://github.com/microsoft/ApplicationInsights-Home/wiki/SDK-Release-Schedule
-
 ## Contributing
+For details on contributing to this repository, see the [contributing guide](https://github.com/microsoft/ApplicationInsights-node.js/master/CONTRIBUTING.md).
 
-1. Install all dependencies with `npm install`.
-2. Set an environment variable to your instrumentation key (optional).
-    ```bash
-    // windows
-    set APPINSIGHTS_INSTRUMENTATIONKEY=<insert_your_instrumentation_key_here>
-    // linux/macos
-    export APPINSIGHTS_INSTRUMENTATIONKEY=<insert_your_instrumentation_key_here>
-    ```
-3. Run tests
-    ```bash
-    npm run test
-    npm run backcompattest
-    npm run functionaltest
-    ```
-    _Note: Functional tests require Docker_
+This project welcomes contributions and suggestions. Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit
+https://cla.microsoft.com.
 
----
+When you submit a pull request, a CLA-bot will automatically determine whether you need to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions provided by the bot. You will only need to do this once across all repositories using our CLA.
 
-This project has adopted the [Microsoft Open Source Code of Conduct][]. For more
-information see the [Code of Conduct FAQ][] or contact
-[opencode@microsoft.com][] with any additional questions or comments.
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
-[Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
-[Code of Conduct FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
-[opencode@microsoft.com]: mailto:opencode@microsoft.com

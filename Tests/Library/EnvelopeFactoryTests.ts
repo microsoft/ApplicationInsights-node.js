@@ -17,14 +17,14 @@ describe("Library/EnvelopeFactory", () => {
             var client1 = new Client("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             client1.commonProperties = commonproperties;
             client1.config.samplingPercentage = 99;
-            var eventTelemetry = <Contracts.EventTelemetry>{name:"name"};
-            eventTelemetry.properties  = properties;
+            var eventTelemetry = <Contracts.EventTelemetry>{ name: "name" };
+            eventTelemetry.properties = properties;
             var env = EnvelopeFactory.createEnvelope(eventTelemetry, Contracts.TelemetryType.Event, commonproperties, client1.context, client1.config);
 
             // check sample rate
             assert.equal(env.sampleRate, client1.config.samplingPercentage);
 
-            var envData:Contracts.Data<Contracts.EventData> = <Contracts.Data<Contracts.EventData>> env.data;
+            var envData: Contracts.Data<Contracts.EventData> = <Contracts.Data<Contracts.EventData>>env.data;
 
             // check common properties
             assert.equal(envData.baseData.properties.common1, (<any>commonproperties).common1);
@@ -41,20 +41,20 @@ describe("Library/EnvelopeFactory", () => {
         it("should allow tags to be overwritten", () => {
 
             var client = new Client("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-            var env = EnvelopeFactory.createEnvelope(<Contracts.EventTelemetry>{name:"name"}, Contracts.TelemetryType.Event, commonproperties, client.context, client.config);
+            var env = EnvelopeFactory.createEnvelope(<Contracts.EventTelemetry>{ name: "name" }, Contracts.TelemetryType.Event, commonproperties, client.context, client.config);
             assert.deepEqual(env.tags, client.context.tags, "tags are set by default");
             var customTag = <{ [id: string]: string }>{ "ai.cloud.roleInstance": "override" };
             var expected: { [id: string]: string } = {};
             for (var tag in client.context.tags) {
                 expected[tag] = customTag[tag] || client.context.tags[tag];
             }
-            env = EnvelopeFactory.createEnvelope(<Contracts.EventTelemetry>{name:"name", tagOverrides:customTag}, Contracts.TelemetryType.Event, commonproperties, client.context, client.config);
+            env = EnvelopeFactory.createEnvelope(<Contracts.EventTelemetry>{ name: "name", tagOverrides: customTag }, Contracts.TelemetryType.Event, commonproperties, client.context, client.config);
             assert.deepEqual(env.tags, expected)
         });
 
         it("should have valid name", function () {
             var client = new Client("key");
-            var envelope = EnvelopeFactory.createEnvelope(<Contracts.EventTelemetry>{name:"name"}, Contracts.TelemetryType.Event, commonproperties, client.context, client.config);
+            var envelope = EnvelopeFactory.createEnvelope(<Contracts.EventTelemetry>{ name: "name" }, Contracts.TelemetryType.Event, commonproperties, client.context, client.config);
             assert.equal(envelope.name, "Microsoft.ApplicationInsights.key.Event");
         });
     });
@@ -108,6 +108,42 @@ describe("Library/EnvelopeFactory", () => {
             assert.deepEqual(actual, expected);
         });
 
+        it("fills stack when provided a scoped package", () => {
+            simpleError.stack = "  at Context.foo (C:/@foo/bar/example.js:123:45)\n" + simpleError.stack;
+
+            var envelope = EnvelopeFactory.createEnvelope(<Contracts.ExceptionTelemetry>{ exception: simpleError }, Contracts.TelemetryType.Exception);
+            var exceptionData = <Contracts.Data<Contracts.ExceptionData>>envelope.data;
+
+            var actual = exceptionData.baseData.exceptions[0].parsedStack[0];
+
+            assert.deepEqual(actual, {
+                fileName: "C:/@foo/bar/example.js",
+                line: 123,
+                level: 0,
+                sizeInBytes: 141,
+                assembly: "at Context.foo (C:/@foo/bar/example.js:123:45)",
+                method: "Context.foo"
+            });
+        });
+
+        it("fills stack when provided a scoped package", () => {
+            simpleError.stack = "  at C:/@foo/bar/example.js:123:45\n" + simpleError.stack;
+
+            var envelope = EnvelopeFactory.createEnvelope(<Contracts.ExceptionTelemetry>{ exception: simpleError }, Contracts.TelemetryType.Exception);
+            var exceptionData = <Contracts.Data<Contracts.ExceptionData>>envelope.data;
+
+            var actual = exceptionData.baseData.exceptions[0].parsedStack[0];
+
+            assert.deepEqual(actual, {
+                fileName: "C:/@foo/bar/example.js",
+                line: 123,
+                level: 0,
+                sizeInBytes: 127,
+                assembly: "at C:/@foo/bar/example.js:123:45",
+                method: "<no_method>"
+            });
+        });
+
         it("fills 'severityLevel' with Error when not specified", () => {
             var envelope = EnvelopeFactory.createEnvelope(<Contracts.ExceptionTelemetry>{ exception: simpleError }, Contracts.TelemetryType.Exception);
             var exceptionData = <Contracts.Data<Contracts.ExceptionData>>envelope.data;
@@ -132,13 +168,13 @@ describe("Library/EnvelopeFactory", () => {
     describe("AvailabilityData", () => {
         let availabilityTelemetry: Contracts.AvailabilityTelemetry;
         beforeEach(() => {
-            availabilityTelemetry  = {
-                success : true,
+            availabilityTelemetry = {
+                success: true,
                 duration: 100,
-                measurements: { "m1" : 1},
+                measurements: { "m1": 1 },
                 runLocation: "west us",
                 properties: {
-                    "prop1" : "prop1 value"
+                    "prop1": "prop1 value"
                 },
                 message: "availability test message",
                 name: "availability test name",
@@ -150,13 +186,13 @@ describe("Library/EnvelopeFactory", () => {
             availabilityTelemetry.id = undefined;
 
             var envelope = EnvelopeFactory.createEnvelope(availabilityTelemetry, Contracts.TelemetryType.Availability);
-            var data =  <Contracts.Data<Contracts.AvailabilityData>>envelope.data;
+            var data = <Contracts.Data<Contracts.AvailabilityData>>envelope.data;
             assert.ok(data.baseData.id != null);
         });
 
         it("creates data with given content", () => {
             var envelope = EnvelopeFactory.createEnvelope(availabilityTelemetry, Contracts.TelemetryType.Availability);
-            var data =  <Contracts.Data<Contracts.AvailabilityData>>envelope.data;
+            var data = <Contracts.Data<Contracts.AvailabilityData>>envelope.data;
 
             assert.deepEqual(data.baseType, "AvailabilityData");
 
@@ -174,11 +210,11 @@ describe("Library/EnvelopeFactory", () => {
     describe("PageViewData", () => {
         let pageViewTelemetry: Contracts.PageViewTelemetry;
         beforeEach(() => {
-            pageViewTelemetry  = {
+            pageViewTelemetry = {
                 duration: 100,
-                measurements: { "m1" : 1},
+                measurements: { "m1": 1 },
                 properties: {
-                    "prop1" : "prop1 value"
+                    "prop1": "prop1 value"
                 },
                 url: "https://www.test.com",
                 name: "availability test name",
@@ -187,7 +223,7 @@ describe("Library/EnvelopeFactory", () => {
 
         it("creates data with given content", () => {
             var envelope = EnvelopeFactory.createEnvelope(pageViewTelemetry, Contracts.TelemetryType.PageView);
-            var data =  <Contracts.Data<Contracts.PageViewData>>envelope.data;
+            var data = <Contracts.Data<Contracts.PageViewData>>envelope.data;
 
             assert.deepEqual(data.baseType, "PageViewData");
 
@@ -197,6 +233,34 @@ describe("Library/EnvelopeFactory", () => {
             assert.deepEqual(data.baseData.properties, pageViewTelemetry.properties);
             assert.deepEqual(data.baseData.duration, Util.msToTimeSpan(pageViewTelemetry.duration));
 
+        });
+    });
+
+    describe("MetricData", () => {
+        let metricTelemetry: Contracts.MetricTelemetry;
+        beforeEach(() => {
+            metricTelemetry = {
+                name: "TestName",
+                value: 123,
+                namespace: "TestNamespace",
+                count: 456,
+                min: 1,
+                max: 8,
+                stdDev: 4
+            };
+        });
+
+        it("creates data with given content", () => {
+            var envelope = EnvelopeFactory.createEnvelope(metricTelemetry, Contracts.TelemetryType.Metric);
+            var data = <Contracts.Data<Contracts.MetricData>>envelope.data;
+
+            assert.deepEqual(data.baseType, "MetricData");
+            assert.deepEqual(data.baseData.metrics[0].name, metricTelemetry.name);
+            assert.deepEqual(data.baseData.metrics[0].value, metricTelemetry.value);
+            assert.deepEqual(data.baseData.metrics[0].ns, metricTelemetry.namespace);
+            assert.deepEqual(data.baseData.metrics[0].min, metricTelemetry.min);
+            assert.deepEqual(data.baseData.metrics[0].max, metricTelemetry.max);
+            assert.deepEqual(data.baseData.metrics[0].stdDev, metricTelemetry.stdDev);
         });
     });
 });

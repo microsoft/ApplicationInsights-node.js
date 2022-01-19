@@ -1,4 +1,4 @@
-import { Telemetry }  from "./Telemetry";
+import { Telemetry } from "./Telemetry";
 
 /**
  * Telemetry encapsulating a custom metric, i.e. aggregated numeric values describing value, count, frequency and distribution of
@@ -14,6 +14,16 @@ export interface MetricTelemetry extends Telemetry {
      * The value of the metric
      */
     value: number;
+
+    /**
+     * A string that identifies the metric namespace.
+     */
+    namespace?: string;
+
+    /**
+     * Type of metric being sent, e.g. Pre-agg metrics have kind=Aggregation
+     */
+    kind?: string;
 
     /**
      * The number of samples used to get this value

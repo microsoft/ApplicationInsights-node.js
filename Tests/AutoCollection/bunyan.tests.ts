@@ -1,9 +1,10 @@
 import assert = require("assert");
 import sinon = require("sinon");
 import AppInsights = require("../../applicationinsights");
-import { channel, IStandardEvent } from "diagnostic-channel";
+import { channel } from "diagnostic-channel";
 import { enable, dispose as disable } from "../../AutoCollection/diagnostic-channel/bunyan.sub";
 import { bunyan } from "diagnostic-channel-publishers";
+import Util = require("../../Library/Util");
 
 describe("diagnostic-channel/bunyan", () => {
     afterEach(() => {
@@ -23,9 +24,11 @@ describe("diagnostic-channel/bunyan", () => {
             result: "test log",
             level: 50 // Error should still log as MessageData
         };
-        const dummyError = new Error("test error");
+
+        const dummyError = { stack: "Test error" };
+        const bunyanJson = Util.stringify({ err: dummyError });
         const errorEvent: bunyan.IBunyanData = {
-            result: dummyError as any,
+            result: bunyanJson,
             level: 10, // Verbose should still log as ExceptionData
         };
 

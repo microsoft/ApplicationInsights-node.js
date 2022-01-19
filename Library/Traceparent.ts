@@ -1,3 +1,4 @@
+import { TraceFlags } from "@opentelemetry/api";
 import Util = require("./Util");
 import CorrelationIdManager = require("./CorrelationIdManager");
 
@@ -7,7 +8,7 @@ import CorrelationIdManager = require("./CorrelationIdManager");
  * https://www.w3.org/TR/trace-context/#traceparent-field
  */
 class Traceparent {
-    public static DEFAULT_TRACE_FLAG = "01";
+    public static DEFAULT_TRACE_FLAG =   "01";
     public static DEFAULT_VERSION = "00";
 
     public legacyRootId: string;
@@ -102,6 +103,11 @@ class Traceparent {
 
     public static isValidSpanId(id: string): boolean {
         return id.match(/^[0-9a-f]{16}$/) && id !== "0000000000000000";
+    }
+
+    public static formatOpenTelemetryTraceFlags(traceFlags : number){
+        let formattedFlags = ("0" + traceFlags.toString(16));
+        return formattedFlags.substring(formattedFlags.length -2);
     }
 
     public getBackCompatRequestId(): string {

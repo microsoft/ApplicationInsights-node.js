@@ -1,8 +1,6 @@
-import http = require("http");
 import os = require("os");
 
 import TelemetryClient = require("../Library/TelemetryClient");
-import Logging = require("../Library/Logging");
 import Constants = require("../Declarations/Constants");
 
 class AutoCollectPerformance {
@@ -11,10 +9,8 @@ class AutoCollectPerformance {
 
     private static _totalRequestCount: number = 0;
     private static _totalFailedRequestCount: number = 0;
-    private static _lastRequestExecutionTime: number = 0;
     private static _totalDependencyCount: number = 0;
     private static _totalFailedDependencyCount: number = 0;
-    private static _lastDependencyExecutionTime: number = 0;
     private static _totalExceptionCount: number = 0;
     private static _intervalDependencyExecutionTime: number = 0;
     private static _intervalRequestExecutionTime: number = 0;
@@ -42,6 +38,9 @@ class AutoCollectPerformance {
             AutoCollectPerformance.INSTANCE = this;
         }
 
+        this._lastRequests = { totalRequestCount: 0, totalFailedRequestCount: 0, time: 0 };
+        this._lastDependencies = { totalDependencyCount: 0, totalFailedDependencyCount: 0, time: 0 };
+        this._lastExceptions = { totalExceptionCount: 0,time: 0 };
         this._isInitialized = false;
         this._client = client;
         this._collectionInterval = collectionInterval;
@@ -72,7 +71,7 @@ class AutoCollectPerformance {
                     time: +new Date
                 };
 
-                if (typeof (process as any).cpuUsage === 'function'){
+                if (typeof (process as any).cpuUsage === 'function') {
                     this._lastAppCpuUsage = (process as any).cpuUsage();
                 }
                 this._lastHrtime = process.hrtime();
@@ -87,7 +86,6 @@ class AutoCollectPerformance {
             }
         }
     }
-
 
     public static countRequest(duration: number | string, success: boolean) {
         let durationMs: number;
@@ -203,7 +201,7 @@ class AutoCollectPerformance {
                 const totalApp = ((appCpuUsage.user - this._lastAppCpuUsage.user) + (appCpuUsage.system - this._lastAppCpuUsage.system)) || 0;
 
                 if (typeof this._lastHrtime !== 'undefined' && this._lastHrtime.length === 2) {
-                    const elapsedTime = ((hrtime[0] - this._lastHrtime[0])*1e6 + (hrtime[1] - this._lastHrtime[1])/1e3) || 0; // convert to microseconds
+                    const elapsedTime = ((hrtime[0] - this._lastHrtime[0]) * 1e6 + (hrtime[1] - this._lastHrtime[1]) / 1e3) || 0; // convert to microseconds
 
                     appCpuPercent = 100 * totalApp / (elapsedTime * cpus.length);
                 }
@@ -215,8 +213,8 @@ class AutoCollectPerformance {
 
             var combinedTotal = (totalUser + totalSys + totalNice + totalIdle + totalIrq) || 1;
 
-            this._client.trackMetric({name: Constants.PerformanceCounter.PROCESSOR_TIME, value: ((combinedTotal - totalIdle) / combinedTotal) * 100});
-            this._client.trackMetric({name: Constants.PerformanceCounter.PROCESS_TIME, value: appCpuPercent || ((totalUser / combinedTotal) * 100)});
+            this._client.trackMetric({ name: Constants.PerformanceCounter.PROCESSOR_TIME, value: ((combinedTotal - totalIdle) / combinedTotal) * 100 });
+            this._client.trackMetric({ name: Constants.PerformanceCounter.PROCESS_TIME, value: appCpuPercent || ((totalUser / combinedTotal) * 100) });
         }
 
         this._lastCpus = cpus;
@@ -226,12 +224,12 @@ class AutoCollectPerformance {
         var freeMem = os.freemem();
         var usedMem = process.memoryUsage().rss;
         var committedMemory = os.totalmem() - freeMem;
-        this._client.trackMetric({name: Constants.PerformanceCounter.PRIVATE_BYTES, value: usedMem});
-        this._client.trackMetric({name: Constants.PerformanceCounter.AVAILABLE_BYTES, value: freeMem});
+        this._client.trackMetric({ name: Constants.PerformanceCounter.PRIVATE_BYTES, value: usedMem });
+        this._client.trackMetric({ name: Constants.PerformanceCounter.AVAILABLE_BYTES, value: freeMem });
 
         // Only supported by quickpulse service
         if (this._enableLiveMetricsCounters) {
-            this._client.trackMetric({name: Constants.QuickPulseCounter.COMMITTED_BYTES, value: committedMemory});
+            this._client.trackMetric({ name: Constants.QuickPulseCounter.COMMITTED_BYTES, value: committedMemory });
         }
     }
 
@@ -264,7 +262,7 @@ class AutoCollectPerformance {
 
             // Only supported by quickpulse service
             if (this._enableLiveMetricsCounters) {
-                this._client.trackMetric({name: Constants.QuickPulseCounter.REQUEST_FAILURE_RATE, value: failedRequestsPerSec});
+                this._client.trackMetric({ name: Constants.QuickPulseCounter.REQUEST_FAILURE_RATE, value: failedRequestsPerSec });
             }
         }
 
@@ -293,13 +291,13 @@ class AutoCollectPerformance {
                 var dependenciesPerSec = intervalDependencies / elapsedSeconds;
                 var failedDependenciesPerSec = intervalFailedDependencies / elapsedSeconds;
 
-                this._client.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_RATE, value: dependenciesPerSec});
-                this._client.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_FAILURE_RATE, value: failedDependenciesPerSec});
+                this._client.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_RATE, value: dependenciesPerSec });
+                this._client.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_FAILURE_RATE, value: failedDependenciesPerSec });
 
                 // redundant check for livemetrics, but kept for consistency w/ requests
                 // Only send duration to live metrics if it has been updated!
                 if (!this._enableLiveMetricsCounters || intervalDependencies > 0) {
-                    this._client.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_DURATION, value: averageDependencyExecutionTime});
+                    this._client.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_DURATION, value: averageDependencyExecutionTime });
                 }
             }
             this._lastDependencies = dependencies;
@@ -322,7 +320,7 @@ class AutoCollectPerformance {
 
             if (elapsedMs > 0) {
                 var exceptionsPerSec = intervalExceptions / elapsedSeconds;
-                this._client.trackMetric({ name: Constants.QuickPulseCounter.EXCEPTION_RATE, value: exceptionsPerSec});
+                this._client.trackMetric({ name: Constants.QuickPulseCounter.EXCEPTION_RATE, value: exceptionsPerSec });
             }
             this._lastExceptions = exceptions;
         }

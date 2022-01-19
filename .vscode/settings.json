@@ -6,5 +6,11 @@
         "**/*.d.ts": true,
         "out/": true
      },
-    "typescript.tsdk": "./node_modules/typescript/lib"
+   "typescript.tsdk": "./node_modules/typescript/lib",
+   "markdownlint.config": {
+      "MD028": false,
+      "MD025": {
+         "front_matter_title": ""
+      }
+   }
 }

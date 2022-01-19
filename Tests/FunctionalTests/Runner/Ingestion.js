@@ -19,7 +19,7 @@ class Ingestion {
             if (request.url.indexOf("/api/profiles") > -1) {
                 response.end(_APPID);
                 return;
-            } else if (request.url.indexOf("/v2/track") > -1) {
+            } else if (request.url.indexOf("/v2.1/track") > -1) {
                 var processor = request;
                 var data = "";
                 if (request.headers["content-encoding"] && request.headers["content-encoding"].toLowerCase() === "gzip") {

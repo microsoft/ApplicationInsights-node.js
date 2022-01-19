@@ -8,14 +8,29 @@ import Config = require("./Config");
 import TelemetryClient = require("../Library/TelemetryClient");
 import RequestResponseHeaders = require("./RequestResponseHeaders");
 import { HttpRequest } from "../Library/Functions";
+import { JsonConfig } from "./JsonConfig";
 
 
 class Util {
+    private static _useKeepAlive = !JsonConfig.getInstance().noHttpAgentKeepAlive;
+    private static _listenerAttached = false;
+
     public static MAX_PROPERTY_LENGTH = 8192;
-    public static tlsRestrictedAgent: https.Agent = new https.Agent(<any>{
+    public static keepAliveAgent: http.Agent = new https.Agent(<any>{
+        keepAlive: true,
+        maxSockets: 25,
         secureOptions: constants.SSL_OP_NO_SSLv2 | constants.SSL_OP_NO_SSLv3 |
             constants.SSL_OP_NO_TLSv1 | constants.SSL_OP_NO_TLSv1_1
     });
+    public static tlsRestrictedAgent: http.Agent = new https.Agent(<any>{
+        secureOptions: constants.SSL_OP_NO_SSLv2 | constants.SSL_OP_NO_SSLv3 |
+            constants.SSL_OP_NO_TLSv1 | constants.SSL_OP_NO_TLSv1_1
+    });
+    public static isNodeExit = false;
+
+    public constructor() {
+        Util._addCloseHandler();
+    }
 
     /**
      * helper method to access userId and sessionId cookie
@@ -41,8 +56,8 @@ class Util {
     /**
      * helper method to trim strings (IE8 does not implement String.prototype.trim)
      */
-    public static trim(str:string):string {
-        if(typeof str === "string") {
+    public static trim(str: string): string {
+        if (typeof str === "string") {
             return str.replace(/^\s+|\s+$/g, "");
         } else {
             return "";
@@ -116,14 +131,14 @@ class Util {
     /**
      * Check if an object is of type Array
      */
-    public static isArray(obj:any):boolean {
+    public static isArray(obj: any): boolean {
         return Object.prototype.toString.call(obj) === "[object Array]";
     }
 
     /**
      * Check if an object is of type Error
      */
-    public static isError(obj:any):boolean {
+    public static isError(obj: any): boolean {
         return obj instanceof Error;
     }
 
@@ -135,14 +150,14 @@ class Util {
     /**
      * Check if an object is of type Date
      */
-    public static isDate(obj:any):boolean {
+    public static isDate(obj: any): boolean {
         return Object.prototype.toString.call(obj) === "[object Date]";
     }
 
     /**
      * Convert ms to c# time span format
      */
-    public static msToTimeSpan(totalms:number):string {
+    public static msToTimeSpan(totalms: number): string {
         if (isNaN(totalms) || totalms < 0) {
             totalms = 0;
         }
@@ -194,7 +209,7 @@ class Util {
      * Validate that an object is of type { [key: string]: string }
      */
     public static validateStringMap(obj: any): { [key: string]: string } {
-        if(typeof obj !== "object") {
+        if (typeof obj !== "object") {
             Logging.info("Invalid properties dropped from payload");
             return;
         }
@@ -242,10 +257,13 @@ class Util {
         }
 
         for (let i = 0; i < excludedDomains.length; i++) {
-            let regex = new RegExp(excludedDomains[i].replace(/\./g,"\.").replace(/\*/g,".*"));
-            if (regex.test(url.parse(requestUrl).hostname)) {
-                return false;
+            let regex = new RegExp(excludedDomains[i].replace(/\./g, "\.").replace(/\*/g, ".*"));
+            try {
+                if (regex.test(new url.URL(requestUrl).hostname)) {
+                    return false;
+                }
             }
+            catch (ex) { }
         }
 
         return true;
@@ -254,8 +272,8 @@ class Util {
     public static getCorrelationContextTarget(response: http.ClientResponse | http.ServerRequest | HttpRequest, key: string) {
         const contextHeaders = response.headers && response.headers[RequestResponseHeaders.requestContextHeader];
         if (contextHeaders) {
-            const keyValues = contextHeaders.split(",");
-            for(let i = 0; i < keyValues.length; ++i) {
+            const keyValues = (<any>contextHeaders).split(",");
+            for (let i = 0; i < keyValues.length; ++i) {
                 const keyValue = keyValues[i].split("=");
                 if (keyValue.length == 2 && keyValue[0] == key) {
                     return keyValue[1];
@@ -273,67 +291,78 @@ class Util {
      * @param {string} requestUrl url endpoint
      * @param {Object} requestOptions Request option
      * @param {Function} requestCallback callback on request
+     * @param {boolean} useProxy Use proxy URL from config
+     * @param {boolean} useAgent Set Http Agent in request
      * @returns {http.ClientRequest} request object
      */
     public static makeRequest(
         config: Config,
         requestUrl: string,
         requestOptions: http.RequestOptions | https.RequestOptions,
-        requestCallback: (res: http.IncomingMessage) => void): http.ClientRequest {
+        requestCallback: (res: http.IncomingMessage) => void,
+        useProxy = true,
+        useAgent = true): http.ClientRequest {
 
         if (requestUrl && requestUrl.indexOf('//') === 0) {
             requestUrl = 'https:' + requestUrl;
         }
 
-        var requestUrlParsed = url.parse(requestUrl);
-        var options = {...requestOptions,
+        var requestUrlParsed = new url.URL(requestUrl);
+        var options = {
+            ...requestOptions,
             host: requestUrlParsed.hostname,
             port: requestUrlParsed.port,
             path: requestUrlParsed.pathname,
         };
 
         var proxyUrl: string = undefined;
-
-        if (requestUrlParsed.protocol === 'https:') {
-            proxyUrl = config.proxyHttpsUrl || undefined;
-        }
-        if (requestUrlParsed.protocol === 'http:') {
-            proxyUrl = config.proxyHttpUrl || undefined;
-        }
-
-        if (proxyUrl) {
-            if (proxyUrl.indexOf('//') === 0) {
-                proxyUrl = 'http:' + proxyUrl;
+        if (useProxy) {
+            if (requestUrlParsed.protocol === 'https:') {
+                proxyUrl = config.proxyHttpsUrl || undefined;
             }
-            var proxyUrlParsed = url.parse(proxyUrl);
-
-            // https is not supported at the moment
-            if (proxyUrlParsed.protocol === 'https:') {
-                Logging.info("Proxies that use HTTPS are not supported");
-                proxyUrl = undefined;
-            } else {
-                options = {...options,
-                    host: proxyUrlParsed.hostname,
-                    port: proxyUrlParsed.port || "80",
-                    path: requestUrl,
-                    headers: {...options.headers,
-                        Host: requestUrlParsed.hostname,
-                    },
-                };
+            if (requestUrlParsed.protocol === 'http:') {
+                proxyUrl = config.proxyHttpUrl || undefined;
+            }
+            if (proxyUrl) {
+                if (proxyUrl.indexOf('//') === 0) {
+                    proxyUrl = 'http:' + proxyUrl;
+                }
+                try {
+                    var proxyUrlParsed = new url.URL(proxyUrl);
+                    // https is not supported at the moment
+                    if (proxyUrlParsed.protocol === 'https:') {
+                        Logging.info("Proxies that use HTTPS are not supported");
+                        proxyUrl = undefined;
+                    } else {
+                        options = {
+                            ...options,
+                            host: proxyUrlParsed.hostname,
+                            port: proxyUrlParsed.port || "80",
+                            path: requestUrl,
+                            headers: {
+                                ...options.headers,
+                                Host: requestUrlParsed.hostname,
+                            },
+                        };
+                    }
+                }
+                catch (err) {
+                    Logging.warn("Wrong proxy URL provided");
+                }
             }
         }
 
         var isHttps = requestUrlParsed.protocol === 'https:' && !proxyUrl;
-
-        if (isHttps && config.httpsAgent !== undefined) {
-            options.agent = config.httpsAgent;
-        } else if (!isHttps && config.httpAgent !== undefined) {
-            options.agent = config.httpAgent;
-        } else if (isHttps) {
-            // HTTPS without a passed in agent. Use one that enforces our TLS rules
-            options.agent = Util.tlsRestrictedAgent;
+        if (useAgent) {
+            if (isHttps && config.httpsAgent !== undefined) {
+                options.agent = config.httpsAgent;
+            } else if (!isHttps && config.httpAgent !== undefined) {
+                options.agent = config.httpAgent;
+            } else if (isHttps) {
+                // HTTPS without a passed in agent. Use one that enforces our TLS rules
+                options.agent = Util._useKeepAlive ? Util.keepAliveAgent : Util.tlsRestrictedAgent;
+            }
         }
-
         if (isHttps) {
             return https.request(<any>options, requestCallback);
         } else {
@@ -369,15 +398,48 @@ class Util {
         }
     }
 
+    /**
+     * Returns string representation of an object suitable for diagnostics logging.
+     */
+    public static dumpObj(object: any): string {
+        const objectTypeDump: string = Object["prototype"].toString.call(object);
+        let propertyValueDump: string = "";
+        if (objectTypeDump === "[object Error]") {
+            propertyValueDump = "{ stack: '" + object.stack + "', message: '" + object.message + "', name: '" + object.name + "'";
+        } else {
+            propertyValueDump = JSON.stringify(object);
+        }
+
+        return objectTypeDump + propertyValueDump;
+    }
+
+    public static stringify(payload: any) {
+        try {
+            return JSON.stringify(payload);
+        } catch (error) {
+            Logging.warn("Failed to serialize payload", error, payload);
+        }
+    }
+
     private static addCorrelationIdHeaderFromString(client: TelemetryClient, response: http.ClientRequest | http.ServerResponse, correlationHeader: string) {
         const components = correlationHeader.split(",");
         const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
-        const found = components.some(value => value.substring(0,key.length) === key);
+        const found = components.some(value => value.substring(0, key.length) === key);
 
         if (!found) {
             response.setHeader(
                 RequestResponseHeaders.requestContextHeader,
                 `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+        }
+    }
+
+    private static _addCloseHandler() {
+        if (!Util._listenerAttached) {
+            process.on("exit", () => {
+                Util.isNodeExit = true;
+                Util._useKeepAlive = false;
+            });
+            Util._listenerAttached = true;
         }
     }
 }
