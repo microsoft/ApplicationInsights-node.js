@@ -5,6 +5,7 @@ import sinon = require("sinon");
 import AppInsights = require("../../applicationinsights");
 import WebSnippet = require("../../AutoCollection/WebSnippet");
 
+
 describe("AutoCollection/WebSnippet", () => {
     afterEach(() => {
         AppInsights.dispose();
@@ -33,7 +34,10 @@ describe("AutoCollection/WebSnippet", () => {
                 },
                 getHeader: (header: string) => { return _headers[header]; }
             };
+            response.statusCode = 300;
             let validHtml = "<html><head></head><body></body></html>";
+            assert.equal(WebSnippet.ValidateInjection(response, validHtml), false); // status code is not 200
+            response.statusCode = 200;
             assert.equal(WebSnippet.ValidateInjection(response, validHtml), false); // No html header
             response.setHeader("Content-Type", "text/html");
             assert.equal(WebSnippet.ValidateInjection(response, validHtml), true); // Valid
@@ -57,14 +61,33 @@ describe("AutoCollection/WebSnippet", () => {
                 getHeader: (header: string) => { return _headers[header]; },
                 removeHeader: (header: string) => { _headers[header] = undefined; }
             };
-            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setAutoCollectRequests(true);
+            response.setHeader("Content-Type", "text/html");
+            response.statusCode = 200;
             let validHtml = "<html><head></head><body></body></html>";
+            assert.equal(WebSnippet.ValidateInjection(response, validHtml), true); // Encoding not supported
             let newHtml = WebSnippet.InjectWebSnippet(response, validHtml).toString();
-            assert.ok(newHtml.indexOf("https://az416426.vo.msecnd.net/scripts/b/ai.2.min.js") >= 0);
+            assert.ok(newHtml.indexOf("https://js.monitor.azure.com/scripts/b/ai.2.min.js") >= 0);
             assert.ok(newHtml.indexOf("<html><head>") == 0);
             assert.ok(newHtml.indexOf('instrumentationKey: "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"') >= 0);
-            assert.equal(newHtml.length, 4482);
-            assert.equal(response.getHeader("Content-Length"), "4482"); // Content length updated
+            //should not overwrite content-lenghth header when original reponse does not have it.
+            assert.equal(!!response.getHeader("Content-Length"), false); 
+        });
+
+        it("injection web snippet should overwrite content length ", () => {
+            let _headers: any = {};
+            let response: http.ServerResponse = <any>{
+                setHeader: (header: string, value: string) => {
+                    _headers[header] = value;
+                },
+                getHeader: (header: string) => { return _headers[header]; },
+                removeHeader: (header: string) => { _headers[header] = undefined; }
+            };
+            response.setHeader("Content-Type", "text/html");
+            response.setHeader("Content-Length", 39);
+            let validHtml = "<html><head></head><body></body></html>";
+            let newHtml = WebSnippet.InjectWebSnippet(response, validHtml).toString();
+            assert.ok(newHtml.length > 4000);
+            assert.ok(Number(response.getHeader("Content-Length")) > 4000); // Content length updated
         });
     });
 

@@ -37,5 +37,7 @@
     "extendedMetricDisablers": "gc,heap",
     "noDiagnosticChannel": false,
     "noPatchModules": "console,redis",
-    "quickPulseHost": "testquickpulsehost.com"
+    "quickPulseHost": "testquickpulsehost.com",
+    "enableAutoWebSnippetInjection": false,
+    "isDebugWebSnippet": false
 }

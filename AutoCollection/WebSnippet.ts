@@ -21,7 +21,8 @@ class WebSnippet {
 
         WebSnippet.INSTANCE = this;
         // AI URL used to validate if snippet already included
-        WebSnippet._aiUrl = "https://az416426.vo.msecnd.net/scripts/b/ai.2";
+        //WebSnippet._aiUrl = "https://az416426.vo.msecnd.net/scripts/b/ai.2";
+        WebSnippet._aiUrl = " https://js.monitor.azure.com/scripts/b/ai.2";
 
         let snippetPath = path.resolve(__dirname, "../../AutoCollection/WebSnippet/snippet.min.js");
         if (client.config.isDebugWebSnippet) {
@@ -89,9 +90,11 @@ class WebSnippet {
      */
     public static ValidateInjection(response: http.ServerResponse, input: string | Buffer): boolean {
         if (response && input) {
+            // insert snippet if only response returns 200
+            if (response.statusCode != 200) return false;
             let contentType = response.getHeader('Content-Type');
             let contentEncoding = response.getHeader('Content-Encoding'); // Compressed content not supported for injection
-            if (!contentEncoding && contentType && contentType.toLowerCase().indexOf("text/html") >= 0) {
+            if (!contentEncoding && contentType && typeof contentType == "string" && contentType.toLowerCase().indexOf("text/html") >= 0) {
                 let html = input.toString();
                 if (html.indexOf("<head>") >= 0 && html.indexOf("</head>") >= 0) {
                     // Check if snippet not already present looking for AI Web SDK URL
@@ -109,8 +112,11 @@ class WebSnippet {
      */
     public static InjectWebSnippet(response: http.ServerResponse, input: string | Buffer): string | Buffer {
         try {
+            let hasContentHeader = !!response.getHeader('Content-Length');
             // Clean content-length header
-            response.removeHeader('Content-Length');
+            if (hasContentHeader) {
+                response.removeHeader('Content-Length');
+            }
             // Read response stream
             let html = input.toString();
             // Try to add script before HTML head closure
@@ -119,8 +125,11 @@ class WebSnippet {
                 let subStart = html.substring(0, index);
                 let subEnd = html.substring(index);
                 input = subStart + '<script type="text/javascript">' + WebSnippet._snippet + '</script>' + subEnd;
+                html = subStart + '<script type="text/javascript">' + WebSnippet._snippet + '</script>' + subEnd;
                 // Set headers
-                response.setHeader("Content-Length", input.length.toString());
+                if (hasContentHeader) {
+                    response.setHeader("Content-Length", input.length.toString());
+                }
             }
         }
         catch (ex) {

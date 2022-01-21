@@ -18,6 +18,7 @@ const ENV_noDiagnosticChannel = "APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL"
 const ENV_noStatsbeat = "APPLICATION_INSIGHTS_NO_STATSBEAT";
 const ENV_noHttpAgentKeepAlive = "APPLICATION_INSIGHTS_NO_HTTP_AGENT_KEEP_ALIVE";
 const ENV_noPatchModules = "APPLICATION_INSIGHTS_NO_PATCH_MODULES";
+const ENV_webSnippetEnable = "APPINSIGHTS_WEB_SNIPPET_ENABLED";
 
 export class JsonConfig implements IJsonConfig {
     private static _instance: JsonConfig;
@@ -59,6 +60,8 @@ export class JsonConfig implements IJsonConfig {
     public noPatchModules: string;
     public noHttpAgentKeepAlive: boolean;
     public quickPulseHost: string;
+    public enableAutoWebSnippetInjection: boolean;
+    public isDebugWebSnippet: boolean;
 
 
     static getInstance() {
@@ -79,6 +82,7 @@ export class JsonConfig implements IJsonConfig {
         this.disableStatsbeat = !!process.env[ENV_noStatsbeat];
         this.noHttpAgentKeepAlive = !!process.env[ENV_noHttpAgentKeepAlive];
         this.noPatchModules = process.env[ENV_noPatchModules] || "";
+        this.enableAutoWebSnippetInjection = !!process.env[ENV_webSnippetEnable];
         this._loadJsonFile();
     }
 
@@ -129,6 +133,12 @@ export class JsonConfig implements IJsonConfig {
             }
             if (jsonConfig.noPatchModules != undefined) {
                 this.noPatchModules = jsonConfig.noPatchModules;
+            }
+            if (jsonConfig.enableAutoWebSnippetInjection != undefined) {
+                this.enableAutoWebSnippetInjection = jsonConfig.enableAutoWebSnippetInjection;
+            }
+            if (jsonConfig.isDebugWebSnippet !== undefined) {
+                this.isDebugWebSnippet = jsonConfig.isDebugWebSnippet;
             }
             this.endpointUrl = jsonConfig.endpointUrl;
             this.maxBatchSize = jsonConfig.maxBatchSize;
