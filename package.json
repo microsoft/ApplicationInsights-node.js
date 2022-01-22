@@ -61,6 +61,7 @@
     "@opentelemetry/core": "^0.23.0",
     "@opentelemetry/semantic-conventions": "^0.24.0",
     "@opentelemetry/tracing": "^0.23.0",
+    "applicationinsight-web-snippet": "0.0.0",
     "cls-hooked": "^4.2.2",
     "continuation-local-storage": "^3.2.1",
     "diagnostic-channel": "1.0.0",

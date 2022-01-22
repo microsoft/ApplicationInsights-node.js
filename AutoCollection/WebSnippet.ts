@@ -21,12 +21,11 @@ class WebSnippet {
 
         WebSnippet.INSTANCE = this;
         // AI URL used to validate if snippet already included
-        //WebSnippet._aiUrl = "https://az416426.vo.msecnd.net/scripts/b/ai.2";
         WebSnippet._aiUrl = " https://js.monitor.azure.com/scripts/b/ai.2";
 
-        let snippetPath = path.resolve(__dirname, "../../AutoCollection/WebSnippet/snippet.min.js");
+        let snippetPath = path.resolve(__dirname, "../../node_modules/applicationinsight-web-snippet/snippet/snippet.min.js");
         if (client.config.isDebugWebSnippet) {
-            snippetPath = path.resolve(__dirname, "../../AutoCollection/WebSnippet/snippet.js");
+            snippetPath = path.resolve(__dirname, "../../node_modules/applicationinsight-web-snippet/snippet/snippet.js");
         }
         fs.readFile(snippetPath, function (err, snippet) {
             if (err) {
