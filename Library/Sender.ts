@@ -124,14 +124,18 @@ class Sender {
                     await authHandler.addAuthorizationHeader(options);
                 }
                 catch (authError) {
-                    let errorMsg = "Failed to get AAD bearer token for the Application. Error:" + authError.toString();
-                    // If AAD auth fails do not send to Breeze
+                    let errorMsg = "Failed to get AAD bearer token for the Application.";
+                    if (this._enableDiskRetryMode) {
+                        errorMsg += "This batch of telemetry items will be retried. ";
+                        this._storeToDisk(envelopes);
+                    }
+                    errorMsg += "Error:" + authError.toString();
+                    Logging.warn(Sender.TAG, errorMsg);
+
                     if (typeof callback === "function") {
                         callback(errorMsg);
                     }
-                    this._storeToDisk(envelopes);
-                    Logging.warn(Sender.TAG, errorMsg);
-                    return;
+                    return; // If AAD auth fails do not send to Breeze
                 }
             }
 
