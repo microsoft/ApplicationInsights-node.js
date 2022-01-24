@@ -354,6 +354,7 @@ describe("Library/Sender", () => {
             var addHeaderStub = sandbox.stub(handler, "addAuthorizationHeader", () => { throw new Error(); });
 
             var sender = new Sender(config, getAuthorizationHandler);
+            sender["_enableDiskRetryMode"] = true;
             var storeToDiskStub = sandbox.stub(sender, "_storeToDisk");
             let envelope = new Contracts.Envelope();
             envelope.name = "TestEnvelope";
