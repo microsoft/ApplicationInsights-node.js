@@ -156,6 +156,18 @@ class HttpDependencyParser extends RequestParser {
             catch (ex) { }
         }
 
+        // Sometimes the hostname is provided but not the host
+        // Add in the path when this occurs
+        if (options.path && options.hostname && !options.host) {
+            // need to force a protocol to make parameter valid - base url is required when input is a relative url
+            try {
+                const parsedQuery = new url.URL(options.path, 'http://' + options.hostname + options.path);
+                options.pathname = parsedQuery.pathname;
+                options.search = parsedQuery.search;
+            }
+            catch (ex) { }
+        }
+
         // Similarly, url.format ignores hostname and port if host is specified,
         // even if host doesn't have the port, but http.request does not work
         // this way. It will use the port if one is not specified in host,
