@@ -7,8 +7,8 @@ import Traceparent = require("../../Library/Traceparent");
 import { SpanContext } from "@opentelemetry/api";
 
 const customProperties = {
-    getProperty(prop: string) {return ""},
-    setProperty(prop: string, val: string) {},
+    getProperty(prop: string) { return "" },
+    setProperty(prop: string, val: string) { },
 }
 
 if (CorrelationContextManager.isNodeVersionCompatible()) {
@@ -42,7 +42,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             });
 
             it("should use cls-hooked if force flag is set to true", () => {
-                if (CorrelationContextManager.canUseClsHooked()){
+                if (CorrelationContextManager.canUseClsHooked()) {
                     CorrelationContextManager.enable(true);
                     assert.deepEqual((CorrelationContextManager as any).cls, require('cls-hooked'), 'cls-hooked is loaded');
                     assert.notDeepEqual((CorrelationContextManager as any).cls, require('continuation-local-storage'));
@@ -71,10 +71,10 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
 
         describe("#getCurrentContext()", () => {
             afterEach(() => {
-              // Mocha's async "done" methods cause future tests to be in the same context chain
-              // Reset the context each time
-              CorrelationContextManager.reset();
-              assert.equal(null, CorrelationContextManager.getCurrentContext());
+                // Mocha's async "done" methods cause future tests to be in the same context chain
+                // Reset the context each time
+                CorrelationContextManager.reset();
+                assert.equal(null, CorrelationContextManager.getCurrentContext());
             });
             it("should return null if not in a context", () => {
                 CorrelationContextManager.enable();
@@ -89,7 +89,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             it("should return null if the ContextManager is disabled (inside context)", (done) => {
                 CorrelationContextManager.enable();
 
-                CorrelationContextManager.runWithContext(testContext, ()=>{
+                CorrelationContextManager.runWithContext(testContext, () => {
                     CorrelationContextManager.disable();
                     assert.equal(CorrelationContextManager.getCurrentContext(), null);
                     done();
@@ -98,7 +98,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             it("should return the context if in a context", (done) => {
                 CorrelationContextManager.enable();
 
-                CorrelationContextManager.runWithContext(testContext, ()=>{
+                CorrelationContextManager.runWithContext(testContext, () => {
                     assert.equal(CorrelationContextManager.getCurrentContext(), testContext);
                     done();
                 });
@@ -106,8 +106,8 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             it("should return the context if called by an asynchronous callback in a context", (done) => {
                 CorrelationContextManager.enable();
 
-                CorrelationContextManager.runWithContext(testContext2, ()=>{
-                    process.nextTick(()=>{
+                CorrelationContextManager.runWithContext(testContext2, () => {
+                    process.nextTick(() => {
                         assert.equal(CorrelationContextManager.getCurrentContext(), testContext2);
                         done();
                     });
@@ -116,19 +116,19 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             it("should return the correct context to asynchronous callbacks occuring in parallel", (done) => {
                 CorrelationContextManager.enable();
 
-                CorrelationContextManager.runWithContext(testContext, ()=>{
-                    process.nextTick(()=>{
+                CorrelationContextManager.runWithContext(testContext, () => {
+                    process.nextTick(() => {
                         assert.equal(CorrelationContextManager.getCurrentContext(), testContext);
                     });
                 });
 
-                CorrelationContextManager.runWithContext(testContext2, ()=>{
-                    process.nextTick(()=>{
+                CorrelationContextManager.runWithContext(testContext2, () => {
+                    process.nextTick(() => {
                         assert.equal(CorrelationContextManager.getCurrentContext(), testContext2);
                     });
                 });
 
-                setTimeout(()=>done(), 10);
+                setTimeout(() => done(), 10);
             });
         });
 
@@ -172,7 +172,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
 
                 var error = new Error();
                 try {
-                    (<any>Error)['prepareStackTrace'](null, [{getFunctionName: ()=>'', getFileName: ():any=>null}]);
+                    (<any>Error)['prepareStackTrace'](null, [{ getFunctionName: () => '', getFileName: (): any => null }]);
                     (<any>Error)['prepareStackTrace'] = stackTrace;
                 } catch (e) {
                     (<any>Error)['prepareStackTrace'] = stackTrace;
@@ -214,21 +214,21 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             it("should return a function that restores the context available at call-time into the supplied function if enabled", (done) => {
                 CorrelationContextManager.enable();
 
-                var sharedFn = ()=> {
+                var sharedFn = () => {
                     assert.equal(CorrelationContextManager.getCurrentContext(), testContext);
                 };
 
-                CorrelationContextManager.runWithContext(testContext, ()=>{
+                CorrelationContextManager.runWithContext(testContext, () => {
                     sharedFn = CorrelationContextManager.wrapCallback(sharedFn);
                 });
 
-                CorrelationContextManager.runWithContext(testContext2, ()=>{
-                    setTimeout(()=>{
+                CorrelationContextManager.runWithContext(testContext2, () => {
+                    setTimeout(() => {
                         sharedFn();
                     }, 8);
                 });
 
-                setTimeout(()=>done(), 10);
+                setTimeout(() => done(), 10);
             });
         });
 
@@ -288,7 +288,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
 
                     assert.ok(context.operation);
                     assert.deepEqual(context.operation.id, spanContext.traceId);
-                    assert.deepEqual(context.operation.parentId, `|${spanContext.traceId}.${spanContext.spanId}.`);
+                    assert.deepEqual(context.operation.parentId, context.operation.parentId);
                     assert.deepEqual(context.operation.name, "GET /example");
                 });
             });
