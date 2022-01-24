@@ -1,5 +1,5 @@
 import { SpanContext } from "@opentelemetry/api";
-import { Span } from "@opentelemetry/tracing";
+import { Span } from "@opentelemetry/sdk-trace-base";
 
 import { CorrelationContextManager, CorrelationContext } from "./CorrelationContextManager"
 import { EventEmitter } from "events";
