@@ -124,7 +124,6 @@ class WebSnippet {
                 let subStart = html.substring(0, index);
                 let subEnd = html.substring(index);
                 input = subStart + '<script type="text/javascript">' + WebSnippet._snippet + '</script>' + subEnd;
-                html = subStart + '<script type="text/javascript">' + WebSnippet._snippet + '</script>' + subEnd;
                 // Set headers
                 if (hasContentHeader) {
                     response.setHeader("Content-Length", input.length.toString());
