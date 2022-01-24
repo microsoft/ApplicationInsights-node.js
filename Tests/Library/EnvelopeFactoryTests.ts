@@ -57,6 +57,27 @@ describe("Library/EnvelopeFactory", () => {
             var envelope = EnvelopeFactory.createEnvelope(<Contracts.EventTelemetry>{ name: "name" }, Contracts.TelemetryType.Event, commonproperties, client.context, client.config);
             assert.equal(envelope.name, "Microsoft.ApplicationInsights.key.Event");
         });
+
+        it("should sanitize properties", () => {
+            var client1 = new Client("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            let commonProps = {
+                "commonProperty": 123,
+            };
+            var eventTelemetry = <Contracts.EventTelemetry>{ name: "name" };
+            eventTelemetry.properties = {
+                "prop1": false,
+                "prop2": 123,
+                "prop3": { "subProp1": "someValue" }
+            };
+            var env = EnvelopeFactory.createEnvelope(eventTelemetry, Contracts.TelemetryType.Event, (<any>commonProps), client1.context, client1.config);
+            var envData: Contracts.Data<Contracts.EventData> = <Contracts.Data<Contracts.EventData>>env.data;
+
+            // check properties
+            assert.equal(envData.baseData.properties.commonProperty, "123");
+            assert.equal(envData.baseData.properties.prop1, "false");
+            assert.equal(envData.baseData.properties.prop2, "123");
+            assert.equal(envData.baseData.properties.prop3, "{\"subProp1\":\"someValue\"}");
+        });
     });
 
     describe("#createDependencyData()", () => {

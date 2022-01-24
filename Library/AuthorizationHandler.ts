@@ -25,7 +25,6 @@ class AuthorizationHandler {
     public async addAuthorizationHeader(requestOptions: http.RequestOptions | https.RequestOptions): Promise<void> {
         let authHeaderName = azureCore.Constants.HeaderConstants.AUTHORIZATION;
         let webResource = new azureCore.WebResource("https://");
-        this
         await this._azureTokenPolicy.sendRequest(webResource);
         requestOptions.headers[authHeaderName] = webResource.headers.get(authHeaderName);
     }
