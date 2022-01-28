@@ -11,7 +11,7 @@ import Traceparent = require("../Library/Traceparent");
 import Tracestate = require("../Library/Tracestate");
 import HttpRequestParser = require("./HttpRequestParser");
 import { SpanContext } from "@opentelemetry/api";
-import { Span } from "@opentelemetry/tracing";
+import { Span } from "@opentelemetry/sdk-trace-base";
 
 export interface CustomProperties {
     /**
