@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
-import { Span } from "@opentelemetry/tracing";
+import { Span } from "@opentelemetry/sdk-trace-base";
 import { SpanKind } from "@opentelemetry/api";
 
 import TelemetryClient = require("../../Library/TelemetryClient");
