@@ -47,5 +47,4 @@ export function registerContextPreservation(cb: (cb: Function) => Function) {
     }
     const diagChannel = (require("diagnostic-channel") as typeof DiagChannel);
     diagChannel.channel.addContextPreservation(cb);
-    diagChannel.channel.spanContextPropagator = AsyncScopeManager;
 }
