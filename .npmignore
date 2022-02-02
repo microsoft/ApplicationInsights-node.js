@@ -7,6 +7,7 @@ obj
 *.sln
 *.njsproj
 .vscode/
+.github
 
 # Ignore test files
 Tests
