@@ -38,14 +38,6 @@ export class AutoCollectNativePerformance {
     }
 
     /**
-     *  Reports if NativePerformance is able to run in this environment
-     */
-    public static isNodeVersionCompatible() {
-        var nodeVer = process.versions.node.split(".");
-        return parseInt(nodeVer[0]) >= 6;
-    }
-
-    /**
      * Start instance of native metrics agent.
      *
      * @param {boolean} isEnabled
@@ -53,10 +45,6 @@ export class AutoCollectNativePerformance {
      * @memberof AutoCollectNativePerformance
      */
     public enable(isEnabled: boolean, disabledMetrics: IDisabledExtendedMetrics = {}, collectionInterval = 60000): void {
-        if (!AutoCollectNativePerformance.isNodeVersionCompatible()) {
-            return;
-        }
-
         if (AutoCollectNativePerformance._metricsAvailable == undefined && isEnabled && !this._isInitialized) {
             // Try to require in the native-metrics library. If it's found initialize it, else do nothing and never try again.
             try {
