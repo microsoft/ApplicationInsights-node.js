@@ -1,9 +1,8 @@
 name: Node.js runtime CI
 
 on:
-  push:
+  pull_request:
     branches: [ develop, master ]
-
 jobs:
   build:
 
