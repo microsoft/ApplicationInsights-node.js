@@ -7,7 +7,6 @@ import { ICorrelationContext, ITraceparent, ITracestate } from "../Declarations/
 
 
 export class CorrelationContextManager {
-
     /**
      *  Provides the current Context.
      *  The context is the most recent one entered into for the current
@@ -61,6 +60,9 @@ export class CorrelationContextManager {
         // TODO
     }
 
+    /**
+     * Create new correlation context.
+     */
     public static startOperation(context: azureFunctionsTypes.Context | (http.IncomingMessage | azureFunctionsTypes.HttpRequest) | SpanContext, request?: azureFunctionsTypes.HttpRequest | string): ICorrelationContext | null {
         // TODO
         return null;

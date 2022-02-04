@@ -1,24 +1,36 @@
 export class NetworkStatsbeat {
 
     public time: number;
+
     public lastTime: number;
+
     public endpoint: number;
+
     public host: string;
+
     public totalRequestCount: number;
+
     public lastRequestCount: number;
-    public totalSuccessfulRequestCount: number;
+
+    public totalSuccesfulRequestCount: number;
+
     public totalFailedRequestCount: number;
+
     public retryCount: number;
+
     public exceptionCount: number;
+
     public throttleCount: number;
+
     public intervalRequestExecutionTime: number;
+
     public lastIntervalRequestExecutionTime: number;
 
     constructor(endpoint: number, host: string) {
         this.endpoint = endpoint;
         this.host = host;
         this.totalRequestCount = 0;
-        this.totalSuccessfulRequestCount = 0;
+        this.totalSuccesfulRequestCount = 0;
         this.totalFailedRequestCount = 0;
         this.retryCount = 0;
         this.exceptionCount = 0;

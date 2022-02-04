@@ -17,6 +17,8 @@ before_install:
   - npm uninstall applicationinsights-native-metrics --save-dev
   - if [ "$TRAVIS_EXTENDED_METRICS" = "true" ]; then npm install applicationinsights-native-metrics --save-optional || true; fi
 script:
+  - npm clean
+  # Build and test
   - npm test
   # Run funcs for LTS releases (currently 6, 8, 10) + current release (12)
   - if [ "$TRAVIS_NODE_VERSION" = "12" ]; then npm run functionaltest; fi

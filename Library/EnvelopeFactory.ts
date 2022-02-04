@@ -51,24 +51,27 @@ class EnvelopeFactory {
                 break;
         }
 
-        if (commonProperties && Contracts.domainSupportsProperties(data.baseData)) { // Do instanceof check. TS will automatically cast and allow the properties property
-            if (data && data.baseData) {
-                // if no properties are specified just add the common ones
-                if (!data.baseData.properties) {
-                    data.baseData.properties = commonProperties;
-                } else {
-                    // otherwise, check each of the common ones
-                    for (var name in commonProperties) {
-                        // only override if the property `name` has not been set on this item
-                        if (!data.baseData.properties[name]) {
-                            data.baseData.properties[name] = commonProperties[name];
+        if (data && data.baseData) {
+            if (Contracts.domainSupportsProperties(data.baseData)) { // Do instanceof check. TS will automatically cast and allow the properties property
+                if (commonProperties) {
+                    // if no properties are specified just add the common ones
+                    if (!data.baseData.properties) {
+                        data.baseData.properties = commonProperties;
+                    } else {
+                        // otherwise, check each of the common ones
+                        for (var name in commonProperties) {
+                            // only override if the property `name` has not been set on this item
+                            if (!data.baseData.properties[name]) {
+                                data.baseData.properties[name] = commonProperties[name];
+                            }
                         }
                     }
                 }
+                if (data.baseData.properties) {
+                    // sanitize properties
+                    data.baseData.properties = Util.validateStringMap(data.baseData.properties);
+                }
             }
-
-            // sanitize properties
-            data.baseData.properties = Util.validateStringMap(data.baseData.properties);
         }
 
         var iKey = config ? config.instrumentationKey || "" : "";

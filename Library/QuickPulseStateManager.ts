@@ -61,9 +61,12 @@ class QuickPulseStateManager {
      * @param envelope
      */
     public addDocument(envelope: Contracts.Envelope): void {
-        const document = QuickPulseEnvelopeFactory.telemetryEnvelopeToQuickPulseDocument(envelope);
-        if (document) {
-            this._documents.push(document);
+        // Only add documents in buffer when Live Metrics is collecting data
+        if (this._isCollectingData) {
+            const document = QuickPulseEnvelopeFactory.telemetryEnvelopeToQuickPulseDocument(envelope);
+            if (document) {
+                this._documents.push(document);
+            }
         }
     }
 

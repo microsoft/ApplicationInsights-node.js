@@ -4,7 +4,7 @@ import TelemetryClient = require("../../Library/TelemetryClient");
 import { SeverityLevel } from "../../Declarations/Contracts";
 import { StatsbeatInstrumentation } from "../../Declarations/Constants";
 
-import { channel, IStandardEvent } from "diagnostic-channel";
+import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
 
 import { bunyan } from "diagnostic-channel-publishers";
 
@@ -38,26 +38,24 @@ const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
 };
 
 export function enable(enabled: boolean, client: TelemetryClient) {
-    let statsbeat = client.getStatsbeat();
     if (enabled) {
         let clientFound = clients.find(c => c == client);
         if (clientFound) {
             return;
         }
         if (clients.length === 0) {
-            channel.subscribe<bunyan.IBunyanData>("bunyan", subscriber);
-            if (statsbeat) {
-                statsbeat.addInstrumentation(StatsbeatInstrumentation.BUNYAN);
-            }
+            channel.subscribe<bunyan.IBunyanData>("bunyan", subscriber, trueFilter, (module, version) => {
+                let statsbeat = client.getStatsbeat();
+                if (statsbeat) {
+                    statsbeat.addInstrumentation(StatsbeatInstrumentation.BUNYAN);
+                }
+            });
         };
         clients.push(client);
     } else {
         clients = clients.filter((c) => c != client);
         if (clients.length === 0) {
             channel.unsubscribe("bunyan", subscriber);
-            if (statsbeat) {
-                statsbeat.removeInstrumentation(StatsbeatInstrumentation.BUNYAN);
-            }
         }
     }
 }

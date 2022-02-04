@@ -40,3 +40,10 @@ if (IsInitialized) {
     Logging.info(TAG, "Not subscribing to dependency auto collection because APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL was set");
 }
 
+export function registerContextPreservation(cb: (cb: Function) => Function) {
+    if (!IsInitialized) {
+        return;
+    }
+    const diagChannel = (require("diagnostic-channel") as typeof DiagChannel);
+    diagChannel.channel.addContextPreservation(cb);
+}
