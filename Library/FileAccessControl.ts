@@ -29,7 +29,9 @@ export class FileAccessControl {
                 // This guarantees we can immediately fail setDiskRetryMode if we need to
                 try {
                     FileAccessControl.OS_PROVIDES_FILE_PROTECTION = fs.existsSync(FileAccessControl.ICACLS_PATH);
-                } catch (e) { }
+                } catch (e) {
+                    // Ignore errors
+                 }
                 if (!FileAccessControl.OS_PROVIDES_FILE_PROTECTION) {
                     Logging.warn(FileAccessControl.TAG, "Could not find ICACLS in expected location! This is necessary to use disk retry mode on Windows.")
                 }
@@ -115,7 +117,7 @@ export class FileAccessControl {
             var psProc = child_process.spawn(FileAccessControl.POWERSHELL_PATH,
                 ["-Command", "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name"], <any>{
                     windowsHide: true,
-                    stdio: ['ignore', 'pipe', 'pipe'] // Needed to prevent hanging on Win 7
+                    stdio: ["ignore", "pipe", "pipe"] // Needed to prevent hanging on Win 7
                 });
             let data = "";
             psProc.stdout.on("data", (d: string) => data += d);
@@ -141,7 +143,7 @@ export class FileAccessControl {
             var psProc = child_process.spawnSync(FileAccessControl.POWERSHELL_PATH,
                 ["-Command", "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name"], <any>{
                     windowsHide: true,
-                    stdio: ['ignore', 'pipe', 'pipe'] // Needed to prevent hanging on Win 7
+                    stdio: ["ignore", "pipe", "pipe"] // Needed to prevent hanging on Win 7
                 });
             if (psProc.error) {
                 throw psProc.error;

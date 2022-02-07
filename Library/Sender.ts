@@ -68,10 +68,10 @@ class Sender {
             FileAccessControl.checkFileProtection(); // Only check file protection when disk retry is enabled
         }
         this._enableDiskRetryMode = FileAccessControl.OS_PROVIDES_FILE_PROTECTION && value;
-        if (typeof resendInterval === 'number' && resendInterval >= 0) {
+        if (typeof resendInterval === "number" && resendInterval >= 0) {
             this._resendInterval = Math.floor(resendInterval);
         }
-        if (typeof maxBytesOnDisk === 'number' && maxBytesOnDisk >= 0) {
+        if (typeof maxBytesOnDisk === "number" && maxBytesOnDisk >= 0) {
             this._maxBytesOnDisk = Math.floor(maxBytesOnDisk);
         }
 

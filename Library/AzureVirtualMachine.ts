@@ -24,10 +24,10 @@ export class AzureVirtualMachine {
         let vmInfo: IVirtualMachineInfo = {};
         const metadataRequestUrl = `${AIMS_URI}?${AIMS_API_VERSION}&${AIMS_FORMAT}`;
         const requestOptions = {
-            method: 'GET',
+            method: "GET",
             [AutoCollectHttpDependencies.disableCollectionRequestOption]: true,
             headers: {
-                "Metadata": "True",
+                "Metadata": "True"
             }
         };
 
@@ -36,10 +36,10 @@ export class AzureVirtualMachine {
                 // Success; VM
                 vmInfo.isVM = true;
                 let virtualMachineData = "";
-                res.on('data', (data: any) => {
+                res.on("data", (data: any) => {
                     virtualMachineData += data;
                 });
-                res.on('end', () => {
+                res.on("end", () => {
                     try {
                         let data = JSON.parse(virtualMachineData);
                         vmInfo.id = data["vmId"] || "";
@@ -57,7 +57,7 @@ export class AzureVirtualMachine {
             }
         }, false, false);
         if (req) {
-            req.on('error', (error: Error) => {
+            req.on("error", (error: Error) => {
                 // Unable to contact endpoint.
                 // Do nothing for now.
                 if (error && error.message && error.message.indexOf(ConnectionErrorMessage) > -1) {

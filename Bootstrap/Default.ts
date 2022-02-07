@@ -20,7 +20,7 @@ const forceStart = process.env.APPLICATIONINSIGHTS_FORCE_START === "true";
 // Other local constants
 const defaultStatus: StatusContract = {
     ...StatusLogger.DEFAULT_STATUS,
-    Ikey: _setupString,
+    Ikey: _setupString
 };
 
 /**
@@ -65,7 +65,7 @@ export function setupAndStart(setupString = _setupString, aadTokenCredential?: a
         _statusLogger.logStatus({
             ...defaultStatus,
             AgentInitializedSuccessfully: false,
-            Reason: message,
+            Reason: message
         });
         return null;
     }

@@ -186,7 +186,7 @@ class Util {
         const looseError = err as any;
         return {
             message: err.message,
-            code: looseError.code || looseError.id || "",
+            code: looseError.code || looseError.id || ""
         }
     }
 
@@ -215,7 +215,7 @@ class Util {
         }
         const map: { [key: string]: string } = {};
         for (let field in obj) {
-            let property: string = '';
+            let property: string = "";
             const origProperty: any = obj[field];
             const propType = typeof origProperty;
 
@@ -263,7 +263,9 @@ class Util {
                     return false;
                 }
             }
-            catch (ex) { }
+            catch (ex) {
+                // Ignore errors
+            }
         }
 
         return true;
@@ -303,8 +305,8 @@ class Util {
         useProxy = true,
         useAgent = true): http.ClientRequest {
 
-        if (requestUrl && requestUrl.indexOf('//') === 0) {
-            requestUrl = 'https:' + requestUrl;
+        if (requestUrl && requestUrl.indexOf("//") === 0) {
+            requestUrl = "https:" + requestUrl;
         }
 
         var requestUrlParsed = new url.URL(requestUrl);
@@ -312,25 +314,25 @@ class Util {
             ...requestOptions,
             host: requestUrlParsed.hostname,
             port: requestUrlParsed.port,
-            path: requestUrlParsed.pathname,
+            path: requestUrlParsed.pathname
         };
 
         var proxyUrl: string = undefined;
         if (useProxy) {
-            if (requestUrlParsed.protocol === 'https:') {
+            if (requestUrlParsed.protocol === "https:") {
                 proxyUrl = config.proxyHttpsUrl || undefined;
             }
-            if (requestUrlParsed.protocol === 'http:') {
+            if (requestUrlParsed.protocol === "http:") {
                 proxyUrl = config.proxyHttpUrl || undefined;
             }
             if (proxyUrl) {
-                if (proxyUrl.indexOf('//') === 0) {
-                    proxyUrl = 'http:' + proxyUrl;
+                if (proxyUrl.indexOf("//") === 0) {
+                    proxyUrl = "http:" + proxyUrl;
                 }
                 try {
                     var proxyUrlParsed = new url.URL(proxyUrl);
                     // https is not supported at the moment
-                    if (proxyUrlParsed.protocol === 'https:') {
+                    if (proxyUrlParsed.protocol === "https:") {
                         Logging.info("Proxies that use HTTPS are not supported");
                         proxyUrl = undefined;
                     } else {
@@ -341,8 +343,8 @@ class Util {
                             path: requestUrl,
                             headers: {
                                 ...options.headers,
-                                Host: requestUrlParsed.hostname,
-                            },
+                                Host: requestUrlParsed.hostname
+                            }
                         };
                     }
                 }
@@ -352,7 +354,7 @@ class Util {
             }
         }
 
-        var isHttps = requestUrlParsed.protocol === 'https:' && !proxyUrl;
+        var isHttps = requestUrlParsed.protocol === "https:" && !proxyUrl;
         if (useAgent) {
             if (isHttps && config.httpsAgent !== undefined) {
                 options.agent = config.httpsAgent;
@@ -369,7 +371,7 @@ class Util {
             return http.request(<any>options, requestCallback);
         }
 
-    };
+    }
 
     /**
      * Parse standard <string | string[] | number> request-context header
