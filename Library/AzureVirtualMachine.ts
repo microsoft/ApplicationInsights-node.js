@@ -1,7 +1,7 @@
 
-import Config = require("./Config");
-import Logging = require("./Logging");
-import Util = require("./Util");
+import { Config } from "./Configuration/Config";
+import { Logger } from "./Logging/Logger";
+import { Util } from "./Util";
 
 const AIMS_URI = "http://169.254.169.254/metadata/instance/compute";
 const AIMS_API_VERSION = "api-version=2017-12-01";
@@ -48,7 +48,7 @@ export class AzureVirtualMachine {
                     }
                     catch (error) {
                         // Failed to parse JSON
-                        Logging.info(AzureVirtualMachine.TAG, error);
+                        Logger.info(AzureVirtualMachine.TAG, error);
                     }
                     callback(vmInfo);
                 });
@@ -65,7 +65,7 @@ export class AzureVirtualMachine {
                 }
                 else {
                     // Only log when is not determined if VM or not to avoid noise outside of Azure VMs
-                    Logging.info(AzureVirtualMachine.TAG, error);
+                    Logger.info(AzureVirtualMachine.TAG, error);
                 }
                 callback(vmInfo);
             });

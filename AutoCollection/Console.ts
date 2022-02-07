@@ -1,7 +1,7 @@
-import TelemetryClient = require("../Library/TelemetryClient");
+import { TelemetryClient } from "../Library/TelemetryClient";
 import * as DiagChannel from "./diagnostic-channel/initialization";
 
-class AutoCollectConsole {
+export class AutoCollectConsole {
     private _client: TelemetryClient;
 
     constructor(client: TelemetryClient) {
@@ -17,4 +17,3 @@ class AutoCollectConsole {
     }
 }
 
-export = AutoCollectConsole;

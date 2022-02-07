@@ -2,7 +2,7 @@ import * as types from "../applicationinsights"; // needed but unused
 import { StatusLogger } from "./StatusLogger";
 import { DiagnosticLogger } from "./DiagnosticLogger";
 import { NoopLogger } from "./NoopLogger";
-import appInsightsLoader = require("./Default");
+import * as appInsightsLoader from "./Default";
 
 appInsightsLoader.setUsagePrefix("alr_"); // App Services Linux Attach
 

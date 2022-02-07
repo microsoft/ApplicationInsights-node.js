@@ -1,5 +1,5 @@
 import { Telemetry }  from "./Telemetry";
-import http = require("http");
+import http } from "http");
 
 /**
  * Object encapsulating information about the incoming HTTP request

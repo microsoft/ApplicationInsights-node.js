@@ -1,7 +1,7 @@
-var Config = require("./Config");
+var Config } from "./Config");
 var appInsights = null;
 if (Config.AppInsightsEnabled) {
-    appInsights = require("applicationinsights");
+    appInsights } from "applicationinsights");
     appInsights.setup(Config.InstrumentationKey);
     appInsights.defaultClient.config.endpointUrl = Config.EndpointBaseAddress+"/v2.1/track";
     appInsights.defaultClient.config.profileQueryEndpoint = Config.EndpointBaseAddress;
@@ -17,11 +17,11 @@ if (Config.AppInsightsEnabled) {
     appInsights.start();
 }
 
-var Tasks = require("./Tasks");
+var Tasks } from "./Tasks");
 var port = parseInt(Config.ServerPort);
-var bodyParser = require('body-parser');
-var express = require("express");
-var http = require("http");
+var bodyParser } from 'body-parser');
+var express } from "express");
+var http } from "http");
 var app = express();
 app.use(bodyParser.json());
 

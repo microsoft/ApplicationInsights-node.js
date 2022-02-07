@@ -1,5 +1,5 @@
 import { Telemetry }  from "./Telemetry";
-import Contracts = require("../");
+import Contracts } from "../");
 
 /**
  * Trace telemetry reports technical, usually detailed information about the environment, 

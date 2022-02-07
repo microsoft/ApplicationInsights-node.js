@@ -1,7 +1,7 @@
-import TelemetryClient = require("../Library/TelemetryClient");
-import Constants = require("../Declarations/Constants");
-import Context = require("../Library/Context");
-import Logging = require("../Library/Logging");
+import { TelemetryClient } from "../Library/TelemetryClient";
+import * as  Constants from "../Declarations/Constants";
+import { Context } from "../Library/Context";
+import { Logger } from "../Library/Logging/Logger";
 import { IBaseConfig, IDisabledExtendedMetrics } from "../Declarations/Interfaces";
 
 
@@ -29,10 +29,10 @@ export class AutoCollectNativePerformance {
         if (this._metricsAvailable == undefined && isEnabled && !this._isInitialized) {
             // Try to require in the native-metrics library. If it's found initialize it, else do nothing and never try again.
             try {
-                const NativeMetricsEmitters = require("applicationinsights-native-metrics");
+                const NativeMetricsEmitters } from "applicationinsights-native-metrics");
                 this._emitter = new NativeMetricsEmitters();
                 this._metricsAvailable = true;
-                Logging.info("Native metrics module successfully loaded!");
+                Logger.info("Native metrics module successfully loaded!");
             } catch (err) {
                 // Package not available. Never try again
                 this._metricsAvailable = false;

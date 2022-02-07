@@ -1,5 +1,5 @@
-var Utils = require("./Utils");
-var TaskExpectations = require("./TaskExpectations");
+var Utils } from "./Utils");
+var TaskExpectations } from "./TaskExpectations");
 
 module.exports.TestValidation = class TestValidation {
     constructor(ingestion) {
@@ -22,7 +22,7 @@ module.exports.TestValidation = class TestValidation {
     }
 
     validateTest(test, correlationId, silent) {
-        const promise = silent ? Promise.resolve() : Utils.Logging.enterSubunit("Validating test " + test.path + "...");
+        const promise = silent ? Promise.resolve() : Utils.Logger.enterSubunit("Validating test " + test.path + "...");
         let operationId;
         return promise
             .then(() => {
@@ -30,10 +30,10 @@ module.exports.TestValidation = class TestValidation {
                     // Find request telemetry
                     const requestTelemetry = this._findRequestMatchingPath(test.path);
                     if (!requestTelemetry) {
-                        Utils.Logging.error("FAILED EXPECTATION - Could not find request telemetry for test!");
+                        Utils.Logger.error("FAILED EXPECTATION - Could not find request telemetry for test!");
                         return false;
                     } else if (!requestTelemetry.tags["ai.operation.id"]) {
-                        Utils.Logging.error("FAILED EXPECTATION - Could not find operation id in request telemetry!");
+                        Utils.Logger.error("FAILED EXPECTATION - Could not find operation id in request telemetry!");
                         return false;
                     }
 
@@ -76,7 +76,7 @@ module.exports.TestValidation = class TestValidation {
                     }
                     const telemetry = this.ingestion.telemetry;
                     const correlTelemetry = this.ingestion.correlatedTelemetry;
-                    Utils.Logging.error("FAILED EXPECTATION - Could not find expected "+type+" child telemetry for rule "+stepName+"!");
+                    Utils.Logger.error("FAILED EXPECTATION - Could not find expected "+type+" child telemetry for rule "+stepName+"!");
                     return false;
                 };
 
@@ -92,30 +92,30 @@ module.exports.TestValidation = class TestValidation {
 
                 // Did we find all of the items in the data set?
                 if (dataSet.length > 1){
-                    Utils.Logging.error("FAILED EXPECTATION - Unexpected child telemetry item(s)!");
-                    Utils.Logging.error(JSON.stringify(dataSet, null, 2));
+                    Utils.Logger.error("FAILED EXPECTATION - Unexpected child telemetry item(s)!");
+                    Utils.Logger.error(JSON.stringify(dataSet, null, 2));
                     hadFailed = true;
                 }
 
                 // Report test status
                 if (!silent) {
                     if (hadFailed) {
-                        Utils.Logging.error("Test FAILED!");
+                        Utils.Logger.error("Test FAILED!");
                     } else {
-                        Utils.Logging.success("Test PASSED!");
+                        Utils.Logger.success("Test PASSED!");
                     }
                 }
 
                 return !hadFailed;
             })
-            .then((success) => { !silent && Utils.Logging.exitSubunit(); return success; });
+            .then((success) => { !silent && Utils.Logger.exitSubunit(); return success; });
     }
 
     validatePerfCounters(perfTypes, expectedEach) {
         let success = true;
-        return Utils.Logging.enterSubunit("Validating performance counters...")
+        return Utils.Logger.enterSubunit("Validating performance counters...")
             .then(() => {
-                Utils.Logging.info("Expecting "+ expectedEach + " instance(s) each of all " + perfTypes.length + " performance counters");
+                Utils.Logger.info("Expecting "+ expectedEach + " instance(s) each of all " + perfTypes.length + " performance counters");
                 const metricTelemetry = this.ingestion.telemetry["MetricData"];
                 perfTypes.forEach((metricType) => {
                     let count = 0;
@@ -128,20 +128,20 @@ module.exports.TestValidation = class TestValidation {
                         }
                     }
                     if (count < expectedEach) {
-                        Utils.Logging.error("FAILED EXPECTATION - " + metricType + " appeared " + count + "times!");
+                        Utils.Logger.error("FAILED EXPECTATION - " + metricType + " appeared " + count + "times!");
                         success = false;
                     }
                 });
 
                 // Report test status
                 if (success) {
-                    Utils.Logging.success("Test PASSED!");
+                    Utils.Logger.success("Test PASSED!");
                 } else {
-                    Utils.Logging.error("Test FAILED!");
+                    Utils.Logger.error("Test FAILED!");
                 }
 
                 return success;
             })
-            .then((success) => { Utils.Logging.exitSubunit(); return success; });
+            .then((success) => { Utils.Logger.exitSubunit(); return success; });
     }
 }

@@ -1,13 +1,13 @@
-var AISDK = require("./AISDK");
-var Mongo = require("./Mongo");
-var MySQL = require("./MySQL");
-var Bunyan = require("./Bunyan");
-var Winston = require("./Winston");
-var Redis = require("./Redis");
-var Utils = require("./Utils");
-var Postgres = require("./Postgres");
-var AzureSdkStorage = require("./AzureSDKStorage");
-var AzureSdkEventHubs = require("./AzureSdkEventHubs");
+var AISDK } from "./AISDK");
+var Mongo } from "./Mongo");
+var MySQL } from "./MySQL");
+var Bunyan } from "./Bunyan");
+var Winston } from "./Winston");
+var Redis } from "./Redis");
+var Utils } from "./Utils");
+var Postgres } from "./Postgres");
+var AzureSdkStorage } from "./AzureSDKStorage");
+var AzureSdkEventHubs } from "./AzureSdkEventHubs");
 
 module.exports = {
     HttpGet: require("./HttpGet"),

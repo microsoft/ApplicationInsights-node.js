@@ -1,6 +1,6 @@
-import http = require('http');
-import https = require('https');
-import azureCore = require("@azure/core-http");
+import http } from 'http');
+import https } from 'https');
+import azureCore } from "@azure/core-http");
 import { DistributedTracingModes } from "../applicationinsights";
 
 
@@ -103,15 +103,15 @@ export interface IBaseConfig {
     enableResendInterval: number;
     enableMaxBytesOnDisk: number;
     /**
-     * Enables debug and warning logging for AppInsights itself.
-     * if true, enables debug logging
+     * Enables debug and warning Logger for AppInsights itself.
+     * if true, enables debug Logger
      */
-    enableInternalDebugLogging: boolean;
+    enableInternalDebugLogger: boolean;
     /**
-     * Enables debug and warning logging for AppInsights itself.
-     * if true, enables warning logging
+     * Enables debug and warning Logger for AppInsights itself.
+     * if true, enables warning Logger
      */
-    enableInternalWarningLogging: boolean;
+    enableInternalWarningLogger: boolean;
     /**
     * Enables communication with Application Insights Live Metrics.
     * if true, enables communication with the live metrics service

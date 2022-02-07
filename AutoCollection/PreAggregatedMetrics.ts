@@ -1,6 +1,5 @@
-import TelemetryClient = require("../Library/TelemetryClient");
-import Constants = require("../Declarations/Constants");
-
+import { TelemetryClient } from "../Library/TelemetryClient";
+import * as  Constants from "../Declarations/Constants";
 import { AggregatedMetric } from "../Declarations/Metrics/AggregatedMetric";
 import { AggregatedMetricCounter } from "../Declarations/Metrics/AggregatedMetricCounters";
 import {
@@ -28,7 +27,7 @@ const PreAggregatedMetricPropertyNames: { [key in MetricDimensionTypeKeys]: stri
 };
 
 
-class AutoCollectPreAggregatedMetrics {
+export class AutoCollectPreAggregatedMetrics {
 
     private _collectionInterval: number;
     private _client: TelemetryClient;
@@ -277,5 +276,3 @@ class AutoCollectPreAggregatedMetrics {
         this._client.trackMetric(telemetry);
     }
 }
-
-export = AutoCollectPreAggregatedMetrics;

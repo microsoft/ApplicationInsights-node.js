@@ -1,14 +1,14 @@
-import Contracts = require("../Declarations/Contracts")
-import Util = require("./Util")
-import Config = require("./Config");
-import Context = require("./Context");
+import * as Contracts from "../Declarations/Contracts";
+import { Util } from "./Util";
+import { Config } from "./Configuration/Config";
+import { Context } from "./Context";
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
 
 
 /**
  * Manages the logic of creating envelopes from Telemetry objects
  */
-class EnvelopeFactory {
+export class EnvelopeFactory {
     /**
      * Creates envelope ready to be sent by Channel
      * @param telemetry Telemetry data
@@ -386,5 +386,3 @@ class _StackFrame {
         this.sizeInBytes += this.line.toString().length;
     }
 }
-
-export = EnvelopeFactory;

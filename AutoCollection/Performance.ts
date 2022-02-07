@@ -1,9 +1,9 @@
-import os = require("os");
+import os } from "os");
 
-import TelemetryClient = require("../Library/TelemetryClient");
-import Constants = require("../Declarations/Constants");
+import { TelemetryClient } from "../Library/TelemetryClient";
+import * as  Constants from "../Declarations/Constants";
 
-class AutoCollectPerformance {
+export class AutoCollectPerformance {
 
     private _totalRequestCount: number = 0;
     private _totalFailedRequestCount: number = 0;
@@ -303,5 +303,3 @@ class AutoCollectPerformance {
         }
     }
 }
-
-export = AutoCollectPerformance;

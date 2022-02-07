@@ -1,18 +1,19 @@
-import os = require("os");
-import EnvelopeFactory = require("../Library/EnvelopeFactory");
-import Logging = require("../Library/Logging");
-import Sender = require("../Library/Sender");
-import Constants = require("../Declarations/Constants");
-import Contracts = require("../Declarations/Contracts");
-import Vm = require("../Library/AzureVirtualMachine");
-import Config = require("../Library/Config");
-import Context = require("../Library/Context");
-import Network = require("./NetworkStatsbeat");
-import Util = require("../Library/Util");
+import os } from "os");
+
+import { EnvelopeFactory } from "../Library/EnvelopeFactory";
+import { Logger } from "../Library/Logging/Logger";
+import { Sender } from "../Library/Transmission/Sender";
+import * as  Constants from "../Declarations/Constants";
+import * as Contracts from "../Declarations/Contracts";
+import { Vm } from "../Library/AzureVirtualMachine";
+import { Config } from "../Library/Configuration/Config";
+import { Context } from "../Library/Context";
+import { Network } from "./NetworkStatsbeat";
+import { Util } from "../Library/Util";
 
 const STATSBEAT_LANGUAGE = "node";
 
-class Statsbeat {
+export class Statsbeat {
 
     public static CONNECTION_STRING = "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://dc.services.visualstudio.com/";
     public static STATS_COLLECTION_SHORT_INTERVAL: number = 900000; // 15 minutes
@@ -172,7 +173,7 @@ class Statsbeat {
             await this._sendStatsbeats();
         }
         catch (error) {
-            Logging.info(Statsbeat.TAG, "Failed to send Statsbeat metrics: " + Util.dumpObj(error));
+            Logger.info(Statsbeat.TAG, "Failed to send Statsbeat metrics: " + Util.dumpObj(error));
         }
     }
 
@@ -203,7 +204,7 @@ class Statsbeat {
             await this._sendStatsbeats();
         }
         catch (error) {
-            Logging.info(Statsbeat.TAG, "Failed to send Statsbeat metrics: " + Util.dumpObj(error));
+            Logger.info(Statsbeat.TAG, "Failed to send Statsbeat metrics: " + Util.dumpObj(error));
         }
     }
 
@@ -333,5 +334,3 @@ class Statsbeat {
         });
     }
 }
-
-export = Statsbeat;

@@ -78,7 +78,7 @@ class ContextTagKeys {
     public sessionIsFirst: string;
 
     /**
-     * In multi-tenant applications this is the account ID or name which the user is acting with. Examples may be subscription ID for Azure portal or blog name blogging platform.
+     * In multi-tenant applications this is the account ID or name which the user is acting with. Examples may be subscription ID for Azure portal or blog name bLogger platform.
      */
     public userAccountId: string;
 

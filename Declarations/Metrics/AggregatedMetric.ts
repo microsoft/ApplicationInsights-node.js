@@ -1,4 +1,4 @@
-import Constants = require("../Constants");
+import Constants } from "../Constants");
 
 export class AggregatedMetric {
 

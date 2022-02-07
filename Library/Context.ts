@@ -1,12 +1,12 @@
-﻿import os = require("os");
-import fs = require("fs");
-import path = require("path");
+﻿import * as os from "os";
+import * as fs from "fs";
+import * as path from "path";
 
-import Contracts = require("../Declarations/Contracts");
+import * as Contracts from "../Declarations/Contracts";
 import { APPLICATION_INSIGHTS_SDK_VERSION } from "../Declarations/Constants";
-import Logging = require("./Logging");
+import { Logger } from "./Logging/Logger";
 
-class Context {
+export class Context {
 
     public keys: Contracts.ContextTagKeys;
     public tags: { [key: string]: string };
@@ -35,7 +35,7 @@ class Context {
                     Context.appVersion[packageJsonPath] = packageJson.version;
                 }
             } catch (exception) {
-                Logging.info("unable to read app version: ", exception);
+                Logger.info("unable to read app version: ", exception);
             }
         }
 
@@ -58,5 +58,3 @@ class Context {
         this.tags[this.keys.internalSdkVersion] = "node:" + Context.sdkVersion;
     }
 }
-
-export = Context;

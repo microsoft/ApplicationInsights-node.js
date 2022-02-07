@@ -1,17 +1,17 @@
-﻿import http = require("http");
-import https = require("https");
-import url = require("url");
-import constants = require("constants");
+﻿import http } from "http");
+import https } from "https");
+import url } from "url");
+import constants } from "constants");
 
-import Logging = require("./Logging");
-import Config = require("./Config");
-import TelemetryClient = require("../Library/TelemetryClient");
-import RequestResponseHeaders = require("./RequestResponseHeaders");
-import { HttpRequest } from "../Library/Functions";
-import { JsonConfig } from "./JsonConfig";
+import { Logger } from "./Logging/Logger";
+import { Config } from "./Configuration/Config";
+import { TelemetryClient } from "../Library/TelemetryClient";
+import { RequestResponseHeaders } from "../Declarations/RequestResponseHeaders";
+import { HttpRequest } from "../Declarations/Functions";
+import { JsonConfig } from "./Configuration/JsonConfig";
 
 
-class Util {
+export class Util {
     private static _useKeepAlive = !JsonConfig.getInstance().noHttpAgentKeepAlive;
     private static _listenerAttached = false;
 
@@ -210,7 +210,7 @@ class Util {
      */
     public static validateStringMap(obj: any): { [key: string]: string } {
         if (typeof obj !== "object") {
-            Logging.info("Invalid properties dropped from payload");
+            Logger.info("Invalid properties dropped from payload");
             return;
         }
         const map: { [key: string]: string } = {};
@@ -224,7 +224,7 @@ class Util {
             } else if (origProperty === null || propType === "undefined") {
                 property = "";
             } else if (propType === "function") {
-                Logging.info("key: " + field + " was function; will not serialize");
+                Logger.info("key: " + field + " was function; will not serialize");
                 continue;
             } else {
                 const stringTarget = Util.isArray(origProperty) ? origProperty : Util.extractObject(origProperty);
@@ -236,7 +236,7 @@ class Util {
                     }
                 } catch (e) {
                     property = origProperty.constructor.name.toString() + " (Error: " + e.message + ")";
-                    Logging.info("key: " + field + ", could not be serialized");
+                    Logger.info("key: " + field + ", could not be serialized");
                 }
             }
 
@@ -331,7 +331,7 @@ class Util {
                     var proxyUrlParsed = new url.URL(proxyUrl);
                     // https is not supported at the moment
                     if (proxyUrlParsed.protocol === 'https:') {
-                        Logging.info("Proxies that use HTTPS are not supported");
+                        Logger.info("Proxies that use HTTPS are not supported");
                         proxyUrl = undefined;
                     } else {
                         options = {
@@ -347,7 +347,7 @@ class Util {
                     }
                 }
                 catch (err) {
-                    Logging.warn("Wrong proxy URL provided");
+                    Logger.warn("Wrong proxy URL provided");
                 }
             }
         }
@@ -385,7 +385,7 @@ class Util {
             try {
                 header = (correlationHeader as any).toString();
             } catch (err) {
-                Logging.warn("Outgoing request-context header could not be read. Correlation of requests may be lost.", err, correlationHeader);
+                Logger.warn("Outgoing request-context header could not be read. Correlation of requests may be lost.", err, correlationHeader);
             }
         }
 
@@ -399,7 +399,7 @@ class Util {
     }
 
     /**
-     * Returns string representation of an object suitable for diagnostics logging.
+     * Returns string representation of an object suitable for diagnostics Logger.
      */
     public static dumpObj(object: any): string {
         const objectTypeDump: string = Object["prototype"].toString.call(object);
@@ -417,7 +417,7 @@ class Util {
         try {
             return JSON.stringify(payload);
         } catch (error) {
-            Logging.warn("Failed to serialize payload", error, payload);
+            Logger.warn("Failed to serialize payload", error, payload);
         }
     }
 
@@ -443,4 +443,3 @@ class Util {
         }
     }
 }
-export = Util;

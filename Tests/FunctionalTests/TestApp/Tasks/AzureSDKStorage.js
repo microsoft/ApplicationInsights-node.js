@@ -1,5 +1,5 @@
 try {
-    var storage = require("@azure/storage-blob");
+    var storage } from "@azure/storage-blob");
 
     const containerName = "newcontainer";
     const client = new storage.BlobServiceClient("https://not-a-real-account.blob.core.windows.net");

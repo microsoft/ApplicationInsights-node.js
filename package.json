@@ -32,10 +32,10 @@
     "prepare": "npm run build:compile",
     "prepublishOnly": "npm run build",
     "pretest": "npm run build",
-    "test": "npm run test:ts && npm run test:js",
+    "test": "npm run test:unit && npm run test:e2e",
     "test:debug": "mocha ./out/Tests --inspect-brk --recursive --no-exit",
-    "test:ts": "mocha ./out/Tests --recursive --exit",
-    "test:js": "mocha ./Tests/js --recursive --exit",
+    "test:unit": "mocha ./out/Tests/UnitTests --recursive --exit",
+    "test:e2e": "mocha ./Tests//EndToEnd --recursive --exit",
     "functionaltest": "npm run build && npm pack && node --use_strict ./Tests/FunctionalTests/RunFunctionalTests.js",
     "backcompattest": "npm run build && npm pack && node --use_strict ./Tests/BackCompatibility/RunBackCompatTests.js"
   },
@@ -43,7 +43,6 @@
     "node": ">=8.0.0"
   },
   "devDependencies": {
-    "@types/cls-hooked": "^4.3.3",
     "@types/mocha": "^7.0.2",
     "@types/node": "^8.0.0",
     "@types/sinon": "2.1.2",
@@ -60,8 +59,6 @@
     "@opentelemetry/core": "^1.0.1",
     "@opentelemetry/sdk-trace-base": "^1.0.1",
     "@opentelemetry/semantic-conventions": "^1.0.1",
-    "cls-hooked": "^4.2.2",
-    "continuation-local-storage": "^3.2.1",
     "diagnostic-channel": "1.1.0",
     "diagnostic-channel-publishers": "1.0.4"
   },

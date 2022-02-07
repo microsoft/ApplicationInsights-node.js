@@ -1,11 +1,11 @@
-import azureCore = require("@azure/core-http");
+import azureCore } from "@azure/core-http");
 
 import * as types from "../applicationinsights";
 import * as Helpers from "./Helpers";
-import Constants = require("../Declarations/Constants");
+import * as  Constants from "../Declarations/Constants";
 import { StatusLogger, StatusContract } from "./StatusLogger";
 import { DiagnosticLogger } from "./DiagnosticLogger";
-import { JsonConfig } from "../Library/JsonConfig";
+import { JsonConfig } from "../Library/Configuration/JsonConfig";
 
 // Private configuration vars
 let _appInsights: typeof types | null;
@@ -71,7 +71,7 @@ export function setupAndStart(setupString = _setupString, aadTokenCredential?: a
     }
 
     try {
-        _appInsights = require("../applicationinsights");
+        _appInsights } from "../applicationinsights");
         if (_appInsights.defaultClient) {
             // setupAndStart was already called, return the result
             _logger.logError("Setup was attempted on the Application Insights Client multiple times. Aborting and returning the first client instance");
@@ -108,7 +108,7 @@ export function setupAndStart(setupString = _setupString, aadTokenCredential?: a
             _logger.logMessage("Using AAD Token Credential");
             _appInsights.defaultClient.config.aadTokenCredential = aadTokenCredential;
         }
-        
+
         _appInsights.start();
         // Add attach flag in Statsbeat
         let statsbeat = _appInsights.defaultClient.getStatsbeat();

@@ -5,14 +5,14 @@
 // This is to avoid requiring the actual module if the NO_DIAGNOSTIC_CHANNEL env is present
 import * as DiagChannelPublishers from "diagnostic-channel-publishers";
 import * as DiagChannel from "diagnostic-channel";
-import Logging = require("../../Library/Logging");
-import { JsonConfig } from "../../Library/JsonConfig";
+import Logger } from "../../Library/Logging/Logger");
+import { JsonConfig } from "../../Library/Configuration/JsonConfig";
 
 export const IsInitialized = !JsonConfig.getInstance().noDiagnosticChannel;
 const TAG = "DiagnosticChannel";
 
 if (IsInitialized) {
-    const publishers: typeof DiagChannelPublishers = require("diagnostic-channel-publishers");
+    const publishers: typeof DiagChannelPublishers } from "diagnostic-channel-publishers");
     const individualOptOuts: string = JsonConfig.getInstance().noPatchModules;
     const unpatchedModules = individualOptOuts.split(",");
     const modules: { [key: string]: any } = {
@@ -30,14 +30,14 @@ if (IsInitialized) {
     for (const mod in modules) {
         if (unpatchedModules.indexOf(mod) === -1) {
             modules[mod].enable();
-            Logging.info(TAG, `Subscribed to ${mod} events`);
+            Logger.info(TAG, `Subscribed to ${mod} events`);
         }
     }
     if (unpatchedModules.length > 0) {
-        Logging.info(TAG, "Some modules will not be patched", unpatchedModules);
+        Logger.info(TAG, "Some modules will not be patched", unpatchedModules);
     }
 } else {
-    Logging.info(TAG, "Not subscribing to dependency auto collection because APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL was set");
+    Logger.info(TAG, "Not subscribing to dependency auto collection because APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL was set");
 }
 
 export function registerContextPreservation(cb: (cb: Function) => Function) {

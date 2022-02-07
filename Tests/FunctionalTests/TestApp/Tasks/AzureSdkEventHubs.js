@@ -1,5 +1,5 @@
 try {
-    var eventhubs = require("@azure/event-hubs");
+    var eventhubs } from "@azure/event-hubs");
 
     const connectionString = "Endpoint=sb://my-servicebus-namespace.servicebus.windows.net/;SharedAccessKeyName=my-SA-name;SharedAccessKey=my-SA-key;";
     const eventHubName = "my-event-hub"

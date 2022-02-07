@@ -1,6 +1,6 @@
 import { Telemetry }  from "./Telemetry";
-import http = require("http");
-import https = require("https");
+import http } from "http");
+import https } from "https");
 
 /**
  * Object encapsulating information about the outgoing request

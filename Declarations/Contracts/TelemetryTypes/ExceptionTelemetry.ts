@@ -1,5 +1,5 @@
 import { Telemetry }  from "./Telemetry";
-import Contracts = require("../");
+import Contracts } from "../");
 
 /**
  * Telemetry about the exception thrown by the application

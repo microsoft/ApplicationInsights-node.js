@@ -1,4 +1,4 @@
-import Contracts = require("./Contracts")
+import Contracts } from "./Contracts")
 
 export const APPLICATION_INSIGHTS_SDK_VERSION = "3.0.0-preview.0";
 export const DEFAULT_BREEZE_ENDPOINT = "https://dc.services.visualstudio.com";

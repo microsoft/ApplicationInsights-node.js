@@ -1,8 +1,8 @@
 // A simple ingestion server to test AI SDK without mocking
-var http = require("http");
-var zlib = require("zlib");
-var Config = require("./Config");
-var TestValidation = require("./TestValidation").TestValidation;
+var http } from "http");
+var zlib } from "zlib");
+var Config } from "./Config");
+var TestValidation } from "./TestValidation").TestValidation;
 
 var _APPID = "DUMMYAPPID";
 var _IKEY = "TESTIKEY";
