@@ -25,4 +25,5 @@ jobs:
     - run: npm ci
     - run: npm run build --if-present
     - run: npm run lint
+    - run: if [[ ${{ matrix.node-version }} == 14 ]]; then npm run lint; fi;
     - run: npm test
