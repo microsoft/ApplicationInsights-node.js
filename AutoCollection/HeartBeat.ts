@@ -1,6 +1,6 @@
-import os } from "os");
+import * as  os from "os";
 
-import { Vm } from "../Library/AzureVirtualMachine";
+import { AzureVirtualMachine } from "../Library/AzureVirtualMachine";
 import { TelemetryClient } from "../Library/TelemetryClient";
 import * as  Constants from "../Declarations/Constants";
 import { Config } from "../Library/Configuration/Config";
@@ -45,7 +45,7 @@ export class HeartBeat {
         } else if (config) {
             if (this._isVM === undefined) {
                 waiting = true;
-                Vm.AzureVirtualMachine.getAzureComputeMetadata(config, (vmInfo) => {
+                AzureVirtualMachine.getAzureComputeMetadata(config, (vmInfo) => {
                     this._isVM = vmInfo.isVM;
                     if (this._isVM) {
                         properties["azInst_vmId"] = vmInfo.id;

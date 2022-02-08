@@ -8,6 +8,7 @@ import { Channel } from "./Channel";
 import { azureRoleEnvironmentTelemetryProcessor } from "./TelemetryProcessors/AzureRoleEnvironmentTelemetryInitializer";
 import { performanceMetricsTelemetryProcessor } from "./TelemetryProcessors/PerformanceMetricsTelemetryProcessor";
 import { preAggregatedMetricsTelemetryProcessor } from "./TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor";
+import { samplingTelemetryProcessor } from "./TelemetryProcessors/SamplingTelemetryProcessor";
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
 import { AutoCollector } from "../AutoCollection/AutoCollector";
 import { Statsbeat } from "../AutoCollection/Statsbeat";
@@ -44,7 +45,7 @@ export class TelemetryClient {
     constructor(setupString?: string) {
         var config = new Config(setupString);
         this.config = config;
-        this.autoCollector = new AutoCollector();
+        this.autoCollector = new AutoCollector(this);
         this.context = new Context();
         this.commonProperties = {};
         this.authorizationHandler = null;
@@ -95,7 +96,7 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackException(telemetry: Contracts.ExceptionTelemetry): void {
-        if (telemetry && telemetry.exception && !Util.isError(telemetry.exception)) {
+        if (telemetry && telemetry.exception && !Util.getInstance().isError(telemetry.exception)) {
             telemetry.exception = new Error(telemetry.exception.toString());
         }
         this.track(telemetry, Contracts.TelemetryType.Exception);
@@ -173,7 +174,7 @@ export class TelemetryClient {
 
             // Ideally we would have a central place for "internal" telemetry processors and users can configure which ones are in use.
             // This will do for now. Otherwise clearTelemetryProcessors() would be problematic.
-            accepted = accepted && TelemetryProcessors.samplingTelemetryProcessor(envelope, { correlationContext: CorrelationContextManager.getCurrentContext() });
+            accepted = accepted && samplingTelemetryProcessor(envelope, { correlationContext: CorrelationContextManager.getCurrentContext() });
             preAggregatedMetricsTelemetryProcessor(envelope, this);
             if (accepted) {
                 performanceMetricsTelemetryProcessor(envelope, this);
@@ -234,7 +235,7 @@ export class TelemetryClient {
         }
 
         contextObjects = contextObjects || {};
-        contextObjects['correlationContext'] = CorrelationContextManager.getCurrentContext();
+        contextObjects["correlationContext"] = CorrelationContextManager.getCurrentContext();
 
         for (var i = 0; i < telemetryProcessorsCount; ++i) {
             try {
@@ -255,10 +256,10 @@ export class TelemetryClient {
         // Sanitize tags and properties after running telemetry processors
         if (accepted) {
             if (envelope && envelope.tags) {
-                envelope.tags = Util.validateStringMap(envelope.tags) as Tags & Tags[];
+                envelope.tags = Util.getInstance().validateStringMap(envelope.tags) as Tags & Tags[];
             }
             if (envelope && envelope.data && envelope.data.baseData && envelope.data.baseData.properties) {
-                envelope.data.baseData.properties = Util.validateStringMap(envelope.data.baseData.properties);
+                envelope.data.baseData.properties = Util.getInstance().validateStringMap(envelope.data.baseData.properties);
             }
         }
 

@@ -3,7 +3,7 @@ import * as sinon from "sinon";
 import { channel } from "diagnostic-channel";
 import { console } from "diagnostic-channel-publishers";
 
-import AppInsights } from "../../../applicationinsights");
+import * as AppInsights from "../../../applicationinsights";
 import { enable, dispose as disable } from "../../../AutoCollection/diagnostic-channel/console.sub";
 
 
@@ -14,7 +14,7 @@ describe("AutoCollection/Console", () => {
     describe("#init and #dispose()", () => {
         it("init should enable and dispose should stop console auto collection", () => {
 
-            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setAutoCollectConsole(true);   
+            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setAutoCollectConsole(true);
             var enableConsoleRequestsSpy = sinon.spy(AppInsights.defaultClient.autoCollector["_console"], "enable");
             appInsights.start();
 

@@ -40,7 +40,7 @@ describe("Library/EnvelopeFactory", () => {
 
         it("should allow tags to be overwritten", () => {
 
-            var client = new Client("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            var client = new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             var env = EnvelopeFactory.createEnvelope(<Contracts.EventTelemetry>{ name: "name" }, Contracts.TelemetryType.Event, commonproperties, client.context, client.config);
             assert.deepEqual(env.tags, client.context.tags, "tags are set by default");
             var customTag = <{ [id: string]: string }>{ "ai.cloud.roleInstance": "override" };
@@ -59,7 +59,7 @@ describe("Library/EnvelopeFactory", () => {
         });
 
         it("should sanitize properties", () => {
-            var client1 = new Client("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            var client1 = new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             let commonProps = {
                 "commonProperty": 123,
             };
@@ -223,7 +223,7 @@ describe("Library/EnvelopeFactory", () => {
             assert.deepEqual(data.baseData.runLocation, availabilityTelemetry.runLocation);
             assert.deepEqual(data.baseData.name, availabilityTelemetry.name);
             assert.deepEqual(data.baseData.properties, availabilityTelemetry.properties);
-            assert.deepEqual(data.baseData.duration, Util.msToTimeSpan(availabilityTelemetry.duration));
+            assert.deepEqual(data.baseData.duration, Util.getInstance().msToTimeSpan(availabilityTelemetry.duration));
 
         });
     });
@@ -252,7 +252,7 @@ describe("Library/EnvelopeFactory", () => {
             assert.deepEqual(data.baseData.measurements, pageViewTelemetry.measurements);
             assert.deepEqual(data.baseData.name, pageViewTelemetry.name);
             assert.deepEqual(data.baseData.properties, pageViewTelemetry.properties);
-            assert.deepEqual(data.baseData.duration, Util.msToTimeSpan(pageViewTelemetry.duration));
+            assert.deepEqual(data.baseData.duration, Util.getInstance().msToTimeSpan(pageViewTelemetry.duration));
 
         });
     });

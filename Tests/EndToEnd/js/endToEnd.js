@@ -1,16 +1,16 @@
-const assert } from 'assert');
-const https } from 'https');
-const sinon } from 'sinon');
+const assert = require('assert');
+const https = require('https');
+const sinon = require('sinon');
 
 // Special embedded test cases for testing if app can close
 if (process.argv.indexOf('embeddedTestCase-AppTerminates1') > -1) {
-    var appInsights } from '../../../out/applicationinsights');
+    var appInsights = require('../../../out/applicationinsights');
     appInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
     appInsights.defaultClient.config.httpsAgent = new https.Agent({ keepAlive: false });
     appInsights.start();
     return;
 } else if (process.argv.indexOf('embeddedTestCase-AppTerminates2') > -1) {
-    var appInsights } from '../../../out/applicationinsights');
+    var appInsights = require('../../../out/applicationinsights');
     appInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
     appInsights.defaultClient.config.httpsAgent = new https.Agent({ keepAlive: false });
     appInsights.start();
@@ -33,7 +33,7 @@ describe('module', function () {
         }
         it('does not prevent the app from terminating if started', function (done) {
             this.timeout(5000);
-            var testCase } from 'child_process').fork(__filename, ['embeddedTestCase-AppTerminates1']);
+            var testCase = require('child_process').fork(__filename, ['embeddedTestCase-AppTerminates1']);
             var timer = setTimeout(function () {
                 assert(false, "App failed to terminate!");
                 testCase.kill();
@@ -47,7 +47,7 @@ describe('module', function () {
         });
         it('does not prevent the app from terminating if started and called track and flush', function (done) {
             this.timeout(10000);
-            var testCase } from 'child_process').fork(__filename, ['embeddedTestCase-AppTerminates2']);
+            var testCase = require('child_process').fork(__filename, ['embeddedTestCase-AppTerminates2']);
             var timer = setTimeout(function () {
                 assert(false, "App failed to terminate!");
                 testCase.kill();
@@ -57,23 +57,6 @@ describe('module', function () {
                 clearTimeout(timer);
                 done();
             });
-        });
-    });
-
-    describe('rejected promises', function () {
-        it('should not crash on rejected promises containing no callstack', function () {
-            var appInsights } from '../../../out/applicationinsights');
-            appInsights.setup('1aa11111-bbbb-1ccc-8ddd-eeeeffff3333');
-            appInsights.defaultClient.config.httpsAgent = new https.Agent({ keepAlive: false });
-            appInsights.start();
-            assert.ok(appInsights.defaultClient);
-            assert.doesNotThrow(function () {
-                if (typeof Promise !== 'undefined') {
-                    Promise.reject();
-                }
-            });
-            appInsights.defaultClient.flush();
-            appInsights.dispose();
         });
     });
 
@@ -107,7 +90,7 @@ describe('module', function () {
         });
 
         it('should crash on uncaught exceptions', function () {
-            var appInsights } from '../../../out/applicationinsights');
+            var appInsights = require('../../../out/applicationinsights');
             appInsights.setup('1aa11111-bbbb-1ccc-8ddd-eeeeffff3333').setAutoCollectExceptions(true);
             appInsights.defaultClient.config.httpsAgent = new https.Agent({ keepAlive: false });
             appInsights.start();
@@ -127,7 +110,7 @@ describe('module', function () {
         });
 
         it('should not crash on uncaught exceptions if multiple handlers exist', function () {
-            var appInsights } from '../../../out/applicationinsights');
+            var appInsights = require('../../../out/applicationinsights');
             appInsights.setup('1aa11111-bbbb-1ccc-8ddd-eeeeffff3333').setAutoCollectExceptions(true);
             appInsights.defaultClient.config.httpsAgent = new https.Agent({ keepAlive: false });
             appInsights.start();

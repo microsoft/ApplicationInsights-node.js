@@ -1,8 +1,8 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
 
-import AppInsights } from "../../../applicationinsights");
-import TelemetryClient } from "../../../Library/TelemetryClient");
+import * as AppInsights from "../../../applicationinsights";
+import { TelemetryClient } from "../../../Library/TelemetryClient";
 import { AutoCollectNativePerformance } from "../../../AutoCollection/NativePerformance";
 import { JsonConfig } from "../../../Library/Configuration/JsonConfig";
 
@@ -46,6 +46,10 @@ describe("AutoCollection/NativePerformance", () => {
             var client = new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             var sinonSpy = sandbox.spy(global, "setInterval");
             var native = new AutoCollectNativePerformance(client);
+            native["_metricsAvailable"] = true;
+            native["_emitter"] = {
+                enable: () => { }
+            };
 
             assert.ok(native);
             assert.doesNotThrow(() => native.enable(true), "Does not throw when trying to enable");

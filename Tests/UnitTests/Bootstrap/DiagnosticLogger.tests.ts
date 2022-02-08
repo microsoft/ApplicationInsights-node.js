@@ -20,7 +20,7 @@ class TestWriter implements AgentLogger {
 describe("DiagnosticLogger", () => {
     const logger = new DiagnosticLogger(new NoopLogger());
     const stub = sinon.stub(logger["_writer"], "log");
-    const version } from "../../../../package.json").version;
+    const version = require("../../../../package.json").version;
 
     afterEach(() => {
         stub.reset();

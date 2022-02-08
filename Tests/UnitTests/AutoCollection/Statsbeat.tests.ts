@@ -1,12 +1,12 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
-import nock } from "nock");
+import * as nock from "nock";
 
-import AppInsights } from "../../../applicationinsights");
-import Statsbeat } from "../../../AutoCollection/Statsbeat");
-import Constants } from "../../../Declarations/Constants");
-import TelemetryClient } from "../../../Library/TelemetryClient");
-import Config } from "../../../Library/Configuration/Config");
+import * as AppInsights from "../../../applicationinsights";
+import { Statsbeat } from "../../../AutoCollection/Statsbeat";
+import * as Constants from "../../../Declarations/Constants";
+import { TelemetryClient } from "../../../Library/TelemetryClient";
+import { Config } from "../../../Library/Configuration/Config";
 
 describe("AutoCollection/Statsbeat", () => {
     var sandbox: sinon.SinonSandbox;

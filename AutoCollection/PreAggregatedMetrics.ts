@@ -23,7 +23,7 @@ const PreAggregatedMetricPropertyNames: { [key in MetricDimensionTypeKeys]: stri
     dependencyTarget: "dependency/target",
     dependencySuccess: "Dependency.Success",
     dependencyResultCode: "dependency/resultCode",
-    traceSeverityLevel: "trace/severityLevel",
+    traceSeverityLevel: "trace/severityLevel"
 };
 
 
@@ -94,10 +94,10 @@ export class AutoCollectPreAggregatedMetrics {
         }
         let durationMs: number;
         let counter: AggregatedMetricCounter = this._getAggregatedCounter(dimensions, this._requestCountersCollection);
-        if (typeof duration === 'string') {
+        if (typeof duration === "string") {
             // dependency duration is passed in as "00:00:00.123" by auto collectors
-            durationMs = +new Date('1970-01-01T' + duration + 'Z'); // convert to num ms, returns NaN if wrong
-        } else if (typeof duration === 'number') {
+            durationMs = +new Date("1970-01-01T" + duration + "Z"); // convert to num ms, returns NaN if wrong
+        } else if (typeof duration === "number") {
             durationMs = duration;
         } else {
             return;
@@ -112,10 +112,10 @@ export class AutoCollectPreAggregatedMetrics {
         }
         let counter: AggregatedMetricCounter = this._getAggregatedCounter(dimensions, this._dependencyCountersCollection);
         let durationMs: number;
-        if (typeof duration === 'string') {
+        if (typeof duration === "string") {
             // dependency duration is passed in as "00:00:00.123" by auto collectors
-            durationMs = +new Date('1970-01-01T' + duration + 'Z'); // convert to num ms, returns NaN if wrong
-        } else if (typeof duration === 'number') {
+            durationMs = +new Date("1970-01-01T" + duration + "Z"); // convert to num ms, returns NaN if wrong
+        } else if (typeof duration === "number") {
             durationMs = duration;
         } else {
             return;
@@ -176,7 +176,7 @@ export class AutoCollectPreAggregatedMetrics {
                     value: averageRequestExecutionTime,
                     count: intervalRequests,
                     aggregationInterval: elapsedMs,
-                    metricType: Constants.MetricId.REQUESTS_DURATION,
+                    metricType: Constants.MetricId.REQUESTS_DURATION
                 });
             }
             // Set last counters
@@ -200,7 +200,7 @@ export class AutoCollectPreAggregatedMetrics {
                     value: averageDependencyExecutionTime,
                     count: intervalDependencies,
                     aggregationInterval: elapsedMs,
-                    metricType: Constants.MetricId.DEPENDENCIES_DURATION,
+                    metricType: Constants.MetricId.DEPENDENCIES_DURATION
                 });
             }
             // Set last counters
@@ -222,7 +222,7 @@ export class AutoCollectPreAggregatedMetrics {
                     value: intervalExceptions,
                     count: intervalExceptions,
                     aggregationInterval: elapsedMs,
-                    metricType: Constants.MetricId.EXCEPTIONS_COUNT,
+                    metricType: Constants.MetricId.EXCEPTIONS_COUNT
                 });
             }
             // Set last counters
@@ -244,7 +244,7 @@ export class AutoCollectPreAggregatedMetrics {
                     value: intervalTraces,
                     count: intervalTraces,
                     aggregationInterval: elapsedMs,
-                    metricType: Constants.MetricId.TRACES_COUNT,
+                    metricType: Constants.MetricId.TRACES_COUNT
                 });
             }
             // Set last counters
@@ -263,7 +263,7 @@ export class AutoCollectPreAggregatedMetrics {
             ...metricProperties,
             "_MS.MetricId": metric.metricType,
             "_MS.AggregationIntervalMs": String(metric.aggregationInterval),
-            "_MS.IsAutocollected": "True",
+            "_MS.IsAutocollected": "True"
         };
 
         let telemetry: Contracts.MetricTelemetry = {
@@ -271,7 +271,7 @@ export class AutoCollectPreAggregatedMetrics {
             value: metric.value,
             count: metric.count,
             properties: metricProperties,
-            kind: "Aggregation",
+            kind: "Aggregation"
         };
         this._client.trackMetric(telemetry);
     }

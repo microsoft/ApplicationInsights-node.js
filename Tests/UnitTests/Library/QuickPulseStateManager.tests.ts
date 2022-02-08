@@ -1,6 +1,5 @@
 import * as assert from "assert";
 import * as https from "https";
-import { IncomingMessage } from "http";
 import * as sinon from "sinon";
 
 import { QuickPulseStateManager } from "../../../Library/QuickPulse/QuickPulseStateManager";
@@ -11,7 +10,7 @@ import { QuickPulseSender } from "../../../Library/QuickPulse/QuickPulseSender";
 import { Util } from "../../../Library/Util";
 
 describe("Library/QuickPulseStateManager", () => {
-    Util.tlsRestrictedAgent = new https.Agent();
+    Util.getInstance().tlsRestrictedAgent = new https.Agent();
 
     describe("#constructor", () => {
         let qps;
@@ -48,134 +47,7 @@ describe("Library/QuickPulseStateManager", () => {
         });
     });
 
-    describe("#enable", () => {
-        let qps: QuickPulseStateManager;
-
-        beforeEach(() => {
-            qps = new QuickPulseStateManager(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
-        })
-        afterEach(() => {
-            qps = null;
-        });
-        it("should call _goQuickPulse() when isEnabled == true", () => {
-            const qpsStub = sinon.stub(qps, "_goQuickPulse");
-
-            assert.ok(qpsStub.notCalled);
-            qps.enable(true);
-            assert.ok(qpsStub.calledOnce);
-            assert.equal(qps["_isEnabled"], true);
-
-            qpsStub.restore();
-        });
-
-        it("should clear timeout handle when isEnabled == false", () => {
-            assert.equal(qps["_handle"], undefined);
-            qps["_isEnabled"] = true;
-            (<any>qps["_handle"]) = setTimeout(() => { throw new Error("this error should be cancelled") }, 1000);
-            <any>qps["_handle"].unref();
-            assert.ok(qps["_handle"]);
-
-            qps.enable(false);
-            assert.equal(qps["_handle"], undefined);
-            assert.equal(qps["_isEnabled"], false);
-        })
-    });
-
-    describe("#reset", () => {
-        it("should reset metric and document buffers", () => {
-            let qps = new QuickPulseStateManager(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
-            (<any>qps["_metrics"]) = { foo: "bar" };
-            (<any>qps["_documents"]) = [{ foo: "bar" }];
-
-            assert.ok(qps["_metrics"].foo);
-            assert.ok(qps["_documents"].length > 0)
-            assert.ok((<any>qps["_documents"][0]).foo);
-
-            qps["_resetQuickPulseBuffer"]();
-            assert.ok(!qps["_metrics"].foo);
-            assert.ok(qps["_documents"].length === 0)
-        })
-    });
-
-    describe("#_goQuickPulse", () => {
-        let qps: QuickPulseStateManager;
-        let postStub: sinon.SinonStub;
-        let pingStub: sinon.SinonStub;
-
-        beforeEach(() => {
-            qps = new QuickPulseStateManager(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
-            postStub = sinon.stub(qps, "_post");
-            pingStub = sinon.stub(qps, "_ping");
-        })
-        afterEach(() => {
-            qps = null;
-            postStub.restore();
-            pingStub.restore();
-        });
-
-        it("should call _ping when not collecting data", () => {
-            qps.enable(true)
-
-            assert.ok(pingStub.calledOnce);
-            assert.ok(postStub.notCalled);
-
-            qps.enable(false);
-        });
-
-        it("should call _post when collecting data", () => {
-            assert.ok(pingStub.notCalled);
-            assert.ok(postStub.notCalled);
-
-            qps["_isCollectingData"] = true;
-            qps.enable(true)
-
-            assert.ok(postStub.calledOnce);
-            assert.ok(pingStub.notCalled);
-
-            qps.enable(false);
-        });
-    });
-
-    describe("#_goQuickPulsePingPollingHint", () => {
-        let qps: QuickPulseStateManager;
-        let postStub: sinon.SinonStub;
-        let pingStub: sinon.SinonStub;
-        let clock: sinon.SinonFakeTimers;
-
-        beforeEach(() => {
-            clock = sinon.useFakeTimers();
-            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
-            postStub = sinon.stub(qps, "_post");
-            pingStub = sinon.stub(qps, "_ping");
-        })
-        afterEach(() => {
-            qps = null;
-            postStub.restore();
-            pingStub.restore();
-            clock.restore();
-        });
-
-        it("should call _ping at once every 5000ms when no pollingIntervalHint is set", () => {
-            qps.enable(true);
-
-            clock.tick(10000);
-            assert.equal(pingStub.callCount, 3);
-            assert.ok(postStub.notCalled);
-            qps.enable(false);
-        });
-
-
-        it("should call _ping at a rate according to interval hint", () => {
-            qps["_pollingIntervalHint"] = 1000;
-            qps.enable(true);
-
-            clock.tick(10000);
-            assert.equal(pingStub.callCount, 11);
-            assert.ok(postStub.notCalled);
-            qps.enable(false);
-        });
-    });
-
+  
     describe("#_goQuickPulsePingWithAllHeaders", () => {
         let qps: QuickPulseStateManager;
         let submitDataStub: sinon.SinonStub;
@@ -245,7 +117,7 @@ describe("Library/QuickPulseStateManager", () => {
 
         it("should call _quickPulseDone and set the _rediectedHost and pollingIntervalHint", () => {
 
-            qps['_quickPulseDone'](true, { statusCode: 200 } as IncomingMessage, 'www.example.com', 2000);
+            qps['_quickPulseDone'](true, { statusCode: 200 } as any, 'www.example.com', 2000);
 
             assert.equal(qps['_redirectedHost'], 'www.example.com');
             assert.equal(qps['_pollingIntervalHint'], 2000);
@@ -256,12 +128,12 @@ describe("Library/QuickPulseStateManager", () => {
         it("should call _quickPulseDone and not set the _rediectedHost and pollingIntervalHint if the arguments are null", () => {
             qps['_pollingIntervalHint'] = 2000;
             qps['_redirectedHost'] = 'www.example.com';
-            qps['_quickPulseDone'](true, { statusCode: 200 } as IncomingMessage, null, 0);
+            qps['_quickPulseDone'](true, { statusCode: 200 } as any, null, 0);
 
             assert.equal(qps['_redirectedHost'], 'www.example.com');
             assert.equal(qps['_pollingIntervalHint'], 2000);
 
-            qps['_quickPulseDone'](true, { statusCode: 200 } as IncomingMessage, 'www.quickpulse.com', 5000);
+            qps['_quickPulseDone'](true, { statusCode: 200 } as any, 'www.quickpulse.com', 5000);
 
             assert.equal(qps['_redirectedHost'], 'www.quickpulse.com');
             assert.equal(qps['_pollingIntervalHint'], 5000);

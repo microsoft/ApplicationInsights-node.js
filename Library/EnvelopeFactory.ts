@@ -69,7 +69,7 @@ export class EnvelopeFactory {
                 }
                 if (data.baseData.properties) {
                     // sanitize properties
-                    data.baseData.properties = Util.validateStringMap(data.baseData.properties);
+                    data.baseData.properties = Util.getInstance().validateStringMap(data.baseData.properties);
                 }
             }
         }
@@ -117,21 +117,21 @@ export class EnvelopeFactory {
     private static createDependencyData(telemetry: Contracts.DependencyTelemetry & Contracts.Identified): Contracts.Data<Contracts.RemoteDependencyData> {
         var remoteDependency = new Contracts.RemoteDependencyData();
         if (typeof telemetry.name === "string") {
-            remoteDependency.name = telemetry.name.length > 1024 ? telemetry.name.slice(0, 1021) + '...' : telemetry.name;
+            remoteDependency.name = telemetry.name.length > 1024 ? telemetry.name.slice(0, 1021) + "..." : telemetry.name;
         }
         remoteDependency.data = telemetry.data;
         remoteDependency.target = telemetry.target;
-        remoteDependency.duration = Util.msToTimeSpan(telemetry.duration);
+        remoteDependency.duration = Util.getInstance().msToTimeSpan(telemetry.duration);
         remoteDependency.success = telemetry.success;
         remoteDependency.type = telemetry.dependencyTypeName;
         remoteDependency.properties = telemetry.properties;
-        remoteDependency.resultCode = (telemetry.resultCode ? telemetry.resultCode + '' : '');
+        remoteDependency.resultCode = (telemetry.resultCode ? telemetry.resultCode + "" : "");
 
         if (telemetry.id) {
             remoteDependency.id = telemetry.id;
         }
         else {
-            remoteDependency.id = Util.w3cTraceId();
+            remoteDependency.id = Util.getInstance().w3cTraceId();
         }
 
         var data = new Contracts.Data<Contracts.RemoteDependencyData>();
@@ -168,7 +168,7 @@ export class EnvelopeFactory {
         exceptionDetails.message = telemetry.exception.message;
         exceptionDetails.typeName = telemetry.exception.name;
         exceptionDetails.parsedStack = this.parseStack(stack);
-        exceptionDetails.hasFullStack = Util.isArray(exceptionDetails.parsedStack) && exceptionDetails.parsedStack.length > 0;
+        exceptionDetails.hasFullStack = Util.getInstance().isArray(exceptionDetails.parsedStack) && exceptionDetails.parsedStack.length > 0;
         exception.exceptions.push(exceptionDetails);
 
         var data = new Contracts.Data<Contracts.ExceptionData>();
@@ -183,13 +183,13 @@ export class EnvelopeFactory {
             requestData.id = telemetry.id;
         }
         else {
-            requestData.id = Util.w3cTraceId();
+            requestData.id = Util.getInstance().w3cTraceId();
         }
         requestData.name = telemetry.name;
         requestData.url = telemetry.url;
         requestData.source = telemetry.source;
-        requestData.duration = Util.msToTimeSpan(telemetry.duration);
-        requestData.responseCode = (telemetry.resultCode ? telemetry.resultCode + '' : '');
+        requestData.duration = Util.getInstance().msToTimeSpan(telemetry.duration);
+        requestData.responseCode = (telemetry.resultCode ? telemetry.resultCode + "" : "");
         requestData.success = telemetry.success
         requestData.properties = telemetry.properties;
         requestData.measurements = telemetry.measurements;
@@ -225,17 +225,17 @@ export class EnvelopeFactory {
     }
 
     private static createAvailabilityData(
-        telemetry: Contracts.AvailabilityTelemetry & Contracts.Identified,
+        telemetry: Contracts.AvailabilityTelemetry & Contracts.Identified
     ): Contracts.Data<Contracts.AvailabilityData> {
         let availabilityData = new Contracts.AvailabilityData();
 
         if (telemetry.id) {
             availabilityData.id = telemetry.id;
         } else {
-            availabilityData.id = Util.w3cTraceId();
+            availabilityData.id = Util.getInstance().w3cTraceId();
         }
         availabilityData.name = telemetry.name;
-        availabilityData.duration = Util.msToTimeSpan(telemetry.duration);
+        availabilityData.duration = Util.getInstance().msToTimeSpan(telemetry.duration);
         availabilityData.success = telemetry.success;
         availabilityData.runLocation = telemetry.runLocation;
         availabilityData.message = telemetry.message;
@@ -250,12 +250,12 @@ export class EnvelopeFactory {
     }
 
     private static createPageViewData(
-        telemetry: Contracts.PageViewTelemetry & Contracts.Identified,
+        telemetry: Contracts.PageViewTelemetry & Contracts.Identified
     ): Contracts.Data<Contracts.PageViewData> {
         let pageViewData = new Contracts.PageViewData();
 
         pageViewData.name = telemetry.name;
-        pageViewData.duration = Util.msToTimeSpan(telemetry.duration);
+        pageViewData.duration = Util.getInstance().msToTimeSpan(telemetry.duration);
         pageViewData.url = telemetry.url;
         pageViewData.measurements = telemetry.measurements;
         pageViewData.properties = telemetry.properties;
@@ -368,11 +368,11 @@ class _StackFrame {
     constructor(frame: string, level: number) {
         this.level = level;
         this.method = "<no_method>";
-        this.assembly = Util.trim(frame);
+        this.assembly = Util.getInstance().trim(frame);
         var matches = frame.match(_StackFrame.regex);
         if (matches && matches.length >= 5) {
-            this.method = Util.trim(matches[2]) || this.method;
-            this.fileName = Util.trim(matches[4]) || "<no_filename>";
+            this.method = Util.getInstance().trim(matches[2]) || this.method;
+            this.fileName = Util.getInstance().trim(matches[4]) || "<no_filename>";
             this.line = parseInt(matches[5]) || 0;
         }
 

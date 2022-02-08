@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
-import TelemetryClient } from "../../Library/TelemetryClient");
+import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
+import { console as consolePub } from "diagnostic-channel-publishers";
+
+import { TelemetryClient } from "../../Library/TelemetryClient";
 import { SeverityLevel } from "../../Declarations/Contracts";
 import { StatsbeatInstrumentation } from "../../Declarations/Constants";
 
-import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
-
-import { console as consolePub } from "diagnostic-channel-publishers";
 
 let clients: TelemetryClient[] = [];
 
@@ -38,7 +38,7 @@ export function enable(enabled: boolean, client: TelemetryClient) {
                     statsbeat.addInstrumentation(StatsbeatInstrumentation.CONSOLE);
                 }
             });
-        };
+        }
         clients.push(client);
     } else {
         clients = clients.filter((c) => c != client);

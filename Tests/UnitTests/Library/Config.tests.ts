@@ -70,7 +70,7 @@ describe("Library/Config", () => {
             it("merge JSON config", () => {
                 JsonConfig["_instance"] = undefined;
                 const env = <{ [id: string]: string }>{};
-                const customConfigJSONPath = path.resolve(__dirname, "../../../Tests/Library/config.json");
+                const customConfigJSONPath = path.resolve(__dirname, "../../../../Tests/UnitTests/Library/config.json");
                 env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath; // Load JSON config
                 process.env = env;
                 const config = new Config();
@@ -113,13 +113,10 @@ describe("Library/Config", () => {
 
         describe("constructor(ikey)", () => {
             beforeEach(() => {
-                sinon.stub(http, 'request');
-                sinon.stub(https, 'request');
+                sandbox.stub(http, 'request');
+                sandbox.stub(https, 'request');
             });
-            afterEach(() => {
-                http.request.restore();
-                https.request.restore();
-            });
+
             it("should throw if no iKey is available", () => {
                 var env = {};
                 process.env = env;

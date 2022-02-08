@@ -1,11 +1,10 @@
-import { Telemetry }  from "./Telemetry";
-import http } from "http");
+import { Telemetry } from "./Telemetry";
+import * as http from "http";
 
 /**
  * Object encapsulating information about the incoming HTTP request
  */
-export interface NodeHttpRequestTelemetry extends Telemetry
-{
+export interface NodeHttpRequestTelemetry extends Telemetry {
     /**
      * HTTP request object
      */
@@ -15,7 +14,7 @@ export interface NodeHttpRequestTelemetry extends Telemetry
      * HTTP response object
      */
     response: http.ServerResponse;
-    
+
     /**
      * HTTP request duration. Used only for synchronous tracks.
      */

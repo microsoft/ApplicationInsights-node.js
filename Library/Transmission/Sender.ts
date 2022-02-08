@@ -6,10 +6,10 @@ import * as zlib from "zlib";
 
 import { AuthorizationHandler } from "../AuthorizationHandler";
 import { Config } from "../Configuration/Config";
-import { Contracts } from "../../Declarations/Contracts";
-import { Constants } from "../../Declarations/Constants";
+import * as Contracts from "../../Declarations/Contracts";
+import * as Constants from "../../Declarations/Constants";
 import { Statsbeat } from "../../AutoCollection/Statsbeat";
-import { FileSystemHelper } from "../FileSystem/FileSystemHelper";
+import * as FileSystemHelper from "../FileSystem/FileSystemHelper";
 import { Util } from "../Util";
 import { URL } from "url";
 import { Logger } from "../Logging/Logger";
@@ -66,10 +66,10 @@ export class Sender {
             FileAccessControl.checkFileProtection(); // Only check file protection when disk retry is enabled
         }
         this._enableDiskRetryMode = FileAccessControl.OS_PROVIDES_FILE_PROTECTION && value;
-        if (typeof resendInterval === 'number' && resendInterval >= 0) {
+        if (typeof resendInterval === "number" && resendInterval >= 0) {
             this._resendInterval = Math.floor(resendInterval);
         }
-        if (typeof maxBytesOnDisk === 'number' && maxBytesOnDisk >= 0) {
+        if (typeof maxBytesOnDisk === "number" && maxBytesOnDisk >= 0) {
             this._maxBytesOnDisk = Math.floor(maxBytesOnDisk);
         }
 
@@ -139,7 +139,7 @@ export class Sender {
 
             let batch: string = "";
             envelopes.forEach(envelope => {
-                var payload: string = Util.stringify(envelope);
+                var payload: string = Util.getInstance().stringify(envelope);
                 if (typeof payload !== "string") {
                     return;
                 }
@@ -261,7 +261,7 @@ export class Sender {
                     });
                 };
 
-                var req = Util.makeRequest(this._config, endpointUrl, options, requestCallback);
+                var req = Util.getInstance().makeRequest(this._config, endpointUrl, options, requestCallback);
 
                 req.on("error", (error: Error) => {
                     // todo: handle error codes better (group to recoverable/non-recoverable and persist)
@@ -278,16 +278,16 @@ export class Sender {
                         if (this._enableDiskRetryMode) {
                             notice = `Ingestion endpoint could not be reached ${this._numConsecutiveFailures} consecutive times. There may be resulting telemetry loss. Most recent error:`;
                         }
-                        Logger.warn(Sender.TAG, notice, Util.dumpObj(error));
+                        Logger.warn(Sender.TAG, notice, Util.getInstance().dumpObj(error));
                     } else {
                         let notice = "Transient failure to reach ingestion endpoint. This batch of telemetry items will be retried. Error:";
-                        Logger.info(Sender.TAG, notice, Util.dumpObj(error));
+                        Logger.info(Sender.TAG, notice, Util.getInstance().dumpObj(error));
                     }
                     this._onErrorHelper(error);
 
                     if (typeof callback === "function") {
                         if (error) {
-                            callback(Util.dumpObj(error));
+                            callback(Util.getInstance().dumpObj(error));
                         }
                         else {
                             callback("Error sending telemetry");
@@ -307,7 +307,7 @@ export class Sender {
 
     public saveOnCrash(envelopes: Contracts.EnvelopeTelemetry[]) {
         if (this._enableDiskRetryMode) {
-            this._storeToDiskSync(Util.stringify(envelopes));
+            this._storeToDiskSync(Util.getInstance().stringify(envelopes));
         }
     }
 
@@ -359,7 +359,7 @@ export class Sender {
             // Mode 600 is w/r for creator and no read access for others (only applies on *nix)
             // For Windows, ACL rules are applied to the entire directory (see logic in _confirmDirExists and _applyACLRules)
             Logger.info(Sender.TAG, "saving data to disk at: " + fileFullPath);
-            FileSystemHelper.writeFileAsync(fileFullPath, Util.stringify(envelopes), { mode: 0o600 });
+            FileSystemHelper.writeFileAsync(fileFullPath, Util.getInstance().stringify(envelopes), { mode: 0o600 });
         }
         catch (ex) {
             Logger.warn(Sender.TAG, "Failed to persist telemetry to disk: " + (ex && ex.message));

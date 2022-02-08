@@ -1,11 +1,11 @@
-import * as http from 'http';
-import * as https from 'https';
-import * as url from 'url';
+import * as http from "http";
+import * as https from "https";
+import * as url from "url";
 import * as azureCore from "@azure/core-http";
 
-import { ConnectionStringParser } from './ConnectionStringParser';
-import { Logger } from '../Logging/Logger';
-import * as  Constants from '../../Declarations/Constants';
+import { ConnectionStringParser } from "./ConnectionStringParser";
+import { Logger } from "../Logging/Logger";
+import * as  Constants from "../../Declarations/Constants";
 import { JsonConfig } from "./JsonConfig";
 import { IConfig, IDisabledExtendedMetrics } from "../../Declarations/Interfaces";
 import { DistributedTracingModes } from "../../Declarations/Enumerators";
@@ -168,13 +168,12 @@ export class Config implements IConfig {
     * Second section has 4 characters
     * Third section has 4 characters
     * Fourth section has 4 characters
-    * Fifth section has 12 characters                  
+    * Fifth section has 12 characters
     */
     private static _validateInstrumentationKey(iKey: string): boolean {
-        const UUID_Regex = '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
+        const UUID_Regex = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$";
         const regexp = new RegExp(UUID_Regex);
         return regexp.test(iKey);
     }
 }
 
-export = Config;

@@ -1,9 +1,7 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
 
-import AppInsights } from "../../../applicationinsights");
-import Performance } from "../../../AutoCollection/Performance");
-import TelemetryClient } from "../../../Library/TelemetryClient");
+import * as AppInsights from "../../../applicationinsights";
 
 describe("AutoCollection/Performance", () => {
     var sandbox: sinon.SinonSandbox;

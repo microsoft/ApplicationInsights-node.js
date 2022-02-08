@@ -5,7 +5,7 @@ import * as Contracts from "../../Declarations/Contracts";
 import { AuthorizationHandler } from "../AuthorizationHandler";
 import { Config } from "../Configuration/Config";
 import { Logger } from "../Logging/Logger";
-import { QuickPulseUtil } from "./QuickPulseUtil";
+import { getTransmissionTime } from "./QuickPulseUtil";
 import { Util } from "../Util";
 
 
@@ -39,7 +39,7 @@ export class QuickPulseSender {
 
     public ping(envelope: Contracts.EnvelopeQuickPulse,
         redirectedHostEndpoint: string,
-        done: (shouldPOST?: boolean, res?: http.IncomingMessage, redirectedHost?: string, pollingIntervalHint?: number) => void,
+        done: (shouldPOST?: boolean, res?: http.IncomingMessage, redirectedHost?: string, pollingIntervalHint?: number) => void
     ): void {
 
         let pingHeaders: { name: string, value: string }[] = [
@@ -54,7 +54,7 @@ export class QuickPulseSender {
 
     public async post(envelope: Contracts.EnvelopeQuickPulse,
         redirectedHostEndpoint: string,
-        done: (shouldPOST?: boolean, res?: http.IncomingMessage, redirectedHost?: string, pollingIntervalHint?: number) => void,
+        done: (shouldPOST?: boolean, res?: http.IncomingMessage, redirectedHost?: string, pollingIntervalHint?: number) => void
     ): Promise<void> {
 
         // Important: When POSTing data, envelope must be an array
@@ -68,7 +68,7 @@ export class QuickPulseSender {
         additionalHeaders?: { name: string, value: string }[]
     ): Promise<void> {
 
-        const payload = Util.stringify(envelope);
+        const payload = Util.getInstance().stringify(envelope);
         var options = {
             // [AutoCollectHttpDependencies.disableCollectionRequestOption]: true,
             // TODO: disable tracking of this HTTP call
@@ -76,10 +76,10 @@ export class QuickPulseSender {
             method: QuickPulseConfig.method,
             path: `/QuickPulseService.svc/${postOrPing}?ikey=${this._config.instrumentationKey}`,
             headers: {
-                'Expect': '100-continue',
-                [QuickPulseConfig.time]: QuickPulseUtil.getTransmissionTime(), // unit = 100s of nanoseconds
-                'Content-Type': 'application\/json',
-                'Content-Length': Buffer.byteLength(payload)
+                "Expect": "100-continue",
+                [QuickPulseConfig.time]: getTransmissionTime(), // unit = 100s of nanoseconds
+                "Content-Type": "application\/json",
+                "Content-Length": Buffer.byteLength(payload)
             }
         };
 
@@ -95,7 +95,7 @@ export class QuickPulseSender {
                     await authHandler.addAuthorizationHeader(options);
                 }
                 catch (authError) {
-                    let notice = `Failed to get AAD bearer token for the Application. Error:`;
+                    let notice = "Failed to get AAD bearer token for the Application. Error:";
                     Logger.info(QuickPulseSender.TAG, notice, authError);
                     // Do not send request to Quickpulse if auth fails, data will be dropped
                     return;
@@ -107,7 +107,7 @@ export class QuickPulseSender {
         if (this._config.httpsAgent) {
             (<any>options).agent = this._config.httpsAgent;
         } else {
-            (<any>options).agent = Util.tlsRestrictedAgent;
+            (<any>options).agent = Util.getInstance().tlsRestrictedAgent;
         }
 
         const req = https.request(options, (res: http.IncomingMessage) => {
@@ -138,7 +138,7 @@ export class QuickPulseSender {
         // Do nothing for now.
         this._consecutiveErrors++;
         // LOG every error, but WARN instead when X number of consecutive errors occur
-        let notice = `Transient error connecting to the Live Metrics endpoint. This packet will not appear in your Live Metrics Stream. Error:`;
+        let notice = "Transient error connecting to the Live Metrics endpoint. This packet will not appear in your Live Metrics Stream. Error:";
         if (this._consecutiveErrors % QuickPulseSender.MAX_QPS_FAILURES_BEFORE_WARN === 0) {
             notice = `Live Metrics endpoint could not be reached ${this._consecutiveErrors} consecutive times. Most recent error:`;
             Logger.warn(QuickPulseSender.TAG, notice, error);

@@ -1,6 +1,6 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
-import AppInsights } from "../../../applicationinsights");
+import * as AppInsights from "../../../applicationinsights";
 import { channel, IStandardEvent } from "diagnostic-channel";
 import { enable, dispose as disable } from "../../../AutoCollection/diagnostic-channel/winston.sub";
 import { winston } from "diagnostic-channel-publishers";

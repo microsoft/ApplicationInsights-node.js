@@ -2,12 +2,12 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 import { preAggregatedMetricsTelemetryProcessor } from "../../../../Library/TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor";
 import { AutoCollectPreAggregatedMetrics } from "../../../../AutoCollection/PreAggregatedMetrics";
-import { Contracts } from "../../../../applicationinsights";
+import { Contracts, TelemetryClient } from "../../../../applicationinsights";
 
 describe("TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor", () => {
     var sandbox: sinon.SinonSandbox;
     let envelope: Contracts.Envelope;
-    let client: Client;
+    let client: TelemetryClient;
     let metrics: AutoCollectPreAggregatedMetrics;
 
     before(() => {
@@ -25,9 +25,7 @@ describe("TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor", () => {
             time: "",
             tags: []
         };
-        client = new Client(ikey);
-        metrics = new AutoCollectPreAggregatedMetrics(client);
-        metrics.enable(true);
+        client = new TelemetryClient(ikey);
     });
 
     afterEach(() => {
@@ -36,7 +34,7 @@ describe("TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor", () => {
 
     describe("#preAggregatedMetricsTelemetryProcessor()", () => {
         it("Exception telemetry", () => {
-            var pgSpy = sandbox.spy(metrics, "countException");
+            var pgSpy = sandbox.spy(client.autoCollector, "countPreAggregatedException");
             var exception = new Contracts.ExceptionData();
             var data = new Contracts.Data<Contracts.ExceptionData>();
             data.baseData = exception;
@@ -46,11 +44,10 @@ describe("TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor", () => {
             var testEnv = <any>envelope;
             assert.equal(testEnv.data.baseData.properties["_MS.ProcessedByMetricExtractors"], "(Name:'Exceptions', Ver:'1.1')");
             assert.ok(pgSpy.calledOnce);
-            pgSpy.restore();
         });
 
         it("Trace telemetry", () => {
-            var pgSpy = sandbox.spy(metrics, "countTrace");
+            var pgSpy = sandbox.spy(client.autoCollector, "countPreAggregatedTrace");
             var trace: Contracts.TraceTelemetry = { message: "" };
             var data = new Contracts.Data<Contracts.TraceTelemetry>();
             data.baseData = trace;
@@ -60,11 +57,10 @@ describe("TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor", () => {
             var testEnv = <any>envelope;
             assert.equal(testEnv.data.baseData.properties["_MS.ProcessedByMetricExtractors"], "(Name:'Traces', Ver:'1.1')");
             assert.ok(pgSpy.calledOnce);
-            pgSpy.restore();
         });
 
         it("Dependency telemetry", () => {
-            var pgSpy = sandbox.spy(metrics, "countDependency");
+            var pgSpy = sandbox.spy(client.autoCollector, "countPreAggregatedDependency");
             var dependency: Contracts.DependencyTelemetry = { name: "", dependencyTypeName: "", data: "", duration: 1, resultCode: "", success: false };
             var data = new Contracts.Data<Contracts.DependencyTelemetry>();
             data.baseData = dependency;
@@ -74,11 +70,10 @@ describe("TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor", () => {
             var testEnv = <any>envelope;
             assert.equal(testEnv.data.baseData.properties["_MS.ProcessedByMetricExtractors"], "(Name:'Dependencies', Ver:'1.1')");
             assert.ok(pgSpy.calledOnce);
-            pgSpy.restore();
         });
 
         it("Request telemetry", () => {
-            var pgSpy = sandbox.spy(metrics, "countRequest");
+            var pgSpy = sandbox.spy(client.autoCollector, "countPreAggregatedRequest");
             var request: Contracts.RequestTelemetry = { name: "", url: "", duration: 1, resultCode: "", success: false };
             var data = new Contracts.Data<Contracts.RequestTelemetry>();
             data.baseData = request;
@@ -88,7 +83,6 @@ describe("TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor", () => {
             var testEnv = <any>envelope;
             assert.equal(testEnv.data.baseData.properties["_MS.ProcessedByMetricExtractors"], "(Name:'Requests', Ver:'1.1')");
             assert.ok(pgSpy.calledOnce);
-            pgSpy.restore();
         });
     });
 });

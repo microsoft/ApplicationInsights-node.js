@@ -1,4 +1,4 @@
-export = {
+export const RequestHeaders = {
 
     /**
      * Request-Context header

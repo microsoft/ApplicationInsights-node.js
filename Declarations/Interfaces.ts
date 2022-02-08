@@ -1,6 +1,6 @@
-import http } from 'http');
-import https } from 'https');
-import azureCore } from "@azure/core-http");
+import * as http from "http";
+import * as https from "https";
+import * as azureCore from "@azure/core-http";
 import { DistributedTracingModes } from "../applicationinsights";
 
 
@@ -139,18 +139,18 @@ export interface IEnvironmentConfig {
     /** Connection String used to send telemetry payloads to */
     connectionString: string;
     /**
-    * In order to track context across asynchronous calls, 
-    * some changes are required in third party libraries such as mongodb and redis. 
-    * By default ApplicationInsights will use diagnostic-channel-publishers to monkey-patch some of these libraries. 
-    * This property is to disable the feature. 
+    * In order to track context across asynchronous calls,
+    * some changes are required in third party libraries such as mongodb and redis.
+    * By default ApplicationInsights will use diagnostic-channel-publishers to monkey-patch some of these libraries.
+    * This property is to disable the feature.
     * Note that by setting this flag, events may no longer be correctly associated with the right operation.
     */
     noDiagnosticChannel: boolean;
     /**
-    * Disable individual monkey-patches. 
-    * Set `noPatchModules` to a comma separated list of packages to disable. 
-    * e.g. `"noPatchModules": "console,redis"` to avoid patching the console and redis packages. 
-    * The following modules are available: `azuresdk, bunyan, console, mongodb, mongodb-core, mysql, redis, winston, pg`, and `pg-pool`. 
+    * Disable individual monkey-patches.
+    * Set `noPatchModules` to a comma separated list of packages to disable.
+    * e.g. `"noPatchModules": "console,redis"` to avoid patching the console and redis packages.
+    * The following modules are available: `azuresdk, bunyan, console, mongodb, mongodb-core, mysql, redis, winston, pg`, and `pg-pool`.
     */
     noPatchModules: string;
     /**
@@ -159,7 +159,7 @@ export interface IEnvironmentConfig {
     noHttpAgentKeepAlive: boolean;
 }
 
-export interface IJsonConfig extends IBaseConfig, IEnvironmentConfig { };
+export interface IJsonConfig extends IBaseConfig, IEnvironmentConfig { }
 
 export interface IConfig extends IBaseConfig {
     /** An http.Agent to use for SDK HTTP traffic (Optional, Default undefined) */

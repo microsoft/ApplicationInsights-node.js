@@ -1,8 +1,8 @@
 import * as fs from "fs";
 import * as assert from "assert";
 import * as sinon from "sinon";
-import path } from "path");
-import os } from "os");
+import * as path from "path";
+import * as  os from "os";
 import { StatusLogger } from "../../../Bootstrap/StatusLogger";
 import { FileWriter, homedir } from "../../../Bootstrap/FileWriter";
 

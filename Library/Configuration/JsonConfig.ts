@@ -1,7 +1,7 @@
-import fs } from "fs");
-import path } from "path");
+import * as fs from "fs";
+import * as path from "path";
 
-import { Logger } from '../Logging/Logger';
+import { Logger } from "../Logging/Logger";
 import { IDisabledExtendedMetrics, IJsonConfig } from "../../Declarations/Interfaces";
 import { DistributedTracingModes } from "../../Declarations/Enumerators";
 
@@ -83,7 +83,7 @@ export class JsonConfig implements IJsonConfig {
 
     private _loadJsonFile() {
         let configFileName = "applicationinsights.json";
-        let rootPath = path.join(__dirname, "../../"); // Root of applicationinsights folder (__dirname = ../out/Library)
+        let rootPath = path.join(__dirname, "../../../"); // Root of applicationinsights folder (__dirname = ../out/Library)
         let tempDir = path.join(rootPath, configFileName); // default
         let configFile = process.env[ENV_CONFIGURATION_FILE];
         if (configFile) {

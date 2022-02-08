@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import { FileSystemHelper } from "../FileSystem/FileSystemHelper";
+import { accessAsync, appendFileAsync, confirmDirExists, getShallowFileSize, readdirAsync, readFileAsync, writeFileAsync, unlinkAsync } from "../FileSystem/FileSystemHelper";
 
 
 export class InternalAzureLogger {
@@ -89,30 +89,30 @@ export class InternalAzureLogger {
         let data = args + "\r\n";
 
         try {
-            await FileSystemHelper.confirmDirExists(this._tempDir);
+            await confirmDirExists(this._tempDir);
         }
         catch (err) {
             console.log(this.TAG, "Failed to create directory for log file: " + (err && err.message));
             return;
         }
         try {
-            await FileSystemHelper.accessAsync(this._fileFullPath, fs.constants.F_OK);
+            await accessAsync(this._fileFullPath, fs.constants.F_OK);
         }
         catch (err) {
-            // No file create one  
-            await FileSystemHelper.appendFileAsync(this._fileFullPath, data).catch((appendError) => {
+            // No file create one
+            await appendFileAsync(this._fileFullPath, data).catch((appendError) => {
                 console.log(this.TAG, "Failed to put log into file: " + (appendError && appendError.message));
             });
             return;
         }
         try {
             // Check size
-            let size = await FileSystemHelper.getShallowFileSize(this._fileFullPath);
+            let size = await getShallowFileSize(this._fileFullPath);
             if (size > this.maxSizeBytes) {
                 await this._createBackupFile(data);
             }
             else {
-                await FileSystemHelper.appendFileAsync(this._fileFullPath, data);
+                await appendFileAsync(this._fileFullPath, data);
             }
         }
         catch (err) {
@@ -122,22 +122,22 @@ export class InternalAzureLogger {
 
     private async _createBackupFile(data: string): Promise<void> {
         try {
-            let buffer = await FileSystemHelper.readFileAsync(this._fileFullPath);
+            let buffer = await readFileAsync(this._fileFullPath);
             let backupPath = path.join(this._tempDir, new Date().getTime() + "." + this._logFileName);
-            await FileSystemHelper.writeFileAsync(backupPath, buffer);
+            await writeFileAsync(backupPath, buffer);
         }
         catch (err) {
-            console.log(`Failed to generate backup log file`, err);
+            console.log("Failed to generate backup log file", err);
         }
         finally {
             // Store logs
-            FileSystemHelper.writeFileAsync(this._fileFullPath, data);
+            writeFileAsync(this._fileFullPath, data);
         }
     }
 
     private async _fileCleanupTask(): Promise<void> {
         try {
-            let files = await FileSystemHelper.readdirAsync(this._tempDir);
+            let files = await readdirAsync(this._tempDir);
             // Filter only backup files
             files = files.filter(f => path.basename(f).indexOf(this._backUpNameFormat) > -1);
             // Sort by creation date
@@ -155,7 +155,7 @@ export class InternalAzureLogger {
             let totalFiles = files.length;
             for (let i = 0; i < totalFiles - this.maxHistory; i++) {
                 let pathToDelete = path.join(this._tempDir, files[i]);
-                await FileSystemHelper.unlinkAsync(pathToDelete);
+                await unlinkAsync(pathToDelete);
             }
         }
         catch (err) {

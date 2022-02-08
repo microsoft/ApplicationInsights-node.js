@@ -1,14 +1,14 @@
-import os } from "os");
+import * as os from "os";
 
 import { EnvelopeFactory } from "../Library/EnvelopeFactory";
 import { Logger } from "../Library/Logging/Logger";
 import { Sender } from "../Library/Transmission/Sender";
 import * as  Constants from "../Declarations/Constants";
 import * as Contracts from "../Declarations/Contracts";
-import { Vm } from "../Library/AzureVirtualMachine";
+import { AzureVirtualMachine } from "../Library/AzureVirtualMachine";
 import { Config } from "../Library/Configuration/Config";
 import { Context } from "../Library/Context";
-import { Network } from "./NetworkStatsbeat";
+import { NetworkStatsbeat } from "./NetworkStatsbeat";
 import { Util } from "../Library/Util";
 
 const STATSBEAT_LANGUAGE = "node";
@@ -21,7 +21,7 @@ export class Statsbeat {
 
     private static TAG = "Statsbeat";
 
-    private _networkStatsbeatCollection: Array<Network.NetworkStatsbeat>;
+    private _networkStatsbeatCollection: Array<NetworkStatsbeat>;
     private _sender: Sender;
     private _context: Context;
     private _handle: NodeJS.Timer | null;
@@ -121,7 +121,7 @@ export class Statsbeat {
         if (!this.isEnabled()) {
             return;
         }
-        let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
+        let counter: NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
         counter.totalRequestCount++;
         counter.intervalRequestExecutionTime += duration;
         if (success === false) {
@@ -136,7 +136,7 @@ export class Statsbeat {
         if (!this.isEnabled()) {
             return;
         }
-        let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
+        let counter: NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
         counter.exceptionCount++;
     }
 
@@ -144,7 +144,7 @@ export class Statsbeat {
         if (!this.isEnabled()) {
             return;
         }
-        let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
+        let counter: NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
         counter.throttleCount++;
     }
 
@@ -152,7 +152,7 @@ export class Statsbeat {
         if (!this.isEnabled()) {
             return;
         }
-        let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
+        let counter: NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
         counter.retryCount++;
     }
 
@@ -166,14 +166,14 @@ export class Statsbeat {
                 "runtimeVersion": this._runtimeVersion,
                 "language": this._language,
                 "version": this._sdkVersion,
-                "attach": this._attach,
+                "attach": this._attach
             }
             this._trackRequestDuration(networkProperties);
             this._trackRequestsCount(networkProperties);
             await this._sendStatsbeats();
         }
         catch (error) {
-            Logger.info(Statsbeat.TAG, "Failed to send Statsbeat metrics: " + Util.dumpObj(error));
+            Logger.info(Statsbeat.TAG, "Failed to send Statsbeat metrics: " + Util.getInstance().dumpObj(error));
         }
     }
 
@@ -187,10 +187,10 @@ export class Statsbeat {
                 "runtimeVersion": this._runtimeVersion,
                 "language": this._language,
                 "version": this._sdkVersion,
-                "attach": this._attach,
+                "attach": this._attach
             };
             let attachProperties = Object.assign({
-                "rpId": this._resourceIdentifier,
+                "rpId": this._resourceIdentifier
             }, commonProperties);
             this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.ATTACH, value: 1, properties: attachProperties });
             if (this._instrumentation != Constants.StatsbeatInstrumentation.NONE) {// Only send if there are some instrumentations enabled
@@ -204,11 +204,11 @@ export class Statsbeat {
             await this._sendStatsbeats();
         }
         catch (error) {
-            Logger.info(Statsbeat.TAG, "Failed to send Statsbeat metrics: " + Util.dumpObj(error));
+            Logger.info(Statsbeat.TAG, "Failed to send Statsbeat metrics: " + Util.getInstance().dumpObj(error));
         }
     }
 
-    private _getNetworkStatsbeatCounter(endpoint: number, host: string): Network.NetworkStatsbeat {
+    private _getNetworkStatsbeatCounter(endpoint: number, host: string): NetworkStatsbeat {
         // Check if counter is available
         for (let i = 0; i < this._networkStatsbeatCollection.length; i++) {
             // Same object
@@ -218,7 +218,7 @@ export class Statsbeat {
             }
         }
         // Create a new one if not found
-        let newCounter = new Network.NetworkStatsbeat(endpoint, host);
+        let newCounter = new NetworkStatsbeat(endpoint, host);
         this._networkStatsbeatCollection.push(newCounter);
         return newCounter;
     }
@@ -312,7 +312,7 @@ export class Statsbeat {
             } else if (this._config) {
                 if (this._isVM === undefined || this._isVM == true) {
                     waiting = true;
-                    Vm.AzureVirtualMachine.getAzureComputeMetadata(this._config, (vmInfo) => {
+                    AzureVirtualMachine.getAzureComputeMetadata(this._config, (vmInfo) => {
                         this._isVM = vmInfo.isVM;
                         if (this._isVM) {
                             this._resourceProvider = Constants.StatsbeatResourceProvider.vm;

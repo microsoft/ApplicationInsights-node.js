@@ -1,11 +1,11 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
-import os } from "os");
+import * as os from "os";
 
-import AppInsights } from "../../../applicationinsights");
-import HeartBeat } from "../../../AutoCollection/HeartBeat");
-import TelemetryClient } from "../../../Library/TelemetryClient");
-import Context } from "../../../Library/Context");
+import * as AppInsights from "../../../applicationinsights";
+import { HeartBeat } from "../../../AutoCollection/HeartBeat";
+import { TelemetryClient } from "../../../Library/TelemetryClient";
+import { Context } from "../../../Library/Context";
 import { JsonConfig } from "../../../Library/Configuration/JsonConfig";
 
 describe("AutoCollection/HeartBeat", () => {

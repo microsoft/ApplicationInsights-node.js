@@ -1,4 +1,4 @@
-import Constants } from "../Constants");
+import * as Constants from "../Constants";
 
 export class AggregatedMetric {
 

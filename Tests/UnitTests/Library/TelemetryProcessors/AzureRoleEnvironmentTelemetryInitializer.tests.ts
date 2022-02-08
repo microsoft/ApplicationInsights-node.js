@@ -1,6 +1,6 @@
 import * as assert from "assert";
 
-import { Contracts } from "../../../../applicationinsights";
+import { Contracts, TelemetryClient } from "../../../../applicationinsights";
 import * as AzureProps from "../../../../Library/TelemetryProcessors/AzureRoleEnvironmentTelemetryInitializer";
 
 describe("TelemetryProcessors/AzureRoleEnvironmentTelemetryInitializer", () => {
@@ -17,7 +17,7 @@ describe("TelemetryProcessors/AzureRoleEnvironmentTelemetryInitializer", () => {
         time: "",
         tags: []
     };
-    var client = new Client(ikey);
+    var client = new TelemetryClient(ikey);
 
     describe("#azureRoleEnvironmentTelemetryProcessor()", () => {
         it("will add cloud role", () => {

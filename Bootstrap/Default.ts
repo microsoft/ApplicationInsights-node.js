@@ -1,4 +1,4 @@
-import azureCore } from "@azure/core-http");
+import * as azureCore from "@azure/core-http";
 
 import * as types from "../applicationinsights";
 import * as Helpers from "./Helpers";
@@ -20,7 +20,7 @@ const forceStart = process.env.APPLICATIONINSIGHTS_FORCE_START === "true";
 // Other local constants
 const defaultStatus: StatusContract = {
     ...StatusLogger.DEFAULT_STATUS,
-    Ikey: _setupString,
+    Ikey: _setupString
 };
 
 /**
@@ -65,13 +65,13 @@ export function setupAndStart(setupString = _setupString, aadTokenCredential?: a
         _statusLogger.logStatus({
             ...defaultStatus,
             AgentInitializedSuccessfully: false,
-            Reason: message,
+            Reason: message
         });
         return null;
     }
 
     try {
-        _appInsights } from "../applicationinsights");
+        _appInsights = require("../applicationinsights");
         if (_appInsights.defaultClient) {
             // setupAndStart was already called, return the result
             _logger.logError("Setup was attempted on the Application Insights Client multiple times. Aborting and returning the first client instance");

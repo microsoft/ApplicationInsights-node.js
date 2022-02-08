@@ -1,8 +1,8 @@
 import * as assert from "assert";
 
 import * as sinon from "sinon";
-import Constants } from "../../Declarations/Constants");
-import ConnectionStringParser } from "../../Library/Configuration/ConnectionStringParser");
+import * as Constants from "../../../Declarations/Constants";
+import { ConnectionStringParser } from "../../../Library/Configuration/ConnectionStringParser";
 
 describe("ConnectionStringParser", () => {
     describe("#parse()", () => {

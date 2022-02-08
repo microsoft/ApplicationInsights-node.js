@@ -1,62 +1,54 @@
-﻿import http } from "http");
-import https } from "https");
-import url } from "url");
-import constants } from "constants");
+﻿import * as http from "http";
+import * as https from "https";
+import * as url from "url";
+import * as constants from "constants";
+
+import { isValidTraceId } from "@opentelemetry/api";
+import { IdGenerator, RandomIdGenerator } from "@opentelemetry/core";
 
 import { Logger } from "./Logging/Logger";
 import { Config } from "./Configuration/Config";
 import { TelemetryClient } from "../Library/TelemetryClient";
-import { RequestResponseHeaders } from "../Declarations/RequestResponseHeaders";
+import { RequestHeaders } from "../Declarations/RequestResponseHeaders";
 import { HttpRequest } from "../Declarations/Functions";
 import { JsonConfig } from "./Configuration/JsonConfig";
 
 
 export class Util {
-    private static _useKeepAlive = !JsonConfig.getInstance().noHttpAgentKeepAlive;
-    private static _listenerAttached = false;
+    private static _instance: Util;
+    private readonly _idGenerator: IdGenerator;
+    private _useKeepAlive = !JsonConfig.getInstance().noHttpAgentKeepAlive;
+    private _listenerAttached = false;
 
-    public static MAX_PROPERTY_LENGTH = 8192;
-    public static keepAliveAgent: http.Agent = new https.Agent(<any>{
+    public MAX_PROPERTY_LENGTH = 8192;
+    public keepAliveAgent: http.Agent = new https.Agent(<any>{
         keepAlive: true,
         maxSockets: 25,
         secureOptions: constants.SSL_OP_NO_SSLv2 | constants.SSL_OP_NO_SSLv3 |
             constants.SSL_OP_NO_TLSv1 | constants.SSL_OP_NO_TLSv1_1
     });
-    public static tlsRestrictedAgent: http.Agent = new https.Agent(<any>{
+    public tlsRestrictedAgent: http.Agent = new https.Agent(<any>{
         secureOptions: constants.SSL_OP_NO_SSLv2 | constants.SSL_OP_NO_SSLv3 |
             constants.SSL_OP_NO_TLSv1 | constants.SSL_OP_NO_TLSv1_1
     });
-    public static isNodeExit = false;
+    public isNodeExit = false;
 
-    public constructor() {
-        Util._addCloseHandler();
+    static getInstance() {
+        if (!Util._instance) {
+            Util._instance = new Util();
+        }
+        return Util._instance;
     }
 
-    /**
-     * helper method to access userId and sessionId cookie
-     */
-    public static getCookie(name: string, cookie: string) {
-        var value = "";
-        if (name && name.length && typeof cookie === "string") {
-            var cookieName = name + "=";
-            var cookies = cookie.split(";");
-            for (var i = 0; i < cookies.length; i++) {
-                var cookie = cookies[i];
-                cookie = Util.trim(cookie);
-                if (cookie && cookie.indexOf(cookieName) === 0) {
-                    value = cookie.substring(cookieName.length, cookies[i].length);
-                    break;
-                }
-            }
-        }
-
-        return value;
+    public constructor() {
+        this._idGenerator = new RandomIdGenerator();
+        this._addCloseHandler();
     }
 
     /**
      * helper method to trim strings (IE8 does not implement String.prototype.trim)
      */
-    public static trim(str: string): string {
+    public trim(str: string): string {
         if (typeof str === "string") {
             return str.replace(/^\s+|\s+$/g, "");
         } else {
@@ -65,84 +57,36 @@ export class Util {
     }
 
     /**
-     * Convert an array of int32 to Base64 (no '==' at the end).
-     * MSB first.
-     */
-    public static int32ArrayToBase64(array: number[]) {
-        let toChar = (v: number, i: number) =>
-            String.fromCharCode((v >> i) & 0xFF);
-        let int32AsString = (v: number) =>
-            toChar(v, 24) + toChar(v, 16) + toChar(v, 8) + toChar(v, 0);
-        let x = array.map(int32AsString).join("");
-        const b = Buffer.from ? Buffer.from(x, "binary") : new Buffer(x, "binary");
-        let s = b.toString("base64");
-        return s.substr(0, s.indexOf("="));
-    }
-
-    /**
-     * generate a random 32bit number (-0x80000000..0x7FFFFFFF).
-     */
-    public static random32() {
-        return (0x100000000 * Math.random()) | 0;
-    }
-
-    /**
-     * generate a random 32bit number (0x00000000..0xFFFFFFFF).
-     */
-    public static randomu32() {
-        return Util.random32() + 0x80000000;
-    }
-
-    /**
      * generate W3C-compatible trace id
      * https://github.com/w3c/distributed-tracing/blob/master/trace_context/HTTP_HEADER_FORMAT.md#trace-id
      */
-    public static w3cTraceId() {
-        var hexValues = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"];
-
-        // rfc4122 version 4 UUID without dashes and with lowercase letters
-        var oct = "", tmp;
-        for (var a = 0; a < 4; a++) {
-            tmp = Util.random32();
-            oct +=
-                hexValues[tmp & 0xF] +
-                hexValues[tmp >> 4 & 0xF] +
-                hexValues[tmp >> 8 & 0xF] +
-                hexValues[tmp >> 12 & 0xF] +
-                hexValues[tmp >> 16 & 0xF] +
-                hexValues[tmp >> 20 & 0xF] +
-                hexValues[tmp >> 24 & 0xF] +
-                hexValues[tmp >> 28 & 0xF];
-        }
-
-        // "Set the two most significant bits (bits 6 and 7) of the clock_seq_hi_and_reserved to zero and one, respectively"
-        var clockSequenceHi = hexValues[8 + (Math.random() * 4) | 0];
-        return oct.substr(0, 8) + oct.substr(9, 4) + "4" + oct.substr(13, 3) + clockSequenceHi + oct.substr(16, 3) + oct.substr(19, 12);
+    public w3cTraceId() {
+        return this._idGenerator.generateTraceId();
     }
 
-    public static w3cSpanId() {
-        return Util.w3cTraceId().substring(16);
+    public w3cSpanId() {
+        return this._idGenerator.generateSpanId();
     }
 
-    public static isValidW3CId(id: string): boolean {
-        return id.length === 32 && id !== "00000000000000000000000000000000";
+    public isValidW3CId(id: string): boolean {
+        return isValidTraceId(id);
     }
 
     /**
      * Check if an object is of type Array
      */
-    public static isArray(obj: any): boolean {
+    public isArray(obj: any): boolean {
         return Object.prototype.toString.call(obj) === "[object Array]";
     }
 
     /**
      * Check if an object is of type Error
      */
-    public static isError(obj: any): boolean {
+    public isError(obj: any): boolean {
         return obj instanceof Error;
     }
 
-    public static isPrimitive(input: any): boolean {
+    public isPrimitive(input: any): boolean {
         const propType = typeof input;
         return propType === "string" || propType === "number" || propType === "boolean";
     }
@@ -150,14 +94,14 @@ export class Util {
     /**
      * Check if an object is of type Date
      */
-    public static isDate(obj: any): boolean {
+    public isDate(obj: any): boolean {
         return Object.prototype.toString.call(obj) === "[object Date]";
     }
 
     /**
      * Convert ms to c# time span format
      */
-    public static msToTimeSpan(totalms: number): string {
+    public msToTimeSpan(totalms: number): string {
         if (isNaN(totalms) || totalms < 0) {
             totalms = 0;
         }
@@ -180,13 +124,13 @@ export class Util {
      * Simplify a generic Node Error into a simpler map for customDimensions
      * Custom errors can still implement toJSON to override this functionality
      */
-    protected static extractError(err: Error): { message: string, code: string } {
+    protected extractError(err: Error): { message: string, code: string } {
         // Error is often subclassed so may have code OR id properties:
         // https://nodejs.org/api/errors.html#errors_error_code
         const looseError = err as any;
         return {
             message: err.message,
-            code: looseError.code || looseError.id || "",
+            code: looseError.code || looseError.id || ""
         }
     }
 
@@ -195,9 +139,9 @@ export class Util {
      * If a primitive is returned, then the consumer of this function can skip JSON.stringify.
      * This avoids double escaping of quotes for Date objects, for example.
      */
-    protected static extractObject(origProperty: any): any {
+    protected extractObject(origProperty: any): any {
         if (origProperty instanceof Error) {
-            return Util.extractError(origProperty);
+            return this.extractError(origProperty);
         }
         if (typeof origProperty.toJSON === "function") {
             return origProperty.toJSON();
@@ -208,18 +152,18 @@ export class Util {
     /**
      * Validate that an object is of type { [key: string]: string }
      */
-    public static validateStringMap(obj: any): { [key: string]: string } {
+    public validateStringMap(obj: any): { [key: string]: string } {
         if (typeof obj !== "object") {
             Logger.info("Invalid properties dropped from payload");
             return;
         }
         const map: { [key: string]: string } = {};
         for (let field in obj) {
-            let property: string = '';
+            let property: string = "";
             const origProperty: any = obj[field];
             const propType = typeof origProperty;
 
-            if (Util.isPrimitive(origProperty)) {
+            if (this.isPrimitive(origProperty)) {
                 property = origProperty.toString();
             } else if (origProperty === null || propType === "undefined") {
                 property = "";
@@ -227,9 +171,9 @@ export class Util {
                 Logger.info("key: " + field + " was function; will not serialize");
                 continue;
             } else {
-                const stringTarget = Util.isArray(origProperty) ? origProperty : Util.extractObject(origProperty);
+                const stringTarget = this.isArray(origProperty) ? origProperty : this.extractObject(origProperty);
                 try {
-                    if (Util.isPrimitive(stringTarget)) {
+                    if (this.isPrimitive(stringTarget)) {
                         property = stringTarget;
                     } else {
                         property = JSON.stringify(stringTarget);
@@ -240,7 +184,7 @@ export class Util {
                 }
             }
 
-            map[field] = property.substring(0, Util.MAX_PROPERTY_LENGTH);
+            map[field] = property.substring(0, this.MAX_PROPERTY_LENGTH);
         }
         return map;
     }
@@ -250,7 +194,7 @@ export class Util {
      * Checks if a request url is not on a excluded domain list
      * and if it is safe to add correlation headers
      */
-    public static canIncludeCorrelationHeader(client: TelemetryClient, requestUrl: string) {
+    public canIncludeCorrelationHeader(client: TelemetryClient, requestUrl: string) {
         let excludedDomains = client && client.config && client.config.correlationHeaderExcludedDomains;
         if (!excludedDomains || excludedDomains.length == 0 || !requestUrl) {
             return true;
@@ -263,14 +207,16 @@ export class Util {
                     return false;
                 }
             }
-            catch (ex) { }
+            catch (ex) {
+                // Ignore error
+            }
         }
 
         return true;
     }
 
-    public static getCorrelationContextTarget(response: http.ClientResponse | http.ServerRequest | HttpRequest, key: string) {
-        const contextHeaders = response.headers && response.headers[RequestResponseHeaders.requestContextHeader];
+    public getCorrelationContextTarget(response: http.ClientResponse | http.ServerRequest | HttpRequest, key: string) {
+        const contextHeaders = response.headers && response.headers[RequestHeaders.requestContextHeader];
         if (contextHeaders) {
             const keyValues = (<any>contextHeaders).split(",");
             for (let i = 0; i < keyValues.length; ++i) {
@@ -295,7 +241,7 @@ export class Util {
      * @param {boolean} useAgent Set Http Agent in request
      * @returns {http.ClientRequest} request object
      */
-    public static makeRequest(
+    public makeRequest(
         config: Config,
         requestUrl: string,
         requestOptions: http.RequestOptions | https.RequestOptions,
@@ -303,8 +249,8 @@ export class Util {
         useProxy = true,
         useAgent = true): http.ClientRequest {
 
-        if (requestUrl && requestUrl.indexOf('//') === 0) {
-            requestUrl = 'https:' + requestUrl;
+        if (requestUrl && requestUrl.indexOf("//") === 0) {
+            requestUrl = "https:" + requestUrl;
         }
 
         var requestUrlParsed = new url.URL(requestUrl);
@@ -312,25 +258,25 @@ export class Util {
             ...requestOptions,
             host: requestUrlParsed.hostname,
             port: requestUrlParsed.port,
-            path: requestUrlParsed.pathname,
+            path: requestUrlParsed.pathname
         };
 
         var proxyUrl: string = undefined;
         if (useProxy) {
-            if (requestUrlParsed.protocol === 'https:') {
+            if (requestUrlParsed.protocol === "https:") {
                 proxyUrl = config.proxyHttpsUrl || undefined;
             }
-            if (requestUrlParsed.protocol === 'http:') {
+            if (requestUrlParsed.protocol === "http:") {
                 proxyUrl = config.proxyHttpUrl || undefined;
             }
             if (proxyUrl) {
-                if (proxyUrl.indexOf('//') === 0) {
-                    proxyUrl = 'http:' + proxyUrl;
+                if (proxyUrl.indexOf("//") === 0) {
+                    proxyUrl = "http:" + proxyUrl;
                 }
                 try {
                     var proxyUrlParsed = new url.URL(proxyUrl);
                     // https is not supported at the moment
-                    if (proxyUrlParsed.protocol === 'https:') {
+                    if (proxyUrlParsed.protocol === "https:") {
                         Logger.info("Proxies that use HTTPS are not supported");
                         proxyUrl = undefined;
                     } else {
@@ -341,8 +287,8 @@ export class Util {
                             path: requestUrl,
                             headers: {
                                 ...options.headers,
-                                Host: requestUrlParsed.hostname,
-                            },
+                                Host: requestUrlParsed.hostname
+                            }
                         };
                     }
                 }
@@ -352,7 +298,7 @@ export class Util {
             }
         }
 
-        var isHttps = requestUrlParsed.protocol === 'https:' && !proxyUrl;
+        var isHttps = requestUrlParsed.protocol === "https:" && !proxyUrl;
         if (useAgent) {
             if (isHttps && config.httpsAgent !== undefined) {
                 options.agent = config.httpsAgent;
@@ -360,7 +306,7 @@ export class Util {
                 options.agent = config.httpAgent;
             } else if (isHttps) {
                 // HTTPS without a passed in agent. Use one that enforces our TLS rules
-                options.agent = Util._useKeepAlive ? Util.keepAliveAgent : Util.tlsRestrictedAgent;
+                options.agent = this._useKeepAlive ? this.keepAliveAgent : this.tlsRestrictedAgent;
             }
         }
         if (isHttps) {
@@ -369,12 +315,12 @@ export class Util {
             return http.request(<any>options, requestCallback);
         }
 
-    };
+    }
 
     /**
      * Parse standard <string | string[] | number> request-context header
      */
-    public static safeIncludeCorrelationHeader(client: TelemetryClient, request: http.ClientRequest | http.ServerResponse, correlationHeader: any) {
+    public safeIncludeCorrelationHeader(client: TelemetryClient, request: http.ClientRequest | http.ServerResponse, correlationHeader: any) {
         let header: string; // attempt to cast correlationHeader to string
         if (typeof correlationHeader === "string") {
             header = correlationHeader;
@@ -390,18 +336,18 @@ export class Util {
         }
 
         if (header) {
-            Util.addCorrelationIdHeaderFromString(client, request, header);
+            this.addCorrelationIdHeaderFromString(client, request, header);
         } else {
             request.setHeader(
-                RequestResponseHeaders.requestContextHeader,
-                `${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+                RequestHeaders.requestContextHeader,
+                `${RequestHeaders.requestContextSourceKey}=${client.config.correlationId}`);
         }
     }
 
     /**
      * Returns string representation of an object suitable for diagnostics Logger.
      */
-    public static dumpObj(object: any): string {
+    public dumpObj(object: any): string {
         const objectTypeDump: string = Object["prototype"].toString.call(object);
         let propertyValueDump: string = "";
         if (objectTypeDump === "[object Error]") {
@@ -413,7 +359,7 @@ export class Util {
         return objectTypeDump + propertyValueDump;
     }
 
-    public static stringify(payload: any) {
+    public stringify(payload: any) {
         try {
             return JSON.stringify(payload);
         } catch (error) {
@@ -421,25 +367,25 @@ export class Util {
         }
     }
 
-    private static addCorrelationIdHeaderFromString(client: TelemetryClient, response: http.ClientRequest | http.ServerResponse, correlationHeader: string) {
+    private addCorrelationIdHeaderFromString(client: TelemetryClient, response: http.ClientRequest | http.ServerResponse, correlationHeader: string) {
         const components = correlationHeader.split(",");
-        const key = `${RequestResponseHeaders.requestContextSourceKey}=`;
+        const key = `${RequestHeaders.requestContextSourceKey}=`;
         const found = components.some(value => value.substring(0, key.length) === key);
 
         if (!found) {
             response.setHeader(
-                RequestResponseHeaders.requestContextHeader,
-                `${correlationHeader},${RequestResponseHeaders.requestContextSourceKey}=${client.config.correlationId}`);
+                RequestHeaders.requestContextHeader,
+                `${correlationHeader},${RequestHeaders.requestContextSourceKey}=${client.config.correlationId}`);
         }
     }
 
-    private static _addCloseHandler() {
-        if (!Util._listenerAttached) {
+    private _addCloseHandler() {
+        if (!this._listenerAttached) {
             process.on("exit", () => {
-                Util.isNodeExit = true;
-                Util._useKeepAlive = false;
+                this.isNodeExit = true;
+                this._useKeepAlive = false;
             });
-            Util._listenerAttached = true;
+            this._listenerAttached = true;
         }
     }
 }

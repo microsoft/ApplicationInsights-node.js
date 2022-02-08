@@ -29,7 +29,7 @@ export class AutoCollectNativePerformance {
         if (this._metricsAvailable == undefined && isEnabled && !this._isInitialized) {
             // Try to require in the native-metrics library. If it's found initialize it, else do nothing and never try again.
             try {
-                const NativeMetricsEmitters } from "applicationinsights-native-metrics");
+                const NativeMetricsEmitters = require("applicationinsights-native-metrics");
                 this._emitter = new NativeMetricsEmitters();
                 this._metricsAvailable = true;
                 Logger.info("Native metrics module successfully loaded!");
@@ -181,7 +181,7 @@ export class AutoCollectNativePerformance {
             return;
         }
 
-        const name = `Event Loop CPU Time`;
+        const name = "Event Loop CPU Time";
         const stdDev = Math.sqrt(metrics.sumSquares / metrics.count - Math.pow(metrics.total / metrics.count, 2)) || 0;
         this._client.trackMetric({
             name: name,
@@ -211,7 +211,7 @@ export class AutoCollectNativePerformance {
         const { heapUsed, heapTotal, rss } = memoryUsage;
 
         this._client.trackMetric({
-            name: `Memory Usage (Heap)`,
+            name: "Memory Usage (Heap)",
             value: heapUsed,
             count: 1,
             tagOverrides: {
@@ -219,7 +219,7 @@ export class AutoCollectNativePerformance {
             }
         });
         this._client.trackMetric({
-            name: `Memory Total (Heap)`,
+            name: "Memory Total (Heap)",
             value: heapTotal,
             count: 1,
             tagOverrides: {
@@ -227,7 +227,7 @@ export class AutoCollectNativePerformance {
             }
         });
         this._client.trackMetric({
-            name: `Memory Usage (Non-Heap)`,
+            name: "Memory Usage (Non-Heap)",
             value: rss - heapTotal,
             count: 1,
             tagOverrides: {

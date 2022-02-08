@@ -77,7 +77,7 @@ export class Channel {
         let bufferIsEmpty = this._buffer.length < 1;
         if (!bufferIsEmpty) {
             // invoke send
-            if (isNodeCrashing || Util.isNodeExit) {
+            if (isNodeCrashing || Util.getInstance().isNodeExit) {
                 this._sender.saveOnCrash(this._buffer);
                 if (typeof callback === "function") {
                     callback("data saved on crash");

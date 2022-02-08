@@ -19,7 +19,7 @@ export function preAggregatedMetricsTelemetryProcessor(envelope: Contracts.Envel
             }
             let exceptionDimensions: IMetricExceptionDimensions = {
                 cloudRoleInstance: envelope.tags[client.context.keys.cloudRoleInstance],
-                cloudRoleName: envelope.tags[client.context.keys.cloudRole],
+                cloudRoleName: envelope.tags[client.context.keys.cloudRole]
             };
             client.autoCollector.countPreAggregatedException(exceptionDimensions);
             break;
@@ -32,7 +32,7 @@ export function preAggregatedMetricsTelemetryProcessor(envelope: Contracts.Envel
             let traceDimensions: IMetricTraceDimensions = {
                 cloudRoleInstance: envelope.tags[client.context.keys.cloudRoleInstance],
                 cloudRoleName: envelope.tags[client.context.keys.cloudRole],
-                traceSeverityLevel: Contracts.SeverityLevel[traceData.severity],
+                traceSeverityLevel: Contracts.SeverityLevel[traceData.severity]
             };
             client.autoCollector.countPreAggregatedTrace(traceDimensions);
             break;
@@ -47,7 +47,7 @@ export function preAggregatedMetricsTelemetryProcessor(envelope: Contracts.Envel
                 cloudRoleName: envelope.tags[client.context.keys.cloudRole],
                 operationSynthetic: envelope.tags[client.context.keys.operationSyntheticSource],
                 requestSuccess: requestData.success,
-                requestResultCode: requestData.responseCode,
+                requestResultCode: requestData.responseCode
             };
             client.autoCollector.countPreAggregatedRequest(requestData.duration, requestDimensions);
             break;
@@ -64,7 +64,7 @@ export function preAggregatedMetricsTelemetryProcessor(envelope: Contracts.Envel
                 dependencySuccess: remoteDependencyData.success,
                 dependencyType: remoteDependencyData.type,
                 dependencyTarget: remoteDependencyData.target,
-                dependencyResultCode: remoteDependencyData.resultCode,
+                dependencyResultCode: remoteDependencyData.resultCode
             };
             client.autoCollector.countPreAggregatedDependency(remoteDependencyData.duration, dependencyDimensions);
             break;

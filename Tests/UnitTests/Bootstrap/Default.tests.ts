@@ -42,7 +42,7 @@ describe("#setupAndStart()", () => {
         const alreadyExistsStub = sinon.stub(Helpers, "sdkAlreadyExists", () => false);
 
         // Test
-        const Default } from "../../../Bootstrap/Default") as typeof DefaultTypes;
+        const Default = require("../../../Bootstrap/Default") as typeof DefaultTypes;
         Default.setLogger(new DiagnosticLogger(logger));
         const instance1 = Default.setupAndStart("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
         assert.ok(instance1.defaultClient);
@@ -66,7 +66,7 @@ describe("#setupAndStart()", () => {
         const alreadyExistsStub = sinon.stub(Helpers, "sdkAlreadyExists", () => false);
 
         // Test
-        const Default } from "../../../Bootstrap/Default") as typeof DefaultTypes;
+        const Default = require("../../../Bootstrap/Default") as typeof DefaultTypes;
         Default.setLogger(new DiagnosticLogger(logger));
         const instance = Default.setupAndStart("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
         assert.deepEqual(instance, appInsights);
@@ -96,7 +96,7 @@ describe("#setupAndStart()", () => {
         const alreadyExistsStub = sinon.stub(Helpers, "sdkAlreadyExists", () => false);
 
         // Test
-        const Default } from "../../../Bootstrap/Default") as typeof DefaultTypes;
+        const Default = require("../../../Bootstrap/Default") as typeof DefaultTypes;
         Default.setLogger(new DiagnosticLogger(logger));
         const instance = Default.setupAndStart();
         assert.equal(instance, null);

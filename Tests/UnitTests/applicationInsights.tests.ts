@@ -71,25 +71,33 @@ describe("ApplicationInsights", () => {
     describe("#setAutoCollect", () => {
 
         it("auto-collection is initialized by default", () => {
-            AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").start();
-            assert.ok(AppInsights.defaultClient.autoCollector["_console"].isInitialized());
-            assert.ok(AppInsights.defaultClient.autoCollector["_exceptions"].isInitialized());
-            assert.ok(AppInsights.defaultClient.autoCollector["_performance"].isInitialized());
+
+            AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            let consoleSpy = sandbox.spy(AppInsights.defaultClient.autoCollector["_console"], "enable");
+            let exceptionsSpy = sandbox.spy(AppInsights.defaultClient.autoCollector["_exceptions"], "enable");
+            let performanceSpy = sandbox.spy(AppInsights.defaultClient.autoCollector["_performance"], "enable");
+            AppInsights.start();
+            assert.ok(consoleSpy.called);
+            assert.ok(exceptionsSpy.called);
+            assert.ok(performanceSpy.called);
         });
 
         it("auto-collection is not initialized if disabled before 'start'", () => {
+
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
                 .setAutoCollectConsole(false)
                 .setAutoCollectExceptions(false)
                 .setAutoCollectPerformance(false)
                 .setAutoCollectRequests(false)
                 .setAutoCollectDependencies(false)
-                .setAutoDependencyCorrelation(false)
-                .start();
-
-            assert.ok(!AppInsights.defaultClient.autoCollector["_console"].isInitialized());
-            assert.ok(!AppInsights.defaultClient.autoCollector["_exceptions"].isInitialized());
-            assert.ok(!AppInsights.defaultClient.autoCollector["_performance"].isInitialized());
+                .setAutoDependencyCorrelation(false);
+            let consoleSpy = sandbox.spy(AppInsights.defaultClient.autoCollector["_console"], "enable");
+            let exceptionsSpy = sandbox.spy(AppInsights.defaultClient.autoCollector["_exceptions"], "enable");
+            let performanceSpy = sandbox.spy(AppInsights.defaultClient.autoCollector["_performance"], "enable");
+            AppInsights.start();
+            assert.equal(consoleSpy.firstCall.args[0], false);
+            assert.equal(exceptionsSpy.firstCall.args[0], false);
+            assert.equal(performanceSpy.firstCall.args[0], false);
         });
     });
 

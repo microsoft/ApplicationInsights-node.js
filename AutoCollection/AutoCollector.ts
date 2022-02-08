@@ -4,7 +4,7 @@ import { AutoCollectPerformance } from "./Performance";
 import { AutoCollectPreAggregatedMetrics } from "./PreAggregatedMetrics";
 import { HeartBeat } from "./HeartBeat";
 import { TelemetryClient } from "../Library/TelemetryClient";
-import { AutoCollectNativePerformance, } from "./NativePerformance";
+import { AutoCollectNativePerformance } from "./NativePerformance";
 import { IDisabledExtendedMetrics } from "../Declarations/Interfaces";
 import {
     IMetricDependencyDimensions,
@@ -38,7 +38,7 @@ export class AutoCollector {
     private _client: TelemetryClient;
     private _isStarted = false;
 
-    public setup(client: TelemetryClient) {
+    constructor(client: TelemetryClient) {
         this._client = client;
         this._initializeFlagsFromConfig();
         this._console = new AutoCollectConsole(client);

@@ -1,10 +1,10 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
-import path } from "path");
-import os } from "os");
-import fs } from "fs");
+import * as path from "path";
+import * as os from "os";
+import * as fs from "fs";
 import { FileWriter, homedir } from "../../../Bootstrap/FileWriter";
-import FileHelpers } from "../../../Bootstrap/Helpers/FileHelpers");
+import { renameCurrentFile } from "../../../Bootstrap/Helpers/FileHelpers";
 
 describe("FileWriter", () => {
     if (!FileWriter.isNodeVersionCompatible()) {
@@ -98,7 +98,7 @@ describe("FileWriter", () => {
             try {
                 // Try to delete the file we are appending
                 fs.unlinkSync(path.join(filedir, "append.txt"));
-            } catch (e) {}
+            } catch (e) { }
             const writer = new FileWriter(filedir, "append.txt", { append: true });
             writer.callback = (err) => {
                 if (counter < 3) {
@@ -130,7 +130,7 @@ describe("FileWriter", () => {
             try {
                 // Try to delete the file we are testing
                 fs.unlinkSync(path.join(filedir, "clocktest.txt"));
-            } catch (e) {}
+            } catch (e) { }
             const sandbox = sinon.sandbox.create();
             const clock = sandbox.useFakeTimers(Date.now());
             const writer = new FileWriter(filedir, "clocktest.txt");
@@ -161,7 +161,7 @@ describe("FileWriter", () => {
                 const birthdate = new Date(fs.statSync(path.join(filedir, "renametest.txt")).birthtime);
 
                 // Rename the file
-                FileHelpers.renameCurrentFile(filedir, "renametest.txt", (err, renamedfullpath) => {
+                renameCurrentFile(filedir, "renametest.txt", (err, renamedfullpath) => {
                     // Assert previously named file no longer exists
                     try {
                         const content = fs.readFileSync(path.join(filedir, "renametest.txt"));

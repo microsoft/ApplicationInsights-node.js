@@ -1,27 +1,27 @@
-import http } from "http");
-import https } from "https");
+import * as http from "http";
+import * as https from "https";
 import * as assert from "assert";
-import path } from "path")
-import os } from "os")
-import fs } from 'fs');
+import * as path from "path";
+import * as os from "os";
+import * as fs from 'fs';
 import * as sinon from "sinon";
-import events } from "events");
+import * as events from "events";
 import { EventEmitter } from "events";
-import child_process } from "child_process");
-import nock } from "nock");
+import * as child_process from "child_process";
+import * as nock from "nock";
 
-import AppInsights } from "../../applicationinsights");
-import Sender } from "../../Library/Transmission/Sender");
+import * as AppInsights from "../../applicationinsights";
+import { Sender } from "../../Library/Transmission/Sender";
 import { CorrelationContextManager } from "../../AutoCollection/CorrelationContextManager";
-import Constants } from "../../Declarations/Constants");
-import Contracts } from "../../Declarations/Contracts");
-import HeartBeat } from "../../AutoCollection/HeartBeat");
-import TelemetryClient } from "../../Library/TelemetryClient");
-import Context } from "../../Library/Context");
-import Util } from "../../Library/Util");
+import * as Constants from "../../Declarations/Constants";
+import * as Contracts from "../../Declarations/Contracts";
+import { HeartBeat } from "../../AutoCollection/HeartBeat";
+import { TelemetryClient } from "../../Library/TelemetryClient";
+import { Context } from "../../Library/Context";
+import { Util } from "../../Library/Util";
 import { JsonConfig } from "../../Library/Configuration/JsonConfig";
 import { FileAccessControl } from "../../Library/FileSystem/FileAccessControl";
-import FileSystemHelper } from "../../Library/FileSystem/FileSystemHelper");
+import * as FileSystemHelper from "../../Library/FileSystem/FileSystemHelper";
 
 /**
  * A fake response class that passes by default
@@ -172,7 +172,7 @@ describe("EndToEnd", () => {
     before(() => {
         sandbox = sinon.sandbox.create();
         var newEnv = <{ [id: string]: string }>{};
-        Util.tlsRestrictedAgent = new https.Agent();
+        Util.getInstance().tlsRestrictedAgent = new https.Agent();
         newEnv["APPLICATION_INSIGHTS_NO_STATSBEAT"] = "true";
         newEnv["TMP"] = process.env.TMP;
         newEnv["TMPDIR"] = process.env.TMPDIR;
@@ -457,7 +457,7 @@ describe("EndToEnd", () => {
 
         beforeEach(() => {
             nockScope = interceptor.reply(503, { "errors": [{ "index": 0, "statusCode": 503 }] });
-            AppInsights.defaultClient = undefined;
+            AppInsights.dispose();
             writeFile = sandbox.stub(FileSystemHelper, 'writeFileAsync');
             writeFileSync = sandbox.stub(fs, 'writeFileSync');
             existsSync = sandbox.stub(fs, 'existsSync').returns(true);

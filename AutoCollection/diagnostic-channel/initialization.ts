@@ -5,14 +5,14 @@
 // This is to avoid requiring the actual module if the NO_DIAGNOSTIC_CHANNEL env is present
 import * as DiagChannelPublishers from "diagnostic-channel-publishers";
 import * as DiagChannel from "diagnostic-channel";
-import Logger } from "../../Library/Logging/Logger");
+import { Logger } from "../../Library/Logging/Logger";
 import { JsonConfig } from "../../Library/Configuration/JsonConfig";
 
 export const IsInitialized = !JsonConfig.getInstance().noDiagnosticChannel;
 const TAG = "DiagnosticChannel";
 
 if (IsInitialized) {
-    const publishers: typeof DiagChannelPublishers } from "diagnostic-channel-publishers");
+    const publishers: typeof DiagChannelPublishers = require("diagnostic-channel-publishers");
     const individualOptOuts: string = JsonConfig.getInstance().noPatchModules;
     const unpatchedModules = individualOptOuts.split(",");
     const modules: { [key: string]: any } = {
