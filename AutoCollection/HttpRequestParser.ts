@@ -72,6 +72,7 @@ class HttpRequestParser extends RequestParser {
             name += " " + new url.URL(this.url).pathname;
         }
         catch (ex) { // Invalid URL
+            // Ignore error
         }
 
         var requestTelemetry: Contracts.RequestTelemetry & Contracts.Identified = {
@@ -152,6 +153,7 @@ class HttpRequestParser extends RequestParser {
             pathName = new url.URL(this.url).pathname;
         }
         catch (ex) { // Invalid URL
+            // Ignore error
         }
         let operationName = this.method;
         if (pathName) {
@@ -189,7 +191,7 @@ class HttpRequestParser extends RequestParser {
 
         var protocol = (encrypted || request.headers["x-forwarded-proto"] == "https") ? "https" : "http";
 
-        var baseUrl = protocol + '://' + request.headers.host + '/';
+        var baseUrl = protocol + "://" + request.headers.host + "/";
 
         var pathName = "";
         var search = "";
@@ -198,7 +200,9 @@ class HttpRequestParser extends RequestParser {
             pathName = requestUrl.pathname;
             search = requestUrl.search;
         }
-        catch (ex) { }
+        catch (ex) {
+            // Ignore errors
+         }
         var absoluteUrl = url.format({
             protocol: protocol,
             host: request.headers.host,
@@ -241,7 +245,7 @@ class HttpRequestParser extends RequestParser {
 
     private _getId(name: string) {
         var cookie = (this.rawHeaders && this.rawHeaders["cookie"] &&
-            typeof this.rawHeaders["cookie"] === 'string' && this.rawHeaders["cookie"]) || "";
+            typeof this.rawHeaders["cookie"] === "string" && this.rawHeaders["cookie"]) || "";
         var value = HttpRequestParser.parseId(Util.getCookie(name, cookie));
         return value;
     }

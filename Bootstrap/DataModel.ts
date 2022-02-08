@@ -7,7 +7,7 @@ export const enum SeverityLevel {
     ERROR = "ERROR",
     WARN = "WARN",
     INFO = "INFO"
-};
+}
 
 export interface DiagnosticLog {
     /**

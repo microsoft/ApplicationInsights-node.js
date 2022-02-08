@@ -25,7 +25,7 @@ export const subscriber = (event: IStandardEvent<mongodb.IMongoData>) => {
                 /* TODO: transmit result code from mongo */
                 resultCode: event.data.succeeded ? "0" : "1",
                 time: event.data.startedData.time,
-                dependencyTypeName: 'mongodb'
+                dependencyTypeName: "mongodb"
             });
     });
 };
@@ -43,7 +43,7 @@ export function enable(enabled: boolean, client: TelemetryClient) {
                     statsbeat.addInstrumentation(StatsbeatInstrumentation.MONGODB);
                 }
             });
-        };
+        }
         clients.push(client);
     } else {
         clients = clients.filter((c) => c != client);

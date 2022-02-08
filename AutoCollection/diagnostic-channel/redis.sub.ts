@@ -43,7 +43,7 @@ export function enable(enabled: boolean, client: TelemetryClient) {
                     statsbeat.addInstrumentation(StatsbeatInstrumentation.REDIS);
                 }
             });
-        };
+        }
         clients.push(client);
     } else {
         clients = clients.filter((c) => c != client);

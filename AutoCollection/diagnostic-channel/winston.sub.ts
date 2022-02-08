@@ -74,7 +74,7 @@ export function enable(enabled: boolean, client: TelemetryClient) {
                     statsbeat.addInstrumentation(StatsbeatInstrumentation.WINSTON);
                 }
             });
-        };
+        }
         clients.push(client);
     } else {
         clients = clients.filter((c) => c != client);

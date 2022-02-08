@@ -17,7 +17,7 @@ const bunyanToAILevelMap: { [key: number]: number } = {
     30: SeverityLevel.Information,
     40: SeverityLevel.Warning,
     50: SeverityLevel.Error,
-    60: SeverityLevel.Critical,
+    60: SeverityLevel.Critical
 };
 
 const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
@@ -31,7 +31,9 @@ const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
                 return;
             }
         }
-        catch (err) { }
+        catch (err) {
+            // Ignore error
+        }
         const AIlevel = bunyanToAILevelMap[event.data.level];
         client.trackTrace({ message: message, severity: AIlevel });
     });
@@ -50,7 +52,7 @@ export function enable(enabled: boolean, client: TelemetryClient) {
                     statsbeat.addInstrumentation(StatsbeatInstrumentation.BUNYAN);
                 }
             });
-        };
+        }
         clients.push(client);
     } else {
         clients = clients.filter((c) => c != client);

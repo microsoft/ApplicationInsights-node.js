@@ -165,7 +165,7 @@ class Statsbeat {
                 "runtimeVersion": this._runtimeVersion,
                 "language": this._language,
                 "version": this._sdkVersion,
-                "attach": this._attach,
+                "attach": this._attach
             }
             this._trackRequestDuration(networkProperties);
             this._trackRequestsCount(networkProperties);
@@ -186,10 +186,10 @@ class Statsbeat {
                 "runtimeVersion": this._runtimeVersion,
                 "language": this._language,
                 "version": this._sdkVersion,
-                "attach": this._attach,
+                "attach": this._attach
             };
             let attachProperties = Object.assign({
-                "rpId": this._resourceIdentifier,
+                "rpId": this._resourceIdentifier
             }, commonProperties);
             this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.ATTACH, value: 1, properties: attachProperties });
             if (this._instrumentation != Constants.StatsbeatInstrumentation.NONE) {// Only send if there are some instrumentations enabled

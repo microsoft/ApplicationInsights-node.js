@@ -159,9 +159,9 @@ export class CorrelationContextManager {
 
             if (typeof this.cls === "undefined") {
                 if ((CorrelationContextManager.forceClsHooked === true) || (CorrelationContextManager.forceClsHooked === undefined && CorrelationContextManager.shouldUseClsHooked())) {
-                    this.cls = require('cls-hooked');
+                    this.cls = require("cls-hooked");
                 } else {
-                    this.cls = require('continuation-local-storage');
+                    this.cls = require("continuation-local-storage");
                 }
             }
 
@@ -228,7 +228,7 @@ export class CorrelationContextManager {
                     : parser.getOperationName({}),
                 parser && parser.getCorrelationContextHeader() || undefined,
                 traceparent,
-                tracestate,
+                tracestate
             );
 
             return correlationContext;
@@ -245,7 +245,7 @@ export class CorrelationContextManager {
                 parser.getOperationName({}),
                 parser.getCorrelationContextHeader(),
                 traceparent,
-                tracestate,
+                tracestate
             );
 
             return correlationContext;
@@ -268,7 +268,7 @@ export class CorrelationContextManager {
     public static reset() {
         if (CorrelationContextManager.hasEverEnabled) {
             CorrelationContextManager.session = null;
-            CorrelationContextManager.session = this.cls.createNamespace('AI-CLS-Session');
+            CorrelationContextManager.session = this.cls.createNamespace("AI-CLS-Session");
         }
     }
 

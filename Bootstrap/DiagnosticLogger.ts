@@ -21,7 +21,7 @@ export class DiagnosticLogger {
             ikey: process.env.APPINSIGHTS_INSTRUMENTATIONKEY,
             extensionVersion: process.env.ApplicationInsightsAgent_EXTENSION_VERSION,
             sdkVersion: APPLICATION_INSIGHTS_SDK_VERSION,
-            subscriptionId: process.env.WEBSITE_OWNER_NAME ? process.env.WEBSITE_OWNER_NAME.split("+")[0] : null,
+            subscriptionId: process.env.WEBSITE_OWNER_NAME ? process.env.WEBSITE_OWNER_NAME.split("+")[0] : null
         }
     }
 
@@ -36,7 +36,7 @@ export class DiagnosticLogger {
                 ...DiagnosticLogger.DefaultEnvelope,
                 message,
                 level: DataModel.SeverityLevel.INFO,
-                time: new Date().toISOString(),
+                time: new Date().toISOString()
             };
             this._writer.log(diagnosticMessage);
         } else {

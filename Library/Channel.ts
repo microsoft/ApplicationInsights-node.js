@@ -97,7 +97,7 @@ class Channel {
         if (bufferIsEmpty && typeof callback === "function") {
             callback("no data to send");
         }
-    }    
+    }
 }
 
 export = Channel;
