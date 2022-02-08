@@ -1,8 +1,8 @@
-var Config = require("../Config");
+var Config } from "../Config");
 
 var appInsights = null;
 if (Config.AppInsightsEnabled) {
-    appInsights = require("applicationinsights");
+    appInsights } from "applicationinsights");
 }
 
 function wrap(fn) {

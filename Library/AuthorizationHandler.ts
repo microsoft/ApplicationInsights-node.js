@@ -1,11 +1,10 @@
-﻿import http = require("http");
-import https = require("https");
-import azureCore = require("@azure/core-http");
+﻿import * as http from "http";
+import * as https from "https";
+import * as azureCore from "@azure/core-http";
 
 const applicationInsightsResource = "https://monitor.azure.com//.default";
 
-
-class AuthorizationHandler {
+export class AuthorizationHandler {
 
     private _azureTokenPolicy: azureCore.RequestPolicy;
 
@@ -30,5 +29,3 @@ class AuthorizationHandler {
     }
 
 }
-
-export = AuthorizationHandler;

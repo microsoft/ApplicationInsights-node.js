@@ -1,6 +1,6 @@
-var http = require("http");
-var URL = require('url');
-var Config = require("../Config");
+var http } from "http");
+var URL } from 'url');
+var Config } from "../Config");
 
 /** Make a HTTP request */
 module.exports = (callback) => {

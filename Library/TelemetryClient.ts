@@ -1,27 +1,30 @@
-import url = require("url");
+import * as  url from "url";
 
-import Config = require("./Config");
-import AuthorizationHandler = require("./AuthorizationHandler");
-import Context = require("./Context");
-import Contracts = require("../Declarations/Contracts");
-import Channel = require("./Channel");
-import TelemetryProcessors = require("../TelemetryProcessors");
+import { Config } from "./Configuration/Config";
+import { AuthorizationHandler } from "./AuthorizationHandler";
+import { Context } from "./Context";
+import * as  Contracts from "../Declarations/Contracts";
+import { Channel } from "./Channel";
+import { azureRoleEnvironmentTelemetryProcessor } from "./TelemetryProcessors/AzureRoleEnvironmentTelemetryInitializer";
+import { performanceMetricsTelemetryProcessor } from "./TelemetryProcessors/PerformanceMetricsTelemetryProcessor";
+import { preAggregatedMetricsTelemetryProcessor } from "./TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor";
+import { samplingTelemetryProcessor } from "./TelemetryProcessors/SamplingTelemetryProcessor";
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
-import AutoCollector = require("../AutoCollection/AutoCollector");
-import Statsbeat = require("../AutoCollection/Statsbeat");
-import Sender = require("./Sender");
-import Util = require("./Util");
-import Logging = require("./Logging");
-import FlushOptions = require("./FlushOptions");
-import EnvelopeFactory = require("./EnvelopeFactory");
-import QuickPulseStateManager = require("./QuickPulseStateManager");
+import { AutoCollector } from "../AutoCollection/AutoCollector";
+import { Statsbeat } from "../AutoCollection/Statsbeat";
+import { Sender } from "./Transmission/Sender";
+import { Util } from "./Util";
+import { Logger } from "./Logging/Logger";
+import { FlushOptions } from "../Declarations/FlushOptions";
+import { EnvelopeFactory } from "./EnvelopeFactory";
+import { QuickPulseStateManager } from "./QuickPulse/QuickPulseStateManager";
 import { Tags } from "../Declarations/Contracts";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
  * and manually trigger immediate sending (flushing)
  */
-class TelemetryClient {
+export class TelemetryClient {
     private static TAG = "TelemetryClient";
     private _telemetryProcessors: { (envelope: Contracts.EnvelopeTelemetry, contextObjects: { [name: string]: any; }): boolean; }[] = [];
     private _enableAzureProperties: boolean = false;
@@ -42,7 +45,7 @@ class TelemetryClient {
     constructor(setupString?: string) {
         var config = new Config(setupString);
         this.config = config;
-        this.autoCollector = new AutoCollector();
+        this.autoCollector = new AutoCollector(this);
         this.context = new Context();
         this.commonProperties = {};
         this.authorizationHandler = null;
@@ -93,7 +96,7 @@ class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackException(telemetry: Contracts.ExceptionTelemetry): void {
-        if (telemetry && telemetry.exception && !Util.isError(telemetry.exception)) {
+        if (telemetry && telemetry.exception && !Util.getInstance().isError(telemetry.exception)) {
             telemetry.exception = new Error(telemetry.exception.toString());
         }
         this.track(telemetry, Contracts.TelemetryType.Exception);
@@ -135,7 +138,7 @@ class TelemetryClient {
             } catch (error) {
                 // set target as null to be compliant with previous behavior
                 telemetry.target = null;
-                Logging.warn(TelemetryClient.TAG, "The URL object is failed to create.", error);
+                Logger.warn(TelemetryClient.TAG, "The URL object is failed to create.", error);
             }
         }
         this.track(telemetry, Contracts.TelemetryType.Dependency);
@@ -165,21 +168,21 @@ class TelemetryClient {
                 envelope.time = telemetry.time.toISOString();
             }
             if (this._enableAzureProperties) {
-                TelemetryProcessors.azureRoleEnvironmentTelemetryProcessor(envelope, this.context);
+                azureRoleEnvironmentTelemetryProcessor(envelope, this.context);
             }
             var accepted = this.runTelemetryProcessors(envelope, telemetry.contextObjects);
 
             // Ideally we would have a central place for "internal" telemetry processors and users can configure which ones are in use.
             // This will do for now. Otherwise clearTelemetryProcessors() would be problematic.
-            accepted = accepted && TelemetryProcessors.samplingTelemetryProcessor(envelope, { correlationContext: CorrelationContextManager.getCurrentContext() });
-            TelemetryProcessors.preAggregatedMetricsTelemetryProcessor(envelope, this);
+            accepted = accepted && samplingTelemetryProcessor(envelope, { correlationContext: CorrelationContextManager.getCurrentContext() });
+            preAggregatedMetricsTelemetryProcessor(envelope, this);
             if (accepted) {
-                TelemetryProcessors.performanceMetricsTelemetryProcessor(envelope, this);
+                performanceMetricsTelemetryProcessor(envelope, this);
                 this.channel.send(envelope);
             }
         }
         else {
-            Logging.warn(TelemetryClient.TAG, "track() requires telemetry object and telemetryType to be specified.")
+            Logger.warn(TelemetryClient.TAG, "track() requires telemetry object and telemetryType to be specified.")
         }
     }
 
@@ -198,7 +201,7 @@ class TelemetryClient {
     public getAuthorizationHandler(config: Config): AuthorizationHandler {
         if (config && config.aadTokenCredential) {
             if (!this.authorizationHandler) {
-                Logging.info(TelemetryClient.TAG, "Adding authorization handler");
+                Logger.info(TelemetryClient.TAG, "Adding authorization handler");
                 this.authorizationHandler = new AuthorizationHandler(config.aadTokenCredential)
             }
             return this.authorizationHandler;
@@ -232,7 +235,7 @@ class TelemetryClient {
         }
 
         contextObjects = contextObjects || {};
-        contextObjects['correlationContext'] = CorrelationContextManager.getCurrentContext();
+        contextObjects["correlationContext"] = CorrelationContextManager.getCurrentContext();
 
         for (var i = 0; i < telemetryProcessorsCount; ++i) {
             try {
@@ -246,17 +249,17 @@ class TelemetryClient {
 
             } catch (error) {
                 accepted = true;
-                Logging.warn(TelemetryClient.TAG, "One of telemetry processors failed, telemetry item will be sent.", error, envelope);
+                Logger.warn(TelemetryClient.TAG, "One of telemetry processors failed, telemetry item will be sent.", error, envelope);
             }
         }
 
         // Sanitize tags and properties after running telemetry processors
         if (accepted) {
             if (envelope && envelope.tags) {
-                envelope.tags = Util.validateStringMap(envelope.tags) as Tags & Tags[];
+                envelope.tags = Util.getInstance().validateStringMap(envelope.tags) as Tags & Tags[];
             }
             if (envelope && envelope.data && envelope.data.baseData && envelope.data.baseData.properties) {
-                envelope.data.baseData.properties = Util.validateStringMap(envelope.data.baseData.properties);
+                envelope.data.baseData.properties = Util.getInstance().validateStringMap(envelope.data.baseData.properties);
             }
         }
 
@@ -270,5 +273,3 @@ class TelemetryClient {
         return this._statsbeat;
     }
 }
-
-export = TelemetryClient;

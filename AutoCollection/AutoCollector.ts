@@ -1,10 +1,10 @@
-import AutoCollectConsole = require("./Console");
-import AutoCollectExceptions = require("./Exceptions");
-import AutoCollectPerformance = require("./Performance");
-import AutoCollectPreAggregatedMetrics = require("./PreAggregatedMetrics");
-import HeartBeat = require("./HeartBeat");
-import TelemetryClient = require("../Library/TelemetryClient");
-import { AutoCollectNativePerformance, } from "./NativePerformance";
+import { AutoCollectConsole } from "./Console";
+import { AutoCollectExceptions } from "./Exceptions";
+import { AutoCollectPerformance } from "./Performance";
+import { AutoCollectPreAggregatedMetrics } from "./PreAggregatedMetrics";
+import { HeartBeat } from "./HeartBeat";
+import { TelemetryClient } from "../Library/TelemetryClient";
+import { AutoCollectNativePerformance } from "./NativePerformance";
 import { IDisabledExtendedMetrics } from "../Declarations/Interfaces";
 import {
     IMetricDependencyDimensions,
@@ -14,7 +14,7 @@ import {
 } from "../Declarations/Metrics/AggregatedMetricDimensions";
 
 
-class AutoCollector {
+export class AutoCollector {
     // Default values
     public isConsole = true;
     public isConsoleLog = false;
@@ -38,7 +38,7 @@ class AutoCollector {
     private _client: TelemetryClient;
     private _isStarted = false;
 
-    public setup(client: TelemetryClient) {
+    constructor(client: TelemetryClient) {
         this._client = client;
         this._initializeFlagsFromConfig();
         this._console = new AutoCollectConsole(client);
@@ -180,5 +180,3 @@ class AutoCollector {
         this.forceClsHooked = this._client.config.enableUseAsyncHooks !== undefined ? this._client.config.enableUseAsyncHooks : this.forceClsHooked;
     }
 }
-
-export = AutoCollector;

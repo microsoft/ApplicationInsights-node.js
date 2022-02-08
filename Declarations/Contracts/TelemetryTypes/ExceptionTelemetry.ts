@@ -1,15 +1,14 @@
-import { Telemetry }  from "./Telemetry";
-import Contracts = require("../");
+import { Telemetry } from "./Telemetry";
+import { SeverityLevel } from "../Generated/SeverityLevel";
 
 /**
  * Telemetry about the exception thrown by the application
  */
-export interface ExceptionTelemetry extends Telemetry
-{
+export interface ExceptionTelemetry extends Telemetry {
     /**
      * Exception thrown
      */
-     exception: Error;
+    exception: Error;
 
     /**
      * Metrics associated with this exception, displayed in Metrics Explorer on the portal. Defaults to empty
@@ -18,5 +17,5 @@ export interface ExceptionTelemetry extends Telemetry
     /**
      * Exception severity level
      */
-    severity?: Contracts.SeverityLevel;
+    severity?: SeverityLevel;
 }

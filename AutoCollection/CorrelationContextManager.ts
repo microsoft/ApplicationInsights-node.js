@@ -1,8 +1,9 @@
-import events = require("events");
+import * as events from "events";
 import * as http from "http";
+
 import { SpanContext } from "@opentelemetry/api";
 
-import * as azureFunctionsTypes from "../Library/Functions";
+import * as azureFunctionsTypes from "../Declarations/Functions";
 import { ICorrelationContext, ITraceparent, ITracestate } from "../Declarations/Interfaces";
 
 

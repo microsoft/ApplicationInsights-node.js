@@ -1,5 +1,5 @@
-var Config = require("../Config");
-var pg = require('pg');
+var Config } from "../Config");
+var pg } from 'pg');
 
 var ready = false;
 var client = null;

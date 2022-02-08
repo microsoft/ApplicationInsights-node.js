@@ -1,6 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-const childProcess = require('child_process');
+const fs } from 'fs');
+const path } from 'path');
+const childProcess } from 'child_process');
 
 function help() {
     console.log(

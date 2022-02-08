@@ -2,7 +2,6 @@
 
 import * as path from "path";
 import * as fs from "fs";
-import * as os from "os";
 import * as DataModel from "./DataModel";
 import * as FileHelpers from "./Helpers/FileHelpers";
 
@@ -68,7 +67,7 @@ export class FileWriter implements DataModel.AgentLogger {
                         // Clear the current file
                         this._writeFile(data);
                     } else if (this._options.renamePolicy === "stop") {
-                        // Stop future logging
+                        // Stop future Logger
                         this._ready = false;
                     }
                 } else {

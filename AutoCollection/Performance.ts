@@ -1,9 +1,9 @@
-import os = require("os");
+import * as  os from "os";
 
-import TelemetryClient = require("../Library/TelemetryClient");
-import Constants = require("../Declarations/Constants");
+import { TelemetryClient } from "../Library/TelemetryClient";
+import * as  Constants from "../Declarations/Constants";
 
-class AutoCollectPerformance {
+export class AutoCollectPerformance {
 
     private _totalRequestCount: number = 0;
     private _totalFailedRequestCount: number = 0;
@@ -58,7 +58,7 @@ class AutoCollectPerformance {
                     time: +new Date
                 };
 
-                if (typeof (process as any).cpuUsage === 'function') {
+                if (typeof (process as any).cpuUsage === "function") {
                     this._lastAppCpuUsage = (process as any).cpuUsage();
                 }
                 this._lastHrtime = process.hrtime();
@@ -80,10 +80,10 @@ class AutoCollectPerformance {
             return;
         }
 
-        if (typeof duration === 'string') {
+        if (typeof duration === "string") {
             // dependency duration is passed in as "00:00:00.123" by autocollectors
-            durationMs = +new Date('1970-01-01T' + duration + 'Z'); // convert to num ms, returns NaN if wrong
-        } else if (typeof duration === 'number') {
+            durationMs = +new Date("1970-01-01T" + duration + "Z"); // convert to num ms, returns NaN if wrong
+        } else if (typeof duration === "number") {
             durationMs = duration;
         } else {
             return;
@@ -106,10 +106,10 @@ class AutoCollectPerformance {
             return;
         }
 
-        if (typeof duration === 'string') {
+        if (typeof duration === "string") {
             // dependency duration is passed in as "00:00:00.123" by autocollectors
-            durationMs = +new Date('1970-01-01T' + duration + 'Z'); // convert to num ms, returns NaN if wrong
-        } else if (typeof duration === 'number') {
+            durationMs = +new Date("1970-01-01T" + duration + "Z"); // convert to num ms, returns NaN if wrong
+        } else if (typeof duration === "number") {
             durationMs = duration;
         } else {
             return;
@@ -173,13 +173,13 @@ class AutoCollectPerformance {
 
             // Calculate % of total cpu time (user + system) this App Process used (Only supported by node v6.1.0+)
             let appCpuPercent: number = undefined;
-            if (typeof (process as any).cpuUsage === 'function') {
+            if (typeof (process as any).cpuUsage === "function") {
                 const appCpuUsage = (process as any).cpuUsage();
                 const hrtime = process.hrtime();
 
                 const totalApp = ((appCpuUsage.user - this._lastAppCpuUsage.user) + (appCpuUsage.system - this._lastAppCpuUsage.system)) || 0;
 
-                if (typeof this._lastHrtime !== 'undefined' && this._lastHrtime.length === 2) {
+                if (typeof this._lastHrtime !== "undefined" && this._lastHrtime.length === 2) {
                     const elapsedTime = ((hrtime[0] - this._lastHrtime[0]) * 1e6 + (hrtime[1] - this._lastHrtime[1]) / 1e3) || 0; // convert to microseconds
 
                     appCpuPercent = 100 * totalApp / (elapsedTime * cpus.length);
@@ -303,5 +303,3 @@ class AutoCollectPerformance {
         }
     }
 }
-
-export = AutoCollectPerformance;

@@ -1,25 +1,25 @@
 import { IncomingMessage } from "http";
 import { SpanContext } from "@opentelemetry/api";
 
-import AutoCollectPerformance = require("./AutoCollection/Performance");
-import Logging = require("./Library/Logging");
-import QuickPulseClient = require("./Library/QuickPulseStateManager");
-import { ICorrelationContext, IDisabledExtendedMetrics, } from "./Declarations/Interfaces";
+import { AutoCollectPerformance } from "./AutoCollection/Performance";
+import { Logger } from "./Library/Logging/Logger";
+import { QuickPulseStateManager } from "./Library/QuickPulse/QuickPulseStateManager";
+import { ICorrelationContext, IDisabledExtendedMetrics } from "./Declarations/Interfaces";
 import { DistributedTracingModes } from "./Declarations/Enumerators";
+import { TelemetryClient } from "./Library/TelemetryClient";
+import * as Contracts from "./Declarations/Contracts";
+import * as azureFunctionsTypes from "./Declarations/Functions";
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
-export import TelemetryClient = require("./Library/TelemetryClient");
-export import Contracts = require("./Declarations/Contracts");
-export import azureFunctionsTypes = require("./Library/Functions");
-export { DistributedTracingModes };
+export { Contracts, TelemetryClient, DistributedTracingModes, azureFunctionsTypes };
 
 /**
 * The default client, initialized when setup was called. To initialize a different client
 * with its own configuration, use `new TelemetryClient(instrumentationKey?)`.
 */
 export let defaultClient: TelemetryClient;
-export let liveMetricsClient: QuickPulseClient;
+export let liveMetricsClient: QuickPulseStateManager;
 let _performanceLiveMetrics: AutoCollectPerformance;
 let _isSendingLiveMetrics = false;
 let _isDiskRetry = true;
@@ -39,15 +39,14 @@ let _diskRetryMaxBytes: number = undefined;
 export function setup(setupString?: string) {
     if (!defaultClient) {
         defaultClient = new TelemetryClient(setupString);
-        defaultClient.autoCollector.setup(defaultClient);
         if (defaultClient.config.distributedTracingMode) {
             Configuration.setDistributedTracingMode(defaultClient.config.distributedTracingMode);
         }
-        if (defaultClient.config.enableInternalDebugLogging) {
-            Logging.enableDebug = defaultClient.config.enableInternalDebugLogging;
+        if (defaultClient.config.enableInternalDebugLogger) {
+            Logger.enableDebug = defaultClient.config.enableInternalDebugLogger;
         }
-        if (defaultClient.config.enableInternalWarningLogging) {
-            Logging.disableWarnings = !defaultClient.config.enableInternalWarningLogging;
+        if (defaultClient.config.enableInternalWarningLogger) {
+            Logger.disableWarnings = !defaultClient.config.enableInternalWarningLogger;
         }
         if (defaultClient.config.enableSendLiveMetrics) {
             Configuration.setSendLiveMetrics(defaultClient.config.enableSendLiveMetrics);
@@ -57,7 +56,7 @@ export function setup(setupString?: string) {
         }
         Configuration.setUseDiskRetryCaching(_isDiskRetry, _diskRetryInterval, _diskRetryMaxBytes);
     } else {
-        Logging.info("The default client is already setup");
+        Logger.info("The default client is already setup");
     }
     return Configuration;
 }
@@ -69,13 +68,13 @@ export function setup(setupString?: string) {
  * @returns {ApplicationInsights} this class
  */
 export function start() {
-    if (!!defaultClient) {
+    if (defaultClient) {
         defaultClient.autoCollector.start();
         if (liveMetricsClient && _isSendingLiveMetrics) {
             liveMetricsClient.enable(_isSendingLiveMetrics);
         }
     } else {
-        Logging.warn("Start cannot be called before setup");
+        Logger.warn("Start cannot be called before setup");
     }
 
     return Configuration;
@@ -95,7 +94,7 @@ export function start() {
  * @returns A plain object for request storage or null if automatic dependency correlation is disabled.
  */
 export function getCorrelationContext(): ICorrelationContext {
-    if (defaultClient.autoCollector.isCorrelating) {
+    if (defaultClient && defaultClient.autoCollector.isCorrelating) {
         // TODO
         return null;
     }
@@ -153,7 +152,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectConsole(value: boolean, collectConsoleLog: boolean = false) {
-        defaultClient.autoCollector.setAutoCollectConsole(value, collectConsoleLog);
+        if (defaultClient) {
+            defaultClient.autoCollector.setAutoCollectConsole(value, collectConsoleLog);
+        }
         return Configuration;
     }
 
@@ -163,7 +164,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectExceptions(value: boolean) {
-        defaultClient.autoCollector.setAutoCollectExceptions(value);
+        if (defaultClient) {
+            defaultClient.autoCollector.setAutoCollectExceptions(value);
+        }
         return Configuration;
     }
 
@@ -174,7 +177,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: boolean | IDisabledExtendedMetrics = true) {
-        defaultClient.autoCollector.setAutoCollectPerformance(value, collectExtendedMetrics);
+        if (defaultClient) {
+            defaultClient.autoCollector.setAutoCollectPerformance(value, collectExtendedMetrics);
+        }
         return Configuration;
     }
 
@@ -184,7 +189,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectPreAggregatedMetrics(value: boolean) {
-        defaultClient.autoCollector.setAutoCollectPreAggregatedMetrics(value);
+        if (defaultClient) {
+            defaultClient.autoCollector.setAutoCollectPreAggregatedMetrics(value);
+        }
         return Configuration;
     }
 
@@ -194,7 +201,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectHeartbeat(value: boolean) {
-        defaultClient.autoCollector.setAutoCollectHeartbeat(value);
+        if (defaultClient) {
+            defaultClient.autoCollector.setAutoCollectHeartbeat(value);
+        }
         return Configuration;
     }
 
@@ -204,7 +213,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectRequests(value: boolean) {
-        defaultClient.autoCollector.setAutoCollectRequests(value);
+        if (defaultClient) {
+            defaultClient.autoCollector.setAutoCollectRequests(value);
+        }
         return Configuration;
     }
 
@@ -214,7 +225,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectDependencies(value: boolean) {
-        defaultClient.autoCollector.setAutoCollectDependencies(value);
+        if (defaultClient) {
+            defaultClient.autoCollector.setAutoCollectDependencies(value);
+        }
         return Configuration;
     }
 
@@ -225,7 +238,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoDependencyCorrelation(value: boolean, useAsyncHooks?: boolean) {
-        defaultClient.autoCollector.setAutoDependencyCorrelation(value, useAsyncHooks);
+        if (defaultClient) {
+            defaultClient.autoCollector.setAutoDependencyCorrelation(value, useAsyncHooks);
+        }
         return Configuration;
     }
 
@@ -250,14 +265,14 @@ export class Configuration {
     }
 
     /**
-     * Enables debug and warning logging for AppInsights itself.
-     * @param enableDebugLogging if true, enables debug logging
-     * @param enableWarningLogging if true, enables warning logging
+     * Enables debug and warning Logger for AppInsights itself.
+     * @param enableDebugLogger if true, enables debug Logger
+     * @param enableWarningLogger if true, enables warning Logger
      * @returns {Configuration} this class
      */
-    public static setInternalLogging(enableDebugLogging = false, enableWarningLogging = true) {
-        Logging.enableDebug = enableDebugLogging;
-        Logging.disableWarnings = !enableWarningLogging;
+    public static setInternalLogger(enableDebugLogger = false, enableWarningLogger = true) {
+        Logger.enableDebug = enableDebugLogger;
+        Logger.disableWarnings = !enableWarningLogger;
         return Configuration;
     }
 
@@ -268,13 +283,13 @@ export class Configuration {
     public static setSendLiveMetrics(enable = false) {
         if (!defaultClient) {
             // Need a defaultClient so that we can add the QPS telemetry processor to it
-            Logging.warn("Live metrics client cannot be setup without the default client");
+            Logger.warn("Live metrics client cannot be setup without the default client");
             return Configuration;
         }
 
         if (!liveMetricsClient && enable) {
             // No qps client exists. Create one and prepare it to be enabled at .start()
-            liveMetricsClient = new QuickPulseClient(defaultClient.config, defaultClient.context, defaultClient.getAuthorizationHandler);
+            liveMetricsClient = new QuickPulseStateManager(defaultClient.config, defaultClient.context, defaultClient.getAuthorizationHandler);
             _performanceLiveMetrics = new AutoCollectPerformance(liveMetricsClient as any, 1000, true);
             liveMetricsClient.addCollector(_performanceLiveMetrics);
             defaultClient.quickPulseClient = liveMetricsClient; // Need this so we can forward all manual tracks to live metrics via PerformanceMetricsTelemetryProcessor
@@ -291,7 +306,9 @@ export class Configuration {
  * Disposes the default client and all the auto collectors so they can be reinitialized with different configuration
 */
 export function dispose() {
-    defaultClient.autoCollector.dispose();
+    if (defaultClient) {
+        defaultClient.autoCollector.dispose();
+    }
     defaultClient = null;
     if (liveMetricsClient) {
         liveMetricsClient.enable(false);

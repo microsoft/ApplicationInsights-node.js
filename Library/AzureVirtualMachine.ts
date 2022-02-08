@@ -1,7 +1,7 @@
 
-import Config = require("./Config");
-import Logging = require("./Logging");
-import Util = require("./Util");
+import { Config } from "./Configuration/Config";
+import { Logger } from "./Logging/Logger";
+import { Util } from "./Util";
 
 const AIMS_URI = "http://169.254.169.254/metadata/instance/compute";
 const AIMS_API_VERSION = "api-version=2017-12-01";
@@ -23,23 +23,23 @@ export class AzureVirtualMachine {
         let vmInfo: IVirtualMachineInfo = {};
         const metadataRequestUrl = `${AIMS_URI}?${AIMS_API_VERSION}&${AIMS_FORMAT}`;
         const requestOptions = {
-            method: 'GET',
+            method: "GET",
             // [AutoCollectHttpDependencies.disableCollectionRequestOption]: true,
             // TODO: disable tracking of this HTTP call
             headers: {
-                "Metadata": "True",
+                "Metadata": "True"
             }
         };
 
-        const req = Util.makeRequest(config, metadataRequestUrl, requestOptions, (res) => {
+        const req = Util.getInstance().makeRequest(config, metadataRequestUrl, requestOptions, (res) => {
             if (res.statusCode === 200) {
                 // Success; VM
                 vmInfo.isVM = true;
                 let virtualMachineData = "";
-                res.on('data', (data: any) => {
+                res.on("data", (data: any) => {
                     virtualMachineData += data;
                 });
-                res.on('end', () => {
+                res.on("end", () => {
                     try {
                         let data = JSON.parse(virtualMachineData);
                         vmInfo.id = data["vmId"] || "";
@@ -48,7 +48,7 @@ export class AzureVirtualMachine {
                     }
                     catch (error) {
                         // Failed to parse JSON
-                        Logging.info(AzureVirtualMachine.TAG, error);
+                        Logger.info(AzureVirtualMachine.TAG, error);
                     }
                     callback(vmInfo);
                 });
@@ -57,7 +57,7 @@ export class AzureVirtualMachine {
             }
         }, false, false);
         if (req) {
-            req.on('error', (error: Error) => {
+            req.on("error", (error: Error) => {
                 // Unable to contact endpoint.
                 // Do nothing for now.
                 if (error && error.message && error.message.indexOf(ConnectionErrorMessage) > -1) {
@@ -65,7 +65,7 @@ export class AzureVirtualMachine {
                 }
                 else {
                     // Only log when is not determined if VM or not to avoid noise outside of Azure VMs
-                    Logging.info(AzureVirtualMachine.TAG, error);
+                    Logger.info(AzureVirtualMachine.TAG, error);
                 }
                 callback(vmInfo);
             });

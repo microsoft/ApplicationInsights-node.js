@@ -1,11 +1,12 @@
-import os = require("os");
-import Vm = require("../Library/AzureVirtualMachine");
-import TelemetryClient = require("../Library/TelemetryClient");
-import Constants = require("../Declarations/Constants");
-import Config = require("../Library/Config");
-import Context = require("../Library/Context");
+import * as  os from "os";
 
-class HeartBeat {
+import { AzureVirtualMachine } from "../Library/AzureVirtualMachine";
+import { TelemetryClient } from "../Library/TelemetryClient";
+import * as  Constants from "../Declarations/Constants";
+import { Config } from "../Library/Configuration/Config";
+import { Context } from "../Library/Context";
+
+export class HeartBeat {
     private _collectionInterval: number = 900000;
     private _client: TelemetryClient;
     private _handle: NodeJS.Timer | null;
@@ -44,7 +45,7 @@ class HeartBeat {
         } else if (config) {
             if (this._isVM === undefined) {
                 waiting = true;
-                Vm.AzureVirtualMachine.getAzureComputeMetadata(config, (vmInfo) => {
+                AzureVirtualMachine.getAzureComputeMetadata(config, (vmInfo) => {
                     this._isVM = vmInfo.isVM;
                     if (this._isVM) {
                         properties["azInst_vmId"] = vmInfo.id;
@@ -62,5 +63,3 @@ class HeartBeat {
         }
     }
 }
-
-export = HeartBeat;

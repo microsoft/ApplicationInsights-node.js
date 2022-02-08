@@ -1,5 +1,5 @@
-import appInsights = require("applicationinsights");
-import http = require("http");
+import appInsights } from "applicationinsights");
+import http } from "http");
 
 appInsights.setup().start();
 appInsights.defaultClient.trackEvent({name: "Test event"});

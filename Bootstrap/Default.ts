@@ -1,11 +1,11 @@
-import azureCore = require("@azure/core-http");
+import * as azureCore from "@azure/core-http";
 
 import * as types from "../applicationinsights";
 import * as Helpers from "./Helpers";
-import Constants = require("../Declarations/Constants");
+import * as  Constants from "../Declarations/Constants";
 import { StatusLogger, StatusContract } from "./StatusLogger";
 import { DiagnosticLogger } from "./DiagnosticLogger";
-import { JsonConfig } from "../Library/JsonConfig";
+import { JsonConfig } from "../Library/Configuration/JsonConfig";
 
 // Private configuration vars
 let _appInsights: typeof types | null;
@@ -20,7 +20,7 @@ const forceStart = process.env.APPLICATIONINSIGHTS_FORCE_START === "true";
 // Other local constants
 const defaultStatus: StatusContract = {
     ...StatusLogger.DEFAULT_STATUS,
-    Ikey: _setupString,
+    Ikey: _setupString
 };
 
 /**
@@ -65,7 +65,7 @@ export function setupAndStart(setupString = _setupString, aadTokenCredential?: a
         _statusLogger.logStatus({
             ...defaultStatus,
             AgentInitializedSuccessfully: false,
-            Reason: message,
+            Reason: message
         });
         return null;
     }
@@ -108,7 +108,7 @@ export function setupAndStart(setupString = _setupString, aadTokenCredential?: a
             _logger.logMessage("Using AAD Token Credential");
             _appInsights.defaultClient.config.aadTokenCredential = aadTokenCredential;
         }
-        
+
         _appInsights.start();
         // Add attach flag in Statsbeat
         let statsbeat = _appInsights.defaultClient.getStatsbeat();

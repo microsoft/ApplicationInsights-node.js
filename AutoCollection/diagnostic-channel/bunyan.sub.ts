@@ -1,12 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
-import TelemetryClient = require("../../Library/TelemetryClient");
+import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
+import { bunyan } from "diagnostic-channel-publishers";
+
+import { TelemetryClient } from "../../Library/TelemetryClient";
 import { SeverityLevel } from "../../Declarations/Contracts";
 import { StatsbeatInstrumentation } from "../../Declarations/Constants";
-
-import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
-
-import { bunyan } from "diagnostic-channel-publishers";
 
 let clients: TelemetryClient[] = [];
 
@@ -17,7 +16,7 @@ const bunyanToAILevelMap: { [key: number]: number } = {
     30: SeverityLevel.Information,
     40: SeverityLevel.Warning,
     50: SeverityLevel.Error,
-    60: SeverityLevel.Critical,
+    60: SeverityLevel.Critical
 };
 
 const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
@@ -31,7 +30,9 @@ const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
                 return;
             }
         }
-        catch (err) { }
+        catch (ex) {
+            // Ignore error
+        }
         const AIlevel = bunyanToAILevelMap[event.data.level];
         client.trackTrace({ message: message, severity: AIlevel });
     });
@@ -50,7 +51,7 @@ export function enable(enabled: boolean, client: TelemetryClient) {
                     statsbeat.addInstrumentation(StatsbeatInstrumentation.BUNYAN);
                 }
             });
-        };
+        }
         clients.push(client);
     } else {
         clients = clients.filter((c) => c != client);

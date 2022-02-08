@@ -1,4 +1,4 @@
-import TelemetryClient = require("../Library/TelemetryClient");
+import { TelemetryClient } from "../Library/TelemetryClient";
 
 type ExceptionHandle = "uncaughtExceptionMonitor" | "uncaughtException" | "unhandledRejection";
 const UNCAUGHT_EXCEPTION_MONITOR_HANDLER_NAME: ExceptionHandle = "uncaughtExceptionMonitor";
@@ -7,7 +7,7 @@ const UNHANDLED_REJECTION_HANDLER_NAME: ExceptionHandle = "unhandledRejection";
 const FALLBACK_ERROR_MESSAGE = "A promise was rejected without providing an error. Application Insights generated this error stack for you.";
 
 
-class AutoCollectExceptions {
+export class AutoCollectExceptions {
     private _canUseUncaughtExceptionMonitor = false;
     private _exceptionListenerHandle?: (error: Error | undefined) => void;
     private _rejectionListenerHandle?: (error: Error | undefined) => void;
@@ -79,5 +79,3 @@ class AutoCollectExceptions {
         }
     }
 }
-
-export = AutoCollectExceptions;

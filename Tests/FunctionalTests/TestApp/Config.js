@@ -1,4 +1,4 @@
-var appInsights = require("applicationinsights");
+var appInsights } from "applicationinsights");
 
 var Config = {
     ServerPort: "9099",

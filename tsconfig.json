@@ -18,9 +18,6 @@
         "AutoCollection/diagnostic-channel/*.ts",
         "Tests/**/*.ts"
     ],
-    "files": [
-        "./node_modules/@types/cls-hooked/index.d.ts"
-    ],
     "exclude": [
         "node_modules",
         "Tests/FunctionalTests",

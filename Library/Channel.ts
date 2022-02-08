@@ -1,16 +1,16 @@
-﻿import Contracts = require("../Declarations/Contracts");
-import Logging = require("./Logging");
-import Sender = require("./Sender");
-import Util = require("./Util");
+﻿import * as Contracts from "../Declarations/Contracts";
+import { Logger } from "./Logging/Logger";
+import { Sender } from "./Transmission/Sender";
+import { Util } from "./Util";
 
-class Channel {
+export class Channel {
     protected _lastSend: number;
     protected _timeoutHandle: any;
 
     protected _isDisabled: () => boolean;
     protected _getBatchSize: () => number;
     protected _getBatchIntervalMs: () => number;
-    
+
     public _sender: Sender;
     public _buffer: Contracts.EnvelopeTelemetry[];
 
@@ -48,7 +48,7 @@ class Channel {
 
         // validate input
         if (!envelope) {
-            Logging.warn("Cannot send null/undefined telemetry");
+            Logger.warn("Cannot send null/undefined telemetry");
             return;
         }
 
@@ -77,7 +77,7 @@ class Channel {
         let bufferIsEmpty = this._buffer.length < 1;
         if (!bufferIsEmpty) {
             // invoke send
-            if (isNodeCrashing || Util.isNodeExit) {
+            if (isNodeCrashing || Util.getInstance().isNodeExit) {
                 this._sender.saveOnCrash(this._buffer);
                 if (typeof callback === "function") {
                     callback("data saved on crash");
@@ -97,7 +97,5 @@ class Channel {
         if (bufferIsEmpty && typeof callback === "function") {
             callback("no data to send");
         }
-    }    
+    }
 }
-
-export = Channel;
