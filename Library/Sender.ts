@@ -185,6 +185,14 @@ class Sender {
                         let endTime = +new Date();
                         let duration = endTime - startTime;
                         this._numConsecutiveFailures = 0;
+                        if (this._statsbeat) {
+                            if (res.statusCode == 429) { // Throttle
+                                this._statsbeat.countThrottle(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
+                            }
+                            else {
+                                this._statsbeat.countRequest(Constants.StatsbeatNetworkCategory.Breeze, endpointHost, duration, res.statusCode === 200);
+                            }
+                        }
                         if (this._enableDiskRetryMode) {
                             // try to send any cached events if the user is back online
                             if (res.statusCode === 200) {
@@ -197,11 +205,8 @@ class Sender {
                                 }
                             } else if (this._isRetriable(res.statusCode)) {
                                 try {
-                                    if (this._statsbeat) {
+                                    if (this._statsbeat && res.statusCode != 429) {
                                         this._statsbeat.countRetry(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
-                                        if (res.statusCode === 429) {
-                                            this._statsbeat.countThrottle(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
-                                        }
                                     }
                                     const breezeResponse = JSON.parse(responseString) as Contracts.BreezeResponse;
                                     let filteredEnvelopes: Contracts.EnvelopeTelemetry[] = [];
@@ -247,9 +252,6 @@ class Sender {
 
                         }
                         else {
-                            if (this._statsbeat) {
-                                this._statsbeat.countRequest(Constants.StatsbeatNetworkCategory.Breeze, endpointHost, duration, res.statusCode === 200);
-                            }
                             this._numConsecutiveRedirects = 0;
                             if (typeof callback === "function") {
                                 callback(responseString);

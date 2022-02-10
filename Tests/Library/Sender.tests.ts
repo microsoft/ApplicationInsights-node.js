@@ -422,7 +422,7 @@ describe("Library/Sender", () => {
             var throttleSpy = sandbox.spy(statsbeat, "countThrottle");
             nockScope = interceptor.reply(429, breezeResponse);
             statsbeatSender.send([testEnvelope], () => {
-                assert.ok(statsbeatSpy.calledOnce);
+                assert.ok(statsbeatSpy.notCalled);
                 assert.ok(throttleSpy.calledOnce);
                 done();
             });
