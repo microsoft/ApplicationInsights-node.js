@@ -16,7 +16,8 @@ import { URL } from "url";
 import Logging = require("./Logging");
 import { FileAccessControl } from "./FileAccessControl";
 
-const throttleStatusCode = 439; //  - Too many requests and refresh cache
+const legacyThrottleStatusCode = 439; //  - Too many requests and refresh cache
+const throttleStatusCode = 402; // Monthly Quota Exceeded (new SDK)
 
 class Sender {
     private static TAG = "Sender";
@@ -186,7 +187,7 @@ class Sender {
                         let duration = endTime - startTime;
                         this._numConsecutiveFailures = 0;
                         if (this._statsbeat) {
-                            if (res.statusCode == throttleStatusCode) { // Throttle
+                            if (res.statusCode == throttleStatusCode || res.statusCode == legacyThrottleStatusCode) { // Throttle
                                 this._statsbeat.countThrottle(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
                             }
                             else {
