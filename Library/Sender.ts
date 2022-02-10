@@ -319,7 +319,6 @@ class Sender {
             statusCode === 403 || // Forbidden
             statusCode === 408 || // Timeout
             statusCode === 429 || // Throttle
-            statusCode === 439 || // Quota
             statusCode === 500 || // Server Error
             statusCode === 503 // Server Unavilable
         );
