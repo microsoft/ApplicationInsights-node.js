@@ -9,7 +9,7 @@ import { AzureVirtualMachine } from "../Library/AzureVirtualMachine";
 import { Config } from "../Library/Configuration/Config";
 import { Context } from "../Library/Context";
 import { NetworkStatsbeat } from "./NetworkStatsbeat";
-import { Util } from "../Library/Util";
+import { Util } from "../Library/Util/Util";
 
 const STATSBEAT_LANGUAGE = "node";
 

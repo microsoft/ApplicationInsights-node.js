@@ -13,12 +13,13 @@ import { CorrelationContextManager } from "../AutoCollection/CorrelationContextM
 import { AutoCollector } from "../AutoCollection/AutoCollector";
 import { Statsbeat } from "../AutoCollection/Statsbeat";
 import { Sender } from "./Transmission/Sender";
-import { Util } from "./Util";
+import { Util } from "./Util/Util";
 import { Logger } from "./Logging/Logger";
 import { FlushOptions } from "../Declarations/FlushOptions";
 import { EnvelopeFactory } from "./EnvelopeFactory";
 import { QuickPulseStateManager } from "./QuickPulse/QuickPulseStateManager";
 import { Tags } from "../Declarations/Contracts";
+import { LogHandler, MetricHandler, TraceHandler } from "./Handlers";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -29,6 +30,9 @@ export class TelemetryClient {
     private _telemetryProcessors: { (envelope: Contracts.EnvelopeTelemetry, contextObjects: { [name: string]: any; }): boolean; }[] = [];
     private _enableAzureProperties: boolean = false;
     private _statsbeat: Statsbeat;
+    private _traceHandler: TraceHandler;
+    private _metricHandler: MetricHandler;
+    private _logHandler: LogHandler;
 
     public config: Config;
     public autoCollector: AutoCollector;

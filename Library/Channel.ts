@@ -1,7 +1,7 @@
 ﻿import * as Contracts from "../Declarations/Contracts";
 import { Logger } from "./Logging/Logger";
 import { Sender } from "./Transmission/Sender";
-import { Util } from "./Util";
+import { Util } from "./Util/Util";
 
 export class Channel {
     protected _lastSend: number;

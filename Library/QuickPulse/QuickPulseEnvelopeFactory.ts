@@ -1,7 +1,7 @@
 import * as os from "os";
 import * as Contracts from "../../Declarations/Contracts";
 import * as Constants from "../../Declarations/Constants";
-import { Util } from "../Util";
+import { Util } from "../Util/Util";
 import { Config } from "../Configuration/Config";
 import { Context } from "../Context";
 import { Logger } from "../Logging/Logger";

@@ -1,22 +1,23 @@
-﻿import * as fs from "fs";
-import * as http from "http";
-import * as os from "os";
-import * as path from "path";
-import * as zlib from "zlib";
+﻿import fs = require("fs");
+import http = require("http");
+import os = require("os");
+import path = require("path");
+import zlib = require("zlib");
 
-import { AuthorizationHandler } from "../AuthorizationHandler";
-import { Config } from "../Configuration/Config";
-import * as Contracts from "../../Declarations/Contracts";
-import * as Constants from "../../Declarations/Constants";
-import { Statsbeat } from "../../AutoCollection/Statsbeat";
-import * as FileSystemHelper from "../Util/FileSystemHelper";
-import { Util } from "../Util/Util";
+import AuthorizationHandler = require("./AuthorizationHandler");
+import Config = require("./Config")
+import Contracts = require("../Declarations/Contracts");
+import Constants = require("../Declarations/Constants");
+import Statsbeat = require("../AutoCollection/Statsbeat");
+import FileSystemHelper = require("./FileSystemHelper");
+import Util = require("./Util/Util");
 import { URL } from "url";
-import { Logger } from "../Logging/Logger";
-import { FileAccessControl } from "../Exporters/Shared/Persist/FileAccessControl";
+import Logging = require("./Logging");
+import { FileAccessControl } from "./FileAccessControl";
+import { Envelope } from "../Declarations/Contracts";
 
 
-export class Sender {
+class Sender {
     private static TAG = "Sender";
     // the amount of time the SDK will wait between resending cached data, this buffer is to avoid any throttling from the service side
     public static WAIT_BETWEEN_RESEND = 60 * 1000; // 1 minute
@@ -66,16 +67,16 @@ export class Sender {
             FileAccessControl.checkFileProtection(); // Only check file protection when disk retry is enabled
         }
         this._enableDiskRetryMode = FileAccessControl.OS_PROVIDES_FILE_PROTECTION && value;
-        if (typeof resendInterval === "number" && resendInterval >= 0) {
+        if (typeof resendInterval === 'number' && resendInterval >= 0) {
             this._resendInterval = Math.floor(resendInterval);
         }
-        if (typeof maxBytesOnDisk === "number" && maxBytesOnDisk >= 0) {
+        if (typeof maxBytesOnDisk === 'number' && maxBytesOnDisk >= 0) {
             this._maxBytesOnDisk = Math.floor(maxBytesOnDisk);
         }
 
         if (value && !FileAccessControl.OS_PROVIDES_FILE_PROTECTION) {
             this._enableDiskRetryMode = false;
-            Logger.warn(Sender.TAG, "Ignoring request to enable disk retry mode. Sufficient file protection capabilities were not detected.")
+            Logging.warn(Sender.TAG, "Ignoring request to enable disk retry mode. Sufficient file protection capabilities were not detected.")
         }
         if (this._enableDiskRetryMode) {
             if (this._statsbeat) {
@@ -128,7 +129,7 @@ export class Sender {
                         this._storeToDisk(envelopes);
                     }
                     errorMsg += "Error:" + authError.toString();
-                    Logger.warn(Sender.TAG, errorMsg);
+                    Logging.warn(Sender.TAG, errorMsg);
 
                     if (typeof callback === "function") {
                         callback(errorMsg);
@@ -139,7 +140,7 @@ export class Sender {
 
             let batch: string = "";
             envelopes.forEach(envelope => {
-                var payload: string = Util.getInstance().stringify(envelope);
+                var payload: string = Util.stringify(envelope);
                 if (typeof payload !== "string") {
                     return;
                 }
@@ -155,7 +156,7 @@ export class Sender {
             zlib.gzip(payload, (err, buffer) => {
                 var dataToSend = buffer;
                 if (err) {
-                    Logger.warn(Sender.TAG, err);
+                    Logging.warn(Sender.TAG, err);
                     dataToSend = payload; // something went wrong so send without gzip
                     options.headers["Content-Length"] = payload.length.toString();
                 } else {
@@ -163,7 +164,7 @@ export class Sender {
                     options.headers["Content-Length"] = buffer.length.toString();
                 }
 
-                Logger.info(Sender.TAG, options);
+                Logging.info(Sender.TAG, options);
 
                 // Ensure this request is not captured by auto-collection.
                 // TODO:
@@ -253,7 +254,7 @@ export class Sender {
                             if (typeof callback === "function") {
                                 callback(responseString);
                             }
-                            Logger.info(Sender.TAG, responseString);
+                            Logging.info(Sender.TAG, responseString);
                             if (typeof this._onSuccess === "function") {
                                 this._onSuccess(responseString);
                             }
@@ -261,7 +262,7 @@ export class Sender {
                     });
                 };
 
-                var req = Util.getInstance().makeRequest(this._config, endpointUrl, options, requestCallback);
+                var req = Util.makeRequest(this._config, endpointUrl, options, requestCallback);
 
                 req.on("error", (error: Error) => {
                     // todo: handle error codes better (group to recoverable/non-recoverable and persist)
@@ -272,22 +273,22 @@ export class Sender {
 
                     // Only use warn level if retries are disabled or we've had some number of consecutive failures sending data
                     // This is because warn level is printed in the console by default, and we don't want to be noisy for transient and self-recovering errors
-                    // Continue informing on each failure if verbose Logger is being used
+                    // Continue informing on each failure if verbose logging is being used
                     if (!this._enableDiskRetryMode || this._numConsecutiveFailures > 0 && this._numConsecutiveFailures % Sender.MAX_CONNECTION_FAILURES_BEFORE_WARN === 0) {
                         let notice = "Ingestion endpoint could not be reached. This batch of telemetry items has been lost. Use Disk Retry Caching to enable resending of failed telemetry. Error:";
                         if (this._enableDiskRetryMode) {
                             notice = `Ingestion endpoint could not be reached ${this._numConsecutiveFailures} consecutive times. There may be resulting telemetry loss. Most recent error:`;
                         }
-                        Logger.warn(Sender.TAG, notice, Util.getInstance().dumpObj(error));
+                        Logging.warn(Sender.TAG, notice, Util.dumpObj(error));
                     } else {
                         let notice = "Transient failure to reach ingestion endpoint. This batch of telemetry items will be retried. Error:";
-                        Logger.info(Sender.TAG, notice, Util.getInstance().dumpObj(error));
+                        Logging.info(Sender.TAG, notice, Util.dumpObj(error));
                     }
                     this._onErrorHelper(error);
 
                     if (typeof callback === "function") {
                         if (error) {
-                            callback(Util.getInstance().dumpObj(error));
+                            callback(Util.dumpObj(error));
                         }
                         else {
                             callback("Error sending telemetry");
@@ -307,7 +308,7 @@ export class Sender {
 
     public saveOnCrash(envelopes: Contracts.EnvelopeTelemetry[]) {
         if (this._enableDiskRetryMode) {
-            this._storeToDiskSync(Util.getInstance().stringify(envelopes));
+            this._storeToDiskSync(Util.stringify(envelopes));
         }
     }
 
@@ -329,11 +330,11 @@ export class Sender {
      */
     private async _storeToDisk(envelopes: Contracts.EnvelopeTelemetry[]): Promise<void> {
         try {
-            Logger.info(Sender.TAG, "Checking existence of data storage directory: " + this._tempDir);
+            Logging.info(Sender.TAG, "Checking existence of data storage directory: " + this._tempDir);
             await FileSystemHelper.confirmDirExists(this._tempDir);
         }
         catch (ex) {
-            Logger.warn(Sender.TAG, "Failed to create folder to put telemetry: " + (ex && ex.message));
+            Logging.warn(Sender.TAG, "Failed to create folder to put telemetry: " + (ex && ex.message));
             this._onErrorHelper(ex);
             return;
         }
@@ -341,14 +342,14 @@ export class Sender {
             await FileAccessControl.applyACLRules(this._tempDir);
         }
         catch (ex) {
-            Logger.warn(Sender.TAG, "Failed to apply file access control to folder: " + (ex && ex.message));
+            Logging.warn(Sender.TAG, "Failed to apply file access control to folder: " + (ex && ex.message));
             this._onErrorHelper(ex);
             return;
         }
         try {
             let size = await FileSystemHelper.getShallowDirectorySize(this._tempDir);
             if (size > this._maxBytesOnDisk) {
-                Logger.warn(Sender.TAG, "Not saving data due to max size limit being met. Directory size in bytes is: " + size);
+                Logging.warn(Sender.TAG, "Not saving data due to max size limit being met. Directory size in bytes is: " + size);
                 return;
             }
             //create file - file name for now is the timestamp, a better approach would be a UUID but that
@@ -358,11 +359,11 @@ export class Sender {
 
             // Mode 600 is w/r for creator and no read access for others (only applies on *nix)
             // For Windows, ACL rules are applied to the entire directory (see logic in _confirmDirExists and _applyACLRules)
-            Logger.info(Sender.TAG, "saving data to disk at: " + fileFullPath);
-            FileSystemHelper.writeFileAsync(fileFullPath, Util.getInstance().stringify(envelopes), { mode: 0o600 });
+            Logging.info(Sender.TAG, "saving data to disk at: " + fileFullPath);
+            FileSystemHelper.writeFileAsync(fileFullPath, Util.stringify(envelopes), { mode: 0o600 });
         }
         catch (ex) {
-            Logger.warn(Sender.TAG, "Failed to persist telemetry to disk: " + (ex && ex.message));
+            Logging.warn(Sender.TAG, "Failed to persist telemetry to disk: " + (ex && ex.message));
             this._onErrorHelper(ex);
             return;
         }
@@ -374,7 +375,7 @@ export class Sender {
      */
     private _storeToDiskSync(payload: any) {
         try {
-            Logger.info(Sender.TAG, "Checking existence of data storage directory: " + this._tempDir);
+            Logging.info(Sender.TAG, "Checking existence of data storage directory: " + this._tempDir);
             if (!fs.existsSync(this._tempDir)) {
                 fs.mkdirSync(this._tempDir);
             }
@@ -384,7 +385,7 @@ export class Sender {
 
             let dirSize = FileSystemHelper.getShallowDirectorySizeSync(this._tempDir);
             if (dirSize > this._maxBytesOnDisk) {
-                Logger.info(Sender.TAG, "Not saving data due to max size limit being met. Directory size in bytes is: " + dirSize);
+                Logging.info(Sender.TAG, "Not saving data due to max size limit being met. Directory size in bytes is: " + dirSize);
                 return;
             }
 
@@ -394,11 +395,11 @@ export class Sender {
             var fileFullPath = path.join(this._tempDir, fileName);
 
             // Mode 600 is w/r for creator and no access for anyone else (only applies on *nix)
-            Logger.info(Sender.TAG, "saving data before crash to disk at: " + fileFullPath);
+            Logging.info(Sender.TAG, "saving data before crash to disk at: " + fileFullPath);
             fs.writeFileSync(fileFullPath, payload, { mode: 0o600 });
 
         } catch (error) {
-            Logger.warn(Sender.TAG, "Error while saving data to disk: " + (error && error.message));
+            Logging.warn(Sender.TAG, "Error while saving data to disk: " + (error && error.message));
             this._onErrorHelper(error);
         }
     }
@@ -457,3 +458,5 @@ export class Sender {
         }
     }
 }
+
+export = Sender;

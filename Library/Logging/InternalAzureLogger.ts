@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import { accessAsync, appendFileAsync, confirmDirExists, getShallowFileSize, readdirAsync, readFileAsync, writeFileAsync, unlinkAsync } from "../FileSystem/FileSystemHelper";
+import { accessAsync, appendFileAsync, confirmDirExists, getShallowFileSize, readdirAsync, readFileAsync, writeFileAsync, unlinkAsync } from "../Util/FileSystemHelper";
 
 
 export class InternalAzureLogger {

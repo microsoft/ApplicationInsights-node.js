@@ -7,7 +7,7 @@ import * as Contracts from "../../../Declarations/Contracts";
 import { AuthorizationHandler } from "../../../Library/AuthorizationHandler";
 import { Config } from "../../../Library/Configuration/Config";
 import { QuickPulseSender } from "../../../Library/QuickPulse/QuickPulseSender";
-import { Util } from "../../../Library/Util";
+import { Util } from "../../../Library/Util/Util";
 
 describe("Library/QuickPulseStateManager", () => {
     Util.getInstance().tlsRestrictedAgent = new https.Agent();

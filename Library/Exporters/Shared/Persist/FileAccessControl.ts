@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as child_process from "child_process";
 
-import { Logger } from "../Logging/Logger";
+import { Logger } from "../../../Logging/Logger";
 
 
 export class FileAccessControl {

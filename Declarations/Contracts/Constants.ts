@@ -55,3 +55,13 @@ export interface ConnectionString {
 }
 
 export type ConnectionStringKey = "instrumentationkey" | "ingestionendpoint" | "liveendpoint" | "location"| "endpointsuffix";
+
+/**
+ * SDK info
+ * @internal
+ */
+ export const SDK_INFO = {
+    NAME: "opentelemetry",
+    RUNTIME: "node",
+    LANGUAGE: "nodejs",
+  };

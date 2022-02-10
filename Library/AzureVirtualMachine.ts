@@ -1,7 +1,7 @@
 
 import { Config } from "./Configuration/Config";
 import { Logger } from "./Logging/Logger";
-import { Util } from "./Util";
+import { Util } from "./Util/Util";
 
 const AIMS_URI = "http://169.254.169.254/metadata/instance/compute";
 const AIMS_API_VERSION = "api-version=2017-12-01";

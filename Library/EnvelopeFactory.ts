@@ -1,5 +1,5 @@
 import * as Contracts from "../Declarations/Contracts";
-import { Util } from "./Util";
+import { Util } from "./Util/Util";
 import { Config } from "./Configuration/Config";
 import { Context } from "./Context";
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";

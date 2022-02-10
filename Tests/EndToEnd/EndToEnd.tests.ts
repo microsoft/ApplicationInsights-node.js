@@ -18,10 +18,10 @@ import * as Contracts from "../../Declarations/Contracts";
 import { HeartBeat } from "../../AutoCollection/HeartBeat";
 import { TelemetryClient } from "../../Library/TelemetryClient";
 import { Context } from "../../Library/Context";
-import { Util } from "../../Library/Util";
+import { Util } from "../../Library/Util/Util";
 import { JsonConfig } from "../../Library/Configuration/JsonConfig";
-import { FileAccessControl } from "../../Library/FileSystem/FileAccessControl";
-import * as FileSystemHelper from "../../Library/FileSystem/FileSystemHelper";
+import { FileAccessControl } from "../../Library/Exporters/Shared/Persist/FileAccessControl";
+import * as FileSystemHelper from "../../Library/Util/FileSystemHelper";
 
 /**
  * A fake response class that passes by default

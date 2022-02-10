@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as sinon from "sinon";
 
 import { InternalAzureLogger } from "../../../Library/Logging/InternalAzureLogger";
-import * as  FileSystemHelper from "../../../Library/FileSystem/FileSystemHelper";
+import * as  FileSystemHelper from "../../../Library/Util/FileSystemHelper";
 
 describe("Library/InternalAzureLogger", () => {
 

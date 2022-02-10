@@ -5,7 +5,7 @@ import * as  azureCore from "@azure/core-http";
 
 import { AuthorizationHandler } from "../../../Library/AuthorizationHandler";
 import { Config } from "../../../Library/Configuration/Config";
-import { Util } from "../../../Library/Util";
+import { Util } from "../../../Library/Util/Util";
 
 class TestTokenCredential implements azureCore.TokenCredential {
     private _expiresOn: Date;

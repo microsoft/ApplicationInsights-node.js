@@ -6,12 +6,12 @@ import * as constants from "constants";
 import { isValidTraceId } from "@opentelemetry/api";
 import { IdGenerator, RandomIdGenerator } from "@opentelemetry/core";
 
-import { Logger } from "./Logging/Logger";
-import { Config } from "./Configuration/Config";
-import { TelemetryClient } from "../Library/TelemetryClient";
-import { RequestHeaders } from "../Declarations/RequestResponseHeaders";
-import { HttpRequest } from "../Declarations/Functions";
-import { JsonConfig } from "./Configuration/JsonConfig";
+import { Logger } from "../Logging/Logger";
+import { Config } from "../Configuration/Config";
+import { TelemetryClient } from "../TelemetryClient";
+import { RequestHeaders } from "../../Declarations/RequestResponseHeaders";
+import { HttpRequest } from "../../Declarations/Functions";
+import { JsonConfig } from "../Configuration/JsonConfig";
 
 
 export class Util {

@@ -5,7 +5,7 @@ import * as http from "http";
 import { EnvelopeFactory } from "../../../Library/EnvelopeFactory";
 import * as Contracts from "../../../Declarations/Contracts";
 import { TelemetryClient } from "../../../Library/TelemetryClient";
-import { Util } from "../../../Library/Util";
+import { Util } from "../../../Library/Util/Util";
 
 describe("Library/EnvelopeFactory", () => {
 

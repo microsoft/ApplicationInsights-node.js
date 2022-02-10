@@ -4,7 +4,7 @@ import * as AppInsights from "../../../applicationinsights";
 import { channel } from "diagnostic-channel";
 import { enable, dispose as disable } from "../../../AutoCollection/diagnostic-channel/bunyan.sub";
 import { bunyan } from "diagnostic-channel-publishers";
-import { Util } from "../../../Library/Util";
+import { Util } from "../../../Library/Util/Util";
 
 describe("diagnostic-channel/bunyan", () => {
     afterEach(() => {

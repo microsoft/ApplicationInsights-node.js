@@ -1,13 +1,14 @@
-import * as https from "https";
+import https = require("https");
+
+import AuthorizationHandler = require("./AuthorizationHandler");
+import Config = require("./Config");
+import Logging = require("./Logging");
+import QuickPulseUtil = require("./QuickPulseUtil");
+import Util = require("./Util/Util");
+
+// Types
 import * as http from "http";
-
-import * as Contracts from "../../Declarations/Contracts";
-import { AuthorizationHandler } from "../AuthorizationHandler";
-import { Config } from "../Configuration/Config";
-import { Logger } from "../Logging/Logger";
-import { getTransmissionTime } from "./QuickPulseUtil";
-import { Util } from "../Util/Util";
-
+import * as Contracts from "../Declarations/Contracts";
 
 const QuickPulseConfig = {
     method: "POST",
@@ -23,7 +24,7 @@ const QuickPulseConfig = {
     subscribed: "x-ms-qps-subscribed"
 };
 
-export class QuickPulseSender {
+class QuickPulseSender {
     private static TAG = "QuickPulseSender";
     private static MAX_QPS_FAILURES_BEFORE_WARN = 25;
 
@@ -39,7 +40,7 @@ export class QuickPulseSender {
 
     public ping(envelope: Contracts.EnvelopeQuickPulse,
         redirectedHostEndpoint: string,
-        done: (shouldPOST?: boolean, res?: http.IncomingMessage, redirectedHost?: string, pollingIntervalHint?: number) => void
+        done: (shouldPOST?: boolean, res?: http.IncomingMessage, redirectedHost?: string, pollingIntervalHint?: number) => void,
     ): void {
 
         let pingHeaders: { name: string, value: string }[] = [
@@ -54,7 +55,7 @@ export class QuickPulseSender {
 
     public async post(envelope: Contracts.EnvelopeQuickPulse,
         redirectedHostEndpoint: string,
-        done: (shouldPOST?: boolean, res?: http.IncomingMessage, redirectedHost?: string, pollingIntervalHint?: number) => void
+        done: (shouldPOST?: boolean, res?: http.IncomingMessage, redirectedHost?: string, pollingIntervalHint?: number) => void,
     ): Promise<void> {
 
         // Important: When POSTing data, envelope must be an array
@@ -68,7 +69,7 @@ export class QuickPulseSender {
         additionalHeaders?: { name: string, value: string }[]
     ): Promise<void> {
 
-        const payload = Util.getInstance().stringify(envelope);
+        const payload = Util.stringify(envelope);
         var options = {
             // [AutoCollectHttpDependencies.disableCollectionRequestOption]: true,
             // TODO: disable tracking of this HTTP call
@@ -76,10 +77,10 @@ export class QuickPulseSender {
             method: QuickPulseConfig.method,
             path: `/QuickPulseService.svc/${postOrPing}?ikey=${this._config.instrumentationKey}`,
             headers: {
-                "Expect": "100-continue",
-                [QuickPulseConfig.time]: getTransmissionTime(), // unit = 100s of nanoseconds
-                "Content-Type": "application\/json",
-                "Content-Length": Buffer.byteLength(payload)
+                'Expect': '100-continue',
+                [QuickPulseConfig.time]: QuickPulseUtil.getTransmissionTime(), // unit = 100s of nanoseconds
+                'Content-Type': 'application\/json',
+                'Content-Length': Buffer.byteLength(payload)
             }
         };
 
@@ -95,8 +96,8 @@ export class QuickPulseSender {
                     await authHandler.addAuthorizationHeader(options);
                 }
                 catch (authError) {
-                    let notice = "Failed to get AAD bearer token for the Application. Error:";
-                    Logger.info(QuickPulseSender.TAG, notice, authError);
+                    let notice = `Failed to get AAD bearer token for the Application. Error:`;
+                    Logging.info(QuickPulseSender.TAG, notice, authError);
                     // Do not send request to Quickpulse if auth fails, data will be dropped
                     return;
                 }
@@ -107,7 +108,7 @@ export class QuickPulseSender {
         if (this._config.httpsAgent) {
             (<any>options).agent = this._config.httpsAgent;
         } else {
-            (<any>options).agent = Util.getInstance().tlsRestrictedAgent;
+            (<any>options).agent = Util.tlsRestrictedAgent;
         }
 
         const req = https.request(options, (res: http.IncomingMessage) => {
@@ -138,13 +139,15 @@ export class QuickPulseSender {
         // Do nothing for now.
         this._consecutiveErrors++;
         // LOG every error, but WARN instead when X number of consecutive errors occur
-        let notice = "Transient error connecting to the Live Metrics endpoint. This packet will not appear in your Live Metrics Stream. Error:";
+        let notice = `Transient error connecting to the Live Metrics endpoint. This packet will not appear in your Live Metrics Stream. Error:`;
         if (this._consecutiveErrors % QuickPulseSender.MAX_QPS_FAILURES_BEFORE_WARN === 0) {
             notice = `Live Metrics endpoint could not be reached ${this._consecutiveErrors} consecutive times. Most recent error:`;
-            Logger.warn(QuickPulseSender.TAG, notice, error);
+            Logging.warn(QuickPulseSender.TAG, notice, error);
         } else {
             // Potentially transient error, do not change the ping/post state yet.
-            Logger.info(QuickPulseSender.TAG, notice, error);
+            Logging.info(QuickPulseSender.TAG, notice, error);
         }
     }
 }
+
+export = QuickPulseSender;

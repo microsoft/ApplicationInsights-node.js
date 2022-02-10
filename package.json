@@ -46,9 +46,9 @@
   "devDependencies": {
     "@types/mocha": "^7.0.2",
     "@types/node": "^8.0.0",
+    "@types/sinon": "2.1.2",
     "@typescript-eslint/eslint-plugin": "^5.11.0",
     "@typescript-eslint/parser": "^5.11.0",
-    "@types/sinon": "2.1.2",
     "applicationinsights-native-metrics": "0.0.7",
     "eslint": "^7.29.0",
     "eslint-config-standard": "^16.0.3",
@@ -64,6 +64,7 @@
   },
   "dependencies": {
     "@azure/core-http": "^2.2.3",
+    "@azure/monitor-opentelemetry-exporter": "^1.0.0-beta.5",
     "@opentelemetry/api": "^1.0.4",
     "@opentelemetry/core": "^1.0.1",
     "@opentelemetry/sdk-trace-base": "^1.0.1",

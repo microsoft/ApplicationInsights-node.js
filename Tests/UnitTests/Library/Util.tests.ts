@@ -4,7 +4,7 @@ import * as http from "http";
 import * as https from "https";
 import * as url from 'url';
 
-import { Util } from "../../../Library/Util";
+import { Util } from "../../../Library/Util/Util";
 
 describe("Library/Util", () => {
 
