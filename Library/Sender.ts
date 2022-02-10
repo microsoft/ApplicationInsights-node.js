@@ -15,8 +15,8 @@ import Util = require("./Util");
 import { URL } from "url";
 import Logging = require("./Logging");
 import { FileAccessControl } from "./FileAccessControl";
-import { Envelope } from "../Declarations/Contracts";
 
+const throttleStatusCode = 439; //  - Too many requests and refresh cache
 
 class Sender {
     private static TAG = "Sender";
@@ -186,7 +186,7 @@ class Sender {
                         let duration = endTime - startTime;
                         this._numConsecutiveFailures = 0;
                         if (this._statsbeat) {
-                            if (res.statusCode == 429) { // Throttle
+                            if (res.statusCode == throttleStatusCode) { // Throttle
                                 this._statsbeat.countThrottle(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
                             }
                             else {
@@ -205,7 +205,7 @@ class Sender {
                                 }
                             } else if (this._isRetriable(res.statusCode)) {
                                 try {
-                                    if (this._statsbeat && res.statusCode != 429) {
+                                    if (this._statsbeat) {
                                         this._statsbeat.countRetry(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
                                     }
                                     const breezeResponse = JSON.parse(responseString) as Contracts.BreezeResponse;
@@ -316,14 +316,13 @@ class Sender {
 
     private _isRetriable(statusCode: number) {
         return (
-            statusCode === 206 || // Retriable
+            statusCode === 206 || // Partial Accept
             statusCode === 401 || // Unauthorized
             statusCode === 403 || // Forbidden
             statusCode === 408 || // Timeout
-            statusCode === 429 || // Throttle
-            statusCode === 439 || // Quota
+            statusCode === 429 || // Too many requests
             statusCode === 500 || // Server Error
-            statusCode === 503 // Server Unavilable
+            statusCode === 503 // Server Unavailable
         );
     }
 
