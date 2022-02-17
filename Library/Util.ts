@@ -139,7 +139,7 @@ class Util {
      * Check if an object is of type Error
      */
     public static isError(obj: any): boolean {
-        return obj instanceof Error;
+        return Object.prototype.toString.call(obj) === "[object Error]";
     }
 
     public static isPrimitive(input: any): boolean {

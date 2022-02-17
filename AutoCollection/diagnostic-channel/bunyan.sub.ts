@@ -27,7 +27,10 @@ const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
             // Try to parse message as Bunyan log is JSON
             let log: any = JSON.parse(message);
             if (log.err) {
-                client.trackException({ exception: log.err });
+                let bunyanError = new Error(log.err.message);
+                bunyanError.name = log.err.name;
+                bunyanError.stack = log.err.stack;
+                client.trackException({ exception: bunyanError });
                 return;
             }
         }
