@@ -1,9 +1,12 @@
 import * as path from "path";
 import http = require("http");
-import fs = require('fs');
+import https = require("https");
+import fs = require("fs");
+import zlib = require("zlib");
 
 import Logging = require("../Library/Logging");
 import TelemetryClient = require("../Library/TelemetryClient");
+import snippetInjectionHelper = require("../Library/SnippetInjectionHelper");
 
 class WebSnippet {
 
@@ -13,6 +16,7 @@ class WebSnippet {
     private static _aiUrl: string;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
+    
 
     constructor(client: TelemetryClient) {
         if (!!WebSnippet.INSTANCE) {
@@ -23,14 +27,17 @@ class WebSnippet {
         // AI URL used to validate if snippet already included
         WebSnippet._aiUrl = " https://js.monitor.azure.com/scripts/b/ai.2";
 
-        let snippetPath = path.resolve(__dirname, "../../node_modules/applicationinsight-web-snippet/snippet/snippet.min.js");
+        //TODO: replace the path with npm package exports
+        let snippetPath = path.resolve(__dirname, "/snippet/snippet.min.js"); 
         if (client.config.isDebugWebSnippet) {
-            snippetPath = path.resolve(__dirname, "../../node_modules/applicationinsight-web-snippet/snippet/snippet.js");
+            snippetPath = path.resolve(__dirname, "/snippet/snippet.js");
         }
+
         fs.readFile(snippetPath, function (err, snippet) {
             if (err) {
                 Logging.warn("Failed to load AI Web snippet. Ex:" + err);
             }
+            //TODO:should add extra config: snippetInstrumentationKey
             WebSnippet._snippet = snippet.toString().replace("INSTRUMENTATION_KEY", client.config.instrumentationKey);
         });
     }
@@ -47,60 +54,113 @@ class WebSnippet {
         return this._isInitialized;
     }
 
-    private _initialize() {
+    private  _initialize() {
         this._isInitialized = true;
         const originalHttpServer = http.createServer;
+        var originalHttpsServer = https.createServer;
         http.createServer = (requestListener?: (request: http.IncomingMessage, response: http.ServerResponse) => void) => {
             const originalRequestListener = requestListener;
             if (originalRequestListener) {
                 requestListener = (request: http.IncomingMessage, response: http.ServerResponse) => {
                     // Patch response write method
                     let originalResponseWrite = response.write;
+                    let isGetRequest = request.method == "GET";
                     let isEnabled = this._isEnabled;
-                    response.write = function wrap(a: Buffer | string, b?: Function | string, c?: Function | string) {
-                        if (isEnabled) {
-                            if (WebSnippet.ValidateInjection(response, a)) {
-                                arguments[0] = WebSnippet.InjectWebSnippet(response, a);
+                    response.write = function wrap(a: Buffer | string, b?: Function | string, c?:  Function | string) {
+                        //only patch GET request
+                        try {
+                            let headers =  snippetInjectionHelper.getContentEncodingFromHeaders(response);
+                            if (isEnabled && isGetRequest) {
+                                if (!headers) {
+                                    if (WebSnippet.ValidateInjection(response, a)) {
+                                        arguments[0] = WebSnippet.InjectWebSnippet(response, a);
+                                    }
+                                } else if (headers.length) {
+                                    let encodeType = headers[0];
+                                    arguments[0] = WebSnippet.InjectWebSnippet(response, a, encodeType);
+                                }
                             }
+                        } catch (err) {
+                            Logging.info("inject snipet error: "+ err);
                         }
                         return originalResponseWrite.apply(response, arguments);
                     }
+
                     // Patch response end method for cases when HTML is added there
                     let originalResponseEnd = response.end;
 
                     response.end = function wrap(a?: Buffer | string | any, b?: Function | string, c?: Function) {
-                        if (isEnabled) {
-                            if (WebSnippet.ValidateInjection(response, a)) {
-                                arguments[0] = WebSnippet.InjectWebSnippet(response, a);
+                        if (isEnabled&& isGetRequest) {
+                            try {
+                                let headers =  snippetInjectionHelper.getContentEncodingFromHeaders(response);
+                                if (isEnabled && isGetRequest) {
+                                    if (!headers) {
+                                        if (WebSnippet.ValidateInjection(response, a)) {
+                                            arguments[0] = WebSnippet.InjectWebSnippet(response, a);
+                                        }
+                                    } else if (headers.length) {
+                                        let encodeType = headers[0];
+                                        arguments[0] = WebSnippet.InjectWebSnippet(response, a, encodeType);
+                                    }
+                                }
+                            } catch (err) {
+                                Logging.info("inject snipet error: "+ err);
                             }
                         }
-                        originalResponseEnd.apply(response, arguments);
+                        return originalResponseEnd.apply(response, arguments);
                     }
 
-                    originalRequestListener(request, response);
+                    return originalRequestListener(request, response);
                 }
             }
             return originalHttpServer(requestListener);
         }
+
+        https.createServer = function(options,httpsRequestListener) {
+            var originalHttpsRequestListener = httpsRequestListener;
+         
+            httpsRequestListener = function (req, res) {
+                var isGetHttpsRequest = req.method == "GET";
+                var isHttpsEnabled = this._isEnabled;
+                var originalHttpsResponseWrite = res.write;
+                res.write = function wrap(a,c) {
+                    try {
+                        let headers =  snippetInjectionHelper.getContentEncodingFromHeaders(res);
+                        if (isHttpsEnabled && isGetHttpsRequest) {
+                            if (!headers) {
+                                if (WebSnippet.ValidateInjection(res, a)) {
+                                    arguments[0] = WebSnippet.InjectWebSnippet(res, a);
+                                }
+                            } else if (headers.length) {
+                                let encodeType = headers[0];
+                                arguments[0] = WebSnippet.InjectWebSnippet(res, a, encodeType);
+                            }
+                        }
+                    } catch (err) {
+                        Logging.info("inject snipet error: "+ err);
+                    }
+                    return originalHttpsResponseWrite.apply(res,arguments)
+                }
+                return originalHttpsRequestListener(req,res);
+            }
+            return originalHttpsServer(options, httpsRequestListener);
+        }
+
     }
+
 
     /**
      * Validate response and try to inject Web snippet
      */
     public static ValidateInjection(response: http.ServerResponse, input: string | Buffer): boolean {
-        if (response && input) {
-            // insert snippet if only response returns 200
-            if (response.statusCode != 200) return false;
-            let contentType = response.getHeader('Content-Type');
-            let contentEncoding = response.getHeader('Content-Encoding'); // Compressed content not supported for injection
-            if (!contentEncoding && contentType && typeof contentType == "string" && contentType.toLowerCase().indexOf("text/html") >= 0) {
-                let html = input.toString();
-                if (html.indexOf("<head>") >= 0 && html.indexOf("</head>") >= 0) {
-                    // Check if snippet not already present looking for AI Web SDK URL
-                    if (html.indexOf(WebSnippet._aiUrl) < 0) {
-                        return true;
-                    }
-                }
+
+        if (!response || !input || response.statusCode != 200) return false;
+        let isContentHtml =  snippetInjectionHelper.isContentTypeHeaderHtml(response);
+        if (!isContentHtml) return false;
+        if (input.indexOf("<head>") >= 0 && input.indexOf("</head>") >= 0) {
+            // Check if snippet not already present looking for AI Web SDK URL
+            if (input.indexOf(this._aiUrl) < 0) {
+                return true;
             }
         }
         return false;
@@ -109,30 +169,75 @@ class WebSnippet {
     /**
      * Inject Web snippet
      */
-    public static InjectWebSnippet(response: http.ServerResponse, input: string | Buffer): string | Buffer {
+    public static InjectWebSnippet(response: http.ServerResponse, input: string | Buffer, encodeType?: snippetInjectionHelper.contentEncodingMethod): string | Buffer {
         try {
-            let hasContentHeader = !!response.getHeader('Content-Length');
-            // Clean content-length header
-            if (hasContentHeader) {
-                response.removeHeader('Content-Length');
-            }
-            // Read response stream
-            let html = input.toString();
-            // Try to add script before HTML head closure
-            let index = html.indexOf("</head>");
-            if (index >= 0) {
-                let subStart = html.substring(0, index);
-                let subEnd = html.substring(index);
-                input = subStart + '<script type="text/javascript">' + WebSnippet._snippet + '</script>' + subEnd;
-                // Set headers
-                if (hasContentHeader) {
-                    response.setHeader("Content-Length", input.length.toString());
+
+            let isCompressedBuffer = !!encodeType;
+            if (!isCompressedBuffer) {
+                let html = input.toString();
+                let index = html.indexOf("</head>");
+                if (index < 0) return input;
+
+                let newHtml = snippetInjectionHelper.insertSnippetByIndex(index,html,WebSnippet._snippet);
+                if (typeof input === "string") {
+                    response.removeHeader("Content-Length");
+                    input = newHtml;
+                    response.setHeader("Content-Length", Buffer.byteLength(input));
+                } else if (Buffer.isBuffer(input)) {
+                    let bufferType = snippetInjectionHelper.findBufferEncodingType(input);
+                    if (bufferType) {
+                        response.removeHeader("Content-Length");
+                        let encodedString = Buffer.from(newHtml).toString(bufferType);
+                        input = Buffer.from(encodedString,bufferType);
+                        response.setHeader("Content-Length", input.length);
+                    }
                 }
+            } else {
+                response.removeHeader("Content-Length");
+                input = this._getInjectedCompressBuffer(response,input as Buffer,encodeType);
+                response.setHeader("Content-Length", input.length);
             }
         }
         catch (ex) {
             Logging.info("Failed to change content-lenght headers for JS injection. Exception:" + ex);
         }
+        return input;
+    }
+
+    //***********************
+    // should NOT use sync functions here. But currently cannot get async functions to work 
+    // because reponse.write return boolean
+    // and also this function do not support partial compression as well
+    // need more investigation 
+    private static _getInjectedCompressBuffer(response: http.ServerResponse, input: Buffer, encodeType: snippetInjectionHelper.contentEncodingMethod): Buffer {
+        switch (encodeType) {
+            case snippetInjectionHelper.contentEncodingMethod.GZIP:
+                let gunzipBuffer = zlib.gunzipSync(input);
+                if (WebSnippet.ValidateInjection(response,gunzipBuffer)) {
+                    let injectedGunzipBuffer = WebSnippet.InjectWebSnippet(response, gunzipBuffer);
+                    input = zlib.gzipSync(injectedGunzipBuffer);
+                 }
+                 break;
+            case snippetInjectionHelper.contentEncodingMethod.DEFLATE:
+                let inflateBuffer = zlib.inflateSync(input);
+                if (WebSnippet.ValidateInjection(response,inflateBuffer)) {
+                    let injectedInflateBuffer = WebSnippet.InjectWebSnippet(response, inflateBuffer);
+                    input = zlib.deflateSync(injectedInflateBuffer);
+                 }
+                 break;
+            case snippetInjectionHelper.contentEncodingMethod.BR:
+                let BrotliDecompressSync = snippetInjectionHelper.getBrotliDecompressSync(zlib);
+                let BrotliCompressSync = snippetInjectionHelper.getBrotliCompressSync(zlib);
+                if (BrotliDecompressSync && BrotliCompressSync) {
+                    let decompressBuffer = BrotliDecompressSync(input);
+                    if (WebSnippet.ValidateInjection(response,decompressBuffer)) {
+                        let injectedDecompressBuffer = WebSnippet.InjectWebSnippet(response, decompressBuffer);
+                        input = BrotliCompressSync(injectedDecompressBuffer);
+                     }
+                     break;
+                }
+        }
+
         return input;
     }
 
