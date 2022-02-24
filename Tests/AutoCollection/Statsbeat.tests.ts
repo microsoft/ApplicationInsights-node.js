@@ -275,8 +275,8 @@ describe("AutoCollection/Statsbeat", () => {
         it("Multiple network categories and endpoints", (done) => {
             statsBeat.enable(true);
             const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
-            statsBeat.countRequest(0, "breezeFirstEndpoint", 100, true);
-            statsBeat.countRequest(1, "quickpulseEndpoint", 200, true);
+            statsBeat.countRequest(0, "https://breezeFirstEndpoint.something.com", 100, true);
+            statsBeat.countRequest(1, "http://quickpulseEndpoint.something.com", 200, true);
             statsBeat.countRequest(0, "breezeSecondEndpoint", 400, true);
             statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
