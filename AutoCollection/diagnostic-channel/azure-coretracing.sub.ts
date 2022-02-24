@@ -44,7 +44,7 @@ export function enable(enabled: boolean, client: TelemetryClient) {
                 }
             });
 
-        };
+        }
         clients.push(client);
     } else {
         clients = clients.filter((c) => c != client);

@@ -59,11 +59,11 @@ export class OpenTelemetryScopeManagerWrapper {
             ...span.spanContext(),
             traceFlags: span.spanContext().traceFlags
         };
-        let parentId = parentSpanId ? `|${spanContext.traceId}.${parentSpanId}.` : spanContext.traceId;  
+        let parentId = parentSpanId ? `|${spanContext.traceId}.${parentSpanId}.` : spanContext.traceId;
         const aiContext = CorrelationContextManager.getCurrentContext();
         if (aiContext) {
             context.traceId = aiContext.operation.id;
-            // If parent is no available use current context 
+            // If parent is no available use current context
             if (!parentSpanId) {
                 parentId = aiContext.operation.parentId;
             }

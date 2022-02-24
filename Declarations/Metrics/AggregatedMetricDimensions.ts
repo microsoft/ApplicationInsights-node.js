@@ -38,5 +38,5 @@ export const PreaggregatedMetricPropertyNames: { [key in MetricDimensionTypeKeys
     dependencyTarget: "dependency/target",
     dependencySuccess: "Dependency.Success",
     dependencyResultCode: "dependency/resultCode",
-    traceSeverityLevel: "trace/severityLevel",
+    traceSeverityLevel: "trace/severityLevel"
 };

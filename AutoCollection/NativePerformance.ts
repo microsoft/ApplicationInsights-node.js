@@ -209,7 +209,7 @@ export class AutoCollectNativePerformance {
             return;
         }
 
-        const name = `Event Loop CPU Time`;
+        const name = "Event Loop CPU Time";
         const stdDev = Math.sqrt(metrics.sumSquares / metrics.count - Math.pow(metrics.total / metrics.count, 2)) || 0;
         this._client.trackMetric({
             name: name,
@@ -239,7 +239,7 @@ export class AutoCollectNativePerformance {
         const { heapUsed, heapTotal, rss } = memoryUsage;
 
         this._client.trackMetric({
-            name: `Memory Usage (Heap)`,
+            name: "Memory Usage (Heap)",
             value: heapUsed,
             count: 1,
             tagOverrides: {
@@ -247,7 +247,7 @@ export class AutoCollectNativePerformance {
             }
         });
         this._client.trackMetric({
-            name: `Memory Total (Heap)`,
+            name: "Memory Total (Heap)",
             value: heapTotal,
             count: 1,
             tagOverrides: {
@@ -255,7 +255,7 @@ export class AutoCollectNativePerformance {
             }
         });
         this._client.trackMetric({
-            name: `Memory Usage (Non-Heap)`,
+            name: "Memory Usage (Non-Heap)",
             value: rss - heapTotal,
             count: 1,
             tagOverrides: {

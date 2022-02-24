@@ -420,9 +420,9 @@ describe("Library/Sender", () => {
             statsbeatSender.setDiskRetryMode(true);
             var statsbeatSpy = sandbox.spy(statsbeat, "countRequest");
             var throttleSpy = sandbox.spy(statsbeat, "countThrottle");
-            nockScope = interceptor.reply(429, breezeResponse);
+            nockScope = interceptor.reply(439, breezeResponse);
             statsbeatSender.send([testEnvelope], () => {
-                assert.ok(statsbeatSpy.calledOnce);
+                assert.ok(statsbeatSpy.notCalled);
                 assert.ok(throttleSpy.calledOnce);
                 done();
             });

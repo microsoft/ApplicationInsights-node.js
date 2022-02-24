@@ -17,7 +17,7 @@ const bunyanToAILevelMap: { [key: number]: number } = {
     30: SeverityLevel.Information,
     40: SeverityLevel.Warning,
     50: SeverityLevel.Error,
-    60: SeverityLevel.Critical,
+    60: SeverityLevel.Critical
 };
 
 const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
@@ -27,11 +27,16 @@ const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
             // Try to parse message as Bunyan log is JSON
             let log: any = JSON.parse(message);
             if (log.err) {
-                client.trackException({ exception: log.err });
+                let bunyanError = new Error(log.err.message);
+                bunyanError.name = log.err.name;
+                bunyanError.stack = log.err.stack;
+                client.trackException({ exception: bunyanError });
                 return;
             }
         }
-        catch (err) { }
+        catch (err) {
+            // Ignore error
+        }
         const AIlevel = bunyanToAILevelMap[event.data.level];
         client.trackTrace({ message: message, severity: AIlevel });
     });
@@ -50,7 +55,7 @@ export function enable(enabled: boolean, client: TelemetryClient) {
                     statsbeat.addInstrumentation(StatsbeatInstrumentation.BUNYAN);
                 }
             });
-        };
+        }
         clients.push(client);
     } else {
         clients = clients.filter((c) => c != client);

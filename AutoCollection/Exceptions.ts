@@ -37,7 +37,6 @@ class AutoCollectExceptions {
     public enable(isEnabled: boolean) {
         if (isEnabled) {
             this._isInitialized = true;
-            var self = this;
             if (!this._exceptionListenerHandle) {
                 // For scenarios like Promise.reject(), an error won't be passed to the handle. Create a placeholder
                 // error for these scenarios.

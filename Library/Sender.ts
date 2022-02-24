@@ -15,8 +15,9 @@ import Util = require("./Util");
 import { URL } from "url";
 import Logging = require("./Logging");
 import { FileAccessControl } from "./FileAccessControl";
-import { Envelope } from "../Declarations/Contracts";
 
+const legacyThrottleStatusCode = 439; //  - Too many requests and refresh cache
+const throttleStatusCode = 402; // Monthly Quota Exceeded (new SDK)
 
 class Sender {
     private static TAG = "Sender";
@@ -68,10 +69,10 @@ class Sender {
             FileAccessControl.checkFileProtection(); // Only check file protection when disk retry is enabled
         }
         this._enableDiskRetryMode = FileAccessControl.OS_PROVIDES_FILE_PROTECTION && value;
-        if (typeof resendInterval === 'number' && resendInterval >= 0) {
+        if (typeof resendInterval === "number" && resendInterval >= 0) {
             this._resendInterval = Math.floor(resendInterval);
         }
-        if (typeof maxBytesOnDisk === 'number' && maxBytesOnDisk >= 0) {
+        if (typeof maxBytesOnDisk === "number" && maxBytesOnDisk >= 0) {
             this._maxBytesOnDisk = Math.floor(maxBytesOnDisk);
         }
 
@@ -185,6 +186,14 @@ class Sender {
                         let endTime = +new Date();
                         let duration = endTime - startTime;
                         this._numConsecutiveFailures = 0;
+                        if (this._statsbeat) {
+                            if (res.statusCode == throttleStatusCode || res.statusCode == legacyThrottleStatusCode) { // Throttle
+                                this._statsbeat.countThrottle(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
+                            }
+                            else {
+                                this._statsbeat.countRequest(Constants.StatsbeatNetworkCategory.Breeze, endpointHost, duration, res.statusCode === 200);
+                            }
+                        }
                         if (this._enableDiskRetryMode) {
                             // try to send any cached events if the user is back online
                             if (res.statusCode === 200) {
@@ -199,9 +208,6 @@ class Sender {
                                 try {
                                     if (this._statsbeat) {
                                         this._statsbeat.countRetry(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
-                                        if (res.statusCode === 429) {
-                                            this._statsbeat.countThrottle(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
-                                        }
                                     }
                                     const breezeResponse = JSON.parse(responseString) as Contracts.BreezeResponse;
                                     let filteredEnvelopes: Contracts.EnvelopeTelemetry[] = [];
@@ -247,9 +253,6 @@ class Sender {
 
                         }
                         else {
-                            if (this._statsbeat) {
-                                this._statsbeat.countRequest(Constants.StatsbeatNetworkCategory.Breeze, endpointHost, duration, res.statusCode === 200);
-                            }
                             this._numConsecutiveRedirects = 0;
                             if (typeof callback === "function") {
                                 callback(responseString);
@@ -314,14 +317,13 @@ class Sender {
 
     private _isRetriable(statusCode: number) {
         return (
-            statusCode === 206 || // Retriable
+            statusCode === 206 || // Partial Accept
             statusCode === 401 || // Unauthorized
             statusCode === 403 || // Forbidden
             statusCode === 408 || // Timeout
-            statusCode === 429 || // Throttle
-            statusCode === 439 || // Quota
+            statusCode === 429 || // Too many requests
             statusCode === 500 || // Server Error
-            statusCode === 503 // Server Unavilable
+            statusCode === 503 // Server Unavailable
         );
     }
 

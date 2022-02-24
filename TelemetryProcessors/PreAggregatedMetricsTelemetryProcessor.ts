@@ -18,10 +18,10 @@ export function preAggregatedMetricsTelemetryProcessor(envelope: Contracts.Envel
                 exceptionData.properties = {
                     ...exceptionData.properties,
                     "_MS.ProcessedByMetricExtractors": "(Name:'Exceptions', Ver:'1.1')"
-                }
+                };
                 let exceptionDimensions: MetricExceptionDimensions = {
                     cloudRoleInstance: envelope.tags[context.keys.cloudRoleInstance],
-                    cloudRoleName: envelope.tags[context.keys.cloudRole],
+                    cloudRoleName: envelope.tags[context.keys.cloudRole]
                 };
                 AutoCollecPreAggregatedMetrics.countException(exceptionDimensions);
                 break;
@@ -34,7 +34,7 @@ export function preAggregatedMetricsTelemetryProcessor(envelope: Contracts.Envel
                 let traceDimensions: MetricTraceDimensions = {
                     cloudRoleInstance: envelope.tags[context.keys.cloudRoleInstance],
                     cloudRoleName: envelope.tags[context.keys.cloudRole],
-                    traceSeverityLevel: Contracts.SeverityLevel[traceData.severity],
+                    traceSeverityLevel: Contracts.SeverityLevel[traceData.severity]
                 };
                 AutoCollecPreAggregatedMetrics.countTrace(traceDimensions);
                 break;
@@ -49,7 +49,7 @@ export function preAggregatedMetricsTelemetryProcessor(envelope: Contracts.Envel
                     cloudRoleName: envelope.tags[context.keys.cloudRole],
                     operationSynthetic: envelope.tags[context.keys.operationSyntheticSource],
                     requestSuccess: requestData.success,
-                    requestResultCode: requestData.responseCode,
+                    requestResultCode: requestData.responseCode
                 };
                 AutoCollecPreAggregatedMetrics.countRequest(requestData.duration, requestDimensions);
                 break;
@@ -66,7 +66,7 @@ export function preAggregatedMetricsTelemetryProcessor(envelope: Contracts.Envel
                     dependencySuccess: remoteDependencyData.success,
                     dependencyType: remoteDependencyData.type,
                     dependencyTarget: remoteDependencyData.target,
-                    dependencyResultCode: remoteDependencyData.resultCode,
+                    dependencyResultCode: remoteDependencyData.resultCode
                 };
                 AutoCollecPreAggregatedMetrics.countDependency(remoteDependencyData.duration, dependencyDimensions);
                 break;

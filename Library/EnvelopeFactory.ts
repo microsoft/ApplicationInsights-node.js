@@ -122,7 +122,7 @@ class EnvelopeFactory {
     private static createDependencyData(telemetry: Contracts.DependencyTelemetry & Contracts.Identified): Contracts.Data<Contracts.RemoteDependencyData> {
         var remoteDependency = new Contracts.RemoteDependencyData();
         if (typeof telemetry.name === "string") {
-            remoteDependency.name = telemetry.name.length > 1024 ? telemetry.name.slice(0, 1021) + '...' : telemetry.name;
+            remoteDependency.name = telemetry.name.length > 1024 ? telemetry.name.slice(0, 1021) + "..." : telemetry.name;
         }
         remoteDependency.data = telemetry.data;
         remoteDependency.target = telemetry.target;
@@ -130,7 +130,7 @@ class EnvelopeFactory {
         remoteDependency.success = telemetry.success;
         remoteDependency.type = telemetry.dependencyTypeName;
         remoteDependency.properties = telemetry.properties;
-        remoteDependency.resultCode = (telemetry.resultCode ? telemetry.resultCode + '' : '');
+        remoteDependency.resultCode = (telemetry.resultCode ? telemetry.resultCode + "" : "");
 
         if (telemetry.id) {
             remoteDependency.id = telemetry.id;
@@ -194,7 +194,7 @@ class EnvelopeFactory {
         requestData.url = telemetry.url;
         requestData.source = telemetry.source;
         requestData.duration = Util.msToTimeSpan(telemetry.duration);
-        requestData.responseCode = (telemetry.resultCode ? telemetry.resultCode + '' : '');
+        requestData.responseCode = (telemetry.resultCode ? telemetry.resultCode + "" : "");
         requestData.success = telemetry.success
         requestData.properties = telemetry.properties;
         requestData.measurements = telemetry.measurements;
@@ -230,7 +230,7 @@ class EnvelopeFactory {
     }
 
     private static createAvailabilityData(
-        telemetry: Contracts.AvailabilityTelemetry & Contracts.Identified,
+        telemetry: Contracts.AvailabilityTelemetry & Contracts.Identified
     ): Contracts.Data<Contracts.AvailabilityData> {
         let availabilityData = new Contracts.AvailabilityData();
 
@@ -255,7 +255,7 @@ class EnvelopeFactory {
     }
 
     private static createPageViewData(
-        telemetry: Contracts.PageViewTelemetry & Contracts.Identified,
+        telemetry: Contracts.PageViewTelemetry & Contracts.Identified
     ): Contracts.Data<Contracts.PageViewData> {
         let pageViewData = new Contracts.PageViewData();
 
