@@ -21,7 +21,7 @@ export function preAggregatedMetricsTelemetryProcessor(envelope: Contracts.Envel
                 cloudRoleInstance: envelope.tags[client.context.keys.cloudRoleInstance],
                 cloudRoleName: envelope.tags[client.context.keys.cloudRole]
             };
-            client.autoCollector.countPreAggregatedException(exceptionDimensions);
+            client.metricHandler.countPreAggregatedException(exceptionDimensions);
             break;
         case TelemetryType.TelemetryTypeString.Trace:
             const traceData: Contracts.TraceTelemetry = (envelope.data as any).baseData;
@@ -34,7 +34,7 @@ export function preAggregatedMetricsTelemetryProcessor(envelope: Contracts.Envel
                 cloudRoleName: envelope.tags[client.context.keys.cloudRole],
                 traceSeverityLevel: Contracts.SeverityLevel[traceData.severity]
             };
-            client.autoCollector.countPreAggregatedTrace(traceDimensions);
+            client.metricHandler.countPreAggregatedTrace(traceDimensions);
             break;
         case TelemetryType.TelemetryTypeString.Request:
             const requestData: Contracts.RequestData = (envelope.data as any).baseData;
@@ -49,7 +49,7 @@ export function preAggregatedMetricsTelemetryProcessor(envelope: Contracts.Envel
                 requestSuccess: requestData.success,
                 requestResultCode: requestData.responseCode
             };
-            client.autoCollector.countPreAggregatedRequest(requestData.duration, requestDimensions);
+            client.metricHandler.countPreAggregatedRequest(requestData.duration, requestDimensions);
             break;
         case TelemetryType.TelemetryTypeString.Dependency:
             const remoteDependencyData: Contracts.RemoteDependencyData = (envelope.data as any).baseData;
@@ -66,7 +66,7 @@ export function preAggregatedMetricsTelemetryProcessor(envelope: Contracts.Envel
                 dependencyTarget: remoteDependencyData.target,
                 dependencyResultCode: remoteDependencyData.resultCode
             };
-            client.autoCollector.countPreAggregatedDependency(remoteDependencyData.duration, dependencyDimensions);
+            client.metricHandler.countPreAggregatedDependency(remoteDependencyData.duration, dependencyDimensions);
             break;
     }
     return true;

@@ -19,7 +19,7 @@ describe("diagnostic-channel/bunyan", () => {
         const trackTraceStub = sinon.stub(AppInsights.defaultClient, "trackTrace");
 
         disable();
-        enable(true, AppInsights.defaultClient);
+        enable(true, AppInsights.defaultClient.logHandler);
         const logEvent: bunyan.IBunyanData = {
             result: "test log",
             level: 50 // Error should still log as MessageData

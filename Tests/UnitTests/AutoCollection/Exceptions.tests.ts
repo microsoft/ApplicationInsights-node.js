@@ -23,7 +23,7 @@ describe("AutoCollection/Exceptions", () => {
 
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setAutoCollectExceptions(true).start();
 
-            if (AppInsights.defaultClient.autoCollector["_exceptions"]["_canUseUncaughtExceptionMonitor"]) {
+            if (AppInsights.defaultClient.logHandler["_exceptions"]["_canUseUncaughtExceptionMonitor"]) {
                 assert.equal(processOnSpy.callCount, 1, "After enabling exception auto collection, there should be 1 call to processOnSpy");
                 assert.equal(processOnSpy.getCall(0).args[0], "uncaughtExceptionMonitor");
             } else {

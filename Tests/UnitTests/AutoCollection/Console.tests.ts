@@ -15,7 +15,7 @@ describe("AutoCollection/Console", () => {
         it("init should enable and dispose should stop console auto collection", () => {
 
             var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setAutoCollectConsole(true);
-            var enableConsoleRequestsSpy = sinon.spy(AppInsights.defaultClient.autoCollector["_console"], "enable");
+            var enableConsoleRequestsSpy = sinon.spy(AppInsights.defaultClient.logHandler["_console"], "enable");
             appInsights.start();
 
             assert.equal(enableConsoleRequestsSpy.callCount, 1, "enable should be called once as part of console auto collection initialization");
@@ -35,7 +35,7 @@ describe("AutoCollection/Console", () => {
             const trackTraceStub = sinon.stub(AppInsights.defaultClient, "trackTrace");
 
             disable();
-            enable(true, AppInsights.defaultClient);
+            enable(true, AppInsights.defaultClient.logHandler);
             const logEvent: console.IConsoleData = {
                 message: "test log",
                 stderr: true // should log as MessageData regardless of this setting

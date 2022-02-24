@@ -69,7 +69,9 @@ export function setup(setupString?: string) {
  */
 export function start() {
     if (defaultClient) {
-        defaultClient.autoCollector.start();
+        defaultClient.traceHandler.start();
+        defaultClient.metricHandler.start();
+        defaultClient.logHandler.start();
         if (liveMetricsClient && _isSendingLiveMetrics) {
             liveMetricsClient.enable(_isSendingLiveMetrics);
         }
@@ -94,7 +96,7 @@ export function start() {
  * @returns A plain object for request storage or null if automatic dependency correlation is disabled.
  */
 export function getCorrelationContext(): ICorrelationContext {
-    if (defaultClient && defaultClient.autoCollector.isCorrelating) {
+    if (defaultClient) {
         // TODO
         return null;
     }
@@ -153,7 +155,7 @@ export class Configuration {
      */
     public static setAutoCollectConsole(value: boolean, collectConsoleLog: boolean = false) {
         if (defaultClient) {
-            defaultClient.autoCollector.setAutoCollectConsole(value, collectConsoleLog);
+            defaultClient.logHandler.setAutoCollectConsole(value, collectConsoleLog);
         }
         return Configuration;
     }
@@ -165,7 +167,7 @@ export class Configuration {
      */
     public static setAutoCollectExceptions(value: boolean) {
         if (defaultClient) {
-            defaultClient.autoCollector.setAutoCollectExceptions(value);
+            defaultClient.logHandler.setAutoCollectExceptions(value);
         }
         return Configuration;
     }
@@ -178,7 +180,7 @@ export class Configuration {
      */
     public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: boolean | IDisabledExtendedMetrics = true) {
         if (defaultClient) {
-            defaultClient.autoCollector.setAutoCollectPerformance(value, collectExtendedMetrics);
+            defaultClient.metricHandler.setAutoCollectPerformance(value, collectExtendedMetrics);
         }
         return Configuration;
     }
@@ -190,7 +192,7 @@ export class Configuration {
      */
     public static setAutoCollectPreAggregatedMetrics(value: boolean) {
         if (defaultClient) {
-            defaultClient.autoCollector.setAutoCollectPreAggregatedMetrics(value);
+            defaultClient.metricHandler.setAutoCollectPreAggregatedMetrics(value);
         }
         return Configuration;
     }
@@ -202,7 +204,7 @@ export class Configuration {
      */
     public static setAutoCollectHeartbeat(value: boolean) {
         if (defaultClient) {
-            defaultClient.autoCollector.setAutoCollectHeartbeat(value);
+            defaultClient.metricHandler.setAutoCollectHeartbeat(value);
         }
         return Configuration;
     }
@@ -213,9 +215,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectRequests(value: boolean) {
-        if (defaultClient) {
-            defaultClient.autoCollector.setAutoCollectRequests(value);
-        }
+        // TODO: Remove
         return Configuration;
     }
 
@@ -225,9 +225,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectDependencies(value: boolean) {
-        if (defaultClient) {
-            defaultClient.autoCollector.setAutoCollectDependencies(value);
-        }
+        // TODO: Remove
         return Configuration;
     }
 
@@ -238,9 +236,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoDependencyCorrelation(value: boolean, useAsyncHooks?: boolean) {
-        if (defaultClient) {
-            defaultClient.autoCollector.setAutoDependencyCorrelation(value, useAsyncHooks);
-        }
+        // TODO: Remove
         return Configuration;
     }
 
@@ -307,7 +303,9 @@ export class Configuration {
 */
 export function dispose() {
     if (defaultClient) {
-        defaultClient.autoCollector.dispose();
+        defaultClient.traceHandler.dispose();
+        defaultClient.metricHandler.dispose();
+        defaultClient.logHandler.dispose();
     }
     defaultClient = null;
     if (liveMetricsClient) {

@@ -31,7 +31,7 @@ describe("AutoCollection/NativePerformance", () => {
                 .setAutoCollectPerformance(false, true)
                 .setAutoCollectPreAggregatedMetrics(false)
                 .start();
-            if (AppInsights.defaultClient.autoCollector["_nativePerformance"]["_metricsAvailable"]) {
+            if (AppInsights.defaultClient.metricHandler["_nativePerformance"]["_metricsAvailable"]) {
                 assert.equal(setIntervalSpy.callCount, 3, "setInterval should be called three times as part of NativePerformance initialization as well as Statsbeat");
                 AppInsights.dispose();
                 assert.equal(clearIntervalSpy.callCount, 1, "clearInterval should be called once as part of NativePerformance shutdown");
@@ -45,7 +45,7 @@ describe("AutoCollection/NativePerformance", () => {
         it("Calling enable multiple times should not create multiple timers", () => {
             var client = new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             var sinonSpy = sandbox.spy(global, "setInterval");
-            var native = new AutoCollectNativePerformance(client);
+            var native = new AutoCollectNativePerformance(client.metricHandler);
             native["_metricsAvailable"] = true;
             native["_emitter"] = {
                 enable: () => { }
@@ -59,7 +59,7 @@ describe("AutoCollection/NativePerformance", () => {
 
         it("Calling enable when metrics are not available should fail gracefully", () => {
             var client = new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-            var native = new AutoCollectNativePerformance(client);
+            var native = new AutoCollectNativePerformance(client.metricHandler);
 
             native["_metricsAvailable"] = false;
             assert.ok(!(<any>native)["_emitter"]);

@@ -53,6 +53,7 @@ export class Config implements IConfig {
     public disableStatsbeat: boolean;
     public extendedMetricDisablers: string;
     public quickPulseHost: string;
+    public setupString: string;
 
     public correlationId: string; // TODO: Should be private
     private _connectionString: string;
@@ -61,6 +62,7 @@ export class Config implements IConfig {
 
 
     constructor(setupString?: string) {
+        this.setupString = setupString;
         // Load config values from env variables and JSON if available
         this._mergeConfig();
         const connectionStringEnv: string | undefined = this._connectionString;

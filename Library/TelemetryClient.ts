@@ -10,7 +10,6 @@ import { performanceMetricsTelemetryProcessor } from "./TelemetryProcessors/Perf
 import { preAggregatedMetricsTelemetryProcessor } from "./TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor";
 import { samplingTelemetryProcessor } from "./TelemetryProcessors/SamplingTelemetryProcessor";
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
-import { AutoCollector } from "../AutoCollection/AutoCollector";
 import { Statsbeat } from "../AutoCollection/Statsbeat";
 import { Sender } from "./Transmission/Sender";
 import { Util } from "./Util/Util";
@@ -30,12 +29,11 @@ export class TelemetryClient {
     private _telemetryProcessors: { (envelope: Contracts.EnvelopeTelemetry, contextObjects: { [name: string]: any; }): boolean; }[] = [];
     private _enableAzureProperties: boolean = false;
     private _statsbeat: Statsbeat;
-    private _traceHandler: TraceHandler;
-    private _metricHandler: MetricHandler;
-    private _logHandler: LogHandler;
 
+    public traceHandler: TraceHandler;
+    public metricHandler: MetricHandler;
+    public logHandler: LogHandler;
     public config: Config;
-    public autoCollector: AutoCollector;
     public context: Context;
     public commonProperties: { [key: string]: string; };
     public channel: Channel;
@@ -49,10 +47,14 @@ export class TelemetryClient {
     constructor(setupString?: string) {
         var config = new Config(setupString);
         this.config = config;
-        this.autoCollector = new AutoCollector(this);
         this.context = new Context();
         this.commonProperties = {};
         this.authorizationHandler = null;
+
+        this.traceHandler = new TraceHandler(this.config);
+        this.metricHandler = new MetricHandler(this.config);
+        this.logHandler = new LogHandler(this.config);
+
         if (!this.config.disableStatsbeat) {
             this._statsbeat = new Statsbeat(this.config, this.context);
             this._statsbeat.enable(true);
@@ -121,6 +123,7 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackRequest(telemetry: Contracts.RequestTelemetry & Contracts.Identified): void {
+        // this.traceHandler.trackRequest(telemetry);
         this.track(telemetry, Contracts.TelemetryType.Request);
     }
 

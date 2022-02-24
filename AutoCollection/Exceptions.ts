@@ -1,4 +1,4 @@
-import { TelemetryClient } from "../Library/TelemetryClient";
+import { LogHandler } from "../Library/Handlers/LogHandler";
 
 type ExceptionHandle = "uncaughtExceptionMonitor" | "uncaughtException" | "unhandledRejection";
 const UNCAUGHT_EXCEPTION_MONITOR_HANDLER_NAME: ExceptionHandle = "uncaughtExceptionMonitor";
@@ -11,10 +11,10 @@ export class AutoCollectExceptions {
     private _canUseUncaughtExceptionMonitor = false;
     private _exceptionListenerHandle?: (error: Error | undefined) => void;
     private _rejectionListenerHandle?: (error: Error | undefined) => void;
-    private _client: TelemetryClient;
+    private _handler: LogHandler;
 
-    constructor(client: TelemetryClient) {
-        this._client = client;
+    constructor(handler: LogHandler) {
+        this._handler = handler;
         // Only use for 13.7.0+
         const nodeVer = process.versions.node.split(".");
         this._canUseUncaughtExceptionMonitor = parseInt(nodeVer[0]) > 13 || (parseInt(nodeVer[0]) === 13 && parseInt(nodeVer[1]) >= 7);
@@ -30,8 +30,8 @@ export class AutoCollectExceptions {
                     name: ExceptionHandle,
                     error: Error | undefined = new Error(FALLBACK_ERROR_MESSAGE)
                 ) => {
-                    this._client.trackException({ exception: error });
-                    this._client.flush({ isAppCrashing: true });
+                    this._handler.trackException({ exception: error });
+                    this._handler.flush({ isAppCrashing: true });
                     // only rethrow when we are the only listener
                     if (reThrow && name && process.listeners(name as any).length === 1) {
                         console.error(error);

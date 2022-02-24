@@ -906,9 +906,9 @@ describe("EndToEnd", () => {
 
             // set up sdk
             const client = new TelemetryClient("key");
-            const heartbeat: HeartBeat = new HeartBeat(client);
+            const heartbeat: HeartBeat = new HeartBeat(client.metricHandler);
             heartbeat.enable(true);
-            const trackMetricStub = sandbox.stub(heartbeat["_client"], "trackMetric");
+            const trackMetricStub = sandbox.stub(heartbeat["_handler"], "trackMetric");
 
             heartbeat["trackHeartBeat"](client.config, () => {
                 assert.equal(trackMetricStub.callCount, 1, "should call trackMetric for the VM heartbeat metric");
@@ -941,9 +941,9 @@ describe("EndToEnd", () => {
 
             // set up sdk
             const client = new TelemetryClient("key");
-            const heartbeat: HeartBeat = new HeartBeat(client);
+            const heartbeat: HeartBeat = new HeartBeat(client.metricHandler);
             heartbeat.enable(true);
-            const trackMetricStub = sandbox.stub(heartbeat["_client"], "trackMetric");
+            const trackMetricStub = sandbox.stub(heartbeat["_handler"], "trackMetric");
 
             heartbeat["trackHeartBeat"](client.config, () => {
                 assert.equal(trackMetricStub.callCount, 1, "should call trackMetric as heartbeat metric");

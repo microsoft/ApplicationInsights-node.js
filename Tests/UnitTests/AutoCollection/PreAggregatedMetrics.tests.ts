@@ -21,7 +21,7 @@ describe("AutoCollection/PreAggregatedMetrics", () => {
             let client = new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             var setIntervalSpy = sandbox.spy(global, "setInterval");
             var clearIntervalSpy = sandbox.spy(global, "clearInterval");
-            let metrics = new AutoCollectPreAggregatedMetrics(client);
+            let metrics = new AutoCollectPreAggregatedMetrics(client.metricHandler);
             metrics.enable(true);
             assert.equal(setIntervalSpy.callCount, 1, "setInterval should be called as part of PreAggregatedMetrics initialization");
             metrics.enable(false);

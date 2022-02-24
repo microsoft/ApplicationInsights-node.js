@@ -10,15 +10,15 @@ export function performanceMetricsTelemetryProcessor(envelope: EnvelopeTelemetry
     // Increment rate counters (for standard metrics and live metrics)
     switch (envelope.data.baseType) {
         case TelemetryType.TelemetryTypeString.Exception:
-            client.autoCollector.countPerformanceException();
+            client.metricHandler.countPerformanceException();
             break;
         case TelemetryType.TelemetryTypeString.Request:
             const requestData: RequestData = (envelope.data as any).baseData;
-            client.autoCollector.countPerformanceRequest(requestData.duration, requestData.success);
+            client.metricHandler.countPerformanceRequest(requestData.duration, requestData.success);
             break;
         case TelemetryType.TelemetryTypeString.Dependency:
             const remoteDependencyData: RemoteDependencyData = (envelope.data as any).baseData;
-            client.autoCollector.countPerformanceDependency(remoteDependencyData.duration, remoteDependencyData.success);
+            client.metricHandler.countPerformanceDependency(remoteDependencyData.duration, remoteDependencyData.success);
             break;
     }
     return true;

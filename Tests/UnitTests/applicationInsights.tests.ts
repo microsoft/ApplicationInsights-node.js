@@ -3,8 +3,6 @@ import * as sinon from "sinon";
 
 import * as AppInsights from "../../applicationinsights";
 import * as Contracts from "../../Declarations/Contracts";
-import { AutoCollectConsole } from "../../AutoCollection/Console";
-import { AutoCollectExceptions } from "../../AutoCollection/Exceptions";
 
 
 describe("ApplicationInsights", () => {
@@ -73,9 +71,9 @@ describe("ApplicationInsights", () => {
         it("auto-collection is initialized by default", () => {
 
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-            let consoleSpy = sandbox.spy(AppInsights.defaultClient.autoCollector["_console"], "enable");
-            let exceptionsSpy = sandbox.spy(AppInsights.defaultClient.autoCollector["_exceptions"], "enable");
-            let performanceSpy = sandbox.spy(AppInsights.defaultClient.autoCollector["_performance"], "enable");
+            let consoleSpy = sandbox.spy(AppInsights.defaultClient.logHandler["_console"], "enable");
+            let exceptionsSpy = sandbox.spy(AppInsights.defaultClient.logHandler["_exceptions"], "enable");
+            let performanceSpy = sandbox.spy(AppInsights.defaultClient.metricHandler["_performance"], "enable");
             AppInsights.start();
             assert.ok(consoleSpy.called);
             assert.ok(exceptionsSpy.called);
@@ -91,9 +89,9 @@ describe("ApplicationInsights", () => {
                 .setAutoCollectRequests(false)
                 .setAutoCollectDependencies(false)
                 .setAutoDependencyCorrelation(false);
-            let consoleSpy = sandbox.spy(AppInsights.defaultClient.autoCollector["_console"], "enable");
-            let exceptionsSpy = sandbox.spy(AppInsights.defaultClient.autoCollector["_exceptions"], "enable");
-            let performanceSpy = sandbox.spy(AppInsights.defaultClient.autoCollector["_performance"], "enable");
+            let consoleSpy = sandbox.spy(AppInsights.defaultClient.logHandler["_console"], "enable");
+            let exceptionsSpy = sandbox.spy(AppInsights.defaultClient.logHandler["_exceptions"], "enable");
+            let performanceSpy = sandbox.spy(AppInsights.defaultClient.metricHandler["_performance"], "enable");
             AppInsights.start();
             assert.equal(consoleSpy.firstCall.args[0], false);
             assert.equal(exceptionsSpy.firstCall.args[0], false);

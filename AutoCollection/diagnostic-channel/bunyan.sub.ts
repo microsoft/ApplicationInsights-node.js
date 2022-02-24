@@ -3,11 +3,11 @@
 import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
 import { bunyan } from "diagnostic-channel-publishers";
 
-import { TelemetryClient } from "../../Library/TelemetryClient";
+import { LogHandler } from "../../Library/Handlers/LogHandler";
 import { SeverityLevel } from "../../Declarations/Contracts";
 import { StatsbeatInstrumentation } from "../../Declarations/Constants";
 
-let clients: TelemetryClient[] = [];
+let handlers: LogHandler[] = [];
 
 // Mapping from bunyan levels defined at https://github.com/trentm/node-bunyan/blob/master/lib/bunyan.js#L256
 const bunyanToAILevelMap: { [key: number]: number } = {
@@ -21,12 +21,12 @@ const bunyanToAILevelMap: { [key: number]: number } = {
 
 const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
     let message = event.data.result as string;
-    clients.forEach((client) => {
+    handlers.forEach((handler) => {
         try {
             // Try to parse message as Bunyan log is JSON
             let log: any = JSON.parse(message);
             if (log.err) {
-                client.trackException({ exception: log.err });
+                handler.trackException({ exception: log.err });
                 return;
             }
         }
@@ -34,28 +34,27 @@ const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
             // Ignore error
         }
         const AIlevel = bunyanToAILevelMap[event.data.level];
-        client.trackTrace({ message: message, severity: AIlevel });
+        handler.trackTrace({ message: message, severity: AIlevel });
     });
 };
 
-export function enable(enabled: boolean, client: TelemetryClient) {
+export function enable(enabled: boolean, handler: LogHandler) {
     if (enabled) {
-        let clientFound = clients.find(c => c == client);
-        if (clientFound) {
+        let handlerFound = handlers.find(c => c == handler);
+        if (handlerFound) {
             return;
         }
-        if (clients.length === 0) {
+        if (handlers.length === 0) {
             channel.subscribe<bunyan.IBunyanData>("bunyan", subscriber, trueFilter, (module, version) => {
-                let statsbeat = client.getStatsbeat();
-                if (statsbeat) {
-                    statsbeat.addInstrumentation(StatsbeatInstrumentation.BUNYAN);
+                if (handler.statsbeat) {
+                    handler.statsbeat.addInstrumentation(StatsbeatInstrumentation.BUNYAN);
                 }
             });
         }
-        clients.push(client);
+        handlers.push(handler);
     } else {
-        clients = clients.filter((c) => c != client);
-        if (clients.length === 0) {
+        handlers = handlers.filter((c) => c != handler);
+        if (handlers.length === 0) {
             channel.unsubscribe("bunyan", subscriber);
         }
     }
@@ -63,5 +62,5 @@ export function enable(enabled: boolean, client: TelemetryClient) {
 
 export function dispose() {
     channel.unsubscribe("bunyan", subscriber);
-    clients = [];
+    handlers = [];
 }

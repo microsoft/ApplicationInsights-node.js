@@ -1,8 +1,8 @@
-import { TelemetryClient } from "../Library/TelemetryClient";
-import * as  Constants from "../Declarations/Constants";
+import { MetricHandler } from "../Library/Handlers/MetricHandler";
 import { Context } from "../Library/Context";
 import { Logger } from "../Library/Logging/Logger";
 import { IBaseConfig, IDisabledExtendedMetrics } from "../Declarations/Interfaces";
+import { KnownContextTagKeys} from "../Declarations/Generated";
 
 
 export class AutoCollectNativePerformance {
@@ -11,11 +11,11 @@ export class AutoCollectNativePerformance {
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _handle: NodeJS.Timer;
-    private _client: TelemetryClient;
+    private _handler: MetricHandler;
     private _disabledMetrics: IDisabledExtendedMetrics = {};
 
-    constructor(client: TelemetryClient) {
-        this._client = client;
+    constructor(handler: MetricHandler) {
+        this._handler = handler;
     }
 
     /**
@@ -146,9 +146,10 @@ export class AutoCollectNativePerformance {
 
         for (let gc in gcData) {
             const metrics = gcData[gc].metrics;
+            
             const name = `${gc} Garbage Collection Duration`;
             const stdDev = Math.sqrt(metrics.sumSquares / metrics.count - Math.pow(metrics.total / metrics.count, 2)) || 0;
-            this._client.trackMetric({
+            this._handler.trackMetric({
                 name: name,
                 value: metrics.total,
                 count: metrics.count,
@@ -156,7 +157,7 @@ export class AutoCollectNativePerformance {
                 min: metrics.min,
                 stdDev: stdDev,
                 tagOverrides: {
-                    [this._client.context.keys.internalSdkVersion]: "node-nativeperf:" + Context.sdkVersion
+                    [KnownContextTagKeys.AiInternalSdkVersion]: "node-nativeperf:" + Context.sdkVersion
                 }
             });
         }
@@ -183,7 +184,7 @@ export class AutoCollectNativePerformance {
 
         const name = "Event Loop CPU Time";
         const stdDev = Math.sqrt(metrics.sumSquares / metrics.count - Math.pow(metrics.total / metrics.count, 2)) || 0;
-        this._client.trackMetric({
+        this._handler.trackMetric({
             name: name,
             value: metrics.total,
             count: metrics.count,
@@ -191,7 +192,7 @@ export class AutoCollectNativePerformance {
             max: metrics.max,
             stdDev: stdDev,
             tagOverrides: {
-                [this._client.context.keys.internalSdkVersion]: "node-nativeperf:" + Context.sdkVersion
+                [KnownContextTagKeys.AiInternalSdkVersion]: "node-nativeperf:" + Context.sdkVersion
             }
         });
     }
@@ -210,28 +211,28 @@ export class AutoCollectNativePerformance {
         const memoryUsage = process.memoryUsage();
         const { heapUsed, heapTotal, rss } = memoryUsage;
 
-        this._client.trackMetric({
+        this._handler.trackMetric({
             name: "Memory Usage (Heap)",
             value: heapUsed,
             count: 1,
             tagOverrides: {
-                [this._client.context.keys.internalSdkVersion]: "node-nativeperf:" + Context.sdkVersion
+                [KnownContextTagKeys.AiInternalSdkVersion]: "node-nativeperf:" + Context.sdkVersion
             }
         });
-        this._client.trackMetric({
+        this._handler.trackMetric({
             name: "Memory Total (Heap)",
             value: heapTotal,
             count: 1,
             tagOverrides: {
-                [this._client.context.keys.internalSdkVersion]: "node-nativeperf:" + Context.sdkVersion
+                [KnownContextTagKeys.AiInternalSdkVersion]: "node-nativeperf:" + Context.sdkVersion
             }
         });
-        this._client.trackMetric({
+        this._handler.trackMetric({
             name: "Memory Usage (Non-Heap)",
             value: rss - heapTotal,
             count: 1,
             tagOverrides: {
-                [this._client.context.keys.internalSdkVersion]: "node-nativeperf:" + Context.sdkVersion
+                [KnownContextTagKeys.AiInternalSdkVersion]: "node-nativeperf:" + Context.sdkVersion
             }
         });
     }

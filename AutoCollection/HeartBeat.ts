@@ -1,25 +1,25 @@
 import * as  os from "os";
 
 import { AzureVirtualMachine } from "../Library/AzureVirtualMachine";
-import { TelemetryClient } from "../Library/TelemetryClient";
+import { MetricHandler } from "../Library/Handlers/MetricHandler";
 import * as  Constants from "../Declarations/Constants";
 import { Config } from "../Library/Configuration/Config";
 import { Context } from "../Library/Context";
 
 export class HeartBeat {
     private _collectionInterval: number = 900000;
-    private _client: TelemetryClient;
+    private _handler: MetricHandler;
     private _handle: NodeJS.Timer | null;
     private _isVM: boolean;
 
-    constructor(client: TelemetryClient) {
-        this._client = client;
+    constructor(handler: MetricHandler) {
+        this._handler = handler;
     }
 
     public enable(isEnabled: boolean) {
         if (isEnabled) {
             if (!this._handle) {
-                this._handle = setInterval(() => this.trackHeartBeat(this._client.config, () => { }), this._collectionInterval);
+                this._handle = setInterval(() => this.trackHeartBeat(this._handler.config, () => { }), this._collectionInterval);
                 this._handle.unref(); // Allow the app to terminate even while this loop is going on
             }
         } else {
@@ -52,13 +52,13 @@ export class HeartBeat {
                         properties["azInst_subscriptionId"] = vmInfo.subscriptionId;
                         properties["azInst_osType"] = vmInfo.osType;
                     }
-                    this._client.trackMetric({ name: Constants.HeartBeatMetricName, value: 0, properties: properties });
+                    this._handler.trackMetric({ name: Constants.HeartBeatMetricName, value: 0, properties: properties });
                     callback();
                 });
             }
         }
         if (!waiting) {
-            this._client.trackMetric({ name: Constants.HeartBeatMetricName, value: 0, properties: properties });
+            this._handler.trackMetric({ name: Constants.HeartBeatMetricName, value: 0, properties: properties });
             callback();
         }
     }

@@ -18,7 +18,7 @@ describe("diagnostic-channel/winston", () => {
         const trackTraceStub = sinon.stub(AppInsights.defaultClient, "trackTrace");
 
         disable();
-        enable(true, AppInsights.defaultClient);
+        enable(true, AppInsights.defaultClient.logHandler);
         const logEvent: winston.IWinstonData = {
             message: "test log",
             meta: {},

@@ -3,46 +3,45 @@
 import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
 import { console as consolePub } from "diagnostic-channel-publishers";
 
-import { TelemetryClient } from "../../Library/TelemetryClient";
+import { LogHandler } from "../../Library/Handlers/LogHandler";
 import { SeverityLevel } from "../../Declarations/Contracts";
 import { StatsbeatInstrumentation } from "../../Declarations/Constants";
 
 
-let clients: TelemetryClient[] = [];
+let handlers: LogHandler[] = [];
 
 const subscriber = (event: IStandardEvent<consolePub.IConsoleData>) => {
     let message = event.data.message as Error | string;
-    clients.forEach((client) => {
+    handlers.forEach((handler) => {
         if (message instanceof Error) {
-            client.trackException({ exception: message });
+            handler.trackException({ exception: message });
         } else {
             // Message can have a trailing newline
             if (message.lastIndexOf("\n") == message.length - 1) {
                 message = message.substring(0, message.length - 1);
             }
-            client.trackTrace({ message: message, severity: (event.data.stderr ? SeverityLevel.Warning : SeverityLevel.Information) });
+            handler.trackTrace({ message: message, severity: (event.data.stderr ? SeverityLevel.Warning : SeverityLevel.Information) });
         }
     });
 };
 
-export function enable(enabled: boolean, client: TelemetryClient) {
+export function enable(enabled: boolean, handler: LogHandler) {
     if (enabled) {
-        let clientFound = clients.find(c => c == client);
-        if (clientFound) {
+        let handlerFound = handlers.find(c => c == handler);
+        if (handlerFound) {
             return;
         }
-        if (clients.length === 0) {
+        if (handlers.length === 0) {
             channel.subscribe<consolePub.IConsoleData>("console", subscriber, trueFilter, (module, version) => {
-                let statsbeat = client.getStatsbeat();
-                if (statsbeat) {
-                    statsbeat.addInstrumentation(StatsbeatInstrumentation.CONSOLE);
+                if (handler.statsbeat) {
+                    handler.statsbeat.addInstrumentation(StatsbeatInstrumentation.CONSOLE);
                 }
             });
         }
-        clients.push(client);
+        handlers.push(handler);
     } else {
-        clients = clients.filter((c) => c != client);
-        if (clients.length === 0) {
+        handlers = handlers.filter((c) => c != handler);
+        if (handlers.length === 0) {
             channel.unsubscribe("console", subscriber);
         }
     }
@@ -50,5 +49,5 @@ export function enable(enabled: boolean, client: TelemetryClient) {
 
 export function dispose() {
     channel.unsubscribe("console", subscriber);
-    clients = [];
+    handlers = [];
 }

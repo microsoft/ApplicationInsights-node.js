@@ -1,4 +1,4 @@
-import { TelemetryClient } from "../Library/TelemetryClient";
+import { MetricHandler } from "../Library/Handlers/MetricHandler";
 import * as  Constants from "../Declarations/Constants";
 import { AggregatedMetric } from "../Declarations/Metrics/AggregatedMetric";
 import { AggregatedMetricCounter } from "../Declarations/Metrics/AggregatedMetricCounters";
@@ -30,7 +30,7 @@ const PreAggregatedMetricPropertyNames: { [key in MetricDimensionTypeKeys]: stri
 export class AutoCollectPreAggregatedMetrics {
 
     private _collectionInterval: number;
-    private _client: TelemetryClient;
+    private _handler: MetricHandler;
     private _handle: NodeJS.Timer;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
@@ -43,12 +43,12 @@ export class AutoCollectPreAggregatedMetrics {
      * @param client - Telemetry Client
      * @param collectionInterval - Metric collection interval in ms
      */
-    constructor(client: TelemetryClient, collectionInterval = 60000) {
+    constructor(handler: MetricHandler, collectionInterval = 60000) {
         this._dependencyCountersCollection = [];
         this._requestCountersCollection = [];
         this._exceptionCountersCollection = [];
         this._traceCountersCollection = [];
-        this._client = client;
+        this._handler = handler;
         this._collectionInterval = collectionInterval;
     }
 
@@ -273,6 +273,6 @@ export class AutoCollectPreAggregatedMetrics {
             properties: metricProperties,
             kind: "Aggregation"
         };
-        this._client.trackMetric(telemetry);
+        this._handler.trackMetric(telemetry);
     }
 }

@@ -34,7 +34,7 @@ describe("TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor", () => {
 
     describe("#preAggregatedMetricsTelemetryProcessor()", () => {
         it("Exception telemetry", () => {
-            var pgSpy = sandbox.spy(client.autoCollector, "countPreAggregatedException");
+            var pgSpy = sandbox.spy(client.metricHandler, "countPreAggregatedException");
             var exception = new Contracts.ExceptionData();
             var data = new Contracts.Data<Contracts.ExceptionData>();
             data.baseData = exception;
@@ -47,7 +47,7 @@ describe("TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor", () => {
         });
 
         it("Trace telemetry", () => {
-            var pgSpy = sandbox.spy(client.autoCollector, "countPreAggregatedTrace");
+            var pgSpy = sandbox.spy(client.metricHandler, "countPreAggregatedTrace");
             var trace: Contracts.TraceTelemetry = { message: "" };
             var data = new Contracts.Data<Contracts.TraceTelemetry>();
             data.baseData = trace;
@@ -60,7 +60,7 @@ describe("TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor", () => {
         });
 
         it("Dependency telemetry", () => {
-            var pgSpy = sandbox.spy(client.autoCollector, "countPreAggregatedDependency");
+            var pgSpy = sandbox.spy(client.metricHandler, "countPreAggregatedDependency");
             var dependency: Contracts.DependencyTelemetry = { name: "", dependencyTypeName: "", data: "", duration: 1, resultCode: "", success: false };
             var data = new Contracts.Data<Contracts.DependencyTelemetry>();
             data.baseData = dependency;
@@ -73,7 +73,7 @@ describe("TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor", () => {
         });
 
         it("Request telemetry", () => {
-            var pgSpy = sandbox.spy(client.autoCollector, "countPreAggregatedRequest");
+            var pgSpy = sandbox.spy(client.metricHandler, "countPreAggregatedRequest");
             var request: Contracts.RequestTelemetry = { name: "", url: "", duration: 1, resultCode: "", success: false };
             var data = new Contracts.Data<Contracts.RequestTelemetry>();
             data.baseData = request;
