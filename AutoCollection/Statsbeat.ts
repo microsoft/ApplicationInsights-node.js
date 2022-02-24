@@ -14,7 +14,8 @@ const STATSBEAT_LANGUAGE = "node";
 
 class Statsbeat {
 
-    public static CONNECTION_STRING = "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://dc.services.visualstudio.com/";
+    public static NON_EU_CONNECTION_STRING = "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://westus-0.in.applicationinsights.azure.com";
+    public static EU_CONNECTION_STRING = "InstrumentationKey=7dc56bab-3c0c-4e9f-9ebb-d1acadee8d0f;IngestionEndpoint=https://westeurope-5.in.applicationinsights.azure.com";
     public static STATS_COLLECTION_SHORT_INTERVAL: number = 900000; // 15 minutes
     public static STATS_COLLECTION_LONG_INTERVAL: number = 1440000; // 1 day
 
@@ -50,7 +51,8 @@ class Statsbeat {
         this._networkStatsbeatCollection = [];
         this._config = config;
         this._context = context || new Context();
-        this._statsbeatConfig = new Config(Statsbeat.CONNECTION_STRING);
+        let statsbeatConnectionString = this._getConnectionString(config);
+        this._statsbeatConfig = new Config(statsbeatConnectionString);
         this._statsbeatConfig.samplingPercentage = 100; // Do not sample
         this._sender = new Sender(this._statsbeatConfig);
     }
@@ -331,6 +333,28 @@ class Statsbeat {
                 resolve();
             }
         });
+    }
+
+    private _getConnectionString(config: Config): string {
+        let currentEndpoint = config.endpointUrl;
+        let euEndpoints = [
+            "westeurope",
+            "northeurope",
+            "francecentral",
+            "francesouth",
+            "germanywestcentral",
+            "norwayeast",
+            "norwaywest",
+            "swedencentral",
+            "switzerlandnorth",
+            "switzerlandwest"
+        ];
+        for (let i = 0; i < euEndpoints.length; i++) {
+            if (currentEndpoint.indexOf(euEndpoints[i]) > -1) {
+                return Statsbeat.EU_CONNECTION_STRING;
+            }
+        }
+        return Statsbeat.NON_EU_CONNECTION_STRING;
     }
 }
 
