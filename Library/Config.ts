@@ -76,7 +76,12 @@ class Config implements IConfig {
             : setupString; // CS was invalid, so it must be an ikey
 
         this.instrumentationKey = csCode.instrumentationkey || iKeyCode /* === instrumentationKey */ || csEnv.instrumentationkey || Config._getInstrumentationKey();
-        this.endpointUrl = `${this.endpointUrl || csCode.ingestionendpoint || csEnv.ingestionendpoint || this._endpointBase}/v2.1/track`;
+        let endpoint = `${this.endpointUrl || csCode.ingestionendpoint || csEnv.ingestionendpoint || this._endpointBase}`;
+        if (endpoint.endsWith("/")) {
+            // Remove extra '/' if present
+            endpoint = endpoint.slice(0, -1);
+        }
+        this.endpointUrl = `${endpoint}/v2.1/track`;
         this.maxBatchSize = this.maxBatchSize || 250;
         this.maxBatchIntervalMs = this.maxBatchIntervalMs || 15000;
         this.disableAppInsights = this.disableAppInsights || false;

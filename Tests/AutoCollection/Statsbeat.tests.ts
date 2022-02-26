@@ -11,10 +11,11 @@ import Config = require("../../Library/Config");
 describe("AutoCollection/Statsbeat", () => {
     var sandbox: sinon.SinonSandbox;
     const config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-    Statsbeat.CONNECTION_STRING = "InstrumentationKey=2aa22222-bbbb-1ccc-8ddd-eeeeffff3333;"
     let statsBeat: Statsbeat = null;
 
     beforeEach(() => {
+        Statsbeat.NON_EU_CONNECTION_STRING = "InstrumentationKey=2aa22222-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://westus-0.in.applicationinsights.azure.com/"
+        Statsbeat.EU_CONNECTION_STRING = "InstrumentationKey=2aa22222-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://westeurope-5.in.applicationinsights.azure.com/"
         sandbox = sinon.sandbox.create();
         statsBeat = new Statsbeat(config);
     });
@@ -38,6 +39,18 @@ describe("AutoCollection/Statsbeat", () => {
             assert.equal(setIntervalSpy.callCount, 2, "setInterval should be called twice as part of Statsbeat initialization");
             client.getStatsbeat().enable(false);
             assert.equal(clearIntervalSpy.callCount, 2, "clearInterval should be called twice as part of Statsbeat disable");
+        });
+
+        it("init should use non EU connection string", () => {
+            let testConfig = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://westus-0.in.applicationinsights.azure.com/");
+            let statsbeat = new Statsbeat(testConfig);
+            assert.equal(statsbeat["_statsbeatConfig"].endpointUrl, "https://westus-0.in.applicationinsights.azure.com/v2.1/track")
+        });
+
+        it("init should use EU connection string", () => {
+            let testConfig = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://northeurope-0.in.applicationinsights.azure.com/");
+            let statsbeat = new Statsbeat(testConfig);
+            assert.equal(statsbeat["_statsbeatConfig"].endpointUrl, "https://westeurope-5.in.applicationinsights.azure.com/v2.1/track")
         });
     });
 
