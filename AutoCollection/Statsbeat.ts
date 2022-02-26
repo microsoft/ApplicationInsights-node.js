@@ -54,7 +54,7 @@ class Statsbeat {
         let statsbeatConnectionString = this._getConnectionString(config);
         this._statsbeatConfig = new Config(statsbeatConnectionString);
         this._statsbeatConfig.samplingPercentage = 100; // Do not sample
-        this._sender = new Sender(this._statsbeatConfig);
+        this._sender = new Sender(this._statsbeatConfig, null, null, this._handleNetworkError);
     }
 
     public enable(isEnabled: boolean) {
@@ -333,6 +333,12 @@ class Statsbeat {
                 resolve();
             }
         });
+    }
+
+    private _handleNetworkError(error: Error) {
+        if (error && error.message && error.message.indexOf("UNREACH") > -1) { // Handle both EHOSTUNREACH and ENETUNREACH
+            this.enable(false);// Disable Statsbeat as is possible SDK is running in private or restricted network 
+        }
     }
 
     private _getConnectionString(config: Config): string {
