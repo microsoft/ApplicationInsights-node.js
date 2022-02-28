@@ -210,16 +210,17 @@ class Statsbeat {
     }
 
     private _getNetworkStatsbeatCounter(endpoint: number, host: string): Network.NetworkStatsbeat {
+        let shortHost = this._getShortHost(host);
         // Check if counter is available
         for (let i = 0; i < this._networkStatsbeatCollection.length; i++) {
             // Same object
             if (endpoint === this._networkStatsbeatCollection[i].endpoint &&
-                host === this._networkStatsbeatCollection[i].host) {
+                shortHost === this._networkStatsbeatCollection[i].host) {
                 return this._networkStatsbeatCollection[i];
             }
         }
         // Create a new one if not found
-        let newCounter = new Network.NetworkStatsbeat(endpoint, host);
+        let newCounter = new Network.NetworkStatsbeat(endpoint, shortHost);
         this._networkStatsbeatCollection.push(newCounter);
         return newCounter;
     }
@@ -240,6 +241,21 @@ class Statsbeat {
             currentCounter.lastRequestCount = currentCounter.totalRequestCount;
             currentCounter.lastTime = currentCounter.time;
         }
+    }
+
+    private _getShortHost(originalHost: string) {
+        let shortHost = originalHost;
+        try {
+            let hostRegex = new RegExp(/^https?:\/\/(?:www\.)?([^\/.-]+)/);
+            let res = hostRegex.exec(originalHost);
+            if (res != null && res.length > 1) {
+                shortHost = res[1];
+            }
+        }
+        catch (error) {
+            // Ignore error
+        }
+        return shortHost;
     }
 
     private _trackRequestsCount(commonProperties: {}) {
