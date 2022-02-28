@@ -44,13 +44,20 @@ describe("AutoCollection/Statsbeat", () => {
         it("init should use non EU connection string", () => {
             let testConfig = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://westus-0.in.applicationinsights.azure.com/");
             let statsbeat = new Statsbeat(testConfig);
-            assert.equal(statsbeat["_statsbeatConfig"].endpointUrl, "https://westus-0.in.applicationinsights.azure.com/v2.1/track")
+            assert.equal(statsbeat["_statsbeatConfig"].endpointUrl, "https://westus-0.in.applicationinsights.azure.com/v2.1/track");
         });
 
         it("init should use EU connection string", () => {
             let testConfig = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://northeurope-0.in.applicationinsights.azure.com/");
             let statsbeat = new Statsbeat(testConfig);
-            assert.equal(statsbeat["_statsbeatConfig"].endpointUrl, "https://westeurope-5.in.applicationinsights.azure.com/v2.1/track")
+            assert.equal(statsbeat["_statsbeatConfig"].endpointUrl, "https://westeurope-5.in.applicationinsights.azure.com/v2.1/track");
+        });
+
+        it("_getShortHost", () => {
+            assert.equal(statsBeat["_getShortHost"]("http://westus02-1.in.applicationinsights.azure.com"), "westus02");
+            assert.equal(statsBeat["_getShortHost"]("https://westus02-1.in.applicationinsights.azure.com"), "westus02");
+            assert.equal(statsBeat["_getShortHost"]("https://dc.services.visualstudio.com"), "dc");
+            assert.equal(statsBeat["_getShortHost"]("https://www.test.com"), "test");
         });
     });
 
@@ -288,8 +295,8 @@ describe("AutoCollection/Statsbeat", () => {
         it("Multiple network categories and endpoints", (done) => {
             statsBeat.enable(true);
             const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
-            statsBeat.countRequest(0, "breezeFirstEndpoint", 100, true);
-            statsBeat.countRequest(1, "quickpulseEndpoint", 200, true);
+            statsBeat.countRequest(0, "https://breezeFirstEndpoint.something.com", 100, true);
+            statsBeat.countRequest(1, "http://quickpulseEndpoint.something.com", 200, true);
             statsBeat.countRequest(0, "breezeSecondEndpoint", 400, true);
             statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
