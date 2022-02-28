@@ -366,7 +366,7 @@ describe("Library/Sender", () => {
     });
 
     describe("#Statsbeat counters", () => {
-        Statsbeat.CONNECTION_STRING = "InstrumentationKey=2aa22222-bbbb-1ccc-8ddd-eeeeffff3333;"
+        Statsbeat.NON_EU_CONNECTION_STRING = "InstrumentationKey=2aa22222-bbbb-1ccc-8ddd-eeeeffff3333;"
         var breezeResponse: Contracts.BreezeResponse = {
             itemsAccepted: 1,
             itemsReceived: 1,
