@@ -25,9 +25,10 @@ export class TraceHandler {
         this._config = config;
         this._instrumentations = [];
         this.tracerProvider = new NodeTracerProvider();
-        // TODO: Simplify connection string parser to a single place
+        let ingestionEndpoint = this._config.endpointUrl.replace("/v2.1/track", "");
+        let connectionString = `InstrumentationKey=${this._config.instrumentationKey};IngestionEndpoint=${ingestionEndpoint}`;
         this._exporter = new AzureMonitorTraceExporter({
-            connectionString: "InstrumentationKey=00000000-0000-0000-0000-000000000000;IngestionEndpoint=https://dc.services.visualstudio.com"
+            connectionString: connectionString
         });
         let bufferConfig: BufferConfig = {
             maxExportBatchSize: 512,
