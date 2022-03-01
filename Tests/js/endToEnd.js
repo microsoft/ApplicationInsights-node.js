@@ -60,23 +60,6 @@ describe('module', function () {
         });
     });
 
-    describe('rejected promises', function () {
-        it('should not crash on rejected promises containing no callstack', function () {
-            var appInsights = require('../../');
-            appInsights.setup('1aa11111-bbbb-1ccc-8ddd-eeeeffff3333');
-            appInsights.defaultClient.config.httpsAgent = new https.Agent({ keepAlive: false });
-            appInsights.start();
-            assert.ok(appInsights.defaultClient);
-            assert.doesNotThrow(function () {
-                if (typeof Promise !== 'undefined') {
-                    Promise.reject();
-                }
-            });
-            appInsights.defaultClient.flush();
-            appInsights.dispose();
-        });
-    });
-
     describe('uncaught exceptions', function () {
         var UNCAUGHT_EXCEPTION = 'uncaughtException';
         var UNCAUGHT_EXCEPTION_MONITOR = 'uncaughtExceptionMonitor';

@@ -1,9 +1,8 @@
-name: Node.js CI
+name: Node.js runtime CI
 
 on:
-  push:
+  pull_request:
     branches: [ develop, master ]
-
 jobs:
   build:
 
@@ -12,7 +11,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node-version: [8, 10, 12, 14, 15, 16, 17]
+        node-version: [10, 12, 14, 16]
 
     steps:
     - uses: actions/checkout@v2
@@ -20,7 +19,6 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
-    - run: npm install
+    - run: npm ci
     - run: npm run build --if-present
-    - run: if [[ ${{ matrix.node-version }} == 14 ]]; then npm run lint; fi;
     - run: npm test
