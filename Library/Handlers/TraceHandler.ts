@@ -2,21 +2,22 @@
 // Licensed under the MIT license.
 import { SpanOptions, context, SpanKind, SpanAttributes, SpanStatusCode } from "@opentelemetry/api";
 import { Instrumentation, InstrumentationOption, registerInstrumentations } from "@opentelemetry/instrumentation";
-import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
+import { NodeTracerProvider, NodeTracerConfig } from "@opentelemetry/sdk-trace-node";
 import { BatchSpanProcessor, BufferConfig, Tracer } from "@opentelemetry/sdk-trace-base";
-import { AzureMonitorTraceExporter } from "@azure/monitor-opentelemetry-exporter";
 import { HttpInstrumentation, HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 
 import { Config } from "../Configuration/Config";
 import * as  Contracts from "../../Declarations/Contracts";
+import { TraceExporter } from "../Exporters";
 
 export class TraceHandler {
 
     public tracerProvider: NodeTracerProvider;
     public tracer: Tracer;
+    public httpInstrumentationConfig: HttpInstrumentationConfig;
 
-    private _exporter: AzureMonitorTraceExporter;
+    private _exporter: TraceExporter;
     private _config: Config;
     private _instrumentations: InstrumentationOption[];
     private _disableInstrumentations: () => void;
@@ -24,31 +25,32 @@ export class TraceHandler {
     constructor(config: Config) {
         this._config = config;
         this._instrumentations = [];
-        this.tracerProvider = new NodeTracerProvider();
-        let ingestionEndpoint = this._config.endpointUrl.replace("/v2.1/track", "");
-        let connectionString = `InstrumentationKey=${this._config.instrumentationKey};IngestionEndpoint=${ingestionEndpoint}`;
-        this._exporter = new AzureMonitorTraceExporter({
-            connectionString: connectionString
-        });
+        let tracerConfig: NodeTracerConfig = {
+            sampler: null,
+            resource: null,
+            generalLimits: null,
+            idGenerator: null,
+            forceFlushTimeoutMillis: 30000
+        };
+        this.tracerProvider = new NodeTracerProvider(tracerConfig);
+        this._exporter = new TraceExporter(this._config);
         let bufferConfig: BufferConfig = {
             maxExportBatchSize: 512,
             scheduledDelayMillis: 5000,
             exportTimeoutMillis: 30000,
             maxQueueSize: 2048
         };
-        let spanProcessor = new BatchSpanProcessor(this._exporter, bufferConfig);
+        let spanProcessor = new BatchSpanProcessor(this._exporter.azureMonitorExporter, bufferConfig);
         this.tracerProvider.addSpanProcessor(spanProcessor);
+        this.httpInstrumentationConfig = {
+            ignoreOutgoingUrls: [new RegExp(this._config.endpointUrl)]
+        };
     }
 
     public start() {
         // TODO: Update config name to enable auto collection of HTTP/HTTPs
         if (this._config.enableAutoCollectRequests || this._config.enableAutoCollectDependencies) {
-            // TODO: Add other configurations
-            // TODO: Maybe expose HttpInstrumentation so it can be updated before init
-            const httpInstrumentationConfig: HttpInstrumentationConfig = {
-                ignoreOutgoingUrls: [new RegExp(/dc.services.visualstudio.com/i)]
-            };
-            let httpInstrumentation = new HttpInstrumentation(httpInstrumentationConfig);
+            let httpInstrumentation = new HttpInstrumentation(this.httpInstrumentationConfig);
             this.addInstrumentation(httpInstrumentation);
         }
 
@@ -78,6 +80,7 @@ export class TraceHandler {
         }
     }
 
+    // Support Legacy APIs
     public trackRequest(telemetry: Contracts.RequestTelemetry & Contracts.Identified) {
         // TODO: Change context if ID is provided?
         const ctx = context.active();
@@ -103,6 +106,7 @@ export class TraceHandler {
         span["_duration"] = telemetry.duration;
     }
 
+    // Support Legacy APIs
     public trackDependency(telemetry: Contracts.DependencyTelemetry & Contracts.Identified) {
         // TODO: Change context if ID is provided?
         const ctx = context.active();
@@ -138,7 +142,7 @@ export class TraceHandler {
     }
 
     public dispose() {
-        this._exporter.shutdown();
+        this._exporter.azureMonitorExporter.shutdown();
     }
 
     private _isDbDependency(dependencyType: string) {

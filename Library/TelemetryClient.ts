@@ -156,6 +156,12 @@ export class TelemetryClient {
      * @param options Flush options, including indicator whether app is crashing and callback
      */
     public flush(options?: FlushOptions) {
+
+        // TODO: Add flush functionality
+        // this.traceHandler.flush();
+        // this.metricHandler.flush();
+        // this.logHandler.flush();
+
         this.channel.triggerSend(
             options ? !!options.isAppCrashing : false,
             options ? options.callback : undefined);

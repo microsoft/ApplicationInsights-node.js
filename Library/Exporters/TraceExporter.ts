@@ -2,21 +2,23 @@ import { AzureMonitorTraceExporter, AzureExporterConfig } from "@azure/monitor-o
 import { ExportResult } from "@opentelemetry/core";
 import { ReadableSpan } from "@opentelemetry/sdk-trace-base";
 
+import { Config } from "../Configuration/Config";
 
 export class TraceExporter {
-    private _exporter: AzureMonitorTraceExporter;
+    public azureMonitorExporter: AzureMonitorTraceExporter;
 
-
-    constructor(connectionString: string) {
-        let config: AzureExporterConfig = {
+    constructor(config: Config) {
+        let ingestionEndpoint = config.endpointUrl.replace("/v2.1/track", "");
+        let connectionString = `InstrumentationKey=${config.instrumentationKey};IngestionEndpoint=${ingestionEndpoint}`;
+        let exporterConfig: AzureExporterConfig = {
             connectionString: connectionString
         };
-        this._exporter = new AzureMonitorTraceExporter();
+        this.azureMonitorExporter = new AzureMonitorTraceExporter(exporterConfig);
     }
 
     public async export(spans: ReadableSpan[], resultCallback: (result: ExportResult) => void) {
         try {
-            return await this._exporter.export(spans, resultCallback);
+            return await this.azureMonitorExporter.export(spans, resultCallback);
         }
         catch (ex) {
             // Failed to export
