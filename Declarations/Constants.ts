@@ -1,6 +1,6 @@
 import Contracts = require("./Contracts")
 
-export const APPLICATION_INSIGHTS_SDK_VERSION = "2.2.0";
+export const APPLICATION_INSIGHTS_SDK_VERSION = "2.2.2";
 export const DEFAULT_BREEZE_ENDPOINT = "https://dc.services.visualstudio.com";
 export const DEFAULT_LIVEMETRICS_ENDPOINT = "https://rt.services.visualstudio.com";
 export const DEFAULT_LIVEMETRICS_HOST = "rt.services.visualstudio.com";
@@ -38,14 +38,14 @@ export enum PerformanceCounter {
     // Requests
     REQUEST_RATE = "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Requests/Sec",
     REQUEST_DURATION = "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Request Execution Time"
-};
+}
 
 export enum MetricId {
     REQUESTS_DURATION = "requests/duration",
     DEPENDENCIES_DURATION = "dependencies/duration",
     EXCEPTIONS_COUNT = "exceptions/count",
     TRACES_COUNT = "traces/count",
-};
+}
 
 /**
  * Map a PerformanceCounter/QuickPulseCounter to a QuickPulseCounter. If no mapping exists, mapping is *undefined*
@@ -85,7 +85,7 @@ export const QuickPulseDocumentType: { [key in Contracts.TelemetryTypeKeys]: Qui
     Request: "Request",
     Dependency: "RemoteDependency",
     Availability: "Availability",
-    PageView: "PageView",
+    PageView: "PageView"
 };
 
 export const QuickPulseType: { [key in Contracts.TelemetryTypeKeys]: QuickPulseType } = {
@@ -96,7 +96,7 @@ export const QuickPulseType: { [key in Contracts.TelemetryTypeKeys]: QuickPulseT
     Request: "RequestTelemetryDocument",
     Dependency: "DependencyTelemetryDocument",
     Availability: "AvailabilityTelemetryDocument",
-    PageView: "PageViewTelemetryDocument",
+    PageView: "PageViewTelemetryDocument"
 };
 
 export const TelemetryTypeStringToQuickPulseType: { [key in Contracts.TelemetryTypeValues]: QuickPulseType } = {
@@ -126,7 +126,7 @@ export const DependencyTypeName = {
     Http: "HTTP",
     InProc: "InProc",
     Sql: "SQL",
-    QueueMessage: "Queue Message",
+    QueueMessage: "Queue Message"
 }
 
 export const HeartBeatMetricName = "HeartBeat";
@@ -137,12 +137,12 @@ export const StatsbeatResourceProvider = {
     appsvc: "appsvc",
     functions: "functions",
     vm: "vm",
-    unknown: "unknown",
+    unknown: "unknown"
 }
 
 export const StatsbeatAttach = {
     codeless: "codeless",
-    sdk: "sdk",
+    sdk: "sdk"
 }
 
 export const StatsbeatCounter = {
@@ -153,7 +153,7 @@ export const StatsbeatCounter = {
     THROTTLE_COUNT: "Throttle Count",
     EXCEPTION_COUNT: "Exception Count",
     ATTACH: "Attach",
-    FEATURE: "Feature",
+    FEATURE: "Feature"
 }
 
 export enum StatsbeatFeature {

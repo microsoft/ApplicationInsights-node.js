@@ -354,6 +354,7 @@ describe("Library/Sender", () => {
             var addHeaderStub = sandbox.stub(handler, "addAuthorizationHeader", () => { throw new Error(); });
 
             var sender = new Sender(config, getAuthorizationHandler);
+            sender["_enableDiskRetryMode"] = true;
             var storeToDiskStub = sandbox.stub(sender, "_storeToDisk");
             let envelope = new Contracts.Envelope();
             envelope.name = "TestEnvelope";
@@ -365,7 +366,7 @@ describe("Library/Sender", () => {
     });
 
     describe("#Statsbeat counters", () => {
-        Statsbeat.CONNECTION_STRING = "InstrumentationKey=2aa22222-bbbb-1ccc-8ddd-eeeeffff3333;"
+        Statsbeat.NON_EU_CONNECTION_STRING = "InstrumentationKey=2aa22222-bbbb-1ccc-8ddd-eeeeffff3333;"
         var breezeResponse: Contracts.BreezeResponse = {
             itemsAccepted: 1,
             itemsReceived: 1,
@@ -419,9 +420,9 @@ describe("Library/Sender", () => {
             statsbeatSender.setDiskRetryMode(true);
             var statsbeatSpy = sandbox.spy(statsbeat, "countRequest");
             var throttleSpy = sandbox.spy(statsbeat, "countThrottle");
-            nockScope = interceptor.reply(429, breezeResponse);
+            nockScope = interceptor.reply(439, breezeResponse);
             statsbeatSender.send([testEnvelope], () => {
-                assert.ok(statsbeatSpy.calledOnce);
+                assert.ok(statsbeatSpy.notCalled);
                 assert.ok(throttleSpy.calledOnce);
                 done();
             });

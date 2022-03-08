@@ -38,14 +38,6 @@ export class AutoCollectNativePerformance {
     }
 
     /**
-     *  Reports if NativePerformance is able to run in this environment
-     */
-    public static isNodeVersionCompatible() {
-        var nodeVer = process.versions.node.split(".");
-        return parseInt(nodeVer[0]) >= 6;
-    }
-
-    /**
      * Start instance of native metrics agent.
      *
      * @param {boolean} isEnabled
@@ -53,10 +45,6 @@ export class AutoCollectNativePerformance {
      * @memberof AutoCollectNativePerformance
      */
     public enable(isEnabled: boolean, disabledMetrics: IDisabledExtendedMetrics = {}, collectionInterval = 60000): void {
-        if (!AutoCollectNativePerformance.isNodeVersionCompatible()) {
-            return;
-        }
-
         if (AutoCollectNativePerformance._metricsAvailable == undefined && isEnabled && !this._isInitialized) {
             // Try to require in the native-metrics library. If it's found initialize it, else do nothing and never try again.
             try {
@@ -221,7 +209,7 @@ export class AutoCollectNativePerformance {
             return;
         }
 
-        const name = `Event Loop CPU Time`;
+        const name = "Event Loop CPU Time";
         const stdDev = Math.sqrt(metrics.sumSquares / metrics.count - Math.pow(metrics.total / metrics.count, 2)) || 0;
         this._client.trackMetric({
             name: name,
@@ -251,7 +239,7 @@ export class AutoCollectNativePerformance {
         const { heapUsed, heapTotal, rss } = memoryUsage;
 
         this._client.trackMetric({
-            name: `Memory Usage (Heap)`,
+            name: "Memory Usage (Heap)",
             value: heapUsed,
             count: 1,
             tagOverrides: {
@@ -259,7 +247,7 @@ export class AutoCollectNativePerformance {
             }
         });
         this._client.trackMetric({
-            name: `Memory Total (Heap)`,
+            name: "Memory Total (Heap)",
             value: heapTotal,
             count: 1,
             tagOverrides: {
@@ -267,7 +255,7 @@ export class AutoCollectNativePerformance {
             }
         });
         this._client.trackMetric({
-            name: `Memory Usage (Non-Heap)`,
+            name: "Memory Usage (Non-Heap)",
             value: rss - heapTotal,
             count: 1,
             tagOverrides: {

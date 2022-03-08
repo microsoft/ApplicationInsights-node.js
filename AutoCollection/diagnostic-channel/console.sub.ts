@@ -4,7 +4,7 @@ import TelemetryClient = require("../../Library/TelemetryClient");
 import { SeverityLevel } from "../../Declarations/Contracts";
 import { StatsbeatInstrumentation } from "../../Declarations/Constants";
 
-import { channel, IStandardEvent } from "diagnostic-channel";
+import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
 
 import { console as consolePub } from "diagnostic-channel-publishers";
 
@@ -26,26 +26,24 @@ const subscriber = (event: IStandardEvent<consolePub.IConsoleData>) => {
 };
 
 export function enable(enabled: boolean, client: TelemetryClient) {
-    let statsbeat = client.getStatsbeat();
     if (enabled) {
         let clientFound = clients.find(c => c == client);
         if (clientFound) {
             return;
         }
         if (clients.length === 0) {
-            channel.subscribe<consolePub.IConsoleData>("console", subscriber);
-            if (statsbeat) {
-                statsbeat.addInstrumentation(StatsbeatInstrumentation.CONSOLE);
-            }
-        };
+            channel.subscribe<consolePub.IConsoleData>("console", subscriber, trueFilter, (module, version) => {
+                let statsbeat = client.getStatsbeat();
+                if (statsbeat) {
+                    statsbeat.addInstrumentation(StatsbeatInstrumentation.CONSOLE);
+                }
+            });
+        }
         clients.push(client);
     } else {
         clients = clients.filter((c) => c != client);
         if (clients.length === 0) {
             channel.unsubscribe("console", subscriber);
-            if (statsbeat) {
-                statsbeat.removeInstrumentation(StatsbeatInstrumentation.CONSOLE);
-            }
         }
     }
 }

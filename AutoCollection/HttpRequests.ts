@@ -15,7 +15,7 @@ class AutoCollectHttpRequests {
 
     public static INSTANCE: AutoCollectHttpRequests;
 
-    private static alreadyAutoCollectedFlag = '_appInsightsAutoCollected';
+    private static alreadyAutoCollectedFlag = "_appInsightsAutoCollected";
 
     private _client: TelemetryClient;
     private _isEnabled: boolean;
@@ -82,8 +82,8 @@ class AutoCollectHttpRequests {
             if (!onRequest) {
                 return undefined;
             }
-            if (typeof onRequest !== 'function') {
-                throw new Error('onRequest handler must be a function');
+            if (typeof onRequest !== "function") {
+                throw new Error("onRequest handler must be a function");
             }
             return (request: http.ServerRequest, response: http.ServerResponse) => {
                 CorrelationContextManager.wrapEmitter(request);
@@ -135,8 +135,8 @@ class AutoCollectHttpRequests {
             const originalAddListener = server.addListener.bind(server);
             server.addListener = (eventType: string, eventHandler: Function) => {
                 switch (eventType) {
-                    case 'request':
-                    case 'checkContinue':
+                    case "request":
+                    case "checkContinue":
                         return originalAddListener(eventType, wrapOnRequestHandler(eventHandler));
                     default:
                         return originalAddListener(eventType, eventHandler);
@@ -153,7 +153,7 @@ class AutoCollectHttpRequests {
         // function createServer(options: ServerOptions, requestListener?: RequestListener): Server;
         http.createServer = (param1?: Object, param2?: Function) => {
             // todo: get a pointer to the server so the IP address can be read from server.address
-            if (param2 && typeof param2 === 'function') {
+            if (param2 && typeof param2 === "function") {
                 const server: http.Server = originalHttpServer(param1, wrapOnRequestHandler(param2));
                 wrapServerEventHandler(server);
                 return server;

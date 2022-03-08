@@ -15,12 +15,12 @@ import Traceparent = require("../Library/Traceparent");
 import * as DiagChannel from "./diagnostic-channel/initialization";
 
 class AutoCollectHttpDependencies {
-    public static disableCollectionRequestOption = 'disableAppInsightsAutoCollection';
+    public static disableCollectionRequestOption = "disableAppInsightsAutoCollection";
 
     public static INSTANCE: AutoCollectHttpDependencies;
 
     private static requestNumber = 1;
-    private static alreadyAutoCollectedFlag = '_appInsightsAutoCollected';
+    private static alreadyAutoCollectedFlag = "_appInsightsAutoCollected";
 
     private _client: TelemetryClient;
     private _isEnabled: boolean;
@@ -64,7 +64,7 @@ class AutoCollectHttpDependencies {
                 !(<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
 
             // If someone else patched traceparent headers onto this request
-            if ((<any>options).headers && (<any>options).headers['user-agent'] && (<any>options).headers['user-agent'].toString().indexOf('azsdk-js') !== -1) {
+            if ((<any>options).headers && (<any>options).headers["user-agent"] && (<any>options).headers["user-agent"].toString().indexOf("azsdk-js") !== -1) {
                 shouldCollect = false;
             }
 
@@ -151,7 +151,7 @@ class AutoCollectHttpDependencies {
             uniqueTraceparent = traceparent.toString();
             uniqueRequestId = traceparent.getBackCompatRequestId();
         } else {
-            uniqueRequestId = currentContext && currentContext.operation && (currentContext.operation.parentId + AutoCollectHttpDependencies.requestNumber++ + '.');
+            uniqueRequestId = currentContext && currentContext.operation && (currentContext.operation.parentId + AutoCollectHttpDependencies.requestNumber++ + ".");
         }
 
         // Add the source correlationId to the request headers, if a value was not already provided.
@@ -205,7 +205,7 @@ class AutoCollectHttpDependencies {
 
         // Collect dependency telemetry about the request when it finishes.
         if (telemetry.request.on) {
-            telemetry.request.on('response', (response: http.ClientResponse) => {
+            telemetry.request.on("response", (response: http.ClientResponse) => {
                 requestParser.onResponse(response);
 
                 var dependencyTelemetry = requestParser.getDependencyTelemetry(telemetry, uniqueRequestId);
@@ -217,7 +217,7 @@ class AutoCollectHttpDependencies {
 
                 client.trackDependency(dependencyTelemetry);
             });
-            telemetry.request.on('error', (error: Error) => {
+            telemetry.request.on("error", (error: Error) => {
                 requestParser.onError(error);
 
                 var dependencyTelemetry = requestParser.getDependencyTelemetry(telemetry, uniqueRequestId);
@@ -229,7 +229,7 @@ class AutoCollectHttpDependencies {
 
                 client.trackDependency(dependencyTelemetry);
             });
-            telemetry.request.on('abort', () => {
+            telemetry.request.on("abort", () => {
                 requestParser.onError(new Error());
 
                 var dependencyTelemetry = requestParser.getDependencyTelemetry(telemetry, uniqueRequestId);

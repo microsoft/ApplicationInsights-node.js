@@ -3,13 +3,13 @@
 import { URL } from "url";
 import { SpanKind, SpanStatusCode, Link } from "@opentelemetry/api";
 import { SemanticAttributes, DbSystemValues } from "@opentelemetry/semantic-conventions";
-import { ReadableSpan } from "@opentelemetry/tracing";
+import { ReadableSpan } from "@opentelemetry/sdk-trace-base";
 
 import * as Contracts from "../../Declarations/Contracts";
 import * as Constants from "../../Declarations/Constants";
 import { parseEventHubSpan } from "./Azure/EventHub";
 import { DependencyTelemetry } from "../../Declarations/Contracts";
-import Util = require ("../../Library/Util");
+import Util = require("../../Library/Util");
 
 function createPropertiesFromSpan(span: ReadableSpan): { [key: string]: any; } {
     const properties: { [key: string]: any; } = {};
@@ -132,7 +132,9 @@ function createDependencyData(span: ReadableSpan): Contracts.DependencyTelemetry
                 let dependencyUrl = new URL(String(httpUrl));
                 pathName = dependencyUrl.pathname;
             }
-            catch (ex) { }
+            catch (ex) {
+                // Ignore error
+            }
             remoteDependency.name = `${httpMethod} ${pathName}`;
         }
         remoteDependency.data = getUrl(span);
@@ -154,7 +156,9 @@ function createDependencyData(span: ReadableSpan): Contracts.DependencyTelemetry
                         target = res[1] + res[2] + res[4];
                     }
                 }
-            } catch (error) { }
+            } catch (error) {
+                // Ignore error
+            }
             remoteDependency.target = `${target}`;
         }
     }
@@ -231,7 +235,9 @@ function createRequestData(span: ReadableSpan): Contracts.RequestTelemetry {
                     let url = new URL(String(httpUrl));
                     requestData.name = `${httpMethod} ${url.pathname}`;
                 }
-                catch (ex) { }
+                catch (ex) {
+                    // Ignore error
+                }
             }
         }
         requestData.url = getUrl(span);

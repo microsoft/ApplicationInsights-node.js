@@ -95,9 +95,9 @@ class QuickPulseEnvelopeFactory {
         const document = QuickPulseEnvelopeFactory.createQuickPulseDocument(envelope);
         const exceptionDetails = ((envelope.data as any).baseData as Contracts.ExceptionData).exceptions;
 
-        let exception = '';
-        let exceptionMessage = '';
-        let exceptionType = '';
+        let exception = "";
+        let exceptionMessage = "";
+        let exceptionType = "";
 
         // Try to fill exception information from first error only
         if (exceptionDetails && exceptionDetails.length > 0) {
@@ -151,7 +151,7 @@ class QuickPulseEnvelopeFactory {
             ResultCode: baseData.resultCode,
             CommandName: baseData.data,
             OperationName: document.OperationId,
-            DependencyTypeName: baseData.type,
+            DependencyTypeName: baseData.type
         }
         return dependencyDocument;
     }

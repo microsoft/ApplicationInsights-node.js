@@ -39,7 +39,7 @@ class CorrelationIdManager {
             }
 
             const requestOptions = {
-                method: 'GET',
+                method: "GET",
                 // Ensure this request is not captured by auto-collection.
                 // Note: we don't refer to the property in HttpDependencyParser because that would cause a cyclical dependency
                 disableAppInsightsAutoCollection: true
@@ -51,10 +51,10 @@ class CorrelationIdManager {
                     // Success; extract the appId from the body
                     let appId = "";
                     res.setEncoding("utf-8");
-                    res.on('data', (data: any) => {
+                    res.on("data", (data: any) => {
                         appId += data;
                     });
-                    res.on('end', () => {
+                    res.on("end", () => {
                         Logging.info(CorrelationIdManager.TAG, appId);
                         const result = CorrelationIdManager.correlationIdPrefix + appId;
                         CorrelationIdManager.completedLookups[appIdUrlString] = result;
@@ -79,7 +79,7 @@ class CorrelationIdManager {
                 }
             }, true, false);
             if (req) {
-                req.on('error', (error: Error) => {
+                req.on("error", (error: Error) => {
                     // Unable to contact endpoint.
                     // Do nothing for now.
                     Logging.warn(CorrelationIdManager.TAG, error);
@@ -116,14 +116,14 @@ class CorrelationIdManager {
      */
     public static generateRequestId(parentId: string): string {
         if (parentId) {
-            parentId = parentId[0] == '|' ? parentId : '|' + parentId;
-            if (parentId[parentId.length - 1] !== '.') {
-                parentId += '.';
+            parentId = parentId[0] == "|" ? parentId : "|" + parentId;
+            if (parentId[parentId.length - 1] !== ".") {
+                parentId += ".";
             }
 
             const suffix = (CorrelationIdManager.currentRootId++).toString(16);
 
-            return CorrelationIdManager.appendSuffix(parentId, suffix, '_')
+            return CorrelationIdManager.appendSuffix(parentId, suffix, "_")
         } else {
             return CorrelationIdManager.generateRootId();
         }
@@ -135,17 +135,17 @@ class CorrelationIdManager {
      * @param id
      */
     public static getRootId(id: string): string {
-        let endIndex = id.indexOf('.');
+        let endIndex = id.indexOf(".");
         if (endIndex < 0) {
             endIndex = id.length;
         }
 
-        const startIndex = id[0] === '|' ? 1 : 0;
+        const startIndex = id[0] === "|" ? 1 : 0;
         return id.substring(startIndex, endIndex);
     }
 
     private static generateRootId(): string {
-        return '|' + Util.w3cTraceId() + '.';
+        return "|" + Util.w3cTraceId() + ".";
     }
 
     private static appendSuffix(parentId: string, suffix: string, delimiter: string): string {
@@ -160,7 +160,7 @@ class CorrelationIdManager {
         if (parentId.length > trimPosition) {
             for (; trimPosition > 1; --trimPosition) {
                 const c = parentId[trimPosition - 1];
-                if (c === '.' || c === '_') {
+                if (c === "." || c === "_") {
                     break;
                 }
             }
@@ -173,9 +173,9 @@ class CorrelationIdManager {
 
         suffix = Util.randomu32().toString(16);
         while (suffix.length < 8) {
-            suffix = '0' + suffix;
+            suffix = "0" + suffix;
         }
-        return parentId.substring(0, trimPosition) + suffix + '#';
+        return parentId.substring(0, trimPosition) + suffix + "#";
     }
 }
 

@@ -1,10 +1,6 @@
-import http = require("http");
-
 import Contracts = require("../Declarations/Contracts");
 import TelemetryClient = require("../Library/TelemetryClient");
-import Sender = require("../Library/Sender");
-import Queue = require("../Library/Channel");
-import Util = require("../Library/Util");
+
 
 class AutoCollectExceptions {
 
@@ -41,7 +37,6 @@ class AutoCollectExceptions {
     public enable(isEnabled: boolean) {
         if (isEnabled) {
             this._isInitialized = true;
-            var self = this;
             if (!this._exceptionListenerHandle) {
                 // For scenarios like Promise.reject(), an error won't be passed to the handle. Create a placeholder
                 // error for these scenarios.

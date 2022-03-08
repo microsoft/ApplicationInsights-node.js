@@ -1,6 +1,6 @@
 import assert = require("assert");
 import sinon = require("sinon");
-import { Span, BasicTracerProvider, TracerConfig } from "@opentelemetry/tracing";
+import { Span, BasicTracerProvider, TracerConfig } from "@opentelemetry/sdk-trace-base";
 import { SpanKind, ROOT_CONTEXT } from "@opentelemetry/api";
 
 import AppInsights = require("../../applicationinsights");

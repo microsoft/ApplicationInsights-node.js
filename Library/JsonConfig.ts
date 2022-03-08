@@ -1,7 +1,7 @@
 import fs = require("fs");
 import path = require("path");
 
-import Logging = require('./Logging');
+import Logging = require("./Logging");
 import { IJsonConfig } from "../Declarations/Interfaces";
 import { DistributedTracingModes } from "../applicationinsights";
 import { IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";

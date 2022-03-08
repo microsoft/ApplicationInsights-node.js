@@ -2,7 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 import TelemetryClient = require("../../Library/TelemetryClient");
 import { StatsbeatInstrumentation } from "../../Declarations/Constants";
-import {channel, IStandardEvent} from "diagnostic-channel";
+import {channel, IStandardEvent, trueFilter} from "diagnostic-channel";
 
 import {mysql} from "diagnostic-channel-publishers";
 
@@ -33,26 +33,24 @@ export const subscriber = (event: IStandardEvent<mysql.IMysqlData>) => {
 };
 
 export function enable(enabled: boolean, client: TelemetryClient) {
-    let statsbeat = client.getStatsbeat();
     if (enabled) {
         let clientFound = clients.find(c => c == client);
         if (clientFound) {
             return;
         }
         if (clients.length === 0) {
-            channel.subscribe<mysql.IMysqlData>("mysql", subscriber);
-            if (statsbeat) {
-                statsbeat.addInstrumentation(StatsbeatInstrumentation.MYSQL);
-            }
-        };
+            channel.subscribe<mysql.IMysqlData>("mysql", subscriber, trueFilter, (module, version) => {
+                let statsbeat = client.getStatsbeat();
+                if (statsbeat) {
+                    statsbeat.addInstrumentation(StatsbeatInstrumentation.MYSQL);
+                }
+            });
+        }
         clients.push(client);
     } else {
         clients = clients.filter((c) => c != client);
         if (clients.length === 0) {
             channel.unsubscribe("mysql", subscriber);
-            if (statsbeat) {
-                statsbeat.removeInstrumentation(StatsbeatInstrumentation.MYSQL);
-            }
         }
     }
 }

@@ -1,7 +1,6 @@
 # Application Insights for Node.js
 
 [![npm version](https://badge.fury.io/js/applicationinsights.svg)](http://badge.fury.io/js/applicationinsights)
-[![Build Status](https://travis-ci.org/Microsoft/ApplicationInsights-node.js.svg?branch=master)](https://travis-ci.org/Microsoft/ApplicationInsights-node.js)
 ![Integration Tests CI](https://github.com/microsoft/ApplicationInsights-node.js/workflows/Integration%20Tests%20CI/badge.svg)
 ![Node.js CI](https://github.com/microsoft/ApplicationInsights-node.js/workflows/Node.js%20CI/badge.svg)
 ![Back Compatability CI](https://github.com/microsoft/ApplicationInsights-node.js/workflows/Back%20Compatability%20CI/badge.svg)
@@ -29,6 +28,7 @@ You can manually track more aspects of your app and system using the API describ
 
 | Platform Version | Supported                                       |
 |------------------|-------------------------------------------------|
+| Node.JS `v16`    | ✅                                              |
 | Node.JS `v15`    | ✅                                              |
 | Node.JS `v14`    | ✅                                              |
 | Node.JS `v12`    | ✅                                              |

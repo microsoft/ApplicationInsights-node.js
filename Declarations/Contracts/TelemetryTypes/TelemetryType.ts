@@ -69,7 +69,7 @@ export const TelemetryTypeString: {[key: string]: TelemetryTypeValues} = {
     Request: "RequestData",
     Dependency: "RemoteDependencyData",
     Availability: "AvailabilityData",
-    PageView: "PageViewData",
+    PageView: "PageViewData"
 }
 
 /**

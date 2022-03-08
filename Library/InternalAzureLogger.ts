@@ -99,7 +99,7 @@ class InternalAzureLogger {
             await FileSystemHelper.accessAsync(this._fileFullPath, fs.constants.F_OK);
         }
         catch (err) {
-            // No file create one  
+            // No file create one
             await FileSystemHelper.appendFileAsync(this._fileFullPath, data).catch((appendError) => {
                 console.log(this.TAG, "Failed to put log into file: " + (appendError && appendError.message));
             });
@@ -127,7 +127,7 @@ class InternalAzureLogger {
             await FileSystemHelper.writeFileAsync(backupPath, buffer);
         }
         catch (err) {
-            console.log(`Failed to generate backup log file`, err);
+            console.log("Failed to generate backup log file", err);
         }
         finally {
             // Store logs

@@ -58,6 +58,7 @@ class HttpDependencyParser extends RequestParser {
 
         }
         catch (ex) { // Invalid URL
+            // Ignore error
         }
         if (this.correlationId) {
             remoteDependencyType = Contracts.RemoteDependencyDataConstants.TYPE_AI;
@@ -112,13 +113,15 @@ class HttpDependencyParser extends RequestParser {
      * necessary because a ClientRequest object does not expose a url property.
      */
     private static _getUrlFromRequestOptions(options: any, request: http.ClientRequest) {
-        if (typeof options === 'string') {
+        if (typeof options === "string") {
             if (options.indexOf("http://") === 0 || options.indexOf("https://") === 0) {
                 // protocol exists, parse normally
                 try {
                     options = new url.URL(options);
                 }
-                catch (ex) { }
+                catch (ex) {
+                    // Ignore error
+                }
             } else {
                 // protocol not found, insert http/https where appropriate
                 try {
@@ -129,9 +132,11 @@ class HttpDependencyParser extends RequestParser {
                         options = new url.URL("http://" + options);
                     }
                 }
-                catch (ex) { }
+                catch (ex) {
+                    // Ignore error
+                }
             }
-        } else if (options && typeof url.URL === 'function' && options instanceof url.URL) {
+        } else if (options && typeof url.URL === "function" && options instanceof url.URL) {
             return url.format(options);
         } else {
             // Avoid modifying the original options object.
@@ -149,11 +154,27 @@ class HttpDependencyParser extends RequestParser {
         if (options.path && options.host) {
             // need to force a protocol to make parameter valid - base url is required when input is a relative url
             try {
-                const parsedQuery = new url.URL(options.path, 'http://' + options.host + options.path);
+                const parsedQuery = new url.URL(options.path, "http://" + options.host + options.path);
                 options.pathname = parsedQuery.pathname;
                 options.search = parsedQuery.search;
             }
-            catch (ex) { }
+            catch (ex) {
+                // Ignore error
+            }
+        }
+
+        // Sometimes the hostname is provided but not the host
+        // Add in the path when this occurs
+        if (options.path && options.hostname && !options.host) {
+            // need to force a protocol to make parameter valid - base url is required when input is a relative url
+            try {
+                const parsedQuery = new url.URL(options.path, "http://" + options.hostname + options.path);
+                options.pathname = parsedQuery.pathname;
+                options.search = parsedQuery.search;
+            }
+            catch (ex) {
+                // Ignore error
+            }
         }
 
         // Similarly, url.format ignores hostname and port if host is specified,
@@ -171,12 +192,14 @@ class HttpDependencyParser extends RequestParser {
                     delete options.host;
                 }
             }
-            catch (ex) { }
+            catch (ex) {
+                // Ignore error
+            }
         }
 
         // Mix in default values used by http.request and others
         options.protocol = options.protocol || ((<any>request).agent && (<any>request).agent.protocol) || ((<any>request).protocol) || undefined;
-        options.hostname = options.hostname || 'localhost';
+        options.hostname = options.hostname || "localhost";
 
         return url.format(options);
     }

@@ -1,12 +1,12 @@
 import azureCore = require("@azure/core-http");
 
-import CorrelationIdManager = require('./CorrelationIdManager');
-import ConnectionStringParser = require('./ConnectionStringParser');
-import Logging = require('./Logging');
-import Constants = require('../Declarations/Constants');
-import http = require('http');
-import https = require('https');
-import url = require('url');
+import CorrelationIdManager = require("./CorrelationIdManager");
+import ConnectionStringParser = require("./ConnectionStringParser");
+import Logging = require("./Logging");
+import Constants = require("../Declarations/Constants");
+import http = require("http");
+import https = require("https");
+import url = require("url");
 import { JsonConfig } from "./JsonConfig";
 import { IConfig } from "../Declarations/Interfaces";
 import { DistributedTracingModes } from "../applicationinsights";
@@ -80,7 +80,12 @@ class Config implements IConfig {
             : setupString; // CS was invalid, so it must be an ikey
 
         this.instrumentationKey = csCode.instrumentationkey || iKeyCode /* === instrumentationKey */ || csEnv.instrumentationkey || Config._getInstrumentationKey();
-        this.endpointUrl = `${this.endpointUrl || csCode.ingestionendpoint || csEnv.ingestionendpoint || this._endpointBase}/v2.1/track`;
+        let endpoint = `${this.endpointUrl || csCode.ingestionendpoint || csEnv.ingestionendpoint || this._endpointBase}`;
+        if (endpoint.endsWith("/")) {
+            // Remove extra '/' if present
+            endpoint = endpoint.slice(0, -1);
+        }
+        this.endpointUrl = `${endpoint}/v2.1/track`;
         this.maxBatchSize = this.maxBatchSize || 250;
         this.maxBatchIntervalMs = this.maxBatchIntervalMs || 15000;
         this.disableAppInsights = this.disableAppInsights || false;
@@ -195,10 +200,10 @@ class Config implements IConfig {
     * Second section has 4 characters
     * Third section has 4 characters
     * Fourth section has 4 characters
-    * Fifth section has 12 characters                  
+    * Fifth section has 12 characters
     */
     private static _validateInstrumentationKey(iKey: string): boolean {
-        const UUID_Regex = '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
+        const UUID_Regex = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$";
         const regexp = new RegExp(UUID_Regex);
         return regexp.test(iKey);
     }

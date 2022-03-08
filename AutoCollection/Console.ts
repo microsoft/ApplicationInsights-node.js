@@ -1,5 +1,4 @@
 import TelemetryClient = require("../Library/TelemetryClient");
-import Logging = require("../Library/Logging");
 
 import * as DiagChannel from "./diagnostic-channel/initialization";
 
