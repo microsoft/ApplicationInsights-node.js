@@ -1,4 +1,3 @@
-import path = require("path");
 import zlib = require("zlib");
 import { promisify } from "util";
 import http = require("http");
@@ -10,7 +9,8 @@ export enum contentEncodingMethod {
     BR = "br"
 }
 
-export const bufferEncodingTypes = ["utf8","utf16le","latin1","base64","hex","base64url","ascii","binary","ucs2"];
+//current supported encoding types
+export const bufferEncodingTypes = ["utf8","utf16le","latin1","base64","hex","ascii","binary","ucs2"];
 
 //for node version under 10, Brotli compression is not supported.
 export const isBrotliSupperted = (): boolean => {
@@ -55,19 +55,22 @@ export const getBrotliDecompressSync = (zlibObject: any): Function => {
     return null;
 }
 
-export const isBufferType = (buffer: Buffer, type:string): boolean => {
-    let newBuffer = Buffer.from(buffer.toString(type),type);
-    let result = newBuffer.toJSON().data.toString() === buffer.toJSON().data.toString();
+export const isBufferType = (buffer: Buffer, type?:string): boolean => {
+    let encodingType = type? type:"utf8";
+    let result = false;
+    if (Buffer.isEncoding(encodingType)) {
+        let newBuffer = Buffer.from(buffer.toString(encodingType),encodingType);
+        result = newBuffer.toJSON().data.toString() === buffer.toJSON().data.toString();
+    }
+    
     return result;
 }
 
 export const findBufferEncodingType = (buffer: Buffer): string =>  {
     let bufferType = null;
-    for (let type in bufferEncodingTypes) {
-        if (!Buffer.isEncoding(type)) {
-            continue;
-        }
-        if (isBufferType(buffer, type)) {
+    for (let key in bufferEncodingTypes) {
+        let type = bufferEncodingTypes[key]
+        if (Buffer.isEncoding(type) && isBufferType(buffer, type) ) {
             bufferType = type;
             break;
         }
@@ -85,8 +88,9 @@ export const isSupportedContentEncoding = (encodingMethod: string): contentEncod
             encodingType = contentEncodingMethod.BR;
             break;
         case "deflate":
-            contentEncodingMethod.DEFLATE;
+            encodingType = contentEncodingMethod.DEFLATE;
             break;
+        default:
     }
     return encodingType;
 }
@@ -96,10 +100,10 @@ export const isSupportedContentEncoding = (encodingMethod: string): contentEncod
 export const getContentEncodingFromHeaders = (response: http.ServerResponse): contentEncodingMethod[] => {
     let headers: contentEncodingMethod[] = [];
     let contentEncodingHeaders = response.getHeader('Content-Encoding');
-    if (!!contentEncodingHeaders) return null;
+    if (!contentEncodingHeaders) return null;
     if (typeof contentEncodingHeaders === "string") {
         let supportedContentEncoding = isSupportedContentEncoding(contentEncodingHeaders);
-        if (supportedContentEncoding) headers = [supportedContentEncoding];
+        if (supportedContentEncoding) { headers.push(supportedContentEncoding); };
     }
     return headers;
 }
@@ -116,10 +120,12 @@ export const insertSnippetByIndex = (index: number, html: string, snippet: strin
 export const isContentTypeHeaderHtml = (response: http.ServerResponse): boolean => {
     let isHtml = false;
     let contentType = response.getHeader("Content-Type");
-    if (typeof contentType === "string") {
-        isHtml = contentType.indexOf("html") >= 0;
-    } else {
-        isHtml = contentType.toString().indexOf("html") >= 0;
+    if (contentType) {
+        if (typeof contentType === "string") {
+            isHtml = contentType.indexOf("html") >= 0;
+        } else {
+            isHtml = contentType.toString().indexOf("html") >= 0;
+        }
     }
     return isHtml;
 }
