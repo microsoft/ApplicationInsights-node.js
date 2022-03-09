@@ -99,11 +99,11 @@ export const isSupportedContentEncoding = (encodingMethod: string): contentEncod
 // for mutiple content-encoding, this method will return any empty array
 export const getContentEncodingFromHeaders = (response: http.ServerResponse): contentEncodingMethod[] => {
     let headers: contentEncodingMethod[] = [];
-    let contentEncodingHeaders = response.getHeader('Content-Encoding');
+    let contentEncodingHeaders = response.getHeader("Content-Encoding");
     if (!contentEncodingHeaders) return null;
     if (typeof contentEncodingHeaders === "string") {
         let supportedContentEncoding = isSupportedContentEncoding(contentEncodingHeaders);
-        if (supportedContentEncoding) { headers.push(supportedContentEncoding); };
+        if (supportedContentEncoding) { headers.push(supportedContentEncoding); }
     }
     return headers;
 }
@@ -113,7 +113,7 @@ export const insertSnippetByIndex = (index: number, html: string, snippet: strin
     let newHtml = null;
     let subStart = html.substring(0, index);
     let subEnd = html.substring(index);
-    newHtml = subStart + '<script type="text/javascript">' + snippet + '</script>' + subEnd;
+    newHtml = subStart + '<script type="text/javascript">' + snippet + "</script>" + subEnd;
     return newHtml;
 }
 

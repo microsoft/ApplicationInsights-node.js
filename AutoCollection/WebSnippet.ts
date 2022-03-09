@@ -30,7 +30,7 @@ class WebSnippet {
         WebSnippet._aiDeprecatedUrl = "https://az416426.vo.msecnd.net/scripts/b/ai"
 
         //TODO: replace the path with npm package exports
-        let snippetPath = path.resolve(__dirname, "../../AutoCollection/snippet/snippet.min.js"); 
+        let snippetPath = path.resolve(__dirname, "../../AutoCollection/snippet/snippet.min.js");
         if (client.config.isDebugWebSnippet) {
             snippetPath = path.resolve(__dirname, "../../AutoCollection/snippet/snippet.js");
         }
@@ -152,7 +152,7 @@ class WebSnippet {
                                 }
                             }
                         } catch (err) {
-                            Logging.info("inject snipet error: "+ err);
+                            Logging.info("inject snippet error: "+ err);
                         }
                         return originalHttpsResponseWrite.apply(res,arguments);
                     }
@@ -175,7 +175,7 @@ class WebSnippet {
                                 }
                             }
                         } catch (err) {
-                            Logging.info("inject snipet error: "+ err);
+                            Logging.info("inject snippet error: "+ err);
                         }
                         return originalHttpsResponseEnd.apply(res,arguments);
 
@@ -241,16 +241,16 @@ class WebSnippet {
             }
         }
         catch (ex) {
-            Logging.info("Failed to change content-lenght headers for JS injection. Exception:" + ex);
+            Logging.info("Failed to inject web snippet and change content-lenght headers. Exception:" + ex);
         }
         return input;
     }
 
     //***********************
-    // should NOT use sync functions here. But currently cannot get async functions to work 
+    // should NOT use sync functions here. But currently cannot get async functions to work
     // because reponse.write return boolean
     // and also this function do not support partial compression as well
-    // need more investigation 
+    // need more investigation
     private static _getInjectedCompressBuffer(response: http.ServerResponse, input: Buffer, encodeType: snippetInjectionHelper.contentEncodingMethod): Buffer {
         switch (encodeType) {
             case snippetInjectionHelper.contentEncodingMethod.GZIP:
