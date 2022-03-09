@@ -1,21 +1,14 @@
-import * as  url from "url";
+import { Resource } from "@opentelemetry/resources";
+import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
 import { Config } from "./Configuration/Config";
-import { AuthorizationHandler } from "./AuthorizationHandler";
 import { Context } from "./Context";
 import * as  Contracts from "../Declarations/Contracts";
-import { Channel } from "./Channel";
-import { azureRoleEnvironmentTelemetryProcessor } from "./TelemetryProcessors/AzureRoleEnvironmentTelemetryInitializer";
-import { performanceMetricsTelemetryProcessor } from "./TelemetryProcessors/PerformanceMetricsTelemetryProcessor";
-import { preAggregatedMetricsTelemetryProcessor } from "./TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor";
-import { samplingTelemetryProcessor } from "./TelemetryProcessors/SamplingTelemetryProcessor";
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
 import { Statsbeat } from "../AutoCollection/Statsbeat";
-import { Sender } from "./Transmission/Sender";
 import { Util } from "./Util/Util";
 import { Logger } from "./Logging/Logger";
 import { FlushOptions } from "../Declarations/FlushOptions";
-import { EnvelopeFactory } from "./EnvelopeFactory";
 import { QuickPulseStateManager } from "./QuickPulse/QuickPulseStateManager";
 import { Tags } from "../Declarations/Contracts";
 import { LogHandler, MetricHandler, TraceHandler } from "./Handlers";
@@ -27,8 +20,8 @@ import { LogHandler, MetricHandler, TraceHandler } from "./Handlers";
 export class TelemetryClient {
     private static TAG = "TelemetryClient";
     private _telemetryProcessors: { (envelope: Contracts.EnvelopeTelemetry, contextObjects: { [name: string]: any; }): boolean; }[] = [];
-    private _enableAzureProperties: boolean = false;
     private _statsbeat: Statsbeat;
+    private _resource: Resource;
 
     public traceHandler: TraceHandler;
     public metricHandler: MetricHandler;
@@ -36,9 +29,7 @@ export class TelemetryClient {
     public config: Config;
     public context: Context;
     public commonProperties: { [key: string]: string; };
-    public channel: Channel;
     public quickPulseClient: QuickPulseStateManager;
-    public authorizationHandler: AuthorizationHandler;
 
     /**
      * Constructs a new client of the client
@@ -49,18 +40,14 @@ export class TelemetryClient {
         this.config = config;
         this.context = new Context();
         this.commonProperties = {};
-        this.authorizationHandler = null;
-
-        this.traceHandler = new TraceHandler(this.config);
-        this.metricHandler = new MetricHandler(this.config);
-        this.logHandler = new LogHandler(this.config);
-
+        this._resource = Resource.EMPTY;
         if (!this.config.disableStatsbeat) {
             this._statsbeat = new Statsbeat(this.config, this.context);
             this._statsbeat.enable(true);
         }
-        var sender = new Sender(this.config, this.getAuthorizationHandler, null, null, this._statsbeat);
-        this.channel = new Channel(() => config.disableAppInsights, () => config.maxBatchSize, () => config.maxBatchIntervalMs, sender);
+        this.traceHandler = new TraceHandler(this.config, this._resource);
+        this.metricHandler = new MetricHandler(this.config);
+        this.logHandler = new LogHandler(this.config, this._statsbeat);
     }
 
     /**
@@ -68,7 +55,7 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackAvailability(telemetry: Contracts.AvailabilityTelemetry): void {
-        this.track(telemetry, Contracts.TelemetryType.Availability);
+        this.logHandler.trackAvailability(telemetry);
     }
 
     /**
@@ -76,7 +63,7 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackPageView(telemetry: Contracts.PageViewTelemetry): void {
-        this.track(telemetry, Contracts.TelemetryType.PageView);
+        this.logHandler.trackPageView(telemetry);
     }
 
     /**
@@ -84,7 +71,7 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackTrace(telemetry: Contracts.TraceTelemetry): void {
-        this.track(telemetry, Contracts.TelemetryType.Trace);
+        this.logHandler.trackTrace(telemetry);
     }
 
     /**
@@ -94,7 +81,7 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackMetric(telemetry: Contracts.MetricTelemetry): void {
-        this.track(telemetry, Contracts.TelemetryType.Metric);
+        this.metricHandler.trackMetric(telemetry);
     }
 
     /**
@@ -102,10 +89,7 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackException(telemetry: Contracts.ExceptionTelemetry): void {
-        if (telemetry && telemetry.exception && !Util.getInstance().isError(telemetry.exception)) {
-            telemetry.exception = new Error(telemetry.exception.toString());
-        }
-        this.track(telemetry, Contracts.TelemetryType.Exception);
+        this.logHandler.trackException(telemetry);
     }
 
     /**
@@ -113,7 +97,7 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackEvent(telemetry: Contracts.EventTelemetry): void {
-        this.track(telemetry, Contracts.TelemetryType.Event);
+        this.logHandler.trackEvent(telemetry);
     }
 
     /**
@@ -123,8 +107,7 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackRequest(telemetry: Contracts.RequestTelemetry & Contracts.Identified): void {
-        // this.traceHandler.trackRequest(telemetry);
-        this.track(telemetry, Contracts.TelemetryType.Request);
+        this.traceHandler.trackRequest(telemetry);
     }
 
     /**
@@ -134,21 +117,7 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking option
      * */
     public trackDependency(telemetry: Contracts.DependencyTelemetry & Contracts.Identified) {
-
-        if (telemetry && !telemetry.target && telemetry.data) {
-            // url.parse().host returns null for non-urls,
-            // making this essentially a no-op in those cases
-            // If this logic is moved, update jsdoc in DependencyTelemetry.target
-            // url.parse() is deprecated, update to use WHATWG URL API instead
-            try {
-                telemetry.target = new url.URL(telemetry.data).host;
-            } catch (error) {
-                // set target as null to be compliant with previous behavior
-                telemetry.target = null;
-                Logger.warn(TelemetryClient.TAG, "The URL object is failed to create.", error);
-            }
-        }
-        this.track(telemetry, Contracts.TelemetryType.Dependency);
+        this.traceHandler.trackDependency(telemetry);
     }
 
     /**
@@ -156,15 +125,9 @@ export class TelemetryClient {
      * @param options Flush options, including indicator whether app is crashing and callback
      */
     public flush(options?: FlushOptions) {
-
-        // TODO: Add flush functionality
-        // this.traceHandler.flush();
-        // this.metricHandler.flush();
-        // this.logHandler.flush();
-
-        this.channel.triggerSend(
-            options ? !!options.isAppCrashing : false,
-            options ? options.callback : undefined);
+        this.traceHandler.flush(options);
+        this.metricHandler.flush(options);
+        this.logHandler.flush(options);
     }
 
     /**
@@ -173,53 +136,32 @@ export class TelemetryClient {
      * @param telemetryType specify the type of telemetry you are tracking from the list of Contracts.DataTypes
      */
     public track(telemetry: Contracts.Telemetry, telemetryType: Contracts.TelemetryType) {
-        if (telemetry && Contracts.telemetryTypeToBaseType(telemetryType)) {
-            var envelope = EnvelopeFactory.createEnvelope(telemetry, telemetryType, this.commonProperties, this.context, this.config);
-
-            // Set time on the envelope if it was set on the telemetry item
-            if (telemetry.time) {
-                envelope.time = telemetry.time.toISOString();
-            }
-            if (this._enableAzureProperties) {
-                azureRoleEnvironmentTelemetryProcessor(envelope, this.context);
-            }
-            var accepted = this.runTelemetryProcessors(envelope, telemetry.contextObjects);
-
-            // Ideally we would have a central place for "internal" telemetry processors and users can configure which ones are in use.
-            // This will do for now. Otherwise clearTelemetryProcessors() would be problematic.
-            accepted = accepted && samplingTelemetryProcessor(envelope, { correlationContext: CorrelationContextManager.getCurrentContext() });
-            preAggregatedMetricsTelemetryProcessor(envelope, this);
-            if (accepted) {
-                performanceMetricsTelemetryProcessor(envelope, this);
-                this.channel.send(envelope);
-            }
-        }
-        else {
-            Logger.warn(TelemetryClient.TAG, "track() requires telemetry object and telemetryType to be specified.")
-        }
+        // TODO: Convert to envelope
+        //this.logHandler.track(telemetry);
     }
 
     /**
      * Automatically populate telemetry properties like RoleName when running in Azure
      *
       * @param value if true properties will be populated
+      * TODO:// Check if possible to remove attributes from Resource
      */
-    public setAutoPopulateAzureProperties(value: boolean) {
-        this._enableAzureProperties = value;
+    public setAutoPopulateAzureProperties() {
+        if (process.env.WEBSITE_SITE_NAME) { // Azure Web apps and Functions
+            this._resource.merge(new Resource({
+                [SemanticResourceAttributes.SERVICE_NAME]: process.env.WEBSITE_SITE_NAME
+            }));
+        }
+        if (process.env.WEBSITE_INSTANCE_ID) {
+            this._resource.merge(new Resource({
+                [SemanticResourceAttributes.SERVICE_INSTANCE_ID]: process.env.WEBSITE_INSTANCE_ID
+            }));
+        }
+
     }
 
-    /**
-     * Get Authorization handler
-     */
-    public getAuthorizationHandler(config: Config): AuthorizationHandler {
-        if (config && config.aadTokenCredential) {
-            if (!this.authorizationHandler) {
-                Logger.info(TelemetryClient.TAG, "Adding authorization handler");
-                this.authorizationHandler = new AuthorizationHandler(config.aadTokenCredential)
-            }
-            return this.authorizationHandler;
-        }
-        return null;
+    public setUseDiskRetryCaching(value: boolean, resendInterval?: number, maxBytesOnDisk?: number) {
+
     }
 
     /**
@@ -242,14 +184,11 @@ export class TelemetryClient {
     private runTelemetryProcessors(envelope: Contracts.EnvelopeTelemetry, contextObjects: { [name: string]: any; }): boolean {
         var accepted = true;
         var telemetryProcessorsCount = this._telemetryProcessors.length;
-
         if (telemetryProcessorsCount === 0) {
             return accepted;
         }
-
         contextObjects = contextObjects || {};
         contextObjects["correlationContext"] = CorrelationContextManager.getCurrentContext();
-
         for (var i = 0; i < telemetryProcessorsCount; ++i) {
             try {
                 var processor = this._telemetryProcessors[i];

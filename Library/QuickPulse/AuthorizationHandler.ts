@@ -27,5 +27,4 @@ export class AuthorizationHandler {
         await this._azureTokenPolicy.sendRequest(webResource);
         requestOptions.headers[authHeaderName] = webResource.headers.get(authHeaderName);
     }
-
 }

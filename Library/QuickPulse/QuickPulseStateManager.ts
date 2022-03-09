@@ -1,6 +1,6 @@
 import * as http from "http";
 
-import { AuthorizationHandler } from "../AuthorizationHandler";
+import { AuthorizationHandler } from "./AuthorizationHandler";
 import { Logger } from "../Logging/Logger";
 import { Config } from "../Configuration/Config";
 import { QuickPulseEnvelopeFactory } from "./QuickPulseEnvelopeFactory";
@@ -34,10 +34,10 @@ export class QuickPulseStateManager {
     private _redirectedHost: string = null;
     private _pollingIntervalHint: number = -1;
 
-    constructor(config: Config, context?: Context, getAuthorizationHandler?: (config: Config) => AuthorizationHandler) {
+    constructor(config: Config, context?: Context) {
         this.config = config;
         this.context = context || new Context();
-        this._sender = new QuickPulseSender(this.config, getAuthorizationHandler);
+        this._sender = new QuickPulseSender(this.config);
         this._isEnabled = false;
     }
 

@@ -2,7 +2,7 @@ import * as https from "https";
 import * as http from "http";
 
 import * as Contracts from "../../Declarations/Contracts";
-import { AuthorizationHandler } from "../AuthorizationHandler";
+import { AuthorizationHandler } from "./AuthorizationHandler";
 import { Config } from "../Configuration/Config";
 import { Logger } from "../Logging/Logger";
 import { getTransmissionTime } from "./QuickPulseUtil";
@@ -28,13 +28,15 @@ export class QuickPulseSender {
     private static MAX_QPS_FAILURES_BEFORE_WARN = 25;
 
     private _config: Config;
+    private _authHandler: AuthorizationHandler;
     private _consecutiveErrors: number;
-    private _getAuthorizationHandler: (config: Config) => AuthorizationHandler;
 
     constructor(config: Config, getAuthorizationHandler?: (config: Config) => AuthorizationHandler) {
         this._config = config;
         this._consecutiveErrors = 0;
-        this._getAuthorizationHandler = getAuthorizationHandler;
+        if(config.aadTokenCredential){
+            this._authHandler= new AuthorizationHandler(config.aadTokenCredential);
+        }
     }
 
     public ping(envelope: Contracts.EnvelopeQuickPulse,
@@ -88,11 +90,10 @@ export class QuickPulseSender {
         }
 
         if (postOrPing === "post") {
-            let authHandler = this._getAuthorizationHandler ? this._getAuthorizationHandler(this._config) : null;
-            if (authHandler) {
+            if (this._authHandler) {
                 try {
                     // Add bearer token
-                    await authHandler.addAuthorizationHeader(options);
+                    await this._authHandler.addAuthorizationHeader(options);
                 }
                 catch (authError) {
                     let notice = "Failed to get AAD bearer token for the Application. Error:";

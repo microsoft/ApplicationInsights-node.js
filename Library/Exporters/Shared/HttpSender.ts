@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 import * as url from "url";
 import { FullOperationResponse } from "@azure/core-client";
-import { redirectPolicyName } from "@azure/core-rest-pipeline";
+import { bearerTokenAuthenticationPolicy, redirectPolicyName } from "@azure/core-rest-pipeline";
 import { ISender, SenderResult } from "../../../Declarations/Types";
 import {
   TelemetryItem as Envelope,
@@ -11,6 +11,8 @@ import {
   TrackOptionalParams,
 } from "../../../Declarations//Generated";
 import { IAzureExporterInternalConfig } from "../../../Declarations/Config";
+
+const applicationInsightsResource = "https://monitor.azure.com//.default";
 
 /**
  * Exporter HTTP sender class
@@ -31,6 +33,15 @@ export class HttpSender implements ISender {
     });
 
     this._appInsightsClient.pipeline.removePolicy({ name: redirectPolicyName });
+    if (this._exporterOptions.aadTokenCredential) {
+      let scopes: string[] = [applicationInsightsResource];
+      this._appInsightsClient.pipeline.addPolicy(
+        bearerTokenAuthenticationPolicy({
+          credential: this._exporterOptions.aadTokenCredential,
+          scopes: scopes,
+        })
+      );
+    }
   }
 
   /**
@@ -63,7 +74,7 @@ export class HttpSender implements ISender {
    * @internal
    */
   public async shutdown(): Promise<void> {
-    
+
   }
 
   public handlePermanentRedirect(location: string | undefined) {

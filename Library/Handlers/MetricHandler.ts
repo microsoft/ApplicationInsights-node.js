@@ -1,11 +1,16 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import { Meter, MeterConfig, MeterProvider } from "@opentelemetry/sdk-metrics-base";
+import { Resource } from "@opentelemetry/resources";
 
+import { BatchProcessor } from "./BatchProcessor";
 import { MetricExporter } from "../Exporters";
+import { TelemetryItem as Envelope } from "../../Declarations/Generated";
 import { Config } from "../Configuration/Config";
 import { AutoCollectPerformance } from "../../AutoCollection/Performance";
 import { AutoCollectPreAggregatedMetrics } from "../../AutoCollection/PreAggregatedMetrics";
 import { HeartBeat } from "../../AutoCollection/HeartBeat";
+import { FlushOptions } from "../../Declarations/FlushOptions";
 import { AutoCollectNativePerformance } from "../../AutoCollection/NativePerformance";
 import { IDisabledExtendedMetrics } from "../../Declarations/Interfaces";
 import * as Contracts from "../../Declarations/Contracts";
@@ -17,8 +22,9 @@ import {
 } from "../../Declarations/Metrics/AggregatedMetricDimensions";
 import { MetricsData } from "../../Declarations/Generated";
 
+
 export class MetricHandler {
-    // Default values
+    public meter: Meter;
     public isPerformance = true;
     public isPreAggregatedMetrics = true;
     public isHeartBeat = false;
@@ -27,17 +33,18 @@ export class MetricHandler {
     public isNativePerformance = true;
     public disabledExtendedMetrics: IDisabledExtendedMetrics;
     public config: Config;
-
+    private _isStarted = false;
+    private _batchProcessor: BatchProcessor;
     private _exporter: MetricExporter;
     private _performance: AutoCollectPerformance;
     private _preAggregatedMetrics: AutoCollectPreAggregatedMetrics;
     private _heartbeat: HeartBeat;
     private _nativePerformance: AutoCollectNativePerformance;
-    private _isStarted = false;
 
-
-    constructor(config: Config) {
+    constructor(config: Config, resource: Resource) {
         this.config = config;
+        this._exporter = new MetricExporter(config);
+        this._batchProcessor = new BatchProcessor(config, this._exporter);
         this._initializeFlagsFromConfig();
         this._performance = new AutoCollectPerformance(this);
         this._preAggregatedMetrics = new AutoCollectPreAggregatedMetrics(this);
@@ -45,6 +52,17 @@ export class MetricHandler {
         if (!this._nativePerformance) {
             this._nativePerformance = new AutoCollectNativePerformance(this);
         }
+        let meterConfig: MeterConfig = {
+            exporter: this._exporter,
+            interval: 1234,
+            resource: resource,
+            processor:
+        };
+        this.meter = new MeterProvider({
+            exporter,
+            interval: 2000,
+        }).getMeter('example-meter');
+
     }
 
     public start() {
@@ -53,6 +71,10 @@ export class MetricHandler {
         this._preAggregatedMetrics.enable(this.isPreAggregatedMetrics);
         this._heartbeat.enable(this.isHeartBeat);
         this._nativePerformance.enable(this.isNativePerformance, this.disabledExtendedMetrics);
+    }
+
+    public flush(options?: FlushOptions) {
+        this._batchProcessor.triggerSend(options.isAppCrashing);
     }
 
     public trackMetric(telemetry: Contracts.MetricTelemetry): void {
@@ -122,6 +144,20 @@ export class MetricHandler {
         this._heartbeat = null;
         this._nativePerformance.enable(false);
         this._nativePerformance = null;
+    }
+
+    /**
+     * Log a user action or other occurrence.
+     * @param telemetry      Object encapsulating tracking options
+     */
+    public track(telemetry: Envelope): void {
+
+        // TODO: Telemetry processor, can we still support them in some cases?
+        // TODO: Sampling was done through telemetryProcessor here
+        // TODO: All telemetry processors including Azure property where done here as well
+        // TODO: Perf and Pre Aggregated metrics were calculated here
+
+        this._batchProcessor.send(telemetry);
     }
 
     private _initializeFlagsFromConfig() {

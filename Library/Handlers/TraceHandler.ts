@@ -6,13 +6,17 @@ import { NodeTracerProvider, NodeTracerConfig } from "@opentelemetry/sdk-trace-n
 import { BatchSpanProcessor, BufferConfig, Tracer } from "@opentelemetry/sdk-trace-base";
 import { HttpInstrumentation, HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
+import { Resource } from "@opentelemetry/resources";
 
 import { Config } from "../Configuration/Config";
 import * as  Contracts from "../../Declarations/Contracts";
 import { TraceExporter } from "../Exporters";
+import { FlushOptions } from "../../Declarations/FlushOptions";
+import { Logger } from "../Logging/Logger";
+
 
 export class TraceHandler {
-
+    public config: Config;
     public tracerProvider: NodeTracerProvider;
     public tracer: Tracer;
     public httpInstrumentationConfig: HttpInstrumentationConfig;
@@ -22,12 +26,12 @@ export class TraceHandler {
     private _instrumentations: InstrumentationOption[];
     private _disableInstrumentations: () => void;
 
-    constructor(config: Config) {
+    constructor(config: Config, resource: Resource) {
         this._config = config;
         this._instrumentations = [];
         let tracerConfig: NodeTracerConfig = {
             sampler: null,
-            resource: null,
+            resource: resource,
             generalLimits: null,
             idGenerator: null,
             forceFlushTimeoutMillis: 30000
@@ -80,6 +84,11 @@ export class TraceHandler {
         }
     }
 
+    public flush(options?: FlushOptions) {
+        // TODO: Flush OpenTelemetry
+
+    }
+
     // Support Legacy APIs
     public trackRequest(telemetry: Contracts.RequestTelemetry & Contracts.Identified) {
         // TODO: Change context if ID is provided?
@@ -109,6 +118,22 @@ export class TraceHandler {
     // Support Legacy APIs
     public trackDependency(telemetry: Contracts.DependencyTelemetry & Contracts.Identified) {
         // TODO: Change context if ID is provided?
+
+        if (telemetry && !telemetry.target && telemetry.data) {
+            // url.parse().host returns null for non-urls,
+            // making this essentially a no-op in those cases
+            // If this logic is moved, update jsdoc in DependencyTelemetry.target
+            // url.parse() is deprecated, update to use WHATWG URL API instead
+            try {
+                telemetry.target = new URL(telemetry.data).host;
+            } catch (error) {
+                // set target as null to be compliant with previous behavior
+                telemetry.target = null;
+                Logger.warn(this.constructor.name, "Failed to create URL.", error);
+            }
+        }
+
+
         const ctx = context.active();
         let attributes: SpanAttributes = {};
         if (telemetry.dependencyTypeName.toLowerCase().indexOf("http") > -1) {

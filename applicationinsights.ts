@@ -250,12 +250,16 @@ export class Configuration {
      * @param maxBytesOnDisk The maximum size (in bytes) that the created temporary directory for cache events can grow to, before caching is disabled.
      * @returns {Configuration} this class
      */
+
     public static setUseDiskRetryCaching(value: boolean, resendInterval?: number, maxBytesOnDisk?: number) {
         _isDiskRetry = value;
         _diskRetryInterval = resendInterval;
         _diskRetryMaxBytes = maxBytesOnDisk;
-        if (defaultClient && defaultClient.channel) {
-            defaultClient.channel.setUseDiskRetryCaching(_isDiskRetry, _diskRetryInterval, _diskRetryMaxBytes);
+        if (defaultClient) {
+            // TODO: Persistance is not configurable in Exporter
+            // defaultClient.traceHandler.setUseDiskRetryCaching(_isDiskRetry, _diskRetryInterval, _diskRetryMaxBytes);
+            // defaultClient.metricHandler.setUseDiskRetryCaching(_isDiskRetry, _diskRetryInterval, _diskRetryMaxBytes);
+            // defaultClient.logHandler.setUseDiskRetryCaching(_isDiskRetry, _diskRetryInterval, _diskRetryMaxBytes);
         }
         return Configuration;
     }
@@ -285,7 +289,7 @@ export class Configuration {
 
         if (!liveMetricsClient && enable) {
             // No qps client exists. Create one and prepare it to be enabled at .start()
-            liveMetricsClient = new QuickPulseStateManager(defaultClient.config, defaultClient.context, defaultClient.getAuthorizationHandler);
+            liveMetricsClient = new QuickPulseStateManager(defaultClient.config, defaultClient.context);
             _performanceLiveMetrics = new AutoCollectPerformance(liveMetricsClient as any, 1000, true);
             liveMetricsClient.addCollector(_performanceLiveMetrics);
             defaultClient.quickPulseClient = liveMetricsClient; // Need this so we can forward all manual tracks to live metrics via PerformanceMetricsTelemetryProcessor

@@ -2,7 +2,6 @@ import * as os from "os";
 
 import { EnvelopeFactory } from "../Library/EnvelopeFactory";
 import { Logger } from "../Library/Logging/Logger";
-import { Sender } from "../Library/Transmission/Sender";
 import * as  Constants from "../Declarations/Constants";
 import * as Contracts from "../Declarations/Contracts";
 import { AzureVirtualMachine } from "../Library/AzureVirtualMachine";
@@ -10,6 +9,7 @@ import { Config } from "../Library/Configuration/Config";
 import { Context } from "../Library/Context";
 import { NetworkStatsbeat } from "./NetworkStatsbeat";
 import { Util } from "../Library/Util/Util";
+import { MetricExporter } from "../Library/Exporters";
 
 const STATSBEAT_LANGUAGE = "node";
 
@@ -21,8 +21,9 @@ export class Statsbeat {
 
     private static TAG = "Statsbeat";
 
+
+    private _metricExporter: MetricExporter;
     private _networkStatsbeatCollection: Array<NetworkStatsbeat>;
-    private _sender: Sender;
     private _context: Context;
     private _handle: NodeJS.Timer | null;
     private _longHandle: NodeJS.Timer | null;
@@ -53,7 +54,7 @@ export class Statsbeat {
         this._context = context || new Context();
         this._statsbeatConfig = new Config(Statsbeat.CONNECTION_STRING);
         this._statsbeatConfig.samplingPercentage = 100; // Do not sample
-        this._sender = new Sender(this._statsbeatConfig);
+        this._metricExporter = new MetricExporter(this._statsbeatConfig);
     }
 
     public enable(isEnabled: boolean) {
@@ -281,7 +282,8 @@ export class Statsbeat {
             envelopes.push(envelope);
         }
         this._statbeatMetrics = [];
-        await this._sender.send(envelopes);
+        // TODO: Use MetricHandler?
+        //await this._metricExporter.export(envelopes, () => { });
     }
 
     private _getCustomProperties() {

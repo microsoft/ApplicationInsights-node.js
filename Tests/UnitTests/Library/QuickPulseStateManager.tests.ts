@@ -4,7 +4,7 @@ import * as sinon from "sinon";
 
 import { QuickPulseStateManager } from "../../../Library/QuickPulse/QuickPulseStateManager";
 import * as Contracts from "../../../Declarations/Contracts";
-import { AuthorizationHandler } from "../../../Library/AuthorizationHandler";
+import { AuthorizationHandler } from "../../../Library/QuickPulse/AuthorizationHandler";
 import { Config } from "../../../Library/Configuration/Config";
 import { QuickPulseSender } from "../../../Library/QuickPulse/QuickPulseSender";
 import { Util } from "../../../Library/Util/Util";
@@ -30,20 +30,6 @@ describe("Library/QuickPulseStateManager", () => {
             assert.ok(Object.keys(qps["_metrics"]).length === 0);
             assert.ok(qps["_documents"].length === 0);
             assert.ok(qps["_collectors"].length === 0);
-        });
-
-        it("should reuse authorization handler if provided", () => {
-            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;");
-            var handler = new AuthorizationHandler({
-                async getToken(scopes: string | string[], options?: any): Promise<any> {
-                    return { token: "testToken", };
-                }
-            });
-            var getAuthorizationHandler = () => {
-                return handler;
-            };
-            qps = new QuickPulseStateManager(config, null, getAuthorizationHandler);
-            assert.equal(qps["_sender"]["_getAuthorizationHandler"](config), handler);
         });
     });
 

@@ -101,7 +101,7 @@ export function setupAndStart(setupString = _setupString, aadTokenCredential?: a
 
         // Instrument the SDK
         _appInsights.setup(setupString).setSendLiveMetrics(true);
-        _appInsights.defaultClient.setAutoPopulateAzureProperties(true);
+        _appInsights.defaultClient.setAutoPopulateAzureProperties();
         _appInsights.defaultClient.addTelemetryProcessor(prefixInternalSdkVersion);
         _appInsights.defaultClient.addTelemetryProcessor(copyOverPrefixInternalSdkVersionToHeartBeatMetric);
         if (aadTokenCredential) {

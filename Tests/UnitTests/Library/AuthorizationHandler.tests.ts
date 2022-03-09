@@ -3,7 +3,7 @@ import * as https from "https";
 import * as sinon from "sinon";
 import * as  azureCore from "@azure/core-http";
 
-import { AuthorizationHandler } from "../../../Library/AuthorizationHandler";
+import { AuthorizationHandler } from "../../../Library/QuickPulse/AuthorizationHandler";
 import { Config } from "../../../Library/Configuration/Config";
 import { Util } from "../../../Library/Util/Util";
 

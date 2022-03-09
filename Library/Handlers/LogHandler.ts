@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import { BatchProcessor } from "./BatchProcessor";
 import { LogExporter } from "../Exporters";
 import {
     TelemetryItem as Envelope,
@@ -13,6 +14,7 @@ import { AutoCollectExceptions } from "../../AutoCollection/Exceptions";
 import { FlushOptions } from "../../Declarations/FlushOptions";
 import { Config } from "../Configuration/Config";
 import { Statsbeat } from "../../AutoCollection/Statsbeat";
+import { Util } from "../Util/Util";
 
 export class LogHandler {
     // Default values
@@ -20,16 +22,19 @@ export class LogHandler {
     public isConsoleLog = false;
     public isExceptions = true;
     public statsbeat: Statsbeat;
-
+    public config: Config;
+    private _isStarted = false;
+    private _statsbeat: Statsbeat;
+    private _batchProcessor: BatchProcessor;
     private _exporter: LogExporter;
     private _console: AutoCollectConsole;
     private _exceptions: AutoCollectExceptions;
-    private _config: Config;
-    private _isStarted = false;
 
-    constructor(config: Config, statsbeat?: Statsbeat) {
-        this._config = config;
-        this.statsbeat = statsbeat;
+    constructor(config: Config, statsbeat: Statsbeat) {
+        this.config = config;
+        this._statsbeat = statsbeat;
+        this._exporter = new LogExporter(config);
+        this._batchProcessor = new BatchProcessor(config, this._exporter);
         this._initializeFlagsFromConfig();
         this._console = new AutoCollectConsole(this);
         this._exceptions = new AutoCollectExceptions(this);
@@ -42,7 +47,7 @@ export class LogHandler {
     }
 
     public flush(options?: FlushOptions) {
-        // TODO: Use new channel
+        this._batchProcessor.triggerSend(options.isAppCrashing);
     }
 
     public dispose() {
@@ -96,6 +101,9 @@ export class LogHandler {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackException(telemetry: Contracts.ExceptionTelemetry): void {
+        if (telemetry && telemetry.exception && !Util.getInstance().isError(telemetry.exception)) {
+            telemetry.exception = new Error(telemetry.exception.toString());
+        }
 
     }
 
@@ -107,13 +115,27 @@ export class LogHandler {
 
     }
 
+    /**
+     * Log a user action or other occurrence.
+     * @param telemetry      Object encapsulating tracking options
+     */
+    public track(telemetry: Envelope): void {
+
+        // TODO: Telemetry processor, can we still support them in some cases?
+        // TODO: Sampling was done through telemetryProcessor here
+        // TODO: All telemetry processors including Azure property where done here as well
+        // TODO: Perf and Pre Aggregated metrics were calculated here
+
+        this._batchProcessor.send(telemetry);
+    }
+
     private _convertToEnvelope(eventData: TelemetryEventData): Envelope {
         return null;
     }
 
     private _initializeFlagsFromConfig() {
-        this.isConsole = this._config.enableAutoCollectExternalLoggers !== undefined ? this._config.enableAutoCollectExternalLoggers : this.isConsole;
-        this.isConsoleLog = this._config.enableAutoCollectConsole !== undefined ? this._config.enableAutoCollectConsole : this.isConsoleLog;
-        this.isExceptions = this._config.enableAutoCollectExceptions !== undefined ? this._config.enableAutoCollectExceptions : this.isExceptions;
+        this.isConsole = this.config.enableAutoCollectExternalLoggers !== undefined ? this.config.enableAutoCollectExternalLoggers : this.isConsole;
+        this.isConsoleLog = this.config.enableAutoCollectConsole !== undefined ? this.config.enableAutoCollectConsole : this.isConsoleLog;
+        this.isExceptions = this.config.enableAutoCollectExceptions !== undefined ? this.config.enableAutoCollectExceptions : this.isExceptions;
     }
 }

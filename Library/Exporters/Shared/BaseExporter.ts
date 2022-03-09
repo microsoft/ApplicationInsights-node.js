@@ -24,7 +24,6 @@ export class BaseExporter {
     private _retryTimer: NodeJS.Timer | null;
     private readonly _options: IAzureExporterInternalConfig;
 
-
     /**
    * Initializes a new instance of the AzureMonitorTraceExporter class.
    * @param AzureExporterConfig - Exporter configuration.
@@ -36,6 +35,7 @@ export class BaseExporter {
             ...DEFAULT_EXPORTER_CONFIG,
         };
         this._options.apiVersion = options.apiVersion ?? this._options.apiVersion;
+        this._options.aadTokenCredential = options.aadTokenCredential;
 
         if (connectionString) {
             const parsedConnectionString = ConnectionStringParser.parse(connectionString);
@@ -58,7 +58,7 @@ export class BaseExporter {
         diag.debug("Exporter was successfully setup");
     }
 
-    protected async exportEnvelopes(envelopes: Envelope[]): Promise<ExportResult> {
+    public async exportEnvelopes(envelopes: Envelope[]): Promise<ExportResult> {
         diag.info(`Exporting ${envelopes.length} envelope(s)`);
 
         try {
@@ -153,7 +153,16 @@ export class BaseExporter {
         return this._sender.shutdown();
     }
 
-    private async _persist(envelopes: unknown[]): Promise<ExportResult> {
+    public async persistOnCrash(envelopes: Envelope[]): Promise<string> {
+        try {
+            this._persist(envelopes);
+        }
+        catch (ex) {
+            return "Failed to persist envelopes";
+        }
+    }
+
+    private async _persist(envelopes: Envelope[]): Promise<ExportResult> {
         try {
             const success = await this._persister.push(envelopes);
             return success

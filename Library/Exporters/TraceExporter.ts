@@ -12,6 +12,7 @@ export class TraceExporter {
         let connectionString = `InstrumentationKey=${config.instrumentationKey};IngestionEndpoint=${ingestionEndpoint}`;
         let exporterConfig: AzureExporterConfig = {
             connectionString: connectionString
+            // TODO: Add AAD when published
         };
         this.azureMonitorExporter = new AzureMonitorTraceExporter(exporterConfig);
     }
