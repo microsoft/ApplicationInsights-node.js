@@ -352,7 +352,7 @@ class Statsbeat {
     }
 
     private _handleNetworkError(error: Error) {
-        if (error && error.message && error.message.indexOf("UNREACH") > -1) { // Handle both EHOSTUNREACH and ENETUNREACH
+        if (error && error.message && (error.message.indexOf("UNREACH") > -1 || error.message.indexOf("ENOTFOUND") > -1)) { // Handle EHOSTUNREACH, ENETUNREACH and ENOTFOUND
             this.enable(false);// Disable Statsbeat as is possible SDK is running in private or restricted network 
         }
     }
