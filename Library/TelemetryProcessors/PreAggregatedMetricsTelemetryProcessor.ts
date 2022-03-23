@@ -32,7 +32,7 @@ export function preAggregatedMetricsTelemetryProcessor(envelope: Contracts.Envel
             let traceDimensions: IMetricTraceDimensions = {
                 cloudRoleInstance: envelope.tags[client.context.keys.cloudRoleInstance],
                 cloudRoleName: envelope.tags[client.context.keys.cloudRole],
-                traceSeverityLevel: Contracts.SeverityLevel[traceData.severity]
+                traceSeverityLevel: traceData.severity
             };
             client.metricHandler.countPreAggregatedTrace(traceDimensions);
             break;

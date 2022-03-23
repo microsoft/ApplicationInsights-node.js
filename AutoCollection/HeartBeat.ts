@@ -1,12 +1,14 @@
 import * as  os from "os";
-
+import { ObservableGauge, ValueType } from "@opentelemetry/api-metrics";
 import { AzureVirtualMachine } from "../Library/AzureVirtualMachine";
 import { MetricHandler } from "../Library/Handlers/MetricHandler";
 import * as  Constants from "../Declarations/Constants";
 import { Config } from "../Library/Configuration/Config";
 import { Context } from "../Library/Context";
 
+
 export class HeartBeat {
+    private _heartBeatGauge: ObservableGauge;
     private _collectionInterval: number = 900000;
     private _handler: MetricHandler;
     private _handle: NodeJS.Timer | null;
@@ -14,6 +16,9 @@ export class HeartBeat {
 
     constructor(handler: MetricHandler) {
         this._handler = handler;
+        this._heartBeatGauge = handler.meter.createObservableGauge(Constants.HeartBeatMetricName, {
+            valueType: ValueType.INT,
+        });
     }
 
     public enable(isEnabled: boolean) {
@@ -52,13 +57,13 @@ export class HeartBeat {
                         properties["azInst_subscriptionId"] = vmInfo.subscriptionId;
                         properties["azInst_osType"] = vmInfo.osType;
                     }
-                    this._handler.trackMetric({ name: Constants.HeartBeatMetricName, value: 0, properties: properties });
+                    this._heartBeatGauge.observation(1, properties);
                     callback();
                 });
             }
         }
         if (!waiting) {
-            this._handler.trackMetric({ name: Constants.HeartBeatMetricName, value: 0, properties: properties });
+            this._heartBeatGauge.observation(1, properties);
             callback();
         }
     }

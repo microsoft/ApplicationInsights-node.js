@@ -19,7 +19,7 @@ export class MessageData extends Domain {
     /**
      * Trace severity level.
      */
-    public severityLevel: SeverityLevel;
+    public severityLevel: string;
 
     /**
      * Collection of custom properties.

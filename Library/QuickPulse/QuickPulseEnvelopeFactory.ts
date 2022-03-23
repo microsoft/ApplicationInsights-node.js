@@ -1,6 +1,7 @@
 import * as os from "os";
 import * as Contracts from "../../Declarations/Contracts";
 import * as Constants from "../../Declarations/Constants";
+import { KnownSeverityLevel } from "../../Declarations/Generated";
 import { Util } from "../Util/Util";
 import { Config } from "../Configuration/Config";
 import { Context } from "../Context";
@@ -81,11 +82,11 @@ export class QuickPulseEnvelopeFactory {
 
     private static createQuickPulseTraceDocument(envelope: Contracts.Envelope): Contracts.MessageDocumentQuickPulse {
         const document = QuickPulseEnvelopeFactory.createQuickPulseDocument(envelope);
-        const severityLevel = ((envelope.data as any).baseData as Contracts.MessageData).severityLevel || 0;
+        const severityLevel = ((envelope.data as any).baseData as Contracts.MessageData).severityLevel || KnownSeverityLevel.Information;
         var traceDocument: Contracts.MessageDocumentQuickPulse = {
             ...document,
             Message: ((envelope.data as any).baseData as Contracts.MessageData).message,
-            SeverityLevel: Contracts.SeverityLevel[severityLevel]
+            SeverityLevel: severityLevel
         }
 
         return traceDocument;

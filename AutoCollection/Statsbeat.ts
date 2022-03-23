@@ -9,7 +9,7 @@ import { Config } from "../Library/Configuration/Config";
 import { Context } from "../Library/Context";
 import { NetworkStatsbeat } from "./NetworkStatsbeat";
 import { Util } from "../Library/Util/Util";
-import { MetricExporter } from "../Library/Exporters";
+import { AzureMonitorMetricExporter } from "../Library/Exporters";
 
 const STATSBEAT_LANGUAGE = "node";
 
@@ -22,7 +22,7 @@ export class Statsbeat {
     private static TAG = "Statsbeat";
 
 
-    private _metricExporter: MetricExporter;
+    private _metricExporter: AzureMonitorMetricExporter;
     private _networkStatsbeatCollection: Array<NetworkStatsbeat>;
     private _context: Context;
     private _handle: NodeJS.Timer | null;
@@ -54,7 +54,7 @@ export class Statsbeat {
         this._context = context || new Context();
         this._statsbeatConfig = new Config(Statsbeat.CONNECTION_STRING);
         this._statsbeatConfig.samplingPercentage = 100; // Do not sample
-        this._metricExporter = new MetricExporter(this._statsbeatConfig);
+        this._metricExporter = new AzureMonitorMetricExporter(this._statsbeatConfig);
     }
 
     public enable(isEnabled: boolean) {

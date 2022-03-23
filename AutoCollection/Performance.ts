@@ -1,9 +1,23 @@
 import * as  os from "os";
-
-import { MetricHandler } from "../Library/Handlers/MetricHandler";
+import { ObservableGauge, ValueType } from "@opentelemetry/api-metrics";
+import { Meter } from "@opentelemetry/sdk-metrics-base";
 import * as  Constants from "../Declarations/Constants";
 
+
 export class AutoCollectPerformance {
+
+    private _availableBytesGauge: ObservableGauge;
+    private _privateBytesGauge: ObservableGauge;
+    private _committedBytesGauge: ObservableGauge;
+    private _cpuGauge: ObservableGauge;
+    private _processCpuGauge: ObservableGauge;
+    private _requestDurationGauge: ObservableGauge;
+    private _requestRateGauge: ObservableGauge;
+    private _requestFailureRateGauge: ObservableGauge;
+    private _dependencyDurationGauge: ObservableGauge;
+    private _dependencyRateGauge: ObservableGauge;
+    private _dependencyFailureRateGauge: ObservableGauge;
+    private _exceptionRateGauge: ObservableGauge;
 
     private _totalRequestCount: number = 0;
     private _totalFailedRequestCount: number = 0;
@@ -16,7 +30,7 @@ export class AutoCollectPerformance {
     private _lastIntervalDependencyExecutionTime: number = 0;
     private _enableLiveMetricsCounters: boolean;
     private _collectionInterval: number;
-    private _handler: MetricHandler;
+    private _meter: Meter;
     private _handle: NodeJS.Timer;
     private _isEnabled: boolean;
     private _lastAppCpuUsage: { user: number, system: number };
@@ -29,11 +43,11 @@ export class AutoCollectPerformance {
     /**
      * @param enableLiveMetricsCounters - enable sending additional live metrics information (dependency metrics, exception metrics, committed memory)
      */
-    constructor(handler: MetricHandler, collectionInterval = 60000, enableLiveMetricsCounters = false) {
+    constructor(meter: Meter, collectionInterval = 60000, enableLiveMetricsCounters = false) {
         this._lastRequests = { totalRequestCount: 0, totalFailedRequestCount: 0, time: 0 };
         this._lastDependencies = { totalDependencyCount: 0, totalFailedDependencyCount: 0, time: 0 };
         this._lastExceptions = { totalExceptionCount: 0, time: 0 };
-        this._handler = handler;
+        this._meter = meter;
         this._collectionInterval = collectionInterval;
         this._enableLiveMetricsCounters = enableLiveMetricsCounters;
     }
@@ -42,6 +56,7 @@ export class AutoCollectPerformance {
         this._isEnabled = isEnabled;
         if (isEnabled) {
             if (!this._handle) {
+                this._initializeGauges();
                 this._lastCpus = os.cpus();
                 this._lastRequests = {
                     totalRequestCount: this._totalRequestCount,
@@ -70,6 +85,85 @@ export class AutoCollectPerformance {
             if (this._handle) {
                 clearInterval(this._handle);
                 this._handle = undefined;
+            }
+        }
+    }
+
+    private _initializeGauges() {
+        if (!this._cpuGauge) {
+            this._cpuGauge = this._meter.createObservableGauge(Constants.PerformanceCounter.PROCESSOR_TIME, {
+                description: "Processor time as a percentage",
+                valueType: ValueType.DOUBLE,
+            });
+        }
+        if (!this._processCpuGauge) {
+            this._processCpuGauge = this._meter.createObservableGauge(Constants.PerformanceCounter.PROCESS_TIME, {
+                description: "Process CPU usage as a percentage",
+                valueType: ValueType.DOUBLE,
+            });
+        }
+        if (!this._availableBytesGauge) {
+            this._availableBytesGauge = this._meter.createObservableGauge(Constants.PerformanceCounter.AVAILABLE_BYTES, {
+                description: "Amount of available memory in bytes",
+                valueType: ValueType.INT,
+            });
+        }
+        if (!this._privateBytesGauge) {
+            this._privateBytesGauge = this._meter.createObservableGauge(Constants.PerformanceCounter.PRIVATE_BYTES, {
+                description: "Amount of memory process has used in bytes",
+                valueType: ValueType.INT,
+            });
+        }
+        if (!this._requestRateGauge) {
+            this._requestRateGauge = this._meter.createObservableGauge(Constants.PerformanceCounter.REQUEST_RATE, {
+                description: "Incoming Requests Rate",
+                valueType: ValueType.DOUBLE,
+            });
+        }
+        if (!this._requestDurationGauge) {
+            this._requestDurationGauge = this._meter.createObservableGauge(Constants.PerformanceCounter.REQUEST_DURATION, {
+                description: "Incoming Requests Average Execution Time",
+                valueType: ValueType.DOUBLE,
+            });
+        }
+
+        // Only supported by quickpulse service
+        if (this._enableLiveMetricsCounters) {
+            if (!this._committedBytesGauge) {
+                this._committedBytesGauge = this._meter.createObservableGauge(Constants.QuickPulseCounter.COMMITTED_BYTES, {
+                    description: "Amount of committed memory in bytes",
+                    valueType: ValueType.INT,
+                });
+            }
+            if (!this._requestFailureRateGauge) {
+                this._requestFailureRateGauge = this._meter.createObservableGauge(Constants.QuickPulseCounter.REQUEST_FAILURE_RATE, {
+                    description: "Incoming Requests Failed Rate",
+                    valueType: ValueType.DOUBLE,
+                });
+            }
+            if (!this._dependencyDurationGauge) {
+                this._dependencyDurationGauge = this._meter.createObservableGauge(Constants.QuickPulseCounter.DEPENDENCY_DURATION, {
+                    description: "Average Outgoing Requests duration",
+                    valueType: ValueType.DOUBLE,
+                });
+            }
+            if (!this._dependencyRateGauge) {
+                this._dependencyRateGauge = this._meter.createObservableGauge(Constants.QuickPulseCounter.DEPENDENCY_RATE, {
+                    description: "Outgoing Requests per second",
+                    valueType: ValueType.DOUBLE,
+                });
+            }
+            if (!this._dependencyFailureRateGauge) {
+                this._dependencyFailureRateGauge = this._meter.createObservableGauge(Constants.QuickPulseCounter.DEPENDENCY_FAILURE_RATE, {
+                    description: "Failed Outgoing Requests per second",
+                    valueType: ValueType.DOUBLE,
+                });
+            }
+            if (!this._exceptionRateGauge) {
+                this._exceptionRateGauge = this._meter.createObservableGauge(Constants.QuickPulseCounter.EXCEPTION_RATE, {
+                    description: "Exceptions Rate",
+                    valueType: ValueType.DOUBLE,
+                });
             }
         }
     }
@@ -143,10 +237,6 @@ export class AutoCollectPerformance {
             for (var i = 0; !!cpus && i < cpus.length; i++) {
                 var cpu = cpus[i];
                 var lastCpu = this._lastCpus[i];
-
-                var name = "% cpu(" + i + ") ";
-                var model = cpu.model;
-                var speed = cpu.speed;
                 var times = cpu.times;
                 var lastTimes = lastCpu.times;
 
@@ -191,9 +281,8 @@ export class AutoCollectPerformance {
             }
 
             var combinedTotal = (totalUser + totalSys + totalNice + totalIdle + totalIrq) || 1;
-
-            this._handler.trackMetric({ name: Constants.PerformanceCounter.PROCESSOR_TIME, value: ((combinedTotal - totalIdle) / combinedTotal) * 100 });
-            this._handler.trackMetric({ name: Constants.PerformanceCounter.PROCESS_TIME, value: appCpuPercent || ((totalUser / combinedTotal) * 100) });
+            this._cpuGauge.observation(((combinedTotal - totalIdle) / combinedTotal) * 100);
+            this._processCpuGauge.observation(appCpuPercent || ((totalUser / combinedTotal) * 100));
         }
 
         this._lastCpus = cpus;
@@ -203,11 +292,11 @@ export class AutoCollectPerformance {
         var freeMem = os.freemem();
         var usedMem = process.memoryUsage().rss;
         var committedMemory = os.totalmem() - freeMem;
-        this._handler.trackMetric({ name: Constants.PerformanceCounter.PRIVATE_BYTES, value: usedMem });
-        this._handler.trackMetric({ name: Constants.PerformanceCounter.AVAILABLE_BYTES, value: freeMem });
+        this._privateBytesGauge.observation(usedMem);
+        this._availableBytesGauge.observation(freeMem);
         // Only supported by quickpulse service
-        if (this._enableLiveMetricsCounters) {
-            this._handler.trackMetric({ name: Constants.QuickPulseCounter.COMMITTED_BYTES, value: committedMemory });
+        if (this._committedBytesGauge) {
+            this._committedBytesGauge.observation(committedMemory);
         }
     }
 
@@ -230,16 +319,13 @@ export class AutoCollectPerformance {
             var requestsPerSec = intervalRequests / elapsedSeconds;
             var failedRequestsPerSec = intervalFailedRequests / elapsedSeconds;
 
-            this._handler.trackMetric({ name: Constants.PerformanceCounter.REQUEST_RATE, value: requestsPerSec });
-
+            this._requestRateGauge.observation(requestsPerSec);
             // Only send duration to live metrics if it has been updated!
-            if (!this._enableLiveMetricsCounters || intervalRequests > 0) {
-                this._handler.trackMetric({ name: Constants.PerformanceCounter.REQUEST_DURATION, value: averageRequestExecutionTime });
+            if (!this._requestDurationGauge || intervalRequests > 0) {
+                this._requestDurationGauge.observation(averageRequestExecutionTime);
             }
-
-            // Only supported by quickpulse service
-            if (this._enableLiveMetricsCounters) {
-                this._handler.trackMetric({ name: Constants.QuickPulseCounter.REQUEST_FAILURE_RATE, value: failedRequestsPerSec });
+            if (this._requestFailureRateGauge) {
+                this._requestFailureRateGauge.observation(failedRequestsPerSec);
             }
         }
 
@@ -267,14 +353,11 @@ export class AutoCollectPerformance {
             if (elapsedMs > 0) {
                 var dependenciesPerSec = intervalDependencies / elapsedSeconds;
                 var failedDependenciesPerSec = intervalFailedDependencies / elapsedSeconds;
-
-                this._handler.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_RATE, value: dependenciesPerSec });
-                this._handler.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_FAILURE_RATE, value: failedDependenciesPerSec });
-
-                // redundant check for livemetrics, but kept for consistency w/ requests
+                this._dependencyRateGauge.observation(dependenciesPerSec);
+                this._dependencyFailureRateGauge.observation(failedDependenciesPerSec);
                 // Only send duration to live metrics if it has been updated!
-                if (!this._enableLiveMetricsCounters || intervalDependencies > 0) {
-                    this._handler.trackMetric({ name: Constants.QuickPulseCounter.DEPENDENCY_DURATION, value: averageDependencyExecutionTime });
+                if (intervalDependencies > 0) {
+                    this._dependencyDurationGauge.observation(averageDependencyExecutionTime);
                 }
             }
             this._lastDependencies = dependencies;
@@ -297,7 +380,7 @@ export class AutoCollectPerformance {
 
             if (elapsedMs > 0) {
                 var exceptionsPerSec = intervalExceptions / elapsedSeconds;
-                this._handler.trackMetric({ name: Constants.QuickPulseCounter.EXCEPTION_RATE, value: exceptionsPerSec });
+                this._exceptionRateGauge.observation(exceptionsPerSec);
             }
             this._lastExceptions = exceptions;
         }

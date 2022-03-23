@@ -1,10 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { TelemetryItem as Envelope } from "../../Declarations/Generated";
-import { Config } from "../Configuration/Config";
-import { Logger } from "../Logging/Logger";
-import { Util } from "../Util/Util";
-import { BaseExporter } from "../Exporters/Shared/BaseExporter";
+import { TelemetryItem as Envelope } from "../../../Declarations/Generated";
+import { Config } from "../../Configuration/Config";
+import { Logger } from "../../Logging/Logger";
+import { Util } from "../../Util/Util";
+import { BaseExporter } from "../../Exporters/Shared/BaseExporter";
 
 export class BatchProcessor {
     protected _lastSend: number;

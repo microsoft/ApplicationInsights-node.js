@@ -1,21 +1,41 @@
+import { ObservableGauge, ValueType } from "@opentelemetry/api-metrics";
 import { MetricHandler } from "../Library/Handlers/MetricHandler";
 import { Context } from "../Library/Context";
 import { Logger } from "../Library/Logging/Logger";
 import { IBaseConfig, IDisabledExtendedMetrics } from "../Declarations/Interfaces";
-import { KnownContextTagKeys} from "../Declarations/Generated";
+import { KnownContextTagKeys } from "../Declarations/Generated";
+import { Meter } from "@opentelemetry/sdk-metrics-base";
 
 
 export class AutoCollectNativePerformance {
+    private _garbageCollectionGauges: ObservableGauge[];
+    private _eventLoopCpuGauge: ObservableGauge;
+    private _memoryUsageHeapGauge: ObservableGauge;
+    private _memoryTotalHeapGauge: ObservableGauge;
+    private _memoryUsageGauge: ObservableGauge;
     private _emitter: any;
     private _metricsAvailable: boolean; // is the native metrics lib installed
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _handle: NodeJS.Timer;
-    private _handler: MetricHandler;
+    private _meter: Meter;
     private _disabledMetrics: IDisabledExtendedMetrics = {};
 
-    constructor(handler: MetricHandler) {
-        this._handler = handler;
+    constructor(meter: Meter) {
+        this._meter = meter;
+        this._garbageCollectionGauges = [];
+        this._eventLoopCpuGauge = this._meter.createObservableGauge("Event Loop CPU Time", {
+            valueType: ValueType.DOUBLE,
+        });
+        this._memoryUsageHeapGauge = this._meter.createObservableGauge("Memory Usage (Heap)", {
+            valueType: ValueType.INT,
+        });
+        this._memoryTotalHeapGauge = this._meter.createObservableGauge("Memory Total (Heap)", {
+            valueType: ValueType.INT,
+        });
+        this._memoryUsageGauge = this._meter.createObservableGauge("Memory Usage (Non-Heap)", {
+            valueType: ValueType.INT,
+        });
     }
 
     /**
@@ -146,20 +166,37 @@ export class AutoCollectNativePerformance {
 
         for (let gc in gcData) {
             const metrics = gcData[gc].metrics;
-            
+
+
             const name = `${gc} Garbage Collection Duration`;
-            const stdDev = Math.sqrt(metrics.sumSquares / metrics.count - Math.pow(metrics.total / metrics.count, 2)) || 0;
-            this._handler.trackMetric({
-                name: name,
-                value: metrics.total,
-                count: metrics.count,
-                max: metrics.max,
-                min: metrics.min,
-                stdDev: stdDev,
-                tagOverrides: {
-                    [KnownContextTagKeys.AiInternalSdkVersion]: "node-nativeperf:" + Context.sdkVersion
+
+            let gcGauge: ObservableGauge = null;
+
+            // TODO: Create gauges dynamically if not available
+            for(let i=0; i< this._garbageCollectionGauges.length; i++){
+                if(this._garbageCollectionGauges[i]){
+                    gcGauge = this._garbageCollectionGauges[i];
                 }
-            });
+            }
+            if(!gcGauge){
+                gcGauge = this._meter.createObservableGauge(name);
+            }
+            const stdDev = Math.sqrt(metrics.sumSquares / metrics.count - Math.pow(metrics.total / metrics.count, 2)) || 0;
+            gcGauge.observation(metrics.total);
+
+            // TODO: Investigate if all fields are present we may need multiple observers for it
+            // TODO: SDK version is updated for some reason for all Native Metrics
+            // this._handler.trackMetric({
+            //     name: name,
+            //     value: metrics.total,
+            //     count: metrics.count,
+            //     max: metrics.max,
+            //     min: metrics.min,
+            //     stdDev: stdDev,
+            //     tagOverrides: {
+            //         [KnownContextTagKeys.AiInternalSdkVersion]: "node-nativeperf:" + Context.sdkVersion
+            //     }
+            // });
         }
     }
 

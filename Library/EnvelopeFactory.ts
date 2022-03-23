@@ -3,6 +3,7 @@ import { Util } from "./Util/Util";
 import { Config } from "./Configuration/Config";
 import { Context } from "./Context";
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
+import { KnownSeverityLevel } from "../Declarations/Generated";
 
 
 /**
@@ -102,10 +103,10 @@ export class EnvelopeFactory {
         var trace = new Contracts.MessageData();
         trace.message = telemetry.message;
         trace.properties = telemetry.properties;
-        if (!isNaN(telemetry.severity)) {
+        if (telemetry.severity) {
             trace.severityLevel = telemetry.severity;
         } else {
-            trace.severityLevel = Contracts.SeverityLevel.Information;
+            trace.severityLevel = KnownSeverityLevel.Information;
         }
 
         var data = new Contracts.Data<Contracts.MessageData>();

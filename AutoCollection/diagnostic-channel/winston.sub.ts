@@ -2,7 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 import { LogHandler } from "../../Library/Handlers/LogHandler";
 import { StatsbeatInstrumentation } from "../../Declarations/Constants";
-import { SeverityLevel } from "../../Declarations/Contracts";
+import { KnownSeverityLevel } from "../../Declarations/Generated";
 
 import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
 
@@ -10,35 +10,35 @@ import { winston } from "diagnostic-channel-publishers";
 
 let handlers: LogHandler[] = [];
 
-const winstonToAILevelMap: { [key: string]: (og: string) => number } = {
+const winstonToAILevelMap: { [key: string]: (og: string) => string } = {
     syslog(og: string) {
-        const map: { [key: string]: number } = {
-            emerg: SeverityLevel.Critical,
-            alert: SeverityLevel.Critical,
-            crit: SeverityLevel.Critical,
-            error: SeverityLevel.Error,
-            warning: SeverityLevel.Warning,
-            notice: SeverityLevel.Information,
-            info: SeverityLevel.Information,
-            debug: SeverityLevel.Verbose
+        const map: { [key: string]: string } = {
+            emerg: KnownSeverityLevel.Critical,
+            alert: KnownSeverityLevel.Critical,
+            crit: KnownSeverityLevel.Critical,
+            error: KnownSeverityLevel.Error,
+            warning: KnownSeverityLevel.Warning,
+            notice: KnownSeverityLevel.Information,
+            info: KnownSeverityLevel.Information,
+            debug: KnownSeverityLevel.Verbose
         };
 
-        return map[og] === undefined ? SeverityLevel.Information : map[og];
+        return map[og] === undefined ? KnownSeverityLevel.Information : map[og];
     },
     npm(og: string) {
-        const map: { [key: string]: number } = {
-            error: SeverityLevel.Error,
-            warn: SeverityLevel.Warning,
-            info: SeverityLevel.Information,
-            verbose: SeverityLevel.Verbose,
-            debug: SeverityLevel.Verbose,
-            silly: SeverityLevel.Verbose
+        const map: { [key: string]: string } = {
+            error: KnownSeverityLevel.Error,
+            warn: KnownSeverityLevel.Warning,
+            info: KnownSeverityLevel.Information,
+            verbose: KnownSeverityLevel.Verbose,
+            debug: KnownSeverityLevel.Verbose,
+            silly: KnownSeverityLevel.Verbose
         };
 
-        return map[og] === undefined ? SeverityLevel.Information : map[og];
+        return map[og] === undefined ? KnownSeverityLevel.Information : map[og];
     },
     unknown(og: string) {
-        return SeverityLevel.Information;
+        return KnownSeverityLevel.Information;
     }
 };
 

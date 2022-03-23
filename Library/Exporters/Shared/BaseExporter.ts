@@ -18,12 +18,12 @@ import { TelemetryItem as Envelope } from "../../../Declarations/Generated";
 
 
 export class BaseExporter {
+    protected readonly _sender: ISender;
+    protected readonly _options: IAzureExporterInternalConfig;
     private readonly _persister: IPersistentStorage;
-    private readonly _sender: ISender;
     private _numConsecutiveRedirects: number;
     private _retryTimer: NodeJS.Timer | null;
-    private readonly _options: IAzureExporterInternalConfig;
-
+    
     /**
    * Initializes a new instance of the AzureMonitorTraceExporter class.
    * @param AzureExporterConfig - Exporter configuration.

@@ -4,7 +4,7 @@ import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
 import { console as consolePub } from "diagnostic-channel-publishers";
 
 import { LogHandler } from "../../Library/Handlers/LogHandler";
-import { SeverityLevel } from "../../Declarations/Contracts";
+import { KnownSeverityLevel } from "../../Declarations/Generated";
 import { StatsbeatInstrumentation } from "../../Declarations/Constants";
 
 
@@ -20,7 +20,7 @@ const subscriber = (event: IStandardEvent<consolePub.IConsoleData>) => {
             if (message.lastIndexOf("\n") == message.length - 1) {
                 message = message.substring(0, message.length - 1);
             }
-            handler.trackTrace({ message: message, severity: (event.data.stderr ? SeverityLevel.Warning : SeverityLevel.Information) });
+            handler.trackTrace({ message: message, severity: (event.data.stderr ? KnownSeverityLevel.Warning : KnownSeverityLevel.Information) });
         }
     });
 };

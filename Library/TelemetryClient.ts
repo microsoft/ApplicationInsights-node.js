@@ -46,7 +46,7 @@ export class TelemetryClient {
             this._statsbeat.enable(true);
         }
         this.traceHandler = new TraceHandler(this.config, this._resource);
-        this.metricHandler = new MetricHandler(this.config);
+        this.metricHandler = new MetricHandler(this.config, this._resource);
         this.logHandler = new LogHandler(this.config, this._statsbeat);
     }
 
