@@ -137,7 +137,7 @@ class HttpDependencyParser extends RequestParser {
                 }
             }
         } else if (options && typeof url.URL === "function" && options instanceof url.URL) {
-            return url.format(options);
+            return url.format(options, { auth: false });
         } else {
             // Avoid modifying the original options object.
             let originalOptions = options;
@@ -146,6 +146,7 @@ class HttpDependencyParser extends RequestParser {
                 Object.keys(originalOptions).forEach(key => {
                     options[key] = originalOptions[key];
                 });
+                delete options.auth; // Strip auth, since url.format options are only respected for URL instances
             }
         }
 
@@ -201,7 +202,7 @@ class HttpDependencyParser extends RequestParser {
         options.protocol = options.protocol || ((<any>request).agent && (<any>request).agent.protocol) || ((<any>request).protocol) || undefined;
         options.hostname = options.hostname || "localhost";
 
-        return url.format(options);
+        return url.format(options, { auth: false });
     }
 }
 
