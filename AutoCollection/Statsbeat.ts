@@ -17,7 +17,7 @@ class Statsbeat {
     public static NON_EU_CONNECTION_STRING = "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://westus-0.in.applicationinsights.azure.com";
     public static EU_CONNECTION_STRING = "InstrumentationKey=7dc56bab-3c0c-4e9f-9ebb-d1acadee8d0f;IngestionEndpoint=https://westeurope-5.in.applicationinsights.azure.com";
     public static STATS_COLLECTION_SHORT_INTERVAL: number = 900000; // 15 minutes
-    public static STATS_COLLECTION_LONG_INTERVAL: number = 1440000; // 1 day
+    public static STATS_COLLECTION_LONG_INTERVAL: number = 86400000; // 1 day
 
     private static TAG = "Statsbeat";
 
@@ -352,7 +352,7 @@ class Statsbeat {
     }
 
     private _handleNetworkError(error: Error) {
-        if (error && error.message && error.message.indexOf("UNREACH") > -1) { // Handle both EHOSTUNREACH and ENETUNREACH
+        if (error && error.message && error.message.indexOf("ENOTFOUND") > -1) { // ENOTFOUND
             this.enable(false);// Disable Statsbeat as is possible SDK is running in private or restricted network 
         }
     }

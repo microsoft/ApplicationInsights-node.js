@@ -12,6 +12,7 @@ import Tracestate = require("../Library/Tracestate");
 import HttpRequestParser = require("./HttpRequestParser");
 import { SpanContext } from "@opentelemetry/api";
 import { Span } from "@opentelemetry/sdk-trace-base";
+import Util = require("../Library/Util");
 
 export interface CustomProperties {
     /**
@@ -110,10 +111,14 @@ export class CorrelationContextManager {
      */
     public static runWithContext(context: CorrelationContext, fn: () => any): any {
         if (CorrelationContextManager.enabled) {
-            return CorrelationContextManager.session.bind(fn, { [CorrelationContextManager.CONTEXT_NAME]: context })();
-        } else {
-            return fn();
+            try {
+                return CorrelationContextManager.session.bind(fn, { [CorrelationContextManager.CONTEXT_NAME]: context })();
+            }
+            catch (error) {
+                Logging.warn("Error binding to session context", Util.dumpObj(error));
+            }
         }
+        return fn();
     }
 
     /**
@@ -121,7 +126,12 @@ export class CorrelationContextManager {
      */
     public static wrapEmitter(emitter: events.EventEmitter): void {
         if (CorrelationContextManager.enabled) {
-            CorrelationContextManager.session.bindEmitter(emitter);
+            try {
+                CorrelationContextManager.session.bindEmitter(emitter);
+            }
+            catch (error) {
+                Logging.warn("Error binding to session context", Util.dumpObj(error));
+            }
         }
     }
 
@@ -134,9 +144,14 @@ export class CorrelationContextManager {
      *  the call to wrapCallback.  */
     public static wrapCallback<T extends Function>(fn: T, context?: CorrelationContext): T {
         if (CorrelationContextManager.enabled) {
-            return CorrelationContextManager.session.bind(fn, context ? {
-                [CorrelationContextManager.CONTEXT_NAME]: context
-            } : undefined);
+            try {
+                return CorrelationContextManager.session.bind(fn, context ? {
+                    [CorrelationContextManager.CONTEXT_NAME]: context
+                } : undefined);
+            }
+            catch (error) {
+                Logging.warn("Error binding to session context", Util.dumpObj(error));
+            }
         }
         return fn;
     }
@@ -168,7 +183,12 @@ export class CorrelationContextManager {
             CorrelationContextManager.session = this.cls.createNamespace("AI-CLS-Session");
 
             DiagChannel.registerContextPreservation((cb) => {
-                return CorrelationContextManager.session.bind(cb);
+                try {
+                    return CorrelationContextManager.session.bind(cb);
+                }
+                catch (error) {
+                    Logging.warn("Error binding to session context", Util.dumpObj(error));
+                }
             });
         }
 

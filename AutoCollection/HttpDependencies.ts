@@ -64,8 +64,14 @@ class AutoCollectHttpDependencies {
                 !(<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
 
             // If someone else patched traceparent headers onto this request
-            if ((<any>options).headers && (<any>options).headers["user-agent"] && (<any>options).headers["user-agent"].toString().indexOf("azsdk-js") !== -1) {
-                shouldCollect = false;
+            let userAgentHeader = null;
+
+            // Azure SDK special handling
+            if ((<any>options).headers) {
+                userAgentHeader = (<any>options).headers["User-Agent"] || (<any>options).headers["user-agent"];
+                if (userAgentHeader && userAgentHeader.toString().indexOf("azsdk-js") !== -1) {
+                    shouldCollect = false;
+                }
             }
 
             (<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag] = true;
