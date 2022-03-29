@@ -56,8 +56,7 @@ class Config implements IConfig {
     public disableStatsbeat: boolean;
     public extendedMetricDisablers: string;
     public quickPulseHost: string;
-    public enableAutoWebSnippetInjection: boolean; 
-    public isDebugWebSnippet: boolean;
+    public enableAutoWebSnippetInjection: boolean;
 
     public correlationId: string; // TODO: Should be private
     private _connectionString: string;
@@ -65,7 +64,6 @@ class Config implements IConfig {
     private _setCorrelationId: (v: string) => void;
     private _profileQueryEndpoint: string;
     private _instrumentationKey: string;
-    //private _isSnippetInjection: string;
  
 
 
@@ -92,7 +90,6 @@ class Config implements IConfig {
         this.samplingPercentage = this.samplingPercentage || 100;
         this.correlationIdRetryIntervalMs = this.correlationIdRetryIntervalMs || 30 * 1000;
         this.enableAutoWebSnippetInjection = this.enableAutoWebSnippetInjection || false;
-        this.isDebugWebSnippet = this.isDebugWebSnippet || false;
         this.correlationHeaderExcludedDomains =
             this.correlationHeaderExcludedDomains ||
             [
@@ -172,7 +169,6 @@ class Config implements IConfig {
         this.quickPulseHost = jsonConfig.quickPulseHost;
         this.samplingPercentage = jsonConfig.samplingPercentage;
         this.enableAutoWebSnippetInjection = jsonConfig.enableAutoWebSnippetInjection;
-        this.isDebugWebSnippet = jsonConfig.isDebugWebSnippet;
     }
 
     private static _getInstrumentationKey(): string {

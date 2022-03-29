@@ -104,7 +104,6 @@ describe("Json Config", () => {
             assert.equal(config.noPatchModules, "console,redis");
             assert.equal(config.quickPulseHost, "testquickpulsehost.com");
             assert.equal(config.enableAutoWebSnippetInjection, false);
-            assert.equal(config.isDebugWebSnippet, false);
         });
 
         it("Should take configurations from environment variables", () => {
@@ -118,7 +117,7 @@ describe("Json Config", () => {
             env["APPLICATION_INSIGHTS_NO_HTTP_AGENT_KEEP_ALIVE"] = "true";
             env["http_proxy"] = "testProxyHttpUrl2";
             env["https_proxy"] = "testProxyHttpsUrl2";
-            env["APPINSIGHTS_WEB_SNIPPET_ENABLED"] = "true";
+            env["APPLICATIONINSIGHTS_WEB_SNIPPET_ENABLED"] = "true";
             process.env = env;
             const config = JsonConfig.getInstance();
             assert.equal(config.connectionString, "TestConnectionString");

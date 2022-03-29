@@ -109,7 +109,6 @@ describe("Library/Config", () => {
                 assert.equal(config.extendedMetricDisablers, "gc,heap");
                 assert.equal(config.quickPulseHost, "testquickpulsehost.com");
                 assert.equal(config.enableAutoWebSnippetInjection, false);
-                assert.equal(config.isDebugWebSnippet, false);
             });
         });
 
@@ -146,7 +145,7 @@ describe("Library/Config", () => {
 
             it("should read enableWebSnippet from environment variables", () => {
                 var env = <{ [id: string]: string }>{};
-                env["APPINSIGHTS_WEB_SNIPPET_ENABLED"] = "true";
+                env["APPLICATIONINSIGHTS_WEB_SNIPPET_ENABLED"] = "true";
                 process.env = env;
                 var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert.equal(config.enableAutoWebSnippetInjection, true);
@@ -175,7 +174,6 @@ describe("Library/Config", () => {
                 assert(config.proxyHttpUrl === undefined);
                 assert(config.proxyHttpsUrl === undefined);
                 assert(config.enableAutoWebSnippetInjection === false);
-                assert(config.isDebugWebSnippet === false);
 
                 assert.equal(config.quickPulseHost, Constants.DEFAULT_LIVEMETRICS_HOST);
             });

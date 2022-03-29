@@ -38,6 +38,5 @@
     "noDiagnosticChannel": false,
     "noPatchModules": "console,redis",
     "quickPulseHost": "testquickpulsehost.com",
-    "enableAutoWebSnippetInjection": false,
-    "isDebugWebSnippet": false
+    "enableAutoWebSnippetInjection": false
 }

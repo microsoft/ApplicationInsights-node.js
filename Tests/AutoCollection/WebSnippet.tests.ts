@@ -4,10 +4,12 @@ import sinon = require("sinon");
 
 import AppInsights = require("../../applicationinsights");
 import WebSnippet = require("../../AutoCollection/WebSnippet");
-import SnippetInjectionHelper = require("../../Library/SnippetInjectionHelper")
+import SnippetInjectionHelper = require("../../Library/SnippetInjectionHelper");
+import TelemetryClient = require("../../Library/TelemetryClient");
 
 
 describe("AutoCollection/WebSnippet", () => {
+ 
     afterEach(() => {
         AppInsights.dispose();
     });
@@ -28,6 +30,9 @@ describe("AutoCollection/WebSnippet", () => {
 
     describe("#validate response", () => {
         it("injection should be triggered only in HTML responses", () => {
+            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setWebSnippetInjection(true);
+            let webSnippet = WebSnippet.INSTANCE;
+         
             let _headers: any = {};
             let response: http.ServerResponse = <any>{
                 setHeader: (header: string, value: string) => {
@@ -37,23 +42,26 @@ describe("AutoCollection/WebSnippet", () => {
             };
             response.statusCode = 300;
             let validHtml = "<html><head></head><body></body></html>";
-            assert.equal(WebSnippet.ValidateInjection(response, validHtml), false); // status code is not 200
+            assert.equal(webSnippet.ValidateInjection(response, validHtml), false); // status code is not 200
             response.statusCode = 200;
-            assert.equal(WebSnippet.ValidateInjection(response, validHtml), false); // No html header
+            assert.equal(webSnippet.ValidateInjection(response, validHtml), false); // No html header
             response.setHeader("Content-Type", "text/html");
-            assert.equal(WebSnippet.ValidateInjection(response, validHtml), true); // Valid
-            assert.equal(WebSnippet.ValidateInjection(response, "test"), false); // No html text
-            assert.equal(WebSnippet.ValidateInjection(response, "<html><body></body></html>"), false); // No head element
+            assert.equal(webSnippet.ValidateInjection(response, validHtml), true); // Valid
+            assert.equal(webSnippet.ValidateInjection(response, "test"), false); // No html text
+            assert.equal(webSnippet.ValidateInjection(response, "<html><body></body></html>"), false); // No head element
             response.setHeader("Content-Type", "text/plain");
-            assert.equal(WebSnippet.ValidateInjection(response, validHtml), false); // No HTML content type
+            assert.equal(webSnippet.ValidateInjection(response, validHtml), false); // No HTML content type
             response.setHeader("Content-Type", "text/html");
             let validBuffer = Buffer.from(validHtml);
-            assert.equal(WebSnippet.ValidateInjection(response, validBuffer), true); // Valid Buffer
-            assert.equal(WebSnippet.ValidateInjection(response, Buffer.from("test")), false); // not valid Buffer
+            assert.equal(webSnippet.ValidateInjection(response, validBuffer), true); // Valid Buffer
+            assert.equal(webSnippet.ValidateInjection(response, Buffer.from("test")), false); // not valid Buffer
         });
     });
 
     describe("#web snippet injection to string", () => {
+        var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setWebSnippetInjection(true);
+        let webSnippet = WebSnippet.INSTANCE;
+        webSnippet.enable(true);
         it("injection add correct snippet code", () => {
             let _headers: any = {};
             let response: http.ServerResponse = <any>{
@@ -66,8 +74,8 @@ describe("AutoCollection/WebSnippet", () => {
             response.setHeader("Content-Type", "text/html");
             response.statusCode = 200;
             let validHtml = "<html><head></head><body></body></html>";
-            assert.equal(WebSnippet.ValidateInjection(response, validHtml), true); 
-            let newHtml = WebSnippet.InjectWebSnippet(response, validHtml).toString();
+            assert.equal(webSnippet.ValidateInjection(response, validHtml), true); 
+            let newHtml = webSnippet.InjectWebSnippet(response, validHtml).toString();
             assert.ok(newHtml.indexOf("https://js.monitor.azure.com/scripts/b/ai.2.min.js") >= 0);
             assert.ok(newHtml.indexOf("<html><head>") == 0);
             assert.ok(newHtml.indexOf('instrumentationKey: "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"') >= 0);
@@ -85,13 +93,16 @@ describe("AutoCollection/WebSnippet", () => {
             response.setHeader("Content-Type", "text/html");
             response.setHeader("Content-Length", 39);
             let validHtml = "<html><head></head><body></body></html>";
-            let newHtml = WebSnippet.InjectWebSnippet(response, validHtml).toString();
+            let newHtml = webSnippet.InjectWebSnippet(response, validHtml).toString();
             assert.ok(newHtml.length > 4000);
             assert.ok(Number(response.getHeader("Content-Length")) > 4000); // Content length updated
         });
     });
 
     describe("#web snippet injection to buffer", () => {
+        var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setWebSnippetInjection(true);
+        let webSnippet = WebSnippet.INSTANCE
+        webSnippet.enable(true);
         it("injection add correct snippet code", () => {
             let _headers: any = {};
             let response: http.ServerResponse = <any>{
@@ -105,8 +116,8 @@ describe("AutoCollection/WebSnippet", () => {
             response.statusCode = 200;
             let validHtml = "<html><head></head><body></body></html>";
             let validBuffer = Buffer.from(validHtml);
-            assert.equal(WebSnippet.ValidateInjection(response, validBuffer), true); 
-            let newHtml = WebSnippet.InjectWebSnippet(response, validBuffer).toString();
+            assert.equal(webSnippet.ValidateInjection(response, validBuffer), true); 
+            let newHtml = webSnippet.InjectWebSnippet(response, validBuffer).toString();
             assert.ok(newHtml.indexOf("https://js.monitor.azure.com/scripts/b/ai.2.min.js") >= 0);
             assert.ok(newHtml.indexOf("<html><head>") == 0);
             assert.ok(newHtml.indexOf('instrumentationKey: "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"') >= 0);
@@ -128,7 +139,7 @@ describe("AutoCollection/WebSnippet", () => {
             let originalBufferSize = validBuffer.length;
             response.setHeader("Content-Type", "text/html");
             response.setHeader("Content-Length", originalBufferSize);
-            let newHtml = WebSnippet.InjectWebSnippet(response, validBuffer);
+            let newHtml = webSnippet.InjectWebSnippet(response, validBuffer);
             let isValidBufferEncode = SnippetInjectionHelper.isBufferType(validBuffer,"utf8");
             assert.ok(isValidBufferEncode);
          

@@ -51,7 +51,6 @@ let _isSendingLiveMetrics = defaultConfig.isSendingLiveMetrics(); // Off by defa
 let _isNativePerformance = defaultConfig.isNativePerformance();
 let _disabledExtendedMetrics: IDisabledExtendedMetrics;
 let _isSnippetInjection = defaultConfig.isSnippetInjection(); // default to false
-let _isDebugWebSnippet = defaultConfig._isDebugWebSnippet();
 
 function _getDefaultAutoCollectConfig() {
     return {
@@ -67,8 +66,7 @@ function _getDefaultAutoCollectConfig() {
         isCorrelating: () => true,
         isSendingLiveMetrics: () => false, // Off by default
         isNativePerformance: () => true,
-        isSnippetInjection: () => false,
-        _isDebugWebSnippet: () => false
+        isSnippetInjection: () => false
     }
 }
 
@@ -172,7 +170,6 @@ function _initializeConfig() {
     _isCorrelating = defaultClient.config.enableAutoDependencyCorrelation !== undefined ? defaultClient.config.enableAutoDependencyCorrelation : _isCorrelating;
     _forceClsHooked = defaultClient.config.enableUseAsyncHooks !== undefined ? defaultClient.config.enableUseAsyncHooks : _forceClsHooked;
     _isSnippetInjection = defaultClient.config.enableAutoWebSnippetInjection !== undefined ? defaultClient.config.enableAutoWebSnippetInjection : _isSnippetInjection;
-    _isDebugWebSnippet = defaultClient.config.isDebugWebSnippet !== undefined ? defaultClient.config.isDebugWebSnippet : _isDebugWebSnippet;
     const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(defaultClient.config.enableAutoCollectExtendedMetrics, defaultClient.config);
     _isNativePerformance = extendedMetricsConfig.isEnabled;
     _disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
@@ -329,19 +326,6 @@ export class Configuration {
             _webSnippet.enable(value);
         }
 
-        return Configuration;
-    }
-
-    /**
-     * Sets the state auto-injection web snippet 
-     * @param value if true, will use full version otherwise use minified version
-     * @returns {Configuration} this class
-     */
-    public static setDebugWebSnippet(value: boolean) {
-        _isDebugWebSnippet = value;
-        if (_isStarted) {
-            _webSnippet.enable(value);
-        }
         return Configuration;
     }
 

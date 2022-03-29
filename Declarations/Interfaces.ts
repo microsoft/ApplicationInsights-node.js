@@ -138,7 +138,6 @@ export interface IBaseConfig {
      * Enable web snippet auto html injection, default to false
      */
      enableAutoWebSnippetInjection: boolean;
-     isDebugWebSnippet: boolean;
     
 }
 

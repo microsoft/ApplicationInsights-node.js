@@ -31,17 +31,18 @@ class WebSnippet {
 
         //TODO: replace the path with npm package exports
         let snippetPath = path.resolve(__dirname, "../../AutoCollection/snippet/snippet.min.js");
-        if (client.config.isDebugWebSnippet) {
-            snippetPath = path.resolve(__dirname, "../../AutoCollection/snippet/snippet.js");
+        try {
+            fs.readFile(snippetPath, function (err, snippet) {
+                if (err) {
+                    Logging.warn("Failed to load AI Web snippet. Ex:" + err);
+                }
+                //TODO:should add extra config: snippetInstrumentationKey
+                WebSnippet._snippet = snippet.toString().replace("INSTRUMENTATION_KEY", client.config.instrumentationKey);
+            });
+        } catch (err) {
+            Logging.warn("Read snippet error: " + err);
         }
-
-        fs.readFile(snippetPath, function (err, snippet) {
-            if (err) {
-                Logging.warn("Failed to load AI Web snippet. Ex:" + err);
-            }
-            //TODO:should add extra config: snippetInstrumentationKey
-            WebSnippet._snippet = snippet.toString().replace("INSTRUMENTATION_KEY", client.config.instrumentationKey);
-        });
+      
     }
 
     public enable(isEnabled: boolean) {
@@ -79,16 +80,16 @@ class WebSnippet {
                                     writeBufferType = b;
                                 }
                                 if (headers === null || headers === undefined) {
-                                    if (WebSnippet.ValidateInjection(response, a)) {
-                                        arguments[0] = WebSnippet.InjectWebSnippet(response, a, undefined, writeBufferType);
+                                    if (this.ValidateInjection(response, a)) {
+                                        arguments[0] = this.InjectWebSnippet(response, a, undefined, writeBufferType);
                                     }
                                 } else if (headers.length) {
                                     let encodeType = headers[0];
-                                    arguments[0] = WebSnippet.InjectWebSnippet(response, a, encodeType);
+                                    arguments[0] = this.InjectWebSnippet(response, a, encodeType);
                                 }
                             }
                         } catch (err) {
-                            Logging.info("inject snipet error: "+ err);
+                            Logging.info("Inject snippet error: "+ err);
                         }
                         return originalResponseWrite.apply(response, arguments);
                     }
@@ -106,16 +107,16 @@ class WebSnippet {
                                         endBufferType = b;
                                     }
                                     if (headers === null || headers === undefined) {
-                                        if (WebSnippet.ValidateInjection(response, a)) {
-                                            arguments[0] = WebSnippet.InjectWebSnippet(response, a, undefined, endBufferType);
+                                        if (this.ValidateInjection(response, a)) {
+                                            arguments[0] = this.InjectWebSnippet(response, a, undefined, endBufferType);
                                         }
                                     } else if (headers.length) {
                                         let encodeType = headers[0];
-                                        arguments[0] = WebSnippet.InjectWebSnippet(response, a, encodeType);
+                                        arguments[0] = this.InjectWebSnippet(response, a, encodeType);
                                     }
                                 }
                             } catch (err) {
-                                Logging.info("inject snipet error: "+ err);
+                                Logging.info("Inject snipet error: "+ err);
                             }
                         }
                         return originalResponseEnd.apply(response, arguments);
@@ -143,16 +144,16 @@ class WebSnippet {
                                     writeBufferType = b;
                                 }
                                 if (headers === null || headers === undefined) {
-                                    if (WebSnippet.ValidateInjection(res, a)) {
-                                        arguments[0] = WebSnippet.InjectWebSnippet(res, a, undefined, writeBufferType);
+                                    if (this.ValidateInjection(res, a)) {
+                                        arguments[0] = this.InjectWebSnippet(res, a, undefined, writeBufferType);
                                     }
                                 } else if (headers.length) {
                                     let encodeType = headers[0];
-                                    arguments[0] = WebSnippet.InjectWebSnippet(res, a, encodeType);
+                                    arguments[0] = this.InjectWebSnippet(res, a, encodeType);
                                 }
                             }
                         } catch (err) {
-                            Logging.info("inject snippet error: "+ err);
+                            Logging.info("Inject snippet error: "+ err);
                         }
                         return originalHttpsResponseWrite.apply(res,arguments);
                     }
@@ -166,16 +167,16 @@ class WebSnippet {
                                     endBufferType = b;
                                 }
                                 if (headers === null || headers === undefined) {
-                                    if (WebSnippet.ValidateInjection(res, a)) {
-                                        arguments[0] = WebSnippet.InjectWebSnippet(res, a, undefined, endBufferType);
+                                    if (this.ValidateInjection(res, a)) {
+                                        arguments[0] = this.InjectWebSnippet(res, a, undefined, endBufferType);
                                     }
                                 } else if (headers.length) {
                                     let encodeType = headers[0];
-                                    arguments[0] = WebSnippet.InjectWebSnippet(res, a, encodeType);
+                                    arguments[0] = this.InjectWebSnippet(res, a, encodeType);
                                 }
                             }
                         } catch (err) {
-                            Logging.info("inject snippet error: "+ err);
+                            Logging.info("Inject snippet error: "+ err);
                         }
                         return originalHttpsResponseEnd.apply(res,arguments);
 
@@ -193,7 +194,7 @@ class WebSnippet {
     /**
      * Validate response and try to inject Web snippet
      */
-    public static ValidateInjection(response: http.ServerResponse, input: string | Buffer): boolean {
+    public ValidateInjection(response: http.ServerResponse, input: string | Buffer): boolean {
 
         if (!response || !input || response.statusCode != 200) return false;
         let isContentHtml =  snippetInjectionHelper.isContentTypeHeaderHtml(response);
@@ -201,7 +202,7 @@ class WebSnippet {
         let inputStr = input.slice().toString();
         if (inputStr.indexOf("<head>") >= 0 && inputStr.indexOf("</head>") >= 0) {
             // Check if snippet not already present looking for AI Web SDK URL
-            if (inputStr.indexOf(this._aiUrl) < 0 && inputStr.indexOf(this._aiDeprecatedUrl) < 0) {
+            if (inputStr.indexOf(WebSnippet._aiUrl) < 0 && inputStr.indexOf(WebSnippet._aiDeprecatedUrl) < 0) {
                 return true;
             }
         }
@@ -211,7 +212,7 @@ class WebSnippet {
     /**
      * Inject Web snippet
      */
-    public static InjectWebSnippet(response: http.ServerResponse, input: string | Buffer, encodeType?: snippetInjectionHelper.contentEncodingMethod, bufferEncodeType?: string ): string | Buffer {
+    public InjectWebSnippet(response: http.ServerResponse, input: string | Buffer, encodeType?: snippetInjectionHelper.contentEncodingMethod, bufferEncodeType?: string ): string | Buffer {
         try {
             let isCompressedBuffer = !!encodeType;
             if (!isCompressedBuffer) {
@@ -251,19 +252,19 @@ class WebSnippet {
     // because reponse.write return boolean
     // and also this function do not support partial compression as well
     // need more investigation
-    private static _getInjectedCompressBuffer(response: http.ServerResponse, input: Buffer, encodeType: snippetInjectionHelper.contentEncodingMethod): Buffer {
+    private _getInjectedCompressBuffer(response: http.ServerResponse, input: Buffer, encodeType: snippetInjectionHelper.contentEncodingMethod): Buffer {
         switch (encodeType) {
             case snippetInjectionHelper.contentEncodingMethod.GZIP:
                 let gunzipBuffer = zlib.gunzipSync(input);
-                if (WebSnippet.ValidateInjection(response,gunzipBuffer)) {
-                    let injectedGunzipBuffer = WebSnippet.InjectWebSnippet(response, gunzipBuffer);
+                if (this.ValidateInjection(response,gunzipBuffer)) {
+                    let injectedGunzipBuffer = this.InjectWebSnippet(response, gunzipBuffer);
                     input = zlib.gzipSync(injectedGunzipBuffer);
                  }
                  break;
             case snippetInjectionHelper.contentEncodingMethod.DEFLATE:
                 let inflateBuffer = zlib.inflateSync(input);
-                if (WebSnippet.ValidateInjection(response,inflateBuffer)) {
-                    let injectedInflateBuffer = WebSnippet.InjectWebSnippet(response, inflateBuffer);
+                if (this.ValidateInjection(response,inflateBuffer)) {
+                    let injectedInflateBuffer = this.InjectWebSnippet(response, inflateBuffer);
                     input = zlib.deflateSync(injectedInflateBuffer);
                  }
                  break;
@@ -272,8 +273,8 @@ class WebSnippet {
                 let BrotliCompressSync = snippetInjectionHelper.getBrotliCompressSync(zlib);
                 if (BrotliDecompressSync && BrotliCompressSync) {
                     let decompressBuffer = BrotliDecompressSync(input);
-                    if (WebSnippet.ValidateInjection(response,decompressBuffer)) {
-                        let injectedDecompressBuffer = WebSnippet.InjectWebSnippet(response, decompressBuffer);
+                    if (this.ValidateInjection(response,decompressBuffer)) {
+                        let injectedDecompressBuffer = this.InjectWebSnippet(response, decompressBuffer);
                         input = BrotliCompressSync(injectedDecompressBuffer);
                      }
                      break;
