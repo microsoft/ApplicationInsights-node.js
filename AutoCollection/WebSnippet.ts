@@ -80,16 +80,16 @@ class WebSnippet {
                                     writeBufferType = b;
                                 }
                                 if (headers === null || headers === undefined) {
-                                    if (this.ValidateInjection(response, a)) {
-                                        arguments[0] = this.InjectWebSnippet(response, a, undefined, writeBufferType);
+                                    if (WebSnippet.INSTANCE.ValidateInjection(response, a)) {
+                                        arguments[0] = WebSnippet.INSTANCE.InjectWebSnippet(response, a, undefined, writeBufferType);
                                     }
                                 } else if (headers.length) {
                                     let encodeType = headers[0];
-                                    arguments[0] = this.InjectWebSnippet(response, a, encodeType);
+                                    arguments[0] = WebSnippet.INSTANCE.InjectWebSnippet(response, a, encodeType);
                                 }
                             }
                         } catch (err) {
-                            Logging.info("Inject snippet error: "+ err);
+                            Logging.warn("Inject snippet error: "+ err);
                         }
                         return originalResponseWrite.apply(response, arguments);
                     }
@@ -107,16 +107,16 @@ class WebSnippet {
                                         endBufferType = b;
                                     }
                                     if (headers === null || headers === undefined) {
-                                        if (this.ValidateInjection(response, a)) {
-                                            arguments[0] = this.InjectWebSnippet(response, a, undefined, endBufferType);
+                                        if (WebSnippet.INSTANCE.ValidateInjection(response, a)) {
+                                            arguments[0] = WebSnippet.INSTANCE.InjectWebSnippet(response, a, undefined, endBufferType);
                                         }
                                     } else if (headers.length) {
                                         let encodeType = headers[0];
-                                        arguments[0] = this.InjectWebSnippet(response, a, encodeType);
+                                        arguments[0] = WebSnippet.INSTANCE.InjectWebSnippet(response, a, encodeType);
                                     }
                                 }
                             } catch (err) {
-                                Logging.info("Inject snipet error: "+ err);
+                                Logging.warn("Inject snipet error: "+ err);
                             }
                         }
                         return originalResponseEnd.apply(response, arguments);
@@ -144,16 +144,16 @@ class WebSnippet {
                                     writeBufferType = b;
                                 }
                                 if (headers === null || headers === undefined) {
-                                    if (this.ValidateInjection(res, a)) {
+                                    if (WebSnippet.INSTANCE.ValidateInjection(res, a)) {
                                         arguments[0] = this.InjectWebSnippet(res, a, undefined, writeBufferType);
                                     }
                                 } else if (headers.length) {
                                     let encodeType = headers[0];
-                                    arguments[0] = this.InjectWebSnippet(res, a, encodeType);
+                                    arguments[0] = WebSnippet.INSTANCE.InjectWebSnippet(res, a, encodeType);
                                 }
                             }
                         } catch (err) {
-                            Logging.info("Inject snippet error: "+ err);
+                            Logging.warn("Inject snippet error: "+ err);
                         }
                         return originalHttpsResponseWrite.apply(res,arguments);
                     }
@@ -167,16 +167,16 @@ class WebSnippet {
                                     endBufferType = b;
                                 }
                                 if (headers === null || headers === undefined) {
-                                    if (this.ValidateInjection(res, a)) {
-                                        arguments[0] = this.InjectWebSnippet(res, a, undefined, endBufferType);
+                                    if (WebSnippet.INSTANCE.ValidateInjection(res, a)) {
+                                        arguments[0] = WebSnippet.INSTANCE.InjectWebSnippet(res, a, undefined, endBufferType);
                                     }
                                 } else if (headers.length) {
                                     let encodeType = headers[0];
-                                    arguments[0] = this.InjectWebSnippet(res, a, encodeType);
+                                    arguments[0] = WebSnippet.INSTANCE.InjectWebSnippet(res, a, encodeType);
                                 }
                             }
                         } catch (err) {
-                            Logging.info("Inject snippet error: "+ err);
+                            Logging.warn("Inject snippet error: "+ err);
                         }
                         return originalHttpsResponseEnd.apply(res,arguments);
 
@@ -242,7 +242,7 @@ class WebSnippet {
             }
         }
         catch (ex) {
-            Logging.info("Failed to inject web snippet and change content-lenght headers. Exception:" + ex);
+            Logging.warn("Failed to inject web snippet and change content-lenght headers. Exception:" + ex);
         }
         return input;
     }
