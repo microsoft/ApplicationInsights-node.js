@@ -116,7 +116,7 @@ export default async function contextPropagatingHttpTrigger(context, req) {
         const startTime = Date.now(); // Start trackRequest timer
 
         // Run the Function
-        await httpTrigger(context, req);
+        const result = await httpTrigger(context, req);
 
         // Track Request on completion
         appInsights.defaultClient.trackRequest({
@@ -124,10 +124,13 @@ export default async function contextPropagatingHttpTrigger(context, req) {
             resultCode: context.res.status,
             success: true,
             url: req.url,
+            time: new Date(startTime),
             duration: Date.now() - startTime,
             id: correlationContext.operation.parentId,
         });
         appInsights.defaultClient.flush();
+
+        return result;
     }, correlationContext)();
 };
 ```
@@ -166,7 +169,7 @@ export default async function contextPropagatingHttpTrigger(context, req) {
         const startTime = Date.now(); // Start trackRequest timer
 
         // Run the Function
-        await httpTrigger(context, req);
+        const result = await httpTrigger(context, req);
 
         // Track Request on completion
         appInsights.defaultClient.trackRequest({
@@ -174,10 +177,13 @@ export default async function contextPropagatingHttpTrigger(context, req) {
             resultCode: context.res.status,
             success: true,
             url: req.url,
+            time: new Date(startTime),
             duration: Date.now() - startTime,
             id: correlationContext.operation.parentId,
         });
         appInsights.defaultClient.flush();
+
+        return result;
     }, correlationContext)();
 };
 ```
