@@ -4,6 +4,7 @@ import AutoCollectExceptions = require("./AutoCollection/Exceptions");
 import AutoCollectPerformance = require("./AutoCollection/Performance");
 import AutoCollecPreAggregatedMetrics = require("./AutoCollection/PreAggregatedMetrics");
 import HeartBeat = require("./AutoCollection/HeartBeat");
+import WebSnippet = require("./AutoCollection/WebSnippet");
 import AutoCollectHttpDependencies = require("./AutoCollection/HttpDependencies");
 import AutoCollectHttpRequests = require("./AutoCollection/HttpRequests");
 import CorrelationIdManager = require("./Library/CorrelationIdManager");
@@ -49,6 +50,7 @@ let _forceClsHooked: boolean;
 let _isSendingLiveMetrics = defaultConfig.isSendingLiveMetrics(); // Off by default
 let _isNativePerformance = defaultConfig.isNativePerformance();
 let _disabledExtendedMetrics: IDisabledExtendedMetrics;
+let _isSnippetInjection = defaultConfig.isSnippetInjection(); // default to false
 
 function _getDefaultAutoCollectConfig() {
     return {
@@ -63,7 +65,8 @@ function _getDefaultAutoCollectConfig() {
         isDiskRetry: () => true,
         isCorrelating: () => true,
         isSendingLiveMetrics: () => false, // Off by default
-        isNativePerformance: () => true
+        isNativePerformance: () => true,
+        isSnippetInjection: () => false
     }
 }
 
@@ -75,6 +78,7 @@ let _exceptions: AutoCollectExceptions;
 let _performance: AutoCollectPerformance;
 let _preAggregatedMetrics: AutoCollecPreAggregatedMetrics;
 let _heartbeat: HeartBeat;
+let _webSnippet: WebSnippet;
 let _nativePerformance: AutoCollectNativePerformance;
 let _serverRequests: AutoCollectHttpRequests;
 let _clientRequests: AutoCollectHttpDependencies;
@@ -108,6 +112,7 @@ export function setup(setupString?: string) {
         _performance = new AutoCollectPerformance(defaultClient);
         _preAggregatedMetrics = new AutoCollecPreAggregatedMetrics(defaultClient);
         _heartbeat = new HeartBeat(defaultClient);
+        _webSnippet = new WebSnippet(defaultClient);
         _serverRequests = new AutoCollectHttpRequests(defaultClient);
         _clientRequests = new AutoCollectHttpDependencies(defaultClient);
         if (!_nativePerformance) {
@@ -142,6 +147,7 @@ export function start() {
         _serverRequests.useAutoCorrelation(_isCorrelating, _forceClsHooked);
         _serverRequests.enable(_isRequests);
         _clientRequests.enable(_isDependencies);
+        _webSnippet.enable(_isSnippetInjection);
         if (liveMetricsClient && _isSendingLiveMetrics) {
             liveMetricsClient.enable(_isSendingLiveMetrics);
         }
@@ -163,9 +169,11 @@ function _initializeConfig() {
     _isDependencies = defaultClient.config.enableAutoDependencyCorrelation !== undefined ? defaultClient.config.enableAutoDependencyCorrelation : _isDependencies;
     _isCorrelating = defaultClient.config.enableAutoDependencyCorrelation !== undefined ? defaultClient.config.enableAutoDependencyCorrelation : _isCorrelating;
     _forceClsHooked = defaultClient.config.enableUseAsyncHooks !== undefined ? defaultClient.config.enableUseAsyncHooks : _forceClsHooked;
+    _isSnippetInjection = defaultClient.config.enableAutoWebSnippetInjection !== undefined ? defaultClient.config.enableAutoWebSnippetInjection : _isSnippetInjection;
     const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(defaultClient.config.enableAutoCollectExtendedMetrics, defaultClient.config);
     _isNativePerformance = extendedMetricsConfig.isEnabled;
     _disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
+    
 }
 
 /**
@@ -308,6 +316,20 @@ export class Configuration {
     }
 
     /**
+     * Sets the state of Web snippet injection
+     * @param value if true Web snippet will be tried to be injected in server response
+     * @returns {Configuration} this class
+     */
+    public static setWebSnippetInjection(value: boolean) {
+        _isSnippetInjection = value;
+        if (_isStarted) {
+            _webSnippet.enable(value);
+        }
+
+        return Configuration;
+    }
+
+    /**
      * Sets the state of request tracking (enabled by default)
      * @param value if true requests will be sent to Application Insights
      * @returns {Configuration} this class
@@ -430,6 +452,9 @@ export function dispose() {
     }
     if (_heartbeat) {
         _heartbeat.dispose();
+    }
+    if (_webSnippet) {
+        _webSnippet.dispose();
     }
     if (_nativePerformance) {
         _nativePerformance.dispose();

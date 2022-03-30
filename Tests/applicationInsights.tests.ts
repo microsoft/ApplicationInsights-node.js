@@ -22,12 +22,14 @@ describe("ApplicationInsights", () => {
         var Performance = require("../AutoCollection/Performance");
         var HttpRequests = require("../AutoCollection/HttpRequests");
         var HttpDependencies = require("../AutoCollection/HttpDependencies");
+        var WebSnippet = require("../AutoCollection/WebSnippet");
         beforeEach(() => {
             Console.INSTANCE = undefined;
             Exceptions.INSTANCE = undefined;
             Performance.INSTANCE = undefined;
             HttpRequests.INSTANCE = undefined;
             HttpDependencies.INSTANCE = undefined;
+            WebSnippet.INSTANCE= undefined;
         });
 
         it("should not warn if setup is called once", () => {
@@ -64,6 +66,7 @@ describe("ApplicationInsights", () => {
         var Performance = require("../AutoCollection/Performance");
         var HttpRequests = require("../AutoCollection/HttpRequests");
         var HttpDependencies = require("../AutoCollection/HttpDependencies");
+        var WebSnippet = require("../AutoCollection/WebSnippet");
 
         beforeEach(() => {
             Console.INSTANCE = undefined;
@@ -71,6 +74,7 @@ describe("ApplicationInsights", () => {
             Performance.INSTANCE = undefined;
             HttpRequests.INSTANCE = undefined;
             HttpDependencies.INSTANCE = undefined;
+            WebSnippet.INSTANCE= undefined;
         });
 
         afterEach(() => AppInsights.defaultClient = undefined);
@@ -133,6 +137,7 @@ describe("ApplicationInsights", () => {
         var Performance = require("../AutoCollection/Performance");
         var HttpRequests = require("../AutoCollection/HttpRequests");
         var HttpDependencies = require("../AutoCollection/HttpDependencies");
+        var WebSnippet = require("../AutoCollection/WebSnippet");
 
         beforeEach(() => {
             AppInsights.defaultClient = undefined;
@@ -141,6 +146,7 @@ describe("ApplicationInsights", () => {
             Performance.INSTANCE = undefined;
             HttpRequests.INSTANCE = undefined;
             HttpDependencies.INSTANCE = undefined;
+            WebSnippet.INSTANCE = undefined;
         });
 
         it("auto-collection is initialized by default", () => {
@@ -161,6 +167,7 @@ describe("ApplicationInsights", () => {
                 .setAutoCollectRequests(false)
                 .setAutoCollectDependencies(false)
                 .setAutoDependencyCorrelation(false)
+                .setWebSnippetInjection(false)
                 .start();
 
             assert.ok(!Console.INSTANCE.isInitialized());
@@ -169,6 +176,7 @@ describe("ApplicationInsights", () => {
             assert.ok(!HttpRequests.INSTANCE.isInitialized());
             assert.ok(!HttpRequests.INSTANCE.isAutoCorrelating());
             assert.ok(!HttpDependencies.INSTANCE.isInitialized());
+            assert.ok(!WebSnippet.INSTANCE.isInitialized());
         });
     });
 

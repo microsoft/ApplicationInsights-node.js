@@ -134,6 +134,11 @@ export interface IBaseConfig {
     * Live Metrics custom host
     */
     quickPulseHost: string;
+    /**
+     * Enable web snippet auto html injection, default to false
+     */
+     enableAutoWebSnippetInjection: boolean;
+    
 }
 
 export interface IEnvironmentConfig {
