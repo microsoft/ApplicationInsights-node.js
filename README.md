@@ -208,6 +208,7 @@ appInsights.setup("<YOUR_CONNECTION_STRING>")
     .setAutoCollectHeartbeat(false)
     .setInternalLogging(false, true)
     .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C)
+    .enableAutoWebSnippetInjection(false)
     .start();
 ```
 
