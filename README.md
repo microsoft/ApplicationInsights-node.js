@@ -265,8 +265,7 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | httpAgent                       | An http.Agent to use for SDK HTTP traffic (Optional, Default undefined)                                    |
 | httpsAgent                      | An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined)
 | aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Credential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes)
-| enableAutoWebSnippetInjection(Preview)| Sets the state of automatic web snippet Injection (disabled by default). If true, web snippet will be injected into valid node server http response automatically
-|                            |
+| enableAutoWebSnippetInjection(Preview)| Sets the state of automatic web snippet injection (disabled by default). If true, web snippet will be injected into valid node server http response automatically |                            |
 
 [Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
 
