@@ -263,8 +263,10 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | noPatchModules                | Disable individual monkey-patches. Set `noPatchModules` to a comma separated list of packages to disable. e.g. `"noPatchModules": "console,redis"` to avoid patching the console and redis packages. The following modules are available: `azuresdk, bunyan, console, mongodb, mongodb-core, mysql, redis, winston, pg`, and `pg-pool`. Visit the [diagnostic-channel-publishers' README](https://github.com/microsoft/node-diagnostic-channel/blob/master/src/diagnostic-channel-publishers/README.md) for information about exactly which versions of these packages are patched. |
 | noHttpAgentKeepAlive          | HTTPS without a passed in agent |
 | httpAgent                       | An http.Agent to use for SDK HTTP traffic (Optional, Default undefined)                                    |
-| httpsAgent                      | An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined)       
-| aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Credential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes) |                            |
+| httpsAgent                      | An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined)
+| aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Credential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes)
+| enableAutoWebSnippetInjection(Preview)| Sets the state of automatic web snippet Injection (disabled by default). If true, web snippet will be injected into valid node server http response automatically
+|                            |
 
 [Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
 
@@ -327,6 +329,18 @@ appInsights.defaultClient.setAutoPopulateAzureProperties(true);
 appInsights.start();
 ```
 
+### Automatic web snippet injection[Preview]
+
+ Automatic web snippet injection is currently in **Preview**. For node server with configuration `enableAutoWebSnippetInjection` set to `true` or environment variable `APPLICATIONINSIGHTS_WEB_SNIPPET_ENABLED = true`, web snippet will be injected into node server response when all of the following requirements are met:
+
+- Response has status code `200`.
+- Response method is `GET`.
+- Sever response has `Content-Type` html.
+- Server response must have both `<head>` and `</head>` Tags.
+- If response is compressed, it must have only one `Content-Encoding` type, and encoding type must be one of `gzip`, `br` or `deflate`.
+- Response does not contain current /backup snippet CDN endpoints.  (current and backup snippet CDN endpoints [here](https://github.com/microsoft/ApplicationInsights-JS#active-public-cdn-endpoints))
+
+**Note:** Snippet auto injection may slow down server response time, especially when response size is large or response is compressed. For the case in which some middle layers are applied, it may result in auto injection not working and original response will be returned.
 
 ### Automatic third-party instrumentation
 
