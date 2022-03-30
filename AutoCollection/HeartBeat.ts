@@ -1,12 +1,14 @@
 import * as  os from "os";
-
+import { ObservableGauge, ValueType } from "@opentelemetry/api-metrics";
 import { AzureVirtualMachine } from "../Library/AzureVirtualMachine";
 import { MetricHandler } from "../Library/Handlers/MetricHandler";
 import * as  Constants from "../Declarations/Constants";
 import { Config } from "../Library/Configuration/Config";
 import { Context } from "../Library/Context";
 
+
 export class HeartBeat {
+    private _heartBeatGauge: ObservableGauge;
     private _collectionInterval: number = 900000;
     private _config: Config;
     private _handler: MetricHandler;

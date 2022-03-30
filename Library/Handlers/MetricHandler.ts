@@ -12,7 +12,6 @@ import { HeartBeat } from "../../AutoCollection/HeartBeat";
 import { FlushOptions } from "../../Declarations/FlushOptions";
 import { AutoCollectNativePerformance } from "../../AutoCollection/NativePerformance";
 import { IDisabledExtendedMetrics } from "../../Declarations/Interfaces";
-import * as Contracts from "../../Declarations/Contracts";
 import {
     IMetricDependencyDimensions,
     IMetricExceptionDimensions,
@@ -65,7 +64,13 @@ export class MetricHandler {
     }
 
     public flush(options?: FlushOptions) {
-        this._batchProcessor.triggerSend(options.isAppCrashing);
+        if (options.isAppCrashing) {
+            this.meterProvider.shutdown();
+        }
+        else {
+            // TODO: Not available in current release
+            //this.meterProvider.forceFlush();
+        }
     }
 
     public async trackMetric(telemetry: Contracts.MetricTelemetry): Promise<void> {

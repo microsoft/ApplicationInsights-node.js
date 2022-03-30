@@ -23,7 +23,6 @@ export class BaseExporter {
     private readonly _persister: IPersistentStorage;
     private _numConsecutiveRedirects: number;
     private _retryTimer: NodeJS.Timer | null;
-
     /**
    * Initializes a new instance of the AzureMonitorTraceExporter class.
    * @param AzureExporterConfig - Exporter configuration.
