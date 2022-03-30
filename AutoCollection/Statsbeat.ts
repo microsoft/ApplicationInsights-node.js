@@ -1,15 +1,14 @@
 import * as os from "os";
 
-import { EnvelopeFactory } from "../Library/EnvelopeFactory";
 import { Logger } from "../Library/Logging/Logger";
 import * as  Constants from "../Declarations/Constants";
-import * as Contracts from "../Declarations/Contracts";
 import { AzureVirtualMachine } from "../Library/AzureVirtualMachine";
 import { Config } from "../Library/Configuration/Config";
 import { Context } from "../Library/Context";
 import { NetworkStatsbeat } from "./NetworkStatsbeat";
 import { Util } from "../Library/Util/Util";
-import { MetricExporter } from "../Library/Exporters";
+import { MetricHandler } from "../Library/Handlers";
+import { MetricTelemetry, MetricPointTelemetry } from "../Declarations/Contracts";
 
 const STATSBEAT_LANGUAGE = "node";
 
@@ -22,7 +21,7 @@ export class Statsbeat {
     private static TAG = "Statsbeat";
 
 
-    private _metricExporter: MetricExporter;
+    private _metricHandler: MetricHandler;
     private _networkStatsbeatCollection: Array<NetworkStatsbeat>;
     private _context: Context;
     private _handle: NodeJS.Timer | null;
@@ -51,10 +50,14 @@ export class Statsbeat {
         this._statbeatMetrics = [];
         this._networkStatsbeatCollection = [];
         this._config = config;
-        this._context = context || new Context();
+        this._context = context || new Context(null);
         this._statsbeatConfig = new Config(Statsbeat.CONNECTION_STRING);
         this._statsbeatConfig.samplingPercentage = 100; // Do not sample
-        this._metricExporter = new MetricExporter(this._statsbeatConfig);
+        this._statsbeatConfig.enableAutoCollectHeartbeat = false;
+        this._statsbeatConfig.enableAutoCollectPerformance = false;
+        this._statsbeatConfig.enableAutoCollectPreAggregatedMetrics = false;
+        this._statsbeatConfig.enableAutoCollectConsole = false;
+        this._metricHandler = new MetricHandler(this._statsbeatConfig, this._context);
     }
 
     public enable(isEnabled: boolean) {
@@ -270,20 +273,14 @@ export class Statsbeat {
     }
 
     private async _sendStatsbeats() {
-        let envelopes: Array<Contracts.Envelope> = [];
         for (let i = 0; i < this._statbeatMetrics.length; i++) {
-            let statsbeat: Contracts.MetricTelemetry = {
+            let statsbeat: MetricPointTelemetry = {
                 name: this._statbeatMetrics[i].name,
                 value: this._statbeatMetrics[i].value,
-                properties: this._statbeatMetrics[i].properties
             };
-            let envelope = EnvelopeFactory.createEnvelope(statsbeat, Contracts.TelemetryType.Metric, null, this._context, this._statsbeatConfig);
-            envelope.name = Constants.StatsbeatTelemetryName;
-            envelopes.push(envelope);
+            let metricTelemetry: MetricTelemetry = { metrics: [statsbeat], properties: this._statbeatMetrics[i].properties };
+            this._metricHandler.trackStatsbeatMetric(metricTelemetry);
         }
-        this._statbeatMetrics = [];
-        // TODO: Use MetricHandler?
-        //await this._metricExporter.export(envelopes, () => { });
     }
 
     private _getCustomProperties() {

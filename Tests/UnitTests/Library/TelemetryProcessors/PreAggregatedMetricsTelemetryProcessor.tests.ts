@@ -3,27 +3,24 @@ import * as sinon from "sinon";
 import { preAggregatedMetricsTelemetryProcessor } from "../../../../Library/TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor";
 import { AutoCollectPreAggregatedMetrics } from "../../../../AutoCollection/PreAggregatedMetrics";
 import { Contracts, TelemetryClient } from "../../../../applicationinsights";
+import { TelemetryItem as Envelope, TelemetryExceptionData, MessageData, RemoteDependencyData, RequestData } from "../../../../Declarations/Generated";
 
 describe("TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor", () => {
     var sandbox: sinon.SinonSandbox;
-    let envelope: Contracts.Envelope;
+    let envelope: Envelope;
     let client: TelemetryClient;
-    let metrics: AutoCollectPreAggregatedMetrics;
 
     before(() => {
         sandbox = sinon.sandbox.create();
         var ikey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
         envelope = {
-            ver: 2,
             name: "name",
             data: {
                 baseType: "SomeData"
             },
-            iKey: ikey,
+            instrumentationKey: ikey,
             sampleRate: 100,
-            seq: "",
-            time: "",
-            tags: []
+            time: new Date()
         };
         client = new TelemetryClient(ikey);
     });
@@ -35,10 +32,8 @@ describe("TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor", () => {
     describe("#preAggregatedMetricsTelemetryProcessor()", () => {
         it("Exception telemetry", () => {
             var pgSpy = sandbox.spy(client.metricHandler, "countPreAggregatedException");
-            var exception = new Contracts.ExceptionData();
-            var data = new Contracts.Data<Contracts.ExceptionData>();
-            data.baseData = exception;
-            envelope.data = data;
+            var data: TelemetryExceptionData = { exceptions: [] };
+            envelope.data.baseData = data;
             envelope.data.baseType = "ExceptionData";
             var res = preAggregatedMetricsTelemetryProcessor(envelope, client);
             var testEnv = <any>envelope;
@@ -48,10 +43,8 @@ describe("TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor", () => {
 
         it("Trace telemetry", () => {
             var pgSpy = sandbox.spy(client.metricHandler, "countPreAggregatedTrace");
-            var trace: Contracts.TraceTelemetry = { message: "" };
-            var data = new Contracts.Data<Contracts.TraceTelemetry>();
-            data.baseData = trace;
-            envelope.data = data;
+            var data: MessageData = { message: "" };
+            envelope.data.baseData = data;
             envelope.data.baseType = "MessageData";
             var res = preAggregatedMetricsTelemetryProcessor(envelope, client);
             var testEnv = <any>envelope;
@@ -61,10 +54,8 @@ describe("TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor", () => {
 
         it("Dependency telemetry", () => {
             var pgSpy = sandbox.spy(client.metricHandler, "countPreAggregatedDependency");
-            var dependency: Contracts.DependencyTelemetry = { name: "", dependencyTypeName: "", data: "", duration: 1, resultCode: "", success: false };
-            var data = new Contracts.Data<Contracts.DependencyTelemetry>();
-            data.baseData = dependency;
-            envelope.data = data;
+            var data: RemoteDependencyData = { name: "", dependencyTypeName: "", data: "", duration: "1", resultCode: "", success: false };
+            envelope.data.baseData = data;
             envelope.data.baseType = "RemoteDependencyData";
             var res = preAggregatedMetricsTelemetryProcessor(envelope, client);
             var testEnv = <any>envelope;
@@ -74,10 +65,8 @@ describe("TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor", () => {
 
         it("Request telemetry", () => {
             var pgSpy = sandbox.spy(client.metricHandler, "countPreAggregatedRequest");
-            var request: Contracts.RequestTelemetry = { name: "", url: "", duration: 1, resultCode: "", success: false };
-            var data = new Contracts.Data<Contracts.RequestTelemetry>();
-            data.baseData = request;
-            envelope.data = data;
+            var data: RequestData = { id: "", name: "", duration: "1", responseCode: "", success: false };
+            envelope.data.baseData = data;
             envelope.data.baseType = "RequestData";
             var res = preAggregatedMetricsTelemetryProcessor(envelope, client);
             var testEnv = <any>envelope;

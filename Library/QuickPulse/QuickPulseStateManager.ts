@@ -8,6 +8,7 @@ import { QuickPulseSender } from "./QuickPulseSender";
 import { Context } from "../Context";
 import * as Constants from "../../Declarations/Constants";
 import * as Contracts from "../../Declarations/Contracts";
+import { TelemetryItem as Envelope } from "../../Declarations/Generated";
 
 
 /** State Container for sending to the QuickPulse Service */
@@ -50,17 +51,10 @@ export class QuickPulseStateManager {
     }
 
     /**
-     * Override of TelemetryClient.trackMetric
-     */
-    public trackMetric(telemetry: Contracts.MetricTelemetry): void {
-        this._addMetric(telemetry);
-    }
-
-    /**
      * Add a document to the current buffer
      * @param envelope
      */
-    public addDocument(envelope: Contracts.Envelope): void {
+    public addDocument(envelope: Envelope): void {
         // Only add documents in buffer when Live Metrics is collecting data
         if (this._isCollectingData) {
             const document = QuickPulseEnvelopeFactory.telemetryEnvelopeToQuickPulseDocument(envelope);
@@ -99,7 +93,7 @@ export class QuickPulseStateManager {
      * Add the metric to this buffer. If same metric already exists in this buffer, add weight to it
      * @param telemetry
      */
-    private _addMetric(telemetry: Contracts.MetricTelemetry) {
+    private _addMetric(telemetry: Contracts.MetricPointTelemetry) {
         const { value } = telemetry;
         const count = telemetry.count || 1;
 

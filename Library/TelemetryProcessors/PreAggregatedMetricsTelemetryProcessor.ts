@@ -1,4 +1,3 @@
-import * as Contracts from "../../Declarations/Contracts";
 import * as TelemetryType from "../../Declarations/Contracts";
 import {
     IMetricDependencyDimensions,
@@ -7,60 +6,61 @@ import {
     IMetricTraceDimensions
 } from "../../Declarations/Metrics/AggregatedMetricDimensions";
 import { TelemetryClient } from "../../applicationinsights";
+import { KnownContextTagKeys, TelemetryItem as Envelope } from "../../Declarations/Generated";
 
-export function preAggregatedMetricsTelemetryProcessor(envelope: Contracts.EnvelopeTelemetry, client: TelemetryClient): boolean {
+export function preAggregatedMetricsTelemetryProcessor(envelope: Envelope, client: TelemetryClient): boolean {
     // Increment rate counters
     switch (envelope.data.baseType) {
         case TelemetryType.TelemetryTypeString.Exception:
-            const exceptionData: Contracts.ExceptionData = (envelope.data as any).baseData;
+            const exceptionData = (envelope.data as any).baseData;
             exceptionData.properties = {
                 ...exceptionData.properties,
                 "_MS.ProcessedByMetricExtractors": "(Name:'Exceptions', Ver:'1.1')"
             }
             let exceptionDimensions: IMetricExceptionDimensions = {
-                cloudRoleInstance: envelope.tags[client.context.keys.cloudRoleInstance],
-                cloudRoleName: envelope.tags[client.context.keys.cloudRole]
+                cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
+                cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole]
             };
             client.metricHandler.countPreAggregatedException(exceptionDimensions);
             break;
         case TelemetryType.TelemetryTypeString.Trace:
-            const traceData: Contracts.TraceTelemetry = (envelope.data as any).baseData;
+            const traceData = (envelope.data as any).baseData;
             traceData.properties = {
                 ...traceData.properties,
                 "_MS.ProcessedByMetricExtractors": "(Name:'Traces', Ver:'1.1')"
             }
             let traceDimensions: IMetricTraceDimensions = {
-                cloudRoleInstance: envelope.tags[client.context.keys.cloudRoleInstance],
-                cloudRoleName: envelope.tags[client.context.keys.cloudRole],
-                traceSeverityLevel: Contracts.SeverityLevel[traceData.severity]
+                cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
+                cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole],
+                traceSeverityLevel: traceData.severity
             };
             client.metricHandler.countPreAggregatedTrace(traceDimensions);
             break;
         case TelemetryType.TelemetryTypeString.Request:
-            const requestData: Contracts.RequestData = (envelope.data as any).baseData;
+            const requestData = (envelope.data as any).baseData;
             requestData.properties = {
                 ...requestData.properties,
                 "_MS.ProcessedByMetricExtractors": "(Name:'Requests', Ver:'1.1')"
             }
             let requestDimensions: IMetricRequestDimensions = {
-                cloudRoleInstance: envelope.tags[client.context.keys.cloudRoleInstance],
-                cloudRoleName: envelope.tags[client.context.keys.cloudRole],
-                operationSynthetic: envelope.tags[client.context.keys.operationSyntheticSource],
+                cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
+                cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole],
+                operationSynthetic: envelope.tags[KnownContextTagKeys.AiOperationSyntheticSource],
                 requestSuccess: requestData.success,
                 requestResultCode: requestData.responseCode
             };
             client.metricHandler.countPreAggregatedRequest(requestData.duration, requestDimensions);
             break;
         case TelemetryType.TelemetryTypeString.Dependency:
-            const remoteDependencyData: Contracts.RemoteDependencyData = (envelope.data as any).baseData;
+            const remoteDependencyData = (envelope.data as any).baseData;
             remoteDependencyData.properties = {
                 ...remoteDependencyData.properties,
                 "_MS.ProcessedByMetricExtractors": "(Name:'Dependencies', Ver:'1.1')"
             }
             let dependencyDimensions: IMetricDependencyDimensions = {
-                cloudRoleInstance: envelope.tags[client.context.keys.cloudRoleInstance],
-                cloudRoleName: envelope.tags[client.context.keys.cloudRole],
-                operationSynthetic: envelope.tags[client.context.keys.operationSyntheticSource],
+                cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
+                cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole],
+                operationSynthetic: envelope.tags[KnownContextTagKeys.AiOperationSyntheticSource],
                 dependencySuccess: remoteDependencyData.success,
                 dependencyType: remoteDependencyData.type,
                 dependencyTarget: remoteDependencyData.target,

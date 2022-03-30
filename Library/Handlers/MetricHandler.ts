@@ -1,10 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { Meter, MeterConfig, MeterProvider } from "@opentelemetry/sdk-metrics-base";
 import { Resource } from "@opentelemetry/resources";
 
-import { BatchProcessor } from "./BatchProcessor";
-import { MetricExporter } from "../Exporters";
+import { BatchProcessor } from "./Shared/BatchProcessor";
+import { AzureMonitorMetricExporter } from "../Exporters";
 import { TelemetryItem as Envelope } from "../../Declarations/Generated";
 import { Config } from "../Configuration/Config";
 import { AutoCollectPerformance } from "../../AutoCollection/Performance";
@@ -21,10 +20,11 @@ import {
     IMetricTraceDimensions
 } from "../../Declarations/Metrics/AggregatedMetricDimensions";
 import { MetricsData } from "../../Declarations/Generated";
+import { Context } from "../Context";
+import { ExportResult } from "@opentelemetry/core";
 
 
 export class MetricHandler {
-    public meter: Meter;
     public isPerformance = true;
     public isPreAggregatedMetrics = true;
     public isHeartBeat = false;
@@ -32,37 +32,28 @@ export class MetricHandler {
     public isDependencies = true;
     public isNativePerformance = true;
     public disabledExtendedMetrics: IDisabledExtendedMetrics;
-    public config: Config;
+    private _config: Config;
+    private _context: Context;
     private _isStarted = false;
     private _batchProcessor: BatchProcessor;
-    private _exporter: MetricExporter;
+    private _exporter: AzureMonitorMetricExporter;
     private _performance: AutoCollectPerformance;
     private _preAggregatedMetrics: AutoCollectPreAggregatedMetrics;
     private _heartbeat: HeartBeat;
     private _nativePerformance: AutoCollectNativePerformance;
 
-    constructor(config: Config, resource: Resource) {
-        this.config = config;
-        this._exporter = new MetricExporter(config);
-        this._batchProcessor = new BatchProcessor(config, this._exporter);
+    constructor(config: Config, context?: Context) {
+        this._config = config;
+        this._context = context;
+        this._exporter = new AzureMonitorMetricExporter(this._config, this._context);
+        this._batchProcessor = new BatchProcessor(this._config, this._exporter);
         this._initializeFlagsFromConfig();
         this._performance = new AutoCollectPerformance(this);
         this._preAggregatedMetrics = new AutoCollectPreAggregatedMetrics(this);
-        this._heartbeat = new HeartBeat(this);
+        this._heartbeat = new HeartBeat(this, this._config);
         if (!this._nativePerformance) {
             this._nativePerformance = new AutoCollectNativePerformance(this);
         }
-        let meterConfig: MeterConfig = {
-            exporter: this._exporter,
-            interval: 1234,
-            resource: resource,
-            processor:
-        };
-        this.meter = new MeterProvider({
-            exporter,
-            interval: 2000,
-        }).getMeter('example-meter');
-
     }
 
     public start() {
@@ -77,13 +68,21 @@ export class MetricHandler {
         this._batchProcessor.triggerSend(options.isAppCrashing);
     }
 
-    public trackMetric(telemetry: Contracts.MetricTelemetry): void {
+    public async trackMetric(telemetry: Contracts.MetricTelemetry): Promise<void> {
+        await this._exporter.export([telemetry], (result: ExportResult) => {
+            // TODO: Add error logs
+        });
+    }
 
+    public async trackStatsbeatMetric(telemetry: Contracts.MetricTelemetry): Promise<void> {
+        await this._exporter.exportStatsbeat([telemetry], (result: ExportResult) => {
+            // TODO: Add error logs
+        });
     }
 
     public setAutoCollectPerformance(value: boolean, collectExtendedMetrics: boolean | IDisabledExtendedMetrics = true) {
         this.isPerformance = value;
-        const extendedMetricsConfig = this._nativePerformance.parseEnabled(collectExtendedMetrics, this.config);
+        const extendedMetricsConfig = this._nativePerformance.parseEnabled(collectExtendedMetrics, this._config);
         this.isNativePerformance = extendedMetricsConfig.isEnabled;
         this.disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
         if (this._isStarted) {
@@ -146,23 +145,9 @@ export class MetricHandler {
         this._nativePerformance = null;
     }
 
-    /**
-     * Log a user action or other occurrence.
-     * @param telemetry      Object encapsulating tracking options
-     */
-    public track(telemetry: Envelope): void {
-
-        // TODO: Telemetry processor, can we still support them in some cases?
-        // TODO: Sampling was done through telemetryProcessor here
-        // TODO: All telemetry processors including Azure property where done here as well
-        // TODO: Perf and Pre Aggregated metrics were calculated here
-
-        this._batchProcessor.send(telemetry);
-    }
-
     private _initializeFlagsFromConfig() {
-        this.isPerformance = this.config.enableAutoCollectPerformance !== undefined ? this.config.enableAutoCollectPerformance : this.isPerformance;
-        this.isPreAggregatedMetrics = this.config.enableAutoCollectPreAggregatedMetrics !== undefined ? this.config.enableAutoCollectPreAggregatedMetrics : this.isPreAggregatedMetrics;
-        this.isHeartBeat = this.config.enableAutoCollectHeartbeat !== undefined ? this.config.enableAutoCollectHeartbeat : this.isHeartBeat;
+        this.isPerformance = this._config.enableAutoCollectPerformance !== undefined ? this._config.enableAutoCollectPerformance : this.isPerformance;
+        this.isPreAggregatedMetrics = this._config.enableAutoCollectPreAggregatedMetrics !== undefined ? this._config.enableAutoCollectPreAggregatedMetrics : this.isPreAggregatedMetrics;
+        this.isHeartBeat = this._config.enableAutoCollectHeartbeat !== undefined ? this._config.enableAutoCollectHeartbeat : this.isHeartBeat;
     }
 }

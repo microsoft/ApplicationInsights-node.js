@@ -1,6 +1,3 @@
-import { Resource } from "@opentelemetry/resources";
-import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
-
 import { Config } from "./Configuration/Config";
 import { Context } from "./Context";
 import * as  Contracts from "../Declarations/Contracts";
@@ -9,8 +6,8 @@ import { Statsbeat } from "../AutoCollection/Statsbeat";
 import { Util } from "./Util/Util";
 import { Logger } from "./Logging/Logger";
 import { FlushOptions } from "../Declarations/FlushOptions";
+import { TelemetryItem as Envelope } from "../Declarations/Generated";
 import { QuickPulseStateManager } from "./QuickPulse/QuickPulseStateManager";
-import { Tags } from "../Declarations/Contracts";
 import { LogHandler, MetricHandler, TraceHandler } from "./Handlers";
 
 /**
@@ -19,9 +16,8 @@ import { LogHandler, MetricHandler, TraceHandler } from "./Handlers";
  */
 export class TelemetryClient {
     private static TAG = "TelemetryClient";
-    private _telemetryProcessors: { (envelope: Contracts.EnvelopeTelemetry, contextObjects: { [name: string]: any; }): boolean; }[] = [];
+    private _telemetryProcessors: { (envelope: Envelope, contextObjects: { [name: string]: any; }): boolean; }[] = [];
     private _statsbeat: Statsbeat;
-    private _resource: Resource;
 
     public traceHandler: TraceHandler;
     public metricHandler: MetricHandler;
@@ -40,13 +36,12 @@ export class TelemetryClient {
         this.config = config;
         this.context = new Context();
         this.commonProperties = {};
-        this._resource = Resource.EMPTY;
         if (!this.config.disableStatsbeat) {
             this._statsbeat = new Statsbeat(this.config, this.context);
             this._statsbeat.enable(true);
         }
-        this.traceHandler = new TraceHandler(this.config, this._resource);
-        this.metricHandler = new MetricHandler(this.config);
+        this.traceHandler = new TraceHandler(this.config, this.context);
+        this.metricHandler = new MetricHandler(this.config, this.context);
         this.logHandler = new LogHandler(this.config, this._statsbeat);
     }
 
@@ -147,16 +142,17 @@ export class TelemetryClient {
       * TODO:// Check if possible to remove attributes from Resource
      */
     public setAutoPopulateAzureProperties() {
-        if (process.env.WEBSITE_SITE_NAME) { // Azure Web apps and Functions
-            this._resource.merge(new Resource({
-                [SemanticResourceAttributes.SERVICE_NAME]: process.env.WEBSITE_SITE_NAME
-            }));
-        }
-        if (process.env.WEBSITE_INSTANCE_ID) {
-            this._resource.merge(new Resource({
-                [SemanticResourceAttributes.SERVICE_INSTANCE_ID]: process.env.WEBSITE_INSTANCE_ID
-            }));
-        }
+        //TODO: Use context to set these
+        // if (process.env.WEBSITE_SITE_NAME) { // Azure Web apps and Functions
+        //     this._resource.merge(new Resource({
+        //         [SemanticResourceAttributes.SERVICE_NAME]: process.env.WEBSITE_SITE_NAME
+        //     }));
+        // }
+        // if (process.env.WEBSITE_INSTANCE_ID) {
+        //     this._resource.merge(new Resource({
+        //         [SemanticResourceAttributes.SERVICE_INSTANCE_ID]: process.env.WEBSITE_INSTANCE_ID
+        //     }));
+        // }
 
     }
 
@@ -170,7 +166,7 @@ export class TelemetryClient {
      *
      * @param telemetryProcessor function, takes Envelope, and optional context object and returns boolean
      */
-    public addTelemetryProcessor(telemetryProcessor: (envelope: Contracts.EnvelopeTelemetry, contextObjects?: { [name: string]: any; }) => boolean) {
+    public addTelemetryProcessor(telemetryProcessor: (envelope: Envelope, contextObjects?: { [name: string]: any; }) => boolean) {
         this._telemetryProcessors.push(telemetryProcessor);
     }
 
@@ -181,7 +177,7 @@ export class TelemetryClient {
         this._telemetryProcessors = [];
     }
 
-    private runTelemetryProcessors(envelope: Contracts.EnvelopeTelemetry, contextObjects: { [name: string]: any; }): boolean {
+    private runTelemetryProcessors(envelope: Envelope, contextObjects: { [name: string]: any; }): boolean {
         var accepted = true;
         var telemetryProcessorsCount = this._telemetryProcessors.length;
         if (telemetryProcessorsCount === 0) {
@@ -208,7 +204,7 @@ export class TelemetryClient {
         // Sanitize tags and properties after running telemetry processors
         if (accepted) {
             if (envelope && envelope.tags) {
-                envelope.tags = Util.getInstance().validateStringMap(envelope.tags) as Tags & Tags[];
+                envelope.tags = Util.getInstance().validateStringMap(envelope.tags);
             }
             if (envelope && envelope.data && envelope.data.baseData && envelope.data.baseData.properties) {
                 envelope.data.baseData.properties = Util.getInstance().validateStringMap(envelope.data.baseData.properties);

@@ -18,11 +18,11 @@ import { TelemetryItem as Envelope } from "../../../Declarations/Generated";
 
 
 export class BaseExporter {
+    protected readonly _sender: ISender;
+    protected readonly _options: IAzureExporterInternalConfig;
     private readonly _persister: IPersistentStorage;
-    private readonly _sender: ISender;
     private _numConsecutiveRedirects: number;
     private _retryTimer: NodeJS.Timer | null;
-    private readonly _options: IAzureExporterInternalConfig;
 
     /**
    * Initializes a new instance of the AzureMonitorTraceExporter class.
@@ -58,7 +58,7 @@ export class BaseExporter {
         diag.debug("Exporter was successfully setup");
     }
 
-    public async exportEnvelopes(envelopes: Envelope[]): Promise<ExportResult> {
+    protected async _exportEnvelopes(envelopes: Envelope[]): Promise<ExportResult> {
         diag.info(`Exporting ${envelopes.length} envelope(s)`);
 
         try {
@@ -120,7 +120,7 @@ export class BaseExporter {
                             // Update sender URL
                             this._sender.handlePermanentRedirect(location);
                             // Send to redirect endpoint as HTTPs library doesn't handle redirect automatically
-                            return this.exportEnvelopes(envelopes);
+                            return this._exportEnvelopes(envelopes);
                         }
                     }
                 } else {

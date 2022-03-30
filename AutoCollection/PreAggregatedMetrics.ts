@@ -267,11 +267,15 @@ export class AutoCollectPreAggregatedMetrics {
         };
 
         let telemetry: Contracts.MetricTelemetry = {
-            name: metric.name,
-            value: metric.value,
-            count: metric.count,
+            metrics: [{
+                name: metric.name,
+                value: metric.value,
+                count: metric.count,
+
+                kind: "Aggregation"
+            }],
             properties: metricProperties,
-            kind: "Aggregation"
+
         };
         this._handler.trackMetric(telemetry);
     }

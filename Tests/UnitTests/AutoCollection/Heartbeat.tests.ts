@@ -46,7 +46,7 @@ describe("AutoCollection/HeartBeat", () => {
 
     describe("#trackHeartBeat()", () => {
         it("should read correct web app values from envrionment variable", (done) => {
-            const heartbeat1: HeartBeat = new HeartBeat(client.metricHandler);
+            const heartbeat1: HeartBeat = new HeartBeat(client.metricHandler, client.config);
             heartbeat1.enable(true);
             const stub1 = sandbox.stub(heartbeat1["_handler"], "trackMetric");
 
@@ -79,7 +79,7 @@ describe("AutoCollection/HeartBeat", () => {
         });
 
         it("should read correct function app values from environment variable", (done) => {
-            const heartbeat2: HeartBeat = new HeartBeat(client.metricHandler);
+            const heartbeat2: HeartBeat = new HeartBeat(client.metricHandler, client.config);
             heartbeat2.enable(true);
             const stub2 = sandbox.stub(heartbeat2["_handler"], "trackMetric");
             var env2 = <{ [id: string]: string }>{};

@@ -2,25 +2,31 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import * as Contracts from "../Declarations/Contracts";
+import { Resource } from "@opentelemetry/resources";
 import { APPLICATION_INSIGHTS_SDK_VERSION } from "../Declarations/Constants";
 import { Logger } from "./Logging/Logger";
+import { KnownContextTagKeys } from "../Declarations/Generated";
 
 export class Context {
 
-    public keys: Contracts.ContextTagKeys;
+
     public tags: { [key: string]: string };
     public static DefaultRoleName: string = "Web";
     public static appVersion: { [path: string]: string } = {};
     public static sdkVersion: string = null;
 
-    constructor(packageJsonPath?: string) {
-        this.keys = new Contracts.ContextTagKeys();
-        this.tags = <{ [key: string]: string }>{};
+    private _resource: Resource;
 
+    constructor(resource?: Resource, packageJsonPath?: string) {
+        this._resource = resource ? resource : Resource.EMPTY;
+        this.tags = <{ [key: string]: string }>{};
         this._loadApplicationContext(packageJsonPath);
         this._loadDeviceContext();
         this._loadInternalContext();
+    }
+
+    public getResource(): Resource {
+        return this._resource;
     }
 
     private _loadApplicationContext(packageJsonPath?: string) {
@@ -39,14 +45,14 @@ export class Context {
             }
         }
 
-        this.tags[this.keys.applicationVersion] = Context.appVersion[packageJsonPath];
+        this.tags[KnownContextTagKeys.AiApplicationVer] = Context.appVersion[packageJsonPath];
     }
 
     private _loadDeviceContext() {
-        this.tags[this.keys.deviceId] = "";
-        this.tags[this.keys.cloudRoleInstance] = os && os.hostname();
-        this.tags[this.keys.deviceOSVersion] = os && (os.type() + " " + os.release());
-        this.tags[this.keys.cloudRole] = Context.DefaultRoleName;
+        this.tags[KnownContextTagKeys.AiDeviceId] = "";
+        this.tags[KnownContextTagKeys.AiCloudRoleInstance] = os && os.hostname();
+        this.tags[KnownContextTagKeys.AiDeviceOsVersion] = os && (os.type() + " " + os.release());
+        this.tags[KnownContextTagKeys.AiCloudRole] = Context.DefaultRoleName;
 
         // not yet supported tags
         this.tags["ai.device.osArchitecture"] = os && os.arch();
@@ -55,6 +61,6 @@ export class Context {
 
     private _loadInternalContext() {
         Context.sdkVersion = APPLICATION_INSIGHTS_SDK_VERSION;
-        this.tags[this.keys.internalSdkVersion] = "node:" + Context.sdkVersion;
+        this.tags[KnownContextTagKeys.AiInternalSdkVersion] = "node:" + Context.sdkVersion;
     }
 }

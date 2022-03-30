@@ -98,10 +98,4 @@ describe("ApplicationInsights", () => {
             assert.equal(performanceSpy.firstCall.args[0], false);
         });
     });
-
-    describe("#Provide access to contracts", () => {
-        it("should provide access to severity levels", () => {
-            assert.equal(AppInsights.Contracts.SeverityLevel.Information, Contracts.SeverityLevel.Information);
-        });
-    });
 });

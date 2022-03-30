@@ -5,6 +5,13 @@ import { Telemetry } from "./Telemetry";
  * of a particular indicator.
  */
 export interface MetricTelemetry extends Telemetry {
+
+    /** List of metrics. Only one metric in the list is currently supported by Application Insights storage. If multiple data points were sent only the first one will be used. */
+    metrics: MetricPointTelemetry[];
+
+}
+
+export interface MetricPointTelemetry {
     /**
      * A string that identifies the metric.
      */

@@ -8,6 +8,7 @@ import { AuthorizationHandler } from "../../../Library/QuickPulse/AuthorizationH
 import { Config } from "../../../Library/Configuration/Config";
 import { QuickPulseSender } from "../../../Library/QuickPulse/QuickPulseSender";
 import { Util } from "../../../Library/Util/Util";
+import { KnownContextTagKeys, TelemetryItem as Envelope } from "../../../Declarations/Generated";
 
 describe("Library/QuickPulseStateManager", () => {
     Util.getInstance().tlsRestrictedAgent = new https.Agent();
@@ -33,7 +34,7 @@ describe("Library/QuickPulseStateManager", () => {
         });
     });
 
-  
+
     describe("#_goQuickPulsePingWithAllHeaders", () => {
         let qps: QuickPulseStateManager;
         let submitDataStub: sinon.SinonStub;
@@ -51,8 +52,8 @@ describe("Library/QuickPulseStateManager", () => {
         });
 
         it("should call _ping with all expected headers set set", () => {
-            qps['context'].tags[qps['context'].keys.cloudRoleInstance] = 'instance1';
-            qps['context'].tags[qps['context'].keys.cloudRole] = 'role1';
+            qps['context'].tags[KnownContextTagKeys.AiCloudRoleInstance] = 'instance1';
+            qps['context'].tags[KnownContextTagKeys.AiCloudRole] = 'role1';
             qps.enable(true);
 
             let callArgs = submitDataStub.args;
@@ -153,7 +154,7 @@ describe("Library/QuickPulseStateManager", () => {
 
         it("should not add document if not sending data", () => {
             sandbox.stub(qps, "_goQuickPulse");
-            var testEnvelope = new Contracts.Envelope();
+            var testEnvelope: Envelope = { name: "test", time: new Date() };
             qps.enable(true);
             assert.equal(qps['_documents'].length, 0);
             qps.addDocument(testEnvelope);

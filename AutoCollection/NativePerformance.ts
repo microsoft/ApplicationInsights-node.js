@@ -2,7 +2,7 @@ import { MetricHandler } from "../Library/Handlers/MetricHandler";
 import { Context } from "../Library/Context";
 import { Logger } from "../Library/Logging/Logger";
 import { IBaseConfig, IDisabledExtendedMetrics } from "../Declarations/Interfaces";
-import { KnownContextTagKeys} from "../Declarations/Generated";
+import { KnownContextTagKeys } from "../Declarations/Generated";
 
 
 export class AutoCollectNativePerformance {
@@ -146,19 +146,18 @@ export class AutoCollectNativePerformance {
 
         for (let gc in gcData) {
             const metrics = gcData[gc].metrics;
-            
+
             const name = `${gc} Garbage Collection Duration`;
             const stdDev = Math.sqrt(metrics.sumSquares / metrics.count - Math.pow(metrics.total / metrics.count, 2)) || 0;
             this._handler.trackMetric({
-                name: name,
-                value: metrics.total,
-                count: metrics.count,
-                max: metrics.max,
-                min: metrics.min,
-                stdDev: stdDev,
-                tagOverrides: {
-                    [KnownContextTagKeys.AiInternalSdkVersion]: "node-nativeperf:" + Context.sdkVersion
-                }
+                metrics: [{
+                    name: name,
+                    value: metrics.total,
+                    count: metrics.count,
+                    max: metrics.max,
+                    min: metrics.min,
+                    stdDev: stdDev
+                }]
             });
         }
     }
@@ -185,15 +184,14 @@ export class AutoCollectNativePerformance {
         const name = "Event Loop CPU Time";
         const stdDev = Math.sqrt(metrics.sumSquares / metrics.count - Math.pow(metrics.total / metrics.count, 2)) || 0;
         this._handler.trackMetric({
-            name: name,
-            value: metrics.total,
-            count: metrics.count,
-            min: metrics.min,
-            max: metrics.max,
-            stdDev: stdDev,
-            tagOverrides: {
-                [KnownContextTagKeys.AiInternalSdkVersion]: "node-nativeperf:" + Context.sdkVersion
-            }
+            metrics: [{
+                name: name,
+                value: metrics.total,
+                count: metrics.count,
+                min: metrics.min,
+                max: metrics.max,
+                stdDev: stdDev
+            }]
         });
     }
 
@@ -212,28 +210,25 @@ export class AutoCollectNativePerformance {
         const { heapUsed, heapTotal, rss } = memoryUsage;
 
         this._handler.trackMetric({
-            name: "Memory Usage (Heap)",
-            value: heapUsed,
-            count: 1,
-            tagOverrides: {
-                [KnownContextTagKeys.AiInternalSdkVersion]: "node-nativeperf:" + Context.sdkVersion
-            }
+            metrics: [{
+                name: "Memory Usage (Heap)",
+                value: heapUsed,
+                count: 1
+            }]
         });
         this._handler.trackMetric({
-            name: "Memory Total (Heap)",
-            value: heapTotal,
-            count: 1,
-            tagOverrides: {
-                [KnownContextTagKeys.AiInternalSdkVersion]: "node-nativeperf:" + Context.sdkVersion
-            }
+            metrics: [{
+                name: "Memory Total (Heap)",
+                value: heapTotal,
+                count: 1
+            }]
         });
         this._handler.trackMetric({
-            name: "Memory Usage (Non-Heap)",
-            value: rss - heapTotal,
-            count: 1,
-            tagOverrides: {
-                [KnownContextTagKeys.AiInternalSdkVersion]: "node-nativeperf:" + Context.sdkVersion
-            }
+            metrics: [{
+                name: "Memory Usage (Non-Heap)",
+                value: rss - heapTotal,
+                count: 1
+            }]
         });
     }
 }

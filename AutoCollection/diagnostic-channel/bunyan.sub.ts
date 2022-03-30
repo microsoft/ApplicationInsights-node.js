@@ -4,19 +4,19 @@ import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
 import { bunyan } from "diagnostic-channel-publishers";
 
 import { LogHandler } from "../../Library/Handlers/LogHandler";
-import { SeverityLevel } from "../../Declarations/Contracts";
+import { KnownSeverityLevel } from "../../Declarations/Generated";
 import { StatsbeatInstrumentation } from "../../Declarations/Constants";
 
 let handlers: LogHandler[] = [];
 
 // Mapping from bunyan levels defined at https://github.com/trentm/node-bunyan/blob/master/lib/bunyan.js#L256
-const bunyanToAILevelMap: { [key: number]: number } = {
-    10: SeverityLevel.Verbose,
-    20: SeverityLevel.Verbose,
-    30: SeverityLevel.Information,
-    40: SeverityLevel.Warning,
-    50: SeverityLevel.Error,
-    60: SeverityLevel.Critical
+const bunyanToAILevelMap: { [key: number]: string } = {
+    10: KnownSeverityLevel.Verbose,
+    20: KnownSeverityLevel.Verbose,
+    30: KnownSeverityLevel.Information,
+    40: KnownSeverityLevel.Warning,
+    50: KnownSeverityLevel.Error,
+    60: KnownSeverityLevel.Critical
 };
 
 const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {

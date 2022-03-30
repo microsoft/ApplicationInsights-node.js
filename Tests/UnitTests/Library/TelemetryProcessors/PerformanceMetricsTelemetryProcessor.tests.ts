@@ -4,7 +4,8 @@ import * as sinon from "sinon";
 import { Config } from "../../../../Library/Configuration/Config";
 import * as QuickPulse from "../../../../Library/TelemetryProcessors/PerformanceMetricsTelemetryProcessor";
 import { QuickPulseStateManager } from "../../../../Library/QuickPulse/QuickPulseStateManager";
-import { Contracts, TelemetryClient } from "../../../../applicationinsights";
+import { TelemetryClient } from "../../../../applicationinsights";
+import { TelemetryItem as Envelope } from "../../../../Declarations/Generated";
 
 
 describe("TelemetryProcessors/PerformanceMetricsTelemetryProcessor", () => {
@@ -18,17 +19,14 @@ describe("TelemetryProcessors/PerformanceMetricsTelemetryProcessor", () => {
     });
 
     describe("#PerformanceMetricsTelemetryProcessor()", () => {
-        var envelope: Contracts.Envelope = {
-            ver: 2,
+        var envelope: Envelope = {
             name: "name",
             data: {
                 baseType: "SomeData"
             },
-            iKey: ikey,
+            instrumentationKey: ikey,
             sampleRate: 100,
-            seq: "",
-            time: "",
-            tags: []
+            time: new Date()
         };
         var ikey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
 

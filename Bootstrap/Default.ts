@@ -6,6 +6,7 @@ import * as  Constants from "../Declarations/Constants";
 import { StatusLogger, StatusContract } from "./StatusLogger";
 import { DiagnosticLogger } from "./DiagnosticLogger";
 import { JsonConfig } from "../Library/Configuration/JsonConfig";
+import { KnownContextTagKeys } from "../Declarations/Generated";
 
 // Private configuration vars
 let _appInsights: typeof types | null;
@@ -77,33 +78,17 @@ export function setupAndStart(setupString = _setupString, aadTokenCredential?: a
             _logger.logError("Setup was attempted on the Application Insights Client multiple times. Aborting and returning the first client instance");
             return _appInsights;
         }
-
-        const prefixInternalSdkVersion = function (envelope: types.Contracts.Envelope, _contextObjects: Object) {
-            try {
-                var appInsightsSDKVersion = _appInsights.defaultClient.context.keys.internalSdkVersion;
-                envelope.tags[appInsightsSDKVersion] = _prefix + envelope.tags[appInsightsSDKVersion];
-            } catch (e) {
-                _logger.logError("Error prefixing SDK version", e);
-            }
-            return true;
-        }
-
-        const copyOverPrefixInternalSdkVersionToHeartBeatMetric = function (envelope: types.Contracts.Envelope, _contextObjects: Object) {
-            var appInsightsSDKVersion = _appInsights.defaultClient.context.keys.internalSdkVersion;
-            const sdkVersion = envelope.tags[appInsightsSDKVersion] || "";
-            if (envelope.name === Constants.HeartBeatMetricName) {
-                ((envelope.data as any).baseData).properties = ((envelope.data as any).baseData).properties || {};
-                ((envelope.data as any).baseData).properties["sdk"] = sdkVersion;
-            }
-
-            return true;
-        }
-
         // Instrument the SDK
         _appInsights.setup(setupString).setSendLiveMetrics(true);
         _appInsights.defaultClient.setAutoPopulateAzureProperties();
-        _appInsights.defaultClient.addTelemetryProcessor(prefixInternalSdkVersion);
-        _appInsights.defaultClient.addTelemetryProcessor(copyOverPrefixInternalSdkVersionToHeartBeatMetric);
+        // Add internal SDK version prefix
+        try {
+            let contextTags = _appInsights.defaultClient.context.tags;
+            contextTags[KnownContextTagKeys.AiInternalSdkVersion] = _prefix + contextTags[KnownContextTagKeys.AiInternalSdkVersion];
+        } catch (e) {
+            _logger.logError("Error prefixing SDK version", e);
+        }
+
         if (aadTokenCredential) {
             _logger.logMessage("Using AAD Token Credential");
             _appInsights.defaultClient.config.aadTokenCredential = aadTokenCredential;

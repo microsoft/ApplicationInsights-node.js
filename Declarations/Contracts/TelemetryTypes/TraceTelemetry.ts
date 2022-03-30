@@ -13,5 +13,5 @@ export interface TraceTelemetry extends Telemetry {
     /**
      * Trace severity level
      */
-    severity?: Contracts.SeverityLevel;
+    severity?: string;
 }

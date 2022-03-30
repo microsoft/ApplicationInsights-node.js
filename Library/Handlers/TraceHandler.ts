@@ -1,18 +1,18 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { SpanOptions, context, SpanKind, SpanAttributes, SpanStatusCode } from "@opentelemetry/api";
+import { SpanOptions, context, SpanKind, SpanStatusCode, SpanAttributes } from "@opentelemetry/api";
 import { Instrumentation, InstrumentationOption, registerInstrumentations } from "@opentelemetry/instrumentation";
 import { NodeTracerProvider, NodeTracerConfig } from "@opentelemetry/sdk-trace-node";
 import { BatchSpanProcessor, BufferConfig, Tracer } from "@opentelemetry/sdk-trace-base";
 import { HttpInstrumentation, HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
-import { Resource } from "@opentelemetry/resources";
 
 import { Config } from "../Configuration/Config";
 import * as  Contracts from "../../Declarations/Contracts";
 import { TraceExporter } from "../Exporters";
 import { FlushOptions } from "../../Declarations/FlushOptions";
 import { Logger } from "../Logging/Logger";
+import { Context } from "../Context";
 
 
 export class TraceHandler {
@@ -23,15 +23,17 @@ export class TraceHandler {
 
     private _exporter: TraceExporter;
     private _config: Config;
+    private _context: Context;
     private _instrumentations: InstrumentationOption[];
     private _disableInstrumentations: () => void;
 
-    constructor(config: Config, resource: Resource) {
+    constructor(config: Config, context: Context) {
         this._config = config;
+        this._context = context;
         this._instrumentations = [];
         let tracerConfig: NodeTracerConfig = {
             sampler: null,
-            resource: resource,
+            resource: this._context.getResource(),
             generalLimits: null,
             idGenerator: null,
             forceFlushTimeoutMillis: 30000
@@ -93,7 +95,9 @@ export class TraceHandler {
     public trackRequest(telemetry: Contracts.RequestTelemetry & Contracts.Identified) {
         // TODO: Change context if ID is provided?
         const ctx = context.active();
-        let attributes: SpanAttributes = {};
+        let attributes: SpanAttributes = {
+            ...telemetry.properties
+        };
         attributes[SemanticAttributes.HTTP_METHOD] = "http";
         try {
             let url = new URL(telemetry.url);
@@ -132,10 +136,10 @@ export class TraceHandler {
                 Logger.warn(this.constructor.name, "Failed to create URL.", error);
             }
         }
-
-
         const ctx = context.active();
-        let attributes: SpanAttributes = {};
+        let attributes: SpanAttributes = {
+            ...telemetry.properties
+        };
         if (telemetry.dependencyTypeName.toLowerCase().indexOf("http") > -1) {
             attributes[SemanticAttributes.HTTP_METHOD] = "http";
             try {

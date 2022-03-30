@@ -1,8 +1,8 @@
-import { EnvelopeTelemetry, RequestData, RemoteDependencyData } from "../../Declarations/Contracts";
 import * as TelemetryType from "../../Declarations/Contracts";
+import { TelemetryItem as Envelope } from "../../Declarations/Generated";
 import { TelemetryClient } from "../../applicationinsights";
 
-export function performanceMetricsTelemetryProcessor(envelope: EnvelopeTelemetry, client: TelemetryClient): boolean {
+export function performanceMetricsTelemetryProcessor(envelope: Envelope, client: TelemetryClient): boolean {
     // If live metrics is enabled, forward all telemetry there
     if (client.quickPulseClient) {
         client.quickPulseClient.addDocument(envelope);
@@ -13,11 +13,11 @@ export function performanceMetricsTelemetryProcessor(envelope: EnvelopeTelemetry
             client.metricHandler.countPerformanceException();
             break;
         case TelemetryType.TelemetryTypeString.Request:
-            const requestData: RequestData = (envelope.data as any).baseData;
+            const requestData = (envelope.data as any).baseData;
             client.metricHandler.countPerformanceRequest(requestData.duration, requestData.success);
             break;
         case TelemetryType.TelemetryTypeString.Dependency:
-            const remoteDependencyData: RemoteDependencyData = (envelope.data as any).baseData;
+            const remoteDependencyData = (envelope.data as any).baseData;
             client.metricHandler.countPerformanceDependency(remoteDependencyData.duration, remoteDependencyData.success);
             break;
     }

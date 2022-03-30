@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { BatchProcessor } from "./BatchProcessor";
+import { BatchProcessor } from "./Shared/BatchProcessor";
 import { LogExporter } from "../Exporters";
 import {
     TelemetryItem as Envelope,

@@ -1,5 +1,5 @@
 import { Telemetry } from "./Telemetry";
-import { SeverityLevel } from "../Generated/SeverityLevel";
+import { KnownSeverityLevel } from "../../Generated";
 
 /**
  * Telemetry about the exception thrown by the application
@@ -17,5 +17,5 @@ export interface ExceptionTelemetry extends Telemetry {
     /**
      * Exception severity level
      */
-    severity?: SeverityLevel;
+    severity?: KnownSeverityLevel;
 }

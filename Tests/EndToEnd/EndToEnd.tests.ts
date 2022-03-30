@@ -221,7 +221,7 @@ describe("EndToEnd", () => {
 
             client.trackEvent({ name: "test event" });
             client.trackException({ exception: new Error("test error") });
-            client.trackMetric({ name: "test metric", value: 3 });
+            client.trackMetric({ metrics: [{ name: "test metric", value: 3 }] });
             client.trackTrace({ message: "test trace" });
             client.trackAvailability(expectedTelemetryData);
 
@@ -534,7 +534,7 @@ describe("EndToEnd", () => {
             assert(existsSync.callCount === 1);
             assert(writeFileSync.callCount === 1);
             assert.equal(spawnSync.callCount, os.type() === "Windows_NT" ? 1 : 0); // This is implicitly testing caching of ACL identity (otherwise call count would be 2 like it is the non-sync time)
-             // TODO: This test should validate external persist is called only
+            // TODO: This test should validate external persist is called only
             // assert.equal(
             //     path.dirname(writeFileSync.firstCall.args[0]),
             //     path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key2"));
@@ -566,7 +566,7 @@ describe("EndToEnd", () => {
 
             // set up sdk
             const client = new TelemetryClient("key");
-            const heartbeat: HeartBeat = new HeartBeat(client.metricHandler);
+            const heartbeat: HeartBeat = new HeartBeat(client.metricHandler, client.config);
             heartbeat.enable(true);
             const trackMetricStub = sandbox.stub(heartbeat["_handler"], "trackMetric");
 
@@ -601,7 +601,7 @@ describe("EndToEnd", () => {
 
             // set up sdk
             const client = new TelemetryClient("key");
-            const heartbeat: HeartBeat = new HeartBeat(client.metricHandler);
+            const heartbeat: HeartBeat = new HeartBeat(client.metricHandler, client.config);
             heartbeat.enable(true);
             const trackMetricStub = sandbox.stub(heartbeat["_handler"], "trackMetric");
 

@@ -1,16 +1,16 @@
-import * as Contracts from "../../Declarations/Contracts";
+import { TelemetryItem as Envelope, MetricsData } from "../../Declarations/Generated";
 import { ICorrelationContext } from "../../Declarations/Interfaces";
 
 /**
  *  A telemetry processor that handles sampling.
  */
-export function samplingTelemetryProcessor(envelope: Contracts.EnvelopeTelemetry, contextObjects: { correlationContext: ICorrelationContext }): boolean {
+export function samplingTelemetryProcessor(envelope: Envelope, contextObjects: { correlationContext: ICorrelationContext }): boolean {
     var samplingPercentage = envelope.sampleRate; // Set for us in Client.getEnvelope
     var isSampledIn = false;
 
     if (samplingPercentage === null || samplingPercentage === undefined || samplingPercentage >= 100) {
         return true;
-    } else if (envelope.data && Contracts.TelemetryType.Metric === Contracts.baseTypeToTelemetryType(envelope.data.baseType as Contracts.TelemetryTypeValues)) {
+    } else if (envelope.data && envelope.data.baseType == "MetricsData") {
         // Exclude MetricData telemetry from sampling
         return true;
     } else if (contextObjects.correlationContext && contextObjects.correlationContext.operation) {

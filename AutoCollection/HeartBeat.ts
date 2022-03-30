@@ -8,18 +8,20 @@ import { Context } from "../Library/Context";
 
 export class HeartBeat {
     private _collectionInterval: number = 900000;
+    private _config: Config;
     private _handler: MetricHandler;
     private _handle: NodeJS.Timer | null;
     private _isVM: boolean;
 
-    constructor(handler: MetricHandler) {
+    constructor(handler: MetricHandler, config: Config) {
         this._handler = handler;
+        this._config = config;
     }
 
     public enable(isEnabled: boolean) {
         if (isEnabled) {
             if (!this._handle) {
-                this._handle = setInterval(() => this.trackHeartBeat(this._handler.config, () => { }), this._collectionInterval);
+                this._handle = setInterval(() => this.trackHeartBeat(this._config, () => { }), this._collectionInterval);
                 this._handle.unref(); // Allow the app to terminate even while this loop is going on
             }
         } else {
@@ -33,7 +35,10 @@ export class HeartBeat {
     public trackHeartBeat(config: Config, callback: () => void) {
         let waiting: boolean = false;
         let properties: { [key: string]: string } = {};
-        const sdkVersion = Context.sdkVersion; // "node" or "node-nativeperf"
+
+        // TODO: Add sdk property for attach scenarios, confirm if this is only expected when attach happens, older code doing this was present in Default.ts
+
+        const sdkVersion = Context.sdkVersion;
         properties["sdk"] = sdkVersion;
         properties["osType"] = os.type();
         if (process.env.WEBSITE_SITE_NAME) { // Web apps
@@ -52,13 +57,13 @@ export class HeartBeat {
                         properties["azInst_subscriptionId"] = vmInfo.subscriptionId;
                         properties["azInst_osType"] = vmInfo.osType;
                     }
-                    this._handler.trackMetric({ name: Constants.HeartBeatMetricName, value: 0, properties: properties });
+                    this._handler.trackMetric({ metrics: [{ name: Constants.HeartBeatMetricName, value: 0 }], properties: properties });
                     callback();
                 });
             }
         }
         if (!waiting) {
-            this._handler.trackMetric({ name: Constants.HeartBeatMetricName, value: 0, properties: properties });
+            this._handler.trackMetric({ metrics: [{ name: Constants.HeartBeatMetricName, value: 0 }], properties: properties });
             callback();
         }
     }
