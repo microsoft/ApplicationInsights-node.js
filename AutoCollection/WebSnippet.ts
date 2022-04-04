@@ -1,7 +1,5 @@
-import * as path from "path";
 import http = require("http");
 import https = require("https");
-import fs = require("fs");
 import zlib = require("zlib");
 
 import Logging = require("../Library/Logging");
@@ -27,21 +25,25 @@ class WebSnippet {
         WebSnippet.INSTANCE = this;
         // AI URL used to validate if snippet already included
         WebSnippet._aiUrl = "https://js.monitor.azure.com/scripts/b/ai";
-        WebSnippet._aiDeprecatedUrl = "https://az416426.vo.msecnd.net/scripts/b/ai"
+        WebSnippet._aiDeprecatedUrl = "https://az416426.vo.msecnd.net/scripts/b/ai";
+
+        //TODO: quick fix for bundle error, remove this when npm is published
+        WebSnippet._snippet = snippetInjectionHelper.webSnippet.replace("INSTRUMENTATION_KEY", client.config.instrumentationKey);
 
         //TODO: replace the path with npm package exports
-        let snippetPath = path.resolve(__dirname, "../../AutoCollection/snippet/snippet.min.js");
-        try {
-            fs.readFile(snippetPath, function (err, snippet) {
-                if (err) {
-                    Logging.warn("Failed to load AI Web snippet. Ex:" + err);
-                }
-                //TODO:should add extra config: snippetInstrumentationKey
-                WebSnippet._snippet = snippet.toString().replace("INSTRUMENTATION_KEY", client.config.instrumentationKey);
-            });
-        } catch (err) {
-            Logging.warn("Read snippet error: " + err);
-        }
+        //NOTE: should use the following part when npm is enabled
+        // let snippetPath = path.resolve(__dirname, "../../AutoCollection/snippet/snippet.min.js");
+        // try {
+        //     fs.readFile(snippetPath, function (err, snippet) {
+        //         if (err) {
+        //             Logging.warn("Failed to load AI Web snippet. Ex:" + err);
+        //         }
+        //         //TODO:should add extra config: snippetInstrumentationKey
+        //         WebSnippet._snippet = snippet.toString().replace("INSTRUMENTATION_KEY", client.config.instrumentationKey);
+        //     });
+        // } catch (err) {
+        //     Logging.warn("Read snippet error: " + err);
+        // }
       
     }
 
