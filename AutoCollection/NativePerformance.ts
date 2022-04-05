@@ -1,4 +1,3 @@
-import { ObservableGauge, ValueType } from "@opentelemetry/api-metrics";
 import { MetricHandler } from "../Library/Handlers/MetricHandler";
 import { Context } from "../Library/Context";
 import { Logger } from "../Library/Logging/Logger";
@@ -7,34 +6,16 @@ import { KnownContextTagKeys } from "../Declarations/Generated";
 
 
 export class AutoCollectNativePerformance {
-    private _garbageCollectionGauges: ObservableGauge[];
-    private _eventLoopCpuGauge: ObservableGauge;
-    private _memoryUsageHeapGauge: ObservableGauge;
-    private _memoryTotalHeapGauge: ObservableGauge;
-    private _memoryUsageGauge: ObservableGauge;
     private _emitter: any;
     private _metricsAvailable: boolean; // is the native metrics lib installed
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _handle: NodeJS.Timer;
-    private _meter: Meter;
+    private _handler: MetricHandler;
     private _disabledMetrics: IDisabledExtendedMetrics = {};
 
-    constructor(meter: Meter) {
-        this._meter = meter;
-        this._garbageCollectionGauges = [];
-        this._eventLoopCpuGauge = this._meter.createObservableGauge("Event Loop CPU Time", {
-            valueType: ValueType.DOUBLE,
-        });
-        this._memoryUsageHeapGauge = this._meter.createObservableGauge("Memory Usage (Heap)", {
-            valueType: ValueType.INT,
-        });
-        this._memoryTotalHeapGauge = this._meter.createObservableGauge("Memory Total (Heap)", {
-            valueType: ValueType.INT,
-        });
-        this._memoryUsageGauge = this._meter.createObservableGauge("Memory Usage (Non-Heap)", {
-            valueType: ValueType.INT,
-        });
+    constructor(handler: MetricHandler) {
+        this._handler = handler;
     }
 
     /**
