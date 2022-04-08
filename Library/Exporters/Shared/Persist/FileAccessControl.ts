@@ -4,85 +4,100 @@ import * as child_process from "child_process";
 
 import { Logger } from "../../../Logging/Logger";
 
+const ICACLS_PATH = `${process.env.systemdrive}/windows/system32/icacls.exe`;
+const POWERSHELL_PATH = `${process.env.systemdrive}/windows/system32/windowspowershell/v1.0/powershell.exe`;
 
 export class FileAccessControl {
-    private static TAG = "FileAccessControl";
+    private static _instance: FileAccessControl;
+    private _TAG = "FileAccessControl";
+    private _ACLedDirectories: { [id: string]: boolean };
+    private _ACLIdentity: string;
+    private _osFileProtectionChecked: boolean;
+    public osProvidesFileProtection: boolean;
+    public useICACLS: boolean;
 
-    private static ICACLS_PATH = `${process.env.systemdrive}/windows/system32/icacls.exe`;
-    private static POWERSHELL_PATH = `${process.env.systemdrive}/windows/system32/windowspowershell/v1.0/powershell.exe`;
-    private static ACLED_DIRECTORIES: { [id: string]: boolean } = {};
-    private static ACL_IDENTITY: string = null;
-    private static OS_FILE_PROTECTION_CHECKED = false;
-    public static OS_PROVIDES_FILE_PROTECTION = false;
-    public static USE_ICACLS = os.type() === "Windows_NT";
+    static getInstance() {
+        if (!FileAccessControl._instance) {
+            FileAccessControl._instance = new FileAccessControl();
+        }
+        return FileAccessControl._instance;
+    }
+
+    constructor() {
+        this._ACLedDirectories = {};
+        this._ACLIdentity = null;
+        this._osFileProtectionChecked = false;
+        this.osProvidesFileProtection = false;
+        this.useICACLS = os.type() === "Windows_NT";
+    }
 
 
     // Check if file access control could be enabled
-    public static checkFileProtection() {
-        if (!FileAccessControl.OS_PROVIDES_FILE_PROTECTION && !FileAccessControl.OS_FILE_PROTECTION_CHECKED) {
-            FileAccessControl.OS_FILE_PROTECTION_CHECKED = true;
+    public checkFileProtection() {
+        if (!this.osProvidesFileProtection && !this._osFileProtectionChecked) {
+            this._osFileProtectionChecked = true;
             // Node's chmod levels do not appropriately restrict file access on Windows
             // Use the built-in command line tool ICACLS on Windows to properly restrict
             // access to the temporary directory used for disk retry mode.
-            if (FileAccessControl.USE_ICACLS) {
+            if (this.useICACLS) {
                 // This should be async - but it's currently safer to have this synchronous
                 // This guarantees we can immediately fail setDiskRetryMode if we need to
                 try {
-                    FileAccessControl.OS_PROVIDES_FILE_PROTECTION = fs.existsSync(FileAccessControl.ICACLS_PATH);
+                    this.osProvidesFileProtection = fs.existsSync(ICACLS_PATH);
                 } catch (e) {
                     // Ignore error
                 }
-                if (!FileAccessControl.OS_PROVIDES_FILE_PROTECTION) {
-                    Logger.warn(FileAccessControl.TAG, "Could not find ICACLS in expected location! This is necessary to use disk retry mode on Windows.")
+                if (!this.osProvidesFileProtection) {
+                    Logger.warn(this._TAG, "Could not find ICACLS in expected location! This is necessary to use disk retry mode on Windows.")
                 }
             } else {
                 // chmod works everywhere else
-                FileAccessControl.OS_PROVIDES_FILE_PROTECTION = true;
+                this.osProvidesFileProtection = true;
             }
         }
     }
 
-    public static async applyACLRules(directory: string): Promise<void> {
-        if (FileAccessControl.USE_ICACLS) {
-            if (FileAccessControl.ACLED_DIRECTORIES[directory] === undefined) {
+    public async applyACLRules(directory: string): Promise<void> {
+        if (this.useICACLS) {
+            if (this._ACLedDirectories[directory] === undefined) {
                 // Avoid multiple calls race condition by setting ACLED_DIRECTORIES to false for this directory immediately
                 // If batches are being failed faster than the processes spawned below return, some data won't be stored to disk
                 // This is better than the alternative of potentially infinitely spawned processes
-                FileAccessControl.ACLED_DIRECTORIES[directory] = false;
+                this._ACLedDirectories[directory] = false;
                 try {
                     // Restrict this directory to only current user and administrator access
                     let identity = await this._getACLIdentity();
                     await this._runICACLS(this._getACLArguments(directory, identity));
-                    FileAccessControl.ACLED_DIRECTORIES[directory] = true;
+                    this._ACLedDirectories[directory] = true;
                 }
                 catch (ex) {
-                    FileAccessControl.ACLED_DIRECTORIES[directory] = false; // false is used to cache failed (vs undefined which is "not yet tried")
+                    this._ACLedDirectories[directory] = false; // false is used to cache failed (vs undefined which is "not yet tried")
                     throw ex;
                 }
             } else {
-                if (!FileAccessControl.ACLED_DIRECTORIES[directory]) {
+                if (!this._ACLedDirectories[directory]) {
                     throw new Error("Setting ACL restrictions did not succeed (cached result)");
                 }
             }
         }
     }
 
-    public static applyACLRulesSync(directory: string) {
-        if (FileAccessControl.USE_ICACLS) {
+    public applyACLRulesSync(directory: string) {
+        if (this.useICACLS) {
             // For performance, only run ACL rules if we haven't already during this session
-            if (FileAccessControl.ACLED_DIRECTORIES[directory] === undefined) {
+            if (this._ACLedDirectories[directory] === undefined) {
                 this._runICACLSSync(this._getACLArguments(directory, this._getACLIdentitySync()));
-                FileAccessControl.ACLED_DIRECTORIES[directory] = true; // If we get here, it succeeded. _runIACLSSync will throw on failures
+                this._ACLedDirectories[directory] = true; // If we get here, it succeeded. _runIACLSSync will throw on failures
                 return;
-            } else if (!FileAccessControl.ACLED_DIRECTORIES[directory]) { // falsy but not undefined
+            } else if (!this._ACLedDirectories[directory]) { // falsy but not undefined
                 throw new Error("Setting ACL restrictions did not succeed (cached result)");
             }
         }
     }
 
-    private static _runICACLS(args: string[]): Promise<void> {
+    private _runICACLS(args: string[]): Promise<void> {
         return new Promise((resolve, reject) => {
-            var aclProc = child_process.spawn(FileAccessControl.ICACLS_PATH, args, <any>{ windowsHide: true });
+            var aclProc = child_process.spawn(ICACLS_PATH, args, <any>{ windowsHide: true });
             aclProc.on("error", (e: Error) => reject(e));
             aclProc.on("close", (code: number, signal: string) => {
                 if (code === 0) {
@@ -95,10 +110,10 @@ export class FileAccessControl {
         });
     }
 
-    private static _runICACLSSync(args: string[]) {
+    private _runICACLSSync(args: string[]) {
         // Some very old versions of Node (< 0.11) don't have this
         if (child_process.spawnSync) {
-            var aclProc = child_process.spawnSync(FileAccessControl.ICACLS_PATH, args, <any>{ windowsHide: true });
+            var aclProc = child_process.spawnSync(ICACLS_PATH, args, <any>{ windowsHide: true });
             if (aclProc.error) {
                 throw aclProc.error;
             } else if (aclProc.status !== 0) {
@@ -109,12 +124,12 @@ export class FileAccessControl {
         }
     }
 
-    private static _getACLIdentity(): Promise<string> {
+    private _getACLIdentity(): Promise<string> {
         return new Promise((resolve, reject) => {
-            if (FileAccessControl.ACL_IDENTITY) {
-                resolve(FileAccessControl.ACL_IDENTITY);
+            if (this._ACLIdentity) {
+                resolve(this._ACLIdentity);
             }
-            var psProc = child_process.spawn(FileAccessControl.POWERSHELL_PATH,
+            var psProc = child_process.spawn(POWERSHELL_PATH,
                 ["-Command", "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name"], <any>{
                     windowsHide: true,
                     stdio: ["ignore", "pipe", "pipe"] // Needed to prevent hanging on Win 7
@@ -123,9 +138,9 @@ export class FileAccessControl {
             psProc.stdout.on("data", (d: string) => data += d);
             psProc.on("error", (e: Error) => reject(e));
             psProc.on("close", (code: number, signal: string) => {
-                FileAccessControl.ACL_IDENTITY = data && data.trim();
+                this._ACLIdentity = data && data.trim();
                 if (code === 0) {
-                    resolve(FileAccessControl.ACL_IDENTITY);
+                    resolve(this._ACLIdentity);
                 }
                 else {
                     reject(new Error(`Getting ACL identity did not succeed (PS returned code ${code})`));
@@ -134,13 +149,13 @@ export class FileAccessControl {
         });
     }
 
-    private static _getACLIdentitySync() {
-        if (FileAccessControl.ACL_IDENTITY) {
-            return FileAccessControl.ACL_IDENTITY;
+    private _getACLIdentitySync() {
+        if (this._ACLIdentity) {
+            return this._ACLIdentity;
         }
         // Some very old versions of Node (< 0.11) don't have this
         if (child_process.spawnSync) {
-            var psProc = child_process.spawnSync(FileAccessControl.POWERSHELL_PATH,
+            var psProc = child_process.spawnSync(POWERSHELL_PATH,
                 ["-Command", "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name"], <any>{
                     windowsHide: true,
                     stdio: ["ignore", "pipe", "pipe"] // Needed to prevent hanging on Win 7
@@ -150,14 +165,14 @@ export class FileAccessControl {
             } else if (psProc.status !== 0) {
                 throw new Error(`Getting ACL identity did not succeed (PS returned code ${psProc.status})`);
             }
-            FileAccessControl.ACL_IDENTITY = psProc.stdout && psProc.stdout.toString().trim();
-            return FileAccessControl.ACL_IDENTITY;
+            this._ACLIdentity = psProc.stdout && psProc.stdout.toString().trim();
+            return this._ACLIdentity;
         } else {
             throw new Error("Could not synchronously get ACL identity under current version of Node.js");
         }
     }
 
-    private static _getACLArguments(directory: string, identity: string) {
+    private _getACLArguments(directory: string, identity: string) {
         return [directory,
             "/grant", "*S-1-5-32-544:(OI)(CI)F", // Full permission for Administrators
             "/grant", `${identity}:(OI)(CI)F`, // Full permission for current user

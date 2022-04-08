@@ -15,25 +15,25 @@ import { FlushOptions } from "../../Declarations/FlushOptions";
 import { Config } from "../Configuration/Config";
 import { Statsbeat } from "../../AutoCollection/Statsbeat";
 import { Util } from "../Util/Util";
+import { Context } from "../Context";
 
 export class LogHandler {
-    // Default values
     public isConsole = true;
     public isConsoleLog = false;
     public isExceptions = true;
     public statsbeat: Statsbeat;
     public config: Config;
+    private _context: Context;
     private _isStarted = false;
-    private _statsbeat: Statsbeat;
     private _batchProcessor: BatchProcessor;
     private _exporter: LogExporter;
     private _console: AutoCollectConsole;
     private _exceptions: AutoCollectExceptions;
 
-    constructor(config: Config, statsbeat: Statsbeat) {
+    constructor(config: Config, context: Context) {
         this.config = config;
-        this._statsbeat = statsbeat;
-        this._exporter = new LogExporter(config);
+        this._context = context;
+        this._exporter = new LogExporter(config,this._context);
         this._batchProcessor = new BatchProcessor(config, this._exporter);
         this._initializeFlagsFromConfig();
         this._console = new AutoCollectConsole(this);

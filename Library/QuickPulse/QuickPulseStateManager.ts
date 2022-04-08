@@ -17,12 +17,13 @@ export class QuickPulseStateManager {
     public context: Context;
     public authorizationHandler: AuthorizationHandler;
 
-    private static MAX_POST_WAIT_TIME = 20000;
-    private static MAX_PING_WAIT_TIME = 60000;
-    private static FALLBACK_INTERVAL = 60000;
-    private static PING_INTERVAL = 5000;
-    private static POST_INTERVAL = 1000;
+    private MAX_POST_WAIT_TIME = 20000;
+    private MAX_PING_WAIT_TIME = 60000;
+    private FALLBACK_INTERVAL = 60000;
+    private PING_INTERVAL = 5000;
+    private POST_INTERVAL = 1000;
 
+    private _envelopeFactory: QuickPulseEnvelopeFactory;
     private _isCollectingData: boolean = false;
     private _sender: QuickPulseSender;
     private _isEnabled: boolean;
@@ -39,6 +40,7 @@ export class QuickPulseStateManager {
         this.config = config;
         this.context = context || new Context();
         this._sender = new QuickPulseSender(this.config);
+        this._envelopeFactory = new QuickPulseEnvelopeFactory();
         this._isEnabled = false;
     }
 
@@ -57,7 +59,7 @@ export class QuickPulseStateManager {
     public addDocument(envelope: Envelope): void {
         // Only add documents in buffer when Live Metrics is collecting data
         if (this._isCollectingData) {
-            const document = QuickPulseEnvelopeFactory.telemetryEnvelopeToQuickPulseDocument(envelope);
+            const document = this._envelopeFactory.telemetryEnvelopeToQuickPulseDocument(envelope);
             if (document) {
                 this._documents.push(document);
             }
@@ -103,7 +105,7 @@ export class QuickPulseStateManager {
                 this._metrics[name].Value = (this._metrics[name].Value * this._metrics[name].Weight + value * count) / (this._metrics[name].Weight + count);
                 this._metrics[name].Weight += count;
             } else {
-                this._metrics[name] = QuickPulseEnvelopeFactory.createQuickPulseMetric(telemetry);
+                this._metrics[name] = this._envelopeFactory.createQuickPulseMetric(telemetry);
                 this._metrics[name].Name = name;
                 this._metrics[name].Weight = 1;
             }
@@ -119,7 +121,7 @@ export class QuickPulseStateManager {
     private async _goQuickPulse(): Promise<void> {
         // Create envelope from Documents and Metrics
         const metrics = Object.keys(this._metrics).map(k => this._metrics[k]);
-        const envelope = QuickPulseEnvelopeFactory.createQuickPulseEnvelope(metrics, this._documents.slice(), this.config, this.context);
+        const envelope = this._envelopeFactory.createQuickPulseEnvelope(metrics, this._documents.slice(), this.config, this.context);
 
         // Clear this document, metric buffer
         this._resetQuickPulseBuffer();
@@ -131,15 +133,15 @@ export class QuickPulseStateManager {
             this._ping(envelope);
         }
 
-        let pingInterval = this._pollingIntervalHint > 0 ? this._pollingIntervalHint : QuickPulseStateManager.PING_INTERVAL;
-        let currentTimeout = this._isCollectingData ? QuickPulseStateManager.POST_INTERVAL : pingInterval;
-        if (this._isCollectingData && Date.now() - this._lastSuccessTime >= QuickPulseStateManager.MAX_POST_WAIT_TIME && !this._lastSendSucceeded) {
+        let pingInterval = this._pollingIntervalHint > 0 ? this._pollingIntervalHint : this.PING_INTERVAL;
+        let currentTimeout = this._isCollectingData ? this.POST_INTERVAL : pingInterval;
+        if (this._isCollectingData && Date.now() - this._lastSuccessTime >= this.MAX_POST_WAIT_TIME && !this._lastSendSucceeded) {
             // Haven't posted successfully in 20 seconds, so wait 60 seconds and ping
             this._isCollectingData = false;
-            currentTimeout = QuickPulseStateManager.FALLBACK_INTERVAL;
-        } else if (!this._isCollectingData && Date.now() - this._lastSuccessTime >= QuickPulseStateManager.MAX_PING_WAIT_TIME && !this._lastSendSucceeded) {
+            currentTimeout = this.FALLBACK_INTERVAL;
+        } else if (!this._isCollectingData && Date.now() - this._lastSuccessTime >= this.MAX_PING_WAIT_TIME && !this._lastSendSucceeded) {
             // Haven't pinged successfully in 60 seconds, so wait another 60 seconds
-            currentTimeout = QuickPulseStateManager.FALLBACK_INTERVAL;
+            currentTimeout = this.FALLBACK_INTERVAL;
         }
         this._lastSendSucceeded = null;
         this._handle = <any>setTimeout(this._goQuickPulse.bind(this), currentTimeout);

@@ -2,8 +2,7 @@ import * as azureCore from "@azure/core-http";
 
 import * as types from "../applicationinsights";
 import * as Helpers from "./Helpers";
-import * as  Constants from "../Declarations/Constants";
-import { StatusLogger, StatusContract } from "./StatusLogger";
+import { StatusLogger, StatusContract, DEFAULT_STATUS_CONTRACT } from "./StatusLogger";
 import { DiagnosticLogger } from "./DiagnosticLogger";
 import { JsonConfig } from "../Library/Configuration/JsonConfig";
 import { KnownContextTagKeys } from "../Declarations/Generated";
@@ -20,7 +19,7 @@ const forceStart = process.env.APPLICATIONINSIGHTS_FORCE_START === "true";
 
 // Other local constants
 const defaultStatus: StatusContract = {
-    ...StatusLogger.DEFAULT_STATUS,
+    ...DEFAULT_STATUS_CONTRACT,
     Ikey: _setupString
 };
 

@@ -17,9 +17,9 @@ export interface IVirtualMachineInfo {
 
 export class AzureVirtualMachine {
 
-    private static TAG = "AzureVirtualMachine";
+    private _TAG = "AzureVirtualMachine";
 
-    public static getAzureComputeMetadata(config: Config, callback: (vm: IVirtualMachineInfo) => void) {
+    public getAzureComputeMetadata(config: Config, callback: (vm: IVirtualMachineInfo) => void) {
         let vmInfo: IVirtualMachineInfo = {};
         const metadataRequestUrl = `${AIMS_URI}?${AIMS_API_VERSION}&${AIMS_FORMAT}`;
         const requestOptions = {
@@ -48,7 +48,7 @@ export class AzureVirtualMachine {
                     }
                     catch (error) {
                         // Failed to parse JSON
-                        Logger.info(AzureVirtualMachine.TAG, error);
+                        Logger.info(this._TAG, error);
                     }
                     callback(vmInfo);
                 });
@@ -65,7 +65,7 @@ export class AzureVirtualMachine {
                 }
                 else {
                     // Only log when is not determined if VM or not to avoid noise outside of Azure VMs
-                    Logger.info(AzureVirtualMachine.TAG, error);
+                    Logger.info(this._TAG, error);
                 }
                 callback(vmInfo);
             });

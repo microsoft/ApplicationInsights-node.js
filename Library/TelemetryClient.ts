@@ -1,7 +1,6 @@
 import { Config } from "./Configuration/Config";
 import { Context } from "./Context";
 import * as  Contracts from "../Declarations/Contracts";
-import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
 import { Statsbeat } from "../AutoCollection/Statsbeat";
 import { Util } from "./Util/Util";
 import { Logger } from "./Logging/Logger";
@@ -15,7 +14,7 @@ import { LogHandler, MetricHandler, TraceHandler } from "./Handlers";
  * and manually trigger immediate sending (flushing)
  */
 export class TelemetryClient {
-    private static TAG = "TelemetryClient";
+    private _TAG = "TelemetryClient";
     private _telemetryProcessors: { (envelope: Envelope, contextObjects: { [name: string]: any; }): boolean; }[] = [];
     private _statsbeat: Statsbeat;
 
@@ -42,7 +41,7 @@ export class TelemetryClient {
         }
         this.traceHandler = new TraceHandler(this.config, this.context);
         this.metricHandler = new MetricHandler(this.config, this.context);
-        this.logHandler = new LogHandler(this.config, this._statsbeat);
+        this.logHandler = new LogHandler(this.config, this.context);
     }
 
     /**
@@ -101,7 +100,7 @@ export class TelemetryClient {
      *
      * @param telemetry      Object encapsulating tracking options
      */
-    public trackRequest(telemetry: Contracts.RequestTelemetry & Contracts.Identified): void {
+    public trackRequest(telemetry: Contracts.RequestTelemetry): void {
         this.traceHandler.trackRequest(telemetry);
     }
 
@@ -111,7 +110,7 @@ export class TelemetryClient {
      *
      * @param telemetry      Object encapsulating tracking option
      * */
-    public trackDependency(telemetry: Contracts.DependencyTelemetry & Contracts.Identified) {
+    public trackDependency(telemetry: Contracts.DependencyTelemetry) {
         this.traceHandler.trackDependency(telemetry);
     }
 
@@ -184,7 +183,8 @@ export class TelemetryClient {
             return accepted;
         }
         contextObjects = contextObjects || {};
-        contextObjects["correlationContext"] = CorrelationContextManager.getCurrentContext();
+        // TODO: Telemetry processor support pending work
+        //contextObjects["correlationContext"] = CorrelationContextManager.getCurrentContext();
         for (var i = 0; i < telemetryProcessorsCount; ++i) {
             try {
                 var processor = this._telemetryProcessors[i];
@@ -197,7 +197,7 @@ export class TelemetryClient {
 
             } catch (error) {
                 accepted = true;
-                Logger.warn(TelemetryClient.TAG, "One of telemetry processors failed, telemetry item will be sent.", error, envelope);
+                Logger.warn(this._TAG, "One of telemetry processors failed, telemetry item will be sent.", error, envelope);
             }
         }
 

@@ -207,8 +207,8 @@ describe("EndToEnd", () => {
             // Dispose the default app insights client and auto collectors so that they can be reconfigured
             // cleanly for each test
             sandbox.restore();
-
-            CorrelationContextManager.reset();
+            // TODO: Correlation management pending work
+            // CorrelationContextManager.reset();
             AppInsights.dispose();
         });
 
@@ -365,7 +365,8 @@ describe("EndToEnd", () => {
             // Dispose the default app insights client and auto collectors so that they can be reconfigured
             // cleanly for each test
             sandbox.restore();
-            CorrelationContextManager.reset();
+            // TODO: Correlation management pending work
+            // CorrelationContextManager.reset();
             AppInsights.dispose();
         });
 
@@ -583,7 +584,7 @@ describe("EndToEnd", () => {
                 assert.equal(keys[4], "azInst_osType", "azInst_osType should be added as a key");
 
                 const properties = trackMetricStub.args[0][0].properties;
-                assert.equal(properties["sdk"], Context.sdkVersion, "sdk version should be read from Context");
+                assert.equal(properties["sdk"], heartbeat["_handler"].getContext().sdkVersion, "sdk version should be read from Context");
                 assert.equal(properties["osType"], os.type(), "osType should be read from os library");
                 assert.equal(properties["azInst_vmId"], "1", "azInst_vmId should be read from response");
                 assert.equal(properties["azInst_subscriptionId"], "2", "azInst_subscriptionId should be read from response");
@@ -615,7 +616,7 @@ describe("EndToEnd", () => {
                 assert.equal(keys[1], "osType", "osType should be added as a key");
 
                 const properties = trackMetricStub.args[0][0].properties;
-                assert.equal(properties["sdk"], Context.sdkVersion, "sdk version should be read from Context");
+                assert.equal(properties["sdk"], heartbeat["_handler"].getContext().sdkVersion, "sdk version should be read from Context");
                 assert.equal(properties["osType"], os.type(), "osType should be read from os library");
                 done();
             });

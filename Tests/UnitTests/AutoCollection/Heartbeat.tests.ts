@@ -69,7 +69,7 @@ describe("AutoCollection/HeartBeat", () => {
                 assert.equal(keys1[3], "appSrv_wsStamp", "appSrv_wsStamp should be added as a key");
                 assert.equal(keys1[4], "appSrv_wsHost", "appSrv_wsHost should be added as a key");
                 const properties1 = stub1.args[0][0].properties;
-                assert.equal(properties1["sdk"], Context.sdkVersion, "sdk version should be read from Context");
+                assert.equal(properties1["sdk"], heartbeat1["_handler"].getContext().sdkVersion, "sdk version should be read from Context");
                 assert.equal(properties1["osType"], os.type(), "osType should be read from os library");
                 assert.equal(properties1["appSrv_SiteName"], "site_name", "appSrv_SiteName should be read from environment variable");
                 assert.equal(properties1["appSrv_wsStamp"], "stamp_name", "appSrv_wsStamp should be read from environment variable");
@@ -97,7 +97,7 @@ describe("AutoCollection/HeartBeat", () => {
                 assert.equal(keys2[1], "osType", "osType should be added as a key");
                 assert.equal(keys2[2], "azfunction_appId", "azfunction_appId should be added as a key");
                 const properties2 = stub2.args[0][0].properties;
-                assert.equal(properties2["sdk"], Context.sdkVersion, "sdk version should be read from Context");
+                assert.equal(properties2["sdk"], heartbeat2["_handler"].getContext().sdkVersion, "sdk version should be read from Context");
                 assert.equal(properties2["osType"], os.type(), "osType should be read from os library");
                 assert.equal(properties2["azfunction_appId"], "host_name", "azfunction_appId should be read from environment variable");
                 done();

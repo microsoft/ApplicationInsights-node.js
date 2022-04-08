@@ -16,35 +16,31 @@ export interface BreezeError {
     message: string;
 }
 
-export class RemoteDependencyDataConstants {
-    public static TYPE_HTTP: string = "Http";
-    public static TYPE_AI: string = "Http (tracked component)";
-}
-
 /**
  * Subset of Connection String fields which this SDK can parse. Lower-typecased to
- * allow for case-insensitivity across field names
- * @type ConnectionStringKey
+ * allow for case-insensitivity across field names.
+ * @internal
  */
-export interface ConnectionString {
-    instrumentationkey?: string;
-    ingestionendpoint?: string;
-    liveendpoint?: string;
-    location?: string;
-    endpointsuffix?: string;
+export type ConnectionString = { [key in ConnectionStringKey]?: string };
 
-    // Note: this is a node types backcompat equivalent to
-    // type ConnectionString = { [key in ConnectionStringKey]?: string }
-}
-
-export type ConnectionStringKey = "instrumentationkey" | "ingestionendpoint" | "liveendpoint" | "location"| "endpointsuffix";
+/**
+ * ConnectionString keys.
+ * @internal
+ */
+export type ConnectionStringKey =
+    | "authorization"
+    | "instrumentationkey"
+    | "ingestionendpoint"
+    | "liveendpoint"
+    | "location"
+    | "endpointsuffix";
 
 /**
  * SDK info
  * @internal
  */
- export const SDK_INFO = {
+export const SDK_INFO = {
     NAME: "opentelemetry",
     RUNTIME: "node",
     LANGUAGE: "nodejs",
-  };
+};

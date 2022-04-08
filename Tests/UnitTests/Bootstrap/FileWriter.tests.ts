@@ -7,10 +7,6 @@ import { FileWriter, homedir } from "../../../Bootstrap/FileWriter";
 import { renameCurrentFile } from "../../../Bootstrap/Helpers/FileHelpers";
 
 describe("FileWriter", () => {
-    if (!FileWriter.isNodeVersionCompatible()) {
-        return;
-    }
-
     const filedir = path.join(homedir, "LogFiles/ApplicationInsights/test");
     describe("#constructor()", () => {
         it("should return a ready FileWriter", () => {

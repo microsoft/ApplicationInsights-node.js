@@ -66,7 +66,7 @@ export class AzureMonitorMetricExporter extends BaseExporter {
         let baseType: "MetricsData";
         let version = 1;
         let baseData: MetricsData = { metrics: [] };
-        const time = (new Date());
+        const time = telemetry.time || (new Date());
         // Exclude metrics from sampling by default
         let sampleRate = 100;
         let properties = {};

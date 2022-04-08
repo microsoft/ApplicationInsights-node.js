@@ -11,7 +11,8 @@ describe("ConnectionStringParser", () => {
             const ingestionEndpoint = "ingest";
             const liveEndpoint = "live";
             var connectionString = `InstrumentationKey=${instrumentationKey};IngestionEndpoint=${ingestionEndpoint};LiveEndpoint=${liveEndpoint};`;
-            const result = ConnectionStringParser.parse(connectionString);
+            let connectionStringPrser = new ConnectionStringParser();
+            const result = connectionStringPrser.parse(connectionString);
             assert.deepEqual(result.instrumentationkey, instrumentationKey);
             assert.deepEqual(result.ingestionendpoint, ingestionEndpoint);
             assert.deepEqual(result.liveendpoint, liveEndpoint);
@@ -22,8 +23,8 @@ describe("ConnectionStringParser", () => {
             const ingestionEndpoint = "ingest";
             const liveEndpoint = "live";
             const connectionString = `Instrume.ntationKey=${instrumentationKey};Ingestion.Endpoint=${ingestionEndpoint};LiveEnd.point=${liveEndpoint}`;
-
-            const result = ConnectionStringParser.parse(connectionString);
+            let connectionStringPrser = new ConnectionStringParser();
+            const result = connectionStringPrser.parse(connectionString);
             assert.deepEqual(result.instrumentationkey, undefined);
             assert.deepEqual(result.ingestionendpoint, Constants.DEFAULT_BREEZE_ENDPOINT);
             assert.deepEqual(result.liveendpoint, Constants.DEFAULT_LIVEMETRICS_ENDPOINT);
@@ -35,7 +36,8 @@ describe("ConnectionStringParser", () => {
             expectedBreezeEndpoint: string,
             expectedLiveMetricsEndpoint: string,
         }) => {
-            const result = ConnectionStringParser.parse(options.connectionString);
+            let connectionStringPrser = new ConnectionStringParser();
+            const result = connectionStringPrser.parse(options.connectionString);
             if (options.expectedInstrumentationKey) assert.deepEqual(result.instrumentationkey, options.expectedInstrumentationKey);
             assert.deepEqual(result.ingestionendpoint, options.expectedBreezeEndpoint);
             assert.deepEqual(result.liveendpoint, options.expectedLiveMetricsEndpoint);

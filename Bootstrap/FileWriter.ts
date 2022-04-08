@@ -15,32 +15,29 @@ export interface FileWriterOptions {
 
 export const homedir = FileHelpers.homedir;
 
+const DEFAULT_OPTIONS: FileWriterOptions = {
+    append: false,
+    deleteOnExit: true,
+    sizeLimit: 10*1024,
+    renamePolicy: "stop",
+    chmod: 0o644 // rw/r/r
+};
+
+
 export class FileWriter implements DataModel.AgentLogger {
     public callback = (_err: Error) => { }; // no-op
     private _ready = false;
     private _options: FileWriterOptions;
-    private static _fullpathsToDelete: string[] = [];
-    private static _listenerAttached = false;
-    private static DEFAULT_OPTIONS: FileWriterOptions = {
-        append: false,
-        deleteOnExit: true,
-        sizeLimit: 10*1024,
-        renamePolicy: "stop",
-        chmod: 0o644 // rw/r/r
-    }
-
-    public static isNodeVersionCompatible() {
-        const majVer = process.versions.node.split(".")[0];
-        return parseInt(majVer) >= 1;
-    }
+    private _fullpathsToDelete: string[] = [];
+    private _listenerAttached = false;
 
     // leave at "keep at single file only", "write up to certain size limit", "clear old file on process startup"
     constructor(private _filepath: string, private _filename: string, options?: Partial<FileWriterOptions>) {
-        this._options = { ...FileWriter.DEFAULT_OPTIONS, ...options };
-        this._ready = FileWriter.isNodeVersionCompatible() && FileHelpers.makeStatusDirs(this._filepath);
+        this._options = { ...DEFAULT_OPTIONS, ...options };
+        this._ready = FileHelpers.makeStatusDirs(this._filepath);
         if (this._options.deleteOnExit) {
-            FileWriter._addCloseHandler();
-            FileWriter._fullpathsToDelete.push(path.join(this._filepath, this._filename));
+            this._addCloseHandler();
+            this._fullpathsToDelete.push(path.join(this._filepath, this._filename));
         }
     }
 
@@ -58,7 +55,7 @@ export class FileWriter implements DataModel.AgentLogger {
                     if (this._options.renamePolicy === "rolling") {
                         FileHelpers.renameCurrentFile(this._filepath, this._filename, (renameErr, renamedFullpath) => {
                             if (renameErr) return;
-                            FileWriter._fullpathsToDelete.push(renamedFullpath);
+                            this._fullpathsToDelete.push(renamedFullpath);
                             this._options.append
                                 ? this._appendFile(data + "\n")
                                 : this._writeFile(data);
@@ -96,16 +93,16 @@ export class FileWriter implements DataModel.AgentLogger {
         fs.writeFile(fullpath, message, { mode: this._options.chmod }, this.callback);
     }
 
-    private static _addCloseHandler() {
-        if (!FileWriter._listenerAttached) {
+    private _addCloseHandler() {
+        if (!this._listenerAttached) {
             process.on("exit", () => {
-                FileWriter._fullpathsToDelete.forEach((filename) => {
+                this._fullpathsToDelete.forEach((filename) => {
                     try {
                         fs.unlinkSync(filename);
                     } catch (err) { /** ignore errors */ }
                 });
             });
-            FileWriter._listenerAttached = true;
+            this._listenerAttached = true;
         }
     }
 

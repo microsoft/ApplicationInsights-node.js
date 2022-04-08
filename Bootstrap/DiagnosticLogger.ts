@@ -1,15 +1,10 @@
-"use strict";
-
-import * as path from "path";
 import * as DataModel from "./DataModel";
 import { FileWriter } from "./FileWriter";
-import { homedir } from "./Helpers/FileHelpers";
 import { APPLICATION_INSIGHTS_SDK_VERSION } from "../Declarations/Constants";
 
 export class DiagnosticLogger {
-    public static readonly DEFAULT_FILE_NAME: string = "application-insights-extension.log";
-    public static readonly DEFAULT_LOG_DIR: string = process.env.APPLICATIONINSIGHTS_LOGDIR || path.join(homedir, "LogFiles/ApplicationInsights");
-    public static DefaultEnvelope: DataModel.DiagnosticLog = {
+
+    private _defaultEnvelope: DataModel.DiagnosticLog = {
         message: null,
         level: null,
         time: null,
@@ -33,7 +28,7 @@ export class DiagnosticLogger {
         }
         if (typeof message === "string") {
             const diagnosticMessage: DataModel.DiagnosticLog = {
-                ...DiagnosticLogger.DefaultEnvelope,
+                ...this._defaultEnvelope,
                 message,
                 level: DataModel.SeverityLevel.INFO,
                 time: new Date().toISOString()
@@ -54,7 +49,7 @@ export class DiagnosticLogger {
         }
         if (typeof message === "string") {
             const diagnosticMessage: DataModel.DiagnosticLog = {
-                ...DiagnosticLogger.DefaultEnvelope,
+                ...this._defaultEnvelope,
                 message,
                 level: DataModel.SeverityLevel.ERROR,
                 time: new Date().toUTCString()

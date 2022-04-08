@@ -4,7 +4,6 @@ import { AzureVirtualMachine } from "../Library/AzureVirtualMachine";
 import { MetricHandler } from "../Library/Handlers/MetricHandler";
 import * as  Constants from "../Declarations/Constants";
 import { Config } from "../Library/Configuration/Config";
-import { Context } from "../Library/Context";
 
 export class HeartBeat {
     private _collectionInterval: number = 900000;
@@ -12,10 +11,12 @@ export class HeartBeat {
     private _handler: MetricHandler;
     private _handle: NodeJS.Timer | null;
     private _isVM: boolean;
+    private _azureVm: AzureVirtualMachine;
 
     constructor(handler: MetricHandler, config: Config) {
         this._handler = handler;
         this._config = config;
+        this._azureVm = new AzureVirtualMachine();
     }
 
     public enable(isEnabled: boolean) {
@@ -38,7 +39,7 @@ export class HeartBeat {
 
         // TODO: Add sdk property for attach scenarios, confirm if this is only expected when attach happens, older code doing this was present in Default.ts
 
-        const sdkVersion = Context.sdkVersion;
+        const sdkVersion = this._handler.getContext().sdkVersion;
         properties["sdk"] = sdkVersion;
         properties["osType"] = os.type();
         if (process.env.WEBSITE_SITE_NAME) { // Web apps
@@ -50,7 +51,7 @@ export class HeartBeat {
         } else if (config) {
             if (this._isVM === undefined) {
                 waiting = true;
-                AzureVirtualMachine.getAzureComputeMetadata(config, (vmInfo) => {
+                this._azureVm.getAzureComputeMetadata(config, (vmInfo) => {
                     this._isVM = vmInfo.isVM;
                     if (this._isVM) {
                         properties["azInst_vmId"] = vmInfo.id;

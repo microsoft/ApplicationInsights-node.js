@@ -11,12 +11,12 @@ import { Config } from "../../../Library/Configuration/Config";
 describe("AutoCollection/Statsbeat", () => {
     var sandbox: sinon.SinonSandbox;
     const config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-    Statsbeat.CONNECTION_STRING = "InstrumentationKey=2aa22222-bbbb-1ccc-8ddd-eeeeffff3333;"
     let statsBeat: Statsbeat = null;
 
     beforeEach(() => {
         sandbox = sinon.sandbox.create();
         statsBeat = new Statsbeat(config);
+        sandbox.stub(statsBeat["_metricHandler"], "trackStatsbeatMetric", () => { }); // Avoid telemetry to be sent from tests
     });
 
     afterEach(() => {

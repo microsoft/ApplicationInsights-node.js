@@ -1,43 +1,26 @@
-import { Telemetry }  from "./Telemetry";
+import { Telemetry } from "./Telemetry";
 
 /**
  * Telemetry about the call to remote component
  */
 export interface DependencyTelemetry extends Telemetry {
-    /**
-     * Type name of the telemetry, such as HTTP of SQL
-     */
-    dependencyTypeName: string;
 
-    /**
-     * Remote component general target information
-     * If left empty, this will be prepopulated with an extracted hostname from the data field, if it is a url.
-     * This prepopulation happens when calling `trackDependency`. Use `track` directly to avoid this behavior.
-     */
-    target?: string;
-
-    /**
-     * Remote call name
-     */
+    /** Identifier of a dependency call instance. Used for correlation with the request telemetry item corresponding to this dependency call. */
+    id?: string;
+    /** Name of the command initiated with this dependency call. Low cardinality value. Examples are stored procedure name and URL path template. */
     name: string;
-
-    /**
-     * Remote call data. This is the most detailed information about the call, such as full URL or SQL statement
-     */
-    data: string;
-
-    /**
-     * Remote call duration in ms
-     */
-    duration: number;
-
-    /**
-     * Result code returned form the remote component. This is domain specific and can be HTTP status code or SQL result code
-     */
-    resultCode: string | number;
-
-    /**
-     * True if remote call was successful, false otherwise
-     */
-    success: boolean;
+    /** Result code of a dependency call. Examples are SQL error code and HTTP status code. */
+    resultCode?: string | number;
+    /** Command initiated by this dependency call. Examples are SQL statement and HTTP URL with all query parameters. */
+    data?: string;
+    /** Dependency type name. Very low cardinality value for logical grouping of dependencies and interpretation of other fields like commandName and resultCode. Examples are SQL, Azure table, and HTTP. */
+    dependencyTypeName?: string;
+    /** Target site of a dependency call. Examples are server name, host address. */
+    target?: string;
+    /** Remote call duration in ms. */
+    duration: string;
+    /** Indication of successful or unsuccessful call. */
+    success?: boolean;
+    /** Collection of custom measurements. */
+    measurements?: { [propertyName: string]: number };
 }

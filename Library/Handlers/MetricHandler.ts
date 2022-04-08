@@ -145,6 +145,10 @@ export class MetricHandler {
         this._nativePerformance = null;
     }
 
+    public getContext() {
+        return this._context;
+    }
+
     private _initializeFlagsFromConfig() {
         this.isPerformance = this._config.enableAutoCollectPerformance !== undefined ? this._config.enableAutoCollectPerformance : this.isPerformance;
         this.isPreAggregatedMetrics = this._config.enableAutoCollectPreAggregatedMetrics !== undefined ? this._config.enableAutoCollectPreAggregatedMetrics : this.isPreAggregatedMetrics;

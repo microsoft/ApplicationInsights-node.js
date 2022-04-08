@@ -92,7 +92,7 @@ export class TraceHandler {
     }
 
     // Support Legacy APIs
-    public trackRequest(telemetry: Contracts.RequestTelemetry & Contracts.Identified) {
+    public trackRequest(telemetry: Contracts.RequestTelemetry) {
         // TODO: Change context if ID is provided?
         const ctx = context.active();
         let attributes: SpanAttributes = {
@@ -120,7 +120,7 @@ export class TraceHandler {
     }
 
     // Support Legacy APIs
-    public trackDependency(telemetry: Contracts.DependencyTelemetry & Contracts.Identified) {
+    public trackDependency(telemetry: Contracts.DependencyTelemetry) {
         // TODO: Change context if ID is provided?
 
         if (telemetry && !telemetry.target && telemetry.data) {

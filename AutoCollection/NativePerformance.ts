@@ -68,7 +68,6 @@ export class AutoCollectNativePerformance {
      * Parse environment variable and overwrite isEnabled based on respective fields being set
      *
      * @private
-     * @static
      * @param {(boolean | IDisabledExtendedMetrics)} collectExtendedMetrics
      * @param {(IBaseConfig)} customConfig
      * @returns {(boolean | IDisabledExtendedMetrics)}

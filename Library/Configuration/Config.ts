@@ -10,13 +10,8 @@ import { JsonConfig } from "./JsonConfig";
 import { IConfig, IDisabledExtendedMetrics } from "../../Declarations/Interfaces";
 import { DistributedTracingModes } from "../../Declarations/Enumerators";
 
+
 export class Config implements IConfig {
-
-    public static ENV_azurePrefix = "APPSETTING_"; // Azure adds this prefix to all environment variables
-    public static ENV_iKey = "APPINSIGHTS_INSTRUMENTATIONKEY"; // This key is provided in the readme
-    public static legacy_ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
-    public static ENV_quickPulseHost = "APPINSIGHTS_QUICKPULSE_HOST";
-
     // IConfig properties
     public endpointUrl: string;
     public maxBatchSize: number;
@@ -66,13 +61,14 @@ export class Config implements IConfig {
         // Load config values from env variables and JSON if available
         this._mergeConfig();
         const connectionStringEnv: string | undefined = this._connectionString;
-        const csCode = ConnectionStringParser.parse(setupString);
-        const csEnv = ConnectionStringParser.parse(connectionStringEnv);
+        let connectionStringPrser = new ConnectionStringParser();
+        const csCode = connectionStringPrser.parse(setupString);
+        const csEnv = connectionStringPrser.parse(connectionStringEnv);
         const iKeyCode = !csCode.instrumentationkey && Object.keys(csCode).length > 0
             ? null // CS was valid but instrumentation key was not provided, null and grab from env var
             : setupString; // CS was invalid, so it must be an ikey
 
-        this.instrumentationKey = csCode.instrumentationkey || iKeyCode /* === instrumentationKey */ || csEnv.instrumentationkey || Config._getInstrumentationKey();
+        this.instrumentationKey = csCode.instrumentationkey || iKeyCode /* === instrumentationKey */ || csEnv.instrumentationkey || this._getInstrumentationKey();
         this.endpointUrl = `${this.endpointUrl || csCode.ingestionendpoint || csEnv.ingestionendpoint || this._endpointBase}/v2.1/track`;
         this.maxBatchSize = this.maxBatchSize || 250;
         this.maxBatchIntervalMs = this.maxBatchIntervalMs || 15000;
@@ -90,7 +86,7 @@ export class Config implements IConfig {
                 "*.core.eaglex.ic.gov"
             ];
         this.ignoreLegacyHeaders = this.ignoreLegacyHeaders || false;
-        this.quickPulseHost = this.quickPulseHost || csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_HOST;
+        this.quickPulseHost = this.quickPulseHost || csCode.liveendpoint || csEnv.liveendpoint || process.env[Constants.ENV_QUCKPULSE_HOST] || Constants.DEFAULT_LIVEMETRICS_HOST;
         // Parse quickPulseHost if it starts with http(s)://
         if (this.quickPulseHost.match(/^https?:\/\//)) {
             this.quickPulseHost = new url.URL(this.quickPulseHost).host;
@@ -98,7 +94,7 @@ export class Config implements IConfig {
     }
 
     public set instrumentationKey(iKey: string) {
-        if (!Config._validateInstrumentationKey(iKey)) {
+        if (!this._validateInstrumentationKey(iKey)) {
             Logger.warn("An invalid instrumentation key was provided. There may be resulting telemetry loss", this.instrumentationKey);
         }
         this._instrumentationKey = iKey;
@@ -145,12 +141,12 @@ export class Config implements IConfig {
         this.samplingPercentage = jsonConfig.samplingPercentage;
     }
 
-    private static _getInstrumentationKey(): string {
+    private _getInstrumentationKey(): string {
         // check for both the documented env variable and the azure-prefixed variable
-        var iKey = process.env[Config.ENV_iKey]
-            || process.env[Config.ENV_azurePrefix + Config.ENV_iKey]
-            || process.env[Config.legacy_ENV_iKey]
-            || process.env[Config.ENV_azurePrefix + Config.legacy_ENV_iKey];
+        var iKey = process.env[Constants.ENV_IKEY]
+            || process.env[Constants.ENV_AZURE_PREFIX + Constants.ENV_IKEY]
+            || process.env[Constants.LEGACY_ENV_IKEY]
+            || process.env[Constants.ENV_AZURE_PREFIX + Constants.LEGACY_ENV_IKEY];
         if (!iKey || iKey == "") {
             throw new Error("Instrumentation key not found, pass the key in the config to this method or set the key in the environment variable APPINSIGHTS_INSTRUMENTATIONKEY before starting the server");
         }
@@ -172,7 +168,7 @@ export class Config implements IConfig {
     * Fourth section has 4 characters
     * Fifth section has 12 characters
     */
-    private static _validateInstrumentationKey(iKey: string): boolean {
+    private _validateInstrumentationKey(iKey: string): boolean {
         const UUID_Regex = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$";
         const regexp = new RegExp(UUID_Regex);
         return regexp.test(iKey);

@@ -28,7 +28,7 @@ describe("DiagnosticLogger", () => {
 
     describe("#DiagnosticLogger.DefaultEnvelope", () => {
         it("should have the correct version string", () => {
-            assert.equal(DiagnosticLogger.DefaultEnvelope.properties.sdkVersion, version);
+            assert.equal(logger["_defaultEnvelope"].properties.sdkVersion, version);
         });
     });
 

@@ -86,6 +86,3 @@ export enum TelemetryType {
     PageView
 }
 
-export interface Identified {
-    id?: string;
-}

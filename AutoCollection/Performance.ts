@@ -246,7 +246,7 @@ export class AutoCollectPerformance {
         this._lastRequests = requests;
     }
 
-    // Static counter is accumulated externally. Report the rate to client here
+    // Counter is accumulated externally. Report the rate to client here
     // Note: This is currently only used with QuickPulse client
     private _trackDependencyRate() {
         if (this._enableLiveMetricsCounters) {
@@ -281,7 +281,7 @@ export class AutoCollectPerformance {
         }
     }
 
-    // Static counter is accumulated externally. Report the rate to client here
+    // Counter is accumulated externally. Report the rate to client here
     // Note: This is currently only used with QuickPulse client
     private _trackExceptionRate() {
         if (this._enableLiveMetricsCounters) {

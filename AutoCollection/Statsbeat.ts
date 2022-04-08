@@ -14,13 +14,10 @@ const STATSBEAT_LANGUAGE = "node";
 
 export class Statsbeat {
 
-    public static CONNECTION_STRING = "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://dc.services.visualstudio.com/";
-    public static STATS_COLLECTION_SHORT_INTERVAL: number = 900000; // 15 minutes
-    public static STATS_COLLECTION_LONG_INTERVAL: number = 1440000; // 1 day
-
-    private static TAG = "Statsbeat";
-
-
+    private _connectionString = "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://dc.services.visualstudio.com/";
+    private _collectionShortIntervalMs: number = 900000; // 15 minutes
+    private _collectionLongIntervalMs: number = 1440000; // 1 day
+    private _TAG = "Statsbeat";
     private _metricHandler: MetricHandler;
     private _networkStatsbeatCollection: Array<NetworkStatsbeat>;
     private _context: Context;
@@ -32,6 +29,7 @@ export class Statsbeat {
     private _statsbeatConfig: Config;
     private _isVM: boolean | undefined;
     private _statbeatMetrics: Array<{ name: string; value: number, properties: {} }>;
+    private _azureVm: AzureVirtualMachine;
 
     // Custom dimensions
     private _resourceProvider: string;
@@ -51,7 +49,8 @@ export class Statsbeat {
         this._networkStatsbeatCollection = [];
         this._config = config;
         this._context = context || new Context(null);
-        this._statsbeatConfig = new Config(Statsbeat.CONNECTION_STRING);
+        this._azureVm = new AzureVirtualMachine();
+        this._statsbeatConfig = new Config(this._connectionString);
         this._statsbeatConfig.samplingPercentage = 100; // Do not sample
         this._statsbeatConfig.enableAutoCollectHeartbeat = false;
         this._statsbeatConfig.enableAutoCollectPerformance = false;
@@ -70,7 +69,7 @@ export class Statsbeat {
             if (!this._handle) {
                 this._handle = setInterval(() => {
                     this.trackShortIntervalStatsbeats();
-                }, Statsbeat.STATS_COLLECTION_SHORT_INTERVAL);
+                }, this._collectionShortIntervalMs);
                 this._handle.unref(); // Allow the app to terminate even while this loop is going on
             }
             if (!this._longHandle) {
@@ -78,7 +77,7 @@ export class Statsbeat {
                 this.trackLongIntervalStatsbeats();
                 this._longHandle = setInterval(() => {
                     this.trackLongIntervalStatsbeats();
-                }, Statsbeat.STATS_COLLECTION_LONG_INTERVAL);
+                }, this._collectionLongIntervalMs);
                 this._longHandle.unref(); // Allow the app to terminate even while this loop is going on
             }
         } else {
@@ -177,7 +176,7 @@ export class Statsbeat {
             await this._sendStatsbeats();
         }
         catch (error) {
-            Logger.info(Statsbeat.TAG, "Failed to send Statsbeat metrics: " + Util.getInstance().dumpObj(error));
+            Logger.info(this._TAG, "Failed to send Statsbeat metrics: " + Util.getInstance().dumpObj(error));
         }
     }
 
@@ -208,7 +207,7 @@ export class Statsbeat {
             await this._sendStatsbeats();
         }
         catch (error) {
-            Logger.info(Statsbeat.TAG, "Failed to send Statsbeat metrics: " + Util.getInstance().dumpObj(error));
+            Logger.info(this._TAG, "Failed to send Statsbeat metrics: " + Util.getInstance().dumpObj(error));
         }
     }
 
@@ -286,7 +285,7 @@ export class Statsbeat {
     private _getCustomProperties() {
         this._language = STATSBEAT_LANGUAGE;
         this._cikey = this._config.instrumentationKey;
-        this._sdkVersion = Context.sdkVersion; // "node" or "node-nativeperf"
+        this._sdkVersion = this._context.sdkVersion; // "node" or "node-nativeperf"
         this._os = os.type();
         this._runtimeVersion = process.version;
     }
@@ -311,7 +310,7 @@ export class Statsbeat {
             } else if (this._config) {
                 if (this._isVM === undefined || this._isVM == true) {
                     waiting = true;
-                    AzureVirtualMachine.getAzureComputeMetadata(this._config, (vmInfo) => {
+                    this._azureVm.getAzureComputeMetadata(this._config, (vmInfo) => {
                         this._isVM = vmInfo.isVM;
                         if (this._isVM) {
                             this._resourceProvider = Constants.StatsbeatResourceProvider.vm;

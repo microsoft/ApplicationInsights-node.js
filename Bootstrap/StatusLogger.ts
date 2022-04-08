@@ -1,10 +1,6 @@
-"use strict";
-
 import * as os from "os";
-import * as path from "path";
-import * as fs from "fs";
 import * as DataModel from "./DataModel";
-import { FileWriter, homedir } from "./FileWriter";
+import { FileWriter } from "./FileWriter";
 import { APPLICATION_INSIGHTS_SDK_VERSION } from "../Declarations/Constants";
 
 export interface StatusContract {
@@ -18,20 +14,18 @@ export interface StatusContract {
     Ikey: string;
 }
 
-export class StatusLogger {
-    public static readonly DEFAULT_FILE_PATH: string = path.join(homedir, "status");
-    public static readonly DEFAULT_FILE_NAME: string = `status_${os.hostname()}_${process.pid}.json`;
-    public static readonly DEFAULT_STATUS: StatusContract = {
-        AgentInitializedSuccessfully: false,
-        SDKPresent: false,
-        Ikey: "unknown",
-        AppType: "node.js",
-        SdkVersion: APPLICATION_INSIGHTS_SDK_VERSION,
-        MachineName: os.hostname(),
-        PID: String(process.pid)
-    }
+export const DEFAULT_STATUS_CONTRACT: StatusContract = {
+    AgentInitializedSuccessfully: false,
+    SDKPresent: false,
+    Ikey: "unknown",
+    AppType: "node.js",
+    SdkVersion: APPLICATION_INSIGHTS_SDK_VERSION,
+    MachineName: os.hostname(),
+    PID: String(process.pid)
+}
 
-    constructor(public _writer: DataModel.AgentLogger = console) {}
+export class StatusLogger {
+    constructor(public _writer: DataModel.AgentLogger = console) { }
 
     public logStatus(data: StatusContract, cb?: (err: Error) => void) {
         if (typeof cb === "function" && this._writer instanceof FileWriter) {

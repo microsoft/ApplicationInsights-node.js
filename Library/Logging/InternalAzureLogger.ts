@@ -5,14 +5,13 @@ import { accessAsync, appendFileAsync, confirmDirExists, getShallowFileSize, rea
 
 
 export class InternalAzureLogger {
-
-    private static _instance: InternalAzureLogger;
     public maxHistory: number;
     public maxSizeBytes: number;
 
-    private TAG = "Logger";
+    private static _instance: InternalAzureLogger;
+    private _TAG = "Logger";
     private _cleanupTimeOut = 60 * 30 * 1000; // 30 minutes;
-    private static _fileCleanupTimer: NodeJS.Timer = null;
+    private _fileCleanupTimer: NodeJS.Timer = null;
     private _tempDir: string;
     public _logFileName: string;
     private _fileFullPath: string;
@@ -51,11 +50,18 @@ export class InternalAzureLogger {
         this._backUpNameFormat = "." + this._logFileName; // {currentime}.applicationinsights.log
 
         if (this._logToFile) {
-            if (!InternalAzureLogger._fileCleanupTimer) {
-                InternalAzureLogger._fileCleanupTimer = setInterval(() => { this._fileCleanupTask(); }, this._cleanupTimeOut);
-                InternalAzureLogger._fileCleanupTimer.unref();
+            if (!this._fileCleanupTimer) {
+                this._fileCleanupTimer = setInterval(() => { this._fileCleanupTask(); }, this._cleanupTimeOut);
+                this._fileCleanupTimer.unref();
             }
         }
+    }
+
+    public static getInstance() {
+        if (!InternalAzureLogger._instance) {
+            InternalAzureLogger._instance = new InternalAzureLogger();
+        }
+        return InternalAzureLogger._instance;
     }
 
     public info(message?: any, ...optionalParams: any[]) {
@@ -78,13 +84,6 @@ export class InternalAzureLogger {
         }
     }
 
-    static getInstance() {
-        if (!InternalAzureLogger._instance) {
-            InternalAzureLogger._instance = new InternalAzureLogger();
-        }
-        return InternalAzureLogger._instance;
-    }
-
     private async _storeToDisk(args: any): Promise<void> {
         let data = args + "\r\n";
 
@@ -92,7 +91,7 @@ export class InternalAzureLogger {
             await confirmDirExists(this._tempDir);
         }
         catch (err) {
-            console.log(this.TAG, "Failed to create directory for log file: " + (err && err.message));
+            console.log(this._TAG, "Failed to create directory for log file: " + (err && err.message));
             return;
         }
         try {
@@ -101,7 +100,7 @@ export class InternalAzureLogger {
         catch (err) {
             // No file create one
             await appendFileAsync(this._fileFullPath, data).catch((appendError) => {
-                console.log(this.TAG, "Failed to put log into file: " + (appendError && appendError.message));
+                console.log(this._TAG, "Failed to put log into file: " + (appendError && appendError.message));
             });
             return;
         }
@@ -116,7 +115,7 @@ export class InternalAzureLogger {
             }
         }
         catch (err) {
-            console.log(this.TAG, "Failed to create backup file: " + (err && err.message));
+            console.log(this._TAG, "Failed to create backup file: " + (err && err.message));
         }
     }
 
@@ -159,7 +158,7 @@ export class InternalAzureLogger {
             }
         }
         catch (err) {
-            console.log(this.TAG, "Failed to cleanup log files: " + (err && err.message));
+            console.log(this._TAG, "Failed to cleanup log files: " + (err && err.message));
         }
     }
 }

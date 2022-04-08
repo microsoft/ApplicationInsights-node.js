@@ -30,28 +30,28 @@ describe("Library/Config", () => {
     describe("#constructor", () => {
         describe("connection string && API && environment variable prioritization", () => {
             it("connection string set via in code setup", () => {
-                var env = { [ENV_connectionString]: "InStruMenTatioNKey=cs.env", [Config.ENV_iKey]: "ikey.env" };
+                var env = { [ENV_connectionString]: "InStruMenTatioNKey=cs.env", [Constants.ENV_IKEY]: "ikey.env" };
                 process.env = env;
                 const config = new Config("InStruMenTatioNKey=cs.code");
                 assert.deepEqual(config.instrumentationKey, "cs.code");
             });
 
             it("instrumentation key set via in code setup", () => {
-                var env = { [ENV_connectionString]: "InStruMenTatioNKey=CS.env", [Config.ENV_iKey]: "ikey.env" };
+                var env = { [ENV_connectionString]: "InStruMenTatioNKey=CS.env", [Constants.ENV_IKEY]: "ikey.env" };
                 process.env = env;
                 const config = new Config("ikey.code");
                 assert.deepEqual(config.instrumentationKey, "ikey.code");
             });
 
             it("connection string set via environment variable", () => {
-                var env = { [ENV_connectionString]: "InStruMenTatioNKey=cs.env", [Config.ENV_iKey]: "ikey.env" };
+                var env = { [ENV_connectionString]: "InStruMenTatioNKey=cs.env", [Constants.ENV_IKEY]: "ikey.env" };
                 process.env = env;
                 const config = new Config();
                 assert.deepEqual(config.instrumentationKey, "cs.env");
             });
 
             it("instrumentation key set via environment variable", () => {
-                var env = { [Config.ENV_iKey]: "ikey.env" };
+                var env = { [Constants.ENV_IKEY]: "ikey.env" };
                 process.env = env;
                 const config = new Config();
                 assert.deepEqual(config.instrumentationKey, "ikey.env");
@@ -125,7 +125,7 @@ describe("Library/Config", () => {
 
             it("should read iKey from environment", () => {
                 var env = <{ [id: string]: string }>{};
-                env[Config.ENV_iKey] = iKey;
+                env[Constants.ENV_IKEY] = iKey;
                 process.env = env;
                 var config = new Config();
                 assert.equal(config.instrumentationKey, iKey);
@@ -133,7 +133,7 @@ describe("Library/Config", () => {
 
             it("should read iKey from azure environment", () => {
                 var env = <{ [id: string]: string }>{};
-                env[Config.ENV_azurePrefix + Config.ENV_iKey] = iKey;
+                env[Constants.ENV_AZURE_PREFIX +Constants.ENV_IKEY] = iKey;
                 process.env = env;
                 var config = new Config();
                 assert.equal(config.instrumentationKey, iKey);

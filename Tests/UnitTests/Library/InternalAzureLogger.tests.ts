@@ -15,7 +15,7 @@ describe("Library/InternalAzureLogger", () => {
 
     beforeEach(() => {
         InternalAzureLogger["_instance"] = null;
-        InternalAzureLogger["_fileCleanupTimer"] = setInterval(() => { }, 0);
+        sandbox.stub(global, "setInterval", () => { });
     });
 
     afterEach(() => {
@@ -76,7 +76,6 @@ describe("Library/InternalAzureLogger", () => {
         });
 
         it("should start file cleanup task", () => {
-            InternalAzureLogger["_fileCleanupTimer"] = null;
             var setIntervalSpy = sandbox.spy(global, "setInterval");
             internalLogger = InternalAzureLogger.getInstance();
             assert.ok(setIntervalSpy.called);

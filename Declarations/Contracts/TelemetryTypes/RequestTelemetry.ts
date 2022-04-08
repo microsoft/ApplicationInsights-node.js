@@ -4,38 +4,20 @@ import { Telemetry } from "./Telemetry";
  * Telemetry about the incoming request processed by the application
  */
 export interface RequestTelemetry extends Telemetry {
-     /**
-      * Request name
-      */
-     name: string;
-
-     /**
-      * Request url
-      */
-     url: string;
-
-     /**
-      * Request source. This encapsulates the information about the component that initiated the request
-      */
-     source?: string;
-
-     /**
-      * Request duration in ms
-      */
+     /** Identifier of a request call instance. Used for correlation between request and other telemetry items. */
+     id: string;
+     /** Name of the request. Represents code path taken to process request. Low cardinality value to allow better grouping of requests. For HTTP requests it represents the HTTP method and URL path template like 'GET /values/{id}'. */
+     name?: string;
+     /** Request duration in ms. */
      duration: number;
-
-     /**
-      * Result code reported by the application
-      */
-     resultCode: string | number;
-
-     /**
-      * Whether the request was successful
-      */
+     /** Indication of successful or unsuccessful call. */
      success: boolean;
-
-     /**
-     * Collection of custom measurements
-     */
-     measurements?: { [key: string]: number; };
+     /** Result of a request execution. HTTP status code for HTTP requests. */
+     resultCode: string;
+     /** Source of the request. Examples are the instrumentation key of the caller or the ip address of the caller. */
+     source?: string;
+     /** Request URL with all query string parameters. */
+     url?: string;
+     /** Collection of custom measurements. */
+     measurements?: { [propertyName: string]: number };
 }

@@ -38,7 +38,8 @@ export class BaseExporter {
         this._options.aadTokenCredential = options.aadTokenCredential;
 
         if (connectionString) {
-            const parsedConnectionString = ConnectionStringParser.parse(connectionString);
+            let connectionStringPrser = new ConnectionStringParser();
+            const parsedConnectionString = connectionStringPrser.parse(connectionString);
             this._options.instrumentationKey =
                 parsedConnectionString.instrumentationkey ?? this._options.instrumentationKey;
             this._options.endpointUrl =
