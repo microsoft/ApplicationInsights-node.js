@@ -30,7 +30,7 @@ describe("Library/AuthorizationHandler", () => {
     Util.getInstance().tlsRestrictedAgent = new https.Agent();
 
     beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
     });
 
     afterEach(() => {

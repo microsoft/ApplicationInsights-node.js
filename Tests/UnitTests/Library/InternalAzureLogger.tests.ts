@@ -1,5 +1,4 @@
 import * as assert from "assert";
-import * as fs from "fs";
 import * as sinon from "sinon";
 
 import { InternalAzureLogger } from "../../../Library/Logging/InternalAzureLogger";
@@ -10,12 +9,12 @@ describe("Library/InternalAzureLogger", () => {
     var sandbox: sinon.SinonSandbox;
 
     before(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
     });
 
     beforeEach(() => {
         InternalAzureLogger["_instance"] = null;
-        sandbox.stub(global, "setInterval", () => { });
+        sandbox.stub(global, "setInterval").callsFake(() => { return null });
     });
 
     afterEach(() => {
@@ -40,7 +39,7 @@ describe("Library/InternalAzureLogger", () => {
             var writeSpy = sandbox.spy(FileSystemHelper, "appendFileAsync");
             internalLogger["_storeToDisk"]("testMessage").then(() => {
                 assert.ok(writeSpy.called);
-                assert.ok(writeSpy.lastCall.args[0].indexOf("applicationinsights.log") > 0);
+                assert.ok(writeSpy.lastCall.args[0].toString().indexOf("applicationinsights.log") > 0);
                 assert.equal(writeSpy.lastCall.args[1], "testMessage\r\n");
                 done();
             }).catch((error) => { done(error); });

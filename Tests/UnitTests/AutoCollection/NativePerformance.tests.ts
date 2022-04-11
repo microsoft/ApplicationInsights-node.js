@@ -12,7 +12,7 @@ describe("AutoCollection/NativePerformance", () => {
     var sandbox: sinon.SinonSandbox;
 
     beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         JsonConfig["_instance"] = undefined;
     });
 

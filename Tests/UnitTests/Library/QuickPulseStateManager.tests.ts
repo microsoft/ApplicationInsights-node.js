@@ -43,7 +43,7 @@ describe("Library/QuickPulseStateManager", () => {
         beforeEach(() => {
             clock = sinon.useFakeTimers();
             qps = new QuickPulseStateManager(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
-            submitDataStub = sinon.stub(qps['_sender'], "_submitData");
+            submitDataStub = sinon.stub(qps['_sender'] as any, "_submitData");
         })
         afterEach(() => {
             qps = null;
@@ -132,7 +132,7 @@ describe("Library/QuickPulseStateManager", () => {
         let qps: QuickPulseStateManager;
 
         beforeEach(() => {
-            sandbox = sinon.sandbox.create();
+            sandbox = sinon.createSandbox();
             qps = new QuickPulseStateManager(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
         });
 
@@ -142,7 +142,7 @@ describe("Library/QuickPulseStateManager", () => {
         });
 
         it("should add document if sending data", () => {
-            sandbox.stub(qps, "_goQuickPulse");
+            sandbox.stub(qps as any, "_goQuickPulse");
             var testEnvelope: any = { name: "Test", tags: [] };
             testEnvelope.data = { baseType: "ExceptionData", baseData: {} };
             qps.enable(true);
@@ -153,7 +153,7 @@ describe("Library/QuickPulseStateManager", () => {
         });
 
         it("should not add document if not sending data", () => {
-            sandbox.stub(qps, "_goQuickPulse");
+            sandbox.stub(qps as any, "_goQuickPulse");
             var testEnvelope: Envelope = { name: "test", time: new Date() };
             qps.enable(true);
             assert.equal(qps['_documents'].length, 0);
@@ -178,7 +178,7 @@ describe("Library/QuickPulseStateManager", () => {
         };
 
         beforeEach(() => {
-            sandbox = sinon.sandbox.create();
+            sandbox = sinon.createSandbox();
         });
 
         afterEach(() => {

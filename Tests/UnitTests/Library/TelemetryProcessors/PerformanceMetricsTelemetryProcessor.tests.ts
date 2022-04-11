@@ -11,7 +11,7 @@ import { TelemetryItem as Envelope } from "../../../../Declarations/Generated";
 describe("TelemetryProcessors/PerformanceMetricsTelemetryProcessor", () => {
     var sandbox: sinon.SinonSandbox;
     before(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
     });
 
     afterEach(() => {

@@ -14,9 +14,9 @@ describe("AutoCollection/Statsbeat", () => {
     let statsBeat: Statsbeat = null;
 
     beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         statsBeat = new Statsbeat(config);
-        sandbox.stub(statsBeat["_metricHandler"], "trackStatsbeatMetric", () => { }); // Avoid telemetry to be sent from tests
+        sandbox.stub(statsBeat["_metricHandler"], "trackStatsbeatMetric").value({}); // Avoid telemetry to be sent from tests
     });
 
     afterEach(() => {
@@ -111,7 +111,7 @@ describe("AutoCollection/Statsbeat", () => {
 
         it("It adds correct network properties to custom metric", (done) => {
             statsBeat.enable(true);
-            const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
+            const sendStub = sandbox.stub(statsBeat as any, "_sendStatsbeats");
             statsBeat.countRequest(1, "testEndpointHost", 123, true);
             statsBeat.setCodelessAttach();
             statsBeat.trackShortIntervalStatsbeats().then(() => {
@@ -135,7 +135,7 @@ describe("AutoCollection/Statsbeat", () => {
 
         it("Track duration", (done) => {
             statsBeat.enable(true);
-            const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
+            const sendStub = sandbox.stub(statsBeat as any, "_sendStatsbeats");
             statsBeat.countRequest(0, "test", 1000, true);
             statsBeat.countRequest(0, "test", 500, false);
             statsBeat.trackShortIntervalStatsbeats().then((error) => {
@@ -150,7 +150,7 @@ describe("AutoCollection/Statsbeat", () => {
 
         it("Track counts", (done) => {
             statsBeat.enable(true);
-            const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
+            const sendStub = sandbox.stub(statsBeat as any, "_sendStatsbeats");
             statsBeat.countRequest(0, "test", 1, true);
             statsBeat.countRequest(0, "test", 1, true);
             statsBeat.countRequest(0, "test", 1, true);
@@ -186,7 +186,7 @@ describe("AutoCollection/Statsbeat", () => {
 
         it("Track attach Statbeat", (done) => {
             statsBeat.enable(true);
-            const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
+            const sendStub = sandbox.stub(statsBeat as any, "_sendStatsbeats");
             statsBeat.trackLongIntervalStatsbeats().then(() => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
                 let metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Attach")[0];
@@ -207,7 +207,7 @@ describe("AutoCollection/Statsbeat", () => {
         it("Track feature Statbeat", (done) => {
             statsBeat.enable(true);
             statsBeat.addFeature(Constants.StatsbeatFeature.DISK_RETRY);
-            const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
+            const sendStub = sandbox.stub(statsBeat as any, "_sendStatsbeats");
             statsBeat.trackLongIntervalStatsbeats().then(() => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
                 let metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Feature")[0];
@@ -230,7 +230,7 @@ describe("AutoCollection/Statsbeat", () => {
         it("Track instrumentation Statbeat", (done) => {
             statsBeat.enable(true);
             statsBeat.addInstrumentation(Constants.StatsbeatInstrumentation.AZURE_CORE_TRACING);
-            const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
+            const sendStub = sandbox.stub(statsBeat as any, "_sendStatsbeats");
             statsBeat.trackLongIntervalStatsbeats().then(() => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
                 let metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Feature")[0];
@@ -274,7 +274,7 @@ describe("AutoCollection/Statsbeat", () => {
 
         it("Multiple network categories and endpoints", (done) => {
             statsBeat.enable(true);
-            const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
+            const sendStub = sandbox.stub(statsBeat as any, "_sendStatsbeats");
             statsBeat.countRequest(0, "breezeFirstEndpoint", 100, true);
             statsBeat.countRequest(1, "quickpulseEndpoint", 200, true);
             statsBeat.countRequest(0, "breezeSecondEndpoint", 400, true);

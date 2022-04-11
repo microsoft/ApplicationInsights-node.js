@@ -11,7 +11,7 @@ describe("TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor", () => {
     let client: TelemetryClient;
 
     before(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         var ikey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
         envelope = {
             name: "name",

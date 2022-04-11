@@ -9,7 +9,7 @@ describe("Library/Logger", () => {
     var sandbox: sinon.SinonSandbox;
 
     beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         InternalAzureLogger["_instance"] = null;
     });
 
@@ -90,7 +90,7 @@ describe("Library/Logger", () => {
             var originalEnv = process.env;
             process.env = env1;
             Logger.enableDebug = true;
-            var fileStub = sandbox.stub(InternalAzureLogger.getInstance(), "_storeToDisk");
+            var fileStub = sandbox.stub(InternalAzureLogger.getInstance() as any, "_storeToDisk");
             Logger.info("test");
             process.env = originalEnv;
             assert.ok(fileStub.called);
@@ -102,7 +102,7 @@ describe("Library/Logger", () => {
             var originalEnv = process.env;
             process.env = env1;
             Logger.enableDebug = true;
-            var fileStub = sandbox.stub(InternalAzureLogger.getInstance(), "_storeToDisk");
+            var fileStub = sandbox.stub(InternalAzureLogger.getInstance() as any, "_storeToDisk");
             Logger.info("test");
             process.env = originalEnv;
             assert.ok(fileStub.notCalled);

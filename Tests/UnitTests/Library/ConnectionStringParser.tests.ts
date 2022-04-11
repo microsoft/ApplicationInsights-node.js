@@ -1,6 +1,5 @@
 import * as assert from "assert";
 
-import * as sinon from "sinon";
 import * as Constants from "../../../Declarations/Constants";
 import { ConnectionStringParser } from "../../../Library/Configuration/ConnectionStringParser";
 
@@ -88,7 +87,7 @@ describe("ConnectionStringParser", () => {
             runTest({
                 connectionString: "InstrumentationKey=00000000-0000-0000-0000-000000000000;LiveEndpoint=http://custom.live.endpoint.com:444",
                 expectedBreezeEndpoint: Constants.DEFAULT_BREEZE_ENDPOINT,
-                expectedLiveMetricsEndpoint: "http://custom.live.endpoint.com:444"
+                expectedLiveMetricsEndpoint: "https://custom.live.endpoint.com:444"
             });
         });
     });

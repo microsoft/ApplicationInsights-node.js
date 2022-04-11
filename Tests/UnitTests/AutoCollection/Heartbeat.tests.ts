@@ -16,7 +16,7 @@ describe("AutoCollection/HeartBeat", () => {
 
     beforeEach(() => {
         originalEnv = process.env;
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
     });
 
     afterEach(() => {
@@ -59,8 +59,8 @@ describe("AutoCollection/HeartBeat", () => {
 
             heartbeat1["trackHeartBeat"](client.config, () => {
                 assert.equal(stub1.callCount, 1, "should call trackMetric for the appSrv heartbeat metric");
-                assert.equal(stub1.args[0][0].name, "HeartBeat", "should use correct name for heartbeat metric");
-                assert.equal(stub1.args[0][0].value, 0, "value should be 0");
+                assert.equal(stub1.args[0][0].metrics[0].name, "HeartBeat", "should use correct name for heartbeat metric");
+                assert.equal(stub1.args[0][0].metrics[0].value, 0, "value should be 0");
                 const keys1 = Object.keys(stub1.args[0][0].properties);
                 assert.equal(keys1.length, 5, "should have 5 kv pairs added when resource type is appSrv");
                 assert.equal(keys1[0], "sdk", "sdk should be added as a key");
@@ -89,8 +89,8 @@ describe("AutoCollection/HeartBeat", () => {
 
             heartbeat2["trackHeartBeat"](client.config, () => {
                 assert.equal(stub2.callCount, 1, "should call trackMetric for the VM heartbeat metric");
-                assert.equal(stub2.args[0][0].name, "HeartBeat", "should use correct name for heartbeat metric");
-                assert.equal(stub2.args[0][0].value, 0, "value should be 0");
+                assert.equal(stub2.args[0][0].metrics[0].name, "HeartBeat", "should use correct name for heartbeat metric");
+                assert.equal(stub2.args[0][0].metrics[0].value, 0, "value should be 0");
                 const keys2 = Object.keys(stub2.args[0][0].properties);
                 assert.equal(keys2.length, 3, "should have 3 kv pairs added when resource type is function app");
                 assert.equal(keys2[0], "sdk", "sdk should be added as a key");

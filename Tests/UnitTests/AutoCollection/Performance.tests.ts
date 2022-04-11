@@ -7,7 +7,7 @@ describe("AutoCollection/Performance", () => {
     var sandbox: sinon.SinonSandbox;
 
     beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
     });
 
     afterEach(() => {

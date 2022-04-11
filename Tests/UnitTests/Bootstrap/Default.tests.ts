@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import * as sinon from "sinon";
+import { createSandbox, SinonSpy } from "sinon";
 import { DiagnosticLogger } from "../../../Bootstrap/DiagnosticLogger";
 import * as DataModel from "../../../Bootstrap/DataModel";
 import * as Helpers from "../../../Bootstrap/Helpers";
@@ -20,26 +20,27 @@ class LoggerSpy implements DataModel.AgentLogger {
 }
 
 describe("#setupAndStart()", () => {
-    const startSpy = sinon.spy(appInsights, "start");
+    let startSpy: SinonSpy = null;
+    let sandbox: sinon.SinonSandbox;
 
     before(() => {
-        startSpy.reset();
+        sandbox = createSandbox();
+    });
+
+    beforeEach(() => {
+        startSpy = sandbox.spy(appInsights, "start");
     });
 
     afterEach(() => {
-        startSpy.reset();
+        sandbox.restore();
         delete require.cache[require.resolve("../../../Bootstrap/Default")];
-    });
-
-    after(() => {
-        startSpy.restore();
     });
 
     it("should return the client if started multiple times", () => {
         const logger = new LoggerSpy();
         const origEnv = process.env.ApplicationInsightsAgent_EXTENSION_VERSION;
         process.env.ApplicationInsightsAgent_EXTENSION_VERSION = "~2";
-        const alreadyExistsStub = sinon.stub(Helpers, "sdkAlreadyExists", () => false);
+        sandbox.stub(Helpers, "sdkAlreadyExists").callsFake(() => false);
 
         // Test
         const Default = require("../../../Bootstrap/Default") as typeof DefaultTypes;
@@ -48,11 +49,8 @@ describe("#setupAndStart()", () => {
         assert.ok(instance1.defaultClient);
         const instance2 = Default.setupAndStart("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
         assert.deepEqual(instance1.defaultClient, instance2.defaultClient);
-        assert.deepEqual(instance1.defaultClient["_telemetryProcessors"].length, 2)
-        assert.deepEqual(instance2.defaultClient["_telemetryProcessors"].length, 2)
 
         // Cleanup
-        alreadyExistsStub.restore();
         instance1.dispose();
         instance2.dispose();
         process.env.ApplicationInsightsAgent_EXTENSION_VERSION = origEnv;
@@ -63,7 +61,7 @@ describe("#setupAndStart()", () => {
         const logger = new LoggerSpy();
         const origEnv = process.env.ApplicationInsightsAgent_EXTENSION_VERSION;
         process.env.ApplicationInsightsAgent_EXTENSION_VERSION = "~2";
-        const alreadyExistsStub = sinon.stub(Helpers, "sdkAlreadyExists", () => false);
+        sandbox.stub(Helpers, "sdkAlreadyExists").callsFake(() => false);
 
         // Test
         const Default = require("../../../Bootstrap/Default") as typeof DefaultTypes;
@@ -72,7 +70,6 @@ describe("#setupAndStart()", () => {
         assert.deepEqual(instance, appInsights);
 
         // Cleanup
-        alreadyExistsStub.restore();
         instance.dispose();
         process.env.ApplicationInsightsAgent_EXTENSION_VERSION = origEnv;
 
@@ -93,7 +90,7 @@ describe("#setupAndStart()", () => {
         process.env.ApplicationInsightsAgent_EXTENSION_VERSION = "~2";
         delete process.env.APPINSIGHTS_INSTRUMENTATIONKEY;
         delete process.env.APPLICATIONINSIGHTS_CONNECTION_STRING;
-        const alreadyExistsStub = sinon.stub(Helpers, "sdkAlreadyExists", () => false);
+        sandbox.stub(Helpers, "sdkAlreadyExists").callsFake(() => false);
 
         // Test
         const Default = require("../../../Bootstrap/Default") as typeof DefaultTypes;
@@ -102,7 +99,6 @@ describe("#setupAndStart()", () => {
         assert.equal(instance, null);
 
         // Cleanup
-        alreadyExistsStub.restore();
         process.env.ApplicationInsightsAgent_EXTENSION_VERSION = origEnv;
 
         // start was never called

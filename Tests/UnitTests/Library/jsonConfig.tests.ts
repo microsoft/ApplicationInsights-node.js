@@ -12,7 +12,7 @@ describe("Json Config", () => {
 
     beforeEach(() => {
         originalEnv = process.env;
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         JsonConfig["_instance"] = undefined;
     });
 

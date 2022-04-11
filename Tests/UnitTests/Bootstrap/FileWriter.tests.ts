@@ -23,7 +23,7 @@ describe("FileWriter", () => {
     describe("#log()", () => {
         it("should not log if the FileWriter is not ready", () => {
             const writer = new FileWriter(filedir, "test.txt");
-            const stub = sinon.stub(writer, "_writeFile");
+            const stub = sinon.stub(writer as any, "_writeFile");
             writer["_ready"] = false;
 
             assert.ok(stub.notCalled);
@@ -127,7 +127,7 @@ describe("FileWriter", () => {
                 // Try to delete the file we are testing
                 fs.unlinkSync(path.join(filedir, "clocktest.txt"));
             } catch (e) { }
-            const sandbox = sinon.sandbox.create();
+            const sandbox = sinon.createSandbox();
             const clock = sandbox.useFakeTimers(Date.now());
             const writer = new FileWriter(filedir, "clocktest.txt");
             writer.callback = (err) => {
