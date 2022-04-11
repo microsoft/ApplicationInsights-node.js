@@ -92,7 +92,7 @@ export class LogExporter extends BaseExporter {
             "Microsoft.ApplicationInsights." +
             instrumentationKey.replace(/-/g, "") +
             "." +
-            baseType.substr(0, baseType.length - 4);
+            baseType.substring(0, baseType.length - 4);
         let sampleRate = this._config.samplingPercentage;
         let properties = {};
         if (telemetry.properties) {

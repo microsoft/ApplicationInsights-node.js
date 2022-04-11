@@ -63,7 +63,7 @@ export class AzureMonitorMetricExporter extends BaseExporter {
      * @internal
      */
     private _metricToEnvelope(telemetry: MetricTelemetry, instrumentationKey: string): Envelope {
-        let baseType: "MetricsData";
+        let baseType = "MetricsData";
         let version = 1;
         let baseData: MetricsData = { metrics: [] };
         const time = telemetry.time || (new Date());
@@ -76,7 +76,7 @@ export class AzureMonitorMetricExporter extends BaseExporter {
             "Microsoft.ApplicationInsights." +
             instrumentationKey.replace(/-/g, "") +
             "." +
-            baseType.substr(0, baseType.length - 4);
+            baseType.substring(0, baseType.length - 4);
         if (telemetry.properties) {
             // sanitize properties
             properties = Util.getInstance().validateStringMap(telemetry.properties);
