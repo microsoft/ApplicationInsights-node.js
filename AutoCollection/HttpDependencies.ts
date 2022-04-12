@@ -74,29 +74,32 @@ class AutoCollectHttpDependencies {
                 }
             }
 
-            (<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag] = true;
-
             if (request && options && shouldCollect) {
                 CorrelationContextManager.wrapEmitter(request);
-                // If there is no context create one, this apply when no request is triggering the dependency
-                if (!CorrelationContextManager.getCurrentContext()) {
-                    // Create correlation context and wrap execution
-                    let operationId = null;
-                    if (CorrelationIdManager.w3cEnabled) {
-                        let traceparent = new Traceparent();
-                        operationId = traceparent.traceId;
+                if (this._isEnabled) {
+                    // Mark as auto collected
+                    (<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag] = true;
+
+                    // If there is no context create one, this apply when no request is triggering the dependency
+                    if (!CorrelationContextManager.getCurrentContext()) {
+                        // Create correlation context and wrap execution
+                        let operationId = null;
+                        if (CorrelationIdManager.w3cEnabled) {
+                            let traceparent = new Traceparent();
+                            operationId = traceparent.traceId;
+                        }
+                        else {
+                            let requestId = CorrelationIdManager.generateRequestId(null);
+                            operationId = CorrelationIdManager.getRootId(requestId);
+                        }
+                        let correlationContext = CorrelationContextManager.generateContextObject(operationId);
+                        CorrelationContextManager.runWithContext(correlationContext, () => {
+                            AutoCollectHttpDependencies.trackRequest(this._client, { options: options, request: request });
+                        });
                     }
                     else {
-                        let requestId = CorrelationIdManager.generateRequestId(null);
-                        operationId = CorrelationIdManager.getRootId(requestId);
-                    }
-                    let correlationContext = CorrelationContextManager.generateContextObject(operationId);
-                    CorrelationContextManager.runWithContext(correlationContext, () => {
                         AutoCollectHttpDependencies.trackRequest(this._client, { options: options, request: request });
-                    });
-                }
-                else {
-                    AutoCollectHttpDependencies.trackRequest(this._client, { options: options, request: request });
+                    }
                 }
             }
         };
