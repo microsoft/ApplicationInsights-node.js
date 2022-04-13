@@ -75,7 +75,7 @@ class AutoCollectHttpRequests {
         );
     }
 
-    private registerRequest(request: http.ServerRequest, response: http.ServerResponse, onRequest: Function) {
+    private _registerRequest(request: http.ServerRequest, response: http.ServerResponse, onRequest: Function) {
         // Set up correlation context
         const requestParser = new HttpRequestParser(request);
         const correlationContext = this._generateCorrelationContext(requestParser);
@@ -120,7 +120,7 @@ class AutoCollectHttpRequests {
                 const shouldCollect: boolean = request && !(<any>request)[AutoCollectHttpRequests.alreadyAutoCollectedFlag];
 
                 if (request && shouldCollect) {
-                    AutoCollectHttpRequests.INSTANCE?.registerRequest(request, response, onRequest)
+                    AutoCollectHttpRequests.INSTANCE?._registerRequest(request, response, onRequest)
                 } else {
                     if (typeof onRequest === "function") {
                         onRequest(request, response);
