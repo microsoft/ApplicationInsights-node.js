@@ -1,6 +1,5 @@
 import http = require("http");
 import https = require("https");
-import url = require("url");
 
 import Contracts = require("../Declarations/Contracts");
 import TelemetryClient = require("../Library/TelemetryClient");
@@ -14,6 +13,7 @@ import AutoCollectPerformance = require("./Performance");
 class AutoCollectHttpRequests {
 
     public static INSTANCE: AutoCollectHttpRequests;
+    public static HANDLER_READY: boolean = false;
 
     private static alreadyAutoCollectedFlag = "_appInsightsAutoCollected";
 
@@ -75,8 +75,37 @@ class AutoCollectHttpRequests {
         );
     }
 
+    private registerRequest(request: http.ServerRequest, response: http.ServerResponse, onRequest: Function) {
+        // Set up correlation context
+        const requestParser = new HttpRequestParser(request);
+        const correlationContext = this._generateCorrelationContext(requestParser);
+
+        // Note: Check for if correlation is enabled happens within this method.
+        // If not enabled, function will directly call the callback.
+        CorrelationContextManager.runWithContext(correlationContext, () => {
+            if (this._isEnabled) {
+                // Mark as auto collected
+                (<any>request)[AutoCollectHttpRequests.alreadyAutoCollectedFlag] = true;
+
+                // Auto collect request
+                AutoCollectHttpRequests.trackRequest(this._client, { request: request, response: response }, requestParser);
+            }
+
+            if (typeof onRequest === "function") {
+                onRequest(request, response);
+            }
+        });
+    }
+
     private _initialize() {
         this._isInitialized = true;
+
+        // Avoid the creation of multiple handler on http(s).createServer
+        if (AutoCollectHttpRequests.HANDLER_READY) {
+            return;
+        }
+
+        AutoCollectHttpRequests.HANDLER_READY = true;
 
         const wrapOnRequestHandler: Function = (onRequest?: Function) => {
             if (!onRequest) {
@@ -91,32 +120,14 @@ class AutoCollectHttpRequests {
                 const shouldCollect: boolean = request && !(<any>request)[AutoCollectHttpRequests.alreadyAutoCollectedFlag];
 
                 if (request && shouldCollect) {
-                    // Set up correlation context
-                    const requestParser = new HttpRequestParser(request);
-                    const correlationContext = this._generateCorrelationContext(requestParser);
-
-                    // Note: Check for if correlation is enabled happens within this method.
-                    // If not enabled, function will directly call the callback.
-                    CorrelationContextManager.runWithContext(correlationContext, () => {
-                        if (this._isEnabled) {
-                            // Mark as auto collected
-                            (<any>request)[AutoCollectHttpRequests.alreadyAutoCollectedFlag] = true;
-
-                            // Auto collect request
-                            AutoCollectHttpRequests.trackRequest(this._client, { request: request, response: response }, requestParser);
-                        }
-
-                        if (typeof onRequest === "function") {
-                            onRequest(request, response);
-                        }
-                    });
+                    AutoCollectHttpRequests.INSTANCE?.registerRequest(request, response, onRequest)
                 } else {
                     if (typeof onRequest === "function") {
                         onRequest(request, response);
                     }
                 }
             }
-        }
+        };
 
         // The `http.createServer` function will instantiate a new http.Server object.
         // Inside the Server's constructor, it is using addListener to register the
@@ -144,7 +155,7 @@ class AutoCollectHttpRequests {
             };
             // on is an alias to addListener only
             server.on = server.addListener;
-        }
+        };
 
         const originalHttpServer: any = http.createServer;
 
@@ -163,14 +174,14 @@ class AutoCollectHttpRequests {
                 wrapServerEventHandler(server);
                 return server;
             }
-        }
+        };
 
         const originalHttpsServer = https.createServer;
         https.createServer = (options: https.ServerOptions, onRequest?: Function) => {
             const server: https.Server = originalHttpsServer(options, wrapOnRequestHandler(onRequest));
             wrapServerEventHandler(server);
             return server;
-        }
+        };
     }
 
     /**
@@ -242,7 +253,7 @@ class AutoCollectHttpRequests {
         if (telemetry.request.on) {
             telemetry.request.on("aborted", () => {
                 const errorMessage = "The request has been aborted and the network socket has closed.";
-                    AutoCollectHttpRequests.endRequest(client, requestParser, telemetry, null, errorMessage);
+                AutoCollectHttpRequests.endRequest(client, requestParser, telemetry, null, errorMessage);
             });
         }
     }
@@ -294,7 +305,5 @@ class AutoCollectHttpRequests {
         this._isAutoCorrelating = false;
     }
 }
-
-
 
 export = AutoCollectHttpRequests;
