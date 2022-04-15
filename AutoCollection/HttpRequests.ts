@@ -13,7 +13,7 @@ import AutoCollectPerformance = require("./Performance");
 class AutoCollectHttpRequests {
 
     public static INSTANCE: AutoCollectHttpRequests;
-    public static HANDLER_READY: boolean = false;
+    private static HANDLER_READY: boolean = false;
 
     private static alreadyAutoCollectedFlag = "_appInsightsAutoCollected";
 
