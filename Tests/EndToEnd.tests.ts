@@ -22,6 +22,7 @@ import Util = require("../Library/Util");
 import { JsonConfig } from "../Library/JsonConfig";
 import { FileAccessControl } from "../Library/FileAccessControl";
 import FileSystemHelper = require("../Library/FileSystemHelper");
+import AutoCollectHttpRequests = require("../AutoCollection/HttpRequests");
 
 /**
  * A fake response class that passes by default
@@ -242,6 +243,10 @@ describe("EndToEnd", () => {
                 return fakeHttpSrv;
             });
 
+            // We stub the property indicating if the handler on http(s).createServer is ready so that the handler is
+            // placed on the function http(s).createServer stub
+            sandbox.stub(AutoCollectHttpRequests, 'HANDLER_READY', false);
+
             AppInsights
                 .setup("ikey")
                 .setAutoCollectRequests(true)
@@ -264,6 +269,10 @@ describe("EndToEnd", () => {
                 fakeHttpSrv.setCallback(callback);
                 return fakeHttpSrv;
             });
+
+            // We stub the property indicating if the handler on http(s).createServer is ready so that the handler is
+            // placed on the function http(s).createServer stub
+            sandbox.stub(AutoCollectHttpRequests, 'HANDLER_READY', false);
 
             AppInsights
                 .setup("ikey")
