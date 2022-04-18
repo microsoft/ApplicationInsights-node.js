@@ -47,9 +47,13 @@ class WebSnippet {
       
     }
 
-    public enable(isEnabled: boolean) {
+    public enable(isEnabled: boolean, webSnippetInstrumentationKey?: string ) {
         this._isEnabled = isEnabled;
-
+        
+        if (webSnippetInstrumentationKey) {
+            WebSnippet._snippet = snippetInjectionHelper.webSnippet.replace("INSTRUMENTATION_KEY", webSnippetInstrumentationKey);
+        }
+        
         if (this._isEnabled && !this._isInitialized) {
             this._initialize();
         }

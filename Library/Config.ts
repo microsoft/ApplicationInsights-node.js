@@ -64,9 +64,8 @@ class Config implements IConfig {
     private _setCorrelationId: (v: string) => void;
     private _profileQueryEndpoint: string;
     private _instrumentationKey: string;
+    private _webSnippetInstrumentationKey: string;
  
-
-
     constructor(setupString?: string) {
         // Load config values from env variables and JSON if available
         this._mergeConfig();
@@ -105,6 +104,7 @@ class Config implements IConfig {
         this.ignoreLegacyHeaders = this.ignoreLegacyHeaders || false;
         this.profileQueryEndpoint = csCode.ingestionendpoint || csEnv.ingestionendpoint || process.env[Config.ENV_profileQueryEndpoint] || this._endpointBase;
         this.quickPulseHost = this.quickPulseHost || csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_HOST;
+        this.webSnippetInstrumentationKey = this.webSnippetInstrumentationKey || this._webSnippetInstrumentationKey || "";
         // Parse quickPulseHost if it starts with http(s)://
         if (this.quickPulseHost.match(/^https?:\/\//)) {
             this.quickPulseHost = new url.URL(this.quickPulseHost).host;
@@ -131,6 +131,14 @@ class Config implements IConfig {
 
     public get instrumentationKey(): string {
         return this._instrumentationKey;
+    }
+
+    public set webSnippetInstrumentationKey(iKey: string) {
+        this._webSnippetInstrumentationKey = iKey;
+    }
+
+    public get webSnippetInstrumentationKey(): string {
+        return this._webSnippetInstrumentationKey;
     }
 
     private _mergeConfig() {
@@ -169,6 +177,7 @@ class Config implements IConfig {
         this.quickPulseHost = jsonConfig.quickPulseHost;
         this.samplingPercentage = jsonConfig.samplingPercentage;
         this.enableAutoWebSnippetInjection = jsonConfig.enableAutoWebSnippetInjection;
+        this.webSnippetInstrumentationKey = jsonConfig.webSnippetInstrumentationKey;
     }
 
     private static _getInstrumentationKey(): string {

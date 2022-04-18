@@ -138,7 +138,11 @@ export interface IBaseConfig {
      * Enable web snippet auto html injection, default to false
      */
      enableAutoWebSnippetInjection: boolean;
-    
+    /**
+     * Application Insights resource instrumentation key for web snippet
+     * Note: if no valid instrumentation key is provided here, web snippet will use the iKey during initializing Nodejs SDK
+     */
+    webSnippetInstrumentationKey?: string;
 }
 
 export interface IEnvironmentConfig {
