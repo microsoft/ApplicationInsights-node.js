@@ -5,6 +5,8 @@ import zlib = require("zlib");
 import Logging = require("../Library/Logging");
 import TelemetryClient = require("../Library/TelemetryClient");
 import snippetInjectionHelper = require("../Library/SnippetInjectionHelper");
+import Statsbeat = require("./Statsbeat");
+import Constants = require("../Declarations/Constants");
 
 class WebSnippet {
 
@@ -13,8 +15,10 @@ class WebSnippet {
     private static _snippet: string;
     private static _aiUrl: string;
     private static _aiDeprecatedUrl: string;
+    private static _statsBeats: Statsbeat;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
+
     
 
     constructor(client: TelemetryClient) {
@@ -29,6 +33,7 @@ class WebSnippet {
 
         //TODO: quick fix for bundle error, remove this when npm is published
         WebSnippet._snippet = snippetInjectionHelper.webSnippet.replace("INSTRUMENTATION_KEY", client.config.instrumentationKey);
+        WebSnippet._statsBeats = client.getStatsbeat();
 
         //TODO: replace the path with npm package exports
         //NOTE: should use the following part when npm is enabled
@@ -64,6 +69,10 @@ class WebSnippet {
         const originalHttpServer = http.createServer;
         const originalHttpsServer = https.createServer;
         var isEnabled = this._isEnabled;
+        var isStatsBeatsEnabled = WebSnippet._statsBeats;
+        if (isStatsBeatsEnabled) {
+            WebSnippet._statsBeats.addInstrumentation(Constants.StatsbeatInstrumentation.WEB_SNIPPET);
+        }
 
         http.createServer = (requestListener?: (request: http.IncomingMessage, response: http.ServerResponse) => void) => {
             const originalRequestListener = requestListener;
@@ -92,6 +101,9 @@ class WebSnippet {
                             }
                         } catch (err) {
                             Logging.warn("Inject snippet error: "+ err);
+                            if (isStatsBeatsEnabled) {
+                                WebSnippet._statsBeats.removeInstrumentation(Constants.StatsbeatInstrumentation.WEB_SNIPPET);
+                            }
                         }
                         return originalResponseWrite.apply(response, arguments);
                     }
@@ -119,6 +131,9 @@ class WebSnippet {
                                 }
                             } catch (err) {
                                 Logging.warn("Inject snipet error: "+ err);
+                                if (isStatsBeatsEnabled) {
+                                    WebSnippet._statsBeats.removeInstrumentation(Constants.StatsbeatInstrumentation.WEB_SNIPPET);
+                                }
                             }
                         }
                         return originalResponseEnd.apply(response, arguments);

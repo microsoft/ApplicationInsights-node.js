@@ -172,6 +172,7 @@ export enum StatsbeatInstrumentation {
     BUNYAN = 32,
     WINSTON = 64,
     CONSOLE = 128,
+    WEB_SNIPPET = 256
 }
 
 export enum StatsbeatFeatureType {
