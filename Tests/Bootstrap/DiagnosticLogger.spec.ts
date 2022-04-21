@@ -45,7 +45,7 @@ describe("DiagnosticLogger", () => {
                     language: "nodejs",
                     operation: "Startup",
                     siteName: undefined,
-                    ikey: undefined,
+                    ikey: "unknown",
                     extensionVersion: undefined,
                     sdkVersion: version,
                     subscriptionId: null,

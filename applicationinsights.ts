@@ -99,7 +99,7 @@ let _performanceLiveMetrics: AutoCollectPerformance;
  *
  * @param setupString the Connection String or Instrumentation Key to use. Optional, if
  * this is not specified, the value will be read from the environment
- * variable APPLICATIONINSIGHTS_CONNECTION_STRING or APPINSIGHTS_INSTRUMENTATIONKEY.
+ * variable APPLICATIONINSIGHTS_CONNECTION_STRING.
  * @returns {Configuration} the configuration class to initialize
  * and start the SDK.
  */
