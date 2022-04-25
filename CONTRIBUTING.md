@@ -15,12 +15,12 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 # How to contribute to the Application Insights Node.js SDK
 
 1. Install all dependencies with `npm install`.
-2. Set an environment variable to your instrumentation key (optional).
+2. Set an environment variable to your Connection String (optional).
     ```bash
     // windows
-    set APPINSIGHTS_INSTRUMENTATIONKEY=<insert_your_instrumentation_key_here>
+    set APPINSIGHTS_INSTRUAPPLICATIONINSIGHTS_CONNECTION_STRINGMENTATIONKEY=<YOUR_CONNECTION_STRING>
     // linux/macos
-    export APPINSIGHTS_INSTRUMENTATIONKEY=<insert_your_instrumentation_key_here>
+    export APPLICATIONINSIGHTS_CONNECTION_STRING=<YOUR_CONNECTION_STRING>
     ```
 3. Run tests
     ```bash

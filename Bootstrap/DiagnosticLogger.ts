@@ -18,14 +18,16 @@ export class DiagnosticLogger {
             language: "nodejs",
             operation: "Startup",
             siteName: process.env.WEBSITE_SITE_NAME,
-            ikey: process.env.APPINSIGHTS_INSTRUMENTATIONKEY,
+            ikey: "unknown",
             extensionVersion: process.env.ApplicationInsightsAgent_EXTENSION_VERSION,
             sdkVersion: APPLICATION_INSIGHTS_SDK_VERSION,
             subscriptionId: process.env.WEBSITE_OWNER_NAME ? process.env.WEBSITE_OWNER_NAME.split("+")[0] : null
         }
     }
 
-    constructor(private _writer: DataModel.AgentLogger = console) { }
+    constructor(private _writer: DataModel.AgentLogger = console, instrumentationKey: string = "unknown") {
+        DiagnosticLogger.DefaultEnvelope.properties.ikey = instrumentationKey;
+    }
 
     logMessage(message: DataModel.DiagnosticLog | string, cb?: (err: Error) => void) {
         if (typeof cb === "function" && this._writer instanceof FileWriter) {
