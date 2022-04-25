@@ -5,6 +5,7 @@ import * as DataModel from "./DataModel";
 import { FileWriter } from "./FileWriter";
 import { homedir } from "./Helpers/FileHelpers";
 import { APPLICATION_INSIGHTS_SDK_VERSION } from "../Declarations/Constants";
+import Util = require("../Library/Util");
 
 export class DiagnosticLogger {
     public static readonly DEFAULT_FILE_NAME: string = "application-insights-extension.log";
@@ -27,10 +28,7 @@ export class DiagnosticLogger {
 
     constructor(private _writer: DataModel.AgentLogger = console) { }
 
-    logMessage(message: DataModel.DiagnosticLog | string, cb?: (err: Error) => void) {
-        if (typeof cb === "function" && this._writer instanceof FileWriter) {
-            this._writer.callback = cb;
-        }
+    logMessage(message: DataModel.DiagnosticLog | string) {
         if (typeof message === "string") {
             const diagnosticMessage: DataModel.DiagnosticLog = {
                 ...DiagnosticLogger.DefaultEnvelope,
@@ -48,9 +46,9 @@ export class DiagnosticLogger {
         }
     }
 
-    logError(message: DataModel.DiagnosticLog | string, cb?: (err: Error) => void) {
-        if (typeof cb === "function" && this._writer instanceof FileWriter) {
-            this._writer.callback = cb;
+    logError(message: DataModel.DiagnosticLog | string, err?: Error) {
+        if (err) {
+            message += ` ${Util.dumpObj(err)}`;
         }
         if (typeof message === "string") {
             const diagnosticMessage: DataModel.DiagnosticLog = {
