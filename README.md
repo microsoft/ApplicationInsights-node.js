@@ -38,6 +38,8 @@ You can manually track more aspects of your app and system using the API describ
 
 ## Getting Started
 
+> *Important:* On March 31st, 2025, support for instrumentation key ingestion will end. Instrumentation key ingestion will continue to work, but we’ll no longer provide updates or support for the feature. [Transition to connection strings](https://docs.microsoft.com/en-us/azure/azure-monitor/app/migrate-from-instrumentation-keys-to-connection-strings) to take advantage of [new capabilities](https://docs.microsoft.com/en-us/azure/azure-monitor/app/migrate-from-instrumentation-keys-to-connection-strings#new-capabilities).
+
 1. Create an Application Insights resource in Azure by following [these instructions][].
 2. Grab the _Connection String_ from the resource you created in
    step 1. Later, you'll either add it to your app's environment variables or
@@ -76,7 +78,7 @@ let appInsights = require("applicationinsights");
 appInsights.setup("YOUR_CONNECTION_STRING").start();
 ```
 
-* If the instrumentation key is set in the environment variable
+* If the connection string is set in the environment variable
   APPLICATIONINSIGHTS\_CONNECTION\_STRING, `.setup()` can be called with no
   arguments. This makes it easy to use different connection strings for different
   environments.
