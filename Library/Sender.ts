@@ -34,7 +34,7 @@ class Sender {
     private _isStatsbeatSender: boolean;
     private _shutdownStatsbeat: () => void;
     private _failedToIngestCounter: number;
-    private _statsbeatHasReachedIngestionAtLeastOnce = false;
+    private _statsbeatHasReachedIngestionAtLeastOnce: boolean;
     private _statsbeat: Statsbeat;
     private _onSuccess: (response: string) => void;
     private _onError: (error: Error) => void;
@@ -67,6 +67,7 @@ class Sender {
         this._isStatsbeatSender = isStatsbeatSender || false;
         this._shutdownStatsbeat = shutdownStatsbeat;
         this._failedToIngestCounter = 0;
+        this._statsbeatHasReachedIngestionAtLeastOnce = false;
     }
 
     /**
@@ -360,9 +361,11 @@ class Sender {
     }
 
     private _statsbeatFailedToIngest() {
-        this._failedToIngestCounter++;
-        if (this._failedToIngestCounter >= 3 && this._shutdownStatsbeat) {
-            this._shutdownStatsbeat();
+        if (this._shutdownStatsbeat) { // Check if callback is available
+            this._failedToIngestCounter++;
+            if (this._failedToIngestCounter >= 3) {
+                this._shutdownStatsbeat();
+            }
         }
     }
 
