@@ -31,7 +31,9 @@ export class StatusLogger {
         PID: String(process.pid)
     }
 
-    constructor(public _writer: DataModel.AgentLogger = console) {}
+    constructor(public _writer: DataModel.AgentLogger = console, instrumentationKey: string = "unknown") {
+        StatusLogger.DEFAULT_STATUS.Ikey = instrumentationKey;
+    }
 
     public logStatus(data: StatusContract, cb?: (err: Error) => void) {
         if (typeof cb === "function" && this._writer instanceof FileWriter) {
