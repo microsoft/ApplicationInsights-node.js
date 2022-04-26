@@ -18,6 +18,7 @@ import { FileAccessControl } from "./FileAccessControl";
 
 const legacyThrottleStatusCode = 439; //  - Too many requests and refresh cache
 const throttleStatusCode = 402; // Monthly Quota Exceeded (new SDK)
+const RESPONSE_CODES_INDICATING_REACHED_BREEZE = [200, 206, 402, 408, 429, 439, 500];
 
 class Sender {
     private static TAG = "Sender";
@@ -32,7 +33,8 @@ class Sender {
     private _config: Config;
     private _isStatsbeatSender: boolean;
     private _shutdownStatsbeat: () => void;
-    private _statsbeatHasReachedBreezeAtLeastOnce = false;
+    private _failedToIngestCounter: number;
+    private _statsbeatHasReachedIngestionAtLeastOnce = false;
     private _statsbeat: Statsbeat;
     private _onSuccess: (response: string) => void;
     private _onError: (error: Error) => void;
@@ -64,6 +66,7 @@ class Sender {
         this._tempDir = path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + this._config.instrumentationKey);
         this._isStatsbeatSender = isStatsbeatSender || false;
         this._shutdownStatsbeat = shutdownStatsbeat;
+        this._failedToIngestCounter = 0;
     }
 
     /**
@@ -191,6 +194,15 @@ class Sender {
                         let endTime = +new Date();
                         let duration = endTime - startTime;
                         this._numConsecutiveFailures = 0;
+                        // Handling of Statsbeat instance sending data, should turn it off if is not able to reach ingestion endpoint
+                        if (this._isStatsbeatSender && !this._statsbeatHasReachedIngestionAtLeastOnce) {
+                            if (RESPONSE_CODES_INDICATING_REACHED_BREEZE.includes(res.statusCode)) {
+                                this._statsbeatHasReachedIngestionAtLeastOnce = true;
+                            }
+                            else {
+                                this._statsbeatFailedToIngest();
+                            }
+                        }
                         if (this._statsbeat) {
                             if (res.statusCode == throttleStatusCode || res.statusCode == legacyThrottleStatusCode) { // Throttle
                                 this._statsbeat.countThrottle(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
@@ -199,16 +211,6 @@ class Sender {
                                 this._statsbeat.countRequest(Constants.StatsbeatNetworkCategory.Breeze, endpointHost, duration, res.statusCode === 200);
                             }
                         }
-                        if(this._isStatsbeatSender && !this._statsbeatHasReachedBreezeAtLeastOnce){
-                            // Check status code
-                            this._shutdownStatsbeat();
-                        }
-
-                        if ((this._isStatsbeatSender && this._statsbeatUnreacheableCallback)
-                            && res.statusCode == 503 || res.statusCode == 401 || res.statusCode == 403) {
-                            this._statsbeatUnreacheableCallback("Failed to" + res.statusCode);
-                        }
-
                         if (this._enableDiskRetryMode) {
                             // try to send any cached events if the user is back online
                             if (res.statusCode === 200) {
@@ -283,8 +285,8 @@ class Sender {
                 var req = Util.makeRequest(this._config, endpointUrl, options, requestCallback);
 
                 req.on("error", (error: Error) => {
-                    if (this._isStatsbeatSender && this._statsbeatUnreacheableCallback) {
-                        this._statsbeatUnreacheableCallback(error);
+                    if (this._isStatsbeatSender && !this._statsbeatHasReachedIngestionAtLeastOnce) {
+                        this._statsbeatFailedToIngest();
                     }
                     // todo: handle error codes better (group to recoverable/non-recoverable and persist)
                     this._numConsecutiveFailures++;
@@ -357,8 +359,11 @@ class Sender {
         }
     }
 
-    private _statsbeatFailedToIngest(){
-        
+    private _statsbeatFailedToIngest() {
+        this._failedToIngestCounter++;
+        if (this._failedToIngestCounter >= 3 && this._shutdownStatsbeat) {
+            this._shutdownStatsbeat();
+        }
     }
 
     /**
