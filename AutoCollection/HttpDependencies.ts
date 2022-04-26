@@ -60,48 +60,54 @@ class AutoCollectHttpDependencies {
         const originalHttpsRequest = https.request;
 
         const clientRequestPatch = (request: http.ClientRequest, options: string | URL | http.RequestOptions | https.RequestOptions) => {
-            var shouldCollect = !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] &&
-                !(<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
+            try {
+                var shouldCollect = !(<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] &&
+                    !(<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag];
 
-            // If someone else patched traceparent headers onto this request
-            let userAgentHeader = null;
+                // If someone else patched traceparent headers onto this request
+                let userAgentHeader = null;
 
-            // Azure SDK special handling
-            if ((<any>options).headers) {
-                userAgentHeader = (<any>options).headers["User-Agent"] || (<any>options).headers["user-agent"];
-                if (userAgentHeader && userAgentHeader.toString().indexOf("azsdk-js") !== -1) {
-                    shouldCollect = false;
+                // Azure SDK special handling
+                if ((<any>options).headers) {
+                    userAgentHeader = (<any>options).headers["User-Agent"] || (<any>options).headers["user-agent"];
+                    if (userAgentHeader && userAgentHeader.toString().indexOf("azsdk-js") !== -1) {
+                        shouldCollect = false;
+                    }
                 }
-            }
 
-            if (request && options && shouldCollect) {
-                CorrelationContextManager.wrapEmitter(request);
-                if (this._isEnabled) {
-                    // Mark as auto collected
-                    (<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag] = true;
+                if (request && options && shouldCollect) {
+                    CorrelationContextManager.wrapEmitter(request);
+                    if (this._isEnabled) {
+                        // Mark as auto collected
+                        (<any>request)[AutoCollectHttpDependencies.alreadyAutoCollectedFlag] = true;
 
-                    // If there is no context create one, this apply when no request is triggering the dependency
-                    if (!CorrelationContextManager.getCurrentContext()) {
-                        // Create correlation context and wrap execution
-                        let operationId = null;
-                        if (CorrelationIdManager.w3cEnabled) {
-                            let traceparent = new Traceparent();
-                            operationId = traceparent.traceId;
+                        // If there is no context create one, this apply when no request is triggering the dependency
+                        if (!CorrelationContextManager.getCurrentContext()) {
+                            // Create correlation context and wrap execution
+                            let operationId = null;
+                            if (CorrelationIdManager.w3cEnabled) {
+                                let traceparent = new Traceparent();
+                                operationId = traceparent.traceId;
+                            }
+                            else {
+                                let requestId = CorrelationIdManager.generateRequestId(null);
+                                operationId = CorrelationIdManager.getRootId(requestId);
+                            }
+                            let correlationContext = CorrelationContextManager.generateContextObject(operationId);
+                            CorrelationContextManager.runWithContext(correlationContext, () => {
+                                AutoCollectHttpDependencies.trackRequest(this._client, { options: options, request: request });
+                            });
                         }
                         else {
-                            let requestId = CorrelationIdManager.generateRequestId(null);
-                            operationId = CorrelationIdManager.getRootId(requestId);
-                        }
-                        let correlationContext = CorrelationContextManager.generateContextObject(operationId);
-                        CorrelationContextManager.runWithContext(correlationContext, () => {
                             AutoCollectHttpDependencies.trackRequest(this._client, { options: options, request: request });
-                        });
-                    }
-                    else {
-                        AutoCollectHttpDependencies.trackRequest(this._client, { options: options, request: request });
+                        }
                     }
                 }
             }
+            catch (err) {
+                Logging.warn("Failed to generate dependency telemetry.", Util.dumpObj(err));
+            }
+
         };
 
         // On node >= v0.11.12 and < 9.0 (excluding 8.9.0) https.request just calls http.request (with additional options).
