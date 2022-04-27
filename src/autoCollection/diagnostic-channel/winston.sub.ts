@@ -1,12 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
+import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
+import { winston } from "diagnostic-channel-publishers";
+
 import { LogHandler } from "../../library/handlers/logHandler";
 import { StatsbeatInstrumentation } from "../../declarations/constants";
 import { KnownSeverityLevel } from "../../declarations/generated";
-
-import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
-
-import { winston } from "diagnostic-channel-publishers";
 
 let handlers: LogHandler[] = [];
 

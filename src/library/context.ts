@@ -29,7 +29,7 @@ export class Context {
 
     private _loadApplicationContext(packageJsonPath?: string) {
         // note: this should return the host package.json
-        packageJsonPath = packageJsonPath || path.resolve(__dirname, "../../../../package.json");
+        packageJsonPath = packageJsonPath || path.resolve(__dirname, "../../../../../package.json");
 
         if (!this.appVersion[packageJsonPath]) {
             this.appVersion[packageJsonPath] = "unknown";

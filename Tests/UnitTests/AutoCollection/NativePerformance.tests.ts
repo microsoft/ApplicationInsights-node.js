@@ -1,10 +1,10 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
 
-import * as AppInsights from "../../../src/applicationinsights";
 import { TelemetryClient } from "../../../src/library";
 import { AutoCollectNativePerformance } from "../../../src/autoCollection/nativePerformance";
-import { JsonConfig } from "../../../src/library/configuration";
+import { Config, JsonConfig } from "../../../src/library/configuration";
+import { MetricHandler } from "../../../src/library/handlers";
 
 const ENV_nativeMetricsDisablers = "APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC";
 const ENV_nativeMetricsDisableAll = "APPLICATION_INSIGHTS_DISABLE_ALL_EXTENDED_METRICS";
@@ -17,7 +17,6 @@ describe("AutoCollection/NativePerformance", () => {
     });
 
     afterEach(() => {
-        AppInsights.dispose();
         sandbox.restore();
     });
 
@@ -25,38 +24,28 @@ describe("AutoCollection/NativePerformance", () => {
         it("init should enable and dispose should stop auto collection interval", () => {
             var setIntervalSpy = sandbox.spy(global, "setInterval");
             var clearIntervalSpy = sandbox.spy(global, "clearInterval");
+            let metricHandler = new MetricHandler(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+            var native = new AutoCollectNativePerformance(metricHandler);
+            native.enable(true);
 
-            AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
-                .setAutoCollectHeartbeat(false)
-                .setAutoCollectPerformance(false, true)
-                .setAutoCollectPreAggregatedMetrics(false)
-                .start();
             if (
-                AppInsights.defaultClient.metricHandler["_nativePerformance"]["_metricsAvailable"]
+                native["_metricsAvailable"]
             ) {
                 assert.equal(
                     setIntervalSpy.callCount,
-                    3,
+                    1,
                     "setInterval should be called three times as part of NativePerformance initialization as well as Statsbeat"
                 );
-                AppInsights.dispose();
+                native.enable(false);
                 assert.equal(
                     clearIntervalSpy.callCount,
                     1,
                     "clearInterval should be called once as part of NativePerformance shutdown"
                 );
             } else {
-                assert.equal(
-                    setIntervalSpy.callCount,
-                    2,
-                    "setInterval should not be called if NativePerformance package is not available, Statsbeat will be called"
-                );
-                AppInsights.dispose();
-                assert.equal(
-                    clearIntervalSpy.callCount,
-                    0,
-                    "clearInterval should not be called if NativePerformance package is not available"
-                );
+                assert.ok(setIntervalSpy.notCalled);
+                native.enable(false);
+                assert.ok(clearIntervalSpy.notCalled);
             }
         });
 
@@ -66,7 +55,7 @@ describe("AutoCollection/NativePerformance", () => {
             var native = new AutoCollectNativePerformance(client.metricHandler);
             native["_metricsAvailable"] = true;
             native["_emitter"] = {
-                enable: () => {},
+                enable: () => { },
             };
 
             assert.ok(native);

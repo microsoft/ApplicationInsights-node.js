@@ -1,7 +1,9 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
+import { AutoCollectPerformance } from "../../../src/autoCollection";
+import { Config } from "../../../src/Library/configuration";
+import { MetricHandler } from "../../../src/library/handlers";
 
-import * as AppInsights from "../../../src/applicationinsights";
 
 describe("AutoCollection/Performance", () => {
     var sandbox: sinon.SinonSandbox;
@@ -11,7 +13,6 @@ describe("AutoCollection/Performance", () => {
     });
 
     afterEach(() => {
-        AppInsights.dispose();
         sandbox.restore();
     });
 
@@ -19,17 +20,15 @@ describe("AutoCollection/Performance", () => {
         it("init should enable and dispose should stop autocollection interval", () => {
             var setIntervalSpy = sandbox.spy(global, "setInterval");
             var clearIntervalSpy = sandbox.spy(global, "clearInterval");
-            AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
-                .setAutoCollectHeartbeat(false)
-                .setAutoCollectPerformance(true, false)
-                .setAutoCollectPreAggregatedMetrics(false)
-                .start();
+            let metricHandler = new MetricHandler(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+            let performance = new AutoCollectPerformance(metricHandler);
+            performance.enable(true);
             assert.equal(
                 setIntervalSpy.callCount,
-                3,
+                1,
                 "setInteval should be called three times as part of performance initialization and also as part of Statsbeat"
             );
-            AppInsights.dispose();
+            performance.enable(false);
             assert.equal(
                 clearIntervalSpy.callCount,
                 1,
