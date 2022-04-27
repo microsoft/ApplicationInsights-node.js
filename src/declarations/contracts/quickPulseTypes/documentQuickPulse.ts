@@ -1,16 +1,16 @@
 export interface DocumentQuickPulse {
-  __type: string;
+    __type: string;
 
-  DocumentType: string;
+    DocumentType: string;
 
-  Version: string;
+    Version: string;
 
-  OperationId: string;
+    OperationId: string;
 
-  Properties: IDocumentProperty[];
+    Properties: IDocumentProperty[];
 }
 
 export interface IDocumentProperty {
-  key: string;
-  value: string;
+    key: string;
+    value: string;
 }

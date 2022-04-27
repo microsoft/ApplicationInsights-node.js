@@ -5,13 +5,13 @@ import { Telemetry } from "./telemetry";
  * you would like to track and aggregate by count. Event can contain measurements such as purchase amount associated with purchase event
  */
 export interface EventTelemetry extends Telemetry {
-  /**
-   * Name of the event
-   */
-  name: string;
+    /**
+     * Name of the event
+     */
+    name: string;
 
-  /**
-   * Metrics associated with this event, displayed in Metrics Explorer on the portal.
-   */
-  measurements?: { [key: string]: number };
+    /**
+     * Metrics associated with this event, displayed in Metrics Explorer on the portal.
+     */
+    measurements?: { [key: string]: number };
 }

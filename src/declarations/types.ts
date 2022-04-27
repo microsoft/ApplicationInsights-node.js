@@ -23,8 +23,8 @@ export type Properties = { [key: string]: Properties | PropertyType };
  * @internal
  */
 export interface MSLink {
-  operation_Id: string;
-  id: string;
+    operation_Id: string;
+    id: string;
 }
 /**
  * Azure Monitor envelope measurements.
@@ -42,9 +42,9 @@ export type SenderResult = { statusCode: number | undefined; result: string };
  * @internal
  */
 export interface ISender {
-  send(payload: unknown[]): Promise<SenderResult>;
-  shutdown(): Promise<void>;
-  handlePermanentRedirect(location: string | undefined): void;
+    send(payload: unknown[]): Promise<SenderResult>;
+    shutdown(): Promise<void>;
+    handlePermanentRedirect(location: string | undefined): void;
 }
 
 /**
@@ -52,6 +52,6 @@ export interface ISender {
  * @internal
  */
 export interface IPersistentStorage {
-  shift(): Promise<unknown>;
-  push(value: unknown[]): Promise<boolean>;
+    shift(): Promise<unknown>;
+    push(value: unknown[]): Promise<boolean>;
 }

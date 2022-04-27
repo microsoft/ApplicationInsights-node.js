@@ -2,18 +2,18 @@
  * Breeze response definition.
  */
 export interface BreezeResponse {
-  itemsReceived: number;
-  itemsAccepted: number;
-  errors: BreezeError[];
+    itemsReceived: number;
+    itemsAccepted: number;
+    errors: BreezeError[];
 }
 
 /**
  * Breeze errors.
  */
 export interface BreezeError {
-  index: number;
-  statusCode: number;
-  message: string;
+    index: number;
+    statusCode: number;
+    message: string;
 }
 
 /**
@@ -28,19 +28,19 @@ export type ConnectionString = { [key in ConnectionStringKey]?: string };
  * @internal
  */
 export type ConnectionStringKey =
-  | "authorization"
-  | "instrumentationkey"
-  | "ingestionendpoint"
-  | "liveendpoint"
-  | "location"
-  | "endpointsuffix";
+    | "authorization"
+    | "instrumentationkey"
+    | "ingestionendpoint"
+    | "liveendpoint"
+    | "location"
+    | "endpointsuffix";
 
 /**
  * SDK info
  * @internal
  */
 export const SDK_INFO = {
-  NAME: "opentelemetry",
-  RUNTIME: "node",
-  LANGUAGE: "nodejs",
+    NAME: "opentelemetry",
+    RUNTIME: "node",
+    LANGUAGE: "nodejs",
 };

@@ -12,41 +12,41 @@ export const IsInitialized = !JsonConfig.getInstance().noDiagnosticChannel;
 const TAG = "DiagnosticChannel";
 
 if (IsInitialized) {
-  const publishers: typeof DiagChannelPublishers = require("diagnostic-channel-publishers");
-  const individualOptOuts: string = JsonConfig.getInstance().noPatchModules;
-  const unpatchedModules = individualOptOuts.split(",");
-  const modules: { [key: string]: any } = {
-    bunyan: publishers.bunyan,
-    console: publishers.console,
-    mongodb: publishers.mongodb,
-    mongodbCore: publishers.mongodbCore,
-    mysql: publishers.mysql,
-    redis: publishers.redis,
-    pg: publishers.pg,
-    pgPool: publishers.pgPool,
-    winston: publishers.winston,
-    azuresdk: publishers.azuresdk,
-  };
-  for (const mod in modules) {
-    if (unpatchedModules.indexOf(mod) === -1) {
-      modules[mod].enable();
-      Logger.info(TAG, `Subscribed to ${mod} events`);
+    const publishers: typeof DiagChannelPublishers = require("diagnostic-channel-publishers");
+    const individualOptOuts: string = JsonConfig.getInstance().noPatchModules;
+    const unpatchedModules = individualOptOuts.split(",");
+    const modules: { [key: string]: any } = {
+        bunyan: publishers.bunyan,
+        console: publishers.console,
+        mongodb: publishers.mongodb,
+        mongodbCore: publishers.mongodbCore,
+        mysql: publishers.mysql,
+        redis: publishers.redis,
+        pg: publishers.pg,
+        pgPool: publishers.pgPool,
+        winston: publishers.winston,
+        azuresdk: publishers.azuresdk,
+    };
+    for (const mod in modules) {
+        if (unpatchedModules.indexOf(mod) === -1) {
+            modules[mod].enable();
+            Logger.info(TAG, `Subscribed to ${mod} events`);
+        }
     }
-  }
-  if (unpatchedModules.length > 0) {
-    Logger.info(TAG, "Some modules will not be patched", unpatchedModules);
-  }
+    if (unpatchedModules.length > 0) {
+        Logger.info(TAG, "Some modules will not be patched", unpatchedModules);
+    }
 } else {
-  Logger.info(
-    TAG,
-    "Not subscribing to dependency auto collection because APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL was set"
-  );
+    Logger.info(
+        TAG,
+        "Not subscribing to dependency auto collection because APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL was set"
+    );
 }
 
 export function registerContextPreservation(cb: (cb: Function) => Function) {
-  if (!IsInitialized) {
-    return;
-  }
-  const diagChannel = require("diagnostic-channel") as typeof DiagChannel;
-  diagChannel.channel.addContextPreservation(cb);
+    if (!IsInitialized) {
+        return;
+    }
+    const diagChannel = require("diagnostic-channel") as typeof DiagChannel;
+    diagChannel.channel.addContextPreservation(cb);
 }

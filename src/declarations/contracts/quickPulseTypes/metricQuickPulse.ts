@@ -1,7 +1,7 @@
 export interface MetricQuickPulse {
-  Name: string;
+    Name: string;
 
-  Value: number;
+    Value: number;
 
-  Weight: number;
+    Weight: number;
 }

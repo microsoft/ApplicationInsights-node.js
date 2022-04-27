@@ -4,33 +4,33 @@ import { FileWriter } from "./fileWriter";
 import { APPLICATION_INSIGHTS_SDK_VERSION } from "../declarations/constants";
 
 export interface StatusContract {
-  AgentInitializedSuccessfully: boolean;
-  Reason?: string;
-  SDKPresent: boolean;
-  AppType: string;
-  MachineName: string;
-  PID: string;
-  SdkVersion: string;
-  Ikey: string;
+    AgentInitializedSuccessfully: boolean;
+    Reason?: string;
+    SDKPresent: boolean;
+    AppType: string;
+    MachineName: string;
+    PID: string;
+    SdkVersion: string;
+    Ikey: string;
 }
 
 export const DEFAULT_STATUS_CONTRACT: StatusContract = {
-  AgentInitializedSuccessfully: false,
-  SDKPresent: false,
-  Ikey: "unknown",
-  AppType: "node.js",
-  SdkVersion: APPLICATION_INSIGHTS_SDK_VERSION,
-  MachineName: os.hostname(),
-  PID: String(process.pid),
+    AgentInitializedSuccessfully: false,
+    SDKPresent: false,
+    Ikey: "unknown",
+    AppType: "node.js",
+    SdkVersion: APPLICATION_INSIGHTS_SDK_VERSION,
+    MachineName: os.hostname(),
+    PID: String(process.pid),
 };
 
 export class StatusLogger {
-  constructor(public _writer: DataModel.AgentLogger = console) {}
+    constructor(public _writer: DataModel.AgentLogger = console) {}
 
-  public logStatus(data: StatusContract, cb?: (err: Error) => void) {
-    if (typeof cb === "function" && this._writer instanceof FileWriter) {
-      this._writer.callback = cb;
+    public logStatus(data: StatusContract, cb?: (err: Error) => void) {
+        if (typeof cb === "function" && this._writer instanceof FileWriter) {
+            this._writer.callback = cb;
+        }
+        this._writer.log(data);
     }
-    this._writer.log(data);
-  }
 }

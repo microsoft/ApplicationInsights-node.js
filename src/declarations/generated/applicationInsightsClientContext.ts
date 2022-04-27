@@ -10,38 +10,38 @@ import * as coreClient from "@azure/core-client";
 import { ApplicationInsightsClientOptionalParams } from "./models";
 
 export class ApplicationInsightsClientContext extends coreClient.ServiceClient {
-  host: string;
+    host: string;
 
-  /**
-   * Initializes a new instance of the ApplicationInsightsClientContext class.
-   * @param options The parameter options
-   */
-  constructor(options?: ApplicationInsightsClientOptionalParams) {
-    // Initializing default values for options
-    if (!options) {
-      options = {};
+    /**
+     * Initializes a new instance of the ApplicationInsightsClientContext class.
+     * @param options The parameter options
+     */
+    constructor(options?: ApplicationInsightsClientOptionalParams) {
+        // Initializing default values for options
+        if (!options) {
+            options = {};
+        }
+        const defaults: ApplicationInsightsClientOptionalParams = {
+            requestContentType: "application/json; charset=utf-8",
+        };
+
+        const packageDetails = `azsdk-js-monitor-opentelemetry-exporter/1.0.0-beta.7`;
+        const userAgentPrefix =
+            options.userAgentOptions && options.userAgentOptions.userAgentPrefix
+                ? `${options.userAgentOptions.userAgentPrefix} ${packageDetails}`
+                : `${packageDetails}`;
+
+        const optionsWithDefaults = {
+            ...defaults,
+            ...options,
+            userAgentOptions: {
+                userAgentPrefix,
+            },
+            baseUri: options.endpoint || "{Host}/v2.1",
+        };
+        super(optionsWithDefaults);
+
+        // Assigning values to Constant parameters
+        this.host = options.host || "https://dc.services.visualstudio.com";
     }
-    const defaults: ApplicationInsightsClientOptionalParams = {
-      requestContentType: "application/json; charset=utf-8",
-    };
-
-    const packageDetails = `azsdk-js-monitor-opentelemetry-exporter/1.0.0-beta.7`;
-    const userAgentPrefix =
-      options.userAgentOptions && options.userAgentOptions.userAgentPrefix
-        ? `${options.userAgentOptions.userAgentPrefix} ${packageDetails}`
-        : `${packageDetails}`;
-
-    const optionsWithDefaults = {
-      ...defaults,
-      ...options,
-      userAgentOptions: {
-        userAgentPrefix,
-      },
-      baseUri: options.endpoint || "{Host}/v2.1",
-    };
-    super(optionsWithDefaults);
-
-    // Assigning values to Constant parameters
-    this.host = options.host || "https://dc.services.visualstudio.com";
-  }
 }

@@ -2,23 +2,23 @@ import { DocumentQuickPulse } from "./DocumentQuickPulse";
 import { MetricQuickPulse } from "./metricQuickPulse";
 
 export interface EnvelopeQuickPulse {
-  Documents: DocumentQuickPulse[];
+    Documents: DocumentQuickPulse[];
 
-  Instance: string;
+    Instance: string;
 
-  RoleName: string;
+    RoleName: string;
 
-  InstrumentationKey: string;
+    InstrumentationKey: string;
 
-  InvariantVersion: number;
+    InvariantVersion: number;
 
-  MachineName: string;
+    MachineName: string;
 
-  Metrics: MetricQuickPulse[];
+    Metrics: MetricQuickPulse[];
 
-  StreamId: string;
+    StreamId: string;
 
-  Timestamp: string;
+    Timestamp: string;
 
-  Version: string;
+    Version: string;
 }

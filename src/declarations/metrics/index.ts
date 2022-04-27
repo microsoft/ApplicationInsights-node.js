@@ -4,10 +4,10 @@
 export { AggregatedMetric } from "./aggregatedMetric";
 export { AggregatedMetricCounter } from "./aggregatedMetricCounters";
 export {
-  IMetricDependencyDimensions,
-  IMetricBaseDimensions,
-  IMetricExceptionDimensions,
-  IMetricRequestDimensions,
-  IMetricTraceDimensions,
-  MetricDimensionTypeKeys,
+    IMetricDependencyDimensions,
+    IMetricBaseDimensions,
+    IMetricExceptionDimensions,
+    IMetricRequestDimensions,
+    IMetricTraceDimensions,
+    MetricDimensionTypeKeys,
 } from "./aggregatedMetricDimensions";
