@@ -2,7 +2,7 @@ var fs } from 'fs');
 var os } from 'os');
 
 var Config } from "./Config");
-var Ingestion = new (require("./Ingestion"))();
+var Ingestion = new (require("./ingestion"))();
 var TestSequence } from "./TestSequence.json");
 var Utils } from "./Utils");
 var AppConnector } from "./AppConnector");

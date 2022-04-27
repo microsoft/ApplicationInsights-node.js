@@ -4,14 +4,14 @@
 // import * as   eventEmitter from 'events';
 
 // import { AutoCollectPreAggregatedMetrics } from "../../../AutoCollection/PreAggregatedMetrics";
-// import { TelemetryClient } from "../../../Library/TelemetryClient";
-// import { Config } from "../../../Library/Configuration/Config";
+// import { TelemetryClient } from "../../../library";
+// import { Config } from "../../../Library/configuration";
 // import * as  Contracts from "../../../Declarations/Contracts";
 // import { RequestHeaders } from "../../../Declarations/RequestResponseHeaders";
 // import { Util } from "../../../Library/Util";
 // import { EnvelopeFactory } from "../../../Library/EnvelopeFactory";
 
-// describe("Library/TelemetryClient", () => {
+// describe("library", () => {
 
 //     Util.tlsRestrictedAgent = new https.Agent();
 
@@ -192,7 +192,6 @@
 //         });
 //     });
 
-
 //     describe("#trackAvailability()", () => {
 //         it("should track availability with correct data", () => {
 //             trackStub.reset();
@@ -344,7 +343,6 @@
 
 //                 var exceptionTelemetry = <Contracts.ExceptionTelemetry>trackStub.firstCall.args[0];
 
-
 //                 assert.equal(exceptionTelemetry.exception.message, name);
 //             });
 
@@ -420,7 +418,6 @@
 //             client.trackDependency({ name: name, data: commandName, duration: value, success: true, resultCode: "0", dependencyTypeName: dependencyTypeName, properties: properties });
 //             assert.ok(createEnvelopeSpy.calledOnce);
 
-
 //             var envelopeCreated = createEnvelopeSpy.firstCall.returnValue;
 //             var obj0 = <Contracts.Data<Contracts.RemoteDependencyData>>envelopeCreated.data;
 //             createEnvelopeSpy.restore();
@@ -441,7 +438,6 @@
 //             var createEnvelopeSpy = sinon.spy(EnvelopeFactory, "createEnvelope");
 //             client.trackDependency({ name: name, data: commandName, duration: value, success: true, resultCode: 0, dependencyTypeName: dependencyTypeName, properties: properties });
 //             assert.ok(createEnvelopeSpy.calledOnce);
-
 
 //             var envelopeCreated = createEnvelopeSpy.firstCall.returnValue;
 //             var obj0 = <Contracts.Data<Contracts.RemoteDependencyData>>envelopeCreated.data;
@@ -464,7 +460,6 @@
 //             client.trackDependency(<Contracts.DependencyTelemetry & Contracts.Identified>{ id: "testid", name: name, data: commandName, duration: value, success: true, resultCode: "0", dependencyTypeName: dependencyTypeName, properties: properties });
 //             assert.ok(createEnvelopeSpy.calledOnce);
 
-
 //             var envelopeCreated = createEnvelopeSpy.firstCall.returnValue;
 //             var obj0 = <Contracts.Data<Contracts.RemoteDependencyData>>envelopeCreated.data;
 //             createEnvelopeSpy.restore();
@@ -479,7 +474,6 @@
 //             var createEnvelopeSpy = sinon.spy(EnvelopeFactory, "createEnvelope");
 //             client.trackDependency(<Contracts.DependencyTelemetry>{ name: name, data: commandName, duration: value, success: true, resultCode: "0", dependencyTypeName: dependencyTypeName, properties: properties });
 //             assert.ok(createEnvelopeSpy.calledOnce);
-
 
 //             var envelopeCreated = createEnvelopeSpy.firstCall.returnValue;
 //             var obj0 = <Contracts.Data<Contracts.RemoteDependencyData>>envelopeCreated.data;
@@ -496,7 +490,6 @@
 //             client.trackDependency(<Contracts.DependencyTelemetry>{ name: name, data: commandName, duration: value, success: true, resultCode: "0", dependencyTypeName: dependencyTypeName, properties: properties });
 //             assert.ok(createEnvelopeSpy.calledOnce);
 
-
 //             var envelopeCreated = createEnvelopeSpy.firstCall.returnValue;
 //             var obj0 = <Contracts.Data<Contracts.RemoteDependencyData>>envelopeCreated.data;
 //             createEnvelopeSpy.restore();
@@ -510,7 +503,6 @@
 //             var createEnvelopeSpy = sinon.spy(EnvelopeFactory, "createEnvelope");
 //             client.trackDependency(<Contracts.DependencyTelemetry>{ name: name, data: commandName, duration: value, success: true, resultCode: "0", dependencyTypeName: dependencyTypeName, properties: properties });
 //             assert.ok(createEnvelopeSpy.calledOnce);
-
 
 //             var envelopeCreated = createEnvelopeSpy.firstCall.returnValue;
 //             var obj0 = <Contracts.Data<Contracts.RemoteDependencyData>>envelopeCreated.data;
@@ -526,7 +518,6 @@
 //             var createEnvelopeSpy = sinon.spy(EnvelopeFactory, "createEnvelope");
 //             client.trackRequest({ url: url, source: "source", name: name, duration: value, success: true, resultCode: "200", properties: properties });
 //             assert.ok(createEnvelopeSpy.calledOnce);
-
 
 //             var envelopeCreated = createEnvelopeSpy.firstCall.returnValue;
 //             var obj0 = <Contracts.Data<Contracts.RequestData>>envelopeCreated.data;
@@ -548,7 +539,6 @@
 //             client.trackRequest({ url: url, source: "source", name: name, duration: value, success: true, resultCode: 200, properties: properties });
 //             assert.ok(createEnvelopeSpy.calledOnce);
 
-
 //             var envelopeCreated = createEnvelopeSpy.firstCall.returnValue;
 //             var obj0 = <Contracts.Data<Contracts.RequestData>>envelopeCreated.data;
 //             createEnvelopeSpy.restore();
@@ -569,7 +559,6 @@
 //             client.trackRequest(<Contracts.RequestTelemetry & Contracts.Identified>{ id: "testid", url: url, source: "source", name: name, duration: value, success: true, resultCode: "200", properties: properties });
 //             assert.ok(createEnvelopeSpy.calledOnce);
 
-
 //             var envelopeCreated = createEnvelopeSpy.firstCall.returnValue;
 //             var obj0 = <Contracts.Data<Contracts.RequestData>>envelopeCreated.data;
 //             createEnvelopeSpy.restore();
@@ -584,7 +573,6 @@
 //             var createEnvelopeSpy = sinon.spy(EnvelopeFactory, "createEnvelope");
 //             client.trackRequest({ url: url, source: "source", name: name, duration: value, success: true, resultCode: "200", properties: properties });
 //             assert.ok(createEnvelopeSpy.calledOnce);
-
 
 //             var envelopeCreated = createEnvelopeSpy.firstCall.returnValue;
 //             var obj0 = <Contracts.Data<Contracts.RequestData>>envelopeCreated.data;
@@ -652,7 +640,6 @@
 
 //             assert.ok(sendStub.calledOnce);
 //         });
-
 
 //         it("should send the envelope that was created", () => {
 //             sendStub.reset();

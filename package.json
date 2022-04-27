@@ -29,6 +29,7 @@
     "build": "npm run build:deps && npm run build:compile",
     "build:deps": "npm update --dev",
     "build:compile": "tsc --project ./tsconfig.json",
+    "format": "prettier --write --config .prettierrc.json --ignore-path .prettierignore \"src/**/*.ts\" \"tests/**/*.ts\"",
     "prepare": "npm run build:compile",
     "prepublishOnly": "npm run build",
     "lint": "eslint ./ --fix",

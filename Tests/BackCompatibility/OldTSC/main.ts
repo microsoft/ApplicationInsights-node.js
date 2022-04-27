@@ -1,6 +1,6 @@
-import appInsights } from "applicationinsights");
-import http } from "http");
+import appInsights = require("applicationinsights");
+import http = require("http");
 
 appInsights.setup().start();
-appInsights.defaultClient.trackEvent({name: "Test event"});
-appInsights.defaultClient.trackNodeHttpDependency({options: {}, request: http.request({})});
+appInsights.defaultClient.trackEvent({ name: "Test event" });
+appInsights.defaultClient.trackNodeHttpDependency({ options: {}, request: http.request({}) });

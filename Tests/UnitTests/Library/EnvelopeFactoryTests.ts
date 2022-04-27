@@ -4,8 +4,8 @@
 
 // import { EnvelopeFactory } from "../../../Library/EnvelopeFactory";
 // import * as Contracts from "../../../Declarations/Contracts";
-// import { TelemetryClient } from "../../../Library/TelemetryClient";
-// import { Util } from "../../../Library/Util/Util";
+// import { TelemetryClient } from "../../../library";
+// import { Util } from "../../../Library/util";
 
 // describe("Library/EnvelopeFactory", () => {
 

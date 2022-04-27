@@ -13,14 +13,14 @@
         ]
     },
     "include": [
-        "Bootstrap/*.ts",
+        "src/bootstrap/*.ts",
         "*.ts",
-        "AutoCollection/diagnostic-channel/*.ts",
-        "Tests/**/*.ts"
-    ],
+        "src/autoCollection/diagnostic-channel/*.ts",
+        "tests/**/*.ts"
+, "src/applicationinsights.ts"    ],
     "exclude": [
         "node_modules",
-        "Tests/FunctionalTests",
-        "Tests/BackCompatibility"
+        "tests/functionalTests",
+        "tests/backCompatibility"
     ]
 }
