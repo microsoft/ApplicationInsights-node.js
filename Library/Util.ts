@@ -404,15 +404,22 @@ class Util {
      * Returns string representation of an object suitable for diagnostics logging.
      */
     public static dumpObj(object: any): string {
-        const objectTypeDump: string = Object["prototype"].toString.call(object);
-        let propertyValueDump: string = "";
-        if (objectTypeDump === "[object Error]") {
-            propertyValueDump = "{ stack: '" + object.stack + "', message: '" + object.message + "', name: '" + object.name + "'";
-        } else {
-            propertyValueDump = JSON.stringify(object);
-        }
+        if (object) {
+            try {
+                const objectTypeDump: string = Object["prototype"].toString.call(object);
+                let propertyValueDump: string = "";
+                if (objectTypeDump === "[object Error]") {
+                    propertyValueDump = "{ stack: '" + object.stack + "', message: '" + object.message + "', name: '" + object.name + "'";
+                } else {
+                    propertyValueDump = this.stringify(object);
+                }
 
-        return objectTypeDump + propertyValueDump;
+                return objectTypeDump + propertyValueDump;
+            }
+            catch (ex) {
+                return object.toString();
+            }
+        }
     }
 
     public static stringify(payload: any) {
