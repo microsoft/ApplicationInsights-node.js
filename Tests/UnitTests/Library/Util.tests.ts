@@ -2,15 +2,14 @@
 import * as sinon from "sinon";
 import * as http from "http";
 import * as https from "https";
-import * as url from 'url';
+import * as url from "url";
 
-import { Util } from "../../../Library/Util";
+import { Util } from "../../../src/library/util";
 
 describe("Library/Util", () => {
-
     var sandbox: sinon.SinonSandbox;
     before(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
     });
 
     afterEach(() => {
@@ -32,7 +31,10 @@ describe("Library/Util", () => {
             assert.equal(Util.getInstance().trim("\t"), "");
             assert.equal(Util.getInstance().trim("\n"), "");
             assert.equal(Util.getInstance().trim("\t\n\r test \t\n\r"), "test");
-            assert.equal(Util.getInstance().trim("\t\n\r test \t\n\r test \t\n\r"), "test \t\n\r test");
+            assert.equal(
+                Util.getInstance().trim("\t\n\r test \t\n\r test \t\n\r"),
+                "test \t\n\r test"
+            );
         });
     });
 
@@ -69,7 +71,7 @@ describe("Library/Util", () => {
         var test = (input: number, expected: string, message: string) => {
             var actual = Util.getInstance().msToTimeSpan(input);
             assert.equal(expected, actual, message);
-        }
+        };
 
         it("should convert milliseconds to a c# timespan", () => {
             test(0, "00:00:00.000", "zero");
@@ -84,12 +86,20 @@ describe("Library/Util", () => {
             test(10 * 60 * 60 * 1000, "10:00:00.000", "hours digit 2");
             test(24 * 60 * 60 * 1000, "1.00:00:00.000", "hours overflow");
             test(11 * 3600000 + 11 * 60000 + 11111, "11:11:11.111", "all digits");
-            test(5 * 86400000 + 13 * 3600000 + 9 * 60000 + 8 * 1000 + 789, "5.13:09:08.789", "all digits with days");
+            test(
+                5 * 86400000 + 13 * 3600000 + 9 * 60000 + 8 * 1000 + 789,
+                "5.13:09:08.789",
+                "all digits with days"
+            );
             test(1001.505, "00:00:01.001505", "fractional milliseconds");
             test(1001.5, "00:00:01.0015", "fractional milliseconds - not all precision 1");
             test(1001.55, "00:00:01.00155", "fractional milliseconds - not all precision 2");
             test(1001.5059, "00:00:01.0015059", "fractional milliseconds - all digits");
-            test(1001.50559, "00:00:01.0015056", "fractional milliseconds - too many digits, round up");
+            test(
+                1001.50559,
+                "00:00:01.0015056",
+                "fractional milliseconds - too many digits, round up"
+            );
         });
 
         it("should handle invalid input", () => {

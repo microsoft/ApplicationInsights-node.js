@@ -3,14 +3,10 @@ import * as sinon from "sinon";
 import * as path from "path";
 import * as os from "os";
 import * as fs from "fs";
-import { FileWriter, homedir } from "../../../Bootstrap/FileWriter";
-import { renameCurrentFile } from "../../../Bootstrap/Helpers/FileHelpers";
+import { FileWriter, homedir } from "../../../src/bootstrap/fileWriter";
+import { renameCurrentFile } from "../../../src/bootstrap/helpers/fileHelpers";
 
 describe("FileWriter", () => {
-    if (!FileWriter.isNodeVersionCompatible()) {
-        return;
-    }
-
     const filedir = path.join(homedir, "LogFiles/ApplicationInsights/test");
     describe("#constructor()", () => {
         it("should return a ready FileWriter", () => {
@@ -21,13 +17,13 @@ describe("FileWriter", () => {
             } else {
                 assert.ok(true, "skipped");
             }
-        })
+        });
     });
 
     describe("#log()", () => {
         it("should not log if the FileWriter is not ready", () => {
             const writer = new FileWriter(filedir, "test.txt");
-            const stub = sinon.stub(writer, "_writeFile");
+            const stub = sinon.stub(writer as any, "_writeFile");
             writer["_ready"] = false;
 
             assert.ok(stub.notCalled);
@@ -59,7 +55,7 @@ describe("FileWriter", () => {
                 const content = fs.readFileSync(path.join(os.tmpdir(), "tempfile.txt"), "utf8");
                 assert.deepEqual(content, "temp:foo");
                 done();
-            }
+            };
             writer.log("temp:foo");
         });
 
@@ -70,7 +66,7 @@ describe("FileWriter", () => {
                 const content = fs.readFileSync(path.join(filedir, "newfile.txt"), "utf8");
                 assert.deepEqual(content, "newfile #1");
                 done();
-            }
+            };
             writer["_writeFile"]("newfile #1");
         });
 
@@ -85,9 +81,9 @@ describe("FileWriter", () => {
                     const content = fs.readFileSync(path.join(filedir, "test.txt"), "utf8");
                     assert.deepEqual(content, "write #2");
                     done();
-                }
+                };
                 writer["_writeFile"]("write #2");
-            }
+            };
             writer["_writeFile"]("write #1");
         });
     });
@@ -98,7 +94,7 @@ describe("FileWriter", () => {
             try {
                 // Try to delete the file we are appending
                 fs.unlinkSync(path.join(filedir, "append.txt"));
-            } catch (e) { }
+            } catch (e) {}
             const writer = new FileWriter(filedir, "append.txt", { append: true });
             writer.callback = (err) => {
                 if (counter < 3) {
@@ -109,7 +105,7 @@ describe("FileWriter", () => {
                     assert.deepEqual(content, "line #0\nline #1\nline #2\nline #3\n");
                     done();
                 }
-            }
+            };
             writer.log(`line #${counter}`);
         });
     });
@@ -120,7 +116,7 @@ describe("FileWriter", () => {
             writer.callback = (err) => {
                 assert.equal(err, null);
                 done();
-            }
+            };
             writer.log("example");
         });
     });
@@ -130,8 +126,8 @@ describe("FileWriter", () => {
             try {
                 // Try to delete the file we are testing
                 fs.unlinkSync(path.join(filedir, "clocktest.txt"));
-            } catch (e) { }
-            const sandbox = sinon.sandbox.create();
+            } catch (e) {}
+            const sandbox = sinon.createSandbox();
             const clock = sandbox.useFakeTimers(Date.now());
             const writer = new FileWriter(filedir, "clocktest.txt");
             writer.callback = (err) => {
@@ -148,7 +144,7 @@ describe("FileWriter", () => {
                         done();
                     });
                 });
-            }
+            };
             writer.log("message");
         });
     });
@@ -158,7 +154,9 @@ describe("FileWriter", () => {
             const writer = new FileWriter(filedir, "renametest.txt");
             writer.callback = (err) => {
                 assert.deepEqual(err, null);
-                const birthdate = new Date(fs.statSync(path.join(filedir, "renametest.txt")).birthtime);
+                const birthdate = new Date(
+                    fs.statSync(path.join(filedir, "renametest.txt")).birthtime
+                );
 
                 // Rename the file
                 renameCurrentFile(filedir, "renametest.txt", (err, renamedfullpath) => {
@@ -171,7 +169,16 @@ describe("FileWriter", () => {
                     }
 
                     // Assert renamed file has identical contents and was renamed properly
-                    assert.deepEqual(renamedfullpath, path.join(filedir, `renametest-${birthdate.toISOString().replace(/[T:\.]/g, "_").replace("Z", "")}.txt.old`));
+                    assert.deepEqual(
+                        renamedfullpath,
+                        path.join(
+                            filedir,
+                            `renametest-${birthdate
+                                .toISOString()
+                                .replace(/[T:\.]/g, "_")
+                                .replace("Z", "")}.txt.old`
+                        )
+                    );
                     const content = fs.readFileSync(renamedfullpath, "utf8");
                     assert.deepEqual(content, "foo");
 
@@ -179,7 +186,7 @@ describe("FileWriter", () => {
                     fs.unlinkSync(renamedfullpath);
                     done();
                 });
-            }
+            };
             writer.log("foo"); // create the file
         });
     });

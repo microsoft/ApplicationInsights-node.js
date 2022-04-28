@@ -2,9 +2,8 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 import * as fs from "fs";
 import * as path from "path";
-import { Logger } from "../../../Library/Logging/Logger";
-import { JsonConfig } from "../../../Library/Configuration/JsonConfig";
-
+import { Logger } from "../../../src/library/logging";
+import { JsonConfig } from "../../../src/library/configuration";
 
 describe("Json Config", () => {
     var sandbox: sinon.SinonSandbox;
@@ -12,7 +11,7 @@ describe("Json Config", () => {
 
     beforeEach(() => {
         originalEnv = process.env;
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         JsonConfig["_instance"] = undefined;
     });
 
@@ -24,7 +23,6 @@ describe("Json Config", () => {
     after(() => {
         JsonConfig["_instance"] = undefined;
     });
-
 
     describe("config path", () => {
         it("Default file path", () => {
@@ -40,11 +38,17 @@ describe("Json Config", () => {
 
         it("Absolute file path", () => {
             const env = <{ [id: string]: string }>{};
-            const customConfigJSONPath = path.resolve(__dirname, "../../../../Tests/UnitTests/Library/config.json");
+            const customConfigJSONPath = path.resolve(
+                __dirname,
+                "../../../../Tests/UnitTests/Library/config.json"
+            );
             env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath;
             process.env = env;
             const config = JsonConfig.getInstance();
-            assert.equal(config.connectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+            assert.equal(
+                config.connectionString,
+                "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"
+            );
         });
 
         it("Relative file path", () => {
@@ -53,18 +57,27 @@ describe("Json Config", () => {
             env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath;
             process.env = env;
             const config = JsonConfig.getInstance();
-            assert.equal(config.connectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+            assert.equal(
+                config.connectionString,
+                "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"
+            );
         });
     });
 
     describe("configuration values", () => {
         it("Should take configurations from JSON config file", () => {
             const env = <{ [id: string]: string }>{};
-            const customConfigJSONPath = path.resolve(__dirname, "../../../../Tests/UnitTests/Library/config.json");
+            const customConfigJSONPath = path.resolve(
+                __dirname,
+                "../../../../Tests/UnitTests/Library/config.json"
+            );
             env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath;
             process.env = env;
             const config = JsonConfig.getInstance();
-            assert.equal(config.connectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+            assert.equal(
+                config.connectionString,
+                "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"
+            );
             assert.equal(config.endpointUrl, "testEndpointUrl");
             assert.equal(config.maxBatchSize, 150);
             assert.equal(config.maxBatchIntervalMs, 12000);
@@ -129,7 +142,10 @@ describe("Json Config", () => {
 
         it("Should take configurations from JSON config file over environment variables if both are configured", () => {
             const env = <{ [id: string]: string }>{};
-            const customConfigJSONPath = path.resolve(__dirname, "../../../../Tests/UnitTests/Library/config.json");
+            const customConfigJSONPath = path.resolve(
+                __dirname,
+                "../../../../Tests/UnitTests/Library/config.json"
+            );
             env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath;
             env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "TestConnectionString";
             env["APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC"] = "gc";
@@ -142,7 +158,10 @@ describe("Json Config", () => {
             env["https_proxy"] = "testProxyHttpsUrl2";
             process.env = env;
             const config = JsonConfig.getInstance();
-            assert.equal(config.connectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+            assert.equal(
+                config.connectionString,
+                "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"
+            );
             assert.equal(config.proxyHttpUrl, "testProxyHttpUrl");
             assert.equal(config.proxyHttpsUrl, "testProxyHttpsUrl");
             assert.equal(config.extendedMetricDisablers, "gc,heap");

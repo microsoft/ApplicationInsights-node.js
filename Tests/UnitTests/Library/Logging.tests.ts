@@ -1,15 +1,14 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
 
-import { Logger } from "../../../Library/Logging/Logger";
-import { InternalAzureLogger } from "../../../Library/Logging/InternalAzureLogger";
+import { Logger } from "../../../src/library/logging";
+import { InternalAzureLogger } from "../../../src/library/Logging/InternalAzureLogger";
 
 describe("Library/Logger", () => {
-
     var sandbox: sinon.SinonSandbox;
 
     beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         InternalAzureLogger["_instance"] = null;
     });
 
@@ -66,7 +65,7 @@ describe("Library/Logger", () => {
     describe("#warn(message, ...optionalParams: any)", () => {
         it("should do nothing if disabled", () => {
             var originalSetting = Logger.disableWarnings;
-            Logger.disableWarnings = true
+            Logger.disableWarnings = true;
             var warnStub = sandbox.stub(InternalAzureLogger.getInstance(), "warning");
             Logger.warn("test");
             assert.ok(warnStub.notCalled);
@@ -90,7 +89,7 @@ describe("Library/Logger", () => {
             var originalEnv = process.env;
             process.env = env1;
             Logger.enableDebug = true;
-            var fileStub = sandbox.stub(InternalAzureLogger.getInstance(), "_storeToDisk");
+            var fileStub = sandbox.stub(InternalAzureLogger.getInstance() as any, "_storeToDisk");
             Logger.info("test");
             process.env = originalEnv;
             assert.ok(fileStub.called);
@@ -102,7 +101,7 @@ describe("Library/Logger", () => {
             var originalEnv = process.env;
             process.env = env1;
             Logger.enableDebug = true;
-            var fileStub = sandbox.stub(InternalAzureLogger.getInstance(), "_storeToDisk");
+            var fileStub = sandbox.stub(InternalAzureLogger.getInstance() as any, "_storeToDisk");
             Logger.info("test");
             process.env = originalEnv;
             assert.ok(fileStub.notCalled);

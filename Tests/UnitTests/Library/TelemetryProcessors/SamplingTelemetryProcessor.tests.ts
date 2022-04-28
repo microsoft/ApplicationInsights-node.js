@@ -1,8 +1,8 @@
-import * as  assert from "assert";
+import * as assert from "assert";
 import {
     getSamplingHashCode,
-    samplingTelemetryProcessor
-} from "../../../../Library/TelemetryProcessors/SamplingTelemetryProcessor";
+    samplingTelemetryProcessor,
+} from "../../../../src/library/TelemetryProcessors/SamplingTelemetryProcessor";
 
 describe("TelemetryProcessors/SamplingTelemetryProcessor", () => {
     var iKey = "Instrumentation-Key-12345-6789A";
@@ -35,8 +35,8 @@ describe("TelemetryProcessors/SamplingTelemetryProcessor", () => {
                 if (result) accepted++;
             }
 
-            assert.ok(accepted > (iterations * 0.25), "data should pass more than 25% of the time");
-            assert.ok(accepted < (iterations * 0.45), "data should pass less than 45% the time");
+            assert.ok(accepted > iterations * 0.25, "data should pass more than 25% of the time");
+            assert.ok(accepted < iterations * 0.45, "data should pass less than 45% the time");
         });
 
         it("will send data roughly 1/2 of the time on 50% sampling", () => {
@@ -49,8 +49,8 @@ describe("TelemetryProcessors/SamplingTelemetryProcessor", () => {
                 if (result) accepted++;
             }
 
-            assert.ok(accepted > (iterations * 0.40), "data should pass more than 40% of the time");
-            assert.ok(accepted < (iterations * 0.60), "data should pass less than 60% the time");
+            assert.ok(accepted > iterations * 0.4, "data should pass more than 40% of the time");
+            assert.ok(accepted < iterations * 0.6, "data should pass less than 60% the time");
         });
 
         it("will send data all of the time on 100% sampling", () => {
@@ -72,7 +72,9 @@ describe("TelemetryProcessors/SamplingTelemetryProcessor", () => {
             mockData.sampleRate = 33;
 
             for (var i = 0; i < iterations; i++) {
-                var result = samplingTelemetryProcessor(mockData, <any>{ correlationContext: { operation: { id: "a" } } });
+                var result = samplingTelemetryProcessor(mockData, <any>{
+                    correlationContext: { operation: { id: "a" } },
+                });
                 if (result) accepted++;
             }
 
@@ -85,7 +87,9 @@ describe("TelemetryProcessors/SamplingTelemetryProcessor", () => {
             mockData.sampleRate = 33;
 
             for (var i = 0; i < iterations; i++) {
-                var result = samplingTelemetryProcessor(mockData, <any>{ correlationContext: { operation: { id: "abc" } } });
+                var result = samplingTelemetryProcessor(mockData, <any>{
+                    correlationContext: { operation: { id: "abc" } },
+                });
                 if (result) accepted++;
             }
 
@@ -141,7 +145,7 @@ describe("TelemetryProcessors/SamplingTelemetryProcessor", () => {
             var csharpMax = 2147483647;
             for (var i = 0; i < testArray.length; ++i) {
                 var res = getSamplingHashCode(<string>testArray[i][0]);
-                assert.equal(res, <number>testArray[i][1] / csharpMax * 100);
+                assert.equal(res, (<number>testArray[i][1] / csharpMax) * 100);
             }
         });
     });

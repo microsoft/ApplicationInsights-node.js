@@ -32,3 +32,6 @@ Tests/FunctionalTests/TestApp/package-lock.json
 # Ignore log files
 npm-debug.log
 undefined/temp/appInsights-node/applicationinsights.log
+
+
+.nyc_output/*

@@ -4,9 +4,9 @@
 // import * as os from "os";
 // import * as path from "path";
 
-// import { Context } from "../../../Library/Context";
+// import { Context } from "../../../library";
 
-// describe("Library/Context", () => {
+// describe("library", () => {
 //     describe("#constructor()", () => {
 //         var stubs: Array<any> = [];
 

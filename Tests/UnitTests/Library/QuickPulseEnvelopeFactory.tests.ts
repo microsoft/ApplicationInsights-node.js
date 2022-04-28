@@ -1,7 +1,7 @@
 import * as assert from "assert";
 
-import * as Contracts from "../../../Declarations/Contracts";
-import * as Constants from "../../../Declarations/Constants";
+import * as Contracts from "../../../src/declarations/Contracts";
+import * as Constants from "../../../src/declarations/Constants";
 
 describe("Library/QuickPulseEnvelopeFactory", () => {
     describe("QPS Constants", () => {
@@ -14,7 +14,7 @@ describe("Library/QuickPulseEnvelopeFactory", () => {
                 const qpsDocType = Constants.TelemetryTypeStringToQuickPulseDocumentType[value];
                 assert.equal(qpsType, Constants.QuickPulseType[key]);
                 assert.equal(qpsDocType, Constants.QuickPulseDocumentType[key]);
-            })
+            });
         });
     });
 });

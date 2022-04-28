@@ -4,21 +4,20 @@ import * as sinon from "sinon";
 import * as http from "http";
 import * as https from "https";
 
-import { Config } from "../../../Library/Configuration/Config";
-import * as Constants from "../../../Declarations/Constants";
-import { JsonConfig } from "../../../Library/Configuration/JsonConfig";
+import { Config } from "../../../src/library/configuration";
+import * as Constants from "../../../src/declarations/Constants";
+import { JsonConfig } from "../../../src/library/configuration";
 
 const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
 
 describe("Library/Config", () => {
-
     var iKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
     let originalEnv: NodeJS.ProcessEnv;
     var sandbox: sinon.SinonSandbox;
 
     beforeEach(() => {
         originalEnv = process.env;
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
     });
 
     afterEach(() => {
@@ -30,51 +29,70 @@ describe("Library/Config", () => {
     describe("#constructor", () => {
         describe("connection string && API && environment variable prioritization", () => {
             it("connection string set via in code setup", () => {
-                var env = { [ENV_connectionString]: "InStruMenTatioNKey=cs.env", [Config.ENV_iKey]: "ikey.env" };
+                var env = {
+                    [ENV_connectionString]: "InStruMenTatioNKey=cs.env",
+                    [Constants.ENV_IKEY]: "ikey.env",
+                };
                 process.env = env;
                 const config = new Config("InStruMenTatioNKey=cs.code");
                 assert.deepEqual(config.instrumentationKey, "cs.code");
             });
 
             it("instrumentation key set via in code setup", () => {
-                var env = { [ENV_connectionString]: "InStruMenTatioNKey=CS.env", [Config.ENV_iKey]: "ikey.env" };
+                var env = {
+                    [ENV_connectionString]: "InStruMenTatioNKey=CS.env",
+                    [Constants.ENV_IKEY]: "ikey.env",
+                };
                 process.env = env;
                 const config = new Config("ikey.code");
                 assert.deepEqual(config.instrumentationKey, "ikey.code");
             });
 
             it("connection string set via environment variable", () => {
-                var env = { [ENV_connectionString]: "InStruMenTatioNKey=cs.env", [Config.ENV_iKey]: "ikey.env" };
+                var env = {
+                    [ENV_connectionString]: "InStruMenTatioNKey=cs.env",
+                    [Constants.ENV_IKEY]: "ikey.env",
+                };
                 process.env = env;
                 const config = new Config();
                 assert.deepEqual(config.instrumentationKey, "cs.env");
             });
 
             it("instrumentation key set via environment variable", () => {
-                var env = { [Config.ENV_iKey]: "ikey.env" };
+                var env = { [Constants.ENV_IKEY]: "ikey.env" };
                 process.env = env;
                 const config = new Config();
                 assert.deepEqual(config.instrumentationKey, "ikey.env");
             });
 
             it("should parse the host of livemetrics host, if provided", () => {
-                const config = new Config("InStruMenTatioNKey=ikey;LiveEndpoint=https://live.applicationinsights.io/foo/bar");
+                const config = new Config(
+                    "InStruMenTatioNKey=ikey;LiveEndpoint=https://live.applicationinsights.io/foo/bar"
+                );
                 assert.deepEqual(config.quickPulseHost, "live.applicationinsights.io");
             });
 
             it("should parse the host of livemetrics host from location+suffix, if provided", () => {
-                const config = new Config("InStruMenTatioNKey=ikey;Location=wus2;EndpointSuffix=example.com");
+                const config = new Config(
+                    "InStruMenTatioNKey=ikey;Location=wus2;EndpointSuffix=example.com"
+                );
                 assert.deepEqual(config.quickPulseHost, "wus2.live.example.com");
             });
 
             it("merge JSON config", () => {
                 JsonConfig["_instance"] = undefined;
                 const env = <{ [id: string]: string }>{};
-                const customConfigJSONPath = path.resolve(__dirname, "../../../../Tests/UnitTests/Library/config.json");
+                const customConfigJSONPath = path.resolve(
+                    __dirname,
+                    "../../../../Tests/UnitTests/Library/config.json"
+                );
                 env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath; // Load JSON config
                 process.env = env;
                 const config = new Config();
-                assert.equal(config["_connectionString"], "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+                assert.equal(
+                    config["_connectionString"],
+                    "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"
+                );
                 assert.equal(config.endpointUrl, "testEndpointUrl/v2.1/track");
                 assert.equal(config.maxBatchSize, 150);
                 assert.equal(config.maxBatchIntervalMs, 12000);
@@ -113,8 +131,8 @@ describe("Library/Config", () => {
 
         describe("constructor(ikey)", () => {
             beforeEach(() => {
-                sandbox.stub(http, 'request');
-                sandbox.stub(https, 'request');
+                sandbox.stub(http, "request");
+                sandbox.stub(https, "request");
             });
 
             it("should throw if no iKey is available", () => {
@@ -125,7 +143,7 @@ describe("Library/Config", () => {
 
             it("should read iKey from environment", () => {
                 var env = <{ [id: string]: string }>{};
-                env[Config.ENV_iKey] = iKey;
+                env[Constants.ENV_IKEY] = iKey;
                 process.env = env;
                 var config = new Config();
                 assert.equal(config.instrumentationKey, iKey);
@@ -133,7 +151,7 @@ describe("Library/Config", () => {
 
             it("should read iKey from azure environment", () => {
                 var env = <{ [id: string]: string }>{};
-                env[Config.ENV_azurePrefix + Config.ENV_iKey] = iKey;
+                env[Constants.ENV_AZURE_PREFIX + Constants.ENV_IKEY] = iKey;
                 process.env = env;
                 var config = new Config();
                 assert.equal(config.instrumentationKey, iKey);
@@ -178,7 +196,10 @@ describe("Library/Config", () => {
 
             it("should add azure domain to excluded list", () => {
                 var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-                assert.equal(config.correlationHeaderExcludedDomains[0].toString(), "*.core.windows.net");
+                assert.equal(
+                    config.correlationHeaderExcludedDomains[0].toString(),
+                    "*.core.windows.net"
+                );
             });
 
             it("instrumentation key validation-valid key passed", () => {
@@ -198,7 +219,6 @@ describe("Library/Config", () => {
                 var config = new Config("abc");
                 assert.ok(warnStub.calledOn, "warning was raised");
             });
-
         });
     });
 });

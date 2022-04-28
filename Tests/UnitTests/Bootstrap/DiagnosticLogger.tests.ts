@@ -1,9 +1,9 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
-import { AgentLogger } from "../../../Bootstrap/DataModel";
-import { DiagnosticLogger } from "../../../Bootstrap/DiagnosticLogger";
-import { NoopLogger } from "../../../Bootstrap/NoopLogger";
-import * as DataModel from "../../../Bootstrap/DataModel";
+import { AgentLogger } from "../../../src/bootstrap/dataModel";
+import { DiagnosticLogger } from "../../../src/bootstrap/diagnosticLogger";
+import { NoopLogger } from "../../../src/bootstrap/noopLogger";
+import * as DataModel from "../../../src/bootstrap/dataModel";
 
 class TestWriter implements AgentLogger {
     prev: any;
@@ -24,11 +24,11 @@ describe("DiagnosticLogger", () => {
 
     afterEach(() => {
         stub.reset();
-    })
+    });
 
     describe("#DiagnosticLogger.DefaultEnvelope", () => {
         it("should have the correct version string", () => {
-            assert.equal(DiagnosticLogger.DefaultEnvelope.properties.sdkVersion, version);
+            assert.equal(logger["_defaultEnvelope"].properties.sdkVersion, version);
         });
     });
 
@@ -49,8 +49,8 @@ describe("DiagnosticLogger", () => {
                     extensionVersion: undefined,
                     sdkVersion: version,
                     subscriptionId: null,
-                }
-            } as DataModel.DiagnosticLog)
-        })
+                },
+            } as DataModel.DiagnosticLog);
+        });
     });
 });

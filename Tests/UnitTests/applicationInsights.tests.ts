@@ -1,17 +1,13 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
 
-import * as AppInsights from "../../applicationinsights";
-import * as Contracts from "../../Declarations/Contracts";
-import { AutoCollectConsole } from "../../AutoCollection/Console";
-import { AutoCollectExceptions } from "../../AutoCollection/Exceptions";
-
+import * as AppInsights from "../../src/applicationinsights";
+import * as Contracts from "../../src/declarations/Contracts";
 
 describe("ApplicationInsights", () => {
-
     var sandbox: sinon.SinonSandbox;
     before(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
     });
 
     afterEach(() => {
@@ -59,23 +55,40 @@ describe("ApplicationInsights", () => {
 
         it("should not start live metrics", () => {
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").start();
-            assert.equal(AppInsights.liveMetricsClient, undefined, "live metrics client is not defined");
+            assert.equal(
+                AppInsights.liveMetricsClient,
+                undefined,
+                "live metrics client is not defined"
+            );
         });
 
         it("should not start live metrics", () => {
-            AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setSendLiveMetrics(false).start();
-            assert.equal(AppInsights.liveMetricsClient, undefined, "live metrics client is not defined");
+            AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
+                .setSendLiveMetrics(false)
+                .start();
+            assert.equal(
+                AppInsights.liveMetricsClient,
+                undefined,
+                "live metrics client is not defined"
+            );
         });
     });
 
     describe("#setAutoCollect", () => {
-
         it("auto-collection is initialized by default", () => {
-
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-            let consoleSpy = sandbox.spy(AppInsights.defaultClient.autoCollector["_console"], "enable");
-            let exceptionsSpy = sandbox.spy(AppInsights.defaultClient.autoCollector["_exceptions"], "enable");
-            let performanceSpy = sandbox.spy(AppInsights.defaultClient.autoCollector["_performance"], "enable");
+            let consoleSpy = sandbox.spy(
+                AppInsights.defaultClient.logHandler["_console"],
+                "enable"
+            );
+            let exceptionsSpy = sandbox.spy(
+                AppInsights.defaultClient.logHandler["_exceptions"],
+                "enable"
+            );
+            let performanceSpy = sandbox.spy(
+                AppInsights.defaultClient.metricHandler["_performance"],
+                "enable"
+            );
             AppInsights.start();
             assert.ok(consoleSpy.called);
             assert.ok(exceptionsSpy.called);
@@ -83,7 +96,6 @@ describe("ApplicationInsights", () => {
         });
 
         it("auto-collection is not initialized if disabled before 'start'", () => {
-
             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
                 .setAutoCollectConsole(false)
                 .setAutoCollectExceptions(false)
@@ -91,19 +103,22 @@ describe("ApplicationInsights", () => {
                 .setAutoCollectRequests(false)
                 .setAutoCollectDependencies(false)
                 .setAutoDependencyCorrelation(false);
-            let consoleSpy = sandbox.spy(AppInsights.defaultClient.autoCollector["_console"], "enable");
-            let exceptionsSpy = sandbox.spy(AppInsights.defaultClient.autoCollector["_exceptions"], "enable");
-            let performanceSpy = sandbox.spy(AppInsights.defaultClient.autoCollector["_performance"], "enable");
+            let consoleSpy = sandbox.spy(
+                AppInsights.defaultClient.logHandler["_console"],
+                "enable"
+            );
+            let exceptionsSpy = sandbox.spy(
+                AppInsights.defaultClient.logHandler["_exceptions"],
+                "enable"
+            );
+            let performanceSpy = sandbox.spy(
+                AppInsights.defaultClient.metricHandler["_performance"],
+                "enable"
+            );
             AppInsights.start();
             assert.equal(consoleSpy.firstCall.args[0], false);
             assert.equal(exceptionsSpy.firstCall.args[0], false);
             assert.equal(performanceSpy.firstCall.args[0], false);
-        });
-    });
-
-    describe("#Provide access to contracts", () => {
-        it("should provide access to severity levels", () => {
-            assert.equal(AppInsights.Contracts.SeverityLevel.Information, Contracts.SeverityLevel.Information);
         });
     });
 });

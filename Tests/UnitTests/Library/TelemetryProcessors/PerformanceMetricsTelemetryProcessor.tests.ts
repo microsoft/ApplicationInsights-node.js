@@ -1,16 +1,16 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
 
-import { Config } from "../../../../Library/Configuration/Config";
-import * as QuickPulse from "../../../../Library/TelemetryProcessors/PerformanceMetricsTelemetryProcessor";
-import { QuickPulseStateManager } from "../../../../Library/QuickPulse/QuickPulseStateManager";
-import { Contracts, TelemetryClient } from "../../../../applicationinsights";
-
+import { Config } from "../../../../src/library/configuration";
+import * as QuickPulse from "../../../../src/library/TelemetryProcessors/PerformanceMetricsTelemetryProcessor";
+import { QuickPulseStateManager } from "../../../../src/library/quickPulse";
+import { TelemetryClient } from "../../../../src/applicationinsights";
+import { TelemetryItem as Envelope } from "../../../../src/declarations/Generated";
 
 describe("TelemetryProcessors/PerformanceMetricsTelemetryProcessor", () => {
     var sandbox: sinon.SinonSandbox;
     before(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
     });
 
     afterEach(() => {
@@ -18,17 +18,14 @@ describe("TelemetryProcessors/PerformanceMetricsTelemetryProcessor", () => {
     });
 
     describe("#PerformanceMetricsTelemetryProcessor()", () => {
-        var envelope: Contracts.Envelope = {
-            ver: 2,
+        var envelope: Envelope = {
             name: "name",
             data: {
-                baseType: "SomeData"
+                baseType: "SomeData",
             },
-            iKey: ikey,
+            instrumentationKey: ikey,
             sampleRate: 100,
-            seq: "",
-            time: "",
-            tags: []
+            time: new Date(),
         };
         var ikey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
 
@@ -36,7 +33,7 @@ describe("TelemetryProcessors/PerformanceMetricsTelemetryProcessor", () => {
             var qpSpy = sandbox.spy(QuickPulse, "performanceMetricsTelemetryProcessor");
             var telemetryClient: TelemetryClient = new TelemetryClient(ikey);
             var res = QuickPulse.performanceMetricsTelemetryProcessor(envelope, telemetryClient);
-            assert.ok(qpSpy.calledOnce)
+            assert.ok(qpSpy.calledOnce);
             assert.equal(res, true, "returns true");
         });
 

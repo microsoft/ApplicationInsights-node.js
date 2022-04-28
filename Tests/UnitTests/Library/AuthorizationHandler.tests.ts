@@ -1,11 +1,11 @@
 import * as assert from "assert";
 import * as https from "https";
 import * as sinon from "sinon";
-import * as  azureCore from "@azure/core-http";
+import * as azureCore from "@azure/core-http";
 
-import { AuthorizationHandler } from "../../../Library/AuthorizationHandler";
-import { Config } from "../../../Library/Configuration/Config";
-import { Util } from "../../../Library/Util";
+import { AuthorizationHandler } from "../../../src/library/QuickPulse/AuthorizationHandler";
+import { Config } from "../../../src/library/configuration";
+import { Util } from "../../../src/library/util";
 
 class TestTokenCredential implements azureCore.TokenCredential {
     private _expiresOn: Date;
@@ -19,18 +19,17 @@ class TestTokenCredential implements azureCore.TokenCredential {
         this._numberOfRefreshs++;
         return {
             token: "testToken" + this._numberOfRefreshs,
-            expiresOnTimestamp: this._expiresOn
+            expiresOnTimestamp: this._expiresOn,
         };
     }
 }
 
 describe("Library/AuthorizationHandler", () => {
-
     var sandbox: sinon.SinonSandbox;
     Util.getInstance().tlsRestrictedAgent = new https.Agent();
 
     beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
     });
 
     afterEach(() => {
@@ -45,8 +44,8 @@ describe("Library/AuthorizationHandler", () => {
             var options = {
                 method: "POST",
                 headers: <{ [key: string]: string }>{
-                    "Content-Type": "application/x-json-stream"
-                }
+                    "Content-Type": "application/x-json-stream",
+                },
             };
             await handler.addAuthorizationHeader(options);
             assert.equal(options.headers["authorization"], "Bearer testToken1");
@@ -54,15 +53,17 @@ describe("Library/AuthorizationHandler", () => {
 
         it("should refresh token if expired", async () => {
             var config = new Config("");
-            var tokenCredential = new TestTokenCredential(new Date(new Date().getMilliseconds() - 500));
+            var tokenCredential = new TestTokenCredential(
+                new Date(new Date().getMilliseconds() - 500)
+            );
             config.aadTokenCredential = tokenCredential;
             var handler = new AuthorizationHandler(config.aadTokenCredential);
             var options: https.RequestOptions = {
                 method: "POST",
                 headers: <{ [key: string]: string }>{
-                    "Content-Type": "application/x-json-stream"
+                    "Content-Type": "application/x-json-stream",
                 },
-                protocol: "HTTPS"
+                protocol: "HTTPS",
             };
             await handler.addAuthorizationHeader(options);
             assert.equal(options.headers["authorization"], "Bearer testToken1");
