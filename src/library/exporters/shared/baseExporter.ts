@@ -1,156 +1,80 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { diag } from "@opentelemetry/api";
+import http = require("http");
+import zlib = require("zlib");
 import { ExportResult, ExportResultCode } from "@opentelemetry/core";
-import { RestError } from "@azure/core-rest-pipeline";
-import { ConnectionStringParser } from "../../configuration";
-import { HttpSender } from "./httpSender";
+
+import { Config } from "../../configuration";
 import { FileSystemPersist } from "./persist";
-import {
-    DEFAULT_EXPORTER_CONFIG,
-    IAzureExporterConfig,
-    IAzureExporterInternalConfig,
-} from "../../../declarations/config";
-import { IPersistentStorage, ISender } from "../../../declarations/types";
+import { IPersistentStorage } from "../../../declarations/types";
+import * as Constants from "../../../declarations/constants";
 import { isRetriable, IBreezeResponse, IBreezeError } from "./breezeUtils";
 import { TelemetryItem as Envelope } from "../../../declarations/generated";
+import { Util } from "../../util";
+import { Logger } from "../../logging";
+import { Statsbeat } from "../../statsbeat";
+import { AuthorizationHandler } from "../../quickPulse/authorizationHandler";
+import { BreezeResponse } from "../../../declarations/contracts";
+
+const legacyThrottleStatusCode = 439; //  - Too many requests and refresh cache
+const throttleStatusCode = 402; // Monthly Quota Exceeded (new SDK)
+const RESPONSE_CODES_INDICATING_REACHED_BREEZE = [200, 206, 402, 408, 429, 439, 500];
 
 export class BaseExporter {
-    protected readonly _sender: ISender;
-    protected readonly _options: IAzureExporterInternalConfig;
+    private _TAG = "Sender";
     private readonly _persister: IPersistentStorage;
+    protected _config: Config;
+    private _resendInterval: number;
     private _numConsecutiveRedirects: number;
     private _retryTimer: NodeJS.Timer | null;
+    private _authHandler: AuthorizationHandler;
+    private _isStatsbeatSender: boolean;
+    private _shutdownStatsbeat: () => void;
+    private _failedToIngestCounter: number;
+    private _numConsecutiveFailures: number;
+    private _statsbeatHasReachedIngestionAtLeastOnce: boolean;
+    private _statsbeat: Statsbeat;
+    private _redirectedHost: string;
+    private _onSuccess: (response: string) => void;
+    private _onError: (error: Error) => void;
 
-    /**
-     * Initializes a new instance of the AzureMonitorTraceExporter class.
-     * @param AzureExporterConfig - Exporter configuration.
-     */
-    constructor(options: IAzureExporterConfig = {}) {
+
+    constructor(config: Config, onSuccess?: (response: string) => void, onError?: (error: Error) => void, statsbeat?: Statsbeat, isStatsbeatSender?: boolean, shutdownStatsbeat?: () => void) {
+        this._config = config;
         this._numConsecutiveRedirects = 0;
-        const connectionString = options.connectionString;
-        this._options = {
-            ...DEFAULT_EXPORTER_CONFIG,
-        };
-        this._options.apiVersion = options.apiVersion ?? this._options.apiVersion;
-        this._options.aadTokenCredential = options.aadTokenCredential;
+        this._resendInterval = 60 * 1000; // 1 minute;
 
-        if (connectionString) {
-            let connectionStringPrser = new ConnectionStringParser();
-            const parsedConnectionString = connectionStringPrser.parse(connectionString);
-            this._options.instrumentationKey =
-                parsedConnectionString.instrumentationkey ?? this._options.instrumentationKey;
-            this._options.endpointUrl =
-                parsedConnectionString.ingestionendpoint?.trim() ?? this._options.endpointUrl;
-        }
-        // Instrumentation key is required
-        if (!this._options.instrumentationKey) {
-            const message =
-                "No instrumentation key or connection string was provided to the Azure Monitor Exporter";
-            diag.error(message);
-            throw new Error(message);
+
+        if (this._config.aadTokenCredential) {
+            this._authHandler = new AuthorizationHandler(this._config.aadTokenCredential);
         }
 
-        this._sender = new HttpSender(this._options);
-        this._persister = new FileSystemPersist(this._options);
+        this._onSuccess = onSuccess;
+        this._onError = onError;
+        this._statsbeat = statsbeat;
+        this._isStatsbeatSender = isStatsbeatSender || false;
+        this._shutdownStatsbeat = shutdownStatsbeat;
+        this._failedToIngestCounter = 0;
+        this._numConsecutiveFailures = 0;
+        this._numConsecutiveRedirects = 0;
+        this._statsbeatHasReachedIngestionAtLeastOnce = false;
+
+        this._persister = new FileSystemPersist(this._config);
         this._retryTimer = null;
-        diag.debug("Exporter was successfully setup");
     }
 
     protected async _exportEnvelopes(envelopes: Envelope[]): Promise<ExportResult> {
-        diag.info(`Exporting ${envelopes.length} envelope(s)`);
-
-        try {
-            const { result, statusCode } = await this._sender.send(envelopes);
-            this._numConsecutiveRedirects = 0;
-            if (statusCode === 200) {
-                // Success -- @todo: start retry timer
-                if (!this._retryTimer) {
-                    this._retryTimer = setTimeout(() => {
-                        this._retryTimer = null;
-                        this._sendFirstPersistedFile();
-                    }, this._options.batchSendRetryIntervalMs);
-                    this._retryTimer.unref();
-                }
-                return { code: ExportResultCode.SUCCESS };
-            } else if (statusCode && isRetriable(statusCode)) {
-                // Failed -- persist failed data
-                if (result) {
-                    diag.info(result);
-                    const breezeResponse = JSON.parse(result) as IBreezeResponse;
-                    const filteredEnvelopes: Envelope[] = [];
-                    breezeResponse.errors.forEach((error: IBreezeError) => {
-                        if (error.statusCode && isRetriable(error.statusCode)) {
-                            filteredEnvelopes.push(envelopes[error.index]);
-                        }
-                    });
-                    if (filteredEnvelopes.length > 0) {
-                        // calls resultCallback(ExportResult) based on result of persister.push
-                        return await this._persist(filteredEnvelopes);
-                    }
-                    // Failed -- not retriable
-                    return {
-                        code: ExportResultCode.FAILED,
-                    };
-                } else {
-                    // calls resultCallback(ExportResult) based on result of persister.push
-                    return await this._persist(envelopes);
-                }
-            } else {
-                // Failed -- not retriable
-                return {
-                    code: ExportResultCode.FAILED,
-                };
-            }
-        } catch (error) {
-            const restError = error as RestError;
-            if (
-                restError.statusCode &&
-                (restError.statusCode === 307 || // Temporary redirect
-                    restError.statusCode === 308)
-            ) {
-                // Permanent redirect
-                this._numConsecutiveRedirects++;
-                // To prevent circular redirects
-                if (this._numConsecutiveRedirects < 10) {
-                    if (restError.response && restError.response.headers) {
-                        const location = restError.response.headers.get("location");
-                        if (location) {
-                            // Update sender URL
-                            this._sender.handlePermanentRedirect(location);
-                            // Send to redirect endpoint as HTTPs library doesn't handle redirect automatically
-                            return this._exportEnvelopes(envelopes);
-                        }
-                    }
-                } else {
-                    return { code: ExportResultCode.FAILED, error: new Error("Circular redirect") };
-                }
-            } else if (restError.statusCode && isRetriable(restError.statusCode)) {
-                return await this._persist(envelopes);
-            }
-            if (this._isNetworkError(restError)) {
-                diag.error(
-                    "Retrying due to transient client side error. Error message:",
-                    restError.message
-                );
-                return await this._persist(envelopes);
-            }
-
-            diag.error(
-                "Envelopes could not be exported and are not retriable. Error message:",
-                restError.message
-            );
-            return { code: ExportResultCode.FAILED, error: restError };
-        }
+        this._logInfo(`Exporting ${envelopes.length} envelope(s)`);
+        await this._send(envelopes);
     }
 
     /**
      * Shutdown
      */
     public async shutdown(): Promise<void> {
-        diag.info("Exporter shutting down");
-        return this._sender.shutdown();
+        this._logInfo("Exporter shutting down");
+        // TODO: Ensure HTTP requests are completed
     }
 
     public async persistOnCrash(envelopes: Envelope[]): Promise<string> {
@@ -161,15 +85,235 @@ export class BaseExporter {
         }
     }
 
+    private async _send(envelopes: Envelope[], callback?: (v: string) => void) {
+        if (envelopes) {
+            var endpointUrl = this._redirectedHost || this._config.endpointUrl;
+
+            var endpointHost = new URL(endpointUrl).hostname;
+
+            // todo: investigate specifying an agent here: https://nodejs.org/api/http.html#http_class_http_agent
+            var options = {
+                method: "POST",
+                withCredentials: false,
+                headers: <{ [key: string]: string }>{
+                    "Content-Type": "application/x-json-stream"
+                }
+            };
+
+            if (this._authHandler) {
+                if (this._statsbeat) {
+                    this._statsbeat.addFeature(Constants.StatsbeatFeature.AAD_HANDLING);
+                }
+                try {
+                    // Add bearer token
+                    await this._authHandler.addAuthorizationHeader(options);
+                }
+                catch (authError) {
+                    let errorMsg = "Failed to get AAD bearer token for the Application.";
+                    this._persist(envelopes);
+                    errorMsg += "Error:" + authError.toString();
+                    this._logWarn(errorMsg);
+
+                    if (typeof callback === "function") {
+                        callback(errorMsg);
+                    }
+                    return; // If AAD auth fails do not send to Breeze
+                }
+            }
+
+            let batch: string = "";
+            envelopes.forEach(envelope => {
+                var payload: string = Util.getInstance().stringify(envelope);
+                if (typeof payload !== "string") {
+                    return;
+                }
+                batch += payload + "\n";
+            });
+            // Remove last \n
+            if (batch.length > 0) {
+                batch = batch.substring(0, batch.length - 1);
+            }
+
+            let payload: Buffer = Buffer.from ? Buffer.from(batch) : new Buffer(batch);
+
+            // TODO: zlib is not supported in Azure Monitor Exporter
+            zlib.gzip(payload, (err, buffer) => {
+                var dataToSend = buffer;
+                if (err) {
+                    this._logWarn(Util.getInstance().dumpObj(err));
+                    dataToSend = payload; // something went wrong so send without gzip
+                    options.headers["Content-Length"] = payload.length.toString();
+                } else {
+                    options.headers["Content-Encoding"] = "gzip";
+                    options.headers["Content-Length"] = buffer.length.toString();
+                }
+
+                this._logInfo(Util.getInstance().dumpObj(options));
+
+                // Ensure this request is not captured by auto-collection.
+                // (<any>options)[AutoCollectHttpDependencies.disableCollectionRequestOption] = true;
+                // TODO: Update usign OpenTelemetry format
+
+                let startTime = +new Date();
+
+                var requestCallback = (res: http.ClientResponse) => {
+                    res.setEncoding("utf-8");
+
+                    //returns empty if the data is accepted
+                    var responseString = "";
+                    res.on("data", (data: string) => {
+                        responseString += data;
+                    });
+
+                    res.on("end", () => {
+                        let endTime = +new Date();
+                        let duration = endTime - startTime;
+                        this._numConsecutiveFailures = 0;
+                        // Handling of Statsbeat instance sending data, should turn it off if is not able to reach ingestion endpoint
+                        if (this._isStatsbeatSender && !this._statsbeatHasReachedIngestionAtLeastOnce) {
+                            if (RESPONSE_CODES_INDICATING_REACHED_BREEZE.includes(res.statusCode)) {
+                                this._statsbeatHasReachedIngestionAtLeastOnce = true;
+                            }
+                            else {
+                                this._statsbeatFailedToIngest();
+                            }
+                        }
+                        if (this._statsbeat) {
+                            if (res.statusCode == throttleStatusCode || res.statusCode == legacyThrottleStatusCode) { // Throttle
+                                this._statsbeat.countThrottle(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
+                            }
+                            else {
+                                this._statsbeat.countRequest(Constants.StatsbeatNetworkCategory.Breeze, endpointHost, duration, res.statusCode === 200);
+                            }
+                        }
+
+                        // try to send any cached events if the user is back online
+                        if (res.statusCode === 200) {
+                            if (!this._retryTimer) {
+                                this._retryTimer = setTimeout(() => {
+                                    this._retryTimer = null;
+                                    this._sendFirstPersistedFile()
+                                }, this._resendInterval);
+                                this._retryTimer.unref();
+                            }
+
+                        } else if (isRetriable(res.statusCode)) {
+                            try {
+                                if (this._statsbeat) {
+                                    this._statsbeat.countRetry(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
+                                }
+                                const breezeResponse = JSON.parse(responseString) as BreezeResponse;
+                                let filteredEnvelopes: Envelope[] = [];
+                                if (breezeResponse.errors) {
+                                    breezeResponse.errors.forEach(error => {
+                                        if (isRetriable(error.statusCode)) {
+                                            filteredEnvelopes.push(envelopes[error.index]);
+                                        }
+                                    });
+                                    if (filteredEnvelopes.length > 0) {
+                                        this._persist(filteredEnvelopes);
+                                    }
+                                }
+
+                            }
+                            catch (ex) {
+                                this._persist(envelopes); // Retriable status code with not valid Breeze response
+                            }
+                        }
+                        // Redirect handling
+                        if (res.statusCode === 307 || // Temporary Redirect
+                            res.statusCode === 308) { // Permanent Redirect
+                            this._numConsecutiveRedirects++;
+                            // To prevent circular redirects
+                            if (this._numConsecutiveRedirects < 10) {
+                                // Try to get redirect header
+                                const locationHeader = res.headers["location"] ? res.headers["location"].toString() : null;
+                                if (locationHeader) {
+                                    this._redirectedHost = locationHeader;
+                                    // Send to redirect endpoint as HTTPs library doesn't handle redirect automatically
+                                    this._send(envelopes, callback);
+                                }
+                            }
+                            else {
+                                if (this._statsbeat) {
+                                    this._statsbeat.countException(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
+                                }
+                                if (typeof callback === "function") {
+                                    callback("Error sending telemetry because of circular redirects.");
+                                }
+                            }
+
+                        }
+                        else {
+                            this._numConsecutiveRedirects = 0;
+                            if (typeof callback === "function") {
+                                callback(responseString);
+                            }
+                            this._logInfo(responseString);
+                            if (typeof this._onSuccess === "function") {
+                                this._onSuccess(responseString);
+                            }
+                        }
+                    });
+                };
+
+                var req = Util.getInstance().makeRequest(this._config, endpointUrl, options, requestCallback);
+
+                req.on("error", (error: Error) => {
+                    if (this._isStatsbeatSender && !this._statsbeatHasReachedIngestionAtLeastOnce) {
+                        this._statsbeatFailedToIngest();
+                    }
+                    // todo: handle error codes better (group to recoverable/non-recoverable and persist)
+                    this._numConsecutiveFailures++;
+                    if (this._statsbeat) {
+                        this._statsbeat.countException(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
+                    }
+
+                    let notice = "Failure to reach ingestion endpoint.";
+                    this._logWarn(notice, Util.getInstance().dumpObj(error));
+                    if (this._onError) {
+                        this._onError(error);
+                    }
+
+                    if (typeof callback === "function") {
+                        if (error) {
+                            callback(Util.getInstance().dumpObj(error));
+                        }
+                        else {
+                            callback("Error sending telemetry");
+                        }
+                    }
+
+                    this._persist(envelopes);
+                });
+
+                req.write(dataToSend);
+                req.end();
+            });
+        }
+    }
+
+    private _logInfo(message?: any, ...optionalParams: any[]) {
+        if (!this._isStatsbeatSender) {
+            Logger.info(this._TAG, message, optionalParams);
+        }
+    }
+
+    private _logWarn(message?: any, ...optionalParams: any[]) {
+        if (!this._isStatsbeatSender) {
+            Logger.warn(this._TAG, message, optionalParams);
+        }
+    }
+
     private async _persist(envelopes: Envelope[]): Promise<ExportResult> {
         try {
             const success = await this._persister.push(envelopes);
             return success
                 ? { code: ExportResultCode.SUCCESS }
                 : {
-                      code: ExportResultCode.FAILED,
-                      error: new Error("Failed to persist envelope in disk."),
-                  };
+                    code: ExportResultCode.FAILED,
+                    error: new Error("Failed to persist envelope in disk."),
+                };
         } catch (ex) {
             return { code: ExportResultCode.FAILED, error: ex };
         }
@@ -179,17 +323,19 @@ export class BaseExporter {
         try {
             const envelopes = (await this._persister.shift()) as Envelope[] | null;
             if (envelopes) {
-                await this._sender.send(envelopes);
+                await this._send(envelopes);
             }
         } catch (err) {
-            diag.warn(`Failed to fetch persisted file`, err);
+            this._logWarn(`Failed to fetch persisted file`, err);
         }
     }
 
-    private _isNetworkError(error: RestError): boolean {
-        if (error && error.code && error.code === "REQUEST_SEND_ERROR") {
-            return true;
+    private _statsbeatFailedToIngest() {
+        if (this._shutdownStatsbeat) { // Check if callback is available
+            this._failedToIngestCounter++;
+            if (this._failedToIngestCounter >= 3) {
+                this._shutdownStatsbeat();
+            }
         }
-        return false;
     }
 }

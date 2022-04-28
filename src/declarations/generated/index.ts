@@ -7,5 +7,3 @@
  */
 
 export * from "./models";
-export { ApplicationInsightsClient } from "./applicationInsightsClient";
-export { ApplicationInsightsClientContext } from "./applicationInsightsClientContext";

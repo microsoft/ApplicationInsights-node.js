@@ -71,6 +71,16 @@ export class InternalAzureLogger {
         return InternalAzureLogger._instance;
     }
 
+    public debug(message?: any, ...optionalParams: any[]) {
+        let args = message ? [message, ...optionalParams] : optionalParams;
+        if (this._logToFile) {
+            this._storeToDisk(args);
+        }
+        if (this._logToConsole) {
+            console.debug(...args);
+        }
+    }
+
     public info(message?: any, ...optionalParams: any[]) {
         let args = message ? [message, ...optionalParams] : optionalParams;
         if (this._logToFile) {
@@ -88,6 +98,16 @@ export class InternalAzureLogger {
         }
         if (this._logToConsole) {
             console.warn(...args);
+        }
+    }
+
+    public error(message?: any, ...optionalParams: any[]) {
+        let args = message ? [message, ...optionalParams] : optionalParams;
+        if (this._logToFile) {
+            this._storeToDisk(args);
+        }
+        if (this._logToConsole) {
+            console.error(...args);
         }
     }
 

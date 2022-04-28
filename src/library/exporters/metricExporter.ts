@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 import { diag } from "@opentelemetry/api";
 import { ExportResult } from "@opentelemetry/core";
-import { AzureExporterConfig } from "@azure/monitor-opentelemetry-exporter";
 
 import { MetricTelemetry } from "../../declarations/contracts";
 import * as Constants from "../../declarations/constants";
@@ -18,17 +17,10 @@ import { Context } from "../context";
 import { Util } from "../util";
 
 export class MetricExporter extends BaseExporter {
-    private _config: Config;
     private _clientContext: Context;
 
     constructor(config: Config, context: Context) {
-        let ingestionEndpoint = config.endpointUrl.replace("/v2.1/track", "");
-        let connectionString = `InstrumentationKey=${config.instrumentationKey};IngestionEndpoint=${ingestionEndpoint}`;
-        let exporterConfig: AzureExporterConfig = {
-            connectionString: connectionString,
-        };
-        super(exporterConfig);
-        this._config = config;
+        super(config);
         this._clientContext = context;
     }
 
@@ -39,7 +31,7 @@ export class MetricExporter extends BaseExporter {
     ): Promise<void> {
         diag.info(`Exporting ${metrics.length} metric(s). Converting to envelopes...`);
         const envelopes = metrics.map((metric) =>
-            this._metricToEnvelope(metric, this._options.instrumentationKey)
+            this._metricToEnvelope(metric, this._config.instrumentationKey)
         );
         resultCallback(await this._exportEnvelopes(envelopes));
     }
@@ -51,7 +43,7 @@ export class MetricExporter extends BaseExporter {
     ): Promise<void> {
         diag.info(`Exporting ${metrics.length} metric(s). Converting to envelopes...`);
         const envelopes = metrics.map((metric) => {
-            let envelope = this._metricToEnvelope(metric, this._options.instrumentationKey);
+            let envelope = this._metricToEnvelope(metric, this._config.instrumentationKey);
             envelope.name = Constants.StatsbeatTelemetryName;
             return envelope;
         });
@@ -63,7 +55,6 @@ export class MetricExporter extends BaseExporter {
      */
     async shutdown(): Promise<void> {
         diag.info("Azure Monitor Metrics Exporter shutting down");
-        return this._sender.shutdown();
     }
 
     /**

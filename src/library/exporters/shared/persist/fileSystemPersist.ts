@@ -7,10 +7,6 @@ import * as path from "path";
 import { Logger } from "../../../logging";
 import { IPersistentStorage } from "../../../../declarations/types";
 import {
-    DEFAULT_EXPORTER_CONFIG,
-    IAzureExporterInternalConfig,
-} from "../../../../declarations/config";
-import {
     confirmDirExists,
     getShallowDirectorySize,
     statAsync,
@@ -20,6 +16,7 @@ import {
     writeFileAsync,
 } from "../../../util";
 import { FileAccessControl } from "./fileAccessControl";
+import { Config } from "../../../configuration";
 
 const TEMPDIR_PREFIX = "applicationinsights-";
 const FILENAME_SUFFIX = ".ai.json";
@@ -38,9 +35,9 @@ export class FileSystemPersist implements IPersistentStorage {
     private _enabled: boolean;
     private _tempDirectory: string;
     private _fileCleanupTimer: NodeJS.Timer | null = null;
-    private readonly _options: IAzureExporterInternalConfig;
+    private readonly _options: Config;
 
-    constructor(options: Partial<IAzureExporterInternalConfig> = {}) {
+    constructor(options: Config) {
         this._enabled = true;
         this._fileAccessControl = FileAccessControl.getInstance();
         this._fileAccessControl.checkFileProtection();
@@ -50,14 +47,6 @@ export class FileSystemPersist implements IPersistentStorage {
             Logger.warn(
                 this._TAG,
                 "Sufficient file protection capabilities were not detected. Files will not be persisted"
-            );
-        }
-        this._options = { ...DEFAULT_EXPORTER_CONFIG, ...options };
-        if (!this._options.instrumentationKey) {
-            this._enabled = false;
-            Logger.warn(
-                this._TAG,
-                "No instrumentation key was provided to FileSystemPersister. Files will not be persisted"
             );
         }
         if (this._enabled) {

@@ -6,6 +6,12 @@ export class Logger {
 
     private static TAG = "ApplicationInsights:";
 
+    public static debug(message?: any, ...optionalParams: any[]) {
+        if (this.enableDebug) {
+            InternalAzureLogger.getInstance().debug(this.TAG + message, optionalParams);
+        }
+    }
+
     public static info(message?: any, ...optionalParams: any[]) {
         if (this.enableDebug) {
             InternalAzureLogger.getInstance().info(this.TAG + message, optionalParams);
@@ -15,6 +21,12 @@ export class Logger {
     public static warn(message?: any, ...optionalParams: any[]) {
         if (!this.disableWarnings) {
             InternalAzureLogger.getInstance().warning(this.TAG + message, optionalParams);
+        }
+    }
+
+    public static error(message?: any, ...optionalParams: any[]) {
+        if (!this.disableWarnings) {
+            InternalAzureLogger.getInstance().error(this.TAG + message, optionalParams);
         }
     }
 }

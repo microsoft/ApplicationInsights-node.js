@@ -29,17 +29,10 @@ import { Context } from "../context";
 import { Util } from "../util";
 
 export class LogExporter extends BaseExporter {
-    private _config: Config;
     private _clientContext: Context;
 
     constructor(config: Config, context: Context) {
-        let ingestionEndpoint = config.endpointUrl.replace("/v2.1/track", "");
-        let connectionString = `InstrumentationKey=${config.instrumentationKey};IngestionEndpoint=${ingestionEndpoint}`;
-        let exporterConfig: AzureExporterConfig = {
-            connectionString: connectionString,
-        };
-        super(exporterConfig);
-        this._config = config;
+        super(config);
         this._clientContext = context;
     }
 
@@ -49,7 +42,7 @@ export class LogExporter extends BaseExporter {
     ): Promise<void> {
         diag.info(`Exporting ${logs.length} log(s). Converting to envelopes...`);
         const envelopes = logs.map((log) =>
-            this._availabilityToEnvelope(log, this._options.instrumentationKey)
+            this._availabilityToEnvelope(log, this._config.instrumentationKey)
         );
         resultCallback(await this._exportEnvelopes(envelopes));
     }
@@ -60,7 +53,7 @@ export class LogExporter extends BaseExporter {
     ): Promise<void> {
         diag.info(`Exporting ${logs.length} logs(s). Converting to envelopes...`);
         const envelopes = logs.map((log) =>
-            this._traceToEnvelope(log, this._options.instrumentationKey)
+            this._traceToEnvelope(log, this._config.instrumentationKey)
         );
         resultCallback(await this._exportEnvelopes(envelopes));
     }
@@ -71,7 +64,7 @@ export class LogExporter extends BaseExporter {
     ): Promise<void> {
         diag.info(`Exporting ${logs.length} log(s). Converting to envelopes...`);
         const envelopes = logs.map((log) =>
-            this._exceptionToEnvelope(log, this._options.instrumentationKey)
+            this._exceptionToEnvelope(log, this._config.instrumentationKey)
         );
         resultCallback(await this._exportEnvelopes(envelopes));
     }
@@ -82,7 +75,7 @@ export class LogExporter extends BaseExporter {
     ): Promise<void> {
         diag.info(`Exporting ${logs.length} log(s). Converting to envelopes...`);
         const envelopes = logs.map((log) =>
-            this._eventToEnvelope(log, this._options.instrumentationKey)
+            this._eventToEnvelope(log, this._config.instrumentationKey)
         );
         resultCallback(await this._exportEnvelopes(envelopes));
     }
@@ -93,7 +86,7 @@ export class LogExporter extends BaseExporter {
     ): Promise<void> {
         diag.info(`Exporting ${logs.length} log(s). Converting to envelopes...`);
         const envelopes = logs.map((log) =>
-            this._pageViewToEnvelope(log, this._options.instrumentationKey)
+            this._pageViewToEnvelope(log, this._config.instrumentationKey)
         );
         resultCallback(await this._exportEnvelopes(envelopes));
     }
@@ -103,7 +96,6 @@ export class LogExporter extends BaseExporter {
      */
     async shutdown(): Promise<void> {
         diag.info("Azure Monitor Logs Exporter shutting down");
-        return this._sender.shutdown();
     }
 
     private _logToEnvelope(
