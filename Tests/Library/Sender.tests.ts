@@ -428,6 +428,83 @@ describe("Library/Sender", () => {
             });
         });
 
+        it("[Statsbeat Sender] should not turn Statsbeat off succesfully reaching ingestion endpoint at least once", (done) => {
+            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            let shutdownCalled = false;
+            let shutdown = () => {
+                shutdownCalled = true;
+            };
+            nockScope = interceptor.reply(200, breezeResponse);
+            let testSender = new Sender(config, null, null, null, null, true, shutdown);
+            assert.equal(testSender["_statsbeatHasReachedIngestionAtLeastOnce"], false);
+            testSender.setDiskRetryMode(false);
+            testSender.send([testEnvelope], (responseText) => {
+                assert.equal(testSender["_statsbeatHasReachedIngestionAtLeastOnce"], true);
+                nockScope = interceptor.reply(503, null);
+                testSender.send([testEnvelope], (responseText) => {
+                    assert.equal(shutdownCalled, false);
+                    testSender.send([testEnvelope], (responseText) => {
+                        assert.equal(shutdownCalled, false);
+                        testSender.send([testEnvelope], (responseText) => {
+                            assert.equal(shutdownCalled, false);
+                            done();
+                        });
+                    });
+                });
+            });
+        });
+
+        it("[Statsbeat Sender] should turn Statsbeat off if there are 3 failures after initialization", (done) => {
+            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            let shutdownCalled = false;
+            let shutdown = () => {
+                shutdownCalled = true;
+            };
+            let testSender = new Sender(config, null, null, null, null, true, shutdown);
+            testSender.setDiskRetryMode(false);
+            nockScope = interceptor.reply(503, null);
+
+            testSender.send([testEnvelope], (responseText) => {
+                assert.equal(shutdownCalled, false);
+                assert.equal(testSender["_failedToIngestCounter"], 1);
+                testSender.send([testEnvelope], (responseText) => {
+                    assert.equal(shutdownCalled, false);
+                    assert.equal(testSender["_failedToIngestCounter"], 2);
+                    testSender.send([testEnvelope], (responseText) => {
+                        assert.equal(testSender["_failedToIngestCounter"], 3);
+                        assert.equal(shutdownCalled, true);
+                        done();
+                    });
+                });
+            });
+        });
+
+        it("[Statsbeat Sender] should turn off warn logging", (done) => {
+            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            let testSender = new Sender(config, null, null, null, null, true, () => { });
+            testSender.setDiskRetryMode(true);
+            let warntub = sandbox.stub(Logging, "warn");
+            nockScope = interceptor.replyWithError("Test Error");
+            testSender.send([testEnvelope], (responseText) => {
+                assert.ok(warntub.notCalled);
+                assert.equal(testSender["_failedToIngestCounter"], 1);
+                done();
+            });
+        });
+
+        it("[Statsbeat Sender] should turn off info logging", (done) => {
+            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            let testSender = new Sender(config, null, null, null, null, true, () => { });
+            testSender.setDiskRetryMode(false);
+            let infoStub = sandbox.stub(Logging, "info");
+            nockScope = interceptor.replyWithError("Test Error");
+            testSender.send([testEnvelope], (responseText) => {
+                assert.ok(infoStub.notCalled);
+                assert.equal(testSender["_failedToIngestCounter"], 1);
+                done();
+            });
+        });
+
         it("Exception counts", (done) => {
             statsbeatSender.setDiskRetryMode(false);
             var statsbeatSpy = sandbox.spy(statsbeat, "countRequest");

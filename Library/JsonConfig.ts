@@ -10,6 +10,10 @@ import { throws } from "assert";
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 // Azure Connection String
 const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
+// Instrumentation Key
+const ENV_azurePrefix = "APPSETTING_"; // Azure adds this prefix to all environment variables
+const ENV_instrumentationKey = "APPINSIGHTS_INSTRUMENTATIONKEY";
+const ENV_legacyInstrumentationKey = "APPINSIGHTS_INSTRUMENTATION_KEY"
 // Native Metrics Opt Outs
 const ENV_nativeMetricsDisablers = "APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC";
 const ENV_nativeMetricsDisableAll = "APPLICATION_INSIGHTS_DISABLE_ALL_EXTENDED_METRICS"
@@ -75,6 +79,14 @@ export class JsonConfig implements IJsonConfig {
     constructor() {
         // Load env variables first
         this.connectionString = process.env[ENV_connectionString];
+        this.instrumentationKey = process.env[ENV_instrumentationKey]
+            || process.env[ENV_azurePrefix + ENV_instrumentationKey]
+            || process.env[ENV_legacyInstrumentationKey]
+            || process.env[ENV_azurePrefix + ENV_legacyInstrumentationKey];
+
+        if (!this.connectionString && this.instrumentationKey) {
+            Logging.warn("APPINSIGHTS_INSTRUMENTATIONKEY is in path of deprecation, please use APPLICATIONINSIGHTS_CONNECTION_STRING env variable to setup the SDK.");
+        }
         this.disableAllExtendedMetrics = !!process.env[ENV_nativeMetricsDisableAll];
         this.extendedMetricDisablers = process.env[ENV_nativeMetricsDisablers];
         this.proxyHttpUrl = process.env[ENV_http_proxy];
