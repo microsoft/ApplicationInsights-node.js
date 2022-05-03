@@ -270,7 +270,7 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Credential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes)
 | enableAutoWebSnippetInjection(Preview)| Sets the state of automatic web snippet injection (disabled by default). If true, web snippet will be injected into valid node server http response automatically |                            |
 
-[Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
+[Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts 
 
 All these properties except httpAgent, httpsAgent and aadTokenCredential could be configured using configuration file `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. These configuration values will be applied to all TelemetryClients created in the SDK. 
 
