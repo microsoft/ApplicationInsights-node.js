@@ -42,9 +42,9 @@ export function setStatusLogger(statusLogger: StatusLogger) {
 
 /**
  * Try to setup and start this app insights instance if attach is enabled.
- * @param setupString connection string
+ * @param aadTokenCredential Optional AAD credential
  */
-export function setupAndStart(setupString?: string, aadTokenCredential?: azureCore.TokenCredential): typeof types | null {
+export function setupAndStart(aadTokenCredential?: azureCore.TokenCredential): typeof types | null {
     // If app already contains SDK, skip agent attach
     if (!forceStart && Helpers.sdkAlreadyExists(_logger)) {
         _statusLogger.logStatus({
@@ -55,8 +55,7 @@ export function setupAndStart(setupString?: string, aadTokenCredential?: azureCo
         })
         return null;
     }
-
-    if (!setupString) {
+    if (!defaultConfig.instrumentationKey) {
         const message = "Application Insights wanted to be started, but no Connection String was provided";
         _logger.logError(message);
         _statusLogger.logStatus({
@@ -97,7 +96,7 @@ export function setupAndStart(setupString?: string, aadTokenCredential?: azureCo
         }
 
         // Instrument the SDK
-        _appInsights.setup(setupString).setSendLiveMetrics(true);
+        _appInsights.setup().setSendLiveMetrics(true);
         _appInsights.defaultClient.setAutoPopulateAzureProperties(true);
         _appInsights.defaultClient.addTelemetryProcessor(prefixInternalSdkVersion);
         _appInsights.defaultClient.addTelemetryProcessor(copyOverPrefixInternalSdkVersionToHeartBeatMetric);
@@ -114,7 +113,7 @@ export function setupAndStart(setupString?: string, aadTokenCredential?: azureCo
         }
 
         // Agent successfully instrumented the SDK
-        _logger.logMessage("Application Insights was started with setupString: " + setupString);
+        _logger.logMessage("Application Insights was started");
         _statusLogger.logStatus({
             ...StatusLogger.DEFAULT_STATUS,
             AgentInitializedSuccessfully: true
