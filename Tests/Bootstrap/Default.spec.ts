@@ -52,9 +52,9 @@ describe("#setupAndStart()", () => {
         // Test
         const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
         Default.setLogger(new DiagnosticLogger(logger));
-        const instance1 = Default.setupAndStart("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+        const instance1 = Default.setupAndStart();
         assert.ok(instance1.defaultClient);
-        const instance2 = Default.setupAndStart("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+        const instance2 = Default.setupAndStart();
         assert.deepEqual(instance1.defaultClient, instance2.defaultClient);
         assert.deepEqual(instance1.defaultClient["_telemetryProcessors"].length, 2)
         assert.deepEqual(instance2.defaultClient["_telemetryProcessors"].length, 2)
@@ -76,7 +76,7 @@ describe("#setupAndStart()", () => {
         // Test
         const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
         Default.setLogger(new DiagnosticLogger(logger));
-        const instance = Default.setupAndStart("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+        const instance = Default.setupAndStart();
         assert.deepEqual(instance, appInsights);
 
         // Cleanup
@@ -90,7 +90,7 @@ describe("#setupAndStart()", () => {
         assert.equal(logger.errorCount, 0);
     });
 
-    it("should not setup and start the SDK if no setupString is provided", () => {
+    it("should not setup and start the SDK if no connectionString is provided", () => {
         // Setup
         const logger = new LoggerSpy();
         const env = <{ [id: string]: string }>{};
