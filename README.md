@@ -24,7 +24,7 @@ This library tracks the following out-of-the-box:
 You can manually track more aspects of your app and system using the API described in the
 [Track custom telemetry](#track-custom-telemetry) section.
 
-## Supported Node.JS versions
+## Supported Node.JS versions 
 
 | Platform Version | Supported                                       |
 |------------------|-------------------------------------------------|
