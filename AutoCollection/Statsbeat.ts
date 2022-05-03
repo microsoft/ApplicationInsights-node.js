@@ -54,7 +54,7 @@ class Statsbeat {
         let statsbeatConnectionString = this._getConnectionString(config);
         this._statsbeatConfig = new Config(statsbeatConnectionString);
         this._statsbeatConfig.samplingPercentage = 100; // Do not sample
-        this._sender = new Sender(this._statsbeatConfig, null, null, null, null, true, this._shutdownStatsbeat);
+        this._sender = new Sender(this._statsbeatConfig, null, null, null, null, true, this._shutdownStatsbeat.bind(this));
     }
 
     public enable(isEnabled: boolean) {
