@@ -139,10 +139,10 @@ export interface IBaseConfig {
      */
      enableAutoWebSnippetInjection: boolean;
     /**
-     * Application Insights resource instrumentation key for web snippet
-     * Note: if no valid instrumentation key is provided here, web snippet will use the iKey during initializing Nodejs SDK
+     * Application Insights resource connection string for web snippet
+     * Note: if no valid connection string is provided here, web snippet will use the connection string during initializing Nodejs SDK
      */
-    webSnippetInstrumentationKey?: string;
+    webSnippetConnectionString?: string;
 }
 
 export interface IEnvironmentConfig {

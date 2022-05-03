@@ -5,6 +5,7 @@ import zlib = require("zlib");
 import Logging = require("../Library/Logging");
 import TelemetryClient = require("../Library/TelemetryClient");
 import snippetInjectionHelper = require("../Library/SnippetInjectionHelper");
+import ConnectionStringParser = require("../Library/ConnectionStringParser");
 
 class WebSnippet {
 
@@ -47,11 +48,12 @@ class WebSnippet {
       
     }
 
-    public enable(isEnabled: boolean, webSnippetInstrumentationKey?: string ) {
+    public enable(isEnabled: boolean, webSnippetConnectionString?: string ) {
         this._isEnabled = isEnabled;
         
-        if (webSnippetInstrumentationKey) {
-            WebSnippet._snippet = snippetInjectionHelper.webSnippet.replace("INSTRUMENTATION_KEY", webSnippetInstrumentationKey);
+        if (webSnippetConnectionString) {
+            let iKey = this._getWebSnippetIkey(webSnippetConnectionString);
+            WebSnippet._snippet = snippetInjectionHelper.webSnippet.replace("INSTRUMENTATION_KEY", iKey);
         }
         
         if (this._isEnabled && !this._isInitialized) {
@@ -61,6 +63,15 @@ class WebSnippet {
 
     public isInitialized() {
         return this._isInitialized;
+    }
+
+    private _getWebSnippetIkey(connectionString: string) {
+        const csCode = ConnectionStringParser.parse(connectionString);
+        const iKeyCode = csCode.instrumentationkey || "";
+        if (!snippetInjectionHelper.isWebSnippetIkeyValid(iKeyCode)) {
+            throw new Error("Invalid web snippet connection string");
+        }
+        return iKeyCode;
     }
 
     private _initialize() {

@@ -5,7 +5,6 @@ import Logging = require("./Logging");
 import { IJsonConfig } from "../Declarations/Interfaces";
 import { DistributedTracingModes } from "../applicationinsights";
 import { IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";
-import { throws } from "assert";
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 // Azure Connection String
@@ -24,7 +23,7 @@ const ENV_noStatsbeat = "APPLICATION_INSIGHTS_NO_STATSBEAT";
 const ENV_noHttpAgentKeepAlive = "APPLICATION_INSIGHTS_NO_HTTP_AGENT_KEEP_ALIVE";
 const ENV_noPatchModules = "APPLICATION_INSIGHTS_NO_PATCH_MODULES";
 const ENV_webSnippetEnable = "APPLICATIONINSIGHTS_WEB_SNIPPET_ENABLED";
-const ENV_webSnippetInstrumentationKey = "APPLICATIONINSIGHTS_WEB_SNIPPET_INSTRUMENTATION_KEY";
+const ENV_webSnippet_connectionString = "APPLICATIONINSIGHTS_WEB_SNIPPET_CONNECTION_STRING";
 
 export class JsonConfig implements IJsonConfig {
     private static _instance: JsonConfig;
@@ -67,7 +66,7 @@ export class JsonConfig implements IJsonConfig {
     public noHttpAgentKeepAlive: boolean;
     public quickPulseHost: string;
     public enableAutoWebSnippetInjection: boolean;
-    public webSnippetInstrumentationKey: string;
+    public webSnippetConnectionString: string;
 
     static getInstance() {
         if (!JsonConfig._instance) {
@@ -96,7 +95,7 @@ export class JsonConfig implements IJsonConfig {
         this.noHttpAgentKeepAlive = !!process.env[ENV_noHttpAgentKeepAlive];
         this.noPatchModules = process.env[ENV_noPatchModules] || "";
         this.enableAutoWebSnippetInjection = !!process.env[ENV_webSnippetEnable];
-        this.webSnippetInstrumentationKey = process.env[ENV_webSnippetInstrumentationKey] || "";
+        this.webSnippetConnectionString = process.env[ENV_webSnippet_connectionString] || "";
         this._loadJsonFile();
     }
 
@@ -152,8 +151,8 @@ export class JsonConfig implements IJsonConfig {
                 this.enableAutoWebSnippetInjection = jsonConfig.enableAutoWebSnippetInjection;
             }
 
-            if (jsonConfig.webSnippetInstrumentationKey != undefined) {
-                this.webSnippetInstrumentationKey = jsonConfig.webSnippetInstrumentationKey;
+            if (jsonConfig.webSnippetConnectionString != undefined) {
+                this.webSnippetConnectionString = jsonConfig.webSnippetConnectionString;
             }
 
             if (jsonConfig)
