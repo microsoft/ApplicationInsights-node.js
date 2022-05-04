@@ -180,12 +180,12 @@ describe("AutoCollection/WebSnippet", () => {
 
     describe("#web snippet enable should throw errors when ikey from config is not valid", () => {
         it("injection should throw errors when ikey from config is not valid", () => {
-            var warnStub = sandbox.stub(console, "warn");
+            var infoStub = sandbox.stub(console, "info");
             var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setWebSnippetInjection(true,"InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeff;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
             let webSnippet = WebSnippet.INSTANCE;
             webSnippet.enable(true, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeff;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
             assert.equal(webSnippet["_isIkeyValid"], false,"ikey should be set to invalid");
-            assert.ok(warnStub.calledOn, "invalid key warning was raised");
+            assert.ok(infoStub.calledOn, "invalid key warning was raised");
         });
     });
 

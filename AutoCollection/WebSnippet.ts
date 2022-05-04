@@ -76,7 +76,7 @@ class WebSnippet {
         const iKeyCode = csCode.instrumentationkey || "";
         if (!snippetInjectionHelper.isWebSnippetIkeyValid(iKeyCode)) {
             this._isIkeyValid = false;
-            Logging.warn("Invalid web snippet connection string, web snippet will not be injected.");
+            Logging.info("Invalid web snippet connection string, web snippet will not be injected.");
         }
         return iKeyCode;
     }
