@@ -72,6 +72,10 @@ class WebSnippet {
                 this._statsbeat.addFeature(Constants.StatsbeatFeature.WEB_SNIPPET);
             }
             this._initialize();
+        } else if (!this._isEnabled) {
+            if (this._statsbeat) {
+                this._statsbeat.removeFeature(Constants.StatsbeatFeature.WEB_SNIPPET);
+            }
         }
     }
 
