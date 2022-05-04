@@ -24,7 +24,7 @@ This library tracks the following out-of-the-box:
 You can manually track more aspects of your app and system using the API described in the
 [Track custom telemetry](#track-custom-telemetry) section.
 
-## Supported Node.JS versions
+## Supported Node.JS versions 
 
 | Platform Version | Supported                                       |
 |------------------|-------------------------------------------------|
@@ -37,6 +37,8 @@ You can manually track more aspects of your app and system using the API describ
 
 
 ## Getting Started
+
+> *Important:* On March 31st, 2025, support for instrumentation key ingestion will end. Instrumentation key ingestion will continue to work, but we’ll no longer provide updates or support for the feature. [Transition to connection strings](https://docs.microsoft.com/en-us/azure/azure-monitor/app/migrate-from-instrumentation-keys-to-connection-strings) to take advantage of [new capabilities](https://docs.microsoft.com/en-us/azure/azure-monitor/app/migrate-from-instrumentation-keys-to-connection-strings#new-capabilities).
 
 1. Create an Application Insights resource in Azure by following [these instructions][].
 2. Grab the _Connection String_ from the resource you created in
@@ -76,7 +78,7 @@ let appInsights = require("applicationinsights");
 appInsights.setup("YOUR_CONNECTION_STRING").start();
 ```
 
-* If the instrumentation key is set in the environment variable
+* If the connection string is set in the environment variable
   APPLICATIONINSIGHTS\_CONNECTION\_STRING, `.setup()` can be called with no
   arguments. This makes it easy to use different connection strings for different
   environments.
@@ -268,7 +270,7 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Credential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes)
 | enableAutoWebSnippetInjection(Preview)| Sets the state of automatic web snippet injection (disabled by default). If true, web snippet will be injected into valid node server http response automatically |                            |
 
-[Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
+[Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts 
 
 All these properties except httpAgent, httpsAgent and aadTokenCredential could be configured using configuration file `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. These configuration values will be applied to all TelemetryClients created in the SDK. 
 

@@ -104,6 +104,7 @@ describe("Json Config", () => {
             assert.equal(config.noPatchModules, "console,redis");
             assert.equal(config.quickPulseHost, "testquickpulsehost.com");
             assert.equal(config.enableAutoWebSnippetInjection, false);
+            assert.equal(config.webSnippetConnectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3331;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
         });
 
         it("Should take configurations from environment variables", () => {
@@ -118,6 +119,7 @@ describe("Json Config", () => {
             env["http_proxy"] = "testProxyHttpUrl2";
             env["https_proxy"] = "testProxyHttpsUrl2";
             env["APPLICATIONINSIGHTS_WEB_SNIPPET_ENABLED"] = "true";
+            env["APPLICATIONINSIGHTS_WEB_SNIPPET_CONNECTION_STRING"] = "SnippetTestConnectionString";
             process.env = env;
             const config = JsonConfig.getInstance();
             assert.equal(config.connectionString, "TestConnectionString");
@@ -130,6 +132,7 @@ describe("Json Config", () => {
             assert.equal(config.noPatchModules, "azuresdk");
             assert.equal(config.disableStatsbeat, true);
             assert.equal(config.enableAutoWebSnippetInjection, true);
+            assert.equal(config.webSnippetConnectionString, "SnippetTestConnectionString");
         });
 
         it("Should take configurations from JSON config file over environment variables if both are configured", () => {
@@ -146,6 +149,7 @@ describe("Json Config", () => {
             env["http_proxy"] = "testProxyHttpUrl2";
             env["https_proxy"] = "testProxyHttpsUrl2";
             env["APPINSIGHTS_WEB_SNIPPET_ENABLED"] = "true";
+            env["APPLICATIONINSIGHTS_WEB_SNIPPET_CONNECTION_STRING"] = "SnippetTestConnectionString";
             process.env = env;
             const config = JsonConfig.getInstance();
             assert.equal(config.connectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
@@ -158,6 +162,7 @@ describe("Json Config", () => {
             assert.equal(config.noPatchModules, "console,redis");
             assert.equal(config.disableStatsbeat, false);
             assert.equal(config.enableAutoWebSnippetInjection, false);
+            assert.equal(config.webSnippetConnectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3331;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
         });
     });
 });

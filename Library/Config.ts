@@ -64,9 +64,8 @@ class Config implements IConfig {
     private _setCorrelationId: (v: string) => void;
     private _profileQueryEndpoint: string;
     private _instrumentationKey: string;
+    private _webSnippetConnectionString: string;
  
-
-
     constructor(setupString?: string) {
         // Load config values from env variables and JSON if available
         this._mergeConfig();
@@ -77,7 +76,13 @@ class Config implements IConfig {
             ? null // CS was valid but instrumentation key was not provided, null and grab from env var
             : setupString; // CS was invalid, so it must be an ikey
 
-        this.instrumentationKey = csCode.instrumentationkey || iKeyCode /* === instrumentationKey */ || csEnv.instrumentationkey || Config._getInstrumentationKey();
+        const instrumentationKeyEnv: string | undefined = this._instrumentationKey;
+        this.instrumentationKey = csCode.instrumentationkey || iKeyCode /* === instrumentationKey */ || csEnv.instrumentationkey || instrumentationKeyEnv;
+
+        if (!this.instrumentationKey || this.instrumentationKey == "") {
+            throw new Error("Instrumentation key not found, please provide a connection string before starting the server");
+        }
+
         let endpoint = `${this.endpointUrl || csCode.ingestionendpoint || csEnv.ingestionendpoint || this._endpointBase}`;
         if (endpoint.endsWith("/")) {
             // Remove extra '/' if present
@@ -105,6 +110,7 @@ class Config implements IConfig {
         this.ignoreLegacyHeaders = this.ignoreLegacyHeaders || false;
         this.profileQueryEndpoint = csCode.ingestionendpoint || csEnv.ingestionendpoint || process.env[Config.ENV_profileQueryEndpoint] || this._endpointBase;
         this.quickPulseHost = this.quickPulseHost || csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_HOST;
+        this.webSnippetConnectionString = this.webSnippetConnectionString || this._webSnippetConnectionString || "";
         // Parse quickPulseHost if it starts with http(s)://
         if (this.quickPulseHost.match(/^https?:\/\//)) {
             this.quickPulseHost = new url.URL(this.quickPulseHost).host;
@@ -133,9 +139,18 @@ class Config implements IConfig {
         return this._instrumentationKey;
     }
 
+    public set webSnippetConnectionString(connectionString: string) {
+        this._webSnippetConnectionString = connectionString;
+    }
+
+    public get webSnippetConnectionString(): string {
+        return this._webSnippetConnectionString;
+    }
+
     private _mergeConfig() {
         let jsonConfig = JsonConfig.getInstance();
         this._connectionString = jsonConfig.connectionString;
+        this._instrumentationKey = jsonConfig.instrumentationKey;
         this.correlationHeaderExcludedDomains = jsonConfig.correlationHeaderExcludedDomains;
         this.correlationIdRetryIntervalMs = jsonConfig.correlationIdRetryIntervalMs;
         this.disableAllExtendedMetrics = jsonConfig.disableAllExtendedMetrics;
@@ -169,19 +184,7 @@ class Config implements IConfig {
         this.quickPulseHost = jsonConfig.quickPulseHost;
         this.samplingPercentage = jsonConfig.samplingPercentage;
         this.enableAutoWebSnippetInjection = jsonConfig.enableAutoWebSnippetInjection;
-    }
-
-    private static _getInstrumentationKey(): string {
-        // check for both the documented env variable and the azure-prefixed variable
-        var iKey = process.env[Config.ENV_iKey]
-            || process.env[Config.ENV_azurePrefix + Config.ENV_iKey]
-            || process.env[Config.legacy_ENV_iKey]
-            || process.env[Config.ENV_azurePrefix + Config.legacy_ENV_iKey];
-        if (!iKey || iKey == "") {
-            throw new Error("Instrumentation key not found, pass the key in the config to this method or set the key in the environment variable APPINSIGHTS_INSTRUMENTATIONKEY before starting the server");
-        }
-
-        return iKey;
+        this.webSnippetConnectionString = jsonConfig.webSnippetConnectionString;
     }
 
     /**

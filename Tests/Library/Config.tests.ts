@@ -109,6 +109,7 @@ describe("Library/Config", () => {
                 assert.equal(config.extendedMetricDisablers, "gc,heap");
                 assert.equal(config.quickPulseHost, "testquickpulsehost.com");
                 assert.equal(config.enableAutoWebSnippetInjection, false);
+                assert.equal(config.webSnippetConnectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3331;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
             });
         });
 
@@ -151,6 +152,14 @@ describe("Library/Config", () => {
                 assert.equal(config.enableAutoWebSnippetInjection, true);
             });
 
+            it("should read webSnippetConnectionString from environment variables", () => {
+                var env = <{ [id: string]: string }>{};
+                env["APPLICATIONINSIGHTS_WEB_SNIPPET_CONNECTION_STRING"] = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/";
+                process.env = env;
+                var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+                assert.equal(config.webSnippetConnectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+            });
+
             it("should initialize valid values", () => {
                 var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert(typeof config.instrumentationKey === "string");
@@ -174,6 +183,7 @@ describe("Library/Config", () => {
                 assert(config.proxyHttpUrl === undefined);
                 assert(config.proxyHttpsUrl === undefined);
                 assert(config.enableAutoWebSnippetInjection === false);
+                assert(config.webSnippetConnectionString === "");
 
                 assert.equal(config.quickPulseHost, Constants.DEFAULT_LIVEMETRICS_HOST);
             });

@@ -9,6 +9,10 @@ import { IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 // Azure Connection String
 const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
+// Instrumentation Key
+const ENV_azurePrefix = "APPSETTING_"; // Azure adds this prefix to all environment variables
+const ENV_instrumentationKey = "APPINSIGHTS_INSTRUMENTATIONKEY";
+const ENV_legacyInstrumentationKey = "APPINSIGHTS_INSTRUMENTATION_KEY"
 // Native Metrics Opt Outs
 const ENV_nativeMetricsDisablers = "APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC";
 const ENV_nativeMetricsDisableAll = "APPLICATION_INSIGHTS_DISABLE_ALL_EXTENDED_METRICS"
@@ -19,6 +23,7 @@ const ENV_noStatsbeat = "APPLICATION_INSIGHTS_NO_STATSBEAT";
 const ENV_noHttpAgentKeepAlive = "APPLICATION_INSIGHTS_NO_HTTP_AGENT_KEEP_ALIVE";
 const ENV_noPatchModules = "APPLICATION_INSIGHTS_NO_PATCH_MODULES";
 const ENV_webSnippetEnable = "APPLICATIONINSIGHTS_WEB_SNIPPET_ENABLED";
+const ENV_webSnippet_connectionString = "APPLICATIONINSIGHTS_WEB_SNIPPET_CONNECTION_STRING";
 
 export class JsonConfig implements IJsonConfig {
     private static _instance: JsonConfig;
@@ -61,7 +66,7 @@ export class JsonConfig implements IJsonConfig {
     public noHttpAgentKeepAlive: boolean;
     public quickPulseHost: string;
     public enableAutoWebSnippetInjection: boolean;
-
+    public webSnippetConnectionString: string;
 
     static getInstance() {
         if (!JsonConfig._instance) {
@@ -73,6 +78,14 @@ export class JsonConfig implements IJsonConfig {
     constructor() {
         // Load env variables first
         this.connectionString = process.env[ENV_connectionString];
+        this.instrumentationKey = process.env[ENV_instrumentationKey]
+            || process.env[ENV_azurePrefix + ENV_instrumentationKey]
+            || process.env[ENV_legacyInstrumentationKey]
+            || process.env[ENV_azurePrefix + ENV_legacyInstrumentationKey];
+
+        if (!this.connectionString && this.instrumentationKey) {
+            Logging.warn("APPINSIGHTS_INSTRUMENTATIONKEY is in path of deprecation, please use APPLICATIONINSIGHTS_CONNECTION_STRING env variable to setup the SDK.");
+        }
         this.disableAllExtendedMetrics = !!process.env[ENV_nativeMetricsDisableAll];
         this.extendedMetricDisablers = process.env[ENV_nativeMetricsDisablers];
         this.proxyHttpUrl = process.env[ENV_http_proxy];
@@ -82,6 +95,7 @@ export class JsonConfig implements IJsonConfig {
         this.noHttpAgentKeepAlive = !!process.env[ENV_noHttpAgentKeepAlive];
         this.noPatchModules = process.env[ENV_noPatchModules] || "";
         this.enableAutoWebSnippetInjection = !!process.env[ENV_webSnippetEnable];
+        this.webSnippetConnectionString = process.env[ENV_webSnippet_connectionString] || "";
         this._loadJsonFile();
     }
 
@@ -136,6 +150,11 @@ export class JsonConfig implements IJsonConfig {
             if (jsonConfig.enableAutoWebSnippetInjection != undefined) {
                 this.enableAutoWebSnippetInjection = jsonConfig.enableAutoWebSnippetInjection;
             }
+
+            if (jsonConfig.webSnippetConnectionString != undefined) {
+                this.webSnippetConnectionString = jsonConfig.webSnippetConnectionString;
+            }
+
             this.endpointUrl = jsonConfig.endpointUrl;
             this.maxBatchSize = jsonConfig.maxBatchSize;
             this.maxBatchIntervalMs = jsonConfig.maxBatchIntervalMs;

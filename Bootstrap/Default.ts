@@ -3,25 +3,22 @@ import azureCore = require("@azure/core-http");
 import * as types from "../applicationinsights";
 import * as Helpers from "./Helpers";
 import Constants = require("../Declarations/Constants");
-import { StatusLogger, StatusContract } from "./StatusLogger";
+import { StatusLogger } from "./StatusLogger";
 import { DiagnosticLogger } from "./DiagnosticLogger";
-import { JsonConfig } from "../Library/JsonConfig";
+import Config = require("../Library/Config");
 
 // Private configuration vars
 let _appInsights: typeof types | null;
 let _prefix = "ad_"; // App Services, Default
-let _logger: DiagnosticLogger = new DiagnosticLogger(console);
-let _statusLogger: StatusLogger = new StatusLogger(console);
+
+export const defaultConfig = new Config(); // Will read env variables, expose for Agent initialization
+const _instrumentationKey = defaultConfig.instrumentationKey;
+let _logger: DiagnosticLogger = new DiagnosticLogger(console, _instrumentationKey);
+let _statusLogger: StatusLogger = new StatusLogger(console, _instrumentationKey);
 
 // Env var local constants
-const _setupString = JsonConfig.getInstance().connectionString || process.env.APPINSIGHTS_INSTRUMENTATIONKEY;
 const forceStart = process.env.APPLICATIONINSIGHTS_FORCE_START === "true";
 
-// Other local constants
-const defaultStatus: StatusContract = {
-    ...StatusLogger.DEFAULT_STATUS,
-    Ikey: _setupString
-};
 
 /**
  * Sets the attach-time logger
@@ -45,25 +42,24 @@ export function setStatusLogger(statusLogger: StatusLogger) {
 
 /**
  * Try to setup and start this app insights instance if attach is enabled.
- * @param setupString connection string or instrumentation key
+ * @param aadTokenCredential Optional AAD credential
  */
-export function setupAndStart(setupString = _setupString, aadTokenCredential?: azureCore.TokenCredential): typeof types | null {
+export function setupAndStart(aadTokenCredential?: azureCore.TokenCredential): typeof types | null {
     // If app already contains SDK, skip agent attach
     if (!forceStart && Helpers.sdkAlreadyExists(_logger)) {
         _statusLogger.logStatus({
-            ...defaultStatus,
+            ...StatusLogger.DEFAULT_STATUS,
             AgentInitializedSuccessfully: false,
             SDKPresent: true,
             Reason: "SDK already exists"
         })
         return null;
     }
-
-    if (!setupString) {
-        const message = "Application Insights wanted to be started, but no Connection String or Instrumentation Key was provided";
+    if (!defaultConfig.instrumentationKey) {
+        const message = "Application Insights wanted to be started, but no Connection String was provided";
         _logger.logError(message);
         _statusLogger.logStatus({
-            ...defaultStatus,
+            ...StatusLogger.DEFAULT_STATUS,
             AgentInitializedSuccessfully: false,
             Reason: message
         });
@@ -100,7 +96,7 @@ export function setupAndStart(setupString = _setupString, aadTokenCredential?: a
         }
 
         // Instrument the SDK
-        _appInsights.setup(setupString).setSendLiveMetrics(true);
+        _appInsights.setup().setSendLiveMetrics(true);
         _appInsights.defaultClient.setAutoPopulateAzureProperties(true);
         _appInsights.defaultClient.addTelemetryProcessor(prefixInternalSdkVersion);
         _appInsights.defaultClient.addTelemetryProcessor(copyOverPrefixInternalSdkVersionToHeartBeatMetric);
@@ -108,7 +104,7 @@ export function setupAndStart(setupString = _setupString, aadTokenCredential?: a
             _logger.logMessage("Using AAD Token Credential");
             _appInsights.defaultClient.config.aadTokenCredential = aadTokenCredential;
         }
-        
+
         _appInsights.start();
         // Add attach flag in Statsbeat
         let statsbeat = _appInsights.defaultClient.getStatsbeat();
@@ -117,15 +113,15 @@ export function setupAndStart(setupString = _setupString, aadTokenCredential?: a
         }
 
         // Agent successfully instrumented the SDK
-        _logger.logMessage("Application Insights was started with setupString: " + setupString);
+        _logger.logMessage("Application Insights was started");
         _statusLogger.logStatus({
-            ...defaultStatus,
+            ...StatusLogger.DEFAULT_STATUS,
             AgentInitializedSuccessfully: true
         });
     } catch (e) {
         _logger.logError("Error setting up Application Insights", e);
         _statusLogger.logStatus({
-            ...defaultStatus,
+            ...StatusLogger.DEFAULT_STATUS,
             AgentInitializedSuccessfully: false,
             Reason: `Error setting up Application Insights: ${e && e.message}`
         })

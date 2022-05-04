@@ -54,7 +54,7 @@ class Statsbeat {
         let statsbeatConnectionString = this._getConnectionString(config);
         this._statsbeatConfig = new Config(statsbeatConnectionString);
         this._statsbeatConfig.samplingPercentage = 100; // Do not sample
-        this._sender = new Sender(this._statsbeatConfig, null, null, this._handleNetworkError);
+        this._sender = new Sender(this._statsbeatConfig, null, null, null, null, true, this._shutdownStatsbeat.bind(this));
     }
 
     public enable(isEnabled: boolean) {
@@ -351,10 +351,8 @@ class Statsbeat {
         });
     }
 
-    private _handleNetworkError(error: Error) {
-        if (error && error.message && error.message.indexOf("ENOTFOUND") > -1) { // ENOTFOUND
-            this.enable(false);// Disable Statsbeat as is possible SDK is running in private or restricted network 
-        }
+    private _shutdownStatsbeat() {
+        this.enable(false);// Disable Statsbeat as is it failed 3 times cosnecutively during initialization, is possible SDK is running in private or restricted network 
     }
 
     private _getConnectionString(config: Config): string {

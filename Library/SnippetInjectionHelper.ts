@@ -131,3 +131,4 @@ export const isContentTypeHeaderHtml = (response: http.ServerResponse): boolean 
     }
     return isHtml;
 }
+
