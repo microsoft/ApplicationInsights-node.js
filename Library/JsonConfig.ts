@@ -155,7 +155,6 @@ export class JsonConfig implements IJsonConfig {
                 this.webSnippetConnectionString = jsonConfig.webSnippetConnectionString;
             }
 
-            if (jsonConfig)
             this.endpointUrl = jsonConfig.endpointUrl;
             this.maxBatchSize = jsonConfig.maxBatchSize;
             this.maxBatchIntervalMs = jsonConfig.maxBatchIntervalMs;

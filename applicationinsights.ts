@@ -319,6 +319,7 @@ export class Configuration {
     /**
      * Sets the state of Web snippet injection
      * @param value if true Web snippet will be tried to be injected in server response
+     * @param WebSnippetConnectionString if provided, web snippet injection will use this ConnectionString. Default to use the connectionString in Node.js app initialization
      * @returns {Configuration} this class
      */
     public static setWebSnippetInjection(value: boolean, WebSnippetConnectionString?: string ) {
