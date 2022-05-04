@@ -16,10 +16,10 @@ class WebSnippet {
     private static _snippet: string;
     private static _aiUrl: string;
     private static _aiDeprecatedUrl: string;
-    private static _statsBeats: Statsbeat;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _isIkeyValid: boolean = true;
+    private _statsbeat: Statsbeat;
     
 
     constructor(client: TelemetryClient) {
@@ -39,9 +39,9 @@ class WebSnippet {
             defaultIkey = clientSnippetIkey;
         }
 
-        WebSnippet._statsBeats = client.getStatsbeat();
-          //TODO: quick fix for bundle error, remove this when npm is published
+        //TODO: quick fix for bundle error, remove this when npm is published
         WebSnippet._snippet = snippetInjectionHelper.webSnippet.replace("INSTRUMENTATION_KEY", defaultIkey);
+        this._statsbeat = client.getStatsbeat();
 
 
         //TODO: replace the path with npm package exports
@@ -68,6 +68,9 @@ class WebSnippet {
             WebSnippet._snippet = snippetInjectionHelper.webSnippet.replace("INSTRUMENTATION_KEY", iKey);
         }
         if (this._isEnabled && !this._isInitialized && this._isIkeyValid) {
+            if (this._statsbeat) {
+                this._statsbeat.addFeature(Constants.StatsbeatFeature.WEB_SNIPPET);
+            }
             this._initialize();
         }
     }
@@ -91,10 +94,6 @@ class WebSnippet {
         const originalHttpServer = http.createServer;
         const originalHttpsServer = https.createServer;
         var isEnabled = this._isEnabled;
-        var isStatsBeatsEnabled = WebSnippet._statsBeats;
-        if (isStatsBeatsEnabled) {
-            WebSnippet._statsBeats.addInstrumentation(Constants.StatsbeatInstrumentation.WEB_SNIPPET);
-        }
 
         http.createServer = (requestListener?: (request: http.IncomingMessage, response: http.ServerResponse) => void) => {
             const originalRequestListener = requestListener;
@@ -123,9 +122,6 @@ class WebSnippet {
                             }
                         } catch (err) {
                             Logging.warn("Inject snippet error: "+ err);
-                            if (isStatsBeatsEnabled) {
-                                WebSnippet._statsBeats.removeInstrumentation(Constants.StatsbeatInstrumentation.WEB_SNIPPET);
-                            }
                         }
                         return originalResponseWrite.apply(response, arguments);
                     }
@@ -153,9 +149,6 @@ class WebSnippet {
                                 }
                             } catch (err) {
                                 Logging.warn("Inject snipet error: "+ err);
-                                if (isStatsBeatsEnabled) {
-                                    WebSnippet._statsBeats.removeInstrumentation(Constants.StatsbeatInstrumentation.WEB_SNIPPET);
-                                }
                             }
                         }
                         return originalResponseEnd.apply(response, arguments);
