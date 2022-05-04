@@ -5,6 +5,8 @@ import zlib = require("zlib");
 import Logging = require("../Library/Logging");
 import TelemetryClient = require("../Library/TelemetryClient");
 import snippetInjectionHelper = require("../Library/SnippetInjectionHelper");
+import Statsbeat = require("./Statsbeat");
+import Constants = require("../Declarations/Constants");
 import ConnectionStringParser = require("../Library/ConnectionStringParser");
 
 class WebSnippet {
@@ -17,6 +19,7 @@ class WebSnippet {
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _isIkeyValid: boolean = true;
+    private _statsbeat: Statsbeat;
     
 
     constructor(client: TelemetryClient) {
@@ -38,6 +41,8 @@ class WebSnippet {
 
         //TODO: quick fix for bundle error, remove this when npm is published
         WebSnippet._snippet = snippetInjectionHelper.webSnippet.replace("INSTRUMENTATION_KEY", defaultIkey);
+        this._statsbeat = client.getStatsbeat();
+
 
         //TODO: replace the path with npm package exports
         //NOTE: should use the following part when npm is enabled
@@ -63,7 +68,14 @@ class WebSnippet {
             WebSnippet._snippet = snippetInjectionHelper.webSnippet.replace("INSTRUMENTATION_KEY", iKey);
         }
         if (this._isEnabled && !this._isInitialized && this._isIkeyValid) {
+            if (this._statsbeat) {
+                this._statsbeat.addFeature(Constants.StatsbeatFeature.WEB_SNIPPET);
+            }
             this._initialize();
+        } else if (!this._isEnabled) {
+            if (this._statsbeat) {
+                this._statsbeat.removeFeature(Constants.StatsbeatFeature.WEB_SNIPPET);
+            }
         }
     }
 

@@ -160,6 +160,7 @@ export enum StatsbeatFeature {
     NONE = 0,
     DISK_RETRY = 1,
     AAD_HANDLING = 2,
+    WEB_SNIPPET = 4,
 }
 
 export enum StatsbeatInstrumentation {
