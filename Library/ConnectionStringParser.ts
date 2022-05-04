@@ -41,7 +41,7 @@ class ConnectionStringParser {
         return result;
     }
 
-    public static isWebSnippetIkeyValid(iKey: string): boolean {
+    public static isIkeyValid(iKey: string): boolean {
         if (!iKey || iKey == "") return false;
         const UUID_Regex = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$";
         const regexp = new RegExp(UUID_Regex);

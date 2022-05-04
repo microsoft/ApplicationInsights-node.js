@@ -74,7 +74,7 @@ class WebSnippet {
     private _getWebSnippetIkey(connectionString: string) {
         const csCode = ConnectionStringParser.parse(connectionString);
         const iKeyCode = csCode.instrumentationkey || "";
-        if (!ConnectionStringParser.isWebSnippetIkeyValid(iKeyCode)) {
+        if (!ConnectionStringParser.isIkeyValid(iKeyCode)) {
             this._isIkeyValid = false;
             Logging.info("Invalid web snippet connection string, web snippet will not be injected.");
         }

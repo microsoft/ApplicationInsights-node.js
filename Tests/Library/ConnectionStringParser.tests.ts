@@ -91,7 +91,7 @@ describe("ConnectionStringParser", () => {
         });
     });
 
-    describe("#isWebSnippetIkeyValid(iKey)", () => {
+    describe("#isIkeyValid(iKey)", () => {
         it("should check if iKey is valid or not", () => {
             let testValidKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
             let testInvalidKey1 = "testKey";
@@ -100,12 +100,12 @@ describe("ConnectionStringParser", () => {
             let testInvalidKey4 = "";
             let testInvalidKey5 = undefined;
             
-            assert.equal(ConnectionStringParser.isWebSnippetIkeyValid(testValidKey), true, "should return true when iKey is valid");
-            assert.equal(ConnectionStringParser.isWebSnippetIkeyValid(testInvalidKey1), false, "should return false when iKey is invalid");
-            assert.equal(ConnectionStringParser.isWebSnippetIkeyValid(testInvalidKey2), false, "should return false when iKey is invalid");
-            assert.equal(ConnectionStringParser.isWebSnippetIkeyValid(testInvalidKey3), false, "should return false when iKey is invalid");
-            assert.equal(ConnectionStringParser.isWebSnippetIkeyValid(testInvalidKey4), false, "should return false when iKey is invalid");
-            assert.equal(ConnectionStringParser.isWebSnippetIkeyValid(testInvalidKey5), false, "should return false when iKey is invalid");
+            assert.equal(ConnectionStringParser.isIkeyValid(testValidKey), true, "should return true when iKey is valid");
+            assert.equal(ConnectionStringParser.isIkeyValid(testInvalidKey1), false, "should return false when iKey is invalid");
+            assert.equal(ConnectionStringParser.isIkeyValid(testInvalidKey2), false, "should return false when iKey is invalid");
+            assert.equal(ConnectionStringParser.isIkeyValid(testInvalidKey3), false, "should return false when iKey is invalid");
+            assert.equal(ConnectionStringParser.isIkeyValid(testInvalidKey4), false, "should return false when iKey is invalid");
+            assert.equal(ConnectionStringParser.isIkeyValid(testInvalidKey5), false, "should return false when iKey is invalid");
         });
     });
 });
