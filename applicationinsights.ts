@@ -72,7 +72,7 @@ function _getDefaultAutoCollectConfig() {
 
 let _diskRetryInterval: number = undefined;
 let _diskRetryMaxBytes: number = undefined;
-let _webSnippetinstrumentationKey: string = undefined;
+let _webSnippetConnectionString: string = undefined;
 
 let _console: AutoCollectConsole;
 let _exceptions: AutoCollectExceptions;
@@ -148,7 +148,7 @@ export function start() {
         _serverRequests.useAutoCorrelation(_isCorrelating, _forceClsHooked);
         _serverRequests.enable(_isRequests);
         _clientRequests.enable(_isDependencies);
-        _webSnippet.enable(_isSnippetInjection, _webSnippetinstrumentationKey);
+        _webSnippet.enable(_isSnippetInjection, _webSnippetConnectionString);
         if (liveMetricsClient && _isSendingLiveMetrics) {
             liveMetricsClient.enable(_isSendingLiveMetrics);
         }
@@ -321,11 +321,11 @@ export class Configuration {
      * @param value if true Web snippet will be tried to be injected in server response
      * @returns {Configuration} this class
      */
-    public static setWebSnippetInjection(value: boolean, WebSnippetinstrumentationKey?: string ) {
+    public static setWebSnippetInjection(value: boolean, WebSnippetConnectionString?: string ) {
         _isSnippetInjection = value;
-        _webSnippetinstrumentationKey = WebSnippetinstrumentationKey;
+        _webSnippetConnectionString = WebSnippetConnectionString;
         if (_isStarted) {
-            _webSnippet.enable(value, _webSnippetinstrumentationKey);
+            _webSnippet.enable(value, _webSnippetConnectionString);
         }
 
         return Configuration;

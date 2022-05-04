@@ -16,6 +16,7 @@ class WebSnippet {
     private static _aiDeprecatedUrl: string;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
+    private _isIkeyValid: boolean = true;
     
 
     constructor(client: TelemetryClient) {
@@ -28,8 +29,15 @@ class WebSnippet {
         WebSnippet._aiUrl = "https://js.monitor.azure.com/scripts/b/ai";
         WebSnippet._aiDeprecatedUrl = "https://az416426.vo.msecnd.net/scripts/b/ai";
 
+        let clientSnippetConnectionString = client.config.webSnippetConnectionString;
+        let defaultIkey = client.config.instrumentationKey;
+        if (!!clientSnippetConnectionString) {
+            let clientSnippetIkey = this._getWebSnippetIkey(client.config.webSnippetConnectionString);
+            defaultIkey = clientSnippetIkey;
+        }
+
         //TODO: quick fix for bundle error, remove this when npm is published
-        WebSnippet._snippet = snippetInjectionHelper.webSnippet.replace("INSTRUMENTATION_KEY", client.config.instrumentationKey);
+        WebSnippet._snippet = snippetInjectionHelper.webSnippet.replace("INSTRUMENTATION_KEY", defaultIkey);
 
         //TODO: replace the path with npm package exports
         //NOTE: should use the following part when npm is enabled
@@ -50,13 +58,11 @@ class WebSnippet {
 
     public enable(isEnabled: boolean, webSnippetConnectionString?: string ) {
         this._isEnabled = isEnabled;
-        
-        if (webSnippetConnectionString) {
+        if (!!webSnippetConnectionString) {
             let iKey = this._getWebSnippetIkey(webSnippetConnectionString);
             WebSnippet._snippet = snippetInjectionHelper.webSnippet.replace("INSTRUMENTATION_KEY", iKey);
         }
-        
-        if (this._isEnabled && !this._isInitialized) {
+        if (this._isEnabled && !this._isInitialized && this._isIkeyValid) {
             this._initialize();
         }
     }
@@ -69,7 +75,8 @@ class WebSnippet {
         const csCode = ConnectionStringParser.parse(connectionString);
         const iKeyCode = csCode.instrumentationkey || "";
         if (!snippetInjectionHelper.isWebSnippetIkeyValid(iKeyCode)) {
-            throw new Error("Invalid web snippet connection string");
+            this._isIkeyValid = false;
+            Logging.warn("Invalid web snippet connection string, web snippet will not be injected.");
         }
         return iKeyCode;
     }

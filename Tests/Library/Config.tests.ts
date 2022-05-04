@@ -152,7 +152,7 @@ describe("Library/Config", () => {
                 assert.equal(config.enableAutoWebSnippetInjection, true);
             });
 
-            it("should read webSnippetInstrumentationKey from environment variables", () => {
+            it("should read webSnippetConnectionString from environment variables", () => {
                 var env = <{ [id: string]: string }>{};
                 env["APPLICATIONINSIGHTS_WEB_SNIPPET_CONNECTION_STRING"] = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/";
                 process.env = env;
