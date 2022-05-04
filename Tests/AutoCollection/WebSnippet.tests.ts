@@ -5,14 +5,19 @@ import sinon = require("sinon");
 import AppInsights = require("../../applicationinsights");
 import WebSnippet = require("../../AutoCollection/WebSnippet");
 import SnippetInjectionHelper = require("../../Library/SnippetInjectionHelper");
-import TelemetryClient = require("../../Library/TelemetryClient");
 
 
 describe("AutoCollection/WebSnippet", () => {
+    var sandbox: sinon.SinonSandbox;
  
     afterEach(() => {
         AppInsights.dispose();
+        sandbox.restore();
     });
+
+    beforeEach(() =>{
+        sandbox = sinon.sandbox.create();
+    })
 
     describe("#init and #dispose()", () => {
         it("init should enable and dispose should stop injection", () => {
@@ -147,5 +152,42 @@ describe("AutoCollection/WebSnippet", () => {
             assert.ok(Number(response.getHeader("Content-Length")) > originalBufferSize); // Content length updated
         });
     });
+
+    describe("#web snippet replace correct connection string from config", () => {
+        it("injection should use correct connection string from config", () => {
+            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setWebSnippetInjection(true,"InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+            let webSnippet = WebSnippet.INSTANCE;
+            webSnippet.enable(true, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+            assert.equal(webSnippet["_isIkeyValid"], true,"ikey should be set to valid");
+            let _headers: any = {};
+            let response: http.ServerResponse = <any>{
+                setHeader: (header: string, value: string) => {
+                    _headers[header] = value;
+                },
+                getHeader: (header: string) => { return _headers[header]; },
+                removeHeader: (header: string) => { _headers[header] = undefined; }
+            };
+            response.setHeader("Content-Type", "text/html");
+            response.statusCode = 200;
+            let validHtml = "<html><head></head><body></body></html>";
+            assert.equal(webSnippet.ValidateInjection(response, validHtml), true); 
+            let newHtml = webSnippet.InjectWebSnippet(response, validHtml).toString();
+            assert.ok(newHtml.indexOf("https://js.monitor.azure.com/scripts/b/ai.2.min.js") >= 0);
+            assert.ok(newHtml.indexOf("<html><head>") == 0);
+            assert.ok(newHtml.indexOf('instrumentationKey: "1aa11111-bbbb-1ccc-8ddd-eeeeffff3330"') >= 0);
+        });
+    });
+
+    describe("#web snippet enable should throw errors when ikey from config is not valid", () => {
+        it("injection should throw errors when ikey from config is not valid", () => {
+            var infoStub = sandbox.stub(console, "info");
+            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setWebSnippetInjection(true,"InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeff;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+            let webSnippet = WebSnippet.INSTANCE;
+            webSnippet.enable(true, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeff;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+            assert.equal(webSnippet["_isIkeyValid"], false,"ikey should be set to invalid");
+            assert.ok(infoStub.calledOn, "invalid key warning was raised");
+        });
+    });
+
 
 });

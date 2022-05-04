@@ -138,7 +138,11 @@ export interface IBaseConfig {
      * Enable web snippet auto html injection, default to false
      */
      enableAutoWebSnippetInjection: boolean;
-    
+    /**
+     * Application Insights resource connection string for web snippet
+     * Note: if no valid connection string is provided here, web snippet will use the connection string during initializing Nodejs SDK
+     */
+    webSnippetConnectionString?: string;
 }
 
 export interface IEnvironmentConfig {

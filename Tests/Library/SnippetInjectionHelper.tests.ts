@@ -3,7 +3,6 @@ import http = require("http");
 import sinon = require("sinon");
 import snippetInjectionHelper = require("../../Library/SnippetInjectionHelper");
 
-import AppInsights = require("../../applicationinsights");
 import WebSnippet = require("../../AutoCollection/WebSnippet");
 
 const testStr = "ZKrIVPWptS13MH4my8kbkjWHF5BoNUIfvzfvt6LSE3qg1GoMOZ9bgNJcdcUXDc3l3jyCP9WIK2Z002rqBCn24cfwYjXLmq6kOO6SVFIFhQqNUwrmpA5";

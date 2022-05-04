@@ -5,6 +5,7 @@ import zlib = require("zlib");
 import Logging = require("../Library/Logging");
 import TelemetryClient = require("../Library/TelemetryClient");
 import snippetInjectionHelper = require("../Library/SnippetInjectionHelper");
+import ConnectionStringParser = require("../Library/ConnectionStringParser");
 
 class WebSnippet {
 
@@ -15,6 +16,7 @@ class WebSnippet {
     private static _aiDeprecatedUrl: string;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
+    private _isIkeyValid: boolean = true;
     
 
     constructor(client: TelemetryClient) {
@@ -27,8 +29,15 @@ class WebSnippet {
         WebSnippet._aiUrl = "https://js.monitor.azure.com/scripts/b/ai";
         WebSnippet._aiDeprecatedUrl = "https://az416426.vo.msecnd.net/scripts/b/ai";
 
+        let clientSnippetConnectionString = client.config.webSnippetConnectionString;
+        let defaultIkey = client.config.instrumentationKey;
+        if (!!clientSnippetConnectionString) {
+            let clientSnippetIkey = this._getWebSnippetIkey(client.config.webSnippetConnectionString);
+            defaultIkey = clientSnippetIkey;
+        }
+
         //TODO: quick fix for bundle error, remove this when npm is published
-        WebSnippet._snippet = snippetInjectionHelper.webSnippet.replace("INSTRUMENTATION_KEY", client.config.instrumentationKey);
+        WebSnippet._snippet = snippetInjectionHelper.webSnippet.replace("INSTRUMENTATION_KEY", defaultIkey);
 
         //TODO: replace the path with npm package exports
         //NOTE: should use the following part when npm is enabled
@@ -47,16 +56,29 @@ class WebSnippet {
       
     }
 
-    public enable(isEnabled: boolean) {
+    public enable(isEnabled: boolean, webSnippetConnectionString?: string ) {
         this._isEnabled = isEnabled;
-
-        if (this._isEnabled && !this._isInitialized) {
+        if (!!webSnippetConnectionString) {
+            let iKey = this._getWebSnippetIkey(webSnippetConnectionString);
+            WebSnippet._snippet = snippetInjectionHelper.webSnippet.replace("INSTRUMENTATION_KEY", iKey);
+        }
+        if (this._isEnabled && !this._isInitialized && this._isIkeyValid) {
             this._initialize();
         }
     }
 
     public isInitialized() {
         return this._isInitialized;
+    }
+
+    private _getWebSnippetIkey(connectionString: string) {
+        const csCode = ConnectionStringParser.parse(connectionString);
+        const iKeyCode = csCode.instrumentationkey || "";
+        if (!ConnectionStringParser.isIkeyValid(iKeyCode)) {
+            this._isIkeyValid = false;
+            Logging.info("Invalid web snippet connection string, web snippet will not be injected.");
+        }
+        return iKeyCode;
     }
 
     private _initialize() {

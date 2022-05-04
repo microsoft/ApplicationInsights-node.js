@@ -90,4 +90,22 @@ describe("ConnectionStringParser", () => {
             });
         });
     });
+
+    describe("#isIkeyValid(iKey)", () => {
+        it("should check if iKey is valid or not", () => {
+            let testValidKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
+            let testInvalidKey1 = "testKey";
+            let testInvalidKey2 = "1aa11111-bbbb-1ccc-8ddd-eeeeffff";
+            let testInvalidKey3 = "1aa11111bbbb-1ccc-8ddd-eeeeffff3333";
+            let testInvalidKey4 = "";
+            let testInvalidKey5 = undefined;
+            
+            assert.equal(ConnectionStringParser.isIkeyValid(testValidKey), true, "should return true when iKey is valid");
+            assert.equal(ConnectionStringParser.isIkeyValid(testInvalidKey1), false, "should return false when iKey is invalid");
+            assert.equal(ConnectionStringParser.isIkeyValid(testInvalidKey2), false, "should return false when iKey is invalid");
+            assert.equal(ConnectionStringParser.isIkeyValid(testInvalidKey3), false, "should return false when iKey is invalid");
+            assert.equal(ConnectionStringParser.isIkeyValid(testInvalidKey4), false, "should return false when iKey is invalid");
+            assert.equal(ConnectionStringParser.isIkeyValid(testInvalidKey5), false, "should return false when iKey is invalid");
+        });
+    });
 });
