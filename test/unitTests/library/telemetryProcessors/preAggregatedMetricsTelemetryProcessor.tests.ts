@@ -1,15 +1,14 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
-import { preAggregatedMetricsTelemetryProcessor } from "../../../../src/library/TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor";
-import { AutoCollectPreAggregatedMetrics } from "../../../../src/autoCollection/preAggregatedMetrics";
-import { Contracts, TelemetryClient } from "../../../../src/applicationinsights";
+import { preAggregatedMetricsTelemetryProcessor } from "../../../../src/library/telemetryProcessors/preAggregatedMetricsTelemetryProcessor";
+import { TelemetryClient } from "../../../../src/applicationinsights";
 import {
     TelemetryItem as Envelope,
     TelemetryExceptionData,
     MessageData,
     RemoteDependencyData,
     RequestData,
-} from "../../../../src/Declarations/Generated";
+} from "../../../../src/declarations/generated";
 
 describe("TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor", () => {
     var sandbox: sinon.SinonSandbox;
