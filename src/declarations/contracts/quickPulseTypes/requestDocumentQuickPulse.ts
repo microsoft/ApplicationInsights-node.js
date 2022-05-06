@@ -1,4 +1,4 @@
-import { DocumentQuickPulse } from "./DocumentQuickPulse";
+import { DocumentQuickPulse } from "./documentQuickPulse";
 
 export interface RequestDocumentQuickPulse extends DocumentQuickPulse {
     Name: string;

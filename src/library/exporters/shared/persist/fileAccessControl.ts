@@ -47,7 +47,7 @@ export class FileAccessControl {
                     // Ignore error
                 }
                 if (!this.osProvidesFileProtection) {
-                    Logger.warn(
+                    Logger.getInstance().warn(
                         this._TAG,
                         "Could not find ICACLS in expected location! This is necessary to use disk retry mode on Windows."
                     );

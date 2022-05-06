@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { diag } from "@opentelemetry/api";
+import { Logger } from "../logging";
 import { ConnectionString, ConnectionStringKey } from "../../declarations/contracts";
 import * as Constants from "../../declarations/constants";
 
@@ -29,7 +29,7 @@ export class ConnectionStringParser {
                 const value = kvParts[1];
                 return { ...fields, [key]: value };
             }
-            diag.error(
+            Logger.getInstance().error(
                 `Connection string key-value pair is invalid: ${kv}`,
                 `Entire connection string will be discarded`,
                 connectionString
@@ -58,12 +58,12 @@ export class ConnectionStringParser {
                 ? this._sanitizeUrl(result.liveendpoint)
                 : Constants.DEFAULT_LIVEMETRICS_ENDPOINT;
             if (result.authorization && result.authorization.toLowerCase() !== "ikey") {
-                diag.warn(
+                Logger.getInstance().warn(
                     `Connection String contains an unsupported 'Authorization' value: ${result.authorization!}. Defaulting to 'Authorization=ikey'. Instrumentation Key ${result.instrumentationkey!}`
                 );
             }
         } else {
-            diag.error(
+            Logger.getInstance().error(
                 "An invalid connection string was passed in. There may be telemetry loss",
                 connectionString
             );

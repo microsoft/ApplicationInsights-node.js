@@ -1,4 +1,4 @@
-import { TelemetryItem as Envelope, MetricsData } from "../../declarations/generated";
+import { TelemetryItem as Envelope } from "../../declarations/generated";
 import { ICorrelationContext } from "../../declarations/interfaces";
 
 /**
@@ -17,7 +17,7 @@ export function samplingTelemetryProcessor(
         samplingPercentage >= 100
     ) {
         return true;
-    } else if (envelope.data && envelope.data.baseType == "MetricsData") {
+    } else if (envelope.data && envelope.data.baseType == "MetricData") {
         // Exclude MetricData telemetry from sampling
         return true;
     } else if (contextObjects.correlationContext && contextObjects.correlationContext.operation) {

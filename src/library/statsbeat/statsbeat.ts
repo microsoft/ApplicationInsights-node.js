@@ -173,7 +173,7 @@ export class Statsbeat {
             this._trackRequestsCount(networkProperties);
             await this._sendStatsbeats();
         } catch (error) {
-            Logger.info(
+            Logger.getInstance().info(
                 this._TAG,
                 "Failed to send Statsbeat metrics: " + Util.getInstance().dumpObj(error)
             );
@@ -232,7 +232,7 @@ export class Statsbeat {
             }
             await this._sendStatsbeats();
         } catch (error) {
-            Logger.info(
+            Logger.getInstance().info(
                 this._TAG,
                 "Failed to send Statsbeat metrics: " + Util.getInstance().dumpObj(error)
             );

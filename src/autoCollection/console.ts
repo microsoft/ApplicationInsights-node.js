@@ -1,4 +1,4 @@
-import { LogHandler } from "../Library/Handlers/LogHandler";
+import { LogHandler } from "../library/handlers";
 import * as DiagChannel from "./diagnostic-channel/initialization";
 
 export class AutoCollectConsole {

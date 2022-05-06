@@ -182,7 +182,7 @@ export class QuickPulseEnvelopeFactory {
         } else {
             // Remark: This should never be hit because createQuickPulseDocument is only called within
             // valid baseType values
-            Logger.warn(
+            Logger.getInstance().warn(
                 "Document type invalid; not sending live metric document",
                 envelope.data.baseType
             );

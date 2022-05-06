@@ -16,11 +16,11 @@
         "src/bootstrap/*.ts",
         "*.ts",
         "src/autoCollection/diagnostic-channel/*.ts",
-        "tests/**/*.ts"
+        "test/**/*.ts"
 , "src/applicationinsights.ts"    ],
     "exclude": [
         "node_modules",
-        "tests/functionalTests",
-        "tests/backCompatibility"
+        "test/functionalTests",
+        "test/backCompatibility"
     ]
 }

@@ -207,7 +207,7 @@ export class TelemetryClient {
                 }
             } catch (error) {
                 accepted = true;
-                Logger.warn(
+                Logger.getInstance().warn(
                     this._TAG,
                     "One of telemetry processors failed, telemetry item will be sent.",
                     error,

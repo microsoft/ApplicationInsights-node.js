@@ -1,5 +1,5 @@
 import * as TelemetryType from "../../declarations/contracts";
-import { TelemetryItem as Envelope } from "../../declarations/Generated";
+import { TelemetryItem as Envelope } from "../../declarations/generated";
 import { TelemetryClient } from "../../library";
 
 export function performanceMetricsTelemetryProcessor(

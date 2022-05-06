@@ -82,7 +82,7 @@ export class JsonConfig implements IJsonConfig {
 
     private _loadJsonFile() {
         let configFileName = "applicationinsights.json";
-        let rootPath = path.join(__dirname, "../../../"); // Root of applicationinsights folder (__dirname = ../out/Library)
+        let rootPath = path.join(__dirname, "../../../../"); // Root of applicationinsights folder (__dirname = ../out)
         let tempDir = path.join(rootPath, configFileName); // default
         let configFile = process.env[ENV_CONFIGURATION_FILE];
         if (configFile) {
@@ -156,7 +156,7 @@ export class JsonConfig implements IJsonConfig {
             this.enableSendLiveMetrics = jsonConfig.enableSendLiveMetrics;
             this.quickPulseHost = jsonConfig.quickPulseHost;
         } catch (err) {
-            Logger.info("Missing or invalid JSON config file: ", err);
+            Logger.getInstance().info("Missing or invalid JSON config file: ", err);
         }
     }
 }

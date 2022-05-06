@@ -79,7 +79,7 @@ export class TraceHandler {
     }
 
     public addInstrumentation(instrumentation: Instrumentation) {
-        this._instrumentations.push(instrumentation);
+        //this._instrumentations.push(instrumentation);
     }
 
     public registerInstrumentations() {
@@ -141,7 +141,7 @@ export class TraceHandler {
             } catch (error) {
                 // set target as null to be compliant with previous behavior
                 telemetry.target = null;
-                Logger.warn(this.constructor.name, "Failed to create URL.", error);
+                Logger.getInstance().warn(this.constructor.name, "Failed to create URL.", error);
             }
         }
         const ctx = context.active();

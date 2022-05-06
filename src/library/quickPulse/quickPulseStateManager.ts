@@ -182,14 +182,14 @@ export class QuickPulseStateManager {
     ): void {
         if (shouldPOST != undefined) {
             if (this._isCollectingData !== shouldPOST) {
-                Logger.info("Live Metrics sending data", shouldPOST);
+                Logger.getInstance().info("Live Metrics sending data", shouldPOST);
                 this.enableCollectors(shouldPOST);
             }
             this._isCollectingData = shouldPOST;
 
             if (redirectedHost && redirectedHost.length > 0) {
                 this._redirectedHost = redirectedHost;
-                Logger.info("Redirecting endpoint to: ", redirectedHost);
+                Logger.getInstance().info("Redirecting endpoint to: ", redirectedHost);
             }
 
             if (pollingIntervalHint && pollingIntervalHint > 0) {

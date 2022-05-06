@@ -1,4 +1,4 @@
-import { DocumentQuickPulse } from "./DocumentQuickPulse";
+import { DocumentQuickPulse } from "./documentQuickPulse";
 import { MetricQuickPulse } from "./metricQuickPulse";
 
 export interface EnvelopeQuickPulse {

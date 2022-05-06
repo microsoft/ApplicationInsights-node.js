@@ -1,20 +1,46 @@
-import { InternalAzureLogger } from "./InternalAzureLogger";
+import { InternalAzureLogger } from "./internalAzureLogger";
 
 export class Logger {
-    public static enableDebug = false;
-    public static disableWarnings = false;
+    public enableDebug = false;
+    public enableInfo = false;
+    public disableWarnings = false;
+    public disableErrors = false;
+    private static _instance: Logger;
 
-    private static TAG = "ApplicationInsights:";
+    private _TAG = "ApplicationInsights:";
 
-    public static info(message?: any, ...optionalParams: any[]) {
+    constructor() {
+
+    }
+
+    public static getInstance() {
+        if (!Logger._instance) {
+            Logger._instance = new Logger();
+        }
+        return Logger._instance;
+    }
+
+    public debug(message?: any, ...optionalParams: any[]) {
         if (this.enableDebug) {
-            InternalAzureLogger.getInstance().info(this.TAG + message, optionalParams);
+            InternalAzureLogger.getInstance().debug(this._TAG + message, optionalParams);
         }
     }
 
-    public static warn(message?: any, ...optionalParams: any[]) {
+    public info(message?: any, ...optionalParams: any[]) {
+        if (this.enableInfo) {
+            InternalAzureLogger.getInstance().info(this._TAG + message, optionalParams);
+        }
+    }
+
+    public warn(message?: any, ...optionalParams: any[]) {
         if (!this.disableWarnings) {
-            InternalAzureLogger.getInstance().warning(this.TAG + message, optionalParams);
+            InternalAzureLogger.getInstance().warning(this._TAG + message, optionalParams);
+        }
+    }
+
+    public error(message?: any, ...optionalParams: any[]) {
+        if (!this.disableErrors) {
+            InternalAzureLogger.getInstance().error(this._TAG + message, optionalParams);
         }
     }
 }
