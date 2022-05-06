@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import { createSandbox, SinonSpy } from "sinon";
+import { createSandbox, SinonStub } from "sinon";
 import { DiagnosticLogger } from "../../../src/bootstrap/diagnosticLogger";
 import * as DataModel from "../../../src/bootstrap/dataModel";
 import * as Helpers from "../../../src/bootstrap/helpers";
@@ -19,7 +19,7 @@ class LoggerSpy implements DataModel.AgentLogger {
 }
 
 describe("#setupAndStart()", () => {
-    let startSpy: SinonSpy = null;
+    let startStub: SinonStub = null;
     let sandbox: sinon.SinonSandbox;
 
     before(() => {
@@ -27,12 +27,12 @@ describe("#setupAndStart()", () => {
     });
 
     beforeEach(() => {
-        startSpy = sandbox.spy(appInsights, "start");
+        startStub = sandbox.stub(appInsights, "start");
     });
 
     afterEach(() => {
         sandbox.restore();
-        delete require.cache[require.resolve("../../../Bootstrap/Default")];
+        delete require.cache[require.resolve("../../../src/bootstrap/default")];
     });
 
     it("should return the client if started multiple times", () => {
@@ -42,7 +42,7 @@ describe("#setupAndStart()", () => {
         sandbox.stub(Helpers, "sdkAlreadyExists").callsFake(() => false);
 
         // Test
-        const Default = require("../../../Bootstrap/Default") as typeof DefaultTypes;
+        const Default = require("../../../src/bootstrap/default") as typeof DefaultTypes;
         Default.setLogger(new DiagnosticLogger(logger));
         const instance1 = Default.setupAndStart("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
         assert.ok(instance1.defaultClient);
@@ -63,7 +63,7 @@ describe("#setupAndStart()", () => {
         sandbox.stub(Helpers, "sdkAlreadyExists").callsFake(() => false);
 
         // Test
-        const Default = require("../../../Bootstrap/Default") as typeof DefaultTypes;
+        const Default = require("../../../src/bootstrap/default") as typeof DefaultTypes;
         Default.setLogger(new DiagnosticLogger(logger));
         const instance = Default.setupAndStart("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
         assert.deepEqual(instance, appInsights);
@@ -73,7 +73,7 @@ describe("#setupAndStart()", () => {
         process.env.ApplicationInsightsAgent_EXTENSION_VERSION = origEnv;
 
         // start was called once
-        assert.equal(startSpy.callCount, 1);
+        assert.equal(startStub.callCount, 1);
 
         // No Logger was done
         assert.equal(logger.logCount, 1);
@@ -92,7 +92,7 @@ describe("#setupAndStart()", () => {
         sandbox.stub(Helpers, "sdkAlreadyExists").callsFake(() => false);
 
         // Test
-        const Default = require("../../../Bootstrap/Default") as typeof DefaultTypes;
+        const Default = require("../../../src/bootstrap/default") as typeof DefaultTypes;
         Default.setLogger(new DiagnosticLogger(logger));
         const instance = Default.setupAndStart();
         assert.equal(instance, null);
@@ -101,7 +101,7 @@ describe("#setupAndStart()", () => {
         process.env.ApplicationInsightsAgent_EXTENSION_VERSION = origEnv;
 
         // start was never called
-        assert.equal(startSpy.callCount, 0);
+        assert.equal(startStub.callCount, 0);
 
         // No Logger was done
         assert.equal(logger.logCount, 0);

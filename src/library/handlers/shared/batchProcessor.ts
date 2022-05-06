@@ -37,7 +37,7 @@ export class BatchProcessor {
         }
         // validate input
         if (!envelope) {
-            Logger.warn("Cannot send null/undefined telemetry");
+            Logger.getInstance().warn("Cannot send null/undefined telemetry");
             return;
         }
         // enqueue the payload
@@ -53,6 +53,7 @@ export class BatchProcessor {
                 this._timeoutHandle = null;
                 this.triggerSend(false);
             }, this._getBatchIntervalMs());
+            this._timeoutHandle.unref();
         }
     }
 
@@ -71,7 +72,7 @@ export class BatchProcessor {
                 }
             } else {
                 try {
-                    //await this._exporter.export(this._buffer);
+                    await this._exporter.export(this._buffer);
                 } catch (error) {
                     return "Failed to export envelopes";
                 }

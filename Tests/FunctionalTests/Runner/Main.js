@@ -22,12 +22,12 @@ const skipAsyncHooksTests = () => {
 const runTestSequence = (index) => {
     const testIndex = index || 0;
     if (testIndex == 0) {
-        Utils.Logger.enterSubunit("Triggering runs for each test sequence");
+        Utils.Logger.getInstance().enterSubunit("Triggering runs for each test sequence");
     }
     if (TestSequence.length == testIndex) {
         const waitTime = Config.WaitTime;
-        Utils.Logger.exitSubunit();
-        Utils.Logger.info("Waiting " + waitTime + "ms for telemetry...");
+        Utils.Logger.getInstance().exitSubunit();
+        Utils.Logger.getInstance().info("Waiting " + waitTime + "ms for telemetry...");
         return new Promise((resolve, reject) => setTimeout(resolve, waitTime));
     } else if (skipAsyncHooksTests() && TestSequence[testIndex].path.indexOf("/~") === 0) {
         console.log("Skipping test for", TestSequence[testIndex].path)
@@ -43,10 +43,10 @@ const runTestSequence = (index) => {
 const validateTestSequence = (index) => {
     const testIndex = index || 0;
     if (testIndex == 0) {
-        Utils.Logger.enterSubunit("Validating telemetry reported for all steps of each test sequence");
+        Utils.Logger.getInstance().enterSubunit("Validating telemetry reported for all steps of each test sequence");
     }
     if (TestSequence.length == testIndex) {
-       Utils.Logger.exitSubunit();
+       Utils.Logger.getInstance().exitSubunit();
        return Promise.resolve(true);
     } else if (skipAsyncHooksTests() && TestSequence[testIndex].path.indexOf("/~") === 0) {
         console.log("Skipping validation for", TestSequence[testIndex].path)
@@ -65,7 +65,7 @@ const validateTestSequence = (index) => {
     }
 };
 const runAndValidateLongTest = () => {
-    Utils.Logger.enterSubunit("Performing parallel requests test sequence for " + Config.StressTestTime + "ms");
+    Utils.Logger.getInstance().enterSubunit("Performing parallel requests test sequence for " + Config.StressTestTime + "ms");
 
     // Find stress test
     let testSequence = null;
@@ -79,12 +79,12 @@ const runAndValidateLongTest = () => {
 
     // Don't continue if we don't have one
     if (!testSequence) {
-        Utils.Logger.info("No parallel test sequence defined. Skipping.");
-        Utils.Logger.exitSubunit();
+        Utils.Logger.getInstance().info("No parallel test sequence defined. Skipping.");
+        Utils.Logger.getInstance().exitSubunit();
         return Promise.resolve(false);
     } else if (!successfulRun) {
-        Utils.Logger.info("Standard tests failed. Skipping.");
-        Utils.Logger.exitSubunit();
+        Utils.Logger.getInstance().info("Standard tests failed. Skipping.");
+        Utils.Logger.getInstance().exitSubunit();
         return Promise.resolve(false);
     }
 
@@ -103,7 +103,7 @@ const runAndValidateLongTest = () => {
 
     const waitForTelemetry = () => {
         const waitTime = Config.WaitTime;
-        Utils.Logger.info("Waiting " + waitTime + "ms for telemetry...");
+        Utils.Logger.getInstance().info("Waiting " + waitTime + "ms for telemetry...");
         return new Promise((resolve, reject) => setTimeout(resolve, waitTime));
     }
 
@@ -118,7 +118,7 @@ const runAndValidateLongTest = () => {
             return Promise.resolve(false);
         }
     }).then(waitForTelemetry).then(()=>{
-        Utils.Logger.enterSubunit("Expecting " + attemptCounter + " requests and all associated nested telemetry");
+        Utils.Logger.getInstance().enterSubunit("Expecting " + attemptCounter + " requests and all associated nested telemetry");
 
         // Get all request item operation ids
         const stressTelemetry = Ingestion.telemetry["RequestData"].filter((v) => {
@@ -128,22 +128,22 @@ const runAndValidateLongTest = () => {
 
         // Validate number of operations
         if (distinctOpIds.length != attemptCounter) {
-            Utils.Logger.error("FAILED EXPECTATION - " + distinctOpIds.length + " distinct operations instead of " + attemptCounter + "!");
+            Utils.Logger.getInstance().error("FAILED EXPECTATION - " + distinctOpIds.length + " distinct operations instead of " + attemptCounter + "!");
             successfulRun = false;
-            Utils.Logger.exitSubunit();
-            Utils.Logger.exitSubunit();
+            Utils.Logger.getInstance().exitSubunit();
+            Utils.Logger.getInstance().exitSubunit();
             return Promise.resolve(false);
         }
 
         const validationLoop = (i) => {
             if (i >= distinctOpIds.length) {
-                Utils.Logger.success("Test PASSED!");
+                Utils.Logger.getInstance().success("Test PASSED!");
                 return true;
             }
             return Ingestion.testValidator.validateTest(testSequence, distinctOpIds[i], true).then(res => {
                 if (!res) {
                     successfulRun = false;
-                    Utils.Logger.error("Test FAILED on item "+i+"!");
+                    Utils.Logger.getInstance().error("Test FAILED on item "+i+"!");
                     return false;
                 } else {
                     return validationLoop(i + 1);
@@ -152,8 +152,8 @@ const runAndValidateLongTest = () => {
         }
 
         return validationLoop(0).then(()=>{
-            Utils.Logger.exitSubunit();
-            Utils.Logger.exitSubunit();
+            Utils.Logger.getInstance().exitSubunit();
+            Utils.Logger.getInstance().exitSubunit();
         });
     });
 }
@@ -201,18 +201,18 @@ if (!perfMode) {
         .then(AppConnector.closeConnection)
         .then(() => {
             Ingestion.disable();
-            Utils.Logger.info("Test run done!");
+            Utils.Logger.getInstance().info("Test run done!");
 
             if (successfulRun) {
-                Utils.Logger.success("All tests PASSED!");
+                Utils.Logger.getInstance().success("All tests PASSED!");
             } else {
-                Utils.Logger.error("At least one test FAILED!");
+                Utils.Logger.getInstance().error("At least one test FAILED!");
             }
             process.exit(successfulRun ? 0: 1);
         })
         .catch((e) => {
-            Utils.Logger.error("Error thrown!");
-            Utils.Logger.error(e.stack || e);
+            Utils.Logger.getInstance().error("Error thrown!");
+            Utils.Logger.getInstance().error(e.stack || e);
             process.exit(1);
         });
 } else {
@@ -222,8 +222,8 @@ if (!perfMode) {
         let newCPU = getCPU();
         let idleDifference = newCPU.idle - lastCPU.idle;
         let totalDifference = newCPU.total - lastCPU.total;
-        Utils.Logger.info("Telemetry Items: " + Ingestion.telemetryCount);
-        Utils.Logger.info("CPU Usage: " + (100 - ~~(100 * idleDifference / totalDifference)) + "%");
+        Utils.Logger.getInstance().info("Telemetry Items: " + Ingestion.telemetryCount);
+        Utils.Logger.getInstance().info("CPU Usage: " + (100 - ~~(100 * idleDifference / totalDifference)) + "%");
         lastCPU = newCPU;
     }, 30 * 1000);
 }

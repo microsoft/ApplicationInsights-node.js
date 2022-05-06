@@ -47,7 +47,7 @@ export class FileSystemPersist implements IPersistentStorage {
 
         if (!this._fileAccessControl.osProvidesFileProtection) {
             this._enabled = false;
-            Logger.warn(
+            Logger.getInstance().warn(
                 this._TAG,
                 "Sufficient file protection capabilities were not detected. Files will not be persisted"
             );
@@ -55,7 +55,7 @@ export class FileSystemPersist implements IPersistentStorage {
         this._options = { ...DEFAULT_EXPORTER_CONFIG, ...options };
         if (!this._options.instrumentationKey) {
             this._enabled = false;
-            Logger.warn(
+            Logger.getInstance().warn(
                 this._TAG,
                 "No instrumentation key was provided to FileSystemPersister. Files will not be persisted"
             );
@@ -77,21 +77,21 @@ export class FileSystemPersist implements IPersistentStorage {
 
     public push(value: unknown[]): Promise<boolean> {
         if (this._enabled) {
-            Logger.info(this._TAG, "Pushing value to persistent storage", value.toString());
+            Logger.getInstance().info(this._TAG, "Pushing value to persistent storage", value.toString());
             return this._storeToDisk(JSON.stringify(value));
         }
     }
 
     public async shift(): Promise<unknown> {
         if (this._enabled) {
-            Logger.info(this._TAG, "Searching for filesystem persisted files");
+            Logger.getInstance().info(this._TAG, "Searching for filesystem persisted files");
             try {
                 const buffer = await this._getFirstFileOnDisk();
                 if (buffer) {
                     return JSON.parse(buffer.toString("utf8"));
                 }
             } catch (e) {
-                Logger.info(this._TAG, "Failed to read persisted file", e);
+                Logger.getInstance().info(this._TAG, "Failed to read persisted file", e);
             }
             return null;
         }
@@ -133,7 +133,7 @@ export class FileSystemPersist implements IPersistentStorage {
         try {
             await confirmDirExists(this._tempDirectory);
         } catch (error) {
-            Logger.warn(
+            Logger.getInstance().warn(
                 this._TAG,
                 `Error while checking/creating directory: `,
                 error && error.message
@@ -144,7 +144,7 @@ export class FileSystemPersist implements IPersistentStorage {
         try {
             await this._fileAccessControl.applyACLRules(this._tempDirectory);
         } catch (ex) {
-            Logger.warn(
+            Logger.getInstance().warn(
                 this._TAG,
                 "Failed to apply file access control to folder: " + (ex && ex.message)
             );
@@ -154,14 +154,14 @@ export class FileSystemPersist implements IPersistentStorage {
         try {
             const size = await getShallowDirectorySize(this._tempDirectory);
             if (size > this.maxBytesOnDisk) {
-                Logger.warn(
+                Logger.getInstance().warn(
                     this._TAG,
                     `Not saving data due to max size limit being met. Directory size in bytes is: ${size}`
                 );
                 return false;
             }
         } catch (error) {
-            Logger.warn(
+            Logger.getInstance().warn(
                 this._TAG,
                 `Error while checking size of persistence directory: `,
                 error && error.message
@@ -174,11 +174,11 @@ export class FileSystemPersist implements IPersistentStorage {
 
         // Mode 600 is w/r for creator and no read access for others (only applies on *nix)
         // For Windows, ACL rules are applied to the entire directory (see logic in FileAccessControl)
-        Logger.info(this._TAG, `saving data to disk at: ${fileFullPath}`);
+        Logger.getInstance().info(this._TAG, `saving data to disk at: ${fileFullPath}`);
         try {
             await writeFileAsync(fileFullPath, payload, { mode: 0o600 });
         } catch (writeError) {
-            Logger.warn(this._TAG, `Error writing file to persistent file storage`, writeError);
+            Logger.getInstance().warn(this._TAG, `Error writing file to persistent file storage`, writeError);
             return false;
         }
         return true;
@@ -210,7 +210,7 @@ export class FileSystemPersist implements IPersistentStorage {
             }
             return false;
         } catch (error) {
-            Logger.info(
+            Logger.getInstance().info(
                 this._TAG,
                 `Failed cleanup of persistent file storage expired files`,
                 error

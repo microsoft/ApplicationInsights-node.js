@@ -159,7 +159,7 @@ export class Util {
      */
     public validateStringMap(obj: any): { [key: string]: string } {
         if (typeof obj !== "object") {
-            Logger.info("Invalid properties dropped from payload");
+            Logger.getInstance().info("Invalid properties dropped from payload");
             return;
         }
         const map: { [key: string]: string } = {};
@@ -173,7 +173,7 @@ export class Util {
             } else if (origProperty === null || propType === "undefined") {
                 property = "";
             } else if (propType === "function") {
-                Logger.info("key: " + field + " was function; will not serialize");
+                Logger.getInstance().info("key: " + field + " was function; will not serialize");
                 continue;
             } else {
                 const stringTarget = this.isArray(origProperty)
@@ -188,7 +188,7 @@ export class Util {
                 } catch (e) {
                     property =
                         origProperty.constructor.name.toString() + " (Error: " + e.message + ")";
-                    Logger.info("key: " + field + ", could not be serialized");
+                    Logger.getInstance().info("key: " + field + ", could not be serialized");
                 }
             }
 
@@ -287,7 +287,7 @@ export class Util {
                     var proxyUrlParsed = new url.URL(proxyUrl);
                     // https is not supported at the moment
                     if (proxyUrlParsed.protocol === "https:") {
-                        Logger.info("Proxies that use HTTPS are not supported");
+                        Logger.getInstance().info("Proxies that use HTTPS are not supported");
                         proxyUrl = undefined;
                     } else {
                         options = {
@@ -302,7 +302,7 @@ export class Util {
                         };
                     }
                 } catch (err) {
-                    Logger.warn("Wrong proxy URL provided");
+                    Logger.getInstance().warn("Wrong proxy URL provided");
                 }
             }
         }
@@ -344,7 +344,7 @@ export class Util {
             try {
                 header = (correlationHeader as any).toString();
             } catch (err) {
-                Logger.warn(
+                Logger.getInstance().warn(
                     "Outgoing request-context header could not be read. Correlation of requests may be lost.",
                     err,
                     correlationHeader
@@ -363,7 +363,7 @@ export class Util {
     }
 
     /**
-     * Returns string representation of an object suitable for diagnostics Logger.
+     * Returns string representation of an object suitable for diagnostics Logger.getInstance().
      */
     public dumpObj(object: any): string {
         const objectTypeDump: string = Object["prototype"].toString.call(object);
@@ -388,7 +388,7 @@ export class Util {
         try {
             return JSON.stringify(payload);
         } catch (error) {
-            Logger.warn("Failed to serialize payload", error, payload);
+            Logger.getInstance().warn("Failed to serialize payload", error, payload);
         }
     }
 

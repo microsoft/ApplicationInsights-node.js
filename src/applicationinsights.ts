@@ -43,10 +43,10 @@ export function setup(setupString?: string) {
             Configuration.setDistributedTracingMode(defaultClient.config.distributedTracingMode);
         }
         if (defaultClient.config.enableInternalDebugLogger) {
-            Logger.enableDebug = defaultClient.config.enableInternalDebugLogger;
+            Logger.getInstance().enableDebug = defaultClient.config.enableInternalDebugLogger;
         }
         if (defaultClient.config.enableInternalWarningLogger) {
-            Logger.disableWarnings = !defaultClient.config.enableInternalWarningLogger;
+            Logger.getInstance().disableWarnings = !defaultClient.config.enableInternalWarningLogger;
         }
         if (defaultClient.config.enableSendLiveMetrics) {
             Configuration.setSendLiveMetrics(defaultClient.config.enableSendLiveMetrics);
@@ -56,7 +56,7 @@ export function setup(setupString?: string) {
         }
         Configuration.setUseDiskRetryCaching(_isDiskRetry, _diskRetryInterval, _diskRetryMaxBytes);
     } else {
-        Logger.info("The default client is already setup");
+        Logger.getInstance().info("The default client is already setup");
     }
     return Configuration;
 }
@@ -76,7 +76,7 @@ export function start() {
             liveMetricsClient.enable(_isSendingLiveMetrics);
         }
     } else {
-        Logger.warn("Start cannot be called before setup");
+        Logger.getInstance().warn("Start cannot be called before setup");
     }
 
     return Configuration;
@@ -296,8 +296,8 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setInternalLogger(enableDebugLogger = false, enableWarningLogger = true) {
-        Logger.enableDebug = enableDebugLogger;
-        Logger.disableWarnings = !enableWarningLogger;
+        Logger.getInstance().enableDebug = enableDebugLogger;
+        Logger.getInstance().disableWarnings = !enableWarningLogger;
         return Configuration;
     }
 
@@ -308,7 +308,7 @@ export class Configuration {
     public static setSendLiveMetrics(enable = false) {
         if (!defaultClient) {
             // Need a defaultClient so that we can add the QPS telemetry processor to it
-            Logger.warn("Live metrics client cannot be setup without the default client");
+            Logger.getInstance().warn("Live metrics client cannot be setup without the default client");
             return Configuration;
         }
 

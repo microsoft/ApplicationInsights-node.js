@@ -30,14 +30,14 @@ if (IsInitialized) {
     for (const mod in modules) {
         if (unpatchedModules.indexOf(mod) === -1) {
             modules[mod].enable();
-            Logger.info(TAG, `Subscribed to ${mod} events`);
+            Logger.getInstance().info(TAG, `Subscribed to ${mod} events`);
         }
     }
     if (unpatchedModules.length > 0) {
-        Logger.info(TAG, "Some modules will not be patched", unpatchedModules);
+        Logger.getInstance().info(TAG, "Some modules will not be patched", unpatchedModules);
     }
 } else {
-    Logger.info(
+    Logger.getInstance().info(
         TAG,
         "Not subscribing to dependency auto collection because APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL was set"
     );

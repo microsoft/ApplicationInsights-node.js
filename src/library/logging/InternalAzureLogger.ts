@@ -71,23 +71,64 @@ export class InternalAzureLogger {
         return InternalAzureLogger._instance;
     }
 
-    public info(message?: any, ...optionalParams: any[]) {
-        let args = message ? [message, ...optionalParams] : optionalParams;
-        if (this._logToFile) {
-            this._storeToDisk(args);
+    public async debug(message?: any, ...optionalParams: any[]): Promise<void> {
+        try {
+            let args = message ? [message, ...optionalParams] : optionalParams;
+            if (this._logToFile) {
+                await this._storeToDisk(args);
+            }
+            if (this._logToConsole) {
+                console.debug(...args);
+            }
         }
-        if (this._logToConsole) {
-            console.info(...args);
+        catch (err) {
+            console.log(this._TAG, "Failed to log debug to file: " + (err && err.message));
         }
     }
 
-    public warning(message?: any, ...optionalParams: any[]) {
-        let args = message ? [message, ...optionalParams] : optionalParams;
-        if (this._logToFile) {
-            this._storeToDisk(args);
+    public async info(message?: any, ...optionalParams: any[]): Promise<void> {
+        try {
+            let args = message ? [message, ...optionalParams] : optionalParams;
+            if (this._logToFile) {
+                await this._storeToDisk(args);
+            }
+            if (this._logToConsole) {
+                console.info(...args);
+            }
         }
-        if (this._logToConsole) {
-            console.warn(...args);
+        catch (err) {
+            console.log(this._TAG, "Failed to log info to file: " + (err && err.message));
+        }
+    }
+
+    public async warning(message?: any, ...optionalParams: any[]): Promise<void> {
+        try {
+            let args = message ? [message, ...optionalParams] : optionalParams;
+            if (this._logToFile) {
+                await this._storeToDisk(args);
+            }
+            if (this._logToConsole) {
+                console.warn(...args);
+            }
+        }
+        catch (err) {
+            console.log(this._TAG, "Failed to log warning to file: " + (err && err.message));
+        }
+
+    }
+
+    public async error(message?: any, ...optionalParams: any[]): Promise<void> {
+        try {
+            let args = message ? [message, ...optionalParams] : optionalParams;
+            if (this._logToFile) {
+                await this._storeToDisk(args);
+            }
+            if (this._logToConsole) {
+                console.error(...args);
+            }
+        }
+        catch (err) {
+            console.log(this._TAG, "Failed to log error to file: " + (err && err.message));
         }
     }
 
@@ -124,7 +165,7 @@ export class InternalAzureLogger {
                 await appendFileAsync(this._fileFullPath, data);
             }
         } catch (err) {
-            console.log(this._TAG, "Failed to create backup file: " + (err && err.message));
+            throw err;
         }
     }
 

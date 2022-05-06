@@ -1,8 +1,5 @@
 ﻿import * as assert from "assert";
 import * as sinon from "sinon";
-import * as http from "http";
-import * as https from "https";
-import * as url from "url";
 
 import { Util } from "../../../src/library/util";
 

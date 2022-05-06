@@ -27,6 +27,7 @@ describe("TelemetryProcessors/PreAggregatedMetricsTelemetryProcessor", () => {
             instrumentationKey: ikey,
             sampleRate: 100,
             time: new Date(),
+            tags: {}
         };
         client = new TelemetryClient(ikey);
     });

@@ -26,7 +26,7 @@ export class QuickPulseSender {
     private _TAG = "QuickPulseSender";
     private MAX_QPS_FAILURES_BEFORE_WARN = 25;
     private _config: Config;
-    private _authHandler: AuthorizationHandler;
+    private _getAuthorizationHandler: (config: Config) => AuthorizationHandler;
     private _consecutiveErrors: number;
 
     constructor(
@@ -35,9 +35,7 @@ export class QuickPulseSender {
     ) {
         this._config = config;
         this._consecutiveErrors = 0;
-        if (config.aadTokenCredential) {
-            this._authHandler = new AuthorizationHandler(config.aadTokenCredential);
-        }
+        this._getAuthorizationHandler = getAuthorizationHandler;
     }
 
     public ping(
@@ -112,13 +110,14 @@ export class QuickPulseSender {
         }
 
         if (postOrPing === "post") {
-            if (this._authHandler) {
+            let authHandler = this._getAuthorizationHandler ? this._getAuthorizationHandler(this._config) : null;
+            if (authHandler) {
                 try {
                     // Add bearer token
-                    await this._authHandler.addAuthorizationHeader(options);
+                    await authHandler.addAuthorizationHeader(options);
                 } catch (authError) {
                     let notice = "Failed to get AAD bearer token for the Application. Error:";
-                    Logger.info(this._TAG, notice, authError);
+                    Logger.getInstance().info(this._TAG, notice, authError);
                     // Do not send request to Quickpulse if auth fails, data will be dropped
                     return;
                 }
@@ -169,10 +168,10 @@ export class QuickPulseSender {
             "Transient error connecting to the Live Metrics endpoint. This packet will not appear in your Live Metrics Stream. Error:";
         if (this._consecutiveErrors % this.MAX_QPS_FAILURES_BEFORE_WARN === 0) {
             notice = `Live Metrics endpoint could not be reached ${this._consecutiveErrors} consecutive times. Most recent error:`;
-            Logger.warn(this._TAG, notice, error);
+            Logger.getInstance().warn(this._TAG, notice, error);
         } else {
             // Potentially transient error, do not change the ping/post state yet.
-            Logger.info(this._TAG, notice, error);
+            Logger.getInstance().info(this._TAG, notice, error);
         }
     }
 }

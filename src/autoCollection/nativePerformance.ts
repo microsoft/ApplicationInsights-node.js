@@ -35,7 +35,7 @@ export class AutoCollectNativePerformance {
                 const NativeMetricsEmitters = require("applicationinsights-native-metrics");
                 this._emitter = new NativeMetricsEmitters();
                 this._metricsAvailable = true;
-                Logger.info("Native metrics module successfully loaded!");
+                Logger.getInstance().info("Native metrics module successfully loaded!");
             } catch (err) {
                 // Package not available. Never try again
                 this._metricsAvailable = false;

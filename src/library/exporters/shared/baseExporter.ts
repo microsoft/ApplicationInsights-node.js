@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { diag } from "@opentelemetry/api";
 import { ExportResult, ExportResultCode } from "@opentelemetry/core";
 import { RestError } from "@azure/core-rest-pipeline";
 import { ConnectionStringParser } from "../../configuration";
@@ -15,6 +14,7 @@ import {
 import { IPersistentStorage, ISender } from "../../../declarations/types";
 import { isRetriable, IBreezeResponse, IBreezeError } from "./breezeUtils";
 import { TelemetryItem as Envelope } from "../../../declarations/generated";
+import { Logger } from "../../logging"
 
 export class BaseExporter {
     protected readonly _sender: ISender;
@@ -48,19 +48,22 @@ export class BaseExporter {
         if (!this._options.instrumentationKey) {
             const message =
                 "No instrumentation key or connection string was provided to the Azure Monitor Exporter";
-            diag.error(message);
+            Logger.getInstance().error(message);
             throw new Error(message);
         }
 
         this._sender = new HttpSender(this._options);
         this._persister = new FileSystemPersist(this._options);
         this._retryTimer = null;
-        diag.debug("Exporter was successfully setup");
+        Logger.getInstance().debug("Exporter was successfully setup");
+    }
+
+    public async export(envelopes: Envelope[]): Promise<void> {
+        await this._exportEnvelopes(envelopes);
     }
 
     protected async _exportEnvelopes(envelopes: Envelope[]): Promise<ExportResult> {
-        diag.info(`Exporting ${envelopes.length} envelope(s)`);
-
+        Logger.getInstance().info(`Exporting ${envelopes.length} envelope(s)`);
         try {
             const { result, statusCode } = await this._sender.send(envelopes);
             this._numConsecutiveRedirects = 0;
@@ -77,7 +80,7 @@ export class BaseExporter {
             } else if (statusCode && isRetriable(statusCode)) {
                 // Failed -- persist failed data
                 if (result) {
-                    diag.info(result);
+                    Logger.getInstance().info(result);
                     const breezeResponse = JSON.parse(result) as IBreezeResponse;
                     const filteredEnvelopes: Envelope[] = [];
                     breezeResponse.errors.forEach((error: IBreezeError) => {
@@ -130,14 +133,14 @@ export class BaseExporter {
                 return await this._persist(envelopes);
             }
             if (this._isNetworkError(restError)) {
-                diag.error(
+                Logger.getInstance().error(
                     "Retrying due to transient client side error. Error message:",
                     restError.message
                 );
                 return await this._persist(envelopes);
             }
 
-            diag.error(
+            Logger.getInstance().error(
                 "Envelopes could not be exported and are not retriable. Error message:",
                 restError.message
             );
@@ -149,7 +152,7 @@ export class BaseExporter {
      * Shutdown
      */
     public async shutdown(): Promise<void> {
-        diag.info("Exporter shutting down");
+        Logger.getInstance().info("Exporter shutting down");
         return this._sender.shutdown();
     }
 
@@ -167,9 +170,9 @@ export class BaseExporter {
             return success
                 ? { code: ExportResultCode.SUCCESS }
                 : {
-                      code: ExportResultCode.FAILED,
-                      error: new Error("Failed to persist envelope in disk."),
-                  };
+                    code: ExportResultCode.FAILED,
+                    error: new Error("Failed to persist envelope in disk."),
+                };
         } catch (ex) {
             return { code: ExportResultCode.FAILED, error: ex };
         }
@@ -182,7 +185,7 @@ export class BaseExporter {
                 await this._sender.send(envelopes);
             }
         } catch (err) {
-            diag.warn(`Failed to fetch persisted file`, err);
+            Logger.getInstance().warn(`Failed to fetch persisted file`, err);
         }
     }
 

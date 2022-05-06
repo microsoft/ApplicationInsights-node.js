@@ -66,16 +66,16 @@ module.exports.Logger =  class Logger {
         return msgPrefix;
     }
     static info(msg) {
-        console.info(Logger._getNesting() + msg);
+        console.info(Logger.getInstance()._getNesting() + msg);
     }
     static error(msg) {
-        console.error("\x1b[1m\x1b[31m" + Logger._getNesting() + msg + "\x1b[0m");
+        console.error("\x1b[1m\x1b[31m" + Logger.getInstance()._getNesting() + msg + "\x1b[0m");
     }
     static success(msg) {
-        console.info("\x1b[1m\x1b[32m" + Logger._getNesting() + msg + "\x1b[0m");
+        console.info("\x1b[1m\x1b[32m" + Logger.getInstance()._getNesting() + msg + "\x1b[0m");
     }
     static enterSubunit(msg) {
-        Logger.info(msg);
+        Logger.getInstance().info(msg);
         if (!this.nesting) {
             this.nesting = 0;
         }

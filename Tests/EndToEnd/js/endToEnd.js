@@ -4,14 +4,14 @@ const sinon = require('sinon');
 
 // Special embedded test cases for testing if app can close
 if (process.argv.indexOf('embeddedTestCase-AppTerminates1') > -1) {
-    var appInsights = require('../../../out/applicationinsights');
-    appInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+    var appInsights = require('../../../out/src/applicationinsights');
+    appInsights.setup("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
     appInsights.defaultClient.config.httpsAgent = new https.Agent({ keepAlive: false });
     appInsights.start();
     return;
 } else if (process.argv.indexOf('embeddedTestCase-AppTerminates2') > -1) {
-    var appInsights = require('../../../out/applicationinsights');
-    appInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+    var appInsights = require('../../../out/src/applicationinsights');
+    appInsights.setup("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
     appInsights.defaultClient.config.httpsAgent = new https.Agent({ keepAlive: false });
     appInsights.start();
     appInsights.defaultClient.trackEvent({ name: 'testEvent' });
@@ -22,7 +22,7 @@ if (process.argv.indexOf('embeddedTestCase-AppTerminates1') > -1) {
 describe('module', function () {
     describe('#require', function () {
         it('loads the applicationinsights module', function (done) {
-            assert.doesNotThrow(function () { return require('../../../out/applicationinsights') });
+            assert.doesNotThrow(function () { return require('../../../out/src/applicationinsights') });
             done();
         });
     });
@@ -90,8 +90,8 @@ describe('module', function () {
         });
 
         it('should crash on uncaught exceptions', function () {
-            var appInsights = require('../../../out/applicationinsights');
-            appInsights.setup('1aa11111-bbbb-1ccc-8ddd-eeeeffff3333').setAutoCollectExceptions(true);
+            var appInsights = require('../../../out/src/applicationinsights');
+            appInsights.setup('InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/').setAutoCollectExceptions(true);
             appInsights.defaultClient.config.httpsAgent = new https.Agent({ keepAlive: false });
             appInsights.start();
             assert.ok(appInsights.defaultClient);
@@ -110,8 +110,8 @@ describe('module', function () {
         });
 
         it('should not crash on uncaught exceptions if multiple handlers exist', function () {
-            var appInsights = require('../../../out/applicationinsights');
-            appInsights.setup('1aa11111-bbbb-1ccc-8ddd-eeeeffff3333').setAutoCollectExceptions(true);
+            var appInsights = require('../../../out/src/applicationinsights');
+            appInsights.setup('InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/').setAutoCollectExceptions(true);
             appInsights.defaultClient.config.httpsAgent = new https.Agent({ keepAlive: false });
             appInsights.start();
             process.addListener(UNCAUGHT_EXCEPTION, function () { });

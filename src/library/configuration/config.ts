@@ -106,7 +106,7 @@ export class Config implements IConfig {
 
     public set instrumentationKey(iKey: string) {
         if (!this._validateInstrumentationKey(iKey)) {
-            Logger.warn(
+            Logger.getInstance().warn(
                 "An invalid instrumentation key was provided. There may be resulting telemetry loss",
                 this.instrumentationKey
             );

@@ -1,56 +1,66 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
-import { AgentLogger } from "../../../src/bootstrap/dataModel";
 import { DiagnosticLogger } from "../../../src/bootstrap/diagnosticLogger";
 import { NoopLogger } from "../../../src/bootstrap/noopLogger";
 import * as DataModel from "../../../src/bootstrap/dataModel";
 
-class TestWriter implements AgentLogger {
-    prev: any;
-
-    log(message?: any, ...optional: any[]): void {
-        this.prev = message;
-    }
-
-    error(message?: any, ...optional: any[]): void {
-        this.log(message, ...optional);
-    }
-}
 
 describe("DiagnosticLogger", () => {
-    const logger = new DiagnosticLogger(new NoopLogger());
-    const stub = sinon.stub(logger["_writer"], "log");
+    var sandbox: sinon.SinonSandbox;
     const version = require("../../../../package.json").version;
 
+    before(()=>{
+        sandbox = sinon.createSandbox();
+    });
+
     afterEach(() => {
-        stub.reset();
+        sandbox.restore();
     });
 
     describe("#DiagnosticLogger.DefaultEnvelope", () => {
-        it("should have the correct version string", () => {
-            assert.equal(logger["_defaultEnvelope"].properties.sdkVersion, version);
+        let originalEnv: NodeJS.ProcessEnv;
+
+        beforeEach(() => {
+            originalEnv = process.env;
+        });
+
+        afterEach(() => {
+            process.env = originalEnv;
+        });
+
+        it("should have the correct fields", () => {
+            const env = <{ [id: string]: string }>{};
+            env["WEBSITE_SITE_NAME"] = "testSiteName";
+            env["APPINSIGHTS_INSTRUMENTATIONKEY"] = "testIkey";
+            env["ApplicationInsightsAgent_EXTENSION_VERSION"] = "testExtensionVersion";
+            env["WEBSITE_OWNER_NAME"] = "testSubscriptionId";
+            process.env = env;
+
+            const testLogger = new DiagnosticLogger(new NoopLogger());
+            assert.equal(testLogger["_defaultEnvelope"].properties.sdkVersion, version);
+            assert.equal(testLogger["_defaultEnvelope"].properties.siteName, "testSiteName");
+            assert.equal(testLogger["_defaultEnvelope"].properties.ikey, "testIkey");
+            assert.equal(testLogger["_defaultEnvelope"].properties.extensionVersion, "testExtensionVersion");
+            assert.equal(testLogger["_defaultEnvelope"].properties.subscriptionId, "testSubscriptionId");
         });
     });
 
     describe("#DiagnosticLogger.logMessage", () => {
         it("should log all required fields", () => {
-            const expectedDate = new Date().toISOString();
+            const expectedDate = new Date();
+            const logger = new DiagnosticLogger(new NoopLogger());
+            let stub = sandbox.stub(logger["_writer"], "log");
             logger.logMessage("Some message");
-            assert.deepEqual(stub.args[0][0], {
-                level: DataModel.SeverityLevel.INFO,
-                message: "Some message",
-                logger: "applicationinsights.extension.diagnostics",
-                time: expectedDate,
-                properties: {
-                    language: "nodejs",
-                    operation: "Startup",
-                    siteName: undefined,
-                    ikey: undefined,
-                    extensionVersion: undefined,
-                    sdkVersion: version,
-                    subscriptionId: null,
-                },
-            } as DataModel.DiagnosticLog);
+
+            let message = stub.args[0][0];
+
+            assert.equal(message.level, DataModel.SeverityLevel.INFO);
+            assert.equal(message.message, "Some message");
+            assert.equal(message.logger, "applicationinsights.extension.diagnostics");
+            assert.equal(new Date(message.time).toDateString(), expectedDate.toDateString());
+            assert.equal(message.properties.language, "nodejs");
+            assert.equal(message.properties.operation, "Startup");
+            assert.equal(message.level, DataModel.SeverityLevel.INFO);
         });
     });
 });

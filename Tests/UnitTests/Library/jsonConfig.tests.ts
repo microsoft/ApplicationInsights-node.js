@@ -27,7 +27,7 @@ describe("Json Config", () => {
     describe("config path", () => {
         it("Default file path", () => {
             let fileSpy = sandbox.spy(fs, "readFileSync");
-            let loggerSpy = sandbox.spy(Logger, "info");
+            let loggerSpy = sandbox.spy(Logger.getInstance(), "info");
             const config = JsonConfig.getInstance();
             assert.equal(loggerSpy.callCount, 0);
             assert.equal(fileSpy.called, 1);

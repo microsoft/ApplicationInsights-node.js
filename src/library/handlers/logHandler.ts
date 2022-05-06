@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import { ExportResult } from "@opentelemetry/core";
 
 import { BatchProcessor } from "./shared/batchProcessor";
 import { LogExporter } from "../exporters";
-import { TelemetryItem as Envelope, TelemetryEventData } from "../../declarations/generated";
 import * as Contracts from "../../declarations/contracts";
 import { AutoCollectConsole, AutoCollectExceptions } from "../../autoCollection";
 import { FlushOptions } from "../../declarations/flushOptions";
@@ -11,6 +11,27 @@ import { Config } from "../configuration";
 import { Util } from "../util";
 import { Context } from "../context";
 import { Statsbeat } from "../statsbeat";
+import { parseStack } from "../exporters/shared";
+import {
+    AvailabilityData,
+    TelemetryExceptionData,
+    MessageData,
+    MonitorDomain,
+    PageViewData,
+    TelemetryItem as Envelope,
+    TelemetryExceptionDetails,
+    KnownSeverityLevel,
+    TelemetryEventData,
+} from "../../declarations/generated";
+import {
+    AvailabilityTelemetry,
+    TraceTelemetry,
+    ExceptionTelemetry,
+    EventTelemetry,
+    PageViewTelemetry,
+    Telemetry,
+} from "../../declarations/contracts";
+import { Logger } from "../logging";
 
 export class LogHandler {
     public isConsole = true;
@@ -28,7 +49,7 @@ export class LogHandler {
     constructor(config: Config, context: Context) {
         this.config = config;
         this._context = context;
-        this._exporter = new LogExporter(config, this._context);
+        this._exporter = new LogExporter(config);
         this._batchProcessor = new BatchProcessor(config, this._exporter);
         this._initializeFlagsFromConfig();
         this._console = new AutoCollectConsole(this);
@@ -42,7 +63,7 @@ export class LogHandler {
     }
 
     public flush(options?: FlushOptions) {
-        this._batchProcessor.triggerSend(options.isAppCrashing);
+        this._batchProcessor.triggerSend(options ? options.isAppCrashing : false);
     }
 
     public dispose() {
@@ -71,27 +92,58 @@ export class LogHandler {
      * Log information about availability of an application
      * @param telemetry      Object encapsulating tracking options
      */
-    public trackAvailability(telemetry: Contracts.AvailabilityTelemetry): void {}
+    public async trackAvailability(telemetry: Contracts.AvailabilityTelemetry): Promise<void> {
+        try {
+            const envelope = this._availabilityToEnvelope(telemetry, this.config.instrumentationKey);
+            this.track(envelope);
+        }
+        catch (err) {
+            Logger.getInstance().error("Failed to send telemetry.", err);
+        }
+    }
 
     /**
      * Log a page view
      * @param telemetry      Object encapsulating tracking options
      */
-    public trackPageView(telemetry: Contracts.PageViewTelemetry): void {}
+    public async trackPageView(telemetry: Contracts.PageViewTelemetry): Promise<void> {
+        try {
+            const envelope = this._pageViewToEnvelope(telemetry, this.config.instrumentationKey);
+            this.track(envelope);
+        }
+        catch (err) {
+            Logger.getInstance().error("Failed to send telemetry.", err);
+        }
+    }
 
     /**
      * Log a trace message
      * @param telemetry      Object encapsulating tracking options
      */
-    public trackTrace(telemetry: Contracts.TraceTelemetry): void {}
+    public async trackTrace(telemetry: Contracts.TraceTelemetry): Promise<void> {
+        try {
+            const envelope = this._traceToEnvelope(telemetry, this.config.instrumentationKey);
+            this.track(envelope);
+        }
+        catch (err) {
+            Logger.getInstance().error("Failed to send telemetry.", err);
+        }
+    }
 
     /**
      * Log an exception
      * @param telemetry      Object encapsulating tracking options
      */
-    public trackException(telemetry: Contracts.ExceptionTelemetry): void {
+    public async trackException(telemetry: Contracts.ExceptionTelemetry): Promise<void> {
         if (telemetry && telemetry.exception && !Util.getInstance().isError(telemetry.exception)) {
             telemetry.exception = new Error(telemetry.exception.toString());
+        }
+        try {
+            const envelope = this._exceptionToEnvelope(telemetry, this.config.instrumentationKey);
+            this.track(envelope);
+        }
+        catch (err) {
+            Logger.getInstance().error("Failed to send telemetry.", err);
         }
     }
 
@@ -99,7 +151,15 @@ export class LogHandler {
      * Log a user action or other occurrence.
      * @param telemetry      Object encapsulating tracking options
      */
-    public trackEvent(telemetry: Contracts.EventTelemetry): void {}
+    public async trackEvent(telemetry: Contracts.EventTelemetry): Promise<void> {
+        try {
+            const envelope = this._eventToEnvelope(telemetry, this.config.instrumentationKey);
+            this.track(envelope);
+        }
+        catch (err) {
+            Logger.getInstance().error("Failed to send telemetry.", err);
+        }
+    }
 
     /**
      * Log a user action or other occurrence.
@@ -114,8 +174,158 @@ export class LogHandler {
         this._batchProcessor.send(telemetry);
     }
 
-    private _convertToEnvelope(eventData: TelemetryEventData): Envelope {
-        return null;
+    private _logToEnvelope(
+        telemetry: Telemetry,
+        baseType: string,
+        baseData: MonitorDomain,
+        instrumentationKey: string
+    ): Envelope {
+        let version = 1;
+        let name =
+            "Microsoft.ApplicationInsights." +
+            instrumentationKey.replace(/-/g, "") +
+            "." +
+            baseType.substring(0, baseType.length - 4);
+        let sampleRate = this.config.samplingPercentage;
+        let properties = {};
+        if (telemetry.properties) {
+            // sanitize properties
+            properties = Util.getInstance().validateStringMap(telemetry.properties);
+        }
+        const tags = this._getTags(this._context);
+        let envelope: Envelope = {
+            name: name,
+            time: telemetry.time || new Date(),
+            instrumentationKey: instrumentationKey,
+            version: version,
+            sampleRate: sampleRate,
+            data: {
+                baseType,
+                baseData: {
+                    ...baseData,
+                    properties,
+                },
+            },
+            tags: tags,
+        };
+        return envelope;
+    }
+
+    /**
+     * Availability Log to Azure envelope parsing.
+     * @internal
+     */
+    private _availabilityToEnvelope(
+        telemetry: AvailabilityTelemetry,
+        instrumentationKey: string
+    ): Envelope {
+        let baseType = "AvailabilityData";
+        let baseData: AvailabilityData = {
+            id: telemetry.id,
+            name: telemetry.name,
+            duration: telemetry.duration.toString(),
+            success: telemetry.success,
+            runLocation: telemetry.runLocation,
+            message: telemetry.message,
+            measurements: telemetry.measurements,
+            version: 2,
+        };
+        let envelope = this._logToEnvelope(telemetry, baseType, baseData, instrumentationKey);
+        return envelope;
+    }
+
+    /**
+     * Exception to Azure envelope parsing.
+     * @internal
+     */
+    private _exceptionToEnvelope(
+        telemetry: ExceptionTelemetry,
+        instrumentationKey: string
+    ): Envelope {
+        let baseType = "ExceptionData";
+        var stack = telemetry.exception["stack"];
+        let parsedStack = parseStack(stack);
+        let exceptionDetails: TelemetryExceptionDetails = {
+            message: telemetry.exception.message,
+            typeName: telemetry.exception.name,
+            parsedStack: parsedStack,
+            hasFullStack: Util.getInstance().isArray(parsedStack) && parsedStack.length > 0,
+        };
+
+        let baseData: TelemetryExceptionData = {
+            severityLevel: telemetry.severity || KnownSeverityLevel.Error,
+            exceptions: [exceptionDetails],
+            measurements: telemetry.measurements,
+            version: 2,
+        };
+        let envelope = this._logToEnvelope(telemetry, baseType, baseData, instrumentationKey);
+        return envelope;
+    }
+
+    /**
+     * Trace to Azure envelope parsing.
+     * @internal
+     */
+    private _traceToEnvelope(telemetry: TraceTelemetry, instrumentationKey: string): Envelope {
+        let baseType = "MessageData";
+        let baseData: MessageData = {
+            message: telemetry.message,
+            severityLevel: telemetry.severity || KnownSeverityLevel.Information,
+            measurements: telemetry.measurements,
+            version: 2,
+        };
+        let envelope = this._logToEnvelope(telemetry, baseType, baseData, instrumentationKey);
+        return envelope;
+    }
+
+    /**
+     * PageView to Azure envelope parsing.
+     * @internal
+     */
+    private _pageViewToEnvelope(
+        telemetry: PageViewTelemetry,
+        instrumentationKey: string
+    ): Envelope {
+        let baseType = "PageViewData";
+        let baseData: PageViewData = {
+            id: telemetry.id,
+            name: telemetry.name,
+            duration: Util.getInstance().msToTimeSpan(telemetry.duration),
+            url: telemetry.url,
+            referredUri: telemetry.referredUri,
+            measurements: telemetry.measurements,
+            version: 2,
+        };
+
+        let envelope = this._logToEnvelope(telemetry, baseType, baseData, instrumentationKey);
+        return envelope;
+    }
+
+    /**
+     * Event to Azure envelope parsing.
+     * @internal
+     */
+    private _eventToEnvelope(telemetry: EventTelemetry, instrumentationKey: string): Envelope {
+        let baseType = "EventData";
+        let baseData: TelemetryEventData = {
+            name: telemetry.name,
+            measurements: telemetry.measurements,
+            version: 2,
+        };
+        let envelope = this._logToEnvelope(telemetry, baseType, baseData, instrumentationKey);
+        return envelope;
+    }
+
+    private _getTags(context: Context) {
+        // Make a copy of context tags so we don't alter the actual object
+        // Also perform tag overriding
+        var newTags = <{ [key: string]: string }>{};
+        if (context && context.tags) {
+            for (var key in context.tags) {
+                newTags[key] = context.tags[key];
+            }
+        }
+        return newTags;
     }
 
     private _initializeFlagsFromConfig() {

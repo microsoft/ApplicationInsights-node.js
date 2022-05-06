@@ -26,23 +26,9 @@ export class AutoCollectExceptions {
             if (!this._exceptionListenerHandle) {
                 // For scenarios like Promise.reject(), an error won't be passed to the handle. Create a placeholder
                 // error for these scenarios.
-                const handle = (
-                    reThrow: boolean,
-                    name: ExceptionHandle,
-                    error: Error | undefined = new Error(FALLBACK_ERROR_MESSAGE)
-                ) => {
-                    this._handler.trackException({ exception: error });
-                    this._handler.flush({ isAppCrashing: true });
-                    // only rethrow when we are the only listener
-                    if (reThrow && name && process.listeners(name as any).length === 1) {
-                        console.error(error);
-                        // eslint-disable-next-line no-process-exit
-                        process.exit(1);
-                    }
-                };
                 if (this._canUseUncaughtExceptionMonitor) {
                     // Node.js >= 13.7.0, use uncaughtExceptionMonitor. It handles both promises and exceptions
-                    this._exceptionListenerHandle = handle.bind(
+                    this._exceptionListenerHandle = this._handleException.bind(
                         this,
                         false,
                         UNCAUGHT_EXCEPTION_MONITOR_HANDLER_NAME
@@ -52,12 +38,12 @@ export class AutoCollectExceptions {
                         this._exceptionListenerHandle
                     );
                 } else {
-                    this._exceptionListenerHandle = handle.bind(
+                    this._exceptionListenerHandle = this._handleException.bind(
                         this,
                         true,
                         UNCAUGHT_EXCEPTION_HANDLER_NAME
                     );
-                    this._rejectionListenerHandle = handle.bind(
+                    this._rejectionListenerHandle = this._handleException.bind(
                         this,
                         false,
                         UNHANDLED_REJECTION_HANDLER_NAME
@@ -98,6 +84,25 @@ export class AutoCollectExceptions {
                 delete this._exceptionListenerHandle;
                 delete this._rejectionListenerHandle;
             }
+        }
+    }
+
+    private _handleException(reThrow: boolean,
+        name: ExceptionHandle,
+        error: Error | undefined = new Error(FALLBACK_ERROR_MESSAGE)) {
+        if (this._handler) {
+            this._handler.trackException({ exception: error });
+            this._handler.flush({ isAppCrashing: true });
+            // only rethrow when we are the only listener
+            if (reThrow && name && process.listeners(name as any).length === 1) {
+                console.error(error);
+                // eslint-disable-next-line no-process-exit
+                process.exit(1);
+            }
+        }
+        else{
+            console.error(error);
+            process.exit(1);
         }
     }
 }

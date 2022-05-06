@@ -40,6 +40,10 @@ export interface IAzureExporterConfig {
      * Azure Active Directory Credential
      */
     aadTokenCredential?: TokenCredential;
+
+    isStatsbeatSender?: boolean;
+
+    shutdownStatsbeat?: () => {};
 }
 
 /**

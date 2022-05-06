@@ -11,8 +11,16 @@ import {
     AutoCollectPreAggregatedMetrics,
     AutoCollectPerformance,
 } from "../../autoCollection";
+import { MetricTelemetry } from "../../declarations/contracts";
 import { IDisabledExtendedMetrics } from "../../declarations/interfaces";
 import * as Contracts from "../../declarations/contracts";
+import * as Constants from "../../declarations/constants";
+import {
+    TelemetryItem as Envelope,
+    MetricsData,
+    MetricDataPoint,
+    KnownDataPointType,
+} from "../../declarations/generated";
 import {
     IMetricDependencyDimensions,
     IMetricExceptionDimensions,
@@ -21,6 +29,8 @@ import {
 } from "../../declarations/metrics/aggregatedMetricDimensions";
 import { Context } from "../context";
 import { HeartBeat } from "../heartBeat";
+import { Logger } from "../logging";
+import { Util } from "../util";
 
 export class MetricHandler {
     public isPerformance = true;
@@ -43,7 +53,7 @@ export class MetricHandler {
     constructor(config: Config, context?: Context) {
         this._config = config;
         this._context = context;
-        this._exporter = new MetricExporter(this._config, this._context);
+        this._exporter = new MetricExporter(this._config);
         this._batchProcessor = new BatchProcessor(this._config, this._exporter);
         this._initializeFlagsFromConfig();
         this._performance = new AutoCollectPerformance(this);
@@ -63,19 +73,31 @@ export class MetricHandler {
     }
 
     public flush(options?: FlushOptions) {
-        this._batchProcessor.triggerSend(options.isAppCrashing);
+        this._batchProcessor.triggerSend(options ? options.isAppCrashing : false);
     }
 
     public async trackMetric(telemetry: Contracts.MetricTelemetry): Promise<void> {
-        await this._exporter.export([telemetry], (result: ExportResult) => {
-            // TODO: Add error logs
-        });
+        const envelope = this._metricToEnvelope(telemetry, this._config.instrumentationKey);
+        this.track(envelope);
     }
 
     public async trackStatsbeatMetric(telemetry: Contracts.MetricTelemetry): Promise<void> {
-        await this._exporter.exportStatsbeat([telemetry], (result: ExportResult) => {
-            // TODO: Add error logs
-        });
+        const envelope = this._metricToEnvelope(telemetry, this._config.instrumentationKey);
+        envelope.name = Constants.StatsbeatTelemetryName;
+        this.track(envelope);
+    }
+
+    /**
+     * Log a user action or other occurrence.
+     * @param telemetry      Object encapsulating tracking options
+     */
+    public track(telemetry: Envelope): void {
+        // TODO: Telemetry processor, can we still support them in some cases?
+        // TODO: Sampling was done through telemetryProcessor here
+        // TODO: All telemetry processors including Azure property where done here as well
+        // TODO: Perf and Pre Aggregated metrics were calculated here
+
+        this._batchProcessor.send(telemetry);
     }
 
     public setAutoCollectPerformance(
@@ -174,5 +196,75 @@ export class MetricHandler {
             this._config.enableAutoCollectHeartbeat !== undefined
                 ? this._config.enableAutoCollectHeartbeat
                 : this.isHeartBeat;
+    }
+
+    /**
+     * Metric to Azure envelope parsing.
+     * @internal
+     */
+    private _metricToEnvelope(telemetry: MetricTelemetry, instrumentationKey: string): Envelope {
+        let baseType = "MetricData";
+        let version = 1;
+        let baseData: MetricsData = {
+            metrics: [],
+            version: 2,
+        };
+        const time = telemetry.time || new Date();
+        // Exclude metrics from sampling by default
+        let sampleRate = 100;
+        let properties = {};
+
+        const tags = this._getTags(this._context);
+        let name =
+            "Microsoft.ApplicationInsights." +
+            instrumentationKey.replace(/-/g, "") +
+            "." +
+            baseType.substring(0, baseType.length - 4);
+        if (telemetry.properties) {
+            // sanitize properties
+            properties = Util.getInstance().validateStringMap(telemetry.properties);
+        }
+
+        telemetry.metrics.forEach((metricPoint) => {
+            var metricDataPoint: MetricDataPoint = {
+                name: metricPoint.name,
+                value: metricPoint.value,
+            };
+            metricDataPoint.count = !isNaN(metricPoint.count) ? metricPoint.count : 1;
+            metricDataPoint.dataPointType = KnownDataPointType.Aggregation; // Aggregation for Manual APIs
+            metricDataPoint.max = !isNaN(metricPoint.max) ? metricPoint.max : metricPoint.value;
+            metricDataPoint.min = !isNaN(metricPoint.min) ? metricPoint.min : metricPoint.value;
+            metricDataPoint.stdDev = !isNaN(metricPoint.stdDev) ? metricPoint.stdDev : 0;
+            metricDataPoint.namespace = metricPoint.namespace;
+            baseData.metrics.push(metricDataPoint);
+        });
+
+        return {
+            name,
+            sampleRate,
+            time,
+            instrumentationKey,
+            tags,
+            version: version,
+            data: {
+                baseType,
+                baseData: {
+                    ...baseData,
+                    properties,
+                },
+            },
+        };
+    }
+
+    private _getTags(context: Context) {
+        // Make a copy of context tags so we don't alter the actual object
+        // Also perform tag overriding
+        var newTags = <{ [key: string]: string }>{};
+        if (context && context.tags) {
+            for (var key in context.tags) {
+                newTags[key] = context.tags[key];
+            }
+        }
+        return newTags;
     }
 }

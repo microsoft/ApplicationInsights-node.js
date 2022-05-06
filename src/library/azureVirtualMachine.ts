@@ -49,7 +49,7 @@ export class AzureVirtualMachine {
                             vmInfo.osType = data["osType"] || "";
                         } catch (error) {
                             // Failed to parse JSON
-                            Logger.info(this._TAG, error);
+                            Logger.getInstance().info(this._TAG, error);
                         }
                         callback(vmInfo);
                     });
@@ -68,7 +68,7 @@ export class AzureVirtualMachine {
                     vmInfo.isVM = false; // confirm it's not in VM
                 } else {
                     // Only log when is not determined if VM or not to avoid noise outside of Azure VMs
-                    Logger.info(this._TAG, error);
+                    Logger.getInstance().info(this._TAG, error);
                 }
                 callback(vmInfo);
             });

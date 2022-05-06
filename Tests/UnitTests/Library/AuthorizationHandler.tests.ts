@@ -38,7 +38,7 @@ describe("Library/AuthorizationHandler", () => {
 
     describe("#addAuthorizationHeader()", () => {
         it("should add Authorization header to options", async () => {
-            var config = new Config("");
+            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
             config.aadTokenCredential = new TestTokenCredential();
             var handler = new AuthorizationHandler(config.aadTokenCredential);
             var options = {
@@ -52,7 +52,7 @@ describe("Library/AuthorizationHandler", () => {
         });
 
         it("should refresh token if expired", async () => {
-            var config = new Config("");
+            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
             var tokenCredential = new TestTokenCredential(
                 new Date(new Date().getMilliseconds() - 500)
             );

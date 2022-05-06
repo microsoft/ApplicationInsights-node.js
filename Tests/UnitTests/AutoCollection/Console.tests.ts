@@ -22,7 +22,7 @@ describe("AutoCollection/Console", () => {
 
     describe("#log and #error()", () => {
         it("should call trackException for errors", () => {
-            let config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            let config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
             config.enableAutoCollectConsole = true;
             let handler = new LogHandler(config, new Context());
             handler.start();
@@ -39,7 +39,7 @@ describe("AutoCollection/Console", () => {
         });
 
         it("should call trackTrace for logs", () => {
-            let config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            let config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
             config.enableAutoCollectConsole = true;
             let handler = new LogHandler(config, new Context());
             handler.start();
@@ -54,8 +54,8 @@ describe("AutoCollection/Console", () => {
         });
 
         it("should notify multiple handlers", () => {
-            let handler = new LogHandler(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"), new Context());
-            let secondHandler = new LogHandler(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"), new Context());
+            let handler = new LogHandler(new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"), new Context());
+            let secondHandler = new LogHandler(new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"), new Context());
             const stub = sandbox.stub(handler, "trackTrace");
             const secondStub = sandbox.stub(secondHandler, "trackTrace");
             enable(true, handler);
