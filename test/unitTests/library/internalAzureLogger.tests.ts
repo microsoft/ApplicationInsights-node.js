@@ -1,7 +1,7 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
 
-import { InternalAzureLogger } from "../../../src/library/logging/InternalAzureLogger";
+import { InternalAzureLogger } from "../../../src/library/logging/internalAzureLogger";
 import * as fileHelper from "../../../src/library/util/fileSystemHelper";
 
 

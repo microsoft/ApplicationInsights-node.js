@@ -1,4 +1,4 @@
-import { InternalAzureLogger } from "./InternalAzureLogger";
+import { InternalAzureLogger } from "./internalAzureLogger";
 
 export class Logger {
     public enableDebug = false;
