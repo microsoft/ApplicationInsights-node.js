@@ -34,10 +34,10 @@
     "prepublishOnly": "npm run build",
     "lint": "eslint ./ --fix",
     "pretest": "npm run build",
-    "test": "npm run test:unit && npm run test:e2e",
+    "test": "nyc mocha ./out/tests --recursive",
     "test:debug": "nyc mocha ./out/tests --inspect-brk --recursive",
     "test:unit": "nyc mocha ./out/tests/unitTests --recursive",
-    "test:e2e": "nyc mocha ./out/tests//endToEnd --recursive",
+    "test:e2e": "nyc mocha ./out/tests/endToEnd --recursive",
     "functionaltest": "npm run build && npm pack && node --use_strict ./tests/functionalTests/runFunctionalTests.js",
     "backcompattest": "npm run build && npm pack && node --use_strict ./tests/backCompatibility/runBackCompatTests.js"
   },
