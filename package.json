@@ -29,17 +29,17 @@
     "build": "npm run build:deps && npm run build:compile",
     "build:deps": "npm update --dev",
     "build:compile": "tsc --project ./tsconfig.json",
-    "format": "prettier --write --config .prettierrc.json --ignore-path .prettierignore \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "format": "prettier --write --config .prettierrc.json --ignore-path .prettierignore \"src/**/*.ts\" \"test/**/*.ts\"",
     "prepare": "npm run build:compile",
     "prepublishOnly": "npm run build",
     "lint": "eslint ./ --fix",
     "pretest": "npm run build",
-    "test": "nyc mocha ./out/tests --recursive",
-    "test:debug": "nyc mocha ./out/tests --inspect-brk --recursive",
-    "test:unit": "nyc mocha ./out/tests/unitTests --recursive",
-    "test:e2e": "nyc mocha ./out/tests/endToEnd --recursive",
-    "functionaltest": "npm run build && npm pack && node --use_strict ./tests/functionalTests/runFunctionalTests.js",
-    "backcompattest": "npm run build && npm pack && node --use_strict ./tests/backCompatibility/runBackCompatTests.js"
+    "test": "nyc mocha ./out/test --recursive",
+    "test:debug": "nyc mocha ./out/test --inspect-brk --recursive",
+    "test:unit": "nyc mocha ./out/test/unitTests --recursive",
+    "test:e2e": "nyc mocha ./out/test/endToEnd --recursive",
+    "functionaltest": "npm run build && npm pack && node --use_strict ./test/functionalTests/runFunctionalTests.js",
+    "backcompattest": "npm run build && npm pack && node --use_strict ./test/backCompatibility/runBackCompatTests.js"
   },
   "engines": {
     "node": ">=8.0.0"
