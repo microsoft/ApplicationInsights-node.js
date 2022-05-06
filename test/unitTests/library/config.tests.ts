@@ -84,7 +84,7 @@ describe("Library/Config", () => {
                 const env = <{ [id: string]: string }>{};
                 const customConfigJSONPath = path.resolve(
                     __dirname,
-                    "../../../../Tests/UnitTests/Library/config.json"
+                    "../../../../test/unitTests/Library/config.json"
                 );
                 env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath; // Load JSON config
                 process.env = env;

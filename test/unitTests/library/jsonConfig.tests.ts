@@ -40,7 +40,7 @@ describe("Json Config", () => {
             const env = <{ [id: string]: string }>{};
             const customConfigJSONPath = path.resolve(
                 __dirname,
-                "../../../../Tests/UnitTests/Library/config.json"
+                "../../../../test/unitTests/library/config.json"
             );
             env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath;
             process.env = env;
@@ -53,7 +53,7 @@ describe("Json Config", () => {
 
         it("Relative file path", () => {
             const env = <{ [id: string]: string }>{};
-            const customConfigJSONPath = "./Tests/UnitTests/Library/config.json";
+            const customConfigJSONPath = "./test/unitTests/library/config.json";
             env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath;
             process.env = env;
             const config = JsonConfig.getInstance();
@@ -69,7 +69,7 @@ describe("Json Config", () => {
             const env = <{ [id: string]: string }>{};
             const customConfigJSONPath = path.resolve(
                 __dirname,
-                "../../../../Tests/UnitTests/Library/config.json"
+                "../../../../test/unitTests/library/config.json"
             );
             env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath;
             process.env = env;
@@ -144,7 +144,7 @@ describe("Json Config", () => {
             const env = <{ [id: string]: string }>{};
             const customConfigJSONPath = path.resolve(
                 __dirname,
-                "../../../../Tests/UnitTests/Library/config.json"
+                "../../../../test/unitTests/library/config.json"
             );
             env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath;
             env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "TestConnectionString";
