@@ -3,7 +3,7 @@
 import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
 import { bunyan } from "diagnostic-channel-publishers";
 
-import { LogHandler } from "../../library/Handlers/LogHandler";
+import { LogHandler } from "../../library/handlers";
 import { KnownSeverityLevel } from "../../declarations/generated";
 import { StatsbeatInstrumentation } from "../../declarations/constants";
 
