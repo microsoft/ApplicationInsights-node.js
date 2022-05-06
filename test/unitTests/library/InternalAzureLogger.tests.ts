@@ -1,8 +1,7 @@
 import * as assert from "assert";
-import { writeFileSync } from "fs";
 import * as sinon from "sinon";
 
-import { InternalAzureLogger } from "../../../src/library/Logging/InternalAzureLogger";
+import { InternalAzureLogger } from "../../../src/library/logging/InternalAzureLogger";
 import * as fileHelper from "../../../src/library/util/fileSystemHelper";
 
 

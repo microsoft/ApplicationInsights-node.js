@@ -1,7 +1,7 @@
 import * as assert from "assert";
 
-import * as Contracts from "../../../src/declarations/Contracts";
-import * as Constants from "../../../src/declarations/Constants";
+import * as Contracts from "../../../src/declarations/contracts";
+import * as Constants from "../../../src/declarations/constants";
 
 describe("Library/QuickPulseEnvelopeFactory", () => {
     describe("QPS Constants", () => {

@@ -25,9 +25,5 @@ jobs:
     - run: npm run clean
     - run: npm ci
     - run: npm run build --if-present
-    - uses: actions/upload-artifact@v3
-      with:
-        name: my-artifact
-        path: ./
     - run: npm test
     

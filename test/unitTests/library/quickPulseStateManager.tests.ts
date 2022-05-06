@@ -3,15 +3,15 @@ import * as https from "https";
 import * as sinon from "sinon";
 
 import { QuickPulseStateManager } from "../../../src/library/quickPulse";
-import * as Contracts from ".../../../src/declarations/Contracts";
-import { AuthorizationHandler } from "../../../src/library/QuickPulse/AuthorizationHandler";
+import * as Contracts from ".../../../src/declarations/contracts";
+import { AuthorizationHandler } from "../../../src/library/quickPulse/authorizationHandler";
 import { Config } from "../../../src/library/configuration";
-import { QuickPulseSender } from "../../../src/library/QuickPulse/QuickPulseSender";
+import { QuickPulseSender } from "../../../src/library/quickPulse/quickPulseSender";
 import { Util } from "../../../src/library/util";
 import {
     KnownContextTagKeys,
     TelemetryItem as Envelope,
-} from "../../../src/declarations/Generated";
+} from "../../../src/declarations/generated";
 
 describe("Library/QuickPulseStateManager", () => {
     Util.getInstance().tlsRestrictedAgent = new https.Agent();

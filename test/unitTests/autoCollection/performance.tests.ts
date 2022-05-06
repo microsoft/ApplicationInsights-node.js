@@ -1,7 +1,7 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
 import { AutoCollectPerformance } from "../../../src/autoCollection";
-import { Config } from "../../../src/Library/configuration";
+import { Config } from "../../../src/library/configuration";
 import { MetricHandler } from "../../../src/library/handlers";
 
 

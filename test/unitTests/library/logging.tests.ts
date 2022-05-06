@@ -2,7 +2,7 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 
 import { Logger } from "../../../src/library/logging";
-import { InternalAzureLogger } from "../../../src/library/Logging/InternalAzureLogger";
+import { InternalAzureLogger } from "../../../src/library/logging/internalAzureLogger";
 
 describe("Library/Logger", () => {
     var sandbox: sinon.SinonSandbox;

@@ -1,7 +1,7 @@
 import * as assert from "assert";
 
-import * as Constants from "../../../src/declarations/Constants";
-import { ConnectionStringParser } from "../../../src/library/Configuration/ConnectionStringParser";
+import * as Constants from "../../../src/declarations/constants";
+import { ConnectionStringParser } from "../../../src/library/configuration/connectionStringParser";
 
 describe("ConnectionStringParser", () => {
     describe("#parse()", () => {

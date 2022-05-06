@@ -4,8 +4,8 @@ import { TelemetryClient } from "../../../../src/applicationinsights";
 import {
     KnownContextTagKeys,
     TelemetryItem as Envelope,
-} from "../../../../src/declarations/Generated";
-import { azureRoleEnvironmentTelemetryProcessor } from "../../../../src/library/TelemetryProcessors";
+} from "../../../../src/declarations/generated";
+import { azureRoleEnvironmentTelemetryProcessor } from "../../../../src/library/telemetryProcessors";
 
 describe("TelemetryProcessors/AzureRoleEnvironmentTelemetryInitializer", () => {
     var ikey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";

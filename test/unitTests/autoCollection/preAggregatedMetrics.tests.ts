@@ -2,7 +2,7 @@
 // import * as sinon from "sinon";
 
 // import { AutoCollectPreAggregatedMetrics } from "../../../src/autoCollection/preAggregatedMetrics";
-// import { Config } from "../../../src/Library/configuration";
+// import { Config } from "../../../src/library/configuration";
 // import { MetricHandler } from "../../../src/library/handlers";
 
 // describe("AutoCollection/PreAggregatedMetrics", () => {

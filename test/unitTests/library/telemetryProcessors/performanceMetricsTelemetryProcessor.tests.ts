@@ -2,10 +2,10 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 
 import { Config } from "../../../../src/library/configuration";
-import * as QuickPulse from "../../../../src/library/TelemetryProcessors/PerformanceMetricsTelemetryProcessor";
+import * as QuickPulse from "../../../../src/library/telemetryProcessors/performanceMetricsTelemetryProcessor";
 import { QuickPulseStateManager } from "../../../../src/library/quickPulse";
 import { TelemetryClient } from "../../../../src/applicationinsights";
-import { TelemetryItem as Envelope } from "../../../../src/declarations/Generated";
+import { TelemetryItem as Envelope } from "../../../../src/declarations/generated";
 
 describe("TelemetryProcessors/PerformanceMetricsTelemetryProcessor", () => {
     var sandbox: sinon.SinonSandbox;

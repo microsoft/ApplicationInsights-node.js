@@ -2,7 +2,7 @@ import * as assert from "assert";
 import {
     getSamplingHashCode,
     samplingTelemetryProcessor,
-} from "../../../../src/library/TelemetryProcessors/SamplingTelemetryProcessor";
+} from "../../../../src/library/telemetryProcessors/samplingTelemetryProcessor";
 
 describe("TelemetryProcessors/SamplingTelemetryProcessor", () => {
     var iKey = "Instrumentation-Key-12345-6789A";

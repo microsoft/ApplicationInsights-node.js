@@ -6,7 +6,7 @@ import { winston } from "diagnostic-channel-publishers";
 import { enable, dispose, } from "../../../src/autoCollection/diagnostic-channel/winston.sub";
 import { Context, } from "../../../src/library";
 import { LogHandler } from "../../../src/library/handlers";
-import { Config } from "../../../src/Library/configuration";
+import { Config } from "../../../src/library/configuration";
 
 
 describe("diagnostic-channel/winston", () => {

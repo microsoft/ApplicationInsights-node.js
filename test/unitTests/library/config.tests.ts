@@ -5,7 +5,7 @@ import * as http from "http";
 import * as https from "https";
 
 import { Config } from "../../../src/library/configuration";
-import * as Constants from "../../../src/declarations/Constants";
+import * as Constants from "../../../src/declarations/constants";
 import { JsonConfig } from "../../../src/library/configuration";
 
 const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";

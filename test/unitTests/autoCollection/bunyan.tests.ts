@@ -7,7 +7,7 @@ import { enable, dispose } from "../../../src/autoCollection/diagnostic-channel/
 import { Util } from "../../../src/library/util";
 import { Context, } from "../../../src/library";
 import { LogHandler } from "../../../src/library/handlers";
-import { Config } from "../../../src/Library/configuration";
+import { Config } from "../../../src/library/configuration";
 
 describe("diagnostic-channel/bunyan", () => {
     var sandbox: sinon.SinonSandbox;

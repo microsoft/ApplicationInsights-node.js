@@ -2,7 +2,7 @@
 // import * as sinon from "sinon";
 
 // import * as AppInsights from "../../src/applicationinsights";
-// import * as Contracts from "../../src/declarations/Contracts";
+// import * as Contracts from "../../src/declarations/contracts";
 
 // describe("ApplicationInsights", () => {
 //     var sandbox: sinon.SinonSandbox;

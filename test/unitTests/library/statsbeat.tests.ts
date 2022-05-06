@@ -3,7 +3,7 @@ import * as sinon from "sinon";
 import * as nock from "nock";
 
 import { Statsbeat } from "../../../src/library/statsbeat";
-import * as Constants from "../../../src/declarations/Constants";
+import * as Constants from "../../../src/declarations/constants";
 import { Config } from "../../../src/library/configuration";
 
 describe("AutoCollection/Statsbeat", () => {
