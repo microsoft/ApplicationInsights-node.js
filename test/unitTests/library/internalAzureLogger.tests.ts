@@ -30,21 +30,17 @@ describe("Library/InternalAzureLogger", () => {
             let confirmDirStub = sandbox.stub(fileHelper, "confirmDirExists").callsFake(async (directory: string) => {
                 // Fake directory creation
             });
-            var accessStub = sandbox.stub(fileHelper, "accessAsync").callsFake(async (directory: string) => {
-                new Error("Not found");
-            });
-            var writeStub = sandbox.stub(fileHelper, "appendFileAsync");
+            var appendFileAsyncStub = sandbox.stub(fileHelper, "appendFileAsync");
             internalLogger["_logToFile"] = true;
 
             internalLogger.info("testMessage")
                 .then(() => {
                     assert.ok(confirmDirStub.called, "confirmDirStub called");
-                    assert.ok(accessStub.called, "accessStub called");
-                    assert.ok(writeStub.called, "writeStub called"); // File creation was called
+                    assert.ok(appendFileAsyncStub.called, "writeStub called"); // File creation was called
                     assert.ok(
-                        writeStub.lastCall.args[0].toString().indexOf("applicationinsights.log") > 0
+                        appendFileAsyncStub.lastCall.args[0].toString().indexOf("applicationinsights.log") > 0
                     );
-                    assert.equal(writeStub.lastCall.args[1], "testMessage\r\n");
+                    assert.equal(appendFileAsyncStub.lastCall.args[1], "testMessage\r\n");
                     done();
                 })
                 .catch((error) => {
