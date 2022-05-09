@@ -21,6 +21,7 @@ Tests/FunctionalTests/TestApp/package-lock.json
 *.dat
 *.njsproj
 .vscode/
+.nyc_output
 
 # Ignore webstorm files
 .idea
