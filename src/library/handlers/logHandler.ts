@@ -6,7 +6,6 @@ import { BatchProcessor } from "./shared/batchProcessor";
 import { LogExporter } from "../exporters";
 import * as Contracts from "../../declarations/contracts";
 import { AutoCollectConsole, AutoCollectExceptions } from "../../autoCollection";
-import { FlushOptions } from "../../declarations/flushOptions";
 import { Config } from "../configuration";
 import { Util } from "../util";
 import { Context } from "../context";
@@ -62,8 +61,8 @@ export class LogHandler {
         this._exceptions.enable(this.isExceptions);
     }
 
-    public flush(options?: FlushOptions) {
-        this._batchProcessor.triggerSend(options ? options.isAppCrashing : false);
+    public flush(isAppCrashing?: boolean) {
+        this._batchProcessor.triggerSend(isAppCrashing);
     }
 
     public dispose() {

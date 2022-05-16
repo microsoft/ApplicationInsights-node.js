@@ -17,7 +17,7 @@ export interface DependencyTelemetry extends Telemetry {
     /** Target site of a dependency call. Examples are server name, host address. */
     target?: string;
     /** Remote call duration in ms. */
-    duration: string;
+    duration: number;
     /** Indication of successful or unsuccessful call. */
     success?: boolean;
     /** Collection of custom measurements. */

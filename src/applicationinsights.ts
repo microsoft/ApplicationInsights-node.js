@@ -339,7 +339,7 @@ export class Configuration {
  */
 export function dispose() {
     if (defaultClient) {
-        defaultClient.traceHandler.dispose();
+        defaultClient.traceHandler.shutdown();
         defaultClient.metricHandler.dispose();
         defaultClient.logHandler.dispose();
     }

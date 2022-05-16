@@ -18,14 +18,7 @@ if (IsInitialized) {
     const modules: { [key: string]: any } = {
         bunyan: publishers.bunyan,
         console: publishers.console,
-        mongodb: publishers.mongodb,
-        mongodbCore: publishers.mongodbCore,
-        mysql: publishers.mysql,
-        redis: publishers.redis,
-        pg: publishers.pg,
-        pgPool: publishers.pgPool,
-        winston: publishers.winston,
-        azuresdk: publishers.azuresdk,
+        winston: publishers.winston
     };
     for (const mod in modules) {
         if (unpatchedModules.indexOf(mod) === -1) {

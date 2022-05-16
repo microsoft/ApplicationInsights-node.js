@@ -4,7 +4,6 @@ import * as Contracts from "../declarations/contracts";
 import { Statsbeat } from "../library/statsbeat";
 import { Util } from "./util";
 import { Logger } from "./logging";
-import { FlushOptions } from "../declarations/flushOptions";
 import { TelemetryItem as Envelope } from "../declarations/generated";
 import { QuickPulseStateManager } from "./quickPulse";
 import { LogHandler, MetricHandler, TraceHandler } from "./handlers";
@@ -120,10 +119,16 @@ export class TelemetryClient {
      * Immediately send all queued telemetry.
      * @param options Flush options, including indicator whether app is crashing and callback
      */
-    public flush(options?: FlushOptions) {
-        this.traceHandler.flush(options);
-        this.metricHandler.flush(options);
-        this.logHandler.flush(options);
+    public async flush(isAppCrashing?: boolean): Promise<void> {
+        try {
+            await this.traceHandler.flush(isAppCrashing);
+            await this.metricHandler.flush(isAppCrashing);
+            await this.logHandler.flush(isAppCrashing);
+        }
+        catch (err) {
+            Logger.getInstance().error("Failed to flush telemetry", err);
+        }
+
     }
 
     /**
@@ -160,7 +165,7 @@ export class TelemetryClient {
         value: boolean,
         resendInterval?: number,
         maxBytesOnDisk?: number
-    ) {}
+    ) { }
 
     /**
      * Adds telemetry processor to the collection. Telemetry processors will be called one by one

@@ -1,11 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { ExportResult } from "@opentelemetry/core";
-
 import { BatchProcessor } from "./shared/batchProcessor";
 import { MetricExporter } from "../exporters";
 import { Config } from "../configuration";
-import { FlushOptions } from "../../declarations/flushOptions";
 import {
     AutoCollectNativePerformance,
     AutoCollectPreAggregatedMetrics,
@@ -72,8 +69,8 @@ export class MetricHandler {
         this._nativePerformance.enable(this.isNativePerformance, this.disabledExtendedMetrics);
     }
 
-    public flush(options?: FlushOptions) {
-        this._batchProcessor.triggerSend(options ? options.isAppCrashing : false);
+    public flush(isAppCrashing?: boolean) {
+        this._batchProcessor.triggerSend(isAppCrashing);
     }
 
     public async trackMetric(telemetry: Contracts.MetricTelemetry): Promise<void> {
