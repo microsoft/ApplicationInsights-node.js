@@ -20,6 +20,8 @@ import * as Contracts from "../../declarations/contracts";
 import { Logger } from "../logging";
 import { Context } from "../context";
 import { AzureExporterConfig, AzureMonitorTraceExporter } from "@azure/monitor-opentelemetry-exporter";
+import { IPersistentStorage } from "../../declarations/types";
+import { FileSystemPersist } from "../exporters/shared/persist";
 
 export class TraceHandler {
     public tracerProvider: NodeTracerProvider;
@@ -42,7 +44,6 @@ export class TraceHandler {
             forceFlushTimeoutMillis: 30000,
         };
         this.tracerProvider = new NodeTracerProvider(tracerConfig);
-
         // Get connection string for Azure Monitor Exporter
         let ingestionEndpoint = config.endpointUrl.replace("/v2.1/track", "");
         let connectionString = `InstrumentationKey=${config.instrumentationKey};IngestionEndpoint=${ingestionEndpoint}`;
@@ -100,15 +101,8 @@ export class TraceHandler {
         }
     }
 
-    public async flush(isAppCrashing?: boolean): Promise<void> {
-        if (isAppCrashing) {
-            // TODO: Store to disk, check OpenTelemetry behavior
-
-        }
-        else {
-            return this._spanProcessor.forceFlush();
-        }
-
+    public async flush(): Promise<void> {
+        return this.tracerProvider.forceFlush();
     }
 
     public shutdown() {

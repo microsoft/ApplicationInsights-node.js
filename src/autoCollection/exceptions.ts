@@ -92,7 +92,7 @@ export class AutoCollectExceptions {
         error: Error | undefined = new Error(FALLBACK_ERROR_MESSAGE)) {
         if (this._handler) {
             this._handler.trackException({ exception: error });
-            this._handler.flush(true);
+            this._handler.flush();
             // only rethrow when we are the only listener
             if (reThrow && name && process.listeners(name as any).length === 1) {
                 console.error(error);

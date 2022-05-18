@@ -69,8 +69,8 @@ export class MetricHandler {
         this._nativePerformance.enable(this.isNativePerformance, this.disabledExtendedMetrics);
     }
 
-    public flush(isAppCrashing?: boolean) {
-        this._batchProcessor.triggerSend(isAppCrashing);
+    public async flush(): Promise<void> {
+        await this._batchProcessor.triggerSend();
     }
 
     public async trackMetric(telemetry: Contracts.MetricTelemetry): Promise<void> {

@@ -53,7 +53,7 @@ export class BaseExporter {
         }
 
         this._sender = new HttpSender(this._options);
-        this._persister = new FileSystemPersist(this._options);
+        this._persister = new FileSystemPersist({ instrumentationKey: this._options.instrumentationKey });
         this._retryTimer = null;
         Logger.getInstance().debug("Exporter was successfully setup");
     }
@@ -154,14 +154,6 @@ export class BaseExporter {
     public async shutdown(): Promise<void> {
         Logger.getInstance().info("Exporter shutting down");
         return this._sender.shutdown();
-    }
-
-    public async persistOnCrash(envelopes: Envelope[]): Promise<string> {
-        try {
-            this._persist(envelopes);
-        } catch (ex) {
-            return "Failed to persist envelopes";
-        }
     }
 
     private async _persist(envelopes: Envelope[]): Promise<ExportResult> {

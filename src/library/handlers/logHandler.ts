@@ -61,8 +61,8 @@ export class LogHandler {
         this._exceptions.enable(this.isExceptions);
     }
 
-    public flush(isAppCrashing?: boolean) {
-        this._batchProcessor.triggerSend(isAppCrashing);
+    public async flush(): Promise<void> {
+        await this._batchProcessor.triggerSend();
     }
 
     public dispose() {

@@ -8,6 +8,7 @@ import { TelemetryItem as Envelope } from "../declarations/generated";
 import { QuickPulseStateManager } from "./quickPulse";
 import { LogHandler, MetricHandler, TraceHandler } from "./handlers";
 
+
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
  * and manually trigger immediate sending (flushing)
@@ -117,13 +118,12 @@ export class TelemetryClient {
 
     /**
      * Immediately send all queued telemetry.
-     * @param options Flush options, including indicator whether app is crashing and callback
      */
-    public async flush(isAppCrashing?: boolean): Promise<void> {
+    public async flush(): Promise<void> {
         try {
-            await this.traceHandler.flush(isAppCrashing);
-            await this.metricHandler.flush(isAppCrashing);
-            await this.logHandler.flush(isAppCrashing);
+            await this.traceHandler.flush();
+            await this.metricHandler.flush();
+            await this.logHandler.flush();
         }
         catch (err) {
             Logger.getInstance().error("Failed to flush telemetry", err);
