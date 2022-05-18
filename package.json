@@ -34,7 +34,6 @@
     "prepublishOnly": "npm run build",
     "lint": "eslint ./ --fix",
     "pretest": "npm run build",
-    "certs": "sudo ./test/certs/generateKey.sh",
     "test": "nyc mocha ./out/test --recursive",
     "test:debug": "nyc mocha ./out/test --inspect-brk --recursive",
     "test:unit": "nyc mocha ./out/test/unitTests --recursive",
