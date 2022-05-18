@@ -17,7 +17,10 @@ jobs:
         node-version: [8.x, 10.x, 12.x, 14.x]
 
     steps:
-    - uses: actions/checkout@v2
+    - name: Permission Setup
+      run: sudo chmod -R 777 /github /__w
+    - name: Checkout
+      uses: actions/checkout@v2
     - name: (${{ matrix.os }}) on Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
       with:
@@ -25,6 +28,6 @@ jobs:
     - run: npm run clean
     - run: npm ci
     - run: npm run build --if-present
-    - run: sudo ./${{ github.workspace }}/test/certs/generateKey.sh
+    - run: npm run certs
     - run: npm test
     
