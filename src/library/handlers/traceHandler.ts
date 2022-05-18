@@ -20,8 +20,7 @@ import * as Contracts from "../../declarations/contracts";
 import { Logger } from "../logging";
 import { Context } from "../context";
 import { AzureExporterConfig, AzureMonitorTraceExporter } from "@azure/monitor-opentelemetry-exporter";
-import { IPersistentStorage } from "../../declarations/types";
-import { FileSystemPersist } from "../exporters/shared/persist";
+
 
 export class TraceHandler {
     public tracerProvider: NodeTracerProvider;
@@ -106,14 +105,13 @@ export class TraceHandler {
     }
 
     public shutdown() {
-        this._spanProcessor.shutdown();
-        this._exporter.shutdown();
+        this.tracerProvider.shutdown();
     }
 
     // Support Legacy APIs
     public trackRequest(telemetry: Contracts.RequestTelemetry) {
-        let startTime = Date.now();
-        let endTime = startTime + telemetry.duration;
+        let startTime = telemetry.time || new Date();
+        let endTime = startTime.getTime() + telemetry.duration;
 
         // TODO: Change context if ID is provided?
         const ctx = context.active();
@@ -139,8 +137,8 @@ export class TraceHandler {
     public trackDependency(telemetry: Contracts.DependencyTelemetry) {
         // TODO: Change context if ID is provided?
 
-        let startTime = Date.now();
-        let endTime = startTime + telemetry.duration;
+        let startTime = telemetry.time || new Date();
+        let endTime = startTime.getTime() + telemetry.duration;
         if (telemetry && !telemetry.target && telemetry.data) {
             // url.parse().host returns null for non-urls,
             // making this essentially a no-op in those cases

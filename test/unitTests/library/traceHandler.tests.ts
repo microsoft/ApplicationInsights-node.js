@@ -76,10 +76,10 @@ describe("Library/TraceHandlers", () => {
             });
             mockHttpsServer = https.createServer({
                 key: fs.readFileSync(
-                    path.join(__dirname, '../../../../test/unitTests/', 'fixtures', 'server-key.pem')
+                    path.join(__dirname, '../../../../test/', 'certs', 'server-key.pem')
                 ),
                 cert: fs.readFileSync(
-                    path.join(__dirname, '../../../../test/unitTests/', 'fixtures', 'server-cert.pem')
+                    path.join(__dirname, '../../../../test/', 'certs', 'server-cert.pem')
                 ),
             }, (req: any, res: any) => {
                 res.statusCode = 200;
