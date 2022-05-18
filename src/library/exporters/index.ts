@@ -3,4 +3,3 @@
 
 export { LogExporter } from "./logExporter";
 export { MetricExporter } from "./metricExporter";
-export { TraceExporter } from "./traceExporter";

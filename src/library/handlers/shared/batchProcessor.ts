@@ -3,7 +3,6 @@
 import { TelemetryItem as Envelope } from "../../../declarations/generated";
 import { Config } from "../../configuration";
 import { Logger } from "../../logging";
-import { Util } from "../../util";
 import { BaseExporter } from "../../exporters/shared";
 
 export class BatchProcessor {
@@ -44,14 +43,14 @@ export class BatchProcessor {
         this._buffer.push(envelope);
         // flush if we would exceed the max-size limit by adding this item
         if (this._buffer.length >= this._getBatchSize()) {
-            this.triggerSend(false);
+            this.triggerSend();
             return;
         }
         // ensure an invocation timeout is set if anything is in the buffer
         if (!this._timeoutHandle && this._buffer.length > 0) {
             this._timeoutHandle = setTimeout(() => {
                 this._timeoutHandle = null;
-                this.triggerSend(false);
+                this.triggerSend();
             }, this._getBatchIntervalMs());
             this._timeoutHandle.unref();
         }
@@ -60,22 +59,12 @@ export class BatchProcessor {
     /**
      * Immediately send buffered data
      */
-    public async triggerSend(isNodeCrashing: boolean): Promise<string> {
-        let bufferIsEmpty = this._buffer.length < 1;
-        if (!bufferIsEmpty) {
-            // invoke send
-            if (isNodeCrashing || Util.getInstance().isNodeExit) {
-                try {
-                    await this._exporter.persistOnCrash(this._buffer);
-                } catch (error) {
-                    return "Failed to persist envelopes on app crash";
-                }
-            } else {
-                try {
-                    await this._exporter.export(this._buffer);
-                } catch (error) {
-                    return "Failed to export envelopes";
-                }
+    public async triggerSend(): Promise<void> {
+        if (this._buffer.length > 0) {
+            try {
+                await this._exporter.export(this._buffer);
+            } catch (error) {
+                Logger.getInstance().error("Failed to export envelopes", error)
             }
         }
         // update lastSend time to enable throttling
@@ -84,8 +73,5 @@ export class BatchProcessor {
         this._buffer = [];
         clearTimeout(this._timeoutHandle);
         this._timeoutHandle = null;
-        if (bufferIsEmpty) {
-            return "No data to send";
-        }
     }
 }

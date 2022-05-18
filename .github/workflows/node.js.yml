@@ -18,6 +18,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - run: openssl req -x509 -nodes -newkey rsa -keyout ./test/certs/server-key.pem -out ./test/certs/server-cert.pem -days 1 -subj "/C=CL/ST=RM/L=OpenTelemetryTest/O=Root/OU=Test/CN=ca"
     - name: (${{ matrix.os }}) on Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
       with:
