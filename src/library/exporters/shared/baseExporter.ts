@@ -58,8 +58,8 @@ export class BaseExporter {
         Logger.getInstance().debug("Exporter was successfully setup");
     }
 
-    public async export(envelopes: Envelope[]): Promise<void> {
-        await this._exportEnvelopes(envelopes);
+    public async export(envelopes: Envelope[], resultCallback: (result: ExportResult) => void): Promise<void> {
+        resultCallback(await this._exportEnvelopes(envelopes));
     }
 
     protected async _exportEnvelopes(envelopes: Envelope[]): Promise<ExportResult> {

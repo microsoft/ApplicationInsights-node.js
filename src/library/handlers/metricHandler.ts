@@ -228,7 +228,7 @@ export class MetricHandler {
                 value: metricPoint.value,
             };
             metricDataPoint.count = !isNaN(metricPoint.count) ? metricPoint.count : 1;
-            metricDataPoint.dataPointType = KnownDataPointType.Aggregation; // Aggregation for Manual APIs
+            metricDataPoint.dataPointType = metricPoint.kind || KnownDataPointType.Aggregation; // Aggregation for Manual APIs
             metricDataPoint.max = !isNaN(metricPoint.max) ? metricPoint.max : metricPoint.value;
             metricDataPoint.min = !isNaN(metricPoint.min) ? metricPoint.min : metricPoint.value;
             metricDataPoint.stdDev = !isNaN(metricPoint.stdDev) ? metricPoint.stdDev : 0;

@@ -33,7 +33,7 @@
     "prepare": "npm run build:compile",
     "prepublishOnly": "npm run build",
     "lint": "eslint ./ --fix",
-    "test": "nyc mocha ./out/test --recursive",
+    "test": "tsc && nyc mocha ./out/test --recursive",
     "test:debug": "nyc mocha ./out/test --inspect-brk --recursive",
     "test:unit": "nyc mocha ./out/test/unitTests --recursive",
     "test:e2e": "nyc mocha ./out/test/endToEnd --recursive",
