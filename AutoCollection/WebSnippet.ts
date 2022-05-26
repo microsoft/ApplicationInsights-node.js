@@ -8,6 +8,7 @@ import snippetInjectionHelper = require("../Library/SnippetInjectionHelper");
 import Statsbeat = require("./Statsbeat");
 import Constants = require("../Declarations/Constants");
 import ConnectionStringParser = require("../Library/ConnectionStringParser");
+import webSnippet = require("@microsoft/applicationinsights-web-snippet");
 
 class WebSnippet {
 
@@ -39,25 +40,8 @@ class WebSnippet {
             defaultIkey = clientSnippetIkey;
         }
 
-        //TODO: quick fix for bundle error, remove this when npm is published
-        WebSnippet._snippet = snippetInjectionHelper.webSnippet.replace("INSTRUMENTATION_KEY", defaultIkey);
+        WebSnippet._snippet = webSnippet.webSnippet.replace("INSTRUMENTATION_KEY", defaultIkey);
         this._statsbeat = client.getStatsbeat();
-
-
-        //TODO: replace the path with npm package exports
-        //NOTE: should use the following part when npm is enabled
-        // let snippetPath = path.resolve(__dirname, "../../AutoCollection/snippet/snippet.min.js");
-        // try {
-        //     fs.readFile(snippetPath, function (err, snippet) {
-        //         if (err) {
-        //             Logging.warn("Failed to load AI Web snippet. Ex:" + err);
-        //         }
-        //         //TODO:should add extra config: snippetInstrumentationKey
-        //         WebSnippet._snippet = snippet.toString().replace("INSTRUMENTATION_KEY", client.config.instrumentationKey);
-        //     });
-        // } catch (err) {
-        //     Logging.warn("Read snippet error: " + err);
-        // }
       
     }
 
@@ -65,7 +49,7 @@ class WebSnippet {
         this._isEnabled = isEnabled;
         if (!!webSnippetConnectionString) {
             let iKey = this._getWebSnippetIkey(webSnippetConnectionString);
-            WebSnippet._snippet = snippetInjectionHelper.webSnippet.replace("INSTRUMENTATION_KEY", iKey);
+            WebSnippet._snippet = webSnippet.webSnippet.replace("INSTRUMENTATION_KEY", iKey);
         }
         if (this._isEnabled && !this._isInitialized && this._isIkeyValid) {
             if (this._statsbeat) {
