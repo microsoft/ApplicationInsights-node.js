@@ -36,34 +36,17 @@ describe("Library/LogHandler", () => {
             _config.enableAutoCollectPerformance = false;
             let handler = new MetricHandler(_config, _context);
             let stub = sinon.stub(handler["_performance"], "enable");
+            let nativeStub = sinon.stub(handler["_nativePerformance"], "enable");
             handler.start();
             assert.ok(stub.called, "Enable was not called");
             assert.equal(stub.args[0][0], false);
-            handler.setAutoCollectPerformance(true);
+            assert.equal(nativeStub.args[0][0], false);
+            handler.setAutoCollectPerformance(true, true);
             assert.ok(stub.called, "Enable was not called");
             assert.equal(stub.args[1][0], true);
+            assert.equal(nativeStub.args[1][0], true);
         });
 
-        it("nativePerformance enablement during start", () => {
-            _config.ena = true;
-            let handler = new MetricHandler(_config, _context);
-            let stub = sinon.stub(handler["_nativePerformance"], "enable");
-            handler.start();
-            assert.ok(stub.calledOnce, "Enable called");
-            assert.equal(stub.args[0][0], true);
-        });
-
-        it("setAutoCollectPerformance", () => {
-            _config.enableAutoCollectPerformance = false;
-            let handler = new MetricHandler(_config, _context);
-            let stub = sinon.stub(handler["_nativePerformance"], "enable");
-            handler.start();
-            assert.ok(stub.called, "Enable was not called");
-            assert.equal(stub.args[0][0], false);
-            handler.setAutoCollectPerformance(true);
-            assert.ok(stub.called, "Enable was not called");
-            assert.equal(stub.args[1][0], true);
-        });
 
         it("preAggregated metrics enablement during start", () => {
             _config.enableAutoCollectPreAggregatedMetrics = true;
