@@ -1,7 +1,5 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { ExportResult } from "@opentelemetry/core";
-
 import { BatchProcessor } from "./shared/batchProcessor";
 import { LogExporter } from "../exporters";
 import * as Contracts from "../../declarations/contracts";
@@ -33,8 +31,8 @@ import {
 import { Logger } from "../logging";
 
 export class LogHandler {
-    public isConsole = true;
-    public isConsoleLog = false;
+    public isAutoCollectConsole = false;
+    public isAutoCollectExternalLoggers = true;
     public isExceptions = true;
     public statsbeat: Statsbeat;
     public config: Config;
@@ -57,7 +55,7 @@ export class LogHandler {
 
     public start() {
         this._isStarted = true;
-        this._console.enable(this.isConsole, this.isConsoleLog);
+        this._console.enable(this.isAutoCollectExternalLoggers, this.isAutoCollectConsole);
         this._exceptions.enable(this.isExceptions);
     }
 
@@ -72,11 +70,11 @@ export class LogHandler {
         this._exceptions = null;
     }
 
-    public setAutoCollectConsole(value: boolean, collectConsoleLog: boolean = false) {
-        this.isConsole = value;
-        this.isConsoleLog = collectConsoleLog;
+    public setAutoCollectConsole(collectExternalLoggers: boolean, collectConsoleLog: boolean = false) {
+        this.isAutoCollectExternalLoggers = collectExternalLoggers;
+        this.isAutoCollectConsole = collectConsoleLog;
         if (this._isStarted) {
-            this._console.enable(value, collectConsoleLog);
+            this._console.enable(this.isAutoCollectExternalLoggers, this.isAutoCollectConsole);
         }
     }
 
@@ -222,7 +220,7 @@ export class LogHandler {
         let baseData: AvailabilityData = {
             id: telemetry.id,
             name: telemetry.name,
-            duration: telemetry.duration.toString(),
+            duration: Util.getInstance().msToTimeSpan(telemetry.duration),
             success: telemetry.success,
             runLocation: telemetry.runLocation,
             message: telemetry.message,
@@ -328,14 +326,14 @@ export class LogHandler {
     }
 
     private _initializeFlagsFromConfig() {
-        this.isConsole =
+        this.isAutoCollectExternalLoggers =
             this.config.enableAutoCollectExternalLoggers !== undefined
                 ? this.config.enableAutoCollectExternalLoggers
-                : this.isConsole;
-        this.isConsoleLog =
+                : this.isAutoCollectExternalLoggers;
+        this.isAutoCollectConsole =
             this.config.enableAutoCollectConsole !== undefined
                 ? this.config.enableAutoCollectConsole
-                : this.isConsoleLog;
+                : this.isAutoCollectConsole;
         this.isExceptions =
             this.config.enableAutoCollectExceptions !== undefined
                 ? this.config.enableAutoCollectExceptions

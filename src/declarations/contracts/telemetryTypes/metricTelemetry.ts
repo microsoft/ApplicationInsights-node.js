@@ -1,3 +1,4 @@
+import { DataPointType } from "../../generated";
 import { Telemetry } from "./telemetry";
 
 /**
@@ -28,7 +29,7 @@ export interface MetricPointTelemetry {
     /**
      * Type of metric being sent, e.g. Pre-agg metrics have kind=Aggregation
      */
-    kind?: string;
+    kind?: DataPointType;
 
     /**
      * The number of samples used to get this value

@@ -4,6 +4,7 @@ import { TelemetryItem as Envelope } from "../../../declarations/generated";
 import { Config } from "../../configuration";
 import { Logger } from "../../logging";
 import { BaseExporter } from "../../exporters/shared";
+import { ExportResult, ExportResultCode } from "@opentelemetry/core";
 
 export class BatchProcessor {
     protected _lastSend: number;
@@ -60,18 +61,29 @@ export class BatchProcessor {
      * Immediately send buffered data
      */
     public async triggerSend(): Promise<void> {
-        if (this._buffer.length > 0) {
-            try {
-                await this._exporter.export(this._buffer);
-            } catch (error) {
-                Logger.getInstance().error("Failed to export envelopes", error)
+        return new Promise((resolve, reject) => {
+            if (this._buffer.length > 0) {
+                this._exporter.export(this._buffer, (result: ExportResult) => {
+                    if (result.code === ExportResultCode.SUCCESS) {
+                        resolve();
+                    } else {
+                        reject(
+                            result.error ??
+                            new Error('Envelope export failed')
+                        );
+                    }
+                });
             }
-        }
-        // update lastSend time to enable throttling
-        this._lastSend = +new Date();
-        // clear buffer
-        this._buffer = [];
-        clearTimeout(this._timeoutHandle);
-        this._timeoutHandle = null;
+            else{
+                resolve();
+            }
+            // update lastSend time to enable throttling
+            this._lastSend = +new Date();
+            // clear buffer
+            this._buffer = [];
+            clearTimeout(this._timeoutHandle);
+            this._timeoutHandle = null;
+        });
+
     }
 }

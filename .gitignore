@@ -35,3 +35,4 @@ undefined/temp/appInsights-node/applicationinsights.log
 
 
 .nyc_output/*
+test/certs/server-key.pem

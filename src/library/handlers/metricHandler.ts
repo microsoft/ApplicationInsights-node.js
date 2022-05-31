@@ -35,7 +35,7 @@ export class MetricHandler {
     public isHeartBeat = false;
     public isRequests = true;
     public isDependencies = true;
-    public isNativePerformance = true;
+    public isNativePerformance = false;
     public disabledExtendedMetrics: IDisabledExtendedMetrics;
     private _config: Config;
     private _context: Context;
@@ -52,13 +52,11 @@ export class MetricHandler {
         this._context = context;
         this._exporter = new MetricExporter(this._config);
         this._batchProcessor = new BatchProcessor(this._config, this._exporter);
+        this._nativePerformance = new AutoCollectNativePerformance(this);
         this._initializeFlagsFromConfig();
         this._performance = new AutoCollectPerformance(this);
         this._preAggregatedMetrics = new AutoCollectPreAggregatedMetrics(this);
         this._heartbeat = new HeartBeat(this, this._config);
-        if (!this._nativePerformance) {
-            this._nativePerformance = new AutoCollectNativePerformance(this);
-        }
     }
 
     public start() {
@@ -193,6 +191,13 @@ export class MetricHandler {
             this._config.enableAutoCollectHeartbeat !== undefined
                 ? this._config.enableAutoCollectHeartbeat
                 : this.isHeartBeat;
+
+        const extendedMetricsConfig = this._nativePerformance.parseEnabled(
+            this._config.enableAutoCollectExtendedMetrics || this.isNativePerformance,
+            this._config
+        );
+        this.isNativePerformance = extendedMetricsConfig.isEnabled;
+        this.disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
     }
 
     /**
@@ -228,7 +233,7 @@ export class MetricHandler {
                 value: metricPoint.value,
             };
             metricDataPoint.count = !isNaN(metricPoint.count) ? metricPoint.count : 1;
-            metricDataPoint.dataPointType = KnownDataPointType.Aggregation; // Aggregation for Manual APIs
+            metricDataPoint.dataPointType = metricPoint.kind || KnownDataPointType.Aggregation; // Aggregation for Manual APIs
             metricDataPoint.max = !isNaN(metricPoint.max) ? metricPoint.max : metricPoint.value;
             metricDataPoint.min = !isNaN(metricPoint.min) ? metricPoint.min : metricPoint.value;
             metricDataPoint.stdDev = !isNaN(metricPoint.stdDev) ? metricPoint.stdDev : 0;
