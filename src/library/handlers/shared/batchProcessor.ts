@@ -64,9 +64,7 @@ export class BatchProcessor {
         return new Promise((resolve, reject) => {
             if (this._buffer.length > 0) {
                 this._exporter.export(this._buffer, (result: ExportResult) => {
-                    if (result.code === ExportResultCode.SUCCESS) {
-                        resolve();
-                    } else {
+                    if (result.code != ExportResultCode.SUCCESS) {
                         reject(
                             result.error ??
                             new Error('Envelope export failed')
@@ -80,6 +78,7 @@ export class BatchProcessor {
             this._buffer = [];
             clearTimeout(this._timeoutHandle);
             this._timeoutHandle = null;
+            resolve();
         });
 
     }
