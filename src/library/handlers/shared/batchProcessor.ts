@@ -61,8 +61,14 @@ export class BatchProcessor {
      * Immediately send buffered data
      */
     public async triggerSend(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            if (this._buffer.length > 0) {
+        // update lastSend time to enable throttling
+        this._lastSend = +new Date();
+        // clear buffer
+        this._buffer = [];
+        clearTimeout(this._timeoutHandle);
+        this._timeoutHandle = null;
+        if (this._buffer.length > 0) {
+            return new Promise((resolve, reject) => {
                 this._exporter.export(this._buffer, (result: ExportResult) => {
                     if (result.code != ExportResultCode.SUCCESS) {
                         reject(
@@ -70,16 +76,9 @@ export class BatchProcessor {
                             new Error('Envelope export failed')
                         );
                     }
+                    resolve();
                 });
-            }
-            // update lastSend time to enable throttling
-            this._lastSend = +new Date();
-            // clear buffer
-            this._buffer = [];
-            clearTimeout(this._timeoutHandle);
-            this._timeoutHandle = null;
-            resolve();
-        });
-
+            });
+        }
     }
 }
