@@ -8,7 +8,7 @@ import snippetInjectionHelper = require("../Library/SnippetInjectionHelper");
 import Statsbeat = require("./Statsbeat");
 import Constants = require("../Declarations/Constants");
 import ConnectionStringParser = require("../Library/ConnectionStringParser");
-import webSnippet = require("@microsoft/applicationinsights-web-snippet");
+import {webSnippet} from "@microsoft/applicationinsights-web-snippet";
 
 class WebSnippet {
 
@@ -40,7 +40,7 @@ class WebSnippet {
             defaultIkey = clientSnippetIkey;
         }
 
-        WebSnippet._snippet = webSnippet.webSnippet.replace("INSTRUMENTATION_KEY", defaultIkey);
+        WebSnippet._snippet = webSnippet.replace("INSTRUMENTATION_KEY", defaultIkey);
         this._statsbeat = client.getStatsbeat();
       
     }
@@ -49,7 +49,7 @@ class WebSnippet {
         this._isEnabled = isEnabled;
         if (!!webSnippetConnectionString) {
             let iKey = this._getWebSnippetIkey(webSnippetConnectionString);
-            WebSnippet._snippet = webSnippet.webSnippet.replace("INSTRUMENTATION_KEY", iKey);
+            WebSnippet._snippet = webSnippet.replace("INSTRUMENTATION_KEY", iKey);
         }
         if (this._isEnabled && !this._isInitialized && this._isIkeyValid) {
             if (this._statsbeat) {
