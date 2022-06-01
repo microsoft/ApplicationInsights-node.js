@@ -4,7 +4,7 @@ import { DiagnosticLogger } from "../../../src/bootstrap/diagnosticLogger";
 import * as DataModel from "../../../src/bootstrap/dataModel";
 import * as Helpers from "../../../src/bootstrap/helpers";
 import * as DefaultTypes from "../../../src/bootstrap/default";
-import * as appInsights from "../../../src/applicationinsights";
+import * as appInsights from "../../../src/shim/applicationinsights";
 
 class LoggerSpy implements DataModel.AgentLogger {
     public logCount = 0;
@@ -73,11 +73,11 @@ describe("#setupAndStart()", () => {
         process.env.ApplicationInsightsAgent_EXTENSION_VERSION = origEnv;
 
         // start was called once
-        assert.equal(startStub.callCount, 1);
+        assert.equal(startStub.callCount, 1, "start not called");
 
         // No Logger was done
-        assert.equal(logger.logCount, 1);
-        assert.equal(logger.errorCount, 0);
+        assert.equal(logger.logCount, 1, "Logger count");
+        assert.equal(logger.errorCount, 0, "Error count");
     });
 
     it("should not setup and start the SDK if no setupString is provided", () => {

@@ -44,6 +44,7 @@ export class JsonConfig implements IJsonConfig {
     public enableAutoCollectRequests: boolean;
     public enableAutoCollectDependencies: boolean;
     public enableAutoDependencyCorrelation: boolean;
+    public enableAutoPopulateAzureProperties: boolean;
     public enableUseAsyncHooks: boolean;
     public enableUseDiskRetryCaching: boolean;
     public enableResendInterval: number;
@@ -147,6 +148,7 @@ export class JsonConfig implements IJsonConfig {
             this.enableAutoCollectRequests = jsonConfig.enableAutoCollectRequests;
             this.enableAutoCollectDependencies = jsonConfig.enableAutoCollectDependencies;
             this.enableAutoDependencyCorrelation = jsonConfig.enableAutoDependencyCorrelation;
+            this.enableAutoPopulateAzureProperties = jsonConfig.enableAutoPopulateAzureProperties;
             this.enableUseAsyncHooks = jsonConfig.enableUseAsyncHooks;
             this.enableUseDiskRetryCaching = jsonConfig.enableUseDiskRetryCaching;
             this.enableResendInterval = jsonConfig.enableResendInterval;

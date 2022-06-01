@@ -4,7 +4,7 @@ import * as Constants from "../../declarations/constants";
 import { KnownContextTagKeys, KnownSeverityLevel } from "../../declarations/generated";
 import { Util } from "../util";
 import { Config } from "../configuration";
-import { Context } from "../context";
+import { ResourceManager } from "../handlers";
 import { Logger } from "../logging";
 import { TelemetryItem as Envelope } from "../../declarations/generated";
 
@@ -15,13 +15,12 @@ export class QuickPulseEnvelopeFactory {
         metrics: Contracts.MetricQuickPulse[],
         documents: Contracts.DocumentQuickPulse[],
         config: Config,
-        context: Context
+        resourceManager: ResourceManager
     ): Contracts.EnvelopeQuickPulse {
         const machineName = (os && typeof os.hostname === "function" && os.hostname()) || "Unknown"; // Note: os.hostname() was added in node v0.3.3
-        const instance =
-            (context.tags && context.tags[KnownContextTagKeys.AiCloudRoleInstance]) || machineName;
-
-        const roleName = (context.tags && context.tags[KnownContextTagKeys.AiCloudRole]) || null;
+        const instance = String(resourceManager.getTraceResource().attributes[KnownContextTagKeys.AiCloudRoleInstance]) || machineName;
+        const roleName = String(resourceManager.getTraceResource().attributes[KnownContextTagKeys.AiCloudRole]) || null;
+        const version = String(resourceManager.getTraceResource().attributes[KnownContextTagKeys.AiInternalSdkVersion]) || null;
 
         var envelope: Contracts.EnvelopeQuickPulse = {
             Documents: documents.length > 0 ? documents : null,
@@ -29,7 +28,7 @@ export class QuickPulseEnvelopeFactory {
             Metrics: metrics.length > 0 ? metrics : null,
             InvariantVersion: 1, //  1 -> v1 QPS protocol
             Timestamp: `\/Date(${Date.now()})\/`,
-            Version: context.tags[KnownContextTagKeys.AiInternalSdkVersion],
+            Version: version,
             StreamId: StreamId,
             MachineName: machineName,
             Instance: instance,
@@ -173,11 +172,11 @@ export class QuickPulseEnvelopeFactory {
         if (envelope.data.baseType) {
             __type =
                 Constants.TelemetryTypeStringToQuickPulseType[
-                    envelope.data.baseType as Contracts.TelemetryTypeValues
+                envelope.data.baseType as Contracts.TelemetryTypeValues
                 ];
             documentType =
                 Constants.TelemetryTypeStringToQuickPulseDocumentType[
-                    envelope.data.baseType as Contracts.TelemetryTypeValues
+                envelope.data.baseType as Contracts.TelemetryTypeValues
                 ];
         } else {
             // Remark: This should never be hit because createQuickPulseDocument is only called within

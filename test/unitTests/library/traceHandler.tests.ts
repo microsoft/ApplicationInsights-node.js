@@ -4,9 +4,8 @@ import * as path from "path";
 import * as sinon from "sinon";
 import { ExportResultCode } from "@opentelemetry/core";
 
-import { TraceHandler } from "../../../src/library/handlers/";
+import { TraceHandler, ResourceManager } from "../../../src/library/handlers/";
 import { Config } from "../../../src/library/configuration";
-import { Context } from "../../../src/library";
 import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations/contracts";
 
 
@@ -14,8 +13,8 @@ describe("Library/TraceHandlers", () => {
     let http: any = null;
     let https: any = null;
     let sandbox: sinon.SinonSandbox;
-    const _context = new Context();
     let _config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+    const _context = new ResourceManager(_config);
 
     before(() => {
         sandbox = sinon.createSandbox();
@@ -313,115 +312,6 @@ describe("Library/TraceHandlers", () => {
                 }).catch((error) => {
                     done(error);
                 });;
-            }).catch((error) => {
-                done(error);
-            });;
-
-        });
-    });
-
-    describe("#manual track APIs", () => {
-        it("trackDependency http", (done) => {
-            let traceHandler = new TraceHandler(_config, _context)
-            let stub = sinon.stub(traceHandler["_exporter"], "export").callsFake((spans: any, resultCallback: any) => {
-                return new Promise((resolve, reject) => {
-                    resultCallback({
-                        code: ExportResultCode.SUCCESS
-                    });
-                    resolve();
-                });
-            });
-            let telemetry: DependencyTelemetry = {
-                name: "TestName",
-                duration: 2000, //2 seconds
-                resultCode: "401",
-                data: "http://test.com",
-                dependencyTypeName: "HTTP",
-                target: "TestTarget",
-                success: false
-            };
-            traceHandler.trackDependency(telemetry);
-            traceHandler.flush().then(() => {
-                assert.ok(stub.calledOnce, "Export called");
-                let spans = stub.args[0][0];
-                assert.equal(spans.length, 1);
-                assert.equal(spans[0].name, "TestName");
-                assert.equal(spans[0].endTime[0] - spans[0].startTime[0], 2); // hrTime UNIX Epoch time in seconds
-                assert.equal(spans[0].kind, 2, "Span Kind"); // Outgoing
-                assert.equal(spans[0].attributes["http.method"], "HTTP");
-                assert.equal(spans[0].attributes["http.status_code"], "401");
-                assert.equal(spans[0].attributes["http.url"], "http://test.com");
-                assert.equal(spans[0].attributes["peer.service"], "TestTarget");
-                done();
-            }).catch((error) => {
-                done(error);
-            });;
-        });
-
-        it("trackDependency DB", (done) => {
-            let traceHandler = new TraceHandler(_config, _context)
-            let stub = sinon.stub(traceHandler["_exporter"], "export").callsFake((spans: any, resultCallback: any) => {
-                return new Promise((resolve, reject) => {
-                    resultCallback({
-                        code: ExportResultCode.SUCCESS
-                    });
-                    resolve();
-                });
-            });
-            let telemetry: DependencyTelemetry = {
-                name: "TestName",
-                duration: 2000, //2 seconds
-                resultCode: "401",
-                data: "SELECT * FROM test",
-                dependencyTypeName: "MYSQL",
-                target: "TestTarget",
-                success: false
-            };
-            traceHandler.trackDependency(telemetry);
-            traceHandler.flush().then(() => {
-                assert.ok(stub.calledOnce, "Export called");
-                let spans = stub.args[0][0];
-                assert.equal(spans.length, 1);
-                assert.equal(spans[0].name, "TestName");
-                assert.equal(spans[0].kind, 2, "Span Kind"); // Outgoing
-                assert.equal(spans[0].attributes["db.system"], "MYSQL");
-                assert.equal(spans[0].attributes["db.statement"], "SELECT * FROM test");
-                done();
-            }).catch((error) => {
-                done(error);
-            });;
-        });
-
-        it("trackRequest", (done) => {
-            let traceHandler = new TraceHandler(_config, _context)
-            let stub = sinon.stub(traceHandler["_exporter"], "export").callsFake((spans: any, resultCallback: any) => {
-                return new Promise((resolve, reject) => {
-                    resultCallback({
-                        code: ExportResultCode.SUCCESS
-                    });
-                    resolve();
-                });
-            });
-            let telemetry: RequestTelemetry = {
-                id: "123456",
-                name: "TestName",
-                duration: 2000, //2 seconds
-                resultCode: "401",
-                url: "http://test.com",
-                success: false
-            };
-            traceHandler.trackRequest(telemetry);
-            traceHandler.flush().then(() => {
-                assert.ok(stub.calledOnce, "Export called");
-                let spans = stub.args[0][0];
-                assert.equal(spans.length, 1);
-                assert.equal(spans[0].name, "TestName");
-                assert.equal(spans[0].endTime[0] - spans[0].startTime[0], 2); // hrTime UNIX Epoch time in seconds
-                assert.equal(spans[0].kind, 1, "Span Kind"); // Incoming
-                assert.equal(spans[0].attributes["http.method"], "HTTP");
-                assert.equal(spans[0].attributes["http.status_code"], "401");
-                assert.equal(spans[0].attributes["http.url"], "http://test.com");
-                done();
             }).catch((error) => {
                 done(error);
             });;

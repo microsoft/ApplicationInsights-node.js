@@ -5,7 +5,7 @@ import { Logger } from "../logging";
 import { Config } from "../configuration";
 import { QuickPulseEnvelopeFactory } from "./quickPulseEnvelopeFactory";
 import { QuickPulseSender } from "./quickPulseSender";
-import { Context } from "../context";
+import { ResourceManager } from "../handlers/resourceManager";
 import * as Constants from "../../declarations/constants";
 import * as Contracts from "../../declarations/contracts";
 import { TelemetryItem as Envelope } from "../../declarations/generated";
@@ -13,7 +13,7 @@ import { TelemetryItem as Envelope } from "../../declarations/generated";
 /** State Container for sending to the QuickPulse Service */
 export class QuickPulseStateManager {
     public config: Config;
-    public context: Context;
+    private _resourceManager: ResourceManager;
     public authorizationHandler: AuthorizationHandler;
 
     private MAX_POST_WAIT_TIME = 20000;
@@ -35,9 +35,9 @@ export class QuickPulseStateManager {
     private _redirectedHost: string = null;
     private _pollingIntervalHint: number = -1;
 
-    constructor(config: Config, context?: Context) {
+    constructor(config: Config, resourceManager?: ResourceManager) {
         this.config = config;
-        this.context = context || new Context();
+        this._resourceManager = resourceManager || new ResourceManager();
         this._sender = new QuickPulseSender(this.config);
         this._envelopeFactory = new QuickPulseEnvelopeFactory();
         this._isEnabled = false;
@@ -126,7 +126,7 @@ export class QuickPulseStateManager {
             metrics,
             this._documents.slice(),
             this.config,
-            this.context
+            this._resourceManager
         );
 
         // Clear this document, metric buffer

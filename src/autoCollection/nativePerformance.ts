@@ -1,8 +1,7 @@
-import { MetricHandler } from "../library/handlers/metricHandler";
-import { Context } from "../library";
+import { MetricHandler } from "../library/handlers";
 import { Logger } from "../library/logging";
 import { IBaseConfig, IDisabledExtendedMetrics } from "../declarations/interfaces";
-import { KnownContextTagKeys } from "../declarations/generated";
+
 
 export class AutoCollectNativePerformance {
     private _emitter: any;

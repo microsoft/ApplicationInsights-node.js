@@ -6,6 +6,7 @@ import { SpanContext } from "@opentelemetry/api";
 import * as azureFunctionsTypes from "../declarations/functions";
 import { ICorrelationContext, ITraceparent, ITracestate } from "../declarations/interfaces";
 
+
 export class CorrelationContextManager {
     /**
      *  Provides the current Context.
@@ -13,8 +14,7 @@ export class CorrelationContextManager {
      *  logical chain of execution, including across asynchronous calls.
      */
     public getCurrentContext(): ICorrelationContext | null {
-        // TODO
-        return null;
+        throw new Error("Not implemented");
     }
 
     /**
@@ -28,8 +28,7 @@ export class CorrelationContextManager {
         traceparent?: ITraceparent,
         tracestate?: ITracestate
     ): ICorrelationContext {
-        // TODO
-        return null;
+        throw new Error("Not implemented");
     }
 
     /**
@@ -38,14 +37,14 @@ export class CorrelationContextManager {
      *  will receive this Context object on calls to GetCurrentContext.
      */
     public runWithContext(context: ICorrelationContext, fn: () => any): any {
-        // TODO
+        throw new Error("Not implemented");
     }
 
     /**
      * Wrapper for cls-hooked bindEmitter method
      */
     public wrapEmitter(emitter: events.EventEmitter): void {
-        // TODO
+        throw new Error("Not implemented");
     }
 
     /**
@@ -56,15 +55,14 @@ export class CorrelationContextManager {
      *  The supplied callback will be given the same context that was present for
      *  the call to wrapCallback.  */
     public wrapCallback<T extends Function>(fn: T, context?: ICorrelationContext): T {
-        // TODO
-        return null;
+        throw new Error("Not implemented");
     }
 
     /**
      *  Enables the CorrelationContextManager.
      */
     public enable(forceClsHooked?: boolean) {
-        // TODO
+        throw new Error("Not implemented");
     }
 
     /**
@@ -77,21 +75,20 @@ export class CorrelationContextManager {
             | SpanContext,
         request?: azureFunctionsTypes.HttpRequest | string
     ): ICorrelationContext | null {
-        // TODO
-        return null;
+        throw new Error("Not implemented");
     }
 
     /**
      *  Disables the CorrelationContextManager.
      */
     public disable() {
-        // TODO
+        throw new Error("Not implemented");
     }
 
     /**
      * Reset the namespace
      */
     public reset() {
-        // TODO
+        throw new Error("Not implemented");
     }
 }

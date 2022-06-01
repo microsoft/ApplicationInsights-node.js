@@ -3,11 +3,12 @@ import * as os from "os";
 import { Logger } from "../logging";
 import * as Constants from "../../declarations/constants";
 import { Config } from "../configuration";
-import { AzureVirtualMachine, Context } from "..";
+import { AzureVirtualMachine } from "..";
 import { NetworkStatsbeat } from "./networkStatsbeat";
 import { Util } from "../util";
-import { MetricHandler } from "../handlers";
+import { MetricHandler, ResourceManager } from "../handlers";
 import { MetricTelemetry, MetricPointTelemetry } from "../../declarations/contracts";
+import { KnownContextTagKeys } from "../../declarations/generated";
 
 const STATSBEAT_LANGUAGE = "node";
 
@@ -19,7 +20,7 @@ export class Statsbeat {
     private _TAG = "Statsbeat";
     private _metricHandler: MetricHandler;
     private _networkStatsbeatCollection: Array<NetworkStatsbeat>;
-    private _context: Context;
+    private _resourceManager: ResourceManager;
     private _handle: NodeJS.Timer | null;
     private _longHandle: NodeJS.Timer | null;
     private _isEnabled: boolean;
@@ -42,12 +43,12 @@ export class Statsbeat {
     private _feature: number = Constants.StatsbeatFeature.NONE;
     private _instrumentation: number = Constants.StatsbeatInstrumentation.NONE;
 
-    constructor(config: Config, context?: Context) {
+    constructor(config: Config, resourceManager?: ResourceManager) {
         this._isInitialized = false;
         this._statbeatMetrics = [];
         this._networkStatsbeatCollection = [];
         this._config = config;
-        this._context = context || new Context(null);
+        this._resourceManager = resourceManager || new ResourceManager();
         this._azureVm = new AzureVirtualMachine();
         this._statsbeatConfig = new Config(this._connectionString);
         this._statsbeatConfig.samplingPercentage = 100; // Do not sample
@@ -55,7 +56,7 @@ export class Statsbeat {
         this._statsbeatConfig.enableAutoCollectPerformance = false;
         this._statsbeatConfig.enableAutoCollectPreAggregatedMetrics = false;
         this._statsbeatConfig.enableAutoCollectConsole = false;
-        this._metricHandler = new MetricHandler(this._statsbeatConfig, this._context);
+        this._metricHandler = new MetricHandler(this._statsbeatConfig, this._resourceManager);
     }
 
     public enable(isEnabled: boolean) {
@@ -356,7 +357,8 @@ export class Statsbeat {
     private _getCustomProperties() {
         this._language = STATSBEAT_LANGUAGE;
         this._cikey = this._config.instrumentationKey;
-        this._sdkVersion = this._context.sdkVersion; // "node" or "node-nativeperf"
+        const sdkVersion = String(this._resourceManager.getTraceResource().attributes[KnownContextTagKeys.AiInternalSdkVersion]) || null;
+        this._sdkVersion = sdkVersion; // "node" or "node-nativeperf"
         this._os = os.type();
         this._runtimeVersion = process.version;
     }

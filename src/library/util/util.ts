@@ -8,7 +8,7 @@ import { IdGenerator, RandomIdGenerator } from "@opentelemetry/core";
 
 import { Logger } from "../logging";
 import { Config } from "../configuration";
-import { TelemetryClient } from "../telemetryClient";
+import { Client } from "../client";
 import { RequestHeaders } from "../../declarations/requestResponseHeaders";
 import { HttpRequest } from "../../declarations/functions";
 import { JsonConfig } from "../configuration";
@@ -203,9 +203,9 @@ export class Util {
      * Checks if a request url is not on a excluded domain list
      * and if it is safe to add correlation headers
      */
-    public canIncludeCorrelationHeader(client: TelemetryClient, requestUrl: string) {
+    public canIncludeCorrelationHeader(client: Client, requestUrl: string) {
         let excludedDomains =
-            client && client.config && client.config.correlationHeaderExcludedDomains;
+            client && client.getConfig() && client.getConfig().correlationHeaderExcludedDomains;
         if (!excludedDomains || excludedDomains.length == 0 || !requestUrl) {
             return true;
         }
@@ -331,7 +331,7 @@ export class Util {
      * Parse standard <string | string[] | number> request-context header
      */
     public safeIncludeCorrelationHeader(
-        client: TelemetryClient,
+        client: Client,
         request: http.ClientRequest | http.ServerResponse,
         correlationHeader: any
     ) {
@@ -359,7 +359,7 @@ export class Util {
         } else {
             request.setHeader(
                 RequestHeaders.requestContextHeader,
-                `${RequestHeaders.requestContextSourceKey}=${client.config.correlationId}`
+                `${RequestHeaders.requestContextSourceKey}=${client.getConfig().correlationId}`
             );
         }
     }
@@ -394,8 +394,18 @@ export class Util {
         }
     }
 
+    public isDbDependency(dependencyType: string) {
+        return (
+            dependencyType.indexOf("SQL") > -1 ||
+            dependencyType == "mysql" ||
+            dependencyType == "postgresql" ||
+            dependencyType == "mongodb" ||
+            dependencyType == "redis"
+        );
+    }
+
     private addCorrelationIdHeaderFromString(
-        client: TelemetryClient,
+        client: Client,
         response: http.ClientRequest | http.ServerResponse,
         correlationHeader: string
     ) {
@@ -406,7 +416,7 @@ export class Util {
         if (!found) {
             response.setHeader(
                 RequestHeaders.requestContextHeader,
-                `${correlationHeader},${RequestHeaders.requestContextSourceKey}=${client.config.correlationId}`
+                `${correlationHeader},${RequestHeaders.requestContextSourceKey}=${client.getConfig().correlationId}`
             );
         }
     }

@@ -1,6 +1,6 @@
 import * as azureCore from "@azure/core-http";
 
-import * as types from "../applicationinsights";
+import * as types from "../shim/applicationinsights";
 import * as Helpers from "./helpers";
 import { StatusLogger, StatusContract, DEFAULT_STATUS_CONTRACT } from "./statusLogger";
 import { DiagnosticLogger } from "./diagnosticLogger";
@@ -76,7 +76,7 @@ export function setupAndStart(
     }
 
     try {
-        _appInsights = require("../applicationinsights");
+        _appInsights = require("../shim/applicationinsights");
         if (_appInsights.defaultClient) {
             // setupAndStart was already called, return the result
             _logger.logError(

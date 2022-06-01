@@ -2,17 +2,16 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 import { ExportResultCode } from "@opentelemetry/core";
 
-import { MetricHandler } from "../../../src/library/handlers";
+import { MetricHandler, ResourceManager } from "../../../src/library/handlers";
 import { Config } from "../../../src/library/configuration";
-import { Context } from "../../../src/library";
 import { MetricTelemetry, MetricPointTelemetry } from "../../../src/declarations/contracts";
 
 
 
 describe("Library/LogHandler", () => {
     let sandbox: sinon.SinonSandbox;
-    const _context = new Context();
     let _config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+    const _context = new ResourceManager(_config);
 
     before(() => {
         sandbox = sinon.createSandbox();

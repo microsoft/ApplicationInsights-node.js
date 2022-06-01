@@ -5,8 +5,7 @@ import { bunyan } from "diagnostic-channel-publishers";
 
 import { enable, dispose } from "../../../src/autoCollection/diagnostic-channel/bunyan.sub";
 import { Util } from "../../../src/library/util";
-import { Context, } from "../../../src/library";
-import { LogHandler } from "../../../src/library/handlers";
+import { LogHandler, ResourceManager } from "../../../src/library/handlers";
 import { Config } from "../../../src/library/configuration";
 
 describe("diagnostic-channel/bunyan", () => {
@@ -24,7 +23,7 @@ describe("diagnostic-channel/bunyan", () => {
     it("should call trackException for errors", () => {
         let config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
         config.enableAutoCollectConsole = true;
-        let handler = new LogHandler(config, new Context());
+        let handler = new LogHandler(config, new ResourceManager(config));
         handler.start();
         const stub = sandbox.stub(handler, "trackException");
         const dummyError = { stack: "Test error" };
@@ -41,7 +40,7 @@ describe("diagnostic-channel/bunyan", () => {
     it("should call trackTrace for logs", () => {
         let config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
         config.enableAutoCollectConsole = true;
-        let handler = new LogHandler(config, new Context());
+        let handler = new LogHandler(config, new ResourceManager(config));
         handler.start();
         const stub = sandbox.stub(handler, "trackTrace");
         const logEvent: bunyan.IBunyanData = {
@@ -54,8 +53,9 @@ describe("diagnostic-channel/bunyan", () => {
     });
 
     it("should notify multiple handlers", () => {
-        let handler = new LogHandler(new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"), new Context());
-        let secondHandler = new LogHandler(new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"), new Context());
+        let config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+        let handler = new LogHandler(config, new ResourceManager(config));
+        let secondHandler = new LogHandler(config, new ResourceManager(config));
         const stub = sandbox.stub(handler, "trackTrace");
         const secondStub = sandbox.stub(secondHandler, "trackTrace");
         enable(true, handler);

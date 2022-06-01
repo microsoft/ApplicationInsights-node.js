@@ -1,4 +1,4 @@
-import * as types from "../applicationinsights"; // needed but unused
+import * as types from "../shim/applicationinsights"; // needed but unused
 import { StatusLogger } from "./statusLogger";
 import { DiagnosticLogger } from "./diagnosticLogger";
 import { NoopLogger } from "./noopLogger";

@@ -1,7 +1,7 @@
 import * as http from "http";
 import * as https from "https";
 import * as azureCore from "@azure/core-http";
-import { DistributedTracingModes } from "../applicationinsights";
+import { DistributedTracingModes } from "../declarations/enumerators";
 
 export interface IBaseConfig {
     /** Application Insights resource instrumentation key */
@@ -85,6 +85,10 @@ export interface IBaseConfig {
      */
     enableAutoDependencyCorrelation: boolean;
     /**
+    * Will add extra information in the telemetry about Azure environment.
+    */
+     enableAutoPopulateAzureProperties: boolean;
+    /**
      * Sets the state of automatic dependency correlation (enabled by default)
      * if true, forces use of experimental async_hooks module to provide correlation. If false, instead uses only patching-based techniques. If left blank, the best option is chosen for you based on your version of Node.js.
      */
@@ -158,7 +162,7 @@ export interface IEnvironmentConfig {
     noHttpAgentKeepAlive: boolean;
 }
 
-export interface IJsonConfig extends IBaseConfig, IEnvironmentConfig {}
+export interface IJsonConfig extends IBaseConfig, IEnvironmentConfig { }
 
 export interface IConfig extends IBaseConfig {
     /** An http.Agent to use for SDK HTTP traffic (Optional, Default undefined) */
