@@ -1,5 +1,5 @@
-var Config } from "../Config");
-var redis } from 'redis')
+var Config = require("../config");
+var redis = require('redis')
 
 var ready = false;
 var client = null;

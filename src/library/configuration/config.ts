@@ -7,8 +7,8 @@ import { ConnectionStringParser } from "./connectionStringParser";
 import { Logger } from "../logging";
 import * as Constants from "../../declarations/constants";
 import { JsonConfig } from "./jsonConfig";
-import { IConfig, IDisabledExtendedMetrics } from "../../declarations/interfaces";
-import { DistributedTracingModes } from "../../declarations/enumerators";
+import { IConfig, IDisabledExtendedMetrics, iInstrumentation, InstrumentationType } from "./interfaces";
+
 
 export class Config implements IConfig {
     // IConfig properties
@@ -37,7 +37,6 @@ export class Config implements IConfig {
     public enableSendLiveMetrics: boolean;
     public enableUseDiskRetryCaching: boolean;
     public enableUseAsyncHooks: boolean;
-    public distributedTracingMode: DistributedTracingModes;
     public enableAutoCollectExtendedMetrics: boolean | IDisabledExtendedMetrics;
     public enableResendInterval: number;
     public enableMaxBytesOnDisk: number;
@@ -48,14 +47,15 @@ export class Config implements IConfig {
     public extendedMetricDisablers: string;
     public quickPulseHost: string;
     public setupString: string;
+    public instrumentations: { [type: string]: iInstrumentation };
 
-    public correlationId: string; // TODO: Should be private
     private _connectionString: string;
     private _endpointBase: string = Constants.DEFAULT_BREEZE_ENDPOINT;
     private _instrumentationKey: string;
 
     constructor(setupString?: string) {
         this.setupString = setupString;
+        this._loadDefaultValues();
         // Load config values from env variables and JSON if available
         this._mergeConfig();
         const connectionStringEnv: string | undefined = this._connectionString;
@@ -72,12 +72,11 @@ export class Config implements IConfig {
             iKeyCode /* === instrumentationKey */ ||
             csEnv.instrumentationkey ||
             this._getInstrumentationKey();
-        this.endpointUrl = `${
-            this.endpointUrl ||
+        this.endpointUrl = `${this.endpointUrl ||
             csCode.ingestionendpoint ||
             csEnv.ingestionendpoint ||
             this._endpointBase
-        }/v2.1/track`;
+            }/v2.1/track`;
         this.maxBatchSize = this.maxBatchSize || 250;
         this.maxBatchIntervalMs = this.maxBatchIntervalMs || 15000;
         this.disableAppInsights = this.disableAppInsights || false;
@@ -104,6 +103,16 @@ export class Config implements IConfig {
         }
     }
 
+    private _loadDefaultValues() {
+        this.instrumentations = {};
+        this.instrumentations[InstrumentationType.azureSdk] = { enabled: false };
+        this.instrumentations[InstrumentationType.mongoDb] = { enabled: false };
+        this.instrumentations[InstrumentationType.mySql] = { enabled: false };
+        this.instrumentations[InstrumentationType.postgreSql] = { enabled: false };
+        this.instrumentations[InstrumentationType.redis] = { enabled: false };
+        this.instrumentations[InstrumentationType.redis4] = { enabled: false };
+    }
+
     public set instrumentationKey(iKey: string) {
         if (!this._validateInstrumentationKey(iKey)) {
             Logger.getInstance().warn(
@@ -126,7 +135,6 @@ export class Config implements IConfig {
         this.disableAllExtendedMetrics = jsonConfig.disableAllExtendedMetrics;
         this.disableAppInsights = jsonConfig.disableAppInsights;
         this.disableStatsbeat = jsonConfig.disableStatsbeat;
-        this.distributedTracingMode = jsonConfig.distributedTracingMode;
         this.enableAutoCollectConsole = jsonConfig.enableAutoCollectConsole;
         this.enableAutoCollectDependencies = jsonConfig.enableAutoCollectDependencies;
         this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
@@ -154,6 +162,7 @@ export class Config implements IConfig {
         this.proxyHttpsUrl = jsonConfig.proxyHttpsUrl;
         this.quickPulseHost = jsonConfig.quickPulseHost;
         this.samplingPercentage = jsonConfig.samplingPercentage;
+        //this.instrumentations = jsonConfig.instrumentations;
     }
 
     private _getInstrumentationKey(): string {

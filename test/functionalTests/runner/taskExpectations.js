@@ -66,7 +66,7 @@ module.exports = {
     "MongoInsert": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
-            return telemetry.data.baseData.name === "insert" &&
+            return telemetry.data.baseData.name === "mongodb.insert" &&
                 telemetry.data.baseData.success === true &&
                 telemetry.data.baseData.target === "testapp" &&
                 telemetry.data.baseData.type === "mongodb";
@@ -75,7 +75,7 @@ module.exports = {
     "MongoInsertMany": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
-            return telemetry.data.baseData.name === "insert" &&
+            return telemetry.data.baseData.name === "mongodb.insert" &&
                 telemetry.data.baseData.success === true &&
                 telemetry.data.baseData.target === "testapp" &&
                 telemetry.data.baseData.type === "mongodb";
@@ -84,8 +84,9 @@ module.exports = {
     "MongoFind": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
-            return telemetry.data.baseData.name === "find" &&
+            return telemetry.data.baseData.name === "mongodb.find" &&
                 telemetry.data.baseData.success === true &&
+                telemetry.data.baseData.data === "{\"testrecord\":\"?\"}" &&
                 telemetry.data.baseData.target === "testapp" &&
                 telemetry.data.baseData.type === "mongodb";
         }
@@ -93,7 +94,7 @@ module.exports = {
     "MongoUpdateOne": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
-            return telemetry.data.baseData.name === "update" &&
+            return telemetry.data.baseData.name === "mongodb.update" &&
                 telemetry.data.baseData.success === true &&
                 telemetry.data.baseData.target === "testapp" &&
                 telemetry.data.baseData.type === "mongodb";
@@ -102,31 +103,10 @@ module.exports = {
     "MongoCreateIndex": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
-            return telemetry.data.baseData.name === "createIndexes" &&
-                telemetry.data.baseData.data === "createIndexes" &&
+            return telemetry.data.baseData.name === "mongodb.createIndexes" &&
+                telemetry.data.baseData.data === "{\"createIndexes\":\"?\",\"indexes\":\"?\"}" &&
                 telemetry.data.baseData.target === "testapp" &&
                 telemetry.data.baseData.type === "mongodb";
-        }
-    ),
-    "AITrackDep": outputContract(
-        "RemoteDependencyData",
-        (telemetry) => {
-            return telemetry.data.baseData.name === "Manual dependency" &&
-            telemetry.data.baseData.success === true &&
-            telemetry.data.baseData.type === "Manual" &&
-            telemetry.data.baseData.duration === '00:00:00.200';
-        }
-    ),
-    "AITrackTrace": outputContract(
-        "MessageData",
-        (telemetry) => {
-            return telemetry.data.baseData.message === "Manual track trace";
-        }
-    ),
-    "AITrackExc": outputContract(
-        "ExceptionData",
-        (telemetry) => {
-            return telemetry.data.baseData.exceptions[0].message === "Manual track error";
         }
     ),
     "Timeout": outputContract(
@@ -220,63 +200,54 @@ module.exports = {
     "MySQLQuery": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
-            return telemetry.data.baseData.name === "SELECT * FROM 'test_table'" &&
+            return telemetry.data.baseData.name === "SELECT" &&
             telemetry.data.baseData.data === "SELECT * FROM 'test_table'" &&
-            telemetry.data.baseData.target.indexOf(":33060") > -1 &&
+            telemetry.data.baseData.target ==="localhost|testdb" &&
             telemetry.data.baseData.type == "mysql";
         }
     ),
     "RedisGet": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
-            return telemetry.data.baseData.name === "get" &&
+            return telemetry.data.baseData.name === "redis-get" &&
             telemetry.data.baseData.data === "get" &&
-            telemetry.data.baseData.target.indexOf(":6379") > -1 &&
+            telemetry.data.baseData.target === "localhost"  &&
             telemetry.data.baseData.type === "redis";
         }
     ),
     "RedisSet": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
-            return telemetry.data.baseData.name === "set" &&
+            return telemetry.data.baseData.name === "redis-set" &&
             telemetry.data.baseData.data === "set" &&
-            telemetry.data.baseData.target.indexOf(":6379") > -1 &&
-            telemetry.data.baseData.type === "redis";
-        }
-    ),
-    "RedisSet2": outputContract(
-        "RemoteDependencyData",
-        (telemetry) => {
-            return telemetry.data.baseData.name === "set" &&
-            telemetry.data.baseData.data === "set" &&
-            telemetry.data.baseData.target.indexOf(":6379") > -1 &&
+            telemetry.data.baseData.target === "localhost"  &&
             telemetry.data.baseData.type === "redis";
         }
     ),
     "RedisHset": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
-            return telemetry.data.baseData.name === "hset" &&
+            return telemetry.data.baseData.name === "redis-hset" &&
             telemetry.data.baseData.data === "hset" &&
-            telemetry.data.baseData.target.indexOf(":6379") > -1 &&
+            telemetry.data.baseData.target === "localhost"  &&
             telemetry.data.baseData.type === "redis";
         }
     ),
     "RedisHkeys": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
-            return telemetry.data.baseData.name === "hkeys" &&
+            return telemetry.data.baseData.name === "redis-hkeys" &&
             telemetry.data.baseData.data === "hkeys" &&
-            telemetry.data.baseData.target.indexOf(":6379") > -1 &&
+            telemetry.data.baseData.target === "localhost"  &&
             telemetry.data.baseData.type === "redis";
         }
     ),
     "RedisHincrby": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
-            return telemetry.data.baseData.name === "hincrby" &&
+            return telemetry.data.baseData.name === "redis-hincrby" &&
             telemetry.data.baseData.data === "hincrby" &&
-            telemetry.data.baseData.target.indexOf(":6379") > -1 &&
+            telemetry.data.baseData.target === "localhost"  &&
             telemetry.data.baseData.type === "redis";
         }
     ),
@@ -346,10 +317,10 @@ module.exports = {
     "PostgresQuery": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
-            return telemetry.data.baseData.name === "SELECT * FROM test_table" &&
+            return telemetry.data.baseData.name === "pg.query:SELECT" &&
             telemetry.data.baseData.data === "SELECT * FROM test_table" &&
-            telemetry.data.baseData.target.indexOf(":5432") > -1 &&
-            telemetry.data.baseData.type == "postgres";
+            telemetry.data.baseData.target === "localhost|postgres" &&
+            telemetry.data.baseData.type == "postgresql";
         }
     )
 }

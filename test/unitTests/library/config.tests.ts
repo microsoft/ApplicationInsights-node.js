@@ -116,7 +116,6 @@ describe("Library/Config", () => {
                 assert.equal(config.enableUseAsyncHooks, false);
                 assert.equal(config.disableStatsbeat, false);
                 assert.equal(config.enableAutoCollectExtendedMetrics, false);
-                assert.equal(config.distributedTracingMode, 0);
                 assert.equal(config.enableUseDiskRetryCaching, false);
                 assert.equal(config.enableResendInterval, 123);
                 assert.equal(config.enableMaxBytesOnDisk, 456);

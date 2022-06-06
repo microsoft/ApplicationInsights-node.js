@@ -3,13 +3,13 @@
 import { BatchProcessor } from "./shared/batchProcessor";
 import { MetricExporter } from "../exporters";
 import { Config } from "../configuration";
+import { IDisabledExtendedMetrics } from "../configuration/interfaces";
 import {
     AutoCollectNativePerformance,
     AutoCollectPreAggregatedMetrics,
     AutoCollectPerformance,
 } from "../../autoCollection";
 import { MetricTelemetry } from "../../declarations/contracts";
-import { IDisabledExtendedMetrics } from "../../declarations/interfaces";
 import * as Contracts from "../../declarations/contracts";
 import * as Constants from "../../declarations/constants";
 import {
