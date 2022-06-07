@@ -5,5 +5,5 @@
     {"path": "/deepRequest", "steps": ["HttpGet", "Timeout", "Timeout", "HttpGet", "Timeout"]},
     {"path": "/mongo", "steps": ["MongoInsert", "MongoInsertMany", "MongoUpdateOne", "MongoCreateIndex", "MongoFind"]},
     {"path": "/mySql", "steps": ["MySQLQuery", "Timeout"]},
-    {"path": "/redis", "steps": ["RedisGet", "RedisSet", "RedisSet2", "RedisHset", "RedisHkeys", "RedisHincrby"]}
+    {"path": "/redis", "steps": ["RedisGet", "RedisSet", "RedisHset", "RedisHkeys", "RedisHincrby"]}
     ]
