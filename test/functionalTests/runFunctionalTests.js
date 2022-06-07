@@ -130,7 +130,7 @@ function main() {
 
     // Prepare runner and testapp
     console.log("Installing Runner and TestApp dependencies...");
-    if (run("npm install", "./Runner").code !== 0 || run("npm install", "./testApp").code !== 0) {
+    if (run("npm install", "./runner").code !== 0 || run("npm install", "./testApp").code !== 0) {
         console.error("Could not install dependencies!");
         return 1;
     }
@@ -145,7 +145,7 @@ function main() {
     console.log("Running functional tests...");
     console.log("=======================\n");
     const testApp = runAsync("node --use_strict main.js", "./testApp");
-    const runnerStatus = runLive("node --use_strict main.js" + (perfMode ? " -perfmode": ""), "./Runner").code;
+    const runnerStatus = runLive("node --use_strict main.js" + (perfMode ? " -perfmode": ""), "./runner").code;
     console.log("\n=======================");
 
     // Clean up
