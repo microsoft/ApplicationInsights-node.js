@@ -128,18 +128,18 @@ function main() {
         return 1;
     }
 
-    // // Prepare runner and testapp
-    // console.log("Installing Runner and TestApp dependencies...");
-    // if (run("npm install", "./Runner").code !== 0 || run("npm install", "./testApp").code !== 0) {
-    //     console.error("Could not install dependencies!");
-    //     return 1;
-    // }
-    // console.log("Installing " + path);
-    // run("npm uninstall applicationinsights", "./testApp");
-    // if (run("npm install --no-save " + path, "./testApp").code !== 0) {
-    //     console.error("Could not install SDK!");
-    //     return 1;
-    // }
+    // Prepare runner and testapp
+    console.log("Installing Runner and TestApp dependencies...");
+    if (run("npm install", "./Runner").code !== 0 || run("npm install", "./testApp").code !== 0) {
+        console.error("Could not install dependencies!");
+        return 1;
+    }
+    console.log("Installing " + path);
+    run("npm uninstall applicationinsights", "./testApp");
+    if (run("npm install --no-save " + path, "./testApp").code !== 0) {
+        console.error("Could not install SDK!");
+        return 1;
+    }
 
     // Run tests
     console.log("Running functional tests...");
