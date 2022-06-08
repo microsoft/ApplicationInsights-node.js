@@ -318,7 +318,7 @@ module.exports = {
         "RemoteDependencyData",
         (telemetry) => {
             return telemetry.data.baseData.name === "pg.query:SELECT" &&
-            telemetry.data.baseData.data === "SELECT * FROM test_table" &&
+            telemetry.data.baseData.data === "SELECT NOW()" &&
             telemetry.data.baseData.target === "localhost|postgres" &&
             telemetry.data.baseData.type == "postgresql";
         }

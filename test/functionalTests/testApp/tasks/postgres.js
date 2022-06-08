@@ -5,31 +5,24 @@ var ready = false;
 var client = null;
 
 function connect() {
-    client = new pg.Pool({ connectionString: Config.PostgresConnectionString });
-    client.connect((err) => {
-        if (err) {
-            setTimeout(connect, 500);
-            return;
-        }
-        client.query(`
-        CREATE TABLE IF NOT EXISTS test_table (
-        id SERIAL,
-        data varchar(100) NOT NULL default '',
-        PRIMARY KEY  (id)
-        );`, () => {
-            ready = true;
+    if (!client) {
+        client = new pg.Pool({ connectionString: Config.PostgresConnectionString });
+        client.connect((err) => {
+            if (!err) {
+                ready = true;
+            }
         });
-    });
+    }
 }
-connect();
 
 function query(callback) {
+    connect();
     if (!ready) {
         setTimeout(() => query(callback), 1500);
         return;
     }
 
-    client.query(`SELECT * FROM test_table`, (err, ret) => {
+    client.query("SELECT NOW()", (err, ret) => {
         if (err) {
             console.log("Failed to query postgres." + err);
         }

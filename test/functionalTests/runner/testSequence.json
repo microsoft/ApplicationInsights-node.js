@@ -1,9 +1,10 @@
 [
     {"path": "/_longRunTest", "steps": ["HttpGet", "RedisSet"]},
-    {"path": "/_perfRun", "steps": ["HttpGet", "BunyanTrace", "RedisSet"]},
+    {"path": "/_perfRun", "steps": ["HttpGet", "RedisSet"]},
     {"path": "/dependencyTestBasic", "steps": ["HttpGet", "Timeout", "HttpGet"]},
     {"path": "/deepRequest", "steps": ["HttpGet", "Timeout", "Timeout", "HttpGet", "Timeout"]},
     {"path": "/mongo", "steps": ["MongoInsert", "MongoInsertMany", "MongoUpdateOne", "MongoCreateIndex", "MongoFind"]},
     {"path": "/mySql", "steps": ["MySQLQuery", "Timeout"]},
+    {"path": "/postgres", "steps": ["PostgresQuery", "Timeout", "PostgresQuery"]},
     {"path": "/redis", "steps": ["RedisGet", "RedisSet", "RedisHset", "RedisHkeys", "RedisHincrby"]}
     ]
