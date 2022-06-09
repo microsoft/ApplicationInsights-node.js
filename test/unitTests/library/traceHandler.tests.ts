@@ -24,6 +24,18 @@ describe("Library/TraceHandlers", () => {
         sandbox.restore();
     });
 
+    // describe("#autoCollect", () => {
+    //     it("performance enablement during start", () => {
+    //         _config.enableAutoCollectPerformance = true;
+    //         let handler = new MetricHandler(_config, _context);
+    //         let stub = sinon.stub(handler["_performance"], "enable");
+    //         handler.start();
+    //         assert.ok(stub.calledOnce, "Enable called");
+    //         assert.equal(stub.args[0][0], true);
+    //     });
+
+    // });
+
     describe("#autoCollection of HTTP/HTTPS requests", () => {
         let exportStub: sinon.SinonStub;
         let handler: TraceHandler = null;

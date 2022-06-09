@@ -1,16 +1,15 @@
-var AISDK } from "./AISDK");
-var Mongo } from "./Mongo");
-var MySQL } from "./MySQL");
-var Bunyan } from "./Bunyan");
-var Winston } from "./Winston");
-var Redis } from "./Redis");
-var Utils } from "./Utils");
-var Postgres } from "./Postgres");
-var AzureSdkStorage } from "./AzureSDKStorage");
-var AzureSdkEventHubs } from "./AzureSdkEventHubs");
+var Mongo = require("./mongo");
+var MySQL = require("./mySQL");
+var Bunyan = require("./bunyan");
+var Winston = require("./winston");
+var Redis = require("./redis");
+var Utils = require("./utils");
+var Postgres = require("./postgres");
+var AzureSdkStorage = require("./azureSDKStorage");
+var AzureSdkEventHubs = require("./azureSdkEventHubs");
 
 module.exports = {
-    HttpGet: require("./HttpGet"),
+    HttpGet: require("./httpGet"),
     AzureSdkEventHubsSend: AzureSdkEventHubs.sendMessage,
     AzureSdkCreate: AzureSdkStorage.createContainer,
     AzureSdkDelete: AzureSdkStorage.deleteContainer,
@@ -47,9 +46,6 @@ module.exports = {
     WinstonWarn2: Winston.warn2,
     WinstonInfo2: Winston.info2,
     PostgresQuery: Postgres.query,
-    AITrackDep: AISDK.trackDependency,
-    AITrackTrace: AISDK.trackTrace,
-    AITrackExc: AISDK.trackException,
     Timeout: Utils.timeout,
     ThrowError: Utils.throwError
 }

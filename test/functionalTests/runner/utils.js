@@ -1,5 +1,5 @@
-const URL } from 'url');
-const http } from 'http');
+const URL = require('url');
+const http = require('http');
 
 module.exports.HTTP = class HTTP {
     /** @param {string} url */
@@ -54,7 +54,7 @@ module.exports.HTTP = class HTTP {
     }
 }
 
-module.exports.Logger =  class Logger {
+module.exports.Logging =  class Logging {
     static _getNesting() {
         let msgPrefix = "";
         if (this.nesting) {
@@ -66,16 +66,16 @@ module.exports.Logger =  class Logger {
         return msgPrefix;
     }
     static info(msg) {
-        console.info(Logger.getInstance()._getNesting() + msg);
+        console.info(Logging._getNesting() + msg);
     }
     static error(msg) {
-        console.error("\x1b[1m\x1b[31m" + Logger.getInstance()._getNesting() + msg + "\x1b[0m");
+        console.error("\x1b[1m\x1b[31m" + Logging._getNesting() + msg + "\x1b[0m");
     }
     static success(msg) {
-        console.info("\x1b[1m\x1b[32m" + Logger.getInstance()._getNesting() + msg + "\x1b[0m");
+        console.info("\x1b[1m\x1b[32m" + Logging._getNesting() + msg + "\x1b[0m");
     }
     static enterSubunit(msg) {
-        Logger.getInstance().info(msg);
+        Logging.info(msg);
         if (!this.nesting) {
             this.nesting = 0;
         }

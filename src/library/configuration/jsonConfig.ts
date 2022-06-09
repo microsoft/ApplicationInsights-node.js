@@ -1,9 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
-
 import { Logger } from "../logging";
-import { IDisabledExtendedMetrics, IJsonConfig } from "../../declarations/interfaces";
-import { DistributedTracingModes } from "../../declarations/enumerators";
+import { IDisabledExtendedMetrics, iInstrumentation, IJsonConfig } from "./interfaces";
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 // Azure Connection String
@@ -33,7 +31,6 @@ export class JsonConfig implements IJsonConfig {
     public proxyHttpUrl: string;
     public proxyHttpsUrl: string;
     public ignoreLegacyHeaders: boolean;
-    public distributedTracingMode: DistributedTracingModes;
     public enableAutoCollectExternalLoggers: boolean;
     public enableAutoCollectConsole: boolean;
     public enableAutoCollectExceptions: boolean;
@@ -59,6 +56,7 @@ export class JsonConfig implements IJsonConfig {
     public noPatchModules: string;
     public noHttpAgentKeepAlive: boolean;
     public quickPulseHost: string;
+    public instrumentations: { [type: string]: iInstrumentation };
 
     static getInstance() {
         if (!JsonConfig._instance) {
@@ -136,7 +134,6 @@ export class JsonConfig implements IJsonConfig {
             this.correlationIdRetryIntervalMs = jsonConfig.correlationIdRetryIntervalMs;
             this.correlationHeaderExcludedDomains = jsonConfig.correlationHeaderExcludedDomains;
             this.ignoreLegacyHeaders = jsonConfig.ignoreLegacyHeaders;
-            this.distributedTracingMode = jsonConfig.distributedTracingMode;
             this.enableAutoCollectExternalLoggers = jsonConfig.enableAutoCollectExternalLoggers;
             this.enableAutoCollectConsole = jsonConfig.enableAutoCollectConsole;
             this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
@@ -157,6 +154,7 @@ export class JsonConfig implements IJsonConfig {
             this.enableInternalWarningLogger = jsonConfig.enableInternalWarningLogger;
             this.enableSendLiveMetrics = jsonConfig.enableSendLiveMetrics;
             this.quickPulseHost = jsonConfig.quickPulseHost;
+            this.instrumentations = jsonConfig.instrumentations;
         } catch (err) {
             Logger.getInstance().info("Missing or invalid JSON config file: ", err);
         }

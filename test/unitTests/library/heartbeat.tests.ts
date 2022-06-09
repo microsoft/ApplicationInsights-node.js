@@ -11,7 +11,6 @@ describe("AutoCollection/HeartBeat", () => {
     var sandbox: sinon.SinonSandbox;
     let originalEnv: NodeJS.ProcessEnv;
     const client = new Client(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
-    client.getConfig().correlationId = "testicd";
 
     beforeEach(() => {
         originalEnv = process.env;

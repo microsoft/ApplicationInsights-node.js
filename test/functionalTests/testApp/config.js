@@ -1,8 +1,8 @@
-var appInsights } from "applicationinsights");
+var appInsights = require("applicationinsights");
 
 var Config = {
     ServerPort: "9099",
-    EndpointBaseAddress: "http://localhost:9091",
+    EndpointBaseAddress: "https://localhost:9091",
     MongoConnectionString: "mongodb://localhost:27017",
     MongoDbName: "testapp",
     MySqlConnectionString: "mysql://root:dummypw@localhost:33060/testdb",

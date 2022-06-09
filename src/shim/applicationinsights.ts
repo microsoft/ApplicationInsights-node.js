@@ -1,17 +1,20 @@
 import { IncomingMessage } from "http";
 import { SpanContext } from "@opentelemetry/api";
 
+import { AutoCollectPerformance } from "../autoCollection";
 import { Logger } from "../library/logging";
+import { IDisabledExtendedMetrics, InstrumentationType } from "../library/configuration/interfaces";
 import { QuickPulseStateManager } from "../library/quickPulse";
-import { ICorrelationContext, IDisabledExtendedMetrics } from "../declarations/interfaces";
+import { ICorrelationContext } from "../declarations/interfaces";
 import { DistributedTracingModes } from "../declarations/enumerators";
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
 import * as azureFunctionsTypes from "../declarations/functions";
 
+
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
-export { Contracts, TelemetryClient, DistributedTracingModes, azureFunctionsTypes };
+export { Contracts, TelemetryClient, DistributedTracingModes, azureFunctionsTypes, InstrumentationType };
 
 /**
  * The default client, initialized when setup was called. To initialize a different client
@@ -36,9 +39,6 @@ let _diskRetryMaxBytes: number = undefined;
 export function setup(setupString?: string) {
     if (!defaultClient) {
         defaultClient = new TelemetryClient(setupString);
-        if (defaultClient.config.distributedTracingMode) {
-            Configuration.setDistributedTracingMode(defaultClient.config.distributedTracingMode);
-        }
         if (defaultClient.config.enableInternalDebugLogger) {
             Logger.getInstance().enableDebug = defaultClient.config.enableInternalDebugLogger;
         }

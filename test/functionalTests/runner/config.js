@@ -1,6 +1,6 @@
 var Config = {
     RunnerPort: "9091",
-    TestAppAddress: "http://localhost:9099",
+    TestAppAddress: "https://localhost:9099",
     WaitTime: 20 * 1000,
     PerfCounterFrequency: 60 * 1000,
     StressTestTime: 1.2 * 60 * 1000

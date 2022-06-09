@@ -2,9 +2,9 @@ name: Integration Tests CI
 
 on:
   push:
-    branches: [ develop, master ]
+    branches: [ develop, master, preview ]
   pull_request:
-    branches: [ develop, master ]
+    branches: [ develop, master, preview ]
 
 jobs:
   integration:
@@ -17,6 +17,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - run: openssl req -x509 -nodes -newkey rsa -keyout ./test/certs/server-key.pem -out ./test/certs/server-cert.pem -days 1 -subj "/C=CL/ST=RM/L=OpenTelemetryTest/O=Root/OU=Test/CN=ca"
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
       with:

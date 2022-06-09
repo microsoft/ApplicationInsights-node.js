@@ -1,7 +1,7 @@
 // Helper script to orchestrate starting Functional Tests
-const fs } from 'fs');
-const path } from 'path');
-const childProcess } from 'child_process');
+const fs = require('fs');
+const path = require('path');
+const childProcess = require('child_process');
 let perfMode = false;
 
 function help() {
@@ -130,13 +130,13 @@ function main() {
 
     // Prepare runner and testapp
     console.log("Installing Runner and TestApp dependencies...");
-    if (run("npm install", "./Runner").code !== 0 || run("npm install", "./TestApp").code !== 0) {
+    if (run("npm install", "./runner").code !== 0 || run("npm install", "./testApp").code !== 0) {
         console.error("Could not install dependencies!");
         return 1;
     }
     console.log("Installing " + path);
-    run("npm uninstall applicationinsights", "./TestApp");
-    if (run("npm install --no-save " + path, "./TestApp").code !== 0) {
+    run("npm uninstall applicationinsights", "./testApp");
+    if (run("npm install --no-save " + path, "./testApp").code !== 0) {
         console.error("Could not install SDK!");
         return 1;
     }
@@ -144,8 +144,8 @@ function main() {
     // Run tests
     console.log("Running functional tests...");
     console.log("=======================\n");
-    const testApp = runAsync("node --use_strict Main.js", "./TestApp");
-    const runnerStatus = runLive("node --use_strict Main.js" + (perfMode ? " -perfmode": ""), "./Runner").code;
+    const testApp = runAsync("node --use_strict main.js", "./testApp");
+    const runnerStatus = runLive("node --use_strict main.js" + (perfMode ? " -perfmode": ""), "./runner").code;
     console.log("\n=======================");
 
     // Clean up

@@ -328,43 +328,6 @@ export class Util {
     }
 
     /**
-     * Parse standard <string | string[] | number> request-context header
-     */
-    public safeIncludeCorrelationHeader(
-        client: Client,
-        request: http.ClientRequest | http.ServerResponse,
-        correlationHeader: any
-    ) {
-        let header: string; // attempt to cast correlationHeader to string
-        if (typeof correlationHeader === "string") {
-            header = correlationHeader;
-        } else if (correlationHeader instanceof Array) {
-            // string[]
-            header = correlationHeader.join(",");
-        } else if (correlationHeader && typeof (correlationHeader as any).toString === "function") {
-            // best effort attempt: requires well-defined toString
-            try {
-                header = (correlationHeader as any).toString();
-            } catch (err) {
-                Logger.getInstance().warn(
-                    "Outgoing request-context header could not be read. Correlation of requests may be lost.",
-                    err,
-                    correlationHeader
-                );
-            }
-        }
-
-        if (header) {
-            this.addCorrelationIdHeaderFromString(client, request, header);
-        } else {
-            request.setHeader(
-                RequestHeaders.requestContextHeader,
-                `${RequestHeaders.requestContextSourceKey}=${client.getConfig().correlationId}`
-            );
-        }
-    }
-
-    /**
      * Returns string representation of an object suitable for diagnostics Logger.getInstance().
      */
     public dumpObj(object: any): string {
@@ -391,33 +354,6 @@ export class Util {
             return JSON.stringify(payload);
         } catch (error) {
             Logger.getInstance().warn("Failed to serialize payload", error, payload);
-        }
-    }
-
-    public isDbDependency(dependencyType: string) {
-        return (
-            dependencyType.indexOf("SQL") > -1 ||
-            dependencyType == "mysql" ||
-            dependencyType == "postgresql" ||
-            dependencyType == "mongodb" ||
-            dependencyType == "redis"
-        );
-    }
-
-    private addCorrelationIdHeaderFromString(
-        client: Client,
-        response: http.ClientRequest | http.ServerResponse,
-        correlationHeader: string
-    ) {
-        const components = correlationHeader.split(",");
-        const key = `${RequestHeaders.requestContextSourceKey}=`;
-        const found = components.some((value) => value.substring(0, key.length) === key);
-
-        if (!found) {
-            response.setHeader(
-                RequestHeaders.requestContextHeader,
-                `${correlationHeader},${RequestHeaders.requestContextSourceKey}=${client.getConfig().correlationId}`
-            );
         }
     }
 

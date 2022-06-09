@@ -1,5 +1,5 @@
-var Config } from "../Config");
-var mongo } from 'mongodb').MongoClient;
+var Config = require("../config");
+var mongo = require('mongodb').MongoClient;
 
 var ready = false;
 var db = null;

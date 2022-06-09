@@ -49,6 +49,13 @@ describe("AutoCollection/Statsbeat", () => {
 
     describe("#Resource provider property", () => {
         it("unknown resource provider", (done) => {
+            let interceptor = nock("http://169.254.169.254").get(
+                "/metadata/instance/compute",
+                (body: string) => {
+                    return true;
+                }
+            );
+            interceptor.reply(400, {});
             statsBeat["_getResourceProvider"]()
                 .then(() => {
                     assert.equal(statsBeat["_resourceProvider"], "unknown");
