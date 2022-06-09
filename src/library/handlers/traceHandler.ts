@@ -7,6 +7,12 @@ import {
     InstrumentationOption,
     registerInstrumentations,
 } from "@opentelemetry/instrumentation";
+import { AzureSdkInstrumentationOptions, createAzureSdkInstrumentation } from "@azure/opentelemetry-instrumentation-azure-sdk";
+import { MongoDBInstrumentation, MongoDBInstrumentationConfig } from "@opentelemetry/instrumentation-mongodb";
+import { MySQLInstrumentation, MySQLInstrumentationConfig } from "@opentelemetry/instrumentation-mysql";
+import { PgInstrumentation, PgInstrumentationConfig } from "@opentelemetry/instrumentation-pg";
+import { RedisInstrumentation, RedisInstrumentationConfig } from "@opentelemetry/instrumentation-redis";
+import { RedisInstrumentation as Redis4Instrumentation, RedisInstrumentationConfig as Redis4InstrumentationConfig } from "@opentelemetry/instrumentation-redis-4";
 import { NodeTracerProvider, NodeTracerConfig } from "@opentelemetry/sdk-trace-node";
 import { BatchSpanProcessor, BufferConfig, Tracer } from "@opentelemetry/sdk-trace-base";
 import {
@@ -20,12 +26,19 @@ import * as Contracts from "../../declarations/contracts";
 import { Logger } from "../logging";
 import { Context } from "../context";
 import { AzureExporterConfig, AzureMonitorTraceExporter } from "@azure/monitor-opentelemetry-exporter";
+import { InstrumentationType } from "../configuration/interfaces";
 
 
 export class TraceHandler {
     public tracerProvider: NodeTracerProvider;
     public tracer: Tracer;
     public httpInstrumentationConfig: HttpInstrumentationConfig;
+    public azureSdkInstrumentationConfig: AzureSdkInstrumentationOptions;
+    public mongoDbInstrumentationConfig: MongoDBInstrumentationConfig;
+    public mySqlInstrumentationConfig: MySQLInstrumentationConfig;
+    public postgressInstrumentationConfig: PgInstrumentationConfig;
+    public redisInstrumentationConfig: RedisInstrumentationConfig;
+    public redis4InstrumentationConfig: Redis4InstrumentationConfig;
 
     private _exporter: AzureMonitorTraceExporter;
     private _spanProcessor: BatchSpanProcessor;
@@ -67,16 +80,41 @@ export class TraceHandler {
         // TODO: Check for conflicts with multiple handlers available
         this.tracer = this.tracerProvider.getTracer("ApplicationInsightsTracer");
 
+        // Defautl configs
         this.httpInstrumentationConfig = {
             ignoreOutgoingRequestHook: this._ignoreOutgoingRequestHook.bind(this),
             ignoreIncomingRequestHook: this._ignoreIncomingRequestHook.bind(this),
         };
+        this.mongoDbInstrumentationConfig = {};
+        this.mySqlInstrumentationConfig = {};
+        this.azureSdkInstrumentationConfig = {};
+        this.redisInstrumentationConfig = {};
+        this.redis4InstrumentationConfig = {};
     }
 
     public start() {
         if (this._config.enableAutoCollectRequests || this._config.enableAutoCollectDependencies) {
-            let httpInstrumentation = new HttpInstrumentation(this.httpInstrumentationConfig);
-            this.addInstrumentation(httpInstrumentation);
+            this.addInstrumentation(new HttpInstrumentation(this.httpInstrumentationConfig));
+        }
+        if (this._config.instrumentations) {
+            if (this._config.instrumentations[InstrumentationType.azureSdk] && this._config.instrumentations[InstrumentationType.azureSdk].enabled) {
+                this.addInstrumentation((createAzureSdkInstrumentation(this.azureSdkInstrumentationConfig)) as any);
+            }
+            if (this._config.instrumentations[InstrumentationType.mongoDb] && this._config.instrumentations[InstrumentationType.mongoDb].enabled) {
+                this.addInstrumentation(new MongoDBInstrumentation(this.mongoDbInstrumentationConfig));
+            }
+            if (this._config.instrumentations[InstrumentationType.mySql] && this._config.instrumentations[InstrumentationType.mySql].enabled) {
+                this.addInstrumentation(new MySQLInstrumentation(this.mySqlInstrumentationConfig));
+            }
+            if (this._config.instrumentations[InstrumentationType.postgreSql] && this._config.instrumentations[InstrumentationType.postgreSql].enabled) {
+                this.addInstrumentation(new PgInstrumentation(this.postgressInstrumentationConfig));
+            }
+            if (this._config.instrumentations[InstrumentationType.redis] && this._config.instrumentations[InstrumentationType.redis].enabled) {
+                this.addInstrumentation(new RedisInstrumentation(this.redisInstrumentationConfig));
+            }
+            if (this._config.instrumentations[InstrumentationType.redis4] && this._config.instrumentations[InstrumentationType.redis4].enabled) {
+                this.addInstrumentation(new Redis4Instrumentation(this.redis4InstrumentationConfig));
+            }
         }
         if (this._instrumentations.length > 0) {
             this.registerInstrumentations();

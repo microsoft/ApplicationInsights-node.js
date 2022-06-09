@@ -1,5 +1,5 @@
-var Config } from "../Config");
-var mysql } from 'mysql');
+var Config = require("../config");
+var mysql = require('mysql');
 
 var ready = false;
 var connection = null;

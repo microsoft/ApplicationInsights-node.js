@@ -1,27 +1,29 @@
-var Config } from "./Config");
+var Config = require("./config");
 var appInsights = null;
 if (Config.AppInsightsEnabled) {
-    appInsights } from "applicationinsights");
-    appInsights.setup(Config.InstrumentationKey);
-    appInsights.defaultClient.config.endpointUrl = Config.EndpointBaseAddress+"/v2.1/track";
-    appInsights.defaultClient.config.profileQueryEndpoint = Config.EndpointBaseAddress;
+    appInsights = require("applicationinsights");
+
+    let testConnectionString = `InstrumentationKey=${Config.InstrumentationKey};IngestionEndpoint=${Config.EndpointBaseAddress}`;
+
+    appInsights.setup(testConnectionString);
     appInsights.defaultClient.config.samplingPercentage = parseFloat(Config.SampleRate);
-    appInsights.Configuration.setAutoDependencyCorrelation(Config.UseAutoCorrelation);
-    appInsights.Configuration.setAutoCollectRequests(Config.UseAutoRequests);
-    appInsights.Configuration.setAutoCollectPerformance(Config.UseAutoPerformance);
-    appInsights.Configuration.setAutoCollectExceptions(Config.UseAutoExceptions);
-    appInsights.Configuration.setAutoCollectDependencies(Config.UseAutoDependencies);
-    appInsights.Configuration.setAutoCollectConsole(Config.UseAutoConsole, Config.UseAutoConsoleLog);
-    appInsights.Configuration.setUseDiskRetryCaching(Config.UseDiskCaching);
-    appInsights.Configuration.setDistributedTracingMode(Config.DistributedTracingMode);
+    appInsights.defaultClient.config.instrumentations["azureSdk"].enabled = true;
+    appInsights.defaultClient.config.instrumentations["mongoDb"].enabled = true;
+    appInsights.defaultClient.config.instrumentations["mySql"].enabled = true;
+    appInsights.defaultClient.config.instrumentations["postgreSql"].enabled = true;
+    appInsights.defaultClient.config.instrumentations["redis"].enabled = true;
+    appInsights.defaultClient.config.instrumentations["redis4"].enabled = true;
+
+    appInsights.defaultClient.config.enableAutoCollectDependencies = true;
+    appInsights.defaultClient.config.enableAutoCollectRequests = true;
+
     appInsights.start();
 }
 
-var Tasks } from "./Tasks");
+var Tasks = require("./tasks");
 var port = parseInt(Config.ServerPort);
-var bodyParser } from 'body-parser');
-var express } from "express");
-var http } from "http");
+var bodyParser = require('body-parser');
+var express = require("express");
 var app = express();
 app.use(bodyParser.json());
 
@@ -49,16 +51,16 @@ app.post("/_configure", (req, res) => {
         }
         tasks = tasks.slice(0);
         var task = tasks.shift();
-        Tasks[task](()=>runTasks(tasks, cb));
+        Tasks[task](() => runTasks(tasks, cb));
     }
 
     var generateStepRoute = (route) => {
         app.get(route.path, (rq, rs) => {
-            runTasks(route.steps, ()=>rs.send("OK"));
+            runTasks(route.steps, () => rs.send("OK"));
         });
     }
 
-    for (var i=0; i < stepConfig.length; i++) {
+    for (var i = 0; i < stepConfig.length; i++) {
         generateStepRoute(stepConfig[i]);
     }
 

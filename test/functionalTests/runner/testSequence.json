@@ -1,15 +1,7 @@
 [
-{"path": "/_longRunTest", "steps": ["PostgresQuery", "HttpGet", "AITrackDep", "RedisSet"]},
-{"path": "/_perfRun", "steps": ["PostgresQuery", "HttpGet", "BunyanTrace", "RedisSet"]},
-{"path": "/dependencyTestBasic", "steps": ["HttpGet", "Timeout", "HttpGet"]},
-{"path": "/manualTracks", "steps": ["AITrackDep", "AITrackTrace", "AITrackExc"]},
-{"path": "/deepRequest", "steps": ["HttpGet", "Timeout", "Timeout", "HttpGet", "AITrackDep", "AITrackTrace", "Timeout", "AITrackExc"]},
-{"path": "/diagChannelMongo", "steps": ["MongoInsert", "MongoInsertMany", "MongoUpdateOne", "MongoCreateIndex", "MongoFind"]},
-{"path": "/diagChannelBunyan", "steps": ["BunyanFatal", "BunyanError", "BunyanWarn", "BunyanInfo", "BunyanDebug", "BunyanTrace"]},
-{"path": "/diagChannelConsole", "steps": ["ConsoleLog", "ConsoleWarn", "ConsoleError", "ConsoleInfo"]},
-{"path": "/diagChannelMySql", "steps": ["MySQLQuery", "Timeout", "MySQLQuery"]},
-{"path": "/diagChannelRedis", "steps": ["RedisGet", "RedisSet", "RedisSet2", "RedisHset", "RedisHkeys", "RedisHincrby"]},
-{"path": "/diagChannelWinston", "steps": ["WinstonError", "WinstonWarn", "WinstonInfo", "WinstonVerbose", "WinstonDebug", "WinstonSilly", "WinstonError2", "WinstonWarn2", "WinstonInfo2"]},
-{"path": "/diagChannelPostgres", "steps": ["PostgresQuery", "Timeout", "PostgresQuery"]},
-{"path": "/deepRequestDiagChannel", "steps": ["HttpGet", "RedisGet", "PostgresQuery", "RedisSet", "BunyanWarn", "AITrackTrace", "MongoInsert", "AITrackExc"]}
-]
+    {"path": "/dependencyTestBasic", "steps": ["HttpGet", "Timeout", "HttpGet"]},
+    {"path": "/deepRequest", "steps": ["HttpGet", "Timeout", "Timeout", "HttpGet", "Timeout"]},
+    {"path": "/mongo", "steps": ["MongoInsert", "MongoInsertMany", "MongoUpdateOne", "MongoCreateIndex", "MongoFind"]},
+    {"path": "/mySql", "steps": ["MySQLQuery", "Timeout"]},
+    {"path": "/redis", "steps": ["RedisGet", "RedisSet", "RedisHset", "RedisHkeys", "RedisHincrby"]}
+    ]

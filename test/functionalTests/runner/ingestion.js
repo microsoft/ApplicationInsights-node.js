@@ -1,10 +1,11 @@
 // A simple ingestion server to test AI SDK without mocking
-var http } from "http");
-var zlib } from "zlib");
-var Config } from "./Config");
-var TestValidation } from "./TestValidation").TestValidation;
+var fs = require("fs");
+var https = require("https");
+var path = require("path");
+var zlib = require("zlib");
+var Config = require("./config");
+var TestValidation = require("./testValidation").TestValidation;
 
-var _APPID = "DUMMYAPPID";
 var _IKEY = "TESTIKEY";
 
 class Ingestion {
@@ -14,12 +15,16 @@ class Ingestion {
         this.correlatedTelemetry = {};
         this.telemetryCount = 0;
         this.testValidator = new TestValidation(this);
-        this.server = http.createServer(function (request, response) {
-            // Handle appid
-            if (request.url.indexOf("/api/profiles") > -1) {
-                response.end(_APPID);
-                return;
-            } else if (request.url.indexOf("/v2.1/track") > -1) {
+
+        this.server = https.createServer({
+            key: fs.readFileSync(
+                path.join(__dirname, '../../', 'certs', 'server-key.pem')
+            ),
+            cert: fs.readFileSync(
+                path.join(__dirname, '../../', 'certs', 'server-cert.pem')
+            ),
+        }, (request, response) => {
+            if (request.url.indexOf("/v2.1/track") > -1) {
                 var processor = request;
                 var data = "";
                 if (request.headers["content-encoding"] && request.headers["content-encoding"].toLowerCase() === "gzip") {
@@ -28,12 +33,12 @@ class Ingestion {
                     processor = gunzip;
                 }
                 processor
-                    .on('data', (d)=>data+=d)
-                    .on('error', ()=>null)
-                    .on('end', (d)=>{
-                        data += (d||"");
+                    .on('data', (d) => data += d)
+                    .on('error', () => null)
+                    .on('end', (d) => {
+                        data += (d || "");
                         let items = data.split("\n");
-                        items.forEach(function(item) {
+                        items.forEach(function (item) {
                             item = JSON.parse(item);
                             if (!Array.isArray(item)) {
                                 item = [item];
@@ -60,7 +65,7 @@ class Ingestion {
         if (!item || !item.iKey || item.iKey !== _IKEY) {
             console.log("INGESTION: Unexpected ikey or malformed data");
             return;
-        } 
+        }
         var type = "unknown";
         if (item.data && item.data.baseType) {
             type = item.data.baseType;

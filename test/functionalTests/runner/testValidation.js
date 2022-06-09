@@ -1,5 +1,5 @@
-var Utils } from "./Utils");
-var TaskExpectations } from "./TaskExpectations");
+var Utils = require("./utils");
+var TaskExpectations = require("./taskExpectations");
 
 module.exports.TestValidation = class TestValidation {
     constructor(ingestion) {
@@ -22,7 +22,7 @@ module.exports.TestValidation = class TestValidation {
     }
 
     validateTest(test, correlationId, silent) {
-        const promise = silent ? Promise.resolve() : Utils.Logger.getInstance().enterSubunit("Validating test " + test.path + "...");
+        const promise = silent ? Promise.resolve() : Utils.Logging.enterSubunit("Validating test " + test.path + "...");
         let operationId;
         return promise
             .then(() => {
@@ -30,10 +30,10 @@ module.exports.TestValidation = class TestValidation {
                     // Find request telemetry
                     const requestTelemetry = this._findRequestMatchingPath(test.path);
                     if (!requestTelemetry) {
-                        Utils.Logger.getInstance().error("FAILED EXPECTATION - Could not find request telemetry for test!");
+                        Utils.Logging.error("FAILED EXPECTATION - Could not find request telemetry for test!");
                         return false;
                     } else if (!requestTelemetry.tags["ai.operation.id"]) {
-                        Utils.Logger.getInstance().error("FAILED EXPECTATION - Could not find operation id in request telemetry!");
+                        Utils.Logging.error("FAILED EXPECTATION - Could not find operation id in request telemetry!");
                         return false;
                     }
 
@@ -51,8 +51,7 @@ module.exports.TestValidation = class TestValidation {
 
                 // Helper fn for validator that runs on all telemetry items
                 const baseValidator = (item) => {
-                    return item.tags['ai.application.ver'] === "1.0.0" && // version of TestApp
-                        item.tags['ai.internal.sdkVersion'].indexOf("node:") === 0; // sdk should always report a version starting with "node:"
+                    return item.tags['ai.internal.sdkVersion'].indexOf("node") === 0; // sdk should always report a version starting with "node:"
                 };
 
                 // Helper fn to find item in the datset
@@ -76,7 +75,7 @@ module.exports.TestValidation = class TestValidation {
                     }
                     const telemetry = this.ingestion.telemetry;
                     const correlTelemetry = this.ingestion.correlatedTelemetry;
-                    Utils.Logger.getInstance().error("FAILED EXPECTATION - Could not find expected "+type+" child telemetry for rule "+stepName+"!");
+                    Utils.Logging.error("FAILED EXPECTATION - Could not find expected "+type+" child telemetry for rule "+stepName+"!");
                     return false;
                 };
 
@@ -92,30 +91,30 @@ module.exports.TestValidation = class TestValidation {
 
                 // Did we find all of the items in the data set?
                 if (dataSet.length > 1){
-                    Utils.Logger.getInstance().error("FAILED EXPECTATION - Unexpected child telemetry item(s)!");
-                    Utils.Logger.getInstance().error(JSON.stringify(dataSet, null, 2));
+                    Utils.Logging.error("FAILED EXPECTATION - Unexpected child telemetry item(s)!");
+                    Utils.Logging.error(JSON.stringify(dataSet, null, 2));
                     hadFailed = true;
                 }
 
                 // Report test status
                 if (!silent) {
                     if (hadFailed) {
-                        Utils.Logger.getInstance().error("Test FAILED!");
+                        Utils.Logging.error("Test FAILED!");
                     } else {
-                        Utils.Logger.getInstance().success("Test PASSED!");
+                        Utils.Logging.success("Test PASSED!");
                     }
                 }
 
                 return !hadFailed;
             })
-            .then((success) => { !silent && Utils.Logger.getInstance().exitSubunit(); return success; });
+            .then((success) => { !silent && Utils.Logging.exitSubunit(); return success; });
     }
 
     validatePerfCounters(perfTypes, expectedEach) {
         let success = true;
-        return Utils.Logger.getInstance().enterSubunit("Validating performance counters...")
+        return Utils.Logging.enterSubunit("Validating performance counters...")
             .then(() => {
-                Utils.Logger.getInstance().info("Expecting "+ expectedEach + " instance(s) each of all " + perfTypes.length + " performance counters");
+                Utils.Logging.info("Expecting "+ expectedEach + " instance(s) each of all " + perfTypes.length + " performance counters");
                 const metricTelemetry = this.ingestion.telemetry["MetricData"];
                 perfTypes.forEach((metricType) => {
                     let count = 0;
@@ -128,20 +127,20 @@ module.exports.TestValidation = class TestValidation {
                         }
                     }
                     if (count < expectedEach) {
-                        Utils.Logger.getInstance().error("FAILED EXPECTATION - " + metricType + " appeared " + count + "times!");
+                        Utils.Logging.error("FAILED EXPECTATION - " + metricType + " appeared " + count + "times!");
                         success = false;
                     }
                 });
 
                 // Report test status
                 if (success) {
-                    Utils.Logger.getInstance().success("Test PASSED!");
+                    Utils.Logging.success("Test PASSED!");
                 } else {
-                    Utils.Logger.getInstance().error("Test FAILED!");
+                    Utils.Logging.error("Test FAILED!");
                 }
 
                 return success;
             })
-            .then((success) => { Utils.Logger.getInstance().exitSubunit(); return success; });
+            .then((success) => { Utils.Logging.exitSubunit(); return success; });
     }
 }

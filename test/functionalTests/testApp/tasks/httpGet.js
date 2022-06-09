@@ -1,11 +1,11 @@
-var http } from "http");
-var URL } from 'url');
-var Config } from "../Config");
+var https = require("https");
+var Config = require("../config");
+
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 /** Make a HTTP request */
 module.exports = (callback) => {
-    var url = URL.parse(Config.EndpointBaseAddress);
-    http.get({host: url.hostname, path: "/", port: url.port}, (resp) => {
+    https.get(Config.EndpointBaseAddress, (resp) => {
         var data = "";
         resp.on("data", (d) => {
             data += d;

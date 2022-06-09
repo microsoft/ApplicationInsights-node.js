@@ -1,4 +1,4 @@
-var winston= require('winston');
+var winston= require('winston');
 winston.level = 'silly';
 
 function logFn(type) {

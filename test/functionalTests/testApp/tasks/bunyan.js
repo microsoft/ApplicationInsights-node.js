@@ -1,5 +1,5 @@
-var bunyan = require('bunyan');
-var log = bunyan.createLogger({name: 'TestApp', level: 0});
+var bunyan = require('bunyan');
+var log = bunyan.createLogger({name: 'TestApp', level: 0});
 
 function logFn(type) {
     return (callback) => {
