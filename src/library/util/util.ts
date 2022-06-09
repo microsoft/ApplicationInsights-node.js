@@ -241,6 +241,16 @@ export class Util {
         }
     }
 
+    public isDbDependency(dependencyType: string) {
+        return (
+            dependencyType.indexOf("SQL") > -1 ||
+            dependencyType == "mysql" ||
+            dependencyType == "postgresql" ||
+            dependencyType == "mongodb" ||
+            dependencyType == "redis"
+        );
+    }
+
     /**
      * Generate request
      *
