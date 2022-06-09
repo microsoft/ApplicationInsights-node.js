@@ -1,5 +1,4 @@
 [
-    {"path": "/_longRunTest", "steps": ["HttpGet", "RedisSet"]},
     {"path": "/dependencyTestBasic", "steps": ["HttpGet", "Timeout", "HttpGet"]},
     {"path": "/deepRequest", "steps": ["HttpGet", "Timeout", "Timeout", "HttpGet", "Timeout"]},
     {"path": "/mongo", "steps": ["MongoInsert", "MongoInsertMany", "MongoUpdateOne", "MongoCreateIndex", "MongoFind"]},
