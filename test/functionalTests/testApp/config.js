@@ -18,7 +18,6 @@ var Config = {
     UseAutoConsole: true,
     UseAutoConsoleLog: true,
     UseDiskCaching: false,
-    DistributedTracingMode: appInsights.DistributedTracingModes.AI_AND_W3C,
     SampleRate: "100",
 }
 

@@ -9,8 +9,8 @@
     "type": "git",
     "url": "https://github.com/microsoft/ApplicationInsights-node.js"
   },
-  "main": "./out/src/applicationinsights.js",
-  "types": "./out/src/applicationinsights.d.ts",
+  "main": "./out/src/index.js",
+  "types": "./out/src/index.d.ts",
   "keywords": [
     "exception monitoring",
     "request monitoring",
