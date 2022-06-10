@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 import { diag } from "@opentelemetry/api";
 import { AzureExporterConfig } from "@azure/monitor-opentelemetry-exporter";
-import { BaseExporter, parseStack } from "./shared";
+import { BaseExporter } from "./shared";
 import { Config } from "../configuration";
 
 
