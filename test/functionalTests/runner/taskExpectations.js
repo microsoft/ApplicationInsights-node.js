@@ -123,42 +123,42 @@ module.exports = {
         "MessageData",
         (telemetry) => {
             return JSON.parse(telemetry.data.baseData.message).msg === "test fatal" &&
-            telemetry.data.baseData.severityLevel === 4;
+            telemetry.data.baseData.severityLevel === "Critical";
         }
     ),
     "BunyanError": outputContract(
         "MessageData",
         (telemetry) => {
             return JSON.parse(telemetry.data.baseData.message).msg === "test error" &&
-            telemetry.data.baseData.severityLevel === 3;
+            telemetry.data.baseData.severityLevel === "Error";
         }
     ),
     "BunyanWarn": outputContract(
         "MessageData",
         (telemetry) => {
             return JSON.parse(telemetry.data.baseData.message).msg === "test warn" &&
-            telemetry.data.baseData.severityLevel === 2
+            telemetry.data.baseData.severityLevel === "Warning"
         }
     ),
     "BunyanInfo": outputContract(
         "MessageData",
         (telemetry) => {
             return JSON.parse(telemetry.data.baseData.message).msg === "test info" &&
-            telemetry.data.baseData.severityLevel === 1
+            telemetry.data.baseData.severityLevel === "Information"
         }
     ),
     "BunyanDebug": outputContract(
         "MessageData",
         (telemetry) => {
-            return JSON.parse(telemetry.data.baseData.message).msg === "test debug" &&
-            telemetry.data.baseData.severityLevel === 0;
+            return telemetry.data.baseData.message.msg === "test debug" &&
+            telemetry.data.baseData.severityLevel === "Verbose";
         }
     ),
     "BunyanTrace": outputContract(
         "MessageData",
         (telemetry) => {
-            return JSON.parse(telemetry.data.baseData.message).msg === "test trace" &&
-            telemetry.data.baseData.severityLevel === 0;
+            return telemetry.data.baseData.message.msg === "test trace" &&
+            telemetry.data.baseData.severityLevel === "Verbose";
         }
     ),
     "ConsoleError": outputContract(
@@ -187,14 +187,6 @@ module.exports = {
         (telemetry) => {
             return telemetry.data.baseData.message === "Test console.log" &&
             telemetry.data.baseData.severityLevel === "Information";
-        }
-    ),
-    "ConsoleAssert": outputContract(
-        "MessageData",
-        (telemetry) => {
-            return telemetry.data.baseData.message.indexOf("AssertionError") === 0 &&
-            telemetry.data.baseData.message.indexOf("Test console.assert") > 0 &&
-            telemetry.data.baseData.severityLevel === 2;
         }
     ),
     "MySQLQuery": outputContract(
@@ -262,56 +254,56 @@ module.exports = {
         "MessageData",
         (telemetry) => {
             return telemetry.data.baseData.message === "test warn" &&
-            telemetry.data.baseData.severityLevel === 2;
+            telemetry.data.baseData.severityLevel === "Warning";
         }
     ),
     "WinstonInfo": outputContract(
         "MessageData",
         (telemetry) => {
             return telemetry.data.baseData.message === "test info" &&
-            telemetry.data.baseData.severityLevel === 1;
+            telemetry.data.baseData.severityLevel === "Information";
         }
     ),
     "WinstonVerbose": outputContract(
         "MessageData",
         (telemetry) => {
             return telemetry.data.baseData.message === "test verbose" &&
-            telemetry.data.baseData.severityLevel === 0;
+            telemetry.data.baseData.severityLevel === "Verbose";
         }
     ),
     "WinstonDebug": outputContract(
         "MessageData",
         (telemetry) => {
             return telemetry.data.baseData.message === "test debug" &&
-            telemetry.data.baseData.severityLevel === 0;
+            telemetry.data.baseData.severityLevel === "Verbose";
         }
     ),
     "WinstonSilly": outputContract(
         "MessageData",
         (telemetry) => {
             return telemetry.data.baseData.message === "test silly" &&
-            telemetry.data.baseData.severityLevel === 0;
+            telemetry.data.baseData.severityLevel === "Verbose";
         }
     ),
     "WinstonError2": outputContract(
         "MessageData",
         (telemetry) => {
             return telemetry.data.baseData.message === "test error" &&
-            telemetry.data.baseData.severityLevel === 3;
+            telemetry.data.baseData.severityLevel === "Error";
         }
     ),
     "WinstonWarn2": outputContract(
         "MessageData",
         (telemetry) => {
             return telemetry.data.baseData.message === "test warn" &&
-            telemetry.data.baseData.severityLevel === 2;
+            telemetry.data.baseData.severityLevel === "Warning";
         }
     ),
     "WinstonInfo2": outputContract(
         "MessageData",
         (telemetry) => {
             return telemetry.data.baseData.message === "test info" &&
-            telemetry.data.baseData.severityLevel === 1;
+            telemetry.data.baseData.severityLevel === "Information";
         }
     ),
     "PostgresQuery": outputContract(
