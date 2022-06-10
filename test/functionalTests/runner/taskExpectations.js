@@ -165,28 +165,28 @@ module.exports = {
         "MessageData",
         (telemetry) => {
             return telemetry.data.baseData.message === "Test console.error" &&
-            telemetry.data.baseData.severityLevel === 2;
+            telemetry.data.baseData.severityLevel === "Warning";
         }
     ),
     "ConsoleWarn": outputContract(
         "MessageData",
         (telemetry) => {
             return telemetry.data.baseData.message === "Test console.warn" &&
-            telemetry.data.baseData.severityLevel === 2;
+            telemetry.data.baseData.severityLevel === "Warning";
         }
     ),
     "ConsoleInfo": outputContract(
         "MessageData",
         (telemetry) => {
             return telemetry.data.baseData.message === "Test console.info" &&
-            telemetry.data.baseData.severityLevel === 1;
+            telemetry.data.baseData.severityLevel === "Information";
         }
     ),
     "ConsoleLog": outputContract(
         "MessageData",
         (telemetry) => {
             return telemetry.data.baseData.message === "Test console.log" &&
-            telemetry.data.baseData.severityLevel === 1;
+            telemetry.data.baseData.severityLevel === "Information";
         }
     ),
     "ConsoleAssert": outputContract(

@@ -1,7 +1,7 @@
 import * as assert from "assert";
 import * as os from "os";
 import * as sinon from "sinon";
-import { isValidTraceId, isValidSpanId } from "@opentelemetry/api";
+import { isValidTraceId, isValidSpanId, context, trace } from "@opentelemetry/api";
 import { ExportResultCode } from "@opentelemetry/core";
 
 import { LogHandler, ResourceManager, TraceHandler } from "../../../src/library/handlers";
@@ -96,8 +96,11 @@ describe("Library/LogHandler", () => {
             let traceHandler = new TraceHandler(_config, _context);
             traceHandler.tracer.startActiveSpan("test", () => {
                 let envelope = logHandler["_logToEnvelope"]({}, "", {}, "");
+                let spanContext = trace.getSpanContext(context.active());
                 assert.ok(isValidTraceId(envelope.tags["ai.operation.id"]), "Valid operation Id");
                 assert.ok(isValidSpanId(envelope.tags["ai.operation.parentId"]), "Valid parent operation Id");
+                assert.equal(envelope.tags["ai.operation.id"], spanContext.traceId);
+                assert.equal(envelope.tags["ai.operation.parentId"], spanContext.spanId);
             });
         });
 

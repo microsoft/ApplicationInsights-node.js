@@ -212,7 +212,7 @@ export class LogHandler {
     ): Envelope {
         let baseType = "AvailabilityData";
         let baseData: AvailabilityData = {
-            id: telemetry.id,
+            id: telemetry.id || this._idGenerator.generateSpanId(),
             name: telemetry.name,
             duration: Util.getInstance().msToTimeSpan(telemetry.duration),
             success: telemetry.success,
@@ -279,7 +279,7 @@ export class LogHandler {
     ): Envelope {
         let baseType = "PageViewData";
         let baseData: PageViewData = {
-            id: telemetry.id,
+            id: telemetry.id || this._idGenerator.generateSpanId(),
             name: telemetry.name,
             duration: Util.getInstance().msToTimeSpan(telemetry.duration),
             url: telemetry.url,
@@ -324,10 +324,13 @@ export class LogHandler {
             tags[KnownContextTagKeys.AiCloudRoleInstance] = String(serviceInstanceId);
         }
         // Add Correlation headers
-        tags[KnownContextTagKeys.AiOperationId] = this._idGenerator.generateTraceId();
-        const parentSpanContext = trace.getSpanContext(context.active());
-        if (parentSpanContext) {
-            tags[KnownContextTagKeys.AiOperationParentId] = parentSpanContext.spanId;
+        const spanContext = trace.getSpanContext(context.active());
+        if (spanContext) {
+            tags[KnownContextTagKeys.AiOperationId] = spanContext.traceId;
+            tags[KnownContextTagKeys.AiOperationParentId] = spanContext.spanId;
+        }
+        else{
+            tags[KnownContextTagKeys.AiOperationId] = this._idGenerator.generateTraceId();
         }
         return tags;
     }
