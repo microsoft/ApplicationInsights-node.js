@@ -27,7 +27,7 @@ describe("Library/QuickPulseStateManager", () => {
 
             assert.ok(qps.config);
             assert.equal(qps.config.instrumentationKey, "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-            assert.ok(qps.context);
+            assert.ok(qps["_resourceManager"]);
             assert.equal(qps["_isEnabled"], false);
             assert.equal(qps["_isCollectingData"], false);
             assert.ok(qps["_sender"]);
@@ -54,8 +54,8 @@ describe("Library/QuickPulseStateManager", () => {
         });
 
         it("should call _ping with all expected headers set set", () => {
-            qps["context"].tags[KnownContextTagKeys.AiCloudRoleInstance] = "instance1";
-            qps["context"].tags[KnownContextTagKeys.AiCloudRole] = "role1";
+            qps["_resourceManager"].getTraceResource().attributes[KnownContextTagKeys.AiCloudRoleInstance] = "instance1";
+            qps["_resourceManager"].getTraceResource().attributes[KnownContextTagKeys.AiCloudRole] = "role1";
             qps.enable(true);
 
             let callArgs = submitDataStub.args;

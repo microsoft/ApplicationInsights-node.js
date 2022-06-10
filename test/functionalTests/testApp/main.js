@@ -1,27 +1,26 @@
-var Config = require("./config");
+var testconfig = require("./config");
 var appInsights = null;
-if (Config.AppInsightsEnabled) {
-    appInsights = require("applicationinsights");
+if (testconfig.AppInsightsEnabled) {
 
-    let testConnectionString = `InstrumentationKey=${Config.InstrumentationKey};IngestionEndpoint=${Config.EndpointBaseAddress}`;
+    const { Client, Config } = require("applicationinsights");
 
-    appInsights.setup(testConnectionString);
-    appInsights.defaultClient.config.samplingPercentage = parseFloat(Config.SampleRate);
-    appInsights.defaultClient.config.instrumentations["azureSdk"].enabled = true;
-    appInsights.defaultClient.config.instrumentations["mongoDb"].enabled = true;
-    appInsights.defaultClient.config.instrumentations["mySql"].enabled = true;
-    appInsights.defaultClient.config.instrumentations["postgreSql"].enabled = true;
-    appInsights.defaultClient.config.instrumentations["redis"].enabled = true;
-    appInsights.defaultClient.config.instrumentations["redis4"].enabled = true;
+    let config = new Config(`InstrumentationKey=${testconfig.InstrumentationKey};IngestionEndpoint=${testconfig.EndpointBaseAddress}`);
+    config.samplingPercentage = parseFloat(testconfig.SampleRate);
+    config.instrumentations["azureSdk"].enabled = true;
+    config.instrumentations["mongoDb"].enabled = true;
+    config.instrumentations["mySql"].enabled = true;
+    config.instrumentations["postgreSql"].enabled = true;
+    config.instrumentations["redis"].enabled = true;
+    config.instrumentations["redis4"].enabled = true;
+    config.enableAutoCollectDependencies = true;
+    config.enableAutoCollectRequests = true;
 
-    appInsights.defaultClient.config.enableAutoCollectDependencies = true;
-    appInsights.defaultClient.config.enableAutoCollectRequests = true;
-
+    appInsights = new Client(config);
     appInsights.start();
 }
 
 var Tasks = require("./tasks");
-var port = parseInt(Config.ServerPort);
+var port = parseInt(testconfig.ServerPort);
 var bodyParser = require('body-parser');
 var express = require("express");
 var app = express();
@@ -70,9 +69,9 @@ app.post("/_configure", (req, res) => {
 app.get("/_close", (req, res) => {
     res.end("OK");
     server.close();
-    if (Config.AppInsightsEnabled) {
-        appInsights.defaultClient.flush();
-        appInsights.dispose();
+    if (testconfig.AppInsightsEnabled) {
+        appInsights.flush();
+        appInsights.shutdown();
         process.exit(0);
     }
 });

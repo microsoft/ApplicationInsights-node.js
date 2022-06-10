@@ -244,6 +244,7 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | enableAutoCollectRequests      | Sets the state of request tracking (enabled by default). If true requests will be sent to Application Insights |
 | enableAutoCollectDependencies  | Sets the state of dependency tracking (enabled by default). If true dependencies will be sent to Application Insights |
 | enableAutoDependencyCorrelation| Sets the state of automatic dependency correlation (enabled by default). If true dependencies will be correlated with requests |
+| enableAutoPopulateAzureProperties| Add extra information to telemetry about Azure environment |
 | enableUseAsyncHooks            | Sets the state of automatic dependency correlation (enabled by default). If true, forces use of experimental async_hooks module to provide correlation. If false, instead uses only patching-based techniques. If left blank, the best option is chosen for you based on your version of Node.js. |
 | enableUseDiskRetryCaching     | If true events that occurred while client is offline will be cached on disk |
 | enableResendInterval          | The wait interval for resending cached events. |
@@ -310,14 +311,6 @@ Use the following to set the RoleName field:
 const appInsights = require("applicationinsights");
 appInsights.setup("<YOUR_CONNECTION_STRING>");
 appInsights.defaultClient.context.tags[appInsights.defaultClient.context.keys.cloudRole] = "MyRoleName";
-appInsights.start();
-```
-
-If running in Azure App service or Azure functions the SDK will automatically populate the cloud role when following code is added:
-```javascript
-const appInsights = require("applicationinsights");
-appInsights.setup("<YOUR_CONNECTION_STRING>");
-appInsights.defaultClient.setAutoPopulateAzureProperties(true);
 appInsights.start();
 ```
 

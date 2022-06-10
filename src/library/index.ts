@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-export { TelemetryClient } from "./telemetryClient";
+export { Client } from "./client";
+export { Config } from "./configuration";
 export { AzureVirtualMachine } from "./azureVirtualMachine";
-export { Context } from "./context";

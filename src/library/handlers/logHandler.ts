@@ -6,7 +6,7 @@ import * as Contracts from "../../declarations/contracts";
 import { AutoCollectConsole, AutoCollectExceptions } from "../../autoCollection";
 import { Config } from "../configuration";
 import { Util } from "../util";
-import { Context } from "../context";
+import { ResourceManager } from "./resourceManager";
 import { Statsbeat } from "../statsbeat";
 import { parseStack } from "../exporters/shared";
 import {
@@ -19,6 +19,7 @@ import {
     TelemetryExceptionDetails,
     KnownSeverityLevel,
     TelemetryEventData,
+    KnownContextTagKeys,
 } from "../../declarations/generated";
 import {
     AvailabilityTelemetry,
@@ -29,6 +30,7 @@ import {
     Telemetry,
 } from "../../declarations/contracts";
 import { Logger } from "../logging";
+import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
 export class LogHandler {
     public isAutoCollectConsole = false;
@@ -36,16 +38,16 @@ export class LogHandler {
     public isExceptions = true;
     public statsbeat: Statsbeat;
     public config: Config;
-    private _context: Context;
+    private _resourceManager: ResourceManager;
     private _isStarted = false;
     private _batchProcessor: BatchProcessor;
     private _exporter: LogExporter;
     private _console: AutoCollectConsole;
     private _exceptions: AutoCollectExceptions;
 
-    constructor(config: Config, context: Context) {
+    constructor(config: Config, resourceManager: ResourceManager) {
         this.config = config;
-        this._context = context;
+        this._resourceManager = resourceManager;
         this._exporter = new LogExporter(config);
         this._batchProcessor = new BatchProcessor(config, this._exporter);
         this._initializeFlagsFromConfig();
@@ -63,7 +65,7 @@ export class LogHandler {
         await this._batchProcessor.triggerSend();
     }
 
-    public dispose() {
+    public async shutdown(): Promise<void> {
         this._console.enable(false, false);
         this._console = null;
         this._exceptions.enable(false);
@@ -189,7 +191,7 @@ export class LogHandler {
             // sanitize properties
             properties = Util.getInstance().validateStringMap(telemetry.properties);
         }
-        const tags = this._getTags(this._context);
+        const tags = this._getTags(this._resourceManager);
         let envelope: Envelope = {
             name: name,
             time: telemetry.time || new Date(),
@@ -313,16 +315,23 @@ export class LogHandler {
         return envelope;
     }
 
-    private _getTags(context: Context) {
-        // Make a copy of context tags so we don't alter the actual object
-        // Also perform tag overriding
-        var newTags = <{ [key: string]: string }>{};
-        if (context && context.tags) {
-            for (var key in context.tags) {
-                newTags[key] = context.tags[key];
+    private _getTags(resourceManager: ResourceManager) {
+        var tags = <{ [key: string]: string }>{};
+        if (resourceManager) {
+            const attributes = resourceManager.getMetricResource().attributes;
+            const serviceName = attributes[SemanticResourceAttributes.SERVICE_NAME];
+            const serviceNamespace = attributes[SemanticResourceAttributes.SERVICE_NAMESPACE];
+            if (serviceName) {
+                if (serviceNamespace) {
+                    tags[KnownContextTagKeys.AiCloudRole] = `${serviceNamespace}.${serviceName}`;
+                } else {
+                    tags[KnownContextTagKeys.AiCloudRole] = String(serviceName);
+                }
             }
+            const serviceInstanceId = attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID];
+            tags[KnownContextTagKeys.AiCloudRoleInstance] = String(serviceInstanceId);
         }
-        return newTags;
+        return tags;
     }
 
     private _initializeFlagsFromConfig() {

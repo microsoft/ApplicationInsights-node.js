@@ -1,0 +1,84 @@
+import { Config } from "./configuration";
+import { ResourceManager } from "./handlers/resourceManager";
+import { Statsbeat } from "./statsbeat";
+import { Logger } from "./logging";
+import { QuickPulseStateManager } from "./quickPulse";
+import { LogHandler, MetricHandler, TraceHandler } from "./handlers";
+
+
+export class Client {
+
+    private _config: Config;
+    private _resourceManager: ResourceManager;
+    private _quickPulseClient: QuickPulseStateManager;
+    private _statsbeat: Statsbeat;
+    private _traceHandler: TraceHandler;
+    private _metricHandler: MetricHandler;
+    private _logHandler: LogHandler;
+
+    /**
+     * Constructs a new client of the client
+     * @param config Configuration
+     */
+    constructor(config?: Config) {
+        this._config = config || new Config();
+        this._resourceManager = new ResourceManager(this._config);
+        if (!this._config.disableStatsbeat) {
+            this._statsbeat = new Statsbeat(this._config, this._resourceManager);
+            this._statsbeat.enable(true);
+        }
+        this._traceHandler = new TraceHandler(this._config, this._resourceManager);
+        this._metricHandler = new MetricHandler(this._config, this._resourceManager);
+        this._logHandler = new LogHandler(this._config, this._resourceManager);
+    }
+
+    public start() {
+        this._traceHandler.start();
+        this._metricHandler.start();
+        this._logHandler.start();
+    }
+
+    public getTraceHandler(): TraceHandler {
+        return this._traceHandler;
+    }
+
+    public getMetricHandler(): MetricHandler {
+        return this._metricHandler;
+    }
+
+    public getLogHandler(): LogHandler {
+        return this._logHandler;
+    }
+
+    public getConfig(): Config {
+        return this._config;
+    }
+
+     public getResourceManager(): ResourceManager {
+        return this._resourceManager;
+    }
+
+    public getStatsbeat(): Statsbeat {
+        return this._statsbeat;
+    }
+
+    /**
+     * Immediately send all queued telemetry.
+     */
+    public async flush(): Promise<void> {
+        try {
+            await this._traceHandler.flush();
+            await this._metricHandler.flush();
+            await this._logHandler.flush();
+        }
+        catch (err) {
+            Logger.getInstance().error("Failed to flush telemetry", err);
+        }
+    }
+
+    public async shutdown(): Promise<void> {
+        this._traceHandler.shutdown();
+        this._metricHandler.shutdown();
+        this._logHandler.shutdown();
+    }
+}

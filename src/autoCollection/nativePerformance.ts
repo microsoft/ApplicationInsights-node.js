@@ -1,4 +1,4 @@
-import { MetricHandler } from "../library/handlers/metricHandler";
+import { MetricHandler } from "../library/handlers";
 import { Logger } from "../library/logging";
 import { IBaseConfig, IDisabledExtendedMetrics } from "../library/configuration/interfaces";
 

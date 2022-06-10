@@ -17,6 +17,7 @@ import {
     MetricsData,
     MetricDataPoint,
     KnownDataPointType,
+    KnownContextTagKeys,
 } from "../../declarations/generated";
 import {
     IMetricDependencyDimensions,
@@ -24,10 +25,10 @@ import {
     IMetricRequestDimensions,
     IMetricTraceDimensions,
 } from "../../declarations/metrics/aggregatedMetricDimensions";
-import { Context } from "../context";
+import { ResourceManager } from "./resourceManager";
 import { HeartBeat } from "../heartBeat";
-import { Logger } from "../logging";
 import { Util } from "../util";
+import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
 export class MetricHandler {
     public isPerformance = true;
@@ -38,7 +39,7 @@ export class MetricHandler {
     public isNativePerformance = false;
     public disabledExtendedMetrics: IDisabledExtendedMetrics;
     private _config: Config;
-    private _context: Context;
+    private _resourceManager: ResourceManager;
     private _isStarted = false;
     private _batchProcessor: BatchProcessor;
     private _exporter: MetricExporter;
@@ -47,9 +48,9 @@ export class MetricHandler {
     private _heartbeat: HeartBeat;
     private _nativePerformance: AutoCollectNativePerformance;
 
-    constructor(config: Config, context?: Context) {
+    constructor(config: Config, resourceManager?: ResourceManager) {
         this._config = config;
-        this._context = context;
+        this._resourceManager = resourceManager;
         this._exporter = new MetricExporter(this._config);
         this._batchProcessor = new BatchProcessor(this._config, this._exporter);
         this._nativePerformance = new AutoCollectNativePerformance(this);
@@ -163,7 +164,7 @@ export class MetricHandler {
         this._preAggregatedMetrics.countDependency(duration, dimensions);
     }
 
-    public dispose() {
+    public async shutdown(): Promise<void> {
         this._performance.enable(false);
         this._performance = null;
         this._preAggregatedMetrics.enable(false);
@@ -174,8 +175,8 @@ export class MetricHandler {
         this._nativePerformance = null;
     }
 
-    public getContext() {
-        return this._context;
+    public getResourceManager() {
+        return this._resourceManager;
     }
 
     private _initializeFlagsFromConfig() {
@@ -216,7 +217,7 @@ export class MetricHandler {
         let sampleRate = 100;
         let properties = {};
 
-        const tags = this._getTags(this._context);
+        const tags = this._getTags(this._resourceManager);
         let name =
             "Microsoft.ApplicationInsights." +
             instrumentationKey.replace(/-/g, "") +
@@ -258,15 +259,22 @@ export class MetricHandler {
         };
     }
 
-    private _getTags(context: Context) {
-        // Make a copy of context tags so we don't alter the actual object
-        // Also perform tag overriding
-        var newTags = <{ [key: string]: string }>{};
-        if (context && context.tags) {
-            for (var key in context.tags) {
-                newTags[key] = context.tags[key];
+    private _getTags(resourceManager: ResourceManager) {
+        var tags = <{ [key: string]: string }>{};
+        if (resourceManager) {
+            const attributes = resourceManager.getMetricResource().attributes;
+            const serviceName = attributes[SemanticResourceAttributes.SERVICE_NAME];
+            const serviceNamespace = attributes[SemanticResourceAttributes.SERVICE_NAMESPACE];
+            if (serviceName) {
+                if (serviceNamespace) {
+                    tags[KnownContextTagKeys.AiCloudRole] = `${serviceNamespace}.${serviceName}`;
+                } else {
+                    tags[KnownContextTagKeys.AiCloudRole] = String(serviceName);
+                }
             }
+            const serviceInstanceId = attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID];
+            tags[KnownContextTagKeys.AiCloudRoleInstance] = String(serviceInstanceId);
         }
-        return newTags;
+        return tags;
     }
 }

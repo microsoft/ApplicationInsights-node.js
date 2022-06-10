@@ -2,14 +2,15 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 import * as os from "os";
 
-import { TelemetryClient } from "../../../src/library/telemetryClient";
+import { Client } from "../../../src/library/client";
 import { HeartBeat } from "../../../src/library/heartBeat";
-import { JsonConfig } from "../../../src/library/configuration";
+import { Config, JsonConfig } from "../../../src/library/configuration";
+import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
 describe("AutoCollection/HeartBeat", () => {
     var sandbox: sinon.SinonSandbox;
     let originalEnv: NodeJS.ProcessEnv;
-    const client = new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+    const client = new Client(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
 
     beforeEach(() => {
         originalEnv = process.env;
@@ -29,7 +30,7 @@ describe("AutoCollection/HeartBeat", () => {
             process.env = env;
             var setIntervalSpy = sandbox.spy(global, "setInterval");
             var clearIntervalSpy = sandbox.spy(global, "clearInterval");
-            const heartbeat: HeartBeat = new HeartBeat(client.metricHandler, client.config);
+            const heartbeat: HeartBeat = new HeartBeat(client.getMetricHandler(), client.getConfig());
             heartbeat.enable(true);
 
             assert.equal(
@@ -48,7 +49,7 @@ describe("AutoCollection/HeartBeat", () => {
 
     describe("#trackHeartBeat()", () => {
         it("should read correct web app values from envrionment variable", (done) => {
-            const heartbeat1: HeartBeat = new HeartBeat(client.metricHandler, client.config);
+            const heartbeat1: HeartBeat = new HeartBeat(client.getMetricHandler(), client.getConfig());
             heartbeat1.enable(true);
             const stub1 = sandbox.stub(heartbeat1["_handler"], "trackMetric");
 
@@ -59,7 +60,7 @@ describe("AutoCollection/HeartBeat", () => {
             env1["WEBSITE_HOSTNAME"] = "host_name";
             process.env = env1;
 
-            heartbeat1["trackHeartBeat"](client.config, () => {
+            heartbeat1["trackHeartBeat"](client.getConfig(), () => {
                 assert.equal(
                     stub1.callCount,
                     1,
@@ -89,7 +90,7 @@ describe("AutoCollection/HeartBeat", () => {
                 const properties1 = stub1.args[0][0].properties;
                 assert.equal(
                     properties1["sdk"],
-                    heartbeat1["_handler"].getContext().sdkVersion,
+                    heartbeat1["_handler"].getResourceManager().getMetricResource().attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION],
                     "sdk version should be read from Context"
                 );
                 assert.equal(
@@ -117,7 +118,7 @@ describe("AutoCollection/HeartBeat", () => {
         });
 
         it("should read correct function app values from environment variable", (done) => {
-            const heartbeat2: HeartBeat = new HeartBeat(client.metricHandler, client.config);
+            const heartbeat2: HeartBeat = new HeartBeat(client.getMetricHandler(), client.getConfig());
             heartbeat2.enable(true);
             const stub2 = sandbox.stub(heartbeat2["_handler"], "trackMetric");
             var env2 = <{ [id: string]: string }>{};
@@ -125,7 +126,7 @@ describe("AutoCollection/HeartBeat", () => {
             env2["WEBSITE_HOSTNAME"] = "host_name";
             process.env = env2;
 
-            heartbeat2["trackHeartBeat"](client.config, () => {
+            heartbeat2["trackHeartBeat"](client.getConfig(), () => {
                 assert.equal(
                     stub2.callCount,
                     1,
@@ -153,7 +154,7 @@ describe("AutoCollection/HeartBeat", () => {
                 const properties2 = stub2.args[0][0].properties;
                 assert.equal(
                     properties2["sdk"],
-                    heartbeat2["_handler"].getContext().sdkVersion,
+                    heartbeat2["_handler"].getResourceManager().getMetricResource().attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION],
                     "sdk version should be read from Context"
                 );
                 assert.equal(

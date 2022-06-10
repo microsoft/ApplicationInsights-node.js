@@ -1,15 +1,16 @@
 import { IncomingMessage } from "http";
 import { SpanContext } from "@opentelemetry/api";
 
-import { AutoCollectPerformance } from "./autoCollection";
-import { Logger } from "./library/logging";
-import { IDisabledExtendedMetrics, InstrumentationType } from "./library/configuration/interfaces";
-import { QuickPulseStateManager } from "./library/quickPulse";
-import { ICorrelationContext } from "./declarations/interfaces";
-import { DistributedTracingModes } from "./declarations/enumerators";
-import { TelemetryClient } from "./library";
-import * as Contracts from "./declarations/contracts";
-import * as azureFunctionsTypes from "./declarations/functions";
+import { AutoCollectPerformance } from "../autoCollection";
+import { Logger } from "../library/logging";
+import { IDisabledExtendedMetrics, InstrumentationType } from "../library/configuration/interfaces";
+import { QuickPulseStateManager } from "../library/quickPulse";
+import { ICorrelationContext } from "../declarations/interfaces";
+import { DistributedTracingModes } from "../declarations/enumerators";
+import { TelemetryClient } from "./telemetryClient";
+import * as Contracts from "../declarations/contracts";
+import * as azureFunctionsTypes from "../declarations/functions";
+
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
@@ -21,8 +22,6 @@ export { Contracts, TelemetryClient, DistributedTracingModes, azureFunctionsType
  */
 export let defaultClient: TelemetryClient;
 export let liveMetricsClient: QuickPulseStateManager;
-let _performanceLiveMetrics: AutoCollectPerformance;
-let _isSendingLiveMetrics = false;
 let _isDiskRetry = true;
 let _diskRetryInterval: number = undefined;
 let _diskRetryMaxBytes: number = undefined;
@@ -66,17 +65,6 @@ export function setup(setupString?: string) {
  * @returns {ApplicationInsights} this class
  */
 export function start() {
-    if (defaultClient) {
-        defaultClient.traceHandler.start();
-        defaultClient.metricHandler.start();
-        defaultClient.logHandler.start();
-        if (liveMetricsClient && _isSendingLiveMetrics) {
-            liveMetricsClient.enable(_isSendingLiveMetrics);
-        }
-    } else {
-        Logger.getInstance().warn("Start cannot be called before setup");
-    }
-
     return Configuration;
 }
 
@@ -94,11 +82,6 @@ export function start() {
  * @returns A plain object for request storage or null if automatic dependency correlation is disabled.
  */
 export function getCorrelationContext(): ICorrelationContext {
-    if (defaultClient) {
-        // TODO
-        return null;
-    }
-
     return null;
 }
 
@@ -126,7 +109,6 @@ export function startOperation(
         | SpanContext,
     request?: azureFunctionsTypes.HttpRequest | string
 ): ICorrelationContext | null {
-    // TODO
     return null;
 }
 
@@ -140,7 +122,6 @@ export function wrapWithCorrelationContext<T extends Function>(
     fn: T,
     context?: ICorrelationContext
 ): T {
-    // TODO
     return null;
 }
 
@@ -159,7 +140,6 @@ export class Configuration {
      * services. Default=AI
      */
     public static setDistributedTracingMode(value: DistributedTracingModes) {
-        // TODO
         return Configuration;
     }
 
@@ -171,7 +151,7 @@ export class Configuration {
      */
     public static setAutoCollectConsole(value: boolean, collectConsoleLog: boolean = false) {
         if (defaultClient) {
-            defaultClient.logHandler.setAutoCollectConsole(value, collectConsoleLog);
+            defaultClient.client.getLogHandler().setAutoCollectConsole(value, collectConsoleLog);
         }
         return Configuration;
     }
@@ -183,7 +163,7 @@ export class Configuration {
      */
     public static setAutoCollectExceptions(value: boolean) {
         if (defaultClient) {
-            defaultClient.logHandler.setAutoCollectExceptions(value);
+            defaultClient.client.getLogHandler().setAutoCollectExceptions(value);
         }
         return Configuration;
     }
@@ -199,7 +179,7 @@ export class Configuration {
         collectExtendedMetrics: boolean | IDisabledExtendedMetrics = true
     ) {
         if (defaultClient) {
-            defaultClient.metricHandler.setAutoCollectPerformance(value, collectExtendedMetrics);
+            defaultClient.client.getMetricHandler().setAutoCollectPerformance(value, collectExtendedMetrics);
         }
         return Configuration;
     }
@@ -211,7 +191,7 @@ export class Configuration {
      */
     public static setAutoCollectPreAggregatedMetrics(value: boolean) {
         if (defaultClient) {
-            defaultClient.metricHandler.setAutoCollectPreAggregatedMetrics(value);
+            defaultClient.client.getMetricHandler().setAutoCollectPreAggregatedMetrics(value);
         }
         return Configuration;
     }
@@ -223,7 +203,7 @@ export class Configuration {
      */
     public static setAutoCollectHeartbeat(value: boolean) {
         if (defaultClient) {
-            defaultClient.metricHandler.setAutoCollectHeartbeat(value);
+            defaultClient.client.getMetricHandler().setAutoCollectHeartbeat(value);
         }
         return Configuration;
     }
@@ -234,7 +214,6 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectRequests(value: boolean) {
-        // TODO: Remove
         return Configuration;
     }
 
@@ -244,7 +223,6 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectDependencies(value: boolean) {
-        // TODO: Remove
         return Configuration;
     }
 
@@ -255,7 +233,6 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoDependencyCorrelation(value: boolean, useAsyncHooks?: boolean) {
-        // TODO: Remove
         return Configuration;
     }
 
@@ -275,15 +252,6 @@ export class Configuration {
         resendInterval?: number,
         maxBytesOnDisk?: number
     ) {
-        _isDiskRetry = value;
-        _diskRetryInterval = resendInterval;
-        _diskRetryMaxBytes = maxBytesOnDisk;
-        if (defaultClient) {
-            // TODO: Persistance is not configurable in Exporter
-            // defaultClient.traceHandler.setUseDiskRetryCaching(_isDiskRetry, _diskRetryInterval, _diskRetryMaxBytes);
-            // defaultClient.metricHandler.setUseDiskRetryCaching(_isDiskRetry, _diskRetryInterval, _diskRetryMaxBytes);
-            // defaultClient.logHandler.setUseDiskRetryCaching(_isDiskRetry, _diskRetryInterval, _diskRetryMaxBytes);
-        }
         return Configuration;
     }
 
@@ -304,30 +272,6 @@ export class Configuration {
      * @param enable if true, enables communication with the live metrics service
      */
     public static setSendLiveMetrics(enable = false) {
-        if (!defaultClient) {
-            // Need a defaultClient so that we can add the QPS telemetry processor to it
-            Logger.getInstance().warn("Live metrics client cannot be setup without the default client");
-            return Configuration;
-        }
-
-        if (!liveMetricsClient && enable) {
-            // No qps client exists. Create one and prepare it to be enabled at .start()
-            liveMetricsClient = new QuickPulseStateManager(
-                defaultClient.config,
-                defaultClient.context
-            );
-            _performanceLiveMetrics = new AutoCollectPerformance(
-                liveMetricsClient as any,
-                1000,
-                true
-            );
-            liveMetricsClient.addCollector(_performanceLiveMetrics);
-            defaultClient.quickPulseClient = liveMetricsClient; // Need this so we can forward all manual tracks to live metrics via PerformanceMetricsTelemetryProcessor
-        } else if (liveMetricsClient) {
-            // qps client already exists; enable/disable it
-            liveMetricsClient.enable(enable);
-        }
-        _isSendingLiveMetrics = enable;
         return Configuration;
     }
 }
@@ -337,14 +281,7 @@ export class Configuration {
  */
 export function dispose() {
     if (defaultClient) {
-        defaultClient.traceHandler.shutdown();
-        defaultClient.metricHandler.dispose();
-        defaultClient.logHandler.dispose();
+        defaultClient.client.shutdown();
     }
     defaultClient = null;
-    if (liveMetricsClient) {
-        liveMetricsClient.enable(false);
-        _isSendingLiveMetrics = false;
-        liveMetricsClient = undefined;
-    }
 }

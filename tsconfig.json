@@ -13,11 +13,9 @@
         ]
     },
     "include": [
-        "src/bootstrap/*.ts",
-        "*.ts",
-        "src/autoCollection/diagnostic-channel/*.ts",
+        "src/**/*.ts",
         "test/**/*.ts"
-, "src/applicationinsights.ts"    ],
+    ],
     "exclude": [
         "node_modules",
         "test/functionalTests",

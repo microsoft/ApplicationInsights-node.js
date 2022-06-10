@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import { RequestOptions } from "http";
-import { SpanOptions, context, SpanKind, SpanStatusCode, Attributes } from "@opentelemetry/api";
+
 import {
     Instrumentation,
     InstrumentationOption,
@@ -19,12 +19,9 @@ import {
     HttpInstrumentation,
     HttpInstrumentationConfig,
 } from "@opentelemetry/instrumentation-http";
-import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 
 import { Config } from "../configuration";
-import * as Contracts from "../../declarations/contracts";
-import { Logger } from "../logging";
-import { Context } from "../context";
+import { ResourceManager } from "./resourceManager";
 import { AzureExporterConfig, AzureMonitorTraceExporter } from "@azure/monitor-opentelemetry-exporter";
 import { InstrumentationType } from "../configuration/interfaces";
 
@@ -43,16 +40,16 @@ export class TraceHandler {
     private _exporter: AzureMonitorTraceExporter;
     private _spanProcessor: BatchSpanProcessor;
     private _config: Config;
-    private _context: Context;
+    private resourceManager: ResourceManager;
     private _instrumentations: InstrumentationOption[];
     private _disableInstrumentations: () => void;
 
-    constructor(config: Config, context: Context) {
+    constructor(config: Config, resourceManager: ResourceManager) {
         this._config = config;
-        this._context = context;
+        this.resourceManager = resourceManager;
         this._instrumentations = [];
         let tracerConfig: NodeTracerConfig = {
-            resource: this._context.getResource(),
+            resource: this.resourceManager.getTraceResource(),
             forceFlushTimeoutMillis: 30000,
         };
         this.tracerProvider = new NodeTracerProvider(tracerConfig);
@@ -142,81 +139,8 @@ export class TraceHandler {
         return this.tracerProvider.forceFlush();
     }
 
-    public shutdown() {
-        this.tracerProvider.shutdown();
-    }
-
-    // Support Legacy APIs
-    public trackRequest(telemetry: Contracts.RequestTelemetry) {
-        let startTime = telemetry.time || new Date();
-        let endTime = startTime.getTime() + telemetry.duration;
-
-        // TODO: Change context if ID is provided?
-        const ctx = context.active();
-        let attributes: Attributes = {
-            ...telemetry.properties,
-        };
-        attributes[SemanticAttributes.HTTP_METHOD] = "HTTP";
-        attributes[SemanticAttributes.HTTP_URL] = telemetry.url;
-        attributes[SemanticAttributes.HTTP_STATUS_CODE] = telemetry.resultCode;
-        let options: SpanOptions = {
-            kind: SpanKind.SERVER,
-            attributes: attributes,
-            startTime: startTime
-        };
-        let span: any = this.tracer.startSpan(telemetry.name, options, ctx);
-        span.setStatus({
-            code: telemetry.success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
-        });
-        span.end(endTime);
-    }
-
-    // Support Legacy APIs
-    public trackDependency(telemetry: Contracts.DependencyTelemetry) {
-        // TODO: Change context if ID is provided?
-
-        let startTime = telemetry.time || new Date();
-        let endTime = startTime.getTime() + telemetry.duration;
-        if (telemetry && !telemetry.target && telemetry.data) {
-            // url.parse().host returns null for non-urls,
-            // making this essentially a no-op in those cases
-            // If this logic is moved, update jsdoc in DependencyTelemetry.target
-            // url.parse() is deprecated, update to use WHATWG URL API instead
-            try {
-                telemetry.target = new URL(telemetry.data).host;
-            } catch (error) {
-                // set target as null to be compliant with previous behavior
-                telemetry.target = null;
-                Logger.getInstance().warn(this.constructor.name, "Failed to create URL.", error);
-            }
-        }
-        const ctx = context.active();
-        let attributes: Attributes = {
-            ...telemetry.properties,
-        };
-        if (telemetry.dependencyTypeName) {
-            if (telemetry.dependencyTypeName.toLowerCase().indexOf("http") > -1) {
-                attributes[SemanticAttributes.HTTP_METHOD] = "HTTP"; // TODO: Dependency doesn't expose method in any property
-                attributes[SemanticAttributes.HTTP_URL] = telemetry.data;
-                attributes[SemanticAttributes.HTTP_STATUS_CODE] = telemetry.resultCode;
-            } else if (this._isDbDependency(telemetry.dependencyTypeName)) {
-                attributes[SemanticAttributes.DB_SYSTEM] = telemetry.dependencyTypeName;
-                attributes[SemanticAttributes.DB_STATEMENT] = telemetry.data;
-            }
-        }
-        if (telemetry.target) {
-            attributes[SemanticAttributes.PEER_SERVICE] = telemetry.target;
-        }
-        let options: SpanOptions = {
-            kind: SpanKind.CLIENT,
-            attributes: attributes,
-            startTime: startTime
-        };
-        let span: any = this.tracer.startSpan(telemetry.name, options, ctx);
-        span.setStatus({
-            code: telemetry.success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
-        });
-        span.end(endTime);
+    public async shutdown(): Promise<void> {
+        await this.tracerProvider.shutdown();
     }
 
     private _ignoreOutgoingRequestHook(request: RequestOptions): boolean {
@@ -233,16 +157,5 @@ export class TraceHandler {
 
     private _ignoreIncomingRequestHook(request: RequestOptions): boolean {
         return !this._config.enableAutoCollectRequests;
-    }
-
-
-    private _isDbDependency(dependencyType: string) {
-        return (
-            dependencyType.indexOf("SQL") > -1 ||
-            dependencyType == "mysql" ||
-            dependencyType == "postgresql" ||
-            dependencyType == "mongodb" ||
-            dependencyType == "redis"
-        );
     }
 }
