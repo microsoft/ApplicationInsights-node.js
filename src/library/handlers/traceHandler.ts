@@ -22,6 +22,7 @@ import {
 
 import { Config } from "../configuration";
 import { ResourceManager } from "./resourceManager";
+import { ApplicationInsightsSampler } from "./sampler";
 import { AzureExporterConfig, AzureMonitorTraceExporter } from "@azure/monitor-opentelemetry-exporter";
 import { InstrumentationType } from "../configuration/interfaces";
 
@@ -48,7 +49,11 @@ export class TraceHandler {
         this._config = config;
         this.resourceManager = resourceManager;
         this._instrumentations = [];
+
+        const aiSampler = new ApplicationInsightsSampler(this._config.samplingPercentage);
+
         let tracerConfig: NodeTracerConfig = {
+            sampler: aiSampler,
             resource: this.resourceManager.getTraceResource(),
             forceFlushTimeoutMillis: 30000,
         };
