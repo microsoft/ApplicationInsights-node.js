@@ -150,14 +150,14 @@ module.exports = {
     "BunyanDebug": outputContract(
         "MessageData",
         (telemetry) => {
-            return telemetry.data.baseData.message.msg === "test debug" &&
+            return  JSON.parse(telemetry.data.baseData.message).msg === "test debug" &&
             telemetry.data.baseData.severityLevel === "Verbose";
         }
     ),
     "BunyanTrace": outputContract(
         "MessageData",
         (telemetry) => {
-            return telemetry.data.baseData.message.msg === "test trace" &&
+            return  JSON.parse(telemetry.data.baseData.message).msg === "test trace" &&
             telemetry.data.baseData.severityLevel === "Verbose";
         }
     ),
@@ -247,7 +247,7 @@ module.exports = {
         "MessageData",
         (telemetry) => {
             return telemetry.data.baseData.message === "test error" &&
-            telemetry.data.baseData.severityLevel === 3;
+            telemetry.data.baseData.severityLevel === "Error";
         }
     ),
     "WinstonWarn": outputContract(
