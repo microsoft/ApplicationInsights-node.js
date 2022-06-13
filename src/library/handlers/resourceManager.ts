@@ -1,7 +1,7 @@
 ﻿import * as os from "os";
 
 import { Resource } from "@opentelemetry/resources";
-import { SemanticResourceAttributes, TelemetrySdkLanguageValues } from "@opentelemetry/semantic-conventions";
+import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
 import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../declarations/constants";
 import { Config } from "../configuration";
@@ -15,10 +15,11 @@ export class ResourceManager {
     private _traceResource: Resource;
     private _metricResource: Resource;
     private _logResource: Resource;
+    private _internalSdkVersion: string;
 
     constructor(config?: Config) {
         this._config = config;
-        this._baseResource = Resource.EMPTY;
+        this._baseResource = Resource.default();
         this._loadAttributes();
         this._traceResource = Resource.EMPTY.merge(this._baseResource);
         this._metricResource = Resource.EMPTY.merge(this._baseResource);
@@ -37,6 +38,10 @@ export class ResourceManager {
         return this._logResource;
     }
 
+    public getInternalSdkVersion(): string {
+        return this._internalSdkVersion;
+    }
+
     private _loadAttributes() {
         this._baseResource.attributes[SemanticResourceAttributes.SERVICE_NAME] = DEFAULT_ROLE_NAME;
         this._baseResource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = os && os.hostname();
@@ -49,8 +54,13 @@ export class ResourceManager {
             }
         }
 
-        const sdkVersion = APPLICATION_INSIGHTS_SDK_VERSION;
-        this._baseResource.attributes[SemanticResourceAttributes.TELEMETRY_SDK_LANGUAGE] = TelemetrySdkLanguageValues.NODEJS;
-        this._baseResource.attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION] = "node:" + sdkVersion;
+        const openTelemetryVersion = this._baseResource.attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION];
+        const { node } = process.versions;
+        const [nodeVersion] = node.split(".");
+        this._internalSdkVersion = `node${nodeVersion}:otel${openTelemetryVersion}:ext${APPLICATION_INSIGHTS_SDK_VERSION}`;
     }
 }
+
+
+
+

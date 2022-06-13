@@ -274,6 +274,7 @@ export class MetricHandler {
             }
             const serviceInstanceId = attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID];
             tags[KnownContextTagKeys.AiCloudRoleInstance] = String(serviceInstanceId);
+            tags[KnownContextTagKeys.AiInternalSdkVersion] = resourceManager.getInternalSdkVersion();
         }
         return tags;
     }

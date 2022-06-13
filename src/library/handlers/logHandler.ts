@@ -322,6 +322,7 @@ export class LogHandler {
             }
             const serviceInstanceId = attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID];
             tags[KnownContextTagKeys.AiCloudRoleInstance] = String(serviceInstanceId);
+            tags[KnownContextTagKeys.AiInternalSdkVersion] = resourceManager.getInternalSdkVersion();
         }
         // Add Correlation headers
         const spanContext = trace.getSpanContext(context.active());

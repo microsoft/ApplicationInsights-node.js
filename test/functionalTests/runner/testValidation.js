@@ -51,9 +51,7 @@ module.exports.TestValidation = class TestValidation {
 
                 // Helper fn for validator that runs on all telemetry items
                 const baseValidator = (item) => {
-                    return true;
-                    //TODO: Add back when SDK version is added to all events
-                    //return item.tags['ai.internal.sdkVersion'].indexOf("node") === 0; // sdk should always report a version starting with "node:"
+                    return item.tags['ai.internal.sdkVersion'].indexOf("node") === 0; // sdk should always report a version starting with "node:"
                 };
 
                 // Helper fn to find item in the datset

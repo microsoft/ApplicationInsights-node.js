@@ -89,6 +89,7 @@ describe("Library/LogHandler", () => {
             assert.equal(envelope.tags["ai.operation.parentId"], undefined);
             assert.equal(envelope.tags["ai.cloud.role"], "Web");
             assert.equal(envelope.tags["ai.cloud.roleInstance"], os.hostname());
+            assert.ok(envelope.tags["ai.internal.sdkVersion"].indexOf("node") == 0, "Incorrect SDK version");
         });
 
         it("tracing", () => {
