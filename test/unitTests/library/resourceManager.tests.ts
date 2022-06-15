@@ -37,11 +37,12 @@ describe("ResourceManager", () => {
             sandbox.restore();
         });
 
-        it("should set internalSdkVersion to 'node:<version>'", () => {
+        it("should set internalSdkVersion", () => {
             var resourceManager = new ResourceManager(new Config());
             const packageJsonPath = path.resolve(__dirname, "../../../../", "./package.json");
             let packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-            assert.strictEqual(resourceManager["_baseResource"].attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION], "node:" + packageJson.version);
+            assert.ok(resourceManager.getInternalSdkVersion().indexOf("node") == 0, "Incorrect SDK version");
+            assert.ok(resourceManager.getInternalSdkVersion().indexOf(":ext" + packageJson.version) > 0, "Incorrect SDK version");
         });
 
         it("should correctly set service attributes", () => {

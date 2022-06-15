@@ -1,10 +1,13 @@
 import * as assert from "assert";
+import * as os from "os";
 import * as sinon from "sinon";
+import { isValidTraceId, isValidSpanId, context, trace } from "@opentelemetry/api";
 import { ExportResultCode } from "@opentelemetry/core";
 
-import { LogHandler, ResourceManager } from "../../../src/library/handlers";
+import { LogHandler, ResourceManager, TraceHandler } from "../../../src/library/handlers";
 import { Config } from "../../../src/library/configuration";
-import { AvailabilityTelemetry, TraceTelemetry, ExceptionTelemetry, PageViewTelemetry, EventTelemetry } from "../../../src/declarations/contracts";
+import { AvailabilityTelemetry, TraceTelemetry, ExceptionTelemetry, PageViewTelemetry, EventTelemetry, Telemetry } from "../../../src/declarations/contracts";
+import { MonitorDomain } from "../../../src/declarations/generated";
 
 
 
@@ -71,6 +74,37 @@ describe("Library/LogHandler", () => {
     });
 
     describe("#manual track APIs", () => {
+        it("_logToEnvelope", () => {
+            let handler = new LogHandler(_config, _context)
+            let telemetry: Telemetry = {};
+            let data: MonitorDomain = {};
+            let envelope = handler["_logToEnvelope"](telemetry, "TestData", data, "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            assert.equal(envelope.name, "Microsoft.ApplicationInsights.1aa11111bbbb1ccc8dddeeeeffff3333.Test");
+            assert.equal(envelope.version, "1");
+            assert.equal(envelope.instrumentationKey, "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            assert.equal(envelope.sampleRate, "100");
+            assert.ok(envelope.time);
+            assert.equal(envelope.data.baseType, "TestData");
+            assert.ok(isValidTraceId(envelope.tags["ai.operation.id"]), "Valid operation Id");
+            assert.equal(envelope.tags["ai.operation.parentId"], undefined);
+            assert.equal(envelope.tags["ai.cloud.role"], "Web");
+            assert.equal(envelope.tags["ai.cloud.roleInstance"], os.hostname());
+            assert.ok(envelope.tags["ai.internal.sdkVersion"].indexOf("node") == 0, "Incorrect SDK version");
+        });
+
+        it("tracing", () => {
+            let logHandler = new LogHandler(_config, _context);
+            let traceHandler = new TraceHandler(_config, _context);
+            traceHandler.tracer.startActiveSpan("test", () => {
+                let envelope = logHandler["_logToEnvelope"]({}, "", {}, "");
+                let spanContext = trace.getSpanContext(context.active());
+                assert.ok(isValidTraceId(envelope.tags["ai.operation.id"]), "Valid operation Id");
+                assert.ok(isValidSpanId(envelope.tags["ai.operation.parentId"]), "Valid parent operation Id");
+                assert.equal(envelope.tags["ai.operation.id"], spanContext.traceId);
+                assert.equal(envelope.tags["ai.operation.parentId"], spanContext.spanId);
+            });
+        });
+
         it("trackAvailability", (done) => {
             let handler = new LogHandler(_config, _context)
             let stub = sinon.stub(handler["_exporter"], "export").callsFake((envelopes: any, resultCallback: any) => {

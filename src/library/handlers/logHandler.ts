@@ -1,5 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import { context, trace } from "@opentelemetry/api";
+import { IdGenerator, RandomIdGenerator } from "@opentelemetry/core";
+import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
+
 import { BatchProcessor } from "./shared/batchProcessor";
 import { LogExporter } from "../exporters";
 import * as Contracts from "../../declarations/contracts";
@@ -30,7 +34,6 @@ import {
     Telemetry,
 } from "../../declarations/contracts";
 import { Logger } from "../logging";
-import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
 export class LogHandler {
     public isAutoCollectConsole = false;
@@ -44,6 +47,7 @@ export class LogHandler {
     private _exporter: LogExporter;
     private _console: AutoCollectConsole;
     private _exceptions: AutoCollectExceptions;
+    private _idGenerator: IdGenerator;
 
     constructor(config: Config, resourceManager: ResourceManager) {
         this.config = config;
@@ -53,6 +57,7 @@ export class LogHandler {
         this._initializeFlagsFromConfig();
         this._console = new AutoCollectConsole(this);
         this._exceptions = new AutoCollectExceptions(this);
+        this._idGenerator = new RandomIdGenerator();
     }
 
     public start() {
@@ -94,7 +99,7 @@ export class LogHandler {
     public async trackAvailability(telemetry: Contracts.AvailabilityTelemetry): Promise<void> {
         try {
             const envelope = this._availabilityToEnvelope(telemetry, this.config.instrumentationKey);
-            this.track(envelope);
+            this._batchProcessor.send(envelope);
         }
         catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
@@ -108,7 +113,7 @@ export class LogHandler {
     public async trackPageView(telemetry: Contracts.PageViewTelemetry): Promise<void> {
         try {
             const envelope = this._pageViewToEnvelope(telemetry, this.config.instrumentationKey);
-            this.track(envelope);
+            this._batchProcessor.send(envelope);
         }
         catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
@@ -122,7 +127,7 @@ export class LogHandler {
     public async trackTrace(telemetry: Contracts.TraceTelemetry): Promise<void> {
         try {
             const envelope = this._traceToEnvelope(telemetry, this.config.instrumentationKey);
-            this.track(envelope);
+            this._batchProcessor.send(envelope);
         }
         catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
@@ -139,7 +144,7 @@ export class LogHandler {
         }
         try {
             const envelope = this._exceptionToEnvelope(telemetry, this.config.instrumentationKey);
-            this.track(envelope);
+            this._batchProcessor.send(envelope);
         }
         catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
@@ -153,24 +158,11 @@ export class LogHandler {
     public async trackEvent(telemetry: Contracts.EventTelemetry): Promise<void> {
         try {
             const envelope = this._eventToEnvelope(telemetry, this.config.instrumentationKey);
-            this.track(envelope);
+            this._batchProcessor.send(envelope);
         }
         catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
         }
-    }
-
-    /**
-     * Log a user action or other occurrence.
-     * @param telemetry      Object encapsulating tracking options
-     */
-    public track(telemetry: Envelope): void {
-        // TODO: Telemetry processor, can we still support them in some cases?
-        // TODO: Sampling was done through telemetryProcessor here
-        // TODO: All telemetry processors including Azure property where done here as well
-        // TODO: Perf and Pre Aggregated metrics were calculated here
-
-        this._batchProcessor.send(telemetry);
     }
 
     private _logToEnvelope(
@@ -220,7 +212,7 @@ export class LogHandler {
     ): Envelope {
         let baseType = "AvailabilityData";
         let baseData: AvailabilityData = {
-            id: telemetry.id,
+            id: telemetry.id || this._idGenerator.generateSpanId(),
             name: telemetry.name,
             duration: Util.getInstance().msToTimeSpan(telemetry.duration),
             success: telemetry.success,
@@ -287,7 +279,7 @@ export class LogHandler {
     ): Envelope {
         let baseType = "PageViewData";
         let baseData: PageViewData = {
-            id: telemetry.id,
+            id: telemetry.id || this._idGenerator.generateSpanId(),
             name: telemetry.name,
             duration: Util.getInstance().msToTimeSpan(telemetry.duration),
             url: telemetry.url,
@@ -318,7 +310,7 @@ export class LogHandler {
     private _getTags(resourceManager: ResourceManager) {
         var tags = <{ [key: string]: string }>{};
         if (resourceManager) {
-            const attributes = resourceManager.getMetricResource().attributes;
+            const attributes = resourceManager.getLogResource().attributes;
             const serviceName = attributes[SemanticResourceAttributes.SERVICE_NAME];
             const serviceNamespace = attributes[SemanticResourceAttributes.SERVICE_NAMESPACE];
             if (serviceName) {
@@ -330,6 +322,16 @@ export class LogHandler {
             }
             const serviceInstanceId = attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID];
             tags[KnownContextTagKeys.AiCloudRoleInstance] = String(serviceInstanceId);
+            tags[KnownContextTagKeys.AiInternalSdkVersion] = resourceManager.getInternalSdkVersion();
+        }
+        // Add Correlation headers
+        const spanContext = trace.getSpanContext(context.active());
+        if (spanContext) {
+            tags[KnownContextTagKeys.AiOperationId] = spanContext.traceId;
+            tags[KnownContextTagKeys.AiOperationParentId] = spanContext.spanId;
+        }
+        else{
+            tags[KnownContextTagKeys.AiOperationId] = this._idGenerator.generateTraceId();
         }
         return tags;
     }

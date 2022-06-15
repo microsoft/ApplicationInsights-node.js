@@ -17,6 +17,7 @@ if (testconfig.AppInsightsEnabled) {
 
     appInsights = new Client(config);
     appInsights.start();
+    appInsights.getLogHandler().setAutoCollectConsole(true, true);
 }
 
 var Tasks = require("./tasks");
