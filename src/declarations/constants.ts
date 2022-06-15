@@ -59,13 +59,6 @@ export enum PerformanceCounter {
     REQUEST_DURATION = "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Request Execution Time",
 }
 
-export enum MetricId {
-    REQUESTS_DURATION = "requests/duration",
-    DEPENDENCIES_DURATION = "dependencies/duration",
-    EXCEPTIONS_COUNT = "exceptions/count",
-    TRACES_COUNT = "traces/count",
-}
-
 /**
  * Map a PerformanceCounter/QuickPulseCounter to a QuickPulseCounter. If no mapping exists, mapping is *undefined*
  */

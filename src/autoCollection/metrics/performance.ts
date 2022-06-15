@@ -1,7 +1,7 @@
 import * as os from "os";
 
-import { MetricHandler } from "../library/handlers/metricHandler";
-import * as Constants from "../declarations/constants";
+import { MetricHandler } from "../../library/handlers/metricHandler";
+import * as Constants from "../../declarations/constants";
 
 export class AutoCollectPerformance {
     private _totalRequestCount: number = 0;

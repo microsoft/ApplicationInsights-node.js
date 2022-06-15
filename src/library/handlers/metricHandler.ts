@@ -1,5 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
+
 import { BatchProcessor } from "./shared/batchProcessor";
 import { MetricExporter } from "../exporters";
 import { Config } from "../configuration";
@@ -24,11 +26,12 @@ import {
     IMetricExceptionDimensions,
     IMetricRequestDimensions,
     IMetricTraceDimensions,
-} from "../../declarations/metrics/aggregatedMetricDimensions";
+} from "../../autoCollection/metrics/types";
+import { HttpMetricsInstrumentation } from "../../autoCollection/metrics/httpMetricsInstrumentation";
 import { ResourceManager } from "./resourceManager";
 import { HeartBeat } from "../heartBeat";
 import { Util } from "../util";
-import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
+
 
 export class MetricHandler {
     public isPerformance = true;
@@ -66,6 +69,11 @@ export class MetricHandler {
         this._preAggregatedMetrics.enable(this.isPreAggregatedMetrics);
         this._heartbeat.enable(this.isHeartBeat);
         this._nativePerformance.enable(this.isNativePerformance, this.disabledExtendedMetrics);
+
+        // TODO: Remove once HTTP Instrumentation generate Http metrics
+        if (this._config.enableAutoCollectPreAggregatedMetrics || this._config.enableAutoCollectPerformance) {
+            this.addInstrumentation(new HttpMetricsInstrumentation({}));
+        }
     }
 
     public async flush(): Promise<void> {
@@ -74,26 +82,13 @@ export class MetricHandler {
 
     public async trackMetric(telemetry: Contracts.MetricTelemetry): Promise<void> {
         const envelope = this._metricToEnvelope(telemetry, this._config.instrumentationKey);
-        this.track(envelope);
+        this._batchProcessor.send(envelope);
     }
 
     public async trackStatsbeatMetric(telemetry: Contracts.MetricTelemetry): Promise<void> {
         const envelope = this._metricToEnvelope(telemetry, this._config.instrumentationKey);
         envelope.name = Constants.StatsbeatTelemetryName;
-        this.track(envelope);
-    }
-
-    /**
-     * Log a user action or other occurrence.
-     * @param telemetry      Object encapsulating tracking options
-     */
-    public track(telemetry: Envelope): void {
-        // TODO: Telemetry processor, can we still support them in some cases?
-        // TODO: Sampling was done through telemetryProcessor here
-        // TODO: All telemetry processors including Azure property where done here as well
-        // TODO: Perf and Pre Aggregated metrics were calculated here
-
-        this._batchProcessor.send(telemetry);
+        this._batchProcessor.send(envelope);
     }
 
     public setAutoCollectPerformance(

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import { RequestOptions } from "http";
-
+import { AzureExporterConfig, AzureMonitorTraceExporter } from "@azure/monitor-opentelemetry-exporter";
 import {
     Instrumentation,
     InstrumentationOption,
@@ -23,7 +23,6 @@ import {
 import { Config } from "../configuration";
 import { ResourceManager } from "./resourceManager";
 import { ApplicationInsightsSampler } from "./sampler";
-import { AzureExporterConfig, AzureMonitorTraceExporter } from "@azure/monitor-opentelemetry-exporter";
 import { InstrumentationType } from "../configuration/interfaces";
 
 

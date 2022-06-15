@@ -49,6 +49,7 @@
     "@types/sinon": "^10.0.11",
     "@typescript-eslint/eslint-plugin": "^5.11.0",
     "@typescript-eslint/parser": "^5.11.0",
+    "@types/semver": "7.3.9",
     "applicationinsights-native-metrics": "0.0.7",
     "eslint": "^7.29.0",
     "eslint-config-standard": "^16.0.3",
@@ -82,7 +83,8 @@
     "@opentelemetry/sdk-trace-node": "^1.0.1",
     "@opentelemetry/semantic-conventions": "^1.0.1",
     "diagnostic-channel": "1.1.0",
-    "diagnostic-channel-publishers": "1.0.4"
+    "diagnostic-channel-publishers": "1.0.4",
+    "semver": "^7.3.5"
   },
   "peerDependencies": {
     "applicationinsights-native-metrics": "*"
