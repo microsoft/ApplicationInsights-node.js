@@ -327,10 +327,10 @@ export class LogHandler {
         // Add Correlation headers
         const spanContext = trace.getSpanContext(context.active());
         if (spanContext) {
-            tags[KnownContextTagKeys.AiOperationId] = parseInt(spanContext.traceId, 16).toString();
-            tags[KnownContextTagKeys.AiOperationParentId] = parseInt(spanContext.spanId, 16).toString();
+            tags[KnownContextTagKeys.AiOperationId] = spanContext.traceId;
+            tags[KnownContextTagKeys.AiOperationParentId] = spanContext.spanId;
         }
-        else {
+        else{
             tags[KnownContextTagKeys.AiOperationId] = this._idGenerator.generateTraceId();
         }
         return tags;
