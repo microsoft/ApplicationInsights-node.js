@@ -11,7 +11,6 @@ import { MetricTelemetry, MetricPointTelemetry } from "../../../src/declarations
 describe("Library/LogHandler", () => {
     let sandbox: sinon.SinonSandbox;
     let _config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-    const _context = new ResourceManager(_config);
 
     before(() => {
         sandbox = sinon.createSandbox();
@@ -24,7 +23,7 @@ describe("Library/LogHandler", () => {
     describe("#autoCollect", () => {
         it("performance enablement during start", () => {
             _config.enableAutoCollectPerformance = true;
-            let handler = new MetricHandler(_config, _context);
+            let handler = new MetricHandler(_config);
             let stub = sinon.stub(handler["_performance"], "enable");
             handler.start();
             assert.ok(stub.calledOnce, "Enable called");
@@ -33,7 +32,7 @@ describe("Library/LogHandler", () => {
 
         it("setAutoCollectPerformance", () => {
             _config.enableAutoCollectPerformance = false;
-            let handler = new MetricHandler(_config, _context);
+            let handler = new MetricHandler(_config);
             let stub = sinon.stub(handler["_performance"], "enable");
             let nativeStub = sinon.stub(handler["_nativePerformance"], "enable");
             handler.start();
@@ -49,7 +48,7 @@ describe("Library/LogHandler", () => {
 
         it("preAggregated metrics enablement during start", () => {
             _config.enableAutoCollectPreAggregatedMetrics = true;
-            let handler = new MetricHandler(_config, _context);
+            let handler = new MetricHandler(_config);
             let stub = sinon.stub(handler["_preAggregatedMetrics"], "enable");
             handler.start();
             assert.ok(stub.calledOnce, "Enable called");
@@ -58,7 +57,7 @@ describe("Library/LogHandler", () => {
 
         it("setAutoCollectPreAggregatedMetrics", () => {
             _config.enableAutoCollectPreAggregatedMetrics = false;
-            let handler = new MetricHandler(_config, _context);
+            let handler = new MetricHandler(_config);
             let stub = sinon.stub(handler["_preAggregatedMetrics"], "enable");
             handler.start();
             assert.ok(stub.called, "Enable was not called");
@@ -70,7 +69,7 @@ describe("Library/LogHandler", () => {
 
         it("preAggregated metrics enablement during start", () => {
             _config.enableAutoCollectHeartbeat = true;
-            let handler = new MetricHandler(_config, _context);
+            let handler = new MetricHandler(_config);
             let stub = sinon.stub(handler["_heartbeat"], "enable");
             handler.start();
             assert.ok(stub.calledOnce, "Enable called");
@@ -79,7 +78,7 @@ describe("Library/LogHandler", () => {
 
         it("setAutoCollectHeartbeat", () => {
             _config.enableAutoCollectHeartbeat = false;
-            let handler = new MetricHandler(_config, _context);
+            let handler = new MetricHandler(_config);
             let stub = sinon.stub(handler["_heartbeat"], "enable");
             handler.start();
             assert.ok(stub.called, "Enable was not called");
@@ -93,7 +92,7 @@ describe("Library/LogHandler", () => {
 
     describe("#manual track APIs", () => {
         it("trackMetric", (done) => {
-            let handler = new MetricHandler(_config, _context)
+            let handler = new MetricHandler(_config)
             let stub = sinon.stub(handler["_exporter"], "export").callsFake((envelopes: any, resultCallback: any) => {
                 return new Promise((resolve, reject) => {
                     resultCallback({
@@ -149,7 +148,7 @@ describe("Library/LogHandler", () => {
         });
 
         it("trackStatsbeatMetric", (done) => {
-            let handler = new MetricHandler(_config, _context)
+            let handler = new MetricHandler(_config)
             let stub = sinon.stub(handler["_exporter"], "export").callsFake((envelopes: any, resultCallback: any) => {
                 return new Promise((resolve, reject) => {
                     resultCallback({

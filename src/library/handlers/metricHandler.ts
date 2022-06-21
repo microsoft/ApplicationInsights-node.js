@@ -1,5 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import { Counter, Meter, ObservableUpDownCounter, ValueType } from "@opentelemetry/api-metrics";
+import { MeterProvider, MeterProviderOptions } from "@opentelemetry/sdk-metrics-base";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
 import { BatchProcessor } from "./shared/batchProcessor";
@@ -12,8 +14,7 @@ import {
     AutoCollectPerformance,
 } from "../../autoCollection";
 import { MetricTelemetry } from "../../declarations/contracts";
-import * as Contracts from "../../declarations/contracts";
-import * as Constants from "../../declarations/constants";
+import { QuickPulseCounter, StatsbeatTelemetryName } from "../../declarations/constants";
 import {
     TelemetryItem as Envelope,
     MetricsData,
@@ -27,13 +28,13 @@ import {
     IMetricRequestDimensions,
     IMetricTraceDimensions,
 } from "../../autoCollection/metrics/types";
-import { HttpMetricsInstrumentation } from "../../autoCollection/metrics/httpMetricsInstrumentation";
 import { ResourceManager } from "./resourceManager";
 import { HeartBeat } from "../heartBeat";
 import { Util } from "../util";
 
 
 export class MetricHandler {
+
     public isPerformance = true;
     public isPreAggregatedMetrics = true;
     public isHeartBeat = false;
@@ -41,8 +42,9 @@ export class MetricHandler {
     public isDependencies = true;
     public isNativePerformance = false;
     public disabledExtendedMetrics: IDisabledExtendedMetrics;
+    private _meterProvider: MeterProvider;
+    private _meter: Meter;
     private _config: Config;
-    private _resourceManager: ResourceManager;
     private _isStarted = false;
     private _batchProcessor: BatchProcessor;
     private _exporter: MetricExporter;
@@ -51,9 +53,14 @@ export class MetricHandler {
     private _heartbeat: HeartBeat;
     private _nativePerformance: AutoCollectNativePerformance;
 
-    constructor(config: Config, resourceManager?: ResourceManager) {
+    // Live Metrics Perf counters
+    private _requestDurationPerfCounter: ObservableUpDownCounter;
+    private _requestFailedRatePerfCounter: ObservableUpDownCounter;
+    private _requestRatePerfCounter: ObservableUpDownCounter;
+    private _dependencyDurationPerfCounter: ObservableUpDownCounter;
+
+    constructor(config: Config) {
         this._config = config;
-        this._resourceManager = resourceManager;
         this._exporter = new MetricExporter(this._config);
         this._batchProcessor = new BatchProcessor(this._config, this._exporter);
         this._nativePerformance = new AutoCollectNativePerformance(this);
@@ -61,6 +68,17 @@ export class MetricHandler {
         this._performance = new AutoCollectPerformance(this);
         this._preAggregatedMetrics = new AutoCollectPreAggregatedMetrics(this);
         this._heartbeat = new HeartBeat(this, this._config);
+
+        const meterProviderConfig: MeterProviderOptions = {
+            resource: ResourceManager.getInstance().getTraceResource(),
+        };
+        this._meterProvider = new MeterProvider(meterProviderConfig);
+        this._meter = this._meterProvider.getMeter("ApplicationInsightsMeter");
+
+        this._dependencyDurationPerfCounter = this._meter.createObservableUpDownCounter(QuickPulseCounter.DEPENDENCY_DURATION, { description: "", unit: "", valueType: ValueType.DOUBLE });
+        this._requestDurationPerfCounter = this._meter.createObservableUpDownCounter(QuickPulseCounter.REQUEST_DURATION, { description: "Incoming Requests Average Execution Time", unit: "ms", valueType: ValueType.DOUBLE });
+        this._requestFailedRatePerfCounter = this._meter.createObservableUpDownCounter(QuickPulseCounter.REQUEST_FAILURE_RATE, { description: "Incoming Requests Failed Rate", unit: "rps", valueType: ValueType.DOUBLE });
+        this._requestRatePerfCounter = this._meter.createObservableUpDownCounter(QuickPulseCounter.REQUEST_RATE, { description: "Incoming Requests Rate", unit: "rps", valueType: ValueType.DOUBLE });
     }
 
     public start() {
@@ -69,25 +87,20 @@ export class MetricHandler {
         this._preAggregatedMetrics.enable(this.isPreAggregatedMetrics);
         this._heartbeat.enable(this.isHeartBeat);
         this._nativePerformance.enable(this.isNativePerformance, this.disabledExtendedMetrics);
-
-        // TODO: Remove once HTTP Instrumentation generate Http metrics
-        if (this._config.enableAutoCollectPreAggregatedMetrics || this._config.enableAutoCollectPerformance) {
-            this.addInstrumentation(new HttpMetricsInstrumentation({}));
-        }
     }
 
     public async flush(): Promise<void> {
         await this._batchProcessor.triggerSend();
     }
 
-    public async trackMetric(telemetry: Contracts.MetricTelemetry): Promise<void> {
+    public async trackMetric(telemetry: MetricTelemetry): Promise<void> {
         const envelope = this._metricToEnvelope(telemetry, this._config.instrumentationKey);
         this._batchProcessor.send(envelope);
     }
 
-    public async trackStatsbeatMetric(telemetry: Contracts.MetricTelemetry): Promise<void> {
+    public async trackStatsbeatMetric(telemetry: MetricTelemetry): Promise<void> {
         const envelope = this._metricToEnvelope(telemetry, this._config.instrumentationKey);
-        envelope.name = Constants.StatsbeatTelemetryName;
+        envelope.name = StatsbeatTelemetryName;
         this._batchProcessor.send(envelope);
     }
 
@@ -170,8 +183,12 @@ export class MetricHandler {
         this._nativePerformance = null;
     }
 
-    public getResourceManager() {
-        return this._resourceManager;
+    public getMeterProvider(): MeterProvider {
+        return this._meterProvider;
+    }
+
+    public getMeter(): Meter {
+        return this._meter;
     }
 
     private _initializeFlagsFromConfig() {
@@ -212,7 +229,7 @@ export class MetricHandler {
         let sampleRate = 100;
         let properties = {};
 
-        const tags = this._getTags(this._resourceManager);
+        const tags = this._getTags();
         let name =
             "Microsoft.ApplicationInsights." +
             instrumentationKey.replace(/-/g, "") +
@@ -254,22 +271,20 @@ export class MetricHandler {
         };
     }
 
-    private _getTags(resourceManager: ResourceManager) {
+    private _getTags() {
         var tags = <{ [key: string]: string }>{};
-        if (resourceManager) {
-            const attributes = resourceManager.getMetricResource().attributes;
-            const serviceName = attributes[SemanticResourceAttributes.SERVICE_NAME];
-            const serviceNamespace = attributes[SemanticResourceAttributes.SERVICE_NAMESPACE];
-            if (serviceName) {
-                if (serviceNamespace) {
-                    tags[KnownContextTagKeys.AiCloudRole] = `${serviceNamespace}.${serviceName}`;
-                } else {
-                    tags[KnownContextTagKeys.AiCloudRole] = String(serviceName);
-                }
+        const attributes = ResourceManager.getInstance().getMetricResource().attributes;
+        const serviceName = attributes[SemanticResourceAttributes.SERVICE_NAME];
+        const serviceNamespace = attributes[SemanticResourceAttributes.SERVICE_NAMESPACE];
+        if (serviceName) {
+            if (serviceNamespace) {
+                tags[KnownContextTagKeys.AiCloudRole] = `${serviceNamespace}.${serviceName}`;
+            } else {
+                tags[KnownContextTagKeys.AiCloudRole] = String(serviceName);
             }
-            const serviceInstanceId = attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID];
-            tags[KnownContextTagKeys.AiCloudRoleInstance] = String(serviceInstanceId);
         }
+        const serviceInstanceId = attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID];
+        tags[KnownContextTagKeys.AiCloudRoleInstance] = String(serviceInstanceId);
         return tags;
     }
 }

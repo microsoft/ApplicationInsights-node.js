@@ -4,6 +4,7 @@ import type * as http from 'http';
 import type * as https from 'https';
 import * as semver from 'semver';
 import * as url from 'url';
+import { ValueType, Histogram, MeterProvider, MetricAttributes, ObservableGauge, ObservableUpDownCounter } from '@opentelemetry/api-metrics';
 import {
   InstrumentationBase,
   InstrumentationConfig,
@@ -12,18 +13,28 @@ import {
   safeExecuteInTheMiddle
 } from '@opentelemetry/instrumentation';
 import { getRequestInfo } from '@opentelemetry/instrumentation-http';
-import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../declarations/constants";
+import { APPLICATION_INSIGHTS_SDK_VERSION, QuickPulseCounter } from "../../declarations/constants";
 import { IHttpMetric, IMetricDependencyDimensions, IMetricRequestDimensions } from './types';
-import { MetricHandler } from '../../library/handlers';
+import { ResourceManager } from '../../library/handlers';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 
 
 export class HttpMetricsInstrumentation extends InstrumentationBase {
 
   private _nodeVersion: string;
+  
+
+
+  
 
   constructor(config: InstrumentationConfig = {}) {
     super('AzureHttpMetricsInstrumentation', APPLICATION_INSIGHTS_SDK_VERSION, config);
     this._nodeVersion = process.versions.node;
+  }
+
+  public initialize(meterProvider: MeterProvider) {
+    this.setMeterProvider(meterProvider);
+   
   }
 
   /**
@@ -40,12 +51,9 @@ export class HttpMetricsInstrumentation extends InstrumentationBase {
   private _done(metric: IHttpMetric) {
     // Done could be called multiple times, only process metric once
     if (!metric.isProcessed) {
-      metric.endTime = Date.now();
-      // Iterate all metric handlers or clients
+      let duration = Date.now() - metric.startTime;
 
-      // Add remaining dimensions using context
 
-      // Make callback
     }
   }
 

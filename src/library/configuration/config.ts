@@ -37,7 +37,6 @@ export class Config implements IConfig {
     public enableSendLiveMetrics: boolean;
     public enableUseDiskRetryCaching: boolean;
     public enableUseAsyncHooks: boolean;
-    public enableAutoPopulateAzureProperties: boolean;
     public enableAutoCollectExtendedMetrics: boolean | IDisabledExtendedMetrics;
     public enableResendInterval: number;
     public enableMaxBytesOnDisk: number;
@@ -143,10 +142,8 @@ export class Config implements IConfig {
         this.enableAutoCollectExternalLoggers = jsonConfig.enableAutoCollectExternalLoggers;
         this.enableAutoCollectHeartbeat = jsonConfig.enableAutoCollectHeartbeat;
         this.enableAutoCollectPerformance = jsonConfig.enableAutoCollectPerformance;
-        this.enableAutoCollectPreAggregatedMetrics =
-            jsonConfig.enableAutoCollectPreAggregatedMetrics;
+        this.enableAutoCollectPreAggregatedMetrics = jsonConfig.enableAutoCollectPreAggregatedMetrics;
         this.enableAutoCollectRequests = jsonConfig.enableAutoCollectRequests;
-        this.enableAutoPopulateAzureProperties = jsonConfig.enableAutoPopulateAzureProperties;
         this.enableAutoDependencyCorrelation = jsonConfig.enableAutoDependencyCorrelation;
         this.enableInternalDebugLogger = jsonConfig.enableInternalDebugLogger;
         this.enableInternalWarningLogger = jsonConfig.enableInternalWarningLogger;

@@ -86,7 +86,6 @@ export type MetricDimensionTypeKeys =
 
 export interface IHttpMetric {
   startTime: number;
-  endTime?: number;
   isOutgoingRequest: boolean;
   isProcessed: boolean;
   dimensions?: IMetricDependencyDimensions | IMetricRequestDimensions;

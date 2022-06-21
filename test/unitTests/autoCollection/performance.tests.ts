@@ -2,7 +2,7 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 import { AutoCollectPerformance } from "../../../src/autoCollection";
 import { Config } from "../../../src/library/configuration";
-import { MetricHandler } from "../../../src/library/handlers";
+import { MetricHandler, ResourceManager } from "../../../src/library/handlers";
 
 
 describe("AutoCollection/Performance", () => {

@@ -14,7 +14,6 @@ describe("Library/TraceHandlers", () => {
     let https: any = null;
     let sandbox: sinon.SinonSandbox;
     let _config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-    const _context = new ResourceManager(_config);
 
     before(() => {
         sandbox = sinon.createSandbox();
@@ -48,7 +47,7 @@ describe("Library/TraceHandlers", () => {
             process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
             _config.enableAutoCollectDependencies = true;
             _config.enableAutoCollectRequests = true;
-            handler = new TraceHandler(_config, _context);
+            handler = new TraceHandler(_config);
             exportStub = sinon.stub(handler["_exporter"], "export").callsFake((spans: any, resultCallback: any) => {
                 return new Promise((resolve, reject) => {
                     resultCallback({

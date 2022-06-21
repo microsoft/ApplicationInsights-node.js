@@ -23,7 +23,7 @@ describe("diagnostic-channel/winston", () => {
     it("should call trackException for errors", () => {
         let config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
         config.enableAutoCollectConsole = true;
-        let handler = new LogHandler(config, new ResourceManager(config));
+        let handler = new LogHandler(config);
         handler.start();
         const stub = sandbox.stub(handler, "trackException");
         const dummyError = new Error("test error");
@@ -41,7 +41,7 @@ describe("diagnostic-channel/winston", () => {
     it("should call trackTrace for logs", () => {
         let config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
         config.enableAutoCollectConsole = true;
-        let handler = new LogHandler(config, new ResourceManager(config));
+        let handler = new LogHandler(config);
         handler.start();
         const stub = sandbox.stub(handler, "trackTrace");
         const logEvent: winston.IWinstonData = {
@@ -57,8 +57,8 @@ describe("diagnostic-channel/winston", () => {
 
     it("should notify multiple handlers", () => {
         let config= new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-        let handler = new LogHandler(config, new ResourceManager(config));
-        let secondHandler = new LogHandler(config, new ResourceManager(config));
+        let handler = new LogHandler(config);
+        let secondHandler = new LogHandler(config);
         const stub = sandbox.stub(handler, "trackTrace");
         const secondStub = sandbox.stub(secondHandler, "trackTrace");
         enable(true, handler);

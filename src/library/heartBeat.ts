@@ -1,10 +1,9 @@
 import * as os from "os";
 
 import { AzureVirtualMachine } from "../library";
-import { MetricHandler } from "../library/handlers";
+import { MetricHandler, ResourceManager } from "../library/handlers";
 import * as Constants from "../declarations/constants";
 import { Config } from "../library/configuration";
-import { KnownContextTagKeys } from "../declarations/generated";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
 export class HeartBeat {
@@ -44,7 +43,7 @@ export class HeartBeat {
 
         // TODO: Add sdk property for attach scenarios, confirm if this is only expected when attach happens, older code doing this was present in Default.ts
 
-        const sdkVersion = String(this._handler.getResourceManager().getTraceResource().attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION]) || null;
+        const sdkVersion = String(ResourceManager.getInstance().getTraceResource().attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION]) || null;
 
         properties["sdk"] = sdkVersion;
         properties["osType"] = os.type();

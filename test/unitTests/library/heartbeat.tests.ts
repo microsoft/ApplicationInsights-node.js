@@ -6,6 +6,7 @@ import { Client } from "../../../src/library/client";
 import { HeartBeat } from "../../../src/library/heartBeat";
 import { Config, JsonConfig } from "../../../src/library/configuration";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
+import { ResourceManager } from "../../../src/library/handlers";
 
 describe("AutoCollection/HeartBeat", () => {
     var sandbox: sinon.SinonSandbox;
@@ -90,7 +91,7 @@ describe("AutoCollection/HeartBeat", () => {
                 const properties1 = stub1.args[0][0].properties;
                 assert.equal(
                     properties1["sdk"],
-                    heartbeat1["_handler"].getResourceManager().getMetricResource().attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION],
+                    ResourceManager.getInstance().getMetricResource().attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION],
                     "sdk version should be read from Context"
                 );
                 assert.equal(
@@ -154,7 +155,7 @@ describe("AutoCollection/HeartBeat", () => {
                 const properties2 = stub2.args[0][0].properties;
                 assert.equal(
                     properties2["sdk"],
-                    heartbeat2["_handler"].getResourceManager().getMetricResource().attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION],
+                    ResourceManager.getInstance().getMetricResource().attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION],
                     "sdk version should be read from Context"
                 );
                 assert.equal(

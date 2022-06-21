@@ -105,7 +105,7 @@ export class TelemetryClient {
             attributes: attributes,
             startTime: startTime
         };
-        let span: any = this.client.getTraceHandler().tracer.startSpan(telemetry.name, options, ctx);
+        let span: any = this.client.getTraceHandler().getTracer().startSpan(telemetry.name, options, ctx);
         span.setStatus({
             code: telemetry.success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
         });
@@ -156,7 +156,7 @@ export class TelemetryClient {
             attributes: attributes,
             startTime: startTime
         };
-        let span: any = this.client.getTraceHandler().tracer.startSpan(telemetry.name, options, ctx);
+        let span: any = this.client.getTraceHandler().getTracer().startSpan(telemetry.name, options, ctx);
         span.setStatus({
             code: telemetry.success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
         });

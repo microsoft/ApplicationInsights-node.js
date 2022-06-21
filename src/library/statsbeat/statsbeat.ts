@@ -56,7 +56,7 @@ export class Statsbeat {
         this._statsbeatConfig.enableAutoCollectPerformance = false;
         this._statsbeatConfig.enableAutoCollectPreAggregatedMetrics = false;
         this._statsbeatConfig.enableAutoCollectConsole = false;
-        this._metricHandler = new MetricHandler(this._statsbeatConfig, this._resourceManager);
+        this._metricHandler = new MetricHandler(this._statsbeatConfig);
     }
 
     public enable(isEnabled: boolean) {
@@ -266,7 +266,7 @@ export class Statsbeat {
             var averageRequestExecutionTime =
                 (currentCounter.intervalRequestExecutionTime -
                     currentCounter.lastIntervalRequestExecutionTime) /
-                    intervalRequests || 0;
+                intervalRequests || 0;
             currentCounter.lastIntervalRequestExecutionTime =
                 currentCounter.intervalRequestExecutionTime; // reset
             if (intervalRequests > 0) {

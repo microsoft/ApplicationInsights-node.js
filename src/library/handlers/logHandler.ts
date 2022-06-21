@@ -38,16 +38,14 @@ export class LogHandler {
     public isExceptions = true;
     public statsbeat: Statsbeat;
     public config: Config;
-    private _resourceManager: ResourceManager;
     private _isStarted = false;
     private _batchProcessor: BatchProcessor;
     private _exporter: LogExporter;
     private _console: AutoCollectConsole;
     private _exceptions: AutoCollectExceptions;
 
-    constructor(config: Config, resourceManager: ResourceManager) {
+    constructor(config: Config) {
         this.config = config;
-        this._resourceManager = resourceManager;
         this._exporter = new LogExporter(config);
         this._batchProcessor = new BatchProcessor(config, this._exporter);
         this._initializeFlagsFromConfig();
@@ -191,7 +189,7 @@ export class LogHandler {
             // sanitize properties
             properties = Util.getInstance().validateStringMap(telemetry.properties);
         }
-        const tags = this._getTags(this._resourceManager);
+        const tags = this._getTags();
         let envelope: Envelope = {
             name: name,
             time: telemetry.time || new Date(),
@@ -315,22 +313,20 @@ export class LogHandler {
         return envelope;
     }
 
-    private _getTags(resourceManager: ResourceManager) {
+    private _getTags() {
         var tags = <{ [key: string]: string }>{};
-        if (resourceManager) {
-            const attributes = resourceManager.getMetricResource().attributes;
-            const serviceName = attributes[SemanticResourceAttributes.SERVICE_NAME];
-            const serviceNamespace = attributes[SemanticResourceAttributes.SERVICE_NAMESPACE];
-            if (serviceName) {
-                if (serviceNamespace) {
-                    tags[KnownContextTagKeys.AiCloudRole] = `${serviceNamespace}.${serviceName}`;
-                } else {
-                    tags[KnownContextTagKeys.AiCloudRole] = String(serviceName);
-                }
+        const attributes = ResourceManager.getInstance().getLogResource().attributes;
+        const serviceName = attributes[SemanticResourceAttributes.SERVICE_NAME];
+        const serviceNamespace = attributes[SemanticResourceAttributes.SERVICE_NAMESPACE];
+        if (serviceName) {
+            if (serviceNamespace) {
+                tags[KnownContextTagKeys.AiCloudRole] = `${serviceNamespace}.${serviceName}`;
+            } else {
+                tags[KnownContextTagKeys.AiCloudRole] = String(serviceName);
             }
-            const serviceInstanceId = attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID];
-            tags[KnownContextTagKeys.AiCloudRoleInstance] = String(serviceInstanceId);
         }
+        const serviceInstanceId = attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID];
+        tags[KnownContextTagKeys.AiCloudRoleInstance] = String(serviceInstanceId);
         return tags;
     }
 
