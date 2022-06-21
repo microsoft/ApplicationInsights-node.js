@@ -41,7 +41,7 @@ class AutoCollectHttpDependencies {
             this._initialize();
         }
         if (DiagChannel.IsInitialized) {
-            require("./diagnostic-channel/azure-coretracing.sub").enable(true, this._client);
+            require("./diagnostic-channel/azure-coretracing.sub").enable(isEnabled, this._client);
             require("./diagnostic-channel/mongodb.sub").enable(isEnabled, this._client);
             require("./diagnostic-channel/mysql.sub").enable(isEnabled, this._client);
             require("./diagnostic-channel/redis.sub").enable(isEnabled, this._client);
