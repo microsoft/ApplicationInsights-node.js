@@ -210,7 +210,7 @@ appInsights.setup("<YOUR_CONNECTION_STRING>")
     .setAutoCollectHeartbeat(false)
     .setInternalLogging(false, true)
     .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C)
-    .enableAutoWebSnippetInjection(false)
+    .setWebSnippetInjection(false)
     .start();
 ```
 
@@ -268,7 +268,7 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | httpAgent                       | An http.Agent to use for SDK HTTP traffic (Optional, Default undefined)                                    |
 | httpsAgent                      | An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined)
 | aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Credential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes)
-| enableAutoWebSnippetInjection(Preview)| Sets the state of automatic web snippet injection (disabled by default). If true, web snippet will be injected into valid node server http response automatically. If a connection string is provided here, e.g. `enableAutoWebSnippetInjection(true, "your-connection-string")`, auto snippet injection will use it instead of the default one (connection string used for SDK initialization) |                            |
+| setWebSnippetInjection(Preview)| Sets the state of automatic web snippet injection (disabled by default). If true, web snippet will be injected into valid node server http response automatically. If a connection string is provided here, e.g. `setWebSnippetInjection(true, "your-connection-string")`, auto snippet injection will use it instead of the default one (connection string used for SDK initialization) |                            |
 
 [Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts 
 
