@@ -29,5 +29,4 @@ Tests/FunctionalTests/TestApp/node_modules/**
 
 # Ignore log files
 npm-debug.log
-
 .nyc_output/
