@@ -42,7 +42,6 @@ export class TraceHandler {
     private _config: Config;
     private _instrumentations: InstrumentationOption[];
     private _disableInstrumentations: () => void;
-    private _httpMetricsInstrumentation: HttpMetricsInstrumentation;
     private _tracerProvider: NodeTracerProvider;
     private _tracer: Tracer;
 
@@ -58,11 +57,8 @@ export class TraceHandler {
             forceFlushTimeoutMillis: 30000,
         };
         this._tracerProvider = new NodeTracerProvider(tracerConfig);
-        // Get connection string for Azure Monitor Exporter
-        let ingestionEndpoint = config.endpointUrl.replace("/v2.1/track", "");
-        let connectionString = `InstrumentationKey=${config.instrumentationKey};IngestionEndpoint=${ingestionEndpoint}`;
         let exporterConfig: AzureExporterConfig = {
-            connectionString: connectionString,
+            connectionString: config.getConnectionString(),
             aadTokenCredential: config.aadTokenCredential
         };
         this._exporter = new AzureMonitorTraceExporter(exporterConfig);
@@ -92,8 +88,6 @@ export class TraceHandler {
         this.azureSdkInstrumentationConfig = {};
         this.redisInstrumentationConfig = {};
         this.redis4InstrumentationConfig = {};
-
-        this._httpMetricsInstrumentation = new HttpMetricsInstrumentation();
     }
 
     public getTracerProvider(): TracerProvider {
@@ -104,14 +98,11 @@ export class TraceHandler {
         return this._tracer;
     }
 
-    public getHttpMetricsInstrumentation(): HttpMetricsInstrumentation {
-        return this._httpMetricsInstrumentation;
-    }
 
     public start() {
         // TODO: Remove once HTTP Instrumentation generate Http metrics
         if (this._config.enableAutoCollectPreAggregatedMetrics || this._config.enableAutoCollectPerformance) {
-            this.addInstrumentation(this._httpMetricsInstrumentation);
+            this.addInstrumentation(HttpMetricsInstrumentation.getInstance());
         }
         if (this._config.enableAutoCollectRequests || this._config.enableAutoCollectDependencies) {
             this.addInstrumentation(new HttpInstrumentation(this.httpInstrumentationConfig));

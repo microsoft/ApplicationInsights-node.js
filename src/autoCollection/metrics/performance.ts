@@ -1,23 +1,32 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 import * as os from "os";
+import { Meter, ObservableGauge, ObservableResult, ValueType } from "@opentelemetry/api-metrics";
+import { QuickPulseCounter, PerformanceCounter } from "../../declarations/constants";
+import { HttpMetricsInstrumentation } from "./httpMetricsInstrumentation";
 
-import { MetricHandler } from "../../library/handlers/metricHandler";
-import * as Constants from "../../declarations/constants";
 
 export class AutoCollectPerformance {
-    private _totalRequestCount: number = 0;
-    private _totalFailedRequestCount: number = 0;
-    private _totalDependencyCount: number = 0;
-    private _totalFailedDependencyCount: number = 0;
-    private _totalExceptionCount: number = 0;
-    private _intervalDependencyExecutionTime: number = 0;
-    private _intervalRequestExecutionTime: number = 0;
-    private _lastIntervalRequestExecutionTime: number = 0; // the sum of durations which took place during from app start until last interval
-    private _lastIntervalDependencyExecutionTime: number = 0;
+
+    private _meter: Meter;
     private _enableLiveMetricsCounters: boolean;
-    private _collectionInterval: number;
-    private _handler: MetricHandler;
-    private _handle: NodeJS.Timer;
+    private _httpMetrics: HttpMetricsInstrumentation
     private _isEnabled: boolean;
+    // Perf counters
+    private _memoryPrivateBytesGauge: ObservableGauge;
+    private _memoryAvailableBytesGauge: ObservableGauge;
+    private _processorTimeGauge: ObservableGauge;
+    private _processTimeGauge: ObservableGauge;
+    private _requestRateGauge: ObservableGauge;
+    private _requestDurationGauge: ObservableGauge;
+    // Live Metrics Perf counters
+    private _memoryCommittedBytesGauge: ObservableGauge;
+    private _requestFailureRateGauge: ObservableGauge;
+    private _dependencyFailureRateGauge: ObservableGauge;
+    private _dependencyRateGauge: ObservableGauge;
+    private _dependencyDurationGauge: ObservableGauge;
+    private _exceptionRateGauge: ObservableGauge; // TODO: Not implemented yet
+
     private _lastAppCpuUsage: { user: number; system: number };
     private _lastHrtime: number[];
     private _lastCpus: {
@@ -25,386 +34,257 @@ export class AutoCollectPerformance {
         speed: number;
         times: { user: number; nice: number; sys: number; idle: number; irq: number };
     }[];
-    private _lastDependencies: {
-        totalDependencyCount: number;
-        totalFailedDependencyCount: number;
-        time: number;
-    };
-    private _lastRequests: {
-        totalRequestCount: number;
-        totalFailedRequestCount: number;
-        time: number;
-    };
-    private _lastExceptions: { totalExceptionCount: number; time: number };
+    private _lastRequestRate: { count: number; time: number; executionInterval: number; };
+    private _lastFailureRequestRate: { count: number; time: number; executionInterval: number; };
+    private _lastRequestDuration: { count: number; time: number; executionInterval: number; };
+    private _lastDependencyRate: { count: number; time: number; executionInterval: number; };
+    private _lastFailureDependencyRate: { count: number; time: number; executionInterval: number; };
+    private _lastDependencyDuration: { count: number; time: number; executionInterval: number; };
 
     /**
      * @param enableLiveMetricsCounters - enable sending additional live metrics information (dependency metrics, exception metrics, committed memory)
      */
-    constructor(
-        handler: MetricHandler,
-        collectionInterval = 60000,
-        enableLiveMetricsCounters = false
-    ) {
-        this._lastRequests = { totalRequestCount: 0, totalFailedRequestCount: 0, time: 0 };
-        this._lastDependencies = {
-            totalDependencyCount: 0,
-            totalFailedDependencyCount: 0,
-            time: 0,
-        };
-        this._lastExceptions = { totalExceptionCount: 0, time: 0 };
-        this._handler = handler;
-        this._collectionInterval = collectionInterval;
+    constructor(meter: Meter, enableLiveMetricsCounters = false) {
+        this._meter = meter;
         this._enableLiveMetricsCounters = enableLiveMetricsCounters;
+        this._lastRequestRate = { count: 0, time: 0, executionInterval: 0 };
+        this._lastFailureRequestRate = { count: 0, time: 0, executionInterval: 0 };
+        this._lastRequestDuration = { count: 0, time: 0, executionInterval: 0 };
+        this._lastDependencyRate = { count: 0, time: 0, executionInterval: 0 };
+        this._lastFailureDependencyRate = { count: 0, time: 0, executionInterval: 0 };
+        this._lastDependencyDuration = { count: 0, time: 0, executionInterval: 0 };
+        this._httpMetrics = HttpMetricsInstrumentation.getInstance();
+
+        // perf counters
+        this._memoryPrivateBytesGauge = this._meter.createObservableGauge(PerformanceCounter.PRIVATE_BYTES, { description: "Amount of memory process has used in bytes", valueType: ValueType.INT });
+        this._memoryAvailableBytesGauge = this._meter.createObservableGauge(PerformanceCounter.AVAILABLE_BYTES, { description: "Amount of available memory in bytes", valueType: ValueType.INT });
+        this._processorTimeGauge = this._meter.createObservableGauge(PerformanceCounter.PROCESSOR_TIME, { description: "Processor time as a percentage", valueType: ValueType.DOUBLE });
+        this._processTimeGauge = this._meter.createObservableGauge(PerformanceCounter.PROCESS_TIME, { description: "Process CPU usage as a percentage", valueType: ValueType.DOUBLE });
+        this._requestRateGauge = this._meter.createObservableGauge(PerformanceCounter.REQUEST_RATE, { description: "Incoming Requests Average Execution Time", valueType: ValueType.DOUBLE });
+        this._requestDurationGauge = this._meter.createObservableGauge(PerformanceCounter.REQUEST_DURATION, { description: "Incoming Requests Average Execution Time", valueType: ValueType.DOUBLE });
+        // Live metrics perf counters
+        this._memoryCommittedBytesGauge = this._meter.createObservableGauge(QuickPulseCounter.COMMITTED_BYTES, { description: "Amount of committed memory in bytes", valueType: ValueType.INT });
+        this._exceptionRateGauge = this._meter.createObservableGauge(QuickPulseCounter.EXCEPTION_RATE, { description: "Exceptions per second", valueType: ValueType.DOUBLE });
+        this._dependencyRateGauge = this._meter.createObservableGauge(QuickPulseCounter.DEPENDENCY_RATE, { description: "Incoming Requests Rate", valueType: ValueType.DOUBLE });
+        this._dependencyFailureRateGauge = this._meter.createObservableGauge(QuickPulseCounter.DEPENDENCY_FAILURE_RATE, { description: "Failed Outgoing Requests per second", valueType: ValueType.DOUBLE });
+        this._dependencyDurationGauge = this._meter.createObservableGauge(QuickPulseCounter.DEPENDENCY_DURATION, { description: "Average Outgoing Requests duration", valueType: ValueType.DOUBLE });
+        this._requestFailureRateGauge = this._meter.createObservableGauge(QuickPulseCounter.REQUEST_FAILURE_RATE, { description: "Incoming Requests Failed Rate", valueType: ValueType.DOUBLE })
+
+        this._memoryPrivateBytesGauge.addCallback(this._getPrivateMemory);
+        this._memoryAvailableBytesGauge.addCallback(this._getAvailableMemory);
+        this._processTimeGauge.addCallback(this._getProcessTime);
+        this._processorTimeGauge.addCallback(this._getProcessorTime);
+        this._requestDurationGauge.addCallback(this._getRequestDuration);
+        this._requestRateGauge.addCallback(this._getRequestRate);
+
+        if (this._enableLiveMetricsCounters) {
+            this._memoryCommittedBytesGauge.addCallback(this._getCommittedMemory);
+            this._requestFailureRateGauge.addCallback(this._getFailureRequestRate);
+            this._dependencyDurationGauge.addCallback(this._getDependencyDuration);
+            this._dependencyFailureRateGauge.addCallback(this._getFailureDependencyRate);
+            this._dependencyRateGauge.addCallback(this._getDependencyRate);
+        }
     }
 
-    public enable(isEnabled: boolean, collectionInterval?: number) {
+    public enable(isEnabled: boolean) {
         this._isEnabled = isEnabled;
-        if (isEnabled) {
-            if (!this._handle) {
-                this._lastCpus = os.cpus();
-                this._lastRequests = {
-                    totalRequestCount: this._totalRequestCount,
-                    totalFailedRequestCount: this._totalFailedRequestCount,
-                    time: +new Date(),
-                };
-                this._lastDependencies = {
-                    totalDependencyCount: this._totalDependencyCount,
-                    totalFailedDependencyCount: this._totalFailedDependencyCount,
-                    time: +new Date(),
-                };
-                this._lastExceptions = {
-                    totalExceptionCount: this._totalExceptionCount,
-                    time: +new Date(),
-                };
-
-                if (typeof (process as any).cpuUsage === "function") {
-                    this._lastAppCpuUsage = (process as any).cpuUsage();
-                }
-                this._lastHrtime = process.hrtime();
-                this._collectionInterval = collectionInterval || this._collectionInterval;
-                this._handle = setInterval(
-                    () => this._trackPerformance(),
-                    this._collectionInterval
-                );
-                this._handle.unref(); // Allow the app to terminate even while this loop is going on
-            }
-        } else {
-            if (this._handle) {
-                clearInterval(this._handle);
-                this._handle = undefined;
-            }
-        }
+        // TODO: Update view to choose which metrics to export?
+        // TODO: Allow enable/disable functionality?
     }
 
-    public countRequest(duration: number | string, success: boolean) {
-        let durationMs: number;
-        if (!this._isEnabled) {
-            return;
-        }
-
-        if (typeof duration === "string") {
-            // dependency duration is passed in as "00:00:00.123" by autocollectors
-            durationMs = +new Date("1970-01-01T" + duration + "Z"); // convert to num ms, returns NaN if wrong
-        } else if (typeof duration === "number") {
-            durationMs = duration;
-        } else {
-            return;
-        }
-
-        this._intervalRequestExecutionTime += durationMs;
-        if (success === false) {
-            this._totalFailedRequestCount++;
-        }
-        this._totalRequestCount++;
+    private _getPrivateMemory(observableResult: ObservableResult) {
+        observableResult.observe(process.memoryUsage().rss);
     }
 
-    public countException() {
-        this._totalExceptionCount++;
+    private _getAvailableMemory(observableResult: ObservableResult) {
+        observableResult.observe(os.freemem());
     }
 
-    public countDependency(duration: number | string, success: boolean) {
-        let durationMs: number;
-        if (!this._isEnabled) {
-            return;
-        }
-
-        if (typeof duration === "string") {
-            // dependency duration is passed in as "00:00:00.123" by autocollectors
-            durationMs = +new Date("1970-01-01T" + duration + "Z"); // convert to num ms, returns NaN if wrong
-        } else if (typeof duration === "number") {
-            durationMs = duration;
-        } else {
-            return;
-        }
-
-        this._intervalDependencyExecutionTime += durationMs;
-        if (success === false) {
-            this._totalFailedDependencyCount++;
-        }
-        this._totalDependencyCount++;
+    private _getCommittedMemory(observableResult: ObservableResult) {
+        observableResult.observe(os.totalmem() - os.freemem());
     }
 
-    private _trackPerformance() {
-        this._trackCpu();
-        this._trackMemory();
-        this._trackNetwork();
-        this._trackDependencyRate();
-        this._trackExceptionRate();
+    private _getTotalCombinedCpu(cpus: os.CpuInfo[]) {
+        var totalUser = 0;
+        var totalSys = 0;
+        var totalNice = 0;
+        var totalIdle = 0;
+        var totalIrq = 0;
+        for (var i = 0; !!cpus && i < cpus.length; i++) {
+            var cpu = cpus[i];
+            var lastCpu = this._lastCpus[i];
+            var times = cpu.times;
+            var lastTimes = lastCpu.times;
+            // user cpu time (or) % CPU time spent in user space
+            var user = times.user - lastTimes.user || 0;
+            totalUser += user;
+            // system cpu time (or) % CPU time spent in kernel space
+            var sys = times.sys - lastTimes.sys || 0;
+            totalSys += sys;
+            // user nice cpu time (or) % CPU time spent on low priority processes
+            var nice = times.nice - lastTimes.nice || 0;
+            totalNice += nice;
+            // idle cpu time (or) % CPU time spent idle
+            var idle = times.idle - lastTimes.idle || 0;
+            totalIdle += idle;
+            // irq (or) % CPU time spent servicing/handling hardware interrupts
+            var irq = times.irq - lastTimes.irq || 0;
+            totalIrq += irq;
+        }
+        var combinedTotal = totalUser + totalSys + totalNice + totalIdle + totalIrq || 1;
+        return {
+            combinedTotal: combinedTotal,
+            totalUser: totalUser,
+            totalIdle: totalIdle
+        };
     }
 
-    private _trackCpu() {
+    private _getProcessorTime(observableResult: ObservableResult) {
         // this reports total ms spent in each category since the OS was booted, to calculate percent it is necessary
         // to find the delta since the last measurement
         var cpus = os.cpus();
         if (cpus && cpus.length && this._lastCpus && cpus.length === this._lastCpus.length) {
-            var totalUser = 0;
-            var totalSys = 0;
-            var totalNice = 0;
-            var totalIdle = 0;
-            var totalIrq = 0;
-            for (var i = 0; !!cpus && i < cpus.length; i++) {
-                var cpu = cpus[i];
-                var lastCpu = this._lastCpus[i];
-
-                var name = "% cpu(" + i + ") ";
-                var model = cpu.model;
-                var speed = cpu.speed;
-                var times = cpu.times;
-                var lastTimes = lastCpu.times;
-
-                // user cpu time (or) % CPU time spent in user space
-                var user = times.user - lastTimes.user || 0;
-                totalUser += user;
-
-                // system cpu time (or) % CPU time spent in kernel space
-                var sys = times.sys - lastTimes.sys || 0;
-                totalSys += sys;
-
-                // user nice cpu time (or) % CPU time spent on low priority processes
-                var nice = times.nice - lastTimes.nice || 0;
-                totalNice += nice;
-
-                // idle cpu time (or) % CPU time spent idle
-                var idle = times.idle - lastTimes.idle || 0;
-                totalIdle += idle;
-
-                // irq (or) % CPU time spent servicing/handling hardware interrupts
-                var irq = times.irq - lastTimes.irq || 0;
-                totalIrq += irq;
-            }
-
-            // Calculate % of total cpu time (user + system) this App Process used (Only supported by node v6.1.0+)
-            let appCpuPercent: number = undefined;
-            if (typeof (process as any).cpuUsage === "function") {
-                const appCpuUsage = (process as any).cpuUsage();
-                const hrtime = process.hrtime();
-
-                const totalApp =
-                    appCpuUsage.user -
-                        this._lastAppCpuUsage.user +
-                        (appCpuUsage.system - this._lastAppCpuUsage.system) || 0;
-
-                if (typeof this._lastHrtime !== "undefined" && this._lastHrtime.length === 2) {
-                    const elapsedTime =
-                        (hrtime[0] - this._lastHrtime[0]) * 1e6 +
-                            (hrtime[1] - this._lastHrtime[1]) / 1e3 || 0; // convert to microseconds
-
-                    appCpuPercent = (100 * totalApp) / (elapsedTime * cpus.length);
-                }
-
-                // Set previous
-                this._lastAppCpuUsage = appCpuUsage;
-                this._lastHrtime = hrtime;
-            }
-
-            var combinedTotal = totalUser + totalSys + totalNice + totalIdle + totalIrq || 1;
-
-            this._handler.trackMetric({
-                metrics: [
-                    {
-                        name: Constants.PerformanceCounter.PROCESSOR_TIME,
-                        value: ((combinedTotal - totalIdle) / combinedTotal) * 100,
-                    },
-                ],
-            });
-            this._handler.trackMetric({
-                metrics: [
-                    {
-                        name: Constants.PerformanceCounter.PROCESS_TIME,
-                        value: appCpuPercent || (totalUser / combinedTotal) * 100,
-                    },
-                ],
-            });
+            let cpuTotals = this._getTotalCombinedCpu(cpus);
+            let value = ((cpuTotals.combinedTotal - cpuTotals.totalIdle) / cpuTotals.combinedTotal) * 100;
+            observableResult.observe(value);
         }
-
         this._lastCpus = cpus;
     }
 
-    private _trackMemory() {
-        var freeMem = os.freemem();
-        var usedMem = process.memoryUsage().rss;
-        var committedMemory = os.totalmem() - freeMem;
-        this._handler.trackMetric({
-            metrics: [{ name: Constants.PerformanceCounter.PRIVATE_BYTES, value: usedMem }],
-        });
-        this._handler.trackMetric({
-            metrics: [{ name: Constants.PerformanceCounter.AVAILABLE_BYTES, value: freeMem }],
-        });
-        // Only supported by quickpulse service
-        if (this._enableLiveMetricsCounters) {
-            this._handler.trackMetric({
-                metrics: [
-                    { name: Constants.QuickPulseCounter.COMMITTED_BYTES, value: committedMemory },
-                ],
-            });
+    private _getProcessTime(observableResult: ObservableResult) {
+        // this reports total ms spent in each category since the OS was booted, to calculate percent it is necessary
+        // to find the delta since the last measurement
+        var cpus = os.cpus();
+        if (cpus && cpus.length && this._lastCpus && cpus.length === this._lastCpus.length) {
+            // Calculate % of total cpu time (user + system) this App Process used (Only supported by node v6.1.0+)
+            let appCpuPercent: number | undefined = undefined;
+            const appCpuUsage = (process as any).cpuUsage();
+            const hrtime = process.hrtime();
+            const totalApp =
+                appCpuUsage.user -
+                this._lastAppCpuUsage.user +
+                (appCpuUsage.system - this._lastAppCpuUsage.system) || 0;
+
+            if (typeof this._lastHrtime !== "undefined" && this._lastHrtime.length === 2) {
+                const elapsedTime =
+                    (hrtime[0] - this._lastHrtime[0]) * 1e6 +
+                    (hrtime[1] - this._lastHrtime[1]) / 1e3 || 0; // convert to microseconds
+
+                appCpuPercent = (100 * totalApp) / (elapsedTime * cpus.length);
+            }
+            // Set previous
+            this._lastAppCpuUsage = appCpuUsage;
+            this._lastHrtime = hrtime;
+            let cpuTotals = this._getTotalCombinedCpu(cpus);
+            let value = appCpuPercent || (cpuTotals.totalUser / cpuTotals.combinedTotal) * 100;
+            observableResult.observe(value);
         }
+        this._lastCpus = cpus;
     }
 
-    private _trackNetwork() {
-        // track total request counters
-        var lastRequests = this._lastRequests;
-        var requests = {
-            totalRequestCount: this._totalRequestCount,
-            totalFailedRequestCount: this._totalFailedRequestCount,
-            time: +new Date(),
-        };
-        var intervalRequests = requests.totalRequestCount - lastRequests.totalRequestCount || 0;
-        var intervalFailedRequests =
-            requests.totalFailedRequestCount - lastRequests.totalFailedRequestCount || 0;
-        var elapsedMs = requests.time - lastRequests.time;
-        var elapsedSeconds = elapsedMs / 1000;
-        var averageRequestExecutionTime =
-            (this._intervalRequestExecutionTime - this._lastIntervalRequestExecutionTime) /
-                intervalRequests || 0; // default to 0 in case no requests in this interval
-        this._lastIntervalRequestExecutionTime = this._intervalRequestExecutionTime; // reset
-
+    private _getRequestDuration(observableResult: ObservableResult) {
+        var last = this._lastRequestDuration;
+        let currentTime = + new Date();
+        var intervalRequests = this._httpMetrics.totalRequestCount - last.count || 0;
+        var elapsedMs = currentTime - last.time;
         if (elapsedMs > 0) {
+            var averageRequestExecutionTime =
+                (this._httpMetrics.intervalRequestExecutionTime - last.executionInterval) /
+                intervalRequests || 0; // default to 0 in case no requests in this interval
+            last.executionInterval = this._httpMetrics.intervalRequestExecutionTime; // reset
+            observableResult.observe(averageRequestExecutionTime);
+        }
+        this._lastRequestRate = {
+            count: this._httpMetrics.totalRequestCount,
+            time: currentTime,
+            executionInterval: last.executionInterval
+        };
+    }
+
+    private _getRequestRate(observableResult: ObservableResult) {
+        var last = this._lastRequestRate;
+        let currentTime = + new Date();
+        var intervalRequests = this._httpMetrics.totalRequestCount - last.count || 0;
+        var elapsedMs = currentTime - last.time;
+        if (elapsedMs > 0) {
+            var elapsedSeconds = elapsedMs / 1000;
             var requestsPerSec = intervalRequests / elapsedSeconds;
-            var failedRequestsPerSec = intervalFailedRequests / elapsedSeconds;
-
-            this._handler.trackMetric({
-                metrics: [
-                    { name: Constants.PerformanceCounter.REQUEST_RATE, value: requestsPerSec },
-                ],
-            });
-
-            // Only send duration to live metrics if it has been updated!
-            if (!this._enableLiveMetricsCounters || intervalRequests > 0) {
-                this._handler.trackMetric({
-                    metrics: [
-                        {
-                            name: Constants.PerformanceCounter.REQUEST_DURATION,
-                            value: averageRequestExecutionTime,
-                        },
-                    ],
-                });
-            }
-
-            // Only supported by quickpulse service
-            if (this._enableLiveMetricsCounters) {
-                this._handler.trackMetric({
-                    metrics: [
-                        {
-                            name: Constants.QuickPulseCounter.REQUEST_FAILURE_RATE,
-                            value: failedRequestsPerSec,
-                        },
-                    ],
-                });
-            }
+            observableResult.observe(requestsPerSec);
         }
-
-        this._lastRequests = requests;
+        this._lastRequestRate = {
+            count: this._httpMetrics.totalRequestCount,
+            time: currentTime,
+            executionInterval: last.executionInterval
+        };
     }
 
-    // Counter is accumulated externally. Report the rate to client here
-    // Note: This is currently only used with QuickPulse client
-    private _trackDependencyRate() {
-        if (this._enableLiveMetricsCounters) {
-            var lastDependencies = this._lastDependencies;
-            var dependencies = {
-                totalDependencyCount: this._totalDependencyCount,
-                totalFailedDependencyCount: this._totalFailedDependencyCount,
-                time: +new Date(),
-            };
-
-            var intervalDependencies =
-                dependencies.totalDependencyCount - lastDependencies.totalDependencyCount || 0;
-            var intervalFailedDependencies =
-                dependencies.totalFailedDependencyCount -
-                    lastDependencies.totalFailedDependencyCount || 0;
-            var elapsedMs = dependencies.time - lastDependencies.time;
+    private _getFailureRequestRate(observableResult: ObservableResult) {
+        var last = this._lastFailureRequestRate;
+        let currentTime = + new Date();
+        var intervalRequests = this._httpMetrics.totalFailedDependencyCount - last.count || 0;
+        var elapsedMs = currentTime - last.time;
+        if (elapsedMs > 0) {
             var elapsedSeconds = elapsedMs / 1000;
+            var requestsPerSec = intervalRequests / elapsedSeconds;
+            observableResult.observe(requestsPerSec);
+        }
+        this._lastRequestRate = {
+            count: this._httpMetrics.totalFailedDependencyCount,
+            time: currentTime,
+            executionInterval: last.executionInterval
+        };
+    }
+
+    private _getDependencyDuration(observableResult: ObservableResult) {
+        var last = this._lastDependencyDuration;
+        let currentTime = + new Date();
+        var intervalDependencys = this._httpMetrics.totalDependencyCount - last.count || 0;
+        var elapsedMs = currentTime - last.time;
+        if (elapsedMs > 0) {
             var averageDependencyExecutionTime =
-                (this._intervalDependencyExecutionTime -
-                    this._lastIntervalDependencyExecutionTime) /
-                    intervalDependencies || 0;
-            this._lastIntervalDependencyExecutionTime = this._intervalDependencyExecutionTime; // reset
-
-            if (elapsedMs > 0) {
-                var dependenciesPerSec = intervalDependencies / elapsedSeconds;
-                var failedDependenciesPerSec = intervalFailedDependencies / elapsedSeconds;
-
-                this._handler.trackMetric({
-                    metrics: [
-                        {
-                            name: Constants.QuickPulseCounter.DEPENDENCY_RATE,
-                            value: dependenciesPerSec,
-                        },
-                    ],
-                });
-                this._handler.trackMetric({
-                    metrics: [
-                        {
-                            name: Constants.QuickPulseCounter.DEPENDENCY_FAILURE_RATE,
-                            value: failedDependenciesPerSec,
-                        },
-                    ],
-                });
-
-                // redundant check for livemetrics, but kept for consistency w/ requests
-                // Only send duration to live metrics if it has been updated!
-                if (!this._enableLiveMetricsCounters || intervalDependencies > 0) {
-                    this._handler.trackMetric({
-                        metrics: [
-                            {
-                                name: Constants.QuickPulseCounter.DEPENDENCY_DURATION,
-                                value: averageDependencyExecutionTime,
-                            },
-                        ],
-                    });
-                }
-            }
-            this._lastDependencies = dependencies;
+                (this._httpMetrics.intervalDependencyExecutionTime - last.executionInterval) /
+                intervalDependencys || 0; // default to 0 in case no Dependencys in this interval
+            last.executionInterval = this._httpMetrics.intervalDependencyExecutionTime; // reset
+            observableResult.observe(averageDependencyExecutionTime);
         }
+        this._lastDependencyRate = {
+            count: this._httpMetrics.totalDependencyCount,
+            time: currentTime,
+            executionInterval: last.executionInterval
+        };
     }
 
-    // Counter is accumulated externally. Report the rate to client here
-    // Note: This is currently only used with QuickPulse client
-    private _trackExceptionRate() {
-        if (this._enableLiveMetricsCounters) {
-            var lastExceptions = this._lastExceptions;
-            var exceptions = {
-                totalExceptionCount: this._totalExceptionCount,
-                time: +new Date(),
-            };
-
-            var intervalExceptions =
-                exceptions.totalExceptionCount - lastExceptions.totalExceptionCount || 0;
-            var elapsedMs = exceptions.time - lastExceptions.time;
+    private _getDependencyRate(observableResult: ObservableResult) {
+        var last = this._lastDependencyRate;
+        let currentTime = + new Date();
+        var intervalDependencys = this._httpMetrics.totalDependencyCount - last.count || 0;
+        var elapsedMs = currentTime - last.time;
+        if (elapsedMs > 0) {
             var elapsedSeconds = elapsedMs / 1000;
-
-            if (elapsedMs > 0) {
-                var exceptionsPerSec = intervalExceptions / elapsedSeconds;
-                this._handler.trackMetric({
-                    metrics: [
-                        {
-                            name: Constants.QuickPulseCounter.EXCEPTION_RATE,
-                            value: exceptionsPerSec,
-                        },
-                    ],
-                });
-            }
-            this._lastExceptions = exceptions;
+            var DependencysPerSec = intervalDependencys / elapsedSeconds;
+            observableResult.observe(DependencysPerSec);
         }
+        this._lastDependencyRate = {
+            count: this._httpMetrics.totalDependencyCount,
+            time: currentTime,
+            executionInterval: last.executionInterval
+        };
+    }
+
+    private _getFailureDependencyRate(observableResult: ObservableResult) {
+        var last = this._lastFailureDependencyRate;
+        let currentTime = + new Date();
+        var intervalDependencys = this._httpMetrics.totalFailedDependencyCount - last.count || 0;
+        var elapsedMs = currentTime - last.time;
+        if (elapsedMs > 0) {
+            var elapsedSeconds = elapsedMs / 1000;
+            var DependencysPerSec = intervalDependencys / elapsedSeconds;
+            observableResult.observe(DependencysPerSec);
+        }
+        this._lastDependencyRate = {
+            count: this._httpMetrics.totalFailedDependencyCount,
+            time: currentTime,
+            executionInterval: last.executionInterval
+        };
     }
 }

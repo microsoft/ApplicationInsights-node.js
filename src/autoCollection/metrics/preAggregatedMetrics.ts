@@ -305,6 +305,6 @@ export class AutoCollectPreAggregatedMetrics {
             ],
             properties: metricProperties,
         };
-        this._handler.trackMetric(telemetry);
+        //this._handler.trackMetric(telemetry);
     }
 }

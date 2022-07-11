@@ -1,4 +1,5 @@
-import { MetricHandler } from "../../library/handlers";
+import { Meter, ObservableGauge, ObservableResult, Histogram } from "@opentelemetry/api-metrics";
+import { GarbageCollectionType, NativeMetricsCounter } from "../../declarations/constants";
 import { Logger } from "../../library/logging";
 import { IBaseConfig, IDisabledExtendedMetrics } from "../../library/configuration/interfaces";
 
@@ -9,30 +10,44 @@ export class AutoCollectNativePerformance {
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _handle: NodeJS.Timer;
-    private _handler: MetricHandler;
+    private _meter: Meter;
+    private _collectionInterval: number = 15000; // 15 seconds
     private _disabledMetrics: IDisabledExtendedMetrics = {};
+    private _eventLoopHistogram: Histogram;
+    private _garbageCollectionScavenge: Histogram;
+    private _garbageCollectionMarkSweepCompact: Histogram;
+    private _garbageCollectionIncrementalMarking: Histogram;
+    private _heapMemoryTotalGauge: ObservableGauge;
+    private _heapMemoryUsageGauge: ObservableGauge;
+    private _memoryUsageNonHeapGauge: ObservableGauge;
 
-    constructor(handler: MetricHandler) {
-        this._handler = handler;
+
+    constructor(meter: Meter) {
+        this._meter = meter;
+        this._eventLoopHistogram = this._meter.createHistogram(NativeMetricsCounter.EVENT_LOOP_CPU);
+        this._garbageCollectionScavenge = this._meter.createHistogram(NativeMetricsCounter.GARBAGE_COLLECTION_SCAVENGE);
+        this._garbageCollectionMarkSweepCompact = this._meter.createHistogram(NativeMetricsCounter.GARBAGE_COLLECTION_SWEEP_COMPACT);
+        this._garbageCollectionIncrementalMarking = this._meter.createHistogram(NativeMetricsCounter.GARBAGE_COLLECTION_INCREMENTAL_MARKING);
+        this._heapMemoryTotalGauge = this._meter.createObservableGauge(NativeMetricsCounter.HEAP_MEMORY_TOTAL);
+        this._heapMemoryUsageGauge = this._meter.createObservableGauge(NativeMetricsCounter.HEAP_MEMORY_USAGE);
+        this._memoryUsageNonHeapGauge = this._meter.createObservableGauge(NativeMetricsCounter.MEMORY_USAGE_NON_HEAP);
     }
 
     /**
      * Start instance of native metrics agent.
      *
      * @param {boolean} isEnabled
-     * @param {number} [collectionInterval=60000]
      * @memberof AutoCollectNativePerformance
      */
     public enable(
         isEnabled: boolean,
-        disabledMetrics: IDisabledExtendedMetrics = {},
-        collectionInterval = 60000
+        disabledMetrics: IDisabledExtendedMetrics = {}
     ): void {
         if (this._metricsAvailable == undefined && isEnabled && !this._isInitialized) {
             // Try to require in the native-metrics library. If it's found initialize it, else do nothing and never try again.
             try {
-                const NativeMetricsEmitters = require("applicationinsights-native-metrics");
-                this._emitter = new NativeMetricsEmitters();
+                const NativeMetricsEmitter = require("applicationinsights-native-metrics");
+                this._emitter = new NativeMetricsEmitter();
                 this._metricsAvailable = true;
                 Logger.getInstance().info("Native metrics module successfully loaded!");
             } catch (err) {
@@ -41,9 +56,8 @@ export class AutoCollectNativePerformance {
                 return;
             }
         }
-
         this._isEnabled = isEnabled;
-        this._disabledMetrics = disabledMetrics;
+        this._disabledMetrics = disabledMetrics;// TODO: Use to filter out metrics in View
         if (this._isEnabled && !this._isInitialized) {
             this._isInitialized = true;
         }
@@ -51,11 +65,17 @@ export class AutoCollectNativePerformance {
         // Enable the emitter if we were able to construct one
         if (this._isEnabled && this._emitter) {
             // enable self
-            this._emitter.enable(true, collectionInterval);
+            this._emitter.enable(true, this._collectionInterval);
+            // Add histogram data collection
             if (!this._handle) {
-                this._handle = setInterval(() => this._trackNativeMetrics(), collectionInterval);
+                this._handle = setInterval(() => this._collectHistogramData(), this._collectionInterval);
                 this._handle.unref();
             }
+            // Add observable callbacks
+            this._heapMemoryTotalGauge.addCallback(this._getHeapTotal);
+            this._heapMemoryUsageGauge.addCallback(this._getHeapUsage);
+            this._memoryUsageNonHeapGauge.addCallback(this._getNonHeapUsage);
+
         } else if (this._emitter) {
             // disable self
             this._emitter.enable(false);
@@ -119,140 +139,53 @@ export class AutoCollectNativePerformance {
         }
     }
 
-    /**
-     * Trigger an iteration of native metrics collection
-     *
-     * @private
-     * @memberof AutoCollectNativePerformance
-     */
-    private _trackNativeMetrics() {
-        let shouldSendAll = true;
-        if (typeof this._isEnabled !== "object") {
-            shouldSendAll = this._isEnabled;
-        }
-
-        if (shouldSendAll) {
-            this._trackGarbageCollection();
-            this._trackEventLoop();
-            this._trackHeapUsage();
-        }
+    private _getHeapUsage(observableResult: ObservableResult) {
+        const memoryUsage = process.memoryUsage();
+        const { heapUsed } = memoryUsage;
+        observableResult.observe(heapUsed);
     }
 
-    /**
-     * Tracks garbage collection stats for this interval. One custom metric is sent per type of garbage
-     * collection that occurred during this collection interval.
-     *
-     * @private
-     * @memberof AutoCollectNativePerformance
-     */
-    private _trackGarbageCollection(): void {
-        if (this._disabledMetrics.gc) {
-            return;
-        }
-
-        const gcData = this._emitter.getGCData();
-
-        for (let gc in gcData) {
-            const metrics = gcData[gc].metrics;
-
-            const name = `${gc} Garbage Collection Duration`;
-            const stdDev =
-                Math.sqrt(
-                    metrics.sumSquares / metrics.count - Math.pow(metrics.total / metrics.count, 2)
-                ) || 0;
-            this._handler.trackMetric({
-                metrics: [
-                    {
-                        name: name,
-                        value: metrics.total,
-                        count: metrics.count,
-                        max: metrics.max,
-                        min: metrics.min,
-                        stdDev: stdDev,
-                    },
-                ],
-            });
-        }
+    private _getHeapTotal(observableResult: ObservableResult) {
+        const memoryUsage = process.memoryUsage();
+        const { heapTotal } = memoryUsage;
+        observableResult.observe(heapTotal);
     }
 
-    /**
-     * Tracks event loop ticks per interval as a custom metric. Also included in the metric is min/max/avg
-     * time spent in event loop for this interval.
-     *
-     * @private
-     * @returns {void}
-     * @memberof AutoCollectNativePerformance
-     */
-    private _trackEventLoop(): void {
-        if (this._disabledMetrics.loop) {
-            return;
-        }
+    private _getNonHeapUsage(observableResult: ObservableResult) {
+        const memoryUsage = process.memoryUsage();
+        const { heapTotal, rss } = memoryUsage;
+        observableResult.observe(rss - heapTotal);
+    }
 
+    private _collectHistogramData() {
+        this._getEventLoopCpu();
+        this._getGarbageCollection();
+    }
+
+    private _getEventLoopCpu() {
         const loopData = this._emitter.getLoopData();
         const metrics = loopData.loopUsage;
         if (metrics.count == 0) {
             return;
         }
-
-        const name = "Event Loop CPU Time";
-        const stdDev =
-            Math.sqrt(
-                metrics.sumSquares / metrics.count - Math.pow(metrics.total / metrics.count, 2)
-            ) || 0;
-        this._handler.trackMetric({
-            metrics: [
-                {
-                    name: name,
-                    value: metrics.total,
-                    count: metrics.count,
-                    min: metrics.min,
-                    max: metrics.max,
-                    stdDev: stdDev,
-                },
-            ],
-        });
+        this._eventLoopHistogram.record(metrics.total);
     }
 
-    /**
-     * Track heap memory usage metrics as a custom metric.
-     *
-     * @private
-     * @memberof AutoCollectNativePerformance
-     */
-    private _trackHeapUsage(): void {
-        if (this._disabledMetrics.heap) {
-            return;
+    private _getGarbageCollection() {
+        const gcData = this._emitter.getGCData();
+        for (let gc in gcData) {
+            const metrics = gcData[gc].metrics;
+            switch (gc) {
+                case GarbageCollectionType.IncrementalMarking:
+                    this._garbageCollectionIncrementalMarking.record(metrics.total);
+                    break;
+                case GarbageCollectionType.MarkSweepCompact:
+                    this._garbageCollectionMarkSweepCompact.record(metrics.total);
+                    break;
+                case GarbageCollectionType.Scavenge:
+                    this._garbageCollectionScavenge.record(metrics.total);
+                    break;
+            }
         }
-
-        const memoryUsage = process.memoryUsage();
-        const { heapUsed, heapTotal, rss } = memoryUsage;
-
-        this._handler.trackMetric({
-            metrics: [
-                {
-                    name: "Memory Usage (Heap)",
-                    value: heapUsed,
-                    count: 1,
-                },
-            ],
-        });
-        this._handler.trackMetric({
-            metrics: [
-                {
-                    name: "Memory Total (Heap)",
-                    value: heapTotal,
-                    count: 1,
-                },
-            ],
-        });
-        this._handler.trackMetric({
-            metrics: [
-                {
-                    name: "Memory Usage (Non-Heap)",
-                    value: rss - heapTotal,
-                    count: 1,
-                },
-            ],
-        });
     }
 }

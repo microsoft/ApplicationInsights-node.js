@@ -127,6 +127,12 @@ export class Config implements IConfig {
         return this._instrumentationKey;
     }
 
+    public getConnectionString(): string {
+        let ingestionEndpoint = this.endpointUrl.replace("/v2.1/track", "");
+        let connectionString = `InstrumentationKey=${this.instrumentationKey};IngestionEndpoint=${ingestionEndpoint}`;
+        return connectionString;
+    }
+
     private _mergeConfig() {
         let jsonConfig = JsonConfig.getInstance();
         this._connectionString = jsonConfig.connectionString;

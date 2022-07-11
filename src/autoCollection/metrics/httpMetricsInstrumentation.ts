@@ -4,7 +4,6 @@ import type * as http from 'http';
 import type * as https from 'https';
 import * as semver from 'semver';
 import * as url from 'url';
-import { ValueType, Histogram, MeterProvider, MetricAttributes, ObservableGauge, ObservableUpDownCounter } from '@opentelemetry/api-metrics';
 import {
   InstrumentationBase,
   InstrumentationConfig,
@@ -13,28 +12,32 @@ import {
   safeExecuteInTheMiddle
 } from '@opentelemetry/instrumentation';
 import { getRequestInfo } from '@opentelemetry/instrumentation-http';
-import { APPLICATION_INSIGHTS_SDK_VERSION, QuickPulseCounter } from "../../declarations/constants";
+
+import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../declarations/constants";
 import { IHttpMetric, IMetricDependencyDimensions, IMetricRequestDimensions } from './types';
-import { ResourceManager } from '../../library/handlers';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 
 
 export class HttpMetricsInstrumentation extends InstrumentationBase {
 
+  private static _instance: HttpMetricsInstrumentation;
   private _nodeVersion: string;
-  
+  public totalRequestCount: number = 0;
+  public totalFailedRequestCount: number = 0;
+  public totalDependencyCount: number = 0;
+  public totalFailedDependencyCount: number = 0;
+  public intervalDependencyExecutionTime: number = 0;
+  public intervalRequestExecutionTime: number = 0;
 
-
-  
+  public static getInstance() {
+    if (!HttpMetricsInstrumentation._instance) {
+      HttpMetricsInstrumentation._instance = new HttpMetricsInstrumentation();
+    }
+    return HttpMetricsInstrumentation._instance;
+  }
 
   constructor(config: InstrumentationConfig = {}) {
     super('AzureHttpMetricsInstrumentation', APPLICATION_INSIGHTS_SDK_VERSION, config);
     this._nodeVersion = process.versions.node;
-  }
-
-  public initialize(meterProvider: MeterProvider) {
-    this.setMeterProvider(meterProvider);
-   
   }
 
   /**
@@ -48,12 +51,24 @@ export class HttpMetricsInstrumentation extends InstrumentationBase {
     return [this._getHttpDefinition(), this._getHttpsDefinition()];
   }
 
-  private _done(metric: IHttpMetric) {
+  private _htppRequestDone(metric: IHttpMetric) {
     // Done could be called multiple times, only process metric once
     if (!metric.isProcessed) {
-      let duration = Date.now() - metric.startTime;
-
-
+      let durationMs = Date.now() - metric.startTime;
+      if (metric.isOutgoingRequest) {
+        this.intervalRequestExecutionTime += durationMs;
+        if ((metric.dimensions as IMetricRequestDimensions).requestSuccess === false) {
+          this.totalFailedRequestCount++;
+        }
+        this.totalRequestCount++;
+      }
+      else {
+        this.intervalDependencyExecutionTime += durationMs;
+        if ((metric.dimensions as IMetricDependencyDimensions).dependencySuccess === false) {
+          this.totalFailedDependencyCount++;
+        }
+        this.totalDependencyCount++;
+      }
     }
   }
 
@@ -183,21 +198,21 @@ export class HttpMetricsInstrumentation extends InstrumentationBase {
             } else {
 
             }
-            instrumentation._done(metric);
+            instrumentation._htppRequestDone(metric);
           });
           response.on('error', (error: Error) => {
-            instrumentation._done(metric);
+            instrumentation._htppRequestDone(metric);
           });
         }
       );
       request.on('close', () => {
         if (!request.aborted) {
-          instrumentation._done(metric);
+          instrumentation._htppRequestDone(metric);
         }
       });
       request.on('error', (error: Error) => {
         (metric.dimensions as IMetricDependencyDimensions).dependencySuccess = false;
-        instrumentation._done(metric);
+        instrumentation._htppRequestDone(metric);
       });
       return request;
     };
@@ -245,20 +260,20 @@ export class HttpMetricsInstrumentation extends InstrumentationBase {
           () => response.end.apply(this, arguments as never),
           error => {
             if (error) {
-              instrumentation._done(metric);
+              instrumentation._htppRequestDone(metric);
               throw error;
             }
           }
         );
 
-        instrumentation._done(metric);
+        instrumentation._htppRequestDone(metric);
         return returned;
       };
       return safeExecuteInTheMiddle(
         () => original.apply(this, [event, ...args]),
         error => {
           if (error) {
-            instrumentation._done(metric);
+            instrumentation._htppRequestDone(metric);
             throw error;
           }
         }

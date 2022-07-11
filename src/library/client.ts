@@ -1,5 +1,5 @@
 import { Config } from "./configuration";
-import { Statsbeat } from "./statsbeat";
+import { Statsbeat } from "../autoCollection/metrics/statsbeat";
 import { Logger } from "./logging";
 import { QuickPulseStateManager } from "./quickPulse";
 import { LogHandler, MetricHandler, TraceHandler } from "./handlers";

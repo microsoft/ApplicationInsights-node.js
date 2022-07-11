@@ -3,7 +3,7 @@ import * as sinon from "sinon";
 import * as os from "os";
 
 import { Client } from "../../../src/library/client";
-import { HeartBeat } from "../../../src/library/heartBeat";
+import { HeartBeat } from "../../../src/autoCollection/metrics/heartBeat";
 import { Config, JsonConfig } from "../../../src/library/configuration";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 import { ResourceManager } from "../../../src/library/handlers";

@@ -2,7 +2,7 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 import { AutoCollectPerformance } from "../../../src/autoCollection";
 import { Config } from "../../../src/library/configuration";
-import { MetricHandler, ResourceManager } from "../../../src/library/handlers";
+import { MetricHandler } from "../../../src/library/handlers";
 
 
 describe("AutoCollection/Performance", () => {
@@ -21,7 +21,7 @@ describe("AutoCollection/Performance", () => {
             var setIntervalSpy = sandbox.spy(global, "setInterval");
             var clearIntervalSpy = sandbox.spy(global, "clearInterval");
             let metricHandler = new MetricHandler(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
-            let performance = new AutoCollectPerformance(metricHandler);
+            let performance = new AutoCollectPerformance(metricHandler.getMeter());
             performance.enable(true);
             assert.equal(
                 setIntervalSpy.callCount,

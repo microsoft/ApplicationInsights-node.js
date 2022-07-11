@@ -1,16 +1,28 @@
 import * as os from "os";
+import { Meter, ObservableGauge } from "@opentelemetry/api-metrics";
+import { MeterProvider } from "@opentelemetry/sdk-metrics-base";
 
-import { Logger } from "../logging";
-import * as Constants from "../../declarations/constants";
-import { Config } from "../configuration";
-import { AzureVirtualMachine } from "..";
-import { NetworkStatsbeat } from "./networkStatsbeat";
-import { Util } from "../util";
-import { MetricHandler, ResourceManager } from "../handlers";
-import { MetricTelemetry, MetricPointTelemetry } from "../../declarations/contracts";
-import { KnownContextTagKeys } from "../../declarations/generated";
+import { Logger } from "../../../library/logging";
+import {
+    StatsbeatAttach,
+    StatsbeatCounter,
+    StatsbeatFeature,
+    StatsbeatFeatureType,
+    StatsbeatInstrumentation,
+    StatsbeatResourceProvider
+} from "../../../declarations/constants";
+import { Config } from "../../../library/configuration";
+import { AzureVirtualMachine } from "../../../library";
+import { NetworkStatsbeat } from "./types";
+import { Util } from "../../../library/util";
+import { ResourceManager } from "../../../library/handlers";
+import { MetricTelemetry, MetricPointTelemetry } from "../../../declarations/contracts";
+import { KnownContextTagKeys } from "../../../declarations/generated";
+import { createMeterProvider } from "../utils";
+import { IVirtualMachineInfo } from "../../../library/azureVirtualMachine";
 
 const STATSBEAT_LANGUAGE = "node";
+
 
 export class Statsbeat {
     private _connectionString =
@@ -18,11 +30,8 @@ export class Statsbeat {
     private _collectionShortIntervalMs: number = 900000; // 15 minutes
     private _collectionLongIntervalMs: number = 1440000; // 1 day
     private _TAG = "Statsbeat";
-    private _metricHandler: MetricHandler;
     private _networkStatsbeatCollection: Array<NetworkStatsbeat>;
     private _resourceManager: ResourceManager;
-    private _handle: NodeJS.Timer | null;
-    private _longHandle: NodeJS.Timer | null;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _config: Config;
@@ -30,6 +39,18 @@ export class Statsbeat {
     private _isVM: boolean | undefined;
     private _statbeatMetrics: Array<{ name: string; value: number; properties: {} }>;
     private _azureVm: AzureVirtualMachine;
+    private _shortIntervalMeterProvider: MeterProvider;
+    private _shortIntervalMeter: Meter;
+    private _longIntervalMeterProvider: MeterProvider;
+    private _longIntervalMeter: Meter;
+    private _requestSuccessGauge: ObservableGauge;
+    private _requestFailureGauge: ObservableGauge;
+    private _requestDurationGauge: ObservableGauge;
+    private _retryCountGauge: ObservableGauge;
+    private _throttleCountGauge: ObservableGauge;
+    private _exceptionCountGauge: ObservableGauge;
+    private _attachGauge: ObservableGauge;
+    private _featureGauge: ObservableGauge;
 
     // Custom dimensions
     private _resourceProvider: string;
@@ -39,9 +60,9 @@ export class Statsbeat {
     private _os: string;
     private _language: string;
     private _cikey: string;
-    private _attach: string = Constants.StatsbeatAttach.sdk; // Default is SDK
-    private _feature: number = Constants.StatsbeatFeature.NONE;
-    private _instrumentation: number = Constants.StatsbeatInstrumentation.NONE;
+    private _attach: string = StatsbeatAttach.sdk; // Default is SDK
+    private _feature: number = StatsbeatFeature.NONE;
+    private _instrumentation: number = StatsbeatInstrumentation.NONE;
 
     constructor(config: Config, resourceManager?: ResourceManager) {
         this._isInitialized = false;
@@ -56,7 +77,18 @@ export class Statsbeat {
         this._statsbeatConfig.enableAutoCollectPerformance = false;
         this._statsbeatConfig.enableAutoCollectPreAggregatedMetrics = false;
         this._statsbeatConfig.enableAutoCollectConsole = false;
-        this._metricHandler = new MetricHandler(this._statsbeatConfig);
+        this._shortIntervalMeterProvider = createMeterProvider(this._statsbeatConfig, null, this._collectionShortIntervalMs);
+        this._shortIntervalMeter = this._shortIntervalMeterProvider.getMeter("ApplicationInsightsStatsbeatShortIntervalMeter");
+        this._longIntervalMeterProvider = createMeterProvider(this._statsbeatConfig, null, this._collectionLongIntervalMs);
+        this._longIntervalMeter = this._longIntervalMeterProvider.getMeter("ApplicationInsightsStatsbeatLongIntervalMeter");
+        this._attachGauge = this._shortIntervalMeter.createObservableGauge(StatsbeatCounter.ATTACH);
+        this._featureGauge = this._shortIntervalMeter.createObservableGauge(StatsbeatCounter.FEATURE);
+        this._retryCountGauge = this._shortIntervalMeter.createObservableGauge(StatsbeatCounter.RETRY_COUNT);
+        this._throttleCountGauge = this._shortIntervalMeter.createObservableGauge(StatsbeatCounter.THROTTLE_COUNT);
+        this._exceptionCountGauge = this._shortIntervalMeter.createObservableGauge(StatsbeatCounter.EXCEPTION_COUNT);
+        this._requestFailureGauge = this._shortIntervalMeter.createObservableGauge(StatsbeatCounter.REQUEST_FAILURE);
+        this._requestSuccessGauge = this._shortIntervalMeter.createObservableGauge(StatsbeatCounter.REQUEST_SUCCESS);
+        this._requestDurationGauge = this._shortIntervalMeter.createObservableGauge(StatsbeatCounter.REQUEST_DURATION);
     }
 
     public enable(isEnabled: boolean) {
@@ -64,31 +96,6 @@ export class Statsbeat {
         if (this._isEnabled && !this._isInitialized) {
             this._getCustomProperties();
             this._isInitialized = true;
-        }
-        if (isEnabled) {
-            if (!this._handle) {
-                this._handle = setInterval(() => {
-                    this.trackShortIntervalStatsbeats();
-                }, this._collectionShortIntervalMs);
-                this._handle.unref(); // Allow the app to terminate even while this loop is going on
-            }
-            if (!this._longHandle) {
-                // On first enablement
-                this.trackLongIntervalStatsbeats();
-                this._longHandle = setInterval(() => {
-                    this.trackLongIntervalStatsbeats();
-                }, this._collectionLongIntervalMs);
-                this._longHandle.unref(); // Allow the app to terminate even while this loop is going on
-            }
-        } else {
-            if (this._handle) {
-                clearInterval(this._handle);
-                this._handle = null;
-            }
-            if (this._longHandle) {
-                clearInterval(this._longHandle);
-                this._longHandle = null;
-            }
         }
     }
 
@@ -101,22 +108,22 @@ export class Statsbeat {
     }
 
     public setCodelessAttach() {
-        this._attach = Constants.StatsbeatAttach.codeless;
+        this._attach = StatsbeatAttach.codeless;
     }
 
-    public addFeature(feature: Constants.StatsbeatFeature) {
+    public addFeature(feature: StatsbeatFeature) {
         this._feature |= feature;
     }
 
-    public removeFeature(feature: Constants.StatsbeatFeature) {
+    public removeFeature(feature: StatsbeatFeature) {
         this._feature &= ~feature;
     }
 
-    public addInstrumentation(instrumentation: Constants.StatsbeatInstrumentation) {
+    public addInstrumentation(instrumentation: StatsbeatInstrumentation) {
         this._instrumentation |= instrumentation;
     }
 
-    public removeInstrumentation(instrumentation: Constants.StatsbeatInstrumentation) {
+    public removeInstrumentation(instrumentation: StatsbeatInstrumentation) {
         this._instrumentation &= ~instrumentation;
     }
 
@@ -200,33 +207,33 @@ export class Statsbeat {
                 commonProperties
             );
             this._statbeatMetrics.push({
-                name: Constants.StatsbeatCounter.ATTACH,
+                name: StatsbeatCounter.ATTACH,
                 value: 1,
                 properties: attachProperties,
             });
-            if (this._instrumentation != Constants.StatsbeatInstrumentation.NONE) {
+            if (this._instrumentation != StatsbeatInstrumentation.NONE) {
                 // Only send if there are some instrumentations enabled
                 let instrumentationProperties = Object.assign(
                     {
                         feature: this._instrumentation,
-                        type: Constants.StatsbeatFeatureType.Instrumentation,
+                        type: StatsbeatFeatureType.Instrumentation,
                     },
                     commonProperties
                 );
                 this._statbeatMetrics.push({
-                    name: Constants.StatsbeatCounter.FEATURE,
+                    name: StatsbeatCounter.FEATURE,
                     value: 1,
                     properties: instrumentationProperties,
                 });
             }
-            if (this._feature != Constants.StatsbeatFeature.NONE) {
+            if (this._feature != StatsbeatFeature.NONE) {
                 // Only send if there are some features enabled
                 let featureProperties = Object.assign(
-                    { feature: this._feature, type: Constants.StatsbeatFeatureType.Feature },
+                    { feature: this._feature, type: StatsbeatFeatureType.Feature },
                     commonProperties
                 );
                 this._statbeatMetrics.push({
-                    name: Constants.StatsbeatCounter.FEATURE,
+                    name: StatsbeatCounter.FEATURE,
                     value: 1,
                     properties: featureProperties,
                 });
@@ -279,7 +286,7 @@ export class Statsbeat {
                     commonProperties
                 );
                 this._statbeatMetrics.push({
-                    name: Constants.StatsbeatCounter.REQUEST_DURATION,
+                    name: StatsbeatCounter.REQUEST_DURATION,
                     value: averageRequestExecutionTime,
                     properties: properties,
                 });
@@ -299,7 +306,7 @@ export class Statsbeat {
             );
             if (currentCounter.totalSuccesfulRequestCount > 0) {
                 this._statbeatMetrics.push({
-                    name: Constants.StatsbeatCounter.REQUEST_SUCCESS,
+                    name: StatsbeatCounter.REQUEST_SUCCESS,
                     value: currentCounter.totalSuccesfulRequestCount,
                     properties: properties,
                 });
@@ -307,7 +314,7 @@ export class Statsbeat {
             }
             if (currentCounter.totalFailedRequestCount > 0) {
                 this._statbeatMetrics.push({
-                    name: Constants.StatsbeatCounter.REQUEST_FAILURE,
+                    name: StatsbeatCounter.REQUEST_FAILURE,
                     value: currentCounter.totalFailedRequestCount,
                     properties: properties,
                 });
@@ -315,7 +322,7 @@ export class Statsbeat {
             }
             if (currentCounter.retryCount > 0) {
                 this._statbeatMetrics.push({
-                    name: Constants.StatsbeatCounter.RETRY_COUNT,
+                    name: StatsbeatCounter.RETRY_COUNT,
                     value: currentCounter.retryCount,
                     properties: properties,
                 });
@@ -323,7 +330,7 @@ export class Statsbeat {
             }
             if (currentCounter.throttleCount > 0) {
                 this._statbeatMetrics.push({
-                    name: Constants.StatsbeatCounter.THROTTLE_COUNT,
+                    name: StatsbeatCounter.THROTTLE_COUNT,
                     value: currentCounter.throttleCount,
                     properties: properties,
                 });
@@ -331,7 +338,7 @@ export class Statsbeat {
             }
             if (currentCounter.exceptionCount > 0) {
                 this._statbeatMetrics.push({
-                    name: Constants.StatsbeatCounter.EXCEPTION_COUNT,
+                    name: StatsbeatCounter.EXCEPTION_COUNT,
                     value: currentCounter.exceptionCount,
                     properties: properties,
                 });
@@ -350,7 +357,7 @@ export class Statsbeat {
                 metrics: [statsbeat],
                 properties: this._statbeatMetrics[i].properties,
             };
-            this._metricHandler.trackStatsbeatMetric(metricTelemetry);
+            //this._metricHandler.trackStatsbeatMetric(metricTelemetry);
         }
     }
 
@@ -363,47 +370,40 @@ export class Statsbeat {
         this._runtimeVersion = process.version;
     }
 
-    private _getResourceProvider(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            // Check resource provider
-            let waiting: boolean = false;
-            this._resourceProvider = Constants.StatsbeatResourceProvider.unknown;
-            this._resourceIdentifier = Constants.StatsbeatResourceProvider.unknown;
-            if (process.env.WEBSITE_SITE_NAME) {
-                // Web apps
-                this._resourceProvider = Constants.StatsbeatResourceProvider.appsvc;
-                this._resourceIdentifier = process.env.WEBSITE_SITE_NAME;
-                if (process.env.WEBSITE_HOME_STAMPNAME) {
-                    this._resourceIdentifier += "/" + process.env.WEBSITE_HOME_STAMPNAME;
-                }
-            } else if (process.env.FUNCTIONS_WORKER_RUNTIME) {
-                // Function apps
-                this._resourceProvider = Constants.StatsbeatResourceProvider.functions;
-                if (process.env.WEBSITE_HOSTNAME) {
-                    this._resourceIdentifier = process.env.WEBSITE_HOSTNAME;
-                }
-            } else if (this._config) {
-                if (this._isVM === undefined || this._isVM == true) {
-                    waiting = true;
-                    this._azureVm.getAzureComputeMetadata(this._config, (vmInfo) => {
-                        this._isVM = vmInfo.isVM;
-                        if (this._isVM) {
-                            this._resourceProvider = Constants.StatsbeatResourceProvider.vm;
-                            this._resourceIdentifier = vmInfo.id + "/" + vmInfo.subscriptionId;
-                            // Override OS as VM info have higher precedence
-                            if (vmInfo.osType) {
-                                this._os = vmInfo.osType;
-                            }
+    private async _getResourceProvider(): Promise<void> {
+        // Check resource provider
+        this._resourceProvider = StatsbeatResourceProvider.unknown;
+        this._resourceIdentifier = StatsbeatResourceProvider.unknown;
+        if (process.env.WEBSITE_SITE_NAME) {
+            // Web apps
+            this._resourceProvider = StatsbeatResourceProvider.appsvc;
+            this._resourceIdentifier = process.env.WEBSITE_SITE_NAME;
+            if (process.env.WEBSITE_HOME_STAMPNAME) {
+                this._resourceIdentifier += "/" + process.env.WEBSITE_HOME_STAMPNAME;
+            }
+        } else if (process.env.FUNCTIONS_WORKER_RUNTIME) {
+            // Function apps
+            this._resourceProvider = StatsbeatResourceProvider.functions;
+            if (process.env.WEBSITE_HOSTNAME) {
+                this._resourceIdentifier = process.env.WEBSITE_HOSTNAME;
+            }
+        } else if (this._config) {
+            if (this._isVM === undefined || this._isVM == true) {
+                await this._azureVm.getAzureComputeMetadata(this._config).then((vmInfo: IVirtualMachineInfo) => {
+                    this._isVM = vmInfo.isVM;
+                    if (this._isVM) {
+                        this._resourceProvider = StatsbeatResourceProvider.vm;
+                        this._resourceIdentifier = vmInfo.id + "/" + vmInfo.subscriptionId;
+                        // Override OS as VM info have higher precedence
+                        if (vmInfo.osType) {
+                            this._os = vmInfo.osType;
                         }
-                        resolve();
-                    });
-                } else {
-                    this._resourceProvider = Constants.StatsbeatResourceProvider.unknown;
-                }
+                    }
+                }).catch((error) => Logger.getInstance().debug(error));
+
+            } else {
+                this._resourceProvider = StatsbeatResourceProvider.unknown;
             }
-            if (!waiting) {
-                resolve();
-            }
-        });
+        }
     }
 }
