@@ -15,10 +15,9 @@ import { Config } from "../../../library/configuration";
 import { AzureVirtualMachine } from "../../../library";
 import { NetworkStatsbeat } from "./types";
 import { Util } from "../../../library/util";
-import { ResourceManager } from "../../../library/handlers";
+import { MetricHandler, ResourceManager } from "../../../library/handlers";
 import { MetricTelemetry, MetricPointTelemetry } from "../../../declarations/contracts";
 import { KnownContextTagKeys } from "../../../declarations/generated";
-import { createMeterProvider } from "../utils";
 import { IVirtualMachineInfo } from "../../../library/azureVirtualMachine";
 
 const STATSBEAT_LANGUAGE = "node";
@@ -30,8 +29,11 @@ export class Statsbeat {
     private _collectionShortIntervalMs: number = 900000; // 15 minutes
     private _collectionLongIntervalMs: number = 1440000; // 1 day
     private _TAG = "Statsbeat";
+    private _metricHandler: MetricHandler;
     private _networkStatsbeatCollection: Array<NetworkStatsbeat>;
     private _resourceManager: ResourceManager;
+    private _handle: NodeJS.Timer | null;
+    private _longHandle: NodeJS.Timer | null;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _config: Config;
@@ -39,18 +41,6 @@ export class Statsbeat {
     private _isVM: boolean | undefined;
     private _statbeatMetrics: Array<{ name: string; value: number; properties: {} }>;
     private _azureVm: AzureVirtualMachine;
-    private _shortIntervalMeterProvider: MeterProvider;
-    private _shortIntervalMeter: Meter;
-    private _longIntervalMeterProvider: MeterProvider;
-    private _longIntervalMeter: Meter;
-    private _requestSuccessGauge: ObservableGauge;
-    private _requestFailureGauge: ObservableGauge;
-    private _requestDurationGauge: ObservableGauge;
-    private _retryCountGauge: ObservableGauge;
-    private _throttleCountGauge: ObservableGauge;
-    private _exceptionCountGauge: ObservableGauge;
-    private _attachGauge: ObservableGauge;
-    private _featureGauge: ObservableGauge;
 
     // Custom dimensions
     private _resourceProvider: string;
@@ -77,18 +67,7 @@ export class Statsbeat {
         this._statsbeatConfig.enableAutoCollectPerformance = false;
         this._statsbeatConfig.enableAutoCollectPreAggregatedMetrics = false;
         this._statsbeatConfig.enableAutoCollectConsole = false;
-        this._shortIntervalMeterProvider = createMeterProvider(this._statsbeatConfig, null, this._collectionShortIntervalMs);
-        this._shortIntervalMeter = this._shortIntervalMeterProvider.getMeter("ApplicationInsightsStatsbeatShortIntervalMeter");
-        this._longIntervalMeterProvider = createMeterProvider(this._statsbeatConfig, null, this._collectionLongIntervalMs);
-        this._longIntervalMeter = this._longIntervalMeterProvider.getMeter("ApplicationInsightsStatsbeatLongIntervalMeter");
-        this._attachGauge = this._shortIntervalMeter.createObservableGauge(StatsbeatCounter.ATTACH);
-        this._featureGauge = this._shortIntervalMeter.createObservableGauge(StatsbeatCounter.FEATURE);
-        this._retryCountGauge = this._shortIntervalMeter.createObservableGauge(StatsbeatCounter.RETRY_COUNT);
-        this._throttleCountGauge = this._shortIntervalMeter.createObservableGauge(StatsbeatCounter.THROTTLE_COUNT);
-        this._exceptionCountGauge = this._shortIntervalMeter.createObservableGauge(StatsbeatCounter.EXCEPTION_COUNT);
-        this._requestFailureGauge = this._shortIntervalMeter.createObservableGauge(StatsbeatCounter.REQUEST_FAILURE);
-        this._requestSuccessGauge = this._shortIntervalMeter.createObservableGauge(StatsbeatCounter.REQUEST_SUCCESS);
-        this._requestDurationGauge = this._shortIntervalMeter.createObservableGauge(StatsbeatCounter.REQUEST_DURATION);
+        this._metricHandler = new MetricHandler(this._statsbeatConfig);
     }
 
     public enable(isEnabled: boolean) {
@@ -97,7 +76,33 @@ export class Statsbeat {
             this._getCustomProperties();
             this._isInitialized = true;
         }
+        if (isEnabled) {
+            if (!this._handle) {
+                this._handle = setInterval(() => {
+                    this.trackShortIntervalStatsbeats();
+                }, this._collectionShortIntervalMs);
+                this._handle.unref(); // Allow the app to terminate even while this loop is going on
+            }
+            if (!this._longHandle) {
+                // On first enablement
+                this.trackLongIntervalStatsbeats();
+                this._longHandle = setInterval(() => {
+                    this.trackLongIntervalStatsbeats();
+                }, this._collectionLongIntervalMs);
+                this._longHandle.unref(); // Allow the app to terminate even while this loop is going on
+            }
+        } else {
+            if (this._handle) {
+                clearInterval(this._handle);
+                this._handle = null;
+            }
+            if (this._longHandle) {
+                clearInterval(this._longHandle);
+                this._longHandle = null;
+            }
+        }
     }
+
 
     public isInitialized() {
         return this._isInitialized;
@@ -357,7 +362,7 @@ export class Statsbeat {
                 metrics: [statsbeat],
                 properties: this._statbeatMetrics[i].properties,
             };
-            //this._metricHandler.trackStatsbeatMetric(metricTelemetry);
+            this._metricHandler.trackStatsbeatMetric(metricTelemetry);
         }
     }
 

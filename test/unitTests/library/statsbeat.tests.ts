@@ -2,7 +2,7 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 import * as nock from "nock";
 
-import { Statsbeat } from "../../../src/library/statsbeat";
+import { Statsbeat } from "../../../src/autoCollection/metrics/statsbeat";
 import * as Constants from "../../../src/declarations/constants";
 import { Config } from "../../../src/library/configuration";
 

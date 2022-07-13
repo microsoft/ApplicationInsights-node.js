@@ -1,5 +1,4 @@
 import { MetricHandler } from "../../library/handlers/metricHandler";
-import * as Constants from "../../declarations/constants";
 import {
     AggregatedMetric,
     AggregatedMetricCounter,
@@ -305,6 +304,6 @@ export class AutoCollectPreAggregatedMetrics {
             ],
             properties: metricProperties,
         };
-        //this._handler.trackMetric(telemetry);
+        this._handler.trackMetric(telemetry);
     }
 }

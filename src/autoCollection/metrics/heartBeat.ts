@@ -34,6 +34,10 @@ export class HeartBeat {
         this._metricGauge.addCallback(this._trackHeartBeat);
     }
 
+    public enable(isEnabled: boolean) {
+        // TODO: Allow enable/disable functionality?
+    }
+
     public async shutdown(): Promise<void> {
         await this._meterProvider.shutdown();
     }

@@ -1,5 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
+
 import { BatchProcessor } from "./shared/batchProcessor";
 import { LogExporter } from "../exporters";
 import * as Contracts from "../../declarations/contracts";
@@ -30,7 +32,7 @@ import {
     Telemetry,
 } from "../../declarations/contracts";
 import { Logger } from "../logging";
-import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
+
 
 export class LogHandler {
     public isAutoCollectConsole = false;

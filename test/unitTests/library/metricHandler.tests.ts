@@ -70,7 +70,7 @@ describe("Library/LogHandler", () => {
         it("preAggregated metrics enablement during start", () => {
             _config.enableAutoCollectHeartbeat = true;
             let handler = new MetricHandler(_config);
-            let stub = sinon.stub(handler["_heartbeat"], "enable");
+            let stub = sinon.stub(handler["_preAggregatedMetrics"], "enable");
             handler.start();
             assert.ok(stub.calledOnce, "Enable called");
             assert.equal(stub.args[0][0], true);
@@ -122,7 +122,7 @@ describe("Library/LogHandler", () => {
             handler.trackMetric(telemetry);
             handler.flush().then(() => {
                 assert.ok(stub.calledOnce, "Export called");
-                let envelopes = stub.args[0][0];
+                let envelopes = stub.args[0][0] as any;
                 assert.equal(envelopes.length, 1);
                 assert.equal(envelopes[0].name, "Microsoft.ApplicationInsights.1aa11111bbbb1ccc8dddeeeeffff3333.Metric");
                 assert.equal(envelopes[0].version, "1");
@@ -178,7 +178,7 @@ describe("Library/LogHandler", () => {
             handler.trackStatsbeatMetric(telemetry);
             handler.flush().then(() => {
                 assert.ok(stub.calledOnce, "Export called");
-                let envelopes = stub.args[0][0];
+                let envelopes = stub.args[0][0] as any;
                 assert.equal(envelopes.length, 1);
                 assert.equal(envelopes[0].name, "Statsbeat");
                 assert.equal(envelopes[0].version, "1");
