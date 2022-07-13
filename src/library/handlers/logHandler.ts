@@ -33,7 +33,6 @@ import {
 } from "../../declarations/contracts";
 import { Logger } from "../logging";
 
-
 export class LogHandler {
     public isAutoCollectConsole = false;
     public isAutoCollectExternalLoggers = true;
@@ -45,6 +44,7 @@ export class LogHandler {
     private _exporter: LogExporter;
     private _console: AutoCollectConsole;
     private _exceptions: AutoCollectExceptions;
+    private _idGenerator: IdGenerator;
 
     constructor(config: Config) {
         this.config = config;
@@ -53,6 +53,7 @@ export class LogHandler {
         this._initializeFlagsFromConfig();
         this._console = new AutoCollectConsole(this);
         this._exceptions = new AutoCollectExceptions(this);
+        this._idGenerator = new RandomIdGenerator();
     }
 
     public start() {
@@ -94,7 +95,7 @@ export class LogHandler {
     public async trackAvailability(telemetry: Contracts.AvailabilityTelemetry): Promise<void> {
         try {
             const envelope = this._availabilityToEnvelope(telemetry, this.config.instrumentationKey);
-            this.track(envelope);
+            this._batchProcessor.send(envelope);
         }
         catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
@@ -108,7 +109,7 @@ export class LogHandler {
     public async trackPageView(telemetry: Contracts.PageViewTelemetry): Promise<void> {
         try {
             const envelope = this._pageViewToEnvelope(telemetry, this.config.instrumentationKey);
-            this.track(envelope);
+            this._batchProcessor.send(envelope);
         }
         catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
@@ -122,7 +123,7 @@ export class LogHandler {
     public async trackTrace(telemetry: Contracts.TraceTelemetry): Promise<void> {
         try {
             const envelope = this._traceToEnvelope(telemetry, this.config.instrumentationKey);
-            this.track(envelope);
+            this._batchProcessor.send(envelope);
         }
         catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
@@ -139,7 +140,7 @@ export class LogHandler {
         }
         try {
             const envelope = this._exceptionToEnvelope(telemetry, this.config.instrumentationKey);
-            this.track(envelope);
+            this._batchProcessor.send(envelope);
         }
         catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
@@ -153,24 +154,11 @@ export class LogHandler {
     public async trackEvent(telemetry: Contracts.EventTelemetry): Promise<void> {
         try {
             const envelope = this._eventToEnvelope(telemetry, this.config.instrumentationKey);
-            this.track(envelope);
+            this._batchProcessor.send(envelope);
         }
         catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
         }
-    }
-
-    /**
-     * Log a user action or other occurrence.
-     * @param telemetry      Object encapsulating tracking options
-     */
-    public track(telemetry: Envelope): void {
-        // TODO: Telemetry processor, can we still support them in some cases?
-        // TODO: Sampling was done through telemetryProcessor here
-        // TODO: All telemetry processors including Azure property where done here as well
-        // TODO: Perf and Pre Aggregated metrics were calculated here
-
-        this._batchProcessor.send(telemetry);
     }
 
     private _logToEnvelope(
@@ -220,7 +208,7 @@ export class LogHandler {
     ): Envelope {
         let baseType = "AvailabilityData";
         let baseData: AvailabilityData = {
-            id: telemetry.id,
+            id: telemetry.id || this._idGenerator.generateSpanId(),
             name: telemetry.name,
             duration: Util.getInstance().msToTimeSpan(telemetry.duration),
             success: telemetry.success,
@@ -287,7 +275,7 @@ export class LogHandler {
     ): Envelope {
         let baseType = "PageViewData";
         let baseData: PageViewData = {
-            id: telemetry.id,
+            id: telemetry.id || this._idGenerator.generateSpanId(),
             name: telemetry.name,
             duration: Util.getInstance().msToTimeSpan(telemetry.duration),
             url: telemetry.url,

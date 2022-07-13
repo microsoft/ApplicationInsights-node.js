@@ -1,6 +1,7 @@
 var https = require("https");
 var Config = require("../config");
 
+process.removeAllListeners('warning');
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 /** Make a HTTP request */

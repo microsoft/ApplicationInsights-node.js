@@ -13,6 +13,7 @@ export class ResourceManager {
     private _traceResource: Resource;
     private _metricResource: Resource;
     private _logResource: Resource;
+    private _internalSdkVersion: string;
 
     constructor() {
         this._baseResource = Resource.EMPTY;
@@ -41,6 +42,10 @@ export class ResourceManager {
         return this._logResource;
     }
 
+    public getInternalSdkVersion(): string {
+        return this._internalSdkVersion;
+    }
+
     private _loadAttributes() {
         this._baseResource.attributes[SemanticResourceAttributes.SERVICE_NAME] = DEFAULT_ROLE_NAME;
         this._baseResource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = os && os.hostname();
@@ -55,3 +60,7 @@ export class ResourceManager {
         this._baseResource.attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION] = "node:" + sdkVersion;
     }
 }
+
+
+
+
