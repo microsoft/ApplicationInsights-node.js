@@ -86,59 +86,6 @@ export class AutoCollectNativePerformance {
         }
     }
 
-    /**
-     * Parse environment variable and overwrite isEnabled based on respective fields being set
-     *
-     * @private
-     * @param {(boolean | IDisabledExtendedMetrics)} collectExtendedMetrics
-     * @param {(IBaseConfig)} customConfig
-     * @returns {(boolean | IDisabledExtendedMetrics)}
-     * @memberof AutoCollectNativePerformance
-     */
-    public parseEnabled(
-        collectExtendedMetrics: boolean | IDisabledExtendedMetrics,
-        customConfig: IBaseConfig
-    ): { isEnabled: boolean; disabledMetrics: IDisabledExtendedMetrics } {
-        const disableAll = customConfig.disableAllExtendedMetrics;
-        const individualOptOuts = customConfig.extendedMetricDisablers;
-
-        // case 1: disable all env var set, RETURN with isEnabled=false
-        if (disableAll) {
-            return { isEnabled: false, disabledMetrics: {} };
-        }
-
-        // case 2: individual env vars set, RETURN with isEnabled=true, disabledMetrics={...}
-        if (individualOptOuts) {
-            const optOutsArr = individualOptOuts.split(",");
-            const disabledMetrics: any = {};
-            if (optOutsArr.length > 0) {
-                for (const opt of optOutsArr) {
-                    disabledMetrics[opt] = true;
-                }
-            }
-
-            // case 2a: collectExtendedMetrics is an object, overwrite existing ones if they exist
-            if (typeof collectExtendedMetrics === "object") {
-                return {
-                    isEnabled: true,
-                    disabledMetrics: { ...collectExtendedMetrics, ...disabledMetrics },
-                };
-            }
-
-            // case 2b: collectExtendedMetrics is a boolean, set disabledMetrics as is
-            return { isEnabled: collectExtendedMetrics, disabledMetrics };
-        }
-
-        // case 4: no env vars set, input arg is a boolean, RETURN with isEnabled=collectExtendedMetrics, disabledMetrics={}
-        if (typeof collectExtendedMetrics === "boolean") {
-            return { isEnabled: collectExtendedMetrics, disabledMetrics: {} };
-        } else {
-            // use else so we don't need to force typing on collectExtendedMetrics
-            // case 5: no env vars set, input arg is object, RETURN with isEnabled=true, disabledMetrics=collectExtendedMetrics
-            return { isEnabled: true, disabledMetrics: collectExtendedMetrics };
-        }
-    }
-
     private _getHeapUsage(observableResult: ObservableResult) {
         const memoryUsage = process.memoryUsage();
         const { heapUsed } = memoryUsage;
@@ -187,5 +134,59 @@ export class AutoCollectNativePerformance {
                     break;
             }
         }
+    }
+}
+
+
+/**
+* Parse environment variable and overwrite isEnabled based on respective fields being set
+*
+* @private
+* @param {(boolean | IDisabledExtendedMetrics)} collectExtendedMetrics
+* @param {(IBaseConfig)} customConfig
+* @returns {(boolean | IDisabledExtendedMetrics)}
+* @memberof AutoCollectNativePerformance
+*/
+export function getNativeMetricsConfig(
+    collectExtendedMetrics: boolean | IDisabledExtendedMetrics,
+    customConfig: IBaseConfig
+): { isEnabled: boolean; disabledMetrics: IDisabledExtendedMetrics } {
+    const disableAll = customConfig.disableAllExtendedMetrics;
+    const individualOptOuts = customConfig.extendedMetricDisablers;
+
+    // case 1: disable all env var set, RETURN with isEnabled=false
+    if (disableAll) {
+        return { isEnabled: false, disabledMetrics: {} };
+    }
+
+    // case 2: individual env vars set, RETURN with isEnabled=true, disabledMetrics={...}
+    if (individualOptOuts) {
+        const optOutsArr = individualOptOuts.split(",");
+        const disabledMetrics: any = {};
+        if (optOutsArr.length > 0) {
+            for (const opt of optOutsArr) {
+                disabledMetrics[opt] = true;
+            }
+        }
+
+        // case 2a: collectExtendedMetrics is an object, overwrite existing ones if they exist
+        if (typeof collectExtendedMetrics === "object") {
+            return {
+                isEnabled: true,
+                disabledMetrics: { ...collectExtendedMetrics, ...disabledMetrics },
+            };
+        }
+
+        // case 2b: collectExtendedMetrics is a boolean, set disabledMetrics as is
+        return { isEnabled: collectExtendedMetrics, disabledMetrics };
+    }
+
+    // case 4: no env vars set, input arg is a boolean, RETURN with isEnabled=collectExtendedMetrics, disabledMetrics={}
+    if (typeof collectExtendedMetrics === "boolean") {
+        return { isEnabled: collectExtendedMetrics, disabledMetrics: {} };
+    } else {
+        // use else so we don't need to force typing on collectExtendedMetrics
+        // case 5: no env vars set, input arg is object, RETURN with isEnabled=true, disabledMetrics=collectExtendedMetrics
+        return { isEnabled: true, disabledMetrics: collectExtendedMetrics };
     }
 }

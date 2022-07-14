@@ -1,19 +1,24 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import { AzureExporterConfig, AzureMonitorMetricExporter, } from "@azure/monitor-opentelemetry-exporter";
 import { Meter } from "@opentelemetry/api-metrics";
 import {
     MeterProvider,
     MeterProviderOptions,
+    PeriodicExportingMetricReader,
+    PeriodicExportingMetricReaderOptions,
 } from "@opentelemetry/sdk-metrics-base";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
 import { BatchProcessor } from "./shared/batchProcessor";
+import { MetricExporter } from "../exporters";
 import { Config } from "../configuration";
 import { IDisabledExtendedMetrics } from "../configuration/interfaces";
 import {
     AutoCollectNativePerformance,
     AutoCollectPreAggregatedMetrics,
     AutoCollectPerformance,
+    getNativeMetricsConfig,
 } from "../../autoCollection";
 import { MetricTelemetry } from "../../declarations/contracts";
 import * as Contracts from "../../declarations/contracts";
@@ -33,7 +38,6 @@ import {
 } from "../../autoCollection/metrics/types";
 import { ResourceManager } from "./resourceManager";
 import { HeartBeat } from "../../autoCollection/metrics/heartBeat";
-import { createMeterProvider } from "../../autoCollection/metrics/utils";
 import { Util } from "../util";
 
 
@@ -46,7 +50,11 @@ export class MetricHandler {
     public isDependencies = true;
     public isNativePerformance = false;
     public disabledExtendedMetrics: IDisabledExtendedMetrics;
+    private _collectionInterval: number = 600000;
     private _meterProvider: MeterProvider;
+    private _exporter: MetricExporter;
+    private _azureExporter: AzureMonitorMetricExporter;
+    private _metricReader: PeriodicExportingMetricReader;
     private _meter: Meter;
     private _config: Config;
     private _isStarted = false;
@@ -59,15 +67,28 @@ export class MetricHandler {
     constructor(config: Config) {
         this._config = config;
         this._initializeFlagsFromConfig();
+        this._exporter = new MetricExporter(this._config);
+        this._batchProcessor = new BatchProcessor(this._config, this._exporter);
         const meterProviderConfig: MeterProviderOptions = {
             resource: ResourceManager.getInstance().getTraceResource(),
         };
-        this._meterProvider = createMeterProvider(this._config, meterProviderConfig);
+        this._meterProvider = new MeterProvider(meterProviderConfig);
+        let exporterConfig: AzureExporterConfig = {
+            connectionString: config.getConnectionString(),
+            aadTokenCredential: config.aadTokenCredential
+        };
+        this._azureExporter = new AzureMonitorMetricExporter(exporterConfig);
+        const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
+            exporter: this._azureExporter,
+            exportIntervalMillis: this._collectionInterval
+        };
+        this._metricReader = new PeriodicExportingMetricReader(metricReaderOptions);
+        this._meterProvider.addMetricReader(this._metricReader);
         this._meter = this._meterProvider.getMeter("ApplicationInsightsMeter");
         this._nativePerformance = new AutoCollectNativePerformance(this._meter);
         this._performance = new AutoCollectPerformance(this._meter);
+        this._heartbeat = new HeartBeat(this._config);
         this._preAggregatedMetrics = new AutoCollectPreAggregatedMetrics(this);
-
     }
 
     public start() {
@@ -75,6 +96,7 @@ export class MetricHandler {
         this._performance.enable(this.isPerformance);
         this._preAggregatedMetrics.enable(this.isPreAggregatedMetrics);
         this._nativePerformance.enable(this.isNativePerformance, this.disabledExtendedMetrics);
+        this._heartbeat.enable(this.isHeartBeat);
     }
 
     public async flush(): Promise<void> {
@@ -103,7 +125,6 @@ export class MetricHandler {
         // TODO: Perf and Pre Aggregated metrics were calculated here
 
         this._batchProcessor.send(telemetry);
-        this._meterProvider.forceFlush();
     }
 
     public setAutoCollectPerformance(
@@ -111,7 +132,7 @@ export class MetricHandler {
         collectExtendedMetrics: boolean | IDisabledExtendedMetrics = true
     ) {
         this.isPerformance = value;
-        const extendedMetricsConfig = this._nativePerformance.parseEnabled(
+        const extendedMetricsConfig = getNativeMetricsConfig(
             collectExtendedMetrics,
             this._config
         );
@@ -168,12 +189,11 @@ export class MetricHandler {
     }
 
     public async shutdown(): Promise<void> {
-        this._performance.enable(false);
-        this._preAggregatedMetrics.enable(false);
-
-        this._nativePerformance.enable(false);
-        this._heartbeat.shutdown();
-        this._meterProvider.shutdown();
+        // this._performance.enable(false);
+        // this._preAggregatedMetrics.enable(false);
+        // this._nativePerformance.enable(false);
+        // this._heartbeat.shutdown();
+        // this._meterProvider.shutdown();
     }
 
     public getMeterProvider(): MeterProvider {
@@ -198,7 +218,7 @@ export class MetricHandler {
                 ? this._config.enableAutoCollectHeartbeat
                 : this.isHeartBeat;
 
-        const extendedMetricsConfig = this._nativePerformance.parseEnabled(
+        const extendedMetricsConfig = getNativeMetricsConfig(
             this._config.enableAutoCollectExtendedMetrics || this.isNativePerformance,
             this._config
         );

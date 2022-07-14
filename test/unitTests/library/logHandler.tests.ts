@@ -74,7 +74,7 @@ describe("Library/LogHandler", () => {
 
     describe("#manual track APIs", () => {
         it("_logToEnvelope", () => {
-            let handler = new LogHandler(_config, _context)
+            let handler = new LogHandler(_config)
             let telemetry: Telemetry = {};
             let data: MonitorDomain = {};
             let envelope = handler["_logToEnvelope"](telemetry, "TestData", data, "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
@@ -92,9 +92,9 @@ describe("Library/LogHandler", () => {
         });
 
         it("tracing", () => {
-            let logHandler = new LogHandler(_config, _context);
-            let traceHandler = new TraceHandler(_config, _context);
-            traceHandler.tracer.startActiveSpan("test", () => {
+            let logHandler = new LogHandler(_config);
+            let traceHandler = new TraceHandler(_config);
+            traceHandler["_tracer"].startActiveSpan("test", () => {
                 let envelope = logHandler["_logToEnvelope"]({}, "", {}, "");
                 let spanContext = trace.getSpanContext(context.active());
                 assert.ok(isValidTraceId(envelope.tags["ai.operation.id"]), "Valid operation Id");

@@ -2,13 +2,13 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 import { ExportResultCode } from "@opentelemetry/core";
 
-import { MetricHandler, ResourceManager } from "../../../src/library/handlers";
+import { MetricHandler } from "../../../src/library/handlers";
 import { Config } from "../../../src/library/configuration";
 import { MetricTelemetry, MetricPointTelemetry } from "../../../src/declarations/contracts";
 
 
 
-describe("Library/LogHandler", () => {
+describe("Library/MetricHandler", () => {
     let sandbox: sinon.SinonSandbox;
     let _config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
 
@@ -67,10 +67,10 @@ describe("Library/LogHandler", () => {
             assert.equal(stub.args[1][0], true);
         });
 
-        it("preAggregated metrics enablement during start", () => {
+        it("heartbeat metrics enablement during start", () => {
             _config.enableAutoCollectHeartbeat = true;
             let handler = new MetricHandler(_config);
-            let stub = sinon.stub(handler["_preAggregatedMetrics"], "enable");
+            let stub = sinon.stub(handler["_heartbeat"], "enable");
             handler.start();
             assert.ok(stub.calledOnce, "Enable called");
             assert.equal(stub.args[0][0], true);

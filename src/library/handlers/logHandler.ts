@@ -1,5 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import { context, trace } from "@opentelemetry/api";
+import { IdGenerator, RandomIdGenerator } from "@opentelemetry/core";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
 import { BatchProcessor } from "./shared/batchProcessor";
@@ -32,6 +34,7 @@ import {
     Telemetry,
 } from "../../declarations/contracts";
 import { Logger } from "../logging";
+
 
 export class LogHandler {
     public isAutoCollectConsole = false;
@@ -317,6 +320,17 @@ export class LogHandler {
         }
         const serviceInstanceId = attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID];
         tags[KnownContextTagKeys.AiCloudRoleInstance] = String(serviceInstanceId);
+        tags[KnownContextTagKeys.AiInternalSdkVersion] = String(attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION]);
+
+         // Add Correlation headers
+         const spanContext = trace.getSpanContext(context.active());
+         if (spanContext) {
+             tags[KnownContextTagKeys.AiOperationId] = spanContext.traceId;
+             tags[KnownContextTagKeys.AiOperationParentId] = spanContext.spanId;
+         }
+         else{
+             tags[KnownContextTagKeys.AiOperationId] = this._idGenerator.generateTraceId();
+         }
         return tags;
     }
 

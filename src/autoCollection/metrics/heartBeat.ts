@@ -14,12 +14,13 @@ import { HeartBeatMetricName } from "../../declarations/constants";
 import { Config } from "../../library/configuration";
 import { IVirtualMachineInfo } from "../../library/azureVirtualMachine";
 import { Logger } from "../../library/logging";
-import { createMeterProvider } from "./utils";
 
 export class HeartBeat {
     private _collectionInterval: number = 900000;
     private _config: Config;
-    private _meterProvider: MeterProvider;
+    private _meterProvider: MeterProvider; 
+    private _exporter: AzureMonitorMetricExporter;
+    private _metricReader: PeriodicExportingMetricReader;
     private _meter: Meter;
     private _metricGauge: ObservableGauge;
     private _isVM: boolean;
@@ -28,7 +29,18 @@ export class HeartBeat {
     constructor(config: Config) {
         this._config = config;
         this._azureVm = new AzureVirtualMachine();
-        this._meterProvider = createMeterProvider(this._config, null, this._collectionInterval);
+        this._meterProvider = new MeterProvider();
+        let exporterConfig: AzureExporterConfig = {
+            connectionString: config.getConnectionString(),
+            aadTokenCredential: config.aadTokenCredential
+        };
+        this._exporter = new AzureMonitorMetricExporter(exporterConfig);
+        const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
+            exporter: this._exporter,
+            exportIntervalMillis: this._collectionInterval
+        };
+        this._metricReader = new PeriodicExportingMetricReader(metricReaderOptions);
+        this._meterProvider.addMetricReader(this._metricReader);
         this._meter = this._meterProvider.getMeter("ApplicationInsightsHeartBeatMeter");
         this._metricGauge = this._meter.createObservableGauge(HeartBeatMetricName);
         this._metricGauge.addCallback(this._trackHeartBeat);
