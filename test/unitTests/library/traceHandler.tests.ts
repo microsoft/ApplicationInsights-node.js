@@ -7,6 +7,7 @@ import { ExportResultCode } from "@opentelemetry/core";
 import { TraceHandler, ResourceManager } from "../../../src/library/handlers/";
 import { Config } from "../../../src/library/configuration";
 import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations/contracts";
+import { Instrumentation } from "@opentelemetry/instrumentation";
 
 
 describe("Library/TraceHandlers", () => {
@@ -23,17 +24,21 @@ describe("Library/TraceHandlers", () => {
         sandbox.restore();
     });
 
-    // describe("#autoCollect", () => {
-    //     it("performance enablement during start", () => {
-    //         _config.enableAutoCollectPerformance = true;
-    //         let handler = new MetricHandler(_config, _context);
-    //         let stub = sinon.stub(handler["_performance"], "enable");
-    //         handler.start();
-    //         assert.ok(stub.calledOnce, "Enable called");
-    //         assert.equal(stub.args[0][0], true);
-    //     });
+    describe("#Instrumentation Enablement", () => {
+        it("HttpMetricsInstrumentation", () => {
+            _config.enableAutoCollectPerformance = true;
+            let handler = new TraceHandler(_config);
+            handler.start();
+            let found = false;
+            handler["_instrumentations"].forEach((instrumentation: Instrumentation) => {
+                if (instrumentation.instrumentationName == "AzureHttpMetricsInstrumentation") {
+                    found = true;
+                }
+            });
+            assert.ok(found, "AzureHttpMetricsInstrumentation not added");
+        });
 
-    // });
+    });
 
     describe("#autoCollection of HTTP/HTTPS requests", () => {
         let exportStub: sinon.SinonStub;

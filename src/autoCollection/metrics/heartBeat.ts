@@ -1,6 +1,6 @@
 import * as os from "os";
 import { AzureExporterConfig, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
-import { Meter, ObservableGauge, ObservableResult } from "@opentelemetry/api-metrics";
+import { Meter, ObservableCallback, ObservableGauge, ObservableResult } from "@opentelemetry/api-metrics";
 import {
     MeterProvider,
     PeriodicExportingMetricReader,
@@ -23,6 +23,7 @@ export class HeartBeat {
     private _metricReader: PeriodicExportingMetricReader;
     private _meter: Meter;
     private _metricGauge: ObservableGauge;
+    private _metricGaugeCallback: ObservableCallback;
     private _isVM: boolean;
     private _azureVm: AzureVirtualMachine;
     private _machineProperties: { [key: string]: string };
@@ -44,15 +45,16 @@ export class HeartBeat {
         this._meterProvider.addMetricReader(this._metricReader);
         this._meter = this._meterProvider.getMeter("ApplicationInsightsHeartBeatMeter");
         this._metricGauge = this._meter.createObservableGauge(HeartBeatMetricName);
+        this._metricGaugeCallback = this._trackHeartBeat.bind(this);
     }
 
     public async enable(isEnabled: boolean) {
         if (isEnabled) {
-            
-            this._metricGauge.addCallback(this._trackHeartBeat.bind(this));
+            this._machineProperties = await this._getMachineProperties();
+            this._metricGauge.addCallback(this._metricGaugeCallback);
         }
         else {
-            this._metricGauge.removeCallback(this._trackHeartBeat);
+            this._metricGauge.removeCallback(this._metricGaugeCallback);
         }
     }
 

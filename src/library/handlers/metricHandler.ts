@@ -86,7 +86,7 @@ export class MetricHandler {
         this._meterProvider.addMetricReader(this._metricReader);
         this._meter = this._meterProvider.getMeter("ApplicationInsightsMeter");
         this._nativePerformance = new AutoCollectNativePerformance(this._meter);
-        this._performance = new AutoCollectPerformance(this._meter);
+        this._performance = new AutoCollectPerformance(this._meter, this._config);
         this._heartbeat = new HeartBeat(this._config);
         this._preAggregatedMetrics = new AutoCollectPreAggregatedMetrics(this);
     }
@@ -202,6 +202,10 @@ export class MetricHandler {
 
     public getMeter(): Meter {
         return this._meter;
+    }
+
+    public getConfig(): Config {
+        return this._config;
     }
 
     private _initializeFlagsFromConfig() {

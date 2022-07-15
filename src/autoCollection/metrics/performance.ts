@@ -1,30 +1,41 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import * as os from "os";
-import { Meter, ObservableGauge, ObservableResult, ValueType } from "@opentelemetry/api-metrics";
+import { Meter, ObservableCallback, ObservableGauge, ObservableResult, ValueType } from "@opentelemetry/api-metrics";
 import { QuickPulseCounter, PerformanceCounter } from "../../declarations/constants";
 import { HttpMetricsInstrumentation } from "./httpMetricsInstrumentation";
+import { Config } from "../../library";
 
 
 export class AutoCollectPerformance {
-
+    private _config: Config;
     private _meter: Meter;
     private _enableLiveMetricsCounters: boolean;
     private _httpMetrics: HttpMetricsInstrumentation
-    private _isEnabled: boolean;
     // Perf counters
     private _memoryPrivateBytesGauge: ObservableGauge;
+    private _memoryPrivateBytesGaugeCallback: ObservableCallback;
     private _memoryAvailableBytesGauge: ObservableGauge;
+    private _memoryAvailableBytesGaugeCallback: ObservableCallback;
     private _processorTimeGauge: ObservableGauge;
+    private _processorTimeGaugeCallback: ObservableCallback;
     private _processTimeGauge: ObservableGauge;
+    private _processTimeGaugeCallback: ObservableCallback;
     private _requestRateGauge: ObservableGauge;
+    private _requestRateGaugeCallback: ObservableCallback;
     private _requestDurationGauge: ObservableGauge;
+    private _requestDurationGaugeCallback: ObservableCallback;
     // Live Metrics Perf counters
     private _memoryCommittedBytesGauge: ObservableGauge;
+    private _memoryCommittedBytesGaugeCallback: ObservableCallback;
     private _requestFailureRateGauge: ObservableGauge;
+    private _requestFailureRateGaugeCallback: ObservableCallback;
     private _dependencyFailureRateGauge: ObservableGauge;
+    private _dependencyFailureRateGaugeCallback: ObservableCallback;
     private _dependencyRateGauge: ObservableGauge;
+    private _dependencyRateGaugeCallback: ObservableCallback;
     private _dependencyDurationGauge: ObservableGauge;
+    private _dependencyDurationGaugeCallback: ObservableCallback;
     private _exceptionRateGauge: ObservableGauge; // TODO: Not implemented yet
 
     private _lastAppCpuUsage: { user: number; system: number };
@@ -41,12 +52,10 @@ export class AutoCollectPerformance {
     private _lastFailureDependencyRate: { count: number; time: number; executionInterval: number; };
     private _lastDependencyDuration: { count: number; time: number; executionInterval: number; };
 
-    /**
-     * @param enableLiveMetricsCounters - enable sending additional live metrics information (dependency metrics, exception metrics, committed memory)
-     */
-    constructor(meter: Meter, enableLiveMetricsCounters = false) {
+    constructor(meter: Meter, config: Config) {
         this._meter = meter;
-        this._enableLiveMetricsCounters = enableLiveMetricsCounters;
+        this._config = config;
+        this._enableLiveMetricsCounters = this._config.enableSendLiveMetrics;
         this._lastRequestRate = { count: 0, time: 0, executionInterval: 0 };
         this._lastFailureRequestRate = { count: 0, time: 0, executionInterval: 0 };
         this._lastRequestDuration = { count: 0, time: 0, executionInterval: 0 };
@@ -64,15 +73,26 @@ export class AutoCollectPerformance {
         this._requestDurationGauge = this._meter.createObservableGauge(PerformanceCounter.REQUEST_DURATION, { description: "Incoming Requests Average Execution Time", valueType: ValueType.DOUBLE });
         // Live metrics perf counters
         this._memoryCommittedBytesGauge = this._meter.createObservableGauge(QuickPulseCounter.COMMITTED_BYTES, { description: "Amount of committed memory in bytes", valueType: ValueType.INT });
-        this._exceptionRateGauge = this._meter.createObservableGauge(QuickPulseCounter.EXCEPTION_RATE, { description: "Exceptions per second", valueType: ValueType.DOUBLE });
         this._dependencyRateGauge = this._meter.createObservableGauge(QuickPulseCounter.DEPENDENCY_RATE, { description: "Incoming Requests Rate", valueType: ValueType.DOUBLE });
         this._dependencyFailureRateGauge = this._meter.createObservableGauge(QuickPulseCounter.DEPENDENCY_FAILURE_RATE, { description: "Failed Outgoing Requests per second", valueType: ValueType.DOUBLE });
         this._dependencyDurationGauge = this._meter.createObservableGauge(QuickPulseCounter.DEPENDENCY_DURATION, { description: "Average Outgoing Requests duration", valueType: ValueType.DOUBLE });
         this._requestFailureRateGauge = this._meter.createObservableGauge(QuickPulseCounter.REQUEST_FAILURE_RATE, { description: "Incoming Requests Failed Rate", valueType: ValueType.DOUBLE })
+        this._exceptionRateGauge = this._meter.createObservableGauge(QuickPulseCounter.EXCEPTION_RATE, { description: "Exceptions per second", valueType: ValueType.DOUBLE });
+
+        this._memoryPrivateBytesGaugeCallback = this._getPrivateMemory.bind(this);
+        this._memoryAvailableBytesGaugeCallback = this._getAvailableMemory.bind(this);
+        this._processorTimeGaugeCallback = this._getProcessTime.bind(this);
+        this._processTimeGaugeCallback = this._getProcessorTime.bind(this);
+        this._requestRateGaugeCallback = this._getRequestRate.bind(this);
+        this._requestDurationGaugeCallback = this._getRequestDuration.bind(this);
+        this._memoryCommittedBytesGaugeCallback = this._getCommittedMemory.bind(this);
+        this._requestFailureRateGaugeCallback = this._getFailureRequestRate.bind(this);
+        this._dependencyFailureRateGaugeCallback = this._getFailureDependencyRate.bind(this);
+        this._dependencyRateGaugeCallback = this._getDependencyRate.bind(this);
+        this._dependencyDurationGaugeCallback = this._getDependencyDuration.bind(this);
     }
 
     public enable(isEnabled: boolean) {
-        this._isEnabled = isEnabled;
         if (isEnabled) {
             this._lastCpus = os.cpus();
 
@@ -109,35 +129,35 @@ export class AutoCollectPerformance {
             this._lastAppCpuUsage = (process as any).cpuUsage();
             this._lastHrtime = process.hrtime();
 
-            this._memoryPrivateBytesGauge.addCallback(this._getPrivateMemory.bind(this));
-            this._memoryAvailableBytesGauge.addCallback(this._getAvailableMemory.bind(this));
-            this._processTimeGauge.addCallback(this._getProcessTime.bind(this));
-            this._processorTimeGauge.addCallback(this._getProcessorTime.bind(this));
-            this._requestDurationGauge.addCallback(this._getRequestDuration.bind(this));
-            this._requestRateGauge.addCallback(this._getRequestRate.bind(this));
+            this._memoryPrivateBytesGauge.addCallback(this._memoryPrivateBytesGaugeCallback);
+            this._memoryAvailableBytesGauge.addCallback(this._memoryAvailableBytesGaugeCallback);
+            this._processTimeGauge.addCallback(this._processTimeGaugeCallback);
+            this._processorTimeGauge.addCallback(this._processorTimeGaugeCallback);
+            this._requestDurationGauge.addCallback(this._requestDurationGaugeCallback);
+            this._requestRateGauge.addCallback(this._requestRateGaugeCallback);
 
             if (this._enableLiveMetricsCounters) {
-                this._memoryCommittedBytesGauge.addCallback(this._getCommittedMemory.bind(this));
-                this._requestFailureRateGauge.addCallback(this._getFailureRequestRate.bind(this));
-                this._dependencyDurationGauge.addCallback(this._getDependencyDuration.bind(this));
-                this._dependencyFailureRateGauge.addCallback(this._getFailureDependencyRate.bind(this));
-                this._dependencyRateGauge.addCallback(this._getDependencyRate.bind(this));
+                this._memoryCommittedBytesGauge.addCallback(this._memoryCommittedBytesGaugeCallback);
+                this._requestFailureRateGauge.addCallback(this._requestFailureRateGaugeCallback);
+                this._dependencyDurationGauge.addCallback(this._dependencyDurationGaugeCallback);
+                this._dependencyFailureRateGauge.addCallback(this._dependencyFailureRateGaugeCallback);
+                this._dependencyRateGauge.addCallback(this._dependencyRateGaugeCallback);
             }
         }
         else {
-            this._memoryPrivateBytesGauge.removeCallback(this._getPrivateMemory);
-            this._memoryAvailableBytesGauge.removeCallback(this._getAvailableMemory);
-            this._processTimeGauge.removeCallback(this._getProcessTime);
-            this._processorTimeGauge.removeCallback(this._getProcessorTime);
-            this._requestDurationGauge.removeCallback(this._getRequestDuration);
-            this._requestRateGauge.removeCallback(this._getRequestRate);
+            this._memoryPrivateBytesGauge.removeCallback(this._memoryPrivateBytesGaugeCallback);
+            this._memoryAvailableBytesGauge.removeCallback(this._memoryAvailableBytesGaugeCallback);
+            this._processTimeGauge.removeCallback(this._processTimeGaugeCallback);
+            this._processorTimeGauge.removeCallback(this._processorTimeGaugeCallback);
+            this._requestDurationGauge.removeCallback(this._requestDurationGaugeCallback);
+            this._requestRateGauge.removeCallback(this._requestRateGaugeCallback);
 
             if (this._enableLiveMetricsCounters) {
-                this._memoryCommittedBytesGauge.removeCallback(this._getCommittedMemory);
-                this._requestFailureRateGauge.removeCallback(this._getFailureRequestRate);
-                this._dependencyDurationGauge.removeCallback(this._getDependencyDuration);
-                this._dependencyFailureRateGauge.removeCallback(this._getFailureDependencyRate);
-                this._dependencyRateGauge.removeCallback(this._getDependencyRate);
+                this._memoryCommittedBytesGauge.removeCallback(this._memoryCommittedBytesGaugeCallback);
+                this._requestFailureRateGauge.removeCallback(this._requestFailureRateGaugeCallback);
+                this._dependencyDurationGauge.removeCallback(this._dependencyDurationGaugeCallback);
+                this._dependencyFailureRateGauge.removeCallback(this._dependencyFailureRateGaugeCallback);
+                this._dependencyRateGauge.removeCallback(this._dependencyRateGaugeCallback);
             }
         }
     }
@@ -240,7 +260,7 @@ export class AutoCollectPerformance {
             var averageRequestExecutionTime =
                 (this._httpMetrics.intervalRequestExecutionTime - this._lastRequestDuration.executionInterval) /
                 intervalRequests || 0; // default to 0 in case no requests in this interval
-                this._lastRequestDuration.executionInterval = this._httpMetrics.intervalRequestExecutionTime; // reset
+            this._lastRequestDuration.executionInterval = this._httpMetrics.intervalRequestExecutionTime; // reset
             observableResult.observe(averageRequestExecutionTime);
         }
         this._lastRequestDuration = {
@@ -290,7 +310,7 @@ export class AutoCollectPerformance {
             var averageDependencyExecutionTime =
                 (this._httpMetrics.intervalDependencyExecutionTime - this._lastDependencyDuration.executionInterval) /
                 intervalDependencys || 0; // default to 0 in case no Dependencys in this interval
-                this._lastDependencyDuration.executionInterval = this._httpMetrics.intervalDependencyExecutionTime; // reset
+            this._lastDependencyDuration.executionInterval = this._httpMetrics.intervalDependencyExecutionTime; // reset
             observableResult.observe(averageDependencyExecutionTime);
         }
         this._lastDependencyDuration = {

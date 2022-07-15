@@ -31,11 +31,13 @@ describe("AutoCollection/HeartBeat", () => {
     describe("#Metrics", () => {
         it("should create instruments", () => {
             let heartBeat = new HeartBeat(config);
+            sandbox.stub(heartBeat["_metricReader"]["_exporter"], "export");
             assert.ok(heartBeat["_metricGauge"], "_metricGauge not available");
         });
 
         it("should observe instruments during collection", (done) => {
             let heartBeat = new HeartBeat(config);
+            sandbox.stub(heartBeat["_metricReader"]["_exporter"], "export");
             heartBeat.enable(true).then(() => {
                 heartBeat["_metricReader"].collect().then(({ resourceMetrics, errors }) => {
                     assert.equal(errors.length, 0, "Errors found during collection");
@@ -53,18 +55,40 @@ describe("AutoCollection/HeartBeat", () => {
                 }).catch((error) => done(error));
             }).catch((error) => done(error));
         });
+
+        it("should not collect when disabled", (done) => {
+            let heartBeat = new HeartBeat(config);
+            sandbox.stub(heartBeat["_metricReader"]["_exporter"], "export");
+            heartBeat.enable(true).then(() => {
+                heartBeat.enable(false).then(() => {
+                    heartBeat["_metricReader"].collect().then(({ resourceMetrics, errors }) => {
+                        assert.equal(errors.length, 0, "Errors found during collection");
+                        assert.equal(resourceMetrics.scopeMetrics.length, 1, "Wrong number of scopeMetrics");
+                        let metricsWithDataPoints: MetricData[] = []; // Only Metrics with data points will be exported
+                        resourceMetrics.scopeMetrics[0].metrics.forEach(metric => {
+                            if (metric.dataPoints.length > 0) {
+                                metricsWithDataPoints.push(metric);
+                            }
+                        });
+                        assert.equal(metricsWithDataPoints.length, 0, "Wrong number of instruments");
+                        done();
+                    }).catch((error) => done(error));
+                });
+            }).catch((error) => done(error));
+        });
     });
 
     describe("#_getMachineProperties()", () => {
         it("should read correct web app values from environment variable", (done) => {
-            const heartbeat: HeartBeat = new HeartBeat(config);
+            const heartBeat: HeartBeat = new HeartBeat(config);
+            sandbox.stub(heartBeat["_metricReader"]["_exporter"], "export");
             var env1 = <{ [id: string]: string }>{};
             env1["WEBSITE_SITE_NAME"] = "site_name";
             env1["WEBSITE_HOME_STAMPNAME"] = "stamp_name";
             env1["WEBSITE_HOSTNAME"] = "host_name";
             process.env = env1;
 
-            heartbeat["_getMachineProperties"]().then((properties) => {
+            heartBeat["_getMachineProperties"]().then((properties) => {
                 const keys = Object.keys(properties);
                 assert.equal(
                     keys.length,
@@ -111,6 +135,7 @@ describe("AutoCollection/HeartBeat", () => {
 
         it("should read correct function app values from environment variable", (done) => {
             const heartbeat: HeartBeat = new HeartBeat(config);
+            sandbox.stub(heartbeat["_metricReader"]["_exporter"], "export");
             var env2 = <{ [id: string]: string }>{};
             env2["FUNCTIONS_WORKER_RUNTIME"] = "nodejs";
             env2["WEBSITE_HOSTNAME"] = "host_name";
