@@ -72,9 +72,9 @@ export class AutoCollectNativePerformance {
                 this._handle.unref();
             }
             // Add observable callbacks
-            this._heapMemoryTotalGauge.addCallback(this._getHeapTotal);
-            this._heapMemoryUsageGauge.addCallback(this._getHeapUsage);
-            this._memoryUsageNonHeapGauge.addCallback(this._getNonHeapUsage);
+            this._heapMemoryTotalGauge.addCallback(this._getHeapTotal.bind(this));
+            this._heapMemoryUsageGauge.addCallback(this._getHeapUsage.bind(this));
+            this._memoryUsageNonHeapGauge.addCallback(this._getNonHeapUsage.bind(this));
 
         } else if (this._emitter) {
             // disable self
@@ -83,6 +83,10 @@ export class AutoCollectNativePerformance {
                 clearInterval(this._handle);
                 this._handle = undefined;
             }
+             // Remove observable callbacks
+             this._heapMemoryTotalGauge.removeCallback(this._getHeapTotal);
+             this._heapMemoryUsageGauge.removeCallback(this._getHeapUsage);
+             this._memoryUsageNonHeapGauge.removeCallback(this._getNonHeapUsage);
         }
     }
 

@@ -69,27 +69,77 @@ export class AutoCollectPerformance {
         this._dependencyFailureRateGauge = this._meter.createObservableGauge(QuickPulseCounter.DEPENDENCY_FAILURE_RATE, { description: "Failed Outgoing Requests per second", valueType: ValueType.DOUBLE });
         this._dependencyDurationGauge = this._meter.createObservableGauge(QuickPulseCounter.DEPENDENCY_DURATION, { description: "Average Outgoing Requests duration", valueType: ValueType.DOUBLE });
         this._requestFailureRateGauge = this._meter.createObservableGauge(QuickPulseCounter.REQUEST_FAILURE_RATE, { description: "Incoming Requests Failed Rate", valueType: ValueType.DOUBLE })
-
-        this._memoryPrivateBytesGauge.addCallback(this._getPrivateMemory);
-        this._memoryAvailableBytesGauge.addCallback(this._getAvailableMemory);
-        this._processTimeGauge.addCallback(this._getProcessTime);
-        this._processorTimeGauge.addCallback(this._getProcessorTime);
-        this._requestDurationGauge.addCallback(this._getRequestDuration);
-        this._requestRateGauge.addCallback(this._getRequestRate);
-
-        if (this._enableLiveMetricsCounters) {
-            this._memoryCommittedBytesGauge.addCallback(this._getCommittedMemory);
-            this._requestFailureRateGauge.addCallback(this._getFailureRequestRate);
-            this._dependencyDurationGauge.addCallback(this._getDependencyDuration);
-            this._dependencyFailureRateGauge.addCallback(this._getFailureDependencyRate);
-            this._dependencyRateGauge.addCallback(this._getDependencyRate);
-        }
     }
 
     public enable(isEnabled: boolean) {
         this._isEnabled = isEnabled;
-        // TODO: Update view to choose which metrics to export?
-        // TODO: Allow enable/disable functionality?
+        if (isEnabled) {
+            this._lastCpus = os.cpus();
+
+            this._lastRequestRate = {
+                count: this._httpMetrics.totalRequestCount,
+                time: +new Date(),
+                executionInterval: this._httpMetrics.intervalRequestExecutionTime
+            };
+            this._lastFailureRequestRate = {
+                count: this._httpMetrics.totalFailedRequestCount,
+                time: +new Date(),
+                executionInterval: this._httpMetrics.intervalRequestExecutionTime
+            };
+            this._lastRequestDuration = {
+                count: this._httpMetrics.totalRequestCount,
+                time: +new Date(),
+                executionInterval: this._httpMetrics.intervalRequestExecutionTime
+            };
+            this._lastDependencyRate = {
+                count: this._httpMetrics.totalDependencyCount,
+                time: +new Date(),
+                executionInterval: this._httpMetrics.intervalDependencyExecutionTime
+            };
+            this._lastFailureDependencyRate = {
+                count: this._httpMetrics.totalFailedRequestCount,
+                time: +new Date(),
+                executionInterval: this._httpMetrics.intervalDependencyExecutionTime
+            };
+            this._lastDependencyDuration = {
+                count: this._httpMetrics.totalDependencyCount,
+                time: +new Date(),
+                executionInterval: this._httpMetrics.intervalDependencyExecutionTime
+            };
+            this._lastAppCpuUsage = (process as any).cpuUsage();
+            this._lastHrtime = process.hrtime();
+
+            this._memoryPrivateBytesGauge.addCallback(this._getPrivateMemory.bind(this));
+            this._memoryAvailableBytesGauge.addCallback(this._getAvailableMemory.bind(this));
+            this._processTimeGauge.addCallback(this._getProcessTime.bind(this));
+            this._processorTimeGauge.addCallback(this._getProcessorTime.bind(this));
+            this._requestDurationGauge.addCallback(this._getRequestDuration.bind(this));
+            this._requestRateGauge.addCallback(this._getRequestRate.bind(this));
+
+            if (this._enableLiveMetricsCounters) {
+                this._memoryCommittedBytesGauge.addCallback(this._getCommittedMemory.bind(this));
+                this._requestFailureRateGauge.addCallback(this._getFailureRequestRate.bind(this));
+                this._dependencyDurationGauge.addCallback(this._getDependencyDuration.bind(this));
+                this._dependencyFailureRateGauge.addCallback(this._getFailureDependencyRate.bind(this));
+                this._dependencyRateGauge.addCallback(this._getDependencyRate.bind(this));
+            }
+        }
+        else {
+            this._memoryPrivateBytesGauge.removeCallback(this._getPrivateMemory);
+            this._memoryAvailableBytesGauge.removeCallback(this._getAvailableMemory);
+            this._processTimeGauge.removeCallback(this._getProcessTime);
+            this._processorTimeGauge.removeCallback(this._getProcessorTime);
+            this._requestDurationGauge.removeCallback(this._getRequestDuration);
+            this._requestRateGauge.removeCallback(this._getRequestRate);
+
+            if (this._enableLiveMetricsCounters) {
+                this._memoryCommittedBytesGauge.removeCallback(this._getCommittedMemory);
+                this._requestFailureRateGauge.removeCallback(this._getFailureRequestRate);
+                this._dependencyDurationGauge.removeCallback(this._getDependencyDuration);
+                this._dependencyFailureRateGauge.removeCallback(this._getFailureDependencyRate);
+                this._dependencyRateGauge.removeCallback(this._getDependencyRate);
+            }
+        }
     }
 
     private _getPrivateMemory(observableResult: ObservableResult) {
@@ -183,29 +233,27 @@ export class AutoCollectPerformance {
     }
 
     private _getRequestDuration(observableResult: ObservableResult) {
-        var last = this._lastRequestDuration;
         let currentTime = + new Date();
-        var intervalRequests = this._httpMetrics.totalRequestCount - last.count || 0;
-        var elapsedMs = currentTime - last.time;
+        var intervalRequests = this._httpMetrics.totalRequestCount - this._lastRequestDuration.count || 0;
+        var elapsedMs = currentTime - this._lastRequestDuration.time;
         if (elapsedMs > 0) {
             var averageRequestExecutionTime =
-                (this._httpMetrics.intervalRequestExecutionTime - last.executionInterval) /
+                (this._httpMetrics.intervalRequestExecutionTime - this._lastRequestDuration.executionInterval) /
                 intervalRequests || 0; // default to 0 in case no requests in this interval
-            last.executionInterval = this._httpMetrics.intervalRequestExecutionTime; // reset
+                this._lastRequestDuration.executionInterval = this._httpMetrics.intervalRequestExecutionTime; // reset
             observableResult.observe(averageRequestExecutionTime);
         }
-        this._lastRequestRate = {
+        this._lastRequestDuration = {
             count: this._httpMetrics.totalRequestCount,
             time: currentTime,
-            executionInterval: last.executionInterval
+            executionInterval: this._lastRequestDuration.executionInterval
         };
     }
 
     private _getRequestRate(observableResult: ObservableResult) {
-        var last = this._lastRequestRate;
         let currentTime = + new Date();
-        var intervalRequests = this._httpMetrics.totalRequestCount - last.count || 0;
-        var elapsedMs = currentTime - last.time;
+        var intervalRequests = this._httpMetrics.totalRequestCount - this._lastRequestRate.count || 0;
+        var elapsedMs = currentTime - this._lastRequestRate.time;
         if (elapsedMs > 0) {
             var elapsedSeconds = elapsedMs / 1000;
             var requestsPerSec = intervalRequests / elapsedSeconds;
@@ -214,43 +262,41 @@ export class AutoCollectPerformance {
         this._lastRequestRate = {
             count: this._httpMetrics.totalRequestCount,
             time: currentTime,
-            executionInterval: last.executionInterval
+            executionInterval: this._lastRequestRate.executionInterval
         };
     }
 
     private _getFailureRequestRate(observableResult: ObservableResult) {
-        var last = this._lastFailureRequestRate;
         let currentTime = + new Date();
-        var intervalRequests = this._httpMetrics.totalFailedDependencyCount - last.count || 0;
-        var elapsedMs = currentTime - last.time;
+        var intervalRequests = this._httpMetrics.totalFailedDependencyCount - this._lastFailureRequestRate.count || 0;
+        var elapsedMs = currentTime - this._lastFailureRequestRate.time;
         if (elapsedMs > 0) {
             var elapsedSeconds = elapsedMs / 1000;
             var requestsPerSec = intervalRequests / elapsedSeconds;
             observableResult.observe(requestsPerSec);
         }
-        this._lastRequestRate = {
+        this._lastFailureRequestRate = {
             count: this._httpMetrics.totalFailedDependencyCount,
             time: currentTime,
-            executionInterval: last.executionInterval
+            executionInterval: this._lastFailureRequestRate.executionInterval
         };
     }
 
     private _getDependencyDuration(observableResult: ObservableResult) {
-        var last = this._lastDependencyDuration;
         let currentTime = + new Date();
-        var intervalDependencys = this._httpMetrics.totalDependencyCount - last.count || 0;
-        var elapsedMs = currentTime - last.time;
+        var intervalDependencys = this._httpMetrics.totalDependencyCount - this._lastDependencyDuration.count || 0;
+        var elapsedMs = currentTime - this._lastDependencyDuration.time;
         if (elapsedMs > 0) {
             var averageDependencyExecutionTime =
-                (this._httpMetrics.intervalDependencyExecutionTime - last.executionInterval) /
+                (this._httpMetrics.intervalDependencyExecutionTime - this._lastDependencyDuration.executionInterval) /
                 intervalDependencys || 0; // default to 0 in case no Dependencys in this interval
-            last.executionInterval = this._httpMetrics.intervalDependencyExecutionTime; // reset
+                this._lastDependencyDuration.executionInterval = this._httpMetrics.intervalDependencyExecutionTime; // reset
             observableResult.observe(averageDependencyExecutionTime);
         }
-        this._lastDependencyRate = {
+        this._lastDependencyDuration = {
             count: this._httpMetrics.totalDependencyCount,
             time: currentTime,
-            executionInterval: last.executionInterval
+            executionInterval: this._lastDependencyDuration.executionInterval
         };
     }
 
@@ -281,7 +327,7 @@ export class AutoCollectPerformance {
             var DependencysPerSec = intervalDependencys / elapsedSeconds;
             observableResult.observe(DependencysPerSec);
         }
-        this._lastDependencyRate = {
+        this._lastFailureDependencyRate = {
             count: this._httpMetrics.totalFailedDependencyCount,
             time: currentTime,
             executionInterval: last.executionInterval

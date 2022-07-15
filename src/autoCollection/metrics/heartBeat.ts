@@ -18,13 +18,14 @@ import { Logger } from "../../library/logging";
 export class HeartBeat {
     private _collectionInterval: number = 900000;
     private _config: Config;
-    private _meterProvider: MeterProvider; 
+    private _meterProvider: MeterProvider;
     private _exporter: AzureMonitorMetricExporter;
     private _metricReader: PeriodicExportingMetricReader;
     private _meter: Meter;
     private _metricGauge: ObservableGauge;
     private _isVM: boolean;
     private _azureVm: AzureVirtualMachine;
+    private _machineProperties: { [key: string]: string };
 
     constructor(config: Config) {
         this._config = config;
@@ -43,11 +44,16 @@ export class HeartBeat {
         this._meterProvider.addMetricReader(this._metricReader);
         this._meter = this._meterProvider.getMeter("ApplicationInsightsHeartBeatMeter");
         this._metricGauge = this._meter.createObservableGauge(HeartBeatMetricName);
-        this._metricGauge.addCallback(this._trackHeartBeat);
     }
 
-    public enable(isEnabled: boolean) {
-        // TODO: Allow enable/disable functionality?
+    public async enable(isEnabled: boolean) {
+        if (isEnabled) {
+            
+            this._metricGauge.addCallback(this._trackHeartBeat.bind(this));
+        }
+        else {
+            this._metricGauge.removeCallback(this._trackHeartBeat);
+        }
     }
 
     public async shutdown(): Promise<void> {
@@ -55,9 +61,7 @@ export class HeartBeat {
     }
 
     private _trackHeartBeat(observableResult: ObservableResult) {
-        this._getMachineProperties().then((props) => {
-            observableResult.observe(0, props);
-        });
+        observableResult.observe(0, this._machineProperties);
     }
 
     private async _getMachineProperties(): Promise<{ [key: string]: string }> {
@@ -76,14 +80,18 @@ export class HeartBeat {
             properties["azfunction_appId"] = process.env.WEBSITE_HOSTNAME;
         } else {
             if (this._isVM === undefined) {
-                await this._azureVm.getAzureComputeMetadata(this._config).then((vmInfo: IVirtualMachineInfo) => {
+                try {
+                    let vmInfo: IVirtualMachineInfo = await this._azureVm.getAzureComputeMetadata(this._config);
                     this._isVM = vmInfo.isVM;
                     if (this._isVM) {
                         properties["azInst_vmId"] = vmInfo.id;
                         properties["azInst_subscriptionId"] = vmInfo.subscriptionId;
                         properties["azInst_osType"] = vmInfo.osType;
                     }
-                }).catch((error) => Logger.getInstance().debug(error));
+                }
+                catch (error) {
+                    Logger.getInstance().debug(error);
+                }
             }
         }
         return properties;
