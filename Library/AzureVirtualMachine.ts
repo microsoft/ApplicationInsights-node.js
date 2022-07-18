@@ -1,4 +1,6 @@
 
+import http = require("http");
+import https = require("https");
 import Config = require("./Config");
 import Logging = require("./Logging");
 import Util = require("./Util");
@@ -23,12 +25,13 @@ export class AzureVirtualMachine {
     public static getAzureComputeMetadata(config: Config, callback: (vm: IVirtualMachineInfo) => void) {
         let vmInfo: IVirtualMachineInfo = {};
         const metadataRequestUrl = `${AIMS_URI}?${AIMS_API_VERSION}&${AIMS_FORMAT}`;
-        const requestOptions = {
+        const requestOptions: http.RequestOptions | https.RequestOptions = {
             method: "GET",
             [AutoCollectHttpDependencies.disableCollectionRequestOption]: true,
             headers: {
                 "Metadata": "True"
-            }
+            },
+            timeout: 2500, // DNS resolution is taking long time in MacOS environments
         };
 
         const req = Util.makeRequest(config, metadataRequestUrl, requestOptions, (res) => {
@@ -57,20 +60,22 @@ export class AzureVirtualMachine {
             }
         }, false, false);
         if (req) {
+            req.on("timeout", () => {
+                req.abort();
+            });
             req.on("error", (error: Error) => {
                 // Unable to contact endpoint.
                 // Do nothing for now.
                 if (error && error.message && error.message.indexOf(ConnectionErrorMessage) > -1) {
                     vmInfo.isVM = false; // confirm it's not in VM
                 }
-                else{
+                else {
                     // Only log when is not determined if VM or not to avoid noise outside of Azure VMs
                     Logging.info(AzureVirtualMachine.TAG, error);
                 }
                 callback(vmInfo);
             });
             req.end();
-            
         }
     }
 }
