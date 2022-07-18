@@ -15,19 +15,22 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 # How to contribute to the Application Insights Node.js SDK
 
 1. Install all dependencies with `npm install`.
-2. Set an environment variable to your Connection String (optional).
+2. Build project 
     ```bash
-    // windows
-    set APPINSIGHTS_INSTRUAPPLICATIONINSIGHTS_CONNECTION_STRINGMENTATIONKEY=<YOUR_CONNECTION_STRING>
-    // linux/macos
-    export APPLICATIONINSIGHTS_CONNECTION_STRING=<YOUR_CONNECTION_STRING>
+    npm run build
     ```
-3. Run tests
+3. Run unit tests
     ```bash
     npm run test
-    npm run backcompattest
+    ```
+4. Run functional and back compatibility tests, start docker then run following commands:
+    ```bash
     npm run functionaltest
     ```
     _Note: Functional tests require Docker_
-
+    
+5. Run back compatibility tests to ckeck older version of Node.js runtime and Typescript.
+    ```bash
+    npm run backcompattest
+    ```
 ---
