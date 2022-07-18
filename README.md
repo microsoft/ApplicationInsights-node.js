@@ -210,7 +210,7 @@ appInsights.setup("<YOUR_CONNECTION_STRING>")
     .setAutoCollectHeartbeat(false)
     .setInternalLogging(false, true)
     .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C)
-    .setWebSnippetInjection(false)
+    .enableAutoWebSnippetInjection(false)
     .start();
 ```
 
@@ -222,7 +222,7 @@ Note that by default `setAutoCollectConsole` is configured to *exclude* calls to
 (e.g. `winston`, `bunyan`) will be collected. You can change this behavior to *include* calls
 to `console` methods by using `setAutoCollectConsole(true, true)`.
 
-Note that by default `setWebSnippetInjection` will use the connection string for SDK initialization. If you want to use a different one, you can set it as `setWebSnippetInjection(true, "your-connection-string")`.
+Note that by default `enableAutoWebSnippetInjection` will use the connection string for SDK initialization. If you want to use a different one, you can set it as `enableAutoWebSnippetInjection(true, "your-connection-string")`.
 
 The TelemetryClient object contains a `config` property with many optional settings. These can be set as follows:
 ```

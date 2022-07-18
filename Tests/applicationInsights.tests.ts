@@ -167,7 +167,7 @@ describe("ApplicationInsights", () => {
                 .setAutoCollectRequests(false)
                 .setAutoCollectDependencies(false)
                 .setAutoDependencyCorrelation(false)
-                .setWebSnippetInjection(false)
+                .enableAutoWebSnippetInjection(false)
                 .start();
 
             assert.ok(!Console.INSTANCE.isInitialized());
