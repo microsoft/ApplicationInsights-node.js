@@ -33,3 +33,4 @@ Tests/FunctionalTests/TestApp/package-lock.json
 # Ignore log files
 npm-debug.log
 undefined/temp/appInsights-node/applicationinsights.log
+test/certs/server-key.pem
