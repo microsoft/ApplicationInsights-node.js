@@ -14,7 +14,6 @@ import { MonitorDomain } from "../../../src/declarations/generated";
 describe("Library/LogHandler", () => {
     let sandbox: sinon.SinonSandbox;
     let _config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-    const _context = new ResourceManager(_config);
 
     before(() => {
         sandbox = sinon.createSandbox();
@@ -28,7 +27,7 @@ describe("Library/LogHandler", () => {
         it("console enablement during start", () => {
             _config.enableAutoCollectConsole = true;
             _config.enableAutoCollectExternalLoggers = true;
-            let handler = new LogHandler(_config, _context);
+            let handler = new LogHandler(_config);
             let stub = sinon.stub(handler["_console"], "enable");
             handler.start();
             assert.ok(stub.calledOnce, "Enable called");
@@ -39,7 +38,7 @@ describe("Library/LogHandler", () => {
         it("setAutoCollectConsole", () => {
             _config.enableAutoCollectConsole = false;
             _config.enableAutoCollectExternalLoggers = false;
-            let handler = new LogHandler(_config, _context);
+            let handler = new LogHandler(_config);
             let stub = sinon.stub(handler["_console"], "enable");
             handler.start();
             assert.ok(stub.called, "Enable was not called");
@@ -53,7 +52,7 @@ describe("Library/LogHandler", () => {
 
         it("exception enablement during start", () => {
             _config.enableAutoCollectExceptions = true;
-            let handler = new LogHandler(_config, _context);
+            let handler = new LogHandler(_config);
             let stub = sinon.stub(handler["_exceptions"], "enable");
             handler.start();
             assert.ok(stub.calledOnce, "Enable called");
@@ -62,7 +61,7 @@ describe("Library/LogHandler", () => {
 
         it("setAutoCollectExceptions", () => {
             _config.enableAutoCollectExceptions = false;
-            let handler = new LogHandler(_config, _context);
+            let handler = new LogHandler(_config);
             let stub = sinon.stub(handler["_exceptions"], "enable");
             handler.start();
             assert.ok(stub.called, "Enable was not called");
@@ -75,7 +74,7 @@ describe("Library/LogHandler", () => {
 
     describe("#manual track APIs", () => {
         it("_logToEnvelope", () => {
-            let handler = new LogHandler(_config, _context)
+            let handler = new LogHandler(_config)
             let telemetry: Telemetry = {};
             let data: MonitorDomain = {};
             let envelope = handler["_logToEnvelope"](telemetry, "TestData", data, "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
@@ -93,9 +92,9 @@ describe("Library/LogHandler", () => {
         });
 
         it("tracing", () => {
-            let logHandler = new LogHandler(_config, _context);
-            let traceHandler = new TraceHandler(_config, _context);
-            traceHandler.tracer.startActiveSpan("test", () => {
+            let logHandler = new LogHandler(_config);
+            let traceHandler = new TraceHandler(_config);
+            traceHandler["_tracer"].startActiveSpan("test", () => {
                 let envelope = logHandler["_logToEnvelope"]({}, "", {}, "");
                 let spanContext = trace.getSpanContext(context.active());
                 assert.ok(isValidTraceId(envelope.tags["ai.operation.id"]), "Valid operation Id");
@@ -106,7 +105,7 @@ describe("Library/LogHandler", () => {
         });
 
         it("trackAvailability", (done) => {
-            let handler = new LogHandler(_config, _context)
+            let handler = new LogHandler(_config)
             let stub = sinon.stub(handler["_exporter"], "export").callsFake((envelopes: any, resultCallback: any) => {
                 return new Promise((resolve, reject) => {
                     resultCallback({
@@ -147,7 +146,7 @@ describe("Library/LogHandler", () => {
         });
 
         it("trackPageView", (done) => {
-            let handler = new LogHandler(_config, _context)
+            let handler = new LogHandler(_config)
             let stub = sinon.stub(handler["_exporter"], "export").callsFake((envelopes: any, resultCallback: any) => {
                 return new Promise((resolve, reject) => {
                     resultCallback({
@@ -186,7 +185,7 @@ describe("Library/LogHandler", () => {
         });
 
         it("trackTrace", (done) => {
-            let handler = new LogHandler(_config, _context)
+            let handler = new LogHandler(_config)
             let stub = sinon.stub(handler["_exporter"], "export").callsFake((envelopes: any, resultCallback: any) => {
                 return new Promise((resolve, reject) => {
                     resultCallback({
@@ -220,7 +219,7 @@ describe("Library/LogHandler", () => {
         });
 
         it("trackException", (done) => {
-            let handler = new LogHandler(_config, _context)
+            let handler = new LogHandler(_config)
             let stub = sinon.stub(handler["_exporter"], "export").callsFake((envelopes: any, resultCallback: any) => {
                 return new Promise((resolve, reject) => {
                     resultCallback({
@@ -262,7 +261,7 @@ describe("Library/LogHandler", () => {
         });
 
         it("trackEvent", (done) => {
-            let handler = new LogHandler(_config, _context)
+            let handler = new LogHandler(_config)
             let stub = sinon.stub(handler["_exporter"], "export").callsFake((envelopes: any, resultCallback: any) => {
                 return new Promise((resolve, reject) => {
                     resultCallback({

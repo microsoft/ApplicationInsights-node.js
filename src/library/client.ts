@@ -1,6 +1,5 @@
 import { Config } from "./configuration";
-import { ResourceManager } from "./handlers/resourceManager";
-import { Statsbeat } from "./statsbeat";
+import { Statsbeat } from "../autoCollection/metrics/statsbeat";
 import { Logger } from "./logging";
 import { QuickPulseStateManager } from "./quickPulse";
 import { LogHandler, MetricHandler, TraceHandler } from "./handlers";
@@ -9,7 +8,6 @@ import { LogHandler, MetricHandler, TraceHandler } from "./handlers";
 export class Client {
 
     private _config: Config;
-    private _resourceManager: ResourceManager;
     private _quickPulseClient: QuickPulseStateManager;
     private _statsbeat: Statsbeat;
     private _traceHandler: TraceHandler;
@@ -22,14 +20,13 @@ export class Client {
      */
     constructor(config?: Config) {
         this._config = config || new Config();
-        this._resourceManager = new ResourceManager(this._config);
         if (!this._config.disableStatsbeat) {
-            this._statsbeat = new Statsbeat(this._config, this._resourceManager);
+            this._statsbeat = new Statsbeat(this._config);
             this._statsbeat.enable(true);
         }
-        this._traceHandler = new TraceHandler(this._config, this._resourceManager);
-        this._metricHandler = new MetricHandler(this._config, this._resourceManager);
-        this._logHandler = new LogHandler(this._config, this._resourceManager);
+        this._traceHandler = new TraceHandler(this._config);
+        this._metricHandler = new MetricHandler(this._config);
+        this._logHandler = new LogHandler(this._config);
     }
 
     public start() {
@@ -52,10 +49,6 @@ export class Client {
 
     public getConfig(): Config {
         return this._config;
-    }
-
-     public getResourceManager(): ResourceManager {
-        return this._resourceManager;
     }
 
     public getStatsbeat(): Statsbeat {

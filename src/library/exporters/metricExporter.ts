@@ -1,10 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { ExportResult } from "@opentelemetry/core";
 import { AzureExporterConfig } from "@azure/monitor-opentelemetry-exporter";
-
-
-
 import { BaseExporter } from "./shared";
 import { Config } from "../configuration";
 import { Logger } from "../logging"

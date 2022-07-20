@@ -1,5 +1,4 @@
-import { MetricHandler } from "../library/handlers/metricHandler";
-import * as Constants from "../declarations/constants";
+import { MetricHandler } from "../../library/handlers/metricHandler";
 import {
     AggregatedMetric,
     AggregatedMetricCounter,
@@ -9,8 +8,9 @@ import {
     IMetricRequestDimensions,
     IMetricTraceDimensions,
     MetricDimensionTypeKeys,
-} from "../declarations/metrics";
-import * as Contracts from "../declarations/contracts";
+    MetricId
+} from "./types";
+import * as Contracts from "../../declarations/contracts";
 
 // Names expected in Breeze side for dimensions
 const PreAggregatedMetricPropertyNames: { [key in MetricDimensionTypeKeys]: string } = {
@@ -189,7 +189,7 @@ export class AutoCollectPreAggregatedMetrics {
             var elapsedMs = currentCounter.time - currentCounter.lastTime;
             var averageRequestExecutionTime =
                 (currentCounter.intervalExecutionTime - currentCounter.lastIntervalExecutionTime) /
-                    intervalRequests || 0;
+                intervalRequests || 0;
             currentCounter.lastIntervalExecutionTime = currentCounter.intervalExecutionTime; // reset
             if (elapsedMs > 0 && intervalRequests > 0) {
                 this._trackPreAggregatedMetric({
@@ -198,7 +198,7 @@ export class AutoCollectPreAggregatedMetrics {
                     value: averageRequestExecutionTime,
                     count: intervalRequests,
                     aggregationInterval: elapsedMs,
-                    metricType: Constants.MetricId.REQUESTS_DURATION,
+                    metricType: MetricId.REQUESTS_DURATION,
                 });
             }
             // Set last counters
@@ -216,7 +216,7 @@ export class AutoCollectPreAggregatedMetrics {
             var elapsedMs = currentCounter.time - currentCounter.lastTime;
             var averageDependencyExecutionTime =
                 (currentCounter.intervalExecutionTime - currentCounter.lastIntervalExecutionTime) /
-                    intervalDependencies || 0;
+                intervalDependencies || 0;
             currentCounter.lastIntervalExecutionTime = currentCounter.intervalExecutionTime; // reset
             if (elapsedMs > 0 && intervalDependencies > 0) {
                 this._trackPreAggregatedMetric({
@@ -225,7 +225,7 @@ export class AutoCollectPreAggregatedMetrics {
                     value: averageDependencyExecutionTime,
                     count: intervalDependencies,
                     aggregationInterval: elapsedMs,
-                    metricType: Constants.MetricId.DEPENDENCIES_DURATION,
+                    metricType: MetricId.DEPENDENCIES_DURATION,
                 });
             }
             // Set last counters
@@ -247,7 +247,7 @@ export class AutoCollectPreAggregatedMetrics {
                     value: intervalExceptions,
                     count: intervalExceptions,
                     aggregationInterval: elapsedMs,
-                    metricType: Constants.MetricId.EXCEPTIONS_COUNT,
+                    metricType: MetricId.EXCEPTIONS_COUNT,
                 });
             }
             // Set last counters
@@ -269,7 +269,7 @@ export class AutoCollectPreAggregatedMetrics {
                     value: intervalTraces,
                     count: intervalTraces,
                     aggregationInterval: elapsedMs,
-                    metricType: Constants.MetricId.TRACES_COUNT,
+                    metricType: MetricId.TRACES_COUNT,
                 });
             }
             // Set last counters

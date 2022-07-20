@@ -81,10 +81,6 @@ export interface IBaseConfig {
      */
     enableUseAsyncHooks: boolean;
     /**
-    * Will add extra information in the telemetry about Azure environment.
-    */
-     enableAutoPopulateAzureProperties: boolean;
-    /**
      * Enable or disable disk-backed retry caching to cache events when client is offline (enabled by default)
      * Note that this method only applies to the default client. Disk-backed retry caching is disabled by default for additional clients.
      * For enable for additional clients, use client.channel.setUseDiskRetryCaching(true).

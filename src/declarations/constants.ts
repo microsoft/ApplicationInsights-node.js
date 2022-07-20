@@ -59,11 +59,20 @@ export enum PerformanceCounter {
     REQUEST_DURATION = "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Request Execution Time",
 }
 
-export enum MetricId {
-    REQUESTS_DURATION = "requests/duration",
-    DEPENDENCIES_DURATION = "dependencies/duration",
-    EXCEPTIONS_COUNT = "exceptions/count",
-    TRACES_COUNT = "traces/count",
+export enum NativeMetricsCounter {
+    HEAP_MEMORY_USAGE = "Memory Usage (Heap)",
+    HEAP_MEMORY_TOTAL = "Memory Total (Heap)",
+    MEMORY_USAGE_NON_HEAP = "Memory Usage (Non-Heap)",
+    EVENT_LOOP_CPU = "Event Loop CPU Time",
+    GARBAGE_COLLECTION_SCAVENGE = "Scavenge Garbage Collection Duration",
+    GARBAGE_COLLECTION_SWEEP_COMPACT = "MarkSweepCompact Garbage Collection Duration",
+    GARBAGE_COLLECTION_INCREMENTAL_MARKING = "IncrementalMarking Collection Duration",
+}
+
+export enum GarbageCollectionType {
+    Scavenge = "Scavenge",
+    MarkSweepCompact = "MarkSweepCompact",
+    IncrementalMarking = "IncrementalMarking"
 }
 
 /**

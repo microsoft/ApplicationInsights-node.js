@@ -2,16 +2,15 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 import { ExportResultCode } from "@opentelemetry/core";
 
-import { MetricHandler, ResourceManager } from "../../../src/library/handlers";
+import { MetricHandler } from "../../../src/library/handlers";
 import { Config } from "../../../src/library/configuration";
 import { MetricTelemetry, MetricPointTelemetry } from "../../../src/declarations/contracts";
 
 
 
-describe("Library/LogHandler", () => {
+describe("Library/MetricHandler", () => {
     let sandbox: sinon.SinonSandbox;
     let _config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-    const _context = new ResourceManager(_config);
 
     before(() => {
         sandbox = sinon.createSandbox();
@@ -24,7 +23,7 @@ describe("Library/LogHandler", () => {
     describe("#autoCollect", () => {
         it("performance enablement during start", () => {
             _config.enableAutoCollectPerformance = true;
-            let handler = new MetricHandler(_config, _context);
+            let handler = new MetricHandler(_config);
             let stub = sinon.stub(handler["_performance"], "enable");
             handler.start();
             assert.ok(stub.calledOnce, "Enable called");
@@ -33,7 +32,7 @@ describe("Library/LogHandler", () => {
 
         it("setAutoCollectPerformance", () => {
             _config.enableAutoCollectPerformance = false;
-            let handler = new MetricHandler(_config, _context);
+            let handler = new MetricHandler(_config);
             let stub = sinon.stub(handler["_performance"], "enable");
             let nativeStub = sinon.stub(handler["_nativePerformance"], "enable");
             handler.start();
@@ -49,7 +48,7 @@ describe("Library/LogHandler", () => {
 
         it("preAggregated metrics enablement during start", () => {
             _config.enableAutoCollectPreAggregatedMetrics = true;
-            let handler = new MetricHandler(_config, _context);
+            let handler = new MetricHandler(_config);
             let stub = sinon.stub(handler["_preAggregatedMetrics"], "enable");
             handler.start();
             assert.ok(stub.calledOnce, "Enable called");
@@ -58,7 +57,7 @@ describe("Library/LogHandler", () => {
 
         it("setAutoCollectPreAggregatedMetrics", () => {
             _config.enableAutoCollectPreAggregatedMetrics = false;
-            let handler = new MetricHandler(_config, _context);
+            let handler = new MetricHandler(_config);
             let stub = sinon.stub(handler["_preAggregatedMetrics"], "enable");
             handler.start();
             assert.ok(stub.called, "Enable was not called");
@@ -68,9 +67,9 @@ describe("Library/LogHandler", () => {
             assert.equal(stub.args[1][0], true);
         });
 
-        it("preAggregated metrics enablement during start", () => {
+        it("heartbeat metrics enablement during start", () => {
             _config.enableAutoCollectHeartbeat = true;
-            let handler = new MetricHandler(_config, _context);
+            let handler = new MetricHandler(_config);
             let stub = sinon.stub(handler["_heartbeat"], "enable");
             handler.start();
             assert.ok(stub.calledOnce, "Enable called");
@@ -79,7 +78,7 @@ describe("Library/LogHandler", () => {
 
         it("setAutoCollectHeartbeat", () => {
             _config.enableAutoCollectHeartbeat = false;
-            let handler = new MetricHandler(_config, _context);
+            let handler = new MetricHandler(_config);
             let stub = sinon.stub(handler["_heartbeat"], "enable");
             handler.start();
             assert.ok(stub.called, "Enable was not called");
@@ -93,7 +92,7 @@ describe("Library/LogHandler", () => {
 
     describe("#manual track APIs", () => {
         it("trackMetric", (done) => {
-            let handler = new MetricHandler(_config, _context)
+            let handler = new MetricHandler(_config)
             let stub = sinon.stub(handler["_exporter"], "export").callsFake((envelopes: any, resultCallback: any) => {
                 return new Promise((resolve, reject) => {
                     resultCallback({
@@ -123,7 +122,7 @@ describe("Library/LogHandler", () => {
             handler.trackMetric(telemetry);
             handler.flush().then(() => {
                 assert.ok(stub.calledOnce, "Export called");
-                let envelopes = stub.args[0][0];
+                let envelopes = stub.args[0][0] as any;
                 assert.equal(envelopes.length, 1);
                 assert.equal(envelopes[0].name, "Microsoft.ApplicationInsights.1aa11111bbbb1ccc8dddeeeeffff3333.Metric");
                 assert.equal(envelopes[0].version, "1");
@@ -149,7 +148,7 @@ describe("Library/LogHandler", () => {
         });
 
         it("trackStatsbeatMetric", (done) => {
-            let handler = new MetricHandler(_config, _context)
+            let handler = new MetricHandler(_config)
             let stub = sinon.stub(handler["_exporter"], "export").callsFake((envelopes: any, resultCallback: any) => {
                 return new Promise((resolve, reject) => {
                     resultCallback({
@@ -179,7 +178,7 @@ describe("Library/LogHandler", () => {
             handler.trackStatsbeatMetric(telemetry);
             handler.flush().then(() => {
                 assert.ok(stub.calledOnce, "Export called");
-                let envelopes = stub.args[0][0];
+                let envelopes = stub.args[0][0] as any;
                 assert.equal(envelopes.length, 1);
                 assert.equal(envelopes[0].name, "Statsbeat");
                 assert.equal(envelopes[0].version, "1");

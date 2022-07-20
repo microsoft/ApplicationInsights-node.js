@@ -11,7 +11,7 @@ import { AutoCollectConsole, AutoCollectExceptions } from "../../autoCollection"
 import { Config } from "../configuration";
 import { Util } from "../util";
 import { ResourceManager } from "./resourceManager";
-import { Statsbeat } from "../statsbeat";
+import { Statsbeat } from "../../autoCollection/metrics/statsbeat";
 import { parseStack } from "../exporters/shared";
 import {
     AvailabilityData,
@@ -35,13 +35,13 @@ import {
 } from "../../declarations/contracts";
 import { Logger } from "../logging";
 
+
 export class LogHandler {
     public isAutoCollectConsole = false;
     public isAutoCollectExternalLoggers = true;
     public isExceptions = true;
     public statsbeat: Statsbeat;
     public config: Config;
-    private _resourceManager: ResourceManager;
     private _isStarted = false;
     private _batchProcessor: BatchProcessor;
     private _exporter: LogExporter;
@@ -49,9 +49,8 @@ export class LogHandler {
     private _exceptions: AutoCollectExceptions;
     private _idGenerator: IdGenerator;
 
-    constructor(config: Config, resourceManager: ResourceManager) {
+    constructor(config: Config) {
         this.config = config;
-        this._resourceManager = resourceManager;
         this._exporter = new LogExporter(config);
         this._batchProcessor = new BatchProcessor(config, this._exporter);
         this._initializeFlagsFromConfig();
@@ -183,7 +182,7 @@ export class LogHandler {
             // sanitize properties
             properties = Util.getInstance().validateStringMap(telemetry.properties);
         }
-        const tags = this._getTags(this._resourceManager);
+        const tags = this._getTags();
         let envelope: Envelope = {
             name: name,
             time: telemetry.time || new Date(),
@@ -307,32 +306,31 @@ export class LogHandler {
         return envelope;
     }
 
-    private _getTags(resourceManager: ResourceManager) {
+    private _getTags() {
         var tags = <{ [key: string]: string }>{};
-        if (resourceManager) {
-            const attributes = resourceManager.getLogResource().attributes;
-            const serviceName = attributes[SemanticResourceAttributes.SERVICE_NAME];
-            const serviceNamespace = attributes[SemanticResourceAttributes.SERVICE_NAMESPACE];
-            if (serviceName) {
-                if (serviceNamespace) {
-                    tags[KnownContextTagKeys.AiCloudRole] = `${serviceNamespace}.${serviceName}`;
-                } else {
-                    tags[KnownContextTagKeys.AiCloudRole] = String(serviceName);
-                }
+        const attributes = ResourceManager.getInstance().getLogResource().attributes;
+        const serviceName = attributes[SemanticResourceAttributes.SERVICE_NAME];
+        const serviceNamespace = attributes[SemanticResourceAttributes.SERVICE_NAMESPACE];
+        if (serviceName) {
+            if (serviceNamespace) {
+                tags[KnownContextTagKeys.AiCloudRole] = `${serviceNamespace}.${serviceName}`;
+            } else {
+                tags[KnownContextTagKeys.AiCloudRole] = String(serviceName);
             }
-            const serviceInstanceId = attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID];
-            tags[KnownContextTagKeys.AiCloudRoleInstance] = String(serviceInstanceId);
-            tags[KnownContextTagKeys.AiInternalSdkVersion] = resourceManager.getInternalSdkVersion();
         }
-        // Add Correlation headers
-        const spanContext = trace.getSpanContext(context.active());
-        if (spanContext) {
-            tags[KnownContextTagKeys.AiOperationId] = spanContext.traceId;
-            tags[KnownContextTagKeys.AiOperationParentId] = spanContext.spanId;
-        }
-        else{
-            tags[KnownContextTagKeys.AiOperationId] = this._idGenerator.generateTraceId();
-        }
+        const serviceInstanceId = attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID];
+        tags[KnownContextTagKeys.AiCloudRoleInstance] = String(serviceInstanceId);
+        tags[KnownContextTagKeys.AiInternalSdkVersion] = String(attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION]);
+
+         // Add Correlation headers
+         const spanContext = trace.getSpanContext(context.active());
+         if (spanContext) {
+             tags[KnownContextTagKeys.AiOperationId] = spanContext.traceId;
+             tags[KnownContextTagKeys.AiOperationParentId] = spanContext.spanId;
+         }
+         else{
+             tags[KnownContextTagKeys.AiOperationId] = this._idGenerator.generateTraceId();
+         }
         return tags;
     }
 

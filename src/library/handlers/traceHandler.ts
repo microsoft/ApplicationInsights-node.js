@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import { RequestOptions } from "http";
-
+import { AzureExporterConfig, AzureMonitorTraceExporter } from "@azure/monitor-opentelemetry-exporter";
 import {
     Instrumentation,
     InstrumentationOption,
@@ -23,13 +23,12 @@ import {
 import { Config } from "../configuration";
 import { ResourceManager } from "./resourceManager";
 import { ApplicationInsightsSampler } from "./sampler";
-import { AzureExporterConfig, AzureMonitorTraceExporter } from "@azure/monitor-opentelemetry-exporter";
+import { HttpMetricsInstrumentation } from "../../autoCollection/metrics/httpMetricsInstrumentation";
 import { InstrumentationType } from "../configuration/interfaces";
+import { TracerProvider } from "@opentelemetry/api";
 
 
 export class TraceHandler {
-    public tracerProvider: NodeTracerProvider;
-    public tracer: Tracer;
     public httpInstrumentationConfig: HttpInstrumentationConfig;
     public azureSdkInstrumentationConfig: AzureSdkInstrumentationOptions;
     public mongoDbInstrumentationConfig: MongoDBInstrumentationConfig;
@@ -41,28 +40,25 @@ export class TraceHandler {
     private _exporter: AzureMonitorTraceExporter;
     private _spanProcessor: BatchSpanProcessor;
     private _config: Config;
-    private resourceManager: ResourceManager;
     private _instrumentations: InstrumentationOption[];
     private _disableInstrumentations: () => void;
+    private _tracerProvider: NodeTracerProvider;
+    private _tracer: Tracer;
 
-    constructor(config: Config, resourceManager: ResourceManager) {
+    constructor(config: Config) {
         this._config = config;
-        this.resourceManager = resourceManager;
         this._instrumentations = [];
 
         const aiSampler = new ApplicationInsightsSampler(this._config.samplingPercentage);
 
         let tracerConfig: NodeTracerConfig = {
             sampler: aiSampler,
-            resource: this.resourceManager.getTraceResource(),
+            resource: ResourceManager.getInstance().getTraceResource(),
             forceFlushTimeoutMillis: 30000,
         };
-        this.tracerProvider = new NodeTracerProvider(tracerConfig);
-        // Get connection string for Azure Monitor Exporter
-        let ingestionEndpoint = config.endpointUrl.replace("/v2.1/track", "");
-        let connectionString = `InstrumentationKey=${config.instrumentationKey};IngestionEndpoint=${ingestionEndpoint}`;
+        this._tracerProvider = new NodeTracerProvider(tracerConfig);
         let exporterConfig: AzureExporterConfig = {
-            connectionString: connectionString,
+            connectionString: config.getConnectionString(),
             aadTokenCredential: config.aadTokenCredential
         };
         this._exporter = new AzureMonitorTraceExporter(exporterConfig);
@@ -77,12 +73,12 @@ export class TraceHandler {
             this._exporter,
             bufferConfig
         );
-        this.tracerProvider.addSpanProcessor(this._spanProcessor);
-        this.tracerProvider.register();
+        this._tracerProvider.addSpanProcessor(this._spanProcessor);
+        this._tracerProvider.register();
         // TODO: Check for conflicts with multiple handlers available
-        this.tracer = this.tracerProvider.getTracer("ApplicationInsightsTracer");
+        this._tracer = this._tracerProvider.getTracer("ApplicationInsightsTracer");
 
-        // Defautl configs
+        // Default configs
         this.httpInstrumentationConfig = {
             ignoreOutgoingRequestHook: this._ignoreOutgoingRequestHook.bind(this),
             ignoreIncomingRequestHook: this._ignoreIncomingRequestHook.bind(this),
@@ -94,7 +90,20 @@ export class TraceHandler {
         this.redis4InstrumentationConfig = {};
     }
 
+    public getTracerProvider(): TracerProvider {
+        return this._tracerProvider;
+    }
+
+    public getTracer(): Tracer {
+        return this._tracer;
+    }
+
+
     public start() {
+        // TODO: Remove once HTTP Instrumentation generate Http metrics
+        if (this._config.enableAutoCollectPreAggregatedMetrics || this._config.enableAutoCollectPerformance) {
+            this.addInstrumentation(HttpMetricsInstrumentation.getInstance());
+        }
         if (this._config.enableAutoCollectRequests || this._config.enableAutoCollectDependencies) {
             this.addInstrumentation(new HttpInstrumentation(this.httpInstrumentationConfig));
         }
@@ -129,7 +138,7 @@ export class TraceHandler {
 
     public registerInstrumentations() {
         this._disableInstrumentations = registerInstrumentations({
-            tracerProvider: this.tracerProvider,
+            tracerProvider: this._tracerProvider,
             instrumentations: this._instrumentations,
         });
     }
@@ -141,11 +150,11 @@ export class TraceHandler {
     }
 
     public async flush(): Promise<void> {
-        return this.tracerProvider.forceFlush();
+        return this._tracerProvider.forceFlush();
     }
 
     public async shutdown(): Promise<void> {
-        await this.tracerProvider.shutdown();
+        await this._tracerProvider.shutdown();
     }
 
     private _ignoreOutgoingRequestHook(request: RequestOptions): boolean {

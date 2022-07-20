@@ -7,6 +7,7 @@ import { ExportResultCode } from "@opentelemetry/core";
 import { TraceHandler, ResourceManager } from "../../../src/library/handlers/";
 import { Config } from "../../../src/library/configuration";
 import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations/contracts";
+import { Instrumentation } from "@opentelemetry/instrumentation";
 
 
 describe("Library/TraceHandlers", () => {
@@ -14,7 +15,6 @@ describe("Library/TraceHandlers", () => {
     let https: any = null;
     let sandbox: sinon.SinonSandbox;
     let _config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-    const _context = new ResourceManager(_config);
 
     before(() => {
         sandbox = sinon.createSandbox();
@@ -24,17 +24,21 @@ describe("Library/TraceHandlers", () => {
         sandbox.restore();
     });
 
-    // describe("#autoCollect", () => {
-    //     it("performance enablement during start", () => {
-    //         _config.enableAutoCollectPerformance = true;
-    //         let handler = new MetricHandler(_config, _context);
-    //         let stub = sinon.stub(handler["_performance"], "enable");
-    //         handler.start();
-    //         assert.ok(stub.calledOnce, "Enable called");
-    //         assert.equal(stub.args[0][0], true);
-    //     });
+    describe("#Instrumentation Enablement", () => {
+        it("HttpMetricsInstrumentation", () => {
+            _config.enableAutoCollectPerformance = true;
+            let handler = new TraceHandler(_config);
+            handler.start();
+            let found = false;
+            handler["_instrumentations"].forEach((instrumentation: Instrumentation) => {
+                if (instrumentation.instrumentationName == "AzureHttpMetricsInstrumentation") {
+                    found = true;
+                }
+            });
+            assert.ok(found, "AzureHttpMetricsInstrumentation not added");
+        });
 
-    // });
+    });
 
     describe("#autoCollection of HTTP/HTTPS requests", () => {
         let exportStub: sinon.SinonStub;
@@ -48,7 +52,7 @@ describe("Library/TraceHandlers", () => {
             process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
             _config.enableAutoCollectDependencies = true;
             _config.enableAutoCollectRequests = true;
-            handler = new TraceHandler(_config, _context);
+            handler = new TraceHandler(_config);
             exportStub = sinon.stub(handler["_exporter"], "export").callsFake((spans: any, resultCallback: any) => {
                 return new Promise((resolve, reject) => {
                     resultCallback({

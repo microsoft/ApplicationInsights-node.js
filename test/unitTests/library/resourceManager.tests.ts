@@ -37,16 +37,15 @@ describe("ResourceManager", () => {
             sandbox.restore();
         });
 
-        it("should set internalSdkVersion", () => {
-            var resourceManager = new ResourceManager(new Config());
+        it("should set internalSdkVersion to 'node:<version>'", () => {
+            var resourceManager = new ResourceManager();
             const packageJsonPath = path.resolve(__dirname, "../../../../", "./package.json");
             let packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-            assert.ok(resourceManager.getInternalSdkVersion().indexOf("node") == 0, "Incorrect SDK version");
-            assert.ok(resourceManager.getInternalSdkVersion().indexOf(":ext" + packageJson.version) > 0, "Incorrect SDK version");
+            assert.equal(resourceManager["_baseResource"].attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION].toString(), "node:" + packageJson.version);
         });
 
         it("should correctly set service attributes", () => {
-            var resourceManager = new ResourceManager(new Config());
+            var resourceManager = new ResourceManager();
             assert.equal(resourceManager["_baseResource"].attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID], "host");
             assert.equal(resourceManager["_baseResource"].attributes[SemanticResourceAttributes.SERVICE_NAME], "Web");
         });
@@ -57,10 +56,7 @@ describe("ResourceManager", () => {
             env.WEBSITE_SITE_NAME = "testRole";
             env.WEBSITE_INSTANCE_ID = "testRoleInstanceId";
             process.env = env;
-
-            let config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-            config.enableAutoPopulateAzureProperties = true;
-            var resourceManager = new ResourceManager(config);
+            var resourceManager = new ResourceManager();
             process.env = originalEnv;
             assert.equal(resourceManager["_baseResource"].attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID], "testRoleInstanceId");
             assert.equal(resourceManager["_baseResource"].attributes[SemanticResourceAttributes.SERVICE_NAME], "testRole");

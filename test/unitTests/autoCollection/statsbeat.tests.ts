@@ -2,7 +2,7 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 import * as nock from "nock";
 
-import { Statsbeat } from "../../../src/library/statsbeat";
+import { Statsbeat } from "../../../src/autoCollection/metrics/statsbeat";
 import * as Constants from "../../../src/declarations/constants";
 import { Config } from "../../../src/library/configuration";
 
@@ -28,22 +28,14 @@ describe("AutoCollection/Statsbeat", () => {
     });
 
     describe("#init and #disable()", () => {
-        it("init should enable and dispose should stop autocollection interval", () => {
-            var setIntervalSpy = sandbox.spy(global, "setInterval");
-            var clearIntervalSpy = sandbox.spy(global, "clearInterval");
+        it("init should enable and dispose autocollection handlers", () => {
             let statsBeat = new Statsbeat(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
             statsBeat.enable(true);
-            assert.equal(
-                setIntervalSpy.callCount,
-                2,
-                "setInterval should be called twice as part of Statsbeat initialization"
-            );
+            assert.ok(statsBeat["_handle"]);
+            assert.ok(statsBeat["_longHandle"]);
             statsBeat.enable(false);
-            assert.equal(
-                clearIntervalSpy.callCount,
-                2,
-                "clearInterval should be called twice as part of Statsbeat disable"
-            );
+            assert.ok(!statsBeat["_handle"]);
+            assert.ok(!statsBeat["_longHandle"]);
         });
     });
 

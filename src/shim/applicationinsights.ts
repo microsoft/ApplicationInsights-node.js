@@ -203,7 +203,7 @@ export class Configuration {
      */
     public static setAutoCollectHeartbeat(value: boolean) {
         if (defaultClient) {
-            defaultClient.client.getMetricHandler().setAutoCollectHeartbeat(value);
+            defaultClient.client.getMetricHandler().enableAutoCollectHeartbeat();
         }
         return Configuration;
     }

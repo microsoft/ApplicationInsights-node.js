@@ -3,6 +3,6 @@
 
 export { AutoCollectConsole } from "./console";
 export { AutoCollectExceptions } from "./exceptions";
-export { AutoCollectNativePerformance } from "./nativePerformance";
-export { AutoCollectPerformance } from "./performance";
-export { AutoCollectPreAggregatedMetrics } from "./preAggregatedMetrics";
+export { AutoCollectNativePerformance, getNativeMetricsConfig } from "./metrics/nativePerformance";
+export { AutoCollectPerformance } from "./metrics/performance";
+export { AutoCollectPreAggregatedMetrics } from "./metrics/preAggregatedMetrics";
