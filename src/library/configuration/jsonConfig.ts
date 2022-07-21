@@ -45,8 +45,6 @@ export class JsonConfig implements IJsonConfig {
     public enableUseDiskRetryCaching: boolean;
     public enableResendInterval: number;
     public enableMaxBytesOnDisk: number;
-    public enableInternalDebugLogger: boolean;
-    public enableInternalWarningLogger: boolean;
     public enableSendLiveMetrics: boolean;
     public disableAllExtendedMetrics: boolean;
     public extendedMetricDisablers: string;
@@ -148,8 +146,6 @@ export class JsonConfig implements IJsonConfig {
             this.enableUseDiskRetryCaching = jsonConfig.enableUseDiskRetryCaching;
             this.enableResendInterval = jsonConfig.enableResendInterval;
             this.enableMaxBytesOnDisk = jsonConfig.enableMaxBytesOnDisk;
-            this.enableInternalDebugLogger = jsonConfig.enableInternalDebugLogger;
-            this.enableInternalWarningLogger = jsonConfig.enableInternalWarningLogger;
             this.enableSendLiveMetrics = jsonConfig.enableSendLiveMetrics;
             this.quickPulseHost = jsonConfig.quickPulseHost;
             this.instrumentations = jsonConfig.instrumentations;

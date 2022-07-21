@@ -39,12 +39,6 @@ let _diskRetryMaxBytes: number = undefined;
 export function setup(setupString?: string) {
     if (!defaultClient) {
         defaultClient = new TelemetryClient(setupString);
-        if (defaultClient.config.enableInternalDebugLogger) {
-            Logger.getInstance().enableDebug = defaultClient.config.enableInternalDebugLogger;
-        }
-        if (defaultClient.config.enableInternalWarningLogger) {
-            Logger.getInstance().disableWarnings = !defaultClient.config.enableInternalWarningLogger;
-        }
         if (defaultClient.config.enableSendLiveMetrics) {
             Configuration.setSendLiveMetrics(defaultClient.config.enableSendLiveMetrics);
         }

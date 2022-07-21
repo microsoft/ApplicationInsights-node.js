@@ -40,8 +40,6 @@ export class Config implements IConfig {
     public enableAutoCollectExtendedMetrics: boolean | IDisabledExtendedMetrics;
     public enableResendInterval: number;
     public enableMaxBytesOnDisk: number;
-    public enableInternalDebugLogger: boolean;
-    public enableInternalWarningLogger: boolean;
     public disableAllExtendedMetrics: boolean;
     public disableStatsbeat: boolean;
     public extendedMetricDisablers: string;
@@ -151,8 +149,6 @@ export class Config implements IConfig {
         this.enableAutoCollectPreAggregatedMetrics = jsonConfig.enableAutoCollectPreAggregatedMetrics;
         this.enableAutoCollectRequests = jsonConfig.enableAutoCollectRequests;
         this.enableAutoDependencyCorrelation = jsonConfig.enableAutoDependencyCorrelation;
-        this.enableInternalDebugLogger = jsonConfig.enableInternalDebugLogger;
-        this.enableInternalWarningLogger = jsonConfig.enableInternalWarningLogger;
         this.enableResendInterval = jsonConfig.enableResendInterval;
         this.enableMaxBytesOnDisk = jsonConfig.enableMaxBytesOnDisk;
         this.enableSendLiveMetrics = jsonConfig.enableSendLiveMetrics;

@@ -105,9 +105,7 @@ describe("Json Config", () => {
             assert.equal(config.enableUseDiskRetryCaching, false);
             assert.equal(config.enableResendInterval, 123);
             assert.equal(config.enableMaxBytesOnDisk, 456);
-            assert.equal(config.enableInternalDebugLogger, false);
             assert.equal(config.disableStatsbeat, false);
-            assert.equal(config.enableInternalWarningLogger, false);
             assert.equal(config.enableSendLiveMetrics, false);
             assert.equal(config.extendedMetricDisablers, "gc,heap");
             assert.equal(config.noDiagnosticChannel, false);
