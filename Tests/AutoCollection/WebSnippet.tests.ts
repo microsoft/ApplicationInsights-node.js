@@ -21,7 +21,7 @@ describe("AutoCollection/WebSnippet", () => {
 
     describe("#init and #dispose()", () => {
         it("init should enable and dispose should stop injection", () => {
-            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setWebSnippetInjection(true);
+            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").enableAutoWebSnippetInjection(true);
             var enableWebSnippetsSpy = sinon.spy(WebSnippet.INSTANCE, "enable");
             appInsights.start();
 
@@ -35,7 +35,7 @@ describe("AutoCollection/WebSnippet", () => {
 
     describe("#validate response", () => {
         it("injection should be triggered only in HTML responses", () => {
-            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setWebSnippetInjection(true);
+            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").enableAutoWebSnippetInjection(true);
             let webSnippet = WebSnippet.INSTANCE;
          
             let _headers: any = {};
@@ -64,7 +64,7 @@ describe("AutoCollection/WebSnippet", () => {
     });
 
     describe("#web snippet injection to string", () => {
-        var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setWebSnippetInjection(true);
+        var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").enableAutoWebSnippetInjection(true);
         let webSnippet = WebSnippet.INSTANCE;
         webSnippet.enable(true);
         it("injection add correct snippet code", () => {
@@ -105,7 +105,7 @@ describe("AutoCollection/WebSnippet", () => {
     });
 
     describe("#web snippet injection to buffer", () => {
-        var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setWebSnippetInjection(true);
+        var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").enableAutoWebSnippetInjection(true);
         let webSnippet = WebSnippet.INSTANCE
         webSnippet.enable(true);
         it("injection add correct snippet code", () => {
@@ -155,7 +155,7 @@ describe("AutoCollection/WebSnippet", () => {
 
     describe("#web snippet replace correct connection string from config", () => {
         it("injection should use correct connection string from config", () => {
-            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setWebSnippetInjection(true,"InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").enableAutoWebSnippetInjection(true,"InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
             let webSnippet = WebSnippet.INSTANCE;
             webSnippet.enable(true, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
             assert.equal(webSnippet["_isIkeyValid"], true,"ikey should be set to valid");
@@ -181,7 +181,7 @@ describe("AutoCollection/WebSnippet", () => {
     describe("#web snippet enable should throw errors when ikey from config is not valid", () => {
         it("injection should throw errors when ikey from config is not valid", () => {
             var infoStub = sandbox.stub(console, "info");
-            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setWebSnippetInjection(true,"InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeff;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").enableAutoWebSnippetInjection(true,"InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeff;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
             let webSnippet = WebSnippet.INSTANCE;
             webSnippet.enable(true, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeff;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
             assert.equal(webSnippet["_isIkeyValid"], false,"ikey should be set to invalid");

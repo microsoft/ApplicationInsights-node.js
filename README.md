@@ -222,6 +222,8 @@ Note that by default `setAutoCollectConsole` is configured to *exclude* calls to
 (e.g. `winston`, `bunyan`) will be collected. You can change this behavior to *include* calls
 to `console` methods by using `setAutoCollectConsole(true, true)`.
 
+Note that by default `enableAutoWebSnippetInjection` will use the connection string for SDK initialization. If you want to use a different one, you can set it as `enableAutoWebSnippetInjection(true, "your-connection-string")`.
+
 The TelemetryClient object contains a `config` property with many optional settings. These can be set as follows:
 ```
 client.config.PROPERTYNAME = VALUE;
@@ -268,7 +270,8 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | httpAgent                       | An http.Agent to use for SDK HTTP traffic (Optional, Default undefined)                                    |
 | httpsAgent                      | An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined)
 | aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Credential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes)
-| enableAutoWebSnippetInjection(Preview)| Sets the state of automatic web snippet injection (disabled by default). If true, web snippet will be injected into valid node server http response automatically. If a connection string is provided here, e.g. `enableAutoWebSnippetInjection(true, "your-connection-string")`, auto snippet injection will use it instead of the default one (connection string used for SDK initialization) |                            |
+| enableAutoWebSnippetInjection(Preview)| Sets the state of automatic web snippet injection (Optional, disabled by default). If true, web snippet will be injected into valid node server http response automatically with the connection string used for SDK initialization
+| webSnippetConnectionString(Preview)| Sets connection string used for web snippet injection (Optional, Default undefined)|                            |
 
 [Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts 
 
