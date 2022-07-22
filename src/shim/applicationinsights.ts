@@ -1,5 +1,5 @@
 import { IncomingMessage } from "http";
-import { SpanContext } from "@opentelemetry/api";
+import { DiagLogLevel, SpanContext } from "@opentelemetry/api";
 
 import { AutoCollectPerformance } from "../autoCollection";
 import { Logger } from "../library/logging";
@@ -39,12 +39,6 @@ let _diskRetryMaxBytes: number = undefined;
 export function setup(setupString?: string) {
     if (!defaultClient) {
         defaultClient = new TelemetryClient(setupString);
-        if (defaultClient.config.enableInternalDebugLogger) {
-            Logger.getInstance().enableDebug = defaultClient.config.enableInternalDebugLogger;
-        }
-        if (defaultClient.config.enableInternalWarningLogger) {
-            Logger.getInstance().disableWarnings = !defaultClient.config.enableInternalWarningLogger;
-        }
         if (defaultClient.config.enableSendLiveMetrics) {
             Configuration.setSendLiveMetrics(defaultClient.config.enableSendLiveMetrics);
         }
@@ -262,8 +256,16 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setInternalLogger(enableDebugLogger = false, enableWarningLogger = true) {
-        Logger.getInstance().enableDebug = enableDebugLogger;
-        Logger.getInstance().disableWarnings = !enableWarningLogger;
+        if (enableDebugLogger) {
+            Logger.getInstance().updateLogLevel(DiagLogLevel.DEBUG);
+            return Configuration;
+        }
+        if (enableWarningLogger) {
+            Logger.getInstance().updateLogLevel(DiagLogLevel.WARN);
+            return Configuration;
+        }
+        // Default
+        Logger.getInstance().updateLogLevel(DiagLogLevel.INFO);
         return Configuration;
     }
 

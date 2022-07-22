@@ -16,13 +16,13 @@ describe("Library/InternalAzureLogger", () => {
 
     beforeEach(() => {
         originalEnv = process.env;
-        internalLogger = InternalAzureLogger.getInstance();
+        internalLogger = new InternalAzureLogger();
     });
 
     afterEach(() => {
         process.env = originalEnv;
         sandbox.restore();
-        InternalAzureLogger["_instance"] = null;
+        internalLogger = null;
     });
 
     describe("Write to file", () => {
@@ -33,7 +33,7 @@ describe("Library/InternalAzureLogger", () => {
             var appendFileAsyncStub = sandbox.stub(fileHelper, "appendFileAsync");
             internalLogger["_logToFile"] = true;
 
-            internalLogger.info("testMessage")
+            internalLogger.logMessage("testMessage")
                 .then(() => {
                     assert.ok(confirmDirStub.called, "confirmDirStub called");
                     assert.ok(appendFileAsyncStub.called, "writeStub called"); // File creation was called
@@ -55,14 +55,14 @@ describe("Library/InternalAzureLogger", () => {
                 // Fake file size check
                 return 123;
             });
-            internalLogger.maxSizeBytes = 122;
+            internalLogger["_maxSizeBytes"] = 122;
 
             var writeStub = sandbox.stub(fileHelper, "writeFileAsync");
             var appendStub = sandbox.stub(fileHelper, "appendFileAsync");
             var readStub = sandbox.stub(fileHelper, "readFileAsync");
             internalLogger["_logToFile"] = true;
 
-            internalLogger.info("backupTestMessage")
+            internalLogger.logMessage("backupTestMessage")
                 .then(() => {
                     assert.ok(readStub.calledOnce, "readStub calledOnce"); // Read content to create backup
                     assert.ok(appendStub.notCalled, "appendStub notCalled");
@@ -87,11 +87,11 @@ describe("Library/InternalAzureLogger", () => {
             });
             var writeStub = sandbox.stub(fileHelper, "writeFileAsync");
             var readStub = sandbox.stub(fileHelper, "readFileAsync");
-            internalLogger.maxSizeBytes = 122;
+            internalLogger["_maxSizeBytes"] = 122;
             internalLogger["_logToFile"] = true;
-            internalLogger.info("backupTestMessage")
+            internalLogger.logMessage("backupTestMessage")
                 .then(() => {
-                    internalLogger.info("backupTestMessage")
+                    internalLogger.logMessage("backupTestMessage")
                         .then(() => {
                             assert.equal(writeStub.callCount, 4);
                             assert.ok(readStub.calledTwice);
@@ -108,12 +108,12 @@ describe("Library/InternalAzureLogger", () => {
         });
 
         it("should start file cleanup task", () => {
-            InternalAzureLogger["_instance"] = null;
+            internalLogger = null;
             const env = <{ [id: string]: string }>{};
             env["APPLICATIONINSIGHTS_LOG_DESTINATION"] = "file";
             process.env = env;
             var setIntervalSpy = sandbox.spy(global, "setInterval");
-            internalLogger = InternalAzureLogger.getInstance();
+            internalLogger = new InternalAzureLogger();
             assert.ok(setIntervalSpy.called);
             assert.ok(internalLogger["_fileCleanupTimer"]);
         });
@@ -122,7 +122,7 @@ describe("Library/InternalAzureLogger", () => {
             sandbox.stub(fileHelper, "readdirAsync").callsFake(async (path: string) => {
                 return ["applicationinsights.log", "123.applicationinsights.log", "456.applicationinsights.log"];
             });
-            internalLogger.maxHistory = 0;
+            internalLogger["_maxHistory"] = 0;
             var unlinkStub = sandbox.stub(fileHelper, "unlinkAsync");
             internalLogger["_fileCleanupTask"]()
                 .then(() => {
@@ -138,7 +138,7 @@ describe("Library/InternalAzureLogger", () => {
             sandbox.stub(fileHelper, "readdirAsync").callsFake(async (path: string) => {
                 return ["applicationinsights.log", "123.applicationinsights.log", "456.applicationinsights.log"];
             });
-            internalLogger.maxHistory = 1;
+            internalLogger["_maxHistory"] = 1;
             var unlinkStub = sandbox.stub(fileHelper, "unlinkAsync");
             internalLogger["_fileCleanupTask"]()
                 .then(() => {

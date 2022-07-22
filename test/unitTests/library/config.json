@@ -31,8 +31,6 @@
     "enableUseDiskRetryCaching": false,
     "enableResendInterval": 123,
     "enableMaxBytesOnDisk": 456,
-    "enableInternalDebugLogger": false,
-    "enableInternalWarningLogger": false,
     "enableSendLiveMetrics": false,
     "extendedMetricDisablers": "gc,heap",
     "noDiagnosticChannel": false,
