@@ -13,19 +13,18 @@ import {
 } from "../util";
 
 export class InternalAzureLogger {
-    public maxHistory: number;
-    public maxSizeBytes: number;
-
-    private static _instance: InternalAzureLogger;
-    private _TAG = "Logger";
+    private _TAG = "InternalLogger:";
     private _cleanupTimeOut = 60 * 30 * 1000; // 30 minutes;
     private _fileCleanupTimer: NodeJS.Timer = null;
     private _tempDir: string;
-    public _logFileName: string;
+    private _logFileName: string;
     private _fileFullPath: string;
     private _backUpNameFormat: string;
     private _logToFile = false;
     private _logToConsole = true;
+    private _maxHistory: number;
+    private _maxSizeBytes: number;
+
 
     constructor() {
         let logDestination = process.env.APPLICATIONINSIGHTS_LOG_DESTINATION; // destination can be one of file, console or file+console
@@ -36,8 +35,8 @@ export class InternalAzureLogger {
             this._logToFile = true;
             this._logToConsole = false;
         }
-        this.maxSizeBytes = 50000;
-        this.maxHistory = 1;
+        this._maxSizeBytes = 50000;
+        this._maxHistory = 1;
         this._logFileName = "applicationinsights.log";
 
         // If custom path not provided use temp folder, /tmp for *nix and USERDIR/AppData/Local/Temp for Windows
@@ -64,14 +63,7 @@ export class InternalAzureLogger {
         }
     }
 
-    public static getInstance() {
-        if (!InternalAzureLogger._instance) {
-            InternalAzureLogger._instance = new InternalAzureLogger();
-        }
-        return InternalAzureLogger._instance;
-    }
-
-    public async debug(message?: any, ...optionalParams: any[]): Promise<void> {
+    public async logMessage(message?: any, ...optionalParams: any[]) {
         try {
             let args = message ? [message, ...optionalParams] : optionalParams;
             if (this._logToFile) {
@@ -82,53 +74,7 @@ export class InternalAzureLogger {
             }
         }
         catch (err) {
-            console.log(this._TAG, "Failed to log debug to file: " + (err && err.message));
-        }
-    }
-
-    public async info(message?: any, ...optionalParams: any[]): Promise<void> {
-        try {
-            let args = message ? [message, ...optionalParams] : optionalParams;
-            if (this._logToFile) {
-                await this._storeToDisk(args);
-            }
-            if (this._logToConsole) {
-                console.info(...args);
-            }
-        }
-        catch (err) {
-            console.log(this._TAG, "Failed to log info to file: " + (err && err.message));
-        }
-    }
-
-    public async warning(message?: any, ...optionalParams: any[]): Promise<void> {
-        try {
-            let args = message ? [message, ...optionalParams] : optionalParams;
-            if (this._logToFile) {
-                await this._storeToDisk(args);
-            }
-            if (this._logToConsole) {
-                console.warn(...args);
-            }
-        }
-        catch (err) {
-            console.log(this._TAG, "Failed to log warning to file: " + (err && err.message));
-        }
-
-    }
-
-    public async error(message?: any, ...optionalParams: any[]): Promise<void> {
-        try {
-            let args = message ? [message, ...optionalParams] : optionalParams;
-            if (this._logToFile) {
-                await this._storeToDisk(args);
-            }
-            if (this._logToConsole) {
-                console.error(...args);
-            }
-        }
-        catch (err) {
-            console.log(this._TAG, "Failed to log error to file: " + (err && err.message));
+            console.log(this._TAG, "Failed to log to file: " + (err && err.message));
         }
     }
 
@@ -159,7 +105,7 @@ export class InternalAzureLogger {
         try {
             // Check size
             let size = await getShallowFileSize(this._fileFullPath);
-            if (size > this.maxSizeBytes) {
+            if (size > this._maxSizeBytes) {
                 await this._createBackupFile(data);
             } else {
                 await appendFileAsync(this._fileFullPath, data);
@@ -203,7 +149,7 @@ export class InternalAzureLogger {
                 }
             });
             let totalFiles = files.length;
-            for (let i = 0; i < totalFiles - this.maxHistory; i++) {
+            for (let i = 0; i < totalFiles - this._maxHistory; i++) {
                 let pathToDelete = path.join(this._tempDir, files[i]);
                 await unlinkAsync(pathToDelete);
             }
