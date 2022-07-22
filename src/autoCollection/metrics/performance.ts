@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 import * as os from "os";
 import { Meter, ObservableCallback, ObservableGauge, ObservableResult, ValueType } from "@opentelemetry/api-metrics";
-import { QuickPulseCounter, PerformanceCounter } from "../../declarations/constants";
+import { QuickPulseCounter, PerformanceCounter } from "./types";
 import { HttpMetricsInstrumentation } from "./httpMetricsInstrumentation";
 import { Config } from "../../library";
 
