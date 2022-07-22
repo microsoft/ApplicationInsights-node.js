@@ -5,4 +5,4 @@ export { AutoCollectConsole } from "./console";
 export { AutoCollectExceptions } from "./exceptions";
 export { AutoCollectNativePerformance, getNativeMetricsConfig } from "./metrics/nativePerformance";
 export { AutoCollectPerformance } from "./metrics/performance";
-export { AutoCollectPreAggregatedMetrics } from "./metrics/preAggregatedMetrics";
+export { AutoCollectPreAggregatedMetrics } from "./metrics/standardMetrics";
