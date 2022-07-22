@@ -1,160 +1,83 @@
-import * as fs from "fs";
-import * as os from "os";
-import * as path from "path";
 import { diag, DiagLogger, DiagLogLevel } from "@opentelemetry/api";
-import {
-    accessAsync,
-    appendFileAsync,
-    confirmDirExists,
-    getShallowFileSize,
-    readdirAsync,
-    readFileAsync,
-    writeFileAsync,
-    unlinkAsync,
-} from "../util";
+import { InternalAzureLogger } from "./internalAzureLogger";
 
 export class Logger implements DiagLogger {
-    private _TAG = "Logger";
-    private _cleanupTimeOut = 60 * 30 * 1000; // 30 minutes;
-    private _fileCleanupTimer: NodeJS.Timer = null;
-    private _tempDir: string;
-    private _logFileName: string;
-    private _fileFullPath: string;
-    private _backUpNameFormat: string;
-    private _logToFile = false;
-    private _logToConsole = true;
-    private _maxHistory: number;
-    private _maxSizeBytes: number;
+    private static _instance: Logger;
+
+    private _TAG = "ApplicationInsights:";
+    private _diagLevel: DiagLogLevel;
+    private _internalLogger: InternalAzureLogger;
+
+    static getInstance() {
+        if (!Logger._instance) {
+            Logger._instance = new Logger();
+        }
+        return Logger._instance;
+    }
 
     constructor() {
-        let logDestination = process.env.APPLICATIONINSIGHTS_LOG_DESTINATION; // destination can be one of file, console or file+console
-        if (logDestination == "file+console") {
-            this._logToFile = true;
+        this._internalLogger = new InternalAzureLogger();
+        let envLogLevel = process.env.APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL;
+        this._diagLevel = DiagLogLevel.INFO; // Default
+        switch (envLogLevel) {
+            case "ALL":
+                this._diagLevel = DiagLogLevel.ALL;
+                break;
+            case "DEBUG":
+                this._diagLevel = DiagLogLevel.DEBUG;
+                break;
+            case "ERROR":
+                this._diagLevel = DiagLogLevel.ERROR;
+                break;
+            case "INFO":
+                this._diagLevel = DiagLogLevel.INFO;
+                break;
+            case "NONE":
+                this._diagLevel = DiagLogLevel.NONE;
+                break;
+            case "VERBOSE":
+                this._diagLevel = DiagLogLevel.VERBOSE;
+                break;
+            case "WARN":
+                this._diagLevel = DiagLogLevel.WARN;
+                break;
         }
-        if (logDestination == "file") {
-            this._logToFile = true;
-            this._logToConsole = false;
-        }
-        this._maxSizeBytes = 50000;
-        this._maxHistory = 1;
-        this._logFileName = "applicationinsights.log";
+        this.updateLogLevel(this._diagLevel);
+    }
 
-        // If custom path not provided use temp folder, /tmp for *nix and USERDIR/AppData/Local/Temp for Windows
-        let logFilePath = process.env.APPLICATIONINSIGHTS_LOGDIR;
-        if (!logFilePath) {
-            this._tempDir = path.join(os.tmpdir(), "appInsights-node");
-        } else {
-            if (path.isAbsolute(logFilePath)) {
-                this._tempDir = logFilePath;
-            } else {
-                this._tempDir = path.join(process.cwd(), logFilePath);
-            }
-        }
-        this._fileFullPath = path.join(this._tempDir, this._logFileName);
-        this._backUpNameFormat = "." + this._logFileName; // {currentime}.applicationinsights.log
+    public updateLogLevel(logLevel: DiagLogLevel) {
+        this._diagLevel = logLevel;
+        // Set OpenTelemetry Logger
+        diag.setLogger(this, this._diagLevel);
+    }
 
-        if (this._logToFile) {
-            if (!this._fileCleanupTimer) {
-                this._fileCleanupTimer = setInterval(() => {
-                    this._fileCleanupTask();
-                }, this._cleanupTimeOut);
-                this._fileCleanupTimer.unref();
-            }
+    public error(message?: any, ...optionalParams: any[]) {
+        if (this._diagLevel >= DiagLogLevel.ERROR) {
+            this._internalLogger.logMessage(this._TAG + message, optionalParams);
         }
     }
 
-    public async debug(message?: any, ...optionalParams: any[]): Promise<void> {
-        try {
-            let args = message ? [message, ...optionalParams] : optionalParams;
-            if (this._logToFile) {
-                await this._storeToDisk(args);
-            }
-            if (this._logToConsole) {
-                console.debug(...args);
-            }
-        }
-        catch (err) {
-            console.log(this._TAG, "Failed to log debug to file: " + (err && err.message));
+    public warn(message?: any, ...optionalParams: any[]) {
+        if (this._diagLevel >= DiagLogLevel.WARN) {
+            this._internalLogger.logMessage(this._TAG + message, optionalParams);
         }
     }
 
-    private async _storeToDisk(args: any): Promise<void> {
-        let data = args + "\r\n";
-
-        try {
-            await confirmDirExists(this._tempDir);
-        } catch (err) {
-            console.log(
-                this._TAG,
-                "Failed to create directory for log file: " + (err && err.message)
-            );
-            return;
-        }
-        try {
-            await accessAsync(this._fileFullPath, fs.constants.F_OK);
-        } catch (err) {
-            // No file create one
-            await appendFileAsync(this._fileFullPath, data).catch((appendError) => {
-                console.log(
-                    this._TAG,
-                    "Failed to put log into file: " + (appendError && appendError.message)
-                );
-            });
-            return;
-        }
-        try {
-            // Check size
-            let size = await getShallowFileSize(this._fileFullPath);
-            if (size > this._maxSizeBytes) {
-                await this._createBackupFile(data);
-            } else {
-                await appendFileAsync(this._fileFullPath, data);
-            }
-        } catch (err) {
-            throw err;
+    public info(message?: any, ...optionalParams: any[]) {
+        if (this._diagLevel >= DiagLogLevel.INFO) {
+            this._internalLogger.logMessage(this._TAG + message, optionalParams);
         }
     }
 
-    private async _createBackupFile(data: string): Promise<void> {
-        try {
-            let buffer = await readFileAsync(this._fileFullPath);
-            let backupPath = path.join(
-                this._tempDir,
-                new Date().getTime() + "." + this._logFileName
-            );
-            await writeFileAsync(backupPath, buffer);
-        } catch (err) {
-            console.log("Failed to generate backup log file", err);
-        } finally {
-            // Store logs
-            writeFileAsync(this._fileFullPath, data);
+    public debug(message?: any, ...optionalParams: any[]) {
+        if (this._diagLevel >= DiagLogLevel.DEBUG) {
+            this._internalLogger.logMessage(this._TAG + message, optionalParams);
         }
     }
 
-    private async _fileCleanupTask(): Promise<void> {
-        try {
-            let files = await readdirAsync(this._tempDir);
-            // Filter only backup files
-            files = files.filter((f) => path.basename(f).indexOf(this._backUpNameFormat) > -1);
-            // Sort by creation date
-            files.sort((a: string, b: String) => {
-                // Check expiration
-                let aCreationDate: Date = new Date(parseInt(a.split(this._backUpNameFormat)[0]));
-                let bCreationDate: Date = new Date(parseInt(b.split(this._backUpNameFormat)[0]));
-                if (aCreationDate < bCreationDate) {
-                    return -1;
-                }
-                if (aCreationDate >= bCreationDate) {
-                    return 1;
-                }
-            });
-            let totalFiles = files.length;
-            for (let i = 0; i < totalFiles - this._maxHistory; i++) {
-                let pathToDelete = path.join(this._tempDir, files[i]);
-                await unlinkAsync(pathToDelete);
-            }
-        } catch (err) {
-            console.log(this._TAG, "Failed to cleanup log files: " + (err && err.message));
+    public verbose(message?: any, ...optionalParams: any[]) {
+        if (this._diagLevel >= DiagLogLevel.VERBOSE) {
+            this._internalLogger.logMessage(this._TAG + message, optionalParams);
         }
     }
 }

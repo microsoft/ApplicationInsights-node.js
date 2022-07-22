@@ -1,5 +1,5 @@
 import { IncomingMessage } from "http";
-import { SpanContext } from "@opentelemetry/api";
+import { DiagLogLevel, SpanContext } from "@opentelemetry/api";
 
 import { AutoCollectPerformance } from "../autoCollection";
 import { Logger } from "../library/logging";
@@ -256,8 +256,16 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setInternalLogger(enableDebugLogger = false, enableWarningLogger = true) {
-        Logger.getInstance().enableDebug = enableDebugLogger;
-        Logger.getInstance().disableWarnings = !enableWarningLogger;
+        if (enableDebugLogger) {
+            Logger.getInstance().updateLogLevel(DiagLogLevel.DEBUG);
+            return Configuration;
+        }
+        if (enableWarningLogger) {
+            Logger.getInstance().updateLogLevel(DiagLogLevel.WARN);
+            return Configuration;
+        }
+        // Default
+        Logger.getInstance().updateLogLevel(DiagLogLevel.INFO);
         return Configuration;
     }
 
