@@ -6,6 +6,7 @@ import AutoCollectHttpDependencies = require("../AutoCollection/HttpDependencies
 import Logging = require("./Logging");
 import QuickPulseUtil = require("./QuickPulseUtil");
 import Util = require("./Util");
+import url = require("url");
 
 // Types
 import * as http from "http";
@@ -15,7 +16,7 @@ const QuickPulseConfig = {
     method: "POST",
     time: "x-ms-qps-transmission-time",
     pollingIntervalHint: "x-ms-qps-service-polling-interval-hint",
-    endpointRedirect: "x-ms-qps-service-endpoint-redirect",
+    endpointRedirect: "x-ms-qps-service-endpoint-redirect-v2",
     instanceName: "x-ms-qps-instance-name",
     streamId: "x-ms-qps-stream-id",
     machineName: "x-ms-qps-machine-name",
@@ -114,7 +115,8 @@ class QuickPulseSender {
         const req = https.request(options, (res: http.IncomingMessage) => {
             if (res.statusCode == 200) {
                 const shouldPOSTData = res.headers[QuickPulseConfig.subscribed] === "true";
-                const redirectHeader = res.headers[QuickPulseConfig.endpointRedirect] ? res.headers[QuickPulseConfig.endpointRedirect].toString() : null;
+                const redirectHeader = res.headers[QuickPulseConfig.endpointRedirect] ? new url.URL(res.headers[QuickPulseConfig.endpointRedirect].toString()).host : null;
+
                 const pollingIntervalHint = res.headers[QuickPulseConfig.pollingIntervalHint] ? parseInt(res.headers[QuickPulseConfig.pollingIntervalHint].toString()) : null;
                 this._consecutiveErrors = 0;
                 done(shouldPOSTData, res, redirectHeader, pollingIntervalHint);
