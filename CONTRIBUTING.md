@@ -17,7 +17,7 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 
 1. Fork this repo
 2. Clone your fork locally (`git clone https://github.com/<youruser>/ApplicationInsights-node.js
-3. Open a terminal and move into your local copy (`cd azure-sdk-for-js`)
+3. Open a terminal and move into your local copy (`cd ApplicationInsights-node.js`)
 4. Install all dependencies with `npm install`.
 5. Build project 
     ```bash
