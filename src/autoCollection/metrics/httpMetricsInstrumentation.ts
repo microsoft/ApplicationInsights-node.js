@@ -12,9 +12,12 @@ import {
   safeExecuteInTheMiddle
 } from '@opentelemetry/instrumentation';
 import { getRequestInfo } from '@opentelemetry/instrumentation-http';
+import { Histogram } from "@opentelemetry/api-metrics";
 
 import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../declarations/constants";
-import { IHttpMetric, IMetricDependencyDimensions, IMetricRequestDimensions } from './types';
+import { IHttpMetric, IMetricDependencyDimensions, IMetricRequestDimensions, MetricDependencyType, StandardMetric } from './types';
+import { Logger } from '../../library/logging';
+import { getMetricAttributes } from './util';
 
 
 export class HttpMetricsInstrumentation extends InstrumentationBase {
@@ -28,6 +31,9 @@ export class HttpMetricsInstrumentation extends InstrumentationBase {
   public intervalDependencyExecutionTime: number = 0;
   public intervalRequestExecutionTime: number = 0;
 
+  private _requestsDurationHistogram: Histogram = null;
+  private _dependenciesDurationHistogram: Histogram = null;
+
   public static getInstance() {
     if (!HttpMetricsInstrumentation._instance) {
       HttpMetricsInstrumentation._instance = new HttpMetricsInstrumentation();
@@ -38,6 +44,16 @@ export class HttpMetricsInstrumentation extends InstrumentationBase {
   constructor(config: InstrumentationConfig = {}) {
     super('AzureHttpMetricsInstrumentation', APPLICATION_INSIGHTS_SDK_VERSION, config);
     this._nodeVersion = process.versions.node;
+  }
+
+  public enableStandardMetrics(requestsDurationHistogram: Histogram, dependenciesDurationHistogram: Histogram) {
+    this._dependenciesDurationHistogram = dependenciesDurationHistogram;
+    this._requestsDurationHistogram = requestsDurationHistogram;
+  }
+
+  public disableStandardMetrics() {
+    this._dependenciesDurationHistogram = null;
+    this._requestsDurationHistogram = null;
   }
 
   /**
@@ -51,20 +67,27 @@ export class HttpMetricsInstrumentation extends InstrumentationBase {
     return [this._getHttpDefinition(), this._getHttpsDefinition()];
   }
 
-  private _htppRequestDone(metric: IHttpMetric) {
+  private _httpRequestDone(metric: IHttpMetric) {
     // Done could be called multiple times, only process metric once
     if (!metric.isProcessed) {
       let durationMs = Date.now() - metric.startTime;
+      let attributes = getMetricAttributes(metric.dimensions);
       if (metric.isOutgoingRequest) {
+        if (this._requestsDurationHistogram) {
+          this._requestsDurationHistogram.record(durationMs, attributes);
+        }
         this.intervalRequestExecutionTime += durationMs;
-        if ((metric.dimensions as IMetricRequestDimensions).requestSuccess === false) {
+        if (metric.dimensions.success === false) {
           this.totalFailedRequestCount++;
         }
         this.totalRequestCount++;
       }
       else {
+        if (this._dependenciesDurationHistogram) {
+          this._dependenciesDurationHistogram.record(durationMs, attributes);
+        }
         this.intervalDependencyExecutionTime += durationMs;
-        if ((metric.dimensions as IMetricDependencyDimensions).dependencySuccess === false) {
+        if (metric.dimensions.success === false) {
           this.totalFailedDependencyCount++;
         }
         this.totalDependencyCount++;
@@ -172,7 +195,9 @@ export class HttpMetricsInstrumentation extends InstrumentationBase {
         return original.apply(this, [options, ...args]);
       }
       let dimensions: IMetricDependencyDimensions = {
-        dependencySuccess: false,
+        success: false,
+        type: MetricDependencyType.HTTP,
+        target: optionsParsed.path || '/'
       };
       let metric: IHttpMetric = {
         startTime: Date.now(),
@@ -184,35 +209,40 @@ export class HttpMetricsInstrumentation extends InstrumentationBase {
         () => original.apply(this, [options, ...args]),
         error => {
           if (error) {
-
             throw error;
           }
         }
       );
       request.prependListener(
         'response',
-        (response: http.IncomingMessage & { aborted?: boolean }) => {
+        (response: http.IncomingMessage & { aborted?: boolean, complete?: boolean }) => {
+          Logger.getInstance().debug('outgoingRequest on response()');
+          metric.dimensions.resultCode = String(response.statusCode);
           response.on('end', () => {
-            if (response.aborted && !(response as any).complete) {
-
+            Logger.getInstance().debug('outgoingRequest on end()');
+            if (response.aborted && !response.complete) {
+              metric.dimensions.success = false;
             } else {
-
+              metric.dimensions.success = (0 < response.statusCode) && (response.statusCode < 400);
             }
-            instrumentation._htppRequestDone(metric);
+            instrumentation._httpRequestDone(metric);
           });
           response.on('error', (error: Error) => {
-            instrumentation._htppRequestDone(metric);
+            Logger.getInstance().debug('outgoingRequest on response error()', error);
+            instrumentation._httpRequestDone(metric);
           });
         }
       );
       request.on('close', () => {
+        Logger.getInstance().debug('outgoingRequest on request close()');
         if (!request.aborted) {
-          instrumentation._htppRequestDone(metric);
+          instrumentation._httpRequestDone(metric);
         }
       });
       request.on('error', (error: Error) => {
-        (metric.dimensions as IMetricDependencyDimensions).dependencySuccess = false;
-        instrumentation._htppRequestDone(metric);
+        Logger.getInstance().debug('outgoingRequest on request error()');
+        metric.dimensions.success = false;
+        instrumentation._httpRequestDone(metric);
       });
       return request;
     };
@@ -239,7 +269,7 @@ export class HttpMetricsInstrumentation extends InstrumentationBase {
         return original.apply(this, [event, ...args]);
       }
       let dimensions: IMetricRequestDimensions = {
-        requestSuccess: false,
+        success: false,
       };
       let metric: IHttpMetric = {
         startTime: Date.now(),
@@ -247,7 +277,6 @@ export class HttpMetricsInstrumentation extends InstrumentationBase {
         isProcessed: false,
         dimensions: dimensions
       };
-
       const request = args[0] as http.IncomingMessage;
       const response = args[1] as http.ServerResponse;
       const originalEnd = response.end;
@@ -256,24 +285,27 @@ export class HttpMetricsInstrumentation extends InstrumentationBase {
         ..._args: any
       ) {
         response.end = originalEnd;
+        metric.dimensions.resultCode = String(response.statusCode);
+        metric.dimensions.success = (0 < response.statusCode) && (response.statusCode < 500);
         const returned = safeExecuteInTheMiddle(
           () => response.end.apply(this, arguments as never),
           error => {
             if (error) {
-              instrumentation._htppRequestDone(metric);
+              instrumentation._httpRequestDone(metric);
               throw error;
             }
           }
         );
-
-        instrumentation._htppRequestDone(metric);
+        instrumentation._httpRequestDone(metric);
         return returned;
       };
       return safeExecuteInTheMiddle(
         () => original.apply(this, [event, ...args]),
         error => {
           if (error) {
-            instrumentation._htppRequestDone(metric);
+            metric.dimensions.resultCode = String(response.statusCode);
+            metric.dimensions.success = false;
+            instrumentation._httpRequestDone(metric);
             throw error;
           }
         }

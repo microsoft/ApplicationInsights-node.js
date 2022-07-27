@@ -1,5 +1,5 @@
 import { Meter, ObservableGauge, ObservableResult, Histogram } from "@opentelemetry/api-metrics";
-import { GarbageCollectionType, NativeMetricsCounter } from "../../declarations/constants";
+import { GarbageCollectionType, NativeMetricsCounter } from "./types";
 import { Logger } from "../../library/logging";
 import { IBaseConfig, IDisabledExtendedMetrics } from "../../library/configuration/interfaces";
 
@@ -83,10 +83,10 @@ export class AutoCollectNativePerformance {
                 clearInterval(this._handle);
                 this._handle = undefined;
             }
-             // Remove observable callbacks
-             this._heapMemoryTotalGauge.removeCallback(this._getHeapTotal);
-             this._heapMemoryUsageGauge.removeCallback(this._getHeapUsage);
-             this._memoryUsageNonHeapGauge.removeCallback(this._getNonHeapUsage);
+            // Remove observable callbacks
+            this._heapMemoryTotalGauge.removeCallback(this._getHeapTotal);
+            this._heapMemoryUsageGauge.removeCallback(this._getHeapUsage);
+            this._memoryUsageNonHeapGauge.removeCallback(this._getNonHeapUsage);
         }
     }
 

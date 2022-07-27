@@ -2,7 +2,7 @@ import { MetricData } from "@opentelemetry/sdk-metrics-base";
 import * as assert from "assert";
 import * as sinon from "sinon";
 import { AutoCollectPerformance } from "../../../src/autoCollection";
-import { PerformanceCounter, QuickPulseCounter } from "../../../src/declarations/constants";
+import { PerformanceCounter, QuickPulseCounter } from "../../../src/autoCollection/metrics/types";
 import { Config } from "../../../src/library/configuration";
 import { MetricHandler } from "../../../src/library/handlers";
 

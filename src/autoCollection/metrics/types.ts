@@ -94,16 +94,20 @@ export interface IMetricBaseDimensions {
 }
 
 export interface IMetricDependencyDimensions extends IMetricBaseDimensions {
-  dependencyType?: string;
-  dependencyTarget?: string;
-  dependencySuccess?: boolean;
-  dependencyResultCode?: string;
+  type?: MetricDependencyType;
+  target?: string;
+  success?: boolean;
+  resultCode?: string;
   operationSynthetic?: string;
 }
 
+export enum MetricDependencyType {
+  HTTP = "Http",
+}
+
 export interface IMetricRequestDimensions extends IMetricBaseDimensions {
-  requestSuccess?: boolean;
-  requestResultCode?: string;
+  success?: boolean;
+  resultCode?: string;
   operationSynthetic?: string;
 }
 

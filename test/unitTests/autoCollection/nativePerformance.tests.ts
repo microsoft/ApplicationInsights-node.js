@@ -3,7 +3,7 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 
 import { AutoCollectNativePerformance, getNativeMetricsConfig } from "../../../src/autoCollection/metrics/nativePerformance";
-import { NativeMetricsCounter } from "../../../src/declarations/constants";
+import { NativeMetricsCounter } from "../../../src/autoCollection/metrics/types";
 import { Config, JsonConfig } from "../../../src/library/configuration";
 import { MetricHandler } from "../../../src/library/handlers";
 

@@ -1,45 +1,32 @@
 import { Histogram, Meter, MetricAttributes, ObservableCallback, ObservableGauge, ObservableResult, ValueType } from "@opentelemetry/api-metrics";
 import {
-    AggregatedMetric,
     AggregatedMetricCounter,
     IMetricBaseDimensions,
-    IMetricDependencyDimensions,
-    IMetricExceptionDimensions,
-    IMetricRequestDimensions,
-    IMetricTraceDimensions,
-    MetricDimensionTypeKeys,
     MetricId,
-    PreAggregatedMetricPropertyNames,
     StandardMetric
 } from "./types";
 import { HttpMetricsInstrumentation } from "./httpMetricsInstrumentation";
+import { getMetricAttributes } from "./util";
 
 
 export class AutoCollectStandardMetrics {
-    private _collectionInterval: number = 60000; // 60 seconds
-    private _handle: NodeJS.Timer;
     private _isEnabled: boolean;
-    private _meter: Meter;
     private _httpMetrics: HttpMetricsInstrumentation
-    private _dependencyCountersCollection: Array<AggregatedMetricCounter>;
-    private _requestCountersCollection: Array<AggregatedMetricCounter>;
+    private _meter: Meter;
     private _exceptionCountersCollection: Array<AggregatedMetricCounter>;
     private _traceCountersCollection: Array<AggregatedMetricCounter>;
-    private _requestsDurationHistogram: Histogram;
-    private _dependenciesDurationHistogram: Histogram;
     private _exceptionsGauge: ObservableGauge; // TODO: Not implemented
     private _exceptionsGaugeCallback: ObservableCallback;
     private _tracesGauge: ObservableGauge; // TODO: Not implemented
     private _tracesGaugeCallback: ObservableCallback;
+    private _requestsDurationHistogram: Histogram;
+    private _dependenciesDurationHistogram: Histogram;
 
     constructor(meter: Meter) {
         this._meter = meter;
-        this._dependencyCountersCollection = [];
-        this._requestCountersCollection = [];
         this._exceptionCountersCollection = [];
         this._traceCountersCollection = [];
         this._httpMetrics = HttpMetricsInstrumentation.getInstance();
-
         this._requestsDurationHistogram = this._meter.createHistogram(StandardMetric.REQUESTS, { valueType: ValueType.DOUBLE });
         this._dependenciesDurationHistogram = this._meter.createHistogram(StandardMetric.DEPENDENCIES, { valueType: ValueType.DOUBLE });
         this._exceptionsGauge = this._meter.createObservableGauge(StandardMetric.EXCEPTIONS, { valueType: ValueType.DOUBLE });
@@ -51,20 +38,13 @@ export class AutoCollectStandardMetrics {
     public enable(isEnabled: boolean) {
         this._isEnabled = isEnabled;
         if (this._isEnabled) {
-            // Add histogram data collection
-            if (!this._handle) {
-                this._handle = setInterval(() => this._collectHistogramData(), this._collectionInterval);
-                this._handle.unref();
-            }
             this._exceptionsGauge.addCallback(this._exceptionsGaugeCallback);
             this._tracesGauge.addCallback(this._tracesGaugeCallback);
+            this._httpMetrics.enableStandardMetrics(this._requestsDurationHistogram, this._dependenciesDurationHistogram);
         } else {
-            if (this._handle) {
-                clearInterval(this._handle);
-                this._handle = undefined;
-            }
             this._exceptionsGauge.removeCallback(this._exceptionsGaugeCallback);
             this._tracesGauge.removeCallback(this._tracesGaugeCallback);
+            this._httpMetrics.disableStandardMetrics();
         }
     }
 
@@ -105,67 +85,6 @@ export class AutoCollectStandardMetrics {
         return newCounter;
     }
 
-    private _collectHistogramData() {
-        this._getRequestDuration();
-        this._getDependencyDuration();
-    }
-
-    private _getRequestDuration() {
-        for (let i = 0; i < this._requestCountersCollection.length; i++) {
-            var currentCounter = this._requestCountersCollection[i];
-            currentCounter.time = +new Date();
-            var intervalRequests = currentCounter.totalCount - currentCounter.lastTotalCount || 0;
-            var elapsedMs = currentCounter.time - currentCounter.lastTime;
-            var averageRequestExecutionTime =
-                (currentCounter.intervalExecutionTime - currentCounter.lastIntervalExecutionTime) /
-                intervalRequests || 0;
-            currentCounter.lastIntervalExecutionTime = currentCounter.intervalExecutionTime; // reset
-            if (elapsedMs > 0 && intervalRequests > 0) {
-                let attributes = this._getMetricAttributes(currentCounter.dimensions, intervalRequests, MetricId.REQUESTS_DURATION);
-                this._dependenciesDurationHistogram.record(intervalExceptions, attributes);
-
-                this._trackPreAggregatedMetric({
-                    name: "Server response time",
-                    dimensions: currentCounter.dimensions,
-                    value: averageRequestExecutionTime,
-                    count: intervalRequests,
-                    aggregationInterval: elapsedMs,
-                    metricType: MetricId.REQUESTS_DURATION,
-                });
-            }
-            // Set last counters
-            currentCounter.lastTotalCount = currentCounter.totalCount;
-            currentCounter.lastTime = currentCounter.time;
-        }
-    }
-
-    private _getDependencyDuration(observableResult: ObservableResult) {
-        for (let i = 0; i < this._dependencyCountersCollection.length; i++) {
-            var currentCounter = this._dependencyCountersCollection[i];
-            currentCounter.time = +new Date();
-            var intervalDependencies =
-                currentCounter.totalCount - currentCounter.lastTotalCount || 0;
-            var elapsedMs = currentCounter.time - currentCounter.lastTime;
-            var averageDependencyExecutionTime =
-                (currentCounter.intervalExecutionTime - currentCounter.lastIntervalExecutionTime) /
-                intervalDependencies || 0;
-            currentCounter.lastIntervalExecutionTime = currentCounter.intervalExecutionTime; // reset
-            if (elapsedMs > 0 && intervalDependencies > 0) {
-                this._trackPreAggregatedMetric({
-                    name: "Dependency duration",
-                    dimensions: currentCounter.dimensions,
-                    value: averageDependencyExecutionTime,
-                    count: intervalDependencies,
-                    aggregationInterval: elapsedMs,
-                    metricType: MetricId.DEPENDENCIES_DURATION,
-                });
-            }
-            // Set last counters
-            currentCounter.lastTotalCount = currentCounter.totalCount;
-            currentCounter.lastTime = currentCounter.time;
-        }
-    }
-
     private _getExceptions(observableResult: ObservableResult) {
         for (let i = 0; i < this._exceptionCountersCollection.length; i++) {
             var currentCounter = this._exceptionCountersCollection[i];
@@ -199,10 +118,7 @@ export class AutoCollectStandardMetrics {
     }
 
     private _getMetricAttributes(dimensions: IMetricBaseDimensions, aggregationInterval: number, metricType: string): MetricAttributes {
-        let metricProperties: MetricAttributes = {};
-        for (let dim in dimensions) {
-            metricProperties[PreAggregatedMetricPropertyNames[dim as MetricDimensionTypeKeys]] = dimensions[dim];
-        }
+        let metricProperties = getMetricAttributes(dimensions);
         metricProperties = {
             ...metricProperties,
             "_MS.MetricId": metricType,

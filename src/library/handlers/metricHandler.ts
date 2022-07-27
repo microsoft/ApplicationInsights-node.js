@@ -16,7 +16,7 @@ import { Config } from "../configuration";
 import { IDisabledExtendedMetrics } from "../configuration/interfaces";
 import {
     AutoCollectNativePerformance,
-    AutoCollectPreAggregatedMetrics,
+    AutoCollectStandardMetrics,
     AutoCollectPerformance,
     getNativeMetricsConfig,
 } from "../../autoCollection";
@@ -30,12 +30,6 @@ import {
     KnownDataPointType,
     KnownContextTagKeys,
 } from "../../declarations/generated";
-import {
-    IMetricDependencyDimensions,
-    IMetricExceptionDimensions,
-    IMetricRequestDimensions,
-    IMetricTraceDimensions,
-} from "../../autoCollection/metrics/types";
 import { ResourceManager } from "./resourceManager";
 import { HeartBeat } from "../../autoCollection/metrics/heartBeat";
 import { Util } from "../util";
@@ -60,7 +54,7 @@ export class MetricHandler {
     private _isStarted = false;
     private _batchProcessor: BatchProcessor;
     private _performance: AutoCollectPerformance;
-    private _preAggregatedMetrics: AutoCollectPreAggregatedMetrics;
+    private _preAggregatedMetrics: AutoCollectStandardMetrics;
     private _heartbeat: HeartBeat;
     private _nativePerformance: AutoCollectNativePerformance;
 
@@ -88,7 +82,7 @@ export class MetricHandler {
         this._nativePerformance = new AutoCollectNativePerformance(this._meter);
         this._performance = new AutoCollectPerformance(this._meter, this._config);
         this._heartbeat = new HeartBeat(this._config);
-        this._preAggregatedMetrics = new AutoCollectPreAggregatedMetrics(this);
+        this._preAggregatedMetrics = new AutoCollectStandardMetrics(this._meter);
     }
 
     public start() {
@@ -164,28 +158,6 @@ export class MetricHandler {
 
     public enableAutoCollectHeartbeat() {
         this._heartbeat = new HeartBeat(this._config);
-    }
-
-    public countPreAggregatedException(dimensions: IMetricExceptionDimensions) {
-        this._preAggregatedMetrics.countException(dimensions);
-    }
-
-    public countPreAggregatedTrace(dimensions: IMetricTraceDimensions) {
-        this._preAggregatedMetrics.countTrace(dimensions);
-    }
-
-    public countPreAggregatedRequest(
-        duration: number | string,
-        dimensions: IMetricRequestDimensions
-    ) {
-        this._preAggregatedMetrics.countRequest(duration, dimensions);
-    }
-
-    public countPreAggregatedDependency(
-        duration: number | string,
-        dimensions: IMetricDependencyDimensions
-    ) {
-        this._preAggregatedMetrics.countDependency(duration, dimensions);
     }
 
     public async shutdown(): Promise<void> {
