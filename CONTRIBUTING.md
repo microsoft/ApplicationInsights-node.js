@@ -14,22 +14,26 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 
 # How to contribute to the Application Insights Node.js SDK
 
-1. Install all dependencies with `npm install`.
-2. Build project 
+
+1. Fork this repo
+2. Clone your fork locally (`git clone https://github.com/<youruser>/ApplicationInsights-node.js
+3. Open a terminal and move into your local copy (`cd ApplicationInsights-node.js`)
+4. Install all dependencies with `npm install`.
+5. Build project 
     ```bash
     npm run build
     ```
-3. Run unit tests
+6. Run unit tests
     ```bash
     npm run test
     ```
-4. Run functional and back compatibility tests, start docker then run following commands:
+7. Run functional and back compatibility tests, start docker then run following commands:
     ```bash
     npm run functionaltest
     ```
     _Note: Functional tests require Docker_
     
-5. Run back compatibility tests to ckeck older version of Node.js runtime and Typescript.
+8. Run back compatibility tests to ckeck older version of Node.js runtime and Typescript.
     ```bash
     npm run backcompattest
     ```
