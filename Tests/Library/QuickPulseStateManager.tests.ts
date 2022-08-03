@@ -3,16 +3,12 @@ import https = require("https");
 import sinon = require("sinon");
 
 import QuickPulseClient = require("../../Library/QuickPulseStateManager");
-<<<<<<< HEAD
-import { IncomingMessage } from "http";
-=======
 import Contracts = require("../../Declarations/Contracts");
 import AuthorizationHandler = require("../../Library/AuthorizationHandler");
 import { IncomingMessage } from "http";
 import Config = require("../../Library/Config");
 import QuickPulseSender = require("../../Library/QuickPulseSender");
 import Util = require("../../Library/Util");
->>>>>>> 6cc5bf55cdb49bc5c927f12ece39e1343908d672
 
 describe("Library/QuickPulseStateManager", () => {
     Util.tlsRestrictedAgent = new https.Agent();
@@ -148,11 +144,7 @@ describe("Library/QuickPulseStateManager", () => {
 
         beforeEach(() => {
             clock = sinon.useFakeTimers();
-<<<<<<< HEAD
-            qps = new QuickPulseClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-=======
             qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
->>>>>>> 6cc5bf55cdb49bc5c927f12ece39e1343908d672
             postStub = sinon.stub(qps, "_post");
             pingStub = sinon.stub(qps, "_ping");
         })
@@ -191,11 +183,7 @@ describe("Library/QuickPulseStateManager", () => {
 
         beforeEach(() => {
             clock = sinon.useFakeTimers();
-<<<<<<< HEAD
-            qps = new QuickPulseClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-=======
             qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
->>>>>>> 6cc5bf55cdb49bc5c927f12ece39e1343908d672
             submitDataStub = sinon.stub(qps['_sender'], "_submitData");
         })
         afterEach(() => {
@@ -222,11 +210,6 @@ describe("Library/QuickPulseStateManager", () => {
             assert.equal((callArgs[0][4][4] as any)['value'], '1');
 
             assert.equal(submitDataStub.callCount, 1);
-<<<<<<< HEAD
-            
-=======
-
->>>>>>> 6cc5bf55cdb49bc5c927f12ece39e1343908d672
             qps.enable(false);
         });
 
@@ -244,11 +227,6 @@ describe("Library/QuickPulseStateManager", () => {
             assert.equal(callArgs[0][1], undefined);
             assert.equal(callArgs[1][1], 'www.example.com');
             assert.equal(callArgs[2][1], 'www.example.com');
-<<<<<<< HEAD
-            
-=======
-
->>>>>>> 6cc5bf55cdb49bc5c927f12ece39e1343908d672
         });
     });
 
@@ -256,11 +234,7 @@ describe("Library/QuickPulseStateManager", () => {
         let qps: QuickPulseClient;
 
         beforeEach(() => {
-<<<<<<< HEAD
-            qps = new QuickPulseClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-=======
             qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
->>>>>>> 6cc5bf55cdb49bc5c927f12ece39e1343908d672
 
         })
         afterEach(() => {
@@ -268,13 +242,8 @@ describe("Library/QuickPulseStateManager", () => {
         });
 
         it("should call _quickPulseDone and set the _rediectedHost and pollingIntervalHint", () => {
-<<<<<<< HEAD
-            
-            qps['_quickPulseDone'](true, { statusCode: 200} as IncomingMessage, 'www.example.com', 2000);
-=======
 
             qps['_quickPulseDone'](true, { statusCode: 200 } as IncomingMessage, 'www.example.com', 2000);
->>>>>>> 6cc5bf55cdb49bc5c927f12ece39e1343908d672
 
             assert.equal(qps['_redirectedHost'], 'www.example.com');
             assert.equal(qps['_pollingIntervalHint'], 2000);
@@ -285,28 +254,17 @@ describe("Library/QuickPulseStateManager", () => {
         it("should call _quickPulseDone and not set the _rediectedHost and pollingIntervalHint if the arguments are null", () => {
             qps['_pollingIntervalHint'] = 2000;
             qps['_redirectedHost'] = 'www.example.com';
-<<<<<<< HEAD
-            qps['_quickPulseDone'](true, { statusCode: 200} as IncomingMessage, null, 0);
-
-            assert.equal(qps['_redirectedHost'], 'www.example.com');
-            assert.equal(qps['_pollingIntervalHint'], 2000);
-            
-            qps['_quickPulseDone'](true, { statusCode: 200} as IncomingMessage, 'www.quickpulse.com', 5000);
-=======
             qps['_quickPulseDone'](true, { statusCode: 200 } as IncomingMessage, null, 0);
 
             assert.equal(qps['_redirectedHost'], 'www.example.com');
             assert.equal(qps['_pollingIntervalHint'], 2000);
 
             qps['_quickPulseDone'](true, { statusCode: 200 } as IncomingMessage, 'www.quickpulse.com', 5000);
->>>>>>> 6cc5bf55cdb49bc5c927f12ece39e1343908d672
 
             assert.equal(qps['_redirectedHost'], 'www.quickpulse.com');
             assert.equal(qps['_pollingIntervalHint'], 5000);
         });
     });
-<<<<<<< HEAD
-=======
 
     describe("#addDocuments", () => {
         var sandbox: sinon.SinonSandbox;
@@ -382,5 +340,4 @@ describe("Library/QuickPulseStateManager", () => {
             assert.ok(addHeaderStub.calledOnce);
         });
     });
->>>>>>> 6cc5bf55cdb49bc5c927f12ece39e1343908d672
 });
