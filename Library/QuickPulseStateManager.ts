@@ -30,11 +30,7 @@ class QuickPulseStateManager {
     private _handle: NodeJS.Timer;
     private _metrics: { [name: string]: Contracts.MetricQuickPulse } = {};
     private _documents: Contracts.DocumentQuickPulse[] = [];
-<<<<<<< HEAD
-    private _collectors: {enable: (enable: boolean) => void}[] = [];
-=======
     private _collectors: { enable: (enable: boolean) => void }[] = [];
->>>>>>> 6cc5bf55cdb49bc5c927f12ece39e1343908d672
     private _redirectedHost: string = null;
     private _pollingIntervalHint: number = -1;
 
@@ -160,25 +156,15 @@ class QuickPulseStateManager {
         this._sender.ping(envelope, this._redirectedHost, this._quickPulseDone.bind(this));
     }
 
-<<<<<<< HEAD
-    private _post(envelope: Contracts.EnvelopeQuickPulse): void {
-        this._sender.post(envelope, this._redirectedHost, this._quickPulseDone.bind(this));
-=======
     private async _post(envelope: Contracts.EnvelopeQuickPulse): Promise<void> {
         await this._sender.post(envelope, this._redirectedHost, this._quickPulseDone.bind(this));
->>>>>>> 6cc5bf55cdb49bc5c927f12ece39e1343908d672
     }
 
     /**
      * Change the current QPS send state. (shouldPOST == undefined) --> error, but do not change the state yet.
      */
-<<<<<<< HEAD
-    private _quickPulseDone(shouldPOST?: boolean, res?: http.IncomingMessage, 
-            redirectedHost?: string, pollingIntervalHint?: number): void {
-=======
     private _quickPulseDone(shouldPOST?: boolean, res?: http.IncomingMessage,
         redirectedHost?: string, pollingIntervalHint?: number): void {
->>>>>>> 6cc5bf55cdb49bc5c927f12ece39e1343908d672
         if (shouldPOST != undefined) {
             if (this._isCollectingData !== shouldPOST) {
                 Logging.info("Live Metrics sending data", shouldPOST);
