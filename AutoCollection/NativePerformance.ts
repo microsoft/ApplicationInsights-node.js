@@ -1,8 +1,8 @@
-import TelemetryClient= require("../Library/TelemetryClient");
+import TelemetryClient = require("../Library/TelemetryClient");
 import Constants = require("../Declarations/Constants");
-import Config = require("../Library/Config");
 import Context = require("../Library/Context");
-import Logging= require("../Library/Logging");
+import Logging = require("../Library/Logging");
+import { IBaseConfig } from "../Declarations/Interfaces";
 
 /**
  * Interface which defines which specific extended metrics should be disabled
@@ -38,14 +38,6 @@ export class AutoCollectNativePerformance {
     }
 
     /**
-     *  Reports if NativePerformance is able to run in this environment
-     */
-    public static isNodeVersionCompatible() {
-        var nodeVer = process.versions.node.split(".");
-        return parseInt(nodeVer[0]) >= 6;
-    }
-
-    /**
      * Start instance of native metrics agent.
      *
      * @param {boolean} isEnabled
@@ -53,10 +45,6 @@ export class AutoCollectNativePerformance {
      * @memberof AutoCollectNativePerformance
      */
     public enable(isEnabled: boolean, disabledMetrics: IDisabledExtendedMetrics = {}, collectionInterval = 60000): void {
-        if (!AutoCollectNativePerformance.isNodeVersionCompatible()) {
-            return;
-        }
-
         if (AutoCollectNativePerformance._metricsAvailable == undefined && isEnabled && !this._isInitialized) {
             // Try to require in the native-metrics library. If it's found initialize it, else do nothing and never try again.
             try {
@@ -81,8 +69,10 @@ export class AutoCollectNativePerformance {
         if (this._isEnabled && AutoCollectNativePerformance._emitter) {
             // enable self
             AutoCollectNativePerformance._emitter.enable(true, collectionInterval);
-            this._handle = setInterval(() => this._trackNativeMetrics(), collectionInterval);
-            this._handle.unref();
+            if (!this._handle) {
+                this._handle = setInterval(() => this._trackNativeMetrics(), collectionInterval);
+                this._handle.unref();
+            }
         } else if (AutoCollectNativePerformance._emitter) {
             // disable self
             AutoCollectNativePerformance._emitter.enable(false);
@@ -108,12 +98,13 @@ export class AutoCollectNativePerformance {
      * @private
      * @static
      * @param {(boolean | IDisabledExtendedMetrics)} collectExtendedMetrics
+     * @param {(IBaseConfig)} customConfig
      * @returns {(boolean | IDisabledExtendedMetrics)}
      * @memberof AutoCollectNativePerformance
      */
-    public static parseEnabled(collectExtendedMetrics: boolean | IDisabledExtendedMetrics): { isEnabled: boolean, disabledMetrics: IDisabledExtendedMetrics } {
-        const disableAll = process.env[Config.ENV_nativeMetricsDisableAll];
-        const individualOptOuts = process.env[Config.ENV_nativeMetricsDisablers]
+    public static parseEnabled(collectExtendedMetrics: boolean | IDisabledExtendedMetrics, customConfig: IBaseConfig): { isEnabled: boolean, disabledMetrics: IDisabledExtendedMetrics } {
+        const disableAll = customConfig.disableAllExtendedMetrics;
+        const individualOptOuts = customConfig.extendedMetricDisablers;
 
         // case 1: disable all env var set, RETURN with isEnabled=false
         if (disableAll) {
@@ -132,11 +123,11 @@ export class AutoCollectNativePerformance {
 
             // case 2a: collectExtendedMetrics is an object, overwrite existing ones if they exist
             if (typeof collectExtendedMetrics === "object") {
-                return {isEnabled: true, disabledMetrics: {...collectExtendedMetrics, ...disabledMetrics}};
+                return { isEnabled: true, disabledMetrics: { ...collectExtendedMetrics, ...disabledMetrics } };
             }
 
             // case 2b: collectExtendedMetrics is a boolean, set disabledMetrics as is
-            return {isEnabled: collectExtendedMetrics, disabledMetrics};
+            return { isEnabled: collectExtendedMetrics, disabledMetrics };
         }
 
         // case 4: no env vars set, input arg is a boolean, RETURN with isEnabled=collectExtendedMetrics, disabledMetrics={}
@@ -144,7 +135,7 @@ export class AutoCollectNativePerformance {
             return { isEnabled: collectExtendedMetrics, disabledMetrics: {} };
         } else { // use else so we don't need to force typing on collectExtendedMetrics
             // case 5: no env vars set, input arg is object, RETURN with isEnabled=true, disabledMetrics=collectExtendedMetrics
-            return { isEnabled: true, disabledMetrics: collectExtendedMetrics};
+            return { isEnabled: true, disabledMetrics: collectExtendedMetrics };
         }
     }
 
@@ -218,7 +209,7 @@ export class AutoCollectNativePerformance {
             return;
         }
 
-        const name = `Event Loop CPU Time`;
+        const name = "Event Loop CPU Time";
         const stdDev = Math.sqrt(metrics.sumSquares / metrics.count - Math.pow(metrics.total / metrics.count, 2)) || 0;
         this._client.trackMetric({
             name: name,
@@ -248,7 +239,7 @@ export class AutoCollectNativePerformance {
         const { heapUsed, heapTotal, rss } = memoryUsage;
 
         this._client.trackMetric({
-            name: `Memory Usage (Heap)`,
+            name: "Memory Usage (Heap)",
             value: heapUsed,
             count: 1,
             tagOverrides: {
@@ -256,7 +247,7 @@ export class AutoCollectNativePerformance {
             }
         });
         this._client.trackMetric({
-            name: `Memory Total (Heap)`,
+            name: "Memory Total (Heap)",
             value: heapTotal,
             count: 1,
             tagOverrides: {
@@ -264,7 +255,7 @@ export class AutoCollectNativePerformance {
             }
         });
         this._client.trackMetric({
-            name: `Memory Usage (Non-Heap)`,
+            name: "Memory Usage (Non-Heap)",
             value: rss - heapTotal,
             count: 1,
             tagOverrides: {

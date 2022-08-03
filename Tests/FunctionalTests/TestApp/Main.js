@@ -3,7 +3,7 @@ var appInsights = null;
 if (Config.AppInsightsEnabled) {
     appInsights = require("applicationinsights");
     appInsights.setup(Config.InstrumentationKey);
-    appInsights.defaultClient.config.endpointUrl = Config.EndpointBaseAddress+"/v2/track";
+    appInsights.defaultClient.config.endpointUrl = Config.EndpointBaseAddress+"/v2.1/track";
     appInsights.defaultClient.config.profileQueryEndpoint = Config.EndpointBaseAddress;
     appInsights.defaultClient.config.samplingPercentage = parseFloat(Config.SampleRate);
     appInsights.Configuration.setAutoDependencyCorrelation(Config.UseAutoCorrelation);

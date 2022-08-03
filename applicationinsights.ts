@@ -4,14 +4,14 @@ import AutoCollectExceptions = require("./AutoCollection/Exceptions");
 import AutoCollectPerformance = require("./AutoCollection/Performance");
 import AutoCollecPreAggregatedMetrics = require("./AutoCollection/PreAggregatedMetrics");
 import HeartBeat = require("./AutoCollection/HeartBeat");
+import WebSnippet = require("./AutoCollection/WebSnippet");
 import AutoCollectHttpDependencies = require("./AutoCollection/HttpDependencies");
 import AutoCollectHttpRequests = require("./AutoCollection/HttpRequests");
 import CorrelationIdManager = require("./Library/CorrelationIdManager");
 import Logging = require("./Library/Logging");
 import QuickPulseClient = require("./Library/QuickPulseStateManager");
 import { IncomingMessage } from "http";
-import { ISpanContext } from "diagnostic-channel";
-
+import { SpanContext } from "@opentelemetry/api";
 import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCollection/NativePerformance";
 
 // We export these imports so that SDK users may use these classes directly.
@@ -19,6 +19,7 @@ import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCo
 export import TelemetryClient = require("./Library/NodeClient");
 export import Contracts = require("./Declarations/Contracts");
 export import azureFunctionsTypes = require("./Library/Functions");
+
 
 export enum DistributedTracingModes {
     /**
@@ -34,29 +35,51 @@ export enum DistributedTracingModes {
 }
 
 // Default autocollection configuration
-let _isConsole = true;
-let _isConsoleLog = false;
-let _isExceptions = true;
-let _isPerformance = true;
-let _isPreAggregatedMetrics = true;
-let _isHeartBeat = false; // off by default for now
-let _isRequests = true;
-let _isDependencies = true;
-let _isDiskRetry = true;
-let _isCorrelating = true;
+let defaultConfig = _getDefaultAutoCollectConfig();
+let _isConsole = defaultConfig.isConsole();
+let _isConsoleLog = defaultConfig.isConsoleLog();
+let _isExceptions = defaultConfig.isExceptions();
+let _isPerformance = defaultConfig.isPerformance();
+let _isPreAggregatedMetrics = defaultConfig.isPreAggregatedMetrics();
+let _isHeartBeat = defaultConfig.isHeartBeat(); // off by default for now
+let _isRequests = defaultConfig.isRequests();
+let _isDependencies = defaultConfig.isDependencies();
+let _isDiskRetry = defaultConfig.isDiskRetry();
+let _isCorrelating = defaultConfig.isCorrelating();
 let _forceClsHooked: boolean;
-let _isSendingLiveMetrics = false; // Off by default
-let _isNativePerformance = true;
+let _isSendingLiveMetrics = defaultConfig.isSendingLiveMetrics(); // Off by default
+let _isNativePerformance = defaultConfig.isNativePerformance();
 let _disabledExtendedMetrics: IDisabledExtendedMetrics;
+let _isSnippetInjection = defaultConfig.isSnippetInjection(); // default to false
+
+function _getDefaultAutoCollectConfig() {
+    return {
+        isConsole: () => true,
+        isConsoleLog: () => false,
+        isExceptions: () => true,
+        isPerformance: () => true,
+        isPreAggregatedMetrics: () => true,
+        isHeartBeat: () => false, // off by default for now
+        isRequests: () => true,
+        isDependencies: () => true,
+        isDiskRetry: () => true,
+        isCorrelating: () => true,
+        isSendingLiveMetrics: () => false, // Off by default
+        isNativePerformance: () => true,
+        isSnippetInjection: () => false
+    }
+}
 
 let _diskRetryInterval: number = undefined;
 let _diskRetryMaxBytes: number = undefined;
+let _webSnippetConnectionString: string = undefined;
 
 let _console: AutoCollectConsole;
 let _exceptions: AutoCollectExceptions;
 let _performance: AutoCollectPerformance;
 let _preAggregatedMetrics: AutoCollecPreAggregatedMetrics;
 let _heartbeat: HeartBeat;
+let _webSnippet: WebSnippet;
 let _nativePerformance: AutoCollectNativePerformance;
 let _serverRequests: AutoCollectHttpRequests;
 let _clientRequests: AutoCollectHttpDependencies;
@@ -77,18 +100,20 @@ let _performanceLiveMetrics: AutoCollectPerformance;
  *
  * @param setupString the Connection String or Instrumentation Key to use. Optional, if
  * this is not specified, the value will be read from the environment
- * variable APPLICATIONINSIGHTS_CONNECTION_STRING or APPINSIGHTS_INSTRUMENTATIONKEY.
+ * variable APPLICATIONINSIGHTS_CONNECTION_STRING.
  * @returns {Configuration} the configuration class to initialize
  * and start the SDK.
  */
 export function setup(setupString?: string) {
     if (!defaultClient) {
         defaultClient = new TelemetryClient(setupString);
+        _initializeConfig();
         _console = new AutoCollectConsole(defaultClient);
         _exceptions = new AutoCollectExceptions(defaultClient);
         _performance = new AutoCollectPerformance(defaultClient);
         _preAggregatedMetrics = new AutoCollecPreAggregatedMetrics(defaultClient);
         _heartbeat = new HeartBeat(defaultClient);
+        _webSnippet = new WebSnippet(defaultClient);
         _serverRequests = new AutoCollectHttpRequests(defaultClient);
         _clientRequests = new AutoCollectHttpDependencies(defaultClient);
         if (!_nativePerformance) {
@@ -118,11 +143,12 @@ export function start() {
         _exceptions.enable(_isExceptions);
         _performance.enable(_isPerformance);
         _preAggregatedMetrics.enable(_isPreAggregatedMetrics);
-        _heartbeat.enable(_isHeartBeat, defaultClient.config);
+        _heartbeat.enable(_isHeartBeat);
         _nativePerformance.enable(_isNativePerformance, _disabledExtendedMetrics);
         _serverRequests.useAutoCorrelation(_isCorrelating, _forceClsHooked);
         _serverRequests.enable(_isRequests);
         _clientRequests.enable(_isDependencies);
+        _webSnippet.enable(_isSnippetInjection, _webSnippetConnectionString);
         if (liveMetricsClient && _isSendingLiveMetrics) {
             liveMetricsClient.enable(_isSendingLiveMetrics);
         }
@@ -131,6 +157,24 @@ export function start() {
     }
 
     return Configuration;
+}
+
+function _initializeConfig() {
+    _isConsole = defaultClient.config.enableAutoCollectExternalLoggers !== undefined ? defaultClient.config.enableAutoCollectExternalLoggers : _isConsole;
+    _isConsoleLog = defaultClient.config.enableAutoCollectConsole !== undefined ? defaultClient.config.enableAutoCollectConsole : _isConsoleLog;
+    _isExceptions = defaultClient.config.enableAutoCollectExceptions !== undefined ? defaultClient.config.enableAutoCollectExceptions : _isExceptions;
+    _isPerformance = defaultClient.config.enableAutoCollectPerformance !== undefined ? defaultClient.config.enableAutoCollectPerformance : _isPerformance;
+    _isPreAggregatedMetrics = defaultClient.config.enableAutoCollectPreAggregatedMetrics !== undefined ? defaultClient.config.enableAutoCollectPreAggregatedMetrics : _isPreAggregatedMetrics;
+    _isHeartBeat = defaultClient.config.enableAutoCollectHeartbeat !== undefined ? defaultClient.config.enableAutoCollectHeartbeat : _isHeartBeat;
+    _isRequests = defaultClient.config.enableAutoCollectRequests !== undefined ? defaultClient.config.enableAutoCollectRequests : _isRequests;
+    _isDependencies = defaultClient.config.enableAutoDependencyCorrelation !== undefined ? defaultClient.config.enableAutoDependencyCorrelation : _isDependencies;
+    _isCorrelating = defaultClient.config.enableAutoDependencyCorrelation !== undefined ? defaultClient.config.enableAutoDependencyCorrelation : _isCorrelating;
+    _forceClsHooked = defaultClient.config.enableUseAsyncHooks !== undefined ? defaultClient.config.enableUseAsyncHooks : _forceClsHooked;
+    _isSnippetInjection = defaultClient.config.enableAutoWebSnippetInjection !== undefined ? defaultClient.config.enableAutoWebSnippetInjection : _isSnippetInjection;
+    const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(defaultClient.config.enableAutoCollectExtendedMetrics, defaultClient.config);
+    _isNativePerformance = extendedMetricsConfig.isEnabled;
+    _disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
+    
 }
 
 /**
@@ -158,11 +202,11 @@ export function getCorrelationContext(): CorrelationContextManager.CorrelationCo
  * **(Experimental!)**
  * Starts a fresh context or propagates the current internal one.
  */
-export function startOperation(context: ISpanContext, name: string): CorrelationContextManager.CorrelationContext | null;
+export function startOperation(context: SpanContext, name: string): CorrelationContextManager.CorrelationContext | null;
 export function startOperation(context: azureFunctionsTypes.Context, request: azureFunctionsTypes.HttpRequest): CorrelationContextManager.CorrelationContext | null;
 export function startOperation(context: azureFunctionsTypes.Context, name: string): CorrelationContextManager.CorrelationContext | null;
 export function startOperation(context: IncomingMessage | azureFunctionsTypes.HttpRequest, request?: never): CorrelationContextManager.CorrelationContext | null;
-export function startOperation(context: azureFunctionsTypes.Context | (IncomingMessage | azureFunctionsTypes.HttpRequest) | (ISpanContext), request?: azureFunctionsTypes.HttpRequest | string): CorrelationContextManager.CorrelationContext | null {
+export function startOperation(context: azureFunctionsTypes.Context | (IncomingMessage | azureFunctionsTypes.HttpRequest) | (SpanContext), request?: azureFunctionsTypes.HttpRequest | string): CorrelationContextManager.CorrelationContext | null {
     return CorrelationContextManager.CorrelationContextManager.startOperation(context, request);
 }
 
@@ -233,7 +277,7 @@ export class Configuration {
      */
     public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: boolean | IDisabledExtendedMetrics = true) {
         _isPerformance = value;
-        const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(collectExtendedMetrics);
+        const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(collectExtendedMetrics, defaultClient.config);
         _isNativePerformance = extendedMetricsConfig.isEnabled;
         _disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
         if (_isStarted) {
@@ -266,7 +310,23 @@ export class Configuration {
     public static setAutoCollectHeartbeat(value: boolean) {
         _isHeartBeat = value;
         if (_isStarted) {
-            _heartbeat.enable(value, defaultClient.config);
+            _heartbeat.enable(value);
+        }
+
+        return Configuration;
+    }
+
+    /**
+     * Sets the state of Web snippet injection
+     * @param value if true Web snippet will be tried to be injected in server response
+     * @param WebSnippetConnectionString if provided, web snippet injection will use this ConnectionString. Default to use the connectionString in Node.js app initialization
+     * @returns {Configuration} this class
+     */
+    public static enableAutoWebSnippetInjection(value: boolean, WebSnippetConnectionString?: string ) {
+        _isSnippetInjection = value;
+        _webSnippetConnectionString = WebSnippetConnectionString;
+        if (_isStarted) {
+            _webSnippet.enable(value, _webSnippetConnectionString);
         }
 
         return Configuration;
@@ -329,11 +389,10 @@ export class Configuration {
     public static setUseDiskRetryCaching(value: boolean, resendInterval?: number, maxBytesOnDisk?: number) {
         _isDiskRetry = value;
         _diskRetryInterval = resendInterval;
-        _diskRetryMaxBytes = maxBytesOnDisk
+        _diskRetryMaxBytes = maxBytesOnDisk;
         if (defaultClient && defaultClient.channel) {
-            defaultClient.channel.setUseDiskRetryCaching(value, resendInterval, maxBytesOnDisk);
+            defaultClient.channel.setUseDiskRetryCaching(_isDiskRetry, _diskRetryInterval, _diskRetryMaxBytes);
         }
-
         return Configuration;
     }
 
@@ -362,7 +421,7 @@ export class Configuration {
 
         if (!liveMetricsClient && enable) {
             // No qps client exists. Create one and prepare it to be enabled at .start()
-            liveMetricsClient = new QuickPulseClient(defaultClient.config.instrumentationKey);
+            liveMetricsClient = new QuickPulseClient(defaultClient.config, defaultClient.context, defaultClient.getAuthorizationHandler);
             _performanceLiveMetrics = new AutoCollectPerformance(liveMetricsClient as any, 1000, true);
             liveMetricsClient.addCollector(_performanceLiveMetrics);
             defaultClient.quickPulseClient = liveMetricsClient; // Need this so we can forward all manual tracks to live metrics via PerformanceMetricsTelemetryProcessor
@@ -371,7 +430,6 @@ export class Configuration {
             liveMetricsClient.enable(enable);
         }
         _isSendingLiveMetrics = enable;
-
         return Configuration;
     }
 }
@@ -397,6 +455,9 @@ export function dispose() {
     }
     if (_heartbeat) {
         _heartbeat.dispose();
+    }
+    if (_webSnippet) {
+        _webSnippet.dispose();
     }
     if (_nativePerformance) {
         _nativePerformance.dispose();

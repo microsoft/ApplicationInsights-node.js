@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 import TelemetryClient = require("../../Library/TelemetryClient");
-import { channel, IStandardEvent } from "diagnostic-channel";
+import { StatsbeatInstrumentation } from "../../Declarations/Constants";
+import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
 
 import { mongodb } from "diagnostic-channel-publishers";
 
@@ -24,16 +25,25 @@ export const subscriber = (event: IStandardEvent<mongodb.IMongoData>) => {
                 /* TODO: transmit result code from mongo */
                 resultCode: event.data.succeeded ? "0" : "1",
                 time: event.data.startedData.time,
-                dependencyTypeName: 'mongodb'
+                dependencyTypeName: "mongodb"
             });
     });
 };
 
 export function enable(enabled: boolean, client: TelemetryClient) {
     if (enabled) {
+        let clientFound = clients.find(c => c == client);
+        if (clientFound) {
+            return;
+        }
         if (clients.length === 0) {
-            channel.subscribe<mongodb.IMongoData>("mongodb", subscriber);
-        };
+            channel.subscribe<mongodb.IMongoData>("mongodb", subscriber, trueFilter, (module, version) => {
+                let statsbeat = client.getStatsbeat();
+                if (statsbeat) {
+                    statsbeat.addInstrumentation(StatsbeatInstrumentation.MONGODB);
+                }
+            });
+        }
         clients.push(client);
     } else {
         clients = clients.filter((c) => c != client);

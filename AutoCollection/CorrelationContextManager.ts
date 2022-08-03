@@ -10,7 +10,9 @@ import * as http from "http";
 import Traceparent = require("../Library/Traceparent");
 import Tracestate = require("../Library/Tracestate");
 import HttpRequestParser = require("./HttpRequestParser");
-import { ISpanContext } from "diagnostic-channel";
+import { SpanContext } from "@opentelemetry/api";
+import { Span } from "@opentelemetry/sdk-trace-base";
+import Util = require("../Library/Util");
 
 export interface CustomProperties {
     /**
@@ -52,7 +54,7 @@ export class CorrelationContextManager {
     private static forceClsHooked: boolean = undefined; // true: use cls-hooked, false: use cls, undefined: choose based on node version
     private static session: cls.Namespace;
     private static cls: typeof cls;
-    private static CONTEXT_NAME = "ApplicationInsights-Context"
+    private static CONTEXT_NAME = "ApplicationInsights-Context";
 
     /**
      *  Provides the current Context.
@@ -93,11 +95,11 @@ export class CorrelationContextManager {
         return null;
     }
 
-    public static spanToContextObject(spanContext: ISpanContext, parentId?: string, name?: string) {
+    public static spanToContextObject(spanContext: SpanContext, parentId?: string, name?: string): CorrelationContext {
         const traceContext = new Traceparent();
         traceContext.traceId = spanContext.traceId;
         traceContext.spanId = spanContext.spanId;
-        traceContext.traceFlag = spanContext.traceFlags || Traceparent.DEFAULT_TRACE_FLAG;
+        traceContext.traceFlag = Traceparent.formatOpenTelemetryTraceFlags(spanContext.traceFlags) || Traceparent.DEFAULT_TRACE_FLAG;
         traceContext.parentId = parentId;
         return CorrelationContextManager.generateContextObject(traceContext.traceId, traceContext.parentId, name, null, traceContext);
     }
@@ -107,12 +109,16 @@ export class CorrelationContextManager {
      *  All logical children of the execution path that entered this Context
      *  will receive this Context object on calls to GetCurrentContext.
      */
-    public static runWithContext(context: CorrelationContext, fn: ()=>any): any {
+    public static runWithContext(context: CorrelationContext, fn: () => any): any {
         if (CorrelationContextManager.enabled) {
-            return CorrelationContextManager.session.bind(fn, {[CorrelationContextManager.CONTEXT_NAME]: context})();
-        } else {
-            return fn();
+            try {
+                return CorrelationContextManager.session.bind(fn, { [CorrelationContextManager.CONTEXT_NAME]: context })();
+            }
+            catch (error) {
+                Logging.warn("Error binding to session context", Util.dumpObj(error));
+            }
         }
+        return fn();
     }
 
     /**
@@ -120,7 +126,12 @@ export class CorrelationContextManager {
      */
     public static wrapEmitter(emitter: events.EventEmitter): void {
         if (CorrelationContextManager.enabled) {
-            CorrelationContextManager.session.bindEmitter(emitter);
+            try {
+                CorrelationContextManager.session.bindEmitter(emitter);
+            }
+            catch (error) {
+                Logging.warn("Error binding to session context", Util.dumpObj(error));
+            }
         }
     }
 
@@ -133,9 +144,14 @@ export class CorrelationContextManager {
      *  the call to wrapCallback.  */
     public static wrapCallback<T extends Function>(fn: T, context?: CorrelationContext): T {
         if (CorrelationContextManager.enabled) {
-            return CorrelationContextManager.session.bind(fn, context ? {
-                [CorrelationContextManager.CONTEXT_NAME]: context
-            } : undefined);
+            try {
+                return CorrelationContextManager.session.bind(fn, context ? {
+                    [CorrelationContextManager.CONTEXT_NAME]: context
+                } : undefined);
+            }
+            catch (error) {
+                Logging.warn("Error binding to session context", Util.dumpObj(error));
+            }
         }
         return fn;
     }
@@ -158,50 +174,72 @@ export class CorrelationContextManager {
 
             if (typeof this.cls === "undefined") {
                 if ((CorrelationContextManager.forceClsHooked === true) || (CorrelationContextManager.forceClsHooked === undefined && CorrelationContextManager.shouldUseClsHooked())) {
-                    this.cls = require('cls-hooked');
+                    this.cls = require("cls-hooked");
                 } else {
-                    this.cls = require('continuation-local-storage');
+                    this.cls = require("continuation-local-storage");
                 }
             }
 
             CorrelationContextManager.session = this.cls.createNamespace("AI-CLS-Session");
 
             DiagChannel.registerContextPreservation((cb) => {
-                return CorrelationContextManager.session.bind(cb);
+                try {
+                    return CorrelationContextManager.session.bind(cb);
+                }
+                catch (error) {
+                    Logging.warn("Error binding to session context", Util.dumpObj(error));
+                }
             });
         }
 
         this.enabled = true;
     }
 
-    public static startOperation(context: azureFunctionsTypes.Context | (http.IncomingMessage | azureFunctionsTypes.HttpRequest) | ISpanContext, request?: azureFunctionsTypes.HttpRequest | string): CorrelationContext | null {
-        const traceContext = context && (context as azureFunctionsTypes.Context).traceContext || null;
-        const spanContext = context && (context as ISpanContext).traceId
-            ? context as ISpanContext
-            : null;
-        const headers = context && (context as http.IncomingMessage | azureFunctionsTypes.HttpRequest).headers;
+    /**
+     * Create new correlation context.
+     */
+    public static startOperation(
+        input: azureFunctionsTypes.Context | (http.IncomingMessage | azureFunctionsTypes.HttpRequest) | SpanContext | Span,
+        request?: azureFunctionsTypes.HttpRequest | string)
+        : CorrelationContext | null {
+        const traceContext = input && (input as azureFunctionsTypes.Context).traceContext || null;
+        const span = input && (input as Span).spanContext ? input as Span : null;
+        const spanContext = input && (input as SpanContext).traceId ? input as SpanContext : null;
+        const headers = input && (input as http.IncomingMessage | azureFunctionsTypes.HttpRequest).headers;
 
-        if (spanContext) {
-            const traceparent = new Traceparent(`00-${spanContext.traceId}-${spanContext.spanId}-01`);
-            const tracestate = new Tracestate(spanContext.tracestate);
-            const correlationContext = CorrelationContextManager.generateContextObject(
-                spanContext.traceId,
-                `|${spanContext.traceId}.${spanContext.spanId}.`,
-                typeof request === "string" ? request : "",
-                undefined,
-                traceparent,
-                tracestate,
-            );
-            return correlationContext;
+        // OpenTelemetry Span
+        if (span) {
+            return this.spanToContextObject(span.spanContext(), span.parentSpanId, span.name);
         }
 
-        // AzFunction TraceContext available
+        // OpenTelemetry SpanContext
+        if (spanContext) {
+            return this.spanToContextObject(spanContext, `|${spanContext.traceId}.${spanContext.spanId}.`, typeof request === "string" ? request : "");
+        }
+
+        // AzFunction TraceContext
         if (traceContext) {
-            const traceparent = new Traceparent(traceContext.traceparent);
-            const tracestate = new Tracestate(traceContext.tracestate);
+            let traceparent = null;
+            let tracestate = null;
+            if ((request as azureFunctionsTypes.HttpRequest).headers) {
+                if ((request as azureFunctionsTypes.HttpRequest).headers.traceparent) {
+                    traceparent = new Traceparent((request as azureFunctionsTypes.HttpRequest).headers.traceparent);
+                } else if ((request as azureFunctionsTypes.HttpRequest).headers["request-id"]) {
+                    traceparent = new Traceparent(null, (request as azureFunctionsTypes.HttpRequest).headers["request-id"]);
+                }
+                if ((request as azureFunctionsTypes.HttpRequest).headers.tracestate) {
+                    tracestate = new Tracestate((request as azureFunctionsTypes.HttpRequest).headers.tracestate);
+                }
+            }
+            if (!traceparent) {
+                traceparent = new Traceparent(traceContext.traceparent);
+            }
+            if (!tracestate) {
+                tracestate = new Tracestate(traceContext.tracestate);
+            }
             const parser = typeof request === "object"
-              ? new HttpRequestParser(request)
-              : null;
+                ? new HttpRequestParser(request)
+                : null;
             const correlationContext = CorrelationContextManager.generateContextObject(
                 traceparent.traceId,
                 traceparent.parentId,
@@ -210,7 +248,7 @@ export class CorrelationContextManager {
                     : parser.getOperationName({}),
                 parser && parser.getCorrelationContextHeader() || undefined,
                 traceparent,
-                tracestate,
+                tracestate
             );
 
             return correlationContext;
@@ -218,16 +256,16 @@ export class CorrelationContextManager {
 
         // No TraceContext available, parse as http.IncomingMessage
         if (headers) {
-            const traceparent = new Traceparent(headers.traceparent);
-            const tracestate = new Tracestate(headers.tracestate);
-            const parser = new HttpRequestParser(context as http.IncomingMessage | azureFunctionsTypes.HttpRequest);
+            const traceparent = new Traceparent(headers.traceparent ? headers.traceparent.toString() : null);
+            const tracestate = new Tracestate(headers.tracestate ? headers.tracestate.toString() : null);
+            const parser = new HttpRequestParser(input as http.IncomingMessage | azureFunctionsTypes.HttpRequest);
             const correlationContext = CorrelationContextManager.generateContextObject(
                 traceparent.traceId,
                 traceparent.parentId,
                 parser.getOperationName({}),
                 parser.getCorrelationContextHeader(),
                 traceparent,
-                tracestate,
+                tracestate
             );
 
             return correlationContext;
@@ -250,7 +288,7 @@ export class CorrelationContextManager {
     public static reset() {
         if (CorrelationContextManager.hasEverEnabled) {
             CorrelationContextManager.session = null;
-            CorrelationContextManager.session = this.cls.createNamespace('AI-CLS-Session');
+            CorrelationContextManager.session = this.cls.createNamespace("AI-CLS-Session");
         }
     }
 
@@ -287,7 +325,7 @@ export class CorrelationContextManager {
 
 class CustomPropertiesImpl implements PrivateCustomProperties {
     private static bannedCharacters = /[,=]/;
-    private props: {key: string, value:string}[] = [];
+    private props: { key: string, value: string }[] = [];
 
     public constructor(header: string) {
         this.addHeaderData(header);
@@ -297,7 +335,7 @@ class CustomPropertiesImpl implements PrivateCustomProperties {
         const keyvals = header ? header.split(", ") : [];
         this.props = keyvals.map((keyval) => {
             const parts = keyval.split("=");
-            return {key: parts[0], value: parts[1]};
+            return { key: parts[0], value: parts[1] };
         }).concat(this.props);
     }
 
@@ -308,7 +346,7 @@ class CustomPropertiesImpl implements PrivateCustomProperties {
     }
 
     public getProperty(prop: string) {
-        for(let i = 0; i < this.props.length; ++i) {
+        for (let i = 0; i < this.props.length; ++i) {
             const keyval = this.props[i]
             if (keyval.key === prop) {
                 return keyval.value;
@@ -322,7 +360,7 @@ class CustomPropertiesImpl implements PrivateCustomProperties {
     // properties. The logic here will need to change to track that.
     public setProperty(prop: string, val: string) {
         if (CustomPropertiesImpl.bannedCharacters.test(prop) || CustomPropertiesImpl.bannedCharacters.test(val)) {
-            Logging.warn("Correlation context property keys and values must not contain ',' or '='. setProperty was called with key: " + prop + " and value: "+ val);
+            Logging.warn("Correlation context property keys and values must not contain ',' or '='. setProperty was called with key: " + prop + " and value: " + val);
             return;
         }
         for (let i = 0; i < this.props.length; ++i) {
@@ -332,6 +370,6 @@ class CustomPropertiesImpl implements PrivateCustomProperties {
                 return;
             }
         }
-        this.props.push({key: prop, value: val});
+        this.props.push({ key: prop, value: val });
     }
 }

@@ -5,6 +5,7 @@ import * as path from "path";
 import * as fs from "fs";
 import * as DataModel from "./DataModel";
 import { FileWriter, homedir } from "./FileWriter";
+import { APPLICATION_INSIGHTS_SDK_VERSION } from "../Declarations/Constants";
 
 export interface StatusContract {
     AgentInitializedSuccessfully: boolean;
@@ -17,17 +18,6 @@ export interface StatusContract {
     Ikey: string;
 }
 
-function readPackageVersion() {
-    let packageJsonPath = path.resolve(__dirname, "../../package.json");
-    try {
-        let packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-        if (packageJson && typeof packageJson.version === "string") {
-            return packageJson.version;
-        }
-    } catch (e) { }
-    return "unknown";
-}
-
 export class StatusLogger {
     public static readonly DEFAULT_FILE_PATH: string = path.join(homedir, "status");
     public static readonly DEFAULT_FILE_NAME: string = `status_${os.hostname()}_${process.pid}.json`;
@@ -36,12 +26,14 @@ export class StatusLogger {
         SDKPresent: false,
         Ikey: "unknown",
         AppType: "node.js",
-        SdkVersion: readPackageVersion(),
+        SdkVersion: APPLICATION_INSIGHTS_SDK_VERSION,
         MachineName: os.hostname(),
         PID: String(process.pid)
     }
 
-    constructor(public _writer: DataModel.AgentLogger = console) {}
+    constructor(public _writer: DataModel.AgentLogger = console, instrumentationKey: string = "unknown") {
+        StatusLogger.DEFAULT_STATUS.Ikey = instrumentationKey;
+    }
 
     public logStatus(data: StatusContract, cb?: (err: Error) => void) {
         if (typeof cb === "function" && this._writer instanceof FileWriter) {

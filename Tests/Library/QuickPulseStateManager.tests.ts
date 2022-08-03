@@ -1,10 +1,22 @@
 import assert = require("assert");
+import https = require("https");
 import sinon = require("sinon");
 
 import QuickPulseClient = require("../../Library/QuickPulseStateManager");
+<<<<<<< HEAD
 import { IncomingMessage } from "http";
+=======
+import Contracts = require("../../Declarations/Contracts");
+import AuthorizationHandler = require("../../Library/AuthorizationHandler");
+import { IncomingMessage } from "http";
+import Config = require("../../Library/Config");
+import QuickPulseSender = require("../../Library/QuickPulseSender");
+import Util = require("../../Library/Util");
+>>>>>>> 6cc5bf55cdb49bc5c927f12ece39e1343908d672
 
 describe("Library/QuickPulseStateManager", () => {
+    Util.tlsRestrictedAgent = new https.Agent();
+
     describe("#constructor", () => {
         let qps;
         afterEach(() => {
@@ -12,7 +24,7 @@ describe("Library/QuickPulseStateManager", () => {
         });
 
         it("should create a config with ikey", () => {
-            qps = new QuickPulseClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
 
             assert.ok(qps.config);
             assert.equal(qps.config.instrumentationKey, "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
@@ -25,13 +37,26 @@ describe("Library/QuickPulseStateManager", () => {
             assert.ok(qps["_collectors"].length === 0);
         });
 
+        it("should reuse authorization handler if provided", () => {
+            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;");
+            var handler = new AuthorizationHandler({
+                async getToken(scopes: string | string[], options?: any): Promise<any> {
+                    return { token: "testToken", };
+                }
+            });
+            var getAuthorizationHandler = () => {
+                return handler;
+            };
+            qps = new QuickPulseClient(config, null, getAuthorizationHandler);
+            assert.equal(qps["_sender"]["_getAuthorizationHandler"](config), handler);
+        });
     });
 
     describe("#enable", () => {
         let qps: QuickPulseClient;
 
         beforeEach(() => {
-            qps = new QuickPulseClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
         })
         afterEach(() => {
             qps = null;
@@ -50,7 +75,7 @@ describe("Library/QuickPulseStateManager", () => {
         it("should clear timeout handle when isEnabled == false", () => {
             assert.equal(qps["_handle"], undefined);
             qps["_isEnabled"] = true;
-            (<any>qps["_handle"]) = setTimeout(()=>{ throw new Error("this error should be cancelled") }, 1000);
+            (<any>qps["_handle"]) = setTimeout(() => { throw new Error("this error should be cancelled") }, 1000);
             <any>qps["_handle"].unref();
             assert.ok(qps["_handle"]);
 
@@ -62,9 +87,9 @@ describe("Library/QuickPulseStateManager", () => {
 
     describe("#reset", () => {
         it("should reset metric and document buffers", () => {
-            let qps = new QuickPulseClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-            (<any>qps["_metrics"]) = {foo: "bar"};
-            (<any>qps["_documents"]) = [{foo: "bar"}];
+            let qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+            (<any>qps["_metrics"]) = { foo: "bar" };
+            (<any>qps["_documents"]) = [{ foo: "bar" }];
 
             assert.ok(qps["_metrics"].foo);
             assert.ok(qps["_documents"].length > 0)
@@ -82,7 +107,7 @@ describe("Library/QuickPulseStateManager", () => {
         let pingStub: sinon.SinonStub;
 
         beforeEach(() => {
-            qps = new QuickPulseClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
             postStub = sinon.stub(qps, "_post");
             pingStub = sinon.stub(qps, "_ping");
         })
@@ -123,7 +148,11 @@ describe("Library/QuickPulseStateManager", () => {
 
         beforeEach(() => {
             clock = sinon.useFakeTimers();
+<<<<<<< HEAD
             qps = new QuickPulseClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+=======
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+>>>>>>> 6cc5bf55cdb49bc5c927f12ece39e1343908d672
             postStub = sinon.stub(qps, "_post");
             pingStub = sinon.stub(qps, "_ping");
         })
@@ -162,7 +191,11 @@ describe("Library/QuickPulseStateManager", () => {
 
         beforeEach(() => {
             clock = sinon.useFakeTimers();
+<<<<<<< HEAD
             qps = new QuickPulseClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+=======
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+>>>>>>> 6cc5bf55cdb49bc5c927f12ece39e1343908d672
             submitDataStub = sinon.stub(qps['_sender'], "_submitData");
         })
         afterEach(() => {
@@ -189,7 +222,11 @@ describe("Library/QuickPulseStateManager", () => {
             assert.equal((callArgs[0][4][4] as any)['value'], '1');
 
             assert.equal(submitDataStub.callCount, 1);
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> 6cc5bf55cdb49bc5c927f12ece39e1343908d672
             qps.enable(false);
         });
 
@@ -207,7 +244,11 @@ describe("Library/QuickPulseStateManager", () => {
             assert.equal(callArgs[0][1], undefined);
             assert.equal(callArgs[1][1], 'www.example.com');
             assert.equal(callArgs[2][1], 'www.example.com');
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> 6cc5bf55cdb49bc5c927f12ece39e1343908d672
         });
     });
 
@@ -215,7 +256,11 @@ describe("Library/QuickPulseStateManager", () => {
         let qps: QuickPulseClient;
 
         beforeEach(() => {
+<<<<<<< HEAD
             qps = new QuickPulseClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+=======
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+>>>>>>> 6cc5bf55cdb49bc5c927f12ece39e1343908d672
 
         })
         afterEach(() => {
@@ -223,8 +268,13 @@ describe("Library/QuickPulseStateManager", () => {
         });
 
         it("should call _quickPulseDone and set the _rediectedHost and pollingIntervalHint", () => {
+<<<<<<< HEAD
             
             qps['_quickPulseDone'](true, { statusCode: 200} as IncomingMessage, 'www.example.com', 2000);
+=======
+
+            qps['_quickPulseDone'](true, { statusCode: 200 } as IncomingMessage, 'www.example.com', 2000);
+>>>>>>> 6cc5bf55cdb49bc5c927f12ece39e1343908d672
 
             assert.equal(qps['_redirectedHost'], 'www.example.com');
             assert.equal(qps['_pollingIntervalHint'], 2000);
@@ -235,15 +285,102 @@ describe("Library/QuickPulseStateManager", () => {
         it("should call _quickPulseDone and not set the _rediectedHost and pollingIntervalHint if the arguments are null", () => {
             qps['_pollingIntervalHint'] = 2000;
             qps['_redirectedHost'] = 'www.example.com';
+<<<<<<< HEAD
             qps['_quickPulseDone'](true, { statusCode: 200} as IncomingMessage, null, 0);
 
             assert.equal(qps['_redirectedHost'], 'www.example.com');
             assert.equal(qps['_pollingIntervalHint'], 2000);
             
             qps['_quickPulseDone'](true, { statusCode: 200} as IncomingMessage, 'www.quickpulse.com', 5000);
+=======
+            qps['_quickPulseDone'](true, { statusCode: 200 } as IncomingMessage, null, 0);
+
+            assert.equal(qps['_redirectedHost'], 'www.example.com');
+            assert.equal(qps['_pollingIntervalHint'], 2000);
+
+            qps['_quickPulseDone'](true, { statusCode: 200 } as IncomingMessage, 'www.quickpulse.com', 5000);
+>>>>>>> 6cc5bf55cdb49bc5c927f12ece39e1343908d672
 
             assert.equal(qps['_redirectedHost'], 'www.quickpulse.com');
             assert.equal(qps['_pollingIntervalHint'], 5000);
         });
     });
+<<<<<<< HEAD
+=======
+
+    describe("#addDocuments", () => {
+        var sandbox: sinon.SinonSandbox;
+        let qps: QuickPulseClient;
+
+        beforeEach(() => {
+            sandbox = sinon.sandbox.create();
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+        });
+
+        afterEach(() => {
+            sandbox.restore();
+            qps = null;
+        });
+
+        it("should add document if sending data", () => {
+            sandbox.stub(qps, "_goQuickPulse");
+            var testEnvelope: any = { name:"Test", tags:[]};
+            testEnvelope.data = { baseType: "ExceptionData", baseData: {} };
+            qps.enable(true);
+            qps["_isCollectingData"] = true;
+            assert.equal(qps['_documents'].length, 0);
+            qps.addDocument(testEnvelope);
+            assert.equal(qps['_documents'].length, 1);
+        });
+
+        it("should not add document if not sending data", () => {
+            sandbox.stub(qps, "_goQuickPulse");
+            var testEnvelope = new Contracts.Envelope();
+            qps.enable(true);
+            assert.equal(qps['_documents'].length, 0);
+            qps.addDocument(testEnvelope);
+            assert.equal(qps['_documents'].length, 0);
+        });
+    });
+
+    describe("#AuthorizationHandler ", () => {
+        var sandbox: sinon.SinonSandbox;
+        let envelope: Contracts.EnvelopeQuickPulse = {
+            Documents: null,
+            Instance: "",
+            RoleName: "",
+            InstrumentationKey: "",
+            InvariantVersion: 1,
+            MachineName: "",
+            Metrics: null,
+            StreamId: "",
+            Timestamp: "",
+            Version: ""
+        };
+
+        beforeEach(() => {
+            sandbox = sinon.sandbox.create();
+        });
+
+        afterEach(() => {
+            sandbox.restore();
+        });
+
+        it("should add token if handler present", () => {
+            var handler = new AuthorizationHandler({
+                async getToken(scopes: string | string[], options?: any): Promise<any> {
+                    return { token: "testToken", };
+                }
+            });
+            var getAuthorizationHandler = () => {
+                return handler;
+            };
+            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;");
+            var addHeaderStub = sandbox.stub(handler, "addAuthorizationHeader");
+            let sender = new QuickPulseSender(config, getAuthorizationHandler);
+            sender.post(envelope, "", () => { });
+            assert.ok(addHeaderStub.calledOnce);
+        });
+    });
+>>>>>>> 6cc5bf55cdb49bc5c927f12ece39e1343908d672
 });

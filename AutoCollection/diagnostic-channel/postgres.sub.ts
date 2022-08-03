@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 import TelemetryClient = require("../../Library/TelemetryClient");
-import { channel, IStandardEvent } from "diagnostic-channel";
+import { StatsbeatInstrumentation } from "../../Declarations/Constants";
+import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
 
 import { pg } from "diagnostic-channel-publishers";
 
@@ -21,15 +22,25 @@ export const subscriber = (event: IStandardEvent<pg.IPostgresData>) => {
             success: success,
             resultCode: success ? "0" : "1",
             time: event.data.time,
-            dependencyTypeName: "postgres"});
+            dependencyTypeName: "postgres"
+        });
     });
 };
 
 export function enable(enabled: boolean, client: TelemetryClient) {
     if (enabled) {
+        let clientFound = clients.find(c => c == client);
+        if (clientFound) {
+            return;
+        }
         if (clients.length === 0) {
-            channel.subscribe<pg.IPostgresData>("postgres", subscriber);
-        };
+            channel.subscribe<pg.IPostgresData>("postgres", subscriber, trueFilter, (module, version) => {
+                let statsbeat = client.getStatsbeat();
+                if (statsbeat) {
+                    statsbeat.addInstrumentation(StatsbeatInstrumentation.POSTGRES);
+                }
+            });
+        }
         clients.push(client);
     } else {
         clients = clients.filter((c) => c != client);

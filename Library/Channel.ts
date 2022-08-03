@@ -1,18 +1,18 @@
 ﻿import Contracts = require("../Declarations/Contracts");
 import Logging = require("./Logging");
 import Sender = require("./Sender");
+import Util = require("./Util");
 
 class Channel {
-
     protected _lastSend: number;
     protected _timeoutHandle: any;
 
     protected _isDisabled: () => boolean;
     protected _getBatchSize: () => number;
     protected _getBatchIntervalMs: () => number;
-
+    
     public _sender: Sender;
-    public _buffer: string[];
+    public _buffer: Contracts.EnvelopeTelemetry[];
 
     constructor(isDisabled: () => boolean, getBatchSize: () => number, getBatchIntervalMs: () => number, sender: Sender) {
         this._buffer = [];
@@ -52,14 +52,8 @@ class Channel {
             return;
         }
 
-        // check if the incoming payload is too large, truncate if necessary
-        var payload: string = this._stringify(envelope);
-        if (typeof payload !== "string") {
-            return;
-        }
-
         // enqueue the payload
-        this._buffer.push(payload);
+        this._buffer.push(envelope);
 
         // flush if we would exceed the max-size limit by adding this item
         if (this._buffer.length >= this._getBatchSize()) {
@@ -82,17 +76,14 @@ class Channel {
     public triggerSend(isNodeCrashing: boolean, callback?: (v: string) => void) {
         let bufferIsEmpty = this._buffer.length < 1;
         if (!bufferIsEmpty) {
-            // compose an array of payloads
-            var batch = this._buffer.join("\n");
-
             // invoke send
-            if (isNodeCrashing) {
-                this._sender.saveOnCrash(batch);
+            if (isNodeCrashing || Util.isNodeExit) {
+                this._sender.saveOnCrash(this._buffer);
                 if (typeof callback === "function") {
                     callback("data saved on crash");
                 }
             } else {
-                this._sender.send(Buffer.from ? Buffer.from(batch) : new Buffer(batch), callback);
+                this._sender.send(this._buffer, callback);
             }
         }
 
@@ -100,19 +91,11 @@ class Channel {
         this._lastSend = +new Date;
 
         // clear buffer
-        this._buffer.length = 0;
+        this._buffer = [];
         clearTimeout(this._timeoutHandle);
         this._timeoutHandle = null;
         if (bufferIsEmpty && typeof callback === "function") {
             callback("no data to send");
-        }
-    }
-
-    protected _stringify(envelope: Contracts.EnvelopeTelemetry) {
-        try {
-            return JSON.stringify(envelope);
-        } catch (error) {
-            Logging.warn("Failed to serialize payload", error, envelope);
         }
     }
 }

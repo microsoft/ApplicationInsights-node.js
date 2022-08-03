@@ -56,24 +56,27 @@ class EnvelopeFactory {
                 break;
         }
 
-        if (commonProperties && Contracts.domainSupportsProperties(data.baseData)) { // Do instanceof check. TS will automatically cast and allow the properties property
-            if (data && data.baseData) {
-                // if no properties are specified just add the common ones
-                if (!data.baseData.properties) {
-                    data.baseData.properties = commonProperties;
-                } else {
-                    // otherwise, check each of the common ones
-                    for (var name in commonProperties) {
-                        // only override if the property `name` has not been set on this item
-                        if (!data.baseData.properties[name]) {
-                            data.baseData.properties[name] = commonProperties[name];
+        if (data && data.baseData) {
+            if (Contracts.domainSupportsProperties(data.baseData)) { // Do instanceof check. TS will automatically cast and allow the properties property
+                if (commonProperties) {
+                    // if no properties are specified just add the common ones
+                    if (!data.baseData.properties) {
+                        data.baseData.properties = commonProperties;
+                    } else {
+                        // otherwise, check each of the common ones
+                        for (var name in commonProperties) {
+                            // only override if the property `name` has not been set on this item
+                            if (!data.baseData.properties[name]) {
+                                data.baseData.properties[name] = commonProperties[name];
+                            }
                         }
                     }
                 }
+                if (data.baseData.properties) {
+                    // sanitize properties
+                    data.baseData.properties = Util.validateStringMap(data.baseData.properties);
+                }
             }
-
-            // sanitize properties
-            data.baseData.properties = Util.validateStringMap(data.baseData.properties);
         }
 
         var iKey = config ? config.instrumentationKey || "" : "";
@@ -119,7 +122,7 @@ class EnvelopeFactory {
     private static createDependencyData(telemetry: Contracts.DependencyTelemetry & Contracts.Identified): Contracts.Data<Contracts.RemoteDependencyData> {
         var remoteDependency = new Contracts.RemoteDependencyData();
         if (typeof telemetry.name === "string") {
-            remoteDependency.name = telemetry.name.length > 1024 ? telemetry.name.slice(0, 1021) + '...' : telemetry.name;
+            remoteDependency.name = telemetry.name.length > 1024 ? telemetry.name.slice(0, 1021) + "..." : telemetry.name;
         }
         remoteDependency.data = telemetry.data;
         remoteDependency.target = telemetry.target;
@@ -127,7 +130,7 @@ class EnvelopeFactory {
         remoteDependency.success = telemetry.success;
         remoteDependency.type = telemetry.dependencyTypeName;
         remoteDependency.properties = telemetry.properties;
-        remoteDependency.resultCode = (telemetry.resultCode ? telemetry.resultCode + '' : '');
+        remoteDependency.resultCode = (telemetry.resultCode ? telemetry.resultCode + "" : "");
 
         if (telemetry.id) {
             remoteDependency.id = telemetry.id;
@@ -191,9 +194,10 @@ class EnvelopeFactory {
         requestData.url = telemetry.url;
         requestData.source = telemetry.source;
         requestData.duration = Util.msToTimeSpan(telemetry.duration);
-        requestData.responseCode = (telemetry.resultCode ? telemetry.resultCode + '' : '');
+        requestData.responseCode = (telemetry.resultCode ? telemetry.resultCode + "" : "");
         requestData.success = telemetry.success
         requestData.properties = telemetry.properties;
+        requestData.measurements = telemetry.measurements;
 
         var data = new Contracts.Data<Contracts.RequestData>();
         data.baseType = Contracts.telemetryTypeToBaseType(Contracts.TelemetryType.Request);
@@ -213,6 +217,7 @@ class EnvelopeFactory {
         metric.name = telemetry.name;
         metric.stdDev = !isNaN(telemetry.stdDev) ? telemetry.stdDev : 0;
         metric.value = telemetry.value;
+        metric.ns = telemetry.namespace;
 
         metrics.metrics.push(metric);
 
@@ -225,7 +230,7 @@ class EnvelopeFactory {
     }
 
     private static createAvailabilityData(
-        telemetry: Contracts.AvailabilityTelemetry & Contracts.Identified,
+        telemetry: Contracts.AvailabilityTelemetry & Contracts.Identified
     ): Contracts.Data<Contracts.AvailabilityData> {
         let availabilityData = new Contracts.AvailabilityData();
 
@@ -250,7 +255,7 @@ class EnvelopeFactory {
     }
 
     private static createPageViewData(
-        telemetry: Contracts.PageViewTelemetry & Contracts.Identified,
+        telemetry: Contracts.PageViewTelemetry & Contracts.Identified
     ): Contracts.Data<Contracts.PageViewData> {
         let pageViewData = new Contracts.PageViewData();
 

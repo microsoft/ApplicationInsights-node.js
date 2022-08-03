@@ -56,8 +56,8 @@ describe("AutoCollection/HttpDependencyParser", () => {
             assert.equal(dependencyTelemetry.dependencyTypeName, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
             assert.equal(dependencyTelemetry.success, true);
             assert.equal(dependencyTelemetry.name, "GET /search");
-            assert.equal(dependencyTelemetry.data, "https://a.bing.com:443/search");
-            assert.equal(dependencyTelemetry.target, "a.bing.com:443");
+            assert.equal(dependencyTelemetry.data, "https://a.bing.com/search");
+            assert.equal(dependencyTelemetry.target, "a.bing.com");
         });
 
         it("should return correct data for a URL without a protocol (http)", () => {
@@ -141,6 +141,26 @@ describe("AutoCollection/HttpDependencyParser", () => {
             assert.equal(dependencyTelemetry.target, "bing.com:8000");
         });
 
+        it("should return correct data for a request options object with a hostname but no host", () => {
+            let requestOptions = {
+                hostname: "bing.com",
+                port: 8000,
+                path: "/search?q=test",
+            };
+            (<any>request)["method"] = "POST";
+            let parser = new HttpDependencyParser(requestOptions, request);
+
+            response.statusCode = 200;
+            parser.onResponse(response);
+
+            let dependencyTelemetry = parser.getDependencyTelemetry();
+            assert.equal(dependencyTelemetry.dependencyTypeName, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
+            assert.equal(dependencyTelemetry.success, true);
+            assert.equal(dependencyTelemetry.name, "POST /search");
+            assert.equal(dependencyTelemetry.data, "http://bing.com:8000/search?q=test");
+            assert.equal(dependencyTelemetry.target, "bing.com:8000");
+        });
+
         it("should return correct data for URL with protocol in request", () => {
             let testRequest: http.ClientRequest = <any>{
                 agent: { protocol: undefined },
@@ -207,6 +227,17 @@ describe("AutoCollection/HttpDependencyParser", () => {
             let dependencyTelemetry = parser.getDependencyTelemetry();
             assert.equal(dependencyTelemetry.dependencyTypeName, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
             assert.equal(dependencyTelemetry.success, false);
+        });
+
+        it("should return non-success for a request abort", () => {
+            (<any>request)["method"] = "GET";
+            let parser = new HttpDependencyParser("http://bing.com/search", request);
+            parser.onError(new Error());
+
+            let dependencyTelemetry = parser.getDependencyTelemetry();
+            assert.equal(dependencyTelemetry.dependencyTypeName, Contracts.RemoteDependencyDataConstants.TYPE_HTTP);
+            assert.equal(dependencyTelemetry.success, false);
+            assert.ok(dependencyTelemetry.properties);
         });
     });
 });

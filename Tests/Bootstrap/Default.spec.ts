@@ -4,6 +4,8 @@ import { DiagnosticLogger } from "../../Bootstrap/DiagnosticLogger";
 import * as DataModel from "../../Bootstrap/DataModel";
 import * as Helpers from "../../Bootstrap/Helpers";
 import * as DefaultTypes from "../../Bootstrap/Default";
+import { JsonConfig } from "../../Library/JsonConfig";
+
 
 const appInsights = require("../../applicationinsights");
 
@@ -20,61 +22,65 @@ class LoggerSpy implements DataModel.AgentLogger {
 }
 
 describe("#setupAndStart()", () => {
-    const startSpy = sinon.spy(appInsights, "start");
+    let startSpy: sinon.SinonSpy;
+    var sandbox: sinon.SinonSandbox;
+    let originalEnv: NodeJS.ProcessEnv;
 
     before(() => {
-        startSpy.reset();
+        sandbox = sinon.sandbox.create();
+    });
+
+    beforeEach(() => {
+        startSpy = sandbox.spy(appInsights, "start");
+        originalEnv = process.env;
+        JsonConfig["_instance"] = undefined;
     });
 
     afterEach(() => {
-        startSpy.reset();
+        process.env = originalEnv;
+        sandbox.restore();
         delete require.cache[require.resolve("../../Bootstrap/Default")];
-    });
-
-    after(() => {
-        startSpy.restore();
     });
 
     it("should return the client if started multiple times", () => {
         const logger = new LoggerSpy();
-        const origEnv = process.env.ApplicationInsightsAgent_EXTENSION_VERSION;
-        process.env.ApplicationInsightsAgent_EXTENSION_VERSION = "~2";
-        const alreadyExistsStub = sinon.stub(Helpers, "sdkAlreadyExists", () => false);
-
+        const env = <{ [id: string]: string }>{};
+        env["ApplicationInsightsAgent_EXTENSION_VERSION"] = "~2";
+        env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/";
+        process.env = env;
+        sandbox.stub(Helpers, "sdkAlreadyExists", () => false);
         // Test
         const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
         Default.setLogger(new DiagnosticLogger(logger));
-        const instance1 = Default.setupAndStart("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+        const instance1 = Default.setupAndStart();
         assert.ok(instance1.defaultClient);
-        const instance2 = Default.setupAndStart("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+        const instance2 = Default.setupAndStart();
         assert.deepEqual(instance1.defaultClient, instance2.defaultClient);
         assert.deepEqual(instance1.defaultClient["_telemetryProcessors"].length, 2)
         assert.deepEqual(instance2.defaultClient["_telemetryProcessors"].length, 2)
 
         // Cleanup
-        alreadyExistsStub.restore();
         instance1.dispose();
         instance2.dispose();
-        process.env.ApplicationInsightsAgent_EXTENSION_VERSION = origEnv;
     })
 
     it("should setup and start the SDK", () => {
         // Setup env vars before requiring loader
         const logger = new LoggerSpy();
-        const origEnv = process.env.ApplicationInsightsAgent_EXTENSION_VERSION;
-        process.env.ApplicationInsightsAgent_EXTENSION_VERSION = "~2";
-        const alreadyExistsStub = sinon.stub(Helpers, "sdkAlreadyExists", () => false);
+        const env = <{ [id: string]: string }>{};
+        env["ApplicationInsightsAgent_EXTENSION_VERSION"] = "~2";
+        env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/";
+        process.env = env;
+        sandbox.stub(Helpers, "sdkAlreadyExists", () => false);
 
         // Test
         const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
         Default.setLogger(new DiagnosticLogger(logger));
-        const instance = Default.setupAndStart("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+        const instance = Default.setupAndStart();
         assert.deepEqual(instance, appInsights);
 
         // Cleanup
-        alreadyExistsStub.restore();
         instance.dispose();
-        process.env.ApplicationInsightsAgent_EXTENSION_VERSION = origEnv;
 
         // start was called once
         assert.equal(startSpy.callCount, 1);
@@ -84,35 +90,15 @@ describe("#setupAndStart()", () => {
         assert.equal(logger.errorCount, 0);
     });
 
-    it("should not setup and start the SDK if no setupString is provided", () => {
+    it("should not setup and start the SDK if no connectionString is provided", () => {
         // Setup
         const logger = new LoggerSpy();
-        const origEnv = process.env.ApplicationInsightsAgent_EXTENSION_VERSION;
-        const origIkey = process.env.APPINSIGHTS_INSTRUMENTATIONKEY;
-        const origCs = process.env.APPLICATIONINSIGHTS_CONNECTION_STRING;
-        process.env.ApplicationInsightsAgent_EXTENSION_VERSION = "~2";
-        delete process.env.APPINSIGHTS_INSTRUMENTATIONKEY;
-        delete process.env.APPLICATIONINSIGHTS_CONNECTION_STRING;
-        const alreadyExistsStub = sinon.stub(Helpers, "sdkAlreadyExists", () => false);
+        const env = <{ [id: string]: string }>{};
+        env["ApplicationInsightsAgent_EXTENSION_VERSION"] = "~2";
+        process.env = env;
 
+        sinon.stub(Helpers, "sdkAlreadyExists", () => false);
         // Test
-        const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
-        Default.setLogger(new DiagnosticLogger(logger));
-        const instance = Default.setupAndStart();
-        assert.equal(instance, null);
-
-        // Cleanup
-        alreadyExistsStub.restore();
-        process.env.ApplicationInsightsAgent_EXTENSION_VERSION = origEnv;
-
-        // start was never called
-        assert.equal(startSpy.callCount, 0);
-
-        // No logging was done
-        assert.equal(logger.logCount, 0);
-        assert.equal(logger.errorCount, 1, "Should log if attach is attempted");
-
-        process.env.APPINSIGHTS_INSTRUMENTATIONKEY = origIkey;
-        process.env.APPLICATIONINSIGHTS_CONNECTION_STRING = origCs;
+        assert.throws(function () { const Default = require("../../Bootstrap/Default") as typeof DefaultTypes; });
     });
 });

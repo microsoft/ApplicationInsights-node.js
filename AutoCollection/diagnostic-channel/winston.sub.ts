@@ -1,9 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 import TelemetryClient = require("../../Library/TelemetryClient");
+import { StatsbeatInstrumentation } from "../../Declarations/Constants";
 import { SeverityLevel } from "../../Declarations/Contracts";
 
-import { channel, IStandardEvent } from "diagnostic-channel";
+import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
 
 import { winston } from "diagnostic-channel-publishers";
 
@@ -11,7 +12,7 @@ let clients: TelemetryClient[] = [];
 
 const winstonToAILevelMap: { [key: string]: (og: string) => number } = {
     syslog(og: string) {
-        const map: { [key: string ]: number } = {
+        const map: { [key: string]: number } = {
             emerg: SeverityLevel.Critical,
             alert: SeverityLevel.Critical,
             crit: SeverityLevel.Critical,
@@ -25,7 +26,7 @@ const winstonToAILevelMap: { [key: string]: (og: string) => number } = {
         return map[og] === undefined ? SeverityLevel.Information : map[og];
     },
     npm(og: string) {
-        const map: { [key: string ]: number } = {
+        const map: { [key: string]: number } = {
             error: SeverityLevel.Error,
             warn: SeverityLevel.Warning,
             info: SeverityLevel.Information,
@@ -62,9 +63,18 @@ const subscriber = (event: IStandardEvent<winston.IWinstonData>) => {
 
 export function enable(enabled: boolean, client: TelemetryClient) {
     if (enabled) {
+        let clientFound = clients.find(c => c == client);
+        if (clientFound) {
+            return;
+        }
         if (clients.length === 0) {
-            channel.subscribe<winston.IWinstonData>("winston", subscriber);
-        };
+            channel.subscribe<winston.IWinstonData>("winston", subscriber, trueFilter, (module, version) => {
+                let statsbeat = client.getStatsbeat();
+                if (statsbeat) {
+                    statsbeat.addInstrumentation(StatsbeatInstrumentation.WINSTON);
+                }
+            });
+        }
         clients.push(client);
     } else {
         clients = clients.filter((c) => c != client);

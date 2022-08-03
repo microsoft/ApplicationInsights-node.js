@@ -21,6 +21,7 @@ Tests/FunctionalTests/TestApp/package-lock.json
 *.dat
 *.njsproj
 .vscode/
+.nyc_output
 
 # Ignore webstorm files
 .idea
@@ -31,3 +32,5 @@ Tests/FunctionalTests/TestApp/package-lock.json
 
 # Ignore log files
 npm-debug.log
+undefined/temp/appInsights-node/applicationinsights.log
+test/certs/server-key.pem

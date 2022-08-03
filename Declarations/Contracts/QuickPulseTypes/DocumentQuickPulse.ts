@@ -13,4 +13,4 @@ export interface DocumentQuickPulse {
 export interface IDocumentProperty {
     key: string;
     value: string;
-};
+}

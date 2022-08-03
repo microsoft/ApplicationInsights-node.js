@@ -1,33 +1,39 @@
 import url = require("url");
 import os = require("os");
+import azureCore = require("@azure/core-http");
 
 import Config = require("./Config");
+import AuthorizationHandler = require("./AuthorizationHandler");
 import Context = require("./Context");
 import Contracts = require("../Declarations/Contracts");
 import Channel = require("./Channel");
 import TelemetryProcessors = require("../TelemetryProcessors");
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
+import Statsbeat = require("../AutoCollection/Statsbeat");
 import Sender = require("./Sender");
 import Util = require("./Util");
 import Logging = require("./Logging");
 import FlushOptions = require("./FlushOptions");
 import EnvelopeFactory = require("./EnvelopeFactory");
 import QuickPulseStateManager = require("./QuickPulseStateManager");
-import {Tags} from "../Declarations/Contracts";
+import { Tags } from "../Declarations/Contracts";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
  * and manually trigger immediate sending (flushing)
  */
 class TelemetryClient {
+    private static TAG = "TelemetryClient";
     private _telemetryProcessors: { (envelope: Contracts.EnvelopeTelemetry, contextObjects: { [name: string]: any; }): boolean; }[] = [];
     private _enableAzureProperties: boolean = false;
+    private _statsbeat: Statsbeat;
 
     public config: Config;
     public context: Context;
     public commonProperties: { [key: string]: string; };
     public channel: Channel;
     public quickPulseClient: QuickPulseStateManager;
+    public authorizationHandler: AuthorizationHandler;
 
     /**
      * Constructs a new client of the client
@@ -38,8 +44,12 @@ class TelemetryClient {
         this.config = config;
         this.context = new Context();
         this.commonProperties = {};
-
-        var sender = new Sender(this.config);
+        this.authorizationHandler = null;
+        if (!this.config.disableStatsbeat) {
+            this._statsbeat = new Statsbeat(this.config, this.context);
+            this._statsbeat.enable(true);
+        }
+        var sender = new Sender(this.config, this.getAuthorizationHandler, null, null, this._statsbeat);
         this.channel = new Channel(() => config.disableAppInsights, () => config.maxBatchSize, () => config.maxBatchIntervalMs, sender);
     }
 
@@ -118,7 +128,14 @@ class TelemetryClient {
             // url.parse().host returns null for non-urls,
             // making this essentially a no-op in those cases
             // If this logic is moved, update jsdoc in DependencyTelemetry.target
-            telemetry.target = url.parse(telemetry.data).host;
+            // url.parse() is deprecated, update to use WHATWG URL API instead
+            try {
+                telemetry.target = new url.URL(telemetry.data).host;
+            } catch (error) {
+                // set target as null to be compliant with previous behavior
+                telemetry.target = null;
+                Logging.warn(TelemetryClient.TAG, "The URL object is failed to create.", error);
+            }
         }
         this.track(telemetry, Contracts.TelemetryType.Dependency);
     }
@@ -161,7 +178,7 @@ class TelemetryClient {
             }
         }
         else {
-            Logging.warn("track() requires telemetry object and telemetryType to be specified.")
+            Logging.warn(TelemetryClient.TAG, "track() requires telemetry object and telemetryType to be specified.")
         }
     }
 
@@ -172,6 +189,20 @@ class TelemetryClient {
      */
     public setAutoPopulateAzureProperties(value: boolean) {
         this._enableAzureProperties = value;
+    }
+
+    /**
+     * Get Authorization handler
+     */
+    public getAuthorizationHandler(config: Config): AuthorizationHandler {
+        if (config && config.aadTokenCredential) {
+            if (!this.authorizationHandler) {
+                Logging.info(TelemetryClient.TAG, "Adding authorization handler");
+                this.authorizationHandler = new AuthorizationHandler(config.aadTokenCredential)
+            }
+            return this.authorizationHandler;
+        }
+        return null;
     }
 
     /**
@@ -200,7 +231,7 @@ class TelemetryClient {
         }
 
         contextObjects = contextObjects || {};
-        contextObjects['correlationContext'] = CorrelationContextManager.getCurrentContext();
+        contextObjects["correlationContext"] = CorrelationContextManager.getCurrentContext();
 
         for (var i = 0; i < telemetryProcessorsCount; ++i) {
             try {
@@ -214,7 +245,7 @@ class TelemetryClient {
 
             } catch (error) {
                 accepted = true;
-                Logging.warn("One of telemetry processors failed, telemetry item will be sent.", error, envelope);
+                Logging.warn(TelemetryClient.TAG, "One of telemetry processors failed, telemetry item will be sent.", error, envelope);
             }
         }
 
@@ -229,6 +260,13 @@ class TelemetryClient {
         }
 
         return accepted;
+    }
+
+    /*
+     * Get Statsbeat instance
+     */
+    public getStatsbeat() {
+        return this._statsbeat;
     }
 }
 

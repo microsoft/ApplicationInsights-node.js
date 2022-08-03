@@ -1,10 +1,9 @@
-import { Telemetry }  from "./Telemetry";
+import { Telemetry } from "./Telemetry";
 
 /**
  * Telemetry about the incoming request processed by the application
  */
-export interface RequestTelemetry extends Telemetry
-{
+export interface RequestTelemetry extends Telemetry {
      /**
       * Request name
       */
@@ -34,4 +33,9 @@ export interface RequestTelemetry extends Telemetry
       * Whether the request was successful
       */
      success: boolean;
+
+     /**
+     * Collection of custom measurements
+     */
+     measurements?: { [key: string]: number; };
 }

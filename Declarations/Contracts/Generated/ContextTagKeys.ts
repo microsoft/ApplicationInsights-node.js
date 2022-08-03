@@ -93,7 +93,7 @@ class ContextTagKeys {
     public userAuthUserId: string;
 
     /**
-     * Name of the role the application is a part of. For Azure environment, this should be initialized with 
+     * Name of the role the application is a part of. For Azure environment, this should be initialized with
      * [Microsoft.WindowsAzure.ServiceRuntime.RoleEnvironment]::CurrentRoleInstance.Role.Name
      * See more details here: https://dzone.com/articles/accessing-azure-role-0
      * It is recommended that you initialize environment variable with this value during machine startup, and then set context field from environment variable
@@ -102,7 +102,7 @@ class ContextTagKeys {
     public cloudRole: string;
 
     /**
-     * Name of the instance where the application is running. For Azure environment, this should be initialized with 
+     * Name of the instance where the application is running. For Azure environment, this should be initialized with
      * [Microsoft.WindowsAzure.ServiceRuntime.RoleEnvironment]::CurrentRoleInstance.Id
      * See more details here: https://dzone.com/articles/accessing-azure-role-0
      * It is recommended that you initialize environment variable with this value during machine startup, and then set context field from environment variable

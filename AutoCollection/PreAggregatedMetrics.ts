@@ -23,8 +23,6 @@ class AutoCollectPreAggregatedMetrics {
     private _handle: NodeJS.Timer;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
-    private _lastIntervalRequestExecutionTime: number = 0; // the sum of durations which took place during from app start until last interval
-    private _lastIntervalDependencyExecutionTime: number = 0;
 
     private static _dependencyCountersCollection: Array<AggregatedMetricCounter>;
     private static _requestCountersCollection: Array<AggregatedMetricCounter>;
@@ -91,10 +89,10 @@ class AutoCollectPreAggregatedMetrics {
         }
         let durationMs: number;
         let counter: AggregatedMetricCounter = AutoCollectPreAggregatedMetrics._getAggregatedCounter(dimensions, this._requestCountersCollection);
-        if (typeof duration === 'string') {
+        if (typeof duration === "string") {
             // dependency duration is passed in as "00:00:00.123" by autocollectors
-            durationMs = +new Date('1970-01-01T' + duration + 'Z'); // convert to num ms, returns NaN if wrong
-        } else if (typeof duration === 'number') {
+            durationMs = +new Date("1970-01-01T" + duration + "Z"); // convert to num ms, returns NaN if wrong
+        } else if (typeof duration === "number") {
             durationMs = duration;
         } else {
             return;
@@ -109,10 +107,10 @@ class AutoCollectPreAggregatedMetrics {
         }
         let counter: AggregatedMetricCounter = AutoCollectPreAggregatedMetrics._getAggregatedCounter(dimensions, this._dependencyCountersCollection);
         let durationMs: number;
-        if (typeof duration === 'string') {
+        if (typeof duration === "string") {
             // dependency duration is passed in as "00:00:00.123" by autocollectors
-            durationMs = +new Date('1970-01-01T' + duration + 'Z'); // convert to num ms, returns NaN if wrong
-        } else if (typeof duration === 'number') {
+            durationMs = +new Date("1970-01-01T" + duration + "Z"); // convert to num ms, returns NaN if wrong
+        } else if (typeof duration === "number") {
             durationMs = duration;
         } else {
             return;
@@ -172,19 +170,17 @@ class AutoCollectPreAggregatedMetrics {
             currentCounter.time = +new Date;
             var intervalRequests = (currentCounter.totalCount - currentCounter.lastTotalCount) || 0;
             var elapsedMs = currentCounter.time - currentCounter.lastTime;
-            var averageRequestExecutionTime = ((currentCounter.intervalExecutionTime - this._lastIntervalRequestExecutionTime) / intervalRequests) || 0;
-            this._lastIntervalRequestExecutionTime = currentCounter.intervalExecutionTime; // reset
-            if (elapsedMs > 0) {
-                if (intervalRequests > 0) {
-                    this._trackPreAggregatedMetric({
-                        name: "Server response time",
-                        dimensions: currentCounter.dimensions,
-                        value: averageRequestExecutionTime,
-                        count: intervalRequests,
-                        aggregationInterval: elapsedMs,
-                        metricType: Constants.MetricId.REQUESTS_DURATION,
-                    });
-                }
+            var averageRequestExecutionTime = ((currentCounter.intervalExecutionTime - currentCounter.lastIntervalExecutionTime) / intervalRequests) || 0;
+            currentCounter.lastIntervalExecutionTime = currentCounter.intervalExecutionTime; // reset
+            if (elapsedMs > 0 && intervalRequests > 0) {
+                this._trackPreAggregatedMetric({
+                    name: "Server response time",
+                    dimensions: currentCounter.dimensions,
+                    value: averageRequestExecutionTime,
+                    count: intervalRequests,
+                    aggregationInterval: elapsedMs,
+                    metricType: Constants.MetricId.REQUESTS_DURATION
+                });
             }
             // Set last counters
             currentCounter.lastTotalCount = currentCounter.totalCount;
@@ -198,19 +194,17 @@ class AutoCollectPreAggregatedMetrics {
             currentCounter.time = +new Date;
             var intervalDependencies = (currentCounter.totalCount - currentCounter.lastTotalCount) || 0;
             var elapsedMs = currentCounter.time - currentCounter.lastTime;
-            var averageDependencyExecutionTime = ((currentCounter.intervalExecutionTime - this._lastIntervalDependencyExecutionTime) / intervalDependencies) || 0;
-            this._lastIntervalDependencyExecutionTime = currentCounter.intervalExecutionTime; // reset
-            if (elapsedMs > 0) {
-                if (intervalDependencies > 0) {
-                    this._trackPreAggregatedMetric({
-                        name: "Dependency duration",
-                        dimensions: currentCounter.dimensions,
-                        value: averageDependencyExecutionTime,
-                        count: intervalDependencies,
-                        aggregationInterval: elapsedMs,
-                        metricType: Constants.MetricId.DEPENDENCIES_DURATION,
-                    });
-                }
+            var averageDependencyExecutionTime = ((currentCounter.intervalExecutionTime - currentCounter.lastIntervalExecutionTime) / intervalDependencies) || 0;
+            currentCounter.lastIntervalExecutionTime = currentCounter.intervalExecutionTime; // reset
+            if (elapsedMs > 0 && intervalDependencies > 0) {
+                this._trackPreAggregatedMetric({
+                    name: "Dependency duration",
+                    dimensions: currentCounter.dimensions,
+                    value: averageDependencyExecutionTime,
+                    count: intervalDependencies,
+                    aggregationInterval: elapsedMs,
+                    metricType: Constants.MetricId.DEPENDENCIES_DURATION
+                });
             }
             // Set last counters
             currentCounter.lastTotalCount = currentCounter.totalCount;
@@ -221,17 +215,19 @@ class AutoCollectPreAggregatedMetrics {
     private _trackExceptionMetrics() {
         for (let i = 0; i < AutoCollectPreAggregatedMetrics._exceptionCountersCollection.length; i++) {
             var currentCounter = AutoCollectPreAggregatedMetrics._exceptionCountersCollection[i];
+            currentCounter.time = +new Date;
             var intervalExceptions = (currentCounter.totalCount - currentCounter.lastTotalCount) || 0;
             var elapsedMs = currentCounter.time - currentCounter.lastTime;
-            this._trackPreAggregatedMetric({
-                name: "Exceptions",
-                dimensions: currentCounter.dimensions,
-                value: intervalExceptions,
-                count: intervalExceptions,
-                aggregationInterval: elapsedMs,
-                metricType: Constants.MetricId.DEPENDENCIES_DURATION,
-            });
-
+            if (elapsedMs > 0 && intervalExceptions > 0) {
+                this._trackPreAggregatedMetric({
+                    name: "Exceptions",
+                    dimensions: currentCounter.dimensions,
+                    value: intervalExceptions,
+                    count: intervalExceptions,
+                    aggregationInterval: elapsedMs,
+                    metricType: Constants.MetricId.EXCEPTIONS_COUNT
+                });
+            }
             // Set last counters
             currentCounter.lastTotalCount = currentCounter.totalCount;
             currentCounter.lastTime = currentCounter.time;
@@ -241,17 +237,19 @@ class AutoCollectPreAggregatedMetrics {
     private _trackTraceMetrics() {
         for (let i = 0; i < AutoCollectPreAggregatedMetrics._traceCountersCollection.length; i++) {
             var currentCounter = AutoCollectPreAggregatedMetrics._traceCountersCollection[i];
+            currentCounter.time = +new Date;
             var intervalTraces = (currentCounter.totalCount - currentCounter.lastTotalCount) || 0;
             var elapsedMs = currentCounter.time - currentCounter.lastTime;
-            this._trackPreAggregatedMetric({
-                name: "Traces",
-                dimensions: currentCounter.dimensions,
-                value: intervalTraces,
-                count: intervalTraces,
-                aggregationInterval: elapsedMs,
-                metricType: Constants.MetricId.DEPENDENCIES_DURATION,
-            });
-
+            if (elapsedMs > 0 && intervalTraces > 0) {
+                this._trackPreAggregatedMetric({
+                    name: "Traces",
+                    dimensions: currentCounter.dimensions,
+                    value: intervalTraces,
+                    count: intervalTraces,
+                    aggregationInterval: elapsedMs,
+                    metricType: Constants.MetricId.TRACES_COUNT
+                });
+            }
             // Set last counters
             currentCounter.lastTotalCount = currentCounter.totalCount;
             currentCounter.lastTime = currentCounter.time;
@@ -268,7 +266,7 @@ class AutoCollectPreAggregatedMetrics {
             ...metricProperties,
             "_MS.MetricId": metric.metricType,
             "_MS.AggregationIntervalMs": String(metric.aggregationInterval),
-            "_MS.IsAutocollected": "True",
+            "_MS.IsAutocollected": "True"
         };
 
         let telemetry: Contracts.MetricTelemetry = {
@@ -276,7 +274,7 @@ class AutoCollectPreAggregatedMetrics {
             value: metric.value,
             count: metric.count,
             properties: metricProperties,
-            kind: "Aggregation",
+            kind: "Aggregation"
         };
         this._client.trackMetric(telemetry);
     }
