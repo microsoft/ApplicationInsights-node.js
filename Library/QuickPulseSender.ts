@@ -115,8 +115,13 @@ class QuickPulseSender {
         const req = https.request(options, (res: http.IncomingMessage) => {
             if (res.statusCode == 200) {
                 const shouldPOSTData = res.headers[QuickPulseConfig.subscribed] === "true";
-                const redirectHeader = res.headers[QuickPulseConfig.endpointRedirect] ? new url.URL(res.headers[QuickPulseConfig.endpointRedirect].toString()).host : null;
-
+                let redirectHeader = null;
+                try {
+                    redirectHeader = res.headers[QuickPulseConfig.endpointRedirect] ? new url.URL(res.headers[QuickPulseConfig.endpointRedirect].toString()).host : null;
+                } catch (error) {
+                    this._onError("Failed to parse redirect header from QuickPulse: " + Util.dumpObj(error));
+                }
+                
                 const pollingIntervalHint = res.headers[QuickPulseConfig.pollingIntervalHint] ? parseInt(res.headers[QuickPulseConfig.pollingIntervalHint].toString()) : null;
                 this._consecutiveErrors = 0;
                 done(shouldPOSTData, res, redirectHeader, pollingIntervalHint);
