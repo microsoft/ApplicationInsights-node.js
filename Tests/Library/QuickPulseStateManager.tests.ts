@@ -210,7 +210,6 @@ describe("Library/QuickPulseStateManager", () => {
             assert.equal((callArgs[0][4][4] as any)['value'], '1');
 
             assert.equal(submitDataStub.callCount, 1);
-
             qps.enable(false);
         });
 
@@ -228,7 +227,6 @@ describe("Library/QuickPulseStateManager", () => {
             assert.equal(callArgs[0][1], undefined);
             assert.equal(callArgs[1][1], 'www.example.com');
             assert.equal(callArgs[2][1], 'www.example.com');
-
         });
     });
 
