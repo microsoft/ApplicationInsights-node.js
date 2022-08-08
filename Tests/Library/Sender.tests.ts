@@ -138,6 +138,29 @@ describe("Library/Sender", () => {
                 done();
             });
         });
+
+        it("should timeout if the server does not provide a response within 20 seconds", (done) => {
+            var envelope = new Contracts.Envelope();
+            envelope.name = "TestTimeout";
+
+            var breezeResponse: Contracts.BreezeResponse = {
+                itemsAccepted: 1,
+                itemsReceived: 1,
+                errors: []
+            };
+
+            nockScope = interceptor.delay(400).reply(200, breezeResponse);
+
+            sender.send([envelope], () => {})
+            .then((response) => {
+                console.log("Response: ", response);
+                done();
+            })
+            .catch((error) => {
+                console.log("Error: ", error);
+                done();
+            });
+        }).timeout(20000);
     });
 
     describe("#setOfflineMode(value, resendInterval)", () => {

@@ -285,6 +285,13 @@ class Sender {
 
                 var req = Util.makeRequest(this._config, endpointUrl, options, requestCallback);
 
+                // Needed as of Node.js v13 default timeouts on HTTP requests are no longer default.
+                // Timeout should trigger the request on error function to run.
+                req.setTimeout(20000, () => {
+                    console.log("Triggered 20 second timeout!")
+                    req.destroy({name: "Timeout", message: "Telemetry request timed out."});
+                });
+
                 req.on("error", (error: Error) => {
                     if (this._isStatsbeatSender && !this._statsbeatHasReachedIngestionAtLeastOnce) {
                         this._statsbeatFailedToIngest();
