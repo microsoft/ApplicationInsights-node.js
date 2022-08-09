@@ -60,6 +60,10 @@ describe("Library/Sender", () => {
             sender.setDiskRetryMode(true);
         });
 
+        afterEach(() => {
+            Sender.HTTP_TIMEOUT = 20000 // 20 seconds
+        });
+
         after(() => {
             FileAccessControl["USE_ICACLS"] = true;
             sender.setDiskRetryMode(false);
@@ -139,7 +143,7 @@ describe("Library/Sender", () => {
             });
         });
 
-        it("should timeout if the server does not provide a response within 20 seconds", (done) => {
+        it("should timeout if the server does not provide a response within the provided timeframe", (done) => {
             var envelope = new Contracts.Envelope();
             envelope.name = "TestTimeout";
 
@@ -149,18 +153,16 @@ describe("Library/Sender", () => {
                 errors: []
             };
 
-            nockScope = interceptor.delay(400).reply(200, breezeResponse);
+            Sender.HTTP_TIMEOUT = 100;
+            nockScope = interceptor.delay(300).reply(200, breezeResponse);
 
-            sender.send([envelope], () => {})
-            .then((response) => {
-                console.log("Response: ", response);
-                done();
-            })
-            .catch((error) => {
-                console.log("Error: ", error);
-                done();
+            // Attempted using sender.spy() here - had to make _onError() a public method and was still seeing issues with calling it from within the test case.
+            // What I've noticed is that when an assert would evaluate to true using the callbackResponse the console.log of the callbackResponse prints out the breezeResponse.
+            sender.send([envelope], (callbackResponse) => {
+                console.log('callback response', callbackResponse);
+                assert.ok(callbackResponse.includes("Timeout sending telemetry"));
             });
-        }).timeout(20000);
+        });
     });
 
     describe("#setOfflineMode(value, resendInterval)", () => {

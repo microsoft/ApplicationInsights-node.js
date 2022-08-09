@@ -29,6 +29,7 @@ class Sender {
     public static CLEANUP_TIMEOUT = 60 * 60 * 1000; // 1 hour
     public static FILE_RETEMPTION_PERIOD = 7 * 24 * 60 * 60 * 1000; // 7 days
     public static TEMPDIR_PREFIX: string = "appInsights-node";
+    public static HTTP_TIMEOUT: number = 20000; // 20 seconds
 
     private _config: Config;
     private _isStatsbeatSender: boolean;
@@ -287,9 +288,8 @@ class Sender {
 
                 // Needed as of Node.js v13 default timeouts on HTTP requests are no longer default.
                 // Timeout should trigger the request on error function to run.
-                req.setTimeout(20000, () => {
-                    console.log("Triggered 20 second timeout!")
-                    req.destroy({name: "Timeout", message: "Telemetry request timed out."});
+                req.setTimeout(Sender.HTTP_TIMEOUT, () => {
+                    req.destroy(new Error("Timeout sending telemetry"));
                 });
 
                 req.on("error", (error: Error) => {
