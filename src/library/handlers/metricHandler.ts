@@ -64,7 +64,7 @@ export class MetricHandler {
         this._exporter = new MetricExporter(this._config);
         this._batchProcessor = new BatchProcessor(this._config, this._exporter);
         const meterProviderConfig: MeterProviderOptions = {
-            resource: ResourceManager.getInstance().getTraceResource(),
+            resource: ResourceManager.getInstance().getMetricResource(),
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);
         let exporterConfig: AzureExporterConfig = {
@@ -154,6 +154,10 @@ export class MetricHandler {
         if (this._isStarted) {
             this._preAggregatedMetrics.enable(value);
         }
+    }
+
+    public getStandardMetricsCollector(): AutoCollectStandardMetrics {
+        return this._preAggregatedMetrics;
     }
 
     public enableAutoCollectHeartbeat() {

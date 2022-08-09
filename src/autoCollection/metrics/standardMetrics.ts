@@ -1,12 +1,12 @@
 import { Meter, MetricAttributes, ObservableCallback, ObservableGauge, ObservableResult, ValueType } from "@opentelemetry/api-metrics";
 import {
     AggregatedMetricCounter,
-    IMetricBaseDimensions,
+    IStandardMetricBaseDimensions,
+    IMetricExceptionDimensions,
+    IMetricTraceDimensions,
     MetricId,
     StandardMetric
 } from "./types";
-import { HttpMetricsInstrumentation } from "./httpMetricsInstrumentation";
-import { getMetricAttributes } from "./util";
 
 
 export class AutoCollectStandardMetrics {
@@ -38,6 +38,65 @@ export class AutoCollectStandardMetrics {
             this._exceptionsGauge.removeCallback(this._exceptionsGaugeCallback);
             this._tracesGauge.removeCallback(this._tracesGaugeCallback);
         }
+    }
+
+    public countException(dimensions: IMetricExceptionDimensions) {
+        if (!this._isEnabled) {
+            return;
+        }
+        let counter: AggregatedMetricCounter = this._getAggregatedCounter(
+            dimensions,
+            this._exceptionCountersCollection
+        );
+        counter.totalCount++;
+    }
+
+    public countTrace(dimensions: IMetricTraceDimensions) {
+        if (!this._isEnabled) {
+            return;
+        }
+        let counter: AggregatedMetricCounter = this._getAggregatedCounter(
+            dimensions,
+            this._traceCountersCollection
+        );
+        counter.totalCount++;
+    }
+
+    private _getAggregatedCounter(
+        dimensions: IStandardMetricBaseDimensions,
+        counterCollection: Array<AggregatedMetricCounter>
+    ): AggregatedMetricCounter {
+        let notMatch = false;
+        // Check if counter with specified dimensions is available
+        for (let i = 0; i < counterCollection.length; i++) {
+            // Same object
+            if (dimensions === counterCollection[i].dimensions) {
+                return counterCollection[i];
+            }
+            // Different number of keys skip
+            if (
+                Object.keys(dimensions).length !==
+                Object.keys(counterCollection[i].dimensions).length
+            ) {
+                continue;
+            }
+            // Check dimension values
+            for (let dim in dimensions) {
+                if ((<any>dimensions)[dim] != (<any>counterCollection[i].dimensions)[dim]) {
+                    notMatch = true;
+                    break;
+                }
+            }
+            if (!notMatch) {
+                // Found
+                return counterCollection[i];
+            }
+            notMatch = false;
+        }
+        // Create a new one if not found
+        let newCounter = new AggregatedMetricCounter(dimensions);
+        counterCollection.push(newCounter);
+        return newCounter;
     }
 
     private _getExceptions(observableResult: ObservableResult) {
@@ -72,14 +131,14 @@ export class AutoCollectStandardMetrics {
         }
     }
 
-    private _getMetricAttributes(dimensions: IMetricBaseDimensions, aggregationInterval: number, metricType: string): MetricAttributes {
-        let metricProperties = getMetricAttributes(dimensions);
-        metricProperties = {
-            ...metricProperties,
+    private _getMetricAttributes(dimensions: IStandardMetricBaseDimensions, aggregationInterval: number, metricType: string): MetricAttributes {
+        let attributes: MetricAttributes = {};
+        attributes = {
+            ...dimensions,
             "_MS.MetricId": metricType,
             "_MS.AggregationIntervalMs": String(aggregationInterval),
             "_MS.IsAutocollected": "True",
         };
-        return metricProperties;
+        return attributes;
     }
 }

@@ -1,6 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import { SpanKind } from "@opentelemetry/api";
+import { MetricAttributes } from "@opentelemetry/api-metrics";
+
 export enum PerformanceCounter {
   // Memory
   PRIVATE_BYTES = "\\Process(??APP_WIN32_PROC??)\\Private Bytes",
@@ -76,9 +79,9 @@ export class AggregatedMetricCounter {
   public lastTotalCount: number;
   public intervalExecutionTime: number;
   public lastIntervalExecutionTime: number;
-  public dimensions: IMetricBaseDimensions;
+  public dimensions: IStandardMetricBaseDimensions;
 
-  constructor(dimensions: IMetricBaseDimensions) {
+  constructor(dimensions: IStandardMetricBaseDimensions) {
     this.dimensions = dimensions;
     this.totalCount = 0;
     this.lastTotalCount = 0;
@@ -88,32 +91,14 @@ export class AggregatedMetricCounter {
   }
 }
 
-export interface IMetricBaseDimensions {
+export interface IStandardMetricBaseDimensions {
   cloudRoleInstance?: string;
   cloudRoleName?: string;
 }
 
-export interface IMetricDependencyDimensions extends IMetricBaseDimensions {
-  type?: MetricDependencyType;
-  target?: string;
-  success?: boolean;
-  resultCode?: string;
-  operationSynthetic?: string;
-}
+export interface IMetricExceptionDimensions extends IStandardMetricBaseDimensions { }
 
-export enum MetricDependencyType {
-  HTTP = "Http",
-}
-
-export interface IMetricRequestDimensions extends IMetricBaseDimensions {
-  success?: boolean;
-  resultCode?: string;
-  operationSynthetic?: string;
-}
-
-export interface IMetricExceptionDimensions extends IMetricBaseDimensions { }
-
-export interface IMetricTraceDimensions extends IMetricBaseDimensions {
+export interface IMetricTraceDimensions extends IStandardMetricBaseDimensions {
   traceSeverityLevel?: string;
 }
 
@@ -129,11 +114,11 @@ export type MetricDimensionTypeKeys =
   | "traceSeverityLevel"
   | "operationSynthetic";
 
-export interface IHttpMetric {
+export interface IHttpStandardMetric {
   startTime: number;
-  isOutgoingRequest: boolean;
   isProcessed: boolean;
-  dimensions?: IMetricDependencyDimensions | IMetricRequestDimensions;
+  spanKind: SpanKind
+  attributes?: MetricAttributes;
 }
 
 // Names expected in Breeze side for dimensions

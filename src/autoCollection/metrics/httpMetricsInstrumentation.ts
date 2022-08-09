@@ -13,12 +13,13 @@ import {
   safeExecuteInTheMiddle
 } from '@opentelemetry/instrumentation';
 import { getRequestInfo } from '@opentelemetry/instrumentation-http';
-import { Histogram, MeterProvider, MetricAttributes, ValueType } from '@opentelemetry/api-metrics';
+import { Histogram, MeterProvider, ValueType } from '@opentelemetry/api-metrics';
 
 import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../declarations/constants";
-import { IHttpMetric, IMetricDependencyDimensions, IMetricRequestDimensions, MetricDependencyType, StandardMetric } from './types';
+import { IHttpStandardMetric, StandardMetric } from './types';
 import { Logger } from '../../library/logging';
-import { getMetricAttributes } from './util';
+import { SpanKind } from '@opentelemetry/api';
+import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 
 export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
@@ -70,23 +71,27 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
     return [this._getHttpDefinition(), this._getHttpsDefinition()];
   }
 
-  private _httpRequestDone(metric: IHttpMetric) {
+  private _httpRequestDone(metric: IHttpStandardMetric) {
     // Done could be called multiple times, only process metric once
     if (!metric.isProcessed) {
       let durationMs = Date.now() - metric.startTime;
-      let attributes = getMetricAttributes(metric.dimensions);
-      if (metric.isOutgoingRequest) {
-        this._httpServerDurationHistogram.record(durationMs, attributes);
+      let success = false;
+      const statusCode = parseInt(metric.attributes[SemanticAttributes.HTTP_STATUS_CODE]);
+      if (statusCode !== NaN) {
+        success = (0 < statusCode) && (statusCode < 500);
+      }
+      if (metric.spanKind == SpanKind.SERVER) {
+        this._httpServerDurationHistogram.record(durationMs, metric.attributes);
         this.intervalRequestExecutionTime += durationMs;
-        if (metric.dimensions.success === false) {
+        if (!success) {
           this.totalFailedRequestCount++;
         }
         this.totalRequestCount++;
       }
       else {
-        this._httpClientDurationHistogram.record(durationMs, attributes);
+        this._httpClientDurationHistogram.record(durationMs, metric.attributes);
         this.intervalDependencyExecutionTime += durationMs;
-        if (metric.dimensions.success === false) {
+        if (!success) {
           this.totalFailedDependencyCount++;
         }
         this.totalDependencyCount++;
@@ -185,7 +190,7 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
        * 2 span for the same request we need to check that the protocol is correct
        * See: https://github.com/nodejs/node/blob/v8.17.0/lib/https.js#L245
        */
-      const { origin, pathname, method, optionsParsed } = getRequestInfo(options);
+      const { optionsParsed } = getRequestInfo(options);
       if (
         component === 'http' &&
         semver.lt(process.version, '9.0.0') &&
@@ -193,17 +198,16 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
       ) {
         return original.apply(this, [options, ...args]);
       }
-      let dimensions: IMetricDependencyDimensions = {
-        success: false,
-        type: MetricDependencyType.HTTP,
-        target: optionsParsed.path || '/'
-      };
-      let metric: IHttpMetric = {
+      let metric: IHttpStandardMetric = {
         startTime: Date.now(),
-        isOutgoingRequest: true,
         isProcessed: false,
-        dimensions: dimensions
+        spanKind: SpanKind.CLIENT,
+        attributes: {}
       };
+
+      metric.attributes[SemanticAttributes.HTTP_METHOD] = optionsParsed.method;
+      metric.attributes[SemanticAttributes.NET_PEER_NAME] = optionsParsed.hostname;
+
       const request: http.ClientRequest = safeExecuteInTheMiddle(
         () => original.apply(this, [options, ...args]),
         error => {
@@ -216,14 +220,12 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
         'response',
         (response: http.IncomingMessage & { aborted?: boolean, complete?: boolean }) => {
           Logger.getInstance().debug('outgoingRequest on response()');
-          metric.dimensions.resultCode = String(response.statusCode);
+          metric.attributes[SemanticAttributes.NET_PEER_PORT] = String(response.socket.remotePort);
+          metric.attributes[SemanticAttributes.HTTP_STATUS_CODE] = String(response.statusCode);
+          metric.attributes[SemanticAttributes.HTTP_FLAVOR] = component;
+
           response.on('end', () => {
             Logger.getInstance().debug('outgoingRequest on end()');
-            if (response.aborted && !response.complete) {
-              metric.dimensions.success = false;
-            } else {
-              metric.dimensions.success = (0 < response.statusCode) && (response.statusCode < 400);
-            }
             instrumentation._httpRequestDone(metric);
           });
           response.on('error', (error: Error) => {
@@ -240,7 +242,6 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
       });
       request.on('error', (error: Error) => {
         Logger.getInstance().debug('outgoingRequest on request error()');
-        metric.dimensions.success = false;
         instrumentation._httpRequestDone(metric);
       });
       return request;
@@ -267,25 +268,34 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
       if (event !== 'request') {
         return original.apply(this, [event, ...args]);
       }
-      let dimensions: IMetricRequestDimensions = {
-        success: false,
-      };
-      let metric: IHttpMetric = {
-        startTime: Date.now(),
-        isOutgoingRequest: false,
-        isProcessed: false,
-        dimensions: dimensions
-      };
       const request = args[0] as http.IncomingMessage;
       const response = args[1] as http.ServerResponse;
+
+      let metric: IHttpStandardMetric = {
+        startTime: Date.now(),
+        spanKind: SpanKind.SERVER,
+        isProcessed: false,
+        attributes: {}
+      };
+
+      metric.attributes[SemanticAttributes.HTTP_SCHEME] = component;
+      metric.attributes[SemanticAttributes.HTTP_METHOD] = request.method || 'GET';
+      metric.attributes[SemanticAttributes.HTTP_FLAVOR] = request.httpVersion;
+
+      const requestUrl = request.url ? url.parse(request.url) : null;
+      const hostname =
+        requestUrl?.hostname ||
+        requestUrl?.host?.replace(/^(.*)(:[0-9]{1,5})/, '$1') ||
+        'localhost';
+      metric.attributes[SemanticAttributes.NET_HOST_NAME] = hostname;
+      metric.attributes[SemanticAttributes.HTTP_TARGET] = requestUrl.pathname || '/';
+
       const originalEnd = response.end;
       response.end = function (
         this: http.ServerResponse,
         ..._args: any
       ) {
         response.end = originalEnd;
-        metric.dimensions.resultCode = String(response.statusCode);
-        metric.dimensions.success = (0 < response.statusCode) && (response.statusCode < 500);
         const returned = safeExecuteInTheMiddle(
           () => response.end.apply(this, arguments as never),
           error => {
@@ -302,8 +312,6 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
         () => original.apply(this, [event, ...args]),
         error => {
           if (error) {
-            metric.dimensions.resultCode = String(response.statusCode);
-            metric.dimensions.success = false;
             instrumentation._httpRequestDone(metric);
             throw error;
           }

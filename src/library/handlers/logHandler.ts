@@ -7,7 +7,7 @@ import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions"
 import { BatchProcessor } from "./shared/batchProcessor";
 import { LogExporter } from "../exporters";
 import * as Contracts from "../../declarations/contracts";
-import { AutoCollectConsole, AutoCollectExceptions } from "../../autoCollection";
+import { AutoCollectConsole, AutoCollectExceptions, AutoCollectStandardMetrics } from "../../autoCollection";
 import { Config } from "../configuration";
 import { Util } from "../util";
 import { ResourceManager } from "./resourceManager";
@@ -34,6 +34,7 @@ import {
     Telemetry,
 } from "../../declarations/contracts";
 import { Logger } from "../logging";
+import { IMetricExceptionDimensions, IMetricTraceDimensions } from "../../autoCollection/metrics/types";
 
 
 export class LogHandler {
@@ -48,8 +49,9 @@ export class LogHandler {
     private _console: AutoCollectConsole;
     private _exceptions: AutoCollectExceptions;
     private _idGenerator: IdGenerator;
+    private _standardMetricsCollector: AutoCollectStandardMetrics
 
-    constructor(config: Config) {
+    constructor(config: Config, standardMetricsCollector?: AutoCollectStandardMetrics) {
         this.config = config;
         this._exporter = new LogExporter(config);
         this._batchProcessor = new BatchProcessor(config, this._exporter);
@@ -57,6 +59,7 @@ export class LogHandler {
         this._console = new AutoCollectConsole(this);
         this._exceptions = new AutoCollectExceptions(this);
         this._idGenerator = new RandomIdGenerator();
+        this._standardMetricsCollector = standardMetricsCollector;
     }
 
     public start() {
@@ -127,6 +130,16 @@ export class LogHandler {
         try {
             const envelope = this._traceToEnvelope(telemetry, this.config.instrumentationKey);
             this._batchProcessor.send(envelope);
+
+            if (this._standardMetricsCollector) {
+                let baseData = envelope.data.baseData as MessageData;
+                let traceDimensions: IMetricTraceDimensions = {
+                    cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
+                    cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole],
+                    traceSeverityLevel: baseData.severity
+                };
+                this._standardMetricsCollector.countTrace(traceDimensions);
+            }
         }
         catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
@@ -144,6 +157,14 @@ export class LogHandler {
         try {
             const envelope = this._exceptionToEnvelope(telemetry, this.config.instrumentationKey);
             this._batchProcessor.send(envelope);
+
+            if (this._standardMetricsCollector) {
+                let exceptionDimensions: IMetricExceptionDimensions = {
+                    cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
+                    cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole]
+                };
+                this._standardMetricsCollector.countTrace(exceptionDimensions);
+            }
         }
         catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
@@ -322,15 +343,15 @@ export class LogHandler {
         tags[KnownContextTagKeys.AiCloudRoleInstance] = String(serviceInstanceId);
         tags[KnownContextTagKeys.AiInternalSdkVersion] = String(attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION]);
 
-         // Add Correlation headers
-         const spanContext = trace.getSpanContext(context.active());
-         if (spanContext) {
-             tags[KnownContextTagKeys.AiOperationId] = spanContext.traceId;
-             tags[KnownContextTagKeys.AiOperationParentId] = spanContext.spanId;
-         }
-         else{
-             tags[KnownContextTagKeys.AiOperationId] = this._idGenerator.generateTraceId();
-         }
+        // Add Correlation headers
+        const spanContext = trace.getSpanContext(context.active());
+        if (spanContext) {
+            tags[KnownContextTagKeys.AiOperationId] = spanContext.traceId;
+            tags[KnownContextTagKeys.AiOperationParentId] = spanContext.spanId;
+        }
+        else {
+            tags[KnownContextTagKeys.AiOperationId] = this._idGenerator.generateTraceId();
+        }
         return tags;
     }
 
