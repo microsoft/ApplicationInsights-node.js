@@ -155,12 +155,13 @@ describe("Library/Sender", () => {
 
             Sender.HTTP_TIMEOUT = 100;
             nockScope = interceptor.delay(300).reply(200, breezeResponse);
+            let onErrorSpy = sandbox.spy(sender, "_onErrorHelper");
 
-            // Attempted using sender.spy() here - had to make _onError() a public method and was still seeing issues with calling it from within the test case.
-            // What I've noticed is that when an assert would evaluate to true using the callbackResponse the console.log of the callbackResponse prints out the breezeResponse.
-            sender.send([envelope], (callbackResponse) => {
-                console.log('callback response', callbackResponse);
-                assert.ok(callbackResponse.includes("Timeout sending telemetry"));
+            sender.send([envelope], () => {
+                assert.ok(onErrorSpy.called);
+                let error = onErrorSpy.args[0][0] as Error;
+                assert.equal(error.message, "telemetry request timed out");
+                done();
             });
         });
     });
