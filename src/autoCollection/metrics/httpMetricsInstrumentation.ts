@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 import type * as http from 'http';
 import type * as https from 'https';
+export type Http = typeof http;
 import * as semver from 'semver';
 import * as url from 'url';
 import {
@@ -12,7 +13,7 @@ import {
   safeExecuteInTheMiddle
 } from '@opentelemetry/instrumentation';
 import { getRequestInfo } from '@opentelemetry/instrumentation-http';
-import { Histogram } from "@opentelemetry/api-metrics";
+import { Histogram, MeterProvider, MetricAttributes, ValueType } from '@opentelemetry/api-metrics';
 
 import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../declarations/constants";
 import { IHttpMetric, IMetricDependencyDimensions, IMetricRequestDimensions, MetricDependencyType, StandardMetric } from './types';
@@ -20,7 +21,7 @@ import { Logger } from '../../library/logging';
 import { getMetricAttributes } from './util';
 
 
-export class HttpMetricsInstrumentation extends InstrumentationBase {
+export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
 
   private static _instance: HttpMetricsInstrumentation;
   private _nodeVersion: string;
@@ -31,8 +32,8 @@ export class HttpMetricsInstrumentation extends InstrumentationBase {
   public intervalDependencyExecutionTime: number = 0;
   public intervalRequestExecutionTime: number = 0;
 
-  private _requestsDurationHistogram: Histogram = null;
-  private _dependenciesDurationHistogram: Histogram = null;
+  private _httpServerDurationHistogram!: Histogram;
+  private _httpClientDurationHistogram!: Histogram;
 
   public static getInstance() {
     if (!HttpMetricsInstrumentation._instance) {
@@ -44,16 +45,18 @@ export class HttpMetricsInstrumentation extends InstrumentationBase {
   constructor(config: InstrumentationConfig = {}) {
     super('AzureHttpMetricsInstrumentation', APPLICATION_INSIGHTS_SDK_VERSION, config);
     this._nodeVersion = process.versions.node;
+    this._updateMetricInstruments();
   }
 
-  public enableStandardMetrics(requestsDurationHistogram: Histogram, dependenciesDurationHistogram: Histogram) {
-    this._dependenciesDurationHistogram = dependenciesDurationHistogram;
-    this._requestsDurationHistogram = requestsDurationHistogram;
+
+  public setMeterProvider(meterProvider: MeterProvider) {
+    super.setMeterProvider(meterProvider);
+    this._updateMetricInstruments();
   }
 
-  public disableStandardMetrics() {
-    this._dependenciesDurationHistogram = null;
-    this._requestsDurationHistogram = null;
+  private _updateMetricInstruments() {
+    this._httpServerDurationHistogram = this.meter.createHistogram(StandardMetric.REQUESTS, { valueType: ValueType.DOUBLE });
+    this._httpClientDurationHistogram = this.meter.createHistogram(StandardMetric.DEPENDENCIES, { valueType: ValueType.DOUBLE });
   }
 
   /**
@@ -73,9 +76,7 @@ export class HttpMetricsInstrumentation extends InstrumentationBase {
       let durationMs = Date.now() - metric.startTime;
       let attributes = getMetricAttributes(metric.dimensions);
       if (metric.isOutgoingRequest) {
-        if (this._requestsDurationHistogram) {
-          this._requestsDurationHistogram.record(durationMs, attributes);
-        }
+        this._httpServerDurationHistogram.record(durationMs, attributes);
         this.intervalRequestExecutionTime += durationMs;
         if (metric.dimensions.success === false) {
           this.totalFailedRequestCount++;
@@ -83,9 +84,7 @@ export class HttpMetricsInstrumentation extends InstrumentationBase {
         this.totalRequestCount++;
       }
       else {
-        if (this._dependenciesDurationHistogram) {
-          this._dependenciesDurationHistogram.record(durationMs, attributes);
-        }
+        this._httpClientDurationHistogram.record(durationMs, attributes);
         this.intervalDependencyExecutionTime += durationMs;
         if (metric.dimensions.success === false) {
           this.totalFailedDependencyCount++;

@@ -1,4 +1,4 @@
-import { Histogram, Meter, MetricAttributes, ObservableCallback, ObservableGauge, ObservableResult, ValueType } from "@opentelemetry/api-metrics";
+import { Meter, MetricAttributes, ObservableCallback, ObservableGauge, ObservableResult, ValueType } from "@opentelemetry/api-metrics";
 import {
     AggregatedMetricCounter,
     IMetricBaseDimensions,
@@ -11,24 +11,18 @@ import { getMetricAttributes } from "./util";
 
 export class AutoCollectStandardMetrics {
     private _isEnabled: boolean;
-    private _httpMetrics: HttpMetricsInstrumentation
     private _meter: Meter;
     private _exceptionCountersCollection: Array<AggregatedMetricCounter>;
     private _traceCountersCollection: Array<AggregatedMetricCounter>;
-    private _exceptionsGauge: ObservableGauge; // TODO: Not implemented
+    private _exceptionsGauge: ObservableGauge;
     private _exceptionsGaugeCallback: ObservableCallback;
-    private _tracesGauge: ObservableGauge; // TODO: Not implemented
+    private _tracesGauge: ObservableGauge;
     private _tracesGaugeCallback: ObservableCallback;
-    private _requestsDurationHistogram: Histogram;
-    private _dependenciesDurationHistogram: Histogram;
 
     constructor(meter: Meter) {
         this._meter = meter;
         this._exceptionCountersCollection = [];
         this._traceCountersCollection = [];
-        this._httpMetrics = HttpMetricsInstrumentation.getInstance();
-        this._requestsDurationHistogram = this._meter.createHistogram(StandardMetric.REQUESTS, { valueType: ValueType.DOUBLE });
-        this._dependenciesDurationHistogram = this._meter.createHistogram(StandardMetric.DEPENDENCIES, { valueType: ValueType.DOUBLE });
         this._exceptionsGauge = this._meter.createObservableGauge(StandardMetric.EXCEPTIONS, { valueType: ValueType.DOUBLE });
         this._tracesGauge = this._meter.createObservableGauge(StandardMetric.TRACES, { valueType: ValueType.DOUBLE });
         this._exceptionsGaugeCallback = this._getExceptions.bind(this);
@@ -40,49 +34,10 @@ export class AutoCollectStandardMetrics {
         if (this._isEnabled) {
             this._exceptionsGauge.addCallback(this._exceptionsGaugeCallback);
             this._tracesGauge.addCallback(this._tracesGaugeCallback);
-            this._httpMetrics.enableStandardMetrics(this._requestsDurationHistogram, this._dependenciesDurationHistogram);
         } else {
             this._exceptionsGauge.removeCallback(this._exceptionsGaugeCallback);
             this._tracesGauge.removeCallback(this._tracesGaugeCallback);
-            this._httpMetrics.disableStandardMetrics();
         }
-    }
-
-    private _getAggregatedCounter(
-        dimensions: IMetricBaseDimensions,
-        counterCollection: Array<AggregatedMetricCounter>
-    ): AggregatedMetricCounter {
-        let notMatch = false;
-        // Check if counter with specified dimensions is available
-        for (let i = 0; i < counterCollection.length; i++) {
-            // Same object
-            if (dimensions === counterCollection[i].dimensions) {
-                return counterCollection[i];
-            }
-            // Different number of keys skip
-            if (
-                Object.keys(dimensions).length !==
-                Object.keys(counterCollection[i].dimensions).length
-            ) {
-                continue;
-            }
-            // Check dimension values
-            for (let dim in dimensions) {
-                if ((<any>dimensions)[dim] != (<any>counterCollection[i].dimensions)[dim]) {
-                    notMatch = true;
-                    break;
-                }
-            }
-            if (!notMatch) {
-                // Found
-                return counterCollection[i];
-            }
-            notMatch = false;
-        }
-        // Create a new one if not found
-        let newCounter = new AggregatedMetricCounter(dimensions);
-        counterCollection.push(newCounter);
-        return newCounter;
     }
 
     private _getExceptions(observableResult: ObservableResult) {
