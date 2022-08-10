@@ -7,6 +7,7 @@ class CorrelationIdManager {
     private static _handle: NodeJS.Timer;
     public static correlationIdPrefix = "cid-v1:";
     public static w3cEnabled = true;
+    public static HTTP_TIMEOUT: number = 20000; // 20 seconds
 
     // To avoid extraneous HTTP requests, we maintain a queue of callbacks waiting on a particular appId lookup,
     // as well as a cache of completed lookups so future requests can be resolved immediately.
@@ -15,6 +16,7 @@ class CorrelationIdManager {
 
     private static requestIdMaxLength = 1024;
     private static currentRootId = Util.randomu32();
+    private static _requestTimedOut: boolean;
 
     public static queryCorrelationId(config: Config, callback: (correlationId: string) => void) {
         // GET request to `${this.endpointBase}/api/profiles/${this.instrumentationKey}/appId`
@@ -79,9 +81,17 @@ class CorrelationIdManager {
                 }
             }, true, false);
             if (req) {
+                req.setTimeout(CorrelationIdManager.HTTP_TIMEOUT, () => {
+                    this._requestTimedOut = true;
+                    req.abort();
+                });
                 req.on("error", (error: Error) => {
                     // Unable to contact endpoint.
                     // Do nothing for now.
+                    if (this._requestTimedOut) {
+                        error.name = "telemetry timeout";
+                        error.message = "telemetry request timed out";
+                    }
                     Logging.warn(CorrelationIdManager.TAG, error);
                     if (this._handle) {
                         clearTimeout(CorrelationIdManager._handle);
