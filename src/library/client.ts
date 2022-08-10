@@ -26,7 +26,7 @@ export class Client {
         }
         this._metricHandler = new MetricHandler(this._config);
         this._traceHandler = new TraceHandler(this._config);
-        this._logHandler = new LogHandler(this._config, this._metricHandler.getStandardMetricsCollector());
+        this._logHandler = new LogHandler(this._config, this._metricHandler);
     }
 
     public start() {

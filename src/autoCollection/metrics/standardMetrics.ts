@@ -106,7 +106,7 @@ export class AutoCollectStandardMetrics {
             var intervalExceptions = currentCounter.totalCount - currentCounter.lastTotalCount || 0;
             var elapsedMs = currentCounter.time - currentCounter.lastTime;
             if (elapsedMs > 0 && intervalExceptions > 0) {
-                let attributes = this._getMetricAttributes(currentCounter.dimensions, intervalExceptions, MetricId.EXCEPTIONS_COUNT);
+                let attributes = this._getMetricAttributes(currentCounter.dimensions, elapsedMs, MetricId.EXCEPTIONS_COUNT);
                 observableResult.observe(intervalExceptions, attributes);
             }
             // Set last counters
@@ -122,7 +122,7 @@ export class AutoCollectStandardMetrics {
             var intervalTraces = currentCounter.totalCount - currentCounter.lastTotalCount || 0;
             var elapsedMs = currentCounter.time - currentCounter.lastTime;
             if (elapsedMs > 0 && intervalTraces > 0) {
-                let attributes = this._getMetricAttributes(currentCounter.dimensions, intervalTraces, MetricId.TRACES_COUNT);
+                let attributes = this._getMetricAttributes(currentCounter.dimensions, elapsedMs, MetricId.TRACES_COUNT);
                 observableResult.observe(intervalTraces, attributes);
             }
             // Set last counters

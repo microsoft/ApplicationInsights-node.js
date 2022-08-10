@@ -35,6 +35,7 @@ import {
 } from "../../declarations/contracts";
 import { Logger } from "../logging";
 import { IMetricExceptionDimensions, IMetricTraceDimensions } from "../../autoCollection/metrics/types";
+import { MetricHandler } from "./metricHandler";
 
 
 export class LogHandler {
@@ -49,9 +50,9 @@ export class LogHandler {
     private _console: AutoCollectConsole;
     private _exceptions: AutoCollectExceptions;
     private _idGenerator: IdGenerator;
-    private _standardMetricsCollector: AutoCollectStandardMetrics
+    private _metricHandler: MetricHandler
 
-    constructor(config: Config, standardMetricsCollector?: AutoCollectStandardMetrics) {
+    constructor(config: Config, metricHandler?: MetricHandler) {
         this.config = config;
         this._exporter = new LogExporter(config);
         this._batchProcessor = new BatchProcessor(config, this._exporter);
@@ -59,7 +60,7 @@ export class LogHandler {
         this._console = new AutoCollectConsole(this);
         this._exceptions = new AutoCollectExceptions(this);
         this._idGenerator = new RandomIdGenerator();
-        this._standardMetricsCollector = standardMetricsCollector;
+        this._metricHandler = metricHandler;
     }
 
     public start() {
@@ -131,14 +132,20 @@ export class LogHandler {
             const envelope = this._traceToEnvelope(telemetry, this.config.instrumentationKey);
             this._batchProcessor.send(envelope);
 
-            if (this._standardMetricsCollector) {
+            if (this._metricHandler?.isStandardMetricsEnabled) {
                 let baseData = envelope.data.baseData as MessageData;
                 let traceDimensions: IMetricTraceDimensions = {
                     cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
                     cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole],
                     traceSeverityLevel: baseData.severity
                 };
-                this._standardMetricsCollector.countTrace(traceDimensions);
+                this._metricHandler.getStandardMetricsCollector().countTrace(traceDimensions);
+                // Mark envelope as processed
+                const traceData: TraceTelemetry = (envelope.data as any).baseData;
+                traceData.properties = {
+                    ...traceData.properties,
+                    "_MS.ProcessedByMetricExtractors": "(Name:'Traces', Ver:'1.1')"
+                }
             }
         }
         catch (err) {
@@ -158,12 +165,18 @@ export class LogHandler {
             const envelope = this._exceptionToEnvelope(telemetry, this.config.instrumentationKey);
             this._batchProcessor.send(envelope);
 
-            if (this._standardMetricsCollector) {
+            if (this._metricHandler?.isStandardMetricsEnabled) {
                 let exceptionDimensions: IMetricExceptionDimensions = {
                     cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
                     cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole]
                 };
-                this._standardMetricsCollector.countTrace(exceptionDimensions);
+                this._metricHandler.getStandardMetricsCollector().countTrace(exceptionDimensions);
+                // Mark envelope as processed
+                const exceptionData: TelemetryExceptionData = (envelope.data as any).baseData;
+                exceptionData.properties = {
+                    ...exceptionData.properties,
+                    "_MS.ProcessedByMetricExtractors": "(Name:'Exceptions', Ver:'1.1')"
+                };
             }
         }
         catch (err) {

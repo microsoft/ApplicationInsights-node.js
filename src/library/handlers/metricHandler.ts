@@ -38,7 +38,7 @@ import { Util } from "../util";
 export class MetricHandler {
 
     public isPerformance = true;
-    public isPreAggregatedMetrics = true;
+    public isStandardMetricsEnabled = true;
     public isHeartBeat = false;
     public isRequests = true;
     public isDependencies = true;
@@ -88,7 +88,7 @@ export class MetricHandler {
     public start() {
         this._isStarted = true;
         this._performance.enable(this.isPerformance);
-        this._preAggregatedMetrics.enable(this.isPreAggregatedMetrics);
+        this._preAggregatedMetrics.enable(this.isStandardMetricsEnabled);
         this._nativePerformance.enable(this.isNativePerformance, this.disabledExtendedMetrics);
         this._heartbeat.enable(this.isHeartBeat);
     }
@@ -150,7 +150,7 @@ export class MetricHandler {
 
 
     public setAutoCollectPreAggregatedMetrics(value: boolean) {
-        this.isPreAggregatedMetrics = value;
+        this.isStandardMetricsEnabled = value;
         if (this._isStarted) {
             this._preAggregatedMetrics.enable(value);
         }
@@ -165,11 +165,11 @@ export class MetricHandler {
     }
 
     public async shutdown(): Promise<void> {
-        // this._performance.enable(false);
-        // this._preAggregatedMetrics.enable(false);
-        // this._nativePerformance.enable(false);
-        // this._heartbeat.shutdown();
-        // this._meterProvider.shutdown();
+        this._performance.enable(false);
+        this._preAggregatedMetrics.enable(false);
+        this._nativePerformance.enable(false);
+        this._heartbeat.shutdown();
+        this._meterProvider.shutdown();
     }
 
     public getMeterProvider(): MeterProvider {
@@ -189,10 +189,10 @@ export class MetricHandler {
             this._config.enableAutoCollectPerformance !== undefined
                 ? this._config.enableAutoCollectPerformance
                 : this.isPerformance;
-        this.isPreAggregatedMetrics =
+        this.isStandardMetricsEnabled =
             this._config.enableAutoCollectPreAggregatedMetrics !== undefined
                 ? this._config.enableAutoCollectPreAggregatedMetrics
-                : this.isPreAggregatedMetrics;
+                : this.isStandardMetricsEnabled;
         this.isHeartBeat =
             this._config.enableAutoCollectHeartbeat !== undefined
                 ? this._config.enableAutoCollectHeartbeat
