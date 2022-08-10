@@ -19,6 +19,7 @@ export interface IVirtualMachineInfo {
 }
 
 export class AzureVirtualMachine {
+    public static HTTP_TIMEOUT: number = 2500; // 2.5 seconds
 
     private static TAG = "AzureVirtualMachine";
 
@@ -31,7 +32,6 @@ export class AzureVirtualMachine {
             headers: {
                 "Metadata": "True"
             },
-            timeout: 2500, // DNS resolution is taking long time in MacOS environments
         };
 
         const req = Util.makeRequest(config, metadataRequestUrl, requestOptions, (res) => {
@@ -60,7 +60,7 @@ export class AzureVirtualMachine {
             }
         }, false, false);
         if (req) {
-            req.on("timeout", () => {
+            req.setTimeout(AzureVirtualMachine.HTTP_TIMEOUT, () => {
                 req.abort();
             });
             req.on("error", (error: Error) => {
