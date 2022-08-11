@@ -29,6 +29,7 @@ class Sender {
     public static CLEANUP_TIMEOUT = 60 * 60 * 1000; // 1 hour
     public static FILE_RETEMPTION_PERIOD = 7 * 24 * 60 * 60 * 1000; // 7 days
     public static TEMPDIR_PREFIX: string = "appInsights-node";
+    public static HTTP_TIMEOUT: number = 20000; // 20 seconds
 
     private _config: Config;
     private _isStatsbeatSender: boolean;
@@ -46,6 +47,7 @@ class Sender {
     private _fileCleanupTimer: NodeJS.Timer;
     private _redirectedHost: string = null;
     private _tempDir: string;
+    private _requestTimedOut: boolean;
     protected _resendInterval: number;
     protected _maxBytesOnDisk: number;
 
@@ -285,6 +287,13 @@ class Sender {
 
                 var req = Util.makeRequest(this._config, endpointUrl, options, requestCallback);
 
+                // Needed as of Node.js v13 default timeouts on HTTP requests are no longer default
+                // Timeout should trigger the request on error function to run
+                req.setTimeout(Sender.HTTP_TIMEOUT, () => {
+                    this._requestTimedOut = true;
+                    req.abort();
+                });
+
                 req.on("error", (error: Error) => {
                     if (this._isStatsbeatSender && !this._statsbeatHasReachedIngestionAtLeastOnce) {
                         this._statsbeatFailedToIngest();
@@ -312,6 +321,11 @@ class Sender {
 
                     if (typeof callback === "function") {
                         if (error) {
+                            // If the error type is a timeout we want to provide more meaningful output
+                            if (this._requestTimedOut) {
+                                error.name = "telemetry timeout";
+                                error.message = "telemetry request timed out";
+                            }
                             callback(Util.dumpObj(error));
                         }
                         else {

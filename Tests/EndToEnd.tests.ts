@@ -108,6 +108,14 @@ class fakeRequest {
 
     }
 
+    public setTimeout(value: number, callback: () => void) {
+
+    }
+
+    public abort() {
+        
+    }
+
     public fail(): void {
         this.callbacks["error"] ? this.callbacks["error"]() : null;
     }

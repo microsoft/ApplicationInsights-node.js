@@ -60,6 +60,10 @@ describe("Library/Sender", () => {
             sender.setDiskRetryMode(true);
         });
 
+        afterEach(() => {
+            Sender.HTTP_TIMEOUT = 20000 // 20 seconds
+        });
+
         after(() => {
             FileAccessControl["USE_ICACLS"] = true;
             sender.setDiskRetryMode(false);
@@ -135,6 +139,28 @@ describe("Library/Sender", () => {
                 assert.ok(storeStub.calledOnce);
                 assert.equal(storeStub.firstCall.args[0].length, 1);
                 assert.equal(storeStub.firstCall.args[0][0].name, "TestPartial0");
+                done();
+            });
+        });
+
+        it("should timeout if the server does not provide a response within the provided timeframe", (done) => {
+            var envelope = new Contracts.Envelope();
+            envelope.name = "TestTimeout";
+
+            var breezeResponse: Contracts.BreezeResponse = {
+                itemsAccepted: 1,
+                itemsReceived: 1,
+                errors: []
+            };
+
+            Sender.HTTP_TIMEOUT = 100;
+            nockScope = interceptor.delay(300).reply(200, breezeResponse);
+            let onErrorSpy = sandbox.spy(sender, "_onErrorHelper");
+
+            sender.send([envelope], () => {
+                assert.ok(onErrorSpy.called);
+                let error = onErrorSpy.args[0][0] as Error;
+                assert.equal(error.message, "telemetry request timed out");
                 done();
             });
         });
