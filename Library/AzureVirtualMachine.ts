@@ -22,6 +22,7 @@ export class AzureVirtualMachine {
     public static HTTP_TIMEOUT: number = 2500; // 2.5 seconds
 
     private static TAG = "AzureVirtualMachine";
+    private static _requestTimedOut: boolean;
 
     public static getAzureComputeMetadata(config: Config, callback: (vm: IVirtualMachineInfo) => void) {
         let vmInfo: IVirtualMachineInfo = {};
@@ -60,12 +61,21 @@ export class AzureVirtualMachine {
             }
         }, false, false);
         if (req) {
-            req.setTimeout(AzureVirtualMachine.HTTP_TIMEOUT, () => {
+            setTimeout(() => {
+                this._requestTimedOut = true;
                 req.abort();
-            });
+            }, AzureVirtualMachine.HTTP_TIMEOUT);
+
             req.on("error", (error: Error) => {
                 // Unable to contact endpoint.
                 // Do nothing for now.
+                if (this._requestTimedOut) {
+                    if (error) {
+                        error.name = "telemetry timeout";
+                        error.message = "telemetry request timed out";
+                    }
+                }
+
                 if (error && error.message && error.message.indexOf(ConnectionErrorMessage) > -1) {
                     vmInfo.isVM = false; // confirm it's not in VM
                 }

@@ -7,7 +7,7 @@ class CorrelationIdManager {
     private static _handle: NodeJS.Timer;
     public static correlationIdPrefix = "cid-v1:";
     public static w3cEnabled = true;
-    public static HTTP_TIMEOUT: number = 20000; // 20 seconds
+    public static HTTP_TIMEOUT: number = 2500; // 2.5 seconds
 
     // To avoid extraneous HTTP requests, we maintain a queue of callbacks waiting on a particular appId lookup,
     // as well as a cache of completed lookups so future requests can be resolved immediately.
