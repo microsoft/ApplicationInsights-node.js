@@ -38,7 +38,6 @@ describe("Library/AzureVirtualMachine", () => {
 
             let onErrorSpy = sandbox.spy(AzureVirtualMachine, "getAzureComputeMetadata");
             Vm.AzureVirtualMachine.getAzureComputeMetadata(client.config, () => {
-                console.log("AZURE VIRTUAL MACHINE CALLBACK");
                 assert.ok(onErrorSpy.calledOnce);
             });
         });
