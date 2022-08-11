@@ -7,7 +7,6 @@ import * as semver from 'semver';
 import * as url from 'url';
 import {
   InstrumentationBase,
-  InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
   isWrapped,
   safeExecuteInTheMiddle
@@ -16,7 +15,7 @@ import { getRequestInfo } from '@opentelemetry/instrumentation-http';
 import { Histogram, MeterProvider, ValueType } from '@opentelemetry/api-metrics';
 
 import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../declarations/constants";
-import { IHttpStandardMetric, StandardMetric } from './types';
+import { HttpMetricsInstrumentationConfig, IHttpStandardMetric, StandardMetric } from './types';
 import { Logger } from '../../library/logging';
 import { SpanKind } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
@@ -24,7 +23,6 @@ import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
 
-  private static _instance: HttpMetricsInstrumentation;
   private _nodeVersion: string;
   public totalRequestCount: number = 0;
   public totalFailedRequestCount: number = 0;
@@ -36,19 +34,11 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
   private _httpServerDurationHistogram!: Histogram;
   private _httpClientDurationHistogram!: Histogram;
 
-  public static getInstance() {
-    if (!HttpMetricsInstrumentation._instance) {
-      HttpMetricsInstrumentation._instance = new HttpMetricsInstrumentation();
-    }
-    return HttpMetricsInstrumentation._instance;
-  }
-
-  constructor(config: InstrumentationConfig = {}) {
+  constructor(config: HttpMetricsInstrumentationConfig = {}) {
     super('AzureHttpMetricsInstrumentation', APPLICATION_INSIGHTS_SDK_VERSION, config);
     this._nodeVersion = process.versions.node;
     this._updateMetricInstruments();
   }
-
 
   public setMeterProvider(meterProvider: MeterProvider) {
     super.setMeterProvider(meterProvider);
@@ -58,6 +48,10 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
   private _updateMetricInstruments() {
     this._httpServerDurationHistogram = this.meter.createHistogram(StandardMetric.REQUESTS, { valueType: ValueType.DOUBLE });
     this._httpClientDurationHistogram = this.meter.createHistogram(StandardMetric.DEPENDENCIES, { valueType: ValueType.DOUBLE });
+  }
+
+  public _getConfig(): HttpMetricsInstrumentationConfig {
+    return this._config;
   }
 
   /**
@@ -74,6 +68,7 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
   private _httpRequestDone(metric: IHttpStandardMetric) {
     // Done could be called multiple times, only process metric once
     if (!metric.isProcessed) {
+      metric.isProcessed = true;
       let durationMs = Date.now() - metric.startTime;
       let success = false;
       const statusCode = parseInt(metric.attributes[SemanticAttributes.HTTP_STATUS_CODE]);
@@ -198,6 +193,18 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
       ) {
         return original.apply(this, [options, ...args]);
       }
+      if (safeExecuteInTheMiddle(
+        () => instrumentation._getConfig().ignoreOutgoingRequestHook?.(optionsParsed),
+        (e: unknown) => {
+          if (e != null) {
+            instrumentation._diag.error('caught ignoreOutgoingRequestHook error: ', e);
+          }
+        },
+        true
+      )) {
+        return original.apply(this, [optionsParsed, ...args]);
+      }
+
       let metric: IHttpStandardMetric = {
         startTime: Date.now(),
         isProcessed: false,
@@ -222,7 +229,7 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
           Logger.getInstance().debug('outgoingRequest on response()');
           metric.attributes[SemanticAttributes.NET_PEER_PORT] = String(response.socket.remotePort);
           metric.attributes[SemanticAttributes.HTTP_STATUS_CODE] = String(response.statusCode);
-          metric.attributes[SemanticAttributes.HTTP_FLAVOR] = component;
+          metric.attributes[SemanticAttributes.HTTP_FLAVOR] = response.httpVersion;
 
           response.on('end', () => {
             Logger.getInstance().debug('outgoingRequest on end()');
@@ -271,6 +278,18 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
       const request = args[0] as http.IncomingMessage;
       const response = args[1] as http.ServerResponse;
 
+      if (safeExecuteInTheMiddle(
+        () => instrumentation._getConfig().ignoreIncomingRequestHook?.(request),
+        (e: unknown) => {
+          if (e != null) {
+            instrumentation._diag.error('caught ignoreIncomingRequestHook error: ', e);
+          }
+        },
+        true
+      )) {
+        return original.apply(this, [event, ...args]);
+      }
+
       let metric: IHttpStandardMetric = {
         startTime: Date.now(),
         spanKind: SpanKind.SERVER,
@@ -305,6 +324,8 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
             }
           }
         );
+        metric.attributes[SemanticAttributes.HTTP_STATUS_CODE] = String(response.statusCode);
+        metric.attributes[SemanticAttributes.NET_HOST_PORT] = String(request.socket.localPort);
         instrumentation._httpRequestDone(metric);
         return returned;
       };
@@ -319,4 +340,5 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
       );
     };
   }
+
 }

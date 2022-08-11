@@ -33,6 +33,9 @@ import {
 import { ResourceManager } from "./resourceManager";
 import { HeartBeat } from "../../autoCollection/metrics/heartBeat";
 import { Util } from "../util";
+import { HttpMetricsInstrumentation } from "../../autoCollection/metrics/httpMetricsInstrumentation";
+import { HttpMetricsInstrumentationConfig } from "../../autoCollection/metrics/types";
+import { RequestOptions } from "https";
 
 
 export class MetricHandler {
@@ -57,10 +60,20 @@ export class MetricHandler {
     private _preAggregatedMetrics: AutoCollectStandardMetrics;
     private _heartbeat: HeartBeat;
     private _nativePerformance: AutoCollectNativePerformance;
+    private _httpMetrics: HttpMetricsInstrumentation;
 
     constructor(config: Config) {
         this._config = config;
         this._initializeFlagsFromConfig();
+        const httpMetricsConfig: HttpMetricsInstrumentationConfig = {
+            ignoreOutgoingRequestHook: (request: RequestOptions) => {
+                if (request.headers && request.headers["user-agent"]) {
+                    return request.headers["user-agent"].toString().indexOf("azsdk-js-monitor-opentelemetry-exporter") > -1;
+                }
+                return false;
+            }
+        };
+        this._httpMetrics = new HttpMetricsInstrumentation(httpMetricsConfig);
         this._exporter = new MetricExporter(this._config);
         this._batchProcessor = new BatchProcessor(this._config, this._exporter);
         const meterProviderConfig: MeterProviderOptions = {
@@ -80,7 +93,7 @@ export class MetricHandler {
         this._meterProvider.addMetricReader(this._metricReader);
         this._meter = this._meterProvider.getMeter("ApplicationInsightsMeter");
         this._nativePerformance = new AutoCollectNativePerformance(this._meter);
-        this._performance = new AutoCollectPerformance(this._meter, this._config);
+        this._performance = new AutoCollectPerformance(this._config, this);
         this._heartbeat = new HeartBeat(this._config);
         this._preAggregatedMetrics = new AutoCollectStandardMetrics(this._meter);
     }
@@ -106,6 +119,10 @@ export class MetricHandler {
         const envelope = this._metricToEnvelope(telemetry, this._config.instrumentationKey);
         envelope.name = Constants.StatsbeatTelemetryName;
         this.track(envelope);
+    }
+
+    public getHttpMetricsInstrumentation(): HttpMetricsInstrumentation {
+        return this._httpMetrics;
     }
 
     /**

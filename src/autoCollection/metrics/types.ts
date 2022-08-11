@@ -1,8 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import { IncomingMessage, RequestOptions } from "http";
+
 import { SpanKind } from "@opentelemetry/api";
 import { MetricAttributes } from "@opentelemetry/api-metrics";
+import { InstrumentationConfig } from "@opentelemetry/instrumentation";
+
 
 export enum PerformanceCounter {
   // Memory
@@ -133,4 +137,21 @@ export const PreAggregatedMetricPropertyNames: { [key in MetricDimensionTypeKeys
   dependencySuccess: "Dependency.Success",
   dependencyResultCode: "dependency/resultCode",
   traceSeverityLevel: "trace/severityLevel",
+}
+
+export type IgnoreMatcher = string | RegExp | ((url: string) => boolean);
+
+export interface IgnoreIncomingRequestFunction {
+  (request: IncomingMessage): boolean;
+}
+
+export interface IgnoreOutgoingRequestFunction {
+  (request: RequestOptions): boolean;
+}
+
+export interface HttpMetricsInstrumentationConfig extends InstrumentationConfig {
+  /** Not trace all incoming requests that matched with custom function */
+  ignoreIncomingRequestHook?: IgnoreIncomingRequestFunction;
+  /** Not trace all outgoing requests that matched with custom function */
+  ignoreOutgoingRequestHook?: IgnoreOutgoingRequestFunction;
 }

@@ -5,13 +5,15 @@ import { Meter, ObservableCallback, ObservableGauge, ObservableResult, ValueType
 import { QuickPulseCounter, PerformanceCounter } from "./types";
 import { HttpMetricsInstrumentation } from "./httpMetricsInstrumentation";
 import { Config } from "../../library";
+import { MetricHandler } from "../../library/handlers";
 
 
 export class AutoCollectPerformance {
     private _config: Config;
+    private _metricHandler: MetricHandler;
     private _meter: Meter;
     private _enableLiveMetricsCounters: boolean;
-    private _httpMetrics: HttpMetricsInstrumentation
+    private _httpMetrics: HttpMetricsInstrumentation;
     // Perf counters
     private _memoryPrivateBytesGauge: ObservableGauge;
     private _memoryPrivateBytesGaugeCallback: ObservableCallback;
@@ -52,9 +54,10 @@ export class AutoCollectPerformance {
     private _lastFailureDependencyRate: { count: number; time: number; executionInterval: number; };
     private _lastDependencyDuration: { count: number; time: number; executionInterval: number; };
 
-    constructor(meter: Meter, config: Config) {
-        this._meter = meter;
+    constructor(config: Config, metricHandler: MetricHandler) {
         this._config = config;
+        this._metricHandler = metricHandler;
+        this._meter = this._metricHandler.getMeter();
         this._enableLiveMetricsCounters = this._config.enableSendLiveMetrics;
         this._lastRequestRate = { count: 0, time: 0, executionInterval: 0 };
         this._lastFailureRequestRate = { count: 0, time: 0, executionInterval: 0 };
@@ -62,7 +65,7 @@ export class AutoCollectPerformance {
         this._lastDependencyRate = { count: 0, time: 0, executionInterval: 0 };
         this._lastFailureDependencyRate = { count: 0, time: 0, executionInterval: 0 };
         this._lastDependencyDuration = { count: 0, time: 0, executionInterval: 0 };
-        this._httpMetrics = HttpMetricsInstrumentation.getInstance();
+        this._httpMetrics = metricHandler.getHttpMetricsInstrumentation();
 
         // perf counters
         this._memoryPrivateBytesGauge = this._meter.createObservableGauge(PerformanceCounter.PRIVATE_BYTES, { description: "Amount of memory process has used in bytes", valueType: ValueType.INT });

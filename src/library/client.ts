@@ -25,7 +25,7 @@ export class Client {
             this._statsbeat.enable(true);
         }
         this._metricHandler = new MetricHandler(this._config);
-        this._traceHandler = new TraceHandler(this._config);
+        this._traceHandler = new TraceHandler(this._config, this._metricHandler);
         this._logHandler = new LogHandler(this._config, this._metricHandler);
     }
 

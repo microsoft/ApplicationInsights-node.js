@@ -6,10 +6,20 @@ import { DataPointType, MeterProvider, PeriodicExportingMetricReader } from "@op
 import { HttpMetricsInstrumentation } from "../../../src/autoCollection/metrics/httpMetricsInstrumentation";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 
-
-const instrumentation = HttpMetricsInstrumentation.getInstance();
+const httpMetricsConfig: HttpMetricsInstrumentationConfig = {
+    ignoreOutgoingRequestHook: (request: any) => {
+        if (request.headers && request.headers["user-agent"]) {
+            return request.headers["user-agent"].toString().indexOf("azsdk-js-monitor-opentelemetry-exporter") > -1;
+        }
+        return false;
+    }
+};
+const instrumentation = new HttpMetricsInstrumentation(httpMetricsConfig);
 instrumentation.enable();
 instrumentation.disable();
+
+import * as http from 'http';
+import { HttpMetricsInstrumentationConfig } from "../../../src/autoCollection/metrics/types";
 
 const meterProvider = new MeterProvider();
 const exporter = new AzureMonitorMetricExporter({ connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/" });
@@ -18,19 +28,18 @@ meterProvider.addMetricReader(metricReader);
 instrumentation.setMeterProvider(meterProvider);
 
 describe("AutoCollection/HttpMetricsInstrumentation", () => {
-    let http: any = null;
     let sandbox: sinon.SinonSandbox;
     let mockHttpServer: any;
     let mockHttpServerPort = 0;
 
     before(() => {
+        instrumentation.enable();
         sandbox = sinon.createSandbox();
-        // Load Http modules
-        http = require("http") as any;
         createMockServer();
     });
 
     after(() => {
+        instrumentation.disable();
         meterProvider.shutdown();
         mockHttpServer.close();
     });
@@ -98,19 +107,15 @@ describe("AutoCollection/HttpMetricsInstrumentation", () => {
         assert.strictEqual(metrics.length, 2, 'metrics count');
         assert.strictEqual(metrics[0].dataPointType, DataPointType.HISTOGRAM);
         assert.strictEqual(metrics[0].descriptor.name, 'http.server.duration');
-
-        assert.strictEqual(JSON.stringify(metrics), "Wrong PRRRTTT");
-
         assert.strictEqual(metrics[0].dataPoints.length, 1);
-       
-        assert.strictEqual((metrics[0].dataPoints[0].value as any).count, 1, "Wrong server duration count");
+        assert.strictEqual((metrics[0].dataPoints[0].value as any).count, 1);
         assert.strictEqual(metrics[0].dataPoints[0].attributes[SemanticAttributes.HTTP_SCHEME], 'http');
         assert.strictEqual(metrics[0].dataPoints[0].attributes[SemanticAttributes.HTTP_METHOD], 'GET');
         assert.strictEqual(metrics[0].dataPoints[0].attributes[SemanticAttributes.HTTP_FLAVOR], '1.1');
         assert.strictEqual(metrics[0].dataPoints[0].attributes[SemanticAttributes.NET_HOST_NAME], 'localhost');
         assert.strictEqual(metrics[0].dataPoints[0].attributes[SemanticAttributes.HTTP_TARGET], '/test');
-        assert.strictEqual(metrics[0].dataPoints[0].attributes[SemanticAttributes.HTTP_STATUS_CODE], 200);
-        assert.strictEqual(metrics[0].dataPoints[0].attributes[SemanticAttributes.NET_HOST_PORT], 22346);
+        assert.strictEqual(metrics[0].dataPoints[0].attributes[SemanticAttributes.HTTP_STATUS_CODE], "200");
+        assert.strictEqual(metrics[0].dataPoints[0].attributes[SemanticAttributes.NET_HOST_PORT], mockHttpServerPort.toString());
 
         assert.strictEqual(metrics[1].dataPointType, DataPointType.HISTOGRAM);
         assert.strictEqual(metrics[1].descriptor.name, 'http.client.duration');
@@ -118,9 +123,8 @@ describe("AutoCollection/HttpMetricsInstrumentation", () => {
         assert.strictEqual((metrics[1].dataPoints[0].value as any).count, 1);
         assert.strictEqual(metrics[1].dataPoints[0].attributes[SemanticAttributes.HTTP_METHOD], 'GET');
         assert.strictEqual(metrics[1].dataPoints[0].attributes[SemanticAttributes.NET_PEER_NAME], 'localhost');
-        assert.strictEqual(metrics[1].dataPoints[0].attributes[SemanticAttributes.HTTP_URL], 'http://localhost:22346/test');
-        assert.strictEqual(metrics[1].dataPoints[0].attributes[SemanticAttributes.NET_PEER_PORT], 22346);
-        assert.strictEqual(metrics[1].dataPoints[0].attributes[SemanticAttributes.HTTP_STATUS_CODE], 200);
+        assert.strictEqual(metrics[1].dataPoints[0].attributes[SemanticAttributes.NET_PEER_PORT], mockHttpServerPort.toString());
+        assert.strictEqual(metrics[1].dataPoints[0].attributes[SemanticAttributes.HTTP_STATUS_CODE], "200");
         assert.strictEqual(metrics[1].dataPoints[0].attributes[SemanticAttributes.HTTP_FLAVOR], '1.1');
     });
 });

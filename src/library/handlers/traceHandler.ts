@@ -23,9 +23,10 @@ import {
 import { Config } from "../configuration";
 import { ResourceManager } from "./resourceManager";
 import { ApplicationInsightsSampler } from "./sampler";
-import { HttpMetricsInstrumentation } from "../../autoCollection/metrics/httpMetricsInstrumentation";
 import { InstrumentationType } from "../configuration/interfaces";
 import { TracerProvider } from "@opentelemetry/api";
+import { MetricHandler } from "./metricHandler";
+import { AzureSpanProcessor } from "./azureSpanProcessor";
 
 
 export class TraceHandler {
@@ -40,13 +41,15 @@ export class TraceHandler {
     private _exporter: AzureMonitorTraceExporter;
     private _spanProcessor: BatchSpanProcessor;
     private _config: Config;
+    private _metricHandler: MetricHandler;
     private _instrumentations: InstrumentationOption[];
     private _disableInstrumentations: () => void;
     private _tracerProvider: NodeTracerProvider;
     private _tracer: Tracer;
 
-    constructor(config: Config) {
+    constructor(config: Config, metricHandler?: MetricHandler) {
         this._config = config;
+        this._metricHandler = metricHandler;
         this._instrumentations = [];
 
         const aiSampler = new ApplicationInsightsSampler(this._config.samplingPercentage);
@@ -74,6 +77,10 @@ export class TraceHandler {
             bufferConfig
         );
         this._tracerProvider.addSpanProcessor(this._spanProcessor);
+        if (this._metricHandler) {
+            const azureSpanProcessor = new AzureSpanProcessor(this._metricHandler);
+            this._tracerProvider.addSpanProcessor(azureSpanProcessor);
+        }
         this._tracerProvider.register();
         // TODO: Check for conflicts with multiple handlers available
         this._tracer = this._tracerProvider.getTracer("ApplicationInsightsTracer");
@@ -101,8 +108,8 @@ export class TraceHandler {
 
     public start() {
         // TODO: Remove once HTTP Instrumentation generate Http metrics
-        if (this._config.enableAutoCollectPreAggregatedMetrics || this._config.enableAutoCollectPerformance) {
-            this.addInstrumentation(HttpMetricsInstrumentation.getInstance());
+        if ((this._config.enableAutoCollectPreAggregatedMetrics || this._config.enableAutoCollectPerformance) && this._metricHandler) {
+            this.addInstrumentation(this._metricHandler.getHttpMetricsInstrumentation());
         }
         if (this._config.enableAutoCollectRequests || this._config.enableAutoCollectDependencies) {
             this.addInstrumentation(new HttpInstrumentation(this.httpInstrumentationConfig));
