@@ -57,7 +57,7 @@ export class MetricHandler {
     private _isStarted = false;
     private _batchProcessor: BatchProcessor;
     private _performance: AutoCollectPerformance;
-    private _preAggregatedMetrics: AutoCollectStandardMetrics;
+    private _standardMetrics: AutoCollectStandardMetrics;
     private _heartbeat: HeartBeat;
     private _nativePerformance: AutoCollectNativePerformance;
     private _httpMetrics: HttpMetricsInstrumentation;
@@ -95,13 +95,13 @@ export class MetricHandler {
         this._nativePerformance = new AutoCollectNativePerformance(this._meter);
         this._performance = new AutoCollectPerformance(this._config, this);
         this._heartbeat = new HeartBeat(this._config);
-        this._preAggregatedMetrics = new AutoCollectStandardMetrics(this._meter);
+        this._standardMetrics = new AutoCollectStandardMetrics(this._meter);
     }
 
     public start() {
         this._isStarted = true;
         this._performance.enable(this.isPerformance);
-        this._preAggregatedMetrics.enable(this.isStandardMetricsEnabled);
+        this._standardMetrics.enable(this.isStandardMetricsEnabled);
         this._nativePerformance.enable(this.isNativePerformance, this.disabledExtendedMetrics);
         this._heartbeat.enable(this.isHeartBeat);
     }
@@ -169,12 +169,12 @@ export class MetricHandler {
     public setAutoCollectPreAggregatedMetrics(value: boolean) {
         this.isStandardMetricsEnabled = value;
         if (this._isStarted) {
-            this._preAggregatedMetrics.enable(value);
+            this._standardMetrics.enable(value);
         }
     }
 
     public getStandardMetricsCollector(): AutoCollectStandardMetrics {
-        return this._preAggregatedMetrics;
+        return this._standardMetrics;
     }
 
     public enableAutoCollectHeartbeat() {
@@ -183,7 +183,7 @@ export class MetricHandler {
 
     public async shutdown(): Promise<void> {
         this._performance.enable(false);
-        this._preAggregatedMetrics.enable(false);
+        this._standardMetrics.enable(false);
         this._nativePerformance.enable(false);
         this._heartbeat.shutdown();
         this._meterProvider.shutdown();

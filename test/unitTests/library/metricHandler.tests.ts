@@ -49,7 +49,7 @@ describe("Library/MetricHandler", () => {
         it("preAggregated metrics enablement during start", () => {
             _config.enableAutoCollectPreAggregatedMetrics = true;
             let handler = new MetricHandler(_config);
-            let stub = sinon.stub(handler["_preAggregatedMetrics"], "enable");
+            let stub = sinon.stub(handler["_standardMetrics"], "enable");
             handler.start();
             assert.ok(stub.calledOnce, "Enable called");
             assert.equal(stub.args[0][0], true);
@@ -58,7 +58,7 @@ describe("Library/MetricHandler", () => {
         it("setAutoCollectPreAggregatedMetrics", () => {
             _config.enableAutoCollectPreAggregatedMetrics = false;
             let handler = new MetricHandler(_config);
-            let stub = sinon.stub(handler["_preAggregatedMetrics"], "enable");
+            let stub = sinon.stub(handler["_standardMetrics"], "enable");
             handler.start();
             assert.ok(stub.called, "Enable was not called");
             assert.equal(stub.args[0][0], false);

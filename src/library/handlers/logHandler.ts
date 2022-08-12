@@ -130,8 +130,6 @@ export class LogHandler {
     public async trackTrace(telemetry: Contracts.TraceTelemetry): Promise<void> {
         try {
             const envelope = this._traceToEnvelope(telemetry, this.config.instrumentationKey);
-            this._batchProcessor.send(envelope);
-
             if (this._metricHandler?.isStandardMetricsEnabled) {
                 let baseData = envelope.data.baseData as MessageData;
                 let traceDimensions: IMetricTraceDimensions = {
@@ -147,6 +145,7 @@ export class LogHandler {
                     "_MS.ProcessedByMetricExtractors": "(Name:'Traces', Ver:'1.1')"
                 }
             }
+            this._batchProcessor.send(envelope);
         }
         catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
@@ -163,14 +162,12 @@ export class LogHandler {
         }
         try {
             const envelope = this._exceptionToEnvelope(telemetry, this.config.instrumentationKey);
-            this._batchProcessor.send(envelope);
-
             if (this._metricHandler?.isStandardMetricsEnabled) {
                 let exceptionDimensions: IMetricExceptionDimensions = {
                     cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
                     cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole]
                 };
-                this._metricHandler.getStandardMetricsCollector().countTrace(exceptionDimensions);
+                this._metricHandler.getStandardMetricsCollector().countException(exceptionDimensions);
                 // Mark envelope as processed
                 const exceptionData: TelemetryExceptionData = (envelope.data as any).baseData;
                 exceptionData.properties = {
@@ -178,6 +175,7 @@ export class LogHandler {
                     "_MS.ProcessedByMetricExtractors": "(Name:'Exceptions', Ver:'1.1')"
                 };
             }
+            this._batchProcessor.send(envelope);
         }
         catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);

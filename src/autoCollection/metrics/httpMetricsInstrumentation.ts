@@ -15,7 +15,7 @@ import { getRequestInfo } from '@opentelemetry/instrumentation-http';
 import { Histogram, MeterProvider, ValueType } from '@opentelemetry/api-metrics';
 
 import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../declarations/constants";
-import { HttpMetricsInstrumentationConfig, IHttpStandardMetric, StandardMetric } from './types';
+import { HttpMetricsInstrumentationConfig, IHttpStandardMetric, MetricId, StandardMetric } from './types';
 import { Logger } from '../../library/logging';
 import { SpanKind } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
@@ -69,6 +69,7 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
     // Done could be called multiple times, only process metric once
     if (!metric.isProcessed) {
       metric.isProcessed = true;
+      metric.attributes["_MS.IsAutocollected"] = "True";
       let durationMs = Date.now() - metric.startTime;
       let success = false;
       const statusCode = parseInt(metric.attributes[SemanticAttributes.HTTP_STATUS_CODE]);
@@ -76,6 +77,7 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
         success = (0 < statusCode) && (statusCode < 500);
       }
       if (metric.spanKind == SpanKind.SERVER) {
+        metric.attributes["_MS.MetricId"] = MetricId.REQUESTS_DURATION;
         this._httpServerDurationHistogram.record(durationMs, metric.attributes);
         this.intervalRequestExecutionTime += durationMs;
         if (!success) {
@@ -84,6 +86,7 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
         this.totalRequestCount++;
       }
       else {
+        metric.attributes["_MS.MetricId"] = MetricId.DEPENDENCIES_DURATION;
         this._httpClientDurationHistogram.record(durationMs, metric.attributes);
         this.intervalDependencyExecutionTime += durationMs;
         if (!success) {
