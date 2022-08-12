@@ -287,7 +287,7 @@ describe("Library/TraceHandlers", () => {
                     let spans = exportStub.args[0][0];
                     assert.equal(spans.length, 2);
                     // Incoming request
-                    assert.equal(spans[0].attributes["_MS.ProcessedByMetricExtractors"], "(Name:'Requests', Ver:'1.1'):");
+                    assert.equal(spans[0].attributes["_MS.ProcessedByMetricExtractors"], "(Name:'Requests', Ver:'1.1')");
                     // Outgoing request
                     assert.equal(spans[1].attributes["_MS.ProcessedByMetricExtractors"], "(Name:'Dependencies', Ver:'1.1')");
                     done();
