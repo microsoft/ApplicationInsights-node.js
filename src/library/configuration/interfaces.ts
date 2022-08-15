@@ -93,16 +93,6 @@ export interface IBaseConfig {
     enableResendInterval: number;
     enableMaxBytesOnDisk: number;
     /**
-     * Enables debug and warning Logger for AppInsights itself.
-     * if true, enables debug Logger
-     */
-    enableInternalDebugLogger: boolean;
-    /**
-     * Enables debug and warning Logger for AppInsights itself.
-     * if true, enables warning Logger
-     */
-    enableInternalWarningLogger: boolean;
-    /**
      * Enables communication with Application Insights Live Metrics.
      * if true, enables communication with the live metrics service
      */
