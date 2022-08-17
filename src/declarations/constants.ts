@@ -1,3 +1,4 @@
+import { PerformanceCounter, QuickPulseCounter } from "../autoCollection/metrics/types";
 import * as Contracts from "./contracts";
 
 /**
@@ -23,10 +24,6 @@ export const ENV_AZURE_PREFIX = "APPSETTING_"; // Azure adds this prefix to all 
 export const ENV_IKEY = "APPINSIGHTS_INSTRUMENTATIONKEY"; // This key is provided in the readme
 export const LEGACY_ENV_IKEY = "APPINSIGHTS_INSTRUMENTATION_KEY";
 export const ENV_QUCKPULSE_HOST = "APPINSIGHTS_QUICKPULSE_HOST";
-
-
-
-
 
 /**
  * Map a PerformanceCounter/QuickPulseCounter to a QuickPulseCounter. If no mapping exists, mapping is *undefined*

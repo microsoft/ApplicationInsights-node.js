@@ -4,9 +4,8 @@ import * as path from "path";
 import * as sinon from "sinon";
 import { ExportResultCode } from "@opentelemetry/core";
 
-import { TraceHandler, ResourceManager } from "../../../src/library/handlers/";
+import { TraceHandler, MetricHandler } from "../../../src/library/handlers/";
 import { Config } from "../../../src/library/configuration";
-import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations/contracts";
 import { Instrumentation } from "@opentelemetry/instrumentation";
 
 
@@ -27,7 +26,8 @@ describe("Library/TraceHandlers", () => {
     describe("#Instrumentation Enablement", () => {
         it("HttpMetricsInstrumentation", () => {
             _config.enableAutoCollectPerformance = true;
-            let handler = new TraceHandler(_config);
+            let metricHandler = new MetricHandler(_config);
+            let handler = new TraceHandler(_config, metricHandler);
             handler.start();
             let found = false;
             handler["_instrumentations"].forEach((instrumentation: Instrumentation) => {
@@ -43,6 +43,7 @@ describe("Library/TraceHandlers", () => {
     describe("#autoCollection of HTTP/HTTPS requests", () => {
         let exportStub: sinon.SinonStub;
         let handler: TraceHandler = null;
+        let metricHandler: MetricHandler = null;
         let mockHttpServer: any;
         let mockHttpsServer: any;
         let mockHttpServerPort = 0;
@@ -52,7 +53,8 @@ describe("Library/TraceHandlers", () => {
             process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
             _config.enableAutoCollectDependencies = true;
             _config.enableAutoCollectRequests = true;
-            handler = new TraceHandler(_config);
+            metricHandler = new MetricHandler(_config);
+            handler = new TraceHandler(_config, metricHandler);
             exportStub = sinon.stub(handler["_exporter"], "export").callsFake((spans: any, resultCallback: any) => {
                 return new Promise((resolve, reject) => {
                     resultCallback({
@@ -277,6 +279,26 @@ describe("Library/TraceHandlers", () => {
             });;
         });
 
+        it("Span processing for pre aggregated metrics", (done) => {
+            metricHandler.isStandardMetricsEnabled = true;
+            makeHttpRequest(false).then(() => {
+                handler.flush().then(() => {
+                    assert.ok(exportStub.calledOnce, "Export called");
+                    let spans = exportStub.args[0][0];
+                    assert.equal(spans.length, 2);
+                    // Incoming request
+                    assert.equal(spans[0].attributes["_MS.ProcessedByMetricExtractors"], "(Name:'Requests', Ver:'1.1')");
+                    // Outgoing request
+                    assert.equal(spans[1].attributes["_MS.ProcessedByMetricExtractors"], "(Name:'Dependencies', Ver:'1.1')");
+                    done();
+                }).catch((error) => {
+                    done(error);
+                });;
+            }).catch((error) => {
+                done(error);
+            });;
+        });
+
         it("should not track dependencies if configured off", (done) => {
             handler["_config"].enableAutoCollectDependencies = false;
             handler["_config"].enableAutoCollectRequests = true;
@@ -333,5 +355,6 @@ describe("Library/TraceHandlers", () => {
             });;
 
         });
+
     });
 });

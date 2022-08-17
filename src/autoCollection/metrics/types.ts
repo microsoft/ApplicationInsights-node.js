@@ -1,6 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import { IncomingMessage, RequestOptions } from "http";
+
+import { SpanKind } from "@opentelemetry/api";
+import { MetricAttributes } from "@opentelemetry/api-metrics";
+import { InstrumentationConfig } from "@opentelemetry/instrumentation";
+
+
 export enum PerformanceCounter {
   // Memory
   PRIVATE_BYTES = "\\Process(??APP_WIN32_PROC??)\\Private Bytes",
@@ -14,8 +21,8 @@ export enum PerformanceCounter {
 }
 
 export enum StandardMetric {
-  REQUESTS = "Server response time",
-  DEPENDENCIES = "Dependency duration",
+  REQUESTS = "http.server.duration", //TODO: Remove once Metric Semantic Conventions are available
+  DEPENDENCIES = "http.client.duration",
   EXCEPTIONS = "Exceptions",
   TRACES = "Traces",
 }
@@ -76,9 +83,9 @@ export class AggregatedMetricCounter {
   public lastTotalCount: number;
   public intervalExecutionTime: number;
   public lastIntervalExecutionTime: number;
-  public dimensions: IMetricBaseDimensions;
+  public dimensions: IStandardMetricBaseDimensions;
 
-  constructor(dimensions: IMetricBaseDimensions) {
+  constructor(dimensions: IStandardMetricBaseDimensions) {
     this.dimensions = dimensions;
     this.totalCount = 0;
     this.lastTotalCount = 0;
@@ -88,28 +95,14 @@ export class AggregatedMetricCounter {
   }
 }
 
-export interface IMetricBaseDimensions {
+export interface IStandardMetricBaseDimensions {
   cloudRoleInstance?: string;
   cloudRoleName?: string;
 }
 
-export interface IMetricDependencyDimensions extends IMetricBaseDimensions {
-  dependencyType?: string;
-  dependencyTarget?: string;
-  dependencySuccess?: boolean;
-  dependencyResultCode?: string;
-  operationSynthetic?: string;
-}
+export interface IMetricExceptionDimensions extends IStandardMetricBaseDimensions { }
 
-export interface IMetricRequestDimensions extends IMetricBaseDimensions {
-  requestSuccess?: boolean;
-  requestResultCode?: string;
-  operationSynthetic?: string;
-}
-
-export interface IMetricExceptionDimensions extends IMetricBaseDimensions { }
-
-export interface IMetricTraceDimensions extends IMetricBaseDimensions {
+export interface IMetricTraceDimensions extends IStandardMetricBaseDimensions {
   traceSeverityLevel?: string;
 }
 
@@ -125,11 +118,11 @@ export type MetricDimensionTypeKeys =
   | "traceSeverityLevel"
   | "operationSynthetic";
 
-export interface IHttpMetric {
+export interface IHttpStandardMetric {
   startTime: number;
-  isOutgoingRequest: boolean;
   isProcessed: boolean;
-  dimensions?: IMetricDependencyDimensions | IMetricRequestDimensions;
+  spanKind: SpanKind
+  attributes?: MetricAttributes;
 }
 
 // Names expected in Breeze side for dimensions
@@ -144,4 +137,21 @@ export const PreAggregatedMetricPropertyNames: { [key in MetricDimensionTypeKeys
   dependencySuccess: "Dependency.Success",
   dependencyResultCode: "dependency/resultCode",
   traceSeverityLevel: "trace/severityLevel",
+}
+
+export type IgnoreMatcher = string | RegExp | ((url: string) => boolean);
+
+export interface IgnoreIncomingRequestFunction {
+  (request: IncomingMessage): boolean;
+}
+
+export interface IgnoreOutgoingRequestFunction {
+  (request: RequestOptions): boolean;
+}
+
+export interface HttpMetricsInstrumentationConfig extends InstrumentationConfig {
+  /** Not trace all incoming requests that matched with custom function */
+  ignoreIncomingRequestHook?: IgnoreIncomingRequestFunction;
+  /** Not trace all outgoing requests that matched with custom function */
+  ignoreOutgoingRequestHook?: IgnoreOutgoingRequestFunction;
 }

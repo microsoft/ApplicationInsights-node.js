@@ -4,7 +4,7 @@ import * as sinon from "sinon";
 import { isValidTraceId, isValidSpanId, context, trace } from "@opentelemetry/api";
 import { ExportResultCode } from "@opentelemetry/core";
 
-import { LogHandler, ResourceManager, TraceHandler } from "../../../src/library/handlers";
+import { LogHandler, MetricHandler, ResourceManager, TraceHandler } from "../../../src/library/handlers";
 import { Config } from "../../../src/library/configuration";
 import { AvailabilityTelemetry, TraceTelemetry, ExceptionTelemetry, PageViewTelemetry, EventTelemetry, Telemetry } from "../../../src/declarations/contracts";
 import { MonitorDomain } from "../../../src/declarations/generated";
@@ -290,6 +290,60 @@ describe("Library/LogHandler", () => {
                 assert.equal(envelopes[0].data.baseData["name"], "TestName");
                 assert.equal(envelopes[0].data.baseData["measurements"]["test"], "123");
                 assert.equal(envelopes[0].data.baseData["version"], "2");
+                done();
+            }).catch((error) => {
+                done(error);
+            });;
+        });
+
+        it("Exception standard metrics processed", (done) => {
+            let metricHandler = new MetricHandler(_config);
+            metricHandler.isStandardMetricsEnabled = true;
+            let handler = new LogHandler(_config, metricHandler);
+            let stub = sinon.stub(handler["_exporter"], "export").callsFake((envelopes: any, resultCallback: any) => {
+                return new Promise((resolve, reject) => {
+                    resultCallback({
+                        code: ExportResultCode.SUCCESS
+                    });
+                    resolve();
+                });
+            });
+            let telemetry: ExceptionTelemetry = {
+                exception: new Error("TestError"),
+                severity: "Critical",
+            };
+            handler.trackException(telemetry);
+            handler.flush().then(() => {
+                let envelopes = stub.args[0][0];
+                assert.equal(envelopes.length, 1);
+                assert.equal(envelopes[0].data.baseData["properties"]["_MS.ProcessedByMetricExtractors"], "(Name:'Exceptions', Ver:'1.1')");
+                done();
+            }).catch((error) => {
+                done(error);
+            });;
+        });
+
+        it("Exception standard metrics processed", (done) => {
+            let metricHandler = new MetricHandler(_config);
+            metricHandler.isStandardMetricsEnabled = true;
+            let handler = new LogHandler(_config, metricHandler);
+            let stub = sinon.stub(handler["_exporter"], "export").callsFake((envelopes: any, resultCallback: any) => {
+                return new Promise((resolve, reject) => {
+                    resultCallback({
+                        code: ExportResultCode.SUCCESS
+                    });
+                    resolve();
+                });
+            });
+            let telemetry: TraceTelemetry = {
+                message: "testMessage",
+                severity: "Information"
+            };
+            handler.trackTrace(telemetry);
+            handler.flush().then(() => {
+                let envelopes = stub.args[0][0];
+                assert.equal(envelopes.length, 1);
+                assert.equal(envelopes[0].data.baseData["properties"]["_MS.ProcessedByMetricExtractors"], "(Name:'Traces', Ver:'1.1')");
                 done();
             }).catch((error) => {
                 done(error);
