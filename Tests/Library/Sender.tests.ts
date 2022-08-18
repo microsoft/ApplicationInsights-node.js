@@ -101,10 +101,58 @@ describe("Library/Sender", () => {
             });
         });
 
-        it("should put telemetry in disk when retryable code is returned", (done) => {
+        it("should put telemetry in disk when retryable 408 code is returned", (done) => {
             var envelope = new Contracts.Envelope();
             envelope.name = "TestRetryable";
             nockScope = interceptor.reply(408, null);
+            var storeStub = sandbox.stub(sender, "_storeToDisk");
+            sender.send([envelope], (responseText) => {
+                assert.ok(storeStub.calledOnce);
+                assert.equal(storeStub.firstCall.args[0][0].name, "TestRetryable");
+                done();
+            });
+        });
+
+        it("should put telemetry in disk when retryable 500 code is returned", (done) => {
+            var envelope = new Contracts.Envelope();
+            envelope.name = "TestRetryable";
+            nockScope = interceptor.reply(500, null);
+            var storeStub = sandbox.stub(sender, "_storeToDisk");
+            sender.send([envelope], (responseText) => {
+                assert.ok(storeStub.calledOnce);
+                assert.equal(storeStub.firstCall.args[0][0].name, "TestRetryable");
+                done();
+            });
+        });
+
+        it("should put telemetry in disk when retryable 502 code is returned", (done) => {
+            var envelope = new Contracts.Envelope();
+            envelope.name = "TestRetryable";
+            nockScope = interceptor.reply(502, null);
+            var storeStub = sandbox.stub(sender, "_storeToDisk");
+            sender.send([envelope], (responseText) => {
+                assert.ok(storeStub.calledOnce);
+                assert.equal(storeStub.firstCall.args[0][0].name, "TestRetryable");
+                done();
+            });
+        });
+
+        it("should put telemetry in disk when retryable 503 code is returned", (done) => {
+            var envelope = new Contracts.Envelope();
+            envelope.name = "TestRetryable";
+            nockScope = interceptor.reply(503, null);
+            var storeStub = sandbox.stub(sender, "_storeToDisk");
+            sender.send([envelope], (responseText) => {
+                assert.ok(storeStub.calledOnce);
+                assert.equal(storeStub.firstCall.args[0][0].name, "TestRetryable");
+                done();
+            });
+        });
+
+        it("should put telemetry in disk when retryable 504 code is returned", (done) => {
+            var envelope = new Contracts.Envelope();
+            envelope.name = "TestRetryable";
+            nockScope = interceptor.reply(504, null);
             var storeStub = sandbox.stub(sender, "_storeToDisk");
             sender.send([envelope], (responseText) => {
                 assert.ok(storeStub.calledOnce);
