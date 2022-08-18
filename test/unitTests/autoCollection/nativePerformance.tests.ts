@@ -2,7 +2,7 @@ import { MetricData } from "@opentelemetry/sdk-metrics-base";
 import * as assert from "assert";
 import * as sinon from "sinon";
 
-import { AutoCollectNativePerformance, getNativeMetricsConfig } from "../../../src/autoCollection/metrics/nativePerformance";
+import { NativePerformanceMetrics, getNativeMetricsConfig } from "../../../src/autoCollection/metrics/nativePerformanceMetrics";
 import { NativeMetricsCounter } from "../../../src/autoCollection/metrics/types";
 import { Config, JsonConfig } from "../../../src/library/configuration";
 import { MetricHandler } from "../../../src/library/handlers";
@@ -28,7 +28,7 @@ describe("AutoCollection/NativePerformance", () => {
         it("init should enable and dispose should stop auto collection interval", () => {
             let metricHandler = new MetricHandler(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
             sandbox.stub(metricHandler["_metricReader"]["_exporter"], "export");
-            let nativePerformance = new AutoCollectNativePerformance(metricHandler.getMeter());
+            let nativePerformance = new NativePerformanceMetrics(metricHandler.getMeter());
             nativePerformance.enable(true);
             if (
                 nativePerformance["_metricsAvailable"]
@@ -44,7 +44,7 @@ describe("AutoCollection/NativePerformance", () => {
         it("should create instruments", () => {
             let metricHandler = new MetricHandler(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
             sandbox.stub(metricHandler["_metricReader"]["_exporter"], "export");
-            let nativePerformance = new AutoCollectNativePerformance(metricHandler.getMeter());
+            let nativePerformance = new NativePerformanceMetrics(metricHandler.getMeter());
             assert.ok(nativePerformance["_eventLoopHistogram"], "_eventLoopHistogram not available");
             assert.ok(nativePerformance["_garbageCollectionScavenge"], "_garbageCollectionScavenge not available");
             assert.ok(nativePerformance["_garbageCollectionMarkSweepCompact"], "_garbageCollectionMarkSweepCompact not available");
@@ -57,7 +57,7 @@ describe("AutoCollection/NativePerformance", () => {
         it("should observe instruments during collection", (done) => {
             let metricHandler = new MetricHandler(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
             sandbox.stub(metricHandler["_metricReader"]["_exporter"], "export");
-            let nativePerformance = new AutoCollectNativePerformance(metricHandler.getMeter());
+            let nativePerformance = new NativePerformanceMetrics(metricHandler.getMeter());
             nativePerformance.enable(true);
             metricHandler["_metricReader"].collect().then(({ resourceMetrics, errors }) => {
                 assert.equal(errors.length, 0, "Errors found during collection");
@@ -84,7 +84,7 @@ describe("AutoCollection/NativePerformance", () => {
         it("should collect histograms during collection", (done) => {
             let metricHandler = new MetricHandler(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
             sandbox.stub(metricHandler["_metricReader"]["_exporter"], "export");
-            let nativePerformance = new AutoCollectNativePerformance(metricHandler.getMeter());
+            let nativePerformance = new NativePerformanceMetrics(metricHandler.getMeter());
             nativePerformance.enable(true);
             if (nativePerformance["_metricsAvailable"]) {
                 nativePerformance["_collectHistogramData"](); // Method called every 15 seconds
@@ -118,7 +118,7 @@ describe("AutoCollection/NativePerformance", () => {
         it("Calling enable when metrics are not available should fail gracefully", () => {
             let metricHandler = new MetricHandler(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
             sandbox.stub(metricHandler["_metricReader"]["_exporter"], "export");
-            var native = new AutoCollectNativePerformance(metricHandler.getMeter());
+            var native = new NativePerformanceMetrics(metricHandler.getMeter());
             native["_metricsAvailable"] = false;
             assert.ok(!(<any>native)["_emitter"]);
 

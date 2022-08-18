@@ -2,20 +2,20 @@ import { InstrumentType, MetricData } from "@opentelemetry/sdk-metrics-base";
 import * as assert from "assert";
 import * as sinon from "sinon";
 
-import { AutoCollectStandardMetrics } from "../../../src/autoCollection/metrics/standardMetrics";
+import { StandardMetricsHandler } from "../../../src/autoCollection/metrics/handlers/standardMetricsHandler";
 import { IMetricExceptionDimensions, StandardMetric } from "../../../src/autoCollection/metrics/types";
 import { Config } from "../../../src/library/configuration";
 import { MetricHandler } from "../../../src/library/handlers";
 
 
-describe("AutoCollection/StandardMetrics", () => {
+describe("StandardMetricsHandler", () => {
     var sandbox: sinon.SinonSandbox;
 
     before(() => {
         sandbox = sinon.createSandbox();
     });
 
-    describe("#AutoCollectStandardMetrics", () => {
+    describe("#StandardMetricsHandler", () => {
         let metricHandler: MetricHandler;
 
         beforeEach(() => {
@@ -29,20 +29,20 @@ describe("AutoCollection/StandardMetrics", () => {
             metricHandler.shutdown();
         });
         it("should create instruments", () => {
-            let autoCollect = new AutoCollectStandardMetrics(metricHandler.getMeter());
-            assert.ok(autoCollect["_exceptionsGauge"], "_exceptionsGauge not available");
-            assert.ok(autoCollect["_tracesGauge"], "_tracesGauge not available");
+            let autoCollect = new StandardMetricsHandler(metricHandler.getMeter());
+            assert.ok(autoCollect.getExceptionMetrics()["_exceptionsGauge"], "_exceptionsGauge not available");
+            assert.ok(autoCollect.getTraceMetrics()["_tracesGauge"], "_tracesGauge not available");
         });
 
         it("should observe instruments during collection", (done) => {
-            let autoCollect = new AutoCollectStandardMetrics(metricHandler.getMeter());
+            let autoCollect = new StandardMetricsHandler(metricHandler.getMeter());
             autoCollect.enable(true);
             let dimensions: IMetricExceptionDimensions = {
                 cloudRoleInstance: "testcloudRoleInstance",
                 cloudRoleName: "testcloudRoleName"
             };
-            autoCollect.countException(dimensions);
-            autoCollect.countTrace(dimensions);
+            autoCollect.getExceptionMetrics().countException(dimensions);
+            autoCollect.getTraceMetrics().countTrace(dimensions);
             new Promise(resolve => setTimeout(resolve, 120)).then(() => {
                 metricHandler["_metricReader"].collect().then(({ resourceMetrics, errors }) => {
                     assert.equal(errors.length, 0, "Errors found during collection");
@@ -72,7 +72,7 @@ describe("AutoCollection/StandardMetrics", () => {
         });
 
         it("should not collect when disabled", (done) => {
-            let autoCollect = new AutoCollectStandardMetrics(metricHandler.getMeter());
+            let autoCollect = new StandardMetricsHandler(metricHandler.getMeter());
             autoCollect.enable(true);
             autoCollect.enable(false);
 

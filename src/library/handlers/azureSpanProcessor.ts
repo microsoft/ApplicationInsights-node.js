@@ -2,7 +2,9 @@
 // Licensed under the MIT license.
 
 import { Context, SpanKind } from "@opentelemetry/api";
-import { ReadableSpan, Span, SpanProcessor } from "@opentelemetry/sdk-trace-base";
+import { ReadableSpan, Span, SpanProcessor, TimedEvent } from "@opentelemetry/sdk-trace-base";
+import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
+import { IStandardMetricBaseDimensions } from "../../autoCollection/metrics/types";
 import { MetricHandler } from "./metricHandler";
 
 export class AzureSpanProcessor implements SpanProcessor {
@@ -26,7 +28,31 @@ export class AzureSpanProcessor implements SpanProcessor {
         }
     }
 
-    onEnd(span: ReadableSpan): void { }
+    onEnd(span: ReadableSpan): void {
+        if (span.events) {
+            span.events.forEach((event: TimedEvent) => {
+                let dimensions: IStandardMetricBaseDimensions = {
+                    cloudRoleInstance: "",
+                    cloudRoleName: ""
+                };
+                const serviceName = span.resource?.attributes[SemanticResourceAttributes.SERVICE_NAME];
+                const serviceNamespace = span.resource?.attributes[SemanticResourceAttributes.SERVICE_NAMESPACE];
+                if (serviceName) {
+                    if (serviceNamespace) {
+                        dimensions.cloudRoleInstance = `${serviceNamespace}.${serviceName}`;
+                    } else {
+                        dimensions.cloudRoleName = String(serviceName);
+                    }
+                }
+                if (event.name == "exception") {
+                    this._metricHandler.countException(dimensions);
+                }
+                else {
+                    this._metricHandler.countTrace(dimensions);
+                }
+            });
+        }
+    }
 
     shutdown(): Promise<void> {
         return Promise.resolve();

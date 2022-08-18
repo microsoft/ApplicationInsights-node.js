@@ -1,6 +1,14 @@
 import * as os from "os";
-import { AzureExporterConfig, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
-import { Meter, ObservableCallback, ObservableGauge, ObservableResult } from "@opentelemetry/api-metrics";
+import {
+    AzureExporterConfig,
+    AzureMonitorMetricExporter
+} from "@azure/monitor-opentelemetry-exporter";
+import {
+    Meter,
+    ObservableCallback,
+    ObservableGauge,
+    ObservableResult
+} from "@opentelemetry/api-metrics";
 import {
     MeterProvider,
     PeriodicExportingMetricReader,
@@ -8,14 +16,14 @@ import {
 } from "@opentelemetry/sdk-metrics-base";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
-import { AzureVirtualMachine } from "../../library";
-import { ResourceManager } from "../../library/handlers";
-import { HeartBeatMetricName } from "../../declarations/constants";
-import { Config } from "../../library/configuration";
-import { IVirtualMachineInfo } from "../../library/azureVirtualMachine";
-import { Logger } from "../../library/logging";
+import { AzureVirtualMachine } from "../../../library";
+import { ResourceManager } from "../../../library/handlers";
+import { HeartBeatMetricName } from "../../../declarations/constants";
+import { Config } from "../../../library/configuration";
+import { IVirtualMachineInfo } from "../../../library/azureVirtualMachine";
+import { Logger } from "../../../library/logging";
 
-export class HeartBeat {
+export class HeartBeatHandler {
     private _collectionInterval: number = 900000;
     private _config: Config;
     private _meterProvider: MeterProvider;

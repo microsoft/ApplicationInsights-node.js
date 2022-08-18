@@ -1,13 +1,13 @@
 import { MetricData } from "@opentelemetry/sdk-metrics-base";
 import * as assert from "assert";
 import * as sinon from "sinon";
-import { AutoCollectPerformance } from "../../../src/autoCollection";
+import { PerformanceCounterMetricsHandler } from "../../../src/autoCollection";
 import { PerformanceCounter, QuickPulseCounter } from "../../../src/autoCollection/metrics/types";
 import { Config } from "../../../src/library/configuration";
 import { MetricHandler } from "../../../src/library/handlers";
 
 
-describe("AutoCollection/Performance", () => {
+describe("PerformanceCounterMetricsHandler", () => {
     var sandbox: sinon.SinonSandbox;
     let metricHandler: MetricHandler;
 
@@ -24,24 +24,24 @@ describe("AutoCollection/Performance", () => {
 
     describe("#Metrics", () => {
         it("should create instruments", () => {
-            let performance = new AutoCollectPerformance(metricHandler.getConfig(), metricHandler);
-            assert.ok(performance["_memoryPrivateBytesGauge"], "_dependencyDurationGauge not available");
-            assert.ok(performance["_memoryAvailableBytesGauge"], "_dependencyDurationGauge not available");
-            assert.ok(performance["_processorTimeGauge"], "_dependencyDurationGauge not available");
-            assert.ok(performance["_processTimeGauge"], "_dependencyDurationGauge not available");
-            assert.ok(performance["_requestRateGauge"], "_dependencyDurationGauge not available");
-            assert.ok(performance["_requestDurationGauge"], "_dependencyDurationGauge not available");
-            // Live metrics gauges
-            assert.ok(performance["_memoryCommittedBytesGauge"], "_memoryCommittedBytesGauge not available");
-            assert.ok(performance["_requestFailureRateGauge"], "_requestFailureRateGauge not available");
-            assert.ok(performance["_dependencyFailureRateGauge"], "_dependencyFailureRateGauge not available");
-            assert.ok(performance["_dependencyRateGauge"], "_dependencyRateGauge not available");
-            assert.ok(performance["_dependencyDurationGauge"], "_dependencyDurationGauge not available");
-            assert.ok(performance["_exceptionRateGauge"], "_exceptionRateGauge not available");
+            let performance = new PerformanceCounterMetricsHandler(metricHandler.getMeter());
+            assert.ok(performance.getProcessMetrics()["_memoryPrivateBytesGauge"], "_dependencyDurationGauge not available");
+            assert.ok(performance.getProcessMetrics()["_memoryAvailableBytesGauge"], "_dependencyDurationGauge not available");
+            assert.ok(performance.getProcessMetrics()["_processorTimeGauge"], "_dependencyDurationGauge not available");
+            assert.ok(performance.getProcessMetrics()["_processTimeGauge"], "_dependencyDurationGauge not available");
+            assert.ok(performance.getRequestMetrics()["_requestRateGauge"], "_dependencyDurationGauge not available");
+            assert.ok(performance.getRequestMetrics()["_requestDurationGauge"], "_dependencyDurationGauge not available");
+
+            assert.ok(performance.getProcessMetrics()["_memoryCommittedBytesGauge"], "_memoryCommittedBytesGauge not available");
+            assert.ok(performance.getRequestMetrics()["_requestFailureRateGauge"], "_requestFailureRateGauge not available");
+            assert.ok(performance.getDependencyMetrics()["_dependencyFailureRateGauge"], "_dependencyFailureRateGauge not available");
+            assert.ok(performance.getDependencyMetrics()["_dependencyRateGauge"], "_dependencyRateGauge not available");
+            assert.ok(performance.getDependencyMetrics()["_dependencyDurationGauge"], "_dependencyDurationGauge not available");
+            assert.ok(performance.getExceptionMetrics()["_exceptionsGauge"], "_exceptionRateGauge not available");
         });
 
         it("should observe instruments during collection", (done) => {
-            let performance = new AutoCollectPerformance(metricHandler.getConfig(), metricHandler);
+            let performance = new PerformanceCounterMetricsHandler(metricHandler.getMeter());
             performance.enable(true);
 
             metricHandler["_metricReader"].collect().then(({ resourceMetrics, errors }) => {
@@ -68,7 +68,7 @@ describe("AutoCollection/Performance", () => {
         it("should observe live metrics instruments during collection", (done) => {
             let config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             config.enableSendLiveMetrics = true;
-            let performance = new AutoCollectPerformance(config, metricHandler);
+            let performance = new PerformanceCounterMetricsHandler(metricHandler.getMeter());
             performance.enable(true);
 
             new Promise(resolve => setTimeout(resolve, 120)).then(() => {
@@ -97,7 +97,7 @@ describe("AutoCollection/Performance", () => {
             let config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             metricHandler = new MetricHandler(config);
             sandbox.stub(metricHandler["_metricReader"]["_exporter"], "export");
-            let performance = new AutoCollectPerformance(metricHandler.getConfig(), metricHandler);
+            let performance = new PerformanceCounterMetricsHandler(metricHandler.getMeter());
             performance.enable(true);
             performance.enable(false);
 

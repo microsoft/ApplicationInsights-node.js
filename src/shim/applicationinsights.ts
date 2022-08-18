@@ -1,7 +1,6 @@
 import { IncomingMessage } from "http";
 import { DiagLogLevel, SpanContext } from "@opentelemetry/api";
 
-import { AutoCollectPerformance } from "../autoCollection";
 import { Logger } from "../library/logging";
 import { IDisabledExtendedMetrics, InstrumentationType } from "../library/configuration/interfaces";
 import { QuickPulseStateManager } from "../library/quickPulse";

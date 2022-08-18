@@ -3,6 +3,7 @@
 
 export { AutoCollectConsole } from "./console";
 export { AutoCollectExceptions } from "./exceptions";
-export { AutoCollectNativePerformance, getNativeMetricsConfig } from "./metrics/nativePerformance";
-export { AutoCollectPerformance } from "./metrics/performance";
-export { AutoCollectStandardMetrics } from "./metrics/standardMetrics";
+export { NativePerformanceMetrics, getNativeMetricsConfig } from "./metrics/nativePerformanceMetrics";
+export { PerformanceCounterMetricsHandler } from "./metrics/handlers/performanceCounterMetricsHandler";
+export { StandardMetricsHandler } from "./metrics/handlers/standardMetricsHandler";
+export { LiveMetricsHandler } from "./metrics/handlers/liveMetricsHandler";

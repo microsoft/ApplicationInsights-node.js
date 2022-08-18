@@ -24,7 +24,7 @@ describe("Library/MetricHandler", () => {
         it("performance enablement during start", () => {
             _config.enableAutoCollectPerformance = true;
             let handler = new MetricHandler(_config);
-            let stub = sinon.stub(handler["_performance"], "enable");
+            let stub = sinon.stub(handler["_perfCounterMetricsHandler"], "enable");
             handler.start();
             assert.ok(stub.calledOnce, "Enable called");
             assert.equal(stub.args[0][0], true);
@@ -33,7 +33,7 @@ describe("Library/MetricHandler", () => {
         it("setAutoCollectPerformance", () => {
             _config.enableAutoCollectPerformance = false;
             let handler = new MetricHandler(_config);
-            let stub = sinon.stub(handler["_performance"], "enable");
+            let stub = sinon.stub(handler["_perfCounterMetricsHandler"], "enable");
             let nativeStub = sinon.stub(handler["_nativePerformance"], "enable");
             handler.start();
             assert.ok(stub.called, "Enable was not called");
@@ -49,7 +49,7 @@ describe("Library/MetricHandler", () => {
         it("preAggregated metrics enablement during start", () => {
             _config.enableAutoCollectPreAggregatedMetrics = true;
             let handler = new MetricHandler(_config);
-            let stub = sinon.stub(handler["_standardMetrics"], "enable");
+            let stub = sinon.stub(handler["_standardMetricsHandler"], "enable");
             handler.start();
             assert.ok(stub.calledOnce, "Enable called");
             assert.equal(stub.args[0][0], true);
@@ -58,7 +58,7 @@ describe("Library/MetricHandler", () => {
         it("setAutoCollectPreAggregatedMetrics", () => {
             _config.enableAutoCollectPreAggregatedMetrics = false;
             let handler = new MetricHandler(_config);
-            let stub = sinon.stub(handler["_standardMetrics"], "enable");
+            let stub = sinon.stub(handler["_standardMetricsHandler"], "enable");
             handler.start();
             assert.ok(stub.called, "Enable was not called");
             assert.equal(stub.args[0][0], false);
@@ -70,7 +70,7 @@ describe("Library/MetricHandler", () => {
         it("heartbeat metrics enablement during start", () => {
             _config.enableAutoCollectHeartbeat = true;
             let handler = new MetricHandler(_config);
-            let stub = sinon.stub(handler["_heartbeat"], "enable");
+            let stub = sinon.stub(handler["_heartbeatHandler"], "enable");
             handler.start();
             assert.ok(stub.calledOnce, "Enable called");
             assert.equal(stub.args[0][0], true);
@@ -79,7 +79,7 @@ describe("Library/MetricHandler", () => {
         it("setAutoCollectHeartbeat", () => {
             _config.enableAutoCollectHeartbeat = false;
             let handler = new MetricHandler(_config);
-            let stub = sinon.stub(handler["_heartbeat"], "enable");
+            let stub = sinon.stub(handler["_heartbeatHandler"], "enable");
             handler.start();
             assert.ok(stub.called, "Enable was not called");
             assert.equal(stub.args[0][0], false);

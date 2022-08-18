@@ -7,7 +7,7 @@ import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions"
 import { BatchProcessor } from "./shared/batchProcessor";
 import { LogExporter } from "../exporters";
 import * as Contracts from "../../declarations/contracts";
-import { AutoCollectConsole, AutoCollectExceptions, AutoCollectStandardMetrics } from "../../autoCollection";
+import { AutoCollectConsole, AutoCollectExceptions } from "../../autoCollection";
 import { Config } from "../configuration";
 import { Util } from "../util";
 import { ResourceManager } from "./resourceManager";
@@ -137,7 +137,7 @@ export class LogHandler {
                     cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole],
                     traceSeverityLevel: baseData.severity
                 };
-                this._metricHandler.getStandardMetricsCollector().countTrace(traceDimensions);
+                this._metricHandler.countTrace(traceDimensions);
                 // Mark envelope as processed
                 const traceData: TraceTelemetry = (envelope.data as any).baseData;
                 traceData.properties = {
@@ -167,7 +167,7 @@ export class LogHandler {
                     cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
                     cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole]
                 };
-                this._metricHandler.getStandardMetricsCollector().countException(exceptionDimensions);
+                this._metricHandler.countException(exceptionDimensions);
                 // Mark envelope as processed
                 const exceptionData: TelemetryExceptionData = (envelope.data as any).baseData;
                 exceptionData.properties = {

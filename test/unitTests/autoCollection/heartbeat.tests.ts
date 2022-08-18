@@ -2,7 +2,7 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 import * as os from "os";
 
-import { HeartBeat } from "../../../src/autoCollection/metrics/heartBeat";
+import { HeartBeatHandler } from "../../../src/autoCollection/metrics/handlers/heartBeatHandler";
 import { Config } from "../../../src/library/configuration";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 import { ResourceManager } from "../../../src/library/handlers";
@@ -30,13 +30,13 @@ describe("AutoCollection/HeartBeat", () => {
 
     describe("#Metrics", () => {
         it("should create instruments", () => {
-            let heartBeat = new HeartBeat(config);
+            let heartBeat = new HeartBeatHandler(config);
             sandbox.stub(heartBeat["_metricReader"]["_exporter"], "export");
             assert.ok(heartBeat["_metricGauge"], "_metricGauge not available");
         });
 
         it("should observe instruments during collection", (done) => {
-            let heartBeat = new HeartBeat(config);
+            let heartBeat = new HeartBeatHandler(config);
             sandbox.stub(heartBeat["_metricReader"]["_exporter"], "export");
             heartBeat.enable(true).then(() => {
                 heartBeat["_metricReader"].collect().then(({ resourceMetrics, errors }) => {
@@ -57,7 +57,7 @@ describe("AutoCollection/HeartBeat", () => {
         });
 
         it("should not collect when disabled", (done) => {
-            let heartBeat = new HeartBeat(config);
+            let heartBeat = new HeartBeatHandler(config);
             sandbox.stub(heartBeat["_metricReader"]["_exporter"], "export");
             heartBeat.enable(true).then(() => {
                 heartBeat.enable(false).then(() => {
@@ -80,7 +80,7 @@ describe("AutoCollection/HeartBeat", () => {
 
     describe("#_getMachineProperties()", () => {
         it("should read correct web app values from environment variable", (done) => {
-            const heartBeat: HeartBeat = new HeartBeat(config);
+            const heartBeat = new HeartBeatHandler(config);
             sandbox.stub(heartBeat["_metricReader"]["_exporter"], "export");
             var env1 = <{ [id: string]: string }>{};
             env1["WEBSITE_SITE_NAME"] = "site_name";
@@ -134,7 +134,7 @@ describe("AutoCollection/HeartBeat", () => {
         });
 
         it("should read correct function app values from environment variable", (done) => {
-            const heartbeat: HeartBeat = new HeartBeat(config);
+            const heartbeat = new HeartBeatHandler(config);
             sandbox.stub(heartbeat["_metricReader"]["_exporter"], "export");
             var env2 = <{ [id: string]: string }>{};
             env2["FUNCTIONS_WORKER_RUNTIME"] = "nodejs";

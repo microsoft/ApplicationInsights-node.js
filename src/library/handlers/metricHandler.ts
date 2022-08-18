@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import { RequestOptions } from "https";
 import { AzureExporterConfig, AzureMonitorMetricExporter, } from "@azure/monitor-opentelemetry-exporter";
 import { Meter } from "@opentelemetry/api-metrics";
 import {
@@ -15,9 +16,9 @@ import { MetricExporter } from "../exporters";
 import { Config } from "../configuration";
 import { IDisabledExtendedMetrics } from "../configuration/interfaces";
 import {
-    AutoCollectNativePerformance,
-    AutoCollectStandardMetrics,
-    AutoCollectPerformance,
+    NativePerformanceMetrics,
+    StandardMetricsHandler,
+    PerformanceCounterMetricsHandler,
     getNativeMetricsConfig,
 } from "../../autoCollection";
 import { MetricTelemetry } from "../../declarations/contracts";
@@ -31,36 +32,33 @@ import {
     KnownContextTagKeys,
 } from "../../declarations/generated";
 import { ResourceManager } from "./resourceManager";
-import { HeartBeat } from "../../autoCollection/metrics/heartBeat";
+import { HeartBeatHandler } from "../../autoCollection/metrics/handlers/heartBeatHandler";
 import { Util } from "../util";
 import { HttpMetricsInstrumentation } from "../../autoCollection/metrics/httpMetricsInstrumentation";
-import { HttpMetricsInstrumentationConfig } from "../../autoCollection/metrics/types";
-import { RequestOptions } from "https";
+import { HttpMetricsInstrumentationConfig, IMetricExceptionDimensions, IMetricTraceDimensions } from "../../autoCollection/metrics/types";
+import { LiveMetricsHandler } from "../../autoCollection/metrics/handlers/liveMetricsHandler";
 
 
 export class MetricHandler {
 
-    public isPerformance = true;
+    public isPerformanceCountersEnabled = true;
+    public isLiveMetricsEnabled = true;
     public isStandardMetricsEnabled = true;
-    public isHeartBeat = false;
-    public isRequests = true;
-    public isDependencies = true;
-    public isNativePerformance = false;
+    public isHeartBeatEnabled = false;
+    public isNativePerformanceEnabled = false;
     public disabledExtendedMetrics: IDisabledExtendedMetrics;
-    private _collectionInterval: number = 600000;
+
+
     private _meterProvider: MeterProvider;
-    private _exporter: MetricExporter;
-    private _azureExporter: AzureMonitorMetricExporter;
-    private _metricReader: PeriodicExportingMetricReader;
     private _meter: Meter;
     private _config: Config;
     private _isStarted = false;
     private _batchProcessor: BatchProcessor;
-    private _performance: AutoCollectPerformance;
-    private _standardMetrics: AutoCollectStandardMetrics;
-    private _heartbeat: HeartBeat;
-    private _nativePerformance: AutoCollectNativePerformance;
-    private _httpMetrics: HttpMetricsInstrumentation;
+    private _perfCounterMetricsHandler: PerformanceCounterMetricsHandler;
+    private _standardMetricsHandler: StandardMetricsHandler;
+    private _liveMetricsHandler: LiveMetricsHandler;
+    private _heartbeatHandler: HeartBeatHandler;
+    private _nativePerformance: NativePerformanceMetrics;
 
     constructor(config: Config) {
         this._config = config;
@@ -73,37 +71,34 @@ export class MetricHandler {
                 return false;
             }
         };
-        this._httpMetrics = new HttpMetricsInstrumentation(httpMetricsConfig);
-        this._exporter = new MetricExporter(this._config);
-        this._batchProcessor = new BatchProcessor(this._config, this._exporter);
-        const meterProviderConfig: MeterProviderOptions = {
-            resource: ResourceManager.getInstance().getMetricResource(),
-        };
-        this._meterProvider = new MeterProvider(meterProviderConfig);
-        let exporterConfig: AzureExporterConfig = {
-            connectionString: config.getConnectionString(),
-            aadTokenCredential: config.aadTokenCredential
-        };
-        this._azureExporter = new AzureMonitorMetricExporter(exporterConfig);
-        const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
-            exporter: this._azureExporter,
-            exportIntervalMillis: this._collectionInterval
-        };
-        this._metricReader = new PeriodicExportingMetricReader(metricReaderOptions);
-        this._meterProvider.addMetricReader(this._metricReader);
-        this._meter = this._meterProvider.getMeter("ApplicationInsightsMeter");
-        this._nativePerformance = new AutoCollectNativePerformance(this._meter);
-        this._performance = new AutoCollectPerformance(this._config, this);
-        this._heartbeat = new HeartBeat(this._config);
-        this._standardMetrics = new AutoCollectStandardMetrics(this._meter);
+
+        // Create StandardMetrics, PerfCounters and LiveMetrics Handlers
+        if (this._config.enableAutoCollectPreAggregatedMetrics) {
+            this._standardMetricsHandler = new StandardMetricsHandler(this._config);
+        }
+        if (this._config.enableSendLiveMetrics) {
+            this._liveMetricsHandler = new LiveMetricsHandler(this._config);
+        }
+        if (this._config.enableAutoCollectPerformance) {
+            this._perfCounterMetricsHandler = new PerformanceCounterMetricsHandler(this._config);
+        }
+        if (this._config.enableAutoCollectHeartbeat) {
+            this._heartbeatHandler = new HeartBeatHandler(this._config);
+        }
+
+
+        this._nativePerformance = new NativePerformanceMetrics(this._meter);
+
+
     }
 
     public start() {
         this._isStarted = true;
-        this._performance.enable(this.isPerformance);
-        this._standardMetrics.enable(this.isStandardMetricsEnabled);
-        this._nativePerformance.enable(this.isNativePerformance, this.disabledExtendedMetrics);
-        this._heartbeat.enable(this.isHeartBeat);
+        this._perfCounterMetricsHandler.enable(this.isPerformanceCountersEnabled);
+        this._liveMetricsHandler.enable(this.isLiveMetricsEnabled);
+        this._standardMetricsHandler.enable(this.isStandardMetricsEnabled);
+        this._nativePerformance.enable(this.isNativePerformanceEnabled, this.disabledExtendedMetrics);
+        this._heartbeatHandler.enable(this.isHeartBeatEnabled);
     }
 
     public async flush(): Promise<void> {
@@ -121,20 +116,11 @@ export class MetricHandler {
         this.track(envelope);
     }
 
-    public getHttpMetricsInstrumentation(): HttpMetricsInstrumentation {
-        return this._httpMetrics;
-    }
-
     /**
      * Log a user action or other occurrence.
      * @param telemetry      Object encapsulating tracking options
      */
     public track(telemetry: Envelope): void {
-        // TODO: Telemetry processor, can we still support them in some cases?
-        // TODO: Sampling was done through telemetryProcessor here
-        // TODO: All telemetry processors including Azure property where done here as well
-        // TODO: Perf and Pre Aggregated metrics were calculated here
-
         this._batchProcessor.send(telemetry);
     }
 
@@ -142,15 +128,15 @@ export class MetricHandler {
         value: boolean,
         collectExtendedMetrics: boolean | IDisabledExtendedMetrics = true
     ) {
-        this.isPerformance = value;
+        this.isPerformanceCountersEnabled = value;
         const extendedMetricsConfig = getNativeMetricsConfig(
             collectExtendedMetrics,
             this._config
         );
-        this.isNativePerformance = extendedMetricsConfig.isEnabled;
+        this.isNativePerformanceEnabled = extendedMetricsConfig.isEnabled;
         this.disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
         if (this._isStarted) {
-            this._performance.enable(value);
+            this._perfCounterMetricsHandler.enable(value);
             this._nativePerformance.enable(
                 extendedMetricsConfig.isEnabled,
                 extendedMetricsConfig.disabledMetrics
@@ -159,33 +145,40 @@ export class MetricHandler {
     }
 
     public setAutoCollectHeartbeat(value: boolean) {
-        this.isHeartBeat = value;
+        this.isHeartBeatEnabled = value;
         if (this._isStarted) {
-            this._heartbeat.enable(value);
+            this._heartbeatHandler.enable(value);
         }
     }
-
 
     public setAutoCollectPreAggregatedMetrics(value: boolean) {
         this.isStandardMetricsEnabled = value;
         if (this._isStarted) {
-            this._standardMetrics.enable(value);
+            this._standardMetricsHandler.enable(value);
         }
     }
 
-    public getStandardMetricsCollector(): AutoCollectStandardMetrics {
-        return this._standardMetrics;
+    public getStandardMetricsHandler(): StandardMetricsHandler {
+        return this._standardMetricsHandler;
+    }
+
+    public getPerformanceMetricsHandler(): PerformanceCounterMetricsHandler {
+        return this._perfCounterMetricsHandler;
+    }
+
+    public getLiveMetricsHandler(): LiveMetricsHandler {
+        return this._liveMetricsHandler;
     }
 
     public enableAutoCollectHeartbeat() {
-        this._heartbeat = new HeartBeat(this._config);
+        this._heartbeatHandler = new HeartBeatHandler(this._config);
     }
 
     public async shutdown(): Promise<void> {
-        this._performance.enable(false);
-        this._standardMetrics.enable(false);
+        this._perfCounterMetricsHandler.enable(false);
+        this._standardMetricsHandler.enable(false);
         this._nativePerformance.enable(false);
-        this._heartbeat.shutdown();
+        this._heartbeatHandler.shutdown();
         this._meterProvider.shutdown();
     }
 
@@ -201,25 +194,44 @@ export class MetricHandler {
         return this._config;
     }
 
+    public getHttpMetricInstrumentations(): HttpMetricsInstrumentation[] {
+        return [this._liveMetricsHandler.getHttpMetricsInstrumentation(),
+        this._perfCounterMetricsHandler.getHttpMetricsInstrumentation(),
+        this._standardMetricsHandler.getHttpMetricsInstrumentation()];
+    }
+
+
+    public countException(dimensions: IMetricExceptionDimensions): void {
+        this._liveMetricsHandler.getExceptionMetrics().countException(dimensions);
+        this._standardMetricsHandler.getExceptionMetrics().countException(dimensions);
+        this._perfCounterMetricsHandler.getExceptionMetrics().countException(dimensions);
+    }
+
+    public countTrace(dimensions: IMetricTraceDimensions): void {
+        this._liveMetricsHandler.getTraceMetrics().countTrace(dimensions);
+        this._standardMetricsHandler.getTraceMetrics().countTrace(dimensions);
+        this._perfCounterMetricsHandler.getTraceMetrics().countTrace(dimensions);
+    }
+
     private _initializeFlagsFromConfig() {
-        this.isPerformance =
+        this.isPerformanceCountersEnabled =
             this._config.enableAutoCollectPerformance !== undefined
                 ? this._config.enableAutoCollectPerformance
-                : this.isPerformance;
+                : this.isPerformanceCountersEnabled;
         this.isStandardMetricsEnabled =
             this._config.enableAutoCollectPreAggregatedMetrics !== undefined
                 ? this._config.enableAutoCollectPreAggregatedMetrics
                 : this.isStandardMetricsEnabled;
-        this.isHeartBeat =
+        this.isHeartBeatEnabled =
             this._config.enableAutoCollectHeartbeat !== undefined
                 ? this._config.enableAutoCollectHeartbeat
-                : this.isHeartBeat;
+                : this.isHeartBeatEnabled;
 
         const extendedMetricsConfig = getNativeMetricsConfig(
-            this._config.enableAutoCollectExtendedMetrics || this.isNativePerformance,
+            this._config.enableAutoCollectExtendedMetrics || this.isNativePerformanceEnabled,
             this._config
         );
-        this.isNativePerformance = extendedMetricsConfig.isEnabled;
+        this.isNativePerformanceEnabled = extendedMetricsConfig.isEnabled;
         this.disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
     }
 

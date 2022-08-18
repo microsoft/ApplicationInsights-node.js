@@ -4,7 +4,7 @@ import { Logger } from "../../library/logging";
 import { IBaseConfig, IDisabledExtendedMetrics } from "../../library/configuration/interfaces";
 
 
-export class AutoCollectNativePerformance {
+export class NativePerformanceMetrics {
     private _emitter: any;
     private _metricsAvailable: boolean; // is the native metrics lib installed
     private _isEnabled: boolean;
