@@ -280,7 +280,7 @@ describe("Library/TraceHandlers", () => {
         });
 
         it("Span processing for pre aggregated metrics", (done) => {
-            metricHandler.isStandardMetricsEnabled = true;
+            metricHandler.getConfig().enableAutoCollectPreAggregatedMetrics = true;
             makeHttpRequest(false).then(() => {
                 handler.flush().then(() => {
                     assert.ok(exportStub.calledOnce, "Export called");

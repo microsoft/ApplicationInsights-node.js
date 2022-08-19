@@ -1,50 +1,46 @@
 import { AzureExporterConfig, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
 import { Meter } from "@opentelemetry/api-metrics";
-import { MeterProvider, MeterProviderOptions, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions } from "@opentelemetry/sdk-metrics-base";
+import { MeterProvider, MeterProviderOptions, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions, View } from "@opentelemetry/sdk-metrics-base";
 import { RequestOptions } from "https";
 import { Config } from "../../../library";
-import { MetricExporter } from "../../../library/exporters";
 import { ResourceManager } from "../../../library/handlers";
-import { BatchProcessor } from "../../../library/handlers/shared/batchProcessor";
 import { ExceptionMetrics } from "../exceptionMetrics";
 import { HttpMetricsInstrumentation } from "../httpMetricsInstrumentation";
 import { TraceMetrics } from "../traceMetrics";
-import { HttpMetricsInstrumentationConfig } from "../types";
+import { HttpMetricsInstrumentationConfig, StandardMetric } from "../types";
 
 
 export class StandardMetricsHandler {
 
     private _config: Config;
-    private _collectionInterval: number = 600000;
+    private _collectionInterval: number = 60000; // 60 seconds
     private _meterProvider: MeterProvider;
     private _azureExporter: AzureMonitorMetricExporter;
     private _metricReader: PeriodicExportingMetricReader;
     private _meter: Meter;
     private _exceptionMetrics: ExceptionMetrics;
-    private _httpMetrics: HttpMetricsInstrumentation;
     private _traceMetrics: TraceMetrics;
+    private _httpMetrics: HttpMetricsInstrumentation;
 
-    constructor(config: Config) {
+    constructor(config: Config, options?: { collectionInterval: number }) {
         this._config = config;
         const meterProviderConfig: MeterProviderOptions = {
             resource: ResourceManager.getInstance().getMetricResource(),
+            views: this._getViews()
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);
         let exporterConfig: AzureExporterConfig = {
-            connectionString: config.getConnectionString(),
-            aadTokenCredential: config.aadTokenCredential
+            connectionString: this._config.getConnectionString(),
+            aadTokenCredential: this._config.aadTokenCredential
         };
         this._azureExporter = new AzureMonitorMetricExporter(exporterConfig);
         const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
-            exporter: this._azureExporter,
-            exportIntervalMillis: this._collectionInterval
+            exporter: this._azureExporter as any,
+            exportIntervalMillis: options?.collectionInterval || this._collectionInterval
         };
         this._metricReader = new PeriodicExportingMetricReader(metricReaderOptions);
         this._meterProvider.addMetricReader(this._metricReader);
         this._meter = this._meterProvider.getMeter("ApplicationInsightsStandardMetricsMeter");
-
-        this._exceptionMetrics = new ExceptionMetrics(this._meter);
-        this._traceMetrics = new TraceMetrics(this._meter);
 
         const httpMetricsConfig: HttpMetricsInstrumentationConfig = {
             ignoreOutgoingRequestHook: (request: RequestOptions) => {
@@ -55,12 +51,18 @@ export class StandardMetricsHandler {
             }
         };
         this._httpMetrics = new HttpMetricsInstrumentation(httpMetricsConfig);
+        this._exceptionMetrics = new ExceptionMetrics(this._meter);
+        this._traceMetrics = new TraceMetrics(this._meter);
     }
 
-    public enable(isEnabled: boolean) {
-        this._exceptionMetrics.enable(isEnabled);
-        this._traceMetrics.enable(isEnabled);
+    public start() {
+        this._exceptionMetrics.enable(true);
+        this._traceMetrics.enable(true);
         // TODO: Enable/Disable instrumentation
+    }
+
+    public shutdown() {
+        this._meterProvider.shutdown();
     }
 
     public getHttpMetricsInstrumentation(): HttpMetricsInstrumentation {
@@ -73,5 +75,28 @@ export class StandardMetricsHandler {
 
     public getTraceMetrics(): TraceMetrics {
         return this._traceMetrics;
+    }
+
+    private _getViews(): View[] {
+        let views = [];
+        views.push(new View({
+            name: StandardMetric.REQUESTS,
+            instrumentName: "http.server.duration",
+            attributeKeys: []
+        }));
+        views.push(new View({
+            name: StandardMetric.DEPENDENCIES,
+            instrumentName: "http.client.duration",
+            attributeKeys: []
+        }));
+        views.push(new View({
+            name: StandardMetric.EXCEPTIONS,
+            instrumentName: StandardMetric.EXCEPTIONS
+        }));
+        views.push(new View({
+            name: StandardMetric.TRACES,
+            instrumentName: StandardMetric.TRACES
+        }));
+        return views;
     }
 }

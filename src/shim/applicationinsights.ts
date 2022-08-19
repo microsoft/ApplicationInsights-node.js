@@ -171,9 +171,6 @@ export class Configuration {
         value: boolean,
         collectExtendedMetrics: boolean | IDisabledExtendedMetrics = true
     ) {
-        if (defaultClient) {
-            defaultClient.client.getMetricHandler().setAutoCollectPerformance(value, collectExtendedMetrics);
-        }
         return Configuration;
     }
 
@@ -183,9 +180,6 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectPreAggregatedMetrics(value: boolean) {
-        if (defaultClient) {
-            defaultClient.client.getMetricHandler().setAutoCollectPreAggregatedMetrics(value);
-        }
         return Configuration;
     }
 
@@ -195,9 +189,6 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectHeartbeat(value: boolean) {
-        if (defaultClient) {
-            defaultClient.client.getMetricHandler().enableAutoCollectHeartbeat();
-        }
         return Configuration;
     }
 

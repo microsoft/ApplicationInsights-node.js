@@ -23,7 +23,7 @@ import { HttpMetricsInstrumentationConfig } from "../../../src/autoCollection/me
 
 const meterProvider = new MeterProvider();
 const exporter = new AzureMonitorMetricExporter({ connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/" });
-const metricReader = new PeriodicExportingMetricReader({ exporter: exporter, exportIntervalMillis: 100 });
+const metricReader = new PeriodicExportingMetricReader({ exporter: exporter as any, exportIntervalMillis: 100 });
 meterProvider.addMetricReader(metricReader);
 instrumentation.setMeterProvider(meterProvider);
 

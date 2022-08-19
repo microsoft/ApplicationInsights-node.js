@@ -21,8 +21,8 @@ export enum PerformanceCounter {
 }
 
 export enum StandardMetric {
-  REQUESTS = "http.server.duration", //TODO: Remove once Metric Semantic Conventions are available
-  DEPENDENCIES = "http.client.duration",
+  REQUESTS = "requests/duration",
+  DEPENDENCIES = "dependencies/duration",
   EXCEPTIONS = "Exceptions",
   TRACES = "Traces",
 }

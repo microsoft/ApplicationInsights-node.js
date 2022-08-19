@@ -36,7 +36,7 @@ export class HeartBeatHandler {
     private _azureVm: AzureVirtualMachine;
     private _machineProperties: { [key: string]: string };
 
-    constructor(config: Config) {
+    constructor(config: Config, options?: { collectionInterval: number }) {
         this._config = config;
         this._azureVm = new AzureVirtualMachine();
         this._meterProvider = new MeterProvider();
@@ -46,8 +46,8 @@ export class HeartBeatHandler {
         };
         this._exporter = new AzureMonitorMetricExporter(exporterConfig);
         const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
-            exporter: this._exporter,
-            exportIntervalMillis: this._collectionInterval
+            exporter: this._exporter as any,
+            exportIntervalMillis: options?.collectionInterval || this._collectionInterval
         };
         this._metricReader = new PeriodicExportingMetricReader(metricReaderOptions);
         this._meterProvider.addMetricReader(this._metricReader);
@@ -56,14 +56,9 @@ export class HeartBeatHandler {
         this._metricGaugeCallback = this._trackHeartBeat.bind(this);
     }
 
-    public async enable(isEnabled: boolean) {
-        if (isEnabled) {
-            this._machineProperties = await this._getMachineProperties();
-            this._metricGauge.addCallback(this._metricGaugeCallback);
-        }
-        else {
-            this._metricGauge.removeCallback(this._metricGaugeCallback);
-        }
+    public async start() {
+        this._machineProperties = await this._getMachineProperties();
+        this._metricGauge.addCallback(this._metricGaugeCallback);
     }
 
     public async shutdown(): Promise<void> {

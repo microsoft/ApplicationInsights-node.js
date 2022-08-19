@@ -15,7 +15,7 @@ import { getRequestInfo } from '@opentelemetry/instrumentation-http';
 import { Histogram, MeterProvider, ValueType } from '@opentelemetry/api-metrics';
 
 import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../declarations/constants";
-import { HttpMetricsInstrumentationConfig, IHttpStandardMetric, MetricId, StandardMetric } from './types';
+import { HttpMetricsInstrumentationConfig, IHttpStandardMetric, MetricId } from './types';
 import { Logger } from '../../library/logging';
 import { SpanKind } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
@@ -46,8 +46,8 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
   }
 
   private _updateMetricInstruments() {
-    this._httpServerDurationHistogram = this.meter.createHistogram(StandardMetric.REQUESTS, { valueType: ValueType.DOUBLE });
-    this._httpClientDurationHistogram = this.meter.createHistogram(StandardMetric.DEPENDENCIES, { valueType: ValueType.DOUBLE });
+    this._httpServerDurationHistogram = this.meter.createHistogram("http.server.duration", { valueType: ValueType.DOUBLE });
+    this._httpClientDurationHistogram = this.meter.createHistogram("http.client.duration", { valueType: ValueType.DOUBLE });
   }
 
   public _getConfig(): HttpMetricsInstrumentationConfig {

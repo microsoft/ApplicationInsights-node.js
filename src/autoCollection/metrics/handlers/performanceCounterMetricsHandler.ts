@@ -1,31 +1,56 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import { RequestOptions } from "https";
+import { AzureExporterConfig, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
 import { Meter } from "@opentelemetry/api-metrics";
-import { HttpMetricsInstrumentationConfig } from "../types";
+import { DropAggregation, MeterProvider, MeterProviderOptions, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions, View } from "@opentelemetry/sdk-metrics-base";
+import { HttpMetricsInstrumentationConfig, NativeMetricsCounter, PerformanceCounter, QuickPulseCounter } from "../types";
 import { HttpMetricsInstrumentation } from "../httpMetricsInstrumentation";
 import { ProcessMetrics } from "../processMetrics";
-import { ExceptionMetrics } from "../exceptionMetrics";
-import { TraceMetrics } from "../traceMetrics";
 import { DependencyMetrics } from "../dependencyMetrics";
 import { RequestMetrics } from "../requestMetrics";
+import { Config } from "../../../library";
+import { ResourceManager } from "../../../library/handlers";
+import { getNativeMetricsConfig, NativePerformanceMetrics } from "../nativePerformanceMetrics";
+import { IDisabledExtendedMetrics } from "../../../library/configuration/interfaces";
 
 
 export class PerformanceCounterMetricsHandler {
+    private _config: Config;
+    private _collectionInterval: number = 60000; // 60 seconds
+    private _meterProvider: MeterProvider;
+    private _azureExporter: AzureMonitorMetricExporter;
+    private _metricReader: PeriodicExportingMetricReader;
     private _meter: Meter;
-    private _exceptionMetrics: ExceptionMetrics;
     private _httpMetrics: HttpMetricsInstrumentation;
-    private _traceMetrics: TraceMetrics;
     private _processMetrics: ProcessMetrics;
-    private _dependencyMetrics: DependencyMetrics;
     private _requestMetrics: RequestMetrics;
+    private _nativeMetrics: NativePerformanceMetrics;
 
-    constructor(meter: Meter) {
-        this._meter = meter;
-        // Add view to filter unwanted metrics
-        this._processMetrics = new ProcessMetrics(this._meter);
-        this._exceptionMetrics = new ExceptionMetrics(this._meter);
-        this._traceMetrics = new TraceMetrics(this._meter);
+    constructor(config: Config, options?: { collectionInterval: number }) {
+        this._config = config;
+        const nativePerformanceConfig = getNativeMetricsConfig(
+            this._config.enableAutoCollectExtendedMetrics,
+            this._config
+        );
+        const meterProviderConfig: MeterProviderOptions = {
+            resource: ResourceManager.getInstance().getMetricResource(),
+            views: this._getViews(nativePerformanceConfig)
+        };
+        this._meterProvider = new MeterProvider(meterProviderConfig);
+        let exporterConfig: AzureExporterConfig = {
+            connectionString: this._config.getConnectionString(),
+            aadTokenCredential: this._config.aadTokenCredential
+        };
+        this._azureExporter = new AzureMonitorMetricExporter(exporterConfig);
+        const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
+            exporter: this._azureExporter as any,
+            exportIntervalMillis: options?.collectionInterval || this._collectionInterval
+        };
+        this._metricReader = new PeriodicExportingMetricReader(metricReaderOptions);
+        this._meterProvider.addMetricReader(this._metricReader);
+        this._meter = this._meterProvider.getMeter("ApplicationInsightsPerfMetricsMeter");
+
         const httpMetricsConfig: HttpMetricsInstrumentationConfig = {
             ignoreOutgoingRequestHook: (request: RequestOptions) => {
                 if (request.headers && request.headers["user-agent"]) {
@@ -35,28 +60,25 @@ export class PerformanceCounterMetricsHandler {
             }
         };
         this._httpMetrics = new HttpMetricsInstrumentation(httpMetricsConfig);
-        this._dependencyMetrics = new DependencyMetrics(this._meter, this._httpMetrics);
+        this._processMetrics = new ProcessMetrics(this._meter);
         this._requestMetrics = new RequestMetrics(this._meter, this._httpMetrics);
+        if (nativePerformanceConfig.isEnabled) {
+            this._nativeMetrics = new NativePerformanceMetrics(this._meter);
+        }
     }
 
-    public enable(isEnabled: boolean) {
-        this._processMetrics.enable(isEnabled);
-        this._traceMetrics.enable(isEnabled);
-        this._exceptionMetrics.enable(isEnabled);
-        this._dependencyMetrics.enable(isEnabled);
-        this._requestMetrics.enable(isEnabled);
+    public start() {
+        this._processMetrics.enable(true);;
+        this._requestMetrics.enable(true);
+        this._nativeMetrics?.enable(true);
+    }
+
+    public shutdown() {
+        this._meterProvider.shutdown();
     }
 
     public getHttpMetricsInstrumentation(): HttpMetricsInstrumentation {
         return this._httpMetrics;
-    }
-
-    public getExceptionMetrics(): ExceptionMetrics {
-        return this._exceptionMetrics;
-    }
-
-    public getTraceMetrics(): TraceMetrics {
-        return this._traceMetrics;
     }
 
     public getProcessMetrics(): ProcessMetrics {
@@ -67,7 +89,81 @@ export class PerformanceCounterMetricsHandler {
         return this._requestMetrics;
     }
 
-    public getDependencyMetrics(): DependencyMetrics {
-        return this._dependencyMetrics;
+    private _getViews(nativePerformanceConfig: { isEnabled: boolean; disabledMetrics: IDisabledExtendedMetrics }): View[] {
+        let views = [];
+        views.push(new View({
+            name: PerformanceCounter.REQUEST_DURATION,
+            instrumentName: "http.server.duration",
+            attributeKeys: [] // Drop all dimensions
+        }));
+        views.push(new View({
+            name: PerformanceCounter.REQUEST_RATE,
+            instrumentName: PerformanceCounter.REQUEST_RATE,
+            attributeKeys: [] // Drop all dimensions
+        }));
+        views.push(new View({
+            name: PerformanceCounter.AVAILABLE_BYTES,
+            instrumentName: PerformanceCounter.AVAILABLE_BYTES
+        }));
+        views.push(new View({
+            name: PerformanceCounter.PRIVATE_BYTES,
+            instrumentName: PerformanceCounter.PRIVATE_BYTES
+        }));
+        views.push(new View({
+            name: PerformanceCounter.PROCESSOR_TIME,
+            instrumentName: PerformanceCounter.PROCESSOR_TIME
+        }));
+        views.push(new View({
+            name: PerformanceCounter.PROCESS_TIME,
+            instrumentName: PerformanceCounter.PROCESS_TIME
+        }));
+
+        // Ignore list
+        views.push(new View({
+            instrumentName: QuickPulseCounter.COMMITTED_BYTES,
+            aggregation: new DropAggregation(),
+        }));
+        views.push(new View({
+            instrumentName: QuickPulseCounter.REQUEST_FAILURE_RATE,
+            aggregation: new DropAggregation(),
+        }));
+
+        if (nativePerformanceConfig.isEnabled) {
+            if (nativePerformanceConfig.disabledMetrics?.gc) {
+                views.push(new View({
+                    instrumentName: NativeMetricsCounter.GARBAGE_COLLECTION_INCREMENTAL_MARKING,
+                    aggregation: new DropAggregation(),
+                }));
+                views.push(new View({
+                    instrumentName: NativeMetricsCounter.GARBAGE_COLLECTION_SCAVENGE,
+                    aggregation: new DropAggregation(),
+                }));
+                views.push(new View({
+                    instrumentName: NativeMetricsCounter.GARBAGE_COLLECTION_SWEEP_COMPACT,
+                    aggregation: new DropAggregation(),
+                }));
+            }
+            if (nativePerformanceConfig.disabledMetrics?.heap) {
+                views.push(new View({
+                    instrumentName: NativeMetricsCounter.HEAP_MEMORY_TOTAL,
+                    aggregation: new DropAggregation(),
+                }));
+                views.push(new View({
+                    instrumentName: NativeMetricsCounter.HEAP_MEMORY_USAGE,
+                    aggregation: new DropAggregation(),
+                }));
+                views.push(new View({
+                    instrumentName: NativeMetricsCounter.MEMORY_USAGE_NON_HEAP,
+                    aggregation: new DropAggregation(),
+                }));
+            }
+            if (nativePerformanceConfig.disabledMetrics?.heap) {
+                views.push(new View({
+                    instrumentName: NativeMetricsCounter.EVENT_LOOP_CPU,
+                    aggregation: new DropAggregation(),
+                }));
+            }
+        }
+        return views;
     }
 }
