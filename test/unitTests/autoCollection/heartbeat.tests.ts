@@ -35,32 +35,29 @@ describe("AutoCollection/HeartBeat", () => {
             assert.ok(heartBeat["_metricGauge"], "_metricGauge not available");
         });
 
-        it("should observe instruments during collection", (done) => {
-            let heartBeat = new HeartBeatHandler(config);
-            sandbox.stub(heartBeat["_metricReader"]["_exporter"], "export");
-            heartBeat.enable(true).then(() => {
-                heartBeat["_metricReader"].collect().then(({ resourceMetrics, errors }) => {
-                    assert.equal(errors.length, 0, "Errors found during collection");
-                    assert.equal(resourceMetrics.scopeMetrics.length, 1, "Wrong number of scopeMetrics");
-                    let metricsWithDataPoints: MetricData[] = []; // Only Metrics with data points will be exported
-                    resourceMetrics.scopeMetrics[0].metrics.forEach(metric => {
-                        if (metric.dataPoints.length > 0) {
-                            metricsWithDataPoints.push(metric);
-                        }
-                    });
+        it("should observe instruments during collection", async () => {
+            let heartBeat = new HeartBeatHandler(config, { collectionInterval: 100 });
+            let mockExport = sandbox.stub(heartBeat["_ex"], "export");
+            await heartBeat.start();
+            await new Promise(resolve => setTimeout(resolve, 120));
 
-                    assert.equal(metricsWithDataPoints.length, 1, "Wrong number of instruments");
-                    assert.equal(metricsWithDataPoints[0].descriptor.name, HeartBeatMetricName);
-                    done();
-                }).catch((error) => done(error));
-            }).catch((error) => done(error));
+            assert.ok(mockExport.called);
+            let resourceMetrics = mockExport.args[0][0];
+            const scopeMetrics = resourceMetrics.scopeMetrics;
+            assert.strictEqual(scopeMetrics.length, 1, 'scopeMetrics count');
+            const metrics = scopeMetrics[0].metrics;
+            assert.strictEqual(metrics.length, 13, 'metrics count');
+            assert.equal(metricsWithDataPoints.length, 1, "Wrong number of instruments");
+            assert.equal(metricsWithDataPoints[0].descriptor.name, HeartBeatMetricName);
+
+
         });
 
         it("should not collect when disabled", (done) => {
             let heartBeat = new HeartBeatHandler(config);
             sandbox.stub(heartBeat["_metricReader"]["_exporter"], "export");
-            heartBeat.enable(true).then(() => {
-                heartBeat.enable(false).then(() => {
+            heartBeat.start().then(() => {
+                heartBeat.shutdown().then(() => {
                     heartBeat["_metricReader"].collect().then(({ resourceMetrics, errors }) => {
                         assert.equal(errors.length, 0, "Errors found during collection");
                         assert.equal(resourceMetrics.scopeMetrics.length, 1, "Wrong number of scopeMetrics");
