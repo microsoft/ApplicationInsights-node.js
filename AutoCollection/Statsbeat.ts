@@ -44,7 +44,7 @@ class Statsbeat {
     private _attach: string = Constants.StatsbeatAttach.sdk; // Default is SDK
     private _feature: number = Constants.StatsbeatFeature.NONE;
     private _instrumentation: number = Constants.StatsbeatInstrumentation.NONE;
-    private _exceptionType: string;
+    public _exceptionType: string;
     public _statusCode: number;
 
     constructor(config: Config, context?: Context) {

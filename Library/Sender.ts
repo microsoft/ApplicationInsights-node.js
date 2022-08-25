@@ -207,6 +207,9 @@ class Sender {
                             }
                         }
                         if (this._statsbeat) {
+                            if (res.statusCode) {
+                                this._statsbeat._statusCode = res.statusCode;
+                            }
                             if (res.statusCode == throttleStatusCode || res.statusCode == legacyThrottleStatusCode) { // Throttle
                                 this._statsbeat.countThrottle(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
                             }
@@ -301,6 +304,7 @@ class Sender {
                     // todo: handle error codes better (group to recoverable/non-recoverable and persist)
                     this._numConsecutiveFailures++;
                     if (this._statsbeat) {
+                        this._statsbeat._exceptionType = error.name;
                         this._statsbeat.countException(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
                     }
 

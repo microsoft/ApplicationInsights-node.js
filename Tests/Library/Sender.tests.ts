@@ -450,6 +450,7 @@ describe("Library/Sender", () => {
         let config = new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333");
         let statsbeat = new Statsbeat(config);
         let statsbeatSender = new Sender(config, null, null, null, statsbeat);
+        let statsbeatError: Error = { name: "Statsbeat", message: "Statsbeat Error" };
 
         it("Succesful requests", (done) => {
             var statsbeatSpy = sandbox.spy(statsbeat, "countRequest");
@@ -583,9 +584,10 @@ describe("Library/Sender", () => {
             statsbeatSender.setDiskRetryMode(false);
             var statsbeatSpy = sandbox.spy(statsbeat, "countRequest");
             var exceptionSpy = sandbox.spy(statsbeat, "countException");
-            nockScope = interceptor.replyWithError("Test Error");
+            nockScope = interceptor.replyWithError(statsbeatError);
             statsbeatSender.send([testEnvelope], () => {
                 assert.equal(statsbeatSpy.callCount, 0);
+                assert.equal(statsbeat._exceptionType, "Statsbeat");
                 assert.ok(exceptionSpy.calledOnce);
                 done();
             });
