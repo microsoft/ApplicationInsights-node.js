@@ -461,6 +461,7 @@ describe("Library/Sender", () => {
                 assert.equal(statsbeatSpy.args[0][1], "dc.services.visualstudio.com"); // Endpoint
                 assert.ok(!isNaN(statsbeatSpy.args[0][2])); // Duration
                 assert.equal(statsbeatSpy.args[0][3], true); // Success
+                assert.equal(statsbeat._statusCode, 200);
                 done();
 
             });
@@ -475,6 +476,7 @@ describe("Library/Sender", () => {
                 assert.equal(statsbeatSpy.args[0][1], "dc.services.visualstudio.com"); // Endpoint
                 assert.ok(!isNaN(statsbeatSpy.args[0][2])); // Duration
                 assert.equal(statsbeatSpy.args[0][3], false); // Failed
+                assert.equal(statsbeat._statusCode, 400);
                 done();
             });
         });
@@ -487,6 +489,7 @@ describe("Library/Sender", () => {
             statsbeatSender.send([testEnvelope], () => {
                 assert.ok(statsbeatSpy.calledOnce);
                 assert.ok(retrySpy.calledOnce);
+                assert.equal(statsbeat._statusCode, 206);
                 done();
             });
         });
@@ -499,6 +502,7 @@ describe("Library/Sender", () => {
             statsbeatSender.send([testEnvelope], () => {
                 assert.ok(statsbeatSpy.notCalled);
                 assert.ok(throttleSpy.calledOnce);
+                assert.equal(statsbeat._statusCode, 439);
                 done();
             });
         });
