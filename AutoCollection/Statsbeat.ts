@@ -44,6 +44,8 @@ class Statsbeat {
     private _attach: string = Constants.StatsbeatAttach.sdk; // Default is SDK
     private _feature: number = Constants.StatsbeatFeature.NONE;
     private _instrumentation: number = Constants.StatsbeatInstrumentation.NONE;
+    private _exceptionType: string;
+    public _statusCode: number;
 
     constructor(config: Config, context?: Context) {
         this._isInitialized = false;
@@ -234,8 +236,18 @@ class Statsbeat {
             currentCounter.lastIntervalRequestExecutionTime = currentCounter.intervalRequestExecutionTime; // reset
             if (intervalRequests > 0) {
                 // Add extra properties
-                let properties = Object.assign({ "endpoint": this._networkStatsbeatCollection[i].endpoint, "host": this._networkStatsbeatCollection[i].host }, commonProperties);
-                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_DURATION, value: averageRequestExecutionTime, properties: properties });
+                let properties = Object.assign(
+                    {
+                        "endpoint": this._networkStatsbeatCollection[i].endpoint,
+                        "host": this._networkStatsbeatCollection[i].host
+                    },
+                    commonProperties
+                );
+                this._statbeatMetrics.push({
+                    name: Constants.StatsbeatCounter.REQUEST_DURATION,
+                    value: averageRequestExecutionTime,
+                    properties: properties
+                });
             }
             // Set last counters
             currentCounter.lastRequestCount = currentCounter.totalRequestCount;
@@ -261,25 +273,54 @@ class Statsbeat {
     private _trackRequestsCount(commonProperties: {}) {
         for (let i = 0; i < this._networkStatsbeatCollection.length; i++) {
             var currentCounter = this._networkStatsbeatCollection[i];
-            let properties = Object.assign({ "endpoint": currentCounter.endpoint, "host": currentCounter.host }, commonProperties);
+            let properties = Object.assign(
+                { "endpoint": currentCounter.endpoint, "host": currentCounter.host },
+                commonProperties
+            );
             if (currentCounter.totalSuccesfulRequestCount > 0) {
-                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_SUCCESS, value: currentCounter.totalSuccesfulRequestCount, properties: properties });
+                properties = Object.assign({ ...properties, statusCode: this._statusCode });
+                this._statbeatMetrics.push({
+                        name: Constants.StatsbeatCounter.REQUEST_SUCCESS,
+                        value: currentCounter.totalSuccesfulRequestCount,
+                        properties: properties
+                });
                 currentCounter.totalSuccesfulRequestCount = 0; //Reset
             }
             if (currentCounter.totalFailedRequestCount > 0) {
-                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_FAILURE, value: currentCounter.totalFailedRequestCount, properties: properties });
+                properties = Object.assign({ ...properties, statusCode: this._statusCode });
+                this._statbeatMetrics.push({
+                    name: Constants.StatsbeatCounter.REQUEST_FAILURE,
+                    value: currentCounter.totalFailedRequestCount,
+                    properties: properties
+                });
                 currentCounter.totalFailedRequestCount = 0; //Reset
             }
             if (currentCounter.retryCount > 0) {
-                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.RETRY_COUNT, value: currentCounter.retryCount, properties: properties });
+                properties = Object.assign({ ...properties, statusCode: this._statusCode });
+                this._statbeatMetrics.push({
+                    name: Constants.StatsbeatCounter.RETRY_COUNT,
+                    value: currentCounter.retryCount,
+                    properties: properties
+                });
                 currentCounter.retryCount = 0; //Reset
             }
             if (currentCounter.throttleCount > 0) {
-                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.THROTTLE_COUNT, value: currentCounter.throttleCount, properties: properties });
+                properties = Object.assign({ ...properties, statusCode: this._statusCode });
+                this._statbeatMetrics.push({
+                    name: Constants.StatsbeatCounter.THROTTLE_COUNT,
+                    value: currentCounter.throttleCount,
+                    properties: properties
+                });
                 currentCounter.throttleCount = 0; //Reset
             }
             if (currentCounter.exceptionCount > 0) {
-                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.EXCEPTION_COUNT, value: currentCounter.exceptionCount, properties: properties });
+                // TODO: Report exception name here.
+                properties = Object.assign({ ...properties, exceptionType: this._exceptionType });
+                this._statbeatMetrics.push({
+                    name: Constants.StatsbeatCounter.EXCEPTION_COUNT,
+                    value: currentCounter.exceptionCount,
+                    properties: properties
+                });
                 currentCounter.exceptionCount = 0; //Reset
             }
         }
