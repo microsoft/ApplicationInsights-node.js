@@ -132,7 +132,7 @@ describe("AutoCollection/Statsbeat", () => {
         it("It adds correct network properties to custom metric", (done) => {
             statsBeat.enable(true);
             const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
-            statsBeat.countRequest(1, "testEndpointHost", 123, true);
+            statsBeat.countRequest(1, "testEndpointHost", 123, true, 200);
             statsBeat.setCodelessAttach();
             statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
@@ -156,8 +156,8 @@ describe("AutoCollection/Statsbeat", () => {
         it("Track duration", (done) => {
             statsBeat.enable(true);
             const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
-            statsBeat.countRequest(0, "test", 1000, true);
-            statsBeat.countRequest(0, "test", 500, false);
+            statsBeat.countRequest(0, "test", 1000, true, 200);
+            statsBeat.countRequest(0, "test", 500, false, 408);
             statsBeat.trackShortIntervalStatsbeats().then((error) => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
                 assert.equal(statsBeat["_statbeatMetrics"].length, 3);
@@ -171,17 +171,17 @@ describe("AutoCollection/Statsbeat", () => {
         it("Track counts", (done) => {
             statsBeat.enable(true);
             const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
-            statsBeat.countRequest(0, "test", 1, true);
-            statsBeat.countRequest(0, "test", 1, true);
-            statsBeat.countRequest(0, "test", 1, true);
-            statsBeat.countRequest(0, "test", 1, true);
-            statsBeat.countRequest(0, "test", 1, false);
-            statsBeat.countRequest(0, "test", 1, false);
-            statsBeat.countRequest(0, "test", 1, false);
-            statsBeat.countRetry(0, "test");
-            statsBeat.countRetry(0, "test");
-            statsBeat.countThrottle(0, "test");
-            statsBeat.countException(0, "test");
+            statsBeat.countRequest(0, "test", 1, true, 200);
+            statsBeat.countRequest(0, "test", 1, true, 200);
+            statsBeat.countRequest(0, "test", 1, true, 200);
+            statsBeat.countRequest(0, "test", 1, true, 200);
+            statsBeat.countRequest(0, "test", 1, false, 200);
+            statsBeat.countRequest(0, "test", 1, false, 200);
+            statsBeat.countRequest(0, "test", 1, false, 200);
+            statsBeat.countRetry(0, "test", 206);
+            statsBeat.countRetry(0, "test", 206);
+            statsBeat.countThrottle(0, "test", 206);
+            statsBeat.countException(0, "test", "Statsbeat Exception");
             statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
                 assert.equal(statsBeat["_statbeatMetrics"].length, 6);
@@ -295,9 +295,9 @@ describe("AutoCollection/Statsbeat", () => {
         it("Multiple network categories and endpoints", (done) => {
             statsBeat.enable(true);
             const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
-            statsBeat.countRequest(0, "https://breezeFirstEndpoint.something.com", 100, true);
-            statsBeat.countRequest(1, "http://quickpulseEndpoint.something.com", 200, true);
-            statsBeat.countRequest(0, "breezeSecondEndpoint", 400, true);
+            statsBeat.countRequest(0, "https://breezeFirstEndpoint.something.com", 100, true, 200);
+            statsBeat.countRequest(1, "http://quickpulseEndpoint.something.com", 200, true, 200);
+            statsBeat.countRequest(0, "breezeSecondEndpoint", 400, true, 200);
             statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
                 let metric: any = statsBeat["_statbeatMetrics"].find(f => f.name === "Request Duration"

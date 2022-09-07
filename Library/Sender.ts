@@ -207,14 +207,11 @@ class Sender {
                             }
                         }
                         if (this._statsbeat) {
-                            if (res.statusCode) {
-                                this._statsbeat._statusCode = res.statusCode;
-                            }
                             if (res.statusCode == throttleStatusCode || res.statusCode == legacyThrottleStatusCode) { // Throttle
-                                this._statsbeat.countThrottle(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
+                                this._statsbeat.countThrottle(Constants.StatsbeatNetworkCategory.Breeze, endpointHost, res.statusCode);
                             }
                             else {
-                                this._statsbeat.countRequest(Constants.StatsbeatNetworkCategory.Breeze, endpointHost, duration, res.statusCode === 200);
+                                this._statsbeat.countRequest(Constants.StatsbeatNetworkCategory.Breeze, endpointHost, duration, res.statusCode === 200, res.statusCode);
                             }
                         }
                         if (this._enableDiskRetryMode) {
@@ -230,7 +227,7 @@ class Sender {
                             } else if (this._isRetriable(res.statusCode)) {
                                 try {
                                     if (this._statsbeat) {
-                                        this._statsbeat.countRetry(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
+                                        this._statsbeat.countRetry(Constants.StatsbeatNetworkCategory.Breeze, endpointHost, res.statusCode);
                                     }
                                     const breezeResponse = JSON.parse(responseString) as Contracts.BreezeResponse;
                                     let filteredEnvelopes: Contracts.EnvelopeTelemetry[] = [];
@@ -266,11 +263,12 @@ class Sender {
                                 }
                             }
                             else {
+                                let circularRedirectMessage = "Error sending telemetry because of circular redirects.";
                                 if (this._statsbeat) {
-                                    this._statsbeat.countException(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
+                                    this._statsbeat.countException(Constants.StatsbeatNetworkCategory.Breeze, endpointHost, circularRedirectMessage);
                                 }
                                 if (typeof callback === "function") {
-                                    callback("Error sending telemetry because of circular redirects.");
+                                    callback(circularRedirectMessage);
                                 }
                             }
 
@@ -304,8 +302,7 @@ class Sender {
                     // todo: handle error codes better (group to recoverable/non-recoverable and persist)
                     this._numConsecutiveFailures++;
                     if (this._statsbeat) {
-                        this._statsbeat._exceptionType = error.name;
-                        this._statsbeat.countException(Constants.StatsbeatNetworkCategory.Breeze, endpointHost);
+                        this._statsbeat.countException(Constants.StatsbeatNetworkCategory.Breeze, endpointHost, error.name);
                     }
 
                     // Only use warn level if retries are disabled or we've had some number of consecutive failures sending data

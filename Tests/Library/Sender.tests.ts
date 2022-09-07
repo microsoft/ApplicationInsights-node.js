@@ -450,7 +450,7 @@ describe("Library/Sender", () => {
         let config = new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333");
         let statsbeat = new Statsbeat(config);
         let statsbeatSender = new Sender(config, null, null, null, statsbeat);
-        let statsbeatError: Error = { name: "Statsbeat", message: "Statsbeat Error" };
+        let statsbeatError: string = "Statsbeat";
 
         it("Succesful requests", (done) => {
             var statsbeatSpy = sandbox.spy(statsbeat, "countRequest");
@@ -461,7 +461,6 @@ describe("Library/Sender", () => {
                 assert.equal(statsbeatSpy.args[0][1], "dc.services.visualstudio.com"); // Endpoint
                 assert.ok(!isNaN(statsbeatSpy.args[0][2])); // Duration
                 assert.equal(statsbeatSpy.args[0][3], true); // Success
-                assert.equal(statsbeat._statusCode, 200);
                 done();
 
             });
@@ -476,7 +475,7 @@ describe("Library/Sender", () => {
                 assert.equal(statsbeatSpy.args[0][1], "dc.services.visualstudio.com"); // Endpoint
                 assert.ok(!isNaN(statsbeatSpy.args[0][2])); // Duration
                 assert.equal(statsbeatSpy.args[0][3], false); // Failed
-                assert.equal(statsbeat._statusCode, 400);
+                assert.equal(statsbeatSpy.args[0][4], 400);
                 done();
             });
         });
@@ -489,7 +488,7 @@ describe("Library/Sender", () => {
             statsbeatSender.send([testEnvelope], () => {
                 assert.ok(statsbeatSpy.calledOnce);
                 assert.ok(retrySpy.calledOnce);
-                assert.equal(statsbeat._statusCode, 206);
+                assert.equal(retrySpy.args[2], 206);
                 done();
             });
         });
@@ -502,7 +501,7 @@ describe("Library/Sender", () => {
             statsbeatSender.send([testEnvelope], () => {
                 assert.ok(statsbeatSpy.notCalled);
                 assert.ok(throttleSpy.calledOnce);
-                assert.equal(statsbeat._statusCode, 439);
+                assert.equal(throttleSpy.args[2], 439);
                 done();
             });
         });
@@ -591,7 +590,7 @@ describe("Library/Sender", () => {
             nockScope = interceptor.replyWithError(statsbeatError);
             statsbeatSender.send([testEnvelope], () => {
                 assert.equal(statsbeatSpy.callCount, 0);
-                assert.equal(statsbeat._exceptionType, "Statsbeat");
+                assert.equal(exceptionSpy.args[2], "Statsbeat");
                 assert.ok(exceptionSpy.calledOnce);
                 done();
             });
