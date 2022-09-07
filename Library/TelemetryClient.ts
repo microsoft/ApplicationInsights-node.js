@@ -42,6 +42,9 @@ class TelemetryClient {
     constructor(setupString?: string) {
         var config = new Config(setupString);
         this.config = config;
+        if (!this.config.instrumentationKey || this.config.instrumentationKey == "") {
+            throw new Error("Instrumentation key not found, please provide a connection string before starting Application Insights SDK.");
+        }
         this.context = new Context();
         this.commonProperties = {};
         this.authorizationHandler = null;

@@ -99,6 +99,12 @@ describe("#setupAndStart()", () => {
 
         sinon.stub(Helpers, "sdkAlreadyExists", () => false);
         // Test
-        assert.throws(function () { const Default = require("../../Bootstrap/Default") as typeof DefaultTypes; });
+        const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
+        Default.setLogger(new DiagnosticLogger(logger));
+
+        let result = Default.setupAndStart();
+        assert.equal(result, null);
+        assert.equal(logger.logCount, 0);
+        assert.equal(logger.errorCount, 1);
     });
 });
