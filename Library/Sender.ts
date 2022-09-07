@@ -233,7 +233,8 @@ class Sender {
                                     let filteredEnvelopes: Contracts.EnvelopeTelemetry[] = [];
                                     if (breezeResponse.errors) {
                                         breezeResponse.errors.forEach(error => {
-                                            if (this._isRetriable(error.statusCode)) {
+                                            // Only retry errors if 429, 500 or 503 response codes
+                                            if (error.statusCode == 429 || error.statusCode == 500 || error.statusCode == 503) {
                                                 filteredEnvelopes.push(envelopes[error.index]);
                                             }
                                         });
