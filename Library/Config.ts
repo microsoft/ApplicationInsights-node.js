@@ -78,11 +78,6 @@ class Config implements IConfig {
 
         const instrumentationKeyEnv: string | undefined = this._instrumentationKey;
         this.instrumentationKey = csCode.instrumentationkey || iKeyCode /* === instrumentationKey */ || csEnv.instrumentationkey || instrumentationKeyEnv;
-
-        if (!this.instrumentationKey || this.instrumentationKey == "") {
-            throw new Error("Instrumentation key not found, please provide a connection string before starting the server");
-        }
-
         let endpoint = `${this.endpointUrl || csCode.ingestionendpoint || csEnv.ingestionendpoint || this._endpointBase}`;
         if (endpoint.endsWith("/")) {
             // Remove extra '/' if present

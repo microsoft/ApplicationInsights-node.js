@@ -122,12 +122,7 @@ describe("Library/Config", () => {
                 http.request.restore();
                 https.request.restore();
             });
-            it("should throw if no iKey is available", () => {
-                var env = {};
-                process.env = env;
-                assert.throws(() => new Config());
-            });
-
+            
             it("should read iKey from environment", () => {
                 var env = <{ [id: string]: string }>{};
                 env[Config.ENV_iKey] = iKey;
