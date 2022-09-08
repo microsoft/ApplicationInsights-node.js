@@ -140,16 +140,16 @@ class Statsbeat {
         }
     }
 
-    public countException(endpoint: number, host: string, exceptionType: string) {
+    public countException(endpoint: number, host: string, exceptionType: Error) {
         if (!this.isEnabled()) {
             return;
         }
         let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
-        let currentErrorCounter = counter.exceptionCount.find((exceptionCounter) => exceptionType === exceptionCounter.exceptionType);
+        let currentErrorCounter = counter.exceptionCount.find((exceptionCounter) => exceptionType.name === exceptionCounter.exceptionType);
         if (currentErrorCounter) {
             currentErrorCounter.count++;
         } else {
-            counter.exceptionCount.push({ exceptionType: exceptionType, count: 1 });
+            counter.exceptionCount.push({ exceptionType: exceptionType.name, count: 1 });
         }
     }
 

@@ -263,12 +263,12 @@ class Sender {
                                 }
                             }
                             else {
-                                let circularRedirectMessage = "Error sending telemetry because of circular redirects.";
+                                const circularRedirectError: Error = { name: "Circular Redirect", message: "Error sending telemetry because of circular redirects." }
                                 if (this._statsbeat) {
-                                    this._statsbeat.countException(Constants.StatsbeatNetworkCategory.Breeze, endpointHost, circularRedirectMessage);
+                                    this._statsbeat.countException(Constants.StatsbeatNetworkCategory.Breeze, endpointHost, circularRedirectError);
                                 }
                                 if (typeof callback === "function") {
-                                    callback(circularRedirectMessage);
+                                    callback("Error sending telemetry because of circular redirects.");
                                 }
                             }
 
@@ -302,7 +302,7 @@ class Sender {
                     // todo: handle error codes better (group to recoverable/non-recoverable and persist)
                     this._numConsecutiveFailures++;
                     if (this._statsbeat) {
-                        this._statsbeat.countException(Constants.StatsbeatNetworkCategory.Breeze, endpointHost, error.name);
+                        this._statsbeat.countException(Constants.StatsbeatNetworkCategory.Breeze, endpointHost, error);
                     }
 
                     // Only use warn level if retries are disabled or we've had some number of consecutive failures sending data

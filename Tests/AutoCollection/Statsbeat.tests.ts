@@ -181,7 +181,7 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.countRetry(0, "test", 206);
             statsBeat.countRetry(0, "test", 206);
             statsBeat.countThrottle(0, "test", 206);
-            statsBeat.countException(0, "test", "Statsbeat Exception");
+            statsBeat.countException(0, "test", { name: "Statsbeat", message: "Statsbeat Exception" });
             statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
                 assert.equal(statsBeat["_statbeatMetrics"].length, 6);
