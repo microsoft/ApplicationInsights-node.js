@@ -44,8 +44,6 @@ class Statsbeat {
     private _attach: string = Constants.StatsbeatAttach.sdk; // Default is SDK
     private _feature: number = Constants.StatsbeatFeature.NONE;
     private _instrumentation: number = Constants.StatsbeatInstrumentation.NONE;
-    private _exceptionType: string;
-    private _statusCode: number;
 
     constructor(config: Config, context?: Context) {
         this._isInitialized = false;
@@ -298,7 +296,6 @@ class Statsbeat {
                 commonProperties
             );
             if (currentCounter.totalSuccesfulRequestCount > 0) {
-                properties = Object.assign({ ...properties, statusCode: this._statusCode });
                 this._statbeatMetrics.push({
                         name: Constants.StatsbeatCounter.REQUEST_SUCCESS,
                         value: currentCounter.totalSuccesfulRequestCount,
