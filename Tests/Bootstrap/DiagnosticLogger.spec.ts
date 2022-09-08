@@ -18,7 +18,7 @@ class TestWriter implements AgentLogger {
 }
 
 describe("DiagnosticLogger", () => {
-    const logger = new DiagnosticLogger(new NoopLogger());
+    const logger = new DiagnosticLogger(new NoopLogger(), "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
     const stub = sinon.stub(logger["_writer"], "log");
     const version = require("../../../package.json").version;
 
@@ -26,16 +26,16 @@ describe("DiagnosticLogger", () => {
         stub.reset();
     })
 
-    describe("#DiagnosticLogger.DefaultEnvelope", () => {
+    describe("#DiagnosticLogger.DefaultProperties", () => {
         it("should have the correct version string", () => {
-            assert.equal(DiagnosticLogger.DefaultEnvelope.properties.sdkVersion, version);
+            assert.equal(logger["_defaultProperties"].sdkVersion, version);
         });
     });
 
     describe("#DiagnosticLogger.logMessage", () => {
         it("should log all required fields", () => {
-            const expectedDate = new Date().toISOString();
-            logger.logMessage("Some message");
+            const expectedDate = new Date().toUTCString();
+            logger.logMessage({ message: "Some message", properties: { "msgId": "4123"} });
             assert.deepEqual(stub.args[0][0], {
                 level: DataModel.SeverityLevel.INFO,
                 message: "Some message",
@@ -45,10 +45,11 @@ describe("DiagnosticLogger", () => {
                     language: "nodejs",
                     operation: "Startup",
                     siteName: undefined,
-                    ikey: "unknown",
+                    ikey: "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
                     extensionVersion: undefined,
                     sdkVersion: version,
                     subscriptionId: null,
+                    msgId: "4123",
                 }
             } as DataModel.DiagnosticLog)
         })

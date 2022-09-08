@@ -2,7 +2,6 @@ import assert = require("assert");
 import sinon = require("sinon");
 import { DiagnosticLogger } from "../../Bootstrap/DiagnosticLogger";
 import * as DataModel from "../../Bootstrap/DataModel";
-import * as Helpers from "../../Bootstrap/Helpers";
 import * as DefaultTypes from "../../Bootstrap/Default";
 import { JsonConfig } from "../../Library/JsonConfig";
 
@@ -48,9 +47,9 @@ describe("#setupAndStart()", () => {
         env["ApplicationInsightsAgent_EXTENSION_VERSION"] = "~2";
         env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/";
         process.env = env;
-        sandbox.stub(Helpers, "sdkAlreadyExists", () => false);
         // Test
         const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
+        sandbox.stub(Default, "sdkAlreadyExists", () => false);
         Default.setLogger(new DiagnosticLogger(logger));
         const instance1 = Default.setupAndStart();
         assert.ok(instance1.defaultClient);
@@ -71,10 +70,10 @@ describe("#setupAndStart()", () => {
         env["ApplicationInsightsAgent_EXTENSION_VERSION"] = "~2";
         env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/";
         process.env = env;
-        sandbox.stub(Helpers, "sdkAlreadyExists", () => false);
 
         // Test
         const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
+        sandbox.stub(Default, "sdkAlreadyExists", () => false);
         Default.setLogger(new DiagnosticLogger(logger));
         const instance = Default.setupAndStart();
         assert.deepEqual(instance, appInsights);
@@ -97,9 +96,9 @@ describe("#setupAndStart()", () => {
         env["ApplicationInsightsAgent_EXTENSION_VERSION"] = "~2";
         process.env = env;
 
-        sinon.stub(Helpers, "sdkAlreadyExists", () => false);
         // Test
         const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
+        sinon.stub(Default, "sdkAlreadyExists", () => false);
         Default.setLogger(new DiagnosticLogger(logger));
 
         let result = Default.setupAndStart();
