@@ -1,3 +1,4 @@
+import { DiagnosticLog, DiagnosticMessageId } from "./DataModel";
 import { DiagnosticLogger } from "./DiagnosticLogger";
 
 export function sdkAlreadyExists(_logger: DiagnosticLogger): boolean {
@@ -13,10 +14,13 @@ export function sdkAlreadyExists(_logger: DiagnosticLogger): boolean {
         }
         // If loaded instance is in Azure machine home path do not attach the SDK, this means customer already instrumented their app
         if (appInstance.indexOf("home") > -1) {
-            _logger.logMessage(
-                "applicationinsights module is already installed in this application; not re-attaching. Installed SDK location: " +
-                appInstance
-            );
+            const diagnosticLog: DiagnosticLog = {
+                message: "Application Insights SDK already exists. Module is already installed in this application; not re-attaching. Installed SDK location: " + appInstance,
+                properties: {
+                    "msgId": DiagnosticMessageId.sdkExists
+                }
+            };
+            _logger.logError(diagnosticLog);
             return true;
         }
         else {
