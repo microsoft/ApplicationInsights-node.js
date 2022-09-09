@@ -2,6 +2,7 @@ import assert = require("assert");
 import sinon = require("sinon");
 import { DiagnosticLogger } from "../../Bootstrap/DiagnosticLogger";
 import * as DataModel from "../../Bootstrap/DataModel";
+import * as Helpers from "../../Bootstrap/Helpers";
 import * as DefaultTypes from "../../Bootstrap/Default";
 import { JsonConfig } from "../../Library/JsonConfig";
 
@@ -49,7 +50,7 @@ describe("#setupAndStart()", () => {
         process.env = env;
         // Test
         const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
-        sandbox.stub(Default, "sdkAlreadyExists", () => false);
+        sandbox.stub(Helpers, "sdkAlreadyExists", () => false);
         Default.setLogger(new DiagnosticLogger(logger));
         const instance1 = Default.setupAndStart();
         assert.ok(instance1.defaultClient);
@@ -73,7 +74,7 @@ describe("#setupAndStart()", () => {
 
         // Test
         const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
-        sandbox.stub(Default, "sdkAlreadyExists", () => false);
+        sandbox.stub(Helpers, "sdkAlreadyExists", () => false);
         Default.setLogger(new DiagnosticLogger(logger));
         const instance = Default.setupAndStart();
         assert.deepEqual(instance, appInsights);
@@ -98,7 +99,7 @@ describe("#setupAndStart()", () => {
 
         // Test
         const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
-        sinon.stub(Default, "sdkAlreadyExists", () => false);
+        sinon.stub(Helpers, "sdkAlreadyExists", () => false);
         Default.setLogger(new DiagnosticLogger(logger));
 
         let result = Default.setupAndStart();
