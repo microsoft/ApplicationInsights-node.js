@@ -118,7 +118,7 @@ class Statsbeat {
         this._instrumentation &= ~instrumentation;
     }
 
-    public countRequest(endpoint: number, host: string, duration: number, success: boolean, statusCode: number) {
+    public countRequest(endpoint: number, host: string, duration: number, success: boolean, statusCode?: number) {
         if (!this.isEnabled()) {
             return;
         }
@@ -305,6 +305,7 @@ class Statsbeat {
             }
             if (currentCounter.totalFailedRequestCount.length > 0) {
                 currentCounter.totalFailedRequestCount.forEach((currentCounter) => {
+                    properties = Object.assign({ ...properties, "statusCode": currentCounter.statusCode });
                     this._statbeatMetrics.push({
                         name: Constants.StatsbeatCounter.REQUEST_FAILURE,
                         value: currentCounter.count,
@@ -315,6 +316,7 @@ class Statsbeat {
             }
             if (currentCounter.retryCount.length > 0) {
                 currentCounter.retryCount.forEach((currentCounter) => {
+                    properties = Object.assign({ ...properties, "statusCode": currentCounter.statusCode });
                     this._statbeatMetrics.push({
                         name: Constants.StatsbeatCounter.RETRY_COUNT,
                         value: currentCounter.count,
@@ -325,6 +327,7 @@ class Statsbeat {
             }
             if (currentCounter.throttleCount.length > 0) {
                 currentCounter.throttleCount.forEach((currentCounter) => {
+                    properties = Object.assign({ ...properties, "statusCode": currentCounter.statusCode });
                     this._statbeatMetrics.push({
                         name: Constants.StatsbeatCounter.THROTTLE_COUNT,
                         value: currentCounter.count,
@@ -335,6 +338,7 @@ class Statsbeat {
             }
             if (currentCounter.exceptionCount.length > 0) {
                 currentCounter.exceptionCount.forEach((currentCounter) => {
+                    properties = Object.assign({ ...properties, "exceptionType": currentCounter.exceptionType });
                     this._statbeatMetrics.push({
                         name: Constants.StatsbeatCounter.EXCEPTION_COUNT,
                         value: currentCounter.count,

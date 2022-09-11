@@ -171,35 +171,55 @@ describe("AutoCollection/Statsbeat", () => {
         it("Track counts", (done) => {
             statsBeat.enable(true);
             const sendStub = sandbox.stub(statsBeat, "_sendStatsbeats");
-            statsBeat.countRequest(0, "test", 1, true, 200);
-            statsBeat.countRequest(0, "test", 1, true, 200);
-            statsBeat.countRequest(0, "test", 1, true, 200);
-            statsBeat.countRequest(0, "test", 1, true, 200);
-            statsBeat.countRequest(0, "test", 1, false, 200);
-            statsBeat.countRequest(0, "test", 1, false, 200);
-            statsBeat.countRequest(0, "test", 1, false, 200);
+            statsBeat.countRequest(0, "test", 1, true);
+            statsBeat.countRequest(0, "test", 1, true);
+            statsBeat.countRequest(0, "test", 1, true);
+            statsBeat.countRequest(0, "test", 1, true);
+            statsBeat.countRequest(0, "test", 1, false, 500);
+            statsBeat.countRequest(0, "test", 1, false, 500);
+            statsBeat.countRequest(0, "test", 1, false, 501);
+            statsBeat.countRequest(0, "test", 1, false, 502);
             statsBeat.countRetry(0, "test", 206);
             statsBeat.countRetry(0, "test", 206);
-            statsBeat.countThrottle(0, "test", 206);
+            statsBeat.countRetry(0, "test", 204);
+            statsBeat.countThrottle(0, "test", 402);
+            statsBeat.countThrottle(0, "test", 439);
             statsBeat.countException(0, "test", { name: "Statsbeat", message: "Statsbeat Exception" });
+            statsBeat.countException(0, "test", { name: "Statsbeat2", message: "Second Statsbeat Exception" });
             statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
-                assert.equal(statsBeat["_statbeatMetrics"].length, 6);
+                assert.equal(statsBeat["_statbeatMetrics"].length, 11);
                 let metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Request Success Count")[0];
                 assert.ok(metric, "Request Success Count metric not found");
                 assert.equal(metric.value, 4);
+
                 metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Request Failure Count")[0];
                 assert.ok(metric, "Request Failure Count metric not found");
-                assert.equal(metric.value, 3);
+                assert.equal((<any>(metric.properties))["statusCode"], 500);
+                assert.equal(metric.value, 2);
+                let metricCount = statsBeat["_statbeatMetrics"].filter(f => f.name === "Request Failure Count");
+                assert.equal(metricCount.length, 3);
+
                 metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Retry Count")[0];
                 assert.ok(metric, "Retry Count metric not found");
+                assert.equal((<any>(metric.properties))["statusCode"], 206);
                 assert.equal(metric.value, 2);
+                metricCount = statsBeat["_statbeatMetrics"].filter(f => f.name === "Retry Count");
+                assert.equal(metricCount.length, 2);
+
                 metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Throttle Count")[0];
                 assert.ok(metric, "Throttle Count metric not found");
+                assert.equal((<any>(metric.properties))["statusCode"], 402);
                 assert.equal(metric.value, 1);
+                metricCount = statsBeat["_statbeatMetrics"].filter(f => f.name === "Throttle Count");
+                assert.equal(metricCount.length, 2);
+
                 metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Exception Count")[0];
                 assert.ok(metric, "Exception Count metric not found");
                 assert.equal(metric.value, 1);
+                assert.equal((<any>(metric.properties))["exceptionType"], "Statsbeat");
+                metricCount = statsBeat["_statbeatMetrics"].filter(f => f.name === "Exception Count");
+                assert.equal(metricCount.length, 2);
                 done();
             }).catch((error) => { done(error); });
         });
