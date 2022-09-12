@@ -3,6 +3,16 @@ export interface AgentLogger {
     error(message?: any, ...optional: any[]): void;
 }
 
+export const DiagnosticMessageId = {
+    "attachSuccessful": "3000",
+    "sdkExists": "3001",
+    "missingIkey": "3002",
+    "setupAlreadyCalled": "3003",
+    "prefixFailed": "3004",
+    "aadEnabled": "3005",
+    "unknownError": "3006",
+}
+
 export const enum SeverityLevel {
     ERROR = "ERROR",
     WARN = "WARN",
@@ -13,17 +23,17 @@ export interface DiagnosticLog {
     /**
      * UTC
      */
-    time: string;
+    time?: string;
 
     /**
      * Log severity, INFO, WARN, ERROR
      */
-    level: SeverityLevel;
+    level?: SeverityLevel;
 
     /**
      * The logger writing this message. Usually the fully-qualified class or package name
      */
-    logger: string;
+    logger?: string;
 
     /**
      * The log message

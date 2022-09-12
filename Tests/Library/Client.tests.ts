@@ -113,6 +113,13 @@ describe("Library/TelemetryClient", () => {
             };
             assert.ok(client.getAuthorizationHandler(client.config));
         });
+
+        it("should throw if no iKey is available", () => {
+            var env = {};
+            process.env = env;
+            assert.throws(() => new Client());
+        });
+
     });
 
     describe("#trackEvent()", () => {
