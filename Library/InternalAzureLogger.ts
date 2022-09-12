@@ -98,12 +98,16 @@ class InternalAzureLogger {
         try {
             await FileSystemHelper.accessAsync(this._fileFullPath, fs.constants.F_OK);
         }
-        catch (err) {
+        catch (appendError) {
             // No file create one
-            await FileSystemHelper.appendFileAsync(this._fileFullPath, data).catch((appendError) => {
+            try {
+                await FileSystemHelper.appendFileAsync(this._fileFullPath, data);
+                return;
+            }
+            catch (err) {
                 console.log(this.TAG, "Failed to put log into file: " + (appendError && appendError.message));
-            });
-            return;
+                return;
+            }
         }
         try {
             // Check size

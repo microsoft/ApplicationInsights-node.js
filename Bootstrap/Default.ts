@@ -6,6 +6,7 @@ import Constants = require("../Declarations/Constants");
 import { StatusLogger } from "./StatusLogger";
 import { DiagnosticLogger } from "./DiagnosticLogger";
 import Config = require("../Library/Config");
+import { DiagnosticLog, DiagnosticMessageId } from "./DataModel";
 
 // Private configuration vars
 let _appInsights: typeof types | null;
@@ -51,17 +52,22 @@ export function setupAndStart(aadTokenCredential?: azureCore.TokenCredential): t
             ...StatusLogger.DEFAULT_STATUS,
             AgentInitializedSuccessfully: false,
             SDKPresent: true,
-            Reason: "SDK already exists"
+            Reason: "Application Insights SDK already exists."
         })
         return null;
     }
     if (!defaultConfig.instrumentationKey) {
-        const message = "Application Insights wanted to be started, but no Connection String was provided";
-        _logger.logError(message);
+        const diagnosticLog: DiagnosticLog = {
+            message: "Application Insights wanted to be started, but no Connection String was provided",
+            properties: {
+                "msgId": DiagnosticMessageId.missingIkey
+            }
+        };
+        _logger.logError(diagnosticLog);
         _statusLogger.logStatus({
             ...StatusLogger.DEFAULT_STATUS,
             AgentInitializedSuccessfully: false,
-            Reason: message
+            Reason: diagnosticLog.message
         });
         return null;
     }
@@ -70,7 +76,13 @@ export function setupAndStart(aadTokenCredential?: azureCore.TokenCredential): t
         _appInsights = require("../applicationinsights");
         if (_appInsights.defaultClient) {
             // setupAndStart was already called, return the result
-            _logger.logError("Setup was attempted on the Application Insights Client multiple times. Aborting and returning the first client instance");
+            const diagnosticLog: DiagnosticLog = {
+                message: "Setup was attempted on the Application Insights Client multiple times. Aborting and returning the first client instance.",
+                properties: {
+                    "msgId": DiagnosticMessageId.setupAlreadyCalled
+                }
+            };
+            _logger.logError(diagnosticLog);
             return _appInsights;
         }
 
@@ -79,7 +91,14 @@ export function setupAndStart(aadTokenCredential?: azureCore.TokenCredential): t
                 var appInsightsSDKVersion = _appInsights.defaultClient.context.keys.internalSdkVersion;
                 envelope.tags[appInsightsSDKVersion] = _prefix + envelope.tags[appInsightsSDKVersion];
             } catch (e) {
-                _logger.logError("Error prefixing SDK version", e);
+                const diagnosticLog: DiagnosticLog = {
+                    message: "Error prefixing SDK version.",
+                    exception: e,
+                    properties: {
+                        "msgId": DiagnosticMessageId.prefixFailed
+                    }
+                };
+                _logger.logError(diagnosticLog);
             }
             return true;
         }
@@ -101,7 +120,13 @@ export function setupAndStart(aadTokenCredential?: azureCore.TokenCredential): t
         _appInsights.defaultClient.addTelemetryProcessor(prefixInternalSdkVersion);
         _appInsights.defaultClient.addTelemetryProcessor(copyOverPrefixInternalSdkVersionToHeartBeatMetric);
         if (aadTokenCredential) {
-            _logger.logMessage("Using AAD Token Credential");
+            const diagnosticLog: DiagnosticLog = {
+                message: "Application Insights using AAD Token Credential.",
+                properties: {
+                    "msgId": DiagnosticMessageId.aadEnabled
+                }
+            };
+            _logger.logMessage(diagnosticLog);
             _appInsights.defaultClient.config.aadTokenCredential = aadTokenCredential;
         }
 
@@ -113,13 +138,26 @@ export function setupAndStart(aadTokenCredential?: azureCore.TokenCredential): t
         }
 
         // Agent successfully instrumented the SDK
-        _logger.logMessage("Application Insights was started");
+        const diagnosticLog: DiagnosticLog = {
+            message: "Application Insights was started succesfully.",
+            properties: {
+                "msgId": DiagnosticMessageId.attachSuccessful
+            }
+        };
+        _logger.logMessage(diagnosticLog);
         _statusLogger.logStatus({
             ...StatusLogger.DEFAULT_STATUS,
             AgentInitializedSuccessfully: true
         });
     } catch (e) {
-        _logger.logError("Error setting up Application Insights", e);
+        const diagnosticLog: DiagnosticLog = {
+            message: "Error setting up Application Insights.",
+            exception: e,
+            properties: {
+                "msgId": DiagnosticMessageId.unknownError
+            }
+        };
+        _logger.logError(diagnosticLog);
         _statusLogger.logStatus({
             ...StatusLogger.DEFAULT_STATUS,
             AgentInitializedSuccessfully: false,
@@ -128,3 +166,4 @@ export function setupAndStart(aadTokenCredential?: azureCore.TokenCredential): t
     }
     return _appInsights;
 }
+

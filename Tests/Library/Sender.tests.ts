@@ -167,10 +167,10 @@ describe("Library/Sender", () => {
                 itemsReceived: 4,
                 errors: [{
                     index: 0,
-                    statusCode: 408,
+                    statusCode: 429,
                     message: ""
                 }, {
-                    index: 2,
+                    index: 1,
                     statusCode: 123,
                     message: ""
                 }]
