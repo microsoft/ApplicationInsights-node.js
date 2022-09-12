@@ -118,7 +118,7 @@ class Statsbeat {
         this._instrumentation &= ~instrumentation;
     }
 
-    public countRequest(endpoint: number, host: string, duration: number, success: boolean) {
+    public countRequest(endpoint: number, host: string, duration: number, success: boolean, statusCode?: number) {
         if (!this.isEnabled()) {
             return;
         }
@@ -126,35 +126,58 @@ class Statsbeat {
         counter.totalRequestCount++;
         counter.intervalRequestExecutionTime += duration;
         if (success === false) {
-            counter.totalFailedRequestCount++;
+            if (!statusCode) {
+                return;
+            }
+            let currentStatusCounter = counter.totalFailedRequestCount.find((statusCounter) => statusCode === statusCounter.statusCode);
+            if (currentStatusCounter) {
+                currentStatusCounter.count++;
+            } else {
+                counter.totalFailedRequestCount.push({ statusCode: statusCode, count: 1 });
+            }
         }
         else {
             counter.totalSuccesfulRequestCount++;
         }
     }
 
-    public countException(endpoint: number, host: string) {
+    public countException(endpoint: number, host: string, exceptionType: Error) {
         if (!this.isEnabled()) {
             return;
         }
         let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
-        counter.exceptionCount++;
+        let currentErrorCounter = counter.exceptionCount.find((exceptionCounter) => exceptionType.name === exceptionCounter.exceptionType);
+        if (currentErrorCounter) {
+            currentErrorCounter.count++;
+        } else {
+            counter.exceptionCount.push({ exceptionType: exceptionType.name, count: 1 });
+        }
     }
 
-    public countThrottle(endpoint: number, host: string) {
+    public countThrottle(endpoint: number, host: string, statusCode: number) {
         if (!this.isEnabled()) {
             return;
         }
         let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
-        counter.throttleCount++;
+        let currentStatusCounter = counter.throttleCount.find((statusCounter) => statusCode === statusCounter.statusCode);
+        if (currentStatusCounter) {
+            currentStatusCounter.count++;
+        } else {
+            counter.throttleCount.push({ statusCode: statusCode, count: 1 });
+        }
     }
 
-    public countRetry(endpoint: number, host: string) {
+    public countRetry(endpoint: number, host: string, statusCode: number) {
         if (!this.isEnabled()) {
             return;
         }
         let counter: Network.NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
-        counter.retryCount++;
+        let currentStatusCounter = counter.retryCount.find((statusCounter) => statusCode === statusCounter.statusCode);
+        if (currentStatusCounter) {
+            currentStatusCounter.count++;
+        } else {
+            counter.retryCount.push({ statusCode: statusCode, count: 1 });
+        }
     }
 
     public async trackShortIntervalStatsbeats() {
@@ -234,8 +257,18 @@ class Statsbeat {
             currentCounter.lastIntervalRequestExecutionTime = currentCounter.intervalRequestExecutionTime; // reset
             if (intervalRequests > 0) {
                 // Add extra properties
-                let properties = Object.assign({ "endpoint": this._networkStatsbeatCollection[i].endpoint, "host": this._networkStatsbeatCollection[i].host }, commonProperties);
-                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_DURATION, value: averageRequestExecutionTime, properties: properties });
+                let properties = Object.assign(
+                    {
+                        "endpoint": this._networkStatsbeatCollection[i].endpoint,
+                        "host": this._networkStatsbeatCollection[i].host
+                    },
+                    commonProperties
+                );
+                this._statbeatMetrics.push({
+                    name: Constants.StatsbeatCounter.REQUEST_DURATION,
+                    value: averageRequestExecutionTime,
+                    properties: properties
+                });
             }
             // Set last counters
             currentCounter.lastRequestCount = currentCounter.totalRequestCount;
@@ -261,26 +294,61 @@ class Statsbeat {
     private _trackRequestsCount(commonProperties: {}) {
         for (let i = 0; i < this._networkStatsbeatCollection.length; i++) {
             var currentCounter = this._networkStatsbeatCollection[i];
-            let properties = Object.assign({ "endpoint": currentCounter.endpoint, "host": currentCounter.host }, commonProperties);
+            let properties = Object.assign(
+                { "endpoint": currentCounter.endpoint, "host": currentCounter.host },
+                commonProperties
+            );
             if (currentCounter.totalSuccesfulRequestCount > 0) {
-                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_SUCCESS, value: currentCounter.totalSuccesfulRequestCount, properties: properties });
+                this._statbeatMetrics.push({
+                        name: Constants.StatsbeatCounter.REQUEST_SUCCESS,
+                        value: currentCounter.totalSuccesfulRequestCount,
+                        properties: properties
+                });
                 currentCounter.totalSuccesfulRequestCount = 0; //Reset
             }
-            if (currentCounter.totalFailedRequestCount > 0) {
-                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.REQUEST_FAILURE, value: currentCounter.totalFailedRequestCount, properties: properties });
-                currentCounter.totalFailedRequestCount = 0; //Reset
+            if (currentCounter.totalFailedRequestCount.length > 0) {
+                currentCounter.totalFailedRequestCount.forEach((currentCounter) => {
+                    properties = Object.assign({ ...properties, "statusCode": currentCounter.statusCode });
+                    this._statbeatMetrics.push({
+                        name: Constants.StatsbeatCounter.REQUEST_FAILURE,
+                        value: currentCounter.count,
+                        properties: properties
+                    });
+                });
+                currentCounter.totalFailedRequestCount = []; //Reset
             }
-            if (currentCounter.retryCount > 0) {
-                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.RETRY_COUNT, value: currentCounter.retryCount, properties: properties });
-                currentCounter.retryCount = 0; //Reset
+            if (currentCounter.retryCount.length > 0) {
+                currentCounter.retryCount.forEach((currentCounter) => {
+                    properties = Object.assign({ ...properties, "statusCode": currentCounter.statusCode });
+                    this._statbeatMetrics.push({
+                        name: Constants.StatsbeatCounter.RETRY_COUNT,
+                        value: currentCounter.count,
+                        properties: properties
+                    });
+                });
+                currentCounter.retryCount = []; //Reset
             }
-            if (currentCounter.throttleCount > 0) {
-                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.THROTTLE_COUNT, value: currentCounter.throttleCount, properties: properties });
-                currentCounter.throttleCount = 0; //Reset
+            if (currentCounter.throttleCount.length > 0) {
+                currentCounter.throttleCount.forEach((currentCounter) => {
+                    properties = Object.assign({ ...properties, "statusCode": currentCounter.statusCode });
+                    this._statbeatMetrics.push({
+                        name: Constants.StatsbeatCounter.THROTTLE_COUNT,
+                        value: currentCounter.count,
+                        properties: properties
+                    });
+                });
+                currentCounter.throttleCount = []; //Reset
             }
-            if (currentCounter.exceptionCount > 0) {
-                this._statbeatMetrics.push({ name: Constants.StatsbeatCounter.EXCEPTION_COUNT, value: currentCounter.exceptionCount, properties: properties });
-                currentCounter.exceptionCount = 0; //Reset
+            if (currentCounter.exceptionCount.length > 0) {
+                currentCounter.exceptionCount.forEach((currentCounter) => {
+                    properties = Object.assign({ ...properties, "exceptionType": currentCounter.exceptionType });
+                    this._statbeatMetrics.push({
+                        name: Constants.StatsbeatCounter.EXCEPTION_COUNT,
+                        value: currentCounter.count,
+                        properties: properties
+                    });
+                });
+                currentCounter.exceptionCount = []; //Reset
             }
         }
     }

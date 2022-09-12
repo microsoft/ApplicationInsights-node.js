@@ -450,6 +450,7 @@ describe("Library/Sender", () => {
         let config = new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333");
         let statsbeat = new Statsbeat(config);
         let statsbeatSender = new Sender(config, null, null, null, statsbeat);
+        let statsbeatError: Error = {name: "Statsbeat", message: "Statsbeat error" };
 
         it("Succesful requests", (done) => {
             var statsbeatSpy = sandbox.spy(statsbeat, "countRequest");
@@ -474,6 +475,7 @@ describe("Library/Sender", () => {
                 assert.equal(statsbeatSpy.args[0][1], "dc.services.visualstudio.com"); // Endpoint
                 assert.ok(!isNaN(statsbeatSpy.args[0][2])); // Duration
                 assert.equal(statsbeatSpy.args[0][3], false); // Failed
+                assert.equal(statsbeatSpy.args[0][4], 400);
                 done();
             });
         });
@@ -486,6 +488,7 @@ describe("Library/Sender", () => {
             statsbeatSender.send([testEnvelope], () => {
                 assert.ok(statsbeatSpy.calledOnce);
                 assert.ok(retrySpy.calledOnce);
+                assert.equal(retrySpy.args[0][2], 206);
                 done();
             });
         });
@@ -498,6 +501,7 @@ describe("Library/Sender", () => {
             statsbeatSender.send([testEnvelope], () => {
                 assert.ok(statsbeatSpy.notCalled);
                 assert.ok(throttleSpy.calledOnce);
+                assert.equal(throttleSpy.args[0][2], 439);
                 done();
             });
         });
@@ -583,9 +587,10 @@ describe("Library/Sender", () => {
             statsbeatSender.setDiskRetryMode(false);
             var statsbeatSpy = sandbox.spy(statsbeat, "countRequest");
             var exceptionSpy = sandbox.spy(statsbeat, "countException");
-            nockScope = interceptor.replyWithError("Test Error");
+            nockScope = interceptor.replyWithError(statsbeatError);
             statsbeatSender.send([testEnvelope], () => {
                 assert.equal(statsbeatSpy.callCount, 0);
+                assert.equal(exceptionSpy.args[0][2], statsbeatError);
                 assert.ok(exceptionSpy.calledOnce);
                 done();
             });
