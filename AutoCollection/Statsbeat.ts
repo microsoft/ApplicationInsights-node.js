@@ -126,6 +126,9 @@ class Statsbeat {
         counter.totalRequestCount++;
         counter.intervalRequestExecutionTime += duration;
         if (success === false) {
+            if (!statusCode) {
+                return;
+            }
             let currentStatusCounter = counter.totalFailedRequestCount.find((statusCounter) => statusCode === statusCounter.statusCode);
             if (currentStatusCounter) {
                 currentStatusCounter.count++;
