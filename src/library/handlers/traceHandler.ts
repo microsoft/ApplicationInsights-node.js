@@ -111,7 +111,9 @@ export class TraceHandler {
         if ((this._config.enableAutoCollectPreAggregatedMetrics || this._config.enableAutoCollectPerformance) && this._metricHandler) {
             const instrumentations = this._metricHandler.getHttpMetricInstrumentations();
             instrumentations.forEach(instrumentation => {
-                this.addInstrumentation(instrumentation);
+                if (instrumentation) {
+                    this.addInstrumentation(instrumentation);
+                }
             });
         }
         if (this._config.enableAutoCollectRequests || this._config.enableAutoCollectDependencies) {

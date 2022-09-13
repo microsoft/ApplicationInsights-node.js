@@ -83,15 +83,14 @@ export class MetricHandler {
         this._standardMetricsHandler?.getHttpMetricsInstrumentation()];
     }
 
-
     public countException(dimensions: IMetricExceptionDimensions): void {
-        this._liveMetricsHandler.getExceptionMetrics().countException(dimensions);
-        this._standardMetricsHandler.getExceptionMetrics().countException(dimensions);
+        this._liveMetricsHandler?.getExceptionMetrics().countException(dimensions);
+        this._standardMetricsHandler?.getExceptionMetrics().countException(dimensions);
     }
 
     public countTrace(dimensions: IMetricTraceDimensions): void {
-        this._liveMetricsHandler.getTraceMetrics().countTrace(dimensions);
-        this._standardMetricsHandler.getTraceMetrics().countTrace(dimensions);
+        this._liveMetricsHandler?.getTraceMetrics().countTrace(dimensions);
+        this._standardMetricsHandler?.getTraceMetrics().countTrace(dimensions);
     }
 
     public async flush(): Promise<void> {

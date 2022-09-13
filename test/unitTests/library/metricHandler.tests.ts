@@ -27,7 +27,6 @@ describe("Library/MetricHandler", () => {
             let stub = sinon.stub(handler["_perfCounterMetricsHandler"], "start");
             handler.start();
             assert.ok(stub.calledOnce, "Enable called");
-            assert.equal(stub.args[0], true);
         });
 
 
@@ -37,7 +36,6 @@ describe("Library/MetricHandler", () => {
             let stub = sinon.stub(handler["_standardMetricsHandler"], "start");
             handler.start();
             assert.ok(stub.calledOnce, "start called");
-            assert.equal(stub.args[0], true);
         });
 
         it("heartbeat metrics enablement during start", () => {
@@ -46,7 +44,6 @@ describe("Library/MetricHandler", () => {
             let stub = sinon.stub(handler["_heartbeatHandler"], "start");
             handler.start();
             assert.ok(stub.calledOnce, "start called");
-            assert.equal(stub.args[0], true);
         });
     });
 

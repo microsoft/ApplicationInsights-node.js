@@ -48,8 +48,7 @@ describe("#StandardMetricsHandler", () => {
         const scopeMetrics = resourceMetrics.scopeMetrics;
         assert.strictEqual(scopeMetrics.length, 1, 'scopeMetrics count');
         const metrics = scopeMetrics[0].metrics;
-        assert.strictEqual(JSON.stringify(metrics), "SUPER PRRTTTT");
-        assert.strictEqual(metrics.length, 4, 'metrics count');
+        assert.strictEqual(metrics.length, 2, 'metrics count');
        
         assert.equal(metrics[0].descriptor.name, StandardMetric.EXCEPTIONS);
         assert.equal(metrics[0].descriptor.type, InstrumentType.OBSERVABLE_GAUGE);
