@@ -1,4 +1,4 @@
-import { MetricData } from "@opentelemetry/sdk-metrics-base";
+import { MetricData } from "@opentelemetry/sdk-metrics";
 import * as assert from "assert";
 import * as sinon from "sinon";
 import { PerformanceCounterMetricsHandler } from "../../../src/autoCollection";

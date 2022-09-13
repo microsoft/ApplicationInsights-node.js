@@ -6,7 +6,6 @@ import { HeartBeatHandler } from "../../../src/autoCollection/metrics/handlers/h
 import { Config } from "../../../src/library/configuration";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 import { ResourceManager } from "../../../src/library/handlers";
-import { MetricData } from "@opentelemetry/sdk-metrics-base";
 import { HeartBeatMetricName } from "../../../src/declarations/constants";
 
 describe("AutoCollection/HeartBeat", () => {

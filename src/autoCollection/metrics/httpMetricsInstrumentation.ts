@@ -72,7 +72,7 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
       metric.attributes["_MS.IsAutocollected"] = "True";
       let durationMs = Date.now() - metric.startTime;
       let success = false;
-      const statusCode = parseInt(metric.attributes[SemanticAttributes.HTTP_STATUS_CODE]);
+      const statusCode = parseInt(String(metric.attributes[SemanticAttributes.HTTP_STATUS_CODE]));
       if (statusCode !== NaN) {
         success = (0 < statusCode) && (statusCode < 500);
       }

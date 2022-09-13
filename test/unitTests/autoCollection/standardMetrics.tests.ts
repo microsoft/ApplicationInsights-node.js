@@ -1,4 +1,4 @@
-import { InstrumentType } from "@opentelemetry/sdk-metrics-base";
+import { InstrumentType } from "@opentelemetry/sdk-metrics";
 import * as assert from "assert";
 import * as sinon from "sinon";
 

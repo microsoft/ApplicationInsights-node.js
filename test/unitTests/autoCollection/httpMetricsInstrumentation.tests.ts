@@ -1,7 +1,7 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
 import { AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
-import { DataPointType, MeterProvider, PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics-base";
+import { DataPointType, MeterProvider, PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 
 import { HttpMetricsInstrumentation } from "../../../src/autoCollection/metrics/httpMetricsInstrumentation";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
@@ -98,7 +98,7 @@ describe("AutoCollection/HttpMetricsInstrumentation", () => {
     it("Server/Client Metric Duration", async () => {
         let mockExport = sandbox.stub(exporter, "export");
         await makeHttpRequest();
-        await new Promise(resolve => setTimeout(resolve, 120));
+        await new Promise(resolve => setTimeout(resolve, 150));
         assert.ok(mockExport.called);
         let resourceMetrics = mockExport.args[0][0];
         const scopeMetrics = resourceMetrics.scopeMetrics;

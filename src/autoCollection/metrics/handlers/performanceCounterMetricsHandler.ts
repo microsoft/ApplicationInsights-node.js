@@ -3,7 +3,7 @@
 import { RequestOptions } from "https";
 import { AzureExporterConfig, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
 import { Meter } from "@opentelemetry/api-metrics";
-import { DropAggregation, MeterProvider, MeterProviderOptions, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions, View } from "@opentelemetry/sdk-metrics-base";
+import { DropAggregation, MeterProvider, MeterProviderOptions, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions, View } from "@opentelemetry/sdk-metrics";
 import { HttpMetricsInstrumentationConfig, NativeMetricsCounter, PerformanceCounter, QuickPulseCounter } from "../types";
 import { HttpMetricsInstrumentation } from "../httpMetricsInstrumentation";
 import { ProcessMetrics } from "../processMetrics";
