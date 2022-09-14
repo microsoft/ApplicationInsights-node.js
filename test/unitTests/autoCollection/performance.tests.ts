@@ -24,18 +24,20 @@ describe("PerformanceCounterMetricsHandler", () => {
 
     describe("#Metrics", () => {
         it("should create instruments", () => {
-            assert.ok(autoCollect.getProcessMetrics()["_memoryPrivateBytesGauge"], "_dependencyDurationGauge not available");
-            assert.ok(autoCollect.getProcessMetrics()["_memoryAvailableBytesGauge"], "_dependencyDurationGauge not available");
-            assert.ok(autoCollect.getProcessMetrics()["_processorTimeGauge"], "_dependencyDurationGauge not available");
-            assert.ok(autoCollect.getProcessMetrics()["_processTimeGauge"], "_dependencyDurationGauge not available");
+            assert.ok(autoCollect.getHttpMetricsInstrumentation()["_httpServerDurationHistogram"], "_httpServerDurationHistogram not available");
+            assert.ok(autoCollect.getProcessMetrics()["_memoryPrivateBytesGauge"], "_memoryPrivateBytesGauge not available");
+            assert.ok(autoCollect.getProcessMetrics()["_memoryAvailableBytesGauge"], "_memoryAvailableBytesGauge not available");
+            assert.ok(autoCollect.getProcessMetrics()["_processorTimeGauge"], "_processorTimeGauge not available");
+            assert.ok(autoCollect.getProcessMetrics()["_processTimeGauge"], "_processTimeGauge not available");
             assert.ok(autoCollect.getRequestMetrics()["_requestRateGauge"], "_dependencyDurationGauge not available");
-            assert.ok(autoCollect.getRequestMetrics()["_requestDurationGauge"], "_dependencyDurationGauge not available");
-            assert.ok(autoCollect.getProcessMetrics()["_memoryCommittedBytesGauge"], "_memoryCommittedBytesGauge not available");
-            assert.ok(autoCollect.getRequestMetrics()["_requestFailureRateGauge"], "_requestFailureRateGauge not available");
-            // assert.ok(autoCollect.getDependencyMetrics()["_dependencyFailureRateGauge"], "_dependencyFailureRateGauge not available");
-            // assert.ok(autoCollect.getDependencyMetrics()["_dependencyRateGauge"], "_dependencyRateGauge not available");
-            // assert.ok(autoCollect.getDependencyMetrics()["_dependencyDurationGauge"], "_dependencyDurationGauge not available");
-            // assert.ok(autoCollect.getExceptionMetrics()["_exceptionsGauge"], "_exceptionRateGauge not available");
+
+            assert.ok(autoCollect["_nativeMetrics"]["_eventLoopHistogram"], "_eventLoopHistogram not available");
+            assert.ok(autoCollect["_nativeMetrics"]["_garbageCollectionScavenge"], "_garbageCollectionScavenge not available");
+            assert.ok(autoCollect["_nativeMetrics"]["_garbageCollectionMarkSweepCompact"], "_garbageCollectionMarkSweepCompact not available");
+            assert.ok(autoCollect["_nativeMetrics"]["_garbageCollectionIncrementalMarking"], "_garbageCollectionIncrementalMarking not available");
+            assert.ok(autoCollect["_nativeMetrics"]["_heapMemoryTotalGauge"], "_heapMemoryTotalGauge not available");
+            assert.ok(autoCollect["_nativeMetrics"]["_heapMemoryUsageGauge"], "_heapMemoryUsageGauge not available");
+            assert.ok(autoCollect["_nativeMetrics"]["_memoryUsageNonHeapGauge"], "_memoryUsageNonHeapGauge not available");
         });
 
         it("should observe instruments during collection", async () => {
@@ -54,6 +56,7 @@ describe("PerformanceCounterMetricsHandler", () => {
             assert.equal(metrics[3].descriptor.name, PerformanceCounter.PROCESS_TIME);
             assert.equal(metrics[4].descriptor.name, PerformanceCounter.REQUEST_RATE);
             assert.equal(metrics[5].descriptor.name, PerformanceCounter.REQUEST_DURATION);
+
             assert.equal(metrics[6].descriptor.name, NativeMetricsCounter.EVENT_LOOP_CPU);
             assert.equal(metrics[7].descriptor.name, NativeMetricsCounter.GARBAGE_COLLECTION_SCAVENGE);
             assert.equal(metrics[8].descriptor.name, NativeMetricsCounter.GARBAGE_COLLECTION_SWEEP_COMPACT);

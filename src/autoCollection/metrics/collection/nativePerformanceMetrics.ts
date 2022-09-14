@@ -1,7 +1,7 @@
 import { Meter, ObservableGauge, ObservableResult, Histogram } from "@opentelemetry/api-metrics";
-import { GarbageCollectionType, NativeMetricsCounter } from "./types";
-import { Logger } from "../../library/logging";
-import { IBaseConfig, IDisabledExtendedMetrics } from "../../library/configuration/interfaces";
+import { GarbageCollectionType, NativeMetricsCounter } from "../types";
+import { Logger } from "../../../library/logging";
+import { IBaseConfig, IDisabledExtendedMetrics } from "../../../library/configuration/interfaces";
 
 
 export class NativePerformanceMetrics {

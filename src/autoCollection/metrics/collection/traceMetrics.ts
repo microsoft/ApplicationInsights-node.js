@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import { Meter, MetricAttributes, ObservableCallback, ObservableGauge, ObservableResult, ValueType } from "@opentelemetry/api-metrics";
-import { AggregatedMetricCounter, StandardMetric, IStandardMetricBaseDimensions, IMetricTraceDimensions, MetricId } from "./types";
+import { AggregatedMetricCounter, IStandardMetricBaseDimensions, IMetricTraceDimensions, MetricId, MetricName } from "../types";
 
 
 export class TraceMetrics {
@@ -14,7 +14,7 @@ export class TraceMetrics {
     constructor(meter: Meter) {
         this._meter = meter;
         this._traceCountersCollection = [];
-        this._tracesGauge = this._meter.createObservableGauge(StandardMetric.TRACES, { valueType: ValueType.DOUBLE });
+        this._tracesGauge = this._meter.createObservableGauge(MetricName.TRACE_RATE, { valueType: ValueType.DOUBLE });
         this._tracesGaugeCallback = this._getTraces.bind(this);
     }
 

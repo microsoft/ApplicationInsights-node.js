@@ -4,10 +4,10 @@ import { MeterProvider, MeterProviderOptions, PeriodicExportingMetricReader, Per
 import { RequestOptions } from "https";
 import { Config } from "../../../library";
 import { ResourceManager } from "../../../library/handlers";
-import { ExceptionMetrics } from "../exceptionMetrics";
-import { HttpMetricsInstrumentation } from "../httpMetricsInstrumentation";
-import { TraceMetrics } from "../traceMetrics";
-import { HttpMetricsInstrumentationConfig, StandardMetric } from "../types";
+import { ExceptionMetrics } from "../collection/exceptionMetrics";
+import { HttpMetricsInstrumentation } from "../collection/httpMetricsInstrumentation";
+import { TraceMetrics } from "../collection/traceMetrics";
+import { HttpMetricsInstrumentationConfig, MetricName, StandardMetric } from "../types";
 
 
 export class StandardMetricsHandler {
@@ -58,7 +58,6 @@ export class StandardMetricsHandler {
     public start() {
         this._exceptionMetrics.enable(true);
         this._traceMetrics.enable(true);
-        // TODO: Enable/Disable instrumentation
     }
 
     public shutdown() {
@@ -81,21 +80,21 @@ export class StandardMetricsHandler {
         let views = [];
         views.push(new View({
             name: StandardMetric.REQUESTS,
-            instrumentName: "http.server.duration",
+            instrumentName: MetricName.REQUEST_DURATION,
             attributeKeys: []
         }));
         views.push(new View({
             name: StandardMetric.DEPENDENCIES,
-            instrumentName: "http.client.duration",
+            instrumentName: MetricName.DEPENDENCY_DURATION,
             attributeKeys: []
         }));
         views.push(new View({
             name: StandardMetric.EXCEPTIONS,
-            instrumentName: StandardMetric.EXCEPTIONS
+            instrumentName: MetricName.EXCEPTION_RATE
         }));
         views.push(new View({
             name: StandardMetric.TRACES,
-            instrumentName: StandardMetric.TRACES
+            instrumentName: MetricName.TRACE_RATE
         }));
         return views;
     }

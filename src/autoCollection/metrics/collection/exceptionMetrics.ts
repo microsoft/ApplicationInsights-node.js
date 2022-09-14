@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import { Meter, MetricAttributes, ObservableCallback, ObservableGauge, ObservableResult, ValueType } from "@opentelemetry/api-metrics";
-import { AggregatedMetricCounter, StandardMetric, IStandardMetricBaseDimensions, IMetricExceptionDimensions, MetricId } from "./types";
+import { AggregatedMetricCounter, IStandardMetricBaseDimensions, IMetricExceptionDimensions, MetricId, MetricName } from "../types";
 
 
 export class ExceptionMetrics {
@@ -14,7 +14,7 @@ export class ExceptionMetrics {
     constructor(meter: Meter) {
         this._meter = meter;
         this._exceptionCountersCollection = [];
-        this._exceptionsGauge = this._meter.createObservableGauge(StandardMetric.EXCEPTIONS, { valueType: ValueType.DOUBLE });
+        this._exceptionsGauge = this._meter.createObservableGauge(MetricName.EXCEPTION_RATE, { valueType: ValueType.DOUBLE });
         this._exceptionsGaugeCallback = this._getExceptions.bind(this);
     }
 

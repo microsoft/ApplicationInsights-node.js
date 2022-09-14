@@ -21,7 +21,7 @@ import {
 import { ResourceManager } from "./resourceManager";
 import { HeartBeatHandler } from "../../autoCollection/metrics/handlers/heartBeatHandler";
 import { Util } from "../util";
-import { HttpMetricsInstrumentation } from "../../autoCollection/metrics/httpMetricsInstrumentation";
+import { HttpMetricsInstrumentation } from "../../autoCollection/metrics/collection/httpMetricsInstrumentation";
 import { IMetricExceptionDimensions, IMetricTraceDimensions } from "../../autoCollection/metrics/types";
 import { LiveMetricsHandler } from "../../autoCollection/metrics/handlers/liveMetricsHandler";
 import { MetricExporter } from "../exporters";
@@ -89,7 +89,6 @@ export class MetricHandler {
     }
 
     public countTrace(dimensions: IMetricTraceDimensions): void {
-        this._liveMetricsHandler?.getTraceMetrics().countTrace(dimensions);
         this._standardMetricsHandler?.getTraceMetrics().countTrace(dimensions);
     }
 

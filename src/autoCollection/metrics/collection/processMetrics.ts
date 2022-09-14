@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 import * as os from "os";
 import { Meter, ObservableCallback, ObservableGauge, ObservableResult, ValueType } from "@opentelemetry/api-metrics";
-import { QuickPulseCounter, PerformanceCounter } from "./types";
+import { MetricName } from "../types";
 
 
 export class ProcessMetrics {
@@ -29,11 +29,11 @@ export class ProcessMetrics {
 
     constructor(meter: Meter) {
         this._meter = meter;
-        this._memoryPrivateBytesGauge = this._meter.createObservableGauge(PerformanceCounter.PRIVATE_BYTES, { description: "Amount of memory process has used in bytes", valueType: ValueType.INT });
-        this._memoryAvailableBytesGauge = this._meter.createObservableGauge(PerformanceCounter.AVAILABLE_BYTES, { description: "Amount of available memory in bytes", valueType: ValueType.INT });
-        this._processorTimeGauge = this._meter.createObservableGauge(PerformanceCounter.PROCESSOR_TIME, { description: "Processor time as a percentage", valueType: ValueType.DOUBLE });
-        this._processTimeGauge = this._meter.createObservableGauge(PerformanceCounter.PROCESS_TIME, { description: "Process CPU usage as a percentage", valueType: ValueType.DOUBLE });
-        this._memoryCommittedBytesGauge = this._meter.createObservableGauge(QuickPulseCounter.COMMITTED_BYTES, { description: "Amount of committed memory in bytes", valueType: ValueType.INT });
+        this._memoryPrivateBytesGauge = this._meter.createObservableGauge(MetricName.PRIVATE_BYTES, { description: "Amount of memory process has used in bytes", valueType: ValueType.INT });
+        this._memoryAvailableBytesGauge = this._meter.createObservableGauge(MetricName.AVAILABLE_BYTES, { description: "Amount of available memory in bytes", valueType: ValueType.INT });
+        this._processorTimeGauge = this._meter.createObservableGauge(MetricName.PROCESSOR_TIME, { description: "Processor time as a percentage", valueType: ValueType.DOUBLE });
+        this._processTimeGauge = this._meter.createObservableGauge(MetricName.PROCESS_TIME, { description: "Process CPU usage as a percentage", valueType: ValueType.DOUBLE });
+        this._memoryCommittedBytesGauge = this._meter.createObservableGauge(MetricName.COMMITTED_BYTES, { description: "Amount of committed memory in bytes", valueType: ValueType.INT });
         this._memoryPrivateBytesGaugeCallback = this._getPrivateMemory.bind(this);
         this._memoryAvailableBytesGaugeCallback = this._getAvailableMemory.bind(this);
         this._processorTimeGaugeCallback = this._getProcessorTime.bind(this);

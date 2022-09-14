@@ -4,14 +4,13 @@ import { RequestOptions } from "https";
 import { AzureExporterConfig, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
 import { Meter } from "@opentelemetry/api-metrics";
 import { DropAggregation, MeterProvider, MeterProviderOptions, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions, View } from "@opentelemetry/sdk-metrics";
-import { HttpMetricsInstrumentationConfig, NativeMetricsCounter, PerformanceCounter, QuickPulseCounter } from "../types";
-import { HttpMetricsInstrumentation } from "../httpMetricsInstrumentation";
-import { ProcessMetrics } from "../processMetrics";
-import { DependencyMetrics } from "../dependencyMetrics";
-import { RequestMetrics } from "../requestMetrics";
+import { HttpMetricsInstrumentationConfig, MetricName, NativeMetricsCounter, PerformanceCounter } from "../types";
+import { HttpMetricsInstrumentation } from "../collection/httpMetricsInstrumentation";
+import { ProcessMetrics } from "../collection/processMetrics";
+import { RequestMetrics } from "../collection/requestMetrics";
 import { Config } from "../../../library";
 import { ResourceManager } from "../../../library/handlers";
-import { getNativeMetricsConfig, NativePerformanceMetrics } from "../nativePerformanceMetrics";
+import { getNativeMetricsConfig, NativePerformanceMetrics } from "../collection/nativePerformanceMetrics";
 import { IDisabledExtendedMetrics } from "../../../library/configuration/interfaces";
 
 
@@ -93,41 +92,51 @@ export class PerformanceCounterMetricsHandler {
         let views = [];
         views.push(new View({
             name: PerformanceCounter.REQUEST_DURATION,
-            instrumentName: "http.server.duration",
+            instrumentName: MetricName.REQUEST_DURATION,
             attributeKeys: [] // Drop all dimensions
         }));
         views.push(new View({
             name: PerformanceCounter.REQUEST_RATE,
-            instrumentName: PerformanceCounter.REQUEST_RATE,
-            attributeKeys: [] // Drop all dimensions
-        }));
-        views.push(new View({
-            name: PerformanceCounter.AVAILABLE_BYTES,
-            instrumentName: PerformanceCounter.AVAILABLE_BYTES
+            instrumentName: MetricName.REQUEST_RATE,
         }));
         views.push(new View({
             name: PerformanceCounter.PRIVATE_BYTES,
-            instrumentName: PerformanceCounter.PRIVATE_BYTES
+            instrumentName: MetricName.PRIVATE_BYTES,
+        }));
+        views.push(new View({
+            name: PerformanceCounter.AVAILABLE_BYTES,
+            instrumentName: MetricName.AVAILABLE_BYTES,
         }));
         views.push(new View({
             name: PerformanceCounter.PROCESSOR_TIME,
-            instrumentName: PerformanceCounter.PROCESSOR_TIME
+            instrumentName: MetricName.PROCESSOR_TIME,
         }));
         views.push(new View({
             name: PerformanceCounter.PROCESS_TIME,
-            instrumentName: PerformanceCounter.PROCESS_TIME
+            instrumentName: MetricName.PROCESS_TIME,
         }));
 
         // Ignore list
         views.push(new View({
-            instrumentName: QuickPulseCounter.COMMITTED_BYTES,
+            instrumentName: MetricName.COMMITTED_BYTES,
             aggregation: new DropAggregation(),
         }));
         views.push(new View({
-            instrumentName: QuickPulseCounter.REQUEST_FAILURE_RATE,
+            instrumentName: MetricName.REQUEST_FAILURE_RATE,
             aggregation: new DropAggregation(),
         }));
-
+        views.push(new View({
+            instrumentName: MetricName.DEPENDENCY_DURATION,
+            aggregation: new DropAggregation(),
+        }));
+        views.push(new View({
+            instrumentName: MetricName.DEPENDENCY_FAILURE_RATE,
+            aggregation: new DropAggregation(),
+        }));
+        views.push(new View({
+            instrumentName: MetricName.DEPENDENCY_RATE,
+            aggregation: new DropAggregation(),
+        }));
         if (nativePerformanceConfig.isEnabled) {
             if (nativePerformanceConfig.disabledMetrics?.gc) {
                 views.push(new View({

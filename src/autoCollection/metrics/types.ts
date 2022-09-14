@@ -4,9 +4,30 @@
 import { IncomingMessage, RequestOptions } from "http";
 
 import { SpanKind } from "@opentelemetry/api";
-import { MetricAttributes } from "@opentelemetry/api-metrics";
+import { MetricAttributes, ValueType } from "@opentelemetry/api-metrics";
 import { InstrumentationConfig } from "@opentelemetry/instrumentation";
 
+
+export enum MetricName {
+  // Memory
+  PRIVATE_BYTES = "PRIVATE_BYTES",
+  AVAILABLE_BYTES = "AVAILABLE_BYTES",
+  COMMITTED_BYTES = "COMMITTED_BYTES",
+  // CPU
+  PROCESSOR_TIME = "PROCESSOR_TIME",
+  PROCESS_TIME = "PROCESS_TIME",
+  // Requests
+  REQUEST_RATE = "REQUEST_RATE",
+  REQUEST_FAILURE_RATE = "REQUEST_FAILURE_RATE",
+  REQUEST_DURATION = "REQUEST_DURATION",
+  DEPENDENCY_RATE = "DEPENDENCY_RATE",
+  DEPENDENCY_FAILURE_RATE = "DEPENDENCY_FAILURE_RATE",
+  DEPENDENCY_DURATION = "DEPENDENCY_DURATION",
+  // Exceptions
+  EXCEPTION_RATE = "EXCEPTION_RATE",
+  // Traces
+  TRACE_RATE = "TRACE_RATE",
+}
 
 export enum PerformanceCounter {
   // Memory
@@ -18,23 +39,6 @@ export enum PerformanceCounter {
   // Requests
   REQUEST_RATE = "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Requests/Sec",
   REQUEST_DURATION = "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Request Execution Time",
-}
-
-export enum StandardMetric {
-  REQUESTS = "requests/duration",
-  DEPENDENCIES = "dependencies/duration",
-  EXCEPTIONS = "Exceptions",
-  TRACES = "Traces",
-}
-
-export enum NativeMetricsCounter {
-  HEAP_MEMORY_USAGE = "Memory Usage (Heap)",
-  HEAP_MEMORY_TOTAL = "Memory Total (Heap)",
-  MEMORY_USAGE_NON_HEAP = "Memory Usage (Non-Heap)",
-  EVENT_LOOP_CPU = "Event Loop CPU Time",
-  GARBAGE_COLLECTION_SCAVENGE = "Scavenge Garbage Collection Duration",
-  GARBAGE_COLLECTION_SWEEP_COMPACT = "MarkSweepCompact Garbage Collection Duration",
-  GARBAGE_COLLECTION_INCREMENTAL_MARKING = "IncrementalMarking Collection Duration",
 }
 
 export enum QuickPulseCounter {
@@ -52,6 +56,23 @@ export enum QuickPulseCounter {
   DEPENDENCY_DURATION = "\\ApplicationInsights\\Dependency Call Duration",
   // Exception
   EXCEPTION_RATE = "\\ApplicationInsights\\Exceptions/Sec",
+}
+
+export enum StandardMetric {
+  REQUESTS = "requests/duration",
+  DEPENDENCIES = "dependencies/duration",
+  EXCEPTIONS = "Exceptions",
+  TRACES = "Traces",
+}
+
+export enum NativeMetricsCounter {
+  HEAP_MEMORY_USAGE = "Memory Usage (Heap)",
+  HEAP_MEMORY_TOTAL = "Memory Total (Heap)",
+  MEMORY_USAGE_NON_HEAP = "Memory Usage (Non-Heap)",
+  EVENT_LOOP_CPU = "Event Loop CPU Time",
+  GARBAGE_COLLECTION_SCAVENGE = "Scavenge Garbage Collection Duration",
+  GARBAGE_COLLECTION_SWEEP_COMPACT = "MarkSweepCompact Garbage Collection Duration",
+  GARBAGE_COLLECTION_INCREMENTAL_MARKING = "IncrementalMarking Collection Duration",
 }
 
 export enum GarbageCollectionType {
@@ -122,7 +143,7 @@ export interface IHttpStandardMetric {
   startTime: number;
   isProcessed: boolean;
   spanKind: SpanKind
-  attributes?: MetricAttributes;
+  attributes: MetricAttributes;
 }
 
 // Names expected in Breeze side for dimensions

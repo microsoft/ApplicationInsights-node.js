@@ -3,7 +3,7 @@ import * as sinon from "sinon";
 import { AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
 import { DataPointType, MeterProvider, PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 
-import { HttpMetricsInstrumentation } from "../../../src/autoCollection/metrics/httpMetricsInstrumentation";
+import { HttpMetricsInstrumentation } from "../../../src/autoCollection/metrics/collection/httpMetricsInstrumentation";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 
 const httpMetricsConfig: HttpMetricsInstrumentationConfig = {
@@ -106,7 +106,7 @@ describe("AutoCollection/HttpMetricsInstrumentation", () => {
         const metrics = scopeMetrics[0].metrics;
         assert.strictEqual(metrics.length, 2, 'metrics count');
         assert.strictEqual(metrics[0].dataPointType, DataPointType.HISTOGRAM);
-        assert.strictEqual(metrics[0].descriptor.name, 'http.server.duration');
+        assert.strictEqual(metrics[0].descriptor.name, 'REQUEST_DURATION');
         assert.strictEqual(metrics[0].dataPoints.length, 1);
         assert.strictEqual((metrics[0].dataPoints[0].value as any).count, 1);
         assert.strictEqual(metrics[0].dataPoints[0].attributes[SemanticAttributes.HTTP_SCHEME], 'http');
@@ -118,7 +118,7 @@ describe("AutoCollection/HttpMetricsInstrumentation", () => {
         assert.strictEqual(metrics[0].dataPoints[0].attributes[SemanticAttributes.NET_HOST_PORT], mockHttpServerPort.toString());
 
         assert.strictEqual(metrics[1].dataPointType, DataPointType.HISTOGRAM);
-        assert.strictEqual(metrics[1].descriptor.name, 'http.client.duration');
+        assert.strictEqual(metrics[1].descriptor.name, 'DEPENDENCY_DURATION');
         assert.strictEqual(metrics[1].dataPoints.length, 1);
         assert.strictEqual((metrics[1].dataPoints[0].value as any).count, 1);
         assert.strictEqual(metrics[1].dataPoints[0].attributes[SemanticAttributes.HTTP_METHOD], 'GET');
