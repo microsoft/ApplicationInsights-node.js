@@ -61,7 +61,6 @@ describe("#StandardMetricsHandler", () => {
         assert.ok(mockExport.called);
         let resourceMetrics = mockExport.args[0][0];
         const scopeMetrics = resourceMetrics.scopeMetrics;
-        assert.equal(JSON.stringify(scopeMetrics), "PRRT");
         assert.strictEqual(scopeMetrics.length, 2, 'scopeMetrics count');
         let metrics = scopeMetrics[0].metrics;
         assert.strictEqual(metrics.length, 2, 'metrics count');
