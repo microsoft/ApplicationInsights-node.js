@@ -1,6 +1,14 @@
 const assert = require('assert');
 const https = require('https');
 const sinon = require('sinon');
+const nock = require('nock');
+
+let nockScope = nock("https://centralus-0.in.applicationinsights.azure.com").post(
+    "/v2.1/track",
+    (body) => {
+        return true;
+    }
+).persist();
 
 // Special embedded test cases for testing if app can close
 if (process.argv.indexOf('embeddedTestCase-AppTerminates1') > -1) {
@@ -20,6 +28,11 @@ if (process.argv.indexOf('embeddedTestCase-AppTerminates1') > -1) {
 }
 
 describe('module', function () {
+
+    after(() => {
+        nock.cleanAll();
+    });
+
     describe('#require', function () {
         it('loads the applicationinsights module', function (done) {
             assert.doesNotThrow(function () { return require('../../../out/src/applicationinsights') });

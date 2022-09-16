@@ -27,7 +27,7 @@ export class HeartBeatHandler {
     private _collectionInterval: number = 900000;
     private _config: Config;
     private _meterProvider: MeterProvider;
-    private _exporter: AzureMonitorMetricExporter;
+    private _azureExporter: AzureMonitorMetricExporter;
     private _metricReader: PeriodicExportingMetricReader;
     private _meter: Meter;
     private _metricGauge: ObservableGauge;
@@ -44,9 +44,9 @@ export class HeartBeatHandler {
             connectionString: config.getConnectionString(),
             aadTokenCredential: config.aadTokenCredential
         };
-        this._exporter = new AzureMonitorMetricExporter(exporterConfig);
+        this._azureExporter = new AzureMonitorMetricExporter(exporterConfig);
         const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
-            exporter: this._exporter as any,
+            exporter: this._azureExporter as any,
             exportIntervalMillis: options?.collectionInterval || this._collectionInterval
         };
         this._metricReader = new PeriodicExportingMetricReader(metricReaderOptions);

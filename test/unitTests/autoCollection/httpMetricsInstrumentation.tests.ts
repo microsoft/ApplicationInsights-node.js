@@ -1,10 +1,19 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
+import * as nock from "nock";
 import { AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
 import { DataPointType, MeterProvider, PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 
 import { HttpMetricsInstrumentation } from "../../../src/autoCollection/metrics/collection/httpMetricsInstrumentation";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
+
+
+nock("https://centralus-0.in.applicationinsights.azure.com").post(
+    "/v2.1/track",
+    (body: string) => {
+        return true;
+    }
+).reply(200, {}).persist();
 
 const httpMetricsConfig: HttpMetricsInstrumentationConfig = {
     ignoreOutgoingRequestHook: (request: any) => {
@@ -42,6 +51,7 @@ describe("AutoCollection/HttpMetricsInstrumentation", () => {
         instrumentation.disable();
         meterProvider.shutdown();
         mockHttpServer.close();
+        nock.cleanAll();
     });
 
     function createMockServer() {

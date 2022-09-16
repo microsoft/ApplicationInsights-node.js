@@ -1,6 +1,4 @@
 import { SpanKind } from "@opentelemetry/api";
-import { InstrumentType } from "@opentelemetry/sdk-metrics";
-import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 import * as assert from "assert";
 import * as sinon from "sinon";
 

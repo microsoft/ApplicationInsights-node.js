@@ -12,10 +12,16 @@ describe("AutoCollection/HeartBeat", () => {
     var sandbox: sinon.SinonSandbox;
     let originalEnv: NodeJS.ProcessEnv;
     let config: Config;
+    let heartbeat: HeartBeatHandler;
 
     before(() => {
         sandbox = sinon.createSandbox();
         config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+        heartbeat = new HeartBeatHandler(config, { collectionInterval: 100 });
+        sandbox.stub(heartbeat["_metricReader"]["_exporter"], "export");
+        sandbox.stub(heartbeat["_azureVm"], "getAzureComputeMetadata").callsFake(() => {
+            return new Promise((resolve, reject) => { resolve({ isVM: true }) });
+        });
     })
 
     beforeEach(() => {
@@ -29,15 +35,12 @@ describe("AutoCollection/HeartBeat", () => {
 
     describe("#Metrics", () => {
         it("should create instruments", () => {
-            let heartBeat = new HeartBeatHandler(config);
-            sandbox.stub(heartBeat["_metricReader"]["_exporter"], "export");
-            assert.ok(heartBeat["_metricGauge"], "_metricGauge not available");
+            assert.ok(heartbeat["_metricGauge"], "_metricGauge not available");
         });
 
         it("should observe instruments during collection", async () => {
-            let heartBeat = new HeartBeatHandler(config, { collectionInterval: 100 });
-            let mockExport = sandbox.stub(heartBeat["_exporter"], "export");
-            await heartBeat.start();
+            let mockExport = sandbox.stub(heartbeat["_azureExporter"], "export");
+            heartbeat.start();
             await new Promise(resolve => setTimeout(resolve, 120));
             assert.ok(mockExport.called);
             let resourceMetrics = mockExport.args[0][0];
@@ -49,10 +52,9 @@ describe("AutoCollection/HeartBeat", () => {
         });
 
         it("should not collect when disabled", async () => {
-            let heartBeat = new HeartBeatHandler(config);
-            let mockExport = sandbox.stub(heartBeat["_exporter"], "export");
-            heartBeat.start();
-            heartBeat.shutdown();
+            let mockExport = sandbox.stub(heartbeat["_azureExporter"], "export");
+            heartbeat.start();
+            heartbeat.shutdown();
             await new Promise(resolve => setTimeout(resolve, 120));
             assert.ok(mockExport.notCalled);
         });
@@ -60,15 +62,13 @@ describe("AutoCollection/HeartBeat", () => {
 
     describe("#_getMachineProperties()", () => {
         it("should read correct web app values from environment variable", (done) => {
-            const heartBeat = new HeartBeatHandler(config);
-            sandbox.stub(heartBeat["_metricReader"]["_exporter"], "export");
             var env1 = <{ [id: string]: string }>{};
             env1["WEBSITE_SITE_NAME"] = "site_name";
             env1["WEBSITE_HOME_STAMPNAME"] = "stamp_name";
             env1["WEBSITE_HOSTNAME"] = "host_name";
             process.env = env1;
 
-            heartBeat["_getMachineProperties"]().then((properties) => {
+            heartbeat["_getMachineProperties"]().then((properties) => {
                 const keys = Object.keys(properties);
                 assert.equal(
                     keys.length,
@@ -114,8 +114,6 @@ describe("AutoCollection/HeartBeat", () => {
         });
 
         it("should read correct function app values from environment variable", (done) => {
-            const heartbeat = new HeartBeatHandler(config);
-            sandbox.stub(heartbeat["_metricReader"]["_exporter"], "export");
             var env2 = <{ [id: string]: string }>{};
             env2["FUNCTIONS_WORKER_RUNTIME"] = "nodejs";
             env2["WEBSITE_HOSTNAME"] = "host_name";
