@@ -1,6 +1,6 @@
 import * as os from "os";
 import { Meter, ObservableGauge } from "@opentelemetry/api-metrics";
-import { MeterProvider } from "@opentelemetry/sdk-metrics-base";
+import { MeterProvider } from "@opentelemetry/sdk-metrics";
 
 import { Logger } from "../../../library/logging";
 import {

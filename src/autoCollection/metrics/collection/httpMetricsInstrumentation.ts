@@ -14,9 +14,9 @@ import {
 import { getRequestInfo } from '@opentelemetry/instrumentation-http';
 import { Histogram, MeterProvider, ValueType } from '@opentelemetry/api-metrics';
 
-import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../declarations/constants";
-import { HttpMetricsInstrumentationConfig, IHttpStandardMetric, MetricId, StandardMetric } from './types';
-import { Logger } from '../../library/logging';
+import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../../declarations/constants";
+import { HttpMetricsInstrumentationConfig, IHttpStandardMetric, MetricId, MetricName } from '../types';
+import { Logger } from '../../../library/logging';
 import { SpanKind } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
@@ -46,8 +46,8 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
   }
 
   private _updateMetricInstruments() {
-    this._httpServerDurationHistogram = this.meter.createHistogram(StandardMetric.REQUESTS, { valueType: ValueType.DOUBLE });
-    this._httpClientDurationHistogram = this.meter.createHistogram(StandardMetric.DEPENDENCIES, { valueType: ValueType.DOUBLE });
+    this._httpServerDurationHistogram = this.meter.createHistogram(MetricName.REQUEST_DURATION, { valueType: ValueType.DOUBLE });
+    this._httpClientDurationHistogram = this.meter.createHistogram(MetricName.DEPENDENCY_DURATION, { valueType: ValueType.DOUBLE });
   }
 
   public _getConfig(): HttpMetricsInstrumentationConfig {
@@ -72,7 +72,7 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
       metric.attributes["_MS.IsAutocollected"] = "True";
       let durationMs = Date.now() - metric.startTime;
       let success = false;
-      const statusCode = parseInt(metric.attributes[SemanticAttributes.HTTP_STATUS_CODE]);
+      const statusCode = parseInt(String(metric.attributes[SemanticAttributes.HTTP_STATUS_CODE]));
       if (statusCode !== NaN) {
         success = (0 < statusCode) && (statusCode < 500);
       }

@@ -7,7 +7,7 @@ import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions"
 import { BatchProcessor } from "./shared/batchProcessor";
 import { LogExporter } from "../exporters";
 import * as Contracts from "../../declarations/contracts";
-import { AutoCollectConsole, AutoCollectExceptions, AutoCollectStandardMetrics } from "../../autoCollection";
+import { AutoCollectConsole, AutoCollectExceptions } from "../../autoCollection";
 import { Config } from "../configuration";
 import { Util } from "../util";
 import { ResourceManager } from "./resourceManager";
@@ -130,14 +130,14 @@ export class LogHandler {
     public async trackTrace(telemetry: Contracts.TraceTelemetry): Promise<void> {
         try {
             const envelope = this._traceToEnvelope(telemetry, this.config.instrumentationKey);
-            if (this._metricHandler?.isStandardMetricsEnabled) {
+            if (this._metricHandler?.getConfig().enableAutoCollectPreAggregatedMetrics) {
                 let baseData = envelope.data.baseData as MessageData;
                 let traceDimensions: IMetricTraceDimensions = {
                     cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
                     cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole],
                     traceSeverityLevel: baseData.severity
                 };
-                this._metricHandler.getStandardMetricsCollector().countTrace(traceDimensions);
+                this._metricHandler.countTrace(traceDimensions);
                 // Mark envelope as processed
                 const traceData: TraceTelemetry = (envelope.data as any).baseData;
                 traceData.properties = {
@@ -162,12 +162,12 @@ export class LogHandler {
         }
         try {
             const envelope = this._exceptionToEnvelope(telemetry, this.config.instrumentationKey);
-            if (this._metricHandler?.isStandardMetricsEnabled) {
+            if (this._metricHandler?.getConfig().enableAutoCollectPreAggregatedMetrics) {
                 let exceptionDimensions: IMetricExceptionDimensions = {
                     cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
                     cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole]
                 };
-                this._metricHandler.getStandardMetricsCollector().countException(exceptionDimensions);
+                this._metricHandler.countException(exceptionDimensions);
                 // Mark envelope as processed
                 const exceptionData: TelemetryExceptionData = (envelope.data as any).baseData;
                 exceptionData.properties = {

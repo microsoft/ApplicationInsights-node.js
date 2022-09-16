@@ -1,10 +1,19 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
+import * as nock from "nock";
 import { AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
-import { DataPointType, MeterProvider, PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics-base";
+import { DataPointType, MeterProvider, PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 
-import { HttpMetricsInstrumentation } from "../../../src/autoCollection/metrics/httpMetricsInstrumentation";
+import { HttpMetricsInstrumentation } from "../../../src/autoCollection/metrics/collection/httpMetricsInstrumentation";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
+
+
+nock("https://centralus-0.in.applicationinsights.azure.com").post(
+    "/v2.1/track",
+    (body: string) => {
+        return true;
+    }
+).reply(200, {}).persist();
 
 const httpMetricsConfig: HttpMetricsInstrumentationConfig = {
     ignoreOutgoingRequestHook: (request: any) => {
@@ -23,7 +32,7 @@ import { HttpMetricsInstrumentationConfig } from "../../../src/autoCollection/me
 
 const meterProvider = new MeterProvider();
 const exporter = new AzureMonitorMetricExporter({ connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/" });
-const metricReader = new PeriodicExportingMetricReader({ exporter: exporter, exportIntervalMillis: 100 });
+const metricReader = new PeriodicExportingMetricReader({ exporter: exporter as any, exportIntervalMillis: 100 });
 meterProvider.addMetricReader(metricReader);
 instrumentation.setMeterProvider(meterProvider);
 
@@ -42,6 +51,7 @@ describe("AutoCollection/HttpMetricsInstrumentation", () => {
         instrumentation.disable();
         meterProvider.shutdown();
         mockHttpServer.close();
+        nock.cleanAll();
     });
 
     function createMockServer() {
@@ -98,7 +108,7 @@ describe("AutoCollection/HttpMetricsInstrumentation", () => {
     it("Server/Client Metric Duration", async () => {
         let mockExport = sandbox.stub(exporter, "export");
         await makeHttpRequest();
-        await new Promise(resolve => setTimeout(resolve, 120));
+        await new Promise(resolve => setTimeout(resolve, 150));
         assert.ok(mockExport.called);
         let resourceMetrics = mockExport.args[0][0];
         const scopeMetrics = resourceMetrics.scopeMetrics;
@@ -106,7 +116,7 @@ describe("AutoCollection/HttpMetricsInstrumentation", () => {
         const metrics = scopeMetrics[0].metrics;
         assert.strictEqual(metrics.length, 2, 'metrics count');
         assert.strictEqual(metrics[0].dataPointType, DataPointType.HISTOGRAM);
-        assert.strictEqual(metrics[0].descriptor.name, 'http.server.duration');
+        assert.strictEqual(metrics[0].descriptor.name, 'REQUEST_DURATION');
         assert.strictEqual(metrics[0].dataPoints.length, 1);
         assert.strictEqual((metrics[0].dataPoints[0].value as any).count, 1);
         assert.strictEqual(metrics[0].dataPoints[0].attributes[SemanticAttributes.HTTP_SCHEME], 'http');
@@ -118,7 +128,7 @@ describe("AutoCollection/HttpMetricsInstrumentation", () => {
         assert.strictEqual(metrics[0].dataPoints[0].attributes[SemanticAttributes.NET_HOST_PORT], mockHttpServerPort.toString());
 
         assert.strictEqual(metrics[1].dataPointType, DataPointType.HISTOGRAM);
-        assert.strictEqual(metrics[1].descriptor.name, 'http.client.duration');
+        assert.strictEqual(metrics[1].descriptor.name, 'DEPENDENCY_DURATION');
         assert.strictEqual(metrics[1].dataPoints.length, 1);
         assert.strictEqual((metrics[1].dataPoints[0].value as any).count, 1);
         assert.strictEqual(metrics[1].dataPoints[0].attributes[SemanticAttributes.HTTP_METHOD], 'GET');

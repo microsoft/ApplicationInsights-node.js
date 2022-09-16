@@ -2,21 +2,26 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 import * as os from "os";
 
-import { HeartBeat } from "../../../src/autoCollection/metrics/heartBeat";
+import { HeartBeatHandler } from "../../../src/autoCollection/metrics/handlers/heartBeatHandler";
 import { Config } from "../../../src/library/configuration";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 import { ResourceManager } from "../../../src/library/handlers";
-import { MetricData } from "@opentelemetry/sdk-metrics-base";
 import { HeartBeatMetricName } from "../../../src/declarations/constants";
 
 describe("AutoCollection/HeartBeat", () => {
     var sandbox: sinon.SinonSandbox;
     let originalEnv: NodeJS.ProcessEnv;
     let config: Config;
+    let heartbeat: HeartBeatHandler;
 
     before(() => {
         sandbox = sinon.createSandbox();
         config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+        heartbeat = new HeartBeatHandler(config, { collectionInterval: 100 });
+        sandbox.stub(heartbeat["_metricReader"]["_exporter"], "export");
+        sandbox.stub(heartbeat["_azureVm"], "getAzureComputeMetadata").callsFake(() => {
+            return new Promise((resolve, reject) => { resolve({ isVM: true }) });
+        });
     })
 
     beforeEach(() => {
@@ -30,65 +35,40 @@ describe("AutoCollection/HeartBeat", () => {
 
     describe("#Metrics", () => {
         it("should create instruments", () => {
-            let heartBeat = new HeartBeat(config);
-            sandbox.stub(heartBeat["_metricReader"]["_exporter"], "export");
-            assert.ok(heartBeat["_metricGauge"], "_metricGauge not available");
+            assert.ok(heartbeat["_metricGauge"], "_metricGauge not available");
         });
 
-        it("should observe instruments during collection", (done) => {
-            let heartBeat = new HeartBeat(config);
-            sandbox.stub(heartBeat["_metricReader"]["_exporter"], "export");
-            heartBeat.enable(true).then(() => {
-                heartBeat["_metricReader"].collect().then(({ resourceMetrics, errors }) => {
-                    assert.equal(errors.length, 0, "Errors found during collection");
-                    assert.equal(resourceMetrics.scopeMetrics.length, 1, "Wrong number of scopeMetrics");
-                    let metricsWithDataPoints: MetricData[] = []; // Only Metrics with data points will be exported
-                    resourceMetrics.scopeMetrics[0].metrics.forEach(metric => {
-                        if (metric.dataPoints.length > 0) {
-                            metricsWithDataPoints.push(metric);
-                        }
-                    });
-
-                    assert.equal(metricsWithDataPoints.length, 1, "Wrong number of instruments");
-                    assert.equal(metricsWithDataPoints[0].descriptor.name, HeartBeatMetricName);
-                    done();
-                }).catch((error) => done(error));
-            }).catch((error) => done(error));
+        it("should observe instruments during collection", async () => {
+            let mockExport = sandbox.stub(heartbeat["_azureExporter"], "export");
+            heartbeat.start();
+            await new Promise(resolve => setTimeout(resolve, 120));
+            assert.ok(mockExport.called);
+            let resourceMetrics = mockExport.args[0][0];
+            const scopeMetrics = resourceMetrics.scopeMetrics;
+            assert.strictEqual(scopeMetrics.length, 1, 'scopeMetrics count');
+            const metrics = scopeMetrics[0].metrics;
+            assert.strictEqual(metrics.length, 1, 'metrics count');
+            assert.equal(metrics[0].descriptor.name, HeartBeatMetricName);
         });
 
-        it("should not collect when disabled", (done) => {
-            let heartBeat = new HeartBeat(config);
-            sandbox.stub(heartBeat["_metricReader"]["_exporter"], "export");
-            heartBeat.enable(true).then(() => {
-                heartBeat.enable(false).then(() => {
-                    heartBeat["_metricReader"].collect().then(({ resourceMetrics, errors }) => {
-                        assert.equal(errors.length, 0, "Errors found during collection");
-                        assert.equal(resourceMetrics.scopeMetrics.length, 1, "Wrong number of scopeMetrics");
-                        let metricsWithDataPoints: MetricData[] = []; // Only Metrics with data points will be exported
-                        resourceMetrics.scopeMetrics[0].metrics.forEach(metric => {
-                            if (metric.dataPoints.length > 0) {
-                                metricsWithDataPoints.push(metric);
-                            }
-                        });
-                        assert.equal(metricsWithDataPoints.length, 0, "Wrong number of instruments");
-                        done();
-                    }).catch((error) => done(error));
-                });
-            }).catch((error) => done(error));
+        it("should not collect when disabled", async () => {
+            let mockExport = sandbox.stub(heartbeat["_azureExporter"], "export");
+            heartbeat.start();
+            heartbeat.shutdown();
+            await new Promise(resolve => setTimeout(resolve, 120));
+            assert.ok(mockExport.notCalled);
         });
     });
 
     describe("#_getMachineProperties()", () => {
         it("should read correct web app values from environment variable", (done) => {
-            const heartBeat: HeartBeat = new HeartBeat(config);
-            sandbox.stub(heartBeat["_metricReader"]["_exporter"], "export");
             var env1 = <{ [id: string]: string }>{};
             env1["WEBSITE_SITE_NAME"] = "site_name";
             env1["WEBSITE_HOME_STAMPNAME"] = "stamp_name";
             env1["WEBSITE_HOSTNAME"] = "host_name";
             process.env = env1;
 
-            heartBeat["_getMachineProperties"]().then((properties) => {
+            heartbeat["_getMachineProperties"]().then((properties) => {
                 const keys = Object.keys(properties);
                 assert.equal(
                     keys.length,
@@ -134,8 +114,6 @@ describe("AutoCollection/HeartBeat", () => {
         });
 
         it("should read correct function app values from environment variable", (done) => {
-            const heartbeat: HeartBeat = new HeartBeat(config);
-            sandbox.stub(heartbeat["_metricReader"]["_exporter"], "export");
             var env2 = <{ [id: string]: string }>{};
             env2["FUNCTIONS_WORKER_RUNTIME"] = "nodejs";
             env2["WEBSITE_HOSTNAME"] = "host_name";

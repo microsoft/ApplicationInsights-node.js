@@ -1,25 +1,33 @@
 import * as os from "os";
-import { AzureExporterConfig, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
-import { Meter, ObservableCallback, ObservableGauge, ObservableResult } from "@opentelemetry/api-metrics";
+import {
+    AzureExporterConfig,
+    AzureMonitorMetricExporter
+} from "@azure/monitor-opentelemetry-exporter";
+import {
+    Meter,
+    ObservableCallback,
+    ObservableGauge,
+    ObservableResult
+} from "@opentelemetry/api-metrics";
 import {
     MeterProvider,
     PeriodicExportingMetricReader,
     PeriodicExportingMetricReaderOptions,
-} from "@opentelemetry/sdk-metrics-base";
+} from "@opentelemetry/sdk-metrics";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
-import { AzureVirtualMachine } from "../../library";
-import { ResourceManager } from "../../library/handlers";
-import { HeartBeatMetricName } from "../../declarations/constants";
-import { Config } from "../../library/configuration";
-import { IVirtualMachineInfo } from "../../library/azureVirtualMachine";
-import { Logger } from "../../library/logging";
+import { AzureVirtualMachine } from "../../../library";
+import { ResourceManager } from "../../../library/handlers";
+import { HeartBeatMetricName } from "../../../declarations/constants";
+import { Config } from "../../../library/configuration";
+import { IVirtualMachineInfo } from "../../../library/azureVirtualMachine";
+import { Logger } from "../../../library/logging";
 
-export class HeartBeat {
+export class HeartBeatHandler {
     private _collectionInterval: number = 900000;
     private _config: Config;
     private _meterProvider: MeterProvider;
-    private _exporter: AzureMonitorMetricExporter;
+    private _azureExporter: AzureMonitorMetricExporter;
     private _metricReader: PeriodicExportingMetricReader;
     private _meter: Meter;
     private _metricGauge: ObservableGauge;
@@ -28,7 +36,7 @@ export class HeartBeat {
     private _azureVm: AzureVirtualMachine;
     private _machineProperties: { [key: string]: string };
 
-    constructor(config: Config) {
+    constructor(config: Config, options?: { collectionInterval: number }) {
         this._config = config;
         this._azureVm = new AzureVirtualMachine();
         this._meterProvider = new MeterProvider();
@@ -36,10 +44,10 @@ export class HeartBeat {
             connectionString: config.getConnectionString(),
             aadTokenCredential: config.aadTokenCredential
         };
-        this._exporter = new AzureMonitorMetricExporter(exporterConfig);
+        this._azureExporter = new AzureMonitorMetricExporter(exporterConfig);
         const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
-            exporter: this._exporter,
-            exportIntervalMillis: this._collectionInterval
+            exporter: this._azureExporter as any,
+            exportIntervalMillis: options?.collectionInterval || this._collectionInterval
         };
         this._metricReader = new PeriodicExportingMetricReader(metricReaderOptions);
         this._meterProvider.addMetricReader(this._metricReader);
@@ -48,14 +56,9 @@ export class HeartBeat {
         this._metricGaugeCallback = this._trackHeartBeat.bind(this);
     }
 
-    public async enable(isEnabled: boolean) {
-        if (isEnabled) {
-            this._machineProperties = await this._getMachineProperties();
-            this._metricGauge.addCallback(this._metricGaugeCallback);
-        }
-        else {
-            this._metricGauge.removeCallback(this._metricGaugeCallback);
-        }
+    public async start() {
+        this._machineProperties = await this._getMachineProperties();
+        this._metricGauge.addCallback(this._metricGaugeCallback);
     }
 
     public async shutdown(): Promise<void> {

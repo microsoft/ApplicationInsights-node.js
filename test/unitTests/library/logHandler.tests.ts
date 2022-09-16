@@ -297,8 +297,8 @@ describe("Library/LogHandler", () => {
         });
 
         it("Exception standard metrics processed", (done) => {
+            _config.enableAutoCollectPreAggregatedMetrics = true;
             let metricHandler = new MetricHandler(_config);
-            metricHandler.isStandardMetricsEnabled = true;
             let handler = new LogHandler(_config, metricHandler);
             let stub = sinon.stub(handler["_exporter"], "export").callsFake((envelopes: any, resultCallback: any) => {
                 return new Promise((resolve, reject) => {
@@ -323,9 +323,9 @@ describe("Library/LogHandler", () => {
             });;
         });
 
-        it("Exception standard metrics processed", (done) => {
+        it("Trace standard metrics processed", (done) => {
+            _config.enableAutoCollectPreAggregatedMetrics = true;
             let metricHandler = new MetricHandler(_config);
-            metricHandler.isStandardMetricsEnabled = true;
             let handler = new LogHandler(_config, metricHandler);
             let stub = sinon.stub(handler["_exporter"], "export").callsFake((envelopes: any, resultCallback: any) => {
                 return new Promise((resolve, reject) => {

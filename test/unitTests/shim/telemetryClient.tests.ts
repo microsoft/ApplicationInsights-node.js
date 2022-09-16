@@ -1,8 +1,10 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
+import * as nock from "nock";
 import { ExportResultCode } from "@opentelemetry/core";
 import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations/contracts";
 import { TelemetryClient } from "../../../src/shim/telemetryClient";
+import { DEFAULT_BREEZE_ENDPOINT } from "../../../src/declarations/constants";
 
 
 describe("shim/TelemetryClient", () => {
@@ -10,10 +12,22 @@ describe("shim/TelemetryClient", () => {
 
     before(() => {
         sandbox = sinon.createSandbox();
+        nock(DEFAULT_BREEZE_ENDPOINT).post(
+            "/v2.1/track",
+            (body: string) => {
+                return true;
+            }
+        ).reply(200, {}).persist();
+        nock.disableNetConnect();
     });
 
     afterEach(() => {
         sandbox.restore();
+    });
+
+    after(() => {
+        nock.cleanAll();
+        nock.enableNetConnect();
     });
 
     describe("#manual track APIs", () => {

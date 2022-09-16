@@ -109,7 +109,12 @@ export class TraceHandler {
     public start() {
         // TODO: Remove once HTTP Instrumentation generate Http metrics
         if ((this._config.enableAutoCollectPreAggregatedMetrics || this._config.enableAutoCollectPerformance) && this._metricHandler) {
-            this.addInstrumentation(this._metricHandler.getHttpMetricsInstrumentation());
+            const instrumentations = this._metricHandler.getHttpMetricInstrumentations();
+            instrumentations.forEach(instrumentation => {
+                if (instrumentation) {
+                    this.addInstrumentation(instrumentation);
+                }
+            });
         }
         if (this._config.enableAutoCollectRequests || this._config.enableAutoCollectDependencies) {
             this.addInstrumentation(new HttpInstrumentation(this.httpInstrumentationConfig));

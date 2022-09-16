@@ -1,54 +1,30 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 import { Meter, MetricAttributes, ObservableCallback, ObservableGauge, ObservableResult, ValueType } from "@opentelemetry/api-metrics";
-import {
-    AggregatedMetricCounter,
-    IStandardMetricBaseDimensions,
-    IMetricExceptionDimensions,
-    IMetricTraceDimensions,
-    MetricId,
-    StandardMetric
-} from "./types";
+import { AggregatedMetricCounter, IStandardMetricBaseDimensions, IMetricTraceDimensions, MetricId, MetricName } from "../types";
 
 
-export class AutoCollectStandardMetrics {
+export class TraceMetrics {
     private _isEnabled: boolean;
     private _meter: Meter;
-    private _exceptionCountersCollection: Array<AggregatedMetricCounter>;
     private _traceCountersCollection: Array<AggregatedMetricCounter>;
-    private _exceptionsGauge: ObservableGauge;
-    private _exceptionsGaugeCallback: ObservableCallback;
     private _tracesGauge: ObservableGauge;
     private _tracesGaugeCallback: ObservableCallback;
 
     constructor(meter: Meter) {
         this._meter = meter;
-        this._exceptionCountersCollection = [];
         this._traceCountersCollection = [];
-        this._exceptionsGauge = this._meter.createObservableGauge(StandardMetric.EXCEPTIONS, { valueType: ValueType.DOUBLE });
-        this._tracesGauge = this._meter.createObservableGauge(StandardMetric.TRACES, { valueType: ValueType.DOUBLE });
-        this._exceptionsGaugeCallback = this._getExceptions.bind(this);
+        this._tracesGauge = this._meter.createObservableGauge(MetricName.TRACE_RATE, { valueType: ValueType.DOUBLE });
         this._tracesGaugeCallback = this._getTraces.bind(this);
     }
 
     public enable(isEnabled: boolean) {
         this._isEnabled = isEnabled;
         if (this._isEnabled) {
-            this._exceptionsGauge.addCallback(this._exceptionsGaugeCallback);
             this._tracesGauge.addCallback(this._tracesGaugeCallback);
         } else {
-            this._exceptionsGauge.removeCallback(this._exceptionsGaugeCallback);
             this._tracesGauge.removeCallback(this._tracesGaugeCallback);
         }
-    }
-
-    public countException(dimensions: IMetricExceptionDimensions) {
-        if (!this._isEnabled) {
-            return;
-        }
-        let counter: AggregatedMetricCounter = this._getAggregatedCounter(
-            dimensions,
-            this._exceptionCountersCollection
-        );
-        counter.totalCount++;
     }
 
     public countTrace(dimensions: IMetricTraceDimensions) {
@@ -97,22 +73,6 @@ export class AutoCollectStandardMetrics {
         let newCounter = new AggregatedMetricCounter(dimensions);
         counterCollection.push(newCounter);
         return newCounter;
-    }
-
-    private _getExceptions(observableResult: ObservableResult) {
-        for (let i = 0; i < this._exceptionCountersCollection.length; i++) {
-            var currentCounter = this._exceptionCountersCollection[i];
-            currentCounter.time = +new Date();
-            var intervalExceptions = currentCounter.totalCount - currentCounter.lastTotalCount || 0;
-            var elapsedMs = currentCounter.time - currentCounter.lastTime;
-            if (elapsedMs > 0 && intervalExceptions > 0) {
-                let attributes = this._getMetricAttributes(currentCounter.dimensions, elapsedMs, MetricId.EXCEPTIONS_COUNT);
-                observableResult.observe(intervalExceptions, attributes);
-            }
-            // Set last counters
-            currentCounter.lastTotalCount = currentCounter.totalCount;
-            currentCounter.lastTime = currentCounter.time;
-        }
     }
 
     private _getTraces(observableResult: ObservableResult) {
