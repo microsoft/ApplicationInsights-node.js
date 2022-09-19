@@ -56,6 +56,9 @@ class Config implements IConfig {
     public disableStatsbeat: boolean;
     public extendedMetricDisablers: string;
     public quickPulseHost: string;
+    public enableWebInstrumentation: boolean;
+    public webInstrumentationConfig: any;
+    // To Be deprecated.
     public enableAutoWebSnippetInjection: boolean;
 
     public correlationId: string; // TODO: Should be private
@@ -64,7 +67,7 @@ class Config implements IConfig {
     private _setCorrelationId: (v: string) => void;
     private _profileQueryEndpoint: string;
     private _instrumentationKey: string;
-    private _webSnippetConnectionString: string;
+    public _webInstrumentationConnectionString: string;
  
     constructor(setupString?: string) {
         // Load config values from env variables and JSON if available
@@ -89,7 +92,9 @@ class Config implements IConfig {
         this.disableAppInsights = this.disableAppInsights || false;
         this.samplingPercentage = this.samplingPercentage || 100;
         this.correlationIdRetryIntervalMs = this.correlationIdRetryIntervalMs || 30 * 1000;
-        this.enableAutoWebSnippetInjection = this.enableAutoWebSnippetInjection || false;
+        this.enableWebInstrumentation = this.enableWebInstrumentation || this.enableAutoWebSnippetInjection || false;
+        this.webInstrumentationConfig = this.webInstrumentationConfig || null;
+        this.enableAutoWebSnippetInjection = this.enableWebInstrumentation;
         this.correlationHeaderExcludedDomains =
             this.correlationHeaderExcludedDomains ||
             [
@@ -105,7 +110,8 @@ class Config implements IConfig {
         this.ignoreLegacyHeaders = this.ignoreLegacyHeaders || false;
         this.profileQueryEndpoint = csCode.ingestionendpoint || csEnv.ingestionendpoint || process.env[Config.ENV_profileQueryEndpoint] || this._endpointBase;
         this.quickPulseHost = this.quickPulseHost || csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_HOST;
-        this.webSnippetConnectionString = this.webSnippetConnectionString || this._webSnippetConnectionString || "";
+        this.webInstrumentationConnectionString = this.webInstrumentationConnectionString || this._webInstrumentationConnectionString || "";
+        this.webSnippetConnectionString = this.webInstrumentationConnectionString;
         // Parse quickPulseHost if it starts with http(s)://
         if (this.quickPulseHost.match(/^https?:\/\//)) {
             this.quickPulseHost = new url.URL(this.quickPulseHost).host;
@@ -135,11 +141,19 @@ class Config implements IConfig {
     }
 
     public set webSnippetConnectionString(connectionString: string) {
-        this._webSnippetConnectionString = connectionString;
+        this._webInstrumentationConnectionString = connectionString;
     }
 
     public get webSnippetConnectionString(): string {
-        return this._webSnippetConnectionString;
+        return this._webInstrumentationConnectionString;
+    }
+
+    public set webInstrumentationConnectionString(connectionString: string) {
+        this._webInstrumentationConnectionString = connectionString;
+    }
+
+    public get webInstrumentationConnectionString() {
+        return this._webInstrumentationConnectionString;
     }
 
     private _mergeConfig() {
@@ -178,8 +192,9 @@ class Config implements IConfig {
         this.proxyHttpsUrl = jsonConfig.proxyHttpsUrl;
         this.quickPulseHost = jsonConfig.quickPulseHost;
         this.samplingPercentage = jsonConfig.samplingPercentage;
-        this.enableAutoWebSnippetInjection = jsonConfig.enableAutoWebSnippetInjection;
-        this.webSnippetConnectionString = jsonConfig.webSnippetConnectionString;
+        this.enableWebInstrumentation = jsonConfig.enableWebInstrumentation;
+        this._webInstrumentationConnectionString = jsonConfig.webInstrumentationConnectionString;
+        this.webInstrumentationConfig = jsonConfig.webInstrumentationConfig;
     }
 
     /**

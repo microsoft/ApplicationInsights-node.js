@@ -170,7 +170,8 @@ function _initializeConfig() {
     _isDependencies = defaultClient.config.enableAutoDependencyCorrelation !== undefined ? defaultClient.config.enableAutoDependencyCorrelation : _isDependencies;
     _isCorrelating = defaultClient.config.enableAutoDependencyCorrelation !== undefined ? defaultClient.config.enableAutoDependencyCorrelation : _isCorrelating;
     _forceClsHooked = defaultClient.config.enableUseAsyncHooks !== undefined ? defaultClient.config.enableUseAsyncHooks : _forceClsHooked;
-    _isSnippetInjection = defaultClient.config.enableAutoWebSnippetInjection !== undefined ? defaultClient.config.enableAutoWebSnippetInjection : _isSnippetInjection;
+    _isSnippetInjection = defaultClient.config.enableWebInstrumentation !== undefined ? defaultClient.config.enableWebInstrumentation : _isSnippetInjection;
+    _isSnippetInjection = defaultClient.config.enableAutoWebSnippetInjection === true ? true : _isSnippetInjection;
     const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(defaultClient.config.enableAutoCollectExtendedMetrics, defaultClient.config);
     _isNativePerformance = extendedMetricsConfig.isEnabled;
     _disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
@@ -317,7 +318,8 @@ export class Configuration {
     }
 
     /**
-     * Sets the state of Web snippet injection
+     * Sets the state of Web snippet injection, this config is NOT exposed in documentation after version 2.3.5
+     * @deprecated, please use enableWebInstrumentation instead.
      * @param value if true Web snippet will be tried to be injected in server response
      * @param WebSnippetConnectionString if provided, web snippet injection will use this ConnectionString. Default to use the connectionString in Node.js app initialization
      * @returns {Configuration} this class
@@ -328,10 +330,25 @@ export class Configuration {
         if (_isStarted) {
             _webSnippet.enable(value, _webSnippetConnectionString);
         }
-
         return Configuration;
     }
 
+    /**
+     * Sets the state of Web snippet injection
+     * @param value if true Web snippet will be tried to be injected in server response
+     * @param WebSnippetConnectionString if provided, web snippet injection will use this ConnectionString. Default to use the connectionString in Node.js app initialization
+     * @returns {Configuration} this class
+     */
+     public static enableWebInstrumentation(value: boolean, WebSnippetConnectionString?: string ) {
+        _isSnippetInjection = value;
+        _webSnippetConnectionString = WebSnippetConnectionString;
+        if (_isStarted) {
+            _webSnippet.enable(value, _webSnippetConnectionString);
+        }
+
+        return Configuration;
+    }
+   
     /**
      * Sets the state of request tracking (enabled by default)
      * @param value if true requests will be sent to Application Insights

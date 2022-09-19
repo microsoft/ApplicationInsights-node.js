@@ -21,6 +21,8 @@ class WebSnippet {
     private _isInitialized: boolean;
     private _isIkeyValid: boolean = true;
     private _statsbeat: Statsbeat;
+    private _webInstrumentationIkey: string;
+    private _clientWebInstrumentationConfig: any;
     
 
     constructor(client: TelemetryClient) {
@@ -33,24 +35,18 @@ class WebSnippet {
         WebSnippet._aiUrl = "https://js.monitor.azure.com/scripts/b/ai";
         WebSnippet._aiDeprecatedUrl = "https://az416426.vo.msecnd.net/scripts/b/ai";
 
-        let clientSnippetConnectionString = client.config.webSnippetConnectionString;
-        let defaultIkey = client.config.instrumentationKey;
-        if (!!clientSnippetConnectionString) {
-            let clientSnippetIkey = this._getWebSnippetIkey(client.config.webSnippetConnectionString);
-            defaultIkey = clientSnippetIkey;
-        }
+        let clientWebIkey = this._getWebSnippetIkey(client.config?.webInstrumentationConnectionString);
+        this._webInstrumentationIkey = clientWebIkey || client.config.instrumentationKey;
+        this._clientWebInstrumentationConfig = client.config.webInstrumentationConfig;
 
-        WebSnippet._snippet = webSnippet.replace("INSTRUMENTATION_KEY", defaultIkey);
         this._statsbeat = client.getStatsbeat();
-      
     }
 
-    public enable(isEnabled: boolean, webSnippetConnectionString?: string ) {
+    public enable(isEnabled: boolean, webInstrumentationConnectionString?: string ) {
         this._isEnabled = isEnabled;
-        if (!!webSnippetConnectionString) {
-            let iKey = this._getWebSnippetIkey(webSnippetConnectionString);
-            WebSnippet._snippet = webSnippet.replace("INSTRUMENTATION_KEY", iKey);
-        }
+        this._webInstrumentationIkey = this._getWebSnippetIkey(webInstrumentationConnectionString) || this._webInstrumentationIkey;
+        WebSnippet._snippet = this._getWebInstrumentationReplacedStr();
+
         if (this._isEnabled && !this._isInitialized && this._isIkeyValid) {
             if (this._statsbeat) {
                 this._statsbeat.addFeature(Constants.StatsbeatFeature.WEB_SNIPPET);
@@ -68,13 +64,60 @@ class WebSnippet {
     }
 
     private _getWebSnippetIkey(connectionString: string) {
+        let iKey = null;
         const csCode = ConnectionStringParser.parse(connectionString);
         const iKeyCode = csCode.instrumentationkey || "";
         if (!ConnectionStringParser.isIkeyValid(iKeyCode)) {
             this._isIkeyValid = false;
-            Logging.info("Invalid web snippet connection string, web snippet will not be injected.");
+            Logging.info("Invalid web Instrumentation connection string, web Instrumentation is not enabled.");
+        } else {
+            this._isIkeyValid = true;
+            iKey = iKeyCode;
         }
-        return iKeyCode;
+        return iKey;
+    }
+
+    private _getWebInstrumentationReplacedStr() {
+        let configStr = this._getClientWebInstrumentationConfigStr(this._clientWebInstrumentationConfig);
+        let snippetReplacedStr = `${this._webInstrumentationIkey}\",\r\n ${configStr} disableIkeyDeprecationMessage: true,\r\n sdkExtension: \"kwr_n_`;
+        let replacedSnippet = webSnippet.replace("INSTRUMENTATION_KEY", snippetReplacedStr);
+        return replacedSnippet;
+    }
+
+    private _getClientWebInstrumentationConfigStr(config: any) {
+        let configStr = "";
+        try {
+            if (config  === typeof Object) {
+                let keys = Object.keys(config);
+                keys.forEach((key) =>{
+                    let val = config.key;
+                    let entry = "";
+                    // NOTE: users should convert object/function to string themselves
+                    // Type "function" and "object" will be skipped!
+                    switch(typeof val) {
+                        case "function":
+                            break;
+                        case "object":
+                            break;
+                        case "string":
+                            entry = `${key}:\"${val}\",\r\n`;
+                            configStr += entry;
+                            break;
+                        default:
+                            entry = `${key}:${val},\r\n`;
+                            configStr += entry;
+                            break;
+                    }
+                    
+                })
+            }
+
+        } catch (e) {
+            // if has any errors here, web Instrumentation will be disabled.
+            this._isEnabled = false;
+            Logging.info("Parse client web instrumentation error. Web Instrumentation is disabled");
+        }
+        return configStr;
     }
 
     private _initialize() {

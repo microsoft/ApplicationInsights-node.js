@@ -135,14 +135,34 @@ export interface IBaseConfig {
     */
     quickPulseHost: string;
     /**
-     * Enable web snippet auto html injection, default to false
+     * @deprecated, please use enableWebInstrumentation instead
+     * Enable web snippet auto html injection, default to false, this config is NOT exposed in documentation after version 2.3.5
      */
-     enableAutoWebSnippetInjection: boolean;
+     enableAutoWebSnippetInjection?: boolean;
     /**
-     * Application Insights resource connection string for web snippet
+     * @deprecated, Please use webInstrumentationConnectionString instead
+     * Application Insights resource connection string for web snippet, this config is NOT exposed in documentation after version 2.3.5
      * Note: if no valid connection string is provided here, web snippet will use the connection string during initializing Nodejs SDK
      */
     webSnippetConnectionString?: string;
+    /**
+     * Enable web instrumentation and automatic monitoring, default to false
+     */
+    enableWebInstrumentation: boolean;
+     /**
+     * Application Insights resource connection string for web instrumentation and automatic monitoring
+     * Note: if no VALID connection string is provided here, web instrumentation will use the connection string during initializing Nodejs SDK
+     */
+    webInstrumentationConnectionString?: string;
+    /**
+     * Application Insights resource config
+     * NOTE: if no config is provided here, web instrumentation will use default values
+     * IMPORTANT NOTE: please convert any functions and objects to double-quoted strings, otherwise they will be skipped.
+     * For example: if you want to pass in a function: function() { return 'hi'; },
+     * you SHOULD wrap it in double-quoted string: "function () {\n  return \"hi\";\n}"
+     * see more details at: https://github.com/microsoft/ApplicationInsights-JS#configuration
+     */
+    webInstrumentationConfig?: any;
 }
 
 export interface IEnvironmentConfig {

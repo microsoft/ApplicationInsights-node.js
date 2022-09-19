@@ -108,8 +108,8 @@ describe("Library/Config", () => {
                 assert.equal(config.enableSendLiveMetrics, false);
                 assert.equal(config.extendedMetricDisablers, "gc,heap");
                 assert.equal(config.quickPulseHost, "testquickpulsehost.com");
-                assert.equal(config.enableAutoWebSnippetInjection, false);
-                assert.equal(config.webSnippetConnectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3331;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+                assert.equal(config.enableAutoWebSnippetInjection, true);
+                assert.equal(config.webSnippetConnectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
             });
         });
 
