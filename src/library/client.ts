@@ -1,14 +1,11 @@
 import { Config } from "./configuration";
 import { Statsbeat } from "../autoCollection/metrics/statsbeat";
 import { Logger } from "./logging";
-import { QuickPulseStateManager } from "./quickPulse";
 import { LogHandler, MetricHandler, TraceHandler } from "./handlers";
 
 
 export class Client {
-
     private _config: Config;
-    private _quickPulseClient: QuickPulseStateManager;
     private _statsbeat: Statsbeat;
     private _traceHandler: TraceHandler;
     private _metricHandler: MetricHandler;
