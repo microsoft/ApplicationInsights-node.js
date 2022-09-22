@@ -11,12 +11,10 @@ import { Config } from "../configuration";
 import { Client } from "../client";
 import { RequestHeaders } from "../../declarations/requestResponseHeaders";
 import { HttpRequest } from "../../declarations/functions";
-import { JsonConfig } from "../configuration";
 
 export class Util {
     private static _instance: Util;
     private readonly _idGenerator: IdGenerator;
-    private _useKeepAlive = !JsonConfig.getInstance().noHttpAgentKeepAlive;
     private _listenerAttached = false;
 
     public MAX_PROPERTY_LENGTH = 8192;
@@ -199,48 +197,6 @@ export class Util {
         return map;
     }
 
-    /**
-     * Checks if a request url is not on a excluded domain list
-     * and if it is safe to add correlation headers
-     */
-    public canIncludeCorrelationHeader(client: Client, requestUrl: string) {
-        let excludedDomains =
-            client && client.getConfig() && client.getConfig().correlationHeaderExcludedDomains;
-        if (!excludedDomains || excludedDomains.length == 0 || !requestUrl) {
-            return true;
-        }
-
-        for (let i = 0; i < excludedDomains.length; i++) {
-            let regex = new RegExp(excludedDomains[i].replace(/\./g, ".").replace(/\*/g, ".*"));
-            try {
-                if (regex.test(new url.URL(requestUrl).hostname)) {
-                    return false;
-                }
-            } catch (ex) {
-                // Ignore error
-            }
-        }
-
-        return true;
-    }
-
-    public getCorrelationContextTarget(
-        response: http.ClientResponse | http.ServerRequest | HttpRequest,
-        key: string
-    ) {
-        const contextHeaders =
-            response.headers && response.headers[RequestHeaders.requestContextHeader];
-        if (contextHeaders) {
-            const keyValues = (<any>contextHeaders).split(",");
-            for (let i = 0; i < keyValues.length; ++i) {
-                const keyValue = keyValues[i].split("=");
-                if (keyValue.length == 2 && keyValue[0] == key) {
-                    return keyValue[1];
-                }
-            }
-        }
-    }
-
     public isDbDependency(dependencyType: string) {
         return (
             dependencyType.indexOf("SQL") > -1 ||
@@ -285,12 +241,6 @@ export class Util {
 
         var proxyUrl: string = undefined;
         if (useProxy) {
-            if (requestUrlParsed.protocol === "https:") {
-                proxyUrl = config.proxyHttpsUrl || undefined;
-            }
-            if (requestUrlParsed.protocol === "http:") {
-                proxyUrl = config.proxyHttpUrl || undefined;
-            }
             if (proxyUrl) {
                 if (proxyUrl.indexOf("//") === 0) {
                     proxyUrl = "http:" + proxyUrl;
@@ -321,13 +271,9 @@ export class Util {
 
         var isHttps = requestUrlParsed.protocol === "https:" && !proxyUrl;
         if (useAgent) {
-            if (isHttps && config.httpsAgent !== undefined) {
-                options.agent = config.httpsAgent;
-            } else if (!isHttps && config.httpAgent !== undefined) {
-                options.agent = config.httpAgent;
-            } else if (isHttps) {
+            if (isHttps) {
                 // HTTPS without a passed in agent. Use one that enforces our TLS rules
-                options.agent = this._useKeepAlive ? this.keepAliveAgent : this.tlsRestrictedAgent;
+                options.agent = this.tlsRestrictedAgent;
             }
         }
         if (isHttps) {
@@ -371,7 +317,6 @@ export class Util {
         if (!this._listenerAttached) {
             process.on("exit", () => {
                 this.isNodeExit = true;
-                this._useKeepAlive = false;
             });
             this._listenerAttached = true;
         }

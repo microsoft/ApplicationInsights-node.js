@@ -9,12 +9,7 @@ const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
 // Native Metrics Opt Outs
 const ENV_nativeMetricsDisablers = "APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC";
 const ENV_nativeMetricsDisableAll = "APPLICATION_INSIGHTS_DISABLE_ALL_EXTENDED_METRICS";
-const ENV_http_proxy = "http_proxy";
-const ENV_https_proxy = "https_proxy";
-const ENV_noDiagnosticChannel = "APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL";
 const ENV_noStatsbeat = "APPLICATION_INSIGHTS_NO_STATSBEAT";
-const ENV_noHttpAgentKeepAlive = "APPLICATION_INSIGHTS_NO_HTTP_AGENT_KEEP_ALIVE";
-const ENV_noPatchModules = "APPLICATION_INSIGHTS_NO_PATCH_MODULES";
 
 export class JsonConfig implements IJsonConfig {
     private static _instance: JsonConfig;
@@ -22,15 +17,7 @@ export class JsonConfig implements IJsonConfig {
     public connectionString: string;
     public instrumentationKey: string;
     public endpointUrl: string;
-    public maxBatchSize: number;
-    public maxBatchIntervalMs: number;
-    public disableAppInsights: boolean;
     public samplingPercentage: number;
-    public correlationIdRetryIntervalMs: number;
-    public correlationHeaderExcludedDomains: string[];
-    public proxyHttpUrl: string;
-    public proxyHttpsUrl: string;
-    public ignoreLegacyHeaders: boolean;
     public enableAutoCollectExternalLoggers: boolean;
     public enableAutoCollectConsole: boolean;
     public enableAutoCollectExceptions: boolean;
@@ -40,18 +27,10 @@ export class JsonConfig implements IJsonConfig {
     public enableAutoCollectHeartbeat: boolean;
     public enableAutoCollectRequests: boolean;
     public enableAutoCollectDependencies: boolean;
-    public enableAutoDependencyCorrelation: boolean;
-    public enableUseAsyncHooks: boolean;
-    public enableUseDiskRetryCaching: boolean;
-    public enableResendInterval: number;
-    public enableMaxBytesOnDisk: number;
     public enableSendLiveMetrics: boolean;
     public disableAllExtendedMetrics: boolean;
     public extendedMetricDisablers: string;
     public disableStatsbeat: boolean;
-    public noDiagnosticChannel: boolean;
-    public noPatchModules: string;
-    public noHttpAgentKeepAlive: boolean;
     public quickPulseHost: string;
     public instrumentations: { [type: string]: iInstrumentation };
 
@@ -67,12 +46,7 @@ export class JsonConfig implements IJsonConfig {
         this.connectionString = process.env[ENV_connectionString];
         this.disableAllExtendedMetrics = !!process.env[ENV_nativeMetricsDisableAll];
         this.extendedMetricDisablers = process.env[ENV_nativeMetricsDisablers];
-        this.proxyHttpUrl = process.env[ENV_http_proxy];
-        this.proxyHttpsUrl = process.env[ENV_https_proxy];
-        this.noDiagnosticChannel = !!process.env[ENV_noDiagnosticChannel];
         this.disableStatsbeat = !!process.env[ENV_noStatsbeat];
-        this.noHttpAgentKeepAlive = !!process.env[ENV_noHttpAgentKeepAlive];
-        this.noPatchModules = process.env[ENV_noPatchModules] || "";
         this._loadJsonFile();
     }
 
@@ -96,41 +70,14 @@ export class JsonConfig implements IJsonConfig {
             if (jsonConfig.disableAllExtendedMetrics != undefined) {
                 this.disableAllExtendedMetrics = jsonConfig.disableStatsbeat;
             }
-            if (jsonConfig.noDiagnosticChannel != undefined) {
-                this.noDiagnosticChannel = jsonConfig.noDiagnosticChannel;
-            }
-            if (jsonConfig.noHttpAgentKeepAlive != undefined) {
-                this.noHttpAgentKeepAlive = jsonConfig.noHttpAgentKeepAlive;
-            }
             if (jsonConfig.connectionString != undefined) {
                 this.connectionString = jsonConfig.connectionString;
             }
             if (jsonConfig.extendedMetricDisablers != undefined) {
                 this.extendedMetricDisablers = jsonConfig.extendedMetricDisablers;
             }
-            if (jsonConfig.noDiagnosticChannel != undefined) {
-                this.noDiagnosticChannel = jsonConfig.noDiagnosticChannel;
-            }
-            if (jsonConfig.proxyHttpUrl != undefined) {
-                this.proxyHttpUrl = jsonConfig.proxyHttpUrl;
-            }
-            if (jsonConfig.proxyHttpsUrl != undefined) {
-                this.proxyHttpsUrl = jsonConfig.proxyHttpsUrl;
-            }
-            if (jsonConfig.proxyHttpsUrl != undefined) {
-                this.proxyHttpsUrl = jsonConfig.proxyHttpsUrl;
-            }
-            if (jsonConfig.noPatchModules != undefined) {
-                this.noPatchModules = jsonConfig.noPatchModules;
-            }
             this.endpointUrl = jsonConfig.endpointUrl;
-            this.maxBatchSize = jsonConfig.maxBatchSize;
-            this.maxBatchIntervalMs = jsonConfig.maxBatchIntervalMs;
-            this.disableAppInsights = jsonConfig.disableAppInsights;
             this.samplingPercentage = jsonConfig.samplingPercentage;
-            this.correlationIdRetryIntervalMs = jsonConfig.correlationIdRetryIntervalMs;
-            this.correlationHeaderExcludedDomains = jsonConfig.correlationHeaderExcludedDomains;
-            this.ignoreLegacyHeaders = jsonConfig.ignoreLegacyHeaders;
             this.enableAutoCollectExternalLoggers = jsonConfig.enableAutoCollectExternalLoggers;
             this.enableAutoCollectConsole = jsonConfig.enableAutoCollectConsole;
             this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
@@ -141,11 +88,6 @@ export class JsonConfig implements IJsonConfig {
             this.enableAutoCollectHeartbeat = jsonConfig.enableAutoCollectHeartbeat;
             this.enableAutoCollectRequests = jsonConfig.enableAutoCollectRequests;
             this.enableAutoCollectDependencies = jsonConfig.enableAutoCollectDependencies;
-            this.enableAutoDependencyCorrelation = jsonConfig.enableAutoDependencyCorrelation;
-            this.enableUseAsyncHooks = jsonConfig.enableUseAsyncHooks;
-            this.enableUseDiskRetryCaching = jsonConfig.enableUseDiskRetryCaching;
-            this.enableResendInterval = jsonConfig.enableResendInterval;
-            this.enableMaxBytesOnDisk = jsonConfig.enableMaxBytesOnDisk;
             this.enableSendLiveMetrics = jsonConfig.enableSendLiveMetrics;
             this.quickPulseHost = jsonConfig.quickPulseHost;
             this.instrumentations = jsonConfig.instrumentations;

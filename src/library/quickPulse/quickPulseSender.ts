@@ -125,11 +125,7 @@ export class QuickPulseSender {
         }
 
         // HTTPS only
-        if (this._config.httpsAgent) {
-            (<any>options).agent = this._config.httpsAgent;
-        } else {
-            (<any>options).agent = Util.getInstance().tlsRestrictedAgent;
-        }
+        (<any>options).agent = Util.getInstance().tlsRestrictedAgent;
 
         const req = https.request(options, (res: http.IncomingMessage) => {
             if (res.statusCode == 200) {

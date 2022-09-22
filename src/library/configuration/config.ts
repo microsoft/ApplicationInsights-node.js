@@ -1,5 +1,3 @@
-import * as http from "http";
-import * as https from "https";
 import * as url from "url";
 import * as azureCore from "@azure/core-http";
 
@@ -13,17 +11,7 @@ import { IConfig, IDisabledExtendedMetrics, iInstrumentation, InstrumentationTyp
 export class Config implements IConfig {
     // IConfig properties
     public endpointUrl: string;
-    public maxBatchSize: number;
-    public maxBatchIntervalMs: number;
-    public disableAppInsights: boolean;
     public samplingPercentage: number;
-    public correlationIdRetryIntervalMs: number;
-    public correlationHeaderExcludedDomains: string[];
-    public proxyHttpUrl: string;
-    public proxyHttpsUrl: string;
-    public httpAgent: http.Agent;
-    public httpsAgent: https.Agent;
-    public ignoreLegacyHeaders: boolean;
     public aadTokenCredential?: azureCore.TokenCredential;
     public enableAutoCollectConsole: boolean;
     public enableAutoCollectExceptions: boolean;
@@ -33,13 +21,8 @@ export class Config implements IConfig {
     public enableAutoCollectHeartbeat: boolean;
     public enableAutoCollectRequests: boolean;
     public enableAutoCollectDependencies: boolean;
-    public enableAutoDependencyCorrelation: boolean;
     public enableSendLiveMetrics: boolean;
-    public enableUseDiskRetryCaching: boolean;
-    public enableUseAsyncHooks: boolean;
     public enableAutoCollectExtendedMetrics: boolean | IDisabledExtendedMetrics;
-    public enableResendInterval: number;
-    public enableMaxBytesOnDisk: number;
     public disableAllExtendedMetrics: boolean;
     public disableStatsbeat: boolean;
     public extendedMetricDisablers: string;
@@ -53,9 +36,9 @@ export class Config implements IConfig {
 
     constructor(setupString?: string) {
         this.setupString = setupString;
-        this._loadDefaultValues();
         // Load config values from env variables and JSON if available
         this._mergeConfig();
+        this._loadDefaultValues();
         const connectionStringEnv: string | undefined = this._connectionString;
         let connectionStringPrser = new ConnectionStringParser();
         const csCode = connectionStringPrser.parse(setupString);
@@ -75,20 +58,6 @@ export class Config implements IConfig {
             csEnv.ingestionendpoint ||
             this._endpointBase
             }/v2.1/track`;
-        this.maxBatchSize = this.maxBatchSize || 250;
-        this.maxBatchIntervalMs = this.maxBatchIntervalMs || 15000;
-        this.disableAppInsights = this.disableAppInsights || false;
-        this.samplingPercentage = this.samplingPercentage || 100;
-        this.correlationIdRetryIntervalMs = this.correlationIdRetryIntervalMs || 30 * 1000;
-        this.correlationHeaderExcludedDomains = this.correlationHeaderExcludedDomains || [
-            "*.core.windows.net",
-            "*.core.chinacloudapi.cn",
-            "*.core.cloudapi.de",
-            "*.core.usgovcloudapi.net",
-            "*.core.microsoft.scloud",
-            "*.core.eaglex.ic.gov",
-        ];
-        this.ignoreLegacyHeaders = this.ignoreLegacyHeaders || false;
         this.quickPulseHost =
             this.quickPulseHost ||
             csCode.liveendpoint ||
@@ -102,13 +71,28 @@ export class Config implements IConfig {
     }
 
     private _loadDefaultValues() {
-        this.instrumentations = {};
-        this.instrumentations[InstrumentationType.azureSdk] = { enabled: false };
-        this.instrumentations[InstrumentationType.mongoDb] = { enabled: false };
-        this.instrumentations[InstrumentationType.mySql] = { enabled: false };
-        this.instrumentations[InstrumentationType.postgreSql] = { enabled: false };
-        this.instrumentations[InstrumentationType.redis] = { enabled: false };
-        this.instrumentations[InstrumentationType.redis4] = { enabled: false };
+        this.disableAllExtendedMetrics = this.disableAllExtendedMetrics != undefined ? this.disableAllExtendedMetrics : false;
+        this.disableStatsbeat = this.disableStatsbeat != undefined ? this.disableStatsbeat : false;
+        this.enableAutoCollectConsole = this.enableAutoCollectConsole != undefined ? this.enableAutoCollectConsole : true;
+        this.enableAutoCollectDependencies = this.enableAutoCollectDependencies != undefined ? this.enableAutoCollectDependencies : true;
+        this.enableAutoCollectExceptions = this.enableAutoCollectExceptions != undefined ? this.enableAutoCollectExceptions : true;
+        this.enableAutoCollectExtendedMetrics = this.enableAutoCollectExtendedMetrics != undefined ? this.enableAutoCollectExtendedMetrics : true;
+        this.enableAutoCollectExternalLoggers = this.enableAutoCollectExternalLoggers != undefined ? this.enableAutoCollectExternalLoggers : true;
+        this.enableAutoCollectHeartbeat = this.enableAutoCollectHeartbeat != undefined ? this.enableAutoCollectHeartbeat : true;
+        this.enableAutoCollectPerformance = this.enableAutoCollectPerformance != undefined ? this.enableAutoCollectPerformance : true;
+        this.enableAutoCollectPreAggregatedMetrics = this.enableAutoCollectPreAggregatedMetrics != undefined ? this.enableAutoCollectPreAggregatedMetrics : true;
+        this.enableAutoCollectRequests = this.enableAutoCollectRequests != undefined ? this.enableAutoCollectRequests : true;
+        this.enableSendLiveMetrics = this.enableSendLiveMetrics != undefined ? this.enableSendLiveMetrics : false;
+        this.samplingPercentage = this.samplingPercentage != undefined ? this.samplingPercentage : 100;
+        if (!this.instrumentations) {
+            this.instrumentations = {};
+            this.instrumentations[InstrumentationType.azureSdk] = { enabled: false };
+            this.instrumentations[InstrumentationType.mongoDb] = { enabled: false };
+            this.instrumentations[InstrumentationType.mySql] = { enabled: false };
+            this.instrumentations[InstrumentationType.postgreSql] = { enabled: false };
+            this.instrumentations[InstrumentationType.redis] = { enabled: false };
+            this.instrumentations[InstrumentationType.redis4] = { enabled: false };
+        }
     }
 
     public set instrumentationKey(iKey: string) {
@@ -134,10 +118,7 @@ export class Config implements IConfig {
     private _mergeConfig() {
         let jsonConfig = JsonConfig.getInstance();
         this._connectionString = jsonConfig.connectionString;
-        this.correlationHeaderExcludedDomains = jsonConfig.correlationHeaderExcludedDomains;
-        this.correlationIdRetryIntervalMs = jsonConfig.correlationIdRetryIntervalMs;
         this.disableAllExtendedMetrics = jsonConfig.disableAllExtendedMetrics;
-        this.disableAppInsights = jsonConfig.disableAppInsights;
         this.disableStatsbeat = jsonConfig.disableStatsbeat;
         this.enableAutoCollectConsole = jsonConfig.enableAutoCollectConsole;
         this.enableAutoCollectDependencies = jsonConfig.enableAutoCollectDependencies;
@@ -148,22 +129,12 @@ export class Config implements IConfig {
         this.enableAutoCollectPerformance = jsonConfig.enableAutoCollectPerformance;
         this.enableAutoCollectPreAggregatedMetrics = jsonConfig.enableAutoCollectPreAggregatedMetrics;
         this.enableAutoCollectRequests = jsonConfig.enableAutoCollectRequests;
-        this.enableAutoDependencyCorrelation = jsonConfig.enableAutoDependencyCorrelation;
-        this.enableResendInterval = jsonConfig.enableResendInterval;
-        this.enableMaxBytesOnDisk = jsonConfig.enableMaxBytesOnDisk;
         this.enableSendLiveMetrics = jsonConfig.enableSendLiveMetrics;
-        this.enableUseAsyncHooks = jsonConfig.enableUseAsyncHooks;
-        this.enableUseDiskRetryCaching = jsonConfig.enableUseDiskRetryCaching;
         this.endpointUrl = jsonConfig.endpointUrl;
         this.extendedMetricDisablers = jsonConfig.extendedMetricDisablers;
-        this.ignoreLegacyHeaders = jsonConfig.ignoreLegacyHeaders;
-        this.maxBatchIntervalMs = jsonConfig.maxBatchIntervalMs;
-        this.maxBatchSize = jsonConfig.maxBatchSize;
-        this.proxyHttpUrl = jsonConfig.proxyHttpUrl;
-        this.proxyHttpsUrl = jsonConfig.proxyHttpsUrl;
         this.quickPulseHost = jsonConfig.quickPulseHost;
         this.samplingPercentage = jsonConfig.samplingPercentage;
-        //this.instrumentations = jsonConfig.instrumentations;
+        this.instrumentations = jsonConfig.instrumentations;
     }
 
     private _getInstrumentationKey(): string {

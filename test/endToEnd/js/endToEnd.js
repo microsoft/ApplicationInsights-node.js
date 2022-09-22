@@ -14,13 +14,11 @@ let nockScope = nock("https://centralus-0.in.applicationinsights.azure.com").pos
 if (process.argv.indexOf('embeddedTestCase-AppTerminates1') > -1) {
     var appInsights = require('../../../out/src/applicationinsights');
     appInsights.setup("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
-    appInsights.defaultClient.config.httpsAgent = new https.Agent({ keepAlive: false });
     appInsights.start();
     return;
 } else if (process.argv.indexOf('embeddedTestCase-AppTerminates2') > -1) {
     var appInsights = require('../../../out/src/applicationinsights');
     appInsights.setup("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
-    appInsights.defaultClient.config.httpsAgent = new https.Agent({ keepAlive: false });
     appInsights.start();
     appInsights.defaultClient.trackEvent({ name: 'testEvent' });
     appInsights.defaultClient.flush();
@@ -105,7 +103,6 @@ describe('module', function () {
         it('should crash on uncaught exceptions', function () {
             var appInsights = require('../../../out/src/applicationinsights');
             appInsights.setup('InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/').setAutoCollectExceptions(true);
-            appInsights.defaultClient.config.httpsAgent = new https.Agent({ keepAlive: false });
             appInsights.start();
             assert.ok(appInsights.defaultClient);
             var handler;
@@ -125,7 +122,6 @@ describe('module', function () {
         it('should not crash on uncaught exceptions if multiple handlers exist', function () {
             var appInsights = require('../../../out/src/applicationinsights');
             appInsights.setup('InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/').setAutoCollectExceptions(true);
-            appInsights.defaultClient.config.httpsAgent = new https.Agent({ keepAlive: false });
             appInsights.start();
             process.addListener(UNCAUGHT_EXCEPTION, function () { });
             assert.ok(appInsights.defaultClient);

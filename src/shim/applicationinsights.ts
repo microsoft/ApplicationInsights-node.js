@@ -5,7 +5,6 @@ import { Logger } from "../library/logging";
 import { IDisabledExtendedMetrics, InstrumentationType } from "../library/configuration/interfaces";
 import { QuickPulseStateManager } from "../library/quickPulse";
 import { ICorrelationContext } from "../declarations/interfaces";
-import { DistributedTracingModes } from "../declarations/enumerators";
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
 import * as azureFunctionsTypes from "../declarations/functions";
@@ -13,7 +12,7 @@ import * as azureFunctionsTypes from "../declarations/functions";
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
-export { Contracts, TelemetryClient, DistributedTracingModes, azureFunctionsTypes, InstrumentationType };
+export { Contracts, TelemetryClient, azureFunctionsTypes, InstrumentationType };
 
 /**
  * The default client, initialized when setup was called. To initialize a different client
@@ -21,9 +20,6 @@ export { Contracts, TelemetryClient, DistributedTracingModes, azureFunctionsType
  */
 export let defaultClient: TelemetryClient;
 export let liveMetricsClient: QuickPulseStateManager;
-let _isDiskRetry = true;
-let _diskRetryInterval: number = undefined;
-let _diskRetryMaxBytes: number = undefined;
 
 /**
  * Initializes the default client. Should be called after setting
@@ -41,10 +37,6 @@ export function setup(setupString?: string) {
         if (defaultClient.config.enableSendLiveMetrics) {
             Configuration.setSendLiveMetrics(defaultClient.config.enableSendLiveMetrics);
         }
-        if (defaultClient.config.enableUseDiskRetryCaching) {
-            _isDiskRetry = defaultClient.config.enableUseDiskRetryCaching;
-        }
-        Configuration.setUseDiskRetryCaching(_isDiskRetry, _diskRetryInterval, _diskRetryMaxBytes);
     } else {
         Logger.getInstance().info("The default client is already setup");
     }
@@ -124,17 +116,6 @@ export function wrapWithCorrelationContext<T extends Function>(
 export class Configuration {
     // Convenience shortcut to ApplicationInsights.start
     public static start = start;
-
-    /**
-     * Sets the distributed tracing modes. If W3C mode is enabled, W3C trace context
-     * headers (traceparent/tracestate) will be parsed in all incoming requests, and included in outgoing
-     * requests. In W3C mode, existing back-compatibility AI headers will also be parsed and included.
-     * Enabling W3C mode will not break existing correlation with other Application Insights instrumented
-     * services. Default=AI
-     */
-    public static setDistributedTracingMode(value: DistributedTracingModes) {
-        return Configuration;
-    }
 
     /**
      * Sets the state of console and logger tracking (enabled by default for third-party loggers only)
@@ -230,14 +211,6 @@ export class Configuration {
      * @param maxBytesOnDisk The maximum size (in bytes) that the created temporary directory for cache events can grow to, before caching is disabled.
      * @returns {Configuration} this class
      */
-
-    public static setUseDiskRetryCaching(
-        value: boolean,
-        resendInterval?: number,
-        maxBytesOnDisk?: number
-    ) {
-        return Configuration;
-    }
 
     /**
      * Enables debug and warning Logger for AppInsights itself.
