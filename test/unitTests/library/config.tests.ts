@@ -94,16 +94,7 @@ describe("Library/Config", () => {
                     "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"
                 );
                 assert.equal(config.endpointUrl, "testEndpointUrl/v2.1/track");
-                assert.equal(config.maxBatchSize, 150);
-                assert.equal(config.maxBatchIntervalMs, 12000);
-                assert.equal(config.disableAppInsights, false);
                 assert.equal(config.samplingPercentage, 30);
-                assert.equal(config.correlationIdRetryIntervalMs, 15000);
-                assert.equal(config.correlationHeaderExcludedDomains[0], "domain1");
-                assert.equal(config.correlationHeaderExcludedDomains[1], "domain2");
-                assert.equal(config.proxyHttpUrl, "testProxyHttpUrl");
-                assert.equal(config.proxyHttpsUrl, "testProxyHttpsUrl");
-                assert.equal(config.ignoreLegacyHeaders, false);
                 assert.equal(config.enableAutoCollectExternalLoggers, false);
                 assert.equal(config.enableAutoCollectConsole, false);
                 assert.equal(config.enableAutoCollectExceptions, false);
@@ -112,13 +103,8 @@ describe("Library/Config", () => {
                 assert.equal(config.enableAutoCollectHeartbeat, false);
                 assert.equal(config.enableAutoCollectRequests, false);
                 assert.equal(config.enableAutoCollectDependencies, false);
-                assert.equal(config.enableAutoDependencyCorrelation, false);
-                assert.equal(config.enableUseAsyncHooks, false);
                 assert.equal(config.disableStatsbeat, false);
                 assert.equal(config.enableAutoCollectExtendedMetrics, false);
-                assert.equal(config.enableUseDiskRetryCaching, false);
-                assert.equal(config.enableResendInterval, 123);
-                assert.equal(config.enableMaxBytesOnDisk, 456);
                 assert.equal(config.disableStatsbeat, false);
                 assert.equal(config.enableSendLiveMetrics, false);
                 assert.equal(config.extendedMetricDisablers, "gc,heap");
@@ -158,45 +144,15 @@ describe("Library/Config", () => {
                 var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert(typeof config.instrumentationKey === "string");
                 assert(typeof config.endpointUrl === "string");
-                assert(typeof config.maxBatchSize === "number");
-                assert(typeof config.maxBatchIntervalMs === "number");
-                assert(typeof config.disableAppInsights === "boolean");
                 assert(typeof config.samplingPercentage === "number");
-                assert(typeof config.correlationIdRetryIntervalMs === "number");
-                assert(typeof config.correlationHeaderExcludedDomains === "object");
                 assert(typeof config.quickPulseHost === "string");
             });
 
             it("should initialize values that we claim in README", () => {
                 var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-                assert(config.maxBatchSize === 250);
-                assert(config.maxBatchIntervalMs === 15000);
-                assert(config.disableAppInsights === false);
                 assert(config.samplingPercentage === 100);
-                assert(config.correlationIdRetryIntervalMs === 30000);
-                assert(config.proxyHttpUrl === undefined);
-                assert(config.proxyHttpsUrl === undefined);
 
                 assert.equal(config.quickPulseHost, Constants.DEFAULT_LIVEMETRICS_HOST);
-            });
-
-            it("should initialize values that we claim in README (2)", () => {
-                process.env.http_proxy = "test";
-                process.env.https_proxy = "test2";
-                JsonConfig["_instance"] = undefined;
-                var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-                assert(config.proxyHttpUrl === "test");
-                assert(config.proxyHttpsUrl === "test2");
-                delete process.env.http_proxy;
-                delete process.env.https_proxy;
-            });
-
-            it("should add azure domain to excluded list", () => {
-                var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-                assert.equal(
-                    config.correlationHeaderExcludedDomains[0].toString(),
-                    "*.core.windows.net"
-                );
             });
 
             it("instrumentation key validation-valid key passed", () => {

@@ -201,7 +201,6 @@ appInsights.setup("<YOUR_CONNECTION_STRING>")
     .setSendLiveMetrics(false)
     .setAutoCollectHeartbeat(false)
     .setInternalLogging(false, true)
-    .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C)
     .start();
 ```
 
@@ -220,49 +219,29 @@ client.config.PROPERTYNAME = VALUE;
 These properties are client specific, so you can configure `appInsights.defaultClient`
 separately from clients created with `new appInsights.TelemetryClient()`.
 
-| Property                        | Description                                                                                                |
-| ------------------------------- |------------------------------------------------------------------------------------------------------------|
-| instrumentationKey              | Application Insights Instrumentation Key                                                                   |
-| endpointUrl                     | The ingestion endpoint to send telemetry payloads to                                                       |
-| proxyHttpUrl                    | A proxy server for SDK HTTP traffic (Optional, Default pulled from `http_proxy` environment variable)      |
-| proxyHttpsUrl                   | A proxy server for SDK HTTPS traffic (Optional, Default pulled from `https_proxy` environment variable)    |
-| maxBatchSize                    | The maximum number of telemetry items to include in a payload to the ingestion endpoint (Default `250`)    |
-| maxBatchIntervalMs              | The maximum amount of time to wait to for a payload to reach maxBatchSize (Default `15000`)                |
-| disableAppInsights              | A flag indicating if telemetry transmission is disabled (Default `false`)                                  |
-| samplingPercentage              | The percentage of telemetry items tracked that should be transmitted (Default `100`)                       |
-| correlationIdRetryIntervalMs    | The time to wait before retrying to retrieve the id for cross-component correlation (Default `30000`)      |
-| correlationHeaderExcludedDomains| A list of domains to exclude from cross-component correlation header injection (Default See [Config.ts][]) |
-| ignoreLegacyHeaders             | Disable including legacy headers in outgoing requests, x-ms-request-id                                     |
-| distributedTracingMode          | Sets the distributed tracing modes (Default=AI)                                                            |
-| enableAutoCollectExternalLoggers| Sets the state of console. If true logger activity will be sent to Application Insights |
-| enableAutoCollectConsole        | Sets the state of logger tracking (enabled by default for third-party loggers only). If true, logger auto collection will include console.log calls (default false) |
-| enableAutoCollectExceptions     | Sets the state of exception tracking (enabled by default). If true uncaught exceptions will be sent to Application Insights |
-| enableAutoCollectPerformance    | Sets the state of performance tracking (enabled by default). If true performance counters will be collected every second and sent to Application Insights |
-| enableAutoCollectExtendedMetrics| Sets the state of performance tracking (enabled by default). If true, extended metrics counters will be collected every minute and sent to Application Insights |
-| enableAutoCollectPreAggregatedMetrics | Sets the state of pre aggregated metrics tracking (enabled by default). If true pre aggregated metrics will be collected every minute and sent to Application Insights |
-| enableAutoCollectHeartbeat      | Sets the state of request tracking (enabled by default). If true HeartBeat metric data will be collected every 15 minutes and sent to Application Insights |
-| enableAutoCollectRequests      | Sets the state of request tracking (enabled by default). If true requests will be sent to Application Insights |
-| enableAutoCollectDependencies  | Sets the state of dependency tracking (enabled by default). If true dependencies will be sent to Application Insights |
-| enableAutoDependencyCorrelation| Sets the state of automatic dependency correlation (enabled by default). If true dependencies will be correlated with requests |
-| enableUseAsyncHooks            | Sets the state of automatic dependency correlation (enabled by default). If true, forces use of experimental async_hooks module to provide correlation. If false, instead uses only patching-based techniques. If left blank, the best option is chosen for you based on your version of Node.js. |
-| enableUseDiskRetryCaching     | If true events that occurred while client is offline will be cached on disk |
-| enableResendInterval          | The wait interval for resending cached events. |
-| enableMaxBytesOnDisk          | The maximum size (in bytes) that the created temporary directory for cache events can grow to, before caching is disabled. |
-| enableInternalDebugLogging    | Enables debug and warning logging for AppInsights itself. If true, enables debug logging |
-| enableInternalWarningLogging  | Enables debug and warning logging for AppInsights itself. If true, enables warning logging |
-| enableSendLiveMetrics         | Enables communication with Application Insights Live Metrics. If true, enables communication with the live metrics service |
-| disableAllExtendedMetrics     | Disable all environment variables set |
-| extendedMetricDisablers       | Disable individual environment variables set. `"extendedMetricDisablers": "..."` |
-| noDiagnosticChannel           | In order to track context across asynchronous calls, some changes are required in third party libraries such as mongodb and redis. By default ApplicationInsights will use diagnostic-channel-publishers to monkey-patch some of these libraries. This property is to disable the feature. Note that by setting this flag, events may no longer be correctly associated with the right operation.  |
-| noPatchModules                | Disable individual monkey-patches. Set `noPatchModules` to a comma separated list of packages to disable. e.g. `"noPatchModules": "console,redis"` to avoid patching the console and redis packages. The following modules are available: `azuresdk, bunyan, console, mongodb, mongodb-core, mysql, redis, winston, pg`, and `pg-pool`. Visit the [diagnostic-channel-publishers' README](https://github.com/microsoft/node-diagnostic-channel/blob/master/src/diagnostic-channel-publishers/README.md) for information about exactly which versions of these packages are patched. |
-| noHttpAgentKeepAlive          | HTTPS without a passed in agent |
-| httpAgent                       | An http.Agent to use for SDK HTTP traffic (Optional, Default undefined)                                    |
-| httpsAgent                      | An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined)       
-| aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Credential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes) |                            |
+|Property|Description|Default|
+| ------------------------------- |------------------------------------------------------------------------------------------------------------|-------|
+| endpointUrl                     | The ingestion endpoint to send telemetry payloads.to                                                       | |
+| samplingPercentage              | The percentage of telemetry items tracked that should be transmitted.                       | 100|                             |                                                  |
+| enableAutoCollectExternalLoggers| Sets the state of console. If true logger activity will be sent to Application Insights. |
+| enableAutoCollectConsole        | Sets the state of logger tracking (enabled by default for third-party loggers only). If true, logger auto collection will include console.log calls. | false |
+| enableAutoCollectExceptions     | Sets the state of exception tracking. If true uncaught exceptions will be sent to Application Insights | true|
+| enableAutoCollectPerformance    | Sets the state of performance tracking. If true performance counters will be collected every second and sent to Application Insights | true|
+| enableAutoCollectExtendedMetrics| Sets the state of performance tracking. If true, extended metrics counters will be collected every minute and sent to Application Insights | true|
+| enableAutoCollectPreAggregatedMetrics | Sets the state of pre aggregated metrics tracking. If true pre aggregated metrics will be collected every minute and sent to Application Insights | true|
+| enableAutoCollectHeartbeat      | Sets the state of request tracking. If true HeartBeat metric data will be collected every 15 minutes and sent to Application Insights | true|
+| enableAutoCollectRequests      | Sets the state of request tracking. If true requests will be sent to Application Insights | true|
+| enableAutoCollectDependencies  | Sets the state of dependency tracking. If true dependencies will be sent to Application Insights | true|
+| enableInternalDebugLogging    | Enables debug and warning logging for AppInsights itself. If true, enables debug logging |true|
+| enableInternalWarningLogging  | Enables debug and warning logging for AppInsights itself. If true, enables warning logging |true|
+| enableSendLiveMetrics         | Enables communication with Application Insights Live Metrics. If true, enables communication with the live metrics service |false|
+| disableAllExtendedMetrics     | Disable all environment variables set |true|
+| extendedMetricDisablers       | Disable individual environment variables set. `"extendedMetricDisablers": "..."` ||
+| aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Credential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes) | |
 
 [Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
 
-All these properties except httpAgent, httpsAgent and aadTokenCredential could be configured using configuration file `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. These configuration values will be applied to all TelemetryClients created in the SDK. 
+All these properties except aadTokenCredential could be configured using configuration file `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. These configuration values will be applied to all TelemetryClients created in the SDK. 
 
 
 ```javascript
@@ -350,16 +329,6 @@ Currently, the native metrics package performs autocollection of Garbage Collect
 - **Event Loop:** How many ticks occurred and how much CPU time was spent in total.
 - **Heap vs Non-Heap:** How much of your app's memory usage is in the heap or non-heap.
 
-### Distributed Tracing Modes
-By default, this SDK will send headers understood by other applications/services instrumented with an Application Insights SDK. You can optionally enable sending/receiving of [W3C Trace Context](https://github.com/w3c/trace-context) headers in addition to the existing AI headers, so you will not break correlation with any of your existing legacy services. Enabling W3C headers will allow your app to correlate with other services not instrumented with Application Insights, but do adopt this W3C standard.
-
-```js
-const appInsights = require("applicationinsights");
-appInsights
-  .setup("<YOUR_CONNECTION_STRING>")
-  .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C)
-  .start()
-```
 
 ## Track custom telemetry
 

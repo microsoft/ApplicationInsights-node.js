@@ -108,7 +108,7 @@ describe("AutoCollection/HttpMetricsInstrumentation", () => {
     it("Server/Client Metric Duration", async () => {
         let mockExport = sandbox.stub(exporter, "export");
         await makeHttpRequest();
-        await new Promise(resolve => setTimeout(resolve, 150));
+        await new Promise(resolve => setTimeout(resolve, 250));
         assert.ok(mockExport.called);
         let resourceMetrics = mockExport.args[0][0];
         const scopeMetrics = resourceMetrics.scopeMetrics;

@@ -14,10 +14,12 @@ if (testconfig.AppInsightsEnabled) {
     config.instrumentations["redis4"].enabled = true;
     config.enableAutoCollectDependencies = true;
     config.enableAutoCollectRequests = true;
+    config.enableAutoCollectExceptions = true;
+    config.enableAutoCollectConsole = true;
+    config.enableAutoCollectExternalLoggers = true;
 
     appInsights = new Client(config);
     appInsights.start();
-    appInsights.getLogHandler().setAutoCollectConsole(true, true);
 }
 
 var Tasks = require("./tasks");

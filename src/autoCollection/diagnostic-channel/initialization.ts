@@ -2,44 +2,27 @@
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 
 // Don't reference modules from these directly. Use only for types.
-// This is to avoid requiring the actual module if the NO_DIAGNOSTIC_CHANNEL env is present
 import * as DiagChannelPublishers from "diagnostic-channel-publishers";
-import * as DiagChannel from "diagnostic-channel";
 import { Logger } from "../../library/logging";
-import { JsonConfig } from "../../library/configuration";
 
-export const IsInitialized = !JsonConfig.getInstance().noDiagnosticChannel;
 const TAG = "DiagnosticChannel";
+let isInitialized = false;
 
-if (IsInitialized) {
-    const publishers: typeof DiagChannelPublishers = require("diagnostic-channel-publishers");
-    const individualOptOuts: string = JsonConfig.getInstance().noPatchModules;
-    const unpatchedModules = individualOptOuts.split(",");
-    const modules: { [key: string]: any } = {
-        bunyan: publishers.bunyan,
-        console: publishers.console,
-        winston: publishers.winston
-    };
-    for (const mod in modules) {
-        if (unpatchedModules.indexOf(mod) === -1) {
+
+export function enablePublishers() {
+    // Only register monkey patchs once
+    if (!isInitialized) {
+        isInitialized = true;
+        const publishers: typeof DiagChannelPublishers = require("diagnostic-channel-publishers");
+        const modules: { [key: string]: any } = {
+            bunyan: publishers.bunyan,
+            console: publishers.console,
+            winston: publishers.winston
+        };
+
+        for (const mod in modules) {
             modules[mod].enable();
             Logger.getInstance().info(TAG, `Subscribed to ${mod} events`);
         }
     }
-    if (unpatchedModules.length > 0) {
-        Logger.getInstance().info(TAG, "Some modules will not be patched", unpatchedModules);
-    }
-} else {
-    Logger.getInstance().info(
-        TAG,
-        "Not subscribing to dependency auto collection because APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL was set"
-    );
-}
-
-export function registerContextPreservation(cb: (cb: Function) => Function) {
-    if (!IsInitialized) {
-        return;
-    }
-    const diagChannel = require("diagnostic-channel") as typeof DiagChannel;
-    diagChannel.channel.addContextPreservation(cb);
 }

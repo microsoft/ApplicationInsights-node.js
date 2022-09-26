@@ -5,7 +5,7 @@ import { bunyan } from "diagnostic-channel-publishers";
 
 import { enable, dispose } from "../../../src/autoCollection/diagnostic-channel/bunyan.sub";
 import { Util } from "../../../src/library/util";
-import { LogHandler, ResourceManager } from "../../../src/library/handlers";
+import { LogHandler } from "../../../src/library/handlers";
 import { Config } from "../../../src/library/configuration";
 
 describe("diagnostic-channel/bunyan", () => {

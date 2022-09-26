@@ -9,8 +9,6 @@ import { ExportResult, ExportResultCode } from "@opentelemetry/core";
 export class BatchProcessor {
     protected _lastSend: number;
     protected _timeoutHandle: any;
-
-    protected _isDisabled: () => boolean;
     protected _getBatchSize: () => number;
     protected _getBatchIntervalMs: () => number;
 
@@ -21,20 +19,14 @@ export class BatchProcessor {
         this._buffer = [];
         this._lastSend = 0;
         this._exporter = exporter;
-        this._isDisabled = () => config.disableAppInsights;
-        this._getBatchSize = () => config.maxBatchSize;
-        this._getBatchIntervalMs = () => config.maxBatchIntervalMs;
+        this._getBatchSize = () => 250;
+        this._getBatchIntervalMs = () => 15000;
     }
 
     /**
      * Add a telemetry item to the send buffer
      */
     public send(envelope: Envelope) {
-        // if master off switch is set, don't send any data
-        if (this._isDisabled()) {
-            // Do not send/save data
-            return;
-        }
         // validate input
         if (!envelope) {
             Logger.getInstance().warn("Cannot send null/undefined telemetry");
