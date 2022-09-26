@@ -73,15 +73,18 @@ export class Config implements IConfig {
     private _loadDefaultValues() {
         this.disableAllExtendedMetrics = this.disableAllExtendedMetrics != undefined ? this.disableAllExtendedMetrics : false;
         this.disableStatsbeat = this.disableStatsbeat != undefined ? this.disableStatsbeat : false;
-        this.enableAutoCollectConsole = this.enableAutoCollectConsole != undefined ? this.enableAutoCollectConsole : true;
+        this.enableAutoCollectConsole = this.enableAutoCollectConsole != undefined ? this.enableAutoCollectConsole : false;
+        this.enableAutoCollectConsole = this.enableAutoCollectExternalLoggers != undefined ? this.enableAutoCollectConsole : true;
+
         this.enableAutoCollectDependencies = this.enableAutoCollectDependencies != undefined ? this.enableAutoCollectDependencies : true;
+        this.enableAutoCollectRequests = this.enableAutoCollectRequests != undefined ? this.enableAutoCollectRequests : true;
+        
         this.enableAutoCollectExceptions = this.enableAutoCollectExceptions != undefined ? this.enableAutoCollectExceptions : true;
         this.enableAutoCollectExtendedMetrics = this.enableAutoCollectExtendedMetrics != undefined ? this.enableAutoCollectExtendedMetrics : true;
-        this.enableAutoCollectExternalLoggers = this.enableAutoCollectExternalLoggers != undefined ? this.enableAutoCollectExternalLoggers : true;
         this.enableAutoCollectHeartbeat = this.enableAutoCollectHeartbeat != undefined ? this.enableAutoCollectHeartbeat : true;
         this.enableAutoCollectPerformance = this.enableAutoCollectPerformance != undefined ? this.enableAutoCollectPerformance : true;
         this.enableAutoCollectPreAggregatedMetrics = this.enableAutoCollectPreAggregatedMetrics != undefined ? this.enableAutoCollectPreAggregatedMetrics : true;
-        this.enableAutoCollectRequests = this.enableAutoCollectRequests != undefined ? this.enableAutoCollectRequests : true;
+        
         this.enableSendLiveMetrics = this.enableSendLiveMetrics != undefined ? this.enableSendLiveMetrics : false;
         this.samplingPercentage = this.samplingPercentage != undefined ? this.samplingPercentage : 100;
         if (!this.instrumentations) {

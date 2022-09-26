@@ -1,4 +1,6 @@
 import { LogHandler } from "../library/handlers";
+import { enablePublishers } from "./diagnostic-channel/initialization";
+enablePublishers();
 
 export class AutoCollectConsole {
     private _handler: LogHandler;
