@@ -163,6 +163,13 @@ export interface IBaseConfig {
      * see more details at: https://github.com/microsoft/ApplicationInsights-JS#configuration
      */
     webInstrumentationConfig?: any;
+     /**
+     * Application Insights web Instrumentation CDN url
+     * NOTE: this config can be changed from env variable: APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_SOURCE or Json Config: webInstrumentationSrc
+     * If no resouce is provided here, default CDN endpoint: https://js.monitor.azure.com/scripts/b/ai will be used
+     * see more details at: https://github.com/microsoft/ApplicationInsights-JS
+     */
+    webInstrumentationSrc?: any;
 }
 
 export interface IEnvironmentConfig {

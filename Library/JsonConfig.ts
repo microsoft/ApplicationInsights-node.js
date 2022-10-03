@@ -24,6 +24,7 @@ const ENV_noHttpAgentKeepAlive = "APPLICATION_INSIGHTS_NO_HTTP_AGENT_KEEP_ALIVE"
 const ENV_noPatchModules = "APPLICATION_INSIGHTS_NO_PATCH_MODULES";
 const ENV_webInstrumentationEnable = "APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_ENABLED";
 const ENV_webInstrumentation_connectionString = "APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_CONNECTION_STRING";
+const ENV_webInstrumentation_source = "APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_SOURCE";
 
 // Old web instrumentation env variables are to be deprecated
 // Those env variables will NOT be exposed in doc after version 2.3.5
@@ -73,6 +74,7 @@ export class JsonConfig implements IJsonConfig {
     public enableWebInstrumentation: boolean;
     public webInstrumentationConnectionString: string;
     public webInstrumentationConfig: any;
+    public webInstrumentationSrc: string;
 
     // the following features are to be deprecated
     // Those env variables will NOT be exposed in doc after version 2.3.5
@@ -105,10 +107,8 @@ export class JsonConfig implements IJsonConfig {
         this.disableStatsbeat = !!process.env[ENV_noStatsbeat];
         this.noHttpAgentKeepAlive = !!process.env[ENV_noHttpAgentKeepAlive];
         this.noPatchModules = process.env[ENV_noPatchModules] || "";
-        this.enableWebInstrumentation = !!process.env[ENV_webInstrumentationEnable];
-        if(!!process.env[ENV_webSnippetEnable]) {
-            this.enableWebInstrumentation = true;
-        }
+        this.enableWebInstrumentation = !!process.env[ENV_webInstrumentationEnable] || !!process.env[ENV_webSnippetEnable];
+        this.webInstrumentationSrc = process.env[ENV_webInstrumentation_source] || "";
         this.webInstrumentationConnectionString = process.env[ENV_webInstrumentation_connectionString] || process.env[ENV_webSnippet_connectionString] || "";
         this.enableAutoWebSnippetInjection = this.enableWebInstrumentation;
         this.webSnippetConnectionString = this.webInstrumentationConnectionString;
@@ -181,6 +181,9 @@ export class JsonConfig implements IJsonConfig {
             }
             if (jsonConfig.webInstrumentationConfig != undefined) {
                 this.webInstrumentationConfig = jsonConfig.webInstrumentationConfig;
+            }
+            if (jsonConfig.webInstrumentationSrc != undefined) {
+                this.webInstrumentationSrc = jsonConfig.webInstrumentationSrc;
             }
 
             this.endpointUrl = jsonConfig.endpointUrl;

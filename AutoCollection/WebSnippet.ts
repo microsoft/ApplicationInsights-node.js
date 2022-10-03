@@ -1,6 +1,7 @@
 import http = require("http");
 import https = require("https");
 import zlib = require("zlib");
+import os = require("os");
 
 import Logging = require("../Library/Logging");
 import TelemetryClient = require("../Library/TelemetryClient");
@@ -9,6 +10,9 @@ import Statsbeat = require("./Statsbeat");
 import Constants = require("../Declarations/Constants");
 import ConnectionStringParser = require("../Library/ConnectionStringParser");
 import {webSnippet} from "@microsoft/applicationinsights-web-snippet";
+
+const OS_WINDOWS = "Windows_NT";
+const OS_LINUX = "Linux";
 
 class WebSnippet {
 
@@ -23,7 +27,7 @@ class WebSnippet {
     private _statsbeat: Statsbeat;
     private _webInstrumentationIkey: string;
     private _clientWebInstrumentationConfig: any;
-    
+    private _clientWebInstrumentationSrc: string;
 
     constructor(client: TelemetryClient) {
         if (!!WebSnippet.INSTANCE) {
@@ -32,12 +36,13 @@ class WebSnippet {
 
         WebSnippet.INSTANCE = this;
         // AI URL used to validate if snippet already included
-        WebSnippet._aiUrl = "https://js.monitor.azure.com/scripts/b/ai";
-        WebSnippet._aiDeprecatedUrl = "https://az416426.vo.msecnd.net/scripts/b/ai";
+        WebSnippet._aiUrl = Constants.WEB_INSTRUMENTATION_DEFAULT_SOURCE;
+        WebSnippet._aiDeprecatedUrl = Constants.WEB_INSTRUMENTATION_DEPRECATE_SOURCE;
 
         let clientWebIkey = this._getWebSnippetIkey(client.config?.webInstrumentationConnectionString);
         this._webInstrumentationIkey = clientWebIkey || client.config.instrumentationKey;
         this._clientWebInstrumentationConfig = client.config.webInstrumentationConfig;
+        this._clientWebInstrumentationSrc = client.config.webInstrumentationSrc;
 
         this._statsbeat = client.getStatsbeat();
     }
@@ -65,32 +70,59 @@ class WebSnippet {
 
     private _getWebSnippetIkey(connectionString: string) {
         let iKey = null;
-        const csCode = ConnectionStringParser.parse(connectionString);
-        const iKeyCode = csCode.instrumentationkey || "";
-        if (!ConnectionStringParser.isIkeyValid(iKeyCode)) {
-            this._isIkeyValid = false;
-            Logging.info("Invalid web Instrumentation connection string, web Instrumentation is not enabled.");
-        } else {
-            this._isIkeyValid = true;
-            iKey = iKeyCode;
+        try {
+            const csCode = ConnectionStringParser.parse(connectionString);
+            const iKeyCode = csCode.instrumentationkey || "";
+            if (!ConnectionStringParser.isIkeyValid(iKeyCode)) {
+                this._isIkeyValid = false;
+                Logging.info("Invalid web Instrumentation connection string, web Instrumentation is not enabled.");
+            } else {
+                this._isIkeyValid = true;
+                iKey = iKeyCode;
+            }
+        } catch (err) {
+            Logging.info("get web snippet ikey error: " + err);
         }
         return iKey;
     }
 
     private _getWebInstrumentationReplacedStr() {
         let configStr = this._getClientWebInstrumentationConfigStr(this._clientWebInstrumentationConfig);
-        let snippetReplacedStr = `${this._webInstrumentationIkey}\",\r\n ${configStr} disableIkeyDeprecationMessage: true,\r\n sdkExtension: \"kwr_n_`;
+        let osStr = this._getOsString();
+        let snippetReplacedStr = `${this._webInstrumentationIkey}\",\r\n${configStr} disableIkeyDeprecationMessage: true,\r\n sdkExtension: \"w${osStr}r_n_`;
         let replacedSnippet = webSnippet.replace("INSTRUMENTATION_KEY", snippetReplacedStr);
+        if (this._clientWebInstrumentationSrc) {
+            return replacedSnippet.replace(`${Constants.WEB_INSTRUMENTATION_DEFAULT_SOURCE}.2.min.js`,this._clientWebInstrumentationSrc);
+        }
         return replacedSnippet;
+    }
+
+    private _getOsString() {
+        // default is unknown OS
+        let osStr = "u";
+        try {
+            if (os && os.type()) {
+                let osType = os.type();
+                if (osType === OS_WINDOWS) {
+                    osStr = "w"
+                }
+                if (osType === OS_LINUX) {
+                    osStr = "l"
+                }
+            }
+        } catch (err) {
+            Logging.info("get OS type err: " + err)
+        }
+        return osStr;
     }
 
     private _getClientWebInstrumentationConfigStr(config: any) {
         let configStr = "";
         try {
-            if (config  === typeof Object) {
+            if (typeof config  === "object") {
                 let keys = Object.keys(config);
                 keys.forEach((key) =>{
-                    let val = config.key;
+                    let val = config.key || config[key];
                     let entry = "";
                     // NOTE: users should convert object/function to string themselves
                     // Type "function" and "object" will be skipped!
@@ -100,11 +132,11 @@ class WebSnippet {
                         case "object":
                             break;
                         case "string":
-                            entry = `${key}:\"${val}\",\r\n`;
+                            entry = ` ${key}: \"${val}\",\r\n`;
                             configStr += entry;
                             break;
                         default:
-                            entry = `${key}:${val},\r\n`;
+                            entry = ` ${key}: ${val},\r\n`;
                             configStr += entry;
                             break;
                     }
@@ -258,16 +290,19 @@ class WebSnippet {
      * Validate response and try to inject Web snippet
      */
     public ValidateInjection(response: http.ServerResponse, input: string | Buffer): boolean {
-
-        if (!response || !input || response.statusCode != 200) return false;
-        let isContentHtml =  snippetInjectionHelper.isContentTypeHeaderHtml(response);
-        if (!isContentHtml) return false;
-        let inputStr = input.slice().toString();
-        if (inputStr.indexOf("<head>") >= 0 && inputStr.indexOf("</head>") >= 0) {
-            // Check if snippet not already present looking for AI Web SDK URL
-            if (inputStr.indexOf(WebSnippet._aiUrl) < 0 && inputStr.indexOf(WebSnippet._aiDeprecatedUrl) < 0) {
-                return true;
+        try {
+            if (!response || !input || response.statusCode != 200) return false;
+            let isContentHtml =  snippetInjectionHelper.isContentTypeHeaderHtml(response);
+            if (!isContentHtml) return false;
+            let inputStr = input.slice().toString();
+            if (inputStr.indexOf("<head>") >= 0 && inputStr.indexOf("</head>") >= 0) {
+                // Check if snippet not already present looking for AI Web SDK URL
+                if (inputStr.indexOf(WebSnippet._aiUrl) < 0 && inputStr.indexOf(WebSnippet._aiDeprecatedUrl) < 0) {
+                    return true;
+                }
             }
+        } catch (err) {
+            Logging.info("validate injections error: " + err);
         }
         return false;
     }
@@ -316,34 +351,39 @@ class WebSnippet {
     // and also this function do not support partial compression as well
     // need more investigation
     private _getInjectedCompressBuffer(response: http.ServerResponse, input: Buffer, encodeType: snippetInjectionHelper.contentEncodingMethod): Buffer {
-        switch (encodeType) {
-            case snippetInjectionHelper.contentEncodingMethod.GZIP:
-                let gunzipBuffer = zlib.gunzipSync(input);
-                if (this.ValidateInjection(response,gunzipBuffer)) {
-                    let injectedGunzipBuffer = this.InjectWebSnippet(response, gunzipBuffer);
-                    input = zlib.gzipSync(injectedGunzipBuffer);
-                 }
-                 break;
-            case snippetInjectionHelper.contentEncodingMethod.DEFLATE:
-                let inflateBuffer = zlib.inflateSync(input);
-                if (this.ValidateInjection(response,inflateBuffer)) {
-                    let injectedInflateBuffer = this.InjectWebSnippet(response, inflateBuffer);
-                    input = zlib.deflateSync(injectedInflateBuffer);
-                 }
-                 break;
-            case snippetInjectionHelper.contentEncodingMethod.BR:
-                let BrotliDecompressSync = snippetInjectionHelper.getBrotliDecompressSync(zlib);
-                let BrotliCompressSync = snippetInjectionHelper.getBrotliCompressSync(zlib);
-                if (BrotliDecompressSync && BrotliCompressSync) {
-                    let decompressBuffer = BrotliDecompressSync(input);
-                    if (this.ValidateInjection(response,decompressBuffer)) {
-                        let injectedDecompressBuffer = this.InjectWebSnippet(response, decompressBuffer);
-                        input = BrotliCompressSync(injectedDecompressBuffer);
+        try {
+            switch (encodeType) {
+                case snippetInjectionHelper.contentEncodingMethod.GZIP:
+                    let gunzipBuffer = zlib.gunzipSync(input);
+                    if (this.ValidateInjection(response,gunzipBuffer)) {
+                        let injectedGunzipBuffer = this.InjectWebSnippet(response, gunzipBuffer);
+                        input = zlib.gzipSync(injectedGunzipBuffer);
                      }
                      break;
-                }
-        }
+                case snippetInjectionHelper.contentEncodingMethod.DEFLATE:
+                    let inflateBuffer = zlib.inflateSync(input);
+                    if (this.ValidateInjection(response,inflateBuffer)) {
+                        let injectedInflateBuffer = this.InjectWebSnippet(response, inflateBuffer);
+                        input = zlib.deflateSync(injectedInflateBuffer);
+                     }
+                     break;
+                case snippetInjectionHelper.contentEncodingMethod.BR:
+                    let BrotliDecompressSync = snippetInjectionHelper.getBrotliDecompressSync(zlib);
+                    let BrotliCompressSync = snippetInjectionHelper.getBrotliCompressSync(zlib);
+                    if (BrotliDecompressSync && BrotliCompressSync) {
+                        let decompressBuffer = BrotliDecompressSync(input);
+                        if (this.ValidateInjection(response,decompressBuffer)) {
+                            let injectedDecompressBuffer = this.InjectWebSnippet(response, decompressBuffer);
+                            input = BrotliCompressSync(injectedDecompressBuffer);
+                         }
+                         break;
+                    }
+            }
 
+        } catch (err) {
+            Logging.info("get web injection compress buffer error: " + err);
+        }
+        
         return input;
     }
 

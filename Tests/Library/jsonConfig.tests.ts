@@ -103,9 +103,11 @@ describe("Json Config", () => {
             assert.equal(config.noDiagnosticChannel, false);
             assert.equal(config.noPatchModules, "console,redis");
             assert.equal(config.quickPulseHost, "testquickpulsehost.com");
-            assert.equal(config.enableAutoWebSnippetInjection, true);
-            assert.equal(config.webSnippetConnectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+            assert.equal(config.enableWebInstrumentation, true);
+            assert.equal(config.webInstrumentationConnectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
             assert.deepEqual(config.webInstrumentationConfig, {key1:"key1", key2: true});
+            assert.equal(config.webInstrumentationSrc, "webInstrumentationSourceFromJson");
+            
             assert.equal(config.enableAutoWebSnippetInjection, true);
             assert.equal(config.webSnippetConnectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
         });
@@ -125,6 +127,7 @@ describe("Json Config", () => {
             env["APPLICATIONINSIGHTS_WEB_SNIPPET_CONNECTION_STRING"] = "SnippetTestConnectionString";
             env["APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_ENABLED"] = "true";
             env["APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_CONNECTION_STRING"] = "WebInstrumentationConnectionString";
+            env["APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_SOURCE"] = "WebInstrumentationTestSource";
             process.env = env;
             const config = JsonConfig.getInstance();
             assert.equal(config.connectionString, "TestConnectionString");
@@ -138,6 +141,7 @@ describe("Json Config", () => {
             assert.equal(config.disableStatsbeat, true);
             assert.equal(config.enableWebInstrumentation, true);
             assert.equal(config.webInstrumentationConnectionString, "WebInstrumentationConnectionString");
+            assert.equal(config.webInstrumentationSrc, "WebInstrumentationTestSource");
             assert.equal(config.enableAutoWebSnippetInjection, true);
             assert.equal(config.webSnippetConnectionString, "WebInstrumentationConnectionString");
         });
@@ -152,6 +156,38 @@ describe("Json Config", () => {
             assert.equal(config.webInstrumentationConnectionString, "SnippetTestConnectionString");
             assert.equal(config.enableAutoWebSnippetInjection, true);
             assert.equal(config.webSnippetConnectionString, "SnippetTestConnectionString");
+            assert.equal(config.webInstrumentationSrc, "");
+        });
+
+        it("Should enable web Instrumentation configurations from old and new environment variables", () => {
+            const env = <{ [id: string]: string }>{};
+            env["APPLICATIONINSIGHTS_WEB_SNIPPET_ENABLED"] = "true";
+            env["APPLICATIONINSIGHTS_WEB_SNIPPET_CONNECTION_STRING"] = "SnippetTestConnectionString";
+            env["APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_ENABLED"] = "false";
+
+            process.env = env;
+            const config = JsonConfig.getInstance();
+            assert.equal(config.enableAutoWebSnippetInjection, true);
+            assert.equal(config.webInstrumentationConnectionString, "SnippetTestConnectionString");
+            assert.equal(config.enableAutoWebSnippetInjection, true);
+            assert.equal(config.webSnippetConnectionString, "SnippetTestConnectionString");
+            assert.equal(config.webInstrumentationSrc, "");
+        });
+
+        it("Should disable web Instrumentation configurations from old and new environment variables", () => {
+            const env = <{ [id: string]: string }>{};
+            env["APPLICATIONINSIGHTS_WEB_SNIPPET_ENABLED"] = "";
+            env["APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_ENABLED"] = "";
+            env["APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_CONNECTION_STRING"] = "WebInstrumentationConnectionString";
+            process.env = env;
+            assert.equal(env["APPLICATIONINSIGHTS_WEB_SNIPPET_ENABLED"], false);
+            assert.equal(env["APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_ENABLED"], false);
+            const config = JsonConfig.getInstance();
+            assert.equal(config.enableAutoWebSnippetInjection, false);
+            assert.equal(config.webInstrumentationConnectionString, "WebInstrumentationConnectionString");
+            assert.equal(config.enableAutoWebSnippetInjection, false);
+            assert.equal(config.webSnippetConnectionString, "WebInstrumentationConnectionString");
+            assert.equal(config.webInstrumentationSrc, "");
         });
 
         it("Should take configurations from JSON config file over environment variables if both are configured", () => {
@@ -171,6 +207,7 @@ describe("Json Config", () => {
             env["APPLICATIONINSIGHTS_WEB_SNIPPET_CONNECTION_STRING"] = "SnippetTestConnectionString";
             env["APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_ENABLED"] = "WebInstrumentationConnectionString";
             env["APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_CONNECTION_STRING"] = "true";
+            env["APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_SOURCE"] = "WebInstrumentationTestSource"
             process.env = env;
             const config = JsonConfig.getInstance();
             assert.equal(config.connectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
@@ -186,6 +223,7 @@ describe("Json Config", () => {
             assert.equal(config.webSnippetConnectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
             assert.equal(config.enableWebInstrumentation, true);
             assert.equal(config.webInstrumentationConnectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+            assert.equal(config.webInstrumentationSrc, "webInstrumentationSourceFromJson");
         });
     });
 });

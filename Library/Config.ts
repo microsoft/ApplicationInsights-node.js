@@ -58,6 +58,7 @@ class Config implements IConfig {
     public quickPulseHost: string;
     public enableWebInstrumentation: boolean;
     public webInstrumentationConfig: any;
+    public webInstrumentationSrc: string;
     // To Be deprecated.
     public enableAutoWebSnippetInjection: boolean;
 
@@ -195,6 +196,7 @@ class Config implements IConfig {
         this.enableWebInstrumentation = jsonConfig.enableWebInstrumentation;
         this._webInstrumentationConnectionString = jsonConfig.webInstrumentationConnectionString;
         this.webInstrumentationConfig = jsonConfig.webInstrumentationConfig;
+        this.webInstrumentationSrc = jsonConfig.webInstrumentationSrc;
     }
 
     /**

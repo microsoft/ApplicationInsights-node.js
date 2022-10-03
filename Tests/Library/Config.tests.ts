@@ -108,6 +108,11 @@ describe("Library/Config", () => {
                 assert.equal(config.enableSendLiveMetrics, false);
                 assert.equal(config.extendedMetricDisablers, "gc,heap");
                 assert.equal(config.quickPulseHost, "testquickpulsehost.com");
+                assert.equal(config.enableWebInstrumentation, true);
+                assert.equal(config.webInstrumentationConnectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+                assert.deepEqual(config.webInstrumentationConfig, {key1:"key1", key2: true});
+                assert.equal(config.webInstrumentationSrc, "webInstrumentationSourceFromJson");
+             
                 assert.equal(config.enableAutoWebSnippetInjection, true);
                 assert.equal(config.webSnippetConnectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
             });
@@ -139,19 +144,98 @@ describe("Library/Config", () => {
                 assert.equal(config.instrumentationKey, iKey);
             });
 
-            it("should read enableWebSnippet from environment variables", () => {
+            it("should read enableWebInstrumentation from old environment variables", () => {
                 var env = <{ [id: string]: string }>{};
                 env["APPLICATIONINSIGHTS_WEB_SNIPPET_ENABLED"] = "true";
                 process.env = env;
                 var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+                assert.equal(config.enableWebInstrumentation, true);
+                assert.equal(config.webInstrumentationSrc, "");
+
                 assert.equal(config.enableAutoWebSnippetInjection, true);
             });
 
-            it("should read webSnippetConnectionString from environment variables", () => {
+            it("should read enableWebInstrumentation from environment variables", () => {
+                var env = <{ [id: string]: string }>{};
+                env["APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_ENABLED"] = "true";
+                process.env = env;
+                var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+                assert.equal(config.enableWebInstrumentation, true);
+                assert.equal(config.webInstrumentationSrc, "");
+
+                assert.equal(config.enableAutoWebSnippetInjection, true);
+            });
+
+            it("should enableWebInstrumentation environment variables from old(false) and new(true) environment variables", () => {
+                var env = <{ [id: string]: string }>{};
+                env["APPLICATIONINSIGHTS_WEB_SNIPPET_ENABLED"] = "false";
+                env["APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_ENABLED"] = "true";
+                process.env = env;
+                var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+                assert.equal(config.enableWebInstrumentation, true);
+                assert.equal(config.webInstrumentationSrc, "");
+
+                assert.equal(config.enableAutoWebSnippetInjection, true);
+            });
+
+            it("should enableWebInstrumentation environment variables from old(true) and new(false) environment variables", () => {
+                var env = <{ [id: string]: string }>{};
+                env["APPLICATIONINSIGHTS_WEB_SNIPPET_ENABLED"] = "true";
+                env["APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_ENABLED"] = "false";
+                env["APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_SOURCE"] = "WebInstrumentationTestSource"
+                process.env = env;
+                var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+                assert.equal(config.enableWebInstrumentation, true);
+                assert.equal(config.webInstrumentationSrc, "WebInstrumentationTestSource");
+
+                assert.equal(config.enableAutoWebSnippetInjection, true);
+            });
+
+            it("should disable WebInstrumentation from old and new environment variables", () => {
+                var env = <{ [id: string]: string }>{};
+                env["APPLICATIONINSIGHTS_WEB_SNIPPET_ENABLED"] = "";
+                env["APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_ENABLED"] = "";
+                process.env = env;
+                var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+                assert.equal(config.enableWebInstrumentation, false);
+
+                assert.equal(config.enableAutoWebSnippetInjection, false);
+            });
+
+            it("should read WebInstrumentation ConnectionString from old environment variables", () => {
                 var env = <{ [id: string]: string }>{};
                 env["APPLICATIONINSIGHTS_WEB_SNIPPET_CONNECTION_STRING"] = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/";
                 process.env = env;
                 var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+                assert.equal(config.enableWebInstrumentation, false);
+                assert.equal(config.webInstrumentationConnectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+                
+                assert.equal(config.enableAutoWebSnippetInjection, false);
+                assert.equal(config.webSnippetConnectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+            });
+
+            it("should read WebInstrumentation ConnectionString from old and new environment variables", () => {
+                var env = <{ [id: string]: string }>{};
+                env["APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_CONNECTION_STRING"] = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/";
+                env["APPLICATIONINSIGHTS_WEB_SNIPPET_CONNECTION_STRING"] = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3331;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/";
+                process.env = env;
+                var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+                assert.equal(config.enableWebInstrumentation, false);
+                assert.equal(config.webInstrumentationConnectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+                
+                assert.equal(config.enableAutoWebSnippetInjection, false);
+                assert.equal(config.webSnippetConnectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+            });
+
+            it("should read WebInstrumentation ConnectionString from new environment variables", () => {
+                var env = <{ [id: string]: string }>{};
+                env["APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_CONNECTION_STRING"] = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/";
+                process.env = env;
+                var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+                assert.equal(config.enableWebInstrumentation, false);
+                assert.equal(config.webInstrumentationConnectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+                
+                assert.equal(config.enableAutoWebSnippetInjection, false);
                 assert.equal(config.webSnippetConnectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
             });
 
@@ -177,6 +261,11 @@ describe("Library/Config", () => {
                 assert(config.correlationIdRetryIntervalMs === 30000);
                 assert(config.proxyHttpUrl === undefined);
                 assert(config.proxyHttpsUrl === undefined);
+                assert(config.enableWebInstrumentation === false);
+                assert(config.webInstrumentationConnectionString === "");
+                assert(config.webInstrumentationSrc === "");
+                assert(config.webInstrumentationConfig === null);
+
                 assert(config.enableAutoWebSnippetInjection === false);
                 assert(config.webSnippetConnectionString === "");
 
