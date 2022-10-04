@@ -362,7 +362,7 @@ export class Statsbeat {
                 metrics: [statsbeat],
                 properties: this._statbeatMetrics[i].properties,
             };
-            this._metricHandler.trackStatsbeatMetric(metricTelemetry);
+            // this._metricHandler.trackStatsbeatMetric(metricTelemetry);
         }
     }
 

@@ -57,16 +57,6 @@ export class TelemetryClient {
     }
 
     /**
-     * Log a numeric value that is not associated with a specific event. Typically used to send regular reports of performance indicators.
-     * To send a single measurement, use just the first two parameters. If you take measurements very frequently, you can reduce the
-     * telemetry bandwidth by aggregating multiple measurements and sending the resulting average at intervals.
-     * @param telemetry      Object encapsulating tracking options
-     */
-    public trackMetric(telemetry: Contracts.MetricTelemetry): void {
-        this.client.getMetricHandler().trackMetric(telemetry);
-    }
-
-    /**
      * Log an exception
      * @param telemetry      Object encapsulating tracking options
      */
@@ -80,6 +70,20 @@ export class TelemetryClient {
      */
     public trackEvent(telemetry: Contracts.EventTelemetry): void {
         this.client.getLogHandler().trackEvent(telemetry);
+    }
+
+    /**
+     * Log a numeric value that is not associated with a specific event. Typically used to send regular reports of performance indicators.
+     * To send a single measurement, use just the first two parameters. If you take measurements very frequently, you can reduce the
+     * telemetry bandwidth by aggregating multiple measurements and sending the resulting average at intervals.
+     * @param telemetry      Object encapsulating tracking options
+     */
+    public trackMetric(telemetry: Contracts.MetricTelemetry): void {
+        // TODO : Create custom metric
+        // let meter = this.client.getMetricHandler().getCustomMetricsHandler().getMeter();
+        // let metricName = "";
+        // let options: MetricOptions = {};
+        // meter.createHistogram(metricName, options)
     }
 
     /**
