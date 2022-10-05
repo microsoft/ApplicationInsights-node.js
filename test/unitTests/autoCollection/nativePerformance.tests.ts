@@ -4,6 +4,12 @@ import { Meter } from "@opentelemetry/api-metrics";
 import { MeterProvider } from "@opentelemetry/sdk-metrics";
 import { NativePerformanceMetrics } from "../../../src/autoCollection/metrics/collection/nativePerformanceMetrics";
 
+class TestEmitter {
+    enable() { }
+    disable() { }
+    getLoopData() { }
+    getGCData() { }
+}
 
 describe("AutoCollection/NativePerformance", () => {
     var sandbox: sinon.SinonSandbox;
@@ -15,10 +21,6 @@ describe("AutoCollection/NativePerformance", () => {
         testMeter = testProvider.getMeter("test");
     })
 
-    beforeEach(() => {
-       
-    });
-
     afterEach(() => {
         sandbox.restore();
     });
@@ -26,7 +28,9 @@ describe("AutoCollection/NativePerformance", () => {
     describe("#Metrics", () => {
         it("init should enable and dispose should stop auto collection interval", () => {
             var nativePerformance = new NativePerformanceMetrics(testMeter);
-            nativePerformance["_metricsAvailable"] = false;
+            nativePerformance["_emitter"] = new TestEmitter();
+            nativePerformance["_metricsAvailable"] = true;
+
             nativePerformance.enable(true);
             if (
                 nativePerformance["_metricsAvailable"]
