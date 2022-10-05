@@ -5,7 +5,7 @@ import { ConnectionStringParser } from "./connectionStringParser";
 import { Logger } from "../logging";
 import * as Constants from "../../declarations/constants";
 import { JsonConfig } from "./jsonConfig";
-import { IConfig, IDisabledExtendedMetrics, iInstrumentation, InstrumentationType } from "./interfaces";
+import { ExtendedMetricType, IConfig, iInstrumentation, InstrumentationType } from "./interfaces";
 
 
 export class Config implements IConfig {
@@ -22,13 +22,11 @@ export class Config implements IConfig {
     public enableAutoCollectRequests: boolean;
     public enableAutoCollectDependencies: boolean;
     public enableSendLiveMetrics: boolean;
-    public enableAutoCollectExtendedMetrics: boolean | IDisabledExtendedMetrics;
-    public disableAllExtendedMetrics: boolean;
     public disableStatsbeat: boolean;
-    public extendedMetricDisablers: string;
     public quickPulseHost: string;
     public setupString: string;
     public instrumentations: { [type: string]: iInstrumentation };
+    public extendedMetrics: { [type: string]: boolean };
 
     private _connectionString: string;
     private _endpointBase: string = Constants.DEFAULT_BREEZE_ENDPOINT;
@@ -71,20 +69,15 @@ export class Config implements IConfig {
     }
 
     private _loadDefaultValues() {
-        this.disableAllExtendedMetrics = this.disableAllExtendedMetrics != undefined ? this.disableAllExtendedMetrics : false;
         this.disableStatsbeat = this.disableStatsbeat != undefined ? this.disableStatsbeat : false;
         this.enableAutoCollectConsole = this.enableAutoCollectConsole != undefined ? this.enableAutoCollectConsole : false;
-        this.enableAutoCollectConsole = this.enableAutoCollectExternalLoggers != undefined ? this.enableAutoCollectConsole : true;
-
+        this.enableAutoCollectExternalLoggers = this.enableAutoCollectExternalLoggers != undefined ? this.enableAutoCollectExternalLoggers : true;
         this.enableAutoCollectDependencies = this.enableAutoCollectDependencies != undefined ? this.enableAutoCollectDependencies : true;
         this.enableAutoCollectRequests = this.enableAutoCollectRequests != undefined ? this.enableAutoCollectRequests : true;
-        
         this.enableAutoCollectExceptions = this.enableAutoCollectExceptions != undefined ? this.enableAutoCollectExceptions : true;
-        this.enableAutoCollectExtendedMetrics = this.enableAutoCollectExtendedMetrics != undefined ? this.enableAutoCollectExtendedMetrics : true;
         this.enableAutoCollectHeartbeat = this.enableAutoCollectHeartbeat != undefined ? this.enableAutoCollectHeartbeat : true;
         this.enableAutoCollectPerformance = this.enableAutoCollectPerformance != undefined ? this.enableAutoCollectPerformance : true;
         this.enableAutoCollectPreAggregatedMetrics = this.enableAutoCollectPreAggregatedMetrics != undefined ? this.enableAutoCollectPreAggregatedMetrics : true;
-        
         this.enableSendLiveMetrics = this.enableSendLiveMetrics != undefined ? this.enableSendLiveMetrics : false;
         this.samplingPercentage = this.samplingPercentage != undefined ? this.samplingPercentage : 100;
         if (!this.instrumentations) {
@@ -95,6 +88,12 @@ export class Config implements IConfig {
             this.instrumentations[InstrumentationType.postgreSql] = { enabled: false };
             this.instrumentations[InstrumentationType.redis] = { enabled: false };
             this.instrumentations[InstrumentationType.redis4] = { enabled: false };
+        }
+        if (!this.extendedMetrics) {
+            this.extendedMetrics = {};
+            this.extendedMetrics[ExtendedMetricType.gc] = false;
+            this.extendedMetrics[ExtendedMetricType.heap] = false;
+            this.extendedMetrics[ExtendedMetricType.loop] = false;
         }
     }
 
@@ -121,12 +120,10 @@ export class Config implements IConfig {
     private _mergeConfig() {
         let jsonConfig = JsonConfig.getInstance();
         this._connectionString = jsonConfig.connectionString;
-        this.disableAllExtendedMetrics = jsonConfig.disableAllExtendedMetrics;
         this.disableStatsbeat = jsonConfig.disableStatsbeat;
         this.enableAutoCollectConsole = jsonConfig.enableAutoCollectConsole;
         this.enableAutoCollectDependencies = jsonConfig.enableAutoCollectDependencies;
         this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
-        this.enableAutoCollectExtendedMetrics = jsonConfig.enableAutoCollectExtendedMetrics;
         this.enableAutoCollectExternalLoggers = jsonConfig.enableAutoCollectExternalLoggers;
         this.enableAutoCollectHeartbeat = jsonConfig.enableAutoCollectHeartbeat;
         this.enableAutoCollectPerformance = jsonConfig.enableAutoCollectPerformance;
@@ -134,10 +131,10 @@ export class Config implements IConfig {
         this.enableAutoCollectRequests = jsonConfig.enableAutoCollectRequests;
         this.enableSendLiveMetrics = jsonConfig.enableSendLiveMetrics;
         this.endpointUrl = jsonConfig.endpointUrl;
-        this.extendedMetricDisablers = jsonConfig.extendedMetricDisablers;
         this.quickPulseHost = jsonConfig.quickPulseHost;
         this.samplingPercentage = jsonConfig.samplingPercentage;
         this.instrumentations = jsonConfig.instrumentations;
+        this.extendedMetrics = jsonConfig.extendedMetrics;
     }
 
     private _getInstrumentationKey(): string {
@@ -147,12 +144,6 @@ export class Config implements IConfig {
             process.env[Constants.ENV_AZURE_PREFIX + Constants.ENV_IKEY] ||
             process.env[Constants.LEGACY_ENV_IKEY] ||
             process.env[Constants.ENV_AZURE_PREFIX + Constants.LEGACY_ENV_IKEY];
-        if (!iKey || iKey == "") {
-            throw new Error(
-                "Instrumentation key not found, pass the key in the config to this method or set the key in the environment variable APPINSIGHTS_INSTRUMENTATIONKEY before starting the server"
-            );
-        }
-
         return iKey;
     }
 

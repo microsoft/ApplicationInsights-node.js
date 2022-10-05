@@ -235,8 +235,7 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | enableInternalDebugLogging    | Enables debug and warning logging for AppInsights itself. If true, enables debug logging |true|
 | enableInternalWarningLogging  | Enables debug and warning logging for AppInsights itself. If true, enables warning logging |true|
 | enableSendLiveMetrics         | Enables communication with Application Insights Live Metrics. If true, enables communication with the live metrics service |false|
-| disableAllExtendedMetrics     | Disable all environment variables set |true|
-| extendedMetricDisablers       | Disable individual environment variables set. `"extendedMetricDisablers": "..."` ||
+| extendedMetrics       | Enable/Disable specific extended Metrics(gc, heap and loop).  |{"gc":false,"heap":false,"loop":false}|
 | aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Credential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes) | |
 
 [Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
