@@ -26,6 +26,7 @@ describe("AutoCollection/NativePerformance", () => {
     describe("#Metrics", () => {
         it("init should enable and dispose should stop auto collection interval", () => {
             var nativePerformance = new NativePerformanceMetrics(testMeter);
+            nativePerformance["_metricsAvailable"] = false;
             nativePerformance.enable(true);
             if (
                 nativePerformance["_metricsAvailable"]
