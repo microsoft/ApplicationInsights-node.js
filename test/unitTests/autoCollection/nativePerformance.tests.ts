@@ -1,8 +1,8 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
+import { Meter } from "@opentelemetry/api-metrics";
 import { MeterProvider } from "@opentelemetry/sdk-metrics";
 import { NativePerformanceMetrics } from "../../../src/autoCollection/metrics/collection/nativePerformanceMetrics";
-import { Meter } from "@opentelemetry/api-metrics";
 
 
 describe("AutoCollection/NativePerformance", () => {

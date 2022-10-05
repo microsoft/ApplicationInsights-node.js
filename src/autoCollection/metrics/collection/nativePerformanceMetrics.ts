@@ -77,8 +77,6 @@ export class NativePerformanceMetrics {
             this._memoryUsageNonHeapGauge.addCallback(this._getNonHeapUsage.bind(this));
 
         } else if (this._emitter) {
-            // disable self
-            this._emitter.enable(false);
             if (this._handle) {
                 clearInterval(this._handle);
                 this._handle = undefined;
