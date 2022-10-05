@@ -89,7 +89,8 @@ class WebSnippet {
     private _getWebInstrumentationReplacedStr() {
         let configStr = this._getClientWebInstrumentationConfigStr(this._clientWebInstrumentationConfig);
         let osStr = this._getOsString();
-        let snippetReplacedStr = `${this._webInstrumentationIkey}\",\r\n${configStr} disableIkeyDeprecationMessage: true,\r\n sdkExtension: \"w${osStr}r_n_`;
+        let rpStr = this._getResourceProvider();
+        let snippetReplacedStr = `${this._webInstrumentationIkey}\",\r\n${configStr} disableIkeyDeprecationMessage: true,\r\n sdkExtension: \"${rpStr}${osStr}r_n_`;
         let replacedSnippet = webSnippet.replace("INSTRUMENTATION_KEY", snippetReplacedStr);
         if (this._clientWebInstrumentationSrc) {
             return replacedSnippet.replace(`${Constants.WEB_INSTRUMENTATION_DEFAULT_SOURCE}.2.min.js`,this._clientWebInstrumentationSrc);
@@ -150,6 +151,16 @@ class WebSnippet {
             Logging.info("Parse client web instrumentation error. Web Instrumentation is disabled");
         }
         return configStr;
+    }
+
+    private _getResourceProvider() {
+        let resourceProvider = "u";
+        if (process.env.WEBSITE_SITE_NAME) { // Web apps
+            resourceProvider = "a";
+        } else if (process.env.FUNCTIONS_WORKER_RUNTIME) { // Function apps
+            resourceProvider = "f"
+        }
+        return resourceProvider;
     }
 
     private _initialize() {
