@@ -58,8 +58,14 @@ export class NativePerformanceMetrics {
 
         // Enable the emitter if we were able to construct one
         if (this._isEnabled && this._emitter) {
-            // enable self
-            this._emitter.enable(true, this._collectionInterval);
+            try {
+                // enable self
+                this._emitter.enable(true, this._collectionInterval);
+            }
+            catch (err) {
+                Logger.getInstance().error("Native metrics enable failed", err);
+            }
+
             // Add histogram data collection
             if (!this._handle) {
                 this._handle = setInterval(() => this._collectHistogramData(), this._collectionInterval);
@@ -108,29 +114,39 @@ export class NativePerformanceMetrics {
     }
 
     private _getEventLoopCpu() {
-        const loopData = this._emitter.getLoopData();
-        const metrics = loopData.loopUsage;
-        if (metrics.count == 0) {
-            return;
+        try {
+            const loopData = this._emitter.getLoopData();
+            const metrics = loopData.loopUsage;
+            if (metrics.count == 0) {
+                return;
+            }
+            this._eventLoopHistogram.record(metrics.total);
         }
-        this._eventLoopHistogram.record(metrics.total);
+        catch (err) {
+            Logger.getInstance().error("Native metrics failed to get event loop CPU failed", err);
+        }
     }
 
     private _getGarbageCollection() {
-        const gcData = this._emitter.getGCData();
-        for (let gc in gcData) {
-            const metrics = gcData[gc].metrics;
-            switch (gc) {
-                case GarbageCollectionType.IncrementalMarking:
-                    this._garbageCollectionIncrementalMarking.record(metrics.total);
-                    break;
-                case GarbageCollectionType.MarkSweepCompact:
-                    this._garbageCollectionMarkSweepCompact.record(metrics.total);
-                    break;
-                case GarbageCollectionType.Scavenge:
-                    this._garbageCollectionScavenge.record(metrics.total);
-                    break;
+        try {
+            const gcData = this._emitter.getGCData();
+            for (let gc in gcData) {
+                const metrics = gcData[gc].metrics;
+                switch (gc) {
+                    case GarbageCollectionType.IncrementalMarking:
+                        this._garbageCollectionIncrementalMarking.record(metrics.total);
+                        break;
+                    case GarbageCollectionType.MarkSweepCompact:
+                        this._garbageCollectionMarkSweepCompact.record(metrics.total);
+                        break;
+                    case GarbageCollectionType.Scavenge:
+                        this._garbageCollectionScavenge.record(metrics.total);
+                        break;
+                }
             }
+        }
+        catch (err) {
+            Logger.getInstance().error("Native metrics failed to get event Garbage Collection metrics failed", err);
         }
     }
 }

@@ -24,33 +24,33 @@ describe("AutoCollection/NativePerformance", () => {
     });
 
     describe("#Metrics", () => {
-        // it("init should enable and dispose should stop auto collection interval", () => {
-        //     var nativePerformance = new NativePerformanceMetrics(testMeter);
-        //     nativePerformance.enable(true);
-        //     if (
-        //         nativePerformance["_metricsAvailable"]
-        //     ) {
-        //         assert.ok(nativePerformance["_handle"]);
-        //         nativePerformance.enable(false);
-        //         assert.ok(!nativePerformance["_handle"]);
-        //     } else {
-        //         assert.ok(!nativePerformance["_handle"]);
-        //     }
-        // });
+        it("init should enable and dispose should stop auto collection interval", () => {
+            var nativePerformance = new NativePerformanceMetrics(testMeter);
+            nativePerformance.enable(true);
+            if (
+                nativePerformance["_metricsAvailable"]
+            ) {
+                assert.ok(nativePerformance["_handle"]);
+                nativePerformance.enable(false);
+                assert.ok(!nativePerformance["_handle"]);
+            } else {
+                assert.ok(!nativePerformance["_handle"]);
+            }
+        });
 
-        // it("Calling enable when metrics are not available should fail gracefully", () => {
-        //     var nativePerformance = new NativePerformanceMetrics(testMeter);
-        //     nativePerformance["_metricsAvailable"] = false;
-        //     assert.ok(!(<any>nativePerformance)["_emitter"]);
+        it("Calling enable when metrics are not available should fail gracefully", () => {
+            var nativePerformance = new NativePerformanceMetrics(testMeter);
+            nativePerformance["_metricsAvailable"] = false;
+            assert.ok(!(<any>nativePerformance)["_emitter"]);
 
-        //     assert.doesNotThrow(
-        //         () => nativePerformance.enable(true),
-        //         "Does not throw when native metrics are not available and trying to enable"
-        //     );
-        //     assert.doesNotThrow(
-        //         () => nativePerformance.enable(false),
-        //         "Does not throw when native metrics are not available and trying to disable"
-        //     );
-        // });
+            assert.doesNotThrow(
+                () => nativePerformance.enable(true),
+                "Does not throw when native metrics are not available and trying to enable"
+            );
+            assert.doesNotThrow(
+                () => nativePerformance.enable(false),
+                "Does not throw when native metrics are not available and trying to disable"
+            );
+        });
     });
 });
