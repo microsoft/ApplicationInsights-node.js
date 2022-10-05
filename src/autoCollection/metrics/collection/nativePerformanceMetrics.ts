@@ -123,7 +123,7 @@ export class NativePerformanceMetrics {
             this._eventLoopHistogram.record(metrics.total);
         }
         catch (err) {
-            Logger.getInstance().error("Native metrics failed to get event loop CPU failed", err);
+            Logger.getInstance().error("Native metrics failed to get event loop CPU", err);
         }
     }
 
@@ -146,7 +146,7 @@ export class NativePerformanceMetrics {
             }
         }
         catch (err) {
-            Logger.getInstance().error("Native metrics failed to get event Garbage Collection metrics failed", err);
+            Logger.getInstance().error("Native metrics failed to get event Garbage Collection metrics", err);
         }
     }
 }
