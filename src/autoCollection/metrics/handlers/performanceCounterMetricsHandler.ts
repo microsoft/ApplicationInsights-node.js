@@ -130,7 +130,7 @@ export class PerformanceCounterMetricsHandler {
             instrumentName: MetricName.DEPENDENCY_RATE,
             aggregation: new DropAggregation(),
         }));
-        if (this._config.extendedMetrics?.gc) {
+        if (!this._config.extendedMetrics?.gc) {
             views.push(new View({
                 instrumentName: NativeMetricsCounter.GARBAGE_COLLECTION_INCREMENTAL_MARKING,
                 aggregation: new DropAggregation(),
@@ -144,7 +144,7 @@ export class PerformanceCounterMetricsHandler {
                 aggregation: new DropAggregation(),
             }));
         }
-        if (this._config.extendedMetrics?.heap) {
+        if (!this._config.extendedMetrics?.heap) {
             views.push(new View({
                 instrumentName: NativeMetricsCounter.HEAP_MEMORY_TOTAL,
                 aggregation: new DropAggregation(),
@@ -158,7 +158,7 @@ export class PerformanceCounterMetricsHandler {
                 aggregation: new DropAggregation(),
             }));
         }
-        if (this._config.extendedMetrics?.loop) {
+        if (!this._config.extendedMetrics?.loop) {
             views.push(new View({
                 instrumentName: NativeMetricsCounter.EVENT_LOOP_CPU,
                 aggregation: new DropAggregation(),
