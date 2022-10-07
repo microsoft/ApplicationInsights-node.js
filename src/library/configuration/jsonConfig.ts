@@ -1,7 +1,8 @@
+import { InstrumentationConfig } from "@opentelemetry/instrumentation";
 import * as fs from "fs";
 import * as path from "path";
 import { Logger } from "../logging";
-import { IDisabledExtendedMetrics, iInstrumentation, IJsonConfig } from "./interfaces";
+import { IDisabledExtendedMetrics, IJsonConfig, InstrumentationsConfig } from "./interfaces";
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 // Azure Connection String
@@ -25,14 +26,12 @@ export class JsonConfig implements IJsonConfig {
     public enableAutoCollectExtendedMetrics: boolean | IDisabledExtendedMetrics;
     public enableAutoCollectPreAggregatedMetrics: boolean;
     public enableAutoCollectHeartbeat: boolean;
-    public enableAutoCollectRequests: boolean;
-    public enableAutoCollectDependencies: boolean;
     public enableSendLiveMetrics: boolean;
     public disableAllExtendedMetrics: boolean;
     public extendedMetricDisablers: string;
     public disableStatsbeat: boolean;
     public quickPulseHost: string;
-    public instrumentations: { [type: string]: iInstrumentation };
+    public instrumentations: InstrumentationsConfig;
 
     static getInstance() {
         if (!JsonConfig._instance) {
@@ -86,8 +85,6 @@ export class JsonConfig implements IJsonConfig {
             this.enableAutoCollectPreAggregatedMetrics =
                 jsonConfig.enableAutoCollectPreAggregatedMetrics;
             this.enableAutoCollectHeartbeat = jsonConfig.enableAutoCollectHeartbeat;
-            this.enableAutoCollectRequests = jsonConfig.enableAutoCollectRequests;
-            this.enableAutoCollectDependencies = jsonConfig.enableAutoCollectDependencies;
             this.enableSendLiveMetrics = jsonConfig.enableSendLiveMetrics;
             this.quickPulseHost = jsonConfig.quickPulseHost;
             this.instrumentations = jsonConfig.instrumentations;

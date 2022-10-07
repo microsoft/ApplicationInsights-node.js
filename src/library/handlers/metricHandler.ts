@@ -9,7 +9,7 @@ import {
     LiveMetricsHandler,
 } from "../../autoCollection";
 import { HeartBeatHandler } from "../../autoCollection/metrics/handlers/heartBeatHandler";
-import { HttpMetricsInstrumentation } from "../../autoCollection/metrics/collection/httpMetricsInstrumentation";
+import { AzureHttpMetricsInstrumentation } from "../../autoCollection/metrics/collection/azureHttpMetricsInstrumentation";
 import { IMetricExceptionDimensions, IMetricTraceDimensions } from "../../autoCollection/metrics/types";
 
 
@@ -66,10 +66,12 @@ export class MetricHandler {
         return this._standardMetricsHandler;
     }
 
-    public getHttpMetricInstrumentations(): HttpMetricsInstrumentation[] {
-        return [this._liveMetricsHandler?.getHttpMetricsInstrumentation(),
-        this._perfCounterMetricsHandler?.getHttpMetricsInstrumentation(),
-        this._standardMetricsHandler?.getHttpMetricsInstrumentation()];
+    public getPerCounterAzureHttpInstrumentation(): AzureHttpMetricsInstrumentation {
+        return this._perfCounterMetricsHandler?.getHttpMetricsInstrumentation();
+    }
+
+    public getLiveMetricsAzureHttpInstrumentation(): AzureHttpMetricsInstrumentation {
+        return this._liveMetricsHandler?.getHttpMetricsInstrumentation();
     }
 
     public countException(dimensions: IMetricExceptionDimensions): void {

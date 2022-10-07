@@ -1,13 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import { Meter, ObservableCallback, ObservableGauge, ObservableResult, ValueType } from "@opentelemetry/api-metrics";
-import { HttpMetricsInstrumentation } from "./httpMetricsInstrumentation";
+import { AzureHttpMetricsInstrumentation } from "./azureHttpMetricsInstrumentation";
 import { MetricName } from "../types";
 
 
 export class RequestMetrics {
     private _meter: Meter;
-    private _httpMetrics: HttpMetricsInstrumentation;
+    private _httpMetrics: AzureHttpMetricsInstrumentation;
     private _requestRateGauge: ObservableGauge;
     private _requestRateGaugeCallback: ObservableCallback;
     private _requestFailureRateGauge: ObservableGauge;
@@ -15,7 +15,7 @@ export class RequestMetrics {
     private _lastRequestRate: { count: number; time: number; executionInterval: number; };
     private _lastFailureRequestRate: { count: number; time: number; executionInterval: number; };
 
-    constructor(meter: Meter, httpMetrics: HttpMetricsInstrumentation) {
+    constructor(meter: Meter, httpMetrics: AzureHttpMetricsInstrumentation) {
         this._meter = meter;
         this._httpMetrics = httpMetrics;
         this._lastRequestRate = { count: 0, time: 0, executionInterval: 0 };

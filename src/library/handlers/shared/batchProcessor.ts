@@ -3,7 +3,7 @@
 import { TelemetryItem as Envelope } from "../../../declarations/generated";
 import { Config } from "../../configuration";
 import { Logger } from "../../logging";
-import { BaseExporter } from "../../exporters/shared";
+import { LogExporter } from "../../exporters";
 import { ExportResult, ExportResultCode } from "@opentelemetry/core";
 
 export class BatchProcessor {
@@ -12,10 +12,10 @@ export class BatchProcessor {
     protected _getBatchSize: () => number;
     protected _getBatchIntervalMs: () => number;
 
-    public _exporter: BaseExporter;
+    public _exporter: LogExporter;
     public _buffer: Envelope[];
 
-    constructor(config: Config, exporter: BaseExporter) {
+    constructor(exporter: LogExporter) {
         this._buffer = [];
         this._lastSend = 0;
         this._exporter = exporter;

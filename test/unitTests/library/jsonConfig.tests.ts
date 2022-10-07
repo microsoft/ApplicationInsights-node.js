@@ -83,8 +83,6 @@ describe("Json Config", () => {
             assert.equal(config.enableAutoCollectPerformance, false);
             assert.equal(config.enableAutoCollectPreAggregatedMetrics, false);
             assert.equal(config.enableAutoCollectHeartbeat, false);
-            assert.equal(config.enableAutoCollectRequests, false);
-            assert.equal(config.enableAutoCollectDependencies, false);
             assert.equal(config.disableStatsbeat, false);
             assert.equal(config.enableAutoCollectExtendedMetrics, false);
             assert.equal(config.disableStatsbeat, false);

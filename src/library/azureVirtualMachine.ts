@@ -22,8 +22,6 @@ export class AzureVirtualMachine {
         const metadataRequestUrl = `${AIMS_URI}?${AIMS_API_VERSION}&${AIMS_FORMAT}`;
         const requestOptions = {
             method: "GET",
-            // [AutoCollectHttpDependencies.disableCollectionRequestOption]: true,
-            // TODO: disable tracking of this HTTP call
             headers: {
                 Metadata: "True",
             },

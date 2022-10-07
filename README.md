@@ -230,14 +230,13 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | enableAutoCollectExtendedMetrics| Sets the state of performance tracking. If true, extended metrics counters will be collected every minute and sent to Application Insights | true|
 | enableAutoCollectPreAggregatedMetrics | Sets the state of pre aggregated metrics tracking. If true pre aggregated metrics will be collected every minute and sent to Application Insights | true|
 | enableAutoCollectHeartbeat      | Sets the state of request tracking. If true HeartBeat metric data will be collected every 15 minutes and sent to Application Insights | true|
-| enableAutoCollectRequests      | Sets the state of request tracking. If true requests will be sent to Application Insights | true|
-| enableAutoCollectDependencies  | Sets the state of dependency tracking. If true dependencies will be sent to Application Insights | true|
 | enableInternalDebugLogging    | Enables debug and warning logging for AppInsights itself. If true, enables debug logging |true|
 | enableInternalWarningLogging  | Enables debug and warning logging for AppInsights itself. If true, enables warning logging |true|
 | enableSendLiveMetrics         | Enables communication with Application Insights Live Metrics. If true, enables communication with the live metrics service |false|
 | disableAllExtendedMetrics     | Disable all environment variables set |true|
 | extendedMetricDisablers       | Disable individual environment variables set. `"extendedMetricDisablers": "..."` ||
 | aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Credential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes) | |
+| instrumentations| Allow configuration of OpenTelemetry Instrumentations. |  {"http": { enabled: true },"azureSdk": { enabled: false },"mongoDb": { enabled: false },"mySql": { enabled: false },"postgreSql": { enabled: false },"redis": { enabled: false }}|
 
 [Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
 

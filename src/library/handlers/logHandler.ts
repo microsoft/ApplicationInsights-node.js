@@ -55,7 +55,7 @@ export class LogHandler {
     constructor(config: Config, metricHandler?: MetricHandler) {
         this.config = config;
         this._exporter = new LogExporter(config);
-        this._batchProcessor = new BatchProcessor(config, this._exporter);
+        this._batchProcessor = new BatchProcessor(this._exporter);
         this._initializeFlagsFromConfig();
         this._console = new AutoCollectConsole(this);
         this._exceptions = new AutoCollectExceptions(this);

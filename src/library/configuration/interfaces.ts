@@ -1,4 +1,5 @@
 import * as azureCore from "@azure/core-http";
+import { InstrumentationConfig } from "@opentelemetry/instrumentation";
 
 export interface IBaseConfig {
     /** The ingestion endpoint to send telemetry payloads to */
@@ -41,16 +42,6 @@ export interface IBaseConfig {
      */
     enableAutoCollectHeartbeat: boolean;
     /**
-     * Sets the state of request tracking (enabled by default)
-     * if true requests will be sent to Application Insights
-     */
-    enableAutoCollectRequests: boolean;
-    /**
-     * Sets the state of dependency tracking (enabled by default)
-     * if true dependencies will be sent to Application Insights
-     */
-    enableAutoCollectDependencies: boolean;
-    /**
      * Enables communication with Application Insights Live Metrics.
      * if true, enables communication with the live metrics service
      */
@@ -72,21 +63,18 @@ export interface IBaseConfig {
      */
     quickPulseHost: string;
 
-    instrumentations: { [type: string]: iInstrumentation };
+    instrumentations: InstrumentationsConfig
 }
 
-export interface iInstrumentation {
-    enabled: boolean
-}
-
-export const enum InstrumentationType {
-    azureSdk = "azureSdk",
-    mongoDb = "mongoDb",
-    mySql = "mySql",
-    postgreSql = "postgreSql",
-    redis = "redis",
-    redis4 = "redis4"
-}
+export interface InstrumentationsConfig {
+    azureSdk?: InstrumentationConfig,
+    http?: InstrumentationConfig,
+    mongoDb?: InstrumentationConfig,
+    mySql?: InstrumentationConfig,
+    postgreSql?: InstrumentationConfig,
+    redis?: InstrumentationConfig,
+    redis4?: InstrumentationConfig
+};
 
 export interface IEnvironmentConfig {
     /** Connection String used to send telemetry payloads to */

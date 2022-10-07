@@ -3,14 +3,13 @@ import * as https from "https";
 import * as url from "url";
 import * as constants from "constants";
 
-import { isValidTraceId } from "@opentelemetry/api";
-import { IdGenerator, RandomIdGenerator } from "@opentelemetry/core";
+import { context, isValidTraceId } from "@opentelemetry/api";
+import { suppressTracing } from "@opentelemetry/core";
+import { IdGenerator, RandomIdGenerator } from "@opentelemetry/sdk-trace-base";
 
 import { Logger } from "../logging";
 import { Config } from "../configuration";
-import { Client } from "../client";
-import { RequestHeaders } from "../../declarations/requestResponseHeaders";
-import { HttpRequest } from "../../declarations/functions";
+
 
 export class Util {
     private static _instance: Util;
@@ -276,11 +275,16 @@ export class Util {
                 options.agent = this.tlsRestrictedAgent;
             }
         }
-        if (isHttps) {
-            return https.request(<any>options, requestCallback);
-        } else {
-            return http.request(<any>options, requestCallback);
-        }
+        // prevent calls from generating spans
+        let request: http.ClientRequest = null;
+        context.with(suppressTracing(context.active()), () => {
+            if (isHttps) {
+                request = https.request(<any>options, requestCallback);
+            } else {
+                request = http.request(<any>options, requestCallback);
+            }
+        });
+        return request;
     }
 
     /**

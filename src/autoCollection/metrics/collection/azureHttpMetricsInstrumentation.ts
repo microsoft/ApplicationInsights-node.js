@@ -17,11 +17,11 @@ import { Histogram, MeterProvider, ValueType } from '@opentelemetry/api-metrics'
 import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../../declarations/constants";
 import { HttpMetricsInstrumentationConfig, IHttpStandardMetric, MetricId, MetricName } from '../types';
 import { Logger } from '../../../library/logging';
-import { SpanKind } from '@opentelemetry/api';
+import { SpanKind, TracerProvider } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
 
 
-export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
+export class AzureHttpMetricsInstrumentation extends InstrumentationBase<Http> {
 
   private _nodeVersion: string;
   public totalRequestCount: number = 0;
@@ -39,6 +39,8 @@ export class HttpMetricsInstrumentation extends InstrumentationBase<Http> {
     this._nodeVersion = process.versions.node;
     this._updateMetricInstruments();
   }
+
+  public setTracerProvider(tracerProvider: TracerProvider) { }
 
   public setMeterProvider(meterProvider: MeterProvider) {
     super.setMeterProvider(meterProvider);
