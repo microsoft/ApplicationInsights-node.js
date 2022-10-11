@@ -10,8 +10,7 @@ import { ProcessMetrics } from "../collection/processMetrics";
 import { RequestMetrics } from "../collection/requestMetrics";
 import { Config } from "../../../library";
 import { ResourceManager } from "../../../library/handlers";
-import { getNativeMetricsConfig, NativePerformanceMetrics } from "../collection/nativePerformanceMetrics";
-import { IDisabledExtendedMetrics } from "../../../library/configuration/interfaces";
+import { NativePerformanceMetrics } from "../collection/nativePerformanceMetrics";
 
 
 export class PerformanceCounterMetricsHandler {
@@ -28,13 +27,9 @@ export class PerformanceCounterMetricsHandler {
 
     constructor(config: Config, options?: { collectionInterval: number }) {
         this._config = config;
-        const nativePerformanceConfig = getNativeMetricsConfig(
-            this._config.enableAutoCollectExtendedMetrics,
-            this._config
-        );
         const meterProviderConfig: MeterProviderOptions = {
             resource: ResourceManager.getInstance().getMetricResource(),
-            views: this._getViews(nativePerformanceConfig)
+            views: this._getViews()
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);
         let exporterConfig: AzureExporterConfig = {
@@ -61,9 +56,7 @@ export class PerformanceCounterMetricsHandler {
         this._httpMetrics = new HttpMetricsInstrumentation(httpMetricsConfig);
         this._processMetrics = new ProcessMetrics(this._meter);
         this._requestMetrics = new RequestMetrics(this._meter, this._httpMetrics);
-        if (nativePerformanceConfig.isEnabled) {
-            this._nativeMetrics = new NativePerformanceMetrics(this._meter);
-        }
+        this._nativeMetrics = new NativePerformanceMetrics(this._meter);
     }
 
     public start() {
@@ -88,7 +81,7 @@ export class PerformanceCounterMetricsHandler {
         return this._requestMetrics;
     }
 
-    private _getViews(nativePerformanceConfig: { isEnabled: boolean; disabledMetrics: IDisabledExtendedMetrics }): View[] {
+    private _getViews(): View[] {
         let views = [];
         views.push(new View({
             name: PerformanceCounter.REQUEST_DURATION,
@@ -137,41 +130,39 @@ export class PerformanceCounterMetricsHandler {
             instrumentName: MetricName.DEPENDENCY_RATE,
             aggregation: new DropAggregation(),
         }));
-        if (nativePerformanceConfig.isEnabled) {
-            if (nativePerformanceConfig.disabledMetrics?.gc) {
-                views.push(new View({
-                    instrumentName: NativeMetricsCounter.GARBAGE_COLLECTION_INCREMENTAL_MARKING,
-                    aggregation: new DropAggregation(),
-                }));
-                views.push(new View({
-                    instrumentName: NativeMetricsCounter.GARBAGE_COLLECTION_SCAVENGE,
-                    aggregation: new DropAggregation(),
-                }));
-                views.push(new View({
-                    instrumentName: NativeMetricsCounter.GARBAGE_COLLECTION_SWEEP_COMPACT,
-                    aggregation: new DropAggregation(),
-                }));
-            }
-            if (nativePerformanceConfig.disabledMetrics?.heap) {
-                views.push(new View({
-                    instrumentName: NativeMetricsCounter.HEAP_MEMORY_TOTAL,
-                    aggregation: new DropAggregation(),
-                }));
-                views.push(new View({
-                    instrumentName: NativeMetricsCounter.HEAP_MEMORY_USAGE,
-                    aggregation: new DropAggregation(),
-                }));
-                views.push(new View({
-                    instrumentName: NativeMetricsCounter.MEMORY_USAGE_NON_HEAP,
-                    aggregation: new DropAggregation(),
-                }));
-            }
-            if (nativePerformanceConfig.disabledMetrics?.heap) {
-                views.push(new View({
-                    instrumentName: NativeMetricsCounter.EVENT_LOOP_CPU,
-                    aggregation: new DropAggregation(),
-                }));
-            }
+        if (!this._config.extendedMetrics?.gc) {
+            views.push(new View({
+                instrumentName: NativeMetricsCounter.GARBAGE_COLLECTION_INCREMENTAL_MARKING,
+                aggregation: new DropAggregation(),
+            }));
+            views.push(new View({
+                instrumentName: NativeMetricsCounter.GARBAGE_COLLECTION_SCAVENGE,
+                aggregation: new DropAggregation(),
+            }));
+            views.push(new View({
+                instrumentName: NativeMetricsCounter.GARBAGE_COLLECTION_SWEEP_COMPACT,
+                aggregation: new DropAggregation(),
+            }));
+        }
+        if (!this._config.extendedMetrics?.heap) {
+            views.push(new View({
+                instrumentName: NativeMetricsCounter.HEAP_MEMORY_TOTAL,
+                aggregation: new DropAggregation(),
+            }));
+            views.push(new View({
+                instrumentName: NativeMetricsCounter.HEAP_MEMORY_USAGE,
+                aggregation: new DropAggregation(),
+            }));
+            views.push(new View({
+                instrumentName: NativeMetricsCounter.MEMORY_USAGE_NON_HEAP,
+                aggregation: new DropAggregation(),
+            }));
+        }
+        if (!this._config.extendedMetrics?.loop) {
+            views.push(new View({
+                instrumentName: NativeMetricsCounter.EVENT_LOOP_CPU,
+                aggregation: new DropAggregation(),
+            }));
         }
         return views;
     }

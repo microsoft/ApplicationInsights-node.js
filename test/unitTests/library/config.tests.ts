@@ -93,22 +93,54 @@ describe("Library/Config", () => {
                     config["_connectionString"],
                     "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"
                 );
-                assert.equal(config.endpointUrl, "testEndpointUrl/v2.1/track");
-                assert.equal(config.samplingPercentage, 30);
-                assert.equal(config.enableAutoCollectExternalLoggers, false);
-                assert.equal(config.enableAutoCollectConsole, false);
-                assert.equal(config.enableAutoCollectExceptions, false);
-                assert.equal(config.enableAutoCollectPerformance, false);
-                assert.equal(config.enableAutoCollectPreAggregatedMetrics, false);
-                assert.equal(config.enableAutoCollectHeartbeat, false);
-                assert.equal(config.enableAutoCollectRequests, false);
-                assert.equal(config.enableAutoCollectDependencies, false);
-                assert.equal(config.disableStatsbeat, false);
-                assert.equal(config.enableAutoCollectExtendedMetrics, false);
-                assert.equal(config.disableStatsbeat, false);
-                assert.equal(config.enableSendLiveMetrics, false);
-                assert.equal(config.extendedMetricDisablers, "gc,heap");
-                assert.equal(config.quickPulseHost, "testquickpulsehost.com");
+                assert.equal(config.endpointUrl, "testEndpointUrl/v2.1/track", "Wrong endpointUrl");
+                assert.equal(config.samplingPercentage, 30, "Wrong samplingPercentage");
+                assert.equal(config.enableAutoCollectExternalLoggers, false, "Wrong enableAutoCollectExternalLoggers");
+                assert.equal(config.enableAutoCollectConsole, true, "Wrong enableAutoCollectConsole");
+                assert.equal(config.enableAutoCollectExceptions, false, "Wrong enableAutoCollectExceptions");
+                assert.equal(config.enableAutoCollectPerformance, false, "Wrong enableAutoCollectPerformance");
+                assert.equal(config.enableAutoCollectPreAggregatedMetrics, false, "Wrong enableAutoCollectPreAggregatedMetrics");
+                assert.equal(config.enableAutoCollectHeartbeat, false, "Wrong enableAutoCollectHeartbeat");
+                assert.equal(config.enableAutoCollectRequests, false, "Wrong enableAutoCollectRequests");
+                assert.equal(config.enableAutoCollectDependencies, false, "Wrong enableAutoCollectDependencies");
+                assert.equal(config.disableStatsbeat, false, "Wrong disableStatsbeat");
+                assert.equal(config.enableSendLiveMetrics, false, "Wrong enableSendLiveMetrics");
+                assert.equal(config.extendedMetrics.loop, true, "Wrong loop");
+                assert.equal(config.extendedMetrics.gc, true, "Wrong gc");
+                assert.equal(config.extendedMetrics.heap, true, "Wrong heap");
+                assert.equal(config.quickPulseHost, "testquickpulsehost.com", "Wrong quickPulseHost");
+                assert.equal(config.instrumentations.azureSdk.enabled, true, "Wrong azureSdk");
+                assert.equal(config.instrumentations.mongoDb.enabled, true, "Wrong mongoDb");
+                assert.equal(config.instrumentations.mySql.enabled, true, "Wrong mySql");
+                assert.equal(config.instrumentations.postgreSql.enabled, true, "Wrong postgreSql");
+                assert.equal(config.instrumentations.redis.enabled, true, "Wrong redis");
+                assert.equal(config.instrumentations.redis4.enabled, true, "Wrong redis4");
+            });
+
+            it("Default config", () => {
+                const config = new Config();
+                assert.equal(config.endpointUrl, "https://dc.services.visualstudio.com/v2.1/track", "Wrong endpointUrl");
+                assert.equal(config.samplingPercentage, 100, "Wrong samplingPercentage");
+                assert.equal(config.enableAutoCollectExternalLoggers, true, "Wrong enableAutoCollectExternalLoggers");
+                assert.equal(config.enableAutoCollectConsole, false, "Wrong enableAutoCollectConsole");
+                assert.equal(config.enableAutoCollectExceptions, true, "Wrong enableAutoCollectExceptions");
+                assert.equal(config.enableAutoCollectPerformance, true, "Wrong enableAutoCollectPerformance");
+                assert.equal(config.enableAutoCollectPreAggregatedMetrics, true, "Wrong enableAutoCollectPreAggregatedMetrics");
+                assert.equal(config.enableAutoCollectHeartbeat, true, "Wrong enableAutoCollectHeartbeat");
+                assert.equal(config.enableAutoCollectRequests, true, "Wrong enableAutoCollectRequests");
+                assert.equal(config.enableAutoCollectDependencies, true, "Wrong enableAutoCollectDependencies");
+                assert.equal(config.disableStatsbeat, false, "Wrong disableStatsbeat");
+                assert.equal(config.enableSendLiveMetrics, false, "Wrong enableSendLiveMetrics");
+                assert.equal(config.extendedMetrics.loop, false, "Wrong loop");
+                assert.equal(config.extendedMetrics.gc, false, "Wrong gc");
+                assert.equal(config.extendedMetrics.heap, false, "Wrong heap");
+                assert.equal(config.quickPulseHost, "rt.services.visualstudio.com", "Wrong quickPulseHost");
+                assert.equal(config.instrumentations.azureSdk.enabled, false, "Wrong azureSdk");
+                assert.equal(config.instrumentations.mongoDb.enabled, false, "Wrong mongoDb");
+                assert.equal(config.instrumentations.mySql.enabled, false, "Wrong mySql");
+                assert.equal(config.instrumentations.postgreSql.enabled, false, "Wrong postgreSql");
+                assert.equal(config.instrumentations.redis.enabled, false, "Wrong redis");
+                assert.equal(config.instrumentations.redis4.enabled, false, "Wrong redis4");
             });
         });
 
@@ -116,12 +148,6 @@ describe("Library/Config", () => {
             beforeEach(() => {
                 sandbox.stub(http, "request");
                 sandbox.stub(https, "request");
-            });
-
-            it("should throw if no iKey is available", () => {
-                var env = {};
-                process.env = env;
-                assert.throws(() => new Config());
             });
 
             it("should read iKey from environment", () => {
