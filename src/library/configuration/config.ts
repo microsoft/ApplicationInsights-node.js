@@ -88,7 +88,8 @@ export class Config implements IConfig {
                 "mongoDb": { enabled: false },
                 "mySql": { enabled: false },
                 "postgreSql": { enabled: false },
-                "redis": { enabled: false }
+                "redis": { enabled: false },
+                "redis4": { enabled: false }
             };
         }
     }

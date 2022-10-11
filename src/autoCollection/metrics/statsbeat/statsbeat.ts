@@ -29,7 +29,6 @@ export class Statsbeat {
     private _collectionShortIntervalMs: number = 900000; // 15 minutes
     private _collectionLongIntervalMs: number = 1440000; // 1 day
     private _TAG = "Statsbeat";
-    private _metricHandler: MetricHandler;
     private _networkStatsbeatCollection: Array<NetworkStatsbeat>;
     private _resourceManager: ResourceManager;
     private _handle: NodeJS.Timer | null;
@@ -67,7 +66,6 @@ export class Statsbeat {
         this._statsbeatConfig.enableAutoCollectPerformance = false;
         this._statsbeatConfig.enableAutoCollectPreAggregatedMetrics = false;
         this._statsbeatConfig.enableAutoCollectConsole = false;
-        this._metricHandler = new MetricHandler(this._statsbeatConfig);
     }
 
     public enable(isEnabled: boolean) {

@@ -9,7 +9,7 @@ describe("Library/ApplicationInsightsSampler", () => {
     describe("#shouldSample()", () => {
         it("will not send data on 0% sampling", () => {
             let sampler = new ApplicationInsightsSampler(0);
-            let result = sampler.shouldSample(null, null);
+            let result = sampler.shouldSample(null, null, null, null, null, null);
             assert.equal(result.decision, SamplingDecision.NOT_RECORD, "data should not pass");
         });
 
@@ -20,7 +20,7 @@ describe("Library/ApplicationInsightsSampler", () => {
             let sampler = new ApplicationInsightsSampler(33);
 
             for (var i = 0; i < iterations; i++) {
-                var result = sampler.shouldSample(null, null);
+                var result = sampler.shouldSample(null, null, null, null, null, null);
                 if (result.decision === SamplingDecision.RECORD_AND_SAMPLED) accepted++;
             }
 
@@ -34,7 +34,7 @@ describe("Library/ApplicationInsightsSampler", () => {
             let sampler = new ApplicationInsightsSampler(50);
 
             for (var i = 0; i < iterations; i++) {
-                var result = sampler.shouldSample(null, null);
+                var result = sampler.shouldSample(null, null, null, null, null, null);
                 if (result.decision === SamplingDecision.RECORD_AND_SAMPLED) accepted++;
             }
 
@@ -48,7 +48,7 @@ describe("Library/ApplicationInsightsSampler", () => {
             let sampler = new ApplicationInsightsSampler(100);
 
             for (var i = 0; i < iterations; i++) {
-                var result = sampler.shouldSample(null, null);
+                var result = sampler.shouldSample(null, null, null, null, null, null);
                 if (result.decision === SamplingDecision.RECORD_AND_SAMPLED) accepted++;
             }
 
@@ -61,7 +61,7 @@ describe("Library/ApplicationInsightsSampler", () => {
             let sampler = new ApplicationInsightsSampler(33);
 
             for (var i = 0; i < iterations; i++) {
-                var result = sampler.shouldSample(null, "a");
+                var result = sampler.shouldSample(null, "a", null, null, null, null);
                 if (result.decision === SamplingDecision.RECORD_AND_SAMPLED) accepted++;
             }
 
@@ -74,7 +74,7 @@ describe("Library/ApplicationInsightsSampler", () => {
             let sampler = new ApplicationInsightsSampler(33);
 
             for (var i = 0; i < iterations; i++) {
-                var result = sampler.shouldSample(null, "abc");
+                var result = sampler.shouldSample(null, "abc", null, null, null, null);
                 if (result.decision === SamplingDecision.RECORD_AND_SAMPLED) accepted++;
             }
 
