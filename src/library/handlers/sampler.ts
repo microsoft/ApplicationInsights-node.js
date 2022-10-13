@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { Sampler, SamplingDecision, SamplingResult } from '@opentelemetry/api';
+import { Link, Attributes, SpanKind, Context } from '@opentelemetry/api';
+import { Sampler, SamplingDecision, SamplingResult } from '@opentelemetry/sdk-trace-base';
 
 
 export class ApplicationInsightsSampler implements Sampler {
@@ -11,9 +12,8 @@ export class ApplicationInsightsSampler implements Sampler {
         this._samplingPercentage = samplingPercentage;
     }
 
-    public shouldSample(context: unknown, traceId: string): SamplingResult {
+    public shouldSample(context: Context, traceId: string, spanName: string, spanKind: SpanKind, attributes: Attributes, links: Link[]): SamplingResult {
         let isSampledIn = false;
-
         if (this._samplingPercentage == 100) {
             isSampledIn = true;
         }
@@ -28,16 +28,17 @@ export class ApplicationInsightsSampler implements Sampler {
                 isSampledIn = this._getSamplingHashCode(traceId) < this._samplingPercentage;
 
             }
-
         }
-        return isSampledIn ? { decision: SamplingDecision.RECORD_AND_SAMPLED } : { decision: SamplingDecision.NOT_RECORD };
+        // Add sample rate as span attribute
+        attributes = attributes || {};
+        attributes["sampleRate"] = this._samplingPercentage;
+        return isSampledIn ? { decision: SamplingDecision.RECORD_AND_SAMPLED, attributes: attributes } : { decision: SamplingDecision.NOT_RECORD, attributes: attributes };
     }
 
     public toString(): string {
         return 'ApplicationInsightsSampler';
     }
 
-    /** Ported from AI .NET SDK */
     private _getSamplingHashCode(input: string): number {
         var csharpMin = -2147483648;
         var csharpMax = 2147483647;

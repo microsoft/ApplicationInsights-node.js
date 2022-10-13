@@ -2,7 +2,6 @@ import { IncomingMessage } from "http";
 import { DiagLogLevel, SpanContext } from "@opentelemetry/api";
 
 import { Logger } from "../library/logging";
-import { InstrumentationType } from "../library/configuration/interfaces";
 import { QuickPulseStateManager } from "../library/quickPulse";
 import { ICorrelationContext } from "../declarations/interfaces";
 import { TelemetryClient } from "./telemetryClient";
@@ -12,7 +11,7 @@ import * as azureFunctionsTypes from "../declarations/functions";
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
-export { Contracts, TelemetryClient, azureFunctionsTypes, InstrumentationType };
+export { Contracts, TelemetryClient, azureFunctionsTypes };
 
 /**
  * The default client, initialized when setup was called. To initialize a different client

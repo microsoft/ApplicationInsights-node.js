@@ -6,14 +6,13 @@ if (testconfig.AppInsightsEnabled) {
 
     let config = new Config(`InstrumentationKey=${testconfig.InstrumentationKey};IngestionEndpoint=${testconfig.EndpointBaseAddress}`);
     config.samplingPercentage = parseFloat(testconfig.SampleRate);
+    config.instrumentations["http"].enabled = true;
     config.instrumentations["azureSdk"].enabled = true;
     config.instrumentations["mongoDb"].enabled = true;
     config.instrumentations["mySql"].enabled = true;
     config.instrumentations["postgreSql"].enabled = true;
     config.instrumentations["redis"].enabled = true;
     config.instrumentations["redis4"].enabled = true;
-    config.enableAutoCollectDependencies = true;
-    config.enableAutoCollectRequests = true;
     config.enableAutoCollectExceptions = true;
     config.enableAutoCollectConsole = true;
     config.enableAutoCollectExternalLoggers = true;

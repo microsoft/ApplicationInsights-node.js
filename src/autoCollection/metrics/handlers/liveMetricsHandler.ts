@@ -6,7 +6,7 @@ import { Config } from "../../../library";
 import { ResourceManager } from "../../../library/handlers";
 import { DependencyMetrics } from "../collection/dependencyMetrics";
 import { ExceptionMetrics } from "../collection/exceptionMetrics";
-import { HttpMetricsInstrumentation } from "../collection/httpMetricsInstrumentation";
+import { AzureHttpMetricsInstrumentation } from "../collection/azureHttpMetricsInstrumentation";
 import { ProcessMetrics } from "../collection/processMetrics";
 import { RequestMetrics } from "../collection/requestMetrics";
 import { HttpMetricsInstrumentationConfig, MetricName, QuickPulseCounter } from "../types";
@@ -20,7 +20,7 @@ export class LiveMetricsHandler {
     private _metricReader: PeriodicExportingMetricReader;
     private _meter: Meter;
     private _exceptionMetrics: ExceptionMetrics;
-    private _httpMetrics: HttpMetricsInstrumentation;
+    private _httpMetrics: AzureHttpMetricsInstrumentation;
     private _processMetrics: ProcessMetrics;
     private _requestMetrics: RequestMetrics;
     private _dependencyMetrics: DependencyMetrics;
@@ -54,7 +54,7 @@ export class LiveMetricsHandler {
         };
         this._processMetrics = new ProcessMetrics(this._meter);
         this._exceptionMetrics = new ExceptionMetrics(this._meter);
-        this._httpMetrics = new HttpMetricsInstrumentation(httpMetricsConfig);
+        this._httpMetrics = new AzureHttpMetricsInstrumentation(httpMetricsConfig);
         this._requestMetrics = new RequestMetrics(this._meter, this._httpMetrics);
         this._dependencyMetrics = new DependencyMetrics(this._meter, this._httpMetrics);
     }
@@ -70,7 +70,7 @@ export class LiveMetricsHandler {
         this._meterProvider.shutdown();
     }
 
-    public getHttpMetricsInstrumentation(): HttpMetricsInstrumentation {
+    public getHttpMetricsInstrumentation(): AzureHttpMetricsInstrumentation {
         return this._httpMetrics;
     }
 

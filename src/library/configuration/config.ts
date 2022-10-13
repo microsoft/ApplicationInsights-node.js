@@ -5,7 +5,7 @@ import { ConnectionStringParser } from "./connectionStringParser";
 import { Logger } from "../logging";
 import * as Constants from "../../declarations/constants";
 import { JsonConfig } from "./jsonConfig";
-import { ExtendedMetricType, IConfig, iInstrumentation, InstrumentationType } from "./interfaces";
+import { ExtendedMetricType, IConfig, InstrumentationsConfig } from "./interfaces";
 
 
 export class Config implements IConfig {
@@ -19,14 +19,12 @@ export class Config implements IConfig {
     public enableAutoCollectExternalLoggers: boolean;
     public enableAutoCollectPreAggregatedMetrics: boolean;
     public enableAutoCollectHeartbeat: boolean;
-    public enableAutoCollectRequests: boolean;
-    public enableAutoCollectDependencies: boolean;
     public enableSendLiveMetrics: boolean;
     public disableStatsbeat: boolean;
     public quickPulseHost: string;
     public setupString: string;
-    public instrumentations: { [type: string]: iInstrumentation };
     public extendedMetrics: { [type: string]: boolean };
+    public instrumentations: InstrumentationsConfig;
 
     private _connectionString: string;
     private _endpointBase: string = Constants.DEFAULT_BREEZE_ENDPOINT;
@@ -72,8 +70,6 @@ export class Config implements IConfig {
         this.disableStatsbeat = this.disableStatsbeat != undefined ? this.disableStatsbeat : false;
         this.enableAutoCollectConsole = this.enableAutoCollectConsole != undefined ? this.enableAutoCollectConsole : false;
         this.enableAutoCollectExternalLoggers = this.enableAutoCollectExternalLoggers != undefined ? this.enableAutoCollectExternalLoggers : true;
-        this.enableAutoCollectDependencies = this.enableAutoCollectDependencies != undefined ? this.enableAutoCollectDependencies : true;
-        this.enableAutoCollectRequests = this.enableAutoCollectRequests != undefined ? this.enableAutoCollectRequests : true;
         this.enableAutoCollectExceptions = this.enableAutoCollectExceptions != undefined ? this.enableAutoCollectExceptions : true;
         this.enableAutoCollectHeartbeat = this.enableAutoCollectHeartbeat != undefined ? this.enableAutoCollectHeartbeat : true;
         this.enableAutoCollectPerformance = this.enableAutoCollectPerformance != undefined ? this.enableAutoCollectPerformance : true;
@@ -81,13 +77,15 @@ export class Config implements IConfig {
         this.enableSendLiveMetrics = this.enableSendLiveMetrics != undefined ? this.enableSendLiveMetrics : false;
         this.samplingPercentage = this.samplingPercentage != undefined ? this.samplingPercentage : 100;
         if (!this.instrumentations) {
-            this.instrumentations = {};
-            this.instrumentations[InstrumentationType.azureSdk] = { enabled: false };
-            this.instrumentations[InstrumentationType.mongoDb] = { enabled: false };
-            this.instrumentations[InstrumentationType.mySql] = { enabled: false };
-            this.instrumentations[InstrumentationType.postgreSql] = { enabled: false };
-            this.instrumentations[InstrumentationType.redis] = { enabled: false };
-            this.instrumentations[InstrumentationType.redis4] = { enabled: false };
+            this.instrumentations = {
+                "http": { enabled: true },
+                "azureSdk": { enabled: false },
+                "mongoDb": { enabled: false },
+                "mySql": { enabled: false },
+                "postgreSql": { enabled: false },
+                "redis": { enabled: false },
+                "redis4": { enabled: false }
+            };
         }
         if (!this.extendedMetrics) {
             this.extendedMetrics = {};
@@ -122,13 +120,11 @@ export class Config implements IConfig {
         this._connectionString = jsonConfig.connectionString;
         this.disableStatsbeat = jsonConfig.disableStatsbeat;
         this.enableAutoCollectConsole = jsonConfig.enableAutoCollectConsole;
-        this.enableAutoCollectDependencies = jsonConfig.enableAutoCollectDependencies;
         this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
         this.enableAutoCollectExternalLoggers = jsonConfig.enableAutoCollectExternalLoggers;
         this.enableAutoCollectHeartbeat = jsonConfig.enableAutoCollectHeartbeat;
         this.enableAutoCollectPerformance = jsonConfig.enableAutoCollectPerformance;
         this.enableAutoCollectPreAggregatedMetrics = jsonConfig.enableAutoCollectPreAggregatedMetrics;
-        this.enableAutoCollectRequests = jsonConfig.enableAutoCollectRequests;
         this.enableSendLiveMetrics = jsonConfig.enableSendLiveMetrics;
         this.endpointUrl = jsonConfig.endpointUrl;
         this.quickPulseHost = jsonConfig.quickPulseHost;

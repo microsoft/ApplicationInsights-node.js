@@ -37,16 +37,6 @@ export interface IBaseConfig {
      */
     enableAutoCollectHeartbeat: boolean;
     /**
-     * Sets the state of request tracking (enabled by default)
-     * if true requests will be sent to Application Insights
-     */
-    enableAutoCollectRequests: boolean;
-    /**
-     * Sets the state of dependency tracking (enabled by default)
-     * if true dependencies will be sent to Application Insights
-     */
-    enableAutoCollectDependencies: boolean;
-    /**
      * Enables communication with Application Insights Live Metrics.
      * if true, enables communication with the live metrics service
      */
@@ -60,26 +50,22 @@ export interface IBaseConfig {
      */
     quickPulseHost: string;
 
-    instrumentations: { [type: string]: iInstrumentation };
+    instrumentations: InstrumentationsConfig
     /**
     * Specific extended metrics
     */
     extendedMetrics: { [type: string]: boolean };
 }
 
-export interface iInstrumentation {
-    enabled: boolean;
-    configuration?: InstrumentationConfig;
-}
-
-export const enum InstrumentationType {
-    azureSdk = "azureSdk",
-    mongoDb = "mongoDb",
-    mySql = "mySql",
-    postgreSql = "postgreSql",
-    redis = "redis",
-    redis4 = "redis4"
-}
+export interface InstrumentationsConfig {
+    azureSdk?: InstrumentationConfig,
+    http?: InstrumentationConfig,
+    mongoDb?: InstrumentationConfig,
+    mySql?: InstrumentationConfig,
+    postgreSql?: InstrumentationConfig,
+    redis?: InstrumentationConfig,
+    redis4?: InstrumentationConfig
+};
 
 export const enum ExtendedMetricType {
     gc = "gc",

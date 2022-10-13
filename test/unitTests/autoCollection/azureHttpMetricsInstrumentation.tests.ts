@@ -4,7 +4,7 @@ import * as nock from "nock";
 import { AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
 import { DataPointType, MeterProvider, PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 
-import { HttpMetricsInstrumentation } from "../../../src/autoCollection/metrics/collection/httpMetricsInstrumentation";
+import { AzureHttpMetricsInstrumentation } from "../../../src/autoCollection/metrics/collection/azureHttpMetricsInstrumentation";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 
 
@@ -23,7 +23,7 @@ const httpMetricsConfig: HttpMetricsInstrumentationConfig = {
         return false;
     }
 };
-const instrumentation = new HttpMetricsInstrumentation(httpMetricsConfig);
+const instrumentation = new AzureHttpMetricsInstrumentation(httpMetricsConfig);
 instrumentation.enable();
 instrumentation.disable();
 
@@ -36,7 +36,7 @@ const metricReader = new PeriodicExportingMetricReader({ exporter: exporter as a
 meterProvider.addMetricReader(metricReader);
 instrumentation.setMeterProvider(meterProvider);
 
-describe("AutoCollection/HttpMetricsInstrumentation", () => {
+describe("AutoCollection/AzureHttpMetricsInstrumentation", () => {
     let sandbox: sinon.SinonSandbox;
     let mockHttpServer: any;
     let mockHttpServerPort = 0;

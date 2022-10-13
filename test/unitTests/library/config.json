@@ -9,8 +9,6 @@
     "enableAutoCollectExtendedMetrics": false,
     "enableAutoCollectPreAggregatedMetrics": false,
     "enableAutoCollectHeartbeat": false,
-    "enableAutoCollectRequests": false,
-    "enableAutoCollectDependencies": false,
     "disableStatsbeat": false,
     "enableSendLiveMetrics": false,
     "extendedMetrics": {

@@ -7,9 +7,10 @@ import { ExportResultCode } from "@opentelemetry/core";
 import { TraceHandler, MetricHandler } from "../../../src/library/handlers/";
 import { Config } from "../../../src/library/configuration";
 import { Instrumentation } from "@opentelemetry/instrumentation";
+import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 
 
-describe("Library/TraceHandlers", () => {
+describe("Library/TraceHandler", () => {
     let http: any = null;
     let https: any = null;
     let sandbox: sinon.SinonSandbox;
@@ -24,7 +25,7 @@ describe("Library/TraceHandlers", () => {
     });
 
     describe("#Instrumentation Enablement", () => {
-        it("HttpMetricsInstrumentation", () => {
+        it("AzureHttpMetricsInstrumentation", () => {
             _config.enableAutoCollectPerformance = true;
             let metricHandler = new MetricHandler(_config);
             let handler = new TraceHandler(_config, metricHandler);
@@ -51,8 +52,10 @@ describe("Library/TraceHandlers", () => {
 
         before(() => {
             process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-            _config.enableAutoCollectDependencies = true;
-            _config.enableAutoCollectRequests = true;
+            let httpConfig: HttpInstrumentationConfig = {
+                enabled: true,
+            };
+            _config.instrumentations.http = httpConfig;
             metricHandler = new MetricHandler(_config);
             handler = new TraceHandler(_config, metricHandler);
             exportStub = sinon.stub(handler["_exporter"], "export").callsFake((spans: any, resultCallback: any) => {
@@ -64,11 +67,16 @@ describe("Library/TraceHandlers", () => {
                 });
             });
             handler.start();
-            // Load Http modules
+            // Load Http modules, HTTP instrumentation hook will be created in OpenTelemetry
             http = require("http") as any;
             https = require("https") as any;
             createMockServers();
         });
+
+        beforeEach(() => {
+            handler.disableInstrumentations();
+        });
+
 
         afterEach(() => {
             exportStub.resetHistory();
@@ -182,7 +190,7 @@ describe("Library/TraceHandlers", () => {
         }
 
         it("http outgoing/incoming requests", (done) => {
-
+            handler.start();
             makeHttpRequest(false).then(() => {
                 handler.flush().then(() => {
                     assert.ok(exportStub.calledOnce, "Export called");
@@ -231,7 +239,7 @@ describe("Library/TraceHandlers", () => {
         });
 
         it("https outgoing/incoming requests", (done) => {
-
+            handler.start();
             makeHttpRequest(true).then(() => {
                 handler.flush().then(() => {
                     assert.ok(exportStub.calledOnce, "Export called");
@@ -280,6 +288,7 @@ describe("Library/TraceHandlers", () => {
         });
 
         it("Span processing for pre aggregated metrics", (done) => {
+            handler.start();
             metricHandler.getConfig().enableAutoCollectPreAggregatedMetrics = true;
             makeHttpRequest(false).then(() => {
                 handler.flush().then(() => {
@@ -300,8 +309,14 @@ describe("Library/TraceHandlers", () => {
         });
 
         it("should not track dependencies if configured off", (done) => {
-            handler["_config"].enableAutoCollectDependencies = false;
-            handler["_config"].enableAutoCollectRequests = true;
+            let httpConfig: HttpInstrumentationConfig = {
+                enabled: true,
+                ignoreOutgoingRequestHook: () => {
+                    return true;
+                }
+            };
+            handler["_httpInstrumentation"].setConfig(httpConfig);
+            handler.start();
             makeHttpRequest(false).then(() => {
                 handler.flush().then(() => {
                     assert.ok(exportStub.calledOnce, "Export called");
@@ -314,12 +329,18 @@ describe("Library/TraceHandlers", () => {
                 });;
             }).catch((error) => {
                 done(error);
-            });;
+            });
         });
 
         it("should not track requests if configured off", (done) => {
-            handler["_config"].enableAutoCollectDependencies = true;
-            handler["_config"].enableAutoCollectRequests = false;
+            let httpConfig: HttpInstrumentationConfig = {
+                enabled: true,
+                ignoreIncomingRequestHook: () => {
+                    return true;
+                }
+            };
+            handler["_httpInstrumentation"].setConfig(httpConfig);
+            handler.start();
             makeHttpRequest(false).then(() => {
                 handler.flush().then(() => {
                     assert.ok(exportStub.calledOnce, "Export called");
@@ -336,8 +357,6 @@ describe("Library/TraceHandlers", () => {
         });
 
         it("http should not track if instrumentations are disabled", (done) => {
-            handler["_config"].enableAutoCollectDependencies = true;
-            handler["_config"].enableAutoCollectRequests = true;
             handler.disableInstrumentations();
             makeHttpRequest(false).then(() => {
                 makeHttpRequest(true).then(() => {

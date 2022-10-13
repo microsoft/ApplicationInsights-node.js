@@ -17,6 +17,7 @@ describe("PerformanceCounterMetricsHandler", () => {
         config.extendedMetrics.loop = true;
         config.extendedMetrics.gc = true;
         autoCollect = new PerformanceCounterMetricsHandler(config, { collectionInterval: 100 });
+        autoCollect["_nativeMetrics"]["_metricsAvailable"] = false;
         sandbox.stub(autoCollect["_metricReader"]["_exporter"], "export");
     })
 
@@ -93,6 +94,7 @@ describe("PerformanceCounterMetricsHandler", () => {
             config.extendedMetrics.loop = false;
             config.extendedMetrics.gc = false;
             let autoCollect = new PerformanceCounterMetricsHandler(config);
+            autoCollect["_nativeMetrics"]["_metricsAvailable"] = false;
             let views = autoCollect["_getViews"]();
             assert.equal(views.length, 18); // All Native metrics ignore views are added
             config.extendedMetrics.heap = true;

@@ -5,7 +5,7 @@ import { AzureExporterConfig, AzureMonitorMetricExporter } from "@azure/monitor-
 import { Meter } from "@opentelemetry/api-metrics";
 import { DropAggregation, MeterProvider, MeterProviderOptions, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions, View } from "@opentelemetry/sdk-metrics";
 import { HttpMetricsInstrumentationConfig, MetricName, NativeMetricsCounter, PerformanceCounter } from "../types";
-import { HttpMetricsInstrumentation } from "../collection/httpMetricsInstrumentation";
+import { AzureHttpMetricsInstrumentation } from "../collection/azureHttpMetricsInstrumentation";
 import { ProcessMetrics } from "../collection/processMetrics";
 import { RequestMetrics } from "../collection/requestMetrics";
 import { Config } from "../../../library";
@@ -20,7 +20,7 @@ export class PerformanceCounterMetricsHandler {
     private _azureExporter: AzureMonitorMetricExporter;
     private _metricReader: PeriodicExportingMetricReader;
     private _meter: Meter;
-    private _httpMetrics: HttpMetricsInstrumentation;
+    private _httpMetrics: AzureHttpMetricsInstrumentation;
     private _processMetrics: ProcessMetrics;
     private _requestMetrics: RequestMetrics;
     private _nativeMetrics: NativePerformanceMetrics;
@@ -53,7 +53,7 @@ export class PerformanceCounterMetricsHandler {
                 return false;
             }
         };
-        this._httpMetrics = new HttpMetricsInstrumentation(httpMetricsConfig);
+        this._httpMetrics = new AzureHttpMetricsInstrumentation(httpMetricsConfig);
         this._processMetrics = new ProcessMetrics(this._meter);
         this._requestMetrics = new RequestMetrics(this._meter, this._httpMetrics);
         this._nativeMetrics = new NativePerformanceMetrics(this._meter);
@@ -62,14 +62,14 @@ export class PerformanceCounterMetricsHandler {
     public start() {
         this._processMetrics.enable(true);;
         this._requestMetrics.enable(true);
-        this._nativeMetrics?.enable(true);
+        this._nativeMetrics.enable(true);
     }
 
     public shutdown() {
         this._meterProvider.shutdown();
     }
 
-    public getHttpMetricsInstrumentation(): HttpMetricsInstrumentation {
+    public getHttpMetricsInstrumentation(): AzureHttpMetricsInstrumentation {
         return this._httpMetrics;
     }
 

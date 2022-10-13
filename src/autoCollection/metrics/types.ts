@@ -59,8 +59,8 @@ export enum QuickPulseCounter {
 }
 
 export enum StandardMetric {
-  REQUESTS = "requests/duration",
-  DEPENDENCIES = "dependencies/duration",
+  REQUESTS = "http.server.duration",
+  DEPENDENCIES = "http.client.duration",
   EXCEPTIONS = "Exceptions",
   TRACES = "Traces",
 }
