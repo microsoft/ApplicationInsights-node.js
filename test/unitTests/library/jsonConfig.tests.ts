@@ -75,38 +75,37 @@ describe("Json Config", () => {
                 config.connectionString,
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"
             );
-            assert.equal(config.endpointUrl, "testEndpointUrl");
-            assert.equal(config.samplingPercentage, 30);
-            assert.equal(config.enableAutoCollectExternalLoggers, false);
-            assert.equal(config.enableAutoCollectConsole, false);
-            assert.equal(config.enableAutoCollectExceptions, false);
-            assert.equal(config.enableAutoCollectPerformance, false);
-            assert.equal(config.enableAutoCollectPreAggregatedMetrics, false);
-            assert.equal(config.enableAutoCollectHeartbeat, false);
-            assert.equal(config.disableStatsbeat, false);
-            assert.equal(config.enableAutoCollectExtendedMetrics, false);
-            assert.equal(config.disableStatsbeat, false);
-            assert.equal(config.enableSendLiveMetrics, false);
-            assert.equal(config.extendedMetricDisablers, "gc,heap");
-            assert.equal(config.quickPulseHost, "testquickpulsehost.com");
+            assert.equal(config.endpointUrl, "testEndpointUrl", "Wrong endpointUrl");
+            assert.equal(config.samplingPercentage, 30, "Wrong samplingPercentage");
+            assert.equal(config.enableAutoCollectExternalLoggers, false, "Wrong enableAutoCollectExternalLoggers");
+            assert.equal(config.enableAutoCollectConsole, true, "Wrong enableAutoCollectConsole");
+            assert.equal(config.enableAutoCollectExceptions, false, "Wrong enableAutoCollectExceptions");
+            assert.equal(config.enableAutoCollectPerformance, false, "Wrong enableAutoCollectPerformance");
+            assert.equal(config.enableAutoCollectPreAggregatedMetrics, false, "Wrong enableAutoCollectPreAggregatedMetrics");
+            assert.equal(config.enableAutoCollectHeartbeat, false, "Wrong enableAutoCollectHeartbeat");
+            assert.equal(config.enableAutoCollectRequests, false, "Wrong enableAutoCollectRequests");
+            assert.equal(config.enableAutoCollectDependencies, false, "Wrong enableAutoCollectDependencies");
+            assert.equal(config.disableStatsbeat, false, "Wrong disableStatsbeat");
+            assert.equal(config.enableSendLiveMetrics, false, "Wrong enableSendLiveMetrics");
+            assert.equal(config.extendedMetrics.loop, true, "Wrong loop");
+            assert.equal(config.extendedMetrics.gc, true, "Wrong gc");
+            assert.equal(config.extendedMetrics.heap, true, "Wrong heap");
+            assert.equal(config.quickPulseHost, "testquickpulsehost.com", "Wrong quickPulseHost");
+            assert.equal(config.instrumentations.azureSdk.enabled, true, "Wrong azureSdk");
+            assert.equal(config.instrumentations.mongoDb.enabled, true, "Wrong mongoDb");
+            assert.equal(config.instrumentations.mySql.enabled, true, "Wrong mySql");
+            assert.equal(config.instrumentations.postgreSql.enabled, true, "Wrong postgreSql");
+            assert.equal(config.instrumentations.redis.enabled, true, "Wrong redis");
+            assert.equal(config.instrumentations.redis4.enabled, true, "Wrong redis4");
         });
 
         it("Should take configurations from environment variables", () => {
             const env = <{ [id: string]: string }>{};
             env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "TestConnectionString";
-            env["APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC"] = "gc";
-            env["APPLICATION_INSIGHTS_NO_PATCH_MODULES"] = "azuresdk";
-            env["APPLICATION_INSIGHTS_DISABLE_ALL_EXTENDED_METRICS"] = "true";
-            env["APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL"] = "true";
             env["APPLICATION_INSIGHTS_NO_STATSBEAT"] = "true";
-            env["APPLICATION_INSIGHTS_NO_HTTP_AGENT_KEEP_ALIVE"] = "true";
-            env["http_proxy"] = "testProxyHttpUrl2";
-            env["https_proxy"] = "testProxyHttpsUrl2";
             process.env = env;
             const config = JsonConfig.getInstance();
             assert.equal(config.connectionString, "TestConnectionString");
-            assert.equal(config.extendedMetricDisablers, "gc");
-            assert.equal(config.disableAllExtendedMetrics, true);
             assert.equal(config.disableStatsbeat, true);
         });
 
@@ -118,22 +117,13 @@ describe("Json Config", () => {
             );
             env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = customConfigJSONPath;
             env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "TestConnectionString";
-            env["APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC"] = "gc";
-            env["APPLICATION_INSIGHTS_NO_PATCH_MODULES"] = "azuresdk";
-            env["APPLICATION_INSIGHTS_DISABLE_ALL_EXTENDED_METRICS"] = "true";
-            env["APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL"] = "true";
             env["APPLICATION_INSIGHTS_NO_STATSBEAT"] = "true";
-            env["APPLICATION_INSIGHTS_NO_HTTP_AGENT_KEEP_ALIVE"] = "true";
-            env["http_proxy"] = "testProxyHttpUrl2";
-            env["https_proxy"] = "testProxyHttpsUrl2";
             process.env = env;
             const config = JsonConfig.getInstance();
             assert.equal(
                 config.connectionString,
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"
             );
-            assert.equal(config.extendedMetricDisablers, "gc,heap");
-            assert.equal(config.disableAllExtendedMetrics, false);
             assert.equal(config.disableStatsbeat, false);
         });
     });

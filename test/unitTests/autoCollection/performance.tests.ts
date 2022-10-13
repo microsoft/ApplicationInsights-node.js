@@ -13,6 +13,9 @@ describe("PerformanceCounterMetricsHandler", () => {
     before(() => {
         sandbox = sinon.createSandbox();
         let config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+        config.extendedMetrics.heap = true;
+        config.extendedMetrics.loop = true;
+        config.extendedMetrics.gc = true;
         autoCollect = new PerformanceCounterMetricsHandler(config, { collectionInterval: 100 });
         sandbox.stub(autoCollect["_metricReader"]["_exporter"], "export");
     })
@@ -81,6 +84,22 @@ describe("PerformanceCounterMetricsHandler", () => {
             autoCollect.shutdown();
             await new Promise(resolve => setTimeout(resolve, 120));
             assert.ok(mockExport.notCalled);
+        });
+
+
+        it("should add correct views", () => {
+            let config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            config.extendedMetrics.heap = false;
+            config.extendedMetrics.loop = false;
+            config.extendedMetrics.gc = false;
+            let autoCollect = new PerformanceCounterMetricsHandler(config);
+            let views = autoCollect["_getViews"]();
+            assert.equal(views.length, 18); // All Native metrics ignore views are added
+            config.extendedMetrics.heap = true;
+            config.extendedMetrics.loop = true;
+            config.extendedMetrics.gc = true;
+            views = autoCollect["_getViews"]();
+            assert.equal(views.length, 11);
         });
     });
 });

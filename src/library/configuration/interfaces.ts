@@ -27,11 +27,6 @@ export interface IBaseConfig {
      */
     enableAutoCollectPerformance: boolean;
     /**
-     * Sets the state of performance tracking (enabled by default)
-     * if true, extended metrics counters will be collected every minute and sent to Application Insights
-     */
-    enableAutoCollectExtendedMetrics: boolean | IDisabledExtendedMetrics;
-    /**
      * Sets the state of pre aggregated metrics tracking (enabled by default)
      * if true pre aggregated metrics will be collected every minute and sent to Application Insights
      */
@@ -47,14 +42,6 @@ export interface IBaseConfig {
      */
     enableSendLiveMetrics: boolean;
     /**
-     * Disable all environment variables set
-     */
-    disableAllExtendedMetrics: boolean;
-    /**
-     * Disable individual environment variables set. eg. "extendedMetricDisablers": "..."
-     */
-    extendedMetricDisablers: string;
-    /**
      * Disable Statsbeat
      */
     disableStatsbeat: boolean;
@@ -64,6 +51,10 @@ export interface IBaseConfig {
     quickPulseHost: string;
 
     instrumentations: InstrumentationsConfig
+    /**
+    * Specific extended metrics
+    */
+    extendedMetrics: { [type: string]: boolean };
 }
 
 export interface InstrumentationsConfig {
@@ -76,6 +67,12 @@ export interface InstrumentationsConfig {
     redis4?: InstrumentationConfig
 };
 
+export const enum ExtendedMetricType {
+    gc = "gc",
+    heap = "heap",
+    loop = "loop"
+}
+
 export interface IEnvironmentConfig {
     /** Connection String used to send telemetry payloads to */
     connectionString: string;
@@ -86,16 +83,4 @@ export interface IJsonConfig extends IBaseConfig, IEnvironmentConfig { }
 export interface IConfig extends IBaseConfig {
     /** AAD TokenCredential to use to authenticate the app */
     aadTokenCredential?: azureCore.TokenCredential;
-}
-
-/**
- * Interface which defines which specific extended metrics should be disabled
- *
- * @export
- * @interface IDisabledExtendedMetrics
- */
-export interface IDisabledExtendedMetrics {
-    gc?: boolean;
-    heap?: boolean;
-    loop?: boolean;
 }

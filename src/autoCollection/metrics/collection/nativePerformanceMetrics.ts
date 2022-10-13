@@ -1,7 +1,6 @@
 import { Meter, ObservableGauge, ObservableResult, Histogram } from "@opentelemetry/api-metrics";
 import { GarbageCollectionType, NativeMetricsCounter } from "../types";
 import { Logger } from "../../../library/logging";
-import { IBaseConfig, IDisabledExtendedMetrics } from "../../../library/configuration/interfaces";
 
 
 export class NativePerformanceMetrics {
@@ -12,7 +11,6 @@ export class NativePerformanceMetrics {
     private _handle: NodeJS.Timer;
     private _meter: Meter;
     private _collectionInterval: number = 15000; // 15 seconds
-    private _disabledMetrics: IDisabledExtendedMetrics = {};
     private _eventLoopHistogram: Histogram;
     private _garbageCollectionScavenge: Histogram;
     private _garbageCollectionMarkSweepCompact: Histogram;
@@ -39,10 +37,7 @@ export class NativePerformanceMetrics {
      * @param {boolean} isEnabled
      * @memberof AutoCollectNativePerformance
      */
-    public enable(
-        isEnabled: boolean,
-        disabledMetrics: IDisabledExtendedMetrics = {}
-    ): void {
+    public enable(isEnabled: boolean): void {
         if (this._metricsAvailable == undefined && isEnabled && !this._isInitialized) {
             // Try to require in the native-metrics library. If it's found initialize it, else do nothing and never try again.
             try {
@@ -57,15 +52,20 @@ export class NativePerformanceMetrics {
             }
         }
         this._isEnabled = isEnabled;
-        this._disabledMetrics = disabledMetrics;// TODO: Use to filter out metrics in View
         if (this._isEnabled && !this._isInitialized) {
             this._isInitialized = true;
         }
 
         // Enable the emitter if we were able to construct one
         if (this._isEnabled && this._emitter) {
-            // enable self
-            this._emitter.enable(true, this._collectionInterval);
+            try {
+                // enable self
+                this._emitter.enable(true, this._collectionInterval);
+            }
+            catch (err) {
+                Logger.getInstance().error("Native metrics enable failed", err);
+            }
+
             // Add histogram data collection
             if (!this._handle) {
                 this._handle = setInterval(() => this._collectHistogramData(), this._collectionInterval);
@@ -77,8 +77,6 @@ export class NativePerformanceMetrics {
             this._memoryUsageNonHeapGauge.addCallback(this._getNonHeapUsage.bind(this));
 
         } else if (this._emitter) {
-            // disable self
-            this._emitter.enable(false);
             if (this._handle) {
                 clearInterval(this._handle);
                 this._handle = undefined;
@@ -114,83 +112,39 @@ export class NativePerformanceMetrics {
     }
 
     private _getEventLoopCpu() {
-        const loopData = this._emitter.getLoopData();
-        const metrics = loopData.loopUsage;
-        if (metrics.count == 0) {
-            return;
+        try {
+            const loopData = this._emitter.getLoopData();
+            const metrics = loopData.loopUsage;
+            if (metrics.count == 0) {
+                return;
+            }
+            this._eventLoopHistogram.record(metrics.total);
         }
-        this._eventLoopHistogram.record(metrics.total);
+        catch (err) {
+            Logger.getInstance().error("Native metrics failed to get event loop CPU", err);
+        }
     }
 
     private _getGarbageCollection() {
-        const gcData = this._emitter.getGCData();
-        for (let gc in gcData) {
-            const metrics = gcData[gc].metrics;
-            switch (gc) {
-                case GarbageCollectionType.IncrementalMarking:
-                    this._garbageCollectionIncrementalMarking.record(metrics.total);
-                    break;
-                case GarbageCollectionType.MarkSweepCompact:
-                    this._garbageCollectionMarkSweepCompact.record(metrics.total);
-                    break;
-                case GarbageCollectionType.Scavenge:
-                    this._garbageCollectionScavenge.record(metrics.total);
-                    break;
+        try {
+            const gcData = this._emitter.getGCData();
+            for (let gc in gcData) {
+                const metrics = gcData[gc].metrics;
+                switch (gc) {
+                    case GarbageCollectionType.IncrementalMarking:
+                        this._garbageCollectionIncrementalMarking.record(metrics.total);
+                        break;
+                    case GarbageCollectionType.MarkSweepCompact:
+                        this._garbageCollectionMarkSweepCompact.record(metrics.total);
+                        break;
+                    case GarbageCollectionType.Scavenge:
+                        this._garbageCollectionScavenge.record(metrics.total);
+                        break;
+                }
             }
         }
-    }
-}
-
-
-/**
-* Parse environment variable and overwrite isEnabled based on respective fields being set
-*
-* @private
-* @param {(boolean | IDisabledExtendedMetrics)} collectExtendedMetrics
-* @param {(IBaseConfig)} customConfig
-* @returns {(boolean | IDisabledExtendedMetrics)}
-* @memberof AutoCollectNativePerformance
-*/
-export function getNativeMetricsConfig(
-    collectExtendedMetrics: boolean | IDisabledExtendedMetrics,
-    customConfig: IBaseConfig
-): { isEnabled: boolean; disabledMetrics: IDisabledExtendedMetrics } {
-    const disableAll = customConfig.disableAllExtendedMetrics;
-    const individualOptOuts = customConfig.extendedMetricDisablers;
-
-    // case 1: disable all env var set, RETURN with isEnabled=false
-    if (disableAll) {
-        return { isEnabled: false, disabledMetrics: {} };
-    }
-
-    // case 2: individual env vars set, RETURN with isEnabled=true, disabledMetrics={...}
-    if (individualOptOuts) {
-        const optOutsArr = individualOptOuts.split(",");
-        const disabledMetrics: any = {};
-        if (optOutsArr.length > 0) {
-            for (const opt of optOutsArr) {
-                disabledMetrics[opt] = true;
-            }
+        catch (err) {
+            Logger.getInstance().error("Native metrics failed to get event Garbage Collection metrics", err);
         }
-
-        // case 2a: collectExtendedMetrics is an object, overwrite existing ones if they exist
-        if (typeof collectExtendedMetrics === "object") {
-            return {
-                isEnabled: true,
-                disabledMetrics: { ...collectExtendedMetrics, ...disabledMetrics },
-            };
-        }
-
-        // case 2b: collectExtendedMetrics is a boolean, set disabledMetrics as is
-        return { isEnabled: collectExtendedMetrics, disabledMetrics };
-    }
-
-    // case 4: no env vars set, input arg is a boolean, RETURN with isEnabled=collectExtendedMetrics, disabledMetrics={}
-    if (typeof collectExtendedMetrics === "boolean") {
-        return { isEnabled: collectExtendedMetrics, disabledMetrics: {} };
-    } else {
-        // use else so we don't need to force typing on collectExtendedMetrics
-        // case 5: no env vars set, input arg is object, RETURN with isEnabled=true, disabledMetrics=collectExtendedMetrics
-        return { isEnabled: true, disabledMetrics: collectExtendedMetrics };
     }
 }

@@ -1,10 +1,9 @@
 {
     "connectionString": "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/",
     "endpointUrl": "testEndpointUrl",
-    "disableAllExtendedMetrics": false,
     "samplingPercentage": 30,
     "enableAutoCollectExternalLoggers": false,
-    "enableAutoCollectConsole": false,
+    "enableAutoCollectConsole": true,
     "enableAutoCollectExceptions": false,
     "enableAutoCollectPerformance": false,
     "enableAutoCollectExtendedMetrics": false,
@@ -12,6 +11,30 @@
     "enableAutoCollectHeartbeat": false,
     "disableStatsbeat": false,
     "enableSendLiveMetrics": false,
-    "extendedMetricDisablers": "gc,heap",
+    "extendedMetrics": {
+        "heap": true,
+        "gc": true,
+        "loop": true
+    },
+    "instrumentations": {
+        "azureSdk": {
+            "enabled": true
+        },
+        "mongoDb": {
+            "enabled": true
+        },
+        "mySql": {
+            "enabled": true
+        },
+        "postgreSql": {
+            "enabled": true
+        },
+        "redis": {
+            "enabled": true
+        },
+        "redis4": {
+            "enabled": true
+        }
+    },
     "quickPulseHost": "testquickpulsehost.com"
 }

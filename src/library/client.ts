@@ -17,6 +17,9 @@ export class Client {
      */
     constructor(config?: Config) {
         this._config = config || new Config();
+        if (!this._config.instrumentationKey || this._config.instrumentationKey == "") {
+            throw new Error("Instrumentation key not found, please provide a connection string before starting Application Insights SDK.");
+        }
         if (!this._config.disableStatsbeat) {
             this._statsbeat = new Statsbeat(this._config);
             this._statsbeat.enable(true);
