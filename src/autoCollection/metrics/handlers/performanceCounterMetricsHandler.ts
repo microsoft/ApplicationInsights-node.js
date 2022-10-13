@@ -62,7 +62,7 @@ export class PerformanceCounterMetricsHandler {
     public start() {
         this._processMetrics.enable(true);;
         this._requestMetrics.enable(true);
-        this._nativeMetrics?.enable(true);
+        this._nativeMetrics.enable(true);
     }
 
     public shutdown() {
