@@ -83,8 +83,6 @@ describe("Json Config", () => {
             assert.equal(config.enableAutoCollectPerformance, false, "Wrong enableAutoCollectPerformance");
             assert.equal(config.enableAutoCollectPreAggregatedMetrics, false, "Wrong enableAutoCollectPreAggregatedMetrics");
             assert.equal(config.enableAutoCollectHeartbeat, false, "Wrong enableAutoCollectHeartbeat");
-            assert.equal(config.enableAutoCollectRequests, false, "Wrong enableAutoCollectRequests");
-            assert.equal(config.enableAutoCollectDependencies, false, "Wrong enableAutoCollectDependencies");
             assert.equal(config.disableStatsbeat, false, "Wrong disableStatsbeat");
             assert.equal(config.enableSendLiveMetrics, false, "Wrong enableSendLiveMetrics");
             assert.equal(config.extendedMetrics.loop, true, "Wrong loop");

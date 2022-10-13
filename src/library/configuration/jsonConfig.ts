@@ -1,8 +1,7 @@
-import { InstrumentationConfig } from "@opentelemetry/instrumentation";
 import * as fs from "fs";
 import * as path from "path";
 import { Logger } from "../logging";
-import { iInstrumentation, IJsonConfig } from "./interfaces";
+import { IJsonConfig, InstrumentationsConfig } from "./interfaces";
 
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";

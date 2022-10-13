@@ -5,7 +5,7 @@ import { ConnectionStringParser } from "./connectionStringParser";
 import { Logger } from "../logging";
 import * as Constants from "../../declarations/constants";
 import { JsonConfig } from "./jsonConfig";
-import { ExtendedMetricType, IConfig, iInstrumentation, InstrumentationType } from "./interfaces";
+import { ExtendedMetricType, IConfig, InstrumentationsConfig } from "./interfaces";
 
 
 export class Config implements IConfig {
@@ -23,6 +23,7 @@ export class Config implements IConfig {
     public disableStatsbeat: boolean;
     public quickPulseHost: string;
     public setupString: string;
+    public extendedMetrics: { [type: string]: boolean };
     public instrumentations: InstrumentationsConfig;
 
     private _connectionString: string;

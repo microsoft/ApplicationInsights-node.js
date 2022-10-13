@@ -2,7 +2,6 @@ import { IncomingMessage } from "http";
 import { DiagLogLevel, SpanContext } from "@opentelemetry/api";
 
 import { Logger } from "../library/logging";
-import { InstrumentationType } from "../library/configuration/interfaces";
 import { QuickPulseStateManager } from "../library/quickPulse";
 import { ICorrelationContext } from "../declarations/interfaces";
 import { TelemetryClient } from "./telemetryClient";
