@@ -27,19 +27,28 @@ describe("#StandardMetricsHandler", () => {
     });
 
     it("should create instruments", () => {
-        assert.ok(autoCollect.getExceptionMetrics()["_exceptionsGauge"], "_exceptionsGauge not available");
-        assert.ok(autoCollect.getTraceMetrics()["_tracesGauge"], "_tracesGauge not available");
+        assert.ok(autoCollect.getExceptionMetrics()["_exceptionsRateGauge"], "_exceptionsRateGauge not available");
+        assert.ok(autoCollect.getTraceMetrics()["_tracesRateGauge"], "_tracesRateGauge not available");
     });
 
     it("should observe instruments during collection", async () => {
         let mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
-        autoCollect.start();
+        // autoCollect.start();
         let dimensions: IMetricExceptionDimensions = {
             cloudRoleInstance: "testcloudRoleInstance",
             cloudRoleName: "testcloudRoleName"
         };
         autoCollect.getExceptionMetrics().countException(dimensions);
         autoCollect.getTraceMetrics().countTrace(dimensions);
+        dimensions = {
+            cloudRoleInstance: "testcloudRoleInstance2",
+            cloudRoleName: "testcloudRoleName2"
+        };
+        for (let i = 0; i < 10; i++) {
+            autoCollect.getExceptionMetrics().countException(dimensions);
+            autoCollect.getTraceMetrics().countTrace(dimensions);
+        }
+
         await new Promise(resolve => setTimeout(resolve, 120));
         assert.ok(mockExport.called);
         let resourceMetrics = mockExport.args[0][0];
@@ -47,13 +56,27 @@ describe("#StandardMetricsHandler", () => {
         assert.strictEqual(scopeMetrics.length, 1, 'scopeMetrics count');
         let metrics = scopeMetrics[0].metrics;
         assert.strictEqual(metrics.length, 2, 'metrics count');
-        assert.equal(metrics[0].descriptor.name, StandardMetric.EXCEPTIONS);
-        assert.equal(metrics[1].descriptor.name, StandardMetric.TRACES);
+        assert.equal(metrics[0].descriptor.name, StandardMetric.EXCEPTION_COUNT);
+        assert.equal(metrics[1].descriptor.name, StandardMetric.TRACE_COUNT);
+        assert.strictEqual(metrics[0].dataPoints.length, 2, 'dataPoints count');
+        // Exceptions
+        assert.strictEqual(metrics[0].dataPoints[0].value, 1, 'dataPoint value');
+        assert.strictEqual(metrics[0].dataPoints[0].attributes["cloudRoleInstance"], "testcloudRoleInstance");
+        assert.strictEqual(metrics[0].dataPoints[0].attributes["cloudRoleName"], "testcloudRoleName");
+        assert.strictEqual(metrics[0].dataPoints[1].value, 10, 'dataPoint value');
+        assert.strictEqual(metrics[0].dataPoints[1].attributes["cloudRoleInstance"], "testcloudRoleInstance2");
+        assert.strictEqual(metrics[0].dataPoints[1].attributes["cloudRoleName"], "testcloudRoleName2");
+        // Traces
+        assert.strictEqual(metrics[1].dataPoints[0].value, 1, 'dataPoint value');
+        assert.strictEqual(metrics[1].dataPoints[0].attributes["cloudRoleInstance"], "testcloudRoleInstance");
+        assert.strictEqual(metrics[1].dataPoints[0].attributes["cloudRoleName"], "testcloudRoleName");
+        assert.strictEqual(metrics[1].dataPoints[1].value, 10, 'dataPoint value');
+        assert.strictEqual(metrics[1].dataPoints[1].attributes["cloudRoleInstance"], "testcloudRoleInstance2");
+        assert.strictEqual(metrics[1].dataPoints[1].attributes["cloudRoleName"], "testcloudRoleName2");
     });
 
     it("should not collect when disabled", async () => {
         let mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
-        autoCollect.start();
         autoCollect.shutdown();
         await new Promise(resolve => setTimeout(resolve, 120));
         assert.ok(mockExport.notCalled);
@@ -136,7 +159,6 @@ describe("#StandardMetricsHandler", () => {
 
         it("http outgoing/incoming requests", async () => {
             let mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
-            autoCollect.start();
             await makeHttpRequest();
             await new Promise(resolve => setTimeout(resolve, 120));
             assert.ok(mockExport.called);
@@ -145,12 +167,12 @@ describe("#StandardMetricsHandler", () => {
             assert.strictEqual(scopeMetrics.length, 2, 'scopeMetrics count');
             let metrics = scopeMetrics[0].metrics;
             assert.strictEqual(metrics.length, 2, 'metrics count');
-            assert.equal(metrics[0].descriptor.name, StandardMetric.EXCEPTIONS);
-            assert.equal(metrics[1].descriptor.name, StandardMetric.TRACES);
+            assert.equal(metrics[0].descriptor.name, StandardMetric.EXCEPTION_COUNT);
+            assert.equal(metrics[1].descriptor.name, StandardMetric.TRACE_COUNT);
             metrics = scopeMetrics[1].metrics;
             assert.strictEqual(metrics.length, 2, 'metrics count');
-            assert.equal(metrics[0].descriptor.name, "http.server.duration");
-            assert.equal(metrics[1].descriptor.name, "http.client.duration");
+            assert.equal(metrics[0].descriptor.name, StandardMetric.REQUEST_DURATION);
+            assert.equal(metrics[1].descriptor.name, StandardMetric.DEPENDENCY_DURATION);
         });
     });
 });
