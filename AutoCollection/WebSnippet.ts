@@ -1,18 +1,17 @@
 import http = require("http");
 import https = require("https");
 import zlib = require("zlib");
-import os = require("os");
 
 import Logging = require("../Library/Logging");
 import TelemetryClient = require("../Library/TelemetryClient");
 import snippetInjectionHelper = require("../Library/SnippetInjectionHelper");
+import prefixHelper = require("../Library/PrefixHelper");
 import Statsbeat = require("./Statsbeat");
 import Constants = require("../Declarations/Constants");
 import ConnectionStringParser = require("../Library/ConnectionStringParser");
 import {webSnippet} from "@microsoft/applicationinsights-web-snippet";
+import { IwebInstrumentationConfig } from "../Declarations/Interfaces";
 
-const OS_WINDOWS = "Windows_NT";
-const OS_LINUX = "Linux";
 
 class WebSnippet {
 
@@ -26,7 +25,7 @@ class WebSnippet {
     private _isIkeyValid: boolean = true;
     private _statsbeat: Statsbeat;
     private _webInstrumentationIkey: string;
-    private _clientWebInstrumentationConfig: any;
+    private _clientWebInstrumentationConfig: IwebInstrumentationConfig[];
     private _clientWebInstrumentationSrc: string;
 
     constructor(client: TelemetryClient) {
@@ -88,9 +87,9 @@ class WebSnippet {
 
     private _getWebInstrumentationReplacedStr() {
         let configStr = this._getClientWebInstrumentationConfigStr(this._clientWebInstrumentationConfig);
-        let osStr = this._getOsString();
-        let rpStr = this._getResourceProvider();
-        let snippetReplacedStr = `${this._webInstrumentationIkey}\",\r\n${configStr} disableIkeyDeprecationMessage: true,\r\n sdkExtension: \"${rpStr}${osStr}r_n_`;
+        let osStr = prefixHelper.getOsPrefix();
+        let rpStr = prefixHelper.getResourceProvider();
+        let snippetReplacedStr = `${this._webInstrumentationIkey}\",\r\n${configStr} disableIkeyDeprecationMessage: true,\r\n sdkExtension: \"${rpStr}${osStr}d_n_`;
         let replacedSnippet = webSnippet.replace("INSTRUMENTATION_KEY", snippetReplacedStr);
         if (this._clientWebInstrumentationSrc) {
             return replacedSnippet.replace(`${Constants.WEB_INSTRUMENTATION_DEFAULT_SOURCE}.2.min.js`,this._clientWebInstrumentationSrc);
@@ -98,32 +97,22 @@ class WebSnippet {
         return replacedSnippet;
     }
 
-    private _getOsString() {
-        // default is unknown OS
-        let osStr = "u";
-        try {
-            if (os && os.type()) {
-                let osType = os.type();
-                if (osType === OS_WINDOWS) {
-                    osStr = "w"
-                }
-                if (osType === OS_LINUX) {
-                    osStr = "l"
-                }
-            }
-        } catch (err) {
-            Logging.info("get OS type err: " + err)
-        }
-        return osStr;
-    }
-
-    private _getClientWebInstrumentationConfigStr(config: any) {
+    // Do not use string replace here, because double quote should be kept.
+    // we want to transfer all values of config to the web snippet in the following way:
+    // cfg: {
+    //      config1: "config1 string value",
+    //      config2: true,
+    //      config3: 1,
+    //      ...
+    //}});
+    private _getClientWebInstrumentationConfigStr(config: IwebInstrumentationConfig[]) {
         let configStr = "";
         try {
-            if (typeof config  === "object") {
-                let keys = Object.keys(config);
-                keys.forEach((key) =>{
-                    let val = config.key || config[key];
+            if (config !== undefined && config.length > 0) {
+                config.forEach((item) =>{
+                    let key = item.configName;
+                    if (key === undefined) return;
+                    let val = item.value;
                     let entry = "";
                     // NOTE: users should convert object/function to string themselves
                     // Type "function" and "object" will be skipped!
@@ -151,16 +140,6 @@ class WebSnippet {
             Logging.info("Parse client web instrumentation error. Web Instrumentation is disabled");
         }
         return configStr;
-    }
-
-    private _getResourceProvider() {
-        let resourceProvider = "u";
-        if (process.env.WEBSITE_SITE_NAME) { // Web apps
-            resourceProvider = "a";
-        } else if (process.env.FUNCTIONS_WORKER_RUNTIME) { // Function apps
-            resourceProvider = "f"
-        }
-        return resourceProvider;
     }
 
     private _initialize() {

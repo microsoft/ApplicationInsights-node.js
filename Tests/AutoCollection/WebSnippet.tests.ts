@@ -146,10 +146,7 @@ describe("AutoCollection/WebSnippet", () => {
         it("snippet should use provided config ", () => {
             let client = new AppInsights.TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             client.config.webInstrumentationSrc = "WebInstrumentationTestSourceURL";
-            client.config.webInstrumentationConfig = {
-                "key1":"key1", 
-                "key2": true
-            };
+            client.config.webInstrumentationConfig = [{configName: "key1",value: "key1"},{configName:"key2", value: true}];
 
             let webSnippet = new WebSnippet(client);
             webSnippet.enable(true);
@@ -167,31 +164,12 @@ describe("AutoCollection/WebSnippet", () => {
             assert.equal(webSnippet.ValidateInjection(response, validHtml), true); 
             let newHtml = webSnippet.InjectWebSnippet(response, validHtml);
             let osType = os.type() === "Windows_NT"? "w":"l";
-            //assert.equal("test", newHtml)
             let expectedStr = 
-            `    instrumentationKey: "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",\r\n key1: "key1",\r\n key2: true,\r\n disableIkeyDeprecationMessage: true,\r\n sdkExtension: "u${osType}r_n_`;
+            `    instrumentationKey: "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",\r\n key1: "key1",\r\n key2: true,\r\n disableIkeyDeprecationMessage: true,\r\n sdkExtension: "u${osType}d_n_`;
             assert.ok(newHtml.indexOf("https://js.monitor.azure.com/scripts/b/ai.2.min.js") < 0);
             assert.ok(newHtml.indexOf("WebInstrumentationTestSourceURL") >= 0);
             assert.ok(newHtml.indexOf("<html><head>") == 0);
             assert.ok(newHtml.indexOf(expectedStr) >= 0);
-        });
-
-        it("should use correct prefix for app services", () => {
-            var newEnv = <{ [id: string]: string }>{};
-            newEnv["WEBSITE_SITE_NAME"] = "Test Website";
-            process.env = newEnv;
-            let client = new AppInsights.TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-            let webSnippet = new WebSnippet(client);
-            assert.equal(webSnippet["_getResourceProvider"](), "a");
-        });
-
-        it("should use correct prefix for azure functions", () => {
-            var newEnv = <{ [id: string]: string }>{};
-            newEnv["FUNCTIONS_WORKER_RUNTIME"] = "test";
-            process.env = newEnv;
-            let client = new AppInsights.TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-            let webSnippet = new WebSnippet(client);
-            assert.equal(webSnippet["_getResourceProvider"](), "f");
         });
     });
 
