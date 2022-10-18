@@ -10,7 +10,7 @@ import Statsbeat = require("./Statsbeat");
 import Constants = require("../Declarations/Constants");
 import ConnectionStringParser = require("../Library/ConnectionStringParser");
 import {webSnippet} from "@microsoft/applicationinsights-web-snippet";
-import { IwebInstrumentationConfig } from "../Declarations/Interfaces";
+import {IWebInstrumentationConfig} from "../Declarations/Interfaces";
 
 
 class WebSnippet {
@@ -25,7 +25,7 @@ class WebSnippet {
     private _isIkeyValid: boolean = true;
     private _statsbeat: Statsbeat;
     private _webInstrumentationIkey: string;
-    private _clientWebInstrumentationConfig: IwebInstrumentationConfig[];
+    private _clientWebInstrumentationConfig: IWebInstrumentationConfig[];
     private _clientWebInstrumentationSrc: string;
 
     constructor(client: TelemetryClient) {
@@ -36,7 +36,7 @@ class WebSnippet {
         WebSnippet.INSTANCE = this;
         // AI URL used to validate if snippet already included
         WebSnippet._aiUrl = Constants.WEB_INSTRUMENTATION_DEFAULT_SOURCE;
-        WebSnippet._aiDeprecatedUrl = Constants.WEB_INSTRUMENTATION_DEPRECATE_SOURCE;
+        WebSnippet._aiDeprecatedUrl = Constants.WEB_INSTRUMENTATION_DEPRECATED_SOURCE;
 
         let clientWebIkey = this._getWebSnippetIkey(client.config?.webInstrumentationConnectionString);
         this._webInstrumentationIkey = clientWebIkey || client.config.instrumentationKey;
@@ -105,12 +105,12 @@ class WebSnippet {
     //      config3: 1,
     //      ...
     //}});
-    private _getClientWebInstrumentationConfigStr(config: IwebInstrumentationConfig[]) {
+    private _getClientWebInstrumentationConfigStr(config: IWebInstrumentationConfig[]) {
         let configStr = "";
         try {
-            if (config !== undefined && config.length > 0) {
+            if (config != undefined && config.length > 0) {
                 config.forEach((item) =>{
-                    let key = item.configName;
+                    let key = item.name;
                     if (key === undefined) return;
                     let val = item.value;
                     let entry = "";
@@ -131,7 +131,7 @@ class WebSnippet {
                             break;
                     }
                     
-                })
+                });
             }
 
         } catch (e) {

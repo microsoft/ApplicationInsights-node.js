@@ -105,7 +105,7 @@ describe("Json Config", () => {
             assert.equal(config.quickPulseHost, "testquickpulsehost.com");
             assert.equal(config.enableWebInstrumentation, true);
             assert.equal(config.webInstrumentationConnectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
-            assert.deepEqual(config.webInstrumentationConfig, [{configName: "key1",value: "key1"},{configName:"key2", value: true}],);
+            assert.deepEqual(config.webInstrumentationConfig, [{name: "key1",value: "key1"},{name:"key2", value: true}],);
             assert.equal(config.webInstrumentationSrc, "webInstrumentationSourceFromJson");
             
             assert.equal(config.enableAutoWebSnippetInjection, true);

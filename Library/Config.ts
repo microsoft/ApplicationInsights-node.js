@@ -8,7 +8,7 @@ import http = require("http");
 import https = require("https");
 import url = require("url");
 import { JsonConfig } from "./JsonConfig";
-import { IConfig } from "../Declarations/Interfaces";
+import { IConfig, IWebInstrumentationConfig } from "../Declarations/Interfaces";
 import { DistributedTracingModes } from "../applicationinsights";
 import { IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";
 
@@ -57,7 +57,7 @@ class Config implements IConfig {
     public extendedMetricDisablers: string;
     public quickPulseHost: string;
     public enableWebInstrumentation: boolean;
-    public webInstrumentationConfig: any;
+    public webInstrumentationConfig: IWebInstrumentationConfig[];
     public webInstrumentationSrc: string;
     // To Be deprecated.
     public enableAutoWebSnippetInjection: boolean;

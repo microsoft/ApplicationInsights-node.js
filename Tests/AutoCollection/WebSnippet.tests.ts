@@ -146,7 +146,7 @@ describe("AutoCollection/WebSnippet", () => {
         it("snippet should use provided config ", () => {
             let client = new AppInsights.TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             client.config.webInstrumentationSrc = "WebInstrumentationTestSourceURL";
-            client.config.webInstrumentationConfig = [{configName: "key1",value: "key1"},{configName:"key2", value: true}];
+            client.config.webInstrumentationConfig = [{name: "key1",value: "key1"},{name:"key2", value: true}];
 
             let webSnippet = new WebSnippet(client);
             webSnippet.enable(true);

@@ -162,7 +162,7 @@ export interface IBaseConfig {
      * you SHOULD wrap it in double-quoted string: "function () {\n  return \"hi\";\n}"
      * see more Application Insights web Instrumentation config details at: https://github.com/microsoft/ApplicationInsights-JS#configuration
      */
-    webInstrumentationConfig?: IwebInstrumentationConfig[];
+    webInstrumentationConfig?: IWebInstrumentationConfig[];
      /**
      * Application Insights web Instrumentation CDN url
      * NOTE: this config can be changed from env variable: APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_SOURCE or Json Config: webInstrumentationSrc
@@ -172,12 +172,12 @@ export interface IBaseConfig {
     webInstrumentationSrc?: string;
 }
 
-export interface IwebInstrumentationConfig {
+export interface IWebInstrumentationConfig {
     /**
      * Name of Application Insights web Instrumentation config to be changed
      * see more Application Insights web Instrumentation config details at: https://github.com/microsoft/ApplicationInsights-JS#configuration
      */
-    configName: string;
+    name: string;
      /**
      * value provided to replace the default config value above
      */
