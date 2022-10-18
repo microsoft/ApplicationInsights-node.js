@@ -200,3 +200,6 @@ export const MessageBusDestination = "message_bus.destination";
   * @internal
   */
  export const TIME_SINCE_ENQUEUED = "timeSinceEnqueued";
+
+ export const WEB_INSTRUMENTATION_DEFAULT_SOURCE= "https://js.monitor.azure.com/scripts/b/ai";
+ export const WEB_INSTRUMENTATION_DEPRECATED_SOURCE= "https://az416426.vo.msecnd.net/scripts/b/ai";

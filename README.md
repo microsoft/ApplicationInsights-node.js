@@ -210,7 +210,7 @@ appInsights.setup("<YOUR_CONNECTION_STRING>")
     .setAutoCollectHeartbeat(false)
     .setInternalLogging(false, true)
     .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C)
-    .enableAutoWebSnippetInjection(false)
+    .enableWebInstrumentation(false)
     .start();
 ```
 
@@ -222,7 +222,7 @@ Note that by default `setAutoCollectConsole` is configured to *exclude* calls to
 (e.g. `winston`, `bunyan`) will be collected. You can change this behavior to *include* calls
 to `console` methods by using `setAutoCollectConsole(true, true)`.
 
-Note that by default `enableAutoWebSnippetInjection` will use the connection string for SDK initialization. If you want to use a different one, you can set it as `enableAutoWebSnippetInjection(true, "your-connection-string")`.
+Note that by default `enableWebInstrumentation` will use the connection string for SDK initialization. If you want to use a different one, you can set it as `enableWebInstrumentation(true, "your-connection-string")`.
 
 The TelemetryClient object contains a `config` property with many optional settings. These can be set as follows:
 ```
@@ -270,8 +270,10 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | httpAgent                       | An http.Agent to use for SDK HTTP traffic (Optional, Default undefined)                                    |
 | httpsAgent                      | An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined)
 | aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Credential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes)
-| enableAutoWebSnippetInjection(Preview)| Sets the state of automatic web snippet injection (Optional, disabled by default). If true, web snippet will be injected into valid node server http response automatically with the connection string used for SDK initialization
-| webSnippetConnectionString(Preview)| Sets connection string used for web snippet injection (Optional, Default undefined)|                            |
+| enableWebInstrumentation(Preview)| Sets the state of automatic web Instrumentation (Optional, disabled by default). If true, web instrumentation will be enabled on valid node server http response with the connection string used for SDK initialization
+| webInstrumentationConnectionString(Preview)| Sets connection string used for web Instrumentation (Optional, Default undefined)|
+| webInstrumentationSrc(Preview)| Sets web Instrumentation CDN url (Optional). see more details at [ApplicationInsights JavaScript SDK](https://github.com/microsoft/ApplicationInsights-JS)|
+| webInstrumentationConfig(Preview)| Sets web Instrumentation config (Optional). see more details at [ApplicationInsights JavaScript SDK](https://github.com/microsoft/ApplicationInsights-JS)|                          |
 
 [Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts 
 
@@ -334,18 +336,21 @@ appInsights.defaultClient.setAutoPopulateAzureProperties(true);
 appInsights.start();
 ```
 
-### Automatic web snippet injection[Preview]
+### Automatic web Instrumentation[Preview]
 
- Automatic web snippet injection is currently in **Preview**. For node server with configuration `enableAutoWebSnippetInjection` set to `true` or environment variable `APPLICATIONINSIGHTS_WEB_SNIPPET_ENABLED = true`, web snippet will be injected into node server response when all of the following requirements are met:
+ Automatic web Instrumentation is currently in **Preview**. For node server with configuration `enableWebInstrumentation` set to `true` or environment variable `APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_ENABLED = true`, web Instrumentation will be enabled on node server response when all of the following requirements are met:
 
 - Response has status code `200`.
 - Response method is `GET`.
 - Sever response has `Content-Type` html.
 - Server response must have both `<head>` and `</head>` Tags.
 - If response is compressed, it must have only one `Content-Encoding` type, and encoding type must be one of `gzip`, `br` or `deflate`.
-- Response does not contain current /backup snippet CDN endpoints.  (current and backup snippet CDN endpoints [here](https://github.com/microsoft/ApplicationInsights-JS#active-public-cdn-endpoints))
+- Response does not contain current /backup web Instrumentation CDN endpoints.  (current and backup Web Instrumentation CDN endpoints [here](https://github.com/microsoft/ApplicationInsights-JS#active-public-cdn-endpoints))
 
-**Note:** Snippet auto injection may slow down server response time, especially when response size is large or response is compressed. For the case in which some middle layers are applied, it may result in auto injection not working and original response will be returned.
+web Instrumentation CDN endpoint can be changed by setting environment variable `APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_SOURCE = "web Instrumentation CDN endpoints"`.
+web Instrumentation connection string can be changed by setting environment variable `APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_CONNECTION_STRING = "web Instrumentation connection string"`
+
+**Note:** web Instrumentation may slow down server response time, especially when response size is large or response is compressed. For the case in which some middle layers are applied, it may result in web Instrumentation not working and original response will be returned.
 
 ### Automatic third-party instrumentation
 

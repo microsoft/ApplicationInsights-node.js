@@ -39,5 +39,9 @@
     "noPatchModules": "console,redis",
     "quickPulseHost": "testquickpulsehost.com",
     "enableAutoWebSnippetInjection": false,
-    "webSnippetConnectionString": "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3331;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"
+    "webSnippetConnectionString": "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3331;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/",
+    "enableWebInstrumentation": true,
+    "webInstrumentationConnectionString": "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/",
+    "webInstrumentationConfig": [{"name": "key1","value": "key1"},{"name":"key2", "value": true}],
+    "webInstrumentationSrc":"webInstrumentationSourceFromJson"
 }
