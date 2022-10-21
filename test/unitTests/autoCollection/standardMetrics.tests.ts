@@ -171,8 +171,8 @@ describe("#StandardMetricsHandler", () => {
             assert.equal(metrics[1].descriptor.name, StandardMetric.TRACE_COUNT);
             metrics = scopeMetrics[1].metrics;
             assert.strictEqual(metrics.length, 2, 'metrics count');
-            assert.equal(metrics[0].descriptor.name, StandardMetric.REQUEST_DURATION);
-            assert.equal(metrics[1].descriptor.name, StandardMetric.DEPENDENCY_DURATION);
+            assert.equal(metrics[0].descriptor.name, StandardMetric.HTTP_REQUEST_DURATION);
+            assert.equal(metrics[1].descriptor.name, StandardMetric.HTTP_DEPENDENCY_DURATION);
         });
     });
 });

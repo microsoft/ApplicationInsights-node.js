@@ -61,11 +61,11 @@ export class StandardMetricsHandler {
     private _getViews(): View[] {
         let views = [];
         views.push(new View({
-            name: StandardMetric.REQUEST_DURATION,
+            name: StandardMetric.HTTP_REQUEST_DURATION,
             instrumentName: "http.server.duration" // Metric semantic conventions not available yet
         }));
         views.push(new View({
-            name: StandardMetric.DEPENDENCY_DURATION,
+            name: StandardMetric.HTTP_DEPENDENCY_DURATION,
             instrumentName: "http.client.duration" // Metric semantic conventions not available yet
         }));
         views.push(new View({

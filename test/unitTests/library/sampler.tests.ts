@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import { SamplingDecision } from "@opentelemetry/api";
+import { SamplingDecision } from "@opentelemetry/sdk-trace-base";
 import { ApplicationInsightsSampler } from "../../../src/library/handlers/sampler";
 
 

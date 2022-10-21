@@ -61,10 +61,10 @@ export enum QuickPulseCounter {
 }
 
 export enum StandardMetric {
-  REQUEST_DURATION = "azureMonitor.standardMetric.requestDuration",
-  DEPENDENCY_DURATION = "azureMonitor.standardMetric.dependencyDuration",
-  EXCEPTION_COUNT = "azureMonitor.standardMetric.exceptionCount",
-  TRACE_COUNT = "azureMonitor.standardMetric.traceCount",
+  HTTP_REQUEST_DURATION = "azureMonitor.http.requestDuration",
+  HTTP_DEPENDENCY_DURATION = "azureMonitor.http.dependencyDuration",
+  EXCEPTION_COUNT = "azureMonitor.exceptionCount",
+  TRACE_COUNT = "azureMonitor.traceCount",
 }
 
 export enum NativeMetricsCounter {
