@@ -22,6 +22,12 @@ const ENV_noDiagnosticChannel = "APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL"
 const ENV_noStatsbeat = "APPLICATION_INSIGHTS_NO_STATSBEAT";
 const ENV_noHttpAgentKeepAlive = "APPLICATION_INSIGHTS_NO_HTTP_AGENT_KEEP_ALIVE";
 const ENV_noPatchModules = "APPLICATION_INSIGHTS_NO_PATCH_MODULES";
+const ENV_webInstrumentationEnable = "APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_ENABLED";
+const ENV_webInstrumentation_connectionString = "APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_CONNECTION_STRING";
+const ENV_webInstrumentation_source = "APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_SOURCE";
+
+// Old web instrumentation env variables are to be deprecated
+// Those env variables will NOT be exposed in doc after version 2.3.5
 const ENV_webSnippetEnable = "APPLICATIONINSIGHTS_WEB_SNIPPET_ENABLED";
 const ENV_webSnippet_connectionString = "APPLICATIONINSIGHTS_WEB_SNIPPET_CONNECTION_STRING";
 
@@ -65,6 +71,13 @@ export class JsonConfig implements IJsonConfig {
     public noPatchModules: string;
     public noHttpAgentKeepAlive: boolean;
     public quickPulseHost: string;
+    public enableWebInstrumentation: boolean;
+    public webInstrumentationConnectionString: string;
+    public webInstrumentationConfig: any;
+    public webInstrumentationSrc: string;
+
+    // the following features are to be deprecated
+    // Those env variables will NOT be exposed in doc after version 2.3.5
     public enableAutoWebSnippetInjection: boolean;
     public webSnippetConnectionString: string;
 
@@ -94,8 +107,11 @@ export class JsonConfig implements IJsonConfig {
         this.disableStatsbeat = !!process.env[ENV_noStatsbeat];
         this.noHttpAgentKeepAlive = !!process.env[ENV_noHttpAgentKeepAlive];
         this.noPatchModules = process.env[ENV_noPatchModules] || "";
-        this.enableAutoWebSnippetInjection = !!process.env[ENV_webSnippetEnable];
-        this.webSnippetConnectionString = process.env[ENV_webSnippet_connectionString] || "";
+        this.enableWebInstrumentation = !!process.env[ENV_webInstrumentationEnable] || !!process.env[ENV_webSnippetEnable];
+        this.webInstrumentationSrc = process.env[ENV_webInstrumentation_source] || "";
+        this.webInstrumentationConnectionString = process.env[ENV_webInstrumentation_connectionString] || process.env[ENV_webSnippet_connectionString] || "";
+        this.enableAutoWebSnippetInjection = this.enableWebInstrumentation;
+        this.webSnippetConnectionString = this.webInstrumentationConnectionString;
         this._loadJsonFile();
     }
 
@@ -148,11 +164,26 @@ export class JsonConfig implements IJsonConfig {
                 this.noPatchModules = jsonConfig.noPatchModules;
             }
             if (jsonConfig.enableAutoWebSnippetInjection != undefined) {
-                this.enableAutoWebSnippetInjection = jsonConfig.enableAutoWebSnippetInjection;
+                this.enableWebInstrumentation = jsonConfig.enableAutoWebSnippetInjection;
+                this.enableAutoWebSnippetInjection = this.enableWebInstrumentation;
             }
-
+            if (jsonConfig.enableWebInstrumentation != undefined) {
+                this.enableWebInstrumentation = jsonConfig.enableWebInstrumentation;
+                this.enableAutoWebSnippetInjection = this.enableWebInstrumentation;
+            }
             if (jsonConfig.webSnippetConnectionString != undefined) {
-                this.webSnippetConnectionString = jsonConfig.webSnippetConnectionString;
+                this.webInstrumentationConnectionString = jsonConfig.webSnippetConnectionString;
+                this.webSnippetConnectionString = this.webInstrumentationConnectionString;
+            }
+            if (jsonConfig.webInstrumentationConnectionString != undefined) {
+                this.webInstrumentationConnectionString = jsonConfig.webInstrumentationConnectionString;
+                this.webSnippetConnectionString = this.webInstrumentationConnectionString;
+            }
+            if (jsonConfig.webInstrumentationConfig != undefined) {
+                this.webInstrumentationConfig = jsonConfig.webInstrumentationConfig;
+            }
+            if (jsonConfig.webInstrumentationSrc != undefined) {
+                this.webInstrumentationSrc = jsonConfig.webInstrumentationSrc;
             }
 
             this.endpointUrl = jsonConfig.endpointUrl;
