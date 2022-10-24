@@ -76,7 +76,7 @@ describe("Json Config", () => {
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"
             );
             assert.equal(config.endpointUrl, "testEndpointUrl", "Wrong endpointUrl");
-            assert.equal(config.samplingPercentage, 30, "Wrong samplingPercentage");
+            assert.equal(config.samplingRate, 0.3, "Wrong samplingRate");
             assert.equal(config.enableAutoCollectExternalLoggers, false, "Wrong enableAutoCollectExternalLoggers");
             assert.equal(config.enableAutoCollectConsole, true, "Wrong enableAutoCollectConsole");
             assert.equal(config.enableAutoCollectExceptions, false, "Wrong enableAutoCollectExceptions");

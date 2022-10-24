@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { AzureExporterConfig, AzureMonitorTraceExporter } from "@azure/monitor-opentelemetry-exporter";
+import { ApplicationInsightsSampler, AzureMonitorExporterOptions, AzureMonitorTraceExporter } from "@azure/monitor-opentelemetry-exporter";
 import { Instrumentation } from "@opentelemetry/instrumentation";
 import { createAzureSdkInstrumentation } from "@azure/opentelemetry-instrumentation-azure-sdk";
 import { MongoDBInstrumentation } from "@opentelemetry/instrumentation-mongodb";
@@ -16,7 +16,6 @@ import {
 
 import { Config } from "../configuration";
 import { ResourceManager } from "./resourceManager";
-import { ApplicationInsightsSampler } from "./sampler";
 import { TracerProvider } from "@opentelemetry/api";
 import { MetricHandler } from "./metricHandler";
 import { AzureSpanProcessor } from "./azureSpanProcessor";
@@ -45,14 +44,14 @@ export class TraceHandler {
         this._config = config;
         this._metricHandler = metricHandler;
         this._instrumentations = [];
-        const aiSampler = new ApplicationInsightsSampler(this._config.samplingPercentage);
+        const aiSampler = new ApplicationInsightsSampler(this._config.samplingRate);
         let tracerConfig: NodeTracerConfig = {
             sampler: aiSampler,
             resource: ResourceManager.getInstance().getTraceResource(),
             forceFlushTimeoutMillis: 30000,
         };
         this._tracerProvider = new NodeTracerProvider(tracerConfig);
-        let exporterConfig: AzureExporterConfig = {
+        let exporterConfig: AzureMonitorExporterOptions = {
             connectionString: config.getConnectionString(),
             aadTokenCredential: config.aadTokenCredential
         };

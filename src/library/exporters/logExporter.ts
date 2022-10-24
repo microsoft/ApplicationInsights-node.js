@@ -3,7 +3,6 @@
 import { context } from "@opentelemetry/api";
 import { ExportResult, ExportResultCode, suppressTracing } from "@opentelemetry/core";
 import { RestError } from "@azure/core-rest-pipeline";
-import { AzureExporterConfig } from "@azure/monitor-opentelemetry-exporter";
 import { Logger } from "../logging"
 import { Config, ConnectionStringParser } from "../configuration";
 import { isRetriable, IBreezeResponse, IBreezeError } from "./shared/breezeUtils";
@@ -24,10 +23,6 @@ export class LogExporter {
     constructor(config: Config) {
         const ingestionEndpoint = config.endpointUrl.replace("/v2.1/track", "");
         const connectionString = `InstrumentationKey=${config.instrumentationKey};IngestionEndpoint=${ingestionEndpoint}`;
-        let exporterConfig: AzureExporterConfig = {
-            connectionString: connectionString,
-        };
-
         this._numConsecutiveRedirects = 0;
         this._options = {
             ...DEFAULT_EXPORTER_CONFIG,

@@ -208,7 +208,7 @@ export class LogHandler {
             instrumentationKey.replace(/-/g, "") +
             "." +
             baseType.substring(0, baseType.length - 4);
-        let sampleRate = this.config.samplingPercentage;
+        let sampleRate = 100; // TODO: Log sampling not supported yet
         let properties = {};
         if (telemetry.properties) {
             // sanitize properties

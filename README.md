@@ -222,7 +222,7 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 |Property|Description|Default|
 | ------------------------------- |------------------------------------------------------------------------------------------------------------|-------|
 | endpointUrl                     | The ingestion endpoint to send telemetry payloads.to                                                       | |
-| samplingPercentage              | The percentage of telemetry items tracked that should be transmitted.                       | 100|                             |                                                  |
+| samplingRatio              | Sampling ration must take a value in the range [0,1], 1 meaning all data will sampled and 0 all data will be sampled out.                       | 0.5|                             |                                                  |
 | enableAutoCollectExternalLoggers| Sets the state of console. If true logger activity will be sent to Application Insights. |
 | enableAutoCollectConsole        | Sets the state of logger tracking (enabled by default for third-party loggers only). If true, logger auto collection will include console.log calls. | false |
 | enableAutoCollectExceptions     | Sets the state of exception tracking. If true uncaught exceptions will be sent to Application Insights | true|
@@ -244,7 +244,7 @@ All these properties except aadTokenCredential could be configured using configu
 
 ```javascript
 {
-    "samplingPercentage": 80,
+    "samplingRate": 0.8,
     "enableAutoCollectExternalLoggers": true,
     "enableAutoCollectExceptions": true,
     "enableAutoCollectHeartbeat": true,
@@ -264,7 +264,7 @@ process.env.APPLICATIONINSIGHTS_CONFIGURATION_FILE = "C:/applicationinsights/con
 
 ### Sampling
 
-By default, the SDK will send all collected data to the Application Insights service. If you collect a lot of data, you might want to enable sampling to reduce the amount of data sent. Set the `samplingPercentage` field on the Config object of a Client to accomplish this. Setting `samplingPercentage` to 100 (the default) means all data will be sent, and 0 means nothing will be sent.
+By default, the SDK will send all collected data to the Application Insights service. If you collect a lot of data, you might want to enable sampling to reduce the amount of data sent. Set the `samplingRate` field on the Config object of a Client to accomplish this. Setting `samplingRate` to 1 (the default) means all data will be sent, and 0 means nothing will be sent.
 
 If you are using automatic correlation, all data associated with a single request will be included or excluded as a unit.
 
@@ -273,7 +273,7 @@ Add code such as the following to enable sampling:
 ```javascript
 const appInsights = require("applicationinsights");
 appInsights.setup("<YOUR_CONNECTION_STRING>");
-appInsights.defaultClient.config.samplingPercentage = 33; // 33% of all telemetry will be sent to Application Insights
+appInsights.defaultClient.config.samplingRate = 0.33; // 33% of all telemetry will be sent to Application Insights
 appInsights.start();
 ```
 

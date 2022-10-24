@@ -1,4 +1,4 @@
-import { AzureExporterConfig, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
+import { AzureMonitorExporterOptions, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
 import { Meter } from "@opentelemetry/api-metrics";
 import { MeterProvider, MeterProviderOptions, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions, View } from "@opentelemetry/sdk-metrics";
 import { Config } from "../../../library";
@@ -19,7 +19,7 @@ export class CustomMetricsHandler {
             resource: ResourceManager.getInstance().getMetricResource(),
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);
-        let exporterConfig: AzureExporterConfig = {
+        let exporterConfig: AzureMonitorExporterOptions = {
             connectionString: this._config.getConnectionString(),
             aadTokenCredential: this._config.aadTokenCredential
         };

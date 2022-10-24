@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import { RequestOptions } from "https";
-import { AzureExporterConfig, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
+import { AzureMonitorExporterOptions, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
 import { Meter } from "@opentelemetry/api-metrics";
 import { DropAggregation, MeterProvider, MeterProviderOptions, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions, View } from "@opentelemetry/sdk-metrics";
 import { HttpMetricsInstrumentationConfig, MetricName, NativeMetricsCounter, PerformanceCounter } from "../types";
@@ -32,7 +32,7 @@ export class PerformanceCounterMetricsHandler {
             views: this._getViews()
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);
-        let exporterConfig: AzureExporterConfig = {
+        let exporterConfig: AzureMonitorExporterOptions = {
             connectionString: this._config.getConnectionString(),
             aadTokenCredential: this._config.aadTokenCredential
         };

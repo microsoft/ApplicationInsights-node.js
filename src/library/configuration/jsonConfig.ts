@@ -15,7 +15,7 @@ export class JsonConfig implements IJsonConfig {
     public connectionString: string;
     public instrumentationKey: string;
     public endpointUrl: string;
-    public samplingPercentage: number;
+    public samplingRate: number;
     public enableAutoCollectExternalLoggers: boolean;
     public enableAutoCollectConsole: boolean;
     public enableAutoCollectExceptions: boolean;
@@ -64,7 +64,7 @@ export class JsonConfig implements IJsonConfig {
                 this.connectionString = jsonConfig.connectionString;
             }
             this.endpointUrl = jsonConfig.endpointUrl;
-            this.samplingPercentage = jsonConfig.samplingPercentage;
+            this.samplingRate = jsonConfig.samplingRate;
             this.enableAutoCollectExternalLoggers = jsonConfig.enableAutoCollectExternalLoggers;
             this.enableAutoCollectConsole = jsonConfig.enableAutoCollectConsole;
             this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;

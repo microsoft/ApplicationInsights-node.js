@@ -94,7 +94,7 @@ describe("Library/Config", () => {
                     "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"
                 );
                 assert.equal(config.endpointUrl, "testEndpointUrl/v2.1/track", "Wrong endpointUrl");
-                assert.equal(config.samplingPercentage, 30, "Wrong samplingPercentage");
+                assert.equal(config.samplingRate, 0.3, "Wrong samplingRate");
                 assert.equal(config.enableAutoCollectExternalLoggers, false, "Wrong enableAutoCollectExternalLoggers");
                 assert.equal(config.enableAutoCollectConsole, true, "Wrong enableAutoCollectConsole");
                 assert.equal(config.enableAutoCollectExceptions, false, "Wrong enableAutoCollectExceptions");
@@ -118,7 +118,7 @@ describe("Library/Config", () => {
             it("Default config", () => {
                 const config = new Config();
                 assert.equal(config.endpointUrl, "https://dc.services.visualstudio.com/v2.1/track", "Wrong endpointUrl");
-                assert.equal(config.samplingPercentage, 100, "Wrong samplingPercentage");
+                assert.equal(config.samplingRate, 1, "Wrong samplingRate");
                 assert.equal(config.enableAutoCollectExternalLoggers, true, "Wrong enableAutoCollectExternalLoggers");
                 assert.equal(config.enableAutoCollectConsole, false, "Wrong enableAutoCollectConsole");
                 assert.equal(config.enableAutoCollectExceptions, true, "Wrong enableAutoCollectExceptions");
@@ -166,13 +166,13 @@ describe("Library/Config", () => {
                 var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert(typeof config.instrumentationKey === "string");
                 assert(typeof config.endpointUrl === "string");
-                assert(typeof config.samplingPercentage === "number");
+                assert(typeof config.samplingRate === "number");
                 assert(typeof config.quickPulseHost === "string");
             });
 
             it("should initialize values that we claim in README", () => {
                 var config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-                assert(config.samplingPercentage === 100);
+                assert(config.samplingRate === 1);
 
                 assert.equal(config.quickPulseHost, Constants.DEFAULT_LIVEMETRICS_HOST);
             });
