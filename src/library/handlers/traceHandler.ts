@@ -102,7 +102,9 @@ export class TraceHandler {
         }
         if (!this._httpInstrumentation) {
             this._httpInstrumentation = new HttpInstrumentation(this._config.instrumentations.http);
-            this._httpInstrumentation.setMeterProvider(this._metricHandler.getStandardMetricsHandler().getMeterProvider());
+            if (this._metricHandler) {
+                this._httpInstrumentation.setMeterProvider(this._metricHandler.getStandardMetricsHandler().getMeterProvider());
+            }
             this.addInstrumentation(this._httpInstrumentation);
         }
         if (!this._azureSdkInstrumentation) {

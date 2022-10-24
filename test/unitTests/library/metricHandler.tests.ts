@@ -35,9 +35,8 @@ describe("Library/MetricHandler", () => {
             _config.enableAutoCollectPreAggregatedMetrics = true;
             let handler = new MetricHandler(_config);
             handler["_perfCounterMetricsHandler"]["_nativeMetrics"]["_metricsAvailable"] = false;
-            let stub = sinon.stub(handler["_standardMetricsHandler"], "start");
             handler.start();
-            assert.ok(stub.calledOnce, "start called");
+            assert.ok(handler.getStandardMetricsHandler());
         });
 
         it("heartbeat metrics enablement during start", () => {

@@ -4,6 +4,8 @@ import { Link, Attributes, SpanKind, Context } from '@opentelemetry/api';
 import { Sampler, SamplingDecision, SamplingResult } from '@opentelemetry/sdk-trace-base';
 
 
+const AzureMonitorSampleRate = "_MS.sampleRate"; 
+
 export class ApplicationInsightsSampler implements Sampler {
 
     private readonly _samplingPercentage: number
@@ -31,7 +33,7 @@ export class ApplicationInsightsSampler implements Sampler {
         }
         // Add sample rate as span attribute
         attributes = attributes || {};
-        attributes["sampleRate"] = this._samplingPercentage;
+        attributes[AzureMonitorSampleRate] = this._samplingPercentage;
         return isSampledIn ? { decision: SamplingDecision.RECORD_AND_SAMPLED, attributes: attributes } : { decision: SamplingDecision.NOT_RECORD, attributes: attributes };
     }
 

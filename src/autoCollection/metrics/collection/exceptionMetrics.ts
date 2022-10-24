@@ -1,36 +1,25 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { Meter, MetricAttributes, ObservableCallback, ObservableGauge, ObservableResult, ValueType } from "@opentelemetry/api-metrics";
-import { AggregatedMetricCounter, IStandardMetricBaseDimensions, IMetricExceptionDimensions, MetricId, MetricName } from "../types";
+import { BatchObservableResult, Meter, ObservableGauge, ValueType } from "@opentelemetry/api-metrics";
+import { AggregatedMetricCounter, IStandardMetricBaseDimensions, IMetricExceptionDimensions, MetricName } from "../types";
 
 
 export class ExceptionMetrics {
-    private _isEnabled: boolean;
     private _meter: Meter;
     private _exceptionCountersCollection: Array<AggregatedMetricCounter>;
-    private _exceptionsGauge: ObservableGauge;
-    private _exceptionsGaugeCallback: ObservableCallback;
+    private _exceptionsCountGauge: ObservableGauge;
+    private _exceptionsRateGauge: ObservableGauge;
 
     constructor(meter: Meter) {
         this._meter = meter;
         this._exceptionCountersCollection = [];
-        this._exceptionsGauge = this._meter.createObservableGauge(MetricName.EXCEPTION_RATE, { valueType: ValueType.DOUBLE });
-        this._exceptionsGaugeCallback = this._getExceptions.bind(this);
-    }
-
-    public enable(isEnabled: boolean) {
-        this._isEnabled = isEnabled;
-        if (this._isEnabled) {
-            this._exceptionsGauge.addCallback(this._exceptionsGaugeCallback);
-        } else {
-            this._exceptionsGauge.removeCallback(this._exceptionsGaugeCallback);
-        }
+        this._exceptionsCountGauge = this._meter.createObservableGauge(MetricName.EXCEPTION_COUNT, { valueType: ValueType.INT });
+        this._exceptionsRateGauge = this._meter.createObservableGauge(MetricName.EXCEPTION_RATE, { valueType: ValueType.DOUBLE });
+        this._meter.addBatchObservableCallback(this._getExceptionCount.bind(this), [this._exceptionsCountGauge,]);
+        this._meter.addBatchObservableCallback(this._getExceptionRate.bind(this), [this._exceptionsRateGauge,]);
     }
 
     public countException(dimensions: IMetricExceptionDimensions) {
-        if (!this._isEnabled) {
-            return;
-        }
         let counter: AggregatedMetricCounter = this._getAggregatedCounter(
             dimensions,
             this._exceptionCountersCollection
@@ -75,15 +64,22 @@ export class ExceptionMetrics {
         return newCounter;
     }
 
-    private _getExceptions(observableResult: ObservableResult) {
+    private _getExceptionRate(observableResult: BatchObservableResult) {
         for (let i = 0; i < this._exceptionCountersCollection.length; i++) {
             var currentCounter = this._exceptionCountersCollection[i];
             currentCounter.time = +new Date();
             var intervalExceptions = currentCounter.totalCount - currentCounter.lastTotalCount || 0;
             var elapsedMs = currentCounter.time - currentCounter.lastTime;
             if (elapsedMs > 0 && intervalExceptions > 0) {
-                let attributes = this._getMetricAttributes(currentCounter.dimensions, elapsedMs, MetricId.TRACES_COUNT);
-                observableResult.observe(intervalExceptions, attributes);
+                var elapsedSeconds = elapsedMs / 1000;
+                var exceptionsPerSec = intervalExceptions / elapsedSeconds;
+                observableResult.observe(
+                    this._exceptionsRateGauge,
+                    exceptionsPerSec,
+                    {
+                        ...currentCounter.dimensions,
+                    }
+                );
             }
             // Set last counters
             currentCounter.lastTotalCount = currentCounter.totalCount;
@@ -91,14 +87,24 @@ export class ExceptionMetrics {
         }
     }
 
-    private _getMetricAttributes(dimensions: IStandardMetricBaseDimensions, aggregationInterval: number, metricType: string): MetricAttributes {
-        let attributes: MetricAttributes = {};
-        attributes = {
-            ...dimensions,
-            "_MS.MetricId": metricType,
-            "_MS.AggregationIntervalMs": String(aggregationInterval),
-            "_MS.IsAutocollected": "True",
-        };
-        return attributes;
+    private _getExceptionCount(observableResult: BatchObservableResult) {
+        for (let i = 0; i < this._exceptionCountersCollection.length; i++) {
+            var currentCounter = this._exceptionCountersCollection[i];
+            currentCounter.time = +new Date();
+            var intervalExceptions = currentCounter.totalCount - currentCounter.lastTotalCount || 0;
+            var elapsedMs = currentCounter.time - currentCounter.lastTime;
+            if (elapsedMs > 0 && intervalExceptions > 0) {
+                observableResult.observe(
+                    this._exceptionsCountGauge,
+                    intervalExceptions,
+                    {
+                        ...currentCounter.dimensions,
+                    }
+                );
+            }
+            // Set last counters
+            currentCounter.lastTotalCount = currentCounter.totalCount;
+            currentCounter.lastTime = currentCounter.time;
+        }
     }
 }

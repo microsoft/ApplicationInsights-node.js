@@ -61,7 +61,6 @@ export class LiveMetricsHandler {
 
     public start() {
         this._processMetrics.enable(true);
-        this._exceptionMetrics.enable(true);
         this._requestMetrics.enable(true);
         this._dependencyMetrics.enable(true);
     }
@@ -147,6 +146,14 @@ export class LiveMetricsHandler {
         }));
         views.push(new View({
             instrumentName: MetricName.PROCESS_TIME,
+            aggregation: new DropAggregation(),
+        }));
+        views.push(new View({
+            instrumentName: MetricName.EXCEPTION_COUNT,
+            aggregation: new DropAggregation(),
+        }));
+        views.push(new View({
+            instrumentName: MetricName.TRACE_COUNT,
             aggregation: new DropAggregation(),
         }));
         return views;
