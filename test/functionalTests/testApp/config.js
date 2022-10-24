@@ -18,7 +18,7 @@ var Config = {
     UseAutoConsole: true,
     UseAutoConsoleLog: true,
     UseDiskCaching: false,
-    SampleRate: "100",
+    SampleRate: "1",
 }
 
 // Allow config overrides from env variables

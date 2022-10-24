@@ -1,4 +1,4 @@
-import { AzureExporterConfig, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
+import { AzureMonitorExporterOptions, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
 import { Meter } from "@opentelemetry/api-metrics";
 import { DropAggregation, MeterProvider, MeterProviderOptions, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions, View } from "@opentelemetry/sdk-metrics";
 import { RequestOptions } from "https";
@@ -32,7 +32,7 @@ export class LiveMetricsHandler {
             views: this._getViews()
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);
-        let exporterConfig: AzureExporterConfig = {
+        let exporterConfig: AzureMonitorExporterOptions = {
             connectionString: this._config.getConnectionString(),
             aadTokenCredential: this._config.aadTokenCredential
         };

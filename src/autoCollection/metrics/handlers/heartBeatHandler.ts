@@ -1,6 +1,6 @@
 import * as os from "os";
 import {
-    AzureExporterConfig,
+    AzureMonitorExporterOptions,
     AzureMonitorMetricExporter
 } from "@azure/monitor-opentelemetry-exporter";
 import {
@@ -40,7 +40,7 @@ export class HeartBeatHandler {
         this._config = config;
         this._azureVm = new AzureVirtualMachine();
         this._meterProvider = new MeterProvider();
-        let exporterConfig: AzureExporterConfig = {
+        let exporterConfig: AzureMonitorExporterOptions = {
             connectionString: config.getConnectionString(),
             aadTokenCredential: config.aadTokenCredential
         };

@@ -4,8 +4,8 @@ import { InstrumentationConfig } from "@opentelemetry/instrumentation";
 export interface IBaseConfig {
     /** The ingestion endpoint to send telemetry payloads to */
     endpointUrl: string;
-    /** The percentage of telemetry items tracked that should be transmitted (Default 100) */
-    samplingPercentage: number;
+    /** The rate of telemetry items tracked that should be transmitted (Default 1.0) */
+    samplingRate: number;
     /**
      * Sets the state of console
      * if true logger activity will be sent to Application Insights

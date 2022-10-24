@@ -11,7 +11,7 @@ import { ExtendedMetricType, IConfig, InstrumentationsConfig } from "./interface
 export class Config implements IConfig {
     // IConfig properties
     public endpointUrl: string;
-    public samplingPercentage: number;
+    public samplingRate: number;
     public aadTokenCredential?: azureCore.TokenCredential;
     public enableAutoCollectConsole: boolean;
     public enableAutoCollectExceptions: boolean;
@@ -75,7 +75,7 @@ export class Config implements IConfig {
         this.enableAutoCollectPerformance = this.enableAutoCollectPerformance != undefined ? this.enableAutoCollectPerformance : true;
         this.enableAutoCollectPreAggregatedMetrics = this.enableAutoCollectPreAggregatedMetrics != undefined ? this.enableAutoCollectPreAggregatedMetrics : true;
         this.enableSendLiveMetrics = this.enableSendLiveMetrics != undefined ? this.enableSendLiveMetrics : false;
-        this.samplingPercentage = this.samplingPercentage != undefined ? this.samplingPercentage : 100;
+        this.samplingRate = this.samplingRate != undefined ? this.samplingRate : 1;
         if (!this.instrumentations) {
             this.instrumentations = {
                 "http": { enabled: true },
@@ -128,7 +128,7 @@ export class Config implements IConfig {
         this.enableSendLiveMetrics = jsonConfig.enableSendLiveMetrics;
         this.endpointUrl = jsonConfig.endpointUrl;
         this.quickPulseHost = jsonConfig.quickPulseHost;
-        this.samplingPercentage = jsonConfig.samplingPercentage;
+        this.samplingRate = jsonConfig.samplingRate;
         this.instrumentations = jsonConfig.instrumentations;
         this.extendedMetrics = jsonConfig.extendedMetrics;
     }

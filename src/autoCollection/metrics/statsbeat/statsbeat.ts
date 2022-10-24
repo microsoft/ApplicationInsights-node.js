@@ -61,7 +61,6 @@ export class Statsbeat {
         this._resourceManager = resourceManager || new ResourceManager();
         this._azureVm = new AzureVirtualMachine();
         this._statsbeatConfig = new Config(this._connectionString);
-        this._statsbeatConfig.samplingPercentage = 100; // Do not sample
         this._statsbeatConfig.enableAutoCollectHeartbeat = false;
         this._statsbeatConfig.enableAutoCollectPerformance = false;
         this._statsbeatConfig.enableAutoCollectPreAggregatedMetrics = false;
