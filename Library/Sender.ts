@@ -414,7 +414,14 @@ class Sender {
                 this._logWarn("Not saving data due to max size limit being met. Directory size in bytes is: " + size);
                 return;
             }
-            //create file - file name for now is the timestamp, a better approach would be a UUID but that
+        }
+        catch (ex) {
+            this._logWarn("Failed to read directory for retriable telemetry: " + Util.dumpObj(ex));
+            this._onErrorHelper(ex);
+            return;
+        }
+        try {
+             //create file - file name for now is the timestamp, a better approach would be a UUID but that
             //would require an external dependency
             var fileName = new Date().getTime() + ".ai.json";
             var fileFullPath = path.join(this._tempDir, fileName);
@@ -422,7 +429,7 @@ class Sender {
             // Mode 600 is w/r for creator and no read access for others (only applies on *nix)
             // For Windows, ACL rules are applied to the entire directory (see logic in _confirmDirExists and _applyACLRules)
             this._logInfo("saving data to disk at: " + fileFullPath);
-            FileSystemHelper.writeFileAsync(fileFullPath, Util.stringify(envelopes), { mode: 0o600 });
+            await FileSystemHelper.writeFileAsync(fileFullPath, Util.stringify(envelopes), { mode: 0o600 });
         }
         catch (ex) {
             this._logWarn("Failed to persist telemetry to disk: " + Util.dumpObj(ex));
