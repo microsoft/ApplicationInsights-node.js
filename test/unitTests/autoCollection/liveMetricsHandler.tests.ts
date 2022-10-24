@@ -27,7 +27,7 @@ describe("#LiveMetricsHandler", () => {
     });
 
     it("should create instruments", () => {
-        assert.ok(autoCollect.getExceptionMetrics()["_exceptionsGauge"], "_exceptionsGauge not available");
+        assert.ok(autoCollect.getExceptionMetrics()["_exceptionsRateGauge"], "_exceptionsRateGauge not available");
         assert.ok(autoCollect.getRequestMetrics()["_requestRateGauge"], "_requestRateGauge not available");
         assert.ok(autoCollect.getRequestMetrics()["_requestFailureRateGauge"], "_requestFailureRateGauge not available");
         assert.ok(autoCollect.getDependencyMetrics()["_dependencyRateGauge"], "_dependencyRateGauge not available");

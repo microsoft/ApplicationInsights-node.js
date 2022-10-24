@@ -1,6 +1,6 @@
 import { AzureMonitorExporterOptions, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
 import { Meter } from "@opentelemetry/api-metrics";
-import { MeterProvider, MeterProviderOptions, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions, View } from "@opentelemetry/sdk-metrics";
+import { DropAggregation, MeterProvider, MeterProviderOptions, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions, View } from "@opentelemetry/sdk-metrics";
 import { Config } from "../../../library";
 import { ResourceManager } from "../../../library/handlers";
 import { ExceptionMetrics } from "../collection/exceptionMetrics";
@@ -42,11 +42,6 @@ export class StandardMetricsHandler {
         this._traceMetrics = new TraceMetrics(this._meter);
     }
 
-    public start() {
-        this._exceptionMetrics.enable(true);
-        this._traceMetrics.enable(true);
-    }
-
     public shutdown() {
         this._meterProvider.shutdown();
     }
@@ -66,22 +61,29 @@ export class StandardMetricsHandler {
     private _getViews(): View[] {
         let views = [];
         views.push(new View({
-            name: StandardMetric.REQUESTS,
-            instrumentName: MetricName.REQUEST_DURATION,
-            attributeKeys: []
+            name: StandardMetric.HTTP_REQUEST_DURATION,
+            instrumentName: "http.server.duration" // Metric semantic conventions not available yet
         }));
         views.push(new View({
-            name: StandardMetric.DEPENDENCIES,
-            instrumentName: MetricName.DEPENDENCY_DURATION,
-            attributeKeys: []
+            name: StandardMetric.HTTP_DEPENDENCY_DURATION,
+            instrumentName: "http.client.duration" // Metric semantic conventions not available yet
         }));
         views.push(new View({
-            name: StandardMetric.EXCEPTIONS,
-            instrumentName: MetricName.EXCEPTION_RATE
+            name: StandardMetric.EXCEPTION_COUNT,
+            instrumentName: MetricName.EXCEPTION_COUNT
         }));
         views.push(new View({
-            name: StandardMetric.TRACES,
-            instrumentName: MetricName.TRACE_RATE
+            name: StandardMetric.TRACE_COUNT,
+            instrumentName: MetricName.TRACE_COUNT
+        }));
+        // Ignore list
+        views.push(new View({
+            instrumentName: MetricName.EXCEPTION_RATE,
+            aggregation: new DropAggregation(),
+        }));
+        views.push(new View({
+            instrumentName: MetricName.TRACE_RATE,
+            aggregation: new DropAggregation(),
         }));
         return views;
     }

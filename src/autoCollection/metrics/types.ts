@@ -25,8 +25,10 @@ export enum MetricName {
   DEPENDENCY_DURATION = "DEPENDENCY_DURATION",
   // Exceptions
   EXCEPTION_RATE = "EXCEPTION_RATE",
+  EXCEPTION_COUNT = "EXCEPTION_COUNT",
   // Traces
   TRACE_RATE = "TRACE_RATE",
+  TRACE_COUNT = "TRACE_COUNT",
 }
 
 export enum PerformanceCounter {
@@ -59,10 +61,10 @@ export enum QuickPulseCounter {
 }
 
 export enum StandardMetric {
-  REQUESTS = "http.server.duration",
-  DEPENDENCIES = "http.client.duration",
-  EXCEPTIONS = "Exceptions",
-  TRACES = "Traces",
+  HTTP_REQUEST_DURATION = "azureMonitor.http.requestDuration",
+  HTTP_DEPENDENCY_DURATION = "azureMonitor.http.dependencyDuration",
+  EXCEPTION_COUNT = "azureMonitor.exceptionCount",
+  TRACE_COUNT = "azureMonitor.traceCount",
 }
 
 export enum NativeMetricsCounter {
@@ -81,16 +83,8 @@ export enum GarbageCollectionType {
   IncrementalMarking = "IncrementalMarking"
 }
 
-export enum MetricId {
-  REQUESTS_DURATION = "requests/duration",
-  DEPENDENCIES_DURATION = "dependencies/duration",
-  EXCEPTIONS_COUNT = "exceptions/count",
-  TRACES_COUNT = "traces/count",
-}
-
 export class AggregatedMetric {
   public name: string;
-  public metricType: MetricId;
   public dimensions: { [key: string]: any };
   public value: number;
   public count: number;

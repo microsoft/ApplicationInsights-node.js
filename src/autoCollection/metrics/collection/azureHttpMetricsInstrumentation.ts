@@ -15,7 +15,7 @@ import { getRequestInfo } from '@opentelemetry/instrumentation-http';
 import { Histogram, MeterProvider, ValueType } from '@opentelemetry/api-metrics';
 
 import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../../declarations/constants";
-import { HttpMetricsInstrumentationConfig, IHttpStandardMetric, MetricId, MetricName } from '../types';
+import { HttpMetricsInstrumentationConfig, IHttpStandardMetric, MetricName } from '../types';
 import { Logger } from '../../../library/logging';
 import { SpanKind, TracerProvider } from '@opentelemetry/api';
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions';
@@ -79,7 +79,6 @@ export class AzureHttpMetricsInstrumentation extends InstrumentationBase<Http> {
         success = (0 < statusCode) && (statusCode < 500);
       }
       if (metric.spanKind == SpanKind.SERVER) {
-        metric.attributes["_MS.MetricId"] = MetricId.REQUESTS_DURATION;
         this._httpServerDurationHistogram.record(durationMs, metric.attributes);
         this.intervalRequestExecutionTime += durationMs;
         if (!success) {
@@ -88,7 +87,6 @@ export class AzureHttpMetricsInstrumentation extends InstrumentationBase<Http> {
         this.totalRequestCount++;
       }
       else {
-        metric.attributes["_MS.MetricId"] = MetricId.DEPENDENCIES_DURATION;
         this._httpClientDurationHistogram.record(durationMs, metric.attributes);
         this.intervalDependencyExecutionTime += durationMs;
         if (!success) {
