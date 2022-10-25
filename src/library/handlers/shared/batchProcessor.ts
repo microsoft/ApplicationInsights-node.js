@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import { TelemetryItem as Envelope } from "../../../declarations/generated";
-import { Config } from "../../configuration";
 import { Logger } from "../../logging";
 import { LogExporter } from "../../exporters";
 import { ExportResult, ExportResultCode } from "@opentelemetry/core";

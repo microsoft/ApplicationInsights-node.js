@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import { context, trace } from "@opentelemetry/api";
-import { IdGenerator, RandomIdGenerator } from "@opentelemetry/core";
+import { IdGenerator, RandomIdGenerator } from "@opentelemetry/sdk-trace-base";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
 import { BatchProcessor } from "./shared/batchProcessor";

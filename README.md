@@ -1,7 +1,7 @@
 # Application Insights for Node.js
 
 [![npm version](https://badge.fury.io/js/applicationinsights.svg)](http://badge.fury.io/js/applicationinsights)
-[![Build Status](https://travis-ci.org/Microsoft/ApplicationInsights-node.js.svg?branch=master)](https://travis-ci.org/Microsoft/ApplicationInsights-node.js)
+[![Build Status](https://travis-ci.org/Microsoft/ApplicationInsights-node.js.svg?branch=preview)](https://travis-ci.org/Microsoft/ApplicationInsights-node.js)
 ![Integration Tests CI](https://github.com/microsoft/ApplicationInsights-node.js/workflows/Integration%20Tests%20CI/badge.svg)
 ![Node.js CI](https://github.com/microsoft/ApplicationInsights-node.js/workflows/Node.js%20CI/badge.svg)
 ![Back Compatability CI](https://github.com/microsoft/ApplicationInsights-node.js/workflows/Back%20Compatability%20CI/badge.svg)
@@ -25,15 +25,17 @@ This library tracks the following out-of-the-box:
 You can manually track more aspects of your app and system using the API described in the
 [Track custom telemetry](#track-custom-telemetry) section.
 
-## Supported Node.JS versions
 
-| Platform Version | Supported                                       |
-|------------------|-------------------------------------------------|
-| Node.JS `v15`    | ✅                                              |
-| Node.JS `v14`    | ✅                                              |
-| Node.JS `v12`    | ✅                                              |
-| Node.JS `v10`    | ✅                                              |
-| Node.JS `v8`     | ✅                                              |
+
+## Prerequisites
+
+- Azure subscription: [Create an Azure subscription for free](https://azure.microsoft.com/free/)
+- Application Insights resource: [Create an Application Insights resource](create-workspace-resource.md#create-a-workspace-based-resource)
+
+- Application using an officially [supported version](https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/monitor/monitor-opentelemetry-exporter#currently-supported-environments) of Node.js runtime:
+  - [OpenTelemetry supported runtimes](https://github.com/open-telemetry/opentelemetry-js#supported-runtimes)
+  - [Azure Monitor OpenTelemetry Exporter supported runtimes](https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/monitor/monitor-opentelemetry-exporter#currently-supported-environments)
+
 
 
 ## Getting Started
