@@ -16,4 +16,10 @@ export interface NodeHttpDependencyTelemetry extends Telemetry
      * Outgoing HTTP request object
      */
     request: http.ClientRequest;
+
+    /**
+     * Flag to determine if telemetry had been processed.
+     */
+     isProcessed?: boolean;
+
 }

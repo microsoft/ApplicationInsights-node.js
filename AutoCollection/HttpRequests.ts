@@ -192,7 +192,7 @@ class AutoCollectHttpRequests {
             Logging.info("AutoCollectHttpRequests.trackRequestSync was called with invalid parameters: ", !telemetry.request, !telemetry.response, !client);
             return;
         }
-
+        telemetry.isProcessed = false;
         AutoCollectHttpRequests.addResponseCorrelationIdHeader(client, telemetry.response);
 
         // store data about the request
@@ -218,7 +218,7 @@ class AutoCollectHttpRequests {
             Logging.info("AutoCollectHttpRequests.trackRequest was called with invalid parameters: ", !telemetry.request, !telemetry.response, !client);
             return;
         }
-
+        telemetry.isProcessed = false;
         // store data about the request
         var correlationContext = CorrelationContextManager.getCurrentContext();
         var requestParser = _requestParser || new HttpRequestParser(telemetry.request, correlationContext && correlationContext.operation.parentId);
@@ -250,6 +250,7 @@ class AutoCollectHttpRequests {
         }
 
         // track an aborted request if an aborted event is emitted
+        // Newer versions of Node.js runtime will trigger error event as well, we need to ensure telemetry is not generated multiple times
         if (telemetry.request.on) {
             telemetry.request.on("aborted", () => {
                 const errorMessage = "The request has been aborted and the network socket has closed.";
@@ -270,6 +271,10 @@ class AutoCollectHttpRequests {
     }
 
     private static endRequest(client: TelemetryClient, requestParser: HttpRequestParser, telemetry: Contracts.NodeHttpRequestTelemetry, ellapsedMilliseconds?: number, error?: any) {
+        if (telemetry.isProcessed) {
+            return;
+        }
+        telemetry.isProcessed = true;
         if (error) {
             requestParser.onError(error, ellapsedMilliseconds);
         } else {
