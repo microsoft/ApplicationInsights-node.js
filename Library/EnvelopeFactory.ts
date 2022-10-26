@@ -130,7 +130,7 @@ class EnvelopeFactory {
         remoteDependency.success = telemetry.success;
         remoteDependency.type = telemetry.dependencyTypeName;
         remoteDependency.properties = telemetry.properties;
-        remoteDependency.resultCode = (telemetry.resultCode ? telemetry.resultCode + "" : "");
+        remoteDependency.resultCode = (telemetry.resultCode ? telemetry.resultCode.toString() : "0");
 
         if (telemetry.id) {
             remoteDependency.id = telemetry.id;
@@ -194,7 +194,7 @@ class EnvelopeFactory {
         requestData.url = telemetry.url;
         requestData.source = telemetry.source;
         requestData.duration = Util.msToTimeSpan(telemetry.duration);
-        requestData.responseCode = (telemetry.resultCode ? telemetry.resultCode + "" : "");
+        requestData.responseCode = (telemetry.resultCode ? telemetry.resultCode.toString() : "0");
         requestData.success = telemetry.success
         requestData.properties = telemetry.properties;
         requestData.measurements = telemetry.measurements;

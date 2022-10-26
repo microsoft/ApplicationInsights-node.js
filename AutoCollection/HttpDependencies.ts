@@ -1,17 +1,14 @@
 import http = require("http");
 import https = require("https");
-import url = require("url");
-
 import Contracts = require("../Declarations/Contracts");
 import TelemetryClient = require("../Library/TelemetryClient");
 import Logging = require("../Library/Logging");
 import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import HttpDependencyParser = require("./HttpDependencyParser");
-import { CorrelationContextManager, CorrelationContext, PrivateCustomProperties } from "./CorrelationContextManager";
+import { CorrelationContextManager, PrivateCustomProperties } from "./CorrelationContextManager";
 import CorrelationIdManager = require("../Library/CorrelationIdManager");
 import Traceparent = require("../Library/Traceparent");
-
 import * as DiagChannel from "./diagnostic-channel/initialization";
 
 class AutoCollectHttpDependencies {
@@ -221,10 +218,12 @@ class AutoCollectHttpDependencies {
         // Collect dependency telemetry about the request when it finishes.
         if (telemetry.request.on) {
             telemetry.request.on("response", (response: http.ClientResponse) => {
+                if (telemetry.isProcessed) {
+                    return;
+                }
+                telemetry.isProcessed = true;
                 requestParser.onResponse(response);
-
                 var dependencyTelemetry = requestParser.getDependencyTelemetry(telemetry, uniqueRequestId);
-
                 dependencyTelemetry.contextObjects = dependencyTelemetry.contextObjects || {};
                 dependencyTelemetry.contextObjects["http.RequestOptions"] = telemetry.options;
                 dependencyTelemetry.contextObjects["http.ClientRequest"] = telemetry.request;
@@ -233,10 +232,12 @@ class AutoCollectHttpDependencies {
                 client.trackDependency(dependencyTelemetry);
             });
             telemetry.request.on("error", (error: Error) => {
+                if (telemetry.isProcessed) {
+                    return;
+                }
+                telemetry.isProcessed = true;
                 requestParser.onError(error);
-
                 var dependencyTelemetry = requestParser.getDependencyTelemetry(telemetry, uniqueRequestId);
-
                 dependencyTelemetry.contextObjects = dependencyTelemetry.contextObjects || {};
                 dependencyTelemetry.contextObjects["http.RequestOptions"] = telemetry.options;
                 dependencyTelemetry.contextObjects["http.ClientRequest"] = telemetry.request;
@@ -245,10 +246,12 @@ class AutoCollectHttpDependencies {
                 client.trackDependency(dependencyTelemetry);
             });
             telemetry.request.on("abort", () => {
-                requestParser.onError(new Error());
-
+                if (telemetry.isProcessed) {
+                    return;
+                }
+                telemetry.isProcessed = true;
+                requestParser.onError(new Error("The request has been aborted and the network socket has closed."));
                 var dependencyTelemetry = requestParser.getDependencyTelemetry(telemetry, uniqueRequestId);
-
                 dependencyTelemetry.contextObjects = dependencyTelemetry.contextObjects || {};
                 dependencyTelemetry.contextObjects["http.RequestOptions"] = telemetry.options;
                 dependencyTelemetry.contextObjects["http.ClientRequest"] = telemetry.request;
