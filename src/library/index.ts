@@ -3,4 +3,5 @@
 
 export { Client } from "./client";
 export { Config } from "./configuration";
-export { AzureVirtualMachine } from "./azureVirtualMachine";
+export { ResourceManager } from "./handlers/resourceManager";
+export { Logger } from "./logging";

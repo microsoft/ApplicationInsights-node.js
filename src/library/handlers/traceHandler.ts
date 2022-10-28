@@ -53,7 +53,9 @@ export class TraceHandler {
         this._tracerProvider = new NodeTracerProvider(tracerConfig);
         let exporterConfig: AzureMonitorExporterOptions = {
             connectionString: config.getConnectionString(),
-            aadTokenCredential: config.aadTokenCredential
+            aadTokenCredential: config.aadTokenCredential,
+            storageDirectory: config.storageDirectory,
+            disableOfflineStorage: config.disableOfflineStorage
         };
         this._exporter = new AzureMonitorTraceExporter(exporterConfig);
         let bufferConfig: BufferConfig = {

@@ -25,7 +25,7 @@ export class MetricHandler {
     constructor(config: Config) {
         this._config = config;
         this._customMetricsHandler = new CustomMetricsHandler(config);
-        if (this._config.enableAutoCollectPreAggregatedMetrics) {
+        if (this._config.enableAutoCollectStandardMetrics) {
             this._standardMetricsHandler = new StandardMetricsHandler(this._config);
         }
         if (this._config.enableSendLiveMetrics) {

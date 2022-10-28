@@ -95,11 +95,13 @@ describe("Library/Config", () => {
                 );
                 assert.equal(config.endpointUrl, "testEndpointUrl/v2.1/track", "Wrong endpointUrl");
                 assert.equal(config.samplingRate, 0.3, "Wrong samplingRate");
+                assert.equal(config.disableOfflineStorage, true, "Wrong disableOfflineStorage");
+                assert.equal(config.storageDirectory, "testPath", "Wrong storageDirectory");
                 assert.equal(config.enableAutoCollectExternalLoggers, false, "Wrong enableAutoCollectExternalLoggers");
                 assert.equal(config.enableAutoCollectConsole, true, "Wrong enableAutoCollectConsole");
                 assert.equal(config.enableAutoCollectExceptions, false, "Wrong enableAutoCollectExceptions");
                 assert.equal(config.enableAutoCollectPerformance, false, "Wrong enableAutoCollectPerformance");
-                assert.equal(config.enableAutoCollectPreAggregatedMetrics, false, "Wrong enableAutoCollectPreAggregatedMetrics");
+                assert.equal(config.enableAutoCollectStandardMetrics, false, "Wrong enableAutoCollectStandardMetrics");
                 assert.equal(config.enableAutoCollectHeartbeat, false, "Wrong enableAutoCollectHeartbeat");
                 assert.equal(config.disableStatsbeat, false, "Wrong disableStatsbeat");
                 assert.equal(config.enableSendLiveMetrics, false, "Wrong enableSendLiveMetrics");
@@ -123,7 +125,7 @@ describe("Library/Config", () => {
                 assert.equal(config.enableAutoCollectConsole, false, "Wrong enableAutoCollectConsole");
                 assert.equal(config.enableAutoCollectExceptions, true, "Wrong enableAutoCollectExceptions");
                 assert.equal(config.enableAutoCollectPerformance, true, "Wrong enableAutoCollectPerformance");
-                assert.equal(config.enableAutoCollectPreAggregatedMetrics, true, "Wrong enableAutoCollectPreAggregatedMetrics");
+                assert.equal(config.enableAutoCollectStandardMetrics, true, "Wrong enableAutoCollectStandardMetrics");
                 assert.equal(config.enableAutoCollectHeartbeat, true, "Wrong enableAutoCollectHeartbeat");
                 assert.equal(config.disableStatsbeat, false, "Wrong disableStatsbeat");
                 assert.equal(config.enableSendLiveMetrics, false, "Wrong enableSendLiveMetrics");
@@ -137,6 +139,8 @@ describe("Library/Config", () => {
                 assert.equal(config.instrumentations.postgreSql.enabled, false, "Wrong postgreSql");
                 assert.equal(config.instrumentations.redis.enabled, false, "Wrong redis");
                 assert.equal(config.instrumentations.redis4.enabled, false, "Wrong redis4");
+                assert.equal(config.disableOfflineStorage, undefined, "Wrong disableOfflineStorage");
+                assert.equal(config.storageDirectory, undefined, "Wrong storageDirectory");
             });
         });
 

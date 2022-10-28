@@ -6,10 +6,11 @@
     "enableAutoCollectConsole": true,
     "enableAutoCollectExceptions": false,
     "enableAutoCollectPerformance": false,
-    "enableAutoCollectExtendedMetrics": false,
-    "enableAutoCollectPreAggregatedMetrics": false,
+    "enableAutoCollectStandardMetrics": false,
     "enableAutoCollectHeartbeat": false,
     "disableStatsbeat": false,
+    "disableOfflineStorage": true,
+    "storageDirectory": "testPath",
     "enableSendLiveMetrics": false,
     "extendedMetrics": {
         "heap": true,

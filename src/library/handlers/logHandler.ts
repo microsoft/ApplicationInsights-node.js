@@ -130,7 +130,7 @@ export class LogHandler {
     public async trackTrace(telemetry: Contracts.TraceTelemetry): Promise<void> {
         try {
             const envelope = this._traceToEnvelope(telemetry, this.config.instrumentationKey);
-            if (this._metricHandler?.getConfig().enableAutoCollectPreAggregatedMetrics) {
+            if (this._metricHandler?.getConfig().enableAutoCollectStandardMetrics) {
                 let baseData = envelope.data.baseData as MessageData;
                 let traceDimensions: IMetricTraceDimensions = {
                     cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
@@ -162,7 +162,7 @@ export class LogHandler {
         }
         try {
             const envelope = this._exceptionToEnvelope(telemetry, this.config.instrumentationKey);
-            if (this._metricHandler?.getConfig().enableAutoCollectPreAggregatedMetrics) {
+            if (this._metricHandler?.getConfig().enableAutoCollectStandardMetrics) {
                 let exceptionDimensions: IMetricExceptionDimensions = {
                     cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
                     cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole]

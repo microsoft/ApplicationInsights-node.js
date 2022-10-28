@@ -32,7 +32,7 @@ describe("Library/MetricHandler", () => {
 
 
         it("preAggregated metrics enablement during start", () => {
-            _config.enableAutoCollectPreAggregatedMetrics = true;
+            _config.enableAutoCollectStandardMetrics = true;
             let handler = new MetricHandler(_config);
             handler["_perfCounterMetricsHandler"]["_nativeMetrics"]["_metricsAvailable"] = false;
             handler.start();

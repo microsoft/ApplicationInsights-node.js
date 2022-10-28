@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { Logger } from "../logging";
-import { IJsonConfig, InstrumentationsConfig } from "./interfaces";
+import { IJsonConfig, InstrumentationsConfig } from "./types";
 
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
@@ -20,13 +20,15 @@ export class JsonConfig implements IJsonConfig {
     public enableAutoCollectConsole: boolean;
     public enableAutoCollectExceptions: boolean;
     public enableAutoCollectPerformance: boolean;
-    public enableAutoCollectPreAggregatedMetrics: boolean;
+    public enableAutoCollectStandardMetrics: boolean;
     public enableAutoCollectHeartbeat: boolean;
     public enableSendLiveMetrics: boolean;
     public disableStatsbeat: boolean;
     public quickPulseHost: string;
     public instrumentations: InstrumentationsConfig;
     public extendedMetrics: { [type: string]: boolean };
+    public disableOfflineStorage: boolean;
+    public storageDirectory: string;
 
 
     static getInstance() {
@@ -69,11 +71,13 @@ export class JsonConfig implements IJsonConfig {
             this.enableAutoCollectConsole = jsonConfig.enableAutoCollectConsole;
             this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
             this.enableAutoCollectPerformance = jsonConfig.enableAutoCollectPerformance;
-            this.enableAutoCollectPreAggregatedMetrics =
-                jsonConfig.enableAutoCollectPreAggregatedMetrics;
+            this.enableAutoCollectStandardMetrics =
+                jsonConfig.enableAutoCollectStandardMetrics;
             this.enableAutoCollectHeartbeat = jsonConfig.enableAutoCollectHeartbeat;
             this.enableSendLiveMetrics = jsonConfig.enableSendLiveMetrics;
             this.quickPulseHost = jsonConfig.quickPulseHost;
+            this.disableOfflineStorage = jsonConfig.disableOfflineStorage;
+            this.storageDirectory = jsonConfig.storageDirectory;
             this.instrumentations = jsonConfig.instrumentations;
             this.extendedMetrics = jsonConfig.extendedMetrics;
         } catch (err) {

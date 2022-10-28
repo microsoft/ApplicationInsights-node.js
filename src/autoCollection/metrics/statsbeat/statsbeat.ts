@@ -12,7 +12,7 @@ import {
     StatsbeatResourceProvider
 } from "../../../declarations/constants";
 import { Config } from "../../../library/configuration";
-import { AzureVirtualMachine } from "../../../library";
+import { AzureVirtualMachine } from "../../../library/azureVirtualMachine";
 import { NetworkStatsbeat } from "./types";
 import { Util } from "../../../library/util";
 import { MetricHandler, ResourceManager } from "../../../library/handlers";
@@ -63,7 +63,7 @@ export class Statsbeat {
         this._statsbeatConfig = new Config(this._connectionString);
         this._statsbeatConfig.enableAutoCollectHeartbeat = false;
         this._statsbeatConfig.enableAutoCollectPerformance = false;
-        this._statsbeatConfig.enableAutoCollectPreAggregatedMetrics = false;
+        this._statsbeatConfig.enableAutoCollectStandardMetrics = false;
         this._statsbeatConfig.enableAutoCollectConsole = false;
     }
 

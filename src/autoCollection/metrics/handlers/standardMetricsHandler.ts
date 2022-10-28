@@ -27,8 +27,10 @@ export class StandardMetricsHandler {
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);
         let exporterConfig: AzureMonitorExporterOptions = {
-            connectionString: this._config.getConnectionString(),
-            aadTokenCredential: this._config.aadTokenCredential
+            connectionString: config.getConnectionString(),
+            aadTokenCredential: config.aadTokenCredential,
+            storageDirectory: config.storageDirectory,
+            disableOfflineStorage: config.disableOfflineStorage
         };
         this._azureExporter = new AzureMonitorMetricExporter(exporterConfig);
         const metricReaderOptions: PeriodicExportingMetricReaderOptions = {

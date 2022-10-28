@@ -27,10 +27,10 @@ export interface IBaseConfig {
      */
     enableAutoCollectPerformance: boolean;
     /**
-     * Sets the state of pre aggregated metrics tracking (enabled by default)
-     * if true pre aggregated metrics will be collected every minute and sent to Application Insights
+     * Sets the state of standard metrics tracking (enabled by default)
+     * if true Standard metrics will be collected every minute and sent to Application Insights
      */
-    enableAutoCollectPreAggregatedMetrics: boolean;
+    enableAutoCollectStandardMetrics: boolean;
     /**
      * Sets the state of request tracking (enabled by default)
      * if true HeartBeat metric data will be collected every 15 minutes and sent to Application Insights
@@ -55,6 +55,14 @@ export interface IBaseConfig {
     * Specific extended metrics
     */
     extendedMetrics: { [type: string]: boolean };
+    /**
+     * Directory to store retriable telemetry when it fails to export.
+     */
+    storageDirectory: string;
+    /**
+     * Disable offline storage when telemetry cannot be exported.
+     */
+    disableOfflineStorage: boolean;
 }
 
 export interface InstrumentationsConfig {

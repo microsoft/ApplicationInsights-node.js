@@ -5,7 +5,7 @@ import { ConnectionStringParser } from "./connectionStringParser";
 import { Logger } from "../logging";
 import * as Constants from "../../declarations/constants";
 import { JsonConfig } from "./jsonConfig";
-import { ExtendedMetricType, IConfig, InstrumentationsConfig } from "./interfaces";
+import { ExtendedMetricType, IConfig, InstrumentationsConfig } from "./types";
 
 
 export class Config implements IConfig {
@@ -17,7 +17,7 @@ export class Config implements IConfig {
     public enableAutoCollectExceptions: boolean;
     public enableAutoCollectPerformance: boolean;
     public enableAutoCollectExternalLoggers: boolean;
-    public enableAutoCollectPreAggregatedMetrics: boolean;
+    public enableAutoCollectStandardMetrics: boolean;
     public enableAutoCollectHeartbeat: boolean;
     public enableSendLiveMetrics: boolean;
     public disableStatsbeat: boolean;
@@ -25,6 +25,8 @@ export class Config implements IConfig {
     public setupString: string;
     public extendedMetrics: { [type: string]: boolean };
     public instrumentations: InstrumentationsConfig;
+    public disableOfflineStorage: boolean;
+    public storageDirectory: string;
 
     private _connectionString: string;
     private _endpointBase: string = Constants.DEFAULT_BREEZE_ENDPOINT;
@@ -73,7 +75,7 @@ export class Config implements IConfig {
         this.enableAutoCollectExceptions = this.enableAutoCollectExceptions != undefined ? this.enableAutoCollectExceptions : true;
         this.enableAutoCollectHeartbeat = this.enableAutoCollectHeartbeat != undefined ? this.enableAutoCollectHeartbeat : true;
         this.enableAutoCollectPerformance = this.enableAutoCollectPerformance != undefined ? this.enableAutoCollectPerformance : true;
-        this.enableAutoCollectPreAggregatedMetrics = this.enableAutoCollectPreAggregatedMetrics != undefined ? this.enableAutoCollectPreAggregatedMetrics : true;
+        this.enableAutoCollectStandardMetrics = this.enableAutoCollectStandardMetrics != undefined ? this.enableAutoCollectStandardMetrics : true;
         this.enableSendLiveMetrics = this.enableSendLiveMetrics != undefined ? this.enableSendLiveMetrics : false;
         this.samplingRate = this.samplingRate != undefined ? this.samplingRate : 1;
         if (!this.instrumentations) {
@@ -124,13 +126,15 @@ export class Config implements IConfig {
         this.enableAutoCollectExternalLoggers = jsonConfig.enableAutoCollectExternalLoggers;
         this.enableAutoCollectHeartbeat = jsonConfig.enableAutoCollectHeartbeat;
         this.enableAutoCollectPerformance = jsonConfig.enableAutoCollectPerformance;
-        this.enableAutoCollectPreAggregatedMetrics = jsonConfig.enableAutoCollectPreAggregatedMetrics;
+        this.enableAutoCollectStandardMetrics = jsonConfig.enableAutoCollectStandardMetrics;
         this.enableSendLiveMetrics = jsonConfig.enableSendLiveMetrics;
         this.endpointUrl = jsonConfig.endpointUrl;
         this.quickPulseHost = jsonConfig.quickPulseHost;
         this.samplingRate = jsonConfig.samplingRate;
         this.instrumentations = jsonConfig.instrumentations;
         this.extendedMetrics = jsonConfig.extendedMetrics;
+        this.storageDirectory = jsonConfig.storageDirectory;
+        this.disableOfflineStorage = jsonConfig.disableOfflineStorage;
     }
 
     private _getInstrumentationKey(): string {

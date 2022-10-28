@@ -16,7 +16,7 @@ export class AzureSpanProcessor implements SpanProcessor {
     }
 
     onStart(span: Span, context: Context): void {
-        if (this._metricHandler.getConfig().enableAutoCollectPreAggregatedMetrics) {
+        if (this._metricHandler.getConfig().enableAutoCollectStandardMetrics) {
             if (span.instrumentationLibrary.name == "@opentelemetry/instrumentation-http") {
                 if (span.kind === SpanKind.CLIENT) {
                     span.setAttributes({ "_MS.ProcessedByMetricExtractors": "(Name:'Dependencies', Ver:'1.1')" });

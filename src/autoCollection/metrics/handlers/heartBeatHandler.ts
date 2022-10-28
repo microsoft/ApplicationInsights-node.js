@@ -16,7 +16,7 @@ import {
 } from "@opentelemetry/sdk-metrics";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
-import { AzureVirtualMachine } from "../../../library";
+import { AzureVirtualMachine } from "../../../library/azureVirtualMachine";
 import { ResourceManager } from "../../../library/handlers";
 import { HeartBeatMetricName } from "../../../declarations/constants";
 import { Config } from "../../../library/configuration";
@@ -42,7 +42,9 @@ export class HeartBeatHandler {
         this._meterProvider = new MeterProvider();
         let exporterConfig: AzureMonitorExporterOptions = {
             connectionString: config.getConnectionString(),
-            aadTokenCredential: config.aadTokenCredential
+            aadTokenCredential: config.aadTokenCredential,
+            storageDirectory: config.storageDirectory,
+            disableOfflineStorage: config.disableOfflineStorage
         };
         this._azureExporter = new AzureMonitorMetricExporter(exporterConfig);
         const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
