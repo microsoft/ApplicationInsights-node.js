@@ -23,13 +23,13 @@ export import azureFunctionsTypes = require("./Library/Functions");
 
 export enum DistributedTracingModes {
     /**
-     * (Default) Send Application Insights correlation headers
+     * Send Application Insights correlation headers
      */
 
     AI = 0,
 
     /**
-     * Send both W3C Trace Context headers and back-compatibility Application Insights headers
+     * (Default) Send both W3C Trace Context headers and back-compatibility Application Insights headers
      */
     AI_AND_W3C
 }
