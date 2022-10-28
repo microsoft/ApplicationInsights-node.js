@@ -1,7 +1,6 @@
 # Application Insights for Node.js
 
 [![npm version](https://badge.fury.io/js/applicationinsights.svg)](http://badge.fury.io/js/applicationinsights)
-[![Build Status](https://travis-ci.org/Microsoft/ApplicationInsights-node.js.svg?branch=preview)](https://travis-ci.org/Microsoft/ApplicationInsights-node.js)
 ![Integration Tests CI](https://github.com/microsoft/ApplicationInsights-node.js/workflows/Integration%20Tests%20CI/badge.svg)
 ![Node.js CI](https://github.com/microsoft/ApplicationInsights-node.js/workflows/Node.js%20CI/badge.svg)
 ![Back Compatability CI](https://github.com/microsoft/ApplicationInsights-node.js/workflows/Back%20Compatability%20CI/badge.svg)
@@ -25,20 +24,21 @@ This library tracks the following out-of-the-box:
 You can manually track more aspects of your app and system using the API described in the
 [Track custom telemetry](#track-custom-telemetry) section.
 
+## Supported Node.JS versions 
 
-
-## Prerequisites
-
-- Azure subscription: [Create an Azure subscription for free](https://azure.microsoft.com/free/)
-- Application Insights resource: [Create an Application Insights resource](create-workspace-resource.md#create-a-workspace-based-resource)
-
-- Application using an officially [supported version](https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/monitor/monitor-opentelemetry-exporter#currently-supported-environments) of Node.js runtime:
-  - [OpenTelemetry supported runtimes](https://github.com/open-telemetry/opentelemetry-js#supported-runtimes)
-  - [Azure Monitor OpenTelemetry Exporter supported runtimes](https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/monitor/monitor-opentelemetry-exporter#currently-supported-environments)
-
+| Platform Version | Supported                                       |
+|------------------|-------------------------------------------------|
+| Node.JS `v16`    | ✅                                              |
+| Node.JS `v15`    | ✅                                              |
+| Node.JS `v14`    | ✅                                              |
+| Node.JS `v12`    | ✅                                              |
+| Node.JS `v10`    | ✅                                              |
+| Node.JS `v8`     | ✅                                              |
 
 
 ## Getting Started
+
+> *Important:* On March 31st, 2025, support for instrumentation key ingestion will end. Instrumentation key ingestion will continue to work, but we’ll no longer provide updates or support for the feature. [Transition to connection strings](https://docs.microsoft.com/en-us/azure/azure-monitor/app/migrate-from-instrumentation-keys-to-connection-strings) to take advantage of [new capabilities](https://docs.microsoft.com/en-us/azure/azure-monitor/app/migrate-from-instrumentation-keys-to-connection-strings#new-capabilities).
 
 1. Create an Application Insights resource in Azure by following [these instructions][].
 2. Grab the _Connection String_ from the resource you created in
@@ -78,7 +78,7 @@ let appInsights = require("applicationinsights");
 appInsights.setup("YOUR_CONNECTION_STRING").start();
 ```
 
-* If the instrumentation key is set in the environment variable
+* If the connection string is set in the environment variable
   APPLICATIONINSIGHTS\_CONNECTION\_STRING, `.setup()` can be called with no
   arguments. This makes it easy to use different connection strings for different
   environments.
@@ -118,7 +118,7 @@ export default async function contextPropagatingHttpTrigger(context, req) {
         const startTime = Date.now(); // Start trackRequest timer
 
         // Run the Function
-        await httpTrigger(context, req);
+        const result = await httpTrigger(context, req);
 
         // Track Request on completion
         appInsights.defaultClient.trackRequest({
@@ -126,10 +126,13 @@ export default async function contextPropagatingHttpTrigger(context, req) {
             resultCode: context.res.status,
             success: true,
             url: req.url,
+            time: new Date(startTime),
             duration: Date.now() - startTime,
             id: correlationContext.operation.parentId,
         });
         appInsights.defaultClient.flush();
+
+        return result;
     }, correlationContext)();
 };
 ```
@@ -168,7 +171,7 @@ export default async function contextPropagatingHttpTrigger(context, req) {
         const startTime = Date.now(); // Start trackRequest timer
 
         // Run the Function
-        await httpTrigger(context, req);
+        const result = await httpTrigger(context, req);
 
         // Track Request on completion
         appInsights.defaultClient.trackRequest({
@@ -176,10 +179,13 @@ export default async function contextPropagatingHttpTrigger(context, req) {
             resultCode: context.res.status,
             success: true,
             url: req.url,
+            time: new Date(startTime),
             duration: Date.now() - startTime,
             id: correlationContext.operation.parentId,
         });
         appInsights.defaultClient.flush();
+
+        return result;
     }, correlationContext)();
 };
 ```
@@ -203,6 +209,8 @@ appInsights.setup("<YOUR_CONNECTION_STRING>")
     .setSendLiveMetrics(false)
     .setAutoCollectHeartbeat(false)
     .setInternalLogging(false, true)
+    .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C)
+    .enableWebInstrumentation(false)
     .start();
 ```
 
@@ -214,6 +222,8 @@ Note that by default `setAutoCollectConsole` is configured to *exclude* calls to
 (e.g. `winston`, `bunyan`) will be collected. You can change this behavior to *include* calls
 to `console` methods by using `setAutoCollectConsole(true, true)`.
 
+Note that by default `enableWebInstrumentation` will use the connection string for SDK initialization. If you want to use a different one, you can set it as `enableWebInstrumentation(true, "your-connection-string")`.
+
 The TelemetryClient object contains a `config` property with many optional settings. These can be set as follows:
 ```
 client.config.PROPERTYNAME = VALUE;
@@ -221,32 +231,58 @@ client.config.PROPERTYNAME = VALUE;
 These properties are client specific, so you can configure `appInsights.defaultClient`
 separately from clients created with `new appInsights.TelemetryClient()`.
 
-|Property|Description|Default|
-| ------------------------------- |------------------------------------------------------------------------------------------------------------|-------|
-| endpointUrl                     | The ingestion endpoint to send telemetry payloads.to                                                       | |
-| samplingRatio              | Sampling ration must take a value in the range [0,1], 1 meaning all data will sampled and 0 all data will be sampled out.                       | 0.5|                             |                                                  |
-| enableAutoCollectExternalLoggers| Sets the state of console. If true logger activity will be sent to Application Insights. |
-| enableAutoCollectConsole        | Sets the state of logger tracking (enabled by default for third-party loggers only). If true, logger auto collection will include console.log calls. | false |
-| enableAutoCollectExceptions     | Sets the state of exception tracking. If true uncaught exceptions will be sent to Application Insights | true|
-| enableAutoCollectPerformance    | Sets the state of performance tracking. If true performance counters will be collected every second and sent to Application Insights | true|
-| enableAutoCollectExtendedMetrics| Sets the state of performance tracking. If true, extended metrics counters will be collected every minute and sent to Application Insights | true|
-| enableAutoCollectPreAggregatedMetrics | Sets the state of pre aggregated metrics tracking. If true pre aggregated metrics will be collected every minute and sent to Application Insights | true|
-| enableAutoCollectHeartbeat      | Sets the state of request tracking. If true HeartBeat metric data will be collected every 15 minutes and sent to Application Insights | true|
-| enableInternalDebugLogging    | Enables debug and warning logging for AppInsights itself. If true, enables debug logging |true|
-| enableInternalWarningLogging  | Enables debug and warning logging for AppInsights itself. If true, enables warning logging |true|
-| enableSendLiveMetrics         | Enables communication with Application Insights Live Metrics. If true, enables communication with the live metrics service |false|
-| extendedMetrics       | Enable/Disable specific extended Metrics(gc, heap and loop).  |{"gc":false,"heap":false,"loop":false}|
-| aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Credential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes) | |
-| instrumentations| Allow configuration of OpenTelemetry Instrumentations. |  {"http": { enabled: true },"azureSdk": { enabled: false },"mongoDb": { enabled: false },"mySql": { enabled: false },"postgreSql": { enabled: false },"redis": { enabled: false }}|
+| Property                        | Description                                                                                                |
+| ------------------------------- |------------------------------------------------------------------------------------------------------------|
+| instrumentationKey              | Application Insights Instrumentation Key                                                                   |
+| endpointUrl                     | The ingestion endpoint to send telemetry payloads to                                                       |
+| proxyHttpUrl                    | A proxy server for SDK HTTP traffic (Optional, Default pulled from `http_proxy` environment variable)      |
+| proxyHttpsUrl                   | A proxy server for SDK HTTPS traffic (Optional, Default pulled from `https_proxy` environment variable)    |
+| maxBatchSize                    | The maximum number of telemetry items to include in a payload to the ingestion endpoint (Default `250`)    |
+| maxBatchIntervalMs              | The maximum amount of time to wait to for a payload to reach maxBatchSize (Default `15000`)                |
+| disableAppInsights              | A flag indicating if telemetry transmission is disabled (Default `false`)                                  |
+| samplingPercentage              | The percentage of telemetry items tracked that should be transmitted (Default `100`)                       |
+| correlationIdRetryIntervalMs    | The time to wait before retrying to retrieve the id for cross-component correlation (Default `30000`)      |
+| correlationHeaderExcludedDomains| A list of domains to exclude from cross-component correlation header injection (Default See [Config.ts][]) |
+| ignoreLegacyHeaders             | Disable including legacy headers in outgoing requests, x-ms-request-id                                     |
+| distributedTracingMode          | Sets the distributed tracing modes (Default=AI)                                                            |
+| enableAutoCollectExternalLoggers| Sets the state of console. If true logger activity will be sent to Application Insights |
+| enableAutoCollectConsole        | Sets the state of logger tracking (enabled by default for third-party loggers only). If true, logger auto collection will include console.log calls (default false) |
+| enableAutoCollectExceptions     | Sets the state of exception tracking (enabled by default). If true uncaught exceptions will be sent to Application Insights |
+| enableAutoCollectPerformance    | Sets the state of performance tracking (enabled by default). If true performance counters will be collected every second and sent to Application Insights |
+| enableAutoCollectExtendedMetrics| Sets the state of performance tracking (enabled by default). If true, extended metrics counters will be collected every minute and sent to Application Insights |
+| enableAutoCollectPreAggregatedMetrics | Sets the state of pre aggregated metrics tracking (enabled by default). If true pre aggregated metrics will be collected every minute and sent to Application Insights |
+| enableAutoCollectHeartbeat      | Sets the state of request tracking (enabled by default). If true HeartBeat metric data will be collected every 15 minutes and sent to Application Insights |
+| enableAutoCollectRequests      | Sets the state of request tracking (enabled by default). If true requests will be sent to Application Insights |
+| enableAutoCollectDependencies  | Sets the state of dependency tracking (enabled by default). If true dependencies will be sent to Application Insights |
+| enableAutoDependencyCorrelation| Sets the state of automatic dependency correlation (enabled by default). If true dependencies will be correlated with requests |
+| enableUseAsyncHooks            | Sets the state of automatic dependency correlation (enabled by default). If true, forces use of experimental async_hooks module to provide correlation. If false, instead uses only patching-based techniques. If left blank, the best option is chosen for you based on your version of Node.js. |
+| enableUseDiskRetryCaching     | If true events that occurred while client is offline will be cached on disk |
+| enableResendInterval          | The wait interval for resending cached events. |
+| enableMaxBytesOnDisk          | The maximum size (in bytes) that the created temporary directory for cache events can grow to, before caching is disabled. |
+| enableInternalDebugLogging    | Enables debug and warning logging for AppInsights itself. If true, enables debug logging |
+| enableInternalWarningLogging  | Enables debug and warning logging for AppInsights itself. If true, enables warning logging |
+| enableSendLiveMetrics         | Enables communication with Application Insights Live Metrics. If true, enables communication with the live metrics service |
+| disableAllExtendedMetrics     | Disable all environment variables set |
+| extendedMetricDisablers       | Disable individual environment variables set. `"extendedMetricDisablers": "..."` |
+| noDiagnosticChannel           | In order to track context across asynchronous calls, some changes are required in third party libraries such as mongodb and redis. By default ApplicationInsights will use diagnostic-channel-publishers to monkey-patch some of these libraries. This property is to disable the feature. Note that by setting this flag, events may no longer be correctly associated with the right operation.  |
+| noPatchModules                | Disable individual monkey-patches. Set `noPatchModules` to a comma separated list of packages to disable. e.g. `"noPatchModules": "console,redis"` to avoid patching the console and redis packages. The following modules are available: `azuresdk, bunyan, console, mongodb, mongodb-core, mysql, redis, winston, pg`, and `pg-pool`. Visit the [diagnostic-channel-publishers' README](https://github.com/microsoft/node-diagnostic-channel/blob/master/src/diagnostic-channel-publishers/README.md) for information about exactly which versions of these packages are patched. |
+| noHttpAgentKeepAlive          | HTTPS without a passed in agent |
+| httpAgent                       | An http.Agent to use for SDK HTTP traffic (Optional, Default undefined)                                    |
+| httpsAgent                      | An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined)
+| aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Credential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes)
+| enableWebInstrumentation(Preview)| Sets the state of automatic web Instrumentation (Optional, disabled by default). If true, web instrumentation will be enabled on valid node server http response with the connection string used for SDK initialization
+| webInstrumentationConnectionString(Preview)| Sets connection string used for web Instrumentation (Optional, Default undefined)|
+| webInstrumentationSrc(Preview)| Sets web Instrumentation CDN url (Optional). see more details at [ApplicationInsights JavaScript SDK](https://github.com/microsoft/ApplicationInsights-JS)|
+| webInstrumentationConfig(Preview)| Sets web Instrumentation config (Optional). see more details at [ApplicationInsights JavaScript SDK](https://github.com/microsoft/ApplicationInsights-JS)|                          |
 
-[Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
+[Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts 
 
-All these properties except aadTokenCredential could be configured using configuration file `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. These configuration values will be applied to all TelemetryClients created in the SDK. 
+All these properties except httpAgent, httpsAgent and aadTokenCredential could be configured using configuration file `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. These configuration values will be applied to all TelemetryClients created in the SDK. 
 
 
 ```javascript
 {
-    "samplingRate": 0.8,
+    "samplingPercentage": 80,
     "enableAutoCollectExternalLoggers": true,
     "enableAutoCollectExceptions": true,
     "enableAutoCollectHeartbeat": true,
@@ -266,7 +302,7 @@ process.env.APPLICATIONINSIGHTS_CONFIGURATION_FILE = "C:/applicationinsights/con
 
 ### Sampling
 
-By default, the SDK will send all collected data to the Application Insights service. If you collect a lot of data, you might want to enable sampling to reduce the amount of data sent. Set the `samplingRate` field on the Config object of a Client to accomplish this. Setting `samplingRate` to 1 (the default) means all data will be sent, and 0 means nothing will be sent.
+By default, the SDK will send all collected data to the Application Insights service. If you collect a lot of data, you might want to enable sampling to reduce the amount of data sent. Set the `samplingPercentage` field on the Config object of a Client to accomplish this. Setting `samplingPercentage` to 100 (the default) means all data will be sent, and 0 means nothing will be sent.
 
 If you are using automatic correlation, all data associated with a single request will be included or excluded as a unit.
 
@@ -275,7 +311,7 @@ Add code such as the following to enable sampling:
 ```javascript
 const appInsights = require("applicationinsights");
 appInsights.setup("<YOUR_CONNECTION_STRING>");
-appInsights.defaultClient.config.samplingRate = 0.33; // 33% of all telemetry will be sent to Application Insights
+appInsights.defaultClient.config.samplingPercentage = 33; // 33% of all telemetry will be sent to Application Insights
 appInsights.start();
 ```
 
@@ -292,6 +328,29 @@ appInsights.defaultClient.context.tags[appInsights.defaultClient.context.keys.cl
 appInsights.start();
 ```
 
+If running in Azure App service or Azure functions the SDK will automatically populate the cloud role when following code is added:
+```javascript
+const appInsights = require("applicationinsights");
+appInsights.setup("<YOUR_CONNECTION_STRING>");
+appInsights.defaultClient.setAutoPopulateAzureProperties(true);
+appInsights.start();
+```
+
+### Automatic web Instrumentation[Preview]
+
+ Automatic web Instrumentation is currently in **Preview**. For node server with configuration `enableWebInstrumentation` set to `true` or environment variable `APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_ENABLED = true`, web Instrumentation will be enabled on node server response when all of the following requirements are met:
+
+- Response has status code `200`.
+- Response method is `GET`.
+- Sever response has `Content-Type` html.
+- Server response must have both `<head>` and `</head>` Tags.
+- If response is compressed, it must have only one `Content-Encoding` type, and encoding type must be one of `gzip`, `br` or `deflate`.
+- Response does not contain current /backup web Instrumentation CDN endpoints.  (current and backup Web Instrumentation CDN endpoints [here](https://github.com/microsoft/ApplicationInsights-JS#active-public-cdn-endpoints))
+
+web Instrumentation CDN endpoint can be changed by setting environment variable `APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_SOURCE = "web Instrumentation CDN endpoints"`.
+web Instrumentation connection string can be changed by setting environment variable `APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_CONNECTION_STRING = "web Instrumentation connection string"`
+
+**Note:** web Instrumentation may slow down server response time, especially when response size is large or response is compressed. For the case in which some middle layers are applied, it may result in web Instrumentation not working and original response will be returned.
 
 ### Automatic third-party instrumentation
 
@@ -329,6 +388,16 @@ Currently, the native metrics package performs autocollection of Garbage Collect
 - **Event Loop:** How many ticks occurred and how much CPU time was spent in total.
 - **Heap vs Non-Heap:** How much of your app's memory usage is in the heap or non-heap.
 
+### Distributed Tracing Modes
+By default, this SDK will send headers understood by other applications/services instrumented with an Application Insights SDK. You can optionally enable sending/receiving of [W3C Trace Context](https://github.com/w3c/trace-context) headers in addition to the existing AI headers, so you will not break correlation with any of your existing legacy services. Enabling W3C headers will allow your app to correlate with other services not instrumented with Application Insights, but do adopt this W3C standard.
+
+```js
+const appInsights = require("applicationinsights");
+appInsights
+  .setup("<YOUR_CONNECTION_STRING>")
+  .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C)
+  .start()
+```
 
 ## Track custom telemetry
 
@@ -550,12 +619,30 @@ process.env.APPLICATIONINSIGHTS_LOGDIR = "C:/applicationinsights/logs"
 [npm]: https://www.npmjs.com/package/applicationinsights
 
 ## Contributing
-For details on contributing to this repository, see the [contributing guide](https://github.com/microsoft/ApplicationInsights-node.js/master/CONTRIBUTING.md).
 
-This project welcomes contributions and suggestions. Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit
+This project welcomes contributions and suggestions. Most contributions require you to
+agree to a Contributor License Agreement (CLA) declaring that you have the right to,
+and actually do, grant us the rights to use your contribution. For details, visit
 https://cla.microsoft.com.
 
-When you submit a pull request, a CLA-bot will automatically determine whether you need to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions provided by the bot. You will only need to do this once across all repositories using our CLA.
+When you submit a pull request, a CLA-bot will automatically determine whether you need
+to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the
+instructions provided by the bot. You will only need to do this once across all repositories using our CLA.
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
+For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/)
+or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
+## Data Collection
+
+As this SDK is designed to enable applications to perform data collection which is sent to the Microsoft collection endpoints the following is required to identify our privacy statement.
+
+The software may collect information about you and your use of the software and send it to Microsoft. Microsoft may use this information to provide services and improve our products and services. You may turn off the telemetry as described in the repository. There are also some features in the software that may enable you and Microsoft to collect data from users of your applications. If you use these features, you must comply with applicable law, including providing appropriate notices to users of your applications together with a copy of Microsoft’s privacy statement. Our privacy statement is located at https://go.microsoft.com/fwlink/?LinkID=824704. You can learn more about data collection and use in the help documentation and our privacy statement. Your use of the software operates as your consent to these practices.
+
+## Trademarks
+
+This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft trademarks or logos is subject to and must follow [Microsoft’s Trademark & Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general). Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship. Any use of third-party trademarks or logos are subject to those third-party’s policies.
+
+## License
+
+[MIT](LICENSE)
