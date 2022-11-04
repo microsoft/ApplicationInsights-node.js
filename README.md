@@ -76,7 +76,8 @@ npm install @opentelemetry/instrumentation-http
 ```typescript
 const { Client, Config } = require("applicationinsights");
 
-const config = new Config("<YOUR_CONNECTION_STRING>");
+const config = new Config();
+config.connectionString = "<YOUR_CONNECTION_STRING>";
 const appInsights = new Client(config);
 appInsights.start();
 ```
@@ -93,7 +94,8 @@ appInsights.start();
 The appInsights Config object provides a number of options to setup SDK behavior.
 
 ```typescript
-const config = new Config("<YOUR_CONNECTION_STRING>");
+const config = new Config();
+config.connectionString = "<YOUR_CONNECTION_STRING>";
 config.samplingRatio = 1;
 config.enableAutoCollectExtendedMetrics = false;
 config.instrumentations =  {
@@ -113,18 +115,17 @@ appInsights.start();
 
 |Property|Description|Default|
 | ------------------------------- |------------------------------------------------------------------------------------------------------------|-------|
-| endpointUrl                     | The ingestion endpoint to send telemetry payloads.to                                                       | |
-| samplingRatio              | Sampling ration must take a value in the range [0,1], 1 meaning all data will sampled and 0 all Tracing data will be sampled out.                       | 1|                             |                                                  |
-| enableAutoCollectExternalLoggers| Sets the state of console. If true logger activity will be sent to Application Insights. |
-| enableAutoCollectConsole        | Sets the state of logger tracking (enabled by default for third-party loggers only). If true, logger auto collection will include console.log calls. | false |
+| connectionString                     | Application Insights Resource Connection String                                                    | |
+| samplingRatio              | Sampling ration must take a value in the range [0,1], 1 meaning all data will sampled and 0 all Tracing data will be sampled out.                       | 1|
 | enableAutoCollectExceptions     | Sets the state of exception tracking. If true uncaught exceptions will be sent to Application Insights | true|
 | enableAutoCollectPerformance    | Sets the state of performance tracking. If true performance counters will be collected every second and sent to Application Insights | true|
 | enableAutoCollectStandarddMetrics | Sets the state of Standard Metrics tracking. If true Standard Metrics will be collected every minute and sent to Application Insights | true|
 | enableAutoCollectHeartbeat      | Sets the state of request tracking. If true HeartBeat metric data will be collected every 15 minutes and sent to Application Insights | true|
-| instrumentations| Allow configuration of OpenTelemetry Instrumentations. |  {"http": { enabled: true },"azureSdk": { enabled: false },"mongoDb": { enabled: false },"mySql": { enabled: false },"postgreSql": { enabled: false },"redis": { enabled: false }}|
 | storageDirectory| Directory to store retriable telemetry when it fails to export| `Windows` %TEMP%\Microsoft\AzureMonitor `Non-Windows` %TMPDIR%/Microsoft/AzureMonitor|
 | disableOfflineStorage| Disable offline storage when telemetry cannot be exported | false |
 | aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Credential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes) |  |
+| instrumentations| Allow configuration of OpenTelemetry Instrumentations. |  {"http": { enabled: true },"azureSdk": { enabled: false },"mongoDb": { enabled: false },"mySql": { enabled: false },"postgreSql": { enabled: false },"redis": { enabled: false }}|
+| logInstrumentations| Allow configuration of Log Instrumentations. |  {"console": { enabled: false },"bunyan": { enabled: false },"winston": { enabled: false }}|
 | extendedMetrics       | Enable/Disable specific extended Metrics(gc, heap and loop).  |{"gc":false,"heap":false,"loop":false}|
 
 [Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
@@ -132,12 +133,22 @@ appInsights.start();
 All these properties except aadTokenCredential could be configured using configuration file `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. These configuration values will be applied to all TelemetryClients created in the SDK. 
 
 
-```javascript
+```json
 {
+    "connectionString": "<YOUR_CONNECTION_STRING>",
     "samplingRate": 0.8,
-    "enableAutoCollectExternalLoggers": true,
     "enableAutoCollectExceptions": true,
-    "enableAutoCollectHeartbeat": true
+    "enableAutoCollectHeartbeat": true,
+    "instrumentations":{
+        "azureSdk": {
+            "enabled": false
+        }
+    },
+    "logInstrumentations":{
+        "console": {
+            "enabled": true
+        }
+    }
     ...
 }
   
@@ -215,7 +226,8 @@ For information on standard attributes for resources, see [Resource Semantic Con
 You may want to enable sampling to reduce your data ingestion volume which reduces your cost. Azure Monitor provides a custom *fixed-rate* sampler that populates events with a "sampling ratio", which Application Insights converts to "ItemCount". This ensures accurate experiences and event counts. The sampler is designed to preserve your traces across services. The sampler expects a sample rate of between 0 and 1 inclusive. A rate of 0.1 means approximately 10% of your telemetry will be sent. 
 
 ```typescript
-const config = new Config("<YOUR_CONNECTION_STRING>");
+const config = new Config();
+config.connectionString = "<YOUR_CONNECTION_STRING>";
 config.samplingRate = 0.1;
 const appInsights = new Client(config);
 appInsights.start();
@@ -450,12 +462,30 @@ For OpenTelemetry issues, contact the [OpenTelemetry JavaScript community](https
 
 
 ## Contributing
-For details on contributing to this repository, see the [contributing guide](https://github.com/microsoft/ApplicationInsights-node.js/master/CONTRIBUTING.md).
 
-This project welcomes contributions and suggestions. Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit
+This project welcomes contributions and suggestions. Most contributions require you to
+agree to a Contributor License Agreement (CLA) declaring that you have the right to,
+and actually do, grant us the rights to use your contribution. For details, visit
 https://cla.microsoft.com.
 
-When you submit a pull request, a CLA-bot will automatically determine whether you need to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions provided by the bot. You will only need to do this once across all repositories using our CLA.
+When you submit a pull request, a CLA-bot will automatically determine whether you need
+to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the
+instructions provided by the bot. You will only need to do this once across all repositories using our CLA.
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
+For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/)
+or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
+## Data Collection
+
+As this SDK is designed to enable applications to perform data collection which is sent to the Microsoft collection endpoints the following is required to identify our privacy statement.
+
+The software may collect information about you and your use of the software and send it to Microsoft. Microsoft may use this information to provide services and improve our products and services. You may turn off the telemetry as described in the repository. There are also some features in the software that may enable you and Microsoft to collect data from users of your applications. If you use these features, you must comply with applicable law, including providing appropriate notices to users of your applications together with a copy of Microsoft’s privacy statement. Our privacy statement is located at https://go.microsoft.com/fwlink/?LinkID=824704. You can learn more about data collection and use in the help documentation and our privacy statement. Your use of the software operates as your consent to these practices.
+
+## Trademarks
+
+This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft trademarks or logos is subject to and must follow [Microsoft’s Trademark & Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general). Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship. Any use of third-party trademarks or logos are subject to those third-party’s policies.
+
+## License
+
+[MIT](LICENSE)
