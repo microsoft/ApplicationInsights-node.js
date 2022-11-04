@@ -15,14 +15,14 @@ describe("ResourceManager", () => {
         before(() => {
             sandbox = sinon.createSandbox();
             // Create custom package json
-            var jsonContent = JSON.stringify({ "version": "testVersion" });
+            var jsonContent = JSON.stringify({ version: "testVersion" });
             var testFilePath = path.resolve(__dirname, "testpackage.json");
-            fs.writeFile(testFilePath, jsonContent, () => { });
+            fs.writeFile(testFilePath, jsonContent, () => {});
         });
 
         after(() => {
-            var testFilePath = path.resolve(__dirname, "testpackage.json")
-            fs.unlink(testFilePath, (err) => { });
+            var testFilePath = path.resolve(__dirname, "testpackage.json");
+            fs.unlink(testFilePath, (err) => {});
         });
 
         beforeEach(() => {
@@ -41,13 +41,28 @@ describe("ResourceManager", () => {
             var resourceManager = new ResourceManager();
             const packageJsonPath = path.resolve(__dirname, "../../../../", "./package.json");
             let packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-            assert.equal(resourceManager["_baseResource"].attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION].toString(), "node:" + packageJson.version);
+            assert.equal(
+                resourceManager["_baseResource"].attributes[
+                    SemanticResourceAttributes.TELEMETRY_SDK_VERSION
+                ].toString(),
+                "node:" + packageJson.version
+            );
         });
 
         it("should correctly set service attributes", () => {
             var resourceManager = new ResourceManager();
-            assert.equal(resourceManager["_baseResource"].attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID], "host");
-            assert.equal(resourceManager["_baseResource"].attributes[SemanticResourceAttributes.SERVICE_NAME], "Web");
+            assert.equal(
+                resourceManager["_baseResource"].attributes[
+                    SemanticResourceAttributes.SERVICE_INSTANCE_ID
+                ],
+                "host"
+            );
+            assert.equal(
+                resourceManager["_baseResource"].attributes[
+                    SemanticResourceAttributes.SERVICE_NAME
+                ],
+                "Web"
+            );
         });
 
         it("should correctly set Azure attributes", () => {
@@ -58,8 +73,18 @@ describe("ResourceManager", () => {
             process.env = env;
             var resourceManager = new ResourceManager();
             process.env = originalEnv;
-            assert.equal(resourceManager["_baseResource"].attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID], "testRoleInstanceId");
-            assert.equal(resourceManager["_baseResource"].attributes[SemanticResourceAttributes.SERVICE_NAME], "testRole");
+            assert.equal(
+                resourceManager["_baseResource"].attributes[
+                    SemanticResourceAttributes.SERVICE_INSTANCE_ID
+                ],
+                "testRoleInstanceId"
+            );
+            assert.equal(
+                resourceManager["_baseResource"].attributes[
+                    SemanticResourceAttributes.SERVICE_NAME
+                ],
+                "testRole"
+            );
         });
     });
 });

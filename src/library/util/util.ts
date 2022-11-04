@@ -10,7 +10,6 @@ import { IdGenerator, RandomIdGenerator } from "@opentelemetry/sdk-trace-base";
 import { Logger } from "../logging";
 import { Config } from "../configuration";
 
-
 export class Util {
     private static _instance: Util;
     private readonly _idGenerator: IdGenerator;
@@ -101,9 +100,9 @@ export class Util {
     }
 
     /**
- * Convert milliseconds to Breeze expected time.
- * @internal
- */
+     * Convert milliseconds to Breeze expected time.
+     * @internal
+     */
     public msToTimeSpan(ms: number): string {
         let totalms = ms;
         if (Number.isNaN(totalms) || totalms < 0 || !Number.isFinite(ms)) {

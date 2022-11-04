@@ -1,18 +1,15 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
-import { ExportResultCode } from "@opentelemetry/core";
-
 import { MetricHandler } from "../../../src/library/handlers";
 import { Config } from "../../../src/library/configuration";
-import { MetricTelemetry, MetricPointTelemetry } from "../../../src/declarations/contracts";
-
-
 
 describe("Library/MetricHandler", () => {
     let sandbox: sinon.SinonSandbox;
-    let _config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+    let _config: Config;
 
     before(() => {
+        _config = new Config();
+        _config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
         sandbox = sinon.createSandbox();
     });
 
@@ -29,7 +26,6 @@ describe("Library/MetricHandler", () => {
             handler.start();
             assert.ok(stub.calledOnce, "Enable called");
         });
-
 
         it("preAggregated metrics enablement during start", () => {
             _config.enableAutoCollectStandardMetrics = true;

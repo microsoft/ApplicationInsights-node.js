@@ -6,19 +6,19 @@ import {
     CustomMetricsHandler,
     StandardMetricsHandler,
     PerformanceCounterMetricsHandler,
-    LiveMetricsHandler,
 } from "../../autoCollection";
 import { HeartBeatHandler } from "../../autoCollection/metrics/handlers/heartBeatHandler";
 import { AzureHttpMetricsInstrumentation } from "../../autoCollection/metrics/collection/azureHttpMetricsInstrumentation";
-import { IMetricExceptionDimensions, IMetricTraceDimensions } from "../../autoCollection/metrics/types";
-
+import {
+    IMetricExceptionDimensions,
+    IMetricTraceDimensions,
+} from "../../autoCollection/metrics/types";
 
 export class MetricHandler {
     private _config: Config;
     private _batchProcessor: BatchProcessor;
     private _perfCounterMetricsHandler: PerformanceCounterMetricsHandler;
     private _standardMetricsHandler: StandardMetricsHandler;
-    private _liveMetricsHandler: LiveMetricsHandler;
     private _heartbeatHandler: HeartBeatHandler;
     private _customMetricsHandler: CustomMetricsHandler;
 
@@ -27,9 +27,6 @@ export class MetricHandler {
         this._customMetricsHandler = new CustomMetricsHandler(config);
         if (this._config.enableAutoCollectStandardMetrics) {
             this._standardMetricsHandler = new StandardMetricsHandler(this._config);
-        }
-        if (this._config.enableSendLiveMetrics) {
-            this._liveMetricsHandler = new LiveMetricsHandler(this._config);
         }
         if (this._config.enableAutoCollectPerformance) {
             this._perfCounterMetricsHandler = new PerformanceCounterMetricsHandler(this._config);
@@ -41,7 +38,6 @@ export class MetricHandler {
 
     public start() {
         this._perfCounterMetricsHandler?.start();
-        this._liveMetricsHandler?.start();
         this._heartbeatHandler?.start();
     }
 
@@ -49,7 +45,6 @@ export class MetricHandler {
         this._customMetricsHandler.shutdown();
         this._perfCounterMetricsHandler?.shutdown();
         this._standardMetricsHandler?.shutdown();
-        this._liveMetricsHandler?.shutdown();
         this._heartbeatHandler?.shutdown();
     }
 
@@ -69,12 +64,7 @@ export class MetricHandler {
         return this._perfCounterMetricsHandler?.getHttpMetricsInstrumentation();
     }
 
-    public getLiveMetricsAzureHttpInstrumentation(): AzureHttpMetricsInstrumentation {
-        return this._liveMetricsHandler?.getHttpMetricsInstrumentation();
-    }
-
     public countException(dimensions: IMetricExceptionDimensions): void {
-        this._liveMetricsHandler?.getExceptionMetrics().countException(dimensions);
         this._standardMetricsHandler?.getExceptionMetrics().countException(dimensions);
     }
 

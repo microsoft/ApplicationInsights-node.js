@@ -1,8 +1,17 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { BatchObservableResult, Meter, ObservableGauge, ValueType } from "@opentelemetry/api-metrics";
-import { AggregatedMetricCounter, IStandardMetricBaseDimensions, IMetricExceptionDimensions, MetricName } from "../types";
-
+import {
+    BatchObservableResult,
+    Meter,
+    ObservableGauge,
+    ValueType,
+} from "@opentelemetry/api-metrics";
+import {
+    AggregatedMetricCounter,
+    IStandardMetricBaseDimensions,
+    IMetricExceptionDimensions,
+    MetricName,
+} from "../types";
 
 export class ExceptionMetrics {
     private _meter: Meter;
@@ -13,10 +22,18 @@ export class ExceptionMetrics {
     constructor(meter: Meter) {
         this._meter = meter;
         this._exceptionCountersCollection = [];
-        this._exceptionsCountGauge = this._meter.createObservableGauge(MetricName.EXCEPTION_COUNT, { valueType: ValueType.INT });
-        this._exceptionsRateGauge = this._meter.createObservableGauge(MetricName.EXCEPTION_RATE, { valueType: ValueType.DOUBLE });
-        this._meter.addBatchObservableCallback(this._getExceptionCount.bind(this), [this._exceptionsCountGauge,]);
-        this._meter.addBatchObservableCallback(this._getExceptionRate.bind(this), [this._exceptionsRateGauge,]);
+        this._exceptionsCountGauge = this._meter.createObservableGauge(MetricName.EXCEPTION_COUNT, {
+            valueType: ValueType.INT,
+        });
+        this._exceptionsRateGauge = this._meter.createObservableGauge(MetricName.EXCEPTION_RATE, {
+            valueType: ValueType.DOUBLE,
+        });
+        this._meter.addBatchObservableCallback(this._getExceptionCount.bind(this), [
+            this._exceptionsCountGauge,
+        ]);
+        this._meter.addBatchObservableCallback(this._getExceptionRate.bind(this), [
+            this._exceptionsRateGauge,
+        ]);
     }
 
     public countException(dimensions: IMetricExceptionDimensions) {
@@ -73,13 +90,9 @@ export class ExceptionMetrics {
             if (elapsedMs > 0 && intervalExceptions > 0) {
                 var elapsedSeconds = elapsedMs / 1000;
                 var exceptionsPerSec = intervalExceptions / elapsedSeconds;
-                observableResult.observe(
-                    this._exceptionsRateGauge,
-                    exceptionsPerSec,
-                    {
-                        ...currentCounter.dimensions,
-                    }
-                );
+                observableResult.observe(this._exceptionsRateGauge, exceptionsPerSec, {
+                    ...currentCounter.dimensions,
+                });
             }
             // Set last counters
             currentCounter.lastTotalCount = currentCounter.totalCount;
@@ -94,13 +107,9 @@ export class ExceptionMetrics {
             var intervalExceptions = currentCounter.totalCount - currentCounter.lastTotalCount || 0;
             var elapsedMs = currentCounter.time - currentCounter.lastTime;
             if (elapsedMs > 0 && intervalExceptions > 0) {
-                observableResult.observe(
-                    this._exceptionsCountGauge,
-                    intervalExceptions,
-                    {
-                        ...currentCounter.dimensions,
-                    }
-                );
+                observableResult.observe(this._exceptionsCountGauge, intervalExceptions, {
+                    ...currentCounter.dimensions,
+                });
             }
             // Set last counters
             currentCounter.lastTotalCount = currentCounter.totalCount;

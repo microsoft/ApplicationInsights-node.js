@@ -16,13 +16,16 @@ describe("AutoCollection/HeartBeat", () => {
 
     before(() => {
         sandbox = sinon.createSandbox();
-        config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+        config = new Config();
+        config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
         heartbeat = new HeartBeatHandler(config, { collectionInterval: 100 });
         sandbox.stub(heartbeat["_metricReader"]["_exporter"], "export");
         sandbox.stub(heartbeat["_azureVm"], "getAzureComputeMetadata").callsFake(() => {
-            return new Promise((resolve, reject) => { resolve({ isVM: true }) });
+            return new Promise((resolve, reject) => {
+                resolve({ isVM: true });
+            });
         });
-    })
+    });
 
     beforeEach(() => {
         originalEnv = process.env;
@@ -41,13 +44,13 @@ describe("AutoCollection/HeartBeat", () => {
         it("should observe instruments during collection", async () => {
             let mockExport = sandbox.stub(heartbeat["_azureExporter"], "export");
             heartbeat.start();
-            await new Promise(resolve => setTimeout(resolve, 120));
+            await new Promise((resolve) => setTimeout(resolve, 120));
             assert.ok(mockExport.called);
             let resourceMetrics = mockExport.args[0][0];
             const scopeMetrics = resourceMetrics.scopeMetrics;
-            assert.strictEqual(scopeMetrics.length, 1, 'scopeMetrics count');
+            assert.strictEqual(scopeMetrics.length, 1, "scopeMetrics count");
             const metrics = scopeMetrics[0].metrics;
-            assert.strictEqual(metrics.length, 1, 'metrics count');
+            assert.strictEqual(metrics.length, 1, "metrics count");
             assert.equal(metrics[0].descriptor.name, HeartBeatMetricName);
         });
 
@@ -55,7 +58,7 @@ describe("AutoCollection/HeartBeat", () => {
             let mockExport = sandbox.stub(heartbeat["_azureExporter"], "export");
             heartbeat.start();
             heartbeat.shutdown();
-            await new Promise(resolve => setTimeout(resolve, 120));
+            await new Promise((resolve) => setTimeout(resolve, 120));
             assert.ok(mockExport.notCalled);
         });
     });
@@ -68,49 +71,61 @@ describe("AutoCollection/HeartBeat", () => {
             env1["WEBSITE_HOSTNAME"] = "host_name";
             process.env = env1;
 
-            heartbeat["_getMachineProperties"]().then((properties) => {
-                const keys = Object.keys(properties);
-                assert.equal(
-                    keys.length,
-                    5,
-                    "should have 5 kv pairs added when resource type is appSrv"
-                );
-                assert.equal(keys[0], "sdk", "sdk should be added as a key");
-                assert.equal(keys[1], "osType", "osType should be added as a key");
-                assert.equal(
-                    keys[2],
-                    "appSrv_SiteName",
-                    "appSrv_SiteName should be added as a key"
-                );
-                assert.equal(keys[3], "appSrv_wsStamp", "appSrv_wsStamp should be added as a key");
-                assert.equal(keys[4], "appSrv_wsHost", "appSrv_wsHost should be added as a key");
-                assert.equal(
-                    properties["sdk"],
-                    ResourceManager.getInstance().getMetricResource().attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION],
-                    "sdk version should be read from Context"
-                );
-                assert.equal(
-                    properties["osType"],
-                    os.type(),
-                    "osType should be read from os library"
-                );
-                assert.equal(
-                    properties["appSrv_SiteName"],
-                    "site_name",
-                    "appSrv_SiteName should be read from environment variable"
-                );
-                assert.equal(
-                    properties["appSrv_wsStamp"],
-                    "stamp_name",
-                    "appSrv_wsStamp should be read from environment variable"
-                );
-                assert.equal(
-                    properties["appSrv_wsHost"],
-                    "host_name",
-                    "appSrv_wsHost should be read from environment variable"
-                );
-                done();
-            }).catch(error => done(error));
+            heartbeat["_getMachineProperties"]()
+                .then((properties) => {
+                    const keys = Object.keys(properties);
+                    assert.equal(
+                        keys.length,
+                        5,
+                        "should have 5 kv pairs added when resource type is appSrv"
+                    );
+                    assert.equal(keys[0], "sdk", "sdk should be added as a key");
+                    assert.equal(keys[1], "osType", "osType should be added as a key");
+                    assert.equal(
+                        keys[2],
+                        "appSrv_SiteName",
+                        "appSrv_SiteName should be added as a key"
+                    );
+                    assert.equal(
+                        keys[3],
+                        "appSrv_wsStamp",
+                        "appSrv_wsStamp should be added as a key"
+                    );
+                    assert.equal(
+                        keys[4],
+                        "appSrv_wsHost",
+                        "appSrv_wsHost should be added as a key"
+                    );
+                    assert.equal(
+                        properties["sdk"],
+                        ResourceManager.getInstance().getMetricResource().attributes[
+                            SemanticResourceAttributes.TELEMETRY_SDK_VERSION
+                        ],
+                        "sdk version should be read from Context"
+                    );
+                    assert.equal(
+                        properties["osType"],
+                        os.type(),
+                        "osType should be read from os library"
+                    );
+                    assert.equal(
+                        properties["appSrv_SiteName"],
+                        "site_name",
+                        "appSrv_SiteName should be read from environment variable"
+                    );
+                    assert.equal(
+                        properties["appSrv_wsStamp"],
+                        "stamp_name",
+                        "appSrv_wsStamp should be read from environment variable"
+                    );
+                    assert.equal(
+                        properties["appSrv_wsHost"],
+                        "host_name",
+                        "appSrv_wsHost should be read from environment variable"
+                    );
+                    done();
+                })
+                .catch((error) => done(error));
         });
 
         it("should read correct function app values from environment variable", (done) => {
@@ -120,7 +135,6 @@ describe("AutoCollection/HeartBeat", () => {
             process.env = env2;
 
             heartbeat["_getMachineProperties"]().then((properties) => {
-
                 const keys = Object.keys(properties);
                 assert.equal(
                     keys.length,
@@ -136,7 +150,9 @@ describe("AutoCollection/HeartBeat", () => {
                 );
                 assert.equal(
                     properties["sdk"],
-                    ResourceManager.getInstance().getMetricResource().attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION],
+                    ResourceManager.getInstance().getMetricResource().attributes[
+                        SemanticResourceAttributes.TELEMETRY_SDK_VERSION
+                    ],
                     "sdk version should be read from Context"
                 );
                 assert.equal(

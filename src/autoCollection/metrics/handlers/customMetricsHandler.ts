@@ -1,9 +1,17 @@
-import { AzureMonitorExporterOptions, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
+import {
+    AzureMonitorExporterOptions,
+    AzureMonitorMetricExporter,
+} from "@azure/monitor-opentelemetry-exporter";
 import { Meter } from "@opentelemetry/api-metrics";
-import { MeterProvider, MeterProviderOptions, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions, View } from "@opentelemetry/sdk-metrics";
+import {
+    MeterProvider,
+    MeterProviderOptions,
+    PeriodicExportingMetricReader,
+    PeriodicExportingMetricReaderOptions,
+    View,
+} from "@opentelemetry/sdk-metrics";
 import { Config } from "../../../library";
 import { ResourceManager } from "../../../library/handlers";
-
 
 export class CustomMetricsHandler {
     private _config: Config;
@@ -20,15 +28,15 @@ export class CustomMetricsHandler {
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);
         let exporterConfig: AzureMonitorExporterOptions = {
-            connectionString: config.getConnectionString(),
-            aadTokenCredential: config.aadTokenCredential,
-            storageDirectory: config.storageDirectory,
-            disableOfflineStorage: config.disableOfflineStorage
+            connectionString: this._config.connectionString,
+            aadTokenCredential: this._config.aadTokenCredential,
+            storageDirectory: this._config.storageDirectory,
+            disableOfflineStorage: this._config.disableOfflineStorage,
         };
         this._azureExporter = new AzureMonitorMetricExporter(exporterConfig);
         const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
             exporter: this._azureExporter as any,
-            exportIntervalMillis: options?.collectionInterval || this._collectionInterval
+            exportIntervalMillis: options?.collectionInterval || this._collectionInterval,
         };
         this._metricReader = new PeriodicExportingMetricReader(metricReaderOptions);
         this._meterProvider.addMetricReader(this._metricReader);

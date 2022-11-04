@@ -34,29 +34,33 @@ import {
     Telemetry,
 } from "../../declarations/contracts";
 import { Logger } from "../logging";
-import { IMetricExceptionDimensions, IMetricTraceDimensions } from "../../autoCollection/metrics/types";
+import {
+    IMetricExceptionDimensions,
+    IMetricTraceDimensions,
+} from "../../autoCollection/metrics/types";
 import { MetricHandler } from "./metricHandler";
-
+import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 
 export class LogHandler {
-    public isAutoCollectConsole = false;
-    public isAutoCollectExternalLoggers = true;
-    public isExceptions = true;
     public statsbeat: Statsbeat;
-    public config: Config;
-    private _isStarted = false;
+    private _config: Config;
     private _batchProcessor: BatchProcessor;
     private _exporter: LogExporter;
     private _console: AutoCollectConsole;
     private _exceptions: AutoCollectExceptions;
     private _idGenerator: IdGenerator;
-    private _metricHandler: MetricHandler
+    private _metricHandler: MetricHandler;
 
     constructor(config: Config, metricHandler?: MetricHandler) {
-        this.config = config;
-        this._exporter = new LogExporter(config);
+        this._config = config;
+        let exporterConfig: AzureMonitorExporterOptions = {
+            connectionString: this._config.connectionString,
+            aadTokenCredential: this._config.aadTokenCredential,
+            storageDirectory: this._config.storageDirectory,
+            disableOfflineStorage: this._config.disableOfflineStorage,
+        };
+        this._exporter = new LogExporter(exporterConfig);
         this._batchProcessor = new BatchProcessor(this._exporter);
-        this._initializeFlagsFromConfig();
         this._console = new AutoCollectConsole(this);
         this._exceptions = new AutoCollectExceptions(this);
         this._idGenerator = new RandomIdGenerator();
@@ -64,9 +68,8 @@ export class LogHandler {
     }
 
     public start() {
-        this._isStarted = true;
-        this._console.enable(this.isAutoCollectExternalLoggers, this.isAutoCollectConsole);
-        this._exceptions.enable(this.isExceptions);
+        this._console.enable(this._config.logInstrumentations);
+        this._exceptions.enable(this._config.enableAutoCollectExceptions);
     }
 
     public async flush(): Promise<void> {
@@ -74,25 +77,10 @@ export class LogHandler {
     }
 
     public async shutdown(): Promise<void> {
-        this._console.enable(false, false);
+        this._console.shutdown();
         this._console = null;
         this._exceptions.enable(false);
         this._exceptions = null;
-    }
-
-    public setAutoCollectConsole(collectExternalLoggers: boolean, collectConsoleLog: boolean = false) {
-        this.isAutoCollectExternalLoggers = collectExternalLoggers;
-        this.isAutoCollectConsole = collectConsoleLog;
-        if (this._isStarted) {
-            this._console.enable(this.isAutoCollectExternalLoggers, this.isAutoCollectConsole);
-        }
-    }
-
-    public setAutoCollectExceptions(value: boolean) {
-        this.isExceptions = value;
-        if (this._isStarted) {
-            this._exceptions.enable(value);
-        }
     }
 
     /**
@@ -101,10 +89,12 @@ export class LogHandler {
      */
     public async trackAvailability(telemetry: Contracts.AvailabilityTelemetry): Promise<void> {
         try {
-            const envelope = this._availabilityToEnvelope(telemetry, this.config.instrumentationKey);
+            const envelope = this._availabilityToEnvelope(
+                telemetry,
+                this._config.getInstrumentationKey()
+            );
             this._batchProcessor.send(envelope);
-        }
-        catch (err) {
+        } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
         }
     }
@@ -115,10 +105,12 @@ export class LogHandler {
      */
     public async trackPageView(telemetry: Contracts.PageViewTelemetry): Promise<void> {
         try {
-            const envelope = this._pageViewToEnvelope(telemetry, this.config.instrumentationKey);
+            const envelope = this._pageViewToEnvelope(
+                telemetry,
+                this._config.getInstrumentationKey()
+            );
             this._batchProcessor.send(envelope);
-        }
-        catch (err) {
+        } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
         }
     }
@@ -129,25 +121,24 @@ export class LogHandler {
      */
     public async trackTrace(telemetry: Contracts.TraceTelemetry): Promise<void> {
         try {
-            const envelope = this._traceToEnvelope(telemetry, this.config.instrumentationKey);
+            const envelope = this._traceToEnvelope(telemetry, this._config.getInstrumentationKey());
             if (this._metricHandler?.getConfig().enableAutoCollectStandardMetrics) {
                 let baseData = envelope.data.baseData as MessageData;
                 let traceDimensions: IMetricTraceDimensions = {
                     cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
                     cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole],
-                    traceSeverityLevel: baseData.severity
+                    traceSeverityLevel: baseData.severity,
                 };
                 this._metricHandler.countTrace(traceDimensions);
                 // Mark envelope as processed
                 const traceData: TraceTelemetry = (envelope.data as any).baseData;
                 traceData.properties = {
                     ...traceData.properties,
-                    "_MS.ProcessedByMetricExtractors": "(Name:'Traces', Ver:'1.1')"
-                }
+                    "_MS.ProcessedByMetricExtractors": "(Name:'Traces', Ver:'1.1')",
+                };
             }
             this._batchProcessor.send(envelope);
-        }
-        catch (err) {
+        } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
         }
     }
@@ -161,23 +152,25 @@ export class LogHandler {
             telemetry.exception = new Error(telemetry.exception.toString());
         }
         try {
-            const envelope = this._exceptionToEnvelope(telemetry, this.config.instrumentationKey);
+            const envelope = this._exceptionToEnvelope(
+                telemetry,
+                this._config.getInstrumentationKey()
+            );
             if (this._metricHandler?.getConfig().enableAutoCollectStandardMetrics) {
                 let exceptionDimensions: IMetricExceptionDimensions = {
                     cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
-                    cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole]
+                    cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole],
                 };
                 this._metricHandler.countException(exceptionDimensions);
                 // Mark envelope as processed
                 const exceptionData: TelemetryExceptionData = (envelope.data as any).baseData;
                 exceptionData.properties = {
                     ...exceptionData.properties,
-                    "_MS.ProcessedByMetricExtractors": "(Name:'Exceptions', Ver:'1.1')"
+                    "_MS.ProcessedByMetricExtractors": "(Name:'Exceptions', Ver:'1.1')",
                 };
             }
             this._batchProcessor.send(envelope);
-        }
-        catch (err) {
+        } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
         }
     }
@@ -188,10 +181,9 @@ export class LogHandler {
      */
     public async trackEvent(telemetry: Contracts.EventTelemetry): Promise<void> {
         try {
-            const envelope = this._eventToEnvelope(telemetry, this.config.instrumentationKey);
+            const envelope = this._eventToEnvelope(telemetry, this._config.getInstrumentationKey());
             this._batchProcessor.send(envelope);
-        }
-        catch (err) {
+        } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
         }
     }
@@ -352,32 +344,18 @@ export class LogHandler {
         }
         const serviceInstanceId = attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID];
         tags[KnownContextTagKeys.AiCloudRoleInstance] = String(serviceInstanceId);
-        tags[KnownContextTagKeys.AiInternalSdkVersion] = String(attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION]);
+        tags[KnownContextTagKeys.AiInternalSdkVersion] = String(
+            attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION]
+        );
 
         // Add Correlation headers
         const spanContext = trace.getSpanContext(context.active());
         if (spanContext) {
             tags[KnownContextTagKeys.AiOperationId] = spanContext.traceId;
             tags[KnownContextTagKeys.AiOperationParentId] = spanContext.spanId;
-        }
-        else {
+        } else {
             tags[KnownContextTagKeys.AiOperationId] = this._idGenerator.generateTraceId();
         }
         return tags;
-    }
-
-    private _initializeFlagsFromConfig() {
-        this.isAutoCollectExternalLoggers =
-            this.config.enableAutoCollectExternalLoggers !== undefined
-                ? this.config.enableAutoCollectExternalLoggers
-                : this.isAutoCollectExternalLoggers;
-        this.isAutoCollectConsole =
-            this.config.enableAutoCollectConsole !== undefined
-                ? this.config.enableAutoCollectConsole
-                : this.isAutoCollectConsole;
-        this.isExceptions =
-            this.config.enableAutoCollectExceptions !== undefined
-                ? this.config.enableAutoCollectExceptions
-                : this.isExceptions;
     }
 }

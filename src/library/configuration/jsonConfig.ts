@@ -1,37 +1,26 @@
 import * as fs from "fs";
 import * as path from "path";
 import { Logger } from "../logging";
-import { IJsonConfig, InstrumentationsConfig } from "./types";
-
+import { IConfig, InstrumentationsConfig, LogInstrumentationsConfig } from "./types";
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
-// Azure Connection String
-const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
-const ENV_noStatsbeat = "APPLICATION_INSIGHTS_NO_STATSBEAT";
 
-export class JsonConfig implements IJsonConfig {
+export class JsonConfig implements IConfig {
     private static _instance: JsonConfig;
 
     public connectionString: string;
-    public instrumentationKey: string;
-    public endpointUrl: string;
     public samplingRate: number;
-    public enableAutoCollectExternalLoggers: boolean;
-    public enableAutoCollectConsole: boolean;
     public enableAutoCollectExceptions: boolean;
     public enableAutoCollectPerformance: boolean;
     public enableAutoCollectStandardMetrics: boolean;
     public enableAutoCollectHeartbeat: boolean;
-    public enableSendLiveMetrics: boolean;
-    public disableStatsbeat: boolean;
-    public quickPulseHost: string;
-    public instrumentations: InstrumentationsConfig;
-    public extendedMetrics: { [type: string]: boolean };
     public disableOfflineStorage: boolean;
     public storageDirectory: string;
+    public instrumentations: InstrumentationsConfig;
+    public logInstrumentations: LogInstrumentationsConfig;
+    public extendedMetrics: { [type: string]: boolean };
 
-
-    static getInstance() {
+    public static getInstance() {
         if (!JsonConfig._instance) {
             JsonConfig._instance = new JsonConfig();
         }
@@ -39,9 +28,6 @@ export class JsonConfig implements IJsonConfig {
     }
 
     constructor() {
-        // Load env variables first
-        this.connectionString = process.env[ENV_connectionString];
-        this.disableStatsbeat = !!process.env[ENV_noStatsbeat];
         this._loadJsonFile();
     }
 
@@ -58,27 +44,19 @@ export class JsonConfig implements IJsonConfig {
             }
         }
         try {
-            const jsonConfig: IJsonConfig = JSON.parse(fs.readFileSync(tempDir, "utf8"));
-            if (jsonConfig.disableStatsbeat != undefined) {
-                this.disableStatsbeat = jsonConfig.disableStatsbeat;
-            }
+            const jsonConfig: IConfig = JSON.parse(fs.readFileSync(tempDir, "utf8"));
             if (jsonConfig.connectionString != undefined) {
                 this.connectionString = jsonConfig.connectionString;
             }
-            this.endpointUrl = jsonConfig.endpointUrl;
             this.samplingRate = jsonConfig.samplingRate;
-            this.enableAutoCollectExternalLoggers = jsonConfig.enableAutoCollectExternalLoggers;
-            this.enableAutoCollectConsole = jsonConfig.enableAutoCollectConsole;
             this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
             this.enableAutoCollectPerformance = jsonConfig.enableAutoCollectPerformance;
-            this.enableAutoCollectStandardMetrics =
-                jsonConfig.enableAutoCollectStandardMetrics;
+            this.enableAutoCollectStandardMetrics = jsonConfig.enableAutoCollectStandardMetrics;
             this.enableAutoCollectHeartbeat = jsonConfig.enableAutoCollectHeartbeat;
-            this.enableSendLiveMetrics = jsonConfig.enableSendLiveMetrics;
-            this.quickPulseHost = jsonConfig.quickPulseHost;
             this.disableOfflineStorage = jsonConfig.disableOfflineStorage;
             this.storageDirectory = jsonConfig.storageDirectory;
             this.instrumentations = jsonConfig.instrumentations;
+            this.logInstrumentations = jsonConfig.logInstrumentations;
             this.extendedMetrics = jsonConfig.extendedMetrics;
         } catch (err) {
             Logger.getInstance().info("Missing or invalid JSON config file: ", err);

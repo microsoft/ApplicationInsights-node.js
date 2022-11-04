@@ -13,9 +13,10 @@ if (testconfig.AppInsightsEnabled) {
     config.instrumentations["postgreSql"].enabled = true;
     config.instrumentations["redis"].enabled = true;
     config.instrumentations["redis4"].enabled = true;
+    config.logInstrumentations["console"].enabled = true;
+    config.logInstrumentations["bunyan"].enabled = true;
+    config.logInstrumentations["winston"].enabled = true;
     config.enableAutoCollectExceptions = true;
-    config.enableAutoCollectConsole = true;
-    config.enableAutoCollectExternalLoggers = true;
 
     appInsights = new Client(config);
     appInsights.start();

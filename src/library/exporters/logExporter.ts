@@ -3,56 +3,61 @@
 import { context } from "@opentelemetry/api";
 import { ExportResult, ExportResultCode, suppressTracing } from "@opentelemetry/core";
 import { RestError } from "@azure/core-rest-pipeline";
-import { Logger } from "../logging"
+import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
+
+import { Logger } from "../logging";
 import { Config, ConnectionStringParser } from "../configuration";
 import { isRetriable, IBreezeResponse, IBreezeError } from "./shared/breezeUtils";
 import { TelemetryItem as Envelope } from "../../declarations/generated";
 import { IPersistentStorage, ISender } from "../../declarations/types";
-import { DEFAULT_EXPORTER_CONFIG, IAzureExporterInternalConfig } from "../../declarations/config";
 import { HttpSender } from "./shared/httpSender";
 import { FileSystemPersist } from "./shared/persist";
+import { DEFAULT_BREEZE_ENDPOINT } from "../../declarations/constants";
 
+const DEFAULT_BATCH_SEND_RETRY_INTERVAL_MS = 60_000;
 
 export class LogExporter {
-    protected readonly _sender: ISender;
-    protected readonly _options: IAzureExporterInternalConfig;
+    private _instrumentationKey: string;
+    private _endpointUrl: string;
+    private readonly _sender: ISender;
+    private readonly _options: AzureMonitorExporterOptions;
     private readonly _persister: IPersistentStorage;
     private _numConsecutiveRedirects: number;
     private _retryTimer: NodeJS.Timer | null;
+    private _batchSendRetryIntervalMs: number = DEFAULT_BATCH_SEND_RETRY_INTERVAL_MS;
 
-    constructor(config: Config) {
-        const ingestionEndpoint = config.endpointUrl.replace("/v2.1/track", "");
-        const connectionString = `InstrumentationKey=${config.instrumentationKey};IngestionEndpoint=${ingestionEndpoint}`;
+    constructor(options: AzureMonitorExporterOptions) {
+        this._options = options;
         this._numConsecutiveRedirects = 0;
-        this._options = {
-            ...DEFAULT_EXPORTER_CONFIG,
-        };
-        this._options.aadTokenCredential = config.aadTokenCredential;
+        this._instrumentationKey = "";
+        this._endpointUrl = DEFAULT_BREEZE_ENDPOINT;
 
-        if (connectionString) {
-            let connectionStringPrser = new ConnectionStringParser();
-            const parsedConnectionString = connectionStringPrser.parse(connectionString);
-            this._options.instrumentationKey =
-                parsedConnectionString.instrumentationkey ?? this._options.instrumentationKey;
-            this._options.endpointUrl =
-                parsedConnectionString.ingestionendpoint?.trim() ?? this._options.endpointUrl;
+        if (this._options.connectionString) {
+            let parser = new ConnectionStringParser();
+            const parsedConnectionString = parser.parse(this._options.connectionString);
+            this._instrumentationKey =
+                parsedConnectionString.instrumentationkey || this._instrumentationKey;
+            this._endpointUrl =
+                parsedConnectionString.ingestionendpoint?.trim() || this._endpointUrl;
         }
+
         // Instrumentation key is required
-        if (!this._options.instrumentationKey) {
+        if (!this._instrumentationKey) {
             const message =
                 "No instrumentation key or connection string was provided to the Azure Monitor Exporter";
             Logger.getInstance().error(message);
             throw new Error(message);
         }
-
-        this._sender = new HttpSender(this._options);
-        this._persister = new FileSystemPersist({ instrumentationKey: this._options.instrumentationKey });
+        this._sender = new HttpSender(this._endpointUrl, this._options);
+        this._persister = new FileSystemPersist(this._instrumentationKey, this._options);
         this._retryTimer = null;
         Logger.getInstance().debug("Exporter was successfully setup");
-
     }
 
-    public async export(envelopes: Envelope[], resultCallback: (result: ExportResult) => void): Promise<void> {
+    public async export(
+        envelopes: Envelope[],
+        resultCallback: (result: ExportResult) => void
+    ): Promise<void> {
         // prevent calls from generating spans
         context.with(suppressTracing(context.active()), async () => {
             resultCallback(await this._exportEnvelopes(envelopes));
@@ -70,7 +75,7 @@ export class LogExporter {
                     this._retryTimer = setTimeout(() => {
                         this._retryTimer = null;
                         this._sendFirstPersistedFile();
-                    }, this._options.batchSendRetryIntervalMs);
+                    }, this._batchSendRetryIntervalMs);
                     this._retryTimer.unref();
                 }
                 return { code: ExportResultCode.SUCCESS };
@@ -159,9 +164,9 @@ export class LogExporter {
             return success
                 ? { code: ExportResultCode.SUCCESS }
                 : {
-                    code: ExportResultCode.FAILED,
-                    error: new Error("Failed to persist envelope in disk."),
-                };
+                      code: ExportResultCode.FAILED,
+                      error: new Error("Failed to persist envelope in disk."),
+                  };
         } catch (ex) {
             return { code: ExportResultCode.FAILED, error: ex };
         }

@@ -8,13 +8,11 @@ import { Attributes, context, SpanKind, SpanOptions, SpanStatusCode } from "@ope
 import { Logger } from "../library/logging";
 import { Util } from "../library/util";
 
-
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
  * and manually trigger immediate sending (flushing)
  */
 export class TelemetryClient {
-
     public client: Client;
     public context: Context;
     public config: Config;
@@ -27,7 +25,11 @@ export class TelemetryClient {
     constructor(setupString?: string) {
         this.commonProperties = {};
         this.context = new Context();
-        var config = new Config(setupString);
+        var config = new Config();
+        if (setupString) {
+            // TODO: Add Support for iKey as well
+            config.connectionString = setupString;
+        }
         this.client = new Client(config);
         this.config = this.client.getConfig();
     }
@@ -107,9 +109,12 @@ export class TelemetryClient {
         let options: SpanOptions = {
             kind: SpanKind.SERVER,
             attributes: attributes,
-            startTime: startTime
+            startTime: startTime,
         };
-        let span: any = this.client.getTraceHandler().getTracer().startSpan(telemetry.name, options, ctx);
+        let span: any = this.client
+            .getTraceHandler()
+            .getTracer()
+            .startSpan(telemetry.name, options, ctx);
         span.setStatus({
             code: telemetry.success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
         });
@@ -158,9 +163,12 @@ export class TelemetryClient {
         let options: SpanOptions = {
             kind: SpanKind.CLIENT,
             attributes: attributes,
-            startTime: startTime
+            startTime: startTime,
         };
-        let span: any = this.client.getTraceHandler().getTracer().startSpan(telemetry.name, options, ctx);
+        let span: any = this.client
+            .getTraceHandler()
+            .getTracer()
+            .startSpan(telemetry.name, options, ctx);
         span.setStatus({
             code: telemetry.success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
         });

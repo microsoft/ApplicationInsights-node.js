@@ -1,8 +1,17 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { BatchObservableResult, Meter, ObservableGauge, ValueType } from "@opentelemetry/api-metrics";
-import { AggregatedMetricCounter, IMetricTraceDimensions, IStandardMetricBaseDimensions, MetricName } from "../types";
-
+import {
+    BatchObservableResult,
+    Meter,
+    ObservableGauge,
+    ValueType,
+} from "@opentelemetry/api-metrics";
+import {
+    AggregatedMetricCounter,
+    IMetricTraceDimensions,
+    IStandardMetricBaseDimensions,
+    MetricName,
+} from "../types";
 
 export class TraceMetrics {
     private _meter: Meter;
@@ -13,10 +22,18 @@ export class TraceMetrics {
     constructor(meter: Meter) {
         this._meter = meter;
         this._traceCountersCollection = [];
-        this._tracesCountGauge = this._meter.createObservableGauge(MetricName.TRACE_COUNT, { valueType: ValueType.INT });
-        this._tracesRateGauge = this._meter.createObservableGauge(MetricName.TRACE_RATE, { valueType: ValueType.DOUBLE });
-        this._meter.addBatchObservableCallback(this._getTraceCount.bind(this), [this._tracesCountGauge,]);
-        this._meter.addBatchObservableCallback(this._getTraceRate.bind(this), [this._tracesRateGauge,]);
+        this._tracesCountGauge = this._meter.createObservableGauge(MetricName.TRACE_COUNT, {
+            valueType: ValueType.INT,
+        });
+        this._tracesRateGauge = this._meter.createObservableGauge(MetricName.TRACE_RATE, {
+            valueType: ValueType.DOUBLE,
+        });
+        this._meter.addBatchObservableCallback(this._getTraceCount.bind(this), [
+            this._tracesCountGauge,
+        ]);
+        this._meter.addBatchObservableCallback(this._getTraceRate.bind(this), [
+            this._tracesRateGauge,
+        ]);
     }
 
     public countTrace(dimensions: IMetricTraceDimensions) {
@@ -73,13 +90,9 @@ export class TraceMetrics {
             if (elapsedMs > 0 && intervalTraces > 0) {
                 var elapsedSeconds = elapsedMs / 1000;
                 var tracesPerSec = intervalTraces / elapsedSeconds;
-                observableResult.observe(
-                    this._tracesRateGauge,
-                    tracesPerSec,
-                    {
-                        ...currentCounter.dimensions,
-                    }
-                );
+                observableResult.observe(this._tracesRateGauge, tracesPerSec, {
+                    ...currentCounter.dimensions,
+                });
             }
             // Set last counters
             currentCounter.lastTotalCount = currentCounter.totalCount;
@@ -94,13 +107,9 @@ export class TraceMetrics {
             var intervalTraces = currentCounter.totalCount - currentCounter.lastTotalCount || 0;
             var elapsedMs = currentCounter.time - currentCounter.lastTime;
             if (elapsedMs > 0 && intervalTraces > 0) {
-                observableResult.observe(
-                    this._tracesCountGauge,
-                    intervalTraces,
-                    {
-                        ...currentCounter.dimensions,
-                    }
-                );
+                observableResult.observe(this._tracesCountGauge, intervalTraces, {
+                    ...currentCounter.dimensions,
+                });
             }
             // Set last counters
             currentCounter.lastTotalCount = currentCounter.totalCount;

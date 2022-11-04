@@ -17,8 +17,7 @@ describe("AutoCollection/Exceptions", () => {
     it("should use uncaughtExceptionMonitor for node 13.7.0+", () => {
         var nodeVer = process.versions.node.split(".");
         var expectation =
-            parseInt(nodeVer[0]) > 13 ||
-            (parseInt(nodeVer[0]) === 13 && parseInt(nodeVer[1]) >= 7);
+            parseInt(nodeVer[0]) > 13 || (parseInt(nodeVer[0]) === 13 && parseInt(nodeVer[1]) >= 7);
         var exceptions = new AutoCollectExceptions(null);
         assert.equal(exceptions["_canUseUncaughtExceptionMonitor"], expectation);
     });

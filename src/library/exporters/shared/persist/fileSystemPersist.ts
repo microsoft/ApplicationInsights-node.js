@@ -7,10 +7,6 @@ import * as path from "path";
 import { Logger } from "../../../logging";
 import { IPersistentStorage } from "../../../../declarations/types";
 import {
-    DEFAULT_EXPORTER_CONFIG,
-    IAzureExporterInternalConfig,
-} from "../../../../declarations/config";
-import {
     confirmDirExists,
     getShallowDirectorySize,
     statAsync,
@@ -20,8 +16,9 @@ import {
     writeFileAsync,
 } from "../../../util";
 import { FileAccessControl } from "./fileAccessControl";
+import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 
-const TEMPDIR_PREFIX = "applicationinsights-";
+const TEMPDIR_PREFIX = "ot-azure-exporter-";
 const FILENAME_SUFFIX = ".ai.json";
 
 /**
@@ -33,27 +30,30 @@ export class FileSystemPersist implements IPersistentStorage {
     public cleanupTimeOut = 60 * 60 * 1000; // 1 hour
     public maxBytesOnDisk: number = 50_000_000; // ~50MB
 
-    private _fileAccessControl: FileAccessControl;
     private _TAG = "FileSystemPersist";
     private _enabled: boolean;
     private _tempDirectory: string;
     private _fileCleanupTimer: NodeJS.Timer | null = null;
-    private readonly _options: IAzureExporterInternalConfig;
+    private _instrumentationKey: string;
 
-    constructor(options: Partial<IAzureExporterInternalConfig> = {}) {
+    constructor(instrumentationKey: string, private _options?: AzureMonitorExporterOptions) {
+        this._instrumentationKey = instrumentationKey;
+        if (this._options?.disableOfflineStorage) {
+            this._enabled = false;
+            return;
+        }
         this._enabled = true;
-        this._fileAccessControl = FileAccessControl.getInstance();
-        this._fileAccessControl.checkFileProtection();
+        FileAccessControl.getInstance().checkFileProtection();
 
-        if (!this._fileAccessControl.osProvidesFileProtection) {
+        if (!FileAccessControl.getInstance().osProvidesFileProtection) {
             this._enabled = false;
             Logger.getInstance().warn(
                 this._TAG,
                 "Sufficient file protection capabilities were not detected. Files will not be persisted"
             );
         }
-        this._options = { ...DEFAULT_EXPORTER_CONFIG, ...options };
-        if (!this._options.instrumentationKey) {
+
+        if (!this._instrumentationKey) {
             this._enabled = false;
             Logger.getInstance().warn(
                 this._TAG,
@@ -62,9 +62,12 @@ export class FileSystemPersist implements IPersistentStorage {
         }
         if (this._enabled) {
             this._tempDirectory = path.join(
-                os.tmpdir(),
-                TEMPDIR_PREFIX + this._options.instrumentationKey
+                this._options?.storageDirectory || os.tmpdir(),
+                "Microsoft",
+                "AzureMonitor",
+                TEMPDIR_PREFIX + this._instrumentationKey
             );
+
             // Starts file cleanup task
             if (!this._fileCleanupTimer) {
                 this._fileCleanupTimer = setTimeout(() => {
@@ -77,7 +80,11 @@ export class FileSystemPersist implements IPersistentStorage {
 
     public push(value: unknown[]): Promise<boolean> {
         if (this._enabled) {
-            Logger.getInstance().info(this._TAG, "Pushing value to persistent storage", value.toString());
+            Logger.getInstance().info(
+                this._TAG,
+                "Pushing value to persistent storage",
+                value.toString()
+            );
             return this._storeToDisk(JSON.stringify(value));
         }
     }
@@ -142,7 +149,7 @@ export class FileSystemPersist implements IPersistentStorage {
         }
 
         try {
-            await this._fileAccessControl.applyACLRules(this._tempDirectory);
+            await FileAccessControl.getInstance().applyACLRules(this._tempDirectory);
         } catch (ex) {
             Logger.getInstance().warn(
                 this._TAG,
@@ -178,7 +185,11 @@ export class FileSystemPersist implements IPersistentStorage {
         try {
             await writeFileAsync(fileFullPath, payload, { mode: 0o600 });
         } catch (writeError) {
-            Logger.getInstance().warn(this._TAG, `Error writing file to persistent file storage`, writeError);
+            Logger.getInstance().warn(
+                this._TAG,
+                `Error writing file to persistent file storage`,
+                writeError
+            );
             return false;
         }
         return true;

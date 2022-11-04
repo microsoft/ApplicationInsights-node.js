@@ -62,7 +62,11 @@ export class AzureVirtualMachine {
                 req.on("error", (error: Error) => {
                     // Unable to contact endpoint.
                     // Do nothing for now.
-                    if (error && error.message && error.message.indexOf(ConnectionErrorMessage) > -1) {
+                    if (
+                        error &&
+                        error.message &&
+                        error.message.indexOf(ConnectionErrorMessage) > -1
+                    ) {
                         vmInfo.isVM = false; // confirm it's not in VM
                     } else {
                         // Only log when is not determined if VM or not to avoid noise outside of Azure VMs

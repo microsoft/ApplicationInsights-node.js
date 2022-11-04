@@ -4,7 +4,7 @@ import { channel } from "diagnostic-channel";
 import { console } from "diagnostic-channel-publishers";
 
 import { enable, dispose } from "../../../src/autoCollection/diagnostic-channel/console.sub";
-import { LogHandler, ResourceManager } from "../../../src/library/handlers";
+import { LogHandler } from "../../../src/library/handlers";
 import { Config } from "../../../src/library/configuration";
 
 describe("AutoCollection/Console", () => {
@@ -21,8 +21,9 @@ describe("AutoCollection/Console", () => {
 
     describe("#log and #error()", () => {
         it("should call trackException for errors", () => {
-            let config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
-            config.enableAutoCollectConsole = true;
+            let config = new Config();
+            config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
+            config.logInstrumentations.console.enabled = true;
             let handler = new LogHandler(config);
             handler.start();
             const stub = sandbox.stub(handler, "trackException");
@@ -38,8 +39,9 @@ describe("AutoCollection/Console", () => {
         });
 
         it("should call trackTrace for logs", () => {
-            let config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
-            config.enableAutoCollectConsole = true;
+            let config = new Config();
+            config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
+            config.logInstrumentations.console.enabled = true;
             let handler = new LogHandler(config);
             handler.start();
             const stub = sandbox.stub(handler, "trackTrace");
@@ -53,7 +55,9 @@ describe("AutoCollection/Console", () => {
         });
 
         it("should notify multiple handlers", () => {
-            let config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+            let config = new Config();
+            config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
+            config.logInstrumentations.console.enabled = true;
             let handler = new LogHandler(config);
             let secondHandler = new LogHandler(config);
             const stub = sandbox.stub(handler, "trackTrace");

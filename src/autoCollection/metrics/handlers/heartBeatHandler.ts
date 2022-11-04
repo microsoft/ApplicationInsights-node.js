@@ -1,13 +1,13 @@
 import * as os from "os";
 import {
     AzureMonitorExporterOptions,
-    AzureMonitorMetricExporter
+    AzureMonitorMetricExporter,
 } from "@azure/monitor-opentelemetry-exporter";
 import {
     Meter,
     ObservableCallback,
     ObservableGauge,
-    ObservableResult
+    ObservableResult,
 } from "@opentelemetry/api-metrics";
 import {
     MeterProvider,
@@ -41,15 +41,15 @@ export class HeartBeatHandler {
         this._azureVm = new AzureVirtualMachine();
         this._meterProvider = new MeterProvider();
         let exporterConfig: AzureMonitorExporterOptions = {
-            connectionString: config.getConnectionString(),
+            connectionString: config.connectionString,
             aadTokenCredential: config.aadTokenCredential,
             storageDirectory: config.storageDirectory,
-            disableOfflineStorage: config.disableOfflineStorage
+            disableOfflineStorage: config.disableOfflineStorage,
         };
         this._azureExporter = new AzureMonitorMetricExporter(exporterConfig);
         const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
             exporter: this._azureExporter as any,
-            exportIntervalMillis: options?.collectionInterval || this._collectionInterval
+            exportIntervalMillis: options?.collectionInterval || this._collectionInterval,
         };
         this._metricReader = new PeriodicExportingMetricReader(metricReaderOptions);
         this._meterProvider.addMetricReader(this._metricReader);
@@ -74,7 +74,12 @@ export class HeartBeatHandler {
     private async _getMachineProperties(): Promise<{ [key: string]: string }> {
         let properties: { [key: string]: string } = {};
         // TODO: Add sdk property for attach scenarios, confirm if this is only expected when attach happens, older code doing this was present in Default.ts
-        const sdkVersion = String(ResourceManager.getInstance().getTraceResource().attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION]) || null;
+        const sdkVersion =
+            String(
+                ResourceManager.getInstance().getTraceResource().attributes[
+                    SemanticResourceAttributes.TELEMETRY_SDK_VERSION
+                ]
+            ) || null;
         properties["sdk"] = sdkVersion;
         properties["osType"] = os.type();
         if (process.env.WEBSITE_SITE_NAME) {
@@ -88,15 +93,16 @@ export class HeartBeatHandler {
         } else {
             if (this._isVM === undefined) {
                 try {
-                    let vmInfo: IVirtualMachineInfo = await this._azureVm.getAzureComputeMetadata(this._config);
+                    let vmInfo: IVirtualMachineInfo = await this._azureVm.getAzureComputeMetadata(
+                        this._config
+                    );
                     this._isVM = vmInfo.isVM;
                     if (this._isVM) {
                         properties["azInst_vmId"] = vmInfo.id;
                         properties["azInst_subscriptionId"] = vmInfo.subscriptionId;
                         properties["azInst_osType"] = vmInfo.osType;
                     }
-                }
-                catch (error) {
+                } catch (error) {
                     Logger.getInstance().debug(error);
                 }
             }

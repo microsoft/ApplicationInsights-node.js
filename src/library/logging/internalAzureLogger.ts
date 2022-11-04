@@ -25,7 +25,6 @@ export class InternalAzureLogger {
     private _maxHistory: number;
     private _maxSizeBytes: number;
 
-
     constructor() {
         let logDestination = process.env.APPLICATIONINSIGHTS_LOG_DESTINATION; // destination can be one of file, console or file+console
         if (logDestination == "file+console") {
@@ -72,8 +71,7 @@ export class InternalAzureLogger {
             if (this._logToConsole) {
                 console.debug(...args);
             }
-        }
-        catch (err) {
+        } catch (err) {
             console.log(this._TAG, "Failed to log to file: " + (err && err.message));
         }
     }

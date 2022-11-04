@@ -2,7 +2,6 @@ import { Meter, ObservableGauge, ObservableResult, Histogram } from "@openteleme
 import { GarbageCollectionType, NativeMetricsCounter } from "../types";
 import { Logger } from "../../../library/logging";
 
-
 export class NativePerformanceMetrics {
     private _emitter: any;
     private _metricsAvailable: boolean; // is the native metrics lib installed
@@ -19,16 +18,27 @@ export class NativePerformanceMetrics {
     private _heapMemoryUsageGauge: ObservableGauge;
     private _memoryUsageNonHeapGauge: ObservableGauge;
 
-
     constructor(meter: Meter) {
         this._meter = meter;
         this._eventLoopHistogram = this._meter.createHistogram(NativeMetricsCounter.EVENT_LOOP_CPU);
-        this._garbageCollectionScavenge = this._meter.createHistogram(NativeMetricsCounter.GARBAGE_COLLECTION_SCAVENGE);
-        this._garbageCollectionMarkSweepCompact = this._meter.createHistogram(NativeMetricsCounter.GARBAGE_COLLECTION_SWEEP_COMPACT);
-        this._garbageCollectionIncrementalMarking = this._meter.createHistogram(NativeMetricsCounter.GARBAGE_COLLECTION_INCREMENTAL_MARKING);
-        this._heapMemoryTotalGauge = this._meter.createObservableGauge(NativeMetricsCounter.HEAP_MEMORY_TOTAL);
-        this._heapMemoryUsageGauge = this._meter.createObservableGauge(NativeMetricsCounter.HEAP_MEMORY_USAGE);
-        this._memoryUsageNonHeapGauge = this._meter.createObservableGauge(NativeMetricsCounter.MEMORY_USAGE_NON_HEAP);
+        this._garbageCollectionScavenge = this._meter.createHistogram(
+            NativeMetricsCounter.GARBAGE_COLLECTION_SCAVENGE
+        );
+        this._garbageCollectionMarkSweepCompact = this._meter.createHistogram(
+            NativeMetricsCounter.GARBAGE_COLLECTION_SWEEP_COMPACT
+        );
+        this._garbageCollectionIncrementalMarking = this._meter.createHistogram(
+            NativeMetricsCounter.GARBAGE_COLLECTION_INCREMENTAL_MARKING
+        );
+        this._heapMemoryTotalGauge = this._meter.createObservableGauge(
+            NativeMetricsCounter.HEAP_MEMORY_TOTAL
+        );
+        this._heapMemoryUsageGauge = this._meter.createObservableGauge(
+            NativeMetricsCounter.HEAP_MEMORY_USAGE
+        );
+        this._memoryUsageNonHeapGauge = this._meter.createObservableGauge(
+            NativeMetricsCounter.MEMORY_USAGE_NON_HEAP
+        );
     }
 
     /**
@@ -61,21 +71,22 @@ export class NativePerformanceMetrics {
             try {
                 // enable self
                 this._emitter.enable(true, this._collectionInterval);
-            }
-            catch (err) {
+            } catch (err) {
                 Logger.getInstance().error("Native metrics enable failed", err);
             }
 
             // Add histogram data collection
             if (!this._handle) {
-                this._handle = setInterval(() => this._collectHistogramData(), this._collectionInterval);
+                this._handle = setInterval(
+                    () => this._collectHistogramData(),
+                    this._collectionInterval
+                );
                 this._handle.unref();
             }
             // Add observable callbacks
             this._heapMemoryTotalGauge.addCallback(this._getHeapTotal.bind(this));
             this._heapMemoryUsageGauge.addCallback(this._getHeapUsage.bind(this));
             this._memoryUsageNonHeapGauge.addCallback(this._getNonHeapUsage.bind(this));
-
         } else if (this._emitter) {
             if (this._handle) {
                 clearInterval(this._handle);
@@ -119,8 +130,7 @@ export class NativePerformanceMetrics {
                 return;
             }
             this._eventLoopHistogram.record(metrics.total);
-        }
-        catch (err) {
+        } catch (err) {
             Logger.getInstance().error("Native metrics failed to get event loop CPU", err);
         }
     }
@@ -142,9 +152,11 @@ export class NativePerformanceMetrics {
                         break;
                 }
             }
-        }
-        catch (err) {
-            Logger.getInstance().error("Native metrics failed to get event Garbage Collection metrics", err);
+        } catch (err) {
+            Logger.getInstance().error(
+                "Native metrics failed to get event Garbage Collection metrics",
+                err
+            );
         }
     }
 }

@@ -1,17 +1,12 @@
 {
     "connectionString": "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/",
-    "endpointUrl": "testEndpointUrl",
     "samplingRate": 0.3,
-    "enableAutoCollectExternalLoggers": false,
-    "enableAutoCollectConsole": true,
     "enableAutoCollectExceptions": false,
     "enableAutoCollectPerformance": false,
     "enableAutoCollectStandardMetrics": false,
     "enableAutoCollectHeartbeat": false,
-    "disableStatsbeat": false,
     "disableOfflineStorage": true,
     "storageDirectory": "testPath",
-    "enableSendLiveMetrics": false,
     "extendedMetrics": {
         "heap": true,
         "gc": true,
@@ -37,5 +32,15 @@
             "enabled": true
         }
     },
-    "quickPulseHost": "testquickpulsehost.com"
+    "logInstrumentations": {
+        "console": {
+            "enabled": true
+        },
+        "bunyan": {
+            "enabled": true
+        },
+        "winston": {
+            "enabled": true
+        }
+    }
 }

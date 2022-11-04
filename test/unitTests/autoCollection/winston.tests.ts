@@ -3,10 +3,9 @@ import * as sinon from "sinon";
 import { channel } from "diagnostic-channel";
 import { winston } from "diagnostic-channel-publishers";
 
-import { enable, dispose, } from "../../../src/autoCollection/diagnostic-channel/winston.sub";
-import { LogHandler, ResourceManager } from "../../../src/library/handlers";
+import { enable, dispose } from "../../../src/autoCollection/diagnostic-channel/winston.sub";
+import { LogHandler } from "../../../src/library/handlers";
 import { Config } from "../../../src/library/configuration";
-
 
 describe("diagnostic-channel/winston", () => {
     var sandbox: sinon.SinonSandbox;
@@ -21,8 +20,9 @@ describe("diagnostic-channel/winston", () => {
     });
 
     it("should call trackException for errors", () => {
-        let config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-        config.enableAutoCollectConsole = true;
+        let config = new Config();
+        config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
+        config.logInstrumentations.winston.enabled = true;
         let handler = new LogHandler(config);
         handler.start();
         const stub = sandbox.stub(handler, "trackException");
@@ -39,8 +39,9 @@ describe("diagnostic-channel/winston", () => {
     });
 
     it("should call trackTrace for logs", () => {
-        let config = new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-        config.enableAutoCollectConsole = true;
+        let config = new Config();
+        config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
+        config.logInstrumentations.winston.enabled = true;
         let handler = new LogHandler(config);
         handler.start();
         const stub = sandbox.stub(handler, "trackTrace");
@@ -56,7 +57,9 @@ describe("diagnostic-channel/winston", () => {
     });
 
     it("should notify multiple handlers", () => {
-        let config= new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+        let config = new Config();
+        config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
+        config.logInstrumentations.winston.enabled = true;
         let handler = new LogHandler(config);
         let secondHandler = new LogHandler(config);
         const stub = sandbox.stub(handler, "trackTrace");

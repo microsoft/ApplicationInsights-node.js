@@ -87,9 +87,11 @@ export class AutoCollectExceptions {
         }
     }
 
-    private _handleException(reThrow: boolean,
+    private _handleException(
+        reThrow: boolean,
         name: ExceptionHandle,
-        error: Error | undefined = new Error(FALLBACK_ERROR_MESSAGE)) {
+        error: Error | undefined = new Error(FALLBACK_ERROR_MESSAGE)
+    ) {
         if (this._handler) {
             this._handler.trackException({ exception: error });
             this._handler.flush();
@@ -99,8 +101,7 @@ export class AutoCollectExceptions {
                 // eslint-disable-next-line no-process-exit
                 process.exit(1);
             }
-        }
-        else {
+        } else {
             console.error(error);
             process.exit(1);
         }

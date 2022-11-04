@@ -5,5 +5,4 @@ export { AutoCollectConsole } from "./console";
 export { AutoCollectExceptions } from "./exceptions";
 export { PerformanceCounterMetricsHandler } from "./metrics/handlers/performanceCounterMetricsHandler";
 export { StandardMetricsHandler } from "./metrics/handlers/standardMetricsHandler";
-export { LiveMetricsHandler } from "./metrics/handlers/liveMetricsHandler";
 export { CustomMetricsHandler } from "./metrics/handlers/customMetricsHandler";

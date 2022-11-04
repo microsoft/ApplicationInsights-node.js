@@ -6,7 +6,6 @@ import { SpanContext } from "@opentelemetry/api";
 import * as azureFunctionsTypes from "../declarations/functions";
 import { ICorrelationContext, ITraceparent, ITracestate } from "../declarations/interfaces";
 
-
 export class CorrelationContextManager {
     /**
      *  Provides the current Context.

@@ -9,7 +9,7 @@ import {
     StatsbeatFeature,
     StatsbeatFeatureType,
     StatsbeatInstrumentation,
-    StatsbeatResourceProvider
+    StatsbeatResourceProvider,
 } from "../../../declarations/constants";
 import { Config } from "../../../library/configuration";
 import { AzureVirtualMachine } from "../../../library/azureVirtualMachine";
@@ -21,7 +21,6 @@ import { KnownContextTagKeys } from "../../../declarations/generated";
 import { IVirtualMachineInfo } from "../../../library/azureVirtualMachine";
 
 const STATSBEAT_LANGUAGE = "node";
-
 
 export class Statsbeat {
     private _connectionString =
@@ -60,11 +59,11 @@ export class Statsbeat {
         this._config = config;
         this._resourceManager = resourceManager || new ResourceManager();
         this._azureVm = new AzureVirtualMachine();
-        this._statsbeatConfig = new Config(this._connectionString);
+        this._statsbeatConfig = new Config();
+        this._statsbeatConfig.connectionString = this._connectionString;
         this._statsbeatConfig.enableAutoCollectHeartbeat = false;
         this._statsbeatConfig.enableAutoCollectPerformance = false;
         this._statsbeatConfig.enableAutoCollectStandardMetrics = false;
-        this._statsbeatConfig.enableAutoCollectConsole = false;
     }
 
     public enable(isEnabled: boolean) {
@@ -99,7 +98,6 @@ export class Statsbeat {
             }
         }
     }
-
 
     public isInitialized() {
         return this._isInitialized;
@@ -275,7 +273,7 @@ export class Statsbeat {
             var averageRequestExecutionTime =
                 (currentCounter.intervalRequestExecutionTime -
                     currentCounter.lastIntervalRequestExecutionTime) /
-                intervalRequests || 0;
+                    intervalRequests || 0;
             currentCounter.lastIntervalRequestExecutionTime =
                 currentCounter.intervalRequestExecutionTime; // reset
             if (intervalRequests > 0) {
@@ -365,8 +363,13 @@ export class Statsbeat {
 
     private _getCustomProperties() {
         this._language = STATSBEAT_LANGUAGE;
-        this._cikey = this._config.instrumentationKey;
-        const sdkVersion = String(this._resourceManager.getTraceResource().attributes[KnownContextTagKeys.AiInternalSdkVersion]) || null;
+        this._cikey = this._config.getInstrumentationKey();
+        const sdkVersion =
+            String(
+                this._resourceManager.getTraceResource().attributes[
+                    KnownContextTagKeys.AiInternalSdkVersion
+                ]
+            ) || null;
         this._sdkVersion = sdkVersion; // "node" or "node-nativeperf"
         this._os = os.type();
         this._runtimeVersion = process.version;
@@ -391,18 +394,20 @@ export class Statsbeat {
             }
         } else if (this._config) {
             if (this._isVM === undefined || this._isVM == true) {
-                await this._azureVm.getAzureComputeMetadata(this._config).then((vmInfo: IVirtualMachineInfo) => {
-                    this._isVM = vmInfo.isVM;
-                    if (this._isVM) {
-                        this._resourceProvider = StatsbeatResourceProvider.vm;
-                        this._resourceIdentifier = vmInfo.id + "/" + vmInfo.subscriptionId;
-                        // Override OS as VM info have higher precedence
-                        if (vmInfo.osType) {
-                            this._os = vmInfo.osType;
+                await this._azureVm
+                    .getAzureComputeMetadata(this._config)
+                    .then((vmInfo: IVirtualMachineInfo) => {
+                        this._isVM = vmInfo.isVM;
+                        if (this._isVM) {
+                            this._resourceProvider = StatsbeatResourceProvider.vm;
+                            this._resourceIdentifier = vmInfo.id + "/" + vmInfo.subscriptionId;
+                            // Override OS as VM info have higher precedence
+                            if (vmInfo.osType) {
+                                this._os = vmInfo.osType;
+                            }
                         }
-                    }
-                }).catch((error) => Logger.getInstance().debug(error));
-
+                    })
+                    .catch((error) => Logger.getInstance().debug(error));
             } else {
                 this._resourceProvider = StatsbeatResourceProvider.unknown;
             }

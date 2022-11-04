@@ -8,7 +8,6 @@ import { Logger } from "../../library/logging";
 const TAG = "DiagnosticChannel";
 let isInitialized = false;
 
-
 export function enablePublishers() {
     // Only register monkey patchs once
     if (!isInitialized) {
@@ -17,7 +16,7 @@ export function enablePublishers() {
         const modules: { [key: string]: any } = {
             bunyan: publishers.bunyan,
             console: publishers.console,
-            winston: publishers.winston
+            winston: publishers.winston,
         };
 
         for (const mod in modules) {

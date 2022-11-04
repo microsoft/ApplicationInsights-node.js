@@ -3,7 +3,6 @@ import { Statsbeat } from "../autoCollection/metrics/statsbeat";
 import { Logger } from "./logging";
 import { LogHandler, MetricHandler, TraceHandler } from "./handlers";
 
-
 export class Client {
     private _config: Config;
     private _statsbeat: Statsbeat;
@@ -17,10 +16,12 @@ export class Client {
      */
     constructor(config?: Config) {
         this._config = config || new Config();
-        if (!this._config.instrumentationKey || this._config.instrumentationKey == "") {
-            throw new Error("Instrumentation key not found, please provide a connection string before starting Application Insights SDK.");
+        if (!this._config.connectionString || this._config.connectionString == "") {
+            throw new Error(
+                "Connection String not found, please provide it before starting Application Insights SDK."
+            );
         }
-        if (!this._config.disableStatsbeat) {
+        if (!this._config.getDisableStatsbeat()) {
             this._statsbeat = new Statsbeat(this._config);
             this._statsbeat.enable(true);
         }
@@ -63,8 +64,7 @@ export class Client {
             await this._traceHandler.flush();
             await this._metricHandler.flush();
             await this._logHandler.flush();
-        }
-        catch (err) {
+        } catch (err) {
             Logger.getInstance().error("Failed to flush telemetry", err);
         }
     }

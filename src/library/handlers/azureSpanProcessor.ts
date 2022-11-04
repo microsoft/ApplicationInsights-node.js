@@ -8,8 +8,7 @@ import { IStandardMetricBaseDimensions } from "../../autoCollection/metrics/type
 import { MetricHandler } from "./metricHandler";
 
 export class AzureSpanProcessor implements SpanProcessor {
-
-    constructor(private readonly _metricHandler: MetricHandler) { }
+    constructor(private readonly _metricHandler: MetricHandler) {}
 
     forceFlush(): Promise<void> {
         return Promise.resolve();
@@ -19,10 +18,13 @@ export class AzureSpanProcessor implements SpanProcessor {
         if (this._metricHandler.getConfig().enableAutoCollectStandardMetrics) {
             if (span.instrumentationLibrary.name == "@opentelemetry/instrumentation-http") {
                 if (span.kind === SpanKind.CLIENT) {
-                    span.setAttributes({ "_MS.ProcessedByMetricExtractors": "(Name:'Dependencies', Ver:'1.1')" });
-                }
-                else if (span.kind === SpanKind.SERVER) {
-                    span.setAttributes({ "_MS.ProcessedByMetricExtractors": "(Name:'Requests', Ver:'1.1')" });
+                    span.setAttributes({
+                        "_MS.ProcessedByMetricExtractors": "(Name:'Dependencies', Ver:'1.1')",
+                    });
+                } else if (span.kind === SpanKind.SERVER) {
+                    span.setAttributes({
+                        "_MS.ProcessedByMetricExtractors": "(Name:'Requests', Ver:'1.1')",
+                    });
                 }
             }
         }
@@ -33,10 +35,12 @@ export class AzureSpanProcessor implements SpanProcessor {
             span.events.forEach((event: TimedEvent) => {
                 let dimensions: IStandardMetricBaseDimensions = {
                     cloudRoleInstance: "",
-                    cloudRoleName: ""
+                    cloudRoleName: "",
                 };
-                const serviceName = span.resource?.attributes[SemanticResourceAttributes.SERVICE_NAME];
-                const serviceNamespace = span.resource?.attributes[SemanticResourceAttributes.SERVICE_NAMESPACE];
+                const serviceName =
+                    span.resource?.attributes[SemanticResourceAttributes.SERVICE_NAME];
+                const serviceNamespace =
+                    span.resource?.attributes[SemanticResourceAttributes.SERVICE_NAMESPACE];
                 if (serviceName) {
                     if (serviceNamespace) {
                         dimensions.cloudRoleInstance = `${serviceNamespace}.${serviceName}`;
@@ -46,8 +50,7 @@ export class AzureSpanProcessor implements SpanProcessor {
                 }
                 if (event.name == "exception") {
                     this._metricHandler.countException(dimensions);
-                }
-                else {
+                } else {
                     this._metricHandler.countTrace(dimensions);
                 }
             });

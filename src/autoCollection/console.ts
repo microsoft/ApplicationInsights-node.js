@@ -1,3 +1,4 @@
+import { LogInstrumentationsConfig } from "../library/configuration/types";
 import { LogHandler } from "../library/handlers";
 import { enablePublishers } from "./diagnostic-channel/initialization";
 enablePublishers();
@@ -9,12 +10,15 @@ export class AutoCollectConsole {
         this._handler = handler;
     }
 
-    public enable(isEnabled: boolean, collectConsoleLog: boolean) {
-        require("./diagnostic-channel/console.sub").enable(
-            isEnabled && collectConsoleLog,
-            this._handler
-        );
-        require("./diagnostic-channel/bunyan.sub").enable(isEnabled, this._handler);
-        require("./diagnostic-channel/winston.sub").enable(isEnabled, this._handler);
+    public enable(config: LogInstrumentationsConfig) {
+        require("./diagnostic-channel/console.sub").enable(config.console.enabled, this._handler);
+        require("./diagnostic-channel/bunyan.sub").enable(config.bunyan.enabled, this._handler);
+        require("./diagnostic-channel/winston.sub").enable(config.winston.enabled, this._handler);
+    }
+
+    public shutdown() {
+        require("./diagnostic-channel/console.sub").enable(false, this._handler);
+        require("./diagnostic-channel/bunyan.sub").enable(false, this._handler);
+        require("./diagnostic-channel/winston.sub").enable(false, this._handler);
     }
 }

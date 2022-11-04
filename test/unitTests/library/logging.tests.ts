@@ -11,8 +11,7 @@ describe("Library/Logger", () => {
     before(() => {
         sandbox = sinon.createSandbox();
         stub = sandbox.stub(Logger.getInstance()["_internalLogger"], "logMessage");
-    })
-
+    });
 
     afterEach(() => {
         sandbox.restore();

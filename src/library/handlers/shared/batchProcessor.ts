@@ -58,14 +58,10 @@ export class BatchProcessor {
                     if (result.code === ExportResultCode.SUCCESS) {
                         resolve();
                     } else {
-                        reject(
-                            result.error ??
-                            new Error('Envelope export failed')
-                        );
+                        reject(result.error ?? new Error("Envelope export failed"));
                     }
                 });
-            }
-            else{
+            } else {
                 resolve();
             }
             // update lastSend time to enable throttling
@@ -75,6 +71,5 @@ export class BatchProcessor {
             clearTimeout(this._timeoutHandle);
             this._timeoutHandle = null;
         });
-
     }
 }

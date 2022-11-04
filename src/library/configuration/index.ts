@@ -3,5 +3,4 @@
 
 export { Config } from "./config";
 export { ConnectionStringParser } from "./connectionStringParser";
-export { JsonConfig } from "./jsonConfig";
 export { IConfig } from "./types";

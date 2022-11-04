@@ -12,11 +12,10 @@ export class ConnectionStringParser {
     private readonly FIELDS_SEPARATOR = ";";
     private readonly FIELD_KEY_VALUE_SEPARATOR = "=";
 
-    public parse(connectionString?: string): ConnectionString {
+    public parse(connectionString: string): ConnectionString {
         if (!connectionString) {
             return {};
         }
-
         const kvPairs = connectionString.split(this.FIELDS_SEPARATOR);
         let isValid = true;
 
@@ -40,7 +39,14 @@ export class ConnectionStringParser {
 
         if (isValid && Object.keys(result).length > 0) {
             // this is a valid connection string, so parse the results
-
+            if (result.instrumentationkey) {
+                if (!this._validateInstrumentationKey(result.instrumentationkey)) {
+                    Logger.getInstance().warn(
+                        "An invalid instrumentation key was provided. There may be resulting telemetry loss",
+                        result.instrumentationkey
+                    );
+                }
+            }
             if (result.endpointsuffix) {
                 // use endpoint suffix where overrides are not provided
                 const locationPrefix = result.location ? `${result.location}.` : "";
@@ -83,5 +89,25 @@ export class ConnectionStringParser {
             newUrl = newUrl.slice(0, -1);
         }
         return newUrl;
+    }
+
+    /**
+     * Validate UUID Format
+     * Specs taken from breeze repo
+     * The definition of a VALID instrumentation key is as follows:
+     * Not none
+     * Not empty
+     * Every character is a hex character [0-9a-f]
+     * 32 characters are separated into 5 sections via 4 dashes
+     * First section has 8 characters
+     * Second section has 4 characters
+     * Third section has 4 characters
+     * Fourth section has 4 characters
+     * Fifth section has 12 characters
+     */
+    private _validateInstrumentationKey(iKey: string): boolean {
+        const UUID_Regex = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$";
+        const regexp = new RegExp(UUID_Regex);
+        return regexp.test(iKey);
     }
 }
