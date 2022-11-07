@@ -6,12 +6,12 @@ import { RestError } from "@azure/core-rest-pipeline";
 import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 
 import { Logger } from "../logging";
-import { Config, ConnectionStringParser } from "../configuration";
-import { isRetriable, IBreezeResponse, IBreezeError } from "./shared/breezeUtils";
+import { ConnectionStringParser } from "../configuration";
+import { isRetriable, IBreezeResponse, IBreezeError } from "./breezeUtils";
 import { TelemetryItem as Envelope } from "../../declarations/generated";
-import { IPersistentStorage, ISender } from "../../declarations/types";
-import { HttpSender } from "./shared/httpSender";
-import { FileSystemPersist } from "./shared/persist";
+import { IPersistentStorage, ISender } from "./types";
+import { HttpSender } from "./httpSender";
+import { FileSystemPersist } from "./persist";
 import { DEFAULT_BREEZE_ENDPOINT } from "../../declarations/constants";
 
 const DEFAULT_BATCH_SEND_RETRY_INTERVAL_MS = 60_000;

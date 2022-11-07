@@ -18,10 +18,12 @@ import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions"
 
 import { AzureVirtualMachine } from "../../../library/azureVirtualMachine";
 import { ResourceManager } from "../../../library/handlers";
-import { HeartBeatMetricName } from "../../../declarations/constants";
 import { Config } from "../../../library/configuration";
 import { IVirtualMachineInfo } from "../../../library/azureVirtualMachine";
 import { Logger } from "../../../library/logging";
+
+
+const HeartBeatMetricName = "HeartBeat";
 
 export class HeartBeatHandler {
     private _collectionInterval: number = 900000;

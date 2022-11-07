@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as child_process from "child_process";
 
-import { Logger } from "../../../logging";
+import { Logger } from "../../logging";
 
 const ICACLS_PATH = `${process.env.systemdrive}/windows/system32/icacls.exe`;
 const POWERSHELL_PATH = `${process.env.systemdrive}/windows/system32/windowspowershell/v1.0/powershell.exe`;

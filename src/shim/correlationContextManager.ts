@@ -2,9 +2,8 @@ import * as events from "events";
 import * as http from "http";
 
 import { SpanContext } from "@opentelemetry/api";
+import { ICorrelationContext, ITraceparent, ITracestate, Context, HttpRequest } from "./types";
 
-import * as azureFunctionsTypes from "../declarations/functions";
-import { ICorrelationContext, ITraceparent, ITracestate } from "../declarations/interfaces";
 
 export class CorrelationContextManager {
     /**
@@ -69,10 +68,10 @@ export class CorrelationContextManager {
      */
     public startOperation(
         context:
-            | azureFunctionsTypes.Context
-            | (http.IncomingMessage | azureFunctionsTypes.HttpRequest)
+            | Context
+            | (http.IncomingMessage | HttpRequest)
             | SpanContext,
-        request?: azureFunctionsTypes.HttpRequest | string
+        request?: HttpRequest | string
     ): ICorrelationContext | null {
         throw new Error("Not implemented");
     }

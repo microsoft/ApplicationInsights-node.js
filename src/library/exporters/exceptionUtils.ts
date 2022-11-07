@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Util } from "../../util";
+import { Util } from "../util";
 
 // regex to match stack frames from ie/chrome/ff
 // methodName=$2, fileName=$4, lineNo=$5, column=$6

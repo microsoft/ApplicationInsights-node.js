@@ -4,8 +4,8 @@
 import * as os from "os";
 import * as path from "path";
 
-import { Logger } from "../../../logging";
-import { IPersistentStorage } from "../../../../declarations/types";
+import { Logger } from "../../logging";
+import { IPersistentStorage } from "../types";
 import {
     confirmDirExists,
     getShallowDirectorySize,
@@ -14,7 +14,7 @@ import {
     readFileAsync,
     unlinkAsync,
     writeFileAsync,
-} from "../../../util";
+} from "../../util";
 import { FileAccessControl } from "./fileAccessControl";
 import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 

@@ -5,7 +5,7 @@ import { bunyan } from "diagnostic-channel-publishers";
 
 import { LogHandler } from "../../library/handlers";
 import { KnownSeverityLevel } from "../../declarations/generated";
-import { StatsbeatInstrumentation } from "../../declarations/constants";
+import { StatsbeatInstrumentation } from "../metrics/statsbeat/types";
 
 let handlers: LogHandler[] = [];
 

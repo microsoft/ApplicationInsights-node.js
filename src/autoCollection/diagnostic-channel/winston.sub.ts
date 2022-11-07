@@ -4,7 +4,7 @@ import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
 import { winston } from "diagnostic-channel-publishers";
 
 import { LogHandler } from "../../library/handlers/logHandler";
-import { StatsbeatInstrumentation } from "../../declarations/constants";
+import { StatsbeatInstrumentation } from "../metrics/statsbeat/types";
 import { KnownSeverityLevel } from "../../declarations/generated";
 
 let handlers: LogHandler[] = [];

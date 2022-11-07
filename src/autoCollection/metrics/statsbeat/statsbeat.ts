@@ -10,12 +10,12 @@ import {
     StatsbeatFeatureType,
     StatsbeatInstrumentation,
     StatsbeatResourceProvider,
-} from "../../../declarations/constants";
+} from "./types";
 import { Config } from "../../../library/configuration";
 import { AzureVirtualMachine } from "../../../library/azureVirtualMachine";
 import { NetworkStatsbeat } from "./types";
 import { Util } from "../../../library/util";
-import { MetricHandler, ResourceManager } from "../../../library/handlers";
+import { ResourceManager } from "../../../library/handlers";
 import { MetricTelemetry, MetricPointTelemetry } from "../../../declarations/contracts";
 import { KnownContextTagKeys } from "../../../declarations/generated";
 import { IVirtualMachineInfo } from "../../../library/azureVirtualMachine";

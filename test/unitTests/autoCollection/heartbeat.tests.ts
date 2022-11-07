@@ -6,7 +6,6 @@ import { HeartBeatHandler } from "../../../src/autoCollection/metrics/handlers/h
 import { Config } from "../../../src/library/configuration";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 import { ResourceManager } from "../../../src/library/handlers";
-import { HeartBeatMetricName } from "../../../src/declarations/constants";
 
 describe("AutoCollection/HeartBeat", () => {
     var sandbox: sinon.SinonSandbox;
@@ -51,7 +50,7 @@ describe("AutoCollection/HeartBeat", () => {
             assert.strictEqual(scopeMetrics.length, 1, "scopeMetrics count");
             const metrics = scopeMetrics[0].metrics;
             assert.strictEqual(metrics.length, 1, "metrics count");
-            assert.equal(metrics[0].descriptor.name, HeartBeatMetricName);
+            assert.equal(metrics[0].descriptor.name, "HeartBeat");
         });
 
         it("should not collect when disabled", async () => {

@@ -2,14 +2,13 @@ import { IncomingMessage } from "http";
 import { DiagLogLevel, SpanContext } from "@opentelemetry/api";
 
 import { Logger } from "../library/logging";
-import { ICorrelationContext } from "../declarations/interfaces";
+import { ICorrelationContext, Context, HttpRequest } from "./types";
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
-import * as azureFunctionsTypes from "../declarations/functions";
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
-export { Contracts, TelemetryClient, azureFunctionsTypes };
+export { Contracts, HttpRequest, TelemetryClient };
 
 /**
  * The default client, initialized when setup was called. To initialize a different client
@@ -70,23 +69,23 @@ export function getCorrelationContext(): ICorrelationContext {
  */
 export function startOperation(context: SpanContext, name: string): ICorrelationContext | null;
 export function startOperation(
-    context: azureFunctionsTypes.Context,
-    request: azureFunctionsTypes.HttpRequest
+    context: Context,
+    request: HttpRequest
 ): ICorrelationContext | null;
 export function startOperation(
-    context: azureFunctionsTypes.Context,
+    context: Context,
     name: string
 ): ICorrelationContext | null;
 export function startOperation(
-    context: IncomingMessage | azureFunctionsTypes.HttpRequest,
+    context: IncomingMessage | HttpRequest,
     request?: never
 ): ICorrelationContext | null;
 export function startOperation(
     context:
-        | azureFunctionsTypes.Context
-        | (IncomingMessage | azureFunctionsTypes.HttpRequest)
+        | Context
+        | (IncomingMessage | HttpRequest)
         | SpanContext,
-    request?: azureFunctionsTypes.HttpRequest | string
+    request?: HttpRequest | string
 ): ICorrelationContext | null {
     return null;
 }

@@ -5,13 +5,13 @@ import { FullOperationResponse } from "@azure/core-client";
 import { bearerTokenAuthenticationPolicy, redirectPolicyName } from "@azure/core-rest-pipeline";
 import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 
-import { ISender, SenderResult } from "../../../declarations/types";
+import { ISender, SenderResult } from "./types";
 import {
     TelemetryItem as Envelope,
     ApplicationInsightsClient,
     ApplicationInsightsClientOptionalParams,
     TrackOptionalParams,
-} from "../../../declarations/generated";
+} from "../../declarations/generated";
 
 const applicationInsightsResource = "https://monitor.azure.com//.default";
 

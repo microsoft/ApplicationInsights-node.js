@@ -12,7 +12,7 @@ import { Config } from "../configuration";
 import { Util } from "../util";
 import { ResourceManager } from "./resourceManager";
 import { Statsbeat } from "../../autoCollection/metrics/statsbeat";
-import { parseStack } from "../exporters/shared";
+import { parseStack } from "../exporters/exceptionUtils";
 import {
     AvailabilityData,
     TelemetryExceptionData,
