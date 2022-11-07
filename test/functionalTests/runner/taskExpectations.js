@@ -68,7 +68,7 @@ module.exports = {
         (telemetry) => {
             return telemetry.data.baseData.name === "mongodb.insert" &&
                 telemetry.data.baseData.success === true &&
-                telemetry.data.baseData.target === "testapp" &&
+                telemetry.data.baseData.target === "localhost|testapp" &&
                 telemetry.data.baseData.type === "mongodb";
         }
     ),
@@ -77,7 +77,7 @@ module.exports = {
         (telemetry) => {
             return telemetry.data.baseData.name === "mongodb.insert" &&
                 telemetry.data.baseData.success === true &&
-                telemetry.data.baseData.target === "testapp" &&
+                telemetry.data.baseData.target === "localhost|testapp" &&
                 telemetry.data.baseData.type === "mongodb";
         }
     ),
@@ -87,7 +87,7 @@ module.exports = {
             return telemetry.data.baseData.name === "mongodb.find" &&
                 telemetry.data.baseData.success === true &&
                 telemetry.data.baseData.data === "{\"testrecord\":\"?\"}" &&
-                telemetry.data.baseData.target === "testapp" &&
+                telemetry.data.baseData.target === "localhost|testapp" &&
                 telemetry.data.baseData.type === "mongodb";
         }
     ),
@@ -96,7 +96,7 @@ module.exports = {
         (telemetry) => {
             return telemetry.data.baseData.name === "mongodb.update" &&
                 telemetry.data.baseData.success === true &&
-                telemetry.data.baseData.target === "testapp" &&
+                telemetry.data.baseData.target === "localhost|testapp" &&
                 telemetry.data.baseData.type === "mongodb";
         }
     ),
@@ -105,7 +105,7 @@ module.exports = {
         (telemetry) => {
             return telemetry.data.baseData.name === "mongodb.createIndexes" &&
                 telemetry.data.baseData.data === "{\"createIndexes\":\"?\",\"indexes\":\"?\"}" &&
-                telemetry.data.baseData.target === "testapp" &&
+                telemetry.data.baseData.target === "localhost|testapp" &&
                 telemetry.data.baseData.type === "mongodb";
         }
     ),
