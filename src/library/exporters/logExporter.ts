@@ -11,6 +11,7 @@ import { IPersistentStorage, ISender } from "../../declarations/types";
 import { DEFAULT_EXPORTER_CONFIG, IAzureExporterInternalConfig } from "../../declarations/config";
 import { HttpSender } from "./shared/httpSender";
 import { FileSystemPersist } from "./shared/persist";
+import { Statsbeat } from "../../autoCollection/metrics/statsbeat/statsbeat";
 
 
 export class LogExporter {
@@ -19,13 +20,14 @@ export class LogExporter {
     private readonly _persister: IPersistentStorage;
     private _numConsecutiveRedirects: number;
     private _retryTimer: NodeJS.Timer | null;
+    private _statsbeatMetrics: Statsbeat;
 
     constructor(config: Config) {
         const ingestionEndpoint = config.endpointUrl.replace("/v2.1/track", "");
         const connectionString = `InstrumentationKey=${config.instrumentationKey};IngestionEndpoint=${ingestionEndpoint}`;
         this._numConsecutiveRedirects = 0;
         this._options = {
-            ...DEFAULT_EXPORTER_CONFIG,
+            ...DEFAULT_EXPORTER_CONFIG
         };
         this._options.aadTokenCredential = config.aadTokenCredential;
 
@@ -45,6 +47,8 @@ export class LogExporter {
             throw new Error(message);
         }
 
+        this._statsbeatMetrics = new Statsbeat(config);
+
         this._sender = new HttpSender(this._options);
         this._persister = new FileSystemPersist({ instrumentationKey: this._options.instrumentationKey });
         this._retryTimer = null;
@@ -62,7 +66,10 @@ export class LogExporter {
     protected async _exportEnvelopes(envelopes: Envelope[]): Promise<ExportResult> {
         Logger.getInstance().info(`Exporting ${envelopes.length} envelope(s)`);
         try {
+            const startTime = new Date().getTime();
             const { result, statusCode } = await this._sender.send(envelopes);
+            const endTime = new Date().getTime();
+            const duration = endTime - startTime;
             this._numConsecutiveRedirects = 0;
             if (statusCode === 200) {
                 // Success -- @todo: start retry timer
@@ -73,9 +80,13 @@ export class LogExporter {
                     }, this._options.batchSendRetryIntervalMs);
                     this._retryTimer.unref();
                 }
+                this._statsbeatMetrics?.countSuccess(duration);
                 return { code: ExportResultCode.SUCCESS };
             } else if (statusCode && isRetriable(statusCode)) {
                 // Failed -- persist failed data
+                if (statusCode === 429 || statusCode === 439) {
+                    this._statsbeatMetrics?.countThrottle(statusCode);
+                }
                 if (result) {
                     Logger.getInstance().info(result);
                     const breezeResponse = JSON.parse(result) as IBreezeResponse;
@@ -86,19 +97,25 @@ export class LogExporter {
                         }
                     });
                     if (filteredEnvelopes.length > 0) {
+                        this._statsbeatMetrics?.countRetry(statusCode);
                         // calls resultCallback(ExportResult) based on result of persister.push
                         return await this._persist(filteredEnvelopes);
                     }
                     // Failed -- not retriable
+                    this._statsbeatMetrics?.countFailure(duration, statusCode);
                     return {
-                        code: ExportResultCode.FAILED,
+                        code: ExportResultCode.FAILED
                     };
                 } else {
                     // calls resultCallback(ExportResult) based on result of persister.push
+                    this._statsbeatMetrics?.countRetry(statusCode);
                     return await this._persist(envelopes);
                 }
             } else {
                 // Failed -- not retriable
+                if (statusCode) {
+                    this._statsbeatMetrics.countFailure(duration, statusCode);
+                }
                 return {
                     code: ExportResultCode.FAILED,
                 };
@@ -124,19 +141,25 @@ export class LogExporter {
                         }
                     }
                 } else {
-                    return { code: ExportResultCode.FAILED, error: new Error("Circular redirect") };
+                    let redirectError = new Error("Circular redirect");
+                    this._statsbeatMetrics?.countException(redirectError);
+                    return { code: ExportResultCode.FAILED, error: redirectError };
                 }
             } else if (restError.statusCode && isRetriable(restError.statusCode)) {
+                this._statsbeatMetrics?.countRetry(restError.statusCode);
                 return await this._persist(envelopes);
             }
             if (this._isNetworkError(restError)) {
+                if (restError.statusCode) {
+                    this._statsbeatMetrics?.countRetry(restError.statusCode);
+                }
                 Logger.getInstance().error(
                     "Retrying due to transient client side error. Error message:",
                     restError.message
                 );
                 return await this._persist(envelopes);
             }
-
+            this._statsbeatMetrics?.countException(restError);
             Logger.getInstance().error(
                 "Envelopes could not be exported and are not retriable. Error message:",
                 restError.message
