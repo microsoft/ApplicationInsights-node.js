@@ -2,9 +2,9 @@ var testconfig = require("./config");
 var appInsights = null;
 if (testconfig.AppInsightsEnabled) {
 
-    const { Client, Config } = require("applicationinsights");
+    const { ApplicationInsightsClient, ApplicationInsightsConfig } = require("applicationinsights");
 
-    let config = new Config();
+    let config = new ApplicationInsightsConfig();
     config.connectionString = `InstrumentationKey=${testconfig.InstrumentationKey};IngestionEndpoint=${testconfig.EndpointBaseAddress}`;
     config.samplingRate = parseFloat(testconfig.SampleRate);
     config.instrumentations["http"].enabled = true;
@@ -19,7 +19,7 @@ if (testconfig.AppInsightsEnabled) {
     config.logInstrumentations.winston.enabled = true;
     config.enableAutoCollectExceptions = true;
 
-    appInsights = new Client(config);
+    appInsights = new ApplicationInsightsClient(config);
     appInsights.start();
 }
 
