@@ -54,6 +54,7 @@ export class Statsbeat {
     private _meter: Meter;
     private _meterProvider: MeterProvider;
     // TODO: Transfer this to be a _AzureMonitorStatsbeatExporter
+    // To do this you'll need to update the version of the AzureMonitorExporter in the package.json
     private _azureExporter: AzureMonitorMetricExporter;
     private _metricReader: PeriodicExportingMetricReader;
 
