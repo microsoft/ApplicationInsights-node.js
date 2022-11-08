@@ -1,24 +1,21 @@
 import { IncomingMessage } from "http";
 import { DiagLogLevel, SpanContext } from "@opentelemetry/api";
 
-import { Logger } from "../library/logging";
-import { QuickPulseStateManager } from "../library/quickPulse";
-import { ICorrelationContext } from "../declarations/interfaces";
+import { Logger } from "../shared/logging";
+import { ICorrelationContext, Context, HttpRequest } from "./types";
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
-import * as azureFunctionsTypes from "../declarations/functions";
-
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
-export { Contracts, TelemetryClient, azureFunctionsTypes };
+export { Contracts, HttpRequest, TelemetryClient };
 
 /**
  * The default client, initialized when setup was called. To initialize a different client
  * with its own configuration, use `new TelemetryClient(instrumentationKey?)`.
  */
 export let defaultClient: TelemetryClient;
-export let liveMetricsClient: QuickPulseStateManager;
+// export let liveMetricsClient: QuickPulseStateManager;
 
 /**
  * Initializes the default client. Should be called after setting
@@ -33,9 +30,6 @@ export let liveMetricsClient: QuickPulseStateManager;
 export function setup(setupString?: string) {
     if (!defaultClient) {
         defaultClient = new TelemetryClient(setupString);
-        if (defaultClient.config.enableSendLiveMetrics) {
-            Configuration.setSendLiveMetrics(defaultClient.config.enableSendLiveMetrics);
-        }
     } else {
         Logger.getInstance().info("The default client is already setup");
     }
@@ -75,23 +69,23 @@ export function getCorrelationContext(): ICorrelationContext {
  */
 export function startOperation(context: SpanContext, name: string): ICorrelationContext | null;
 export function startOperation(
-    context: azureFunctionsTypes.Context,
-    request: azureFunctionsTypes.HttpRequest
+    context: Context,
+    request: HttpRequest
 ): ICorrelationContext | null;
 export function startOperation(
-    context: azureFunctionsTypes.Context,
+    context: Context,
     name: string
 ): ICorrelationContext | null;
 export function startOperation(
-    context: IncomingMessage | azureFunctionsTypes.HttpRequest,
+    context: IncomingMessage | HttpRequest,
     request?: never
 ): ICorrelationContext | null;
 export function startOperation(
     context:
-        | azureFunctionsTypes.Context
-        | (IncomingMessage | azureFunctionsTypes.HttpRequest)
+        | Context
+        | (IncomingMessage | HttpRequest)
         | SpanContext,
-    request?: azureFunctionsTypes.HttpRequest | string
+    request?: HttpRequest | string
 ): ICorrelationContext | null {
     return null;
 }
@@ -123,9 +117,6 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectConsole(value: boolean, collectConsoleLog: boolean = false) {
-        if (defaultClient) {
-            defaultClient.client.getLogHandler().setAutoCollectConsole(value, collectConsoleLog);
-        }
         return Configuration;
     }
 
@@ -135,9 +126,6 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectExceptions(value: boolean) {
-        if (defaultClient) {
-            defaultClient.client.getLogHandler().setAutoCollectExceptions(value);
-        }
         return Configuration;
     }
 
@@ -147,10 +135,7 @@ export class Configuration {
      * @param collectExtendedMetrics if true, extended metrics counters will be collected every minute and sent to Application Insights
      * @returns {Configuration} this class
      */
-    public static setAutoCollectPerformance(
-        value: boolean,
-        collectExtendedMetrics: any
-    ) {
+    public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: any) {
         return Configuration;
     }
 

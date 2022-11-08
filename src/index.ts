@@ -1,4 +1,5 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-export { Client, Config } from "./library";
+export { ApplicationInsightsClient } from "./applicationInsightsClient";
+export { ApplicationInsightsConfig } from "./shared";

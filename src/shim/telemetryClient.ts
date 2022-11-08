@@ -1,23 +1,21 @@
 import * as Contracts from "../declarations/contracts";
 import { TelemetryItem as Envelope } from "../declarations/generated";
 import { Context } from "./context";
-import { Client } from "../library";
-import { Config } from "../library/configuration";
+import { ApplicationInsightsClient } from "../applicationInsightsClient";
+import { ApplicationInsightsConfig } from "../shared";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 import { Attributes, context, SpanKind, SpanOptions, SpanStatusCode } from "@opentelemetry/api";
-import { Logger } from "../library/logging";
-import { Util } from "../library/util";
-
+import { Logger } from "../shared/logging";
+import { Util } from "../shared/util";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
  * and manually trigger immediate sending (flushing)
  */
 export class TelemetryClient {
-
-    public client: Client;
+    public client: ApplicationInsightsClient;
     public context: Context;
-    public config: Config;
+    public config: ApplicationInsightsConfig;
     public commonProperties: { [key: string]: string }; // TODO: Add setter so Resources are updated
 
     /**
@@ -27,8 +25,12 @@ export class TelemetryClient {
     constructor(setupString?: string) {
         this.commonProperties = {};
         this.context = new Context();
-        var config = new Config(setupString);
-        this.client = new Client(config);
+        var config = new ApplicationInsightsConfig();
+        if (setupString) {
+            // TODO: Add Support for iKey as well
+            config.connectionString = setupString;
+        }
+        this.client = new ApplicationInsightsClient(config);
         this.config = this.client.getConfig();
     }
 
@@ -107,9 +109,12 @@ export class TelemetryClient {
         let options: SpanOptions = {
             kind: SpanKind.SERVER,
             attributes: attributes,
-            startTime: startTime
+            startTime: startTime,
         };
-        let span: any = this.client.getTraceHandler().getTracer().startSpan(telemetry.name, options, ctx);
+        let span: any = this.client
+            .getTraceHandler()
+            .getTracer()
+            .startSpan(telemetry.name, options, ctx);
         span.setStatus({
             code: telemetry.success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
         });
@@ -158,9 +163,12 @@ export class TelemetryClient {
         let options: SpanOptions = {
             kind: SpanKind.CLIENT,
             attributes: attributes,
-            startTime: startTime
+            startTime: startTime,
         };
-        let span: any = this.client.getTraceHandler().getTracer().startSpan(telemetry.name, options, ctx);
+        let span: any = this.client
+            .getTraceHandler()
+            .getTracer()
+            .startSpan(telemetry.name, options, ctx);
         span.setStatus({
             code: telemetry.success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
         });
