@@ -1,7 +1,7 @@
 import { IncomingMessage } from "http";
 import { DiagLogLevel, SpanContext } from "@opentelemetry/api";
 
-import { Logger } from "../library/logging";
+import { Logger } from "../shared/logging";
 import { ICorrelationContext, Context, HttpRequest } from "./types";
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
