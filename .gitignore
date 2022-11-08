@@ -8,12 +8,12 @@ obj/
 
 # Ignore Node files
 node_modules/**
-test/BackCompatibility/OldTSC/node_modules/**
-test/BackCompatibility/Node10Types/node_modules/**
-test/FunctionalTests/Runner/node_modules/**
-test/FunctionalTests/TestApp/node_modules/**
-test/FunctionalTests/Runner/package-lock.json
-test/FunctionalTests/TestApp/package-lock.json
+test/backCompatibility/oldTSC/node_modules/**
+test/backCompatibility/node10Types/node_modules/**
+test/functionalTests/runner/node_modules/**
+test/functionalTests/testApp/node_modules/**
+test/functionalTests/runner/package-lock.json
+test/functionalTests/testApp/package-lock.json
 
 # Ignore Visual Studio files
 *.suo

@@ -2,9 +2,10 @@ var testconfig = require("./config");
 var appInsights = null;
 if (testconfig.AppInsightsEnabled) {
 
-    const { Client, Config } = require("applicationinsights");
+    const { ApplicationInsightsClient, ApplicationInsightsConfig } = require("applicationinsights");
 
-    let config = new Config(`InstrumentationKey=${testconfig.InstrumentationKey};IngestionEndpoint=${testconfig.EndpointBaseAddress}`);
+    let config = new ApplicationInsightsConfig();
+    config.connectionString = `InstrumentationKey=${testconfig.InstrumentationKey};IngestionEndpoint=${testconfig.EndpointBaseAddress}`;
     config.samplingRate = parseFloat(testconfig.SampleRate);
     config.instrumentations["http"].enabled = true;
     config.instrumentations["azureSdk"].enabled = true;
@@ -13,11 +14,12 @@ if (testconfig.AppInsightsEnabled) {
     config.instrumentations["postgreSql"].enabled = true;
     config.instrumentations["redis"].enabled = true;
     config.instrumentations["redis4"].enabled = true;
+    config.logInstrumentations.console.enabled = true;
+    config.logInstrumentations.bunyan.enabled = true;
+    config.logInstrumentations.winston.enabled = true;
     config.enableAutoCollectExceptions = true;
-    config.enableAutoCollectConsole = true;
-    config.enableAutoCollectExternalLoggers = true;
 
-    appInsights = new Client(config);
+    appInsights = new ApplicationInsightsClient(config);
     appInsights.start();
 }
 
