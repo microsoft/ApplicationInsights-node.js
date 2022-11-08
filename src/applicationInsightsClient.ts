@@ -1,9 +1,11 @@
+import { Resource } from "@opentelemetry/resources";
 import { ApplicationInsightsConfig } from "./shared/configuration";
 import { Statsbeat } from "./metrics/statsbeat";
 import { Logger } from "./shared/logging";
 import { LogHandler } from "./logs";
 import { MetricHandler } from "./metrics";
 import { TraceHandler } from "./traces";
+import { ResourceManager } from "./shared";
 
 export class ApplicationInsightsClient {
     private _config: ApplicationInsightsConfig;
@@ -56,6 +58,22 @@ export class ApplicationInsightsClient {
 
     public getStatsbeat(): Statsbeat {
         return this._statsbeat;
+    }
+
+    public getTraceResource(): Resource {
+        return ResourceManager.getInstance().getTraceResource();
+    }
+
+    public getMetricResource(): Resource {
+        return ResourceManager.getInstance().getMetricResource();
+    }
+
+    public getLogResource(): Resource {
+        return ResourceManager.getInstance().getLogResource();
+    }
+
+    public getLogger(): Logger {
+        return Logger.getInstance();
     }
 
     /**

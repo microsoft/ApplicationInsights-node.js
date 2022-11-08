@@ -1,5 +1,4 @@
 ﻿import * as os from "os";
-
 import { Resource } from "@opentelemetry/resources";
 import {
     SemanticResourceAttributes,

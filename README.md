@@ -74,11 +74,11 @@ npm install @opentelemetry/instrumentation-http
 
 
 ```typescript
-const { Client, Config } = require("applicationinsights");
+const { ApplicationInsightsClient, ApplicationInsightsConfig } = require("applicationinsights");
 
-const config = new Config();
+const config = new ApplicationInsightsConfig();
 config.connectionString = "<YOUR_CONNECTION_STRING>";
-const appInsights = new Client(config);
+const appInsights = new ApplicationInsightsClient(config);
 appInsights.start();
 ```
 
@@ -94,7 +94,7 @@ appInsights.start();
 The appInsights Config object provides a number of options to setup SDK behavior.
 
 ```typescript
-const config = new Config();
+const config = new ApplicationInsightsConfig();
 config.connectionString = "<YOUR_CONNECTION_STRING>";
 config.samplingRatio = 1;
 config.enableAutoCollectExtendedMetrics = false;
@@ -106,7 +106,7 @@ config.instrumentations =  {
   "postgreSql": { enabled: false },
   "redis": { enabled: false }
 };
-const appInsights = new Client(config);
+const appInsights = new ApplicationInsightsClient(config);
 appInsights.start();
 
 ```
@@ -127,8 +127,6 @@ appInsights.start();
 | instrumentations| Allow configuration of OpenTelemetry Instrumentations. |  {"http": { enabled: true },"azureSdk": { enabled: false },"mongoDb": { enabled: false },"mySql": { enabled: false },"postgreSql": { enabled: false },"redis": { enabled: false }}|
 | logInstrumentations| Allow configuration of Log Instrumentations. |  {"console": { enabled: false },"bunyan": { enabled: false },"winston": { enabled: false }}|
 | extendedMetrics       | Enable/Disable specific extended Metrics(gc, heap and loop).  |{"gc":false,"heap":false,"loop":false}|
-
-[Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts
 
 All these properties except aadTokenCredential could be configured using configuration file `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. These configuration values will be applied to all TelemetryClients created in the SDK. 
 
@@ -193,13 +191,13 @@ You might set the Cloud Role Name and the Cloud Role Instance via [OpenTelemetry
 
 
 ```typescript
-const { Client, Config, ResourceManager } = require("applicationinsights");
+const { ApplicationInsightsClient, ApplicationInsightsConfig } = require("applicationinsights");
 const { SemanticResourceAttributes } = require("@opentelemetry/semantic-conventions");
 
-const appInsights = new Client(new Config());
-const traceResource = ResourceManager.getInstance().getTraceResource();
-const metricResource = ResourceManager.getInstance().getMetricResource();
-const logResource = ResourceManager.getInstance().getLogResource();
+const appInsights = new ApplicationInsightsClient(new ApplicationInsightsConfig());
+const traceResource = appInsights.getTraceResource();
+const metricResource = appInsights.getMetricResource();
+const logResource = appInsights.getLogResource();
 
 // ----------------------------------------
 // Setting role name and role instance
@@ -226,10 +224,10 @@ For information on standard attributes for resources, see [Resource Semantic Con
 You may want to enable sampling to reduce your data ingestion volume which reduces your cost. Azure Monitor provides a custom *fixed-rate* sampler that populates events with a "sampling ratio", which Application Insights converts to "ItemCount". This ensures accurate experiences and event counts. The sampler is designed to preserve your traces across services. The sampler expects a sample rate of between 0 and 1 inclusive. A rate of 0.1 means approximately 10% of your telemetry will be sent. 
 
 ```typescript
-const config = new Config();
+const config = new ApplicationInsightsConfig();
 config.connectionString = "<YOUR_CONNECTION_STRING>";
 config.samplingRate = 0.1;
-const appInsights = new Client(config);
+const appInsights = new ApplicationInsightsClient(config);
 appInsights.start();
 ```
 
@@ -262,11 +260,11 @@ Any [attributes](#add-span-attributes) you add to spans are exported as custom p
 Use a custom processor:
 
 ```typescript
-const { Client, Config } = require("applicationinsights");
+const { ApplicationInsightsClient, ApplicationInsightsConfig } = require("applicationinsights");
 const { ReadableSpan, Span, SpanProcessor } = require("@opentelemetry/sdk-trace-base");
 const { SemanticAttributes } = require("@opentelemetry/semantic-conventions");
 
-const appInsights = new Client(new Config());
+const appInsights = new ApplicationInsightsClient(new ApplicationInsightsConfig());
 
 class SpanEnrichingProcessor implements SpanProcessor{
     forceFlush(): Promise<void>{
@@ -297,7 +295,7 @@ You might use the following ways to filter out telemetry before it leaves your a
     The following example shows how to exclude a certain URL from being tracked by using the [HTTP/HTTPS instrumentation library](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-http):
     
     ```typescript
-    const { Client, Config } = require("applicationinsights");
+    const { ApplicationInsightsClient, ApplicationInsightsConfig } = require("applicationinsights");
     const { IncomingMessage } = require("http");
     const { RequestOptions } = require("https");
     const { HttpInstrumentationConfig }= require("@opentelemetry/instrumentation-http");
@@ -319,9 +317,9 @@ You might use the following ways to filter out telemetry before it leaves your a
             return false;
         }
     };
-    const config = new Config();
+    const config = new ApplicationInsightsConfig();
     config.instrumentations.http = httpInstrumentationConfig;
-    const appInsights = new Client(config);
+    const appInsights = new ApplicationInsightsClient(config);
     appInsights.start();
     
     ```
@@ -373,9 +371,9 @@ The [OpenTelemetry Specification](https://github.com/open-telemetry/opentelemetr
 describes the instruments and provides examples of when you might use each one.
 
 ```typescript
-    const { Client, Config } = require("applicationinsights");
+    const { ApplicationInsightsClient, ApplicationInsightsConfig } = require("applicationinsights");
 
-    const appInsights = new Client(new Config());
+    const appInsights = new ApplicationInsightsClient(new ApplicationInsightsConfig());
     
     const customMetricsHandler = appInsights.getMetricHandler().getCustomMetricsHandler();
     const meter =  customMetricsHandler.getMeter();\
@@ -409,9 +407,9 @@ For instance, exceptions caught by your code are *not* ordinarily not reported, 
 and thus draw attention to them in relevant experiences including the failures blade and end-to-end transaction view.
 
 ```typescript
-const { Client, Config } = require("applicationinsights");
+const { ApplicationInsightsClient, ApplicationInsightsConfig } = require("applicationinsights");
 
-const appInsights = new Client(new Config());
+const appInsights = new ApplicationInsightsClient(new ApplicationInsightsConfig());
 const tracer = appInsights.getTraceHandler().getTracer();
 let span = tracer.startSpan("hello");
 try{
@@ -433,10 +431,12 @@ This functionality can be helpful for spotting and diagnosing issues with Applic
 By default, Application Insights Node.js SDK logs at warning level to console, following code demonstrate how to enable debug logging as well and generate telemetry for internal logs:
 
 ```typescript
-import { Logger } from "applicationinsights";
+import { ApplicationInsightsClient, ApplicationInsightsConfig } from "applicationinsights";
 import { DiagLogLevel } from "@opentelemetry/api";
 
-Logger.getInstance().updateLogLevel(DiagLogLevel.DEBUG);
+const appInsights = new ApplicationInsightsClient(new ApplicationInsightsConfig());
+const logger = appInsights.getLogger();
+logger.updateLogLevel(DiagLogLevel.DEBUG);
 ```
 
 
