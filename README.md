@@ -1,30 +1,25 @@
-# Azure Monitor Application Insights for Node.js
+# Azure Monitor Application Insights Distro for Node.js (Preview)
 
 
 
-[Azure Monitor Application Insights][] monitors your backend services and components after
-you deploy them to help you [discover and rapidly diagnose performance and other
-issues][]. Add this SDK to your Node.js services to include deep info about Node.js
+Azure Monitor Application Insights Distro SDK monitors your backend services and components after
+you deploy them to help you discover and rapidly diagnose performance and other
+issues. Add this SDK to your Node.js services to include deep info about Node.js
 processes and their external dependencies such as database and cache services.
 You can use this SDK for your Node.js services hosted anywhere: your datacenter,
-Azure VMs and Web Apps, and even other public clouds.
+Azure VMs and Web Apps, and even other public clouds. This soulution is based on OpenTelemetry, to learn more about OpenTelemetry concepts, see the [OpenTelemetry overview](opentelemetry-overview.md) or [OpenTelemetry FAQ](/azure/azure-monitor/faq#opentelemetry).
+
+> [!IMPORTANT]
+> The Azure Monitor OpenTelemetry-based Offerings for Node.js applications are currently in preview.
+> See the [Supplemental Terms of Use for Microsoft Azure Previews](https://azure.microsoft.com/support/legal/preview-supplemental-terms/) for legal terms that apply to Azure features that are in beta, preview, or otherwise not yet released into general availability.
 
 [Azure Application Insights]: https://azure.microsoft.com/documentation/articles/app-insights-overview/
 [discover and rapidly diagnose performance and other issues]: https://docs.microsoft.com/azure/application-insights/app-insights-detect-triage-diagnose
 
-This library tracks the following out-of-the-box:
-- Incoming and outgoing HTTP requests
-- Important system metrics such as CPU usage
-- Unhandled exceptions
-- Events from many popular third-party libraries ([see Automatic third-party instrumentation](#automatic-third-party-instrumentation))
 
-You can manually track more aspects of your app and system using the API described in the
-[Track custom telemetry](#track-custom-telemetry) section.
+## Limitations of current preview release
 
-
-## Limitations of the preview release
-
-Consider whether this preview is right for you. It *enables distributed tracing, metrics* and _excludes_:
+Consider whether this preview is right for you. It *enables distributed tracing, metrics, logs* and _excludes_:
 
  - Live Metrics
  - Autopopulation of Cloud Role Name and Cloud Role Instance in Azure environments
@@ -70,7 +65,7 @@ npm install @opentelemetry/instrumentation-http
 
 ### Enable Azure Monitor Application Insights
 
-> *Important:* `applicationinsights` must be setup *and* started *before* you import anything else. There may be resulting telemetry loss if other libraries are imported first.
+> *Important:* `ApplicationInsightsClient` must be setup *and* started *before* you import anything else. There may be resulting telemetry loss if other libraries are imported first.
 
 
 ```typescript
@@ -83,7 +78,7 @@ appInsights.start();
 ```
 
 * If the Connection String is set in the environment variable
-  APPLICATIONINSIGHTS\_CONNECTION\_STRING, `Config` constructor can be called with no
+  APPLICATIONINSIGHTS\_CONNECTION\_STRING, `ApplicationInsightsConfig` constructor can be called with no
   arguments. This makes it easy to use different connection strings for different
   environments.
 
@@ -91,7 +86,7 @@ appInsights.start();
 
 ## Configuration
 
-The appInsights Config object provides a number of options to setup SDK behavior.
+The ApplicationInsightsConfig object provides a number of options to setup SDK behavior.
 
 ```typescript
 const config = new ApplicationInsightsConfig();
@@ -128,7 +123,7 @@ appInsights.start();
 | logInstrumentations| Allow configuration of Log Instrumentations. |  {"console": { enabled: false },"bunyan": { enabled: false },"winston": { enabled: false }}|
 | extendedMetrics       | Enable/Disable specific extended Metrics(gc, heap and loop).  |{"gc":false,"heap":false,"loop":false}|
 
-All these properties except aadTokenCredential could be configured using configuration file `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. These configuration values will be applied to all TelemetryClients created in the SDK. 
+All these properties except aadTokenCredential could be configured using configuration file `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. These configuration values will be applied to all ApplicationInsightsClients created in the SDK. 
 
 
 ```json
@@ -164,26 +159,36 @@ process.env.APPLICATIONINSIGHTS_CONFIGURATION_FILE = "C:/applicationinsights/con
 
 ## Instrumentation libraries
 
-The following libraries are validated to work with the preview release.
+The following OpenTelemetry Instrumentation libraries are included as part of Azure Monitor Application Insights Distro.
 
 > [!WARNING]
 > Instrumentation libraries are based on experimental OpenTelemetry specifications. Microsoft's *preview* support commitment is to ensure that the following libraries emit data to Azure Monitor Application Insights, but it's possible that breaking changes or experimental mapping will block some data elements.
 
 ### Distributed Tracing
-- Requests/Dependencies
-  - [http/https](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-http/README.md) version:
-  [0.33.0](https://www.npmjs.com/package/@opentelemetry/instrumentation-http/v/0.33.0)
-  
-- Dependencies
-  - [mysql](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mysql) version:
-  [0.25.0](https://www.npmjs.com/package/@opentelemetry/instrumentation-mysql/v/0.25.0)
+
+  - [HTTP/HTTPS](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-http)
+  - [MongoDB](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mongodb)
+  - [MySQL](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mysql)
+  - [Postgres](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-pg)
+  - [Redis](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-redis)
+  - [Redis-4](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-redis-4)
+  - [Azure SDK](https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/instrumentation/opentelemetry-instrumentation-azure-sdk)
 
 ### Metrics
-- [http/https](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-http/README.md) version:
-  [0.33.0](https://www.npmjs.com/package/@opentelemetry/instrumentation-http/v/0.33.0)
+- [HTTP/HTTPS](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-http) 
 
+Other OpenTelemetry Instrumentations are available [here](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node) and could be added using TraceHandler in ApplicationInsightsClient.
 
+ ```typescript
+    const { ApplicationInsightsClient, ApplicationInsightsConfig } = require("applicationinsights");
+    const { ExpressInstrumentation } = require('@opentelemetry/instrumentation-express');
 
+    const appInsights = new ApplicationInsightsClient(new ApplicationInsightsConfig());
+    const traceHandler = appInsights.getTraceHandler();
+    traceHandler.addInstrumentation(new ExpressInstrumentation());
+    appInsights.start();
+    
+```
 
 ## Set the Cloud Role Name and the Cloud Role Instance
 
@@ -424,11 +429,7 @@ catch(error){
 
 ### Self-diagnostics
 
-"Self-diagnostics" refers to internal logging from Application Insights Node.js SDK.
-
-This functionality can be helpful for spotting and diagnosing issues with Application Insights itself.
-
-By default, Application Insights Node.js SDK logs at warning level to console, following code demonstrate how to enable debug logging as well and generate telemetry for internal logs:
+Azure Monitor Application Insights Distro uses the OpenTelemetry API Logger for internal logs. To enable it, use the following code:
 
 ```typescript
 import { ApplicationInsightsClient, ApplicationInsightsConfig } from "applicationinsights";
@@ -454,11 +455,12 @@ process.env.APPLICATIONINSIGHTS_LOGDIR = "C:/applicationinsights/logs";
 ```
 
 ## Support
-To get support:
 
-TODO We should mention 2 kinds of suppoprt here, our code and OTel code
+For help and questions about using this project, please create a Support request issue on
+https://github.com/microsoft/ApplicationInsights-node.js/issues.
 
-For OpenTelemetry issues, contact the [OpenTelemetry JavaScript community](https://github.com/open-telemetry/opentelemetry-js) directly.
+For OpenTelemetry issues, contact the [OpenTelemetry JavaScript community](https://github.com/open-telemetry/opentelemetry-js) directly. [Support Policy](SUPPORT)
+
 
 
 ## Contributing
