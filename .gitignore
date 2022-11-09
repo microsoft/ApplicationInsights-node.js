@@ -8,12 +8,12 @@ obj/
 
 # Ignore Node files
 node_modules/**
-Tests/BackCompatibility/OldTSC/node_modules/**
-Tests/BackCompatibility/Node10Types/node_modules/**
-Tests/FunctionalTests/Runner/node_modules/**
-Tests/FunctionalTests/TestApp/node_modules/**
-Tests/FunctionalTests/Runner/package-lock.json
-Tests/FunctionalTests/TestApp/package-lock.json
+test/backCompatibility/oldTSC/node_modules/**
+test/backCompatibility/node10Types/node_modules/**
+test/functionalTests/runner/node_modules/**
+test/functionalTests/testApp/node_modules/**
+test/functionalTests/runner/package-lock.json
+test/functionalTests/testApp/package-lock.json
 
 # Ignore Visual Studio files
 *.suo
@@ -31,3 +31,8 @@ Tests/FunctionalTests/TestApp/package-lock.json
 
 # Ignore log files
 npm-debug.log
+undefined/temp/appInsights-node/applicationinsights.log
+
+
+.nyc_output/*
+test/certs/server-key.pem

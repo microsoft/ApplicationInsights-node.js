@@ -7,9 +7,12 @@ obj
 *.sln
 *.njsproj
 .vscode/
+.github
+
+.nyc_output
 
 # Ignore test files
-Tests
+test
 
 # Don't publish source files that aren't needed in package
 *.ts
@@ -18,7 +21,8 @@ Tests
 .travis.yml
 .ntvs_analysis.dat
 
-/Declarations
+
+/declarations
 
 Schema
 

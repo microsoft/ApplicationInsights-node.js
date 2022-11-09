@@ -3,14 +3,14 @@
   "author": "Microsoft Application Insights Team",
   "license": "MIT",
   "bugs": "https://github.com/microsoft/ApplicationInsights-node.js/issues",
-  "version": "2.1.2-beta.0",
+  "version": "3.0.0-beta.0",
   "description": "Microsoft Application Insights module for Node.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/microsoft/ApplicationInsights-node.js"
   },
-  "main": "./out/applicationinsights.js",
-  "types": "./out/applicationinsights.d.ts",
+  "main": "./out/src/index.js",
+  "types": "./out/src/index.d.ts",
   "keywords": [
     "exception monitoring",
     "request monitoring",
@@ -26,42 +26,75 @@
   ],
   "scripts": {
     "clean": "rm -rf ./out && rm -rf ./node_modules",
-    "build": "npm run build:deps && npm run build:compile",
+    "build": "npm run build:compile",
     "build:deps": "npm update --dev",
     "build:compile": "tsc --project ./tsconfig.json",
+    "format": "prettier --write --config .prettierrc.json --ignore-path .prettierignore \"src/**/*.ts\" \"test/**/*.ts\"",
     "prepare": "npm run build:compile",
     "prepublishOnly": "npm run build",
+    "lint": "eslint ./ --fix",
     "pretest": "npm run build",
-    "test": "npm run test:ts && npm run test:js",
-    "test:debug": "mocha ./out/Tests --inspect-brk --recursive --no-exit",
-    "test:ts": "mocha ./out/Tests --recursive --exit",
-    "test:js": "mocha ./Tests/js --recursive --exit",
-    "functionaltest": "npm run build && npm pack && node --use_strict ./Tests/FunctionalTests/RunFunctionalTests.js",
-    "backcompattest": "npm run build && npm pack && node --use_strict ./Tests/BackCompatibility/RunBackCompatTests.js"
+    "test": "nyc mocha ./out/test --recursive",
+    "test:debug": "nyc mocha ./out/test --inspect-brk --recursive",
+    "test:unit": "nyc mocha ./out/test/unitTests --recursive",
+    "test:e2e": "nyc mocha ./out/test/endToEnd --recursive",
+    "functionaltest": "npm run build && npm pack && node --use_strict ./test/functionalTests/runFunctionalTests.js",
+    "backcompattest": "npm run build && npm pack && node --use_strict ./test/backCompatibility/runBackCompatTests.js"
   },
   "engines": {
     "node": ">=8.0.0"
   },
   "devDependencies": {
-    "@types/cls-hooked": "^4.3.3",
     "@types/mocha": "^7.0.2",
     "@types/node": "^8.0.0",
-    "@types/sinon": "2.1.2",
-    "applicationinsights-native-metrics": "0.0.6",
-    "mocha": "^7.1.1",
-    "nock": "^11.9.1",
-    "node-mocks-http": "1.2.3",
-    "sinon": "1.17.6",
+    "@types/semver": "7.3.9",
+    "@types/sinon": "^10.0.12",
+    "@typescript-eslint/eslint-plugin": "^5.37.0",
+    "@typescript-eslint/parser": "^5.37.0",
+    "applicationinsights-native-metrics": "0.0.8",
+    "eslint": "^7.29.0",
+    "eslint-config-standard": "^16.0.3",
+    "eslint-plugin-import": "^2.23.4",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^5.1.0",
+    "eslint-plugin-security": "^1.4.0",
+    "mocha": "^10.0.0",
+    "nock": "^12.0.3",
+    "nyc": "^15.0.0",
+    "prettier": "^2.5.1",
+    "sinon": "^9.0.2",
     "typescript": "4.1.2"
   },
   "dependencies": {
-    "@azure/core-http": "^2.0.0",
-    "@opentelemetry/api": "^1.0.0",
-    "@opentelemetry/semantic-conventions": "^0.23.0",
-    "@opentelemetry/tracing": "^0.23.0",
-    "cls-hooked": "^4.2.2",
-    "continuation-local-storage": "^3.2.1",
-    "diagnostic-channel": "1.0.0",
-    "diagnostic-channel-publishers": "1.0.2"
+    "@azure/core-client": "^1.0.0",
+    "@azure/core-http": "^2.2.7",
+    "@azure/core-rest-pipeline": "^1.9.2",
+    "@azure/monitor-opentelemetry-exporter": "^1.0.0-beta.10",
+    "@azure/opentelemetry-instrumentation-azure-sdk": "^1.0.0-beta.1",
+    "@opentelemetry/api": "^1.2.0",
+    "@opentelemetry/api-metrics": "^0.32.0",
+    "@opentelemetry/core": "^1.7.0",
+    "@opentelemetry/instrumentation": "^0.33.0",
+    "@opentelemetry/instrumentation-http": "^0.33.0",
+    "@opentelemetry/instrumentation-mongodb": "^0.32.0",
+    "@opentelemetry/instrumentation-mysql": "^0.31.0",
+    "@opentelemetry/instrumentation-pg": "^0.31.0",
+    "@opentelemetry/instrumentation-redis": "^0.33.0",
+    "@opentelemetry/instrumentation-redis-4": "^0.32.0",
+    "@opentelemetry/sdk-metrics": "^0.33.0",
+    "@opentelemetry/sdk-trace-base": "^1.7.0",
+    "@opentelemetry/sdk-trace-node": "^1.7.0",
+    "@opentelemetry/semantic-conventions": "^1.7.0",
+    "diagnostic-channel": "1.1.0",
+    "diagnostic-channel-publishers": "1.0.4",
+    "semver": "^7.3.5"
+  },
+  "peerDependencies": {
+    "applicationinsights-native-metrics": "*"
+  },
+  "peerDependenciesMeta": {
+    "applicationinsights-native-metrics": {
+      "optional": true
+    }
   }
 }

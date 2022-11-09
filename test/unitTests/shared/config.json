@@ -1,0 +1,46 @@
+{
+    "connectionString": "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/",
+    "samplingRate": 0.3,
+    "enableAutoCollectExceptions": false,
+    "enableAutoCollectPerformance": false,
+    "enableAutoCollectStandardMetrics": false,
+    "enableAutoCollectHeartbeat": false,
+    "disableOfflineStorage": true,
+    "storageDirectory": "testPath",
+    "extendedMetrics": {
+        "heap": true,
+        "gc": true,
+        "loop": true
+    },
+    "instrumentations": {
+        "azureSdk": {
+            "enabled": true
+        },
+        "mongoDb": {
+            "enabled": true
+        },
+        "mySql": {
+            "enabled": true
+        },
+        "postgreSql": {
+            "enabled": true
+        },
+        "redis": {
+            "enabled": true
+        },
+        "redis4": {
+            "enabled": true
+        }
+    },
+    "logInstrumentations": {
+        "console": {
+            "enabled": true
+        },
+        "bunyan": {
+            "enabled": true
+        },
+        "winston": {
+            "enabled": true
+        }
+    }
+}

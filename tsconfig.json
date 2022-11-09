@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "target": "es5",
+        "target": "ES2017",
         "module": "commonjs",
         "moduleResolution": "node",
         "inlineSources": true,
@@ -13,17 +13,12 @@
         ]
     },
     "include": [
-        "Bootstrap/*.ts",
-        "*.ts",
-        "AutoCollection/diagnostic-channel/*.ts",
-        "Tests/**/*.ts"
-    ],
-    "files": [
-        "./node_modules/@types/cls-hooked/index.d.ts"
+        "src/**/*.ts",
+        "test/**/*.ts"
     ],
     "exclude": [
         "node_modules",
-        "Tests/FunctionalTests",
-        "Tests/BackCompatibility"
+        "test/functionalTests",
+        "test/backCompatibility"
     ]
 }
