@@ -47,7 +47,7 @@ export class ApplicationInsightsConfig implements IConfig {
         if (!this.connectionString) {
             // Try to build connection string using iKey environment variables
             // check for both the documented env variable and the azure-prefixed variable
-            let instrumentationKey = this.getInstrunmentationKeyFromEnv();
+            const instrumentationKey = this.getInstrunmentationKeyFromEnv();
             if (instrumentationKey) {
                 this.connectionString = `InstrumentationKey=${instrumentationKey};IngestionEndpoint=${Constants.DEFAULT_BREEZE_ENDPOINT}`;
             }
@@ -73,18 +73,20 @@ export class ApplicationInsightsConfig implements IConfig {
 
     private _loadDefaultValues() {
         this.enableAutoCollectExceptions =
-            this.enableAutoCollectExceptions != undefined ? this.enableAutoCollectExceptions : true;
+            this.enableAutoCollectExceptions !== undefined
+                ? this.enableAutoCollectExceptions
+                : true;
         this.enableAutoCollectHeartbeat =
-            this.enableAutoCollectHeartbeat != undefined ? this.enableAutoCollectHeartbeat : true;
+            this.enableAutoCollectHeartbeat !== undefined ? this.enableAutoCollectHeartbeat : true;
         this.enableAutoCollectPerformance =
-            this.enableAutoCollectPerformance != undefined
+            this.enableAutoCollectPerformance !== undefined
                 ? this.enableAutoCollectPerformance
                 : true;
         this.enableAutoCollectStandardMetrics =
-            this.enableAutoCollectStandardMetrics != undefined
+            this.enableAutoCollectStandardMetrics !== undefined
                 ? this.enableAutoCollectStandardMetrics
                 : true;
-        this.samplingRate = this.samplingRate != undefined ? this.samplingRate : 1;
+        this.samplingRate = this.samplingRate !== undefined ? this.samplingRate : 1;
         this.instrumentations = {
             http: { enabled: true },
             azureSdk: { enabled: false },
@@ -107,81 +109,81 @@ export class ApplicationInsightsConfig implements IConfig {
 
     private _mergeConfig() {
         try {
-            let jsonConfig = JsonConfig.getInstance();
+            const jsonConfig = JsonConfig.getInstance();
             this.connectionString =
-                jsonConfig.connectionString != undefined
+                jsonConfig.connectionString !== undefined
                     ? jsonConfig.connectionString
                     : this.connectionString;
             this.enableAutoCollectExceptions =
-                jsonConfig.enableAutoCollectExceptions != undefined
+                jsonConfig.enableAutoCollectExceptions !== undefined
                     ? jsonConfig.enableAutoCollectExceptions
                     : this.enableAutoCollectExceptions;
             this.enableAutoCollectHeartbeat =
-                jsonConfig.enableAutoCollectHeartbeat != undefined
+                jsonConfig.enableAutoCollectHeartbeat !== undefined
                     ? jsonConfig.enableAutoCollectHeartbeat
                     : this.enableAutoCollectHeartbeat;
             this.enableAutoCollectPerformance =
-                jsonConfig.enableAutoCollectPerformance != undefined
+                jsonConfig.enableAutoCollectPerformance !== undefined
                     ? jsonConfig.enableAutoCollectPerformance
                     : this.enableAutoCollectPerformance;
             this.enableAutoCollectStandardMetrics =
-                jsonConfig.enableAutoCollectStandardMetrics != undefined
+                jsonConfig.enableAutoCollectStandardMetrics !== undefined
                     ? jsonConfig.enableAutoCollectStandardMetrics
                     : this.enableAutoCollectStandardMetrics;
             this.samplingRate =
-                jsonConfig.samplingRate != undefined ? jsonConfig.samplingRate : this.samplingRate;
+                jsonConfig.samplingRate !== undefined ? jsonConfig.samplingRate : this.samplingRate;
             this.storageDirectory =
-                jsonConfig.storageDirectory != undefined
+                jsonConfig.storageDirectory !== undefined
                     ? jsonConfig.storageDirectory
                     : this.storageDirectory;
             this.disableOfflineStorage =
-                jsonConfig.disableOfflineStorage != undefined
+                jsonConfig.disableOfflineStorage !== undefined
                     ? jsonConfig.disableOfflineStorage
                     : this.disableOfflineStorage;
             if (jsonConfig.instrumentations) {
                 if (
                     jsonConfig.instrumentations.azureSdk &&
-                    jsonConfig.instrumentations.azureSdk.enabled != undefined
+                    jsonConfig.instrumentations.azureSdk.enabled !== undefined
                 ) {
                     this.instrumentations.azureSdk.enabled =
                         jsonConfig.instrumentations.azureSdk.enabled;
                 }
                 if (
                     jsonConfig.instrumentations.http &&
-                    jsonConfig.instrumentations.http.enabled != undefined
+                    jsonConfig.instrumentations.http.enabled !== undefined
                 ) {
                     this.instrumentations.http.enabled = jsonConfig.instrumentations.http.enabled;
                 }
                 if (
                     jsonConfig.instrumentations.mongoDb &&
-                    jsonConfig.instrumentations.mongoDb.enabled != undefined
+                    jsonConfig.instrumentations.mongoDb.enabled !== undefined
                 ) {
                     this.instrumentations.mongoDb.enabled =
                         jsonConfig.instrumentations.mongoDb.enabled;
                 }
                 if (
                     jsonConfig.instrumentations.mySql &&
-                    jsonConfig.instrumentations.mySql.enabled != undefined
+                    jsonConfig.instrumentations.mySql.enabled !== undefined
                 ) {
                     this.instrumentations.mySql.enabled = jsonConfig.instrumentations.mySql.enabled;
                 }
                 if (
                     jsonConfig.instrumentations.postgreSql &&
-                    jsonConfig.instrumentations.postgreSql.enabled != undefined
+                    jsonConfig.instrumentations.postgreSql.enabled !== undefined
                 ) {
                     this.instrumentations.postgreSql.enabled =
                         jsonConfig.instrumentations.postgreSql.enabled;
                 }
                 if (
                     jsonConfig.instrumentations.redis4 &&
-                    jsonConfig.instrumentations.redis4.enabled != undefined
+                    jsonConfig.instrumentations.redis4.enabled !== undefined
                 ) {
                     this.instrumentations.redis4.enabled =
                         jsonConfig.instrumentations.redis4.enabled;
                 }
                 if (
                     jsonConfig.instrumentations.redis &&
-                    jsonConfig.instrumentations.redis.enabled != undefined
+                    jsonConfig.instrumentations.redis.enabled !== undefined
                 ) {
                     this.instrumentations.redis.enabled = jsonConfig.instrumentations.redis.enabled;
                 }
@@ -189,36 +191,36 @@ export class ApplicationInsightsConfig implements IConfig {
             if (jsonConfig.logInstrumentations) {
                 if (
                     jsonConfig.logInstrumentations.console &&
-                    jsonConfig.logInstrumentations.console.enabled != undefined
+                    jsonConfig.logInstrumentations.console.enabled !== undefined
                 ) {
                     this.logInstrumentations.console.enabled =
                         jsonConfig.logInstrumentations.console.enabled;
                 }
                 if (
                     jsonConfig.logInstrumentations.bunyan &&
-                    jsonConfig.logInstrumentations.bunyan.enabled != undefined
+                    jsonConfig.logInstrumentations.bunyan.enabled !== undefined
                 ) {
                     this.logInstrumentations.bunyan.enabled =
                         jsonConfig.logInstrumentations.bunyan.enabled;
                 }
                 if (
                     jsonConfig.logInstrumentations.winston &&
-                    jsonConfig.logInstrumentations.winston.enabled != undefined
+                    jsonConfig.logInstrumentations.winston.enabled !== undefined
                 ) {
                     this.logInstrumentations.winston.enabled =
                         jsonConfig.logInstrumentations.winston.enabled;
                 }
             }
             if (jsonConfig.extendedMetrics) {
-                if (jsonConfig.extendedMetrics[ExtendedMetricType.gc] != undefined) {
+                if (jsonConfig.extendedMetrics[ExtendedMetricType.gc] !== undefined) {
                     this.extendedMetrics[ExtendedMetricType.gc] =
                         jsonConfig.extendedMetrics[ExtendedMetricType.gc];
                 }
-                if (jsonConfig.extendedMetrics[ExtendedMetricType.heap] != undefined) {
+                if (jsonConfig.extendedMetrics[ExtendedMetricType.heap] !== undefined) {
                     this.extendedMetrics[ExtendedMetricType.heap] =
                         jsonConfig.extendedMetrics[ExtendedMetricType.heap];
                 }
-                if (jsonConfig.extendedMetrics[ExtendedMetricType.loop] != undefined) {
+                if (jsonConfig.extendedMetrics[ExtendedMetricType.loop] !== undefined) {
                     this.extendedMetrics[ExtendedMetricType.loop] =
                         jsonConfig.extendedMetrics[ExtendedMetricType.loop];
                 }
@@ -229,7 +231,7 @@ export class ApplicationInsightsConfig implements IConfig {
     }
 
     private getInstrunmentationKeyFromEnv(): string {
-        var iKey =
+        const iKey =
             process.env[ENV_IKEY] ||
             process.env[ENV_AZURE_PREFIX + ENV_IKEY] ||
             process.env[LEGACY_ENV_IKEY] ||

@@ -32,10 +32,10 @@ export class JsonConfig implements IConfig {
     }
 
     private _loadJsonFile() {
-        let configFileName = "applicationinsights.json";
-        let rootPath = path.join(__dirname, "../../../../"); // Root of applicationinsights folder (__dirname = ../out)
+        const configFileName = "applicationinsights.json";
+        const rootPath = path.join(__dirname, "../../../../"); // Root of applicationinsights folder (__dirname = ../out)
         let tempDir = path.join(rootPath, configFileName); // default
-        let configFile = process.env[ENV_CONFIGURATION_FILE];
+        const configFile = process.env[ENV_CONFIGURATION_FILE];
         if (configFile) {
             if (path.isAbsolute(configFile)) {
                 tempDir = configFile;
@@ -45,7 +45,7 @@ export class JsonConfig implements IConfig {
         }
         try {
             const jsonConfig: IConfig = JSON.parse(fs.readFileSync(tempDir, "utf8"));
-            if (jsonConfig.connectionString != undefined) {
+            if (jsonConfig.connectionString !== undefined) {
                 this.connectionString = jsonConfig.connectionString;
             }
             this.samplingRate = jsonConfig.samplingRate;

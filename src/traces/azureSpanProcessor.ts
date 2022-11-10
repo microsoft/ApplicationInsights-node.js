@@ -16,7 +16,7 @@ export class AzureSpanProcessor implements SpanProcessor {
 
     onStart(span: Span, context: Context): void {
         if (this._metricHandler.getConfig().enableAutoCollectStandardMetrics) {
-            if (span.instrumentationLibrary.name == "@opentelemetry/instrumentation-http") {
+            if (span.instrumentationLibrary.name === "@opentelemetry/instrumentation-http") {
                 if (span.kind === SpanKind.CLIENT) {
                     span.setAttributes({
                         "_MS.ProcessedByMetricExtractors": "(Name:'Dependencies', Ver:'1.1')",
@@ -33,7 +33,7 @@ export class AzureSpanProcessor implements SpanProcessor {
     onEnd(span: ReadableSpan): void {
         if (span.events) {
             span.events.forEach((event: TimedEvent) => {
-                let dimensions: IStandardMetricBaseDimensions = {
+                const dimensions: IStandardMetricBaseDimensions = {
                     cloudRoleInstance: "",
                     cloudRoleName: "",
                 };
@@ -48,7 +48,7 @@ export class AzureSpanProcessor implements SpanProcessor {
                         dimensions.cloudRoleName = String(serviceName);
                     }
                 }
-                if (event.name == "exception") {
+                if (event.name === "exception") {
                     this._metricHandler.countException(dimensions);
                 } else {
                     this._metricHandler.countTrace(dimensions);

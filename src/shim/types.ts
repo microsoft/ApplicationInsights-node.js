@@ -25,7 +25,6 @@ export interface ICorrelationContext {
     customProperties: ICustomProperties;
 }
 
-
 export interface ICustomProperties {
     /**
      * Get a custom property from the correlation context
@@ -45,7 +44,7 @@ export interface ICustomProperties {
  * the context.done callback when your exported function is synchronous. A context object is passed
  * to your function from the Azure Functions runtime on function invocation.
  */
- export interface Context {
+export interface Context {
     traceContext: TraceContext;
 }
 

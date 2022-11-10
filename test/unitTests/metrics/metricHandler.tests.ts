@@ -20,16 +20,16 @@ describe("Library/MetricHandler", () => {
     describe("#autoCollect", () => {
         it("performance enablement during start", () => {
             _config.enableAutoCollectPerformance = true;
-            let handler = new MetricHandler(_config);
+            const handler = new MetricHandler(_config);
             handler["_perfCounterMetricsHandler"]["_nativeMetrics"]["_metricsAvailable"] = false;
-            let stub = sinon.stub(handler["_perfCounterMetricsHandler"], "start");
+            const stub = sinon.stub(handler["_perfCounterMetricsHandler"], "start");
             handler.start();
             assert.ok(stub.calledOnce, "Enable called");
         });
 
         it("preAggregated metrics enablement during start", () => {
             _config.enableAutoCollectStandardMetrics = true;
-            let handler = new MetricHandler(_config);
+            const handler = new MetricHandler(_config);
             handler["_perfCounterMetricsHandler"]["_nativeMetrics"]["_metricsAvailable"] = false;
             handler.start();
             assert.ok(handler.getStandardMetricsHandler());
@@ -37,9 +37,9 @@ describe("Library/MetricHandler", () => {
 
         it("heartbeat metrics enablement during start", () => {
             _config.enableAutoCollectHeartbeat = true;
-            let handler = new MetricHandler(_config);
+            const handler = new MetricHandler(_config);
             handler["_perfCounterMetricsHandler"]["_nativeMetrics"]["_metricsAvailable"] = false;
-            let stub = sinon.stub(handler["_heartbeatHandler"], "start");
+            const stub = sinon.stub(handler["_heartbeatHandler"], "start");
             handler.start();
             assert.ok(stub.calledOnce, "start called");
         });

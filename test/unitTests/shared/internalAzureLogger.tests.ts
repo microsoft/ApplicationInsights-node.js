@@ -5,7 +5,7 @@ import { InternalAzureLogger } from "../../../src/shared/logging/internalAzureLo
 import * as fileHelper from "../../../src/shared/util/fileSystemHelper";
 
 describe("Library/InternalAzureLogger", () => {
-    var sandbox: sinon.SinonSandbox;
+    let sandbox: sinon.SinonSandbox;
     let originalEnv: NodeJS.ProcessEnv;
     let internalLogger: InternalAzureLogger = null;
 
@@ -26,12 +26,12 @@ describe("Library/InternalAzureLogger", () => {
 
     describe("Write to file", () => {
         it("should log message to new file", (done) => {
-            let confirmDirStub = sandbox
+            const confirmDirStub = sandbox
                 .stub(fileHelper, "confirmDirExists")
                 .callsFake(async (directory: string) => {
                     // Fake directory creation
                 });
-            var appendFileAsyncStub = sandbox.stub(fileHelper, "appendFileAsync");
+            const appendFileAsyncStub = sandbox.stub(fileHelper, "appendFileAsync");
             internalLogger["_logToFile"] = true;
 
             internalLogger
@@ -55,15 +55,16 @@ describe("Library/InternalAzureLogger", () => {
         it("should create backup file", (done) => {
             sandbox.stub(fileHelper, "confirmDirExists").callsFake(async (directory: string) => {});
             sandbox.stub(fileHelper, "accessAsync").callsFake(async (directory: string) => {});
-            sandbox.stub(fileHelper, "getShallowFileSize").callsFake(async (path: string) => {
-                // Fake file size check
-                return 123;
-            });
+            sandbox.stub(fileHelper, "getShallowFileSize").callsFake(
+                async (path: string) =>
+                    // Fake file size check
+                    123
+            );
             internalLogger["_maxSizeBytes"] = 122;
 
-            var writeStub = sandbox.stub(fileHelper, "writeFileAsync");
-            var appendStub = sandbox.stub(fileHelper, "appendFileAsync");
-            var readStub = sandbox.stub(fileHelper, "readFileAsync");
+            const writeStub = sandbox.stub(fileHelper, "writeFileAsync");
+            const appendStub = sandbox.stub(fileHelper, "appendFileAsync");
+            const readStub = sandbox.stub(fileHelper, "readFileAsync");
             internalLogger["_logToFile"] = true;
 
             internalLogger
@@ -89,12 +90,13 @@ describe("Library/InternalAzureLogger", () => {
         it("should create multiple backup files", (done) => {
             sandbox.stub(fileHelper, "confirmDirExists").callsFake(async (directory: string) => {});
             sandbox.stub(fileHelper, "accessAsync").callsFake(async (directory: string) => {});
-            sandbox.stub(fileHelper, "getShallowFileSize").callsFake(async (path: string) => {
-                // Fake file size check
-                return 123;
-            });
-            var writeStub = sandbox.stub(fileHelper, "writeFileAsync");
-            var readStub = sandbox.stub(fileHelper, "readFileAsync");
+            sandbox.stub(fileHelper, "getShallowFileSize").callsFake(
+                async (path: string) =>
+                    // Fake file size check
+                    123
+            );
+            const writeStub = sandbox.stub(fileHelper, "writeFileAsync");
+            const readStub = sandbox.stub(fileHelper, "readFileAsync");
             internalLogger["_maxSizeBytes"] = 122;
             internalLogger["_logToFile"] = true;
             internalLogger
@@ -122,22 +124,22 @@ describe("Library/InternalAzureLogger", () => {
             const env = <{ [id: string]: string }>{};
             env["APPLICATIONINSIGHTS_LOG_DESTINATION"] = "file";
             process.env = env;
-            var setIntervalSpy = sandbox.spy(global, "setInterval");
+            const setIntervalSpy = sandbox.spy(global, "setInterval");
             internalLogger = new InternalAzureLogger();
             assert.ok(setIntervalSpy.called);
             assert.ok(internalLogger["_fileCleanupTimer"]);
         });
 
         it("should remove backup files", (done) => {
-            sandbox.stub(fileHelper, "readdirAsync").callsFake(async (path: string) => {
-                return [
+            sandbox
+                .stub(fileHelper, "readdirAsync")
+                .callsFake(async (path: string) => [
                     "applicationinsights.log",
                     "123.applicationinsights.log",
                     "456.applicationinsights.log",
-                ];
-            });
+                ]);
             internalLogger["_maxHistory"] = 0;
-            var unlinkStub = sandbox.stub(fileHelper, "unlinkAsync");
+            const unlinkStub = sandbox.stub(fileHelper, "unlinkAsync");
             internalLogger["_fileCleanupTask"]()
                 .then(() => {
                     assert.ok(unlinkStub.calledTwice, "unlinkStub calledTwice");
@@ -149,15 +151,15 @@ describe("Library/InternalAzureLogger", () => {
         });
 
         it("cleanup should keep configured number of backups", (done) => {
-            sandbox.stub(fileHelper, "readdirAsync").callsFake(async (path: string) => {
-                return [
+            sandbox
+                .stub(fileHelper, "readdirAsync")
+                .callsFake(async (path: string) => [
                     "applicationinsights.log",
                     "123.applicationinsights.log",
                     "456.applicationinsights.log",
-                ];
-            });
+                ]);
             internalLogger["_maxHistory"] = 1;
-            var unlinkStub = sandbox.stub(fileHelper, "unlinkAsync");
+            const unlinkStub = sandbox.stub(fileHelper, "unlinkAsync");
             internalLogger["_fileCleanupTask"]()
                 .then(() => {
                     assert.ok(unlinkStub.calledOnce, "unlinkStub calledOnce");

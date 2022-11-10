@@ -20,7 +20,7 @@ import { MonitorDomain } from "../../../src/declarations/generated";
 
 describe("Library/LogHandler", () => {
     let sandbox: sinon.SinonSandbox;
-    let _config = new ApplicationInsightsConfig();
+    const _config = new ApplicationInsightsConfig();
     _config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
 
     before(() => {
@@ -34,8 +34,8 @@ describe("Library/LogHandler", () => {
     describe("#autoCollect", () => {
         it("exception enablement during start", () => {
             _config.enableAutoCollectExceptions = true;
-            let handler = new LogHandler(_config);
-            let stub = sinon.stub(handler["_exceptions"], "enable");
+            const handler = new LogHandler(_config);
+            const stub = sinon.stub(handler["_exceptions"], "enable");
             handler.start();
             assert.ok(stub.calledOnce, "Enable called");
             assert.equal(stub.args[0][0], true);
@@ -44,10 +44,10 @@ describe("Library/LogHandler", () => {
 
     describe("#manual track APIs", () => {
         it("_logToEnvelope", () => {
-            let handler = new LogHandler(_config);
-            let telemetry: Telemetry = {};
-            let data: MonitorDomain = {};
-            let envelope = handler["_logToEnvelope"](
+            const handler = new LogHandler(_config);
+            const telemetry: Telemetry = {};
+            const data: MonitorDomain = {};
+            const envelope = handler["_logToEnvelope"](
                 telemetry,
                 "TestData",
                 data,
@@ -73,11 +73,11 @@ describe("Library/LogHandler", () => {
         });
 
         it("tracing", () => {
-            let logHandler = new LogHandler(_config);
-            let traceHandler = new TraceHandler(_config);
+            const logHandler = new LogHandler(_config);
+            const traceHandler = new TraceHandler(_config);
             traceHandler["_tracer"].startActiveSpan("test", () => {
-                let envelope = logHandler["_logToEnvelope"]({}, "", {}, "");
-                let spanContext = trace.getSpanContext(context.active());
+                const envelope = logHandler["_logToEnvelope"]({}, "", {}, "");
+                const spanContext = trace.getSpanContext(context.active());
                 assert.ok(isValidTraceId(envelope.tags["ai.operation.id"]), "Valid operation Id");
                 assert.ok(
                     isValidSpanId(envelope.tags["ai.operation.parentId"]),
@@ -89,18 +89,17 @@ describe("Library/LogHandler", () => {
         });
 
         it("trackAvailability", (done) => {
-            let handler = new LogHandler(_config);
-            let stub = sinon
-                .stub(handler["_exporter"], "export")
-                .callsFake((envelopes: any, resultCallback: any) => {
-                    return new Promise((resolve, reject) => {
+            const handler = new LogHandler(_config);
+            const stub = sinon.stub(handler["_exporter"], "export").callsFake(
+                (envelopes: any, resultCallback: any) =>
+                    new Promise((resolve, reject) => {
                         resultCallback({
                             code: ExportResultCode.SUCCESS,
                         });
                         resolve();
-                    });
-                });
-            let telemetry: AvailabilityTelemetry = {
+                    })
+            );
+            const telemetry: AvailabilityTelemetry = {
                 name: "TestName",
                 duration: 2000, //2 seconds
                 id: "testId",
@@ -113,7 +112,7 @@ describe("Library/LogHandler", () => {
                 .flush()
                 .then(() => {
                     assert.ok(stub.calledOnce, "Export called");
-                    let envelopes = stub.args[0][0];
+                    const envelopes = stub.args[0][0];
                     assert.equal(envelopes.length, 1);
                     assert.equal(
                         envelopes[0].name,
@@ -141,18 +140,17 @@ describe("Library/LogHandler", () => {
         });
 
         it("trackPageView", (done) => {
-            let handler = new LogHandler(_config);
-            let stub = sinon
-                .stub(handler["_exporter"], "export")
-                .callsFake((envelopes: any, resultCallback: any) => {
-                    return new Promise((resolve, reject) => {
+            const handler = new LogHandler(_config);
+            const stub = sinon.stub(handler["_exporter"], "export").callsFake(
+                (envelopes: any, resultCallback: any) =>
+                    new Promise((resolve, reject) => {
                         resultCallback({
                             code: ExportResultCode.SUCCESS,
                         });
                         resolve();
-                    });
-                });
-            let telemetry: PageViewTelemetry = {
+                    })
+            );
+            const telemetry: PageViewTelemetry = {
                 name: "TestName",
                 duration: 2000, //2 seconds
                 id: "testId",
@@ -164,7 +162,7 @@ describe("Library/LogHandler", () => {
                 .flush()
                 .then(() => {
                     assert.ok(stub.calledOnce, "Export called");
-                    let envelopes = stub.args[0][0];
+                    const envelopes = stub.args[0][0];
                     assert.equal(envelopes.length, 1);
                     assert.equal(
                         envelopes[0].name,
@@ -191,18 +189,17 @@ describe("Library/LogHandler", () => {
         });
 
         it("trackTrace", (done) => {
-            let handler = new LogHandler(_config);
-            let stub = sinon
-                .stub(handler["_exporter"], "export")
-                .callsFake((envelopes: any, resultCallback: any) => {
-                    return new Promise((resolve, reject) => {
+            const handler = new LogHandler(_config);
+            const stub = sinon.stub(handler["_exporter"], "export").callsFake(
+                (envelopes: any, resultCallback: any) =>
+                    new Promise((resolve, reject) => {
                         resultCallback({
                             code: ExportResultCode.SUCCESS,
                         });
                         resolve();
-                    });
-                });
-            let telemetry: TraceTelemetry = {
+                    })
+            );
+            const telemetry: TraceTelemetry = {
                 message: "testMessage",
                 severity: "Information",
             };
@@ -211,7 +208,7 @@ describe("Library/LogHandler", () => {
                 .flush()
                 .then(() => {
                     assert.ok(stub.calledOnce, "Export called");
-                    let envelopes = stub.args[0][0];
+                    const envelopes = stub.args[0][0];
                     assert.equal(envelopes.length, 1);
                     assert.equal(
                         envelopes[0].name,
@@ -236,20 +233,19 @@ describe("Library/LogHandler", () => {
         });
 
         it("trackException", (done) => {
-            let handler = new LogHandler(_config);
-            let stub = sinon
-                .stub(handler["_exporter"], "export")
-                .callsFake((envelopes: any, resultCallback: any) => {
-                    return new Promise((resolve, reject) => {
+            const handler = new LogHandler(_config);
+            const stub = sinon.stub(handler["_exporter"], "export").callsFake(
+                (envelopes: any, resultCallback: any) =>
+                    new Promise((resolve, reject) => {
                         resultCallback({
                             code: ExportResultCode.SUCCESS,
                         });
                         resolve();
-                    });
-                });
-            let measurements: { [key: string]: number } = {};
+                    })
+            );
+            const measurements: { [key: string]: number } = {};
             measurements["test"] = 123;
-            let telemetry: ExceptionTelemetry = {
+            const telemetry: ExceptionTelemetry = {
                 exception: new Error("TestError"),
                 severity: "Critical",
                 measurements: measurements,
@@ -259,7 +255,7 @@ describe("Library/LogHandler", () => {
                 .flush()
                 .then(() => {
                     assert.ok(stub.calledOnce, "Export called");
-                    let envelopes = stub.args[0][0];
+                    const envelopes = stub.args[0][0];
                     assert.equal(envelopes.length, 1);
                     assert.equal(
                         envelopes[0].name,
@@ -292,20 +288,19 @@ describe("Library/LogHandler", () => {
         });
 
         it("trackEvent", (done) => {
-            let handler = new LogHandler(_config);
-            let stub = sinon
-                .stub(handler["_exporter"], "export")
-                .callsFake((envelopes: any, resultCallback: any) => {
-                    return new Promise((resolve, reject) => {
+            const handler = new LogHandler(_config);
+            const stub = sinon.stub(handler["_exporter"], "export").callsFake(
+                (envelopes: any, resultCallback: any) =>
+                    new Promise((resolve, reject) => {
                         resultCallback({
                             code: ExportResultCode.SUCCESS,
                         });
                         resolve();
-                    });
-                });
-            let measurements: { [key: string]: number } = {};
+                    })
+            );
+            const measurements: { [key: string]: number } = {};
             measurements["test"] = 123;
-            let telemetry: EventTelemetry = {
+            const telemetry: EventTelemetry = {
                 name: "TestName",
                 measurements: measurements,
             };
@@ -314,7 +309,7 @@ describe("Library/LogHandler", () => {
                 .flush()
                 .then(() => {
                     assert.ok(stub.calledOnce, "Export called");
-                    let envelopes = stub.args[0][0];
+                    const envelopes = stub.args[0][0];
                     assert.equal(envelopes.length, 1);
                     assert.equal(
                         envelopes[0].name,
@@ -340,19 +335,18 @@ describe("Library/LogHandler", () => {
 
         it("Exception standard metrics processed", (done) => {
             _config.enableAutoCollectStandardMetrics = true;
-            let metricHandler = new MetricHandler(_config);
-            let handler = new LogHandler(_config, metricHandler);
-            let stub = sinon
-                .stub(handler["_exporter"], "export")
-                .callsFake((envelopes: any, resultCallback: any) => {
-                    return new Promise((resolve, reject) => {
+            const metricHandler = new MetricHandler(_config);
+            const handler = new LogHandler(_config, metricHandler);
+            const stub = sinon.stub(handler["_exporter"], "export").callsFake(
+                (envelopes: any, resultCallback: any) =>
+                    new Promise((resolve, reject) => {
                         resultCallback({
                             code: ExportResultCode.SUCCESS,
                         });
                         resolve();
-                    });
-                });
-            let telemetry: ExceptionTelemetry = {
+                    })
+            );
+            const telemetry: ExceptionTelemetry = {
                 exception: new Error("TestError"),
                 severity: "Critical",
             };
@@ -360,7 +354,7 @@ describe("Library/LogHandler", () => {
             handler
                 .flush()
                 .then(() => {
-                    let envelopes = stub.args[0][0];
+                    const envelopes = stub.args[0][0];
                     assert.equal(envelopes.length, 1);
                     assert.equal(
                         envelopes[0].data.baseData["properties"]["_MS.ProcessedByMetricExtractors"],
@@ -375,19 +369,18 @@ describe("Library/LogHandler", () => {
 
         it("Trace standard metrics processed", (done) => {
             _config.enableAutoCollectStandardMetrics = true;
-            let metricHandler = new MetricHandler(_config);
-            let handler = new LogHandler(_config, metricHandler);
-            let stub = sinon
-                .stub(handler["_exporter"], "export")
-                .callsFake((envelopes: any, resultCallback: any) => {
-                    return new Promise((resolve, reject) => {
+            const metricHandler = new MetricHandler(_config);
+            const handler = new LogHandler(_config, metricHandler);
+            const stub = sinon.stub(handler["_exporter"], "export").callsFake(
+                (envelopes: any, resultCallback: any) =>
+                    new Promise((resolve, reject) => {
                         resultCallback({
                             code: ExportResultCode.SUCCESS,
                         });
                         resolve();
-                    });
-                });
-            let telemetry: TraceTelemetry = {
+                    })
+            );
+            const telemetry: TraceTelemetry = {
                 message: "testMessage",
                 severity: "Information",
             };
@@ -395,7 +388,7 @@ describe("Library/LogHandler", () => {
             handler
                 .flush()
                 .then(() => {
-                    let envelopes = stub.args[0][0];
+                    const envelopes = stub.args[0][0];
                     assert.equal(envelopes.length, 1);
                     assert.equal(
                         envelopes[0].data.baseData["properties"]["_MS.ProcessedByMetricExtractors"],

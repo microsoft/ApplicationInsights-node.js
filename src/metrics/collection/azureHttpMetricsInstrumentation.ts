@@ -22,12 +22,12 @@ import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 
 export class AzureHttpMetricsInstrumentation extends InstrumentationBase<Http> {
     private _nodeVersion: string;
-    public totalRequestCount: number = 0;
-    public totalFailedRequestCount: number = 0;
-    public totalDependencyCount: number = 0;
-    public totalFailedDependencyCount: number = 0;
-    public intervalDependencyExecutionTime: number = 0;
-    public intervalRequestExecutionTime: number = 0;
+    public totalRequestCount = 0;
+    public totalFailedRequestCount = 0;
+    public totalDependencyCount = 0;
+    public totalFailedDependencyCount = 0;
+    public intervalDependencyExecutionTime = 0;
+    public intervalRequestExecutionTime = 0;
 
     private _httpServerDurationHistogram!: Histogram;
     private _httpClientDurationHistogram!: Histogram;
@@ -38,7 +38,9 @@ export class AzureHttpMetricsInstrumentation extends InstrumentationBase<Http> {
         this._updateMetricInstruments();
     }
 
-    public setTracerProvider(tracerProvider: TracerProvider) {}
+    public setTracerProvider(tracerProvider: TracerProvider) {
+        return;
+    }
 
     public setMeterProvider(meterProvider: MeterProvider) {
         super.setMeterProvider(meterProvider);
@@ -76,15 +78,15 @@ export class AzureHttpMetricsInstrumentation extends InstrumentationBase<Http> {
         if (!metric.isProcessed) {
             metric.isProcessed = true;
             metric.attributes["_MS.IsAutocollected"] = "True";
-            let durationMs = Date.now() - metric.startTime;
+            const durationMs = Date.now() - metric.startTime;
             let success = false;
             const statusCode = parseInt(
                 String(metric.attributes[SemanticAttributes.HTTP_STATUS_CODE])
             );
-            if (statusCode !== NaN) {
+            if (!isNaN(statusCode)) {
                 success = 0 < statusCode && statusCode < 500;
             }
-            if (metric.spanKind == SpanKind.SERVER) {
+            if (metric.spanKind === SpanKind.SERVER) {
                 this._httpServerDurationHistogram.record(durationMs, metric.attributes);
                 this.intervalRequestExecutionTime += durationMs;
                 if (!success) {
@@ -123,7 +125,9 @@ export class AzureHttpMetricsInstrumentation extends InstrumentationBase<Http> {
                 return moduleExports;
             },
             (moduleExports) => {
-                if (moduleExports === undefined) return;
+                if (moduleExports === undefined) {
+                    return;
+                }
                 this._diag.debug(`Removing patch for http@${this._nodeVersion}`);
 
                 this._unwrap(moduleExports, "request");
@@ -158,7 +162,9 @@ export class AzureHttpMetricsInstrumentation extends InstrumentationBase<Http> {
                 return moduleExports;
             },
             (moduleExports) => {
-                if (moduleExports === undefined) return;
+                if (moduleExports === undefined) {
+                    return;
+                }
                 this._diag.debug(`Removing patch for https@${this._nodeVersion}`);
 
                 this._unwrap(moduleExports, "request");
@@ -171,15 +177,15 @@ export class AzureHttpMetricsInstrumentation extends InstrumentationBase<Http> {
     private _getPatchOutgoingRequestFunction(component: "http" | "https") {
         return (
             original: (...args: any[]) => http.ClientRequest
-        ): ((...args: any[]) => http.ClientRequest) => {
-            return this._outgoingRequestFunction(component, original);
-        };
+        ): ((...args: any[]) => http.ClientRequest) =>
+            this._outgoingRequestFunction(component, original);
     }
 
     private _outgoingRequestFunction(
         component: "http" | "https",
         original: (...args: any[]) => http.ClientRequest
     ): (...args: any[]) => http.ClientRequest {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         const instrumentation = this;
         return function outgoingRequest(
             this: unknown,
@@ -203,7 +209,7 @@ export class AzureHttpMetricsInstrumentation extends InstrumentationBase<Http> {
                 safeExecuteInTheMiddle(
                     () => instrumentation._getConfig().ignoreOutgoingRequestHook?.(optionsParsed),
                     (e: unknown) => {
-                        if (e != null) {
+                        if (e !== null) {
                             instrumentation._diag.error(
                                 "caught ignoreOutgoingRequestHook error: ",
                                 e
@@ -216,7 +222,7 @@ export class AzureHttpMetricsInstrumentation extends InstrumentationBase<Http> {
                 return original.apply(this, [optionsParsed, ...args]);
             }
 
-            let metric: IHttpStandardMetric = {
+            const metric: IHttpStandardMetric = {
                 startTime: Date.now(),
                 isProcessed: false,
                 spanKind: SpanKind.CLIENT,
@@ -273,15 +279,15 @@ export class AzureHttpMetricsInstrumentation extends InstrumentationBase<Http> {
     private _getPatchIncomingRequestFunction(component: "http" | "https") {
         return (
             original: (event: string, ...args: unknown[]) => boolean
-        ): ((this: unknown, event: string, ...args: unknown[]) => boolean) => {
-            return this._incomingRequestFunction(component, original);
-        };
+        ): ((this: unknown, event: string, ...args: unknown[]) => boolean) =>
+            this._incomingRequestFunction(component, original);
     }
 
     private _incomingRequestFunction(
         component: "http" | "https",
         original: (event: string, ...args: unknown[]) => boolean
     ) {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         const instrumentation = this;
         return function incomingRequest(this: unknown, event: string, ...args: unknown[]): boolean {
             // Only count request events
@@ -295,7 +301,7 @@ export class AzureHttpMetricsInstrumentation extends InstrumentationBase<Http> {
                 safeExecuteInTheMiddle(
                     () => instrumentation._getConfig().ignoreIncomingRequestHook?.(request),
                     (e: unknown) => {
-                        if (e != null) {
+                        if (e !== null) {
                             instrumentation._diag.error(
                                 "caught ignoreIncomingRequestHook error: ",
                                 e
@@ -308,7 +314,7 @@ export class AzureHttpMetricsInstrumentation extends InstrumentationBase<Http> {
                 return original.apply(this, [event, ...args]);
             }
 
-            let metric: IHttpStandardMetric = {
+            const metric: IHttpStandardMetric = {
                 startTime: Date.now(),
                 spanKind: SpanKind.SERVER,
                 isProcessed: false,
@@ -331,6 +337,7 @@ export class AzureHttpMetricsInstrumentation extends InstrumentationBase<Http> {
             response.end = function (this: http.ServerResponse, ..._args: any) {
                 response.end = originalEnd;
                 const returned = safeExecuteInTheMiddle(
+                    // eslint-disable-next-line prefer-rest-params
                     () => response.end.apply(this, arguments as never),
                     (error) => {
                         if (error) {

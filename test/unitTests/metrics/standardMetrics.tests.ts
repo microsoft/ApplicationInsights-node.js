@@ -6,19 +6,16 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 
 import { StandardMetricsHandler } from "../../../src/metrics/handlers/standardMetricsHandler";
-import {
-    IMetricExceptionDimensions,
-    StandardMetric,
-} from "../../../src/metrics/types";
+import { IMetricExceptionDimensions, StandardMetric } from "../../../src/metrics/types";
 import { ApplicationInsightsConfig } from "../../../src/shared";
 
 describe("#StandardMetricsHandler", () => {
-    var sandbox: sinon.SinonSandbox;
+    let sandbox: sinon.SinonSandbox;
     let autoCollect: StandardMetricsHandler;
 
     before(() => {
         sandbox = sinon.createSandbox();
-        let config = new ApplicationInsightsConfig();
+        const config = new ApplicationInsightsConfig();
         config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
         autoCollect = new StandardMetricsHandler(config, { collectionInterval: 100 });
         sandbox.stub(autoCollect["_metricReader"]["_exporter"], "export");
@@ -44,7 +41,7 @@ describe("#StandardMetricsHandler", () => {
     });
 
     it("should observe instruments during collection", async () => {
-        let mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
+        const mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
         // autoCollect.start();
         let dimensions: IMetricExceptionDimensions = {
             cloudRoleInstance: "testcloudRoleInstance",
@@ -63,10 +60,10 @@ describe("#StandardMetricsHandler", () => {
 
         await new Promise((resolve) => setTimeout(resolve, 120));
         assert.ok(mockExport.called);
-        let resourceMetrics = mockExport.args[0][0];
+        const resourceMetrics = mockExport.args[0][0];
         const scopeMetrics = resourceMetrics.scopeMetrics;
         assert.strictEqual(scopeMetrics.length, 1, "scopeMetrics count");
-        let metrics = scopeMetrics[0].metrics;
+        const metrics = scopeMetrics[0].metrics;
         assert.strictEqual(metrics.length, 2, "metrics count");
         assert.equal(metrics[0].descriptor.name, StandardMetric.EXCEPTION_COUNT);
         assert.equal(metrics[1].descriptor.name, StandardMetric.TRACE_COUNT);
@@ -112,7 +109,7 @@ describe("#StandardMetricsHandler", () => {
     });
 
     it("should not collect when disabled", async () => {
-        let mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
+        const mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
         autoCollect.shutdown();
         await new Promise((resolve) => setTimeout(resolve, 120));
         assert.ok(mockExport.notCalled);
@@ -124,14 +121,14 @@ describe("#StandardMetricsHandler", () => {
         let mockHttpServerPort = 0;
 
         before(() => {
-            let config = new ApplicationInsightsConfig();
+            const config = new ApplicationInsightsConfig();
             config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
             autoCollect = new StandardMetricsHandler(config, { collectionInterval: 100 });
 
-            let httpConfig: HttpInstrumentationConfig = {
+            const httpConfig: HttpInstrumentationConfig = {
                 enabled: true,
             };
-            let instrumentation = new HttpInstrumentation(httpConfig);
+            const instrumentation = new HttpInstrumentation(httpConfig);
             instrumentation.setMeterProvider(autoCollect.getMeterProvider());
             instrumentation.enable();
             // Load Http modules, HTTP instrumentation hook will be created in OpenTelemetry
@@ -194,11 +191,11 @@ describe("#StandardMetricsHandler", () => {
         }
 
         it("http outgoing/incoming requests", async () => {
-            let mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
+            const mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
             await makeHttpRequest();
             await new Promise((resolve) => setTimeout(resolve, 120));
             assert.ok(mockExport.called);
-            let resourceMetrics = mockExport.args[0][0];
+            const resourceMetrics = mockExport.args[0][0];
             const scopeMetrics = resourceMetrics.scopeMetrics;
             assert.strictEqual(scopeMetrics.length, 2, "scopeMetrics count");
             let metrics = scopeMetrics[0].metrics;

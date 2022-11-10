@@ -2,19 +2,16 @@ import { SpanKind } from "@opentelemetry/api";
 import * as assert from "assert";
 import * as sinon from "sinon";
 import { PerformanceCounterMetricsHandler } from "../../../src/metrics/handlers";
-import {
-    NativeMetricsCounter,
-    PerformanceCounter,
-} from "../../../src/metrics/types";
+import { NativeMetricsCounter, PerformanceCounter } from "../../../src/metrics/types";
 import { ApplicationInsightsConfig } from "../../../src/shared";
 
 describe("PerformanceCounterMetricsHandler", () => {
-    var sandbox: sinon.SinonSandbox;
+    let sandbox: sinon.SinonSandbox;
     let autoCollect: PerformanceCounterMetricsHandler;
 
     before(() => {
         sandbox = sinon.createSandbox();
-        let config = new ApplicationInsightsConfig();
+        const config = new ApplicationInsightsConfig();
         config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
         config.extendedMetrics.heap = true;
         config.extendedMetrics.loop = true;
@@ -86,7 +83,7 @@ describe("PerformanceCounterMetricsHandler", () => {
         });
 
         it("should observe instruments during collection", async () => {
-            let mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
+            const mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
             autoCollect.start();
             autoCollect
                 .getHttpMetricsInstrumentation()
@@ -100,7 +97,7 @@ describe("PerformanceCounterMetricsHandler", () => {
 
             await new Promise((resolve) => setTimeout(resolve, 120));
             assert.ok(mockExport.called);
-            let resourceMetrics = mockExport.args[0][0];
+            const resourceMetrics = mockExport.args[0][0];
             const scopeMetrics = resourceMetrics.scopeMetrics;
             assert.strictEqual(scopeMetrics.length, 2, "scopeMetrics count");
             let metrics = scopeMetrics[0].metrics;
@@ -132,7 +129,7 @@ describe("PerformanceCounterMetricsHandler", () => {
         });
 
         it("should not collect when disabled", async () => {
-            let mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
+            const mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
             autoCollect.start();
             autoCollect.shutdown();
             await new Promise((resolve) => setTimeout(resolve, 120));
@@ -140,12 +137,12 @@ describe("PerformanceCounterMetricsHandler", () => {
         });
 
         it("should add correct views", () => {
-            let config = new ApplicationInsightsConfig();
+            const config = new ApplicationInsightsConfig();
             config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
             config.extendedMetrics.heap = false;
             config.extendedMetrics.loop = false;
             config.extendedMetrics.gc = false;
-            let autoCollect = new PerformanceCounterMetricsHandler(config);
+            const autoCollect = new PerformanceCounterMetricsHandler(config);
             autoCollect["_nativeMetrics"]["_metricsAvailable"] = false;
             let views = autoCollect["_getViews"]();
             assert.equal(views.length, 18); // All Native metrics ignore views are added

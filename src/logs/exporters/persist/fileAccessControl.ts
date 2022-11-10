@@ -68,7 +68,7 @@ export class FileAccessControl {
                 this._ACLedDirectories[directory] = false;
                 try {
                     // Restrict this directory to only current user and administrator access
-                    let identity = await this._getACLIdentity();
+                    const identity = await this._getACLIdentity();
                     await this._runICACLS(this._getACLArguments(directory, identity));
                     this._ACLedDirectories[directory] = true;
                 } catch (ex) {
@@ -99,7 +99,7 @@ export class FileAccessControl {
 
     private _runICACLS(args: string[]): Promise<void> {
         return new Promise((resolve, reject) => {
-            var aclProc = child_process.spawn(ICACLS_PATH, args, <any>{ windowsHide: true });
+            const aclProc = child_process.spawn(ICACLS_PATH, args, <any>{ windowsHide: true });
             aclProc.on("error", (e: Error) => reject(e));
             aclProc.on("close", (code: number, signal: string) => {
                 if (code === 0) {
@@ -118,7 +118,7 @@ export class FileAccessControl {
     private _runICACLSSync(args: string[]) {
         // Some very old versions of Node (< 0.11) don't have this
         if (child_process.spawnSync) {
-            var aclProc = child_process.spawnSync(ICACLS_PATH, args, <any>{ windowsHide: true });
+            const aclProc = child_process.spawnSync(ICACLS_PATH, args, <any>{ windowsHide: true });
             if (aclProc.error) {
                 throw aclProc.error;
             } else if (aclProc.status !== 0) {
@@ -136,7 +136,7 @@ export class FileAccessControl {
             if (this._ACLIdentity) {
                 resolve(this._ACLIdentity);
             }
-            var psProc = child_process.spawn(
+            const psProc = child_process.spawn(
                 POWERSHELL_PATH,
                 ["-Command", "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name"],
                 <any>{
@@ -166,7 +166,7 @@ export class FileAccessControl {
         }
         // Some very old versions of Node (< 0.11) don't have this
         if (child_process.spawnSync) {
-            var psProc = child_process.spawnSync(
+            const psProc = child_process.spawnSync(
                 POWERSHELL_PATH,
                 ["-Command", "[System.Security.Principal.WindowsIdentity]::GetCurrent().Name"],
                 <any>{
@@ -183,11 +183,10 @@ export class FileAccessControl {
             }
             this._ACLIdentity = psProc.stdout && psProc.stdout.toString().trim();
             return this._ACLIdentity;
-        } else {
-            throw new Error(
-                "Could not synchronously get ACL identity under current version of Node.js"
-            );
         }
+        throw new Error(
+            "Could not synchronously get ACL identity under current version of Node.js"
+        );
     }
 
     private _getACLArguments(directory: string, identity: string) {

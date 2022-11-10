@@ -12,9 +12,7 @@ describe("shim/TelemetryClient", () => {
     before(() => {
         sandbox = sinon.createSandbox();
         nock(DEFAULT_BREEZE_ENDPOINT)
-            .post("/v2.1/track", (body: string) => {
-                return true;
-            })
+            .post("/v2.1/track", (body: string) => true)
             .reply(200, {})
             .persist();
         nock.disableNetConnect();
@@ -31,20 +29,21 @@ describe("shim/TelemetryClient", () => {
 
     describe("#manual track APIs", () => {
         it("trackDependency http", (done) => {
-            let client = new TelemetryClient(
+            const client = new TelemetryClient(
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
             );
-            let stub = sinon
+            const stub = sinon
                 .stub(client.client.getTraceHandler()["_exporter"], "export")
-                .callsFake((spans: any, resultCallback: any) => {
-                    return new Promise((resolve, reject) => {
-                        resultCallback({
-                            code: ExportResultCode.SUCCESS,
-                        });
-                        resolve();
-                    });
-                });
-            let telemetry: DependencyTelemetry = {
+                .callsFake(
+                    (spans: any, resultCallback: any) =>
+                        new Promise((resolve, reject) => {
+                            resultCallback({
+                                code: ExportResultCode.SUCCESS,
+                            });
+                            resolve();
+                        })
+                );
+            const telemetry: DependencyTelemetry = {
                 name: "TestName",
                 duration: 2000, //2 seconds
                 resultCode: "401",
@@ -58,7 +57,7 @@ describe("shim/TelemetryClient", () => {
                 .flush()
                 .then(() => {
                     assert.ok(stub.calledOnce, "Export called");
-                    let spans = stub.args[0][0];
+                    const spans = stub.args[0][0];
                     assert.equal(spans.length, 1);
                     assert.equal(spans[0].name, "TestName");
                     assert.equal(spans[0].endTime[0] - spans[0].startTime[0], 2); // hrTime UNIX Epoch time in seconds
@@ -75,20 +74,21 @@ describe("shim/TelemetryClient", () => {
         });
 
         it("trackDependency DB", (done) => {
-            let client = new TelemetryClient(
+            const client = new TelemetryClient(
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
             );
-            let stub = sinon
+            const stub = sinon
                 .stub(client.client.getTraceHandler()["_exporter"], "export")
-                .callsFake((spans: any, resultCallback: any) => {
-                    return new Promise((resolve, reject) => {
-                        resultCallback({
-                            code: ExportResultCode.SUCCESS,
-                        });
-                        resolve();
-                    });
-                });
-            let telemetry: DependencyTelemetry = {
+                .callsFake(
+                    (spans: any, resultCallback: any) =>
+                        new Promise((resolve, reject) => {
+                            resultCallback({
+                                code: ExportResultCode.SUCCESS,
+                            });
+                            resolve();
+                        })
+                );
+            const telemetry: DependencyTelemetry = {
                 name: "TestName",
                 duration: 2000, //2 seconds
                 resultCode: "401",
@@ -102,7 +102,7 @@ describe("shim/TelemetryClient", () => {
                 .flush()
                 .then(() => {
                     assert.ok(stub.calledOnce, "Export called");
-                    let spans = stub.args[0][0];
+                    const spans = stub.args[0][0];
                     assert.equal(spans.length, 1);
                     assert.equal(spans[0].name, "TestName");
                     assert.equal(spans[0].kind, 2, "Span Kind"); // Outgoing
@@ -116,20 +116,21 @@ describe("shim/TelemetryClient", () => {
         });
 
         it("trackRequest", (done) => {
-            let client = new TelemetryClient(
+            const client = new TelemetryClient(
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
             );
-            let stub = sinon
+            const stub = sinon
                 .stub(client.client.getTraceHandler()["_exporter"], "export")
-                .callsFake((spans: any, resultCallback: any) => {
-                    return new Promise((resolve, reject) => {
-                        resultCallback({
-                            code: ExportResultCode.SUCCESS,
-                        });
-                        resolve();
-                    });
-                });
-            let telemetry: RequestTelemetry = {
+                .callsFake(
+                    (spans: any, resultCallback: any) =>
+                        new Promise((resolve, reject) => {
+                            resultCallback({
+                                code: ExportResultCode.SUCCESS,
+                            });
+                            resolve();
+                        })
+                );
+            const telemetry: RequestTelemetry = {
                 id: "123456",
                 name: "TestName",
                 duration: 2000, //2 seconds
@@ -142,7 +143,7 @@ describe("shim/TelemetryClient", () => {
                 .flush()
                 .then(() => {
                     assert.ok(stub.calledOnce, "Export called");
-                    let spans = stub.args[0][0];
+                    const spans = stub.args[0][0];
                     assert.equal(spans.length, 1);
                     assert.equal(spans[0].name, "TestName");
                     assert.equal(spans[0].endTime[0] - spans[0].startTime[0], 2); // hrTime UNIX Epoch time in seconds

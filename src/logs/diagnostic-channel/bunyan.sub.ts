@@ -20,11 +20,11 @@ const bunyanToAILevelMap: { [key: number]: string } = {
 };
 
 const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
-    let message = event.data.result as string;
+    const message = event.data.result as string;
     handlers.forEach((handler) => {
         try {
             // Try to parse message as Bunyan log is JSON
-            let log: any = JSON.parse(message);
+            const log: any = JSON.parse(message);
             if (log.err) {
                 handler.trackException({ exception: log.err });
                 return;
@@ -39,7 +39,7 @@ const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
 
 export function enable(enabled: boolean, handler: LogHandler) {
     if (enabled) {
-        let handlerFound = handlers.find((c) => c == handler);
+        const handlerFound = handlers.find((c) => c === handler);
         if (handlerFound) {
             return;
         }
@@ -57,7 +57,7 @@ export function enable(enabled: boolean, handler: LogHandler) {
         }
         handlers.push(handler);
     } else {
-        handlers = handlers.filter((c) => c != handler);
+        handlers = handlers.filter((c) => c !== handler);
         if (handlers.length === 0) {
             channel.unsubscribe("bunyan", subscriber);
         }

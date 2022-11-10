@@ -18,7 +18,7 @@ import { MetricName, StandardMetric } from "../types";
 
 export class StandardMetricsHandler {
     private _config: ApplicationInsightsConfig;
-    private _collectionInterval: number = 60000; // 60 seconds
+    private _collectionInterval = 60000; // 60 seconds
     private _meterProvider: MeterProvider;
     private _azureExporter: AzureMonitorMetricExporter;
     private _metricReader: PeriodicExportingMetricReader;
@@ -33,7 +33,7 @@ export class StandardMetricsHandler {
             views: this._getViews(),
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);
-        let exporterConfig: AzureMonitorExporterOptions = {
+        const exporterConfig: AzureMonitorExporterOptions = {
             connectionString: this._config.connectionString,
             aadTokenCredential: this._config.aadTokenCredential,
             storageDirectory: this._config.storageDirectory,
@@ -68,7 +68,7 @@ export class StandardMetricsHandler {
     }
 
     private _getViews(): View[] {
-        let views = [];
+        const views = [];
         views.push(
             new View({
                 name: StandardMetric.HTTP_REQUEST_DURATION,

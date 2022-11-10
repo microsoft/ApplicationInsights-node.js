@@ -58,13 +58,13 @@ export class RequestMetrics {
     }
 
     private _getRequestRate(observableResult: ObservableResult) {
-        let currentTime = +new Date();
-        var intervalRequests =
+        const currentTime = +new Date();
+        const intervalRequests =
             this._httpMetrics.totalRequestCount - this._lastRequestRate.count || 0;
-        var elapsedMs = currentTime - this._lastRequestRate.time;
+        const elapsedMs = currentTime - this._lastRequestRate.time;
         if (elapsedMs > 0) {
-            var elapsedSeconds = elapsedMs / 1000;
-            var requestsPerSec = intervalRequests / elapsedSeconds;
+            const elapsedSeconds = elapsedMs / 1000;
+            const requestsPerSec = intervalRequests / elapsedSeconds;
             observableResult.observe(requestsPerSec);
         }
         this._lastRequestRate = {
@@ -75,13 +75,13 @@ export class RequestMetrics {
     }
 
     private _getFailureRequestRate(observableResult: ObservableResult) {
-        let currentTime = +new Date();
-        var intervalRequests =
+        const currentTime = +new Date();
+        const intervalRequests =
             this._httpMetrics.totalFailedDependencyCount - this._lastFailureRequestRate.count || 0;
-        var elapsedMs = currentTime - this._lastFailureRequestRate.time;
+        const elapsedMs = currentTime - this._lastFailureRequestRate.time;
         if (elapsedMs > 0) {
-            var elapsedSeconds = elapsedMs / 1000;
-            var requestsPerSec = intervalRequests / elapsedSeconds;
+            const elapsedSeconds = elapsedMs / 1000;
+            const requestsPerSec = intervalRequests / elapsedSeconds;
             observableResult.observe(requestsPerSec);
         }
         this._lastFailureRequestRate = {

@@ -44,20 +44,20 @@ export class TraceHandler {
         this._metricHandler = metricHandler;
         this._instrumentations = [];
         const aiSampler = new ApplicationInsightsSampler(this._config.samplingRate);
-        let tracerConfig: NodeTracerConfig = {
+        const tracerConfig: NodeTracerConfig = {
             sampler: aiSampler,
             resource: ResourceManager.getInstance().getTraceResource(),
             forceFlushTimeoutMillis: 30000,
         };
         this._tracerProvider = new NodeTracerProvider(tracerConfig);
-        let exporterConfig: AzureMonitorExporterOptions = {
+        const exporterConfig: AzureMonitorExporterOptions = {
             connectionString: this._config.connectionString,
             aadTokenCredential: this._config.aadTokenCredential,
             storageDirectory: this._config.storageDirectory,
             disableOfflineStorage: this._config.disableOfflineStorage,
         };
         this._exporter = new AzureMonitorTraceExporter(exporterConfig);
-        let bufferConfig: BufferConfig = {
+        const bufferConfig: BufferConfig = {
             maxExportBatchSize: 512,
             scheduledDelayMillis: 5000,
             exportTimeoutMillis: 30000,

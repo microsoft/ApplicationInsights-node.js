@@ -6,9 +6,8 @@ import { HeartBeatHandler } from "../../../src/metrics/handlers/heartBeatHandler
 import { ApplicationInsightsConfig, ResourceManager } from "../../../src/shared";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
-
 describe("AutoCollection/HeartBeat", () => {
-    var sandbox: sinon.SinonSandbox;
+    let sandbox: sinon.SinonSandbox;
     let originalEnv: NodeJS.ProcessEnv;
     let config: ApplicationInsightsConfig;
     let heartbeat: HeartBeatHandler;
@@ -19,11 +18,12 @@ describe("AutoCollection/HeartBeat", () => {
         config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
         heartbeat = new HeartBeatHandler(config, { collectionInterval: 100 });
         sandbox.stub(heartbeat["_metricReader"]["_exporter"], "export");
-        sandbox.stub(heartbeat["_azureVm"], "getAzureComputeMetadata").callsFake(() => {
-            return new Promise((resolve, reject) => {
-                resolve({ isVM: true });
-            });
-        });
+        sandbox.stub(heartbeat["_azureVm"], "getAzureComputeMetadata").callsFake(
+            () =>
+                new Promise((resolve, reject) => {
+                    resolve({ isVM: true });
+                })
+        );
     });
 
     beforeEach(() => {
@@ -41,11 +41,11 @@ describe("AutoCollection/HeartBeat", () => {
         });
 
         it("should observe instruments during collection", async () => {
-            let mockExport = sandbox.stub(heartbeat["_azureExporter"], "export");
+            const mockExport = sandbox.stub(heartbeat["_azureExporter"], "export");
             heartbeat.start();
             await new Promise((resolve) => setTimeout(resolve, 120));
             assert.ok(mockExport.called);
-            let resourceMetrics = mockExport.args[0][0];
+            const resourceMetrics = mockExport.args[0][0];
             const scopeMetrics = resourceMetrics.scopeMetrics;
             assert.strictEqual(scopeMetrics.length, 1, "scopeMetrics count");
             const metrics = scopeMetrics[0].metrics;
@@ -54,7 +54,7 @@ describe("AutoCollection/HeartBeat", () => {
         });
 
         it("should not collect when disabled", async () => {
-            let mockExport = sandbox.stub(heartbeat["_azureExporter"], "export");
+            const mockExport = sandbox.stub(heartbeat["_azureExporter"], "export");
             heartbeat.start();
             heartbeat.shutdown();
             await new Promise((resolve) => setTimeout(resolve, 120));
@@ -64,7 +64,7 @@ describe("AutoCollection/HeartBeat", () => {
 
     describe("#_getMachineProperties()", () => {
         it("should read correct web app values from environment variable", (done) => {
-            var env1 = <{ [id: string]: string }>{};
+            const env1 = <{ [id: string]: string }>{};
             env1["WEBSITE_SITE_NAME"] = "site_name";
             env1["WEBSITE_HOME_STAMPNAME"] = "stamp_name";
             env1["WEBSITE_HOSTNAME"] = "host_name";
@@ -128,7 +128,7 @@ describe("AutoCollection/HeartBeat", () => {
         });
 
         it("should read correct function app values from environment variable", (done) => {
-            var env2 = <{ [id: string]: string }>{};
+            const env2 = <{ [id: string]: string }>{};
             env2["FUNCTIONS_WORKER_RUNTIME"] = "nodejs";
             env2["WEBSITE_HOSTNAME"] = "host_name";
             process.env = env2;

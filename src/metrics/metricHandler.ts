@@ -8,10 +8,7 @@ import {
     PerformanceCounterMetricsHandler,
 } from "./handlers";
 import { AzureHttpMetricsInstrumentation } from "./collection/azureHttpMetricsInstrumentation";
-import {
-    IMetricExceptionDimensions,
-    IMetricTraceDimensions,
-} from "./types";
+import { IMetricExceptionDimensions, IMetricTraceDimensions } from "./types";
 
 export class MetricHandler {
     private _config: ApplicationInsightsConfig;

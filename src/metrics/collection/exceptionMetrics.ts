@@ -37,7 +37,7 @@ export class ExceptionMetrics {
     }
 
     public countException(dimensions: IMetricExceptionDimensions) {
-        let counter: AggregatedMetricCounter = this._getAggregatedCounter(
+        const counter: AggregatedMetricCounter = this._getAggregatedCounter(
             dimensions,
             this._exceptionCountersCollection
         );
@@ -63,8 +63,8 @@ export class ExceptionMetrics {
                 continue;
             }
             // Check dimension values
-            for (let dim in dimensions) {
-                if ((<any>dimensions)[dim] != (<any>counterCollection[i].dimensions)[dim]) {
+            for (const dim in dimensions) {
+                if ((<any>dimensions)[dim] !== (<any>counterCollection[i].dimensions)[dim]) {
                     notMatch = true;
                     break;
                 }
@@ -76,20 +76,21 @@ export class ExceptionMetrics {
             notMatch = false;
         }
         // Create a new one if not found
-        let newCounter = new AggregatedMetricCounter(dimensions);
+        const newCounter = new AggregatedMetricCounter(dimensions);
         counterCollection.push(newCounter);
         return newCounter;
     }
 
     private _getExceptionRate(observableResult: BatchObservableResult) {
         for (let i = 0; i < this._exceptionCountersCollection.length; i++) {
-            var currentCounter = this._exceptionCountersCollection[i];
+            const currentCounter = this._exceptionCountersCollection[i];
             currentCounter.time = +new Date();
-            var intervalExceptions = currentCounter.totalCount - currentCounter.lastTotalCount || 0;
-            var elapsedMs = currentCounter.time - currentCounter.lastTime;
+            const intervalExceptions =
+                currentCounter.totalCount - currentCounter.lastTotalCount || 0;
+            const elapsedMs = currentCounter.time - currentCounter.lastTime;
             if (elapsedMs > 0 && intervalExceptions > 0) {
-                var elapsedSeconds = elapsedMs / 1000;
-                var exceptionsPerSec = intervalExceptions / elapsedSeconds;
+                const elapsedSeconds = elapsedMs / 1000;
+                const exceptionsPerSec = intervalExceptions / elapsedSeconds;
                 observableResult.observe(this._exceptionsRateGauge, exceptionsPerSec, {
                     ...currentCounter.dimensions,
                 });
@@ -102,10 +103,11 @@ export class ExceptionMetrics {
 
     private _getExceptionCount(observableResult: BatchObservableResult) {
         for (let i = 0; i < this._exceptionCountersCollection.length; i++) {
-            var currentCounter = this._exceptionCountersCollection[i];
+            const currentCounter = this._exceptionCountersCollection[i];
             currentCounter.time = +new Date();
-            var intervalExceptions = currentCounter.totalCount - currentCounter.lastTotalCount || 0;
-            var elapsedMs = currentCounter.time - currentCounter.lastTime;
+            const intervalExceptions =
+                currentCounter.totalCount - currentCounter.lastTotalCount || 0;
+            const elapsedMs = currentCounter.time - currentCounter.lastTime;
             if (elapsedMs > 0 && intervalExceptions > 0) {
                 observableResult.observe(this._exceptionsCountGauge, intervalExceptions, {
                     ...currentCounter.dimensions,

@@ -4,7 +4,7 @@ import * as sinon from "sinon";
 import { AutoCollectExceptions } from "../../../src/logs/exceptions";
 
 describe("AutoCollection/Exceptions", () => {
-    var sandbox: sinon.SinonSandbox;
+    let sandbox: sinon.SinonSandbox;
 
     before(() => {
         sandbox = sinon.createSandbox();
@@ -15,16 +15,16 @@ describe("AutoCollection/Exceptions", () => {
     });
 
     it("should use uncaughtExceptionMonitor for node 13.7.0+", () => {
-        var nodeVer = process.versions.node.split(".");
-        var expectation =
+        const nodeVer = process.versions.node.split(".");
+        const expectation =
             parseInt(nodeVer[0]) > 13 || (parseInt(nodeVer[0]) === 13 && parseInt(nodeVer[1]) >= 7);
-        var exceptions = new AutoCollectExceptions(null);
+        const exceptions = new AutoCollectExceptions(null);
         assert.equal(exceptions["_canUseUncaughtExceptionMonitor"], expectation);
     });
 
     it("enable auto collection", () => {
-        var processOnSpy = sandbox.spy(global.process, "on");
-        var exceptions = new AutoCollectExceptions(null);
+        const processOnSpy = sandbox.spy(global.process, "on");
+        const exceptions = new AutoCollectExceptions(null);
         exceptions.enable(true);
         if (exceptions["_canUseUncaughtExceptionMonitor"]) {
             assert.equal(
@@ -45,8 +45,8 @@ describe("AutoCollection/Exceptions", () => {
     });
 
     it("disables auto collection", () => {
-        var processRemoveListenerSpy = sandbox.spy(global.process, "removeListener");
-        var exceptions = new AutoCollectExceptions(null);
+        const processRemoveListenerSpy = sandbox.spy(global.process, "removeListener");
+        const exceptions = new AutoCollectExceptions(null);
         exceptions.enable(true);
         exceptions.enable(false);
         if (exceptions["_canUseUncaughtExceptionMonitor"]) {

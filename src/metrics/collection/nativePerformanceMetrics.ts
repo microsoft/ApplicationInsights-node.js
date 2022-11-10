@@ -9,7 +9,7 @@ export class NativePerformanceMetrics {
     private _isInitialized: boolean;
     private _handle: NodeJS.Timer;
     private _meter: Meter;
-    private _collectionInterval: number = 15000; // 15 seconds
+    private _collectionInterval = 15000; // 15 seconds
     private _eventLoopHistogram: Histogram;
     private _garbageCollectionScavenge: Histogram;
     private _garbageCollectionMarkSweepCompact: Histogram;
@@ -48,9 +48,10 @@ export class NativePerformanceMetrics {
      * @memberof AutoCollectNativePerformance
      */
     public enable(isEnabled: boolean): void {
-        if (this._metricsAvailable == undefined && isEnabled && !this._isInitialized) {
+        if (this._metricsAvailable === undefined && isEnabled && !this._isInitialized) {
             // Try to require in the native-metrics library. If it's found initialize it, else do nothing and never try again.
             try {
+                // eslint-disable-next-line @typescript-eslint/no-var-requires
                 const NativeMetricsEmitter = require("applicationinsights-native-metrics");
                 this._emitter = new NativeMetricsEmitter();
                 this._metricsAvailable = true;
@@ -126,7 +127,7 @@ export class NativePerformanceMetrics {
         try {
             const loopData = this._emitter.getLoopData();
             const metrics = loopData.loopUsage;
-            if (metrics.count == 0) {
+            if (metrics.count === 0) {
                 return;
             }
             this._eventLoopHistogram.record(metrics.total);
@@ -138,7 +139,7 @@ export class NativePerformanceMetrics {
     private _getGarbageCollection() {
         try {
             const gcData = this._emitter.getGCData();
-            for (let gc in gcData) {
+            for (const gc in gcData) {
                 const metrics = gcData[gc].metrics;
                 switch (gc) {
                     case GarbageCollectionType.IncrementalMarking:

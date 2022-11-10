@@ -85,7 +85,7 @@ export class ConnectionStringParser {
             newUrl = newUrl.replace("http://", "https://");
         }
         // Remove final slash if present
-        if (newUrl[newUrl.length - 1] == "/") {
+        if (newUrl[newUrl.length - 1] === "/") {
             newUrl = newUrl.slice(0, -1);
         }
         return newUrl;

@@ -17,8 +17,10 @@ export interface IVirtualMachineInfo {
 export class AzureVirtualMachine {
     private _TAG = "AzureVirtualMachine";
 
-    public async getAzureComputeMetadata(config: ApplicationInsightsConfig): Promise<IVirtualMachineInfo> {
-        let vmInfo: IVirtualMachineInfo = {};
+    public async getAzureComputeMetadata(
+        config: ApplicationInsightsConfig
+    ): Promise<IVirtualMachineInfo> {
+        const vmInfo: IVirtualMachineInfo = {};
         const metadataRequestUrl = `${AIMS_URI}?${AIMS_API_VERSION}&${AIMS_FORMAT}`;
         const requestOptions = {
             method: "GET",
@@ -41,7 +43,7 @@ export class AzureVirtualMachine {
                         });
                         res.on("end", () => {
                             try {
-                                let data = JSON.parse(virtualMachineData);
+                                const data = JSON.parse(virtualMachineData);
                                 vmInfo.id = data["vmId"] || "";
                                 vmInfo.subscriptionId = data["subscriptionId"] || "";
                                 vmInfo.osType = data["osType"] || "";

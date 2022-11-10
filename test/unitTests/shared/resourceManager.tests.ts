@@ -7,20 +7,20 @@ import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions"
 import { ResourceManager } from "../../../src/shared";
 
 describe("ResourceManager", () => {
-    var sandbox: sinon.SinonSandbox;
+    let sandbox: sinon.SinonSandbox;
 
     describe("#constructor()", () => {
         before(() => {
             sandbox = sinon.createSandbox();
             // Create custom package json
-            var jsonContent = JSON.stringify({ version: "testVersion" });
-            var testFilePath = path.resolve(__dirname, "testpackage.json");
-            fs.writeFile(testFilePath, jsonContent, () => { });
+            const jsonContent = JSON.stringify({ version: "testVersion" });
+            const testFilePath = path.resolve(__dirname, "testpackage.json");
+            fs.writeFile(testFilePath, jsonContent, () => {});
         });
 
         after(() => {
-            var testFilePath = path.resolve(__dirname, "testpackage.json");
-            fs.unlink(testFilePath, (err) => { });
+            const testFilePath = path.resolve(__dirname, "testpackage.json");
+            fs.unlink(testFilePath, (err) => {});
         });
 
         beforeEach(() => {
@@ -36,28 +36,28 @@ describe("ResourceManager", () => {
         });
 
         it("should set internalSdkVersion to 'node:<version>'", () => {
-            var resourceManager = new ResourceManager();
+            const resourceManager = new ResourceManager();
             const packageJsonPath = path.resolve(__dirname, "../../../../", "./package.json");
-            let packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+            const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
             assert.equal(
                 resourceManager["_baseResource"].attributes[
                     SemanticResourceAttributes.TELEMETRY_SDK_VERSION
                 ].toString(),
-                "node:" + packageJson.version
+                `node:${packageJson.version}`
             );
         });
 
         it("should correctly set service attributes", () => {
-            var resourceManager = new ResourceManager();
+            const resourceManager = new ResourceManager();
             assert.equal(
                 resourceManager["_baseResource"].attributes[
-                SemanticResourceAttributes.SERVICE_INSTANCE_ID
+                    SemanticResourceAttributes.SERVICE_INSTANCE_ID
                 ],
                 "host"
             );
             assert.equal(
                 resourceManager["_baseResource"].attributes[
-                SemanticResourceAttributes.SERVICE_NAME
+                    SemanticResourceAttributes.SERVICE_NAME
                 ],
                 "Web"
             );
@@ -69,17 +69,17 @@ describe("ResourceManager", () => {
             env.WEBSITE_SITE_NAME = "testRole";
             env.WEBSITE_INSTANCE_ID = "testRoleInstanceId";
             process.env = env;
-            var resourceManager = new ResourceManager();
+            const resourceManager = new ResourceManager();
             process.env = originalEnv;
             assert.equal(
                 resourceManager["_baseResource"].attributes[
-                SemanticResourceAttributes.SERVICE_INSTANCE_ID
+                    SemanticResourceAttributes.SERVICE_INSTANCE_ID
                 ],
                 "testRoleInstanceId"
             );
             assert.equal(
                 resourceManager["_baseResource"].attributes[
-                SemanticResourceAttributes.SERVICE_NAME
+                    SemanticResourceAttributes.SERVICE_NAME
                 ],
                 "testRole"
             );

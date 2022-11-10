@@ -12,12 +12,12 @@ class TestEmitter {
 }
 
 describe("AutoCollection/NativePerformance", () => {
-    var sandbox: sinon.SinonSandbox;
+    let sandbox: sinon.SinonSandbox;
     let testMeter: Meter;
 
     before(() => {
         sandbox = sinon.createSandbox();
-        let testProvider = new MeterProvider();
+        const testProvider = new MeterProvider();
         testMeter = testProvider.getMeter("test");
     });
 
@@ -27,7 +27,7 @@ describe("AutoCollection/NativePerformance", () => {
 
     describe("#Metrics", () => {
         it("init should enable and dispose should stop auto collection interval", () => {
-            var nativePerformance = new NativePerformanceMetrics(testMeter);
+            const nativePerformance = new NativePerformanceMetrics(testMeter);
             nativePerformance["_emitter"] = new TestEmitter();
             nativePerformance["_metricsAvailable"] = true;
 
@@ -42,7 +42,7 @@ describe("AutoCollection/NativePerformance", () => {
         });
 
         it("Calling enable when metrics are not available should fail gracefully", () => {
-            var nativePerformance = new NativePerformanceMetrics(testMeter);
+            const nativePerformance = new NativePerformanceMetrics(testMeter);
             nativePerformance["_metricsAvailable"] = false;
             assert.ok(!(<any>nativePerformance)["_emitter"]);
 

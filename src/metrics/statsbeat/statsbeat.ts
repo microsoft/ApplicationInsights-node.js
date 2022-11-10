@@ -2,6 +2,7 @@ import * as os from "os";
 
 import { Logger } from "../../shared/logging";
 import {
+    NetworkStatsbeat,
     StatsbeatAttach,
     StatsbeatCounter,
     StatsbeatFeature,
@@ -10,7 +11,6 @@ import {
     StatsbeatResourceProvider,
 } from "./types";
 import { ApplicationInsightsConfig, AzureVirtualMachine, ResourceManager } from "../../shared";
-import { NetworkStatsbeat } from "./types";
 import { Util } from "../../shared/util";
 import { MetricTelemetry, MetricPointTelemetry } from "../../declarations/contracts";
 import { KnownContextTagKeys } from "../../declarations/generated";
@@ -21,8 +21,8 @@ const STATSBEAT_LANGUAGE = "node";
 export class Statsbeat {
     private _connectionString =
         "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://dc.services.visualstudio.com/";
-    private _collectionShortIntervalMs: number = 900000; // 15 minutes
-    private _collectionLongIntervalMs: number = 1440000; // 1 day
+    private _collectionShortIntervalMs = 900000; // 15 minutes
+    private _collectionLongIntervalMs = 1440000; // 1 day
     private _TAG = "Statsbeat";
     private _networkStatsbeatCollection: Array<NetworkStatsbeat>;
     private _resourceManager: ResourceManager;
@@ -33,7 +33,7 @@ export class Statsbeat {
     private _config: ApplicationInsightsConfig;
     private _statsbeatConfig: ApplicationInsightsConfig;
     private _isVM: boolean | undefined;
-    private _statbeatMetrics: Array<{ name: string; value: number; properties: {} }>;
+    private _statbeatMetrics: Array<{ name: string; value: number; properties: unknown }>;
     private _azureVm: AzureVirtualMachine;
 
     // Custom dimensions
@@ -127,7 +127,7 @@ export class Statsbeat {
         if (!this.isEnabled()) {
             return;
         }
-        let counter: NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
+        const counter: NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
         counter.totalRequestCount++;
         counter.intervalRequestExecutionTime += duration;
         if (success === false) {
@@ -141,7 +141,7 @@ export class Statsbeat {
         if (!this.isEnabled()) {
             return;
         }
-        let counter: NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
+        const counter: NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
         counter.exceptionCount++;
     }
 
@@ -149,7 +149,7 @@ export class Statsbeat {
         if (!this.isEnabled()) {
             return;
         }
-        let counter: NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
+        const counter: NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
         counter.throttleCount++;
     }
 
@@ -157,14 +157,14 @@ export class Statsbeat {
         if (!this.isEnabled()) {
             return;
         }
-        let counter: NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
+        const counter: NetworkStatsbeat = this._getNetworkStatsbeatCounter(endpoint, host);
         counter.retryCount++;
     }
 
     public async trackShortIntervalStatsbeats() {
         try {
             await this._getResourceProvider();
-            let networkProperties = {
+            const networkProperties = {
                 os: this._os,
                 rp: this._resourceProvider,
                 cikey: this._cikey,
@@ -179,7 +179,7 @@ export class Statsbeat {
         } catch (error) {
             Logger.getInstance().info(
                 this._TAG,
-                "Failed to send Statsbeat metrics: " + Util.getInstance().dumpObj(error)
+                `Failed to send Statsbeat metrics: ${Util.getInstance().dumpObj(error)}`
             );
         }
     }
@@ -187,7 +187,7 @@ export class Statsbeat {
     public async trackLongIntervalStatsbeats() {
         try {
             await this._getResourceProvider();
-            let commonProperties = {
+            const commonProperties = {
                 os: this._os,
                 rp: this._resourceProvider,
                 cikey: this._cikey,
@@ -196,7 +196,7 @@ export class Statsbeat {
                 version: this._sdkVersion,
                 attach: this._attach,
             };
-            let attachProperties = Object.assign(
+            const attachProperties = Object.assign(
                 {
                     rpId: this._resourceIdentifier,
                 },
@@ -207,9 +207,9 @@ export class Statsbeat {
                 value: 1,
                 properties: attachProperties,
             });
-            if (this._instrumentation != StatsbeatInstrumentation.NONE) {
+            if (this._instrumentation !== StatsbeatInstrumentation.NONE) {
                 // Only send if there are some instrumentations enabled
-                let instrumentationProperties = Object.assign(
+                const instrumentationProperties = Object.assign(
                     {
                         feature: this._instrumentation,
                         type: StatsbeatFeatureType.Instrumentation,
@@ -222,9 +222,9 @@ export class Statsbeat {
                     properties: instrumentationProperties,
                 });
             }
-            if (this._feature != StatsbeatFeature.NONE) {
+            if (this._feature !== StatsbeatFeature.NONE) {
                 // Only send if there are some features enabled
-                let featureProperties = Object.assign(
+                const featureProperties = Object.assign(
                     { feature: this._feature, type: StatsbeatFeatureType.Feature },
                     commonProperties
                 );
@@ -238,7 +238,7 @@ export class Statsbeat {
         } catch (error) {
             Logger.getInstance().info(
                 this._TAG,
-                "Failed to send Statsbeat metrics: " + Util.getInstance().dumpObj(error)
+                `Failed to send Statsbeat metrics: ${Util.getInstance().dumpObj(error)}`
             );
         }
     }
@@ -255,26 +255,26 @@ export class Statsbeat {
             }
         }
         // Create a new one if not found
-        let newCounter = new NetworkStatsbeat(endpoint, host);
+        const newCounter = new NetworkStatsbeat(endpoint, host);
         this._networkStatsbeatCollection.push(newCounter);
         return newCounter;
     }
 
-    private _trackRequestDuration(commonProperties: {}) {
+    private _trackRequestDuration(commonProperties: unknown) {
         for (let i = 0; i < this._networkStatsbeatCollection.length; i++) {
-            var currentCounter = this._networkStatsbeatCollection[i];
+            const currentCounter = this._networkStatsbeatCollection[i];
             currentCounter.time = +new Date();
-            var intervalRequests =
+            const intervalRequests =
                 currentCounter.totalRequestCount - currentCounter.lastRequestCount || 0;
-            var averageRequestExecutionTime =
+            const averageRequestExecutionTime =
                 (currentCounter.intervalRequestExecutionTime -
                     currentCounter.lastIntervalRequestExecutionTime) /
-                intervalRequests || 0;
+                    intervalRequests || 0;
             currentCounter.lastIntervalRequestExecutionTime =
                 currentCounter.intervalRequestExecutionTime; // reset
             if (intervalRequests > 0) {
                 // Add extra properties
-                let properties = Object.assign(
+                const properties = Object.assign(
                     {
                         endpoint: this._networkStatsbeatCollection[i].endpoint,
                         host: this._networkStatsbeatCollection[i].host,
@@ -293,10 +293,10 @@ export class Statsbeat {
         }
     }
 
-    private _trackRequestsCount(commonProperties: {}) {
+    private _trackRequestsCount(commonProperties: unknown) {
         for (let i = 0; i < this._networkStatsbeatCollection.length; i++) {
-            var currentCounter = this._networkStatsbeatCollection[i];
-            let properties = Object.assign(
+            const currentCounter = this._networkStatsbeatCollection[i];
+            const properties = Object.assign(
                 { endpoint: currentCounter.endpoint, host: currentCounter.host },
                 commonProperties
             );
@@ -345,11 +345,11 @@ export class Statsbeat {
 
     private async _sendStatsbeats() {
         for (let i = 0; i < this._statbeatMetrics.length; i++) {
-            let statsbeat: MetricPointTelemetry = {
+            const statsbeat: MetricPointTelemetry = {
                 name: this._statbeatMetrics[i].name,
                 value: this._statbeatMetrics[i].value,
             };
-            let metricTelemetry: MetricTelemetry = {
+            const metricTelemetry: MetricTelemetry = {
                 metrics: [statsbeat],
                 properties: this._statbeatMetrics[i].properties,
             };
@@ -363,7 +363,7 @@ export class Statsbeat {
         const sdkVersion =
             String(
                 this._resourceManager.getTraceResource().attributes[
-                KnownContextTagKeys.AiInternalSdkVersion
+                    KnownContextTagKeys.AiInternalSdkVersion
                 ]
             ) || null;
         this._sdkVersion = sdkVersion; // "node" or "node-nativeperf"
@@ -380,7 +380,7 @@ export class Statsbeat {
             this._resourceProvider = StatsbeatResourceProvider.appsvc;
             this._resourceIdentifier = process.env.WEBSITE_SITE_NAME;
             if (process.env.WEBSITE_HOME_STAMPNAME) {
-                this._resourceIdentifier += "/" + process.env.WEBSITE_HOME_STAMPNAME;
+                this._resourceIdentifier += `/${process.env.WEBSITE_HOME_STAMPNAME}`;
             }
         } else if (process.env.FUNCTIONS_WORKER_RUNTIME) {
             // Function apps
@@ -389,14 +389,14 @@ export class Statsbeat {
                 this._resourceIdentifier = process.env.WEBSITE_HOSTNAME;
             }
         } else if (this._config) {
-            if (this._isVM === undefined || this._isVM == true) {
+            if (this._isVM === undefined || this._isVM === true) {
                 await this._azureVm
                     .getAzureComputeMetadata(this._config)
                     .then((vmInfo: IVirtualMachineInfo) => {
                         this._isVM = vmInfo.isVM;
                         if (this._isVM) {
                             this._resourceProvider = StatsbeatResourceProvider.vm;
-                            this._resourceIdentifier = vmInfo.id + "/" + vmInfo.subscriptionId;
+                            this._resourceIdentifier = `${vmInfo.id}/${vmInfo.subscriptionId}`;
                             // Override OS as VM info have higher precedence
                             if (vmInfo.osType) {
                                 this._os = vmInfo.osType;

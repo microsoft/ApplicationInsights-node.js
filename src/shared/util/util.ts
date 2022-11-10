@@ -52,9 +52,8 @@ export class Util {
     public trim(str: string): string {
         if (typeof str === "string") {
             return str.replace(/^\s+|\s+$/g, "");
-        } else {
-            return "";
         }
+        return "";
     }
 
     /**
@@ -161,8 +160,8 @@ export class Util {
             return;
         }
         const map: { [key: string]: string } = {};
-        for (let field in obj) {
-            let property: string = "";
+        for (const field in obj) {
+            let property = "";
             const origProperty: any = obj[field];
             const propType = typeof origProperty;
 
@@ -171,7 +170,7 @@ export class Util {
             } else if (origProperty === null || propType === "undefined") {
                 property = "";
             } else if (propType === "function") {
-                Logger.getInstance().info("key: " + field + " was function; will not serialize");
+                Logger.getInstance().info(`key: ${field} was function; will not serialize`);
                 continue;
             } else {
                 const stringTarget = this.isArray(origProperty)
@@ -184,9 +183,8 @@ export class Util {
                         property = JSON.stringify(stringTarget);
                     }
                 } catch (e) {
-                    property =
-                        origProperty.constructor.name.toString() + " (Error: " + e.message + ")";
-                    Logger.getInstance().info("key: " + field + ", could not be serialized");
+                    property = `${origProperty.constructor.name.toString()} (Error: ${e.message})`;
+                    Logger.getInstance().info(`key: ${field}, could not be serialized`);
                 }
             }
 
@@ -198,10 +196,10 @@ export class Util {
     public isDbDependency(dependencyType: string) {
         return (
             dependencyType.indexOf("SQL") > -1 ||
-            dependencyType == "mysql" ||
-            dependencyType == "postgresql" ||
-            dependencyType == "mongodb" ||
-            dependencyType == "redis"
+            dependencyType === "mysql" ||
+            dependencyType === "postgresql" ||
+            dependencyType === "mongodb" ||
+            dependencyType === "redis"
         );
     }
 
@@ -226,25 +224,25 @@ export class Util {
         useAgent = true
     ): http.ClientRequest {
         if (requestUrl && requestUrl.indexOf("//") === 0) {
-            requestUrl = "https:" + requestUrl;
+            requestUrl = `https:${requestUrl}`;
         }
 
-        var requestUrlParsed = new url.URL(requestUrl);
-        var options = {
+        const requestUrlParsed = new url.URL(requestUrl);
+        let options = {
             ...requestOptions,
             host: requestUrlParsed.hostname,
             port: requestUrlParsed.port,
             path: requestUrlParsed.pathname,
         };
 
-        var proxyUrl: string = undefined;
+        let proxyUrl: string = undefined;
         if (useProxy) {
             if (proxyUrl) {
                 if (proxyUrl.indexOf("//") === 0) {
-                    proxyUrl = "http:" + proxyUrl;
+                    proxyUrl = `http:${proxyUrl}`;
                 }
                 try {
-                    var proxyUrlParsed = new url.URL(proxyUrl);
+                    const proxyUrlParsed = new url.URL(proxyUrl);
                     // https is not supported at the moment
                     if (proxyUrlParsed.protocol === "https:") {
                         Logger.getInstance().info("Proxies that use HTTPS are not supported");
@@ -267,7 +265,7 @@ export class Util {
             }
         }
 
-        var isHttps = requestUrlParsed.protocol === "https:" && !proxyUrl;
+        const isHttps = requestUrlParsed.protocol === "https:" && !proxyUrl;
         if (useAgent) {
             if (isHttps) {
                 // HTTPS without a passed in agent. Use one that enforces our TLS rules
@@ -291,16 +289,9 @@ export class Util {
      */
     public dumpObj(object: any): string {
         const objectTypeDump: string = Object["prototype"].toString.call(object);
-        let propertyValueDump: string = "";
+        let propertyValueDump = "";
         if (objectTypeDump === "[object Error]") {
-            propertyValueDump =
-                "{ stack: '" +
-                object.stack +
-                "', message: '" +
-                object.message +
-                "', name: '" +
-                object.name +
-                "'";
+            propertyValueDump = `{ stack: '${object.stack}', message: '${object.message}', name: '${object.name}'`;
         } else {
             propertyValueDump = JSON.stringify(object);
         }

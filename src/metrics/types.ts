@@ -114,7 +114,7 @@ export interface IStandardMetricBaseDimensions {
     cloudRoleName?: string;
 }
 
-export interface IMetricExceptionDimensions extends IStandardMetricBaseDimensions {}
+export type IMetricExceptionDimensions = IStandardMetricBaseDimensions;
 
 export interface IMetricTraceDimensions extends IStandardMetricBaseDimensions {
     traceSeverityLevel?: string;

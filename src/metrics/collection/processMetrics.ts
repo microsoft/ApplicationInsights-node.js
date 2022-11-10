@@ -92,33 +92,33 @@ export class ProcessMetrics {
     }
 
     private _getTotalCombinedCpu(cpus: os.CpuInfo[]) {
-        var totalUser = 0;
-        var totalSys = 0;
-        var totalNice = 0;
-        var totalIdle = 0;
-        var totalIrq = 0;
-        for (var i = 0; !!cpus && i < cpus.length; i++) {
-            var cpu = cpus[i];
-            var lastCpu = this._lastCpus[i];
-            var times = cpu.times;
-            var lastTimes = lastCpu.times;
+        let totalUser = 0;
+        let totalSys = 0;
+        let totalNice = 0;
+        let totalIdle = 0;
+        let totalIrq = 0;
+        for (let i = 0; !!cpus && i < cpus.length; i++) {
+            const cpu = cpus[i];
+            const lastCpu = this._lastCpus[i];
+            const times = cpu.times;
+            const lastTimes = lastCpu.times;
             // user cpu time (or) % CPU time spent in user space
-            var user = times.user - lastTimes.user || 0;
+            const user = times.user - lastTimes.user || 0;
             totalUser += user;
             // system cpu time (or) % CPU time spent in kernel space
-            var sys = times.sys - lastTimes.sys || 0;
+            const sys = times.sys - lastTimes.sys || 0;
             totalSys += sys;
             // user nice cpu time (or) % CPU time spent on low priority processes
-            var nice = times.nice - lastTimes.nice || 0;
+            const nice = times.nice - lastTimes.nice || 0;
             totalNice += nice;
             // idle cpu time (or) % CPU time spent idle
-            var idle = times.idle - lastTimes.idle || 0;
+            const idle = times.idle - lastTimes.idle || 0;
             totalIdle += idle;
             // irq (or) % CPU time spent servicing/handling hardware interrupts
-            var irq = times.irq - lastTimes.irq || 0;
+            const irq = times.irq - lastTimes.irq || 0;
             totalIrq += irq;
         }
-        var combinedTotal = totalUser + totalSys + totalNice + totalIdle + totalIrq || 1;
+        const combinedTotal = totalUser + totalSys + totalNice + totalIdle + totalIrq || 1;
         return {
             combinedTotal: combinedTotal,
             totalUser: totalUser,
@@ -129,10 +129,10 @@ export class ProcessMetrics {
     private _getProcessorTime(observableResult: ObservableResult) {
         // this reports total ms spent in each category since the OS was booted, to calculate percent it is necessary
         // to find the delta since the last measurement
-        var cpus = os.cpus();
+        const cpus = os.cpus();
         if (cpus && cpus.length && this._lastCpus && cpus.length === this._lastCpus.length) {
-            let cpuTotals = this._getTotalCombinedCpu(cpus);
-            let value =
+            const cpuTotals = this._getTotalCombinedCpu(cpus);
+            const value =
                 ((cpuTotals.combinedTotal - cpuTotals.totalIdle) / cpuTotals.combinedTotal) * 100;
             observableResult.observe(value);
         }
@@ -142,7 +142,7 @@ export class ProcessMetrics {
     private _getProcessTime(observableResult: ObservableResult) {
         // this reports total ms spent in each category since the OS was booted, to calculate percent it is necessary
         // to find the delta since the last measurement
-        var cpus = os.cpus();
+        const cpus = os.cpus();
         if (cpus && cpus.length && this._lastCpus && cpus.length === this._lastCpus.length) {
             // Calculate % of total cpu time (user + system) this App Process used (Only supported by node v6.1.0+)
             let appCpuPercent: number | undefined = undefined;
@@ -163,8 +163,8 @@ export class ProcessMetrics {
             // Set previous
             this._lastAppCpuUsage = appCpuUsage;
             this._lastHrtime = hrtime;
-            let cpuTotals = this._getTotalCombinedCpu(cpus);
-            let value = appCpuPercent || (cpuTotals.totalUser / cpuTotals.combinedTotal) * 100;
+            const cpuTotals = this._getTotalCombinedCpu(cpus);
+            const value = appCpuPercent || (cpuTotals.totalUser / cpuTotals.combinedTotal) * 100;
             observableResult.observe(value);
         }
         this._lastCpus = cpus;

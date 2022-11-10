@@ -5,7 +5,7 @@ import * as path from "path";
 import { JsonConfig } from "../../../src/shared/configuration/jsonConfig";
 
 describe("Json Config", () => {
-    var sandbox: sinon.SinonSandbox;
+    let sandbox: sinon.SinonSandbox;
     let originalEnv: NodeJS.ProcessEnv;
 
     beforeEach(() => {
@@ -25,11 +25,11 @@ describe("Json Config", () => {
 
     describe("config path", () => {
         it("Default file path", () => {
-            let fileSpy = sandbox.spy(fs, "readFileSync");
+            const fileSpy = sandbox.spy(fs, "readFileSync");
             const config = JsonConfig.getInstance();
             config["_loadJsonFile"]();
             assert.ok(fileSpy.called);
-            let defaultPath = path.resolve(process.cwd(), "applicationinsights.json");
+            const defaultPath = path.resolve(process.cwd(), "applicationinsights.json");
             assert.equal(fileSpy.args[0][0], defaultPath);
         });
 

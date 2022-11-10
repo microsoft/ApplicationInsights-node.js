@@ -16,7 +16,7 @@ const subscriber = (event: IStandardEvent<consolePub.IConsoleData>) => {
             handler.trackException({ exception: message });
         } else {
             // Message can have a trailing newline
-            if (message.lastIndexOf("\n") == message.length - 1) {
+            if (message.lastIndexOf("\n") === message.length - 1) {
                 message = message.substring(0, message.length - 1);
             }
             handler.trackTrace({
@@ -31,7 +31,7 @@ const subscriber = (event: IStandardEvent<consolePub.IConsoleData>) => {
 
 export function enable(enabled: boolean, handler: LogHandler) {
     if (enabled) {
-        let handlerFound = handlers.find((c) => c == handler);
+        const handlerFound = handlers.find((c) => c === handler);
         if (handlerFound) {
             return;
         }
@@ -49,7 +49,7 @@ export function enable(enabled: boolean, handler: LogHandler) {
         }
         handlers.push(handler);
     } else {
-        handlers = handlers.filter((c) => c != handler);
+        handlers = handlers.filter((c) => c !== handler);
         if (handlers.length === 0) {
             channel.unsubscribe("console", subscriber);
         }

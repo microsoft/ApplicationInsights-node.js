@@ -33,7 +33,7 @@ export class HttpSender implements ISender {
 
         this._appInsightsClient.pipeline.removePolicy({ name: redirectPolicyName });
         if (options.aadTokenCredential) {
-            let scopes: string[] = [applicationInsightsResource];
+            const scopes: string[] = [applicationInsightsResource];
             this._appInsightsClient.pipeline.addPolicy(
                 bearerTokenAuthenticationPolicy({
                     credential: options.aadTokenCredential,
@@ -48,37 +48,35 @@ export class HttpSender implements ISender {
      * @internal
      */
     public async send(envelopes: Envelope[]): Promise<SenderResult> {
-        let options: TrackOptionalParams = {};
-        try {
-            let response: FullOperationResponse | undefined;
-            let onResponse = (rawResponse: FullOperationResponse, flatResponse: unknown) => {
-                response = rawResponse;
-                if (options.onResponse) {
-                    options.onResponse(rawResponse, flatResponse);
-                }
-            };
-            await this._appInsightsClient.track(envelopes, {
-                ...options,
-                onResponse,
-            });
+        const options: TrackOptionalParams = {};
+        let response: FullOperationResponse | undefined;
+        const onResponse = (rawResponse: FullOperationResponse, flatResponse: unknown) => {
+            response = rawResponse;
+            if (options.onResponse) {
+                options.onResponse(rawResponse, flatResponse);
+            }
+        };
+        await this._appInsightsClient.track(envelopes, {
+            ...options,
+            onResponse,
+        });
 
-            return { statusCode: response?.status, result: response?.bodyAsText ?? "" };
-        } catch (e) {
-            throw e;
-        }
+        return { statusCode: response?.status, result: response?.bodyAsText ?? "" };
     }
 
     /**
      * Shutdown sender
      * @internal
      */
-    public async shutdown(): Promise<void> {}
+    public async shutdown(): Promise<void> {
+        return;
+    }
 
     public handlePermanentRedirect(location: string | undefined) {
         if (location) {
             const locUrl = new url.URL(location);
             if (locUrl && locUrl.host) {
-                this._appInsightsClient.host = "https://" + locUrl.host;
+                this._appInsightsClient.host = `https://${locUrl.host}`;
             }
         }
     }

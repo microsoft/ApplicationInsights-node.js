@@ -17,7 +17,7 @@ export class Logger implements DiagLogger {
 
     constructor() {
         this._internalLogger = new InternalAzureLogger();
-        let envLogLevel = process.env.APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL;
+        const envLogLevel = process.env.APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL;
         this._diagLevel = DiagLogLevel.INFO; // Default
         switch (envLogLevel) {
             case "ALL":
