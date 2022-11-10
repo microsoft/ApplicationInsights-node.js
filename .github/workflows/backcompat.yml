@@ -2,9 +2,9 @@ name: Back Compatibility CI
 
 on:
   push:
-    branches: [ develop, master ]
+    branches: [ develop ]
   pull_request:
-    branches: [ develop, master ]
+    branches: [ develop ]
 
 jobs:
   backcompat:

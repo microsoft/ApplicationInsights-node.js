@@ -67,25 +67,9 @@ export function getCorrelationContext(): ICorrelationContext {
  * **(Experimental!)**
  * Starts a fresh context or propagates the current internal one.
  */
-export function startOperation(context: SpanContext, name: string): ICorrelationContext | null;
 export function startOperation(
-    context: Context,
-    request: HttpRequest
-): ICorrelationContext | null;
-export function startOperation(
-    context: Context,
-    name: string
-): ICorrelationContext | null;
-export function startOperation(
-    context: IncomingMessage | HttpRequest,
-    request?: never
-): ICorrelationContext | null;
-export function startOperation(
-    context:
-        | Context
-        | (IncomingMessage | HttpRequest)
-        | SpanContext,
-    request?: HttpRequest | string
+    arg1: Context | (IncomingMessage | HttpRequest) | SpanContext,
+    arg2?: HttpRequest | string
 ): ICorrelationContext | null {
     return null;
 }
@@ -96,10 +80,7 @@ export function startOperation(
  * Use this method if automatic dependency correlation is not propagating
  * correctly to an asynchronous callback.
  */
-export function wrapWithCorrelationContext<T extends Function>(
-    fn: T,
-    context?: ICorrelationContext
-): T {
+export function wrapWithCorrelationContext<T>(fn: T, context?: ICorrelationContext): T {
     return null;
 }
 
@@ -116,7 +97,7 @@ export class Configuration {
      * @param collectConsoleLog if true, logger autocollection will include console.log calls (default false)
      * @returns {Configuration} this class
      */
-    public static setAutoCollectConsole(value: boolean, collectConsoleLog: boolean = false) {
+    public static setAutoCollectConsole(value: boolean, collectConsoleLog = false) {
         return Configuration;
     }
 

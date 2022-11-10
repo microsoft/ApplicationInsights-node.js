@@ -35,10 +35,7 @@ import {
     Telemetry,
 } from "../declarations/contracts";
 import { Logger } from "../shared/logging";
-import {
-    IMetricExceptionDimensions,
-    IMetricTraceDimensions,
-} from "../metrics/types";
+import { IMetricExceptionDimensions, IMetricTraceDimensions } from "../metrics/types";
 import { MetricHandler } from "../metrics/metricHandler";
 import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 
@@ -54,7 +51,7 @@ export class LogHandler {
 
     constructor(config: ApplicationInsightsConfig, metricHandler?: MetricHandler) {
         this._config = config;
-        let exporterConfig: AzureMonitorExporterOptions = {
+        const exporterConfig: AzureMonitorExporterOptions = {
             connectionString: this._config.connectionString,
             aadTokenCredential: this._config.aadTokenCredential,
             storageDirectory: this._config.storageDirectory,
@@ -124,8 +121,8 @@ export class LogHandler {
         try {
             const envelope = this._traceToEnvelope(telemetry, this._config.getInstrumentationKey());
             if (this._metricHandler?.getConfig().enableAutoCollectStandardMetrics) {
-                let baseData = envelope.data.baseData as MessageData;
-                let traceDimensions: IMetricTraceDimensions = {
+                const baseData = envelope.data.baseData as MessageData;
+                const traceDimensions: IMetricTraceDimensions = {
                     cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
                     cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole],
                     traceSeverityLevel: baseData.severity,
@@ -158,7 +155,7 @@ export class LogHandler {
                 this._config.getInstrumentationKey()
             );
             if (this._metricHandler?.getConfig().enableAutoCollectStandardMetrics) {
-                let exceptionDimensions: IMetricExceptionDimensions = {
+                const exceptionDimensions: IMetricExceptionDimensions = {
                     cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
                     cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole],
                 };
@@ -195,20 +192,19 @@ export class LogHandler {
         baseData: MonitorDomain,
         instrumentationKey: string
     ): Envelope {
-        let version = 1;
-        let name =
-            "Microsoft.ApplicationInsights." +
-            instrumentationKey.replace(/-/g, "") +
-            "." +
-            baseType.substring(0, baseType.length - 4);
-        let sampleRate = 100; // TODO: Log sampling not supported yet
+        const version = 1;
+        const name = `Microsoft.ApplicationInsights.${instrumentationKey.replace(
+            /-/g,
+            ""
+        )}.${baseType.substring(0, baseType.length - 4)}`;
+        const sampleRate = 100; // TODO: Log sampling not supported yet
         let properties = {};
         if (telemetry.properties) {
             // sanitize properties
             properties = Util.getInstance().validateStringMap(telemetry.properties);
         }
         const tags = this._getTags();
-        let envelope: Envelope = {
+        const envelope: Envelope = {
             name: name,
             time: telemetry.time || new Date(),
             instrumentationKey: instrumentationKey,
@@ -234,8 +230,8 @@ export class LogHandler {
         telemetry: AvailabilityTelemetry,
         instrumentationKey: string
     ): Envelope {
-        let baseType = "AvailabilityData";
-        let baseData: AvailabilityData = {
+        const baseType = "AvailabilityData";
+        const baseData: AvailabilityData = {
             id: telemetry.id || this._idGenerator.generateSpanId(),
             name: telemetry.name,
             duration: Util.getInstance().msToTimeSpan(telemetry.duration),
@@ -245,7 +241,7 @@ export class LogHandler {
             measurements: telemetry.measurements,
             version: 2,
         };
-        let envelope = this._logToEnvelope(telemetry, baseType, baseData, instrumentationKey);
+        const envelope = this._logToEnvelope(telemetry, baseType, baseData, instrumentationKey);
         return envelope;
     }
 
@@ -257,23 +253,23 @@ export class LogHandler {
         telemetry: ExceptionTelemetry,
         instrumentationKey: string
     ): Envelope {
-        let baseType = "ExceptionData";
-        var stack = telemetry.exception["stack"];
-        let parsedStack = parseStack(stack);
-        let exceptionDetails: TelemetryExceptionDetails = {
+        const baseType = "ExceptionData";
+        const stack = telemetry.exception["stack"];
+        const parsedStack = parseStack(stack);
+        const exceptionDetails: TelemetryExceptionDetails = {
             message: telemetry.exception.message,
             typeName: telemetry.exception.name,
             parsedStack: parsedStack,
             hasFullStack: Util.getInstance().isArray(parsedStack) && parsedStack.length > 0,
         };
 
-        let baseData: TelemetryExceptionData = {
+        const baseData: TelemetryExceptionData = {
             severityLevel: telemetry.severity || KnownSeverityLevel.Error,
             exceptions: [exceptionDetails],
             measurements: telemetry.measurements,
             version: 2,
         };
-        let envelope = this._logToEnvelope(telemetry, baseType, baseData, instrumentationKey);
+        const envelope = this._logToEnvelope(telemetry, baseType, baseData, instrumentationKey);
         return envelope;
     }
 
@@ -282,14 +278,14 @@ export class LogHandler {
      * @internal
      */
     private _traceToEnvelope(telemetry: TraceTelemetry, instrumentationKey: string): Envelope {
-        let baseType = "MessageData";
-        let baseData: MessageData = {
+        const baseType = "MessageData";
+        const baseData: MessageData = {
             message: telemetry.message,
             severityLevel: telemetry.severity || KnownSeverityLevel.Information,
             measurements: telemetry.measurements,
             version: 2,
         };
-        let envelope = this._logToEnvelope(telemetry, baseType, baseData, instrumentationKey);
+        const envelope = this._logToEnvelope(telemetry, baseType, baseData, instrumentationKey);
         return envelope;
     }
 
@@ -301,8 +297,8 @@ export class LogHandler {
         telemetry: PageViewTelemetry,
         instrumentationKey: string
     ): Envelope {
-        let baseType = "PageViewData";
-        let baseData: PageViewData = {
+        const baseType = "PageViewData";
+        const baseData: PageViewData = {
             id: telemetry.id || this._idGenerator.generateSpanId(),
             name: telemetry.name,
             duration: Util.getInstance().msToTimeSpan(telemetry.duration),
@@ -312,7 +308,7 @@ export class LogHandler {
             version: 2,
         };
 
-        let envelope = this._logToEnvelope(telemetry, baseType, baseData, instrumentationKey);
+        const envelope = this._logToEnvelope(telemetry, baseType, baseData, instrumentationKey);
         return envelope;
     }
 
@@ -321,18 +317,18 @@ export class LogHandler {
      * @internal
      */
     private _eventToEnvelope(telemetry: EventTelemetry, instrumentationKey: string): Envelope {
-        let baseType = "EventData";
-        let baseData: TelemetryEventData = {
+        const baseType = "EventData";
+        const baseData: TelemetryEventData = {
             name: telemetry.name,
             measurements: telemetry.measurements,
             version: 2,
         };
-        let envelope = this._logToEnvelope(telemetry, baseType, baseData, instrumentationKey);
+        const envelope = this._logToEnvelope(telemetry, baseType, baseData, instrumentationKey);
         return envelope;
     }
 
     private _getTags() {
-        var tags = <{ [key: string]: string }>{};
+        const tags = <{ [key: string]: string }>{};
         const attributes = ResourceManager.getInstance().getLogResource().attributes;
         const serviceName = attributes[SemanticResourceAttributes.SERVICE_NAME];
         const serviceNamespace = attributes[SemanticResourceAttributes.SERVICE_NAMESPACE];

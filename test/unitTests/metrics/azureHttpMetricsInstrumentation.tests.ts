@@ -12,9 +12,7 @@ import { AzureHttpMetricsInstrumentation } from "../../../src/metrics/collection
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 
 nock("https://centralus-0.in.applicationinsights.azure.com")
-    .post("/v2.1/track", (body: string) => {
-        return true;
-    })
+    .post("/v2.1/track", (body: string) => true)
     .reply(200, {})
     .persist();
 
@@ -118,11 +116,11 @@ describe("AutoCollection/AzureHttpMetricsInstrumentation", () => {
     }
 
     it("Server/Client Metric Duration", async () => {
-        let mockExport = sandbox.stub(exporter, "export");
+        const mockExport = sandbox.stub(exporter, "export");
         await makeHttpRequest();
         await new Promise((resolve) => setTimeout(resolve, 250));
         assert.ok(mockExport.called);
-        let resourceMetrics = mockExport.args[0][0];
+        const resourceMetrics = mockExport.args[0][0];
         const scopeMetrics = resourceMetrics.scopeMetrics;
         assert.strictEqual(scopeMetrics.length, 1, "scopeMetrics count");
         const metrics = scopeMetrics[0].metrics;

@@ -29,8 +29,8 @@ describe("Library/TraceHandler", () => {
     describe("#Instrumentation Enablement", () => {
         it("AzureHttpMetricsInstrumentation", () => {
             _config.enableAutoCollectPerformance = true;
-            let metricHandler = new MetricHandler(_config);
-            let handler = new TraceHandler(_config, metricHandler);
+            const metricHandler = new MetricHandler(_config);
+            const handler = new TraceHandler(_config, metricHandler);
             handler.start();
             let found = false;
             handler["_instrumentations"].forEach((instrumentation: Instrumentation) => {
@@ -53,22 +53,21 @@ describe("Library/TraceHandler", () => {
 
         before(() => {
             process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-            let httpConfig: HttpInstrumentationConfig = {
+            const httpConfig: HttpInstrumentationConfig = {
                 enabled: true,
             };
             _config.instrumentations.http = httpConfig;
             metricHandler = new MetricHandler(_config);
             handler = new TraceHandler(_config, metricHandler);
-            exportStub = sinon
-                .stub(handler["_exporter"], "export")
-                .callsFake((spans: any, resultCallback: any) => {
-                    return new Promise((resolve, reject) => {
+            exportStub = sinon.stub(handler["_exporter"], "export").callsFake(
+                (spans: any, resultCallback: any) =>
+                    new Promise((resolve, reject) => {
                         resultCallback({
                             code: ExportResultCode.SUCCESS,
                         });
                         resolve();
-                    });
-                });
+                    })
+            );
             handler.start();
             // Load Http modules, HTTP instrumentation hook will be created in OpenTelemetry
             http = require("http") as any;
@@ -165,20 +164,7 @@ describe("Library/TraceHandler", () => {
             if (isHttps) {
                 return new Promise((resolve, reject) => {
                     const req = https.request(options, (res: any) => {
-                        res.on("data", function () { });
-                        res.on("end", () => {
-                            resolve();
-                        });
-                    });
-                    req.on("error", (error: Error) => {
-                        reject(error);
-                    });
-                    req.end();
-                });
-            } else {
-                return new Promise((resolve, reject) => {
-                    const req = http.request(options, (res: any) => {
-                        res.on("data", function () { });
+                        res.on("data", function () {});
                         res.on("end", () => {
                             resolve();
                         });
@@ -189,6 +175,18 @@ describe("Library/TraceHandler", () => {
                     req.end();
                 });
             }
+            return new Promise((resolve, reject) => {
+                const req = http.request(options, (res: any) => {
+                    res.on("data", function () {});
+                    res.on("end", () => {
+                        resolve();
+                    });
+                });
+                req.on("error", (error: Error) => {
+                    reject(error);
+                });
+                req.end();
+            });
         }
 
         it("http outgoing/incoming requests", (done) => {
@@ -199,7 +197,7 @@ describe("Library/TraceHandler", () => {
                         .flush()
                         .then(() => {
                             assert.ok(exportStub.calledOnce, "Export called");
-                            let spans = exportStub.args[0][0];
+                            const spans = exportStub.args[0][0];
                             assert.equal(spans.length, 2);
                             // Incoming request
                             assert.equal(spans[0].name, "HTTP GET");
@@ -213,7 +211,7 @@ describe("Library/TraceHandler", () => {
                             assert.ok(spans[0].endTime);
                             assert.equal(
                                 spans[0].attributes["http.host"],
-                                "localhost:" + mockHttpServerPort
+                                `localhost:${mockHttpServerPort}`
                             );
                             assert.equal(spans[0].attributes["http.method"], "GET");
                             assert.equal(spans[0].attributes["http.status_code"], "200");
@@ -221,7 +219,7 @@ describe("Library/TraceHandler", () => {
                             assert.equal(spans[0].attributes["http.target"], "/test");
                             assert.equal(
                                 spans[0].attributes["http.url"],
-                                "http://localhost:" + mockHttpServerPort + "/test"
+                                `http://localhost:${mockHttpServerPort}/test`
                             );
                             assert.equal(spans[0].attributes["net.host.name"], "localhost");
                             assert.equal(spans[0].attributes["net.host.port"], mockHttpServerPort);
@@ -237,7 +235,7 @@ describe("Library/TraceHandler", () => {
                             assert.ok(spans[1].endTime);
                             assert.equal(
                                 spans[1].attributes["http.host"],
-                                "localhost:" + mockHttpServerPort
+                                `localhost:${mockHttpServerPort}`
                             );
                             assert.equal(spans[1].attributes["http.method"], "GET");
                             assert.equal(spans[1].attributes["http.status_code"], "200");
@@ -245,7 +243,7 @@ describe("Library/TraceHandler", () => {
                             assert.equal(spans[1].attributes["http.target"], "/test");
                             assert.equal(
                                 spans[1].attributes["http.url"],
-                                "http://localhost:" + mockHttpServerPort + "/test"
+                                `http://localhost:${mockHttpServerPort}/test`
                             );
                             assert.equal(spans[1].attributes["net.peer.name"], "localhost");
                             assert.equal(spans[1].attributes["net.peer.port"], mockHttpServerPort);
@@ -277,7 +275,7 @@ describe("Library/TraceHandler", () => {
                         .flush()
                         .then(() => {
                             assert.ok(exportStub.calledOnce, "Export called");
-                            let spans = exportStub.args[0][0];
+                            const spans = exportStub.args[0][0];
                             assert.equal(spans.length, 2);
                             // Incoming request
                             assert.equal(spans[0].name, "HTTPS GET");
@@ -291,7 +289,7 @@ describe("Library/TraceHandler", () => {
                             assert.ok(spans[0].endTime);
                             assert.equal(
                                 spans[0].attributes["http.host"],
-                                "localhost:" + mockHttpsServerPort
+                                `localhost:${mockHttpsServerPort}`
                             );
                             assert.equal(spans[0].attributes["http.method"], "GET");
                             assert.equal(spans[0].attributes["http.status_code"], "200");
@@ -299,7 +297,7 @@ describe("Library/TraceHandler", () => {
                             assert.equal(spans[0].attributes["http.target"], "/test");
                             assert.equal(
                                 spans[0].attributes["http.url"],
-                                "https://localhost:" + mockHttpsServerPort + "/test"
+                                `https://localhost:${mockHttpsServerPort}/test`
                             );
                             assert.equal(spans[0].attributes["net.host.name"], "localhost");
                             assert.equal(spans[0].attributes["net.host.port"], mockHttpsServerPort);
@@ -315,7 +313,7 @@ describe("Library/TraceHandler", () => {
                             assert.ok(spans[1].endTime);
                             assert.equal(
                                 spans[1].attributes["http.host"],
-                                "localhost:" + mockHttpsServerPort
+                                `localhost:${mockHttpsServerPort}`
                             );
                             assert.equal(spans[1].attributes["http.method"], "GET");
                             assert.equal(spans[1].attributes["http.status_code"], "200");
@@ -323,7 +321,7 @@ describe("Library/TraceHandler", () => {
                             assert.equal(spans[1].attributes["http.target"], "/test");
                             assert.equal(
                                 spans[1].attributes["http.url"],
-                                "https://localhost:" + mockHttpsServerPort + "/test"
+                                `https://localhost:${mockHttpsServerPort}/test`
                             );
                             assert.equal(spans[1].attributes["net.peer.name"], "localhost");
                             assert.equal(spans[1].attributes["net.peer.port"], mockHttpsServerPort);
@@ -356,7 +354,7 @@ describe("Library/TraceHandler", () => {
                         .flush()
                         .then(() => {
                             assert.ok(exportStub.calledOnce, "Export called");
-                            let spans = exportStub.args[0][0];
+                            const spans = exportStub.args[0][0];
                             assert.equal(spans.length, 2);
                             // Incoming request
                             assert.equal(
@@ -380,11 +378,9 @@ describe("Library/TraceHandler", () => {
         });
 
         it("should not track dependencies if configured off", (done) => {
-            let httpConfig: HttpInstrumentationConfig = {
+            const httpConfig: HttpInstrumentationConfig = {
                 enabled: true,
-                ignoreOutgoingRequestHook: () => {
-                    return true;
-                },
+                ignoreOutgoingRequestHook: () => true,
             };
             handler["_httpInstrumentation"].setConfig(httpConfig);
             handler.start();
@@ -394,7 +390,7 @@ describe("Library/TraceHandler", () => {
                         .flush()
                         .then(() => {
                             assert.ok(exportStub.calledOnce, "Export called");
-                            let spans = exportStub.args[0][0];
+                            const spans = exportStub.args[0][0];
                             assert.equal(spans.length, 1);
                             assert.equal(spans[0].kind, 1, "Span Kind"); // Incoming only
                             done();
@@ -409,11 +405,9 @@ describe("Library/TraceHandler", () => {
         });
 
         it("should not track requests if configured off", (done) => {
-            let httpConfig: HttpInstrumentationConfig = {
+            const httpConfig: HttpInstrumentationConfig = {
                 enabled: true,
-                ignoreIncomingRequestHook: () => {
-                    return true;
-                },
+                ignoreIncomingRequestHook: () => true,
             };
             handler["_httpInstrumentation"].setConfig(httpConfig);
             handler.start();
@@ -423,7 +417,7 @@ describe("Library/TraceHandler", () => {
                         .flush()
                         .then(() => {
                             assert.ok(exportStub.calledOnce, "Export called");
-                            let spans = exportStub.args[0][0];
+                            const spans = exportStub.args[0][0];
                             assert.equal(spans.length, 1);
                             assert.equal(spans[0].kind, 2, "Span Kind"); // Outgoing only
                             done();

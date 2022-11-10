@@ -25,7 +25,7 @@ export class TelemetryClient {
     constructor(setupString?: string) {
         this.commonProperties = {};
         this.context = new Context();
-        var config = new ApplicationInsightsConfig();
+        const config = new ApplicationInsightsConfig();
         if (setupString) {
             // TODO: Add Support for iKey as well
             config.connectionString = setupString;
@@ -95,23 +95,23 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackRequest(telemetry: Contracts.RequestTelemetry): void {
-        let startTime = telemetry.time || new Date();
-        let endTime = startTime.getTime() + telemetry.duration;
+        const startTime = telemetry.time || new Date();
+        const endTime = startTime.getTime() + telemetry.duration;
 
         // TODO: Change resourceManager if ID is provided?
         const ctx = context.active();
-        let attributes: Attributes = {
+        const attributes: Attributes = {
             ...telemetry.properties,
         };
         attributes[SemanticAttributes.HTTP_METHOD] = "HTTP";
         attributes[SemanticAttributes.HTTP_URL] = telemetry.url;
         attributes[SemanticAttributes.HTTP_STATUS_CODE] = telemetry.resultCode;
-        let options: SpanOptions = {
+        const options: SpanOptions = {
             kind: SpanKind.SERVER,
             attributes: attributes,
             startTime: startTime,
         };
-        let span: any = this.client
+        const span: any = this.client
             .getTraceHandler()
             .getTracer()
             .startSpan(telemetry.name, options, ctx);
@@ -128,8 +128,8 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking option
      * */
     public trackDependency(telemetry: Contracts.DependencyTelemetry) {
-        let startTime = telemetry.time || new Date();
-        let endTime = startTime.getTime() + telemetry.duration;
+        const startTime = telemetry.time || new Date();
+        const endTime = startTime.getTime() + telemetry.duration;
         if (telemetry && !telemetry.target && telemetry.data) {
             // url.parse().host returns null for non-urls,
             // making this essentially a no-op in those cases
@@ -144,7 +144,7 @@ export class TelemetryClient {
             }
         }
         const ctx = context.active();
-        let attributes: Attributes = {
+        const attributes: Attributes = {
             ...telemetry.properties,
         };
         if (telemetry.dependencyTypeName) {
@@ -160,12 +160,12 @@ export class TelemetryClient {
         if (telemetry.target) {
             attributes[SemanticAttributes.PEER_SERVICE] = telemetry.target;
         }
-        let options: SpanOptions = {
+        const options: SpanOptions = {
             kind: SpanKind.CLIENT,
             attributes: attributes,
             startTime: startTime,
         };
-        let span: any = this.client
+        const span: any = this.client
             .getTraceHandler()
             .getTracer()
             .startSpan(telemetry.name, options, ctx);

@@ -20,7 +20,7 @@ export class ApplicationInsightsClient {
      */
     constructor(config?: ApplicationInsightsConfig) {
         this._config = config || new ApplicationInsightsConfig();
-        if (!this._config.connectionString || this._config.connectionString == "") {
+        if (!this._config.connectionString || this._config.connectionString === "") {
             throw new Error(
                 "Connection String not found, please provide it before starting Application Insights SDK."
             );

@@ -58,7 +58,8 @@ export class ResourceManager {
         const sdkVersion = APPLICATION_INSIGHTS_SDK_VERSION;
         this._baseResource.attributes[SemanticResourceAttributes.TELEMETRY_SDK_LANGUAGE] =
             TelemetrySdkLanguageValues.NODEJS;
-        this._baseResource.attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION] =
-            "node:" + sdkVersion;
+        this._baseResource.attributes[
+            SemanticResourceAttributes.TELEMETRY_SDK_VERSION
+        ] = `node:${sdkVersion}`;
     }
 }

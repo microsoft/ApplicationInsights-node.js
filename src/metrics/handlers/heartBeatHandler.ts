@@ -19,11 +19,10 @@ import { ApplicationInsightsConfig, AzureVirtualMachine, ResourceManager } from 
 import { IVirtualMachineInfo } from "../../shared/azureVirtualMachine";
 import { Logger } from "../../shared/logging";
 
-
 const HeartBeatMetricName = "HeartBeat";
 
 export class HeartBeatHandler {
-    private _collectionInterval: number = 900000;
+    private _collectionInterval = 900000;
     private _config: ApplicationInsightsConfig;
     private _meterProvider: MeterProvider;
     private _azureExporter: AzureMonitorMetricExporter;
@@ -39,7 +38,7 @@ export class HeartBeatHandler {
         this._config = config;
         this._azureVm = new AzureVirtualMachine();
         this._meterProvider = new MeterProvider();
-        let exporterConfig: AzureMonitorExporterOptions = {
+        const exporterConfig: AzureMonitorExporterOptions = {
             connectionString: config.connectionString,
             aadTokenCredential: config.aadTokenCredential,
             storageDirectory: config.storageDirectory,
@@ -71,12 +70,12 @@ export class HeartBeatHandler {
     }
 
     private async _getMachineProperties(): Promise<{ [key: string]: string }> {
-        let properties: { [key: string]: string } = {};
+        const properties: { [key: string]: string } = {};
         // TODO: Add sdk property for attach scenarios, confirm if this is only expected when attach happens, older code doing this was present in Default.ts
         const sdkVersion =
             String(
                 ResourceManager.getInstance().getTraceResource().attributes[
-                SemanticResourceAttributes.TELEMETRY_SDK_VERSION
+                    SemanticResourceAttributes.TELEMETRY_SDK_VERSION
                 ]
             ) || null;
         properties["sdk"] = sdkVersion;
@@ -92,7 +91,7 @@ export class HeartBeatHandler {
         } else {
             if (this._isVM === undefined) {
                 try {
-                    let vmInfo: IVirtualMachineInfo = await this._azureVm.getAzureComputeMetadata(
+                    const vmInfo: IVirtualMachineInfo = await this._azureVm.getAzureComputeMetadata(
                         this._config
                     );
                     this._isVM = vmInfo.isVM;

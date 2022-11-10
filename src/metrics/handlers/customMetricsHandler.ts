@@ -11,10 +11,9 @@ import {
 } from "@opentelemetry/sdk-metrics";
 import { ApplicationInsightsConfig, ResourceManager } from "../../shared";
 
-
 export class CustomMetricsHandler {
     private _config: ApplicationInsightsConfig;
-    private _collectionInterval: number = 60000; // 60 seconds
+    private _collectionInterval = 60000; // 60 seconds
     private _meterProvider: MeterProvider;
     private _azureExporter: AzureMonitorMetricExporter;
     private _metricReader: PeriodicExportingMetricReader;
@@ -26,7 +25,7 @@ export class CustomMetricsHandler {
             resource: ResourceManager.getInstance().getMetricResource(),
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);
-        let exporterConfig: AzureMonitorExporterOptions = {
+        const exporterConfig: AzureMonitorExporterOptions = {
             connectionString: this._config.connectionString,
             aadTokenCredential: this._config.aadTokenCredential,
             storageDirectory: this._config.storageDirectory,

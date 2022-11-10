@@ -37,7 +37,7 @@ export class TraceMetrics {
     }
 
     public countTrace(dimensions: IMetricTraceDimensions) {
-        let counter: AggregatedMetricCounter = this._getAggregatedCounter(
+        const counter: AggregatedMetricCounter = this._getAggregatedCounter(
             dimensions,
             this._traceCountersCollection
         );
@@ -63,8 +63,8 @@ export class TraceMetrics {
                 continue;
             }
             // Check dimension values
-            for (let dim in dimensions) {
-                if ((<any>dimensions)[dim] != (<any>counterCollection[i].dimensions)[dim]) {
+            for (const dim in dimensions) {
+                if ((<any>dimensions)[dim] !== (<any>counterCollection[i].dimensions)[dim]) {
                     notMatch = true;
                     break;
                 }
@@ -76,20 +76,20 @@ export class TraceMetrics {
             notMatch = false;
         }
         // Create a new one if not found
-        let newCounter = new AggregatedMetricCounter(dimensions);
+        const newCounter = new AggregatedMetricCounter(dimensions);
         counterCollection.push(newCounter);
         return newCounter;
     }
 
     private _getTraceRate(observableResult: BatchObservableResult) {
         for (let i = 0; i < this._traceCountersCollection.length; i++) {
-            var currentCounter = this._traceCountersCollection[i];
+            const currentCounter = this._traceCountersCollection[i];
             currentCounter.time = +new Date();
-            var intervalTraces = currentCounter.totalCount - currentCounter.lastTotalCount || 0;
-            var elapsedMs = currentCounter.time - currentCounter.lastTime;
+            const intervalTraces = currentCounter.totalCount - currentCounter.lastTotalCount || 0;
+            const elapsedMs = currentCounter.time - currentCounter.lastTime;
             if (elapsedMs > 0 && intervalTraces > 0) {
-                var elapsedSeconds = elapsedMs / 1000;
-                var tracesPerSec = intervalTraces / elapsedSeconds;
+                const elapsedSeconds = elapsedMs / 1000;
+                const tracesPerSec = intervalTraces / elapsedSeconds;
                 observableResult.observe(this._tracesRateGauge, tracesPerSec, {
                     ...currentCounter.dimensions,
                 });
@@ -102,10 +102,10 @@ export class TraceMetrics {
 
     private _getTraceCount(observableResult: BatchObservableResult) {
         for (let i = 0; i < this._traceCountersCollection.length; i++) {
-            var currentCounter = this._traceCountersCollection[i];
+            const currentCounter = this._traceCountersCollection[i];
             currentCounter.time = +new Date();
-            var intervalTraces = currentCounter.totalCount - currentCounter.lastTotalCount || 0;
-            var elapsedMs = currentCounter.time - currentCounter.lastTime;
+            const intervalTraces = currentCounter.totalCount - currentCounter.lastTotalCount || 0;
+            const elapsedMs = currentCounter.time - currentCounter.lastTime;
             if (elapsedMs > 0 && intervalTraces > 0) {
                 observableResult.observe(this._tracesCountGauge, intervalTraces, {
                     ...currentCounter.dimensions,

@@ -4,7 +4,7 @@ import * as sinon from "sinon";
 import { Util } from "../../../src/shared/util";
 
 describe("Library/Util", () => {
-    var sandbox: sinon.SinonSandbox;
+    let sandbox: sinon.SinonSandbox;
     before(() => {
         sandbox = sinon.createSandbox();
     });
@@ -65,8 +65,8 @@ describe("Library/Util", () => {
     });
 
     describe("#msToTimeSpan(totalMs)", () => {
-        var test = (input: number, expected: string, message: string) => {
-            var actual = Util.getInstance().msToTimeSpan(input);
+        const test = (input: number, expected: string, message: string) => {
+            const actual = Util.getInstance().msToTimeSpan(input);
             assert.equal(expected, actual, message);
         };
 

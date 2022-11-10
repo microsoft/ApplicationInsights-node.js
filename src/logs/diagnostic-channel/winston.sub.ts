@@ -62,7 +62,7 @@ const subscriber = (event: IStandardEvent<winston.IWinstonData>) => {
 
 export function enable(enabled: boolean, handler: LogHandler) {
     if (enabled) {
-        let handlerFound = handlers.find((c) => c == handler);
+        const handlerFound = handlers.find((c) => c === handler);
         if (handlerFound) {
             return;
         }
@@ -80,7 +80,7 @@ export function enable(enabled: boolean, handler: LogHandler) {
         }
         handlers.push(handler);
     } else {
-        handlers = handlers.filter((c) => c != handler);
+        handlers = handlers.filter((c) => c !== handler);
         if (handlers.length === 0) {
             channel.unsubscribe("winston", subscriber);
         }

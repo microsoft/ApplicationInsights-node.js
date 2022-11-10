@@ -8,7 +8,7 @@ import { LogHandler } from "../../../src/logs";
 import { ApplicationInsightsConfig } from "../../../src/shared";
 
 describe("AutoCollection/Console", () => {
-    var sandbox: sinon.SinonSandbox;
+    let sandbox: sinon.SinonSandbox;
 
     before(() => {
         sandbox = sinon.createSandbox();
@@ -21,10 +21,10 @@ describe("AutoCollection/Console", () => {
 
     describe("#log and #error()", () => {
         it("should call trackException for errors", () => {
-            let config = new ApplicationInsightsConfig();
+            const config = new ApplicationInsightsConfig();
             config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
             config.logInstrumentations.console.enabled = true;
-            let handler = new LogHandler(config);
+            const handler = new LogHandler(config);
             handler.start();
             const stub = sandbox.stub(handler, "trackException");
             const dummyError = new Error("test error");
@@ -39,10 +39,10 @@ describe("AutoCollection/Console", () => {
         });
 
         it("should call trackTrace for logs", () => {
-            let config = new ApplicationInsightsConfig();
+            const config = new ApplicationInsightsConfig();
             config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
             config.logInstrumentations.console.enabled = true;
-            let handler = new LogHandler(config);
+            const handler = new LogHandler(config);
             handler.start();
             const stub = sandbox.stub(handler, "trackTrace");
             const logEvent: console.IConsoleData = {
@@ -55,11 +55,11 @@ describe("AutoCollection/Console", () => {
         });
 
         it("should notify multiple handlers", () => {
-            let config = new ApplicationInsightsConfig();
+            const config = new ApplicationInsightsConfig();
             config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
             config.logInstrumentations.console.enabled = true;
-            let handler = new LogHandler(config);
-            let secondHandler = new LogHandler(config);
+            const handler = new LogHandler(config);
+            const secondHandler = new LogHandler(config);
             const stub = sandbox.stub(handler, "trackTrace");
             const secondStub = sandbox.stub(secondHandler, "trackTrace");
             enable(true, handler);

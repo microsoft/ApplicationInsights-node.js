@@ -28,7 +28,7 @@ const FILENAME_SUFFIX = ".ai.json";
 export class FileSystemPersist implements IPersistentStorage {
     public fileRetemptionPeriod = 7 * 24 * 60 * 60 * 1000; // 7 days
     public cleanupTimeOut = 60 * 60 * 1000; // 1 hour
-    public maxBytesOnDisk: number = 50_000_000; // ~50MB
+    public maxBytesOnDisk = 50_000_000; // ~50MB
 
     private _TAG = "FileSystemPersist";
     private _enabled: boolean;
@@ -116,23 +116,21 @@ export class FileSystemPersist implements IPersistentStorage {
                 const files = origFiles.filter((f) => path.basename(f).includes(FILENAME_SUFFIX));
                 if (files.length === 0) {
                     return null;
-                } else {
-                    const firstFile = files[0];
-                    const filePath = path.join(this._tempDirectory, firstFile);
-                    const payload = await readFileAsync(filePath);
-                    // delete the file first to prevent double sending
-                    await unlinkAsync(filePath);
-                    return payload;
                 }
+                const firstFile = files[0];
+                const filePath = path.join(this._tempDirectory, firstFile);
+                const payload = await readFileAsync(filePath);
+                // delete the file first to prevent double sending
+                await unlinkAsync(filePath);
+                return payload;
             }
             return null;
         } catch (e) {
             if (e.code === "ENOENT") {
                 // File does not exist -- return null instead of throwing
                 return null;
-            } else {
-                throw e;
             }
+            throw e;
         }
     }
 
@@ -153,7 +151,7 @@ export class FileSystemPersist implements IPersistentStorage {
         } catch (ex) {
             Logger.getInstance().warn(
                 this._TAG,
-                "Failed to apply file access control to folder: " + (ex && ex.message)
+                `Failed to apply file access control to folder: ${ex && ex.message}`
             );
             return false;
         }
@@ -203,21 +201,20 @@ export class FileSystemPersist implements IPersistentStorage {
                 const files = origFiles.filter((f) => path.basename(f).includes(FILENAME_SUFFIX));
                 if (files.length === 0) {
                     return false;
-                } else {
-                    files.forEach(async (file) => {
-                        // Check expiration
-                        const fileCreationDate: Date = new Date(
-                            parseInt(file.split(FILENAME_SUFFIX)[0])
-                        );
-                        const expired =
-                            new Date(+new Date() - this.fileRetemptionPeriod) > fileCreationDate;
-                        if (expired) {
-                            const filePath = path.join(this._tempDirectory, file);
-                            await unlinkAsync(filePath);
-                        }
-                    });
-                    return true;
                 }
+                files.forEach(async (file) => {
+                    // Check expiration
+                    const fileCreationDate: Date = new Date(
+                        parseInt(file.split(FILENAME_SUFFIX)[0])
+                    );
+                    const expired =
+                        new Date(+new Date() - this.fileRetemptionPeriod) > fileCreationDate;
+                    if (expired) {
+                        const filePath = path.join(this._tempDirectory, file);
+                        await unlinkAsync(filePath);
+                    }
+                });
+                return true;
             }
             return false;
         } catch (error) {

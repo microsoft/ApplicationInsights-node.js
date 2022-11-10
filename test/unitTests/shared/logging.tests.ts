@@ -5,7 +5,7 @@ import * as sinon from "sinon";
 import { Logger } from "../../../src/shared/logging";
 
 describe("Library/Logger", () => {
-    var sandbox: sinon.SinonSandbox;
+    let sandbox: sinon.SinonSandbox;
     let stub: sinon.SinonStub;
 
     before(() => {

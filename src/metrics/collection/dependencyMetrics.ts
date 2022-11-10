@@ -61,13 +61,13 @@ export class DependencyMetrics {
     }
 
     private _getDependencyRate(observableResult: ObservableResult) {
-        var last = this._lastDependencyRate;
-        let currentTime = +new Date();
-        var intervalDependencys = this._httpMetrics.totalDependencyCount - last.count || 0;
-        var elapsedMs = currentTime - last.time;
+        const last = this._lastDependencyRate;
+        const currentTime = +new Date();
+        const intervalDependencys = this._httpMetrics.totalDependencyCount - last.count || 0;
+        const elapsedMs = currentTime - last.time;
         if (elapsedMs > 0) {
-            var elapsedSeconds = elapsedMs / 1000;
-            var DependencysPerSec = intervalDependencys / elapsedSeconds;
+            const elapsedSeconds = elapsedMs / 1000;
+            const DependencysPerSec = intervalDependencys / elapsedSeconds;
             observableResult.observe(DependencysPerSec);
         }
         this._lastDependencyRate = {
@@ -78,13 +78,13 @@ export class DependencyMetrics {
     }
 
     private _getFailureDependencyRate(observableResult: ObservableResult) {
-        var last = this._lastFailureDependencyRate;
-        let currentTime = +new Date();
-        var intervalDependencys = this._httpMetrics.totalFailedDependencyCount - last.count || 0;
-        var elapsedMs = currentTime - last.time;
+        const last = this._lastFailureDependencyRate;
+        const currentTime = +new Date();
+        const intervalDependencys = this._httpMetrics.totalFailedDependencyCount - last.count || 0;
+        const elapsedMs = currentTime - last.time;
         if (elapsedMs > 0) {
-            var elapsedSeconds = elapsedMs / 1000;
-            var DependencysPerSec = intervalDependencys / elapsedSeconds;
+            const elapsedSeconds = elapsedMs / 1000;
+            const DependencysPerSec = intervalDependencys / elapsedSeconds;
             observableResult.observe(DependencysPerSec);
         }
         this._lastFailureDependencyRate = {

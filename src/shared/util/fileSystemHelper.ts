@@ -59,7 +59,7 @@ export const getShallowDirectorySize = async (directory: string): Promise<number
  * Computes the size (in bytes) of all files in a directory at the root level. Synchronously.
  */
 export const getShallowDirectorySizeSync = (directory: string): number => {
-    let files = fs.readdirSync(directory);
+    const files = fs.readdirSync(directory);
     let totalSize = 0;
     for (let i = 0; i < files.length; i++) {
         totalSize += fs.statSync(path.join(directory, files[i])).size;

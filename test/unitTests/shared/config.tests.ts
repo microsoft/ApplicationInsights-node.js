@@ -11,9 +11,9 @@ import { ENV_AZURE_PREFIX, ENV_IKEY } from "../../../src/shared/configuration/ty
 const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
 
 describe("Library/Config", () => {
-    var iKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
+    const iKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
     let originalEnv: NodeJS.ProcessEnv;
-    var sandbox: sinon.SinonSandbox;
+    let sandbox: sinon.SinonSandbox;
 
     beforeEach(() => {
         originalEnv = process.env;
@@ -29,7 +29,7 @@ describe("Library/Config", () => {
     describe("#constructor", () => {
         describe("connection string && API && environment variable prioritization", () => {
             it("connection string set via in code setup", () => {
-                var env = {
+                const env = {
                     [ENV_connectionString]: "InstrumentationKey=cs.env",
                     [ENV_IKEY]: "ikey.env",
                 };
@@ -40,7 +40,7 @@ describe("Library/Config", () => {
             });
 
             it("connection string set via environment variable", () => {
-                var env = {
+                const env = {
                     [ENV_connectionString]: "InstrumentationKey=cs.env",
                     [ENV_IKEY]: "ikey.env",
                 };
@@ -50,7 +50,7 @@ describe("Library/Config", () => {
             });
 
             it("instrumentation key set via environment variable", () => {
-                var env = { [ENV_IKEY]: "ikey.env" };
+                const env = { [ENV_IKEY]: "ikey.env" };
                 process.env = env;
                 const config = new ApplicationInsightsConfig();
                 assert.deepEqual(config.getInstrumentationKey(), "ikey.env");
@@ -168,45 +168,45 @@ describe("Library/Config", () => {
             });
 
             it("should read iKey from environment", () => {
-                var env = <{ [id: string]: string }>{};
+                const env = <{ [id: string]: string }>{};
                 env[ENV_IKEY] = iKey;
                 process.env = env;
-                var config = new ApplicationInsightsConfig();
+                const config = new ApplicationInsightsConfig();
                 assert.equal(config.getInstrumentationKey(), iKey);
             });
 
             it("should read iKey from azure environment", () => {
-                var env = <{ [id: string]: string }>{};
+                const env = <{ [id: string]: string }>{};
                 env[ENV_AZURE_PREFIX + ENV_IKEY] = iKey;
                 process.env = env;
-                var config = new ApplicationInsightsConfig();
+                const config = new ApplicationInsightsConfig();
                 assert.equal(config.getInstrumentationKey(), iKey);
             });
 
             it("should initialize valid values", () => {
-                var config = new ApplicationInsightsConfig();
+                const config = new ApplicationInsightsConfig();
                 config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
                 assert(typeof config.getInstrumentationKey() === "string");
                 assert(typeof config.samplingRate === "number");
             });
 
             it("instrumentation key validation-valid key passed", () => {
-                var warnStub = sandbox.stub(console, "warn");
-                var config = new ApplicationInsightsConfig();
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new ApplicationInsightsConfig();
                 config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
                 assert.ok(warnStub.notCalled, "warning was not raised");
             });
 
             it("instrumentation key validation-invalid key passed", () => {
-                var warnStub = sandbox.stub(console, "warn");
-                var config = new ApplicationInsightsConfig();
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new ApplicationInsightsConfig();
                 config.connectionString = "InstrumentationKey=1aa11111bbbb1ccc8dddeeeeffff3333";
                 assert.ok(warnStub.calledOn, "warning was raised");
             });
 
             it("instrumentation key validation-invalid key passed", () => {
-                var warnStub = sandbox.stub(console, "warn");
-                var config = new ApplicationInsightsConfig();
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new ApplicationInsightsConfig();
                 config.connectionString = "abc";
                 assert.ok(warnStub.calledOn, "warning was raised");
             });

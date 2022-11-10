@@ -33,7 +33,7 @@ export class LogExporter {
         this._endpointUrl = DEFAULT_BREEZE_ENDPOINT;
 
         if (this._options.connectionString) {
-            let parser = new ConnectionStringParser();
+            const parser = new ConnectionStringParser();
             const parsedConnectionString = parser.parse(this._options.connectionString);
             this._instrumentationKey =
                 parsedConnectionString.instrumentationkey || this._instrumentationKey;
@@ -98,16 +98,14 @@ export class LogExporter {
                     return {
                         code: ExportResultCode.FAILED,
                     };
-                } else {
-                    // calls resultCallback(ExportResult) based on result of persister.push
-                    return await this._persist(envelopes);
                 }
-            } else {
-                // Failed -- not retriable
-                return {
-                    code: ExportResultCode.FAILED,
-                };
+                // calls resultCallback(ExportResult) based on result of persister.push
+                return await this._persist(envelopes);
             }
+            // Failed -- not retriable
+            return {
+                code: ExportResultCode.FAILED,
+            };
         } catch (error) {
             const restError = error as RestError;
             if (

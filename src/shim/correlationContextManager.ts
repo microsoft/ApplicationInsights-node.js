@@ -4,7 +4,6 @@ import * as http from "http";
 import { SpanContext } from "@opentelemetry/api";
 import { ICorrelationContext, ITraceparent, ITracestate, Context, HttpRequest } from "./types";
 
-
 export class CorrelationContextManager {
     /**
      *  Provides the current Context.
@@ -52,7 +51,7 @@ export class CorrelationContextManager {
      *
      *  The supplied callback will be given the same context that was present for
      *  the call to wrapCallback.  */
-    public wrapCallback<T extends Function>(fn: T, context?: ICorrelationContext): T {
+    public wrapCallback<T>(fn: T, context?: ICorrelationContext): T {
         throw new Error("Not implemented");
     }
 
@@ -67,10 +66,7 @@ export class CorrelationContextManager {
      * Create new correlation context.
      */
     public startOperation(
-        context:
-            | Context
-            | (http.IncomingMessage | HttpRequest)
-            | SpanContext,
+        context: Context | (http.IncomingMessage | HttpRequest) | SpanContext,
         request?: HttpRequest | string
     ): ICorrelationContext | null {
         throw new Error("Not implemented");
