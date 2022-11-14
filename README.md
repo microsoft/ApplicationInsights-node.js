@@ -1,12 +1,9 @@
 # Application Insights for Node.js
 
 [![npm version](https://badge.fury.io/js/applicationinsights.svg)](http://badge.fury.io/js/applicationinsights)
-![Integration Tests CI](https://github.com/microsoft/ApplicationInsights-node.js/workflows/Integration%20Tests%20CI/badge.svg)
-![Node.js CI](https://github.com/microsoft/ApplicationInsights-node.js/workflows/Node.js%20CI/badge.svg)
-![Back Compatability CI](https://github.com/microsoft/ApplicationInsights-node.js/workflows/Back%20Compatability%20CI/badge.svg)
 
 
-## [`applicationinsights@3.0.0-beta`](https://github.com/microsoft/ApplicationInsights-node.js/tree/applicationinsights%402.0.0) (Beta)
+## `applicationinsights@3.0.0-beta`
 
 An experimental / beta version of the SDK is also available. It is built on top of [OpenTelemetry](https://opentelemetry.io/), more information about beta version available [here](https://github.com/microsoft/ApplicationInsights-node.js/tree/beta#readme).
 
