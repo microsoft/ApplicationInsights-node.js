@@ -213,17 +213,17 @@ describe("Library/Util", () => {
         });
         it("supports object and string .toJSON return values", () => {
             const complex = {
-                secret: "private",
-                isPublic: "public",
+                prop1: "private",
+                prop2: "public",
                 toJSON: function() {
                     return {
-                        isPublic: this.isPublic,
+                        prop2: this.prop2,
                     }
                 },
             };
             const d = new Date(1971, 5, 28);
             const mapped = Util.validateStringMap({ date: d, complex });
-            assert.deepEqual(JSON.parse(mapped.complex), { isPublic: "public" });
+            assert.deepEqual(JSON.parse(mapped.complex), { prop2: "public" });
             assert.equal(mapped.date, d.toJSON());
         });
         it("should handle circular references", () => {
