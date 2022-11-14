@@ -5,6 +5,15 @@
 ![Node.js CI](https://github.com/microsoft/ApplicationInsights-node.js/workflows/Node.js%20CI/badge.svg)
 ![Back Compatability CI](https://github.com/microsoft/ApplicationInsights-node.js/workflows/Back%20Compatability%20CI/badge.svg)
 
+
+## [`applicationinsights@3.0.0-beta`](https://github.com/microsoft/ApplicationInsights-node.js/tree/applicationinsights%402.0.0) (Beta)
+
+An experimental / beta version of the SDK is also available. It is built on top of [OpenTelemetry](https://opentelemetry.io/), more information about beta version available [here](https://github.com/microsoft/ApplicationInsights-node.js/tree/beta#readme).
+
+```zsh
+npm install applicationinsights@beta
+```
+
 [Azure Application Insights][] monitors your backend services and components after
 you deploy them to help you [discover and rapidly diagnose performance and other
 issues][]. Add this SDK to your Node.js services to include deep info about Node.js
@@ -23,6 +32,8 @@ This library tracks the following out-of-the-box:
 
 You can manually track more aspects of your app and system using the API described in the
 [Track custom telemetry](#track-custom-telemetry) section.
+
+
 
 ## Supported Node.JS versions 
 
