@@ -9,8 +9,7 @@ processes and their external dependencies such as database and cache services.
 You can use this SDK for your Node.js services hosted anywhere: your datacenter,
 Azure VMs and Web Apps, and even other public clouds. This soulution is based on OpenTelemetry, to learn more about OpenTelemetry concepts, see the [OpenTelemetry overview](opentelemetry-overview.md) or [OpenTelemetry FAQ](/azure/azure-monitor/faq#opentelemetry).
 
-> [!IMPORTANT]
-> The Azure Monitor OpenTelemetry-based Offerings for Node.js applications are currently in preview.
+> *Important:* The Azure Monitor OpenTelemetry-based Offerings for Node.js applications are currently in preview.
 > See the [Supplemental Terms of Use for Microsoft Azure Previews](https://azure.microsoft.com/support/legal/preview-supplemental-terms/) for legal terms that apply to Azure features that are in beta, preview, or otherwise not yet released into general availability.
 
 [Azure Application Insights]: https://azure.microsoft.com/documentation/articles/app-insights-overview/
@@ -30,8 +29,7 @@ Consider whether this preview is right for you. It *enables distributed tracing,
  - Propagating Operation Name to Dependency Telemetry
 
 
-> [!WARNING]
-> This SDK only works for Node.js environments. Use the [Application Insights JavaScript SDK](https://github.com/microsoft/ApplicationInsights-JS) for web and browser scenarios.
+> *Warning:* This SDK only works for Node.js environments. Use the [Application Insights JavaScript SDK](https://github.com/microsoft/ApplicationInsights-JS) for web and browser scenarios.
 
 
 ## Get started
@@ -161,8 +159,7 @@ process.env.APPLICATIONINSIGHTS_CONFIGURATION_FILE = "C:/applicationinsights/con
 
 The following OpenTelemetry Instrumentation libraries are included as part of Azure Monitor Application Insights Distro.
 
-> [!WARNING]
-> Instrumentation libraries are based on experimental OpenTelemetry specifications. Microsoft's *preview* support commitment is to ensure that the following libraries emit data to Azure Monitor Application Insights, but it's possible that breaking changes or experimental mapping will block some data elements.
+> *Warning:* Instrumentation libraries are based on experimental OpenTelemetry specifications. Microsoft's *preview* support commitment is to ensure that the following libraries emit data to Azure Monitor Application Insights, but it's possible that breaking changes or experimental mapping will block some data elements.
 
 ### Distributed Tracing
 
@@ -238,8 +235,7 @@ appInsights.start();
 
 ---
 
-> [!TIP]
-> If you're not sure where to set the sampling rate, start at 5% (i.e., 0.05 sampling ratio) and adjust the rate based on the accuracy of the operations shown in the failures and performance blades. A higher rate generally results in higher accuracy.
+> *Tip:* If you're not sure where to set the sampling rate, start at 5% (i.e., 0.05 sampling ratio) and adjust the rate based on the accuracy of the operations shown in the failures and performance blades. A higher rate generally results in higher accuracy.
 
 
 ## Modify telemetry
@@ -255,8 +251,7 @@ To add span attributes, use either of the following two ways:
 
 These attributes might include adding a custom property to your telemetry. You might also use attributes to set optional fields in the Application Insights schema, like Client IP.
 
-> [!TIP]
-> The advantage of using options provided by instrumentation libraries, when they're available, is that the entire context is available. As a result, users can select to add or filter more attributes. For example, the enrich option in the HttpClient instrumentation library gives users access to the httpRequestMessage itself. They can select anything from it and store it as an attribute.
+> *Tip:* The advantage of using options provided by instrumentation libraries, when they're available, is that the entire context is available. As a result, users can select to add or filter more attributes. For example, the enrich option in the HttpClient instrumentation library gives users access to the httpRequestMessage itself. They can select anything from it and store it as an attribute.
 
 #### Add a custom property to a Trace
 
@@ -369,8 +364,7 @@ The following table shows the recommended aggregation types] for each of the Ope
 | UpDownCounter (Python and Node.js only)              | Sum                                                        |
 | Asynchronous UpDownCounter (Python and Node.js only) | Sum                                                        |
 
-> [!CAUTION]
-> Aggregation types beyond what's shown in the table typically aren't meaningful.
+>> *Caution:* Aggregation types beyond what's shown in the table typically aren't meaningful.
 
 The [OpenTelemetry Specification](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#instrument)
 describes the instruments and provides examples of when you might use each one.
