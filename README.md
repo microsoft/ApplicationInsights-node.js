@@ -1,9 +1,6 @@
 # Application Insights for Node.js
 
 [![npm version](https://badge.fury.io/js/applicationinsights.svg)](http://badge.fury.io/js/applicationinsights)
-![Integration Tests CI](https://github.com/microsoft/ApplicationInsights-node.js/workflows/Integration%20Tests%20CI/badge.svg)
-![Node.js CI](https://github.com/microsoft/ApplicationInsights-node.js/workflows/Node.js%20CI/badge.svg)
-![Back Compatability CI](https://github.com/microsoft/ApplicationInsights-node.js/workflows/Back%20Compatability%20CI/badge.svg)
 
 
 ## `applicationinsights@3.0.0-beta`
