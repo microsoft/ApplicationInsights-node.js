@@ -6,7 +6,7 @@
 ![Back Compatability CI](https://github.com/microsoft/ApplicationInsights-node.js/workflows/Back%20Compatability%20CI/badge.svg)
 
 
-## [`applicationinsights@3.0.0-beta`](https://github.com/microsoft/ApplicationInsights-node.js/tree/applicationinsights%402.0.0) (Beta)
+## `applicationinsights@3.0.0-beta`
 
 An experimental / beta version of the SDK is also available. It is built on top of [OpenTelemetry](https://opentelemetry.io/), more information about beta version available [here](https://github.com/microsoft/ApplicationInsights-node.js/tree/beta#readme).
 
