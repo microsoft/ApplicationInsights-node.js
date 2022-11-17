@@ -1,6 +1,6 @@
 import http = require("http");
 import https = require("https");
-import azureCore = require("@azure/core-http");
+import * as azureCoreAuth from "@azure/core-auth";
 import { DistributedTracingModes } from "../applicationinsights";
 import { IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";
 
@@ -216,5 +216,5 @@ export interface IConfig extends IBaseConfig {
     /** An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined) */
     httpsAgent: https.Agent;
     /** AAD TokenCredential to use to authenticate the app */
-    aadTokenCredential?: azureCore.TokenCredential;
+    aadTokenCredential?: azureCoreAuth.TokenCredential;
 }

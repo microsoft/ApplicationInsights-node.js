@@ -1,13 +1,13 @@
 import assert = require("assert");
 import https = require("https");
 import sinon = require("sinon");
-import azureCore = require("@azure/core-http");
+import azureCoreAuth = require("@azure/core-auth");
 
 import AuthorizationHandler = require("../../Library/AuthorizationHandler");
 import Config = require("../../Library/Config");
 import Util = require("../../Library/Util");
 
-class TestTokenCredential implements azureCore.TokenCredential {
+class TestTokenCredential implements azureCoreAuth.TokenCredential {
     private _expiresOn: Date;
     private _numberOfRefreshs = 0;
 
