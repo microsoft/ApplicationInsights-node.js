@@ -284,6 +284,7 @@ class Statsbeat {
             if (res != null && res.length > 1) {
                 shortHost = res[1];
             }
+            shortHost = shortHost.replace(".in.applicationinsights.azure.com", "");
         }
         catch (error) {
             // Ignore error
