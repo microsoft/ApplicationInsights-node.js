@@ -1,6 +1,5 @@
 import url = require("url");
 import os = require("os");
-import azureCore = require("@azure/core-http");
 
 import Config = require("./Config");
 import AuthorizationHandler = require("./AuthorizationHandler");

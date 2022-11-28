@@ -1,4 +1,4 @@
-import azureCore = require("@azure/core-http");
+import azureCoreAuth = require("@azure/core-auth");
 
 import CorrelationIdManager = require("./CorrelationIdManager");
 import ConnectionStringParser = require("./ConnectionStringParser");
@@ -33,7 +33,7 @@ class Config implements IConfig {
     public httpAgent: http.Agent;
     public httpsAgent: https.Agent;
     public ignoreLegacyHeaders: boolean;
-    public aadTokenCredential?: azureCore.TokenCredential;
+    public aadTokenCredential?: azureCoreAuth.TokenCredential;
     public enableAutoCollectConsole: boolean;
     public enableAutoCollectExceptions: boolean;
     public enableAutoCollectPerformance: boolean;
