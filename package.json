@@ -64,7 +64,8 @@
     "typescript": "4.1.2"
   },
   "dependencies": {
-    "@azure/core-http": "^2.2.3",
+    "@azure/core-auth": "^1.4.0",
+    "@azure/core-rest-pipeline": "^1.10.0",
     "@microsoft/applicationinsights-web-snippet": "^1.0.1",
     "@opentelemetry/api": "^1.0.4",
     "@opentelemetry/core": "^1.0.1",

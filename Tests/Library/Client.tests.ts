@@ -3,7 +3,6 @@ import https = require("https");
 import sinon = require("sinon");
 import Sinon = require("sinon");
 import eventEmitter = require('events');
-import azureCore = require("@azure/core-http");
 
 import AutoCollecPreAggregatedMetrics = require("../../AutoCollection/PreAggregatedMetrics");
 import Client = require("../../Library/NodeClient");
