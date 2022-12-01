@@ -250,10 +250,11 @@ class Statsbeat {
 
     private _trackRequestDuration(commonProperties: {}) {
         for (let i = 0; i < this._networkStatsbeatCollection.length; i++) {
-            var currentCounter = this._networkStatsbeatCollection[i];
+            let currentCounter = this._networkStatsbeatCollection[i];
             currentCounter.time = +new Date;
-            var intervalRequests = (currentCounter.totalRequestCount - currentCounter.lastRequestCount) || 0;
-            var averageRequestExecutionTime = ((currentCounter.intervalRequestExecutionTime - currentCounter.lastIntervalRequestExecutionTime) / intervalRequests) || 0;
+            let intervalRequests = (currentCounter.totalRequestCount - currentCounter.lastRequestCount) || 0;
+            let totalRequestExecutionTime = currentCounter.intervalRequestExecutionTime - currentCounter.lastIntervalRequestExecutionTime;
+            let averageRequestExecutionTime = totalRequestExecutionTime > 0 ? (totalRequestExecutionTime / intervalRequests) || 0 : 0;
             currentCounter.lastIntervalRequestExecutionTime = currentCounter.intervalRequestExecutionTime; // reset
             if (intervalRequests > 0) {
                 // Add extra properties
@@ -284,6 +285,7 @@ class Statsbeat {
             if (res != null && res.length > 1) {
                 shortHost = res[1];
             }
+            shortHost = shortHost.replace(".in.applicationinsights.azure.com", "");
         }
         catch (error) {
             // Ignore error
@@ -435,7 +437,9 @@ class Statsbeat {
             "norwaywest",
             "swedencentral",
             "switzerlandnorth",
-            "switzerlandwest"
+            "switzerlandwest",
+            "uksouth",
+            "ukwest"
         ];
         for (let i = 0; i < euEndpoints.length; i++) {
             if (currentEndpoint.indexOf(euEndpoints[i]) > -1) {
