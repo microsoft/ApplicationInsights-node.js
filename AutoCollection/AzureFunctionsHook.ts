@@ -10,13 +10,13 @@ import { CorrelationContextManager } from "./CorrelationContextManager";
 */
 export class AutoCollectAzureFunctions {
     private _client: TelemetryClient;
-    private _appInsightsHooks: any;
+    private _functionsCoreModule: any;
     private _preInvocationHook: any;
 
     constructor(client: TelemetryClient) {
         this._client = client;
         try {
-            this._appInsightsHooks = require('@azure/functions-core');
+            this._functionsCoreModule = require('@azure/functions-core');
         }
         catch (error) {
             Logging.info("AutoCollectAzureFunctions failed to load, not running in Azure Functions");
@@ -24,7 +24,7 @@ export class AutoCollectAzureFunctions {
     }
 
     public enable(isEnabled: boolean) {
-        if (this._appInsightsHooks) {
+        if (this._functionsCoreModule) {
             if (isEnabled) {
                 this._addPreInvocationHook();
             } else {
@@ -35,13 +35,13 @@ export class AutoCollectAzureFunctions {
 
     public dispose() {
         this.enable(false);
-        this._appInsightsHooks = undefined;
+        this._functionsCoreModule = undefined;
     }
 
     private _addPreInvocationHook() {
         // Only add hook once
         if (!this._preInvocationHook) {
-            this._preInvocationHook = this._appInsightsHooks.registerHook('preInvocation', (context: any) => {
+            this._preInvocationHook = this._functionsCoreModule.registerHook('preInvocation', (context: any) => {
                 const originalCallback = context.functionCallback;
                 context.functionCallback = async (context: Context, req: HttpRequest) => {
                     const startTime = Date.now(); // Start trackRequest timer
@@ -54,10 +54,10 @@ export class AutoCollectAzureFunctions {
                                 name: context?.req?.method + " " + context.req?.url,
                                 resultCode: context?.res?.status,
                                 success: true,
-                                url: (req as HttpRequest).url,
+                                url: (req as HttpRequest)?.url,
                                 time: new Date(startTime),
                                 duration: Date.now() - startTime,
-                                id: correlationContext.operation.parentId,
+                                id: correlationContext.operation?.parentId,
                             });
                             this._client.flush();
                         }, correlationContext)();
