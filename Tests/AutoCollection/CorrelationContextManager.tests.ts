@@ -1,5 +1,5 @@
 import { CorrelationContextManager, CorrelationContext } from "../../AutoCollection/CorrelationContextManager";
-import * as azureFunctionTypes from "@azure/functions";
+import * as azureFunctionTypes from "../../Library/Functions";
 
 import assert = require("assert");
 import sinon = require("sinon");
@@ -244,7 +244,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
                 attributes: {},
             };
 
-            const request: azureFunctionTypes.HttpRequest = {
+            const request = {
                 method: "GET",
                 url: "/search",
                 headers: {
@@ -252,9 +252,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
                     traceparent: functionContext.traceparent,
                 },
                 query: { q: 'test' },
-                params: {},
-                user: null,
-                parseFormBody: null
+                params: {}
             };
 
             describe("#Azure Functions", () => {

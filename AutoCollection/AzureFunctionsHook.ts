@@ -1,6 +1,4 @@
-import { Context, HttpRequest } from "@azure/functions";
-import { PreInvocationContext } from "@azure/functions-core";
-
+import { Context, HttpRequest } from "../Library/Functions";
 import Logging = require("../Library/Logging");
 import TelemetryClient = require("../Library/TelemetryClient");
 import { CorrelationContextManager } from "./CorrelationContextManager";
@@ -12,16 +10,13 @@ import { CorrelationContextManager } from "./CorrelationContextManager";
 */
 export class AutoCollectAzureFunctions {
     private _client: TelemetryClient;
-    private _isEnabled: boolean;
-    private _isInitialized: boolean;
     private _appInsightsHooks: any;
     private _preInvocationHook: any;
 
     constructor(client: TelemetryClient) {
         this._client = client;
         try {
-            this._appInsightsHooks = require('app-insights-functions-hooks');
-            this._isInitialized = true;
+            this._appInsightsHooks = require('@azure/functions-core');
         }
         catch (error) {
             Logging.info("AutoCollectAzureFunctions failed to load, not running in Azure Functions");
@@ -29,8 +24,7 @@ export class AutoCollectAzureFunctions {
     }
 
     public enable(isEnabled: boolean) {
-        this._isEnabled = isEnabled;
-        if (this._isInitialized) {
+        if (this._appInsightsHooks) {
             if (isEnabled) {
                 this._addPreInvocationHook();
             } else {
@@ -41,13 +35,13 @@ export class AutoCollectAzureFunctions {
 
     public dispose() {
         this.enable(false);
-        this._isInitialized = false;
+        this._appInsightsHooks = undefined;
     }
 
     private _addPreInvocationHook() {
         // Only add hook once
         if (!this._preInvocationHook) {
-            this._preInvocationHook = this._appInsightsHooks.registerHook('preInvocation', (context: PreInvocationContext) => {
+            this._preInvocationHook = this._appInsightsHooks.registerHook('preInvocation', (context: any) => {
                 const originalCallback = context.functionCallback;
                 context.functionCallback = async (context: Context, req: HttpRequest) => {
                     const startTime = Date.now(); // Start trackRequest timer
@@ -56,18 +50,16 @@ export class AutoCollectAzureFunctions {
                     if (correlationContext) {
                         CorrelationContextManager.wrapCallback(async () => {
                             originalCallback(context, req);
-                            if (this._client.config.enableAutoCollectRequests) {
-                                this._client.trackRequest({
-                                    name: context?.req?.method + " " + context.req?.url,
-                                    resultCode: context?.res?.status,
-                                    success: true,
-                                    url: (req as HttpRequest).url,
-                                    time: new Date(startTime),
-                                    duration: Date.now() - startTime,
-                                    id: correlationContext.operation.parentId,
-                                });
-                                this._client.flush();
-                            }
+                            this._client.trackRequest({
+                                name: context?.req?.method + " " + context.req?.url,
+                                resultCode: context?.res?.status,
+                                success: true,
+                                url: (req as HttpRequest).url,
+                                time: new Date(startTime),
+                                duration: Date.now() - startTime,
+                                id: correlationContext.operation.parentId,
+                            });
+                            this._client.flush();
                         }, correlationContext)();
                     }
                 };

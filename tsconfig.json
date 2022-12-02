@@ -9,8 +9,7 @@
         "noImplicitAny": true,
         "outDir": "./out",
         "typeRoots": [
-            "./node_modules/@types",
-            "./Declarations/@types"
+            "./node_modules/@types"
         ]
     },
     "include": [
