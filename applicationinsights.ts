@@ -13,13 +13,13 @@ import QuickPulseClient = require("./Library/QuickPulseStateManager");
 import { IncomingMessage } from "http";
 import { SpanContext } from "@opentelemetry/api";
 import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCollection/NativePerformance";
+import { AutoCollectAzureFunctions } from "./AutoCollection/AzureFunctionsHook";
+import * as azureFunctionsTypes from "@azure/functions";
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
 export import TelemetryClient = require("./Library/NodeClient");
 export import Contracts = require("./Declarations/Contracts");
-export import azureFunctionsTypes = require("./Library/Functions");
-
 
 export enum DistributedTracingModes {
     /**
@@ -51,6 +51,7 @@ let _isSendingLiveMetrics = defaultConfig.isSendingLiveMetrics(); // Off by defa
 let _isNativePerformance = defaultConfig.isNativePerformance();
 let _disabledExtendedMetrics: IDisabledExtendedMetrics;
 let _isSnippetInjection = defaultConfig.isSnippetInjection(); // default to false
+let _isAzureFunctions = defaultConfig.isAzureFunctions(); // default to true
 
 function _getDefaultAutoCollectConfig() {
     return {
@@ -66,7 +67,8 @@ function _getDefaultAutoCollectConfig() {
         isCorrelating: () => true,
         isSendingLiveMetrics: () => false, // Off by default
         isNativePerformance: () => true,
-        isSnippetInjection: () => false
+        isSnippetInjection: () => false,
+        isAzureFunctions: () => true
     }
 }
 
@@ -83,6 +85,7 @@ let _webSnippet: WebSnippet;
 let _nativePerformance: AutoCollectNativePerformance;
 let _serverRequests: AutoCollectHttpRequests;
 let _clientRequests: AutoCollectHttpDependencies;
+let _azureFunctions: AutoCollectAzureFunctions;
 
 let _isStarted = false;
 
@@ -119,6 +122,7 @@ export function setup(setupString?: string) {
         if (!_nativePerformance) {
             _nativePerformance = new AutoCollectNativePerformance(defaultClient);
         }
+        _azureFunctions = new AutoCollectAzureFunctions(defaultClient);
     } else {
         Logging.info("The default client is already setup");
     }
@@ -152,6 +156,7 @@ export function start() {
         if (liveMetricsClient && _isSendingLiveMetrics) {
             liveMetricsClient.enable(_isSendingLiveMetrics);
         }
+        _azureFunctions.enable(_isAzureFunctions);
     } else {
         Logging.warn("Start cannot be called before setup");
     }
@@ -172,10 +177,11 @@ function _initializeConfig() {
     _forceClsHooked = defaultClient.config.enableUseAsyncHooks !== undefined ? defaultClient.config.enableUseAsyncHooks : _forceClsHooked;
     _isSnippetInjection = defaultClient.config.enableWebInstrumentation !== undefined ? defaultClient.config.enableWebInstrumentation : _isSnippetInjection;
     _isSnippetInjection = defaultClient.config.enableAutoWebSnippetInjection === true ? true : _isSnippetInjection;
+    _isAzureFunctions = defaultClient.config.enableAutoCollectAzureFunctions !== undefined ? defaultClient.config.enableAutoCollectAzureFunctions : _isPerformance;
     const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(defaultClient.config.enableAutoCollectExtendedMetrics, defaultClient.config);
     _isNativePerformance = extendedMetricsConfig.isEnabled;
     _disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
-    
+
 }
 
 /**
@@ -324,7 +330,7 @@ export class Configuration {
      * @param WebSnippetConnectionString if provided, web snippet injection will use this ConnectionString. Default to use the connectionString in Node.js app initialization
      * @returns {Configuration} this class
      */
-    public static enableAutoWebSnippetInjection(value: boolean, WebSnippetConnectionString?: string ) {
+    public static enableAutoWebSnippetInjection(value: boolean, WebSnippetConnectionString?: string) {
         _isSnippetInjection = value;
         _webSnippetConnectionString = WebSnippetConnectionString;
         if (_isStarted) {
@@ -339,7 +345,7 @@ export class Configuration {
      * @param WebSnippetConnectionString if provided, web snippet injection will use this ConnectionString. Default to use the connectionString in Node.js app initialization
      * @returns {Configuration} this class
      */
-     public static enableWebInstrumentation(value: boolean, WebSnippetConnectionString?: string ) {
+    public static enableWebInstrumentation(value: boolean, WebSnippetConnectionString?: string) {
         _isSnippetInjection = value;
         _webSnippetConnectionString = WebSnippetConnectionString;
         if (_isStarted) {
@@ -348,7 +354,7 @@ export class Configuration {
 
         return Configuration;
     }
-   
+
     /**
      * Sets the state of request tracking (enabled by default)
      * @param value if true requests will be sent to Application Insights
@@ -426,6 +432,19 @@ export class Configuration {
     }
 
     /**
+     * Enable automatic incoming request tracking and correct correlation when using Azure Functions
+     * @param value if true auto collection will be enabled
+     * @returns {Configuration} this class
+     */
+    public static setAutoCollectAzureFunctions(value: boolean) {
+        _isAzureFunctions = value;
+        if (_isStarted) {
+            _azureFunctions.enable(value);
+        }
+        return Configuration;
+    }
+
+    /**
      * Enables communication with Application Insights Live Metrics.
      * @param enable if true, enables communication with the live metrics service
      */
@@ -489,5 +508,8 @@ export function dispose() {
         liveMetricsClient.enable(false);
         _isSendingLiveMetrics = false;
         liveMetricsClient = undefined;
+    }
+    if (_azureFunctions) {
+        _azureFunctions.dispose();
     }
 }

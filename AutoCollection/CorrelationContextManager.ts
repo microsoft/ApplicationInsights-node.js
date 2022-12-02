@@ -1,8 +1,8 @@
 import events = require("events");
-import Logging = require("../Library/Logging");
+import * as azureFunctionsTypes from "@azure/functions";
 
+import Logging = require("../Library/Logging");
 import * as DiagChannel from "./diagnostic-channel/initialization";
-import * as azureFunctionsTypes from "../Library/Functions";
 
 // Don't reference modules from these directly. Use only for types.
 import * as cls from "cls-hooked";

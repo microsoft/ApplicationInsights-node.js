@@ -24,6 +24,7 @@
     "enableAutoCollectRequests": false,
     "enableAutoCollectDependencies": false,
     "enableAutoDependencyCorrelation": false,
+    "enableAutoCollectAzureFunctions": false,
     "enableUseAsyncHooks": false,
     "disableStatsbeat": false,
     "noHttpAgentKeepAlive": false,
