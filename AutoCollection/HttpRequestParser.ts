@@ -11,6 +11,7 @@ import Tracestate = require("../Library/Tracestate");
 import Traceparent = require("../Library/Traceparent");
 import { HttpRequest } from "../Library/Functions";
 
+
 /**
  * Helper class to read data from the request/response objects and convert them into the telemetry contract
  */
@@ -145,7 +146,7 @@ class HttpRequestParser extends RequestParser {
     }
 
     public getOperationName(tags: { [key: string]: string }) {
-        if(tags[HttpRequestParser.keys.operationName]){
+        if (tags[HttpRequestParser.keys.operationName]) {
             return tags[HttpRequestParser.keys.operationName];
         }
         let pathName = "";
@@ -202,7 +203,7 @@ class HttpRequestParser extends RequestParser {
         }
         catch (ex) {
             // Ignore errors
-         }
+        }
         var absoluteUrl = url.format({
             protocol: protocol,
             host: request.headers.host,

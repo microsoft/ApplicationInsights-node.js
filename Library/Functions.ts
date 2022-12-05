@@ -4,7 +4,18 @@
  * to your function from the Azure Functions runtime on function invocation.
  */
 export interface Context {
-    traceContext: TraceContext
+    traceContext: TraceContext;
+
+    /**
+     * HTTP request object. Provided to your function when using HTTP Bindings.
+     */
+    req?: HttpRequest;
+    /**
+     * HTTP response object. Provided to your function when using HTTP Bindings.
+     */
+    res?: {
+        [key: string]: any;
+    };
 }
 
 /**

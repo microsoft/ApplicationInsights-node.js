@@ -247,9 +247,6 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             const request = {
                 method: "GET",
                 url: "/search",
-                connection: {
-                    encrypted: false
-                },
                 headers: {
                     host: "bing.com",
                     traceparent: functionContext.traceparent,
@@ -327,7 +324,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             it("should return null if the ContextManager is disabled (inside context)", (done) => {
                 CorrelationContextManager.enable();
 
-                CorrelationContextManager.runWithContext(testContext, ()=>{
+                CorrelationContextManager.runWithContext(testContext, () => {
                     CorrelationContextManager.disable();
                     assert.equal(CorrelationContextManager.getCurrentContext(), null);
                     done();
@@ -336,7 +333,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             it("should return null if in a context", (done) => {
                 CorrelationContextManager.enable();
 
-                CorrelationContextManager.runWithContext(testContext, ()=>{
+                CorrelationContextManager.runWithContext(testContext, () => {
                     assert.equal(CorrelationContextManager.getCurrentContext(), null);
                     done();
                 });
@@ -344,8 +341,8 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             it("should return null if called by an asynchronous callback in a context", (done) => {
                 CorrelationContextManager.enable();
 
-                CorrelationContextManager.runWithContext(testContext, ()=>{
-                    process.nextTick(()=>{
+                CorrelationContextManager.runWithContext(testContext, () => {
+                    process.nextTick(() => {
                         assert.equal(CorrelationContextManager.getCurrentContext(), null);
                         done();
                     });
@@ -354,19 +351,19 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             it("should return null to asynchronous callbacks occuring in parallel", (done) => {
                 CorrelationContextManager.enable();
 
-                CorrelationContextManager.runWithContext(testContext, ()=>{
-                    process.nextTick(()=>{
+                CorrelationContextManager.runWithContext(testContext, () => {
+                    process.nextTick(() => {
                         assert.equal(CorrelationContextManager.getCurrentContext(), null);
                     });
                 });
 
-                CorrelationContextManager.runWithContext(testContext2, ()=>{
-                    process.nextTick(()=>{
+                CorrelationContextManager.runWithContext(testContext2, () => {
+                    process.nextTick(() => {
                         assert.equal(CorrelationContextManager.getCurrentContext(), null);
                     });
                 });
 
-                setTimeout(()=>done(), 10);
+                setTimeout(() => done(), 10);
             });
         });
 
@@ -401,21 +398,21 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
             it("should not return a function that restores a null context at call-time into the supplied function if enabled", (done) => {
                 CorrelationContextManager.enable();
 
-                var sharedFn = ()=> {
+                var sharedFn = () => {
                     assert.equal(CorrelationContextManager.getCurrentContext(), null);
                 };
 
-                CorrelationContextManager.runWithContext(testContext, ()=>{
+                CorrelationContextManager.runWithContext(testContext, () => {
                     sharedFn = CorrelationContextManager.wrapCallback(sharedFn);
                 });
 
-                CorrelationContextManager.runWithContext(testContext2, ()=>{
-                    setTimeout(()=>{
+                CorrelationContextManager.runWithContext(testContext2, () => {
+                    setTimeout(() => {
                         sharedFn();
                     }, 8);
                 });
 
-                setTimeout(()=>done(), 10);
+                setTimeout(() => done(), 10);
             });
         });
     });

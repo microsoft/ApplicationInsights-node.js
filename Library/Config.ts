@@ -43,6 +43,7 @@ class Config implements IConfig {
     public enableAutoCollectRequests: boolean;
     public enableAutoCollectDependencies: boolean;
     public enableAutoDependencyCorrelation: boolean;
+    public enableAutoCollectAzureFunctions: boolean;
     public enableSendLiveMetrics: boolean;
     public enableUseDiskRetryCaching: boolean;
     public enableUseAsyncHooks: boolean;
@@ -169,6 +170,7 @@ class Config implements IConfig {
         this.distributedTracingMode = jsonConfig.distributedTracingMode;
         this.enableAutoCollectConsole = jsonConfig.enableAutoCollectConsole;
         this.enableAutoCollectDependencies = jsonConfig.enableAutoCollectDependencies;
+        this.enableAutoCollectAzureFunctions = jsonConfig.enableAutoCollectAzureFunctions;
         this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
         this.enableAutoCollectExtendedMetrics = jsonConfig.enableAutoCollectExtendedMetrics;
         this.enableAutoCollectExternalLoggers = jsonConfig.enableAutoCollectExternalLoggers;

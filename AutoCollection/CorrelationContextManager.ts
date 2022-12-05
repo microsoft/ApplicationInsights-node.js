@@ -1,6 +1,5 @@
 import events = require("events");
 import Logging = require("../Library/Logging");
-
 import * as DiagChannel from "./diagnostic-channel/initialization";
 import * as azureFunctionsTypes from "../Library/Functions";
 
