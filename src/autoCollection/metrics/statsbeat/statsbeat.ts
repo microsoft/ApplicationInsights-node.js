@@ -13,6 +13,9 @@ import {
 
 import { Logger } from "../../../library/logging";
 import {
+    EU_CONNECTION_STRING,
+    EU_ENDPOINTS,
+    NON_EU_CONNECTION_STRING,
     StatsbeatAttach,
     StatsbeatCounter,
     StatsbeatFeature,
@@ -77,8 +80,7 @@ export class Statsbeat {
     private _averageDurationGauge: ObservableGauge;
 
     // Network attributes
-    private _connectionString =
-        "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://dc.services.visualstudio.com/";
+    private _connectionString: string;
     private _endpoint: string;
     private _host: string;
 
@@ -88,6 +90,7 @@ export class Statsbeat {
         this._networkStatsbeatCollection = [];
         this._config = config;
         this._endpoint = this._config.endpointUrl;
+        this._connectionString = this._getConnectionString(config.endpointUrl);
         this._host = this._getShortHost(this._endpoint);
 
         this._resourceManager = resourceManager || new ResourceManager();
@@ -567,6 +570,16 @@ export class Statsbeat {
             );
         }
         return shortHost;
+    }
+
+    private _getConnectionString(endpointUrl: string) {
+        let currentEndpoint = endpointUrl;
+        for (let i = 0; i < EU_ENDPOINTS.length; i++) {
+          if (currentEndpoint.includes(EU_ENDPOINTS[i])) {
+            return EU_CONNECTION_STRING;
+          }
+        }
+        return NON_EU_CONNECTION_STRING;
     }
 
     private async _getResourceProvider(): Promise<void> {
