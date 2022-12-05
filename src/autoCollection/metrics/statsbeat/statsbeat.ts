@@ -53,8 +53,6 @@ export class Statsbeat {
     private _azureVm: AzureVirtualMachine;
     private _meter: Meter;
     private _meterProvider: MeterProvider;
-    // TODO: Transfer this to be a _AzureMonitorStatsbeatExporter
-    // To do this you'll need to update the version of the AzureMonitorExporter in the package.json
     private _azureExporter: AzureMonitorMetricExporter;
     private _metricReader: PeriodicExportingMetricReader;
 
@@ -136,7 +134,7 @@ export class Statsbeat {
         const exporterConfig: AzureMonitorExporterOptions = {
             connectionString: this._connectionString
         };
-        // TODO: Transfer this to using the _AzureMonitorStatsbeatExporter
+
         this._azureExporter = new AzureMonitorMetricExporter(exporterConfig);
     }
 
@@ -296,6 +294,16 @@ export class Statsbeat {
         let attributes = { ...this._networkProperties, ...this._commonProperties };
         observableResult.observe(counter.averageRequestExecutionTime, attributes);
         counter.averageRequestExecutionTime = 0;
+    }
+
+    // TOOD: Export the feature statsbeat here.
+    private _featureCallback(observableResult: ObservableResult) {
+
+    }
+
+    // TOOD: Export the attach statsbeat here.
+    private _attachCallback(observableResult: ObservableResult) {
+        
     }
 
     // Public methods to increase counters
@@ -551,6 +559,7 @@ export class Statsbeat {
             if (res != null && res.length > 1) {
                 shortHost = res[1];
             }
+            shortHost = shortHost.replace(".in.applicationinsights.azure.com", "");
         } catch (error) {
             Logger.getInstance().info(
                 this._TAG,
