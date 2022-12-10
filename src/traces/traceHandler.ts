@@ -21,6 +21,7 @@ import { TracerProvider } from "@opentelemetry/api";
 import { MetricHandler } from "../metrics/metricHandler";
 import { AzureSpanProcessor } from "./azureSpanProcessor";
 import { AzureHttpMetricsInstrumentation } from "../metrics/collection/azureHttpMetricsInstrumentation";
+import { AzureFunctionsHook } from "./azureFunctionsHook";
 
 export class TraceHandler {
     private _exporter: AzureMonitorTraceExporter;
@@ -30,6 +31,7 @@ export class TraceHandler {
     private _instrumentations: Instrumentation[];
     private _tracerProvider: NodeTracerProvider;
     private _tracer: Tracer;
+    private _azureFunctionsHook: AzureFunctionsHook;
     private _perfCountersHttpInstrumentation: AzureHttpMetricsInstrumentation;
     private _httpInstrumentation: Instrumentation;
     private _azureSdkInstrumentation: Instrumentation;
@@ -72,6 +74,7 @@ export class TraceHandler {
         this._tracerProvider.register();
         // TODO: Check for conflicts with multiple handlers available
         this._tracer = this._tracerProvider.getTracer("ApplicationInsightsTracer");
+        this._azureFunctionsHook = new AzureFunctionsHook(this, this._config);
     }
 
     public getTracerProvider(): TracerProvider {
@@ -95,7 +98,7 @@ export class TraceHandler {
         }
         if (!this._httpInstrumentation) {
             this._httpInstrumentation = new HttpInstrumentation(this._config.instrumentations.http);
-            if (this._metricHandler) {
+            if (this._metricHandler && this._metricHandler.getStandardMetricsHandler()) {
                 this._httpInstrumentation.setMeterProvider(
                     this._metricHandler.getStandardMetricsHandler().getMeterProvider()
                 );
@@ -160,5 +163,6 @@ export class TraceHandler {
 
     public async shutdown(): Promise<void> {
         await this._tracerProvider.shutdown();
+        this._azureFunctionsHook.shutdown();
     }
 }

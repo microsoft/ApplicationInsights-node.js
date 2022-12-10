@@ -14,6 +14,7 @@ export class JsonConfig implements IConfig {
     public enableAutoCollectPerformance: boolean;
     public enableAutoCollectStandardMetrics: boolean;
     public enableAutoCollectHeartbeat: boolean;
+    public enableAutoCollectAzureFunctions: boolean;
     public disableOfflineStorage: boolean;
     public storageDirectory: string;
     public instrumentations: InstrumentationsConfig;
@@ -53,6 +54,7 @@ export class JsonConfig implements IConfig {
             this.enableAutoCollectPerformance = jsonConfig.enableAutoCollectPerformance;
             this.enableAutoCollectStandardMetrics = jsonConfig.enableAutoCollectStandardMetrics;
             this.enableAutoCollectHeartbeat = jsonConfig.enableAutoCollectHeartbeat;
+            this.enableAutoCollectAzureFunctions = jsonConfig.enableAutoCollectAzureFunctions;
             this.disableOfflineStorage = jsonConfig.disableOfflineStorage;
             this.storageDirectory = jsonConfig.storageDirectory;
             this.instrumentations = jsonConfig.instrumentations;
