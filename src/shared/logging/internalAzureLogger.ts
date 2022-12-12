@@ -70,7 +70,7 @@ export class InternalAzureLogger {
             }
             if (this._logToConsole) {
                 // eslint-disable-next-line no-console
-                console.debug(...args);
+                console.log(...args);
             }
         } catch (err) {
             // eslint-disable-next-line no-console

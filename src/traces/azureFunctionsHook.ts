@@ -3,7 +3,7 @@
 
 import type * as http from 'http';
 import * as url from 'url';
-import { Context, HttpRequest, HttpResponse } from "@azure/functions";
+import { Context, HttpRequest } from "@azure/functions";
 import { Attributes, Span, SpanKind, SpanOptions, context, propagation, ROOT_CONTEXT } from "@opentelemetry/api";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 import { ApplicationInsightsConfig } from "../shared";
@@ -50,24 +50,38 @@ export class AzureFunctionsHook {
     }
 
     private async _propagateContext(ctx: Context, request: HttpRequest, originalCallback: any) {
-        // TODO: Remove
-        ctx.log('Overriden function:' + JSON.stringify(ctx.traceContext));
-
         // Update context to use Azure Functions one
         let extractedContext = null;
-        if (ctx.traceContext) {
-            extractedContext = propagation.extract(ROOT_CONTEXT, ctx.traceContext);
+        try {
+            if (ctx.traceContext) {
+                extractedContext = propagation.extract(ROOT_CONTEXT, ctx.traceContext);
+            }
         }
-
+        catch (err) {
+            Logger.getInstance().error("Failed to propagate context in Azure Functions", err);
+        }
         const currentContext = extractedContext || context.active();
         context.with(currentContext, async () => {
-            ctx.log('SPAN START:');
             const incomingRequestSpan = this._generateServerSpan(request);
             originalCallback(ctx, request);
-            if (incomingRequestSpan) {
-                incomingRequestSpan.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, ctx.res.statusCode);
-                incomingRequestSpan.end();
-                await this._traceHandler.flush();
+            try {
+                if (incomingRequestSpan) {
+                    let statusCode = 200; //Default
+                    if (ctx.res) {
+                        if (ctx.res.statusCode) {
+                            statusCode = ctx.res.statusCode;
+                        }
+                        else if (ctx.res.status) {
+                            statusCode = ctx.res.status;
+                        }
+                    }
+                    incomingRequestSpan.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, statusCode);
+                    incomingRequestSpan.end();
+                    await this._traceHandler.flush();
+                }
+            }
+            catch (err) {
+                Logger.getInstance().error("Error creating automatic server span in Azure Functions", err);
             }
         });
     }
@@ -113,19 +127,15 @@ export class AzureFunctionsHook {
             [SemanticAttributes.NET_HOST_NAME]: hostname,
             [SemanticAttributes.HTTP_METHOD]: method,
         };
-
         if (typeof ips === 'string') {
             attributes[SemanticAttributes.HTTP_CLIENT_IP] = ips.split(',')[0];
         }
-
         if (requestUrl) {
             attributes[SemanticAttributes.HTTP_TARGET] = requestUrl.pathname || '/';
         }
-
         if (userAgent !== undefined) {
             attributes[SemanticAttributes.HTTP_USER_AGENT] = userAgent;
         }
-
         return attributes;
     };
 
@@ -142,9 +152,6 @@ export class AzureFunctionsHook {
         const path = reqUrlObject.path || '/';
         let host =
             reqUrlObject.host || reqUrlObject.hostname || headers.host || 'localhost';
-
-        // if there is no port in host and there is a port
-        // it should be displayed if it's not 80 and 443 (default ports)
         if (
             (host as string).indexOf(':') === -1 &&
             port &&
@@ -153,8 +160,6 @@ export class AzureFunctionsHook {
         ) {
             host += `:${port}`;
         }
-
         return `${protocol}//${host}${path}`;
     };
-
 }
