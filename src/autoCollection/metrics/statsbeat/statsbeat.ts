@@ -32,7 +32,7 @@ import { KnownContextTagKeys } from "../../../declarations/generated";
 import { IVirtualMachineInfo } from "../../../library/azureVirtualMachine";
 import {
     AzureMonitorExporterOptions,
-    AzureMonitorMetricExporter
+    AzureMonitorStatsbeatExporter
 } from "@azure/monitor-opentelemetry-exporter";
 
 const STATSBEAT_LANGUAGE = "node";
@@ -52,12 +52,13 @@ export class Statsbeat {
     private _config: Config;
     private _statsbeatConfig: Config;
     private _isVM: boolean | undefined;
-    private _statbeatMetrics: Array<{ name: string; value: number; properties: {} }>;
     private _azureVm: AzureVirtualMachine;
-    private _meter: Meter;
+    private _networkStatsbeatMeter: Meter;
+    private _longIntervalStatsbeatMeter: Meter;
     private _meterProvider: MeterProvider;
-    private _azureExporter: AzureMonitorMetricExporter;
-    private _metricReader: PeriodicExportingMetricReader;
+    private _azureExporter: AzureMonitorStatsbeatExporter;
+    private _networkMetricReader: PeriodicExportingMetricReader;
+    private _longIntervalMetricReader: PeriodicExportingMetricReader;
 
     // Custom dimensions
     private _resourceProvider: string;
@@ -78,6 +79,8 @@ export class Statsbeat {
     private _throttleCountGauge: ObservableGauge;
     private _exceptionCountGauge: ObservableGauge;
     private _averageDurationGauge: ObservableGauge;
+    private _featureStatsbeatGauge: ObservableGauge;
+    private _attachStatsbeatGauge: ObservableGauge;
 
     // Network attributes
     private _connectionString: string;
@@ -86,7 +89,6 @@ export class Statsbeat {
 
     constructor(config: Config, resourceManager?: ResourceManager) {
         this._isInitialized = false;
-        this._statbeatMetrics = [];
         this._networkStatsbeatCollection = [];
         this._config = config;
         this._endpoint = this._config.endpointUrl;
@@ -102,22 +104,47 @@ export class Statsbeat {
         this._statsbeatConfig.enableAutoCollectConsole = false;
 
         this._meterProvider = new MeterProvider();
-        this._successCountGauge = this._meter.createObservableGauge(
+
+        // Exports Network Statsbeat every 15 minutes
+        const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
+            exporter: this._azureExporter,
+            exportIntervalMillis: this._collectionShortIntervalMs
+        };
+
+        this._networkMetricReader = new PeriodicExportingMetricReader(metricReaderOptions);
+        this._meterProvider.addMetricReader(this._networkMetricReader);
+        this._networkStatsbeatMeter = this._meterProvider.getMeter("Application Insights NetworkStatsbeat");
+
+        this._successCountGauge = this._networkStatsbeatMeter.createObservableGauge(
             StatsbeatCounter.REQUEST_SUCCESS
         );
-        this._failureCountGauge = this._meter.createObservableGauge(
+        this._failureCountGauge = this._networkStatsbeatMeter.createObservableGauge(
             StatsbeatCounter.REQUEST_FAILURE
         );
-        this._retryCountGauge = this._meter.createObservableGauge(StatsbeatCounter.RETRY_COUNT);
-        this._throttleCountGauge = this._meter.createObservableGauge(
+        this._retryCountGauge = this._networkStatsbeatMeter.createObservableGauge(StatsbeatCounter.RETRY_COUNT);
+        this._throttleCountGauge = this._networkStatsbeatMeter.createObservableGauge(
             StatsbeatCounter.THROTTLE_COUNT
         );
-        this._exceptionCountGauge = this._meter.createObservableGauge(
+        this._exceptionCountGauge = this._networkStatsbeatMeter.createObservableGauge(
             StatsbeatCounter.EXCEPTION_COUNT
         );
-        this._averageDurationGauge = this._meter.createObservableGauge(
+        this._averageDurationGauge = this._networkStatsbeatMeter.createObservableGauge(
             StatsbeatCounter.REQUEST_DURATION
         );
+
+        // Exports Long Interval Statsbets every day
+        const longIntervalMetricReaderOptions: PeriodicExportingMetricReaderOptions = {
+            exporter: this._azureExporter,
+            // TODO: Get this to export once immmediately and once when statstbeat starts up.
+            exportIntervalMillis: this._collectionLongIntervalMs
+        };
+
+        this._longIntervalMetricReader = new PeriodicExportingMetricReader(
+            longIntervalMetricReaderOptions
+        );
+
+        this._meterProvider.addMetricReader(this._longIntervalMetricReader);
+        this._longIntervalStatsbeatMeter = this._meterProvider.getMeter("Azure Monitor LongIntervalStatsbeat");
 
         this._commonProperties = {
             os: this._os,
@@ -138,7 +165,7 @@ export class Statsbeat {
             connectionString: this._connectionString
         };
 
-        this._azureExporter = new AzureMonitorMetricExporter(exporterConfig);
+        this._azureExporter = new AzureMonitorStatsbeatExporter(exporterConfig);
     }
 
     public enable(isEnabled: boolean) {
@@ -298,15 +325,17 @@ export class Statsbeat {
         observableResult.observe(counter.averageRequestExecutionTime, attributes);
         counter.averageRequestExecutionTime = 0;
     }
-
-    // TOOD: Export the feature statsbeat here.
+    
     private _featureCallback(observableResult: ObservableResult) {
-
+        if (this._feature != StatsbeatFeature.NONE) {
+            let attributes = { feature: this._feature, type: StatsbeatFeatureType.Feature, ...this._commonProperties }
+            observableResult.observe(1, attributes);
+        }
     }
 
-    // TOOD: Export the attach statsbeat here.
     private _attachCallback(observableResult: ObservableResult) {
-        
+        let attributes = { rpId: this._resourceIdentifier, ...this._commonProperties };
+        observableResult.observe(1, attributes);
     }
 
     // Public methods to increase counters
@@ -402,43 +431,27 @@ export class Statsbeat {
     }
 
     public async trackShortIntervalStatsbeats() {
-        const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
-            exporter: this._azureExporter,
-            exportIntervalMillis: this._collectionShortIntervalMs
-        };
 
         try {
             await this._getResourceProvider();
             // Add observable callbacks
             this._successCountGauge.addCallback(this._successCallback.bind(this));
-            this._meter.addBatchObservableCallback(this._failureCallback.bind(this), [
+            this._networkStatsbeatMeter.addBatchObservableCallback(this._failureCallback.bind(this), [
                 this._failureCountGauge
             ]);
-            this._meter.addBatchObservableCallback(this._retryCallback.bind(this), [
+            this._networkStatsbeatMeter.addBatchObservableCallback(this._retryCallback.bind(this), [
                 this._retryCountGauge
             ]);
-            this._meter.addBatchObservableCallback(this._throttleCallback.bind(this), [
+            this._networkStatsbeatMeter.addBatchObservableCallback(this._throttleCallback.bind(this), [
                 this._throttleCountGauge
             ]);
-            this._meter.addBatchObservableCallback(this._exceptionCallback.bind(this), [
+            this._networkStatsbeatMeter.addBatchObservableCallback(this._exceptionCallback.bind(this), [
                 this._exceptionCountGauge
             ]);
             this._averageDurationGauge.addCallback(this._durationCallback.bind(this));
-            this._commonProperties = {
-                os: this._os,
-                rp: this._resourceProvider,
-                cikey: this._cikey,
-                runtimeVersion: this._runtimeVersion,
-                language: this._language,
-                version: this._sdkVersion,
-                attach: this._attach
-            };
 
             // Dont use this send Statsbeats method anymore and instead call the PeriodicExporter here.
             // Exports Network Statsbeat every 15 minutes
-            this._metricReader = new PeriodicExportingMetricReader(metricReaderOptions);
-            this._meterProvider.addMetricReader(this._metricReader);
-            this._meter = this._meterProvider.getMeter("Application Insights NetworkStatsbeat");
         } catch (error) {
             Logger.getInstance().info(
                 this._TAG,
@@ -450,53 +463,10 @@ export class Statsbeat {
     public async trackLongIntervalStatsbeats() {
         try {
             await this._getResourceProvider();
-            let commonProperties = {
-                os: this._os,
-                rp: this._resourceProvider,
-                cikey: this._cikey,
-                runtimeVersion: this._runtimeVersion,
-                language: this._language,
-                version: this._sdkVersion,
-                attach: this._attach
-            };
-            let attachProperties = Object.assign(
-                {
-                    rpId: this._resourceIdentifier
-                },
-                commonProperties
-            );
-            this._statbeatMetrics.push({
-                name: StatsbeatCounter.ATTACH,
-                value: 1,
-                properties: attachProperties
-            });
-            if (this._instrumentation != StatsbeatInstrumentation.NONE) {
-                // Only send if there are some instrumentations enabled
-                let instrumentationProperties = Object.assign(
-                    {
-                        feature: this._instrumentation,
-                        type: StatsbeatFeatureType.Instrumentation
-                    },
-                    commonProperties
-                );
-                this._statbeatMetrics.push({
-                    name: StatsbeatCounter.FEATURE,
-                    value: 1,
-                    properties: instrumentationProperties
-                });
-            }
-            if (this._feature != StatsbeatFeature.NONE) {
-                // Only send if there are some features enabled
-                let featureProperties = Object.assign(
-                    { feature: this._feature, type: StatsbeatFeatureType.Feature },
-                    commonProperties
-                );
-                this._statbeatMetrics.push({
-                    name: StatsbeatCounter.FEATURE,
-                    value: 1,
-                    properties: featureProperties
-                });
-            }
+
+            this._attachStatsbeatGauge.addCallback(this._attachCallback.bind(this));
+            this._featureStatsbeatGauge.addCallback(this._featureCallback.bind(this));
+            // TODO: Here we want the metric reader logic.
         } catch (error) {
             Logger.getInstance().info(
                 this._TAG,
