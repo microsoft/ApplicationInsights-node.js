@@ -1,70 +1,102 @@
 import { Context, HttpRequest } from "../Library/Functions";
 import Logging = require("../Library/Logging");
 import TelemetryClient = require("../Library/TelemetryClient");
-import { CorrelationContextManager } from "./CorrelationContextManager";
+import { CorrelationContext, CorrelationContextManager } from "./CorrelationContextManager";
 
 
 /** Node.js Azure Functions handle incoming HTTP requests before Application Insights SDK is available,
  * this code generate incoming request telemetry and generate correlation context to be used 
  * by outgoing requests and other telemetry, we rely on hooks provided by Azure Functions
 */
-export class AutoCollectAzureFunctions {
+export class AzureFunctionsHook {
     private _client: TelemetryClient;
     private _functionsCoreModule: any;
+    private _autoGenerateIncomingRequests: boolean;
     private _preInvocationHook: any;
 
     constructor(client: TelemetryClient) {
         this._client = client;
+        this._autoGenerateIncomingRequests = false;
         try {
             this._functionsCoreModule = require('@azure/functions-core');
         }
         catch (error) {
-            Logging.info("AutoCollectAzureFunctions failed to load, not running in Azure Functions");
+            Logging.info("AzureFunctionsHook failed to load, not running in Azure Functions");
+            return;
         }
+        this._addPreInvocationHook();
     }
 
     public enable(isEnabled: boolean) {
-        if (this._functionsCoreModule) {
-            if (isEnabled) {
-                this._addPreInvocationHook();
-            } else {
-                this._removePreInvocationHook();
-            }
-        }
+        this._autoGenerateIncomingRequests = isEnabled;
     }
 
     public dispose() {
         this.enable(false);
+        this._removePreInvocationHook();
         this._functionsCoreModule = undefined;
     }
 
     private _addPreInvocationHook() {
-        // Only add hook once
         if (!this._preInvocationHook) {
-            this._preInvocationHook = this._functionsCoreModule.registerHook('preInvocation', (context: any) => {
-                const originalCallback = context.functionCallback;
-                context.functionCallback = async (context: Context, req: HttpRequest) => {
-                    const startTime = Date.now(); // Start trackRequest timer
-                    // Start an AI Correlation Context using the provided Function context
-                    const correlationContext = CorrelationContextManager.startOperation(context, req);
-                    if (correlationContext) {
-                        CorrelationContextManager.wrapCallback(async () => {
-                            originalCallback(context, req);
-                            this._client.trackRequest({
-                                name: context?.req?.method + " " + context.req?.url,
-                                resultCode: context?.res?.status,
-                                success: true,
-                                url: (req as HttpRequest)?.url,
-                                time: new Date(startTime),
-                                duration: Date.now() - startTime,
-                                id: correlationContext.operation?.parentId,
-                            });
-                            this._client.flush();
-                        }, correlationContext)();
-                    }
+            this._preInvocationHook = this._functionsCoreModule.registerHook('preInvocation', async (preInvocationContext: any) => {
+                const originalCallback = preInvocationContext.functionCallback;
+                preInvocationContext.functionCallback = async (ctx: Context, request: HttpRequest) => {
+                    this._propagateContext(ctx, request, originalCallback);
                 };
             });
         }
+    }
+
+    private async _propagateContext(ctx: Context, request: HttpRequest, originalCallback: any) {
+        // Update context to use Azure Functions one
+        let extractedContext: CorrelationContext = null;
+        try {
+            // Start an AI Correlation Context using the provided Function context
+            extractedContext = CorrelationContextManager.startOperation(ctx, request);
+        }
+        catch (err) {
+            Logging.warn("Failed to propagate context in Azure Functions", err);
+            originalCallback(ctx, request);
+            return;
+        }
+        if (!extractedContext) {
+            // Correlation Context could be disabled causing this to be null
+            Logging.warn("Failed to create context in Azure Functions");
+            originalCallback(ctx, request);
+            return;
+        }
+
+        CorrelationContextManager.wrapCallback(async () => {
+            const startTime = Date.now(); // Start trackRequest timer
+            originalCallback(ctx, request);
+            try {
+                if (this._autoGenerateIncomingRequests) {
+                    let statusCode = 200; //Default
+                    if (ctx.res) {
+                        if (ctx.res.statusCode) {
+                            statusCode = ctx.res.statusCode;
+                        }
+                        else if (ctx.res.status) {
+                            statusCode = ctx.res.status;
+                        }
+                    }
+                    this._client.trackRequest({
+                        name: request.method + " " + request.url,
+                        resultCode: statusCode,
+                        success: statusCode == 200,
+                        url: request.url,
+                        time: new Date(startTime),
+                        duration: Date.now() - startTime,
+                        id: extractedContext.operation?.parentId,
+                    });
+                    this._client.flush();
+                }
+            }
+            catch (err) {
+                Logging.warn("Error creating automatic incoming request in Azure Functions", err);
+            }
+        }, extractedContext)();
     }
 
     private _removePreInvocationHook() {
