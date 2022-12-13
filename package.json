@@ -45,6 +45,7 @@
     "node": ">=8.0.0"
   },
   "devDependencies": {
+    "@azure/functions": "^3.2.0",
     "@types/mocha": "^7.0.2",
     "@types/node": "^8.0.0",
     "@types/semver": "7.3.9",
