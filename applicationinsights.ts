@@ -13,7 +13,7 @@ import QuickPulseClient = require("./Library/QuickPulseStateManager");
 import { IncomingMessage } from "http";
 import { SpanContext } from "@opentelemetry/api";
 import { AutoCollectNativePerformance, IDisabledExtendedMetrics } from "./AutoCollection/NativePerformance";
-import { AutoCollectAzureFunctions } from "./AutoCollection/AzureFunctionsHook";
+import { AzureFunctionsHook } from "./AutoCollection/AzureFunctionsHook";
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
@@ -85,7 +85,7 @@ let _webSnippet: WebSnippet;
 let _nativePerformance: AutoCollectNativePerformance;
 let _serverRequests: AutoCollectHttpRequests;
 let _clientRequests: AutoCollectHttpDependencies;
-let _azureFunctions: AutoCollectAzureFunctions;
+let _azureFunctions: AzureFunctionsHook;
 
 let _isStarted = false;
 
@@ -122,7 +122,7 @@ export function setup(setupString?: string) {
         if (!_nativePerformance) {
             _nativePerformance = new AutoCollectNativePerformance(defaultClient);
         }
-        _azureFunctions = new AutoCollectAzureFunctions(defaultClient);
+        _azureFunctions = new AzureFunctionsHook(defaultClient);
     } else {
         Logging.info("The default client is already setup");
     }
@@ -177,7 +177,7 @@ function _initializeConfig() {
     _forceClsHooked = defaultClient.config.enableUseAsyncHooks !== undefined ? defaultClient.config.enableUseAsyncHooks : _forceClsHooked;
     _isSnippetInjection = defaultClient.config.enableWebInstrumentation !== undefined ? defaultClient.config.enableWebInstrumentation : _isSnippetInjection;
     _isSnippetInjection = defaultClient.config.enableAutoWebSnippetInjection === true ? true : _isSnippetInjection;
-    _isAzureFunctions = defaultClient.config.enableAutoCollectAzureFunctions !== undefined ? defaultClient.config.enableAutoCollectAzureFunctions : _isPerformance;
+    _isAzureFunctions = defaultClient.config.enableAutoCollectAzureFunctions !== undefined ? defaultClient.config.enableAutoCollectAzureFunctions : _isAzureFunctions;
     const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(defaultClient.config.enableAutoCollectExtendedMetrics, defaultClient.config);
     _isNativePerformance = extendedMetricsConfig.isEnabled;
     _disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;

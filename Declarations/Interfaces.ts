@@ -150,8 +150,8 @@ export interface IBaseConfig {
      */
     enableWebInstrumentation: boolean;
     /**
-     * Enable automatic incoming request tracking and correct correlation when using Azure Functions
-     */
+    * Enable automatic incoming request tracking when running in Azure Functions
+    */
     enableAutoCollectAzureFunctions: boolean;
     /**
     * Application Insights resource connection string for web instrumentation and automatic monitoring
