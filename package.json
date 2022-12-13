@@ -57,7 +57,7 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^5.1.0",
     "eslint-plugin-security": "^1.4.0",
-    "mocha": "^7.1.1",
+    "mocha": "^10.2.0",
     "nock": "^11.9.1",
     "node-mocks-http": "1.2.3",
     "sinon": "1.17.6",
