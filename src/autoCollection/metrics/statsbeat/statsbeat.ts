@@ -166,38 +166,39 @@ export class Statsbeat {
         };
 
         this._azureExporter = new AzureMonitorStatsbeatExporter(exporterConfig);
+        this._isInitialized = true;
+        this._initialize();
     }
 
-    public enable(isEnabled: boolean) {
-        this._isEnabled = isEnabled;
-        if (this._isEnabled && !this._isInitialized) {
+    private async _initialize() {
+        try {
             this._getCustomProperties();
-            this._isInitialized = true;
-        }
-        if (isEnabled) {
-            if (!this._handle) {
-                this._handle = setInterval(() => {
-                    this.trackShortIntervalStatsbeats();
-                }, this._collectionShortIntervalMs);
-                this._handle.unref(); // Allow the app to terminate even while this loop is going on
-            }
-            if (!this._longHandle) {
-                // On first enablement
-                this.trackLongIntervalStatsbeats();
-                this._longHandle = setInterval(() => {
-                    this.trackLongIntervalStatsbeats();
-                }, this._collectionLongIntervalMs);
-                this._longHandle.unref(); // Allow the app to terminate even while this loop is going on
-            }
-        } else {
-            if (this._handle) {
-                clearInterval(this._handle);
-                this._handle = null;
-            }
-            if (this._longHandle) {
-                clearInterval(this._longHandle);
-                this._longHandle = null;
-            }
+            await this._getResourceProvider();
+
+            // Add network observable callbacks
+            this._successCountGauge.addCallback(this._successCallback.bind(this));
+            this._networkStatsbeatMeter.addBatchObservableCallback(this._failureCallback.bind(this), [
+                this._failureCountGauge
+            ]);
+            this._networkStatsbeatMeter.addBatchObservableCallback(this._retryCallback.bind(this), [
+                this._retryCountGauge
+            ]);
+            this._networkStatsbeatMeter.addBatchObservableCallback(this._throttleCallback.bind(this), [
+                this._throttleCountGauge
+            ]);
+            this._networkStatsbeatMeter.addBatchObservableCallback(this._exceptionCallback.bind(this), [
+                this._exceptionCountGauge
+            ]);
+            this._averageDurationGauge.addCallback(this._durationCallback.bind(this));
+
+            // Add long interval observable callbacks
+            this._attachStatsbeatGauge.addCallback(this._attachCallback.bind(this));
+            this._featureStatsbeatGauge.addCallback(this._featureCallback.bind(this));
+        } catch (error) {
+            Logger.getInstance().info(
+                this._TAG,
+                "Failed to send Statsbeat metrics: " + Util.getInstance().dumpObj(error)
+            );
         }
     }
 
@@ -427,51 +428,6 @@ export class Statsbeat {
             currentStatusCounter.count++;
         } else {
             counter.retryCount.push({ statusCode: statusCode, count: 1 });
-        }
-    }
-
-    public async trackShortIntervalStatsbeats() {
-
-        try {
-            await this._getResourceProvider();
-            // Add observable callbacks
-            this._successCountGauge.addCallback(this._successCallback.bind(this));
-            this._networkStatsbeatMeter.addBatchObservableCallback(this._failureCallback.bind(this), [
-                this._failureCountGauge
-            ]);
-            this._networkStatsbeatMeter.addBatchObservableCallback(this._retryCallback.bind(this), [
-                this._retryCountGauge
-            ]);
-            this._networkStatsbeatMeter.addBatchObservableCallback(this._throttleCallback.bind(this), [
-                this._throttleCountGauge
-            ]);
-            this._networkStatsbeatMeter.addBatchObservableCallback(this._exceptionCallback.bind(this), [
-                this._exceptionCountGauge
-            ]);
-            this._averageDurationGauge.addCallback(this._durationCallback.bind(this));
-
-            // Dont use this send Statsbeats method anymore and instead call the PeriodicExporter here.
-            // Exports Network Statsbeat every 15 minutes
-        } catch (error) {
-            Logger.getInstance().info(
-                this._TAG,
-                "Failed to send Statsbeat metrics: " + Util.getInstance().dumpObj(error)
-            );
-        }
-    }
-
-    public async trackLongIntervalStatsbeats() {
-        try {
-            await this._getResourceProvider();
-
-            this._attachStatsbeatGauge.addCallback(this._attachCallback.bind(this));
-            this._featureStatsbeatGauge.addCallback(this._featureCallback.bind(this));
-            // TODO: Here we want the metric reader logic.
-        } catch (error) {
-            Logger.getInstance().info(
-                this._TAG,
-                "Failed to send Statsbeat metrics: " + Util.getInstance().dumpObj(error)
-            );
         }
     }
 

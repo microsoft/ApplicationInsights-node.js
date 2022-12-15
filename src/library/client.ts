@@ -22,7 +22,8 @@ export class Client {
         }
         if (!this._config.disableStatsbeat) {
             this._statsbeat = new Statsbeat(this._config);
-            this._statsbeat.enable(true);
+            // Shouldn't need to enable statsbeat now since creating it will run the initialize function
+            // this._statsbeat.enable(true);
         }
         this._metricHandler = new MetricHandler(this._config);
         this._traceHandler = new TraceHandler(this._config, this._metricHandler);
