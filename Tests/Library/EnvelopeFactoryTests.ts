@@ -6,6 +6,8 @@ import EnvelopeFactory = require("../../Library/EnvelopeFactory");
 import Contracts = require("../../Declarations/Contracts");
 import Client = require("../../Library/TelemetryClient");
 import Util = require("../../Library/Util");
+import { CorrelationContextManager } from "../../AutoCollection/CorrelationContextManager";
+import { Context } from "../../Library/Functions";
 
 describe("Library/EnvelopeFactory", () => {
 
@@ -77,6 +79,27 @@ describe("Library/EnvelopeFactory", () => {
             assert.equal(envData.baseData.properties.prop1, "false");
             assert.equal(envData.baseData.properties.prop2, "123");
             assert.equal(envData.baseData.properties.prop3, "{\"subProp1\":\"someValue\"}");
+        });
+
+        it("should add Azure Functions correlation properties", function () {
+            var client = new Client("key");
+            CorrelationContextManager.enable(true);
+            let context = CorrelationContextManager.generateContextObject("operationId", "parentId");
+            context.customProperties.setProperty("InvocationId", "tesvalue1");
+            context.customProperties.setProperty("ProcessId", "tesvalue2");
+            context.customProperties.setProperty("LogLevel", "tesvalue3");
+            context.customProperties.setProperty("Category", "tesvalue4");
+            context.customProperties.setProperty("HostInstanceId", "tesvalue5");
+            context.customProperties.setProperty("AzFuncLiveLogsSessionId", "tesvalue6");
+            CorrelationContextManager.runWithContext(context, () => {
+                var envelope = EnvelopeFactory.createEnvelope(<Contracts.EventTelemetry>{ name: "name" }, Contracts.TelemetryType.Event, commonproperties, client.context, client.config);
+                assert.equal((envelope.data as Contracts.Data<Contracts.EventTelemetry>).baseData.properties["InvocationId"], "tesvalue1");
+                assert.equal((envelope.data as Contracts.Data<Contracts.EventTelemetry>).baseData.properties["ProcessId"], "tesvalue2");
+                assert.equal((envelope.data as Contracts.Data<Contracts.EventTelemetry>).baseData.properties["LogLevel"], "tesvalue3");
+                assert.equal((envelope.data as Contracts.Data<Contracts.EventTelemetry>).baseData.properties["Category"], "tesvalue4");
+                assert.equal((envelope.data as Contracts.Data<Contracts.EventTelemetry>).baseData.properties["HostInstanceId"], "tesvalue5");
+                assert.equal((envelope.data as Contracts.Data<Contracts.EventTelemetry>).baseData.properties["AzFuncLiveLogsSessionId"], "tesvalue6");
+            })
         });
     });
 

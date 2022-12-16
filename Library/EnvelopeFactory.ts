@@ -72,6 +72,7 @@ class EnvelopeFactory {
                         }
                     }
                 }
+                EnvelopeFactory.addAzureFunctionsCorrelationProperties(data.baseData.properties);
                 if (data.baseData.properties) {
                     // sanitize properties
                     data.baseData.properties = Util.validateStringMap(data.baseData.properties);
@@ -101,6 +102,37 @@ class EnvelopeFactory {
         }
 
         return envelope;
+    }
+
+    private static addAzureFunctionsCorrelationProperties(properties: { [key: string]: string; }) {
+        var correlationContext = CorrelationContextManager.getCurrentContext();
+        if (correlationContext && correlationContext.customProperties && correlationContext.customProperties["getProperty"] instanceof Function) {
+            properties = properties || {}; // Initialize properties if not present
+            let property = correlationContext.customProperties.getProperty("InvocationId");
+            if (property) {
+                properties["InvocationId"] = property;
+            }
+            property = correlationContext.customProperties.getProperty("ProcessId");
+            if (property) {
+                properties["ProcessId"] = property;
+            }
+            property = correlationContext.customProperties.getProperty("LogLevel");
+            if (property) {
+                properties["LogLevel"] = property;
+            }
+            property = correlationContext.customProperties.getProperty("Category");
+            if (property) {
+                properties["Category"] = property;
+            }
+            property = correlationContext.customProperties.getProperty("HostInstanceId");
+            if (property) {
+                properties["HostInstanceId"] = property;
+            }
+            property = correlationContext.customProperties.getProperty("AzFuncLiveLogsSessionId");
+            if (property) {
+                properties["AzFuncLiveLogsSessionId"] = property;
+            }
+        }
     }
 
     private static createTraceData(telemetry: Contracts.TraceTelemetry): Contracts.Data<Contracts.MessageData> {

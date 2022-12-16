@@ -4,8 +4,14 @@
  * to your function from the Azure Functions runtime on function invocation.
  */
 export interface Context {
+    /**
+     * A unique GUID per function invocation.
+     */
+    invocationId?: string;
+    /**
+    * TraceContext information to enable distributed tracing scenarios.
+    */
     traceContext: TraceContext;
-
     /**
      * HTTP request object. Provided to your function when using HTTP Bindings.
      */
