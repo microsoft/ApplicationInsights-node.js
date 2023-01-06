@@ -36,6 +36,8 @@ You can manually track more aspects of your app and system using the API describ
 
 | Platform Version | Supported                                       |
 |------------------|-------------------------------------------------|
+| Node.JS `v18`    | ✅                                              |
+| Node.JS `v17`    | ✅                                              |
 | Node.JS `v16`    | ✅                                              |
 | Node.JS `v15`    | ✅                                              |
 | Node.JS `v14`    | ✅                                              |
