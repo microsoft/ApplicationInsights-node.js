@@ -10,7 +10,7 @@ import { DiagnosticLog, DiagnosticMessageId } from "./DataModel";
 
 // Private configuration vars
 let _appInsights: typeof types | null;
-let _prefix = "ad_"; // App Services, Default
+let _prefix = "ud_"; // Unknown, Default
 
 export const defaultConfig = new Config(); // Will read env variables, expose for Agent initialization
 const _instrumentationKey = defaultConfig.instrumentationKey;
@@ -31,7 +31,7 @@ export function setLogger(logger: DiagnosticLogger) {
 
 /**
  * Sets the string which is prefixed to the existing sdkVersion, e.g. `ad_`, `alr_`
- * @param prefix string prefix, including underscore. Defaults to `ad_`
+ * @param prefix string prefix, including underscore. Defaults to `ud_`
  */
 export function setUsagePrefix(prefix: string) {
     _prefix = prefix;
@@ -45,7 +45,7 @@ export function setStatusLogger(statusLogger: StatusLogger) {
  * Try to setup and start this app insights instance if attach is enabled.
  * @param aadTokenCredential Optional AAD credential
  */
-export function setupAndStart(aadTokenCredential?: azureCoreAuth.TokenCredential): typeof types | null {
+export function setupAndStart(aadTokenCredential?: azureCoreAuth.TokenCredential, isAzureFunction?: boolean): typeof types | null {
     // If app already contains SDK, skip agent attach
     if (!forceStart && Helpers.sdkAlreadyExists(_logger)) {
         _statusLogger.logStatus({
@@ -115,7 +115,31 @@ export function setupAndStart(aadTokenCredential?: azureCoreAuth.TokenCredential
         }
 
         // Instrument the SDK
-        _appInsights.setup().setSendLiveMetrics(true);
+        // Azure Functions
+        if (isAzureFunction) {
+            _appInsights.setup().setSendLiveMetrics(false)
+                .setAutoCollectPerformance(false)
+                .setAutoCollectPreAggregatedMetrics(false)
+                .setAutoCollectAzureFunctions(true)
+                .setAutoCollectRequests(true)
+                .setAutoCollectDependencies(true)
+                .setAutoCollectExceptions(true)
+                .setAutoCollectHeartbeat(true)
+                .setUseDiskRetryCaching(true);
+        }
+        // App Services
+        else {
+            _appInsights.setup().setSendLiveMetrics(true)
+                .setAutoCollectPerformance(true)
+                .setAutoCollectPreAggregatedMetrics(true)
+                .setAutoCollectAzureFunctions(false)
+                .setAutoCollectRequests(true)
+                .setAutoCollectDependencies(true)
+                .setAutoCollectExceptions(true)
+                .setAutoCollectHeartbeat(true)
+                .setUseDiskRetryCaching(true);
+        }
+
         _appInsights.defaultClient.setAutoPopulateAzureProperties(true);
         _appInsights.defaultClient.addTelemetryProcessor(prefixInternalSdkVersion);
         _appInsights.defaultClient.addTelemetryProcessor(copyOverPrefixInternalSdkVersionToHeartBeatMetric);
