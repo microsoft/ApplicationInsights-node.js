@@ -54,6 +54,14 @@ export class AzureFunctionsHook {
         try {
             // Start an AI Correlation Context using the provided Function context
             extractedContext = CorrelationContextManager.startOperation(ctx, request);
+            extractedContext.customProperties.setProperty("InvocationId", ctx.invocationId);
+            if (ctx.traceContext.attributes) {
+                extractedContext.customProperties.setProperty("ProcessId", ctx.traceContext.attributes["ProcessId"]);
+                extractedContext.customProperties.setProperty("LogLevel", ctx.traceContext.attributes["LogLevel"]);
+                extractedContext.customProperties.setProperty("Category", ctx.traceContext.attributes["Category"]);
+                extractedContext.customProperties.setProperty("HostInstanceId", ctx.traceContext.attributes["HostInstanceId"]);
+                extractedContext.customProperties.setProperty("AzFuncLiveLogsSessionId", ctx.traceContext.attributes["#AzFuncLiveLogsSessionId"]);
+            }
         }
         catch (err) {
             Logging.warn("Failed to propagate context in Azure Functions", err);

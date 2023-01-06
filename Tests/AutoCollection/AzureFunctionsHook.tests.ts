@@ -2,7 +2,7 @@ import assert = require("assert");
 import sinon = require("sinon");
 import { TelemetryClient } from "../../applicationinsights";
 import { AzureFunctionsHook } from "../../AutoCollection/AzureFunctionsHook";
-import { CorrelationContextManager } from "../../AutoCollection/CorrelationContextManager";
+import { CorrelationContext, CorrelationContextManager } from "../../AutoCollection/CorrelationContextManager";
 import { HttpRequest } from "../../Library/Functions";
 import Logging = require("../../Library/Logging");
 
@@ -66,10 +66,17 @@ describe("AutoCollection/AzureFunctionsHook", () => {
         let contextSpy = sandbox.spy(CorrelationContextManager, "wrapCallback");
         let ctx = {
             res: { "status": 400 },
+            invocationId: "testinvocationId",
             traceContext: {
                 traceparent: "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
                 tracestate: "",
-                attributes: {}
+                attributes: {
+                    "ProcessId": "testProcessId",
+                    "LogLevel": "testLogLevel",
+                    "Category": "testCategory",
+                    "HostInstanceId": "testHostInstanceId",
+                    "#AzFuncLiveLogsSessionId": "testAzFuncLiveLogsSessionId",
+                }
             }
         };
         let request: HttpRequest = {
@@ -84,10 +91,16 @@ describe("AutoCollection/AzureFunctionsHook", () => {
         assert.ok(originalCallbackCalled);
         assert.ok(flushStub.called);
         assert.ok(trackRequestSpy.called);
-        let propagatedContext = contextSpy.args[0][1];
+        let propagatedContext: CorrelationContext = contextSpy.args[0][1];
         assert.equal(propagatedContext.operation.id, "0af7651916cd43dd8448eb211c80319c");
         assert.equal(propagatedContext.operation.name, "HEAD /");
         assert.equal(propagatedContext.operation.parentId, "|0af7651916cd43dd8448eb211c80319c.b7ad6b7169203331.");
+        assert.equal(propagatedContext.customProperties.getProperty("InvocationId"), "testinvocationId");
+        assert.equal(propagatedContext.customProperties.getProperty("ProcessId"), "testProcessId");
+        assert.equal(propagatedContext.customProperties.getProperty("LogLevel"), "testLogLevel");
+        assert.equal(propagatedContext.customProperties.getProperty("Category"), "testCategory");
+        assert.equal(propagatedContext.customProperties.getProperty("HostInstanceId"), "testHostInstanceId");
+        assert.equal(propagatedContext.customProperties.getProperty("AzFuncLiveLogsSessionId"), "testAzFuncLiveLogsSessionId");
         let incomingRequest = trackRequestSpy.args[0][0];
         assert.equal(incomingRequest.id, "|0af7651916cd43dd8448eb211c80319c.b7ad6b7169203331.");
         assert.equal(incomingRequest.name, "HEAD test.com");
