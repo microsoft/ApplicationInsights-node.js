@@ -26,8 +26,8 @@ const STATSBEAT_LANGUAGE = "node";
 export class Statsbeat {
     private _commonProperties: CommonStatsbeatProperties;
     private _networtProperties: NetworkStatsbeatProperties;
-    private _connectionString =
-        "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://dc.services.visualstudio.com/";
+    // TODO: Determine what this old connection string was used for. Was this before we had region specific connectionStrings?
+    // private _connectionString = "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://dc.services.visualstudio.com/";
     // TODO: Change these to production times.
     private _collectionShortIntervalMs = 1000; // 15 minutes
     private _collectionLongIntervalMs = 5000; // 1 day
@@ -74,6 +74,7 @@ export class Statsbeat {
     private _attachStatsbeatGauge: ObservableGauge;
 
     // Network Attributes
+    private _connectionString: string;
     private _endpoint: string;
     private _host: string;
 
@@ -82,11 +83,13 @@ export class Statsbeat {
         this._statbeatMetrics = [];
         this._networkStatsbeatCollection = [];
         this._config = config;
-        // TODO: Figure out why endpoint doesn't exist on config.
+        // TODO: Figure out why endpoint doesn't exist on config. I think this will get the proper endpointUrl.
+        this._endpoint = this._config.getIngestionEndpoint();
+        this._connectionString = this._getConnectionString(this._endpoint);
         this._resourceManager = resourceManager || new ResourceManager();
         this._azureVm = new AzureVirtualMachine();
         this._statsbeatConfig = new ApplicationInsightsConfig();
-        this._statsbeatConfig.connectionString = this._connectionString;
+        this._statsbeatConfig.connectionString = this._;
         this._statsbeatConfig.enableAutoCollectHeartbeat = false;
         this._statsbeatConfig.enableAutoCollectPerformance = false;
         this._statsbeatConfig.enableAutoCollectStandardMetrics = false;

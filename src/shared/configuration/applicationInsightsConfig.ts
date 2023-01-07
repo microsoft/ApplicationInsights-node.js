@@ -68,6 +68,10 @@ export class ApplicationInsightsConfig implements IConfig {
         return this._parsedConnectionString?.instrumentationkey;
     }
 
+    public getIngestionEndpoint(): string {
+        return this._parsedConnectionString?.ingestionendpoint;
+    }
+
     public getDisableStatsbeat(): boolean {
         return this._disableStatsbeat;
     }
