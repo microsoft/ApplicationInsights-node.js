@@ -2,7 +2,9 @@ import * as os from "os";
 
 import { Logger } from "../../shared/logging";
 import {
+    CommonStatsbeatProperties,
     NetworkStatsbeat,
+    NetworkStatsbeatProperties,
     StatsbeatAttach,
     StatsbeatCounter,
     StatsbeatFeature,
@@ -15,14 +17,20 @@ import { Util } from "../../shared/util";
 import { MetricTelemetry, MetricPointTelemetry } from "../../declarations/contracts";
 import { KnownContextTagKeys } from "../../declarations/generated";
 import { IVirtualMachineInfo } from "../../shared/azureVirtualMachine";
+import { MeterProvider, PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
+import { AzureMonitorStatsbeatExporter } from "@azure/monitor-opentelemetry-exporter";
+import { Meter, ObservableGauge } from "@opentelemetry/api-metrics";
 
 const STATSBEAT_LANGUAGE = "node";
 
 export class Statsbeat {
+    private _commonProperties: CommonStatsbeatProperties;
+    private _networtProperties: NetworkStatsbeatProperties;
     private _connectionString =
         "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://dc.services.visualstudio.com/";
-    private _collectionShortIntervalMs = 900000; // 15 minutes
-    private _collectionLongIntervalMs = 1440000; // 1 day
+    // TODO: Change these to production times.
+    private _collectionShortIntervalMs = 1000; // 15 minutes
+    private _collectionLongIntervalMs = 5000; // 1 day
     private _TAG = "Statsbeat";
     private _networkStatsbeatCollection: Array<NetworkStatsbeat>;
     private _resourceManager: ResourceManager;
@@ -35,6 +43,13 @@ export class Statsbeat {
     private _isVM: boolean | undefined;
     private _statbeatMetrics: Array<{ name: string; value: number; properties: unknown }>;
     private _azureVm: AzureVirtualMachine;
+    
+    private _networkStatsbeatMeter: Meter;
+    private _longIntervalStatsbeatMeter: Meter;
+    private _meterProvider: MeterProvider;
+    private _azureExporter: AzureMonitorStatsbeatExporter;
+    private _networkMetricReader: PeriodicExportingMetricReader;
+    private _longIntervalMetricReader: PeriodicExportingMetricReader;
 
     // Custom dimensions
     private _resourceProvider: string;
@@ -48,11 +63,26 @@ export class Statsbeat {
     private _feature: number = StatsbeatFeature.NONE;
     private _instrumentation: number = StatsbeatInstrumentation.NONE;
 
+    // Observable Gauges
+    private _successCountGauge: ObservableGauge;
+    private _failureCountGauge: ObservableGauge;
+    private _retryCountGauge: ObservableGauge;
+    private _throttleCountGauge: ObservableGauge;
+    private _exceptionCountGauge: ObservableGauge;
+    private _averageDurationGauge: ObservableGauge;
+    private _featureStatsbeatGauge: ObservableGauge;
+    private _attachStatsbeatGauge: ObservableGauge;
+
+    // Network Attributes
+    private _endpoint: string;
+    private _host: string;
+
     constructor(config: ApplicationInsightsConfig, resourceManager?: ResourceManager) {
         this._isInitialized = false;
         this._statbeatMetrics = [];
         this._networkStatsbeatCollection = [];
         this._config = config;
+        // TODO: Figure out why endpoint doesn't exist on config.
         this._resourceManager = resourceManager || new ResourceManager();
         this._azureVm = new AzureVirtualMachine();
         this._statsbeatConfig = new ApplicationInsightsConfig();
@@ -60,8 +90,11 @@ export class Statsbeat {
         this._statsbeatConfig.enableAutoCollectHeartbeat = false;
         this._statsbeatConfig.enableAutoCollectPerformance = false;
         this._statsbeatConfig.enableAutoCollectStandardMetrics = false;
+
+        this._meterProvider
     }
 
+    // TODO: Ensure that statsbeat can be turned off if an environment variable is changed.
     public enable(isEnabled: boolean) {
         this._isEnabled = isEnabled;
         if (this._isEnabled && !this._isInitialized) {
