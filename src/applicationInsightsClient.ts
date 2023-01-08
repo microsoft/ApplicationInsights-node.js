@@ -25,10 +25,8 @@ export class ApplicationInsightsClient {
                 "Connection String not found, please provide it before starting Application Insights SDK."
             );
         }
-        if (!this._config.getDisableStatsbeat()) {
-            this._statsbeat = new Statsbeat(this._config);
-            this._statsbeat.enable(true);
-        }
+        // Statsbeat enable/disable is handled from within the Statsbeat class
+        this._statsbeat = new Statsbeat(this._config);
         this._metricHandler = new MetricHandler(this._config);
         this._traceHandler = new TraceHandler(this._config, this._metricHandler);
         this._logHandler = new LogHandler(this._config, this._metricHandler);
