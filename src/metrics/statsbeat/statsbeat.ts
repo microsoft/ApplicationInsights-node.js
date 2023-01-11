@@ -26,20 +26,16 @@ const STATSBEAT_LANGUAGE = "node";
 export class Statsbeat {
     private _commonProperties: CommonStatsbeatProperties;
     private _networkProperties: NetworkStatsbeatProperties;
-    private _connectionString = "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://dc.services.visualstudio.com/";
     private _collectionShortIntervalMs = 900000; // 15 minutes
     private _collectionLongIntervalMs = 86400000; // 1 day
     private _TAG = "Statsbeat";
     private _networkStatsbeatCollection: Array<NetworkStatsbeat>;
     private _resourceManager: ResourceManager;
-    private _handle: NodeJS.Timer | null;
-    private _longHandle: NodeJS.Timer | null;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _config: ApplicationInsightsConfig;
     private _statsbeatConfig: ApplicationInsightsConfig;
     private _isVM: boolean | undefined;
-    private _statbeatMetrics: Array<{ name: string; value: number; properties: unknown }>;
     private _azureVm: AzureVirtualMachine;
     
     private _networkStatsbeatMeter: Meter;
@@ -78,7 +74,6 @@ export class Statsbeat {
 
     constructor(config: ApplicationInsightsConfig, resourceManager?: ResourceManager) {
         this._isInitialized = false;
-        this._statbeatMetrics = [];
         this._networkStatsbeatCollection = [];
         this._config = config;
 
