@@ -107,13 +107,8 @@ Configuration section below.
 
 ## Azure Functions
 
-Due to how Azure Functions (and other FaaS services) handle incoming requests, they are not seen as `http` requests to the Node.js runtime. For this reason, Request -> Dependency correlelation will **not** work out of the box.
-To enable tracking here, you simply need to grab the context from your Function request handler, and wrap your Function with that context.
+Auto correlation in Azure Functions is supported automatically starting in 2.4.0, if using previous version following code should be added to handle the correlation available in Azure Functions environment.
 
-### Setting up Auto-Correlation for Azure Functions
-
-You do not need to make any changes to your existing Function logic.
-Instead, you can update the `default` export of your `httpTrigger` to be wrapped with some Application Insights logic:
 
 ```js
 ...
@@ -147,58 +142,6 @@ export default async function contextPropagatingHttpTrigger(context, req) {
 };
 ```
 
-### Azure Functions Example
-
-An example of making an `axios` call to <https://httpbin.org> and returning the reponse.
-
-```js
-const appInsights = require("applicationinsights");
-appInsights.setup("<YOUR_CONNECTION_STRING>")
-    .setAutoCollectPerformance(false)
-    .start();
-
-const axios = require("axios");
-
-/**
- * No changes required to your existing Function logic
- */
-const httpTrigger = async function (context, req) {
-    const response = await axios.get("https://httpbin.org/status/200");
-
-    context.res = {
-        status: response.status,
-        body: response.statusText,
-    };
-};
-
-// Default export wrapped with Application Insights FaaS context propagation
-export default async function contextPropagatingHttpTrigger(context, req) {
-    // Start an AI Correlation Context using the provided Function context
-    const correlationContext = appInsights.startOperation(context, req);
-
-    // Wrap the Function runtime with correlationContext
-    return appInsights.wrapWithCorrelationContext(async () => {
-        const startTime = Date.now(); // Start trackRequest timer
-
-        // Run the Function
-        const result = await httpTrigger(context, req);
-
-        // Track Request on completion
-        appInsights.defaultClient.trackRequest({
-            name: context.req.method + " " + context.req.url,
-            resultCode: context.res.status,
-            success: true,
-            url: req.url,
-            time: new Date(startTime),
-            duration: Date.now() - startTime,
-            id: correlationContext.operation.parentId,
-        });
-        appInsights.defaultClient.flush();
-
-        return result;
-    }, correlationContext)();
-};
-```
 
 ## Configuration
 
@@ -218,6 +161,7 @@ appInsights.setup("<YOUR_CONNECTION_STRING>")
     .setAutoCollectPreAggregatedMetrics(true)
     .setSendLiveMetrics(false)
     .setAutoCollectHeartbeat(false)
+    .setAutoCollectIncomingRequestAzureFunctions(true)
     .setInternalLogging(false, true)
     .setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C)
     .enableWebInstrumentation(false)
@@ -265,6 +209,7 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | enableAutoCollectRequests      | Sets the state of request tracking (enabled by default). If true requests will be sent to Application Insights |
 | enableAutoCollectDependencies  | Sets the state of dependency tracking (enabled by default). If true dependencies will be sent to Application Insights |
 | enableAutoDependencyCorrelation| Sets the state of automatic dependency correlation (enabled by default). If true dependencies will be correlated with requests |
+| enableAutoCollectIncomingRequestAzureFunctions| Enable automatic incoming request tracking when running in Azure Functions (disabled by default). |
 | enableUseAsyncHooks            | Sets the state of automatic dependency correlation (enabled by default). If true, forces use of experimental async_hooks module to provide correlation. If false, instead uses only patching-based techniques. If left blank, the best option is chosen for you based on your version of Node.js. |
 | enableUseDiskRetryCaching     | If true events that occurred while client is offline will be cached on disk |
 | enableResendInterval          | The wait interval for resending cached events. |
