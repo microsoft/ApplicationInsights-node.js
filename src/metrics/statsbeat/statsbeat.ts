@@ -14,7 +14,6 @@ import {
 } from "./types";
 import { ApplicationInsightsConfig, AzureVirtualMachine, ResourceManager } from "../../shared";
 import { Util } from "../../shared/util";
-import { MetricTelemetry, MetricPointTelemetry } from "../../declarations/contracts";
 import { KnownContextTagKeys } from "../../declarations/generated";
 import { IVirtualMachineInfo } from "../../shared/azureVirtualMachine";
 import { MeterProvider, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions } from "@opentelemetry/sdk-metrics";
@@ -88,7 +87,6 @@ export class Statsbeat {
         // Only initialize the statsbeat process if not disabled in the user-defined config.
         this._isEnabled = !config.getDisableStatsbeat();
         if (!this._isEnabled) {
-            // TODO: Figure out why endpoint doesn't exist on config. I think this will get the proper endpointUrl.
             this._endpoint = this._config.getIngestionEndpoint();
             this._connectionString = this._getConnectionString(this._endpoint);
             this._host = this._getShortHost(this._endpoint);
