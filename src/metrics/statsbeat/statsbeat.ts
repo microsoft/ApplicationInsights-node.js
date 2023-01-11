@@ -26,11 +26,9 @@ const STATSBEAT_LANGUAGE = "node";
 export class Statsbeat {
     private _commonProperties: CommonStatsbeatProperties;
     private _networkProperties: NetworkStatsbeatProperties;
-    // TODO: Determine what this old connection string was used for. Was this before we had region specific connectionStrings?
-    // private _connectionString = "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://dc.services.visualstudio.com/";
-    // TODO: Change these to production times.
-    private _collectionShortIntervalMs = 1000; // 15 minutes
-    private _collectionLongIntervalMs = 5000; // 1 day
+    private _connectionString = "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://dc.services.visualstudio.com/";
+    private _collectionShortIntervalMs = 900000; // 15 minutes
+    private _collectionLongIntervalMs = 86400000; // 1 day
     private _TAG = "Statsbeat";
     private _networkStatsbeatCollection: Array<NetworkStatsbeat>;
     private _resourceManager: ResourceManager;
