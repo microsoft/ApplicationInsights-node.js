@@ -13,6 +13,7 @@ import { IPersistentStorage, ISender } from "./types";
 import { HttpSender } from "./httpSender";
 import { FileSystemPersist } from "./persist";
 import { DEFAULT_BREEZE_ENDPOINT } from "../../declarations/constants";
+import { Statsbeat } from "../../metrics/statsbeat";
 
 const DEFAULT_BATCH_SEND_RETRY_INTERVAL_MS = 60_000;
 
@@ -25,6 +26,7 @@ export class LogExporter {
     private _numConsecutiveRedirects: number;
     private _retryTimer: NodeJS.Timer | null;
     private _batchSendRetryIntervalMs: number = DEFAULT_BATCH_SEND_RETRY_INTERVAL_MS;
+    private _statsbeatMetrics: Statsbeat;
 
     constructor(options: AzureMonitorExporterOptions) {
         this._options = options;
@@ -67,7 +69,10 @@ export class LogExporter {
     protected async _exportEnvelopes(envelopes: Envelope[]): Promise<ExportResult> {
         Logger.getInstance().info(`Exporting ${envelopes.length} envelope(s)`);
         try {
+            const startTime = new Date().getTime();
             const { result, statusCode } = await this._sender.send(envelopes);
+            const endTime = new Date().getTime();
+            const duration = endTime - startTime;
             this._numConsecutiveRedirects = 0;
             if (statusCode === 200) {
                 // Success -- @todo: start retry timer
@@ -78,9 +83,13 @@ export class LogExporter {
                     }, this._batchSendRetryIntervalMs);
                     this._retryTimer.unref();
                 }
+                this._statsbeatMetrics?.countSuccess(duration);
                 return { code: ExportResultCode.SUCCESS };
             } else if (statusCode && isRetriable(statusCode)) {
                 // Failed -- persist failed data
+                if (statusCode === 429 || statusCode === 439) {
+                    this._statsbeatMetrics?.countThrottle(statusCode);
+                }
                 if (result) {
                     Logger.getInstance().info(result);
                     const breezeResponse = JSON.parse(result) as IBreezeResponse;
@@ -91,10 +100,12 @@ export class LogExporter {
                         }
                     });
                     if (filteredEnvelopes.length > 0) {
+                        this._statsbeatMetrics?.countRetry(statusCode);
                         // calls resultCallback(ExportResult) based on result of persister.push
                         return await this._persist(filteredEnvelopes);
                     }
                     // Failed -- not retriable
+                    this._statsbeatMetrics?.countFailure(duration, statusCode);
                     return {
                         code: ExportResultCode.FAILED,
                     };
@@ -103,6 +114,9 @@ export class LogExporter {
                 return await this._persist(envelopes);
             }
             // Failed -- not retriable
+            if (statusCode) {
+                this._statsbeatMetrics.countFailure(duration, statusCode);
+            }
             return {
                 code: ExportResultCode.FAILED,
             };
@@ -127,19 +141,25 @@ export class LogExporter {
                         }
                     }
                 } else {
-                    return { code: ExportResultCode.FAILED, error: new Error("Circular redirect") };
+                    const redirectError = new Error("Circular redirect");
+                    this._statsbeatMetrics?.countException(redirectError);
+                    return { code: ExportResultCode.FAILED, error: redirectError };
                 }
             } else if (restError.statusCode && isRetriable(restError.statusCode)) {
+                this._statsbeatMetrics?.countRetry(restError.statusCode);
                 return await this._persist(envelopes);
             }
             if (this._isNetworkError(restError)) {
+                if (restError.statusCode) {
+                    this._statsbeatMetrics?.countRetry(restError.statusCode);
+                }
                 Logger.getInstance().error(
                     "Retrying due to transient client side error. Error message:",
                     restError.message
                 );
                 return await this._persist(envelopes);
             }
-
+            this._statsbeatMetrics?.countException(restError);
             Logger.getInstance().error(
                 "Envelopes could not be exported and are not retriable. Error message:",
                 restError.message
