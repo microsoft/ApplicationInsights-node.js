@@ -95,7 +95,7 @@ describe("Library/Config", () => {
                 assert.equal(config.enableAutoCollectRequests, false);
                 assert.equal(config.enableAutoCollectDependencies, false);
                 assert.equal(config.enableAutoDependencyCorrelation, false);
-                assert.equal(config.enableAutoCollectAzureFunctions, false);
+                assert.equal(config.enableAutoCollectIncomingRequestAzureFunctions, false);
                 assert.equal(config.enableUseAsyncHooks, false);
                 assert.equal(config.disableStatsbeat, false);
                 assert.equal(config.enableAutoCollectExtendedMetrics, false);

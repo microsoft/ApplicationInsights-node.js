@@ -177,7 +177,7 @@ function _initializeConfig() {
     _forceClsHooked = defaultClient.config.enableUseAsyncHooks !== undefined ? defaultClient.config.enableUseAsyncHooks : _forceClsHooked;
     _isSnippetInjection = defaultClient.config.enableWebInstrumentation !== undefined ? defaultClient.config.enableWebInstrumentation : _isSnippetInjection;
     _isSnippetInjection = defaultClient.config.enableAutoWebSnippetInjection === true ? true : _isSnippetInjection;
-    _isAzureFunctions = defaultClient.config.enableAutoCollectAzureFunctions !== undefined ? defaultClient.config.enableAutoCollectAzureFunctions : _isAzureFunctions;
+    _isAzureFunctions = defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions !== undefined ? defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions : _isAzureFunctions;
     const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(defaultClient.config.enableAutoCollectExtendedMetrics, defaultClient.config);
     _isNativePerformance = extendedMetricsConfig.isEnabled;
     _disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
@@ -432,11 +432,11 @@ export class Configuration {
     }
 
     /**
-     * Enable automatic incoming request tracking and correct correlation when using Azure Functions
-     * @param value if true auto collection will be enabled
+     * Enable automatic incoming request tracking when using Azure Functions
+     * @param value if true auto collection of incomign requests will be enabled
      * @returns {Configuration} this class
      */
-    public static setAutoCollectAzureFunctions(value: boolean) {
+    public static setAutoCollectIncomingRequestAzureFunctions(value: boolean) {
         _isAzureFunctions = value;
         if (_isStarted) {
             _azureFunctions.enable(value);
