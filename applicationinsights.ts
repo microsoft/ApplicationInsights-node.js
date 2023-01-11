@@ -433,7 +433,7 @@ export class Configuration {
 
     /**
      * Enable automatic incoming request tracking when using Azure Functions
-     * @param value if true auto collection of incomign requests will be enabled
+     * @param value if true auto collection of incoming requests will be enabled
      * @returns {Configuration} this class
      */
     public static setAutoCollectIncomingRequestAzureFunctions(value: boolean) {
