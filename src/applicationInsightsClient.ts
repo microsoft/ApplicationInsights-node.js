@@ -6,6 +6,7 @@ import { LogHandler } from "./logs";
 import { MetricHandler } from "./metrics";
 import { TraceHandler } from "./traces";
 import { ResourceManager } from "./shared";
+import { StatsbeatFeature, StatsbeatInstrumentation } from "./metrics/statsbeat/types";
 
 export class ApplicationInsightsClient {
     private _config: ApplicationInsightsConfig;
@@ -13,6 +14,9 @@ export class ApplicationInsightsClient {
     private _traceHandler: TraceHandler;
     private _metricHandler: MetricHandler;
     private _logHandler: LogHandler;
+
+    private _statsbeatInstrumentations: StatsbeatInstrumentation[] = [];
+    private _statsbeatFeatures: StatsbeatFeature[] = [];
 
     /**
      * Constructs a new client of the client
@@ -25,10 +29,13 @@ export class ApplicationInsightsClient {
                 "Connection String not found, please provide it before starting Application Insights SDK."
             );
         }
+        this._getStatsbeatInstrumentations();
+        this._getStatsbeatFeatures();
+
         // Statsbeat enable/disable is handled from within the Statsbeat class
         this._statsbeat = new Statsbeat(this._config);
         this._metricHandler = new MetricHandler(this._config);
-        this._traceHandler = new TraceHandler(this._config, this._metricHandler);
+        this._traceHandler = new TraceHandler(this._config, this._metricHandler, this._statsbeatInstrumentations, this._statsbeatFeatures);
         this._logHandler = new LogHandler(this._config, this._metricHandler);
     }
 
@@ -72,6 +79,33 @@ export class ApplicationInsightsClient {
 
     public getLogger(): Logger {
         return Logger.getInstance();
+    }
+
+    private _getStatsbeatInstrumentations() {
+        if (this._config?.instrumentations?.azureSdk?.enabled) {
+            this._statsbeatInstrumentations.push(StatsbeatInstrumentation.AZURE_CORE_TRACING);
+        }
+        if (this._config?.instrumentations?.mongoDb?.enabled) {
+            this._statsbeatInstrumentations.push(StatsbeatInstrumentation.MONGODB);
+        }
+        if (this._config?.instrumentations?.mySql?.enabled) {
+            this._statsbeatInstrumentations.push(StatsbeatInstrumentation.MYSQL);
+        }
+        if (this._config?.instrumentations?.postgreSql?.enabled) {
+            this._statsbeatInstrumentations.push(StatsbeatInstrumentation.POSTGRES);
+        }
+        if (this._config?.instrumentations?.redis?.enabled) {
+            this._statsbeatInstrumentations.push(StatsbeatInstrumentation.REDIS);
+        }
+    }
+
+    private _getStatsbeatFeatures() {
+        if (this._config?.aadTokenCredential) {
+            this._statsbeatFeatures.push(StatsbeatFeature.AAD_HANDLING);
+        }
+        if (!this._config?.disableOfflineStorage) {
+            this._statsbeatFeatures.push(StatsbeatFeature.DISK_RETRY);
+        }
     }
 
     /**
