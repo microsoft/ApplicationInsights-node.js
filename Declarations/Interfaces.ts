@@ -152,7 +152,7 @@ export interface IBaseConfig {
     /**
     * Enable automatic incoming request tracking when running in Azure Functions
     */
-    enableAutoCollectAzureFunctions: boolean;
+    enableAutoCollectIncomingRequestAzureFunctions: boolean;
     /**
     * Application Insights resource connection string for web instrumentation and automatic monitoring
     * Note: if no VALID connection string is provided here, web instrumentation will use the connection string during initializing Nodejs SDK
