@@ -58,6 +58,10 @@ export interface NetworkStatsbeatProperties {
     host: string;
 }
 
+export interface AttachStatsbeatProperties {
+    rpId: string;
+}
+
 export const StatsbeatTelemetryName = "Statsbeat";
 
 export const StatsbeatResourceProvider = {
