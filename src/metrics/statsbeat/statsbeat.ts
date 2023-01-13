@@ -21,7 +21,7 @@ import { MeterProvider, PeriodicExportingMetricReader, PeriodicExportingMetricRe
 import { AzureMonitorExporterOptions, AzureMonitorStatsbeatExporter } from "@azure/monitor-opentelemetry-exporter";
 import { BatchObservableResult, Meter, ObservableGauge, ObservableResult } from "@opentelemetry/api-metrics";
 import { EU_CONNECTION_STRING, EU_ENDPOINTS, NON_EU_CONNECTION_STRING } from "../../declarations/constants";
-import { ExportResultCode } from "@opentelemetry/core";
+import { ExportResult, ExportResultCode } from "@opentelemetry/core";
 
 const STATSBEAT_LANGUAGE = "node";
 
@@ -209,7 +209,7 @@ export class Statsbeat {
             // Export Feature/Attach Statsbeat once upon app initialization
             this._longIntervalAzureExporter.export(
                 (await this._longIntervalMetricReader.collect()).resourceMetrics,
-                (result) => {
+                (result: ExportResult) => {
                     if (result.code !== ExportResultCode.SUCCESS) {
                         Logger.getInstance().info(
                             this._TAG,
