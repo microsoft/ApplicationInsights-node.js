@@ -253,7 +253,7 @@ export class Statsbeat {
             observableResult.observe(
                 this._failureCountGauge,
                 counter.totalFailedRequestCount[i].count,
-                attributes
+                { ...attributes }
             );
             counter.totalFailedRequestCount[i].count = 0;
         }
@@ -271,7 +271,7 @@ export class Statsbeat {
             observableResult.observe(
                 this._retryCountGauge,
                 counter.retryCount[i].count,
-                attributes
+                { ...attributes }
             );
             counter.retryCount[i].count = 0;
         }
@@ -289,7 +289,7 @@ export class Statsbeat {
             observableResult.observe(
                 this._throttleCountGauge,
                 counter.throttleCount[i].count,
-                attributes
+                { ...attributes }
             );
             counter.throttleCount[i].count = 0;
         }
@@ -311,7 +311,7 @@ export class Statsbeat {
             observableResult.observe(
                 this._exceptionCountGauge,
                 counter.exceptionCount[i].count,
-                attributes
+                { ...attributes }
             );
             counter.exceptionCount[i].count = 0;
         }
@@ -323,8 +323,23 @@ export class Statsbeat {
             this._host
         );
         const attributes = { ...this._networkProperties, ...this._commonProperties };
-        observableResult.observe(counter.averageRequestExecutionTime, attributes);
-        counter.averageRequestExecutionTime = 0;
+        for (let i = 0; i < this._networkStatsbeatCollection.length; i++) {
+            const currentCounter = this._networkStatsbeatCollection[i];
+            currentCounter.time = Number(new Date());
+            const intervalRequests =
+              currentCounter.totalRequestCount - currentCounter.lastRequestCount || 0;
+            currentCounter.averageRequestExecutionTime =
+              (currentCounter.intervalRequestExecutionTime -
+                currentCounter.lastIntervalRequestExecutionTime) /
+                intervalRequests || 0;
+            currentCounter.lastIntervalRequestExecutionTime = currentCounter.intervalRequestExecutionTime; // reset
+      
+            currentCounter.lastRequestCount = currentCounter.totalRequestCount;
+            currentCounter.lastTime = currentCounter.time;
+          }
+          observableResult.observe(counter.averageRequestExecutionTime, attributes);
+      
+          counter.averageRequestExecutionTime = 0;
     }
 
     private _featureCallback(observableResult: BatchObservableResult) {
