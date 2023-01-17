@@ -43,7 +43,7 @@ describe("AutoCollection/AzureFunctionsHook", () => {
     it("Hook added if running in Azure Functions", () => {
         let hook = new AzureFunctionsHook(client);
         let testCore = new TestFunctionCore();
-        hook["_functionsCoreModule"] = testCore;
+        hook["_functionsCoreModule"] = <any>testCore;
         hook["_addPreInvocationHook"]();
         assert.ok(testCore.registerCalled);
         assert.equal(testCore.hookName, "preInvocation");

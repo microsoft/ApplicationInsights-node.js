@@ -45,6 +45,7 @@
   },
   "devDependencies": {
     "@types/cls-hooked": "^4.3.3",
+    "@types/long": "^4.0.2",
     "@types/mocha": "^7.0.2",
     "@types/node": "^8.0.0",
     "@types/sinon": "2.1.2",
