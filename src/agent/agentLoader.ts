@@ -1,3 +1,5 @@
+import { ManagedIdentityCredential } from "@azure/identity";
+
 import { ApplicationInsightsClient } from "../applicationInsightsClient";
 import { ApplicationInsightsConfig } from "../shared";
 import { Util } from "../shared/util";
@@ -45,7 +47,7 @@ export class AgentLoader {
 
             }
             catch (error) {
-                const msg = "Error initializaing Azure Monitor Application Insights Distro." + Util.getInstance().dumpObj(error);
+                const msg = `Error initializaing Azure Monitor Application Insights Distro.${Util.getInstance().dumpObj(error)}`;
                 const diagnosticLog: IDiagnosticLog = {
                     message: msg,
                     messageId: DiagnosticMessageId.unknownError
@@ -84,7 +86,7 @@ export class AgentLoader {
             return true;
         }
         catch (err: any) {
-            const msg = "Failed to validate Azure Monitor Application Insights Distro initialization." + Util.getInstance().dumpObj(err);
+            const msg = `Failed to validate Azure Monitor Application Insights Distro initialization.${Util.getInstance().dumpObj(err)}`;
             console.log(msg);
             if (this._diagnosticLogger) {
                 const diagnosticLog: IDiagnosticLog = {
@@ -102,10 +104,8 @@ export class AgentLoader {
         }
     }
 
-
     private _getAuthenticationCredential(): any {
         let credential = undefined;
-        const { ManagedIdentityCredential } = require("@azure/identity");
         // Try to add AAD Token Credential
         try {
             const authenticationString = process.env["APPLICATIONINSIGHTS_AUTHENTICATION_STRING"];
@@ -120,7 +120,7 @@ export class AgentLoader {
                     }
                     return fields;
                 }, {});
-                if (result["authorization"] && result["authorization"] == "AAD") {
+                if (result["authorization"] && result["authorization"] === "AAD") {
                     const clientId = result["clientid"];
                     if (clientId) {
                         console.log('AppInsightsAgent: ClientId found, trying to authenticate using Managed Identity.');
@@ -134,7 +134,7 @@ export class AgentLoader {
             }
         }
         catch (authError: any) {
-            const msg = "Failed to get authentication credential and enable AAD." + Util.getInstance().dumpObj(authError);
+            const msg = `Failed to get authentication credential and enable AAD.${Util.getInstance().dumpObj(authError)}`;
             console.log(msg);
             if (this._diagnosticLogger) {
                 const diagnosticLog: IDiagnosticLog = {
@@ -156,21 +156,21 @@ export class AgentLoader {
                 appInstance = (require.resolve as any)("applicationinsights", { paths: [process.cwd()] });
             } catch (e) {
                 // Node <8.9
-                appInstance = require.resolve(process.cwd() + "/node_modules/applicationinsights");
+                appInstance = require.resolve(`${process.cwd()}/node_modules/applicationinsights`);
             }
             // If loaded instance is in Azure machine home path do not attach the SDK, this means customer already instrumented their app
             if (appInstance.indexOf("home") > -1) {
                 const diagnosticLog: IDiagnosticLog = {
-                    message: "Azure Monitor Application Insights Distro already exists. Module is already installed in this application; not re-attaching. Location: " + appInstance,
+                    message: `Azure Monitor Application Insights Distro already exists. Module is already installed in this application; not re-attaching. Location: ${appInstance}`,
                     messageId: DiagnosticMessageId.sdkExists
                 };
                 this._diagnosticLogger.logMessage(diagnosticLog);
                 return true;
             }
-            else {
-                // ApplicationInsights could be loaded outside of customer application, attach in this case
-                return false;
-            }
+
+            // ApplicationInsights could be loaded outside of customer application, attach in this case
+            return false;
+
         } catch (e) {
             // crashed while trying to resolve "applicationinsights", so SDK does not exist. Attach appinsights
             return false;

@@ -15,7 +15,9 @@ export interface FileWriterOptions {
 
 
 export class FileWriter implements IAgentLogger {
-    public callback = (_err: Error) => { }; // no-op
+    public callback = (_err: Error) => {
+        // no-op
+    };
     private _ready = false;
     private _options: FileWriterOptions;
     private static _fullpathsToDelete: string[] = [];
@@ -45,21 +47,21 @@ export class FileWriter implements IAgentLogger {
 
     public log(message: any) {
         if (this._ready) {
-            let data = typeof message === "object"
+            const data = typeof message === "object"
                 ? JSON.stringify(message)
                 : message.toString();
 
             // Check if existing file needs to be renamed
             this._shouldRenameFile((err, shouldRename) => {
-                if (err) return;
+                if (err) { return; }
 
                 if (shouldRename) {
                     if (this._options.renamePolicy === "rolling") {
                         renameCurrentFile(this._filepath, this._filename, (renameErr, renamedFullpath) => {
-                            if (renameErr) return;
+                            if (renameErr) { return; }
                             FileWriter._fullpathsToDelete.push(renamedFullpath);
                             this._options.append
-                                ? this._appendFile(data + "\n")
+                                ? this._appendFile(`${data}\n`)
                                 : this._writeFile(data);
                         });
                     } else if (this._options.renamePolicy === "overwrite") {
@@ -71,16 +73,12 @@ export class FileWriter implements IAgentLogger {
                     }
                 } else {
                     this._options.append
-                        ? this._appendFile(data + "\n")
+                        ? this._appendFile(`${data}\n`)
                         : this._writeFile(data);
                 }
             });
 
         }
-    }
-
-    public error(message: any) {
-        this.log(message);
     }
 
     private _appendFile(message: string) {

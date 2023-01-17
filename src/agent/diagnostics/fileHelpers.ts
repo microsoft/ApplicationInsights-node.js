@@ -2,7 +2,7 @@ import * as path from "path";
 import * as fs from "fs";
 import * as os from "os";
 
-export const homedir = os.homedir ? os.homedir() : (process.env[(process.platform == "win32") ? "USERPROFILE" : "HOME"]);
+export const homedir = os.homedir ? os.homedir() : (process.env[(process.platform === "win32") ? "USERPROFILE" : "HOME"]);
 
 /**
  * Zero dependencies: recursive mkdir
@@ -58,9 +58,9 @@ export function renameCurrentFile(filepath: string, filename: string, callback?:
         }
 
         const createDate = new Date(stats.birthtime);
-        const destfilename = basename + "-" +
-            createDate.toISOString().replace(/[T:\.]/g, "_").replace("Z", "") +
-            path.extname(filename) + ".old";
+        const destfilename = `${basename }-${ 
+            createDate.toISOString().replace(/[T:\.]/g, "_").replace("Z", "") 
+            }${path.extname(filename) }.old`;
         const destfullpath = path.join(filepath, destfilename);
         fs.rename(fullpath, destfullpath, (renameErr) => {
             if (typeof callback === "function") {

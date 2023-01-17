@@ -3,8 +3,7 @@ export const LOGGER_LANGUAGE = "nodejs";
 export const NODE_JS_RUNTIME_MAJOR_VERSION = parseInt(process.versions.node.split('.')[0], 10);
 
 export interface IAgentLogger {
-    log(message?: any, ...optional: any[]): void;
-    error(message?: any, ...optional: any[]): void;
+    log(message: any, ...optional: any[]): void;
 }
 
 export interface IDiagnosticLogger {

@@ -35,9 +35,9 @@ export class EtwDiagnosticLogger extends BaseDiagnosticLogger {
     public logMessage(diagnosticLog: IDiagnosticLog): void {
         try {
             console.log('AppInsightsAgent ETWLogger', diagnosticLog.message);
-            let metaData = this._getMetadata();
+            const metaData = this._getMetadata();
             metaData.push(diagnosticLog.messageId || "");
-            let message: string = diagnosticLog.message;
+            const message: string = diagnosticLog.message;
             this._agentLogger.log(message, metaData);
         }
         catch (ex) {
@@ -51,6 +51,7 @@ export class EtwDiagnosticLogger extends BaseDiagnosticLogger {
         try {
             // throws an error if directory is not readable / does not exist
             fs.accessSync(dirname, fs.constants.R_OK);
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
             return require(dirname) as typeof etwTypes;
         } catch (e) {
             // Could not load ETW, return nothing

@@ -23,5 +23,7 @@ export class BaseDiagnosticLogger implements IDiagnosticLogger {
         this._subscriptionId = process.env.WEBSITE_OWNER_NAME ? process.env.WEBSITE_OWNER_NAME.split("+")[0] : null;
     }
 
-    public logMessage(diagnosticLog: IDiagnosticLog) { };
+    public logMessage(diagnosticLog: IDiagnosticLog) {
+        // No OP
+    }
 }

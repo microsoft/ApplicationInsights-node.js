@@ -20,14 +20,13 @@ export class AzureFunctionsLoader {
             instrumentationKey,
             new ConsoleWriter(),
         );
+        // Azure Fn specific configuration
+        this._config.enableAutoCollectPerformance = false;
+        this._config.enableAutoCollectStandardMetrics = false;
         this._loader= new AgentLoader(this._statusLogger, this._diagnosticLogger, this._config);
     }
 
     public initialize(): void {
-        // Azure Fn specific configuration
-        this._config.enableAutoCollectPerformance = false;
-        this._config.enableAutoCollectStandardMetrics = false;
-        const agentLoader = new AgentLoader(this._statusLogger, this._diagnosticLogger, this._config);
         this._loader.initialize();
     }
 }

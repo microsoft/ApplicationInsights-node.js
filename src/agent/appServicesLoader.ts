@@ -22,7 +22,7 @@ export class AppServicesLoader {
         let statusLogDir = '/var/log/applicationinsights/';
         if (isWindows) {
             if (process.env.HOME) {
-                statusLogDir = path.join(process.env.HOME, "LogFiles", "ApplicationInsights", "status");;
+                statusLogDir = path.join(process.env.HOME, "LogFiles", "ApplicationInsights", "status");
             }
             else {
                 statusLogDir = path.join(os.tmpdir(), "Microsoft", "ApplicationInsights", "StatusMonitor", "LogFiles", "ApplicationInsights", "status");
@@ -36,7 +36,7 @@ export class AppServicesLoader {
         }));
 
         if (isWindows) {
-            let etwLogger = new EtwDiagnosticLogger(instrumentationKey);
+            const etwLogger = new EtwDiagnosticLogger(instrumentationKey);
             if (etwLogger.isLoaded()) {
                 this._diagnosticLogger = etwLogger;
             }
