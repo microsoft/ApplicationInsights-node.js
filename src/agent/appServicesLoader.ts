@@ -9,10 +9,11 @@ import { AgentLoader } from "./agentLoader";
 import { IDiagnosticLogger } from "./types";
 
 
-class AppServicesLoader {
+export class AppServicesLoader {
     private _config: ApplicationInsightsConfig;
     private _diagnosticLogger: IDiagnosticLogger;
     private _statusLogger: StatusLogger;
+    private _loader: AgentLoader;
 
     constructor() {
         this._config = new ApplicationInsightsConfig();
@@ -35,9 +36,13 @@ class AppServicesLoader {
         }));
 
         if (isWindows) {
-            this._diagnosticLogger = new EtwDiagnosticLogger(instrumentationKey);
-        } else {
-            // Linux
+            let etwLogger = new EtwDiagnosticLogger(instrumentationKey);
+            if (etwLogger.isLoaded()) {
+                this._diagnosticLogger = etwLogger;
+            }
+        }
+
+        if (!this._diagnosticLogger) {
             this._diagnosticLogger = new DiagnosticLogger(
                 instrumentationKey,
                 new FileWriter(
@@ -52,14 +57,10 @@ class AppServicesLoader {
                 )
             );
         }
+        this._loader = new AgentLoader(this._statusLogger, this._diagnosticLogger, this._config);
     }
 
     public initialize(): void {
-        const agentLoader = new AgentLoader(this._statusLogger, this._diagnosticLogger, this._config);
-        agentLoader.initialize();
+        this._loader.initialize();
     }
 }
-
-const loader = new AppServicesLoader();
-loader.initialize();
-export = loader;

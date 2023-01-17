@@ -6,10 +6,11 @@ import { AgentLoader } from "./agentLoader";
 import { IDiagnosticLogger } from "./types";
 
 
-class AKSLoader {
+export class AKSLoader {
     private _config: ApplicationInsightsConfig;
     private _diagnosticLogger: IDiagnosticLogger;
     private _statusLogger: StatusLogger;
+    private _loader: AgentLoader;
 
     constructor() {
         this._config = new ApplicationInsightsConfig();
@@ -19,14 +20,10 @@ class AKSLoader {
             instrumentationKey,
             new ConsoleWriter(),
         );
+        this._loader= new AgentLoader(this._statusLogger, this._diagnosticLogger, this._config);
     }
 
     public initialize(): void {
-        const agentLoader = new AgentLoader(this._statusLogger, this._diagnosticLogger, this._config);
-        agentLoader.initialize();
+        this._loader.initialize();
     }
 }
-
-const loader = new AKSLoader();
-loader.initialize();
-export = loader;

@@ -6,10 +6,11 @@ import { AgentLoader } from "./agentLoader";
 import { IDiagnosticLogger } from "./types";
 
 
-class AzureFunctionsLoader {
+export class AzureFunctionsLoader {
     private _config: ApplicationInsightsConfig;
     private _diagnosticLogger: IDiagnosticLogger;
     private _statusLogger: StatusLogger;
+    private _loader: AgentLoader;
 
     constructor() {
         this._config = new ApplicationInsightsConfig();
@@ -19,6 +20,7 @@ class AzureFunctionsLoader {
             instrumentationKey,
             new ConsoleWriter(),
         );
+        this._loader= new AgentLoader(this._statusLogger, this._diagnosticLogger, this._config);
     }
 
     public initialize(): void {
@@ -26,10 +28,6 @@ class AzureFunctionsLoader {
         this._config.enableAutoCollectPerformance = false;
         this._config.enableAutoCollectStandardMetrics = false;
         const agentLoader = new AgentLoader(this._statusLogger, this._diagnosticLogger, this._config);
-        agentLoader.initialize();
+        this._loader.initialize();
     }
 }
-
-const loader = new AzureFunctionsLoader();
-loader.initialize();
-export = loader;

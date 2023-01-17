@@ -3,34 +3,33 @@ import * as path from 'path';
 import type * as etwTypes from '@microsoft/typescript-etw';
 import { BaseDiagnosticLogger } from './baseDiagnosticLogger';
 import { IDiagnosticLog, NODE_JS_RUNTIME_MAJOR_VERSION } from '../types';
+import { EtwWriter } from './etwWriter';
 
 
 export class EtwDiagnosticLogger extends BaseDiagnosticLogger {
+
+    private _isLoaded: boolean;
+
     constructor(instrumentationKey: string) {
         super(instrumentationKey);
+        this._isLoaded = false;
         let etwModule: typeof etwTypes | undefined;
         try {
             etwModule = this._loadEtwModule(NODE_JS_RUNTIME_MAJOR_VERSION);
             if (etwModule) {
-                this._agentLogger = {
-                    log: (message: any, params: any[]) => {
-                        (etwModule.logInfoEvent as Function)(message, ...params);
-                    },
-                    error: (message: any, params: any[]) => {
-                        (etwModule.logErrEvent as Function)(message, ...params);
-                    },
-                };
+                this._agentLogger = new EtwWriter();
+                this._isLoaded = true
                 console.log('AppInsightsAgent: Successfully loaded ETW');
             } else {
                 console.log('AppInsightsAgent: ETW could not be loaded');
-                this._agentLogger = console;
             }
         } catch (e) {
-            console.log('Could not load ETW. Defaulting to console logging', e);
-            etwModule = undefined;
-            this._agentLogger = console;
+            console.log('AppInsightsAgent: ETW could not be loaded');
         }
+    }
 
+    public isLoaded(): boolean {
+        return this._isLoaded;
     }
 
     public logMessage(diagnosticLog: IDiagnosticLog): void {

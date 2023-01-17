@@ -1,5 +1,5 @@
 import { IAgentLogger, IDiagnosticLog, IDiagnosticLogger, LOGGER_LANGUAGE, LOGGER_NAME } from "../types";
-import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../Declarations/Constants";
+import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../declarations/constants";
 
 
 export class BaseDiagnosticLogger implements IDiagnosticLogger {
