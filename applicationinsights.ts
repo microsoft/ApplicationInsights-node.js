@@ -19,7 +19,7 @@ import { AzureFunctionsHook } from "./AutoCollection/AzureFunctionsHook";
 // They're exposed using "export import" so that types are passed along as expected
 export import TelemetryClient = require("./Library/NodeClient");
 export import Contracts = require("./Declarations/Contracts");
-export import azureFunctionsTypes = require("@azure/functions");
+export import azureFunctionsTypes = require("./Library/Functions");
 
 export enum DistributedTracingModes {
     /**

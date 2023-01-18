@@ -1,7 +1,6 @@
 import http = require("http");
 import url = require("url");
 import net = require("net");
-import { HttpRequest } from "@azure/functions";
 
 import Contracts = require("../Declarations/Contracts");
 import Util = require("../Library/Util");
@@ -10,6 +9,7 @@ import RequestParser = require("./RequestParser");
 import CorrelationIdManager = require("../Library/CorrelationIdManager");
 import Tracestate = require("../Library/Tracestate");
 import Traceparent = require("../Library/Traceparent");
+import { HttpRequest } from "../Library/Functions";
 
 
 /**
