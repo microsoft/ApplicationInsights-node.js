@@ -1,13 +1,14 @@
 import assert = require("assert");
 import sinon = require("sinon");
 import http = require("http");
+import { Context } from "@azure/functions";
 
 import EnvelopeFactory = require("../../Library/EnvelopeFactory");
 import Contracts = require("../../Declarations/Contracts");
 import Client = require("../../Library/TelemetryClient");
 import Util = require("../../Library/Util");
 import { CorrelationContextManager } from "../../AutoCollection/CorrelationContextManager";
-import { Context } from "../../Library/Functions";
+
 
 describe("Library/EnvelopeFactory", () => {
 

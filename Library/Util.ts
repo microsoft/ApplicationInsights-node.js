@@ -2,12 +2,12 @@
 import https = require("https");
 import url = require("url");
 import constants = require("constants");
+import { HttpRequest } from "@azure/functions";
 
 import Logging = require("./Logging");
 import Config = require("./Config");
 import TelemetryClient = require("../Library/TelemetryClient");
 import RequestResponseHeaders = require("./RequestResponseHeaders");
-import { HttpRequest } from "../Library/Functions";
 import { JsonConfig } from "./JsonConfig";
 
 

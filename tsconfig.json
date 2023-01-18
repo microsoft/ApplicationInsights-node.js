@@ -10,7 +10,12 @@
         "outDir": "./out",
         "typeRoots": [
             "./node_modules/@types"
-        ]
+        ],
+        "paths": {
+            "@azure/functions-core": [
+                "./typings/functions-core"
+            ]
+        }
     },
     "include": [
         "Bootstrap/*.ts",

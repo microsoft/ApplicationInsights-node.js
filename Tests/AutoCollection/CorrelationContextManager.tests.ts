@@ -1,10 +1,11 @@
-import { CorrelationContextManager, CorrelationContext } from "../../AutoCollection/CorrelationContextManager";
-import * as azureFunctionTypes from "../../Library/Functions";
-
 import assert = require("assert");
 import sinon = require("sinon");
+import * as azureFunctionTypes from "@azure/functions";
+
+import { CorrelationContextManager, CorrelationContext } from "../../AutoCollection/CorrelationContextManager";
 import Traceparent = require("../../Library/Traceparent");
 import { SpanContext } from "@opentelemetry/api";
+import { HttpRequest } from "@azure/functions";
 
 const customProperties = {
     getProperty(prop: string) { return "" },
@@ -244,7 +245,7 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
                 attributes: {},
             };
 
-            const request = {
+            const request: HttpRequest = {
                 method: "GET",
                 url: "/search",
                 headers: {
@@ -252,7 +253,10 @@ if (CorrelationContextManager.isNodeVersionCompatible()) {
                     traceparent: functionContext.traceparent,
                 },
                 query: { q: 'test' },
-                params: {}
+                params: {},
+                get: null,
+                user: null,
+                parseFormBody: null,
             };
 
             describe("#Azure Functions", () => {

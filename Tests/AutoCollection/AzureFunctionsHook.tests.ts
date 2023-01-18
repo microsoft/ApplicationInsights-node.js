@@ -1,9 +1,9 @@
 import assert = require("assert");
 import sinon = require("sinon");
+import { HttpRequest } from "@azure/functions";
 import { TelemetryClient } from "../../applicationinsights";
 import { AzureFunctionsHook } from "../../AutoCollection/AzureFunctionsHook";
 import { CorrelationContext, CorrelationContextManager } from "../../AutoCollection/CorrelationContextManager";
-import { HttpRequest } from "../../Library/Functions";
 import Logging = require("../../Library/Logging");
 
 
@@ -82,7 +82,12 @@ describe("AutoCollection/AzureFunctionsHook", () => {
         let request: HttpRequest = {
             method: "HEAD",
             url: "test.com",
-            headers: { "": "" }
+            headers: { "": "" },
+            query:null,
+            params: null,
+            user: null,
+            get: null,
+            parseFormBody: null
         };
         let originalCallbackCalled = false;
         let originalCallback = () => { originalCallbackCalled = true };

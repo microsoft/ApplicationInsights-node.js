@@ -44,6 +44,7 @@
     "node": ">=8.0.0"
   },
   "devDependencies": {
+    "@azure/functions": "^3.5.0",
     "@types/cls-hooked": "^4.3.3",
     "@types/mocha": "^7.0.2",
     "@types/node": "^8.0.0",

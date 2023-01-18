@@ -1,4 +1,6 @@
-import { Context, HttpRequest } from "../Library/Functions";
+import { FunctionCallback, PreInvocationContext } from "@azure/functions-core";
+import { Context, HttpRequest } from "@azure/functions";
+
 import Logging = require("../Library/Logging");
 import TelemetryClient = require("../Library/TelemetryClient");
 import { CorrelationContext, CorrelationContextManager } from "./CorrelationContextManager";
@@ -39,7 +41,7 @@ export class AzureFunctionsHook {
 
     private _addPreInvocationHook() {
         if (!this._preInvocationHook) {
-            this._preInvocationHook = this._functionsCoreModule.registerHook('preInvocation', async (preInvocationContext: any) => {
+            this._preInvocationHook = this._functionsCoreModule.registerHook('preInvocation', async (preInvocationContext: PreInvocationContext ) => {
                 const originalCallback = preInvocationContext.functionCallback;
                 preInvocationContext.functionCallback = async (ctx: Context, request: HttpRequest) => {
                     this._propagateContext(ctx, request, originalCallback);
@@ -48,7 +50,7 @@ export class AzureFunctionsHook {
         }
     }
 
-    private async _propagateContext(ctx: Context, request: HttpRequest, originalCallback: any) {
+    private async _propagateContext(ctx: Context, request: HttpRequest, originalCallback: FunctionCallback) {
         // Update context to use Azure Functions one
         let extractedContext: CorrelationContext = null;
         try {
@@ -65,19 +67,17 @@ export class AzureFunctionsHook {
         }
         catch (err) {
             Logging.warn("Failed to propagate context in Azure Functions", err);
-            originalCallback(ctx, request);
-            return;
+            return originalCallback(ctx, request);
         }
         if (!extractedContext) {
             // Correlation Context could be disabled causing this to be null
             Logging.warn("Failed to create context in Azure Functions");
-            originalCallback(ctx, request);
-            return;
+            return originalCallback(ctx, request);;
         }
 
         CorrelationContextManager.wrapCallback(async () => {
             const startTime = Date.now(); // Start trackRequest timer
-            originalCallback(ctx, request);
+            let callbackResult = originalCallback(ctx, request);
             try {
                 if (this._autoGenerateIncomingRequests) {
                     let statusCode = 200; //Default
@@ -104,6 +104,7 @@ export class AzureFunctionsHook {
             catch (err) {
                 Logging.warn("Error creating automatic incoming request in Azure Functions", err);
             }
+            return callbackResult;
         }, extractedContext)();
     }
 
