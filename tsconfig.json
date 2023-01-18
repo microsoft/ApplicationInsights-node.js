@@ -9,13 +9,9 @@
         "noImplicitAny": true,
         "outDir": "./out",
         "typeRoots": [
-            "./node_modules/@types"
-        ],
-        "paths": {
-            "@azure/functions-core": [
-                "./typings/functions-core"
-            ]
-        }
+            "./node_modules/@types",
+            "./types"
+        ]
     },
     "include": [
         "Bootstrap/*.ts",
