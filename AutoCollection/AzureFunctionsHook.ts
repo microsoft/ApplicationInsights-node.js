@@ -1,24 +1,24 @@
+import { Disposable, FunctionCallback, PreInvocationContext } from "@azure/functions-core";
 import { Context, HttpRequest } from "../Library/Functions";
 import Logging = require("../Library/Logging");
 import TelemetryClient = require("../Library/TelemetryClient");
 import { CorrelationContext, CorrelationContextManager } from "./CorrelationContextManager";
 
-
 /** Node.js Azure Functions handle incoming HTTP requests before Application Insights SDK is available,
- * this code generate incoming request telemetry and generate correlation context to be used 
+ * this code generate incoming request telemetry and generate correlation context to be used
  * by outgoing requests and other telemetry, we rely on hooks provided by Azure Functions
 */
 export class AzureFunctionsHook {
     private _client: TelemetryClient;
-    private _functionsCoreModule: any;
+    private _functionsCoreModule: typeof import("@azure/functions-core");
     private _autoGenerateIncomingRequests: boolean;
-    private _preInvocationHook: any;
+    private _preInvocationHook: Disposable;
 
     constructor(client: TelemetryClient) {
         this._client = client;
         this._autoGenerateIncomingRequests = false;
         try {
-            this._functionsCoreModule = require('@azure/functions-core');
+            this._functionsCoreModule = require("@azure/functions-core");
         }
         catch (error) {
             Logging.info("AzureFunctionsHook failed to load, not running in Azure Functions");
@@ -39,7 +39,7 @@ export class AzureFunctionsHook {
 
     private _addPreInvocationHook() {
         if (!this._preInvocationHook) {
-            this._preInvocationHook = this._functionsCoreModule.registerHook('preInvocation', async (preInvocationContext: any) => {
+            this._preInvocationHook = this._functionsCoreModule.registerHook("preInvocation", async (preInvocationContext: PreInvocationContext) => {
                 const originalCallback = preInvocationContext.functionCallback;
                 preInvocationContext.functionCallback = async (ctx: Context, request: HttpRequest) => {
                     this._propagateContext(ctx, request, originalCallback);
@@ -48,7 +48,7 @@ export class AzureFunctionsHook {
         }
     }
 
-    private async _propagateContext(ctx: Context, request: HttpRequest, originalCallback: any) {
+    private async _propagateContext(ctx: Context, request: HttpRequest, originalCallback: FunctionCallback) {
         // Update context to use Azure Functions one
         let extractedContext: CorrelationContext = null;
         try {
@@ -96,7 +96,7 @@ export class AzureFunctionsHook {
                         url: request.url,
                         time: new Date(startTime),
                         duration: Date.now() - startTime,
-                        id: extractedContext.operation?.parentId,
+                        id: extractedContext.operation?.parentId
                     });
                     this._client.flush();
                 }
