@@ -17,14 +17,15 @@ export class AzureFunctionsHook {
     constructor(client: TelemetryClient) {
         this._client = client;
         this._autoGenerateIncomingRequests = false;
-        try {
-            this._functionsCoreModule = require("@azure/functions-core");
-        }
-        catch (error) {
-            Logging.info("AzureFunctionsHook failed to load, not running in Azure Functions");
-            return;
-        }
-        this._addPreInvocationHook();
+        // TODO: Enable when all Azure Functions scenarios are covered
+        // try {
+        //     this._functionsCoreModule = require("@azure/functions-core");
+        // }
+        // catch (error) {
+        //     Logging.info("AzureFunctionsHook failed to load, not running in Azure Functions");
+        //     return;
+        // }
+        // this._addPreInvocationHook();
     }
 
     public enable(isEnabled: boolean) {

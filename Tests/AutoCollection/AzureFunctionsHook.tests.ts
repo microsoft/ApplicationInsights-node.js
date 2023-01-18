@@ -32,13 +32,13 @@ describe("AutoCollection/AzureFunctionsHook", () => {
     });
 
 
-    it("Hook not added if not running in Azure Functions", () => {
-        const spy = sandbox.spy(Logging, "info");
-        let hook = new AzureFunctionsHook(client);
-        assert.equal(hook["_functionsCoreModule"], undefined);
-        assert.ok(spy.called);
-        assert.equal(spy.args[0][0], "AzureFunctionsHook failed to load, not running in Azure Functions");
-    });
+    // it("Hook not added if not running in Azure Functions", () => {
+    //     const spy = sandbox.spy(Logging, "info");
+    //     let hook = new AzureFunctionsHook(client);
+    //     assert.equal(hook["_functionsCoreModule"], undefined);
+    //     assert.ok(spy.called);
+    //     assert.equal(spy.args[0][0], "AzureFunctionsHook failed to load, not running in Azure Functions");
+    // });
 
     it("Hook added if running in Azure Functions", () => {
         let hook = new AzureFunctionsHook(client);
