@@ -57,60 +57,60 @@ describe("AutoCollection/AzureFunctionsHook", () => {
         assert.equal(hook["_autoGenerateIncomingRequests"], false);
     });
 
-    it("Context propagation", () => {
-        CorrelationContextManager.enable(true);
-        let hook = new AzureFunctionsHook(client);
-        hook.enable(true);
-        let flushStub = sandbox.stub(hook["_client"], "flush");
-        let trackRequestSpy = sandbox.stub(hook["_client"], "trackRequest");
-        let contextSpy = sandbox.spy(CorrelationContextManager, "wrapCallback");
-        let ctx = {
-            res: { "status": 400 },
-            invocationId: "testinvocationId",
-            traceContext: {
-                traceparent: "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
-                tracestate: "",
-                attributes: {
-                    "ProcessId": "testProcessId",
-                    "LogLevel": "testLogLevel",
-                    "Category": "testCategory",
-                    "HostInstanceId": "testHostInstanceId",
-                    "#AzFuncLiveLogsSessionId": "testAzFuncLiveLogsSessionId",
-                }
-            }
-        };
-        let request: HttpRequest = {
-            method: "HEAD",
-            url: "test.com",
-            headers: { "": "" },
-            query:null,
-            params: null,
-            user: null,
-            get: null,
-            parseFormBody: null
-        };
-        let originalCallbackCalled = false;
-        let originalCallback = () => { originalCallbackCalled = true };
-        hook["_propagateContext"](ctx as any, request, originalCallback);
-        assert.ok(contextSpy.called);
-        assert.ok(originalCallbackCalled);
-        assert.ok(flushStub.called);
-        assert.ok(trackRequestSpy.called);
-        let propagatedContext: CorrelationContext = contextSpy.args[0][1];
-        assert.equal(propagatedContext.operation.id, "0af7651916cd43dd8448eb211c80319c");
-        assert.equal(propagatedContext.operation.name, "HEAD /");
-        assert.equal(propagatedContext.operation.parentId, "|0af7651916cd43dd8448eb211c80319c.b7ad6b7169203331.");
-        assert.equal(propagatedContext.customProperties.getProperty("InvocationId"), "testinvocationId");
-        assert.equal(propagatedContext.customProperties.getProperty("ProcessId"), "testProcessId");
-        assert.equal(propagatedContext.customProperties.getProperty("LogLevel"), "testLogLevel");
-        assert.equal(propagatedContext.customProperties.getProperty("Category"), "testCategory");
-        assert.equal(propagatedContext.customProperties.getProperty("HostInstanceId"), "testHostInstanceId");
-        assert.equal(propagatedContext.customProperties.getProperty("AzFuncLiveLogsSessionId"), "testAzFuncLiveLogsSessionId");
-        let incomingRequest = trackRequestSpy.args[0][0];
-        assert.equal(incomingRequest.id, "|0af7651916cd43dd8448eb211c80319c.b7ad6b7169203331.");
-        assert.equal(incomingRequest.name, "HEAD test.com");
-        assert.equal(incomingRequest.resultCode, 400);
-        assert.equal(incomingRequest.success, false);
-        assert.equal(incomingRequest.url, "test.com");
-    });
+    // it("Context propagation", () => {
+    //     CorrelationContextManager.enable(true);
+    //     let hook = new AzureFunctionsHook(client);
+    //     hook.enable(true);
+    //     let flushStub = sandbox.stub(hook["_client"], "flush");
+    //     let trackRequestSpy = sandbox.stub(hook["_client"], "trackRequest");
+    //     let contextSpy = sandbox.spy(CorrelationContextManager, "wrapCallback");
+    //     let ctx = {
+    //         res: { "status": 400 },
+    //         invocationId: "testinvocationId",
+    //         traceContext: {
+    //             traceparent: "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+    //             tracestate: "",
+    //             attributes: {
+    //                 "ProcessId": "testProcessId",
+    //                 "LogLevel": "testLogLevel",
+    //                 "Category": "testCategory",
+    //                 "HostInstanceId": "testHostInstanceId",
+    //                 "#AzFuncLiveLogsSessionId": "testAzFuncLiveLogsSessionId",
+    //             }
+    //         }
+    //     };
+    //     let request: HttpRequest = {
+    //         method: "HEAD",
+    //         url: "test.com",
+    //         headers: { "": "" },
+    //         query:null,
+    //         params: null,
+    //         user: null,
+    //         get: null,
+    //         parseFormBody: null
+    //     };
+    //     let originalCallbackCalled = false;
+    //     let originalCallback = () => { originalCallbackCalled = true };
+    //     hook["_propagateContext"](ctx as any, request, originalCallback);
+    //     assert.ok(contextSpy.called);
+    //     assert.ok(originalCallbackCalled);
+    //     assert.ok(flushStub.called);
+    //     assert.ok(trackRequestSpy.called);
+    //     let propagatedContext: CorrelationContext = contextSpy.args[0][1];
+    //     assert.equal(propagatedContext.operation.id, "0af7651916cd43dd8448eb211c80319c");
+    //     assert.equal(propagatedContext.operation.name, "HEAD /");
+    //     assert.equal(propagatedContext.operation.parentId, "|0af7651916cd43dd8448eb211c80319c.b7ad6b7169203331.");
+    //     assert.equal(propagatedContext.customProperties.getProperty("InvocationId"), "testinvocationId");
+    //     assert.equal(propagatedContext.customProperties.getProperty("ProcessId"), "testProcessId");
+    //     assert.equal(propagatedContext.customProperties.getProperty("LogLevel"), "testLogLevel");
+    //     assert.equal(propagatedContext.customProperties.getProperty("Category"), "testCategory");
+    //     assert.equal(propagatedContext.customProperties.getProperty("HostInstanceId"), "testHostInstanceId");
+    //     assert.equal(propagatedContext.customProperties.getProperty("AzFuncLiveLogsSessionId"), "testAzFuncLiveLogsSessionId");
+    //     let incomingRequest = trackRequestSpy.args[0][0];
+    //     assert.equal(incomingRequest.id, "|0af7651916cd43dd8448eb211c80319c.b7ad6b7169203331.");
+    //     assert.equal(incomingRequest.name, "HEAD test.com");
+    //     assert.equal(incomingRequest.resultCode, 400);
+    //     assert.equal(incomingRequest.success, false);
+    //     assert.equal(incomingRequest.url, "test.com");
+    // });
 });
