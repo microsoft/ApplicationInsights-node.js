@@ -216,18 +216,24 @@ export class CorrelationContextManager {
             return this.spanToContextObject(spanContext, `|${spanContext.traceId}.${spanContext.spanId}.`, typeof request === "string" ? request : "");
         }
 
+        let operationName = typeof request === "string" ? request : "";
+
         // AzFunction TraceContext
         if (traceContext) {
             let traceparent = null;
             let tracestate = null;
-            if ((request as azureFunctionsTypes.HttpRequest).headers) {
-                if ((request as azureFunctionsTypes.HttpRequest).headers.traceparent) {
-                    traceparent = new Traceparent((request as azureFunctionsTypes.HttpRequest).headers.traceparent);
-                } else if ((request as azureFunctionsTypes.HttpRequest).headers["request-id"]) {
-                    traceparent = new Traceparent(null, (request as azureFunctionsTypes.HttpRequest).headers["request-id"]);
-                }
-                if ((request as azureFunctionsTypes.HttpRequest).headers.tracestate) {
-                    tracestate = new Tracestate((request as azureFunctionsTypes.HttpRequest).headers.tracestate);
+            operationName = traceContext.attributes["OperationName"];
+            if (request) {
+                let azureFnRequest = request as azureFunctionsTypes.HttpRequest;
+                if (azureFnRequest.headers) {
+                    if (azureFnRequest.headers.traceparent) {
+                        traceparent = new Traceparent(azureFnRequest.headers.traceparent);
+                    } else if (azureFnRequest.headers["request-id"]) {
+                        traceparent = new Traceparent(null, azureFnRequest.headers["request-id"]);
+                    }
+                    if (azureFnRequest.headers.tracestate) {
+                        tracestate = new Tracestate(azureFnRequest.headers.tracestate);
+                    }
                 }
             }
             if (!traceparent) {
@@ -236,16 +242,18 @@ export class CorrelationContextManager {
             if (!tracestate) {
                 tracestate = new Tracestate(traceContext.tracestate);
             }
-            const parser = typeof request === "object"
-                ? new HttpRequestParser(request)
-                : null;
+
+            let correlationContextHeader = undefined;
+            if (typeof request === "object") {
+                const parser = new HttpRequestParser(request);
+                correlationContextHeader = parser.getCorrelationContextHeader();
+                operationName = parser.getOperationName({});
+            }
             const correlationContext = CorrelationContextManager.generateContextObject(
                 traceparent.traceId,
                 traceparent.parentId,
-                typeof request === "string"
-                    ? request
-                    : parser.getOperationName({}),
-                parser && parser.getCorrelationContextHeader() || undefined,
+                operationName,
+                correlationContextHeader,
                 traceparent,
                 tracestate
             );
