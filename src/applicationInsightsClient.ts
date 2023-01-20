@@ -15,8 +15,8 @@ export class ApplicationInsightsClient {
     private _metricHandler: MetricHandler;
     private _logHandler: LogHandler;
 
-    private _statsbeatInstrumentations: StatsbeatInstrumentation[] = [];
-    private _statsbeatFeatures: StatsbeatFeature[] = [];
+    private _instrumentation: StatsbeatInstrumentation;
+    private _feature: StatsbeatFeature;
 
     /**
      * Constructs a new client of the client
@@ -31,8 +31,10 @@ export class ApplicationInsightsClient {
         }
         this._getStatsbeatInstrumentations();
         this._getStatsbeatFeatures();
-        process.env.STATSBEAT_INSTRUMENTATIONS = this._statsbeatInstrumentations.toString();
-        process.env.STATSBEAT_FEATURES = this._statsbeatFeatures.toString();
+        process.env.AZURE_MONITOR_STATSBEAT_FEATURES = JSON.stringify({
+            instrumentation: this._instrumentation,
+            feature: this._feature
+        });
 
         // Statsbeat enable/disable is handled from within the Statsbeat class
         this._statsbeat = new Statsbeat(this._config);
@@ -85,29 +87,37 @@ export class ApplicationInsightsClient {
 
     private _getStatsbeatInstrumentations() {
         if (this._config?.instrumentations?.azureSdk?.enabled) {
-            this._statsbeatInstrumentations.push(StatsbeatInstrumentation.AZURE_CORE_TRACING);
+            this._addInstrumentation(StatsbeatInstrumentation.AZURE_CORE_TRACING);
         }
         if (this._config?.instrumentations?.mongoDb?.enabled) {
-            this._statsbeatInstrumentations.push(StatsbeatInstrumentation.MONGODB);
+            this._addInstrumentation(StatsbeatInstrumentation.MONGODB);
         }
         if (this._config?.instrumentations?.mySql?.enabled) {
-            this._statsbeatInstrumentations.push(StatsbeatInstrumentation.MYSQL);
+            this._addInstrumentation(StatsbeatInstrumentation.MYSQL);
         }
         if (this._config?.instrumentations?.postgreSql?.enabled) {
-            this._statsbeatInstrumentations.push(StatsbeatInstrumentation.POSTGRES);
+            this._addInstrumentation(StatsbeatInstrumentation.POSTGRES);
         }
         if (this._config?.instrumentations?.redis?.enabled) {
-            this._statsbeatInstrumentations.push(StatsbeatInstrumentation.REDIS);
+            this._addInstrumentation(StatsbeatInstrumentation.REDIS);
         }
     }
 
     private _getStatsbeatFeatures() {
         if (this._config?.aadTokenCredential) {
-            this._statsbeatFeatures.push(StatsbeatFeature.AAD_HANDLING);
+            this._addFeature(StatsbeatFeature.AAD_HANDLING);
         }
         if (!this._config?.disableOfflineStorage) {
-            this._statsbeatFeatures.push(StatsbeatFeature.DISK_RETRY);
+            this._addFeature(StatsbeatFeature.DISK_RETRY);
         }
+    }
+
+    private _addFeature(feature: number) {
+        this._feature |= feature;
+    }
+    
+    private _addInstrumentation(instrumentation: number) {
+        this._instrumentation |= instrumentation;
     }
 
     /**
