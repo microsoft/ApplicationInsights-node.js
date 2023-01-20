@@ -22,7 +22,6 @@ import { MetricHandler } from "../metrics/metricHandler";
 import { AzureSpanProcessor } from "./azureSpanProcessor";
 import { AzureHttpMetricsInstrumentation } from "../metrics/collection/azureHttpMetricsInstrumentation";
 import { AzureFunctionsHook } from "./azureFunctionsHook";
-import { StatsbeatFeature, StatsbeatInstrumentation } from "../metrics/statsbeat/types";
 
 export class TraceHandler {
     private _exporter: AzureMonitorTraceExporter;
@@ -45,8 +44,6 @@ export class TraceHandler {
     constructor(
         config: ApplicationInsightsConfig,
         metricHandler?: MetricHandler,
-        statsbeatInstrumentations?: StatsbeatInstrumentation[],
-        statsbeatFeatures?: StatsbeatFeature[]
     ) {
         this._config = config;
         this._metricHandler = metricHandler;
@@ -64,7 +61,7 @@ export class TraceHandler {
             storageDirectory: this._config.storageDirectory,
             disableOfflineStorage: this._config.disableOfflineStorage,
         };
-        this._exporter = new AzureMonitorTraceExporter(exporterConfig, statsbeatInstrumentations, statsbeatFeatures);
+        this._exporter = new AzureMonitorTraceExporter(exporterConfig);
         const bufferConfig: BufferConfig = {
             maxExportBatchSize: 512,
             scheduledDelayMillis: 5000,

@@ -31,11 +31,13 @@ export class ApplicationInsightsClient {
         }
         this._getStatsbeatInstrumentations();
         this._getStatsbeatFeatures();
+        process.env.STATSBEAT_INSTRUMENTATIONS = this._statsbeatInstrumentations.toString();
+        process.env.STATSBEAT_FEATURES = this._statsbeatFeatures.toString();
 
         // Statsbeat enable/disable is handled from within the Statsbeat class
         this._statsbeat = new Statsbeat(this._config);
         this._metricHandler = new MetricHandler(this._config);
-        this._traceHandler = new TraceHandler(this._config, this._metricHandler, this._statsbeatInstrumentations, this._statsbeatFeatures);
+        this._traceHandler = new TraceHandler(this._config, this._metricHandler);
         this._logHandler = new LogHandler(this._config, this._metricHandler);
     }
 

@@ -183,6 +183,7 @@ export class Statsbeat {
     private async _initialize() {
         try {
             this._getResourceProvider();
+            this._getCustomProperties();
 
             // Add network observable callbacks
             this._successCountGauge.addCallback(this._successCallback.bind(this));
