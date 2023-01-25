@@ -60,8 +60,8 @@ export class Statsbeat {
     private _language: string;
     private _cikey: string;
     private _attach: string = StatsbeatAttach.sdk; // Default is SDK
-    private _feature: number = StatsbeatFeature.NONE;
-    private _instrumentation: number = StatsbeatInstrumentation.NONE;
+    private _feature: number | undefined = undefined;
+    private _instrumentation: number | undefined = undefined;
 
     // Observable Gauges
     private _successCountGauge: ObservableGauge;

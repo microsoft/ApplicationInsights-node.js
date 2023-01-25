@@ -88,21 +88,21 @@ export const StatsbeatCounter = {
 };
 
 export enum StatsbeatFeature {
-    NONE = 0,
-    DISK_RETRY = 1,
-    AAD_HANDLING = 2,
+    DISK_RETRY = 0,
+    AAD_HANDLING = 1,
+    WEB_SNIPPET = 2,
+    DISTRO = 4,
 }
 
 export enum StatsbeatInstrumentation {
-    NONE = 0,
-    AZURE_CORE_TRACING = 1,
-    MONGODB = 2,
-    MYSQL = 4,
-    REDIS = 8,
-    POSTGRES = 16,
-    BUNYAN = 32,
-    WINSTON = 64,
-    CONSOLE = 128,
+    AZURE_CORE_TRACING = 0,
+    MONGODB = 1,
+    MYSQL = 2,
+    REDIS = 4,
+    POSTGRES = 8,
+    BUNYAN = 16,
+    WINSTON = 32,
+    CONSOLE = 64,
 }
 
 export enum StatsbeatFeatureType {

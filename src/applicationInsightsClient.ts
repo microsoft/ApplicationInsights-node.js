@@ -110,6 +110,7 @@ export class ApplicationInsightsClient {
         if (!this._config?.disableOfflineStorage) {
             this._addFeature(StatsbeatFeature.DISK_RETRY);
         }
+        this._addFeature(StatsbeatFeature.DISTRO);
     }
 
     private _addFeature(feature: number) {
