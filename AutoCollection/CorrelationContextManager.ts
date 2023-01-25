@@ -222,7 +222,7 @@ export class CorrelationContextManager {
         if (traceContext) {
             let traceparent = null;
             let tracestate = null;
-            operationName = traceContext.attributes["OperationName"];
+            operationName = traceContext.attributes["OperationName"] || operationName;
             if (request) {
                 let azureFnRequest = request as azureFunctionsTypes.HttpRequest;
                 if (azureFnRequest.headers) {
