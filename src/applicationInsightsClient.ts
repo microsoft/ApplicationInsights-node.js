@@ -29,15 +29,6 @@ export class ApplicationInsightsClient {
                 "Connection String not found, please provide it before starting Application Insights SDK."
             );
         }
-        this._getStatsbeatInstrumentations();
-        this._getStatsbeatFeatures();
-        process.env.AZURE_MONITOR_STATSBEAT_FEATURES = JSON.stringify({
-            instrumentation: this._instrumentation,
-            feature: this._feature
-        });
-
-        // Statsbeat enable/disable is handled from within the Statsbeat class
-        this._statsbeat = new Statsbeat(this._config);
         this._metricHandler = new MetricHandler(this._config);
         this._traceHandler = new TraceHandler(this._config, this._metricHandler);
         this._logHandler = new LogHandler(this._config, this._metricHandler);
@@ -83,42 +74,6 @@ export class ApplicationInsightsClient {
 
     public getLogger(): Logger {
         return Logger.getInstance();
-    }
-
-    private _getStatsbeatInstrumentations() {
-        if (this._config?.instrumentations?.azureSdk?.enabled) {
-            this._addInstrumentation(StatsbeatInstrumentation.AZURE_CORE_TRACING);
-        }
-        if (this._config?.instrumentations?.mongoDb?.enabled) {
-            this._addInstrumentation(StatsbeatInstrumentation.MONGODB);
-        }
-        if (this._config?.instrumentations?.mySql?.enabled) {
-            this._addInstrumentation(StatsbeatInstrumentation.MYSQL);
-        }
-        if (this._config?.instrumentations?.postgreSql?.enabled) {
-            this._addInstrumentation(StatsbeatInstrumentation.POSTGRES);
-        }
-        if (this._config?.instrumentations?.redis?.enabled) {
-            this._addInstrumentation(StatsbeatInstrumentation.REDIS);
-        }
-    }
-
-    private _getStatsbeatFeatures() {
-        if (this._config?.aadTokenCredential) {
-            this._addFeature(StatsbeatFeature.AAD_HANDLING);
-        }
-        if (!this._config?.disableOfflineStorage) {
-            this._addFeature(StatsbeatFeature.DISK_RETRY);
-        }
-        this._addFeature(StatsbeatFeature.DISTRO);
-    }
-
-    private _addFeature(feature: number) {
-        this._feature |= feature;
-    }
-    
-    private _addInstrumentation(instrumentation: number) {
-        this._instrumentation |= instrumentation;
     }
 
     /**

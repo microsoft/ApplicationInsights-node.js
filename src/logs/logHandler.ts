@@ -37,7 +37,6 @@ import {
 import { Logger } from "../shared/logging";
 import { IMetricExceptionDimensions, IMetricTraceDimensions } from "../metrics/types";
 import { MetricHandler } from "../metrics/metricHandler";
-import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 
 export class LogHandler {
     public statsbeat: Statsbeat;
@@ -51,13 +50,7 @@ export class LogHandler {
 
     constructor(config: ApplicationInsightsConfig, metricHandler?: MetricHandler) {
         this._config = config;
-        const exporterConfig: AzureMonitorExporterOptions = {
-            connectionString: this._config.connectionString,
-            aadTokenCredential: this._config.aadTokenCredential,
-            storageDirectory: this._config.storageDirectory,
-            disableOfflineStorage: this._config.disableOfflineStorage,
-        };
-        this._exporter = new LogExporter(exporterConfig);
+        this._exporter = new LogExporter(this._config);
         this._batchProcessor = new BatchProcessor(this._exporter);
         this._console = new AutoCollectConsole(this);
         this._exceptions = new AutoCollectExceptions(this);

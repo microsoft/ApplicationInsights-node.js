@@ -12,6 +12,9 @@ import {
     StatsbeatFeatureType,
     StatsbeatInstrumentation,
     StatsbeatResourceProvider,
+    EU_CONNECTION_STRING,
+    EU_ENDPOINTS,
+    NON_EU_CONNECTION_STRING,
 } from "./types";
 import { ApplicationInsightsConfig, AzureVirtualMachine, ResourceManager } from "../../shared";
 import { Util } from "../../shared/util";
@@ -20,10 +23,10 @@ import { IVirtualMachineInfo } from "../../shared/azureVirtualMachine";
 import { MeterProvider, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions } from "@opentelemetry/sdk-metrics";
 import { AzureMonitorExporterOptions, AzureMonitorStatsbeatExporter } from "@azure/monitor-opentelemetry-exporter";
 import { BatchObservableResult, Meter, ObservableGauge, ObservableResult } from "@opentelemetry/api-metrics";
-import { EU_CONNECTION_STRING, EU_ENDPOINTS, NON_EU_CONNECTION_STRING } from "../../declarations/constants";
 import { ExportResult, ExportResultCode } from "@opentelemetry/core";
 
 const STATSBEAT_LANGUAGE = "node";
+const AZURE_MONITOR_STATSBEAT_FEATURES = "AZURE_MONITOR_STATSBEAT_FEATURES";
 
 export class Statsbeat {
     private _commonProperties: CommonStatsbeatProperties;
@@ -86,6 +89,16 @@ export class Statsbeat {
         // Only initialize the statsbeat process if not disabled in the user-defined config.
         this._isEnabled = !config.getDisableStatsbeat();
         if (!this._isEnabled) {
+            this._getStatsbeatInstrumentations();
+            this._getStatsbeatFeatures();
+            try {
+                process.env[AZURE_MONITOR_STATSBEAT_FEATURES] = JSON.stringify({
+                    instrumentation: this._instrumentation,
+                    feature: this._feature
+                });
+            } catch(error) {
+                Logger.getInstance().error("Failed call to JSON.stringify.", error);
+            }
             this._endpoint = this._config.getIngestionEndpoint();
             this._connectionString = this._getConnectionString(this._endpoint);
             this._host = this._getShortHost(this._endpoint);
@@ -573,5 +586,41 @@ export class Statsbeat {
                 this._resourceProvider = StatsbeatResourceProvider.unknown;
             }
         }
+    }
+
+    private _getStatsbeatInstrumentations() {
+        if (this._config?.instrumentations?.azureSdk?.enabled) {
+            this._addInstrumentation(StatsbeatInstrumentation.AZURE_CORE_TRACING);
+        }
+        if (this._config?.instrumentations?.mongoDb?.enabled) {
+            this._addInstrumentation(StatsbeatInstrumentation.MONGODB);
+        }
+        if (this._config?.instrumentations?.mySql?.enabled) {
+            this._addInstrumentation(StatsbeatInstrumentation.MYSQL);
+        }
+        if (this._config?.instrumentations?.postgreSql?.enabled) {
+            this._addInstrumentation(StatsbeatInstrumentation.POSTGRES);
+        }
+        if (this._config?.instrumentations?.redis?.enabled) {
+            this._addInstrumentation(StatsbeatInstrumentation.REDIS);
+        }
+    }
+
+    private _getStatsbeatFeatures() {
+        if (this._config?.aadTokenCredential) {
+            this._addFeature(StatsbeatFeature.AAD_HANDLING);
+        }
+        if (!this._config?.disableOfflineStorage) {
+            this._addFeature(StatsbeatFeature.DISK_RETRY);
+        }
+        this._addFeature(StatsbeatFeature.DISTRO);
+    }
+
+    private _addFeature(feature: number) {
+        this._feature |= feature;
+    }
+    
+    private _addInstrumentation(instrumentation: number) {
+        this._instrumentation |= instrumentation;
     }
 }

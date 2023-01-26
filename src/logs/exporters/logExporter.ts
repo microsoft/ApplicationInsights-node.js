@@ -6,7 +6,7 @@ import { RestError } from "@azure/core-rest-pipeline";
 import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 
 import { Logger } from "../../shared/logging";
-import { ConnectionStringParser } from "../../shared/configuration";
+import { ApplicationInsightsConfig, ConnectionStringParser } from "../../shared/configuration";
 import { isRetriable, IBreezeResponse, IBreezeError } from "./breezeUtils";
 import { TelemetryItem as Envelope } from "../../declarations/generated";
 import { IPersistentStorage, ISender } from "./types";
@@ -28,7 +28,7 @@ export class LogExporter {
     private _batchSendRetryIntervalMs: number = DEFAULT_BATCH_SEND_RETRY_INTERVAL_MS;
     private _statsbeatMetrics: Statsbeat;
 
-    constructor(options: AzureMonitorExporterOptions) {
+    constructor(options: ApplicationInsightsConfig) {
         this._options = options;
         this._numConsecutiveRedirects = 0;
         this._instrumentationKey = "";
@@ -50,6 +50,8 @@ export class LogExporter {
             Logger.getInstance().error(message);
             throw new Error(message);
         }
+        
+        this._statsbeatMetrics = new Statsbeat(options);
         this._sender = new HttpSender(this._endpointUrl, this._options);
         this._persister = new FileSystemPersist(this._instrumentationKey, this._options);
         this._retryTimer = null;
@@ -115,7 +117,7 @@ export class LogExporter {
             }
             // Failed -- not retriable
             if (statusCode) {
-                this._statsbeatMetrics.countFailure(duration, statusCode);
+                this._statsbeatMetrics?.countFailure(duration, statusCode);
             }
             return {
                 code: ExportResultCode.FAILED,
