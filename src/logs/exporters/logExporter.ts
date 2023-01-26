@@ -28,7 +28,7 @@ export class LogExporter {
     private _batchSendRetryIntervalMs: number = DEFAULT_BATCH_SEND_RETRY_INTERVAL_MS;
     private _statsbeatMetrics: Statsbeat;
 
-    constructor(options: ApplicationInsightsConfig) {
+    constructor(options: ApplicationInsightsConfig, statsbeat: Statsbeat) {
         this._options = options;
         this._numConsecutiveRedirects = 0;
         this._instrumentationKey = "";
@@ -51,7 +51,7 @@ export class LogExporter {
             throw new Error(message);
         }
         
-        this._statsbeatMetrics = new Statsbeat(options);
+        this._statsbeatMetrics = statsbeat;
         this._sender = new HttpSender(this._endpointUrl, this._options);
         this._persister = new FileSystemPersist(this._instrumentationKey, this._options);
         this._retryTimer = null;

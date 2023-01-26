@@ -39,6 +39,7 @@ import { IMetricExceptionDimensions, IMetricTraceDimensions } from "../metrics/t
 import { MetricHandler } from "../metrics/metricHandler";
 
 export class LogHandler {
+    // Statsbeat is instantiated here such that it can be accessed by the diagnostic-channel.
     public statsbeat: Statsbeat;
     private _config: ApplicationInsightsConfig;
     private _batchProcessor: BatchProcessor;
@@ -50,7 +51,8 @@ export class LogHandler {
 
     constructor(config: ApplicationInsightsConfig, metricHandler?: MetricHandler) {
         this._config = config;
-        this._exporter = new LogExporter(this._config);
+        this.statsbeat = new Statsbeat(config);
+        this._exporter = new LogExporter(this._config, this.statsbeat);
         this._batchProcessor = new BatchProcessor(this._exporter);
         this._console = new AutoCollectConsole(this);
         this._exceptions = new AutoCollectExceptions(this);

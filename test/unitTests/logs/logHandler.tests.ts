@@ -400,5 +400,14 @@ describe("Library/LogHandler", () => {
                     done(error);
                 });
         });
+
+        it ("Logs Statsbeat initializd", () => {
+            const handler = new LogHandler(_config);
+            assert.ok(handler["_exporter"]["_statsbeatMetrics"], "Statsbeat not initialized on the logsExporter.");
+            handler["_exporter"]["_statsbeatMetrics"].countSuccess(100);
+            const logsStatsbeatCollection = handler["_exporter"]["_statsbeatMetrics"]["_networkStatsbeatCollection"];
+            assert.strictEqual(logsStatsbeatCollection[0].totalSuccesfulRequestCount, 1);
+            assert.strictEqual(logsStatsbeatCollection[0].intervalRequestExecutionTime, 100);
+        });
     });
 });

@@ -491,7 +491,6 @@ export class Statsbeat {
         return newCounter;
     }
 
-    // TODO: Ensure we apply the negative average statsbeat fix to this if necessary.
     public countAverageDuration() {
         for (let i = 0; i < this._networkStatsbeatCollection.length; i++) {
             const currentCounter = this._networkStatsbeatCollection[i];
@@ -590,37 +589,29 @@ export class Statsbeat {
 
     private _getStatsbeatInstrumentations() {
         if (this._config?.instrumentations?.azureSdk?.enabled) {
-            this._addInstrumentation(StatsbeatInstrumentation.AZURE_CORE_TRACING);
+            this.addInstrumentation(StatsbeatInstrumentation.AZURE_CORE_TRACING);
         }
         if (this._config?.instrumentations?.mongoDb?.enabled) {
-            this._addInstrumentation(StatsbeatInstrumentation.MONGODB);
+            this.addInstrumentation(StatsbeatInstrumentation.MONGODB);
         }
         if (this._config?.instrumentations?.mySql?.enabled) {
-            this._addInstrumentation(StatsbeatInstrumentation.MYSQL);
+            this.addInstrumentation(StatsbeatInstrumentation.MYSQL);
         }
         if (this._config?.instrumentations?.postgreSql?.enabled) {
-            this._addInstrumentation(StatsbeatInstrumentation.POSTGRES);
+            this.addInstrumentation(StatsbeatInstrumentation.POSTGRES);
         }
         if (this._config?.instrumentations?.redis?.enabled) {
-            this._addInstrumentation(StatsbeatInstrumentation.REDIS);
+            this.addInstrumentation(StatsbeatInstrumentation.REDIS);
         }
     }
 
     private _getStatsbeatFeatures() {
         if (this._config?.aadTokenCredential) {
-            this._addFeature(StatsbeatFeature.AAD_HANDLING);
+            this.addFeature(StatsbeatFeature.AAD_HANDLING);
         }
         if (!this._config?.disableOfflineStorage) {
-            this._addFeature(StatsbeatFeature.DISK_RETRY);
+            this.addFeature(StatsbeatFeature.DISK_RETRY);
         }
-        this._addFeature(StatsbeatFeature.DISTRO);
-    }
-
-    private _addFeature(feature: number) {
-        this._feature |= feature;
-    }
-    
-    private _addInstrumentation(instrumentation: number) {
-        this._instrumentation |= instrumentation;
+        this.addFeature(StatsbeatFeature.DISTRO);
     }
 }
