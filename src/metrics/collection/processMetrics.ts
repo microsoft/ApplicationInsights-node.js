@@ -7,7 +7,7 @@ import {
     ObservableGauge,
     ObservableResult,
     ValueType,
-} from "@opentelemetry/api-metrics";
+} from "@opentelemetry/api";
 import { MetricName } from "../types";
 
 export class ProcessMetrics {

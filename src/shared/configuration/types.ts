@@ -32,10 +32,6 @@ export interface IConfig {
      */
     enableAutoCollectHeartbeat: boolean;
     /**
-    * Enable automatic incoming request tracking when running in Azure Functions
-    */
-    enableAutoCollectAzureFunctions: boolean;
-    /**
      * OpenTelemetry Instrumentations configuration included as part of Application Insights (azureSdk, http, mongoDb, mySql, postgreSql, redis, redis4)
      */
     instrumentations: InstrumentationsConfig;

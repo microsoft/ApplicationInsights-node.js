@@ -1,4 +1,4 @@
-import { Meter, ObservableGauge, ObservableResult, Histogram } from "@opentelemetry/api-metrics";
+import { Meter, ObservableGauge, ObservableResult, Histogram } from "@opentelemetry/api";
 import { GarbageCollectionType, NativeMetricsCounter } from "../types";
 import { Logger } from "../../shared/logging";
 

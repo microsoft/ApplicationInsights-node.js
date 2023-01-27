@@ -25,7 +25,6 @@ export class ApplicationInsightsConfig implements IConfig {
     public enableAutoCollectPerformance: boolean;
     public enableAutoCollectStandardMetrics: boolean;
     public enableAutoCollectHeartbeat: boolean;
-    public enableAutoCollectAzureFunctions: boolean;
     public extendedMetrics: { [type: string]: boolean };
     public instrumentations: InstrumentationsConfig;
     public logInstrumentations: LogInstrumentationsConfig;
@@ -87,8 +86,6 @@ export class ApplicationInsightsConfig implements IConfig {
             this.enableAutoCollectStandardMetrics !== undefined
                 ? this.enableAutoCollectStandardMetrics
                 : true;
-        this.enableAutoCollectAzureFunctions =
-            this.enableAutoCollectAzureFunctions !== undefined ? this.enableAutoCollectAzureFunctions : true;
         this.samplingRate = this.samplingRate !== undefined ? this.samplingRate : 1;
         this.instrumentations = {
             http: { enabled: true },
@@ -133,10 +130,6 @@ export class ApplicationInsightsConfig implements IConfig {
                 jsonConfig.enableAutoCollectStandardMetrics !== undefined
                     ? jsonConfig.enableAutoCollectStandardMetrics
                     : this.enableAutoCollectStandardMetrics;
-            this.enableAutoCollectAzureFunctions =
-                jsonConfig.enableAutoCollectAzureFunctions !== undefined
-                    ? jsonConfig.enableAutoCollectAzureFunctions
-                    : this.enableAutoCollectAzureFunctions;
             this.samplingRate =
                 jsonConfig.samplingRate !== undefined ? jsonConfig.samplingRate : this.samplingRate;
             this.storageDirectory =

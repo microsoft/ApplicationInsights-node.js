@@ -3,8 +3,7 @@
 
 import { IncomingMessage, RequestOptions } from "http";
 
-import { SpanKind } from "@opentelemetry/api";
-import { MetricAttributes, ValueType } from "@opentelemetry/api-metrics";
+import { Attributes, SpanKind } from "@opentelemetry/api";
 import { InstrumentationConfig } from "@opentelemetry/instrumentation";
 
 export enum MetricName {
@@ -136,7 +135,7 @@ export interface IHttpStandardMetric {
     startTime: number;
     isProcessed: boolean;
     spanKind: SpanKind;
-    attributes: MetricAttributes;
+    attributes: Attributes;
 }
 
 // Names expected in Breeze side for dimensions

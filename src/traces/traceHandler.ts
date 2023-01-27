@@ -74,7 +74,7 @@ export class TraceHandler {
         this._tracerProvider.register();
         // TODO: Check for conflicts with multiple handlers available
         this._tracer = this._tracerProvider.getTracer("ApplicationInsightsTracer");
-        this._azureFunctionsHook = new AzureFunctionsHook(this, this._config);
+        this._azureFunctionsHook = new AzureFunctionsHook();
     }
 
     public getTracerProvider(): TracerProvider {

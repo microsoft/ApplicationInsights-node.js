@@ -6,7 +6,7 @@ import {
     ObservableGauge,
     ObservableResult,
     ValueType,
-} from "@opentelemetry/api-metrics";
+} from "@opentelemetry/api";
 import { AzureHttpMetricsInstrumentation } from "./azureHttpMetricsInstrumentation";
 import { MetricName } from "../types";
 
