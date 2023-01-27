@@ -2,28 +2,25 @@ import * as os from "os";
 
 import { Logger } from "../../shared/logging";
 import {
-    AttachStatsbeatProperties,
     CommonStatsbeatProperties,
     NetworkStatsbeat,
     NetworkStatsbeatProperties,
     StatsbeatAttach,
     StatsbeatCounter,
     StatsbeatFeature,
-    StatsbeatFeatureType,
     StatsbeatInstrumentation,
     StatsbeatResourceProvider,
     EU_CONNECTION_STRING,
     EU_ENDPOINTS,
     NON_EU_CONNECTION_STRING,
 } from "./types";
-import { ApplicationInsightsConfig, AzureVirtualMachine, ResourceManager } from "../../shared";
+import { ApplicationInsightsConfig, AzureVirtualMachine } from "../../shared";
 import { Util } from "../../shared/util";
-import { KnownContextTagKeys } from "../../declarations/generated";
 import { IVirtualMachineInfo } from "../../shared/azureVirtualMachine";
 import { MeterProvider, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions } from "@opentelemetry/sdk-metrics";
 import { AzureMonitorExporterOptions, AzureMonitorStatsbeatExporter } from "@azure/monitor-opentelemetry-exporter";
 import { BatchObservableResult, Meter, ObservableGauge, ObservableResult } from "@opentelemetry/api-metrics";
-import { ExportResult, ExportResultCode } from "@opentelemetry/core";
+import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../declarations/constants";
 
 const STATSBEAT_LANGUAGE = "node";
 const AZURE_MONITOR_STATSBEAT_FEATURES = "AZURE_MONITOR_STATSBEAT_FEATURES";
@@ -31,12 +28,9 @@ const AZURE_MONITOR_STATSBEAT_FEATURES = "AZURE_MONITOR_STATSBEAT_FEATURES";
 export class Statsbeat {
     private _commonProperties: CommonStatsbeatProperties;
     private _networkProperties: NetworkStatsbeatProperties;
-    private _attachProperties: AttachStatsbeatProperties;
     private _collectionShortIntervalMs = 900000; // 15 minutes
-    private _collectionLongIntervalMs = 86400000; // 1 day
     private _TAG = "Statsbeat";
     private _networkStatsbeatCollection: Array<NetworkStatsbeat>;
-    private _resourceManager: ResourceManager;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _config: ApplicationInsightsConfig;
@@ -49,18 +43,12 @@ export class Statsbeat {
     private _networkAzureExporter: AzureMonitorStatsbeatExporter;
     private _networkMetricReader: PeriodicExportingMetricReader;
 
-    private _longIntervalStatsbeatMeter: Meter;
-    private _longIntervalStatsbeatMeterProvider: MeterProvider;
-    private _longIntervalAzureExporter: AzureMonitorStatsbeatExporter;
-    private _longIntervalMetricReader: PeriodicExportingMetricReader;
-
     // Custom dimensions
-    private _resourceProvider: string;
-    private _resourceIdentifier: string;
-    private _sdkVersion: string;
-    private _runtimeVersion: string;
-    private _os: string;
-    private _language: string;
+    private _resourceProvider: string = StatsbeatResourceProvider.unknown;
+    private _sdkVersion: string = APPLICATION_INSIGHTS_SDK_VERSION;
+    private _runtimeVersion: string = process.version;
+    private _os: string = os.type();
+    private _language: string = STATSBEAT_LANGUAGE;
     private _cikey: string;
     private _attach: string = StatsbeatAttach.sdk; // Default is SDK
     private _feature: number | undefined = undefined;
@@ -73,130 +61,89 @@ export class Statsbeat {
     private _throttleCountGauge: ObservableGauge;
     private _exceptionCountGauge: ObservableGauge;
     private _averageDurationGauge: ObservableGauge;
-    private _featureStatsbeatGauge: ObservableGauge;
-    private _attachStatsbeatGauge: ObservableGauge;
 
     // Network Attributes
     private _connectionString: string;
     private _endpoint: string;
     private _host: string;
 
-    constructor(config: ApplicationInsightsConfig, resourceManager?: ResourceManager) {
+    constructor(config: ApplicationInsightsConfig) {
         this._isInitialized = false;
         this._networkStatsbeatCollection = [];
         this._config = config;
+        this._endpoint = this._config.getIngestionEndpoint();
+        this._host = this._getShortHost(this._endpoint);
 
-        // Only initialize the statsbeat process if not disabled in the user-defined config.
-        this._isEnabled = !config.getDisableStatsbeat();
-        if (!this._isEnabled) {
-            this._getStatsbeatInstrumentations();
-            this._getStatsbeatFeatures();
-            try {
-                process.env[AZURE_MONITOR_STATSBEAT_FEATURES] = JSON.stringify({
-                    instrumentation: this._instrumentation,
-                    feature: this._feature
-                });
-            } catch(error) {
-                Logger.getInstance().error("Failed call to JSON.stringify.", error);
-            }
-            this._endpoint = this._config.getIngestionEndpoint();
-            this._connectionString = this._getConnectionString(this._endpoint);
-            this._host = this._getShortHost(this._endpoint);
+        this._azureVm = new AzureVirtualMachine();
+        this._statsbeatConfig = new ApplicationInsightsConfig();
+        this._statsbeatConfig.connectionString = this._connectionString;
+        this._statsbeatConfig.enableAutoCollectHeartbeat = false;
+        this._statsbeatConfig.enableAutoCollectPerformance = false;
+        this._statsbeatConfig.enableAutoCollectStandardMetrics = false;
 
-            this._resourceManager = resourceManager || new ResourceManager();
-            this._azureVm = new AzureVirtualMachine();
-            this._statsbeatConfig = new ApplicationInsightsConfig();
-            this._statsbeatConfig.connectionString = this._connectionString;
-            this._statsbeatConfig.enableAutoCollectHeartbeat = false;
-            this._statsbeatConfig.enableAutoCollectPerformance = false;
-            this._statsbeatConfig.enableAutoCollectStandardMetrics = false;
+        this._networkStatsbeatMeterProvider = new MeterProvider();
 
-            this._networkStatsbeatMeterProvider = new MeterProvider();
-
-            const exporterConfig: AzureMonitorExporterOptions = {
-                connectionString: this._connectionString
-            }
-
-            this._networkAzureExporter = new AzureMonitorStatsbeatExporter(exporterConfig);
-
-            // Exports Network Statsbeat every 15 minutes
-            const networkMetricReaderOptions: PeriodicExportingMetricReaderOptions = {
-                exporter: this._networkAzureExporter,
-                exportIntervalMillis: this._collectionShortIntervalMs
-            };
-
-            this._networkMetricReader = new PeriodicExportingMetricReader(networkMetricReaderOptions);
-            this._networkStatsbeatMeterProvider.addMetricReader(this._networkMetricReader);
-            this._networkStatsbeatMeter = this._networkStatsbeatMeterProvider.getMeter("Application Insights Network Statsbeat");
-
-            this._successCountGauge = this._networkStatsbeatMeter.createObservableGauge(
-                StatsbeatCounter.REQUEST_SUCCESS
-            );
-            this._failureCountGauge = this._networkStatsbeatMeter.createObservableGauge(
-                StatsbeatCounter.REQUEST_FAILURE
-            );
-            this._retryCountGauge = this._networkStatsbeatMeter.createObservableGauge(StatsbeatCounter.RETRY_COUNT);
-            this._throttleCountGauge = this._networkStatsbeatMeter.createObservableGauge(
-                StatsbeatCounter.THROTTLE_COUNT
-            );
-            this._exceptionCountGauge = this._networkStatsbeatMeter.createObservableGauge(
-                StatsbeatCounter.EXCEPTION_COUNT
-            );
-            this._averageDurationGauge = this._networkStatsbeatMeter.createObservableGauge(
-                StatsbeatCounter.REQUEST_DURATION
-            );
-
-            this._longIntervalStatsbeatMeterProvider = new MeterProvider();
-            this._longIntervalAzureExporter = new AzureMonitorStatsbeatExporter(exporterConfig);
-
-            // Exports Long Interval Statsbets every day
-            const longIntervalMetricReaderOptions: PeriodicExportingMetricReaderOptions = {
-                exporter: this._longIntervalAzureExporter,
-                exportIntervalMillis: this._collectionLongIntervalMs // 1 day
-            };
-
-            this._longIntervalMetricReader = new PeriodicExportingMetricReader(
-                longIntervalMetricReaderOptions
-            );
-
-            this._longIntervalStatsbeatMeterProvider.addMetricReader(this._longIntervalMetricReader);
-            this._longIntervalStatsbeatMeter = this._longIntervalStatsbeatMeterProvider.getMeter("Azure Monitor Long Interval Statsbeat");
-
-            this._featureStatsbeatGauge = this._longIntervalStatsbeatMeter.createObservableGauge(
-                StatsbeatCounter.FEATURE
-            );
-            this._attachStatsbeatGauge = this._longIntervalStatsbeatMeter.createObservableGauge(
-                StatsbeatCounter.ATTACH
-            );
-
-            this._commonProperties = {
-                os: this._os,
-                rp: this._resourceProvider,
-                cikey: this._cikey,
-                runtimeVersion: this._runtimeVersion,
-                language: this._language,
-                version: this._sdkVersion,
-                attach: this._attach
-            };
-
-            this._networkProperties = {
-                endpoint: this._endpoint,
-                host: this._host
-            };
-
-            this._attachProperties = {
-                rpId: this._resourceIdentifier
-            };
-
-            this._isInitialized = true;
-            this._initialize();
+        const exporterConfig: AzureMonitorExporterOptions = {
+            connectionString: this._connectionString
         }
+
+        this._networkAzureExporter = new AzureMonitorStatsbeatExporter(exporterConfig);
+
+        // Exports Network Statsbeat every 15 minutes
+        const networkMetricReaderOptions: PeriodicExportingMetricReaderOptions = {
+            exporter: this._networkAzureExporter,
+            exportIntervalMillis: this._collectionShortIntervalMs
+        };
+
+        this._networkMetricReader = new PeriodicExportingMetricReader(networkMetricReaderOptions);
+        this._networkStatsbeatMeterProvider.addMetricReader(this._networkMetricReader);
+        this._networkStatsbeatMeter = this._networkStatsbeatMeterProvider.getMeter("Application Insights Network Statsbeat");
+
+        this._successCountGauge = this._networkStatsbeatMeter.createObservableGauge(
+            StatsbeatCounter.REQUEST_SUCCESS
+        );
+        this._failureCountGauge = this._networkStatsbeatMeter.createObservableGauge(
+            StatsbeatCounter.REQUEST_FAILURE
+        );
+        this._retryCountGauge = this._networkStatsbeatMeter.createObservableGauge(StatsbeatCounter.RETRY_COUNT);
+        this._throttleCountGauge = this._networkStatsbeatMeter.createObservableGauge(
+            StatsbeatCounter.THROTTLE_COUNT
+        );
+        this._exceptionCountGauge = this._networkStatsbeatMeter.createObservableGauge(
+            StatsbeatCounter.EXCEPTION_COUNT
+        );
+        this._averageDurationGauge = this._networkStatsbeatMeter.createObservableGauge(
+            StatsbeatCounter.REQUEST_DURATION
+        );
+
+        this._language = STATSBEAT_LANGUAGE;
+        this._cikey = this._config.getInstrumentationKey();
+        this._sdkVersion = APPLICATION_INSIGHTS_SDK_VERSION;
+        this._os = os.type();
+        this._runtimeVersion = process.version;
+
+        this._commonProperties = {
+            os: this._os,
+            rp: this._resourceProvider,
+            cikey: this._cikey,
+            runtimeVersion: this._runtimeVersion,
+            language: this._language,
+            version: this._sdkVersion,
+            attach: this._attach,
+        };
+
+        this._networkProperties = {
+            endpoint: this._endpoint,
+            host: this._host
+        };
+
+        this._isInitialized = true;
+        this._initialize();
     }
 
     private async _initialize() {
         try {
-            this._getResourceProvider();
-            this._getCustomProperties();
+            await this._getResourceProvider();
 
             // Add network observable callbacks
             this._successCountGauge.addCallback(this._successCallback.bind(this));
@@ -213,25 +160,6 @@ export class Statsbeat {
                 this._exceptionCountGauge
             ]);
             this._averageDurationGauge.addCallback(this._durationCallback.bind(this));
-
-            // Add long interval observable callbacks
-            this._attachStatsbeatGauge.addCallback(this._attachCallback.bind(this));
-            this._longIntervalStatsbeatMeter.addBatchObservableCallback(this._featureCallback.bind(this), [
-                this._featureStatsbeatGauge
-            ]);
-
-            // Export Feature/Attach Statsbeat once upon app initialization
-            this._longIntervalAzureExporter.export(
-                (await this._longIntervalMetricReader.collect()).resourceMetrics,
-                (result: ExportResult) => {
-                    if (result.code !== ExportResultCode.SUCCESS) {
-                        Logger.getInstance().info(
-                            this._TAG,
-                            `Metrics export failed: ${result.error}`
-                        );
-                    }
-                }
-            );
         } catch (error) {
             Logger.getInstance().info(
                 this._TAG,
@@ -354,24 +282,6 @@ export class Statsbeat {
           observableResult.observe(counter.averageRequestExecutionTime, attributes);
       
           counter.averageRequestExecutionTime = 0;
-    }
-
-    private _featureCallback(observableResult: BatchObservableResult) {
-        let attributes;
-        if (this._instrumentation) {
-          attributes = { ...this._commonProperties, feature: this._instrumentation, type: StatsbeatFeatureType.Instrumentation };
-          observableResult.observe(this._featureStatsbeatGauge, 1, { ...attributes });
-        }
-    
-        if (this._feature) {
-          attributes = { ...this._commonProperties, feature: this._feature, type: StatsbeatFeatureType.Feature };
-          observableResult.observe(this._featureStatsbeatGauge, 1, { ...attributes });
-        }
-    }
-
-    private _attachCallback(observableResult: ObservableResult) {
-        const attributes = { ...this._commonProperties, ...this._attachProperties };
-        observableResult.observe(1, attributes);
     }
 
     public isEnabled() {
@@ -507,20 +417,6 @@ export class Statsbeat {
         }
     }
 
-    private _getCustomProperties() {
-        this._language = STATSBEAT_LANGUAGE;
-        this._cikey = this._config.getInstrumentationKey();
-        const sdkVersion =
-            String(
-                this._resourceManager.getTraceResource().attributes[
-                    KnownContextTagKeys.AiInternalSdkVersion
-                ]
-            ) || null;
-        this._sdkVersion = sdkVersion; // "node" or "node-nativeperf"
-        this._os = os.type();
-        this._runtimeVersion = process.version;
-    }
-
     private _getShortHost(originalHost: string) {
         let shortHost = originalHost;
         try {
@@ -551,20 +447,12 @@ export class Statsbeat {
     private async _getResourceProvider(): Promise<void> {
         // Check resource provider
         this._resourceProvider = StatsbeatResourceProvider.unknown;
-        this._resourceIdentifier = StatsbeatResourceProvider.unknown;
         if (process.env.WEBSITE_SITE_NAME) {
             // Web apps
             this._resourceProvider = StatsbeatResourceProvider.appsvc;
-            this._resourceIdentifier = process.env.WEBSITE_SITE_NAME;
-            if (process.env.WEBSITE_HOME_STAMPNAME) {
-                this._resourceIdentifier += `/${process.env.WEBSITE_HOME_STAMPNAME}`;
-            }
         } else if (process.env.FUNCTIONS_WORKER_RUNTIME) {
             // Function apps
             this._resourceProvider = StatsbeatResourceProvider.functions;
-            if (process.env.WEBSITE_HOSTNAME) {
-                this._resourceIdentifier = process.env.WEBSITE_HOSTNAME;
-            }
         } else if (this._config) {
             if (this._isVM === undefined || this._isVM === true) {
                 await this._azureVm
@@ -573,7 +461,6 @@ export class Statsbeat {
                         this._isVM = vmInfo.isVM;
                         if (this._isVM) {
                             this._resourceProvider = StatsbeatResourceProvider.vm;
-                            this._resourceIdentifier = `${vmInfo.id}/${vmInfo.subscriptionId}`;
                             // Override OS as VM info have higher precedence
                             if (vmInfo.osType) {
                                 this._os = vmInfo.osType;
@@ -587,7 +474,8 @@ export class Statsbeat {
         }
     }
 
-    private _getStatsbeatInstrumentations() {
+    public setFeatureStatsbeat() {
+        // Set Statsbeat Instrumentations
         if (this._config?.instrumentations?.azureSdk?.enabled) {
             this.addInstrumentation(StatsbeatInstrumentation.AZURE_CORE_TRACING);
         }
@@ -603,9 +491,17 @@ export class Statsbeat {
         if (this._config?.instrumentations?.redis?.enabled) {
             this.addInstrumentation(StatsbeatInstrumentation.REDIS);
         }
-    }
+        if (this._config?.logInstrumentations?.bunyan?.enabled) {
+            this.addInstrumentation(StatsbeatInstrumentation.BUNYAN);
+        }
+        if (this._config?.logInstrumentations?.winston?.enabled) {
+            this.addInstrumentation(StatsbeatInstrumentation.WINSTON);
+        }
+        if (this._config?.logInstrumentations?.console?.enabled) {
+            this.addInstrumentation(StatsbeatInstrumentation.CONSOLE);
+        }
 
-    private _getStatsbeatFeatures() {
+        // Set Statsbeat Features
         if (this._config?.aadTokenCredential) {
             this.addFeature(StatsbeatFeature.AAD_HANDLING);
         }
@@ -613,5 +509,14 @@ export class Statsbeat {
             this.addFeature(StatsbeatFeature.DISK_RETRY);
         }
         this.addFeature(StatsbeatFeature.DISTRO);
+
+        try {
+            process.env[AZURE_MONITOR_STATSBEAT_FEATURES] = JSON.stringify({
+                instrumentation: this._instrumentation,
+                feature: this._feature
+            });
+        } catch(error) {
+            Logger.getInstance().error("Failed call to JSON.stringify.", error);
+        }
     }
 }

@@ -105,11 +105,6 @@ export enum StatsbeatInstrumentation {
     CONSOLE = 64,
 }
 
-export enum StatsbeatFeatureType {
-    Feature,
-    Instrumentation,
-}
-
 export enum StatsbeatNetworkCategory {
     Breeze,
     Quickpulse,

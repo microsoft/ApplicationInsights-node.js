@@ -49,9 +49,9 @@ export class LogHandler {
     private _idGenerator: IdGenerator;
     private _metricHandler: MetricHandler;
 
-    constructor(config: ApplicationInsightsConfig, metricHandler?: MetricHandler) {
+    constructor(config: ApplicationInsightsConfig, metricHandler?: MetricHandler, statsbeat?: Statsbeat) {
         this._config = config;
-        this.statsbeat = new Statsbeat(config);
+        this.statsbeat = statsbeat;
         this._exporter = new LogExporter(this._config, this.statsbeat);
         this._batchProcessor = new BatchProcessor(this._exporter);
         this._console = new AutoCollectConsole(this);
