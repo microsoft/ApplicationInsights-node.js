@@ -6,7 +6,6 @@ import { LogHandler } from "./logs";
 import { MetricHandler } from "./metrics";
 import { TraceHandler } from "./traces";
 import { ResourceManager } from "./shared";
-import { StatsbeatFeature, StatsbeatInstrumentation } from "./metrics/statsbeat/types";
 
 export class ApplicationInsightsClient {
     private _config: ApplicationInsightsConfig;
@@ -14,9 +13,6 @@ export class ApplicationInsightsClient {
     private _traceHandler: TraceHandler;
     private _metricHandler: MetricHandler;
     private _logHandler: LogHandler;
-
-    private _instrumentation: StatsbeatInstrumentation;
-    private _feature: StatsbeatFeature;
 
     /**
      * Constructs a new client of the client
