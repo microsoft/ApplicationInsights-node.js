@@ -72,6 +72,7 @@ export class Statsbeat {
         this._networkStatsbeatCollection = [];
         this._config = config;
         this._endpoint = this._config.getIngestionEndpoint();
+        this._connectionString = this._getConnectionString(this._endpoint);
         this._host = this._getShortHost(this._endpoint);
 
         this._azureVm = new AzureVirtualMachine();
