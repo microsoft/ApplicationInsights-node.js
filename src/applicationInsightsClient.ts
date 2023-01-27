@@ -26,7 +26,7 @@ export class ApplicationInsightsClient {
             );
         }
 
-        if (!config.getDisableStatsbeat()) {
+        if (!this._config.getDisableStatsbeat()) {
             this._statsbeat = new Statsbeat(this._config);
             this._statsbeat.setFeatureStatsbeat();
         }
