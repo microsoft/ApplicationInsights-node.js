@@ -117,13 +117,14 @@ export function setupAndStart(aadTokenCredential?: azureCoreAuth.TokenCredential
         // Instrument the SDK
         // Azure Functions
         if (isAzureFunction) {
+            // Agent will always run in parallel with Azure Functions .NET Agent, disable requests and exceptions to avoid duplication of telemetry
             _appInsights.setup().setSendLiveMetrics(false)
                 .setAutoCollectPerformance(false)
                 .setAutoCollectPreAggregatedMetrics(false)
                 .setAutoCollectIncomingRequestAzureFunctions(false)
-                .setAutoCollectRequests(true)
+                .setAutoCollectRequests(false)
+                .setAutoCollectExceptions(false)
                 .setAutoCollectDependencies(true)
-                .setAutoCollectExceptions(true)
                 .setAutoCollectHeartbeat(true)
                 .setUseDiskRetryCaching(true);
         }

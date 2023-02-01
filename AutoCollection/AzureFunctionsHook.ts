@@ -99,9 +99,11 @@ export class AzureFunctionsHook {
                                 if (!extractedContext) {
                                     this._createIncomingRequestTelemetry(ctx, request, startTime, null);
                                 }
-                                CorrelationContextManager.runWithContext(extractedContext, () => {
-                                    this._createIncomingRequestTelemetry(ctx, request, startTime, extractedContext.operation.parentId);
-                                });
+                                else {
+                                    CorrelationContextManager.runWithContext(extractedContext, () => {
+                                        this._createIncomingRequestTelemetry(ctx, request, startTime, extractedContext.operation.parentId);
+                                    });
+                                }
                             }
                         }
                     }

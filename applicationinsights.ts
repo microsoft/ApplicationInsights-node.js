@@ -51,7 +51,7 @@ let _isSendingLiveMetrics = defaultConfig.isSendingLiveMetrics(); // Off by defa
 let _isNativePerformance = defaultConfig.isNativePerformance();
 let _disabledExtendedMetrics: IDisabledExtendedMetrics;
 let _isSnippetInjection = defaultConfig.isSnippetInjection(); // default to false
-let _isAzureFunctions = defaultConfig.isAzureFunctions(); // default to true
+let _isAzureFunctions = defaultConfig.isAzureFunctions(); // default to false
 
 function _getDefaultAutoCollectConfig() {
     return {
@@ -68,7 +68,7 @@ function _getDefaultAutoCollectConfig() {
         isSendingLiveMetrics: () => false, // Off by default
         isNativePerformance: () => true,
         isSnippetInjection: () => false,
-        isAzureFunctions: () => true
+        isAzureFunctions: () => false
     }
 }
 
