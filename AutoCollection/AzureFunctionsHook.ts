@@ -20,20 +20,18 @@ export class AzureFunctionsHook {
         this._autoGenerateIncomingRequests = false;
         try {
             this._functionsCoreModule = require("@azure/functions-core");
+            // Only v3 of Azure Functions library is supported right now. See matrix of versions here:
+            // https://github.com/Azure/azure-functions-nodejs-library
+            const funcProgModel = this._functionsCoreModule.getProgrammingModel();
+            if (funcProgModel.name === "@azure/functions" && funcProgModel.version.startsWith("3.")) {
+                this._addPreInvocationHook();
+                this._addPostInvocationHook();
+            } else {
+                Logging.warn(`AzureFunctionsHook does not support model "${funcProgModel.name}" version "${funcProgModel.version}"`);
+            }
         }
         catch (error) {
             Logging.info("AzureFunctionsHook failed to load, not running in Azure Functions");
-            return;
-        }
-
-        // Only v3 of Azure Functions library is supported right now. See matrix of versions here:
-        // https://github.com/Azure/azure-functions-nodejs-library
-        const funcProgModel = this._functionsCoreModule.getProgrammingModel();
-        if (funcProgModel.name === "@azure/functions" && funcProgModel.version.startsWith("3.")) {
-            this._addPreInvocationHook();
-            this._addPostInvocationHook();
-        } else {
-            Logging.warn(`AzureFunctionsHook does not support model "${funcProgModel.name}" version "${funcProgModel.version}"`);
         }
     }
 
@@ -51,12 +49,9 @@ export class AzureFunctionsHook {
         if (!this._preInvocationHook) {
             this._preInvocationHook = this._functionsCoreModule.registerHook("preInvocation", async (preInvocationContext: PreInvocationContext) => {
                 const ctx: Context = <Context>preInvocationContext.invocationContext;
-
-                // Update context to use Azure Functions one
-                let extractedContext: CorrelationContext = null;
                 try {
                     // Start an AI Correlation Context using the provided Function context
-                    extractedContext = CorrelationContextManager.startOperation(ctx);
+                    let extractedContext = CorrelationContextManager.startOperation(ctx);
                     extractedContext.customProperties.setProperty("InvocationId", ctx.invocationId);
                     if (ctx.traceContext.attributes) {
                         extractedContext.customProperties.setProperty("ProcessId", ctx.traceContext.attributes["ProcessId"]);
@@ -65,21 +60,21 @@ export class AzureFunctionsHook {
                         extractedContext.customProperties.setProperty("HostInstanceId", ctx.traceContext.attributes["HostInstanceId"]);
                         extractedContext.customProperties.setProperty("AzFuncLiveLogsSessionId", ctx.traceContext.attributes["#AzFuncLiveLogsSessionId"]);
                     }
+                    if (!extractedContext) {
+                        // Correlation Context could be disabled causing this to be null
+                        Logging.warn("Failed to create context in Azure Functions");
+                        return;
+                    }
+
+                    preInvocationContext.functionCallback = CorrelationContextManager.wrapCallback(preInvocationContext.functionCallback, extractedContext);
+                    if (this._isHttpTrigger(ctx) && this._autoGenerateIncomingRequests) {
+                        preInvocationContext.hookData.appInsightsExtractedContext = extractedContext;
+                        preInvocationContext.hookData.appInsightsStartTime = Date.now(); // Start trackRequest timer
+                    }
                 }
                 catch (err) {
                     Logging.warn("Failed to propagate context in Azure Functions", err);
                     return;
-                }
-                if (!extractedContext) {
-                    // Correlation Context could be disabled causing this to be null
-                    Logging.warn("Failed to create context in Azure Functions");
-                    return;
-                }
-
-                preInvocationContext.functionCallback = CorrelationContextManager.wrapCallback(preInvocationContext.functionCallback, extractedContext);
-                if (this._isHttpTrigger(ctx) && this._autoGenerateIncomingRequests) {
-                    preInvocationContext.hookData.appInsightsExtractedContext = extractedContext;
-                    preInvocationContext.hookData.appInsightsStartTime = Date.now(); // Start trackRequest timer
                 }
             });
         }
@@ -119,10 +114,10 @@ export class AzureFunctionsHook {
         let statusCode = 200; //Default
         if (ctx.res) {
             if (ctx.res.statusCode) {
-                statusCode = ctx.res.statusCode;
+                statusCode = isNaN(ctx.res.statusCode) ? statusCode : ctx.res.statusCode;
             }
             else if (ctx.res.status) {
-                statusCode = ctx.res.status;
+                statusCode = isNaN(ctx.res.status) ? statusCode : ctx.res.status;
             }
         }
         this._client.trackRequest({
