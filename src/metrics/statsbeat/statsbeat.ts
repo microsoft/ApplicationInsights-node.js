@@ -31,7 +31,6 @@ export class Statsbeat {
     private _collectionShortIntervalMs = 900000; // 15 minutes
     private _TAG = "Statsbeat";
     private _networkStatsbeatCollection: Array<NetworkStatsbeat>;
-    private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _config: ApplicationInsightsConfig;
     private _statsbeatConfig: ApplicationInsightsConfig;
@@ -285,10 +284,6 @@ export class Statsbeat {
           counter.averageRequestExecutionTime = 0;
     }
 
-    public isEnabled() {
-        return this._isEnabled;
-    }
-
     public setCodelessAttach() {
         this._attach = StatsbeatAttach.codeless;
     }
@@ -310,9 +305,6 @@ export class Statsbeat {
     }
 
     public countSuccess(duration: number) {
-        if (!this.isEnabled()) {
-            return;
-        }
         const counter: NetworkStatsbeat = this._getNetworkStatsbeatCounter(this._endpoint, this._host);
         counter.totalRequestCount++;
         counter.totalSuccesfulRequestCount++;
@@ -339,9 +331,6 @@ export class Statsbeat {
     }
 
     public countException(exceptionType: Error) {
-        if (!this.isEnabled()) {
-            return;
-        }
         const counter: NetworkStatsbeat = this._getNetworkStatsbeatCounter(this._endpoint, this._host);
         const currentErrorCounter = counter.exceptionCount.find(
             (exceptionCounter) => exceptionType.name === exceptionCounter.exceptionType
@@ -354,9 +343,6 @@ export class Statsbeat {
     }
 
     public countThrottle(statusCode: number) {
-        if (!this.isEnabled()) {
-            return;
-        }
         const counter: NetworkStatsbeat = this._getNetworkStatsbeatCounter(this._endpoint, this._host);
         const currentStatusCounter = counter.throttleCount.find(
             (statusCounter) => statusCode === statusCounter.statusCode
@@ -370,9 +356,6 @@ export class Statsbeat {
     }
 
     public countRetry(statusCode: number) {
-        if (!this.isEnabled()) {
-            return;
-        }
         const counter: NetworkStatsbeat = this._getNetworkStatsbeatCounter(this._endpoint, this._host);
         const currentStatusCounter = counter.retryCount.find(
             (statuscounter) => statusCode === statuscounter.statusCode
