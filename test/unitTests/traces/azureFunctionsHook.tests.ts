@@ -63,7 +63,8 @@ describe("Library/AzureFunctionsHook", () => {
             query: { "": "" },
             params: null,
             user: null,
-            parseFormBody: null
+            parseFormBody: null,
+            get: undefined,
         };
         const span = (hook["_generateServerSpan"](request) as any) as ReadableSpan;
         assert.equal(span.attributes["http.url"], "http://localhosttest.com");
@@ -94,7 +95,8 @@ describe("Library/AzureFunctionsHook", () => {
             query: { "": "" },
             params: null,
             user: null,
-            parseFormBody: null
+            parseFormBody: null,
+            get: undefined,
         };
         let originalCallbackCalled = false;
         let originalCallback = () => { originalCallbackCalled = true };
