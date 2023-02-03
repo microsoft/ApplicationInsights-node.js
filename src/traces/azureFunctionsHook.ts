@@ -13,19 +13,17 @@ export class AzureFunctionsHook {
     constructor() {
         try {
             this._functionsCoreModule = require("@azure/functions-core");
+            // Only v3 of Azure Functions library is supported right now. See matrix of versions here:
+            // https://github.com/Azure/azure-functions-nodejs-library
+            const funcProgModel = this._functionsCoreModule.getProgrammingModel();
+            if (funcProgModel.name === "@azure/functions" && funcProgModel.version.startsWith("3.")) {
+                this._addPreInvocationHook();
+            } else {
+                Logger.getInstance().debug(`AzureFunctionsHook does not support model "${funcProgModel.name}" version "${funcProgModel.version}"`);
+            }
         }
         catch (error) {
             Logger.getInstance().debug("@azure/functions-core failed to load, not running in Azure Functions");
-            return;
-        }
-
-        // Only v3 of Azure Functions library is supported right now. See matrix of versions here:
-        // https://github.com/Azure/azure-functions-nodejs-library
-        const funcProgModel = this._functionsCoreModule.getProgrammingModel();
-        if (funcProgModel.name === "@azure/functions" && funcProgModel.version.startsWith("3.")) {
-            this._addPreInvocationHook();
-        } else {
-            Logger.getInstance().debug(`AzureFunctionsHook does not support model "${funcProgModel.name}" version "${funcProgModel.version}"`);
         }
     }
 
@@ -47,13 +45,12 @@ export class AzureFunctionsHook {
                     if (ctx.traceContext) {
                         extractedContext = propagation.extract(ROOT_CONTEXT, ctx.traceContext);
                     }
+                    const currentContext = extractedContext || context.active();
+                    preInvocationContext.functionCallback = context.bind(currentContext, preInvocationContext.functionCallback);
                 }
                 catch (err) {
                     Logger.getInstance().error("Failed to propagate context in Azure Functions", err);
                 }
-
-                const currentContext = extractedContext || context.active();
-                preInvocationContext.functionCallback = context.bind(currentContext, preInvocationContext.functionCallback);
             });
         }
     }
