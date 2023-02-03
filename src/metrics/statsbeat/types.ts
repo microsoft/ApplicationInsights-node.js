@@ -1,9 +1,9 @@
 export class NetworkStatsbeat {
-    public time: number;
+    public time: number | undefined;
 
     public lastTime: number;
 
-    public endpoint: number;
+    public endpoint: string;
 
     public host: string;
 
@@ -13,32 +13,49 @@ export class NetworkStatsbeat {
 
     public totalSuccesfulRequestCount: number;
 
-    public totalFailedRequestCount: number;
+    public totalFailedRequestCount: { statusCode: number; count: number }[];
 
-    public retryCount: number;
+    public retryCount: { statusCode: number; count: number }[];
 
-    public exceptionCount: number;
+    public exceptionCount: { exceptionType: string; count: number }[];
 
-    public throttleCount: number;
+    public throttleCount: { statusCode: number; count: number }[];
 
     public intervalRequestExecutionTime: number;
 
     public lastIntervalRequestExecutionTime: number;
 
-    constructor(endpoint: number, host: string) {
+    public averageRequestExecutionTime: number;
+
+    constructor(endpoint: string, host: string) {
         this.endpoint = endpoint;
         this.host = host;
         this.totalRequestCount = 0;
         this.totalSuccesfulRequestCount = 0;
-        this.totalFailedRequestCount = 0;
-        this.retryCount = 0;
-        this.exceptionCount = 0;
-        this.throttleCount = 0;
+        this.totalFailedRequestCount = [];
+        this.retryCount = [];
+        this.exceptionCount = [];
+        this.throttleCount = [];
         this.intervalRequestExecutionTime = 0;
         this.lastIntervalRequestExecutionTime = 0;
         this.lastTime = +new Date();
         this.lastRequestCount = 0;
     }
+}
+
+export interface CommonStatsbeatProperties {
+    os: string;
+    rp: string;
+    cikey: string;
+    runtimeVersion: string;
+    language: string;
+    version: string;
+    attach: string;
+}
+
+export interface NetworkStatsbeatProperties {
+    endpoint: string;
+    host: string;
 }
 
 export const StatsbeatTelemetryName = "Statsbeat";
@@ -67,29 +84,43 @@ export const StatsbeatCounter = {
 };
 
 export enum StatsbeatFeature {
-    NONE = 0,
-    DISK_RETRY = 1,
-    AAD_HANDLING = 2,
+    DISK_RETRY = 0,
+    AAD_HANDLING = 1,
+    WEB_SNIPPET = 2,
+    DISTRO = 4,
 }
 
 export enum StatsbeatInstrumentation {
-    NONE = 0,
-    AZURE_CORE_TRACING = 1,
-    MONGODB = 2,
-    MYSQL = 4,
-    REDIS = 8,
-    POSTGRES = 16,
-    BUNYAN = 32,
-    WINSTON = 64,
-    CONSOLE = 128,
-}
-
-export enum StatsbeatFeatureType {
-    Feature,
-    Instrumentation,
+    AZURE_CORE_TRACING = 0,
+    MONGODB = 1,
+    MYSQL = 2,
+    REDIS = 4,
+    POSTGRES = 8,
+    BUNYAN = 16,
+    WINSTON = 32,
+    CONSOLE = 64,
 }
 
 export enum StatsbeatNetworkCategory {
     Breeze,
     Quickpulse,
 }
+
+export const NON_EU_CONNECTION_STRING =
+  "InstrumentationKey=c4a29126-a7cb-47e5-b348-11414998b11e;IngestionEndpoint=https://westus-0.in.applicationinsights.azure.com";
+export const EU_CONNECTION_STRING =
+  "InstrumentationKey=7dc56bab-3c0c-4e9f-9ebb-d1acadee8d0f;IngestionEndpoint=https://westeurope-5.in.applicationinsights.azure.com";
+export const EU_ENDPOINTS = [
+  "westeurope",
+  "northeurope",
+  "francecentral",
+  "francesouth",
+  "germanywestcentral",
+  "norwayeast",
+  "norwaywest",
+  "swedencentral",
+  "switzerlandnorth",
+  "switzerlandwest",
+  "uksouth",
+  "ukwest"
+];
