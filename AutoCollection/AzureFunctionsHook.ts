@@ -107,11 +107,17 @@ export class AzureFunctionsHook {
 
     private _createIncomingRequestTelemetry(request: HttpRequest, response: HttpResponse, startTime: number, parentId: string) {
         let statusCode: string | number = 200; //Default
-        if (response?.statusCode) {
-            statusCode = response.statusCode;
-        }
-        else if (response?.status) {
-            statusCode = response.status as number | string;
+        for (const value of [response.statusCode, response.status]) {
+            if (typeof value === "number" && Number.isInteger(value)) {
+                statusCode = value;
+                break;
+            } else if (typeof value === "string") {
+                const parsedVal = parseInt(value);
+                if (!isNaN(parsedVal)) {
+                    statusCode = parsedVal;
+                    break;
+                }
+            }
         }
         this._client.trackRequest({
             name: request.method + " " + request.url,
@@ -129,7 +135,7 @@ export class AzureFunctionsHook {
         const httpOutputBinding = ctx.bindingDefinitions.find(b => b.direction === "out" && b.type.toLowerCase() === "http");
         if (httpOutputBinding?.name === "$return") {
             return postInvocationContext.result;
-        } else if (ctx.bindings && ctx.bindings[httpOutputBinding.name] !== undefined) {
+        } else if (httpOutputBinding && ctx.bindings && ctx.bindings[httpOutputBinding.name] !== undefined) {
             return ctx.bindings[httpOutputBinding.name];
         } else {
             return ctx.res;
