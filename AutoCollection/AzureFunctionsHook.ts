@@ -1,5 +1,5 @@
 import { Disposable, PostInvocationContext, PreInvocationContext } from "@azure/functions-core";
-import { Context, HttpRequest } from "@azure/functions";
+import { Context, HttpRequest, HttpResponse } from "@azure/functions";
 import Logging = require("../Library/Logging");
 import TelemetryClient = require("../Library/TelemetryClient");
 import { CorrelationContext, CorrelationContextManager } from "./CorrelationContextManager";
@@ -60,12 +60,6 @@ export class AzureFunctionsHook {
                         extractedContext.customProperties.setProperty("HostInstanceId", ctx.traceContext.attributes["HostInstanceId"]);
                         extractedContext.customProperties.setProperty("AzFuncLiveLogsSessionId", ctx.traceContext.attributes["#AzFuncLiveLogsSessionId"]);
                     }
-                    if (!extractedContext) {
-                        // Correlation Context could be disabled causing this to be null
-                        Logging.warn("Failed to create context in Azure Functions");
-                        return;
-                    }
-
                     preInvocationContext.functionCallback = CorrelationContextManager.wrapCallback(preInvocationContext.functionCallback, extractedContext);
                     if (this._isHttpTrigger(ctx) && this._autoGenerateIncomingRequests) {
                         preInvocationContext.hookData.appInsightsExtractedContext = extractedContext;
@@ -90,13 +84,14 @@ export class AzureFunctionsHook {
                             const request: HttpRequest = postInvocationContext.inputs[0];
                             if (request) {
                                 const startTime: number = postInvocationContext.hookData.appInsightsStartTime || Date.now();
+                                const response = this._getAzureFunctionResponse(postInvocationContext, ctx);
                                 const extractedContext: CorrelationContext | undefined = postInvocationContext.hookData.appInsightsExtractedContext;
                                 if (!extractedContext) {
-                                    this._createIncomingRequestTelemetry(ctx, request, startTime, null);
+                                    this._createIncomingRequestTelemetry(request, response, startTime, null);
                                 }
                                 else {
                                     CorrelationContextManager.runWithContext(extractedContext, () => {
-                                        this._createIncomingRequestTelemetry(ctx, request, startTime, extractedContext.operation.parentId);
+                                        this._createIncomingRequestTelemetry(request, response, startTime, extractedContext.operation.parentId);
                                     });
                                 }
                             }
@@ -110,26 +105,32 @@ export class AzureFunctionsHook {
         }
     }
 
-    private _createIncomingRequestTelemetry(ctx: Context, request: HttpRequest, startTime: number, parentId: string) {
-        let statusCode = 200; //Default
-        if (ctx.res) {
-            if (ctx.res.statusCode) {
-                statusCode = isNaN(ctx.res.statusCode) ? statusCode : ctx.res.statusCode;
-            }
-            else if (ctx.res.status) {
-                statusCode = isNaN(ctx.res.status) ? statusCode : ctx.res.status;
-            }
+    private _createIncomingRequestTelemetry(request: HttpRequest, response: HttpResponse, startTime: number, parentId: string) {
+        let statusCode: string | number = 200; //Default
+        if (response?.statusCode) {
+            statusCode = response.statusCode;
         }
         this._client.trackRequest({
             name: request.method + " " + request.url,
             resultCode: statusCode,
-            success: statusCode == 200,
+            success: (0 < statusCode) && (statusCode < 400),
             url: request.url,
             time: new Date(startTime),
             duration: Date.now() - startTime,
             id: parentId
         });
         this._client.flush();
+    }
+
+    private _getAzureFunctionResponse(postInvocationContext: PostInvocationContext, ctx: Context): HttpResponse {
+        const httpOutputBinding = ctx.bindingDefinitions.find(b => b.direction === "out" && b.type.toLowerCase() === "http");
+        if (httpOutputBinding.name === "$return") {
+            return postInvocationContext.result;
+        } else if (ctx.bindings[httpOutputBinding.name] !== undefined) {
+            return ctx.bindings[httpOutputBinding.name];
+        } else {
+            return ctx.res;
+        }
     }
 
     private _isHttpTrigger(ctx: Context) {
