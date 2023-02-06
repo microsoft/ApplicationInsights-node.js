@@ -41,7 +41,10 @@ export class TraceHandler {
     private _redisInstrumentation: Instrumentation;
     private _redis4Instrumentation: Instrumentation;
 
-    constructor(config: ApplicationInsightsConfig, metricHandler?: MetricHandler) {
+    constructor(
+        config: ApplicationInsightsConfig,
+        metricHandler?: MetricHandler,
+    ) {
         this._config = config;
         this._metricHandler = metricHandler;
         this._instrumentations = [];
