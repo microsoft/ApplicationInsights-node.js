@@ -110,6 +110,9 @@ export class AzureFunctionsHook {
         if (response?.statusCode) {
             statusCode = response.statusCode;
         }
+        else if (response?.status) {
+            statusCode = response.status as number | string;
+        }
         this._client.trackRequest({
             name: request.method + " " + request.url,
             resultCode: statusCode,
@@ -124,9 +127,9 @@ export class AzureFunctionsHook {
 
     private _getAzureFunctionResponse(postInvocationContext: PostInvocationContext, ctx: Context): HttpResponse {
         const httpOutputBinding = ctx.bindingDefinitions.find(b => b.direction === "out" && b.type.toLowerCase() === "http");
-        if (httpOutputBinding.name === "$return") {
+        if (httpOutputBinding?.name === "$return") {
             return postInvocationContext.result;
-        } else if (ctx.bindings[httpOutputBinding.name] !== undefined) {
+        } else if (ctx.bindings && ctx.bindings[httpOutputBinding.name] !== undefined) {
             return ctx.bindings[httpOutputBinding.name];
         } else {
             return ctx.res;
