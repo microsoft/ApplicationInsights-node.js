@@ -5,7 +5,7 @@ import {
     AzureMonitorExporterOptions,
     AzureMonitorMetricExporter,
 } from "@azure/monitor-opentelemetry-exporter";
-import { Meter } from "@opentelemetry/api-metrics";
+import { Meter } from "@opentelemetry/api";
 import {
     DropAggregation,
     MeterProvider,

@@ -202,7 +202,7 @@ module.exports = {
         "RemoteDependencyData",
         (telemetry) => {
             return telemetry.data.baseData.name === "redis-get" &&
-            telemetry.data.baseData.data === "get" &&
+            telemetry.data.baseData.data === "get testkey" &&
             telemetry.data.baseData.target === "localhost"  &&
             telemetry.data.baseData.type === "redis";
         }
@@ -211,7 +211,7 @@ module.exports = {
         "RemoteDependencyData",
         (telemetry) => {
             return telemetry.data.baseData.name === "redis-set" &&
-            telemetry.data.baseData.data === "set" &&
+            telemetry.data.baseData.data === "set testkey [1 other arguments]" &&
             telemetry.data.baseData.target === "localhost"  &&
             telemetry.data.baseData.type === "redis";
         }
@@ -220,7 +220,7 @@ module.exports = {
         "RemoteDependencyData",
         (telemetry) => {
             return telemetry.data.baseData.name === "redis-hset" &&
-            telemetry.data.baseData.data === "hset" &&
+            telemetry.data.baseData.data === "hset testhash testfield [1 other arguments]" &&
             telemetry.data.baseData.target === "localhost"  &&
             telemetry.data.baseData.type === "redis";
         }
@@ -229,7 +229,7 @@ module.exports = {
         "RemoteDependencyData",
         (telemetry) => {
             return telemetry.data.baseData.name === "redis-hkeys" &&
-            telemetry.data.baseData.data === "hkeys" &&
+            telemetry.data.baseData.data === "hkeys [1 other arguments]" &&
             telemetry.data.baseData.target === "localhost"  &&
             telemetry.data.baseData.type === "redis";
         }
@@ -238,7 +238,7 @@ module.exports = {
         "RemoteDependencyData",
         (telemetry) => {
             return telemetry.data.baseData.name === "redis-hincrby" &&
-            telemetry.data.baseData.data === "hincrby" &&
+            telemetry.data.baseData.data === "hincrby testhash testfield 1" &&
             telemetry.data.baseData.target === "localhost"  &&
             telemetry.data.baseData.type === "redis";
         }

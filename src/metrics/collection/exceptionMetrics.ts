@@ -5,7 +5,7 @@ import {
     Meter,
     ObservableGauge,
     ValueType,
-} from "@opentelemetry/api-metrics";
+} from "@opentelemetry/api";
 import {
     AggregatedMetricCounter,
     IStandardMetricBaseDimensions,

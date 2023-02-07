@@ -8,7 +8,7 @@ import {
     ObservableCallback,
     ObservableGauge,
     ObservableResult,
-} from "@opentelemetry/api-metrics";
+} from "@opentelemetry/api";
 import {
     MeterProvider,
     PeriodicExportingMetricReader,

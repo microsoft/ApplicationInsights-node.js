@@ -12,13 +12,13 @@ import {
     safeExecuteInTheMiddle,
 } from "@opentelemetry/instrumentation";
 import { getRequestInfo } from "@opentelemetry/instrumentation-http";
-import { Histogram, MeterProvider, ValueType } from "@opentelemetry/api-metrics";
+import { SpanKind, TracerProvider, Histogram, MeterProvider, ValueType } from "@opentelemetry/api";
+import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 
 import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../declarations/constants";
 import { HttpMetricsInstrumentationConfig, IHttpStandardMetric, MetricName } from "../types";
 import { Logger } from "../../shared/logging";
-import { SpanKind, TracerProvider } from "@opentelemetry/api";
-import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
+
 
 export class AzureHttpMetricsInstrumentation extends InstrumentationBase<Http> {
     private _nodeVersion: string;
@@ -47,7 +47,7 @@ export class AzureHttpMetricsInstrumentation extends InstrumentationBase<Http> {
         this._updateMetricInstruments();
     }
 
-    private _updateMetricInstruments() {
+    protected _updateMetricInstruments() {
         this._httpServerDurationHistogram = this.meter.createHistogram(
             MetricName.REQUEST_DURATION,
             { valueType: ValueType.DOUBLE }

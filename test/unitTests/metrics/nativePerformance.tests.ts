@@ -1,6 +1,6 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
-import { Meter } from "@opentelemetry/api-metrics";
+import { Meter } from "@opentelemetry/api";
 import { MeterProvider } from "@opentelemetry/sdk-metrics";
 import { NativePerformanceMetrics } from "../../../src/metrics/collection/nativePerformanceMetrics";
 
