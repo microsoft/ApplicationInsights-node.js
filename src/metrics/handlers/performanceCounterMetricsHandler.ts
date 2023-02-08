@@ -64,7 +64,7 @@ export class PerformanceCounterMetricsHandler {
             ignoreOutgoingRequestHook: (request: RequestOptions) => {
                 // Iterate headers
                 for (const key in request?.headers) {
-                    if (key.toLowerCase() == "user-agent") {
+                    if (key.toLowerCase() === "user-agent") {
                         return (
                             request?.headers[key]
                                 .toString()
