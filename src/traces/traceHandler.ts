@@ -146,7 +146,6 @@ export class TraceHandler {
         }
         this._instrumentations.forEach((instrumentation) => {
             instrumentation.setTracerProvider(this._tracerProvider);
-            instrumentation.enable();
         });
     }
 
