@@ -17,13 +17,16 @@ nock("https://centralus-0.in.applicationinsights.azure.com")
     .persist();
 
 const httpMetricsConfig: HttpMetricsInstrumentationConfig = {
-    ignoreOutgoingRequestHook: (request: any) => {
-        if (request.headers && request.headers["user-agent"]) {
-            return (
-                request.headers["user-agent"]
-                    .toString()
-                    .indexOf("azsdk-js-monitor-opentelemetry-exporter") > -1
-            );
+    ignoreOutgoingRequestHook: (request: RequestOptions) => {
+        // Iterate headers
+        for (const key in request?.headers) {
+            if (key.toLowerCase() === "user-agent") {
+                return (
+                    request?.headers[key]
+                        .toString()
+                        .indexOf("azsdk-js-monitor-opentelemetry-exporter") > -1
+                );
+            }
         }
         return false;
     },
@@ -34,6 +37,7 @@ instrumentation.disable();
 
 import * as http from "http";
 import { HttpMetricsInstrumentationConfig } from "../../../src/metrics/types";
+import { RequestOptions } from "https";
 
 const meterProvider = new MeterProvider();
 const exporter = new AzureMonitorMetricExporter({
@@ -103,7 +107,7 @@ describe("AutoCollection/AzureHttpMetricsInstrumentation", () => {
         };
         return new Promise((resolve, reject) => {
             const req = http.request(options, (res: any) => {
-                res.on("data", function () {});
+                res.on("data", function () { });
                 res.on("end", () => {
                     resolve();
                 });
