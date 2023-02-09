@@ -62,12 +62,15 @@ export class PerformanceCounterMetricsHandler {
 
         const httpMetricsConfig: HttpMetricsInstrumentationConfig = {
             ignoreOutgoingRequestHook: (request: RequestOptions) => {
-                if (request.headers && request.headers["user-agent"]) {
-                    return (
-                        request.headers["user-agent"]
-                            .toString()
-                            .indexOf("azsdk-js-monitor-opentelemetry-exporter") > -1
-                    );
+                // Iterate headers
+                for (const key in request?.headers) {
+                    if (key.toLowerCase() === "user-agent") {
+                        return (
+                            request?.headers[key]
+                                .toString()
+                                .indexOf("azsdk-js-monitor-opentelemetry-exporter") > -1
+                        );
+                    }
                 }
                 return false;
             },

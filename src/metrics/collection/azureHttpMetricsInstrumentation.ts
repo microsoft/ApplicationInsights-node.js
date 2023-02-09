@@ -209,7 +209,7 @@ export class AzureHttpMetricsInstrumentation extends InstrumentationBase<Http> {
                 safeExecuteInTheMiddle(
                     () => instrumentation._getConfig().ignoreOutgoingRequestHook?.(optionsParsed),
                     (e: unknown) => {
-                        if (e !== null) {
+                        if (e) {
                             instrumentation._diag.error(
                                 "caught ignoreOutgoingRequestHook error: ",
                                 e
