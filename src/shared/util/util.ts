@@ -9,6 +9,7 @@ import { IdGenerator, RandomIdGenerator } from "@opentelemetry/sdk-trace-base";
 
 import { Logger } from "../logging";
 import { ApplicationInsightsConfig } from "../configuration";
+import { IgnoreOutgoingRequestFunction } from "@opentelemetry/instrumentation-http";
 
 export class Util {
     private static _instance: Util;
@@ -120,6 +121,21 @@ export class Util {
 
         return `${daysText + hour}:${min}:${sec}`;
     }
+
+    public ignoreOutgoingRequestHook: IgnoreOutgoingRequestFunction =
+        (request: http.RequestOptions) => {
+            // Iterate headers and ignore if call is from Azure Monitor Exporter
+            for (const key in request?.headers) {
+                if (key.toLowerCase() === "user-agent") {
+                    return (
+                        request?.headers[key]
+                            .toString()
+                            .indexOf("azsdk-js-monitor-opentelemetry-exporter") > -1
+                    );
+                }
+            }
+            return false;
+        };
 
     /**
      * Using JSON.stringify, by default Errors do not serialize to something useful:
