@@ -7,9 +7,9 @@ import {
     MeterProvider,
     PeriodicExportingMetricReader,
 } from "@opentelemetry/sdk-metrics";
-
-import { AzureHttpMetricsInstrumentation } from "../../../src/metrics/collection/azureHttpMetricsInstrumentation";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
+import { AzureHttpMetricsInstrumentation } from "../../../src/metrics/collection/azureHttpMetricsInstrumentation";
+import { Util } from "../../../src/shared/util";
 
 nock("https://centralus-0.in.applicationinsights.azure.com")
     .post("/v2.1/track", (body: string) => true)
@@ -23,7 +23,6 @@ instrumentation.enable();
 instrumentation.disable();
 
 import * as http from "http";
-import { Util } from "../../../src/shared/util";
 
 const meterProvider = new MeterProvider();
 const exporter = new AzureMonitorMetricExporter({
