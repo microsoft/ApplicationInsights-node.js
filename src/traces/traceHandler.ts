@@ -103,12 +103,12 @@ export class TraceHandler {
         }
         if (!this._httpInstrumentation) {
             let httpInstrumentationConfig = (this._config.instrumentations.http as HttpInstrumentationConfig);
-            let providedgnoreOutgoingRequestHook = httpInstrumentationConfig.ignoreOutgoingRequestHook;
+            let providedIgnoreOutgoingRequestHook = httpInstrumentationConfig.ignoreOutgoingRequestHook;
             let mergedIgnoreOutgoingRequestHook: IgnoreOutgoingRequestFunction = (request: RequestOptions) => {
                 let result = Util.getInstance().ignoreOutgoingRequestHook(request);
                 if (!result) { // Not internal call
-                    if (providedgnoreOutgoingRequestHook) { // Provided hook in config
-                        return providedgnoreOutgoingRequestHook(request);
+                    if (providedIgnoreOutgoingRequestHook) { // Provided hook in config
+                        return providedIgnoreOutgoingRequestHook(request);
                     }
                 }
                 return result;
