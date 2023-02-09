@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import { RequestOptions } from "http";
 import {
     ApplicationInsightsSampler,
     AzureMonitorExporterOptions,
@@ -14,7 +15,7 @@ import { RedisInstrumentation } from "@opentelemetry/instrumentation-redis";
 import { RedisInstrumentation as Redis4Instrumentation } from "@opentelemetry/instrumentation-redis-4";
 import { NodeTracerProvider, NodeTracerConfig } from "@opentelemetry/sdk-trace-node";
 import { BatchSpanProcessor, BufferConfig, Tracer } from "@opentelemetry/sdk-trace-base";
-import { HttpInstrumentation } from "@opentelemetry/instrumentation-http";
+import { HttpInstrumentation, HttpInstrumentationConfig, IgnoreOutgoingRequestFunction } from "@opentelemetry/instrumentation-http";
 
 import { ApplicationInsightsConfig, ResourceManager } from "../shared";
 import { TracerProvider } from "@opentelemetry/api";
@@ -22,6 +23,7 @@ import { MetricHandler } from "../metrics/metricHandler";
 import { AzureSpanProcessor } from "./azureSpanProcessor";
 import { AzureHttpMetricsInstrumentation } from "../metrics/collection/azureHttpMetricsInstrumentation";
 import { AzureFunctionsHook } from "./azureFunctionsHook";
+import { Util } from "../shared/util";
 
 export class TraceHandler {
     private _exporter: AzureMonitorTraceExporter;
@@ -100,6 +102,18 @@ export class TraceHandler {
             }
         }
         if (!this._httpInstrumentation) {
+            let httpInstrumentationConfig = (this._config.instrumentations.http as HttpInstrumentationConfig);
+            let providedgnoreOutgoingRequestHook = httpInstrumentationConfig.ignoreOutgoingRequestHook;
+            let mergedIgnoreOutgoingRequestHook: IgnoreOutgoingRequestFunction = (request: RequestOptions) => {
+                let result = Util.getInstance().ignoreOutgoingRequestHook(request);
+                if (!result) { // Not internal call
+                    if (providedgnoreOutgoingRequestHook) { // Provided hook in config
+                        return providedgnoreOutgoingRequestHook(request);
+                    }
+                }
+                return result;
+            };
+            httpInstrumentationConfig.ignoreOutgoingRequestHook = mergedIgnoreOutgoingRequestHook;
             this._httpInstrumentation = new HttpInstrumentation(this._config.instrumentations.http);
             if (this._metricHandler && this._metricHandler.getStandardMetricsHandler()) {
                 this._httpInstrumentation.setMeterProvider(

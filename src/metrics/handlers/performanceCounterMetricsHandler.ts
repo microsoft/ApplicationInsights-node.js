@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { RequestOptions } from "https";
 import {
     AzureMonitorExporterOptions,
     AzureMonitorMetricExporter,
@@ -15,7 +14,6 @@ import {
     View,
 } from "@opentelemetry/sdk-metrics";
 import {
-    HttpMetricsInstrumentationConfig,
     MetricName,
     NativeMetricsCounter,
     PerformanceCounter,
@@ -25,6 +23,7 @@ import { ProcessMetrics } from "../collection/processMetrics";
 import { RequestMetrics } from "../collection/requestMetrics";
 import { ApplicationInsightsConfig, ResourceManager } from "../../shared";
 import { NativePerformanceMetrics } from "../collection/nativePerformanceMetrics";
+import { Util } from "../../shared/util";
 
 export class PerformanceCounterMetricsHandler {
     private _config: ApplicationInsightsConfig;
@@ -59,23 +58,9 @@ export class PerformanceCounterMetricsHandler {
         this._metricReader = new PeriodicExportingMetricReader(metricReaderOptions);
         this._meterProvider.addMetricReader(this._metricReader);
         this._meter = this._meterProvider.getMeter("ApplicationInsightsPerfMetricsMeter");
-
-        const httpMetricsConfig: HttpMetricsInstrumentationConfig = {
-            ignoreOutgoingRequestHook: (request: RequestOptions) => {
-                // Iterate headers
-                for (const key in request?.headers) {
-                    if (key.toLowerCase() === "user-agent") {
-                        return (
-                            request?.headers[key]
-                                .toString()
-                                .indexOf("azsdk-js-monitor-opentelemetry-exporter") > -1
-                        );
-                    }
-                }
-                return false;
-            },
-        };
-        this._httpMetrics = new AzureHttpMetricsInstrumentation(httpMetricsConfig);
+        this._httpMetrics = new AzureHttpMetricsInstrumentation({
+            ignoreOutgoingRequestHook: Util.getInstance().ignoreOutgoingRequestHook
+        });
         this._processMetrics = new ProcessMetrics(this._meter);
         this._requestMetrics = new RequestMetrics(this._meter, this._httpMetrics);
         this._nativeMetrics = new NativePerformanceMetrics(this._meter);

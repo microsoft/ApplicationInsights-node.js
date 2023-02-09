@@ -16,28 +16,14 @@ nock("https://centralus-0.in.applicationinsights.azure.com")
     .reply(200, {})
     .persist();
 
-const httpMetricsConfig: HttpMetricsInstrumentationConfig = {
-    ignoreOutgoingRequestHook: (request: RequestOptions) => {
-        // Iterate headers
-        for (const key in request?.headers) {
-            if (key.toLowerCase() === "user-agent") {
-                return (
-                    request?.headers[key]
-                        .toString()
-                        .indexOf("azsdk-js-monitor-opentelemetry-exporter") > -1
-                );
-            }
-        }
-        return false;
-    },
-};
-const instrumentation = new AzureHttpMetricsInstrumentation(httpMetricsConfig);
+const instrumentation = new AzureHttpMetricsInstrumentation({
+    ignoreOutgoingRequestHook: Util.getInstance().ignoreOutgoingRequestHook
+});
 instrumentation.enable();
 instrumentation.disable();
 
 import * as http from "http";
-import { HttpMetricsInstrumentationConfig } from "../../../src/metrics/types";
-import { RequestOptions } from "https";
+import { Util } from "../../../src/shared/util";
 
 const meterProvider = new MeterProvider();
 const exporter = new AzureMonitorMetricExporter({
