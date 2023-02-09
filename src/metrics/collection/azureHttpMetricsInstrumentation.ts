@@ -11,12 +11,12 @@ import {
     isWrapped,
     safeExecuteInTheMiddle,
 } from "@opentelemetry/instrumentation";
-import { getRequestInfo } from "@opentelemetry/instrumentation-http";
+import { getRequestInfo, HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { SpanKind, TracerProvider, Histogram, MeterProvider, ValueType } from "@opentelemetry/api";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 
 import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../declarations/constants";
-import { HttpMetricsInstrumentationConfig, IHttpStandardMetric, MetricName } from "../types";
+import { IHttpStandardMetric, MetricName } from "../types";
 import { Logger } from "../../shared/logging";
 
 
@@ -32,7 +32,7 @@ export class AzureHttpMetricsInstrumentation extends InstrumentationBase<Http> {
     private _httpServerDurationHistogram!: Histogram;
     private _httpClientDurationHistogram!: Histogram;
 
-    constructor(config: HttpMetricsInstrumentationConfig = {}) {
+    constructor(config: HttpInstrumentationConfig = {}) {
         super("AzureHttpMetricsInstrumentation", APPLICATION_INSIGHTS_SDK_VERSION, config);
         this._nodeVersion = process.versions.node;
         this._updateMetricInstruments();
@@ -58,7 +58,7 @@ export class AzureHttpMetricsInstrumentation extends InstrumentationBase<Http> {
         );
     }
 
-    public _getConfig(): HttpMetricsInstrumentationConfig {
+    public _getConfig(): HttpInstrumentationConfig {
         return this._config;
     }
 

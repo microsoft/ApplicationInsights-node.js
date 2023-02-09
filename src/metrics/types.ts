@@ -151,20 +151,3 @@ export const PreAggregatedMetricPropertyNames: { [key in MetricDimensionTypeKeys
     dependencyResultCode: "dependency/resultCode",
     traceSeverityLevel: "trace/severityLevel",
 };
-
-export type IgnoreMatcher = string | RegExp | ((url: string) => boolean);
-
-export interface IgnoreIncomingRequestFunction {
-    (request: IncomingMessage): boolean;
-}
-
-export interface IgnoreOutgoingRequestFunction {
-    (request: RequestOptions): boolean;
-}
-
-export interface HttpMetricsInstrumentationConfig extends InstrumentationConfig {
-    /** Not trace all incoming requests that matched with custom function */
-    ignoreIncomingRequestHook?: IgnoreIncomingRequestFunction;
-    /** Not trace all outgoing requests that matched with custom function */
-    ignoreOutgoingRequestHook?: IgnoreOutgoingRequestFunction;
-}
