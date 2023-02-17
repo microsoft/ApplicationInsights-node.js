@@ -9,6 +9,7 @@ import HttpDependencyParser = require("./HttpDependencyParser");
 import { CorrelationContextManager, PrivateCustomProperties } from "./CorrelationContextManager";
 import Traceparent = require("../Library/Traceparent");
 import * as DiagChannel from "./diagnostic-channel/initialization";
+import CorrelationIdManager = require("../Library/CorrelationIdManager");
 
 class AutoCollectHttpDependencies {
     public static disableCollectionRequestOption = "disableAppInsightsAutoCollection";

@@ -7,6 +7,7 @@ import HeartBeat = require("./AutoCollection/HeartBeat");
 import WebSnippet = require("./AutoCollection/WebSnippet");
 import AutoCollectHttpDependencies = require("./AutoCollection/HttpDependencies");
 import AutoCollectHttpRequests = require("./AutoCollection/HttpRequests");
+import CorrelationIdManager = require("./Library/CorrelationIdManager");
 import Logging = require("./Library/Logging");
 import QuickPulseClient = require("./Library/QuickPulseStateManager");
 import { IncomingMessage } from "http";
