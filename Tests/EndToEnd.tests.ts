@@ -481,7 +481,6 @@ describe("EndToEnd", () => {
         beforeEach(() => {
             nockScope = interceptor.reply(503, { "errors": [{ "index": 0, "statusCode": 503 }] });
             AppInsights.defaultClient = undefined;
-            sandbox.stub(CorrelationIdManager, 'queryCorrelationId'); // TODO: Fix method of stubbing requests to allow CID to be part of E2E tests
             writeFile = sandbox.stub(FileSystemHelper, 'writeFileAsync');
             writeFileSync = sandbox.stub(fs, 'writeFileSync');
             existsSync = sandbox.stub(fs, 'existsSync').returns(true);

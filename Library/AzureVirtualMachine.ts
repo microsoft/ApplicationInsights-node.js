@@ -32,7 +32,7 @@ export class AzureVirtualMachine {
             [AutoCollectHttpDependencies.disableCollectionRequestOption]: true,
             headers: {
                 "Metadata": "True"
-            },
+            }
         };
 
         const req = Util.makeRequest(config, metadataRequestUrl, requestOptions, (res) => {

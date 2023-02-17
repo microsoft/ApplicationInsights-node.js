@@ -1,123 +1,21 @@
 import Util = require("./Util");
 import Config = require("./Config");
-import Logging = require("./Logging");
 
 class CorrelationIdManager {
-    private static TAG = "CorrelationIdManager";
-    private static _handle: NodeJS.Timer;
     public static correlationIdPrefix = "cid-v1:";
     public static w3cEnabled = true;
     public static HTTP_TIMEOUT: number = 2500; // 2.5 seconds
 
-    // To avoid extraneous HTTP requests, we maintain a queue of callbacks waiting on a particular appId lookup,
-    // as well as a cache of completed lookups so future requests can be resolved immediately.
-    private static pendingLookups: { [key: string]: Function[] } = {};
-    private static completedLookups: { [key: string]: string } = {};
 
     private static requestIdMaxLength = 1024;
     private static currentRootId = Util.randomu32();
-    private static _requestTimedOut: boolean;
 
     public static queryCorrelationId(config: Config, callback: (correlationId: string) => void) {
-        // GET request to `${this.endpointBase}/api/profiles/${this.instrumentationKey}/appId`
-        // If it 404s, the iKey is bad and we should give up
-        // If it fails otherwise, try again later
-        const appIdUrlString = `${config.profileQueryEndpoint}/api/profiles/${config.instrumentationKey}/appId`;
-
-        if (CorrelationIdManager.completedLookups.hasOwnProperty(appIdUrlString)) {
-            callback(CorrelationIdManager.completedLookups[appIdUrlString]);
-            return;
-        } else if (CorrelationIdManager.pendingLookups[appIdUrlString]) {
-            CorrelationIdManager.pendingLookups[appIdUrlString].push(callback);
-            return;
-        }
-
-        CorrelationIdManager.pendingLookups[appIdUrlString] = [callback];
-
-        const fetchAppId = () => {
-            if (!CorrelationIdManager.pendingLookups[appIdUrlString]) {
-                // This query has been cancelled.
-                return;
-            }
-
-            const requestOptions = {
-                method: "GET",
-                // Ensure this request is not captured by auto-collection.
-                // Note: we don't refer to the property in HttpDependencyParser because that would cause a cyclical dependency
-                disableAppInsightsAutoCollection: true
-            };
-
-            Logging.info(CorrelationIdManager.TAG, requestOptions);
-            const req = Util.makeRequest(config, appIdUrlString, requestOptions, (res) => {
-                if (res.statusCode === 200) {
-                    // Success; extract the appId from the body
-                    let appId = "";
-                    res.setEncoding("utf-8");
-                    res.on("data", (data: any) => {
-                        appId += data;
-                    });
-                    res.on("end", () => {
-                        Logging.info(CorrelationIdManager.TAG, appId);
-                        const result = CorrelationIdManager.correlationIdPrefix + appId;
-                        CorrelationIdManager.completedLookups[appIdUrlString] = result;
-                        if (CorrelationIdManager.pendingLookups[appIdUrlString]) {
-                            CorrelationIdManager.pendingLookups[appIdUrlString].forEach((cb) => cb(result));
-                        }
-                        delete CorrelationIdManager.pendingLookups[appIdUrlString];
-                    });
-                } else if (res.statusCode >= 400 && res.statusCode < 500) {
-                    // Not found, probably a bad key. Do not try again.
-                    CorrelationIdManager.completedLookups[appIdUrlString] = undefined;
-                    delete CorrelationIdManager.pendingLookups[appIdUrlString];
-                }
-                else {
-                    // Keep retrying
-                    return;
-                }
-                // Do not retry
-                if (CorrelationIdManager._handle) {
-                    clearTimeout(CorrelationIdManager._handle);
-                    CorrelationIdManager._handle = undefined;
-                }
-            }, true, false);
-            if (req) {
-                req.setTimeout(CorrelationIdManager.HTTP_TIMEOUT, () => {
-                    this._requestTimedOut = true;
-                    req.abort();
-                });
-                req.on("error", (error: Error) => {
-                    // Unable to contact endpoint.
-                    // Do nothing for now.
-                    if (this._requestTimedOut) {
-                        error.name = "telemetry timeout";
-                        error.message = "telemetry request timed out";
-                    }
-                    Logging.warn(CorrelationIdManager.TAG, error);
-                    if (this._handle) {
-                        clearTimeout(CorrelationIdManager._handle);
-                        CorrelationIdManager._handle = undefined;
-                    }
-                });
-                req.end();
-            }
-        };
-        if (!CorrelationIdManager._handle) {
-            CorrelationIdManager._handle = <any>setTimeout(fetchAppId, config.correlationIdRetryIntervalMs);
-            CorrelationIdManager._handle.unref(); // Don't block apps from terminating
-        }
-        // Initial fetch
-        setImmediate(fetchAppId);
+        // No Op, App ID Exchange not required in SDK anymore
     }
 
     public static cancelCorrelationIdQuery(config: Config, callback: (correlationId: string) => void) {
-        const appIdUrlString = `${config.profileQueryEndpoint}/api/profiles/${config.instrumentationKey}/appId`;
-        const pendingLookups = CorrelationIdManager.pendingLookups[appIdUrlString];
-        if (pendingLookups) {
-            CorrelationIdManager.pendingLookups[appIdUrlString] = pendingLookups.filter((cb) => cb != callback);
-            if (CorrelationIdManager.pendingLookups[appIdUrlString].length == 0) {
-                delete CorrelationIdManager.pendingLookups[appIdUrlString];
-            }
-        }
+        // No Op, App ID Exchange not required in SDK anymore
     }
 
     /**

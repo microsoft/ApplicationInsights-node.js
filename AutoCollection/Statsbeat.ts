@@ -422,7 +422,7 @@ class Statsbeat {
     }
 
     private _shutdownStatsbeat() {
-        this.enable(false);// Disable Statsbeat as is it failed 3 times cosnecutively during initialization, is possible SDK is running in private or restricted network 
+        this.enable(false);// Disable Statsbeat as is it failed 3 times cosnecutively during initialization, is possible SDK is running in private or restricted network
     }
 
     private _getConnectionString(config: Config): string {
