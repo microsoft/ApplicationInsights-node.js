@@ -7,7 +7,6 @@ import Util = require("../Library/Util");
 import RequestResponseHeaders = require("../Library/RequestResponseHeaders");
 import HttpDependencyParser = require("./HttpDependencyParser");
 import { CorrelationContextManager, PrivateCustomProperties } from "./CorrelationContextManager";
-import CorrelationIdManager = require("../Library/CorrelationIdManager");
 import Traceparent = require("../Library/Traceparent");
 import * as DiagChannel from "./diagnostic-channel/initialization";
 
