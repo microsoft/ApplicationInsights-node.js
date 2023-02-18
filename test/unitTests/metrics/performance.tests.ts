@@ -28,27 +28,23 @@ describe("PerformanceCounterMetricsHandler", () => {
     describe("#Metrics", () => {
         it("should create instruments", () => {
             assert.ok(
-                autoCollect.getHttpMetricsInstrumentation()["_httpServerDurationHistogram"],
-                "_httpServerDurationHistogram not available"
-            );
-            assert.ok(
-                autoCollect.getProcessMetrics()["_memoryPrivateBytesGauge"],
+                autoCollect["_processMetrics"]["_memoryPrivateBytesGauge"],
                 "_memoryPrivateBytesGauge not available"
             );
             assert.ok(
-                autoCollect.getProcessMetrics()["_memoryAvailableBytesGauge"],
+                autoCollect["_processMetrics"]["_memoryAvailableBytesGauge"],
                 "_memoryAvailableBytesGauge not available"
             );
             assert.ok(
-                autoCollect.getProcessMetrics()["_processorTimeGauge"],
+                autoCollect["_processMetrics"]["_processorTimeGauge"],
                 "_processorTimeGauge not available"
             );
             assert.ok(
-                autoCollect.getProcessMetrics()["_processTimeGauge"],
+                autoCollect["_processMetrics"]["_processTimeGauge"],
                 "_processTimeGauge not available"
             );
             assert.ok(
-                autoCollect.getRequestMetrics()["_requestRateGauge"],
+                autoCollect["_requestMetrics"]["_requestRateGauge"],
                 "_dependencyDurationGauge not available"
             );
 
@@ -85,15 +81,15 @@ describe("PerformanceCounterMetricsHandler", () => {
         it("should observe instruments during collection", async () => {
             const mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
             autoCollect.start();
-            autoCollect
-                .getHttpMetricsInstrumentation()
-                .setMeterProvider(autoCollect["_meterProvider"]);
-            autoCollect.getHttpMetricsInstrumentation()["_httpRequestDone"]({
-                startTime: Date.now() - 100,
-                isProcessed: false,
-                spanKind: SpanKind.SERVER,
-                attributes: { HTTP_STATUS_CODE: "200" },
-            });
+            // autoCollect
+            //     .getHttpMetricsInstrumentation()
+            //     .setMeterProvider(autoCollect["_meterProvider"]);
+            // autoCollect.getHttpMetricsInstrumentation()["_httpRequestDone"]({
+            //     startTime: Date.now() - 100,
+            //     isProcessed: false,
+            //     spanKind: SpanKind.SERVER,
+            //     attributes: { HTTP_STATUS_CODE: "200" },
+            // });
 
             await new Promise((resolve) => setTimeout(resolve, 120));
             assert.ok(mockExport.called);

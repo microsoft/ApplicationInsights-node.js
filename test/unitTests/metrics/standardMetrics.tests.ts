@@ -6,7 +6,7 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 
 import { StandardMetricsHandler } from "../../../src/metrics/handlers/standardMetricsHandler";
-import { IMetricExceptionDimensions, StandardMetric } from "../../../src/metrics/types";
+import { IStandardMetricBaseDimensions, StandardMetric } from "../../../src/metrics/types";
 import { ApplicationInsightsConfig } from "../../../src/shared";
 
 describe("#StandardMetricsHandler", () => {
@@ -31,11 +31,11 @@ describe("#StandardMetricsHandler", () => {
 
     it("should create instruments", () => {
         assert.ok(
-            autoCollect.getExceptionMetrics()["_exceptionsRateGauge"],
+            autoCollect["_exceptionMetrics"]["_exceptionsRateGauge"],
             "_exceptionsRateGauge not available"
         );
         assert.ok(
-            autoCollect.getTraceMetrics()["_tracesRateGauge"],
+            autoCollect["_traceMetrics"]["_tracesRateGauge"],
             "_tracesRateGauge not available"
         );
     });
@@ -43,19 +43,19 @@ describe("#StandardMetricsHandler", () => {
     it("should observe instruments during collection", async () => {
         const mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
         // autoCollect.start();
-        let dimensions: IMetricExceptionDimensions = {
+        let dimensions: IStandardMetricBaseDimensions = {
             cloudRoleInstance: "testcloudRoleInstance",
             cloudRoleName: "testcloudRoleName",
         };
-        autoCollect.getExceptionMetrics().countException(dimensions);
-        autoCollect.getTraceMetrics().countTrace(dimensions);
+        autoCollect.recordException(dimensions);
+        autoCollect.recordTrace(dimensions);
         dimensions = {
             cloudRoleInstance: "testcloudRoleInstance2",
             cloudRoleName: "testcloudRoleName2",
         };
         for (let i = 0; i < 10; i++) {
-            autoCollect.getExceptionMetrics().countException(dimensions);
-            autoCollect.getTraceMetrics().countTrace(dimensions);
+            autoCollect.recordException(dimensions);
+            autoCollect.recordTrace(dimensions);
         }
 
         await new Promise((resolve) => setTimeout(resolve, 120));
@@ -129,7 +129,7 @@ describe("#StandardMetricsHandler", () => {
                 enabled: true,
             };
             const instrumentation = new HttpInstrumentation(httpConfig);
-            instrumentation.setMeterProvider(autoCollect.getMeterProvider());
+            instrumentation.setMeterProvider(autoCollect["_meterProvider"]);
             instrumentation.enable();
             // Load Http modules, HTTP instrumentation hook will be created in OpenTelemetry
             http = require("http") as any;

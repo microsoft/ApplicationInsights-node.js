@@ -9,9 +9,9 @@ import {
 import {
     AggregatedMetricCounter,
     IStandardMetricBaseDimensions,
-    IMetricExceptionDimensions,
     MetricName,
 } from "../types";
+
 
 export class ExceptionMetrics {
     private _meter: Meter;
@@ -36,7 +36,7 @@ export class ExceptionMetrics {
         ]);
     }
 
-    public countException(dimensions: IMetricExceptionDimensions) {
+    public countException(dimensions: IStandardMetricBaseDimensions) {
         const counter: AggregatedMetricCounter = this._getAggregatedCounter(
             dimensions,
             this._exceptionCountersCollection

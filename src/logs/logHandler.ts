@@ -35,7 +35,7 @@ import {
     Telemetry,
 } from "../declarations/contracts";
 import { Logger } from "../shared/logging";
-import { IMetricExceptionDimensions, IMetricTraceDimensions } from "../metrics/types";
+import { IStandardMetricBaseDimensions, IMetricTraceDimensions } from "../metrics/types";
 import { MetricHandler } from "../metrics/metricHandler";
 
 export class LogHandler {
@@ -120,9 +120,9 @@ export class LogHandler {
                 const traceDimensions: IMetricTraceDimensions = {
                     cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
                     cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole],
-                    traceSeverityLevel: baseData.severity,
+                    traceSeverityLevel: baseData.severity
                 };
-                this._metricHandler.countTrace(traceDimensions);
+                this._metricHandler.recordTrace(traceDimensions);
                 // Mark envelope as processed
                 const traceData: TraceTelemetry = (envelope.data as any).baseData;
                 traceData.properties = {
@@ -150,11 +150,11 @@ export class LogHandler {
                 this._config.getInstrumentationKey()
             );
             if (this._metricHandler?.getConfig().enableAutoCollectStandardMetrics) {
-                const exceptionDimensions: IMetricExceptionDimensions = {
+                const exceptionDimensions: IStandardMetricBaseDimensions = {
                     cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
-                    cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole],
+                    cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole]
                 };
-                this._metricHandler.countException(exceptionDimensions);
+                this._metricHandler.recordException(exceptionDimensions);
                 // Mark envelope as processed
                 const exceptionData: TelemetryExceptionData = (envelope.data as any).baseData;
                 exceptionData.properties = {

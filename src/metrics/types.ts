@@ -1,10 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-
-import { IncomingMessage, RequestOptions } from "http";
-
 import { Attributes, SpanKind } from "@opentelemetry/api";
-import { InstrumentationConfig } from "@opentelemetry/instrumentation";
 
 export enum MetricName {
     // Memory
@@ -81,14 +77,6 @@ export enum GarbageCollectionType {
     IncrementalMarking = "IncrementalMarking",
 }
 
-export class AggregatedMetric {
-    public name: string;
-    public dimensions: { [key: string]: any };
-    public value: number;
-    public count: number;
-    public aggregationInterval: number;
-}
-
 export class AggregatedMetricCounter {
     public time: number;
     public lastTime: number;
@@ -108,28 +96,35 @@ export class AggregatedMetricCounter {
     }
 }
 
+export enum StandardMetricIds {
+    REQUEST_DURATION = "requests/duration",
+    DEPENDENCY_DURATION = "dependencies/duration",
+    EXCEPTION_COUNT = "exceptions/count",
+    TRACE_COUNT = "traces/count",
+  }
+
 export interface IStandardMetricBaseDimensions {
+    metricId?: string;
     cloudRoleInstance?: string;
     cloudRoleName?: string;
+    IsAutocollected?: string;
 }
-
-export type IMetricExceptionDimensions = IStandardMetricBaseDimensions;
 
 export interface IMetricTraceDimensions extends IStandardMetricBaseDimensions {
     traceSeverityLevel?: string;
 }
 
-export type MetricDimensionTypeKeys =
-    | "cloudRoleInstance"
-    | "cloudRoleName"
-    | "requestSuccess"
-    | "requestResultCode"
-    | "dependencyType"
-    | "dependencyTarget"
-    | "dependencySuccess"
-    | "dependencyResultCode"
-    | "traceSeverityLevel"
-    | "operationSynthetic";
+export interface IMetricRequestDimensions extends IStandardMetricBaseDimensions {
+    requestSuccess?: string;
+    requestResultCode?: string;
+}
+
+export interface IMetricDependencyDimensions extends IStandardMetricBaseDimensions {
+    dependencyType?: string;
+    dependencyTarget?: string;
+    dependencySuccess?: string;
+    dependencyResultCode?: string;
+}
 
 export interface IHttpStandardMetric {
     startTime: number;
@@ -137,6 +132,20 @@ export interface IHttpStandardMetric {
     spanKind: SpanKind;
     attributes: Attributes;
 }
+
+export type MetricDimensionTypeKeys =
+  | "cloudRoleInstance"
+  | "cloudRoleName"
+  | "requestSuccess"
+  | "requestResultCode"
+  | "dependencyType"
+  | "dependencyTarget"
+  | "dependencySuccess"
+  | "dependencyResultCode"
+  | "traceSeverityLevel"
+  | "operationSynthetic"
+  | "metricId"
+  | "IsAutocollected";
 
 // Names expected in Breeze side for dimensions
 export const PreAggregatedMetricPropertyNames: { [key in MetricDimensionTypeKeys]: string } = {
@@ -150,4 +159,6 @@ export const PreAggregatedMetricPropertyNames: { [key in MetricDimensionTypeKeys
     dependencySuccess: "Dependency.Success",
     dependencyResultCode: "dependency/resultCode",
     traceSeverityLevel: "trace/severityLevel",
+    metricId: "_MS.MetricId",
+    IsAutocollected: "_MS.IsAutocollected",
 };
