@@ -113,7 +113,7 @@ export const insertSnippetByIndex = (index: number, html: string, snippet: strin
     let newHtml = null;
     let subStart = html.substring(0, index);
     let subEnd = html.substring(index);
-    newHtml = subStart + '<script type="text/javascript">' + snippet + "</script>" + subEnd;
+    newHtml = subStart + "<script type=\"text/javascript\">" + snippet + "</script>" + subEnd;
     return newHtml;
 }
 

@@ -66,7 +66,6 @@ class Config implements IConfig {
     public correlationId: string; // TODO: Should be private
     private _connectionString: string;
     private _endpointBase: string = Constants.DEFAULT_BREEZE_ENDPOINT;
-    private _setCorrelationId: (v: string) => void;
     private _profileQueryEndpoint: string;
     private _instrumentationKey: string;
     public _webInstrumentationConnectionString: string;
@@ -108,7 +107,6 @@ class Config implements IConfig {
                 "*.core.eaglex.ic.gov"
             ];
 
-        this._setCorrelationId = (correlationId) => this.correlationId = correlationId;
         this.ignoreLegacyHeaders = this.ignoreLegacyHeaders || false;
         this.profileQueryEndpoint = csCode.ingestionendpoint || csEnv.ingestionendpoint || process.env[Config.ENV_profileQueryEndpoint] || this._endpointBase;
         this.quickPulseHost = this.quickPulseHost || csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_HOST;
@@ -121,10 +119,8 @@ class Config implements IConfig {
     }
 
     public set profileQueryEndpoint(endpoint: string) {
-        CorrelationIdManager.cancelCorrelationIdQuery(this, this._setCorrelationId);
         this._profileQueryEndpoint = endpoint;
-        this.correlationId = CorrelationIdManager.correlationIdPrefix; // Reset the correlationId while we wait for the new query
-        CorrelationIdManager.queryCorrelationId(this, this._setCorrelationId);
+        this.correlationId = CorrelationIdManager.correlationIdPrefix;
     }
 
     public get profileQueryEndpoint() {
