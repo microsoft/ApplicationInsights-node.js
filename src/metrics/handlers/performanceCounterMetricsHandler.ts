@@ -73,7 +73,7 @@ export class PerformanceCounterMetricsHandler {
     }
 
     public recordSpan(span: ReadableSpan): void {
-        if (span.kind == SpanKind.SERVER) {
+        if (span.kind === SpanKind.SERVER) {
             this._requestMetrics.setRequestRate(span);
         }
     }

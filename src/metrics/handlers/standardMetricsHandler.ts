@@ -76,8 +76,8 @@ export class StandardMetricsHandler {
     }
 
     public recordSpan(span: ReadableSpan): void {
-        let durationMs = span.duration[0];
-        if (span.kind == SpanKind.SERVER) {
+        const durationMs = span.duration[0];
+        if (span.kind === SpanKind.SERVER) {
             this._requestMetrics.getDurationHistogram().record(durationMs, this._getStandardMetricRequestDimensions(span));
         }
         else {
@@ -88,20 +88,20 @@ export class StandardMetricsHandler {
     private _getStandardMetricRequestDimensions(span: ReadableSpan): Attributes {
         const dimensions: IMetricRequestDimensions = this._getStandardMetricBaseDimensions(span);
         dimensions.metricId = StandardMetricIds.REQUEST_DURATION;
-        let statusCode = String(span.attributes["http.status_code"]);
+        const statusCode = String(span.attributes["http.status_code"]);
         dimensions.requestResultCode = statusCode;
-        dimensions.requestSuccess = statusCode == "200" ? "True" : "False";
+        dimensions.requestSuccess = statusCode === "200" ? "True" : "False";
         return dimensions as Attributes;
     }
 
     private _getStandardMetricDependencyDimensions(span: ReadableSpan): Attributes {
         const dimensions: IMetricDependencyDimensions = this._getStandardMetricBaseDimensions(span);
         dimensions.metricId = StandardMetricIds.DEPENDENCY_DURATION;
-        let statusCode = String(span.attributes["http.status_code"]);
+        const statusCode = String(span.attributes["http.status_code"]);
         dimensions.dependencyTarget = this._getDependencyTarget(span.attributes);
         dimensions.dependencyResultCode = statusCode;
         dimensions.dependencyType = "http";
-        dimensions.dependencySuccess = statusCode == "200" ? "True" : "False";
+        dimensions.dependencySuccess = statusCode === "200" ? "True" : "False";
         return dimensions as Attributes;
     }
 
