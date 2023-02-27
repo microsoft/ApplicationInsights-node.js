@@ -61,7 +61,7 @@ class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackAvailability(telemetry: Contracts.AvailabilityTelemetry): void {
-        if (telemetry.message) {
+        if (telemetry?.message) {
             telemetry.message = this._enforceMessageLength(telemetry.message);
         }
         this.track(telemetry, Contracts.TelemetryType.Availability);
@@ -80,7 +80,7 @@ class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackTrace(telemetry: Contracts.TraceTelemetry): void {
-        if (telemetry.message) {
+        if (telemetry?.message) {
             telemetry.message = this._enforceMessageLength(telemetry.message);
         }
         this.track(telemetry, Contracts.TelemetryType.Trace);
