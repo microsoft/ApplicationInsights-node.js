@@ -16,6 +16,7 @@ import FlushOptions = require("./FlushOptions");
 import EnvelopeFactory = require("./EnvelopeFactory");
 import QuickPulseStateManager = require("./QuickPulseStateManager");
 import { Tags } from "../Declarations/Contracts";
+import { MAX_TELEMETRY_MESSAGE_LENGTH } from "../Declarations/Constants";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -60,6 +61,9 @@ class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackAvailability(telemetry: Contracts.AvailabilityTelemetry): void {
+        if (telemetry.message) {
+            telemetry.message = this._enforceMessageLength(telemetry.message);
+        }
         this.track(telemetry, Contracts.TelemetryType.Availability);
     }
 
@@ -76,6 +80,9 @@ class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackTrace(telemetry: Contracts.TraceTelemetry): void {
+        if (telemetry.message) {
+            telemetry.message = this._enforceMessageLength(telemetry.message);
+        }
         this.track(telemetry, Contracts.TelemetryType.Trace);
     }
 
@@ -222,6 +229,10 @@ class TelemetryClient {
      */
     public clearTelemetryProcessors() {
         this._telemetryProcessors = [];
+    }
+
+    private _enforceMessageLength(message: string) {
+        return message.substring(0, MAX_TELEMETRY_MESSAGE_LENGTH);
     }
 
     private runTelemetryProcessors(envelope: Contracts.EnvelopeTelemetry, contextObjects: { [name: string]: any; }): boolean {
