@@ -26,22 +26,6 @@ describe("Library/TraceHandler", () => {
         sandbox.restore();
     });
 
-    describe("#Instrumentation Enablement", () => {
-        it("AzureHttpMetricsInstrumentation", () => {
-            _config.enableAutoCollectPerformance = true;
-            const metricHandler = new MetricHandler(_config);
-            const handler = new TraceHandler(_config, metricHandler);
-            handler.start();
-            let found = false;
-            handler["_instrumentations"].forEach((instrumentation: Instrumentation) => {
-                if (instrumentation.instrumentationName == "AzureHttpMetricsInstrumentation") {
-                    found = true;
-                }
-            });
-            assert.ok(found, "AzureHttpMetricsInstrumentation not added");
-        });
-    });
-
     describe("#autoCollection of HTTP/HTTPS requests", () => {
         let exportStub: sinon.SinonStub;
         let handler: TraceHandler = null;

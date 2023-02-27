@@ -53,6 +53,8 @@ export class StandardMetricsHandler {
         this._metricReader = new PeriodicExportingMetricReader(metricReaderOptions);
         this._meterProvider.addMetricReader(this._metricReader);
         this._meter = this._meterProvider.getMeter("ApplicationInsightsStandardMetricsMeter");
+        this._requestMetrics = new RequestMetrics(this._meter);
+        this._dependencyMetrics = new DependencyMetrics(this._meter);
         this._exceptionMetrics = new ExceptionMetrics(this._meter);
         this._traceMetrics = new TraceMetrics(this._meter);
     }
@@ -153,13 +155,13 @@ export class StandardMetricsHandler {
         views.push(
             new View({
                 name: StandardMetric.HTTP_REQUEST_DURATION,
-                instrumentName: "http.server.duration", // Metric semantic conventions not available yet
+                instrumentName: MetricName.REQUEST_DURATION
             })
         );
         views.push(
             new View({
                 name: StandardMetric.HTTP_DEPENDENCY_DURATION,
-                instrumentName: "http.client.duration", // Metric semantic conventions not available yet
+                instrumentName: MetricName.DEPENDENCY_DURATION,
             })
         );
         views.push(
@@ -175,6 +177,30 @@ export class StandardMetricsHandler {
             })
         );
         // Ignore list
+        views.push(
+            new View({
+                instrumentName: MetricName.REQUEST_RATE,
+                aggregation: new DropAggregation(),
+            })
+        );
+        views.push(
+            new View({
+                instrumentName: MetricName.REQUEST_FAILURE_RATE,
+                aggregation: new DropAggregation(),
+            })
+        );
+        views.push(
+            new View({
+                instrumentName: MetricName.DEPENDENCY_RATE,
+                aggregation: new DropAggregation(),
+            })
+        );
+        views.push(
+            new View({
+                instrumentName: MetricName.DEPENDENCY_FAILURE_RATE,
+                aggregation: new DropAggregation(),
+            })
+        );
         views.push(
             new View({
                 instrumentName: MetricName.EXCEPTION_RATE,

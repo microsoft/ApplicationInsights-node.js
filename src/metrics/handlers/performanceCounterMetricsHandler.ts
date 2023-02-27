@@ -84,7 +84,6 @@ export class PerformanceCounterMetricsHandler {
             new View({
                 name: PerformanceCounter.REQUEST_DURATION,
                 instrumentName: MetricName.REQUEST_DURATION,
-                attributeKeys: [], // Drop all dimensions
             })
         );
         views.push(
