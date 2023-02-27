@@ -1,7 +1,7 @@
 import { AgentLoader } from "./agentLoader";
 import { DiagnosticLogger } from "./diagnostics/diagnosticLogger";
 import { StatusLogger } from "./diagnostics/statusLogger";
-import { AzureFunctionsWriter } from "./diagnostics/writers/azureFunctionsWritter";
+import { AzureFunctionsWriter } from "./diagnostics/writers/azureFunctionsWriter";
 
 
 export class AzureFunctionsLoader extends AgentLoader {

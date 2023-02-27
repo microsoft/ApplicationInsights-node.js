@@ -3,7 +3,7 @@ import * as sinon from "sinon";
 
 import { AzureFunctionsLoader } from "../../../src/agent/azureFunctionsLoader";
 import { DiagnosticLogger } from "../../../src/agent/diagnostics/diagnosticLogger";
-import { AzureFunctionsWriter } from "../../../src/agent/diagnostics/writers/azureFunctionsWritter";
+import { AzureFunctionsWriter } from "../../../src/agent/diagnostics/writers/azureFunctionsWriter";
 
 describe("agent/AzureFunctionsLoader", () => {
     let originalEnv: NodeJS.ProcessEnv;
