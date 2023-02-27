@@ -2,10 +2,8 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 
 import { AppServicesLoader } from "../../../src/agent/appServicesLoader";
-import { ConsoleWriter } from "../../../src/agent/diagnostics/consoleWriter";
 import { DiagnosticLogger } from "../../../src/agent/diagnostics/diagnosticLogger";
-import { EtwDiagnosticLogger } from "../../../src/agent/diagnostics/etwDiagnosticLogger";
-import { FileWriter } from "../../../src/agent/diagnostics/fileWriter";
+import { FileWriter } from "../../../src/agent/diagnostics/writers/fileWriter";
 
 describe("agent/AppServicesLoader", () => {
     let originalEnv: NodeJS.ProcessEnv;
@@ -53,13 +51,13 @@ describe("agent/AppServicesLoader", () => {
             assert.equal(statusLogger["_agentLogger"]["_filepath"], "/var/log/applicationinsights/");
         }
         // Loader is using correct diagnostics
-        assert.equal(agent["_loader"]["_diagnosticLogger"], diagnosticLogger, "Wrong diagnosticLogger");
-        assert.equal(agent["_loader"]["_statusLogger"], statusLogger, "Wrong statusLogger");
+        assert.equal(agent["_diagnosticLogger"], diagnosticLogger, "Wrong diagnosticLogger");
+        assert.equal(agent["_statusLogger"], statusLogger, "Wrong statusLogger");
     });
 
     it("initialize", () => {
         const agent = new AppServicesLoader();
-        let stub = sandbox.stub(agent["_loader"], "initialize");
+        let stub = sandbox.stub(agent, "initialize");
         agent.initialize();
         // Agent Loader called
         assert.ok(stub.calledOnce);

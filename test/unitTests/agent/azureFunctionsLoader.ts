@@ -2,7 +2,7 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 
 import { AzureFunctionsLoader } from "../../../src/agent/azureFunctionsLoader";
-import { ConsoleWriter } from "../../../src/agent/diagnostics/consoleWriter";
+import { ConsoleWriter } from "../../../src/agent/diagnostics/writers/consoleWriter";
 import { DiagnosticLogger } from "../../../src/agent/diagnostics/diagnosticLogger";
 
 describe("agent/AzureFunctionsLoader", () => {
@@ -36,13 +36,13 @@ describe("agent/AzureFunctionsLoader", () => {
         assert.equal(statusLogger["_instrumentationKey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
         assert.ok(statusLogger["_agentLogger"] instanceof ConsoleWriter);
         // Loader is using correct diagnostics
-        assert.equal(agent["_loader"]["_diagnosticLogger"], diagnosticLogger);
-        assert.equal(agent["_loader"]["_statusLogger"], statusLogger);
+        assert.equal(agent["_diagnosticLogger"], diagnosticLogger);
+        assert.equal(agent["_statusLogger"], statusLogger);
     });
 
     it("initialize", () => {
         const agent = new AzureFunctionsLoader();
-        let stub = sandbox.stub(agent["_loader"], "initialize");
+        let stub = sandbox.stub(agent, "initialize");
         agent.initialize();
         // Agent Loader called
         assert.ok(stub.calledOnce);
