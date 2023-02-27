@@ -112,4 +112,5 @@ export class MetricHandler {
                 }
             });
         }
+    }
 }
