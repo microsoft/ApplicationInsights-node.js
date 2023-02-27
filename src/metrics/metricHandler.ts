@@ -47,9 +47,9 @@ export class MetricHandler {
 
     public async flush(): Promise<void> {
         await this._customMetricsHandler.flush();
-        await this._heartbeatHandler.flush();
-        await this._standardMetricsHandler.flush();
-        await this._perfCounterMetricsHandler.flush();
+        await this._heartbeatHandler?.flush();
+        await this._standardMetricsHandler?.flush();
+        await this._perfCounterMetricsHandler?.flush();
     }
 
     public getConfig(): ApplicationInsightsConfig {
@@ -112,5 +112,4 @@ export class MetricHandler {
                 }
             });
         }
-    }
 }

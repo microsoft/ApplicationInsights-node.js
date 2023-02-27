@@ -204,17 +204,17 @@ const logResource = appInsights.getLogResource();
 // ----------------------------------------
 // Setting role name and role instance
 // ----------------------------------------
-traceResource[SemanticResourceAttributes.SERVICE_NAME] = "my-helloworld-service";
-traceResource[SemanticResourceAttributes.SERVICE_NAMESPACE] = "my-namespace";
-traceResource[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = "my-instance";
+traceResource.attributes[SemanticResourceAttributes.SERVICE_NAME] = "my-helloworld-service";
+traceResource.attributes[SemanticResourceAttributes.SERVICE_NAMESPACE] = "my-namespace";
+traceResource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = "my-instance";
 
-metricResource[SemanticResourceAttributes.SERVICE_NAME] = "my-helloworld-service";
-metricResource[SemanticResourceAttributes.SERVICE_NAMESPACE] = "my-namespace";
-metricResource[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = "my-instance";
+metricResource.attributes[SemanticResourceAttributes.SERVICE_NAME] = "my-helloworld-service";
+metricResource.attributes[SemanticResourceAttributes.SERVICE_NAMESPACE] = "my-namespace";
+metricResource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = "my-instance";
 
-logResource[SemanticResourceAttributes.SERVICE_NAME] = "my-helloworld-service";
-logResource[SemanticResourceAttributes.SERVICE_NAMESPACE] = "my-namespace";
-logResource[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = "my-instance";
+logResource.attributes[SemanticResourceAttributes.SERVICE_NAME] = "my-helloworld-service";
+logResource.attributes[SemanticResourceAttributes.SERVICE_NAMESPACE] = "my-namespace";
+logResource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = "my-instance";
 
 appInsights.start();
 ```
