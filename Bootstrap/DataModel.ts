@@ -10,7 +10,7 @@ export const DiagnosticMessageId = {
     "setupAlreadyCalled": "3003",
     "prefixFailed": "3004",
     "aadEnabled": "3005",
-    "unknownError": "3006",
+    "unknownError": "3006"
 }
 
 export const enum SeverityLevel {
