@@ -9,7 +9,7 @@ import {
     PeriodicExportingMetricReader,
     PeriodicExportingMetricReaderOptions,
 } from "@opentelemetry/sdk-metrics";
-import { ApplicationInsightsConfig, ResourceManager } from "../../shared";
+import { ApplicationInsightsConfig } from "../../shared";
 
 export class CustomMetricsHandler {
     private _config: ApplicationInsightsConfig;
@@ -22,7 +22,7 @@ export class CustomMetricsHandler {
     constructor(config: ApplicationInsightsConfig, options?: { collectionInterval: number }) {
         this._config = config;
         const meterProviderConfig: MeterProviderOptions = {
-            resource: ResourceManager.getInstance().getMetricResource(),
+            resource: this._config.resource,
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);
         const exporterConfig: AzureMonitorExporterOptions = {

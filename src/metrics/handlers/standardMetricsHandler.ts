@@ -11,7 +11,7 @@ import {
     PeriodicExportingMetricReaderOptions,
     View,
 } from "@opentelemetry/sdk-metrics";
-import { ApplicationInsightsConfig, ResourceManager } from "../../shared";
+import { ApplicationInsightsConfig } from "../../shared";
 import { ExceptionMetrics } from "../collection/exceptionMetrics";
 import { TraceMetrics } from "../collection/traceMetrics";
 import { MetricName, StandardMetric } from "../types";
@@ -29,7 +29,7 @@ export class StandardMetricsHandler {
     constructor(config: ApplicationInsightsConfig, options?: { collectionInterval: number }) {
         this._config = config;
         const meterProviderConfig: MeterProviderOptions = {
-            resource: ResourceManager.getInstance().getMetricResource(),
+            resource: this._config.resource,
             views: this._getViews(),
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);

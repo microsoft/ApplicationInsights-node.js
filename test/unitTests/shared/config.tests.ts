@@ -1,5 +1,7 @@
 import * as assert from "assert";
+import * as fs from "fs";
 import * as path from "path";
+import * as os from "os";
 import * as sinon from "sinon";
 import * as http from "http";
 import * as https from "https";
@@ -7,6 +9,8 @@ import * as https from "https";
 import { ApplicationInsightsConfig } from "../../../src/shared";
 import { JsonConfig } from "../../../src/shared/configuration/jsonConfig";
 import { ENV_AZURE_PREFIX, ENV_IKEY } from "../../../src/shared/configuration/types";
+import { Resource } from "@opentelemetry/resources";
+import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
 const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
 
@@ -210,6 +214,72 @@ describe("Library/Config", () => {
                 config.connectionString = "abc";
                 assert.ok(warnStub.calledOn, "warning was raised");
             });
+        });
+    });
+
+    describe("OpenTelemetry Resource", () => {
+
+        beforeEach(() => {
+            sandbox.stub(os, "hostname").callsFake(() => "host");
+        });
+
+        it("should allow custom resource to be configured", () => {
+            let customAttributes: any = {};
+            customAttributes[SemanticResourceAttributes.SERVICE_NAME] = "testServiceName";
+            customAttributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = "testServiceInstanceId";
+            customAttributes[SemanticResourceAttributes.CONTAINER_ID] = "testContainerId";
+            let customResource = new Resource(customAttributes);
+            const config = new ApplicationInsightsConfig();
+            config.resource = customResource;
+            assert.strictEqual(config.resource.attributes[SemanticResourceAttributes.SERVICE_NAME], "testServiceName");
+            assert.strictEqual(config.resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID], "testServiceInstanceId");
+            assert.strictEqual(config.resource.attributes[SemanticResourceAttributes.CONTAINER_ID], "testContainerId");
+        });
+
+        it("Default values", () => {
+            const packageJsonPath = path.resolve(__dirname, "../../../../", "./package.json");
+            const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+            const config = new ApplicationInsightsConfig();
+            assert.equal(
+                config.resource.attributes[
+                    SemanticResourceAttributes.TELEMETRY_SDK_VERSION
+                ].toString(),
+                `node:${packageJson.version}`
+            );
+            assert.equal(
+                config.resource.attributes[
+                SemanticResourceAttributes.SERVICE_INSTANCE_ID
+                ],
+                "host"
+            );
+            assert.equal(
+                config.resource.attributes[
+                SemanticResourceAttributes.SERVICE_NAME
+                ],
+                "Web"
+            );
+        });
+
+        it("should correctly set Azure attributes", () => {
+            const env = <{ [id: string]: string }>{};
+            const originalEnv = process.env;
+            env.WEBSITE_SITE_NAME = "testRole";
+            env.WEBSITE_INSTANCE_ID = "testRoleInstanceId";
+            process.env = env;
+            const config = new ApplicationInsightsConfig();
+            process.env = originalEnv;
+            assert.equal(
+                config.resource.attributes[
+                SemanticResourceAttributes.SERVICE_INSTANCE_ID
+                ],
+                "testRoleInstanceId"
+            );
+            assert.equal(
+                config.resource.attributes[
+                SemanticResourceAttributes.SERVICE_NAME
+                ],
+                "testRole"
+            );
         });
     });
 });

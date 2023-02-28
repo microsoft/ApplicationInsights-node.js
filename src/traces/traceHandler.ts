@@ -17,7 +17,7 @@ import { NodeTracerProvider, NodeTracerConfig } from "@opentelemetry/sdk-trace-n
 import { BatchSpanProcessor, BufferConfig, Tracer } from "@opentelemetry/sdk-trace-base";
 import { HttpInstrumentation, HttpInstrumentationConfig, IgnoreOutgoingRequestFunction } from "@opentelemetry/instrumentation-http";
 
-import { ApplicationInsightsConfig, ResourceManager } from "../shared";
+import { ApplicationInsightsConfig } from "../shared";
 import { TracerProvider } from "@opentelemetry/api";
 import { MetricHandler } from "../metrics/metricHandler";
 import { AzureSpanProcessor } from "./azureSpanProcessor";
@@ -53,7 +53,7 @@ export class TraceHandler {
         const aiSampler = new ApplicationInsightsSampler(this._config.samplingRate);
         const tracerConfig: NodeTracerConfig = {
             sampler: aiSampler,
-            resource: ResourceManager.getInstance().getTraceResource(),
+            resource: this._config.resource,
             forceFlushTimeoutMillis: 30000,
         };
         this._tracerProvider = new NodeTracerProvider(tracerConfig);

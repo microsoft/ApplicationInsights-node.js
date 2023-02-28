@@ -1,11 +1,11 @@
 import * as fs from "fs";
 import * as path from "path";
 import { Logger } from "../logging";
-import { IConfig, InstrumentationsConfig, LogInstrumentationsConfig } from "./types";
+import { IBaseConfig, IConfig, InstrumentationsConfig, LogInstrumentationsConfig } from "./types";
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 
-export class JsonConfig implements IConfig {
+export class JsonConfig implements IBaseConfig {
     private static _instance: JsonConfig;
 
     public connectionString: string;

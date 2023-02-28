@@ -3,7 +3,7 @@ import * as sinon from "sinon";
 import * as os from "os";
 
 import { HeartBeatHandler } from "../../../src/metrics/handlers/heartBeatHandler";
-import { ApplicationInsightsConfig, ResourceManager } from "../../../src/shared";
+import { ApplicationInsightsConfig } from "../../../src/shared";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
 describe("AutoCollection/HeartBeat", () => {
@@ -97,7 +97,7 @@ describe("AutoCollection/HeartBeat", () => {
                     );
                     assert.equal(
                         properties["sdk"],
-                        ResourceManager.getInstance().getMetricResource().attributes[
+                        config.resource.attributes[
                             SemanticResourceAttributes.TELEMETRY_SDK_VERSION
                         ],
                         "sdk version should be read from Context"
@@ -149,7 +149,7 @@ describe("AutoCollection/HeartBeat", () => {
                 );
                 assert.equal(
                     properties["sdk"],
-                    ResourceManager.getInstance().getMetricResource().attributes[
+                    config.resource.attributes[
                         SemanticResourceAttributes.TELEMETRY_SDK_VERSION
                     ],
                     "sdk version should be read from Context"
