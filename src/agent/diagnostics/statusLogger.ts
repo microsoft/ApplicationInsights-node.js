@@ -1,5 +1,5 @@
 import * as os from "os";
-import { FileWriter } from "./fileWriter";
+import { FileWriter } from "./writers/fileWriter";
 import { IAgentLogger, IStatusContract, LOGGER_LANGUAGE } from "../types";
 import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../declarations/constants";
 
