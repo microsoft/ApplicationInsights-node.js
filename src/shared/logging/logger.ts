@@ -45,10 +45,14 @@ export class Logger implements DiagLogger {
         this.updateLogLevel(this._diagLevel);
     }
 
-    public updateLogLevel(logLevel: DiagLogLevel) {
+    public updateLogLevel(logLevel: DiagLogLevel, suppressOverrideMessage?: boolean) {
         this._diagLevel = logLevel;
+        
         // Set OpenTelemetry Logger
-        diag.setLogger(this, this._diagLevel);
+        diag.setLogger(this, {
+            logLevel: this._diagLevel,
+            suppressOverrideMessage,
+        });
     }
 
     public error(message?: any, ...optionalParams: any[]) {
