@@ -120,8 +120,9 @@ appInsights.start();
 | instrumentations| Allow configuration of OpenTelemetry Instrumentations. |  {"http": { enabled: true },"azureSdk": { enabled: false },"mongoDb": { enabled: false },"mySql": { enabled: false },"postgreSql": { enabled: false },"redis": { enabled: false }}|
 | logInstrumentations| Allow configuration of Log Instrumentations. |  {"console": { enabled: false },"bunyan": { enabled: false },"winston": { enabled: false }}|
 | extendedMetrics       | Enable/Disable specific extended Metrics(gc, heap and loop).  |{"gc":false,"heap":false,"loop":false}|
+| resource       | Specify custom Opentelemetry Resource.   ||
 
-All these properties except aadTokenCredential could be configured using configuration file `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. These configuration values will be applied to all ApplicationInsightsClients created in the SDK. 
+All these properties except aadTokenCredential and resource could be configured using configuration file `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. These configuration values will be applied to all ApplicationInsightsClients created in the SDK. 
 
 
 ```json
@@ -194,28 +195,20 @@ You might set the Cloud Role Name and the Cloud Role Instance via [OpenTelemetry
 
 ```typescript
 const { ApplicationInsightsClient, ApplicationInsightsConfig } = require("applicationinsights");
+const { Resource } = require("@opentelemetry/resources");
 const { SemanticResourceAttributes } = require("@opentelemetry/semantic-conventions");
-
-const appInsights = new ApplicationInsightsClient(new ApplicationInsightsConfig());
-const traceResource = appInsights.getTraceResource();
-const metricResource = appInsights.getMetricResource();
-const logResource = appInsights.getLogResource();
 
 // ----------------------------------------
 // Setting role name and role instance
 // ----------------------------------------
-traceResource.attributes[SemanticResourceAttributes.SERVICE_NAME] = "my-helloworld-service";
-traceResource.attributes[SemanticResourceAttributes.SERVICE_NAMESPACE] = "my-namespace";
-traceResource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = "my-instance";
+const customResource = Resource.EMPTY;
+resource.attributes[SemanticResourceAttributes.SERVICE_NAME] = "my-helloworld-service";
+resource.attributes[SemanticResourceAttributes.SERVICE_NAMESPACE] = "my-namespace";
+resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = "my-instance";
 
-metricResource.attributes[SemanticResourceAttributes.SERVICE_NAME] = "my-helloworld-service";
-metricResource.attributes[SemanticResourceAttributes.SERVICE_NAMESPACE] = "my-namespace";
-metricResource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = "my-instance";
-
-logResource.attributes[SemanticResourceAttributes.SERVICE_NAME] = "my-helloworld-service";
-logResource.attributes[SemanticResourceAttributes.SERVICE_NAMESPACE] = "my-namespace";
-logResource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = "my-instance";
-
+let config = new ApplicationInsightsConfig();
+config.resource = customResource;
+const appInsights = new ApplicationInsightsClient(config);
 appInsights.start();
 ```
 
