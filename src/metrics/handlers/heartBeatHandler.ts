@@ -15,7 +15,7 @@ import {
     PeriodicExportingMetricReaderOptions,
 } from "@opentelemetry/sdk-metrics";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
-import { ApplicationInsightsConfig, AzureVirtualMachine, ResourceManager } from "../../shared";
+import { ApplicationInsightsConfig, AzureVirtualMachine } from "../../shared";
 import { IVirtualMachineInfo } from "../../shared/azureVirtualMachine";
 import { Logger } from "../../shared/logging";
 
@@ -74,8 +74,8 @@ export class HeartBeatHandler {
         // TODO: Add sdk property for attach scenarios, confirm if this is only expected when attach happens, older code doing this was present in Default.ts
         const sdkVersion =
             String(
-                ResourceManager.getInstance().getTraceResource().attributes[
-                    SemanticResourceAttributes.TELEMETRY_SDK_VERSION
+                this._config.resource.attributes[
+                SemanticResourceAttributes.TELEMETRY_SDK_VERSION
                 ]
             ) || null;
         properties["sdk"] = sdkVersion;

@@ -1,3 +1,4 @@
+import * as os from "os";
 import * as azureCore from "@azure/core-http";
 import { ConnectionStringParser } from "./connectionStringParser";
 import * as Constants from "../../declarations/constants";
@@ -13,10 +14,14 @@ import {
 import { ConnectionString } from "../../declarations/contracts";
 import { JsonConfig } from "./jsonConfig";
 import { Logger } from "../logging";
+import { Resource } from "@opentelemetry/resources";
+import { SemanticResourceAttributes, TelemetrySdkLanguageValues } from "@opentelemetry/semantic-conventions";
 
 // Azure Connection String
 const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
 const ENV_noStatsbeat = "APPLICATION_INSIGHTS_NO_STATSBEAT";
+const DEFAULT_ROLE_NAME = "Web";
+
 
 export class ApplicationInsightsConfig implements IConfig {
     public samplingRate: number;
@@ -35,6 +40,7 @@ export class ApplicationInsightsConfig implements IConfig {
     private _connectionStringParser: ConnectionStringParser;
     private _parsedConnectionString: ConnectionString;
     private _connectionString: string;
+    private _resource?: Resource;
 
     constructor() {
         this._connectionStringParser = new ConnectionStringParser();
@@ -61,6 +67,14 @@ export class ApplicationInsightsConfig implements IConfig {
 
     public get connectionString(): string {
         return this._connectionString;
+    }
+
+    public set resource(resource: Resource) {
+        this._resource = this._resource.merge(resource);
+    }
+
+    public get resource(): Resource {
+        return this._resource;
     }
 
     public getInstrumentationKey(): string {
@@ -109,6 +123,29 @@ export class ApplicationInsightsConfig implements IConfig {
         this.extendedMetrics[ExtendedMetricType.gc] = false;
         this.extendedMetrics[ExtendedMetricType.heap] = false;
         this.extendedMetrics[ExtendedMetricType.loop] = false;
+        this._resource = this._getDefaultResource();
+    }
+
+    private _getDefaultResource(): Resource {
+        let resource = Resource.EMPTY;
+        resource.attributes[SemanticResourceAttributes.SERVICE_NAME] = DEFAULT_ROLE_NAME;
+        if (process.env.WEBSITE_SITE_NAME) {
+            // Azure Web apps and Functions
+            resource.attributes[SemanticResourceAttributes.SERVICE_NAME] =
+                process.env.WEBSITE_SITE_NAME;
+        }
+        resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = os && os.hostname();
+        if (process.env.WEBSITE_INSTANCE_ID) {
+            resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] =
+                process.env.WEBSITE_INSTANCE_ID;
+        }
+        const sdkVersion = Constants.APPLICATION_INSIGHTS_SDK_VERSION;
+        resource.attributes[SemanticResourceAttributes.TELEMETRY_SDK_LANGUAGE] =
+            TelemetrySdkLanguageValues.NODEJS;
+        resource.attributes[
+            SemanticResourceAttributes.TELEMETRY_SDK_VERSION
+        ] = `node:${sdkVersion}`;
+        return resource;
     }
 
     private _mergeConfig() {

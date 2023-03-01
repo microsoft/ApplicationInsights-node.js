@@ -21,7 +21,7 @@ import {
 import { AzureHttpMetricsInstrumentation } from "../collection/azureHttpMetricsInstrumentation";
 import { ProcessMetrics } from "../collection/processMetrics";
 import { RequestMetrics } from "../collection/requestMetrics";
-import { ApplicationInsightsConfig, ResourceManager } from "../../shared";
+import { ApplicationInsightsConfig } from "../../shared";
 import { NativePerformanceMetrics } from "../collection/nativePerformanceMetrics";
 import { Util } from "../../shared/util";
 
@@ -40,7 +40,7 @@ export class PerformanceCounterMetricsHandler {
     constructor(config: ApplicationInsightsConfig, options?: { collectionInterval: number }) {
         this._config = config;
         const meterProviderConfig: MeterProviderOptions = {
-            resource: ResourceManager.getInstance().getMetricResource(),
+            resource: this._config.resource,
             views: this._getViews(),
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);

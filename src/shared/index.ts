@@ -3,4 +3,3 @@
 
 export { ApplicationInsightsConfig } from "./configuration";
 export { AzureVirtualMachine } from "./azureVirtualMachine";
-export { ResourceManager } from "./resourceManager";
