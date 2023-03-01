@@ -45,9 +45,14 @@ export class Logger implements DiagLogger {
         this.updateLogLevel(this._diagLevel);
     }
 
+    /**
+     * Set the global LogLevel. If a global diag logger is already set, this will override it.
+     * @param logLevel - The DiagLogLevel used to filter logs sent to the logger.
+     * @param suppressOverrideMessage - Setting that suppress the warning message normally emitted when registering a logger when another logger is already registered.
+     */
     public updateLogLevel(logLevel: DiagLogLevel, suppressOverrideMessage?: boolean) {
         this._diagLevel = logLevel;
-        
+
         // Set OpenTelemetry Logger
         diag.setLogger(this, {
             logLevel: this._diagLevel,
