@@ -198,11 +198,7 @@ class EnvelopeFactory {
         var event = new Contracts.EventData();
         event.name = telemetry.name?.substring(0, MAX_SHORT_NAME_LENGTH);
         event.properties = this.truncateProperties(telemetry);
-        if (telemetry.measurements) {
-            Object.keys(telemetry.measurements).map((key: string) => {
-                key.length <= MAX_KEY_LENGTH ? event.measurements[key] = telemetry.measurements[key] : null;
-            });
-        }
+        event.measurements = telemetry.measurements;
 
         var data = new Contracts.Data<Contracts.EventData>();
         data.baseType = Contracts.telemetryTypeToBaseType(Contracts.TelemetryType.Event);
