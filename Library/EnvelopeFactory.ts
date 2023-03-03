@@ -3,8 +3,8 @@ import Util = require("./Util")
 import Config = require("./Config");
 import Context = require("./Context");
 import { CorrelationContextManager } from "../AutoCollection/CorrelationContextManager";
-import { MAX_KEY_LENGTH, MAX_NAME_LENGTH, MAX_PROPERTY_LENGTH, MAX_SHORT_NAME_LENGTH, MAX_TELEMETRY_MESSAGE_LENGTH, MAX_URL_LENGTH } from "../Declarations/Constants";
 import { Telemetry } from "../Declarations/Contracts";
+import Logging = require("./Logging");
 
 
 /**
@@ -139,24 +139,28 @@ class EnvelopeFactory {
 
     private static truncateProperties(telemetry: Telemetry) {
         if (telemetry.properties) {
-            let properties: {[key: string]: any} = {};
-            const propertiesKeys = Object.keys(telemetry.properties);
-            const propertiesValues = Object.values(telemetry.properties);
-            for (let i = 0; i < propertiesKeys.length; i++) {
-                if (propertiesKeys[i].length <= MAX_KEY_LENGTH) {
-                    if (typeof(propertiesValues[i]) === "object") {
-                        propertiesValues[i] = Util.stringify(propertiesValues[i]);
+            try {
+                let properties: {[key: string]: any} = {};
+                const propertiesKeys = Object.keys(telemetry.properties);
+                const propertiesValues = Object.values(telemetry.properties);
+                for (let i = 0; i < propertiesKeys.length; i++) {
+                    if (propertiesKeys[i].length <= 150) {
+                        if (typeof(propertiesValues[i]) === "object") {
+                            propertiesValues[i] = Util.stringify(propertiesValues[i]);
+                        }
+                        properties[propertiesKeys[i]] = String(propertiesValues[i]).substring(0, 8192);
                     }
-                    properties[propertiesKeys[i]] = String(propertiesValues[i]).substring(0, MAX_PROPERTY_LENGTH);
                 }
+                return properties;
+            } catch(error) {
+                Logging.warn("Failed to properly truncate telemetry properties: ", error);
             }
-            return properties;
         }
     }
 
     private static createTraceData(telemetry: Contracts.TraceTelemetry): Contracts.Data<Contracts.MessageData> {
         var trace = new Contracts.MessageData();
-        trace.message = telemetry.message?.substring(0, MAX_TELEMETRY_MESSAGE_LENGTH);
+        trace.message = telemetry.message?.substring(0, 32768);
         trace.properties = this.truncateProperties(telemetry);
         if (!isNaN(telemetry.severity)) {
             trace.severityLevel = telemetry.severity;
@@ -172,9 +176,9 @@ class EnvelopeFactory {
 
     private static createDependencyData(telemetry: Contracts.DependencyTelemetry & Contracts.Identified): Contracts.Data<Contracts.RemoteDependencyData> {
         var remoteDependency = new Contracts.RemoteDependencyData();
-        remoteDependency.name = telemetry.name?.substring(0, MAX_NAME_LENGTH);
-        remoteDependency.data = telemetry.data?.substring(0, MAX_PROPERTY_LENGTH);
-        remoteDependency.target = telemetry.target?.substring(0, MAX_NAME_LENGTH);
+        remoteDependency.name = telemetry.name?.substring(0, 1024);
+        remoteDependency.data = telemetry.data?.substring(0, 8192);
+        remoteDependency.target = telemetry.target?.substring(0, 1024);
         remoteDependency.duration = Util.msToTimeSpan(telemetry.duration);
         remoteDependency.success = telemetry.success;
         remoteDependency.type = telemetry.dependencyTypeName;
@@ -196,7 +200,7 @@ class EnvelopeFactory {
 
     private static createEventData(telemetry: Contracts.EventTelemetry): Contracts.Data<Contracts.EventData> {
         var event = new Contracts.EventData();
-        event.name = telemetry.name?.substring(0, MAX_SHORT_NAME_LENGTH);
+        event.name = telemetry.name?.substring(0, 512);
         event.properties = this.truncateProperties(telemetry);
         event.measurements = telemetry.measurements;
 
@@ -219,8 +223,8 @@ class EnvelopeFactory {
 
         var stack = telemetry.exception["stack"];
         var exceptionDetails = new Contracts.ExceptionDetails();
-        exceptionDetails.message = telemetry.exception.message?.substring(0, MAX_TELEMETRY_MESSAGE_LENGTH);
-        exceptionDetails.typeName = telemetry.exception.name?.substring(0, MAX_NAME_LENGTH);
+        exceptionDetails.message = telemetry.exception.message?.substring(0, 32768);
+        exceptionDetails.typeName = telemetry.exception.name?.substring(0, 1024);
         exceptionDetails.parsedStack = this.parseStack(stack);
         exceptionDetails.hasFullStack = Util.isArray(exceptionDetails.parsedStack) && exceptionDetails.parsedStack.length > 0;
         exception.exceptions.push(exceptionDetails);
@@ -239,11 +243,11 @@ class EnvelopeFactory {
         else {
             requestData.id = Util.w3cTraceId();
         }
-        requestData.name = telemetry.name?.substring(0, MAX_NAME_LENGTH);
-        requestData.url = telemetry.url?.substring(0, MAX_URL_LENGTH);
-        requestData.source = telemetry.source?.substring(0, MAX_NAME_LENGTH);
+        requestData.name = telemetry.name?.substring(0, 1024);
+        requestData.url = telemetry.url?.substring(0, 2048);
+        requestData.source = telemetry.source?.substring(0, 1024);
         requestData.duration = Util.msToTimeSpan(telemetry.duration);
-        requestData.responseCode = (telemetry.resultCode ? telemetry.resultCode.toString() : "0")?.substring(0, MAX_NAME_LENGTH);
+        requestData.responseCode = (telemetry.resultCode ? telemetry.resultCode.toString() : "0")?.substring(0, 1024);
         requestData.success = telemetry.success;
         requestData.properties = this.truncateProperties(telemetry);
         requestData.measurements = telemetry.measurements;
@@ -263,7 +267,7 @@ class EnvelopeFactory {
         metric.kind = Contracts.DataPointType.Aggregation;
         metric.max = !isNaN(telemetry.max) ? telemetry.max : telemetry.value;
         metric.min = !isNaN(telemetry.min) ? telemetry.min : telemetry.value;
-        metric.name = telemetry.name?.substring(0, MAX_NAME_LENGTH);
+        metric.name = telemetry.name?.substring(0, 1024);
         metric.stdDev = !isNaN(telemetry.stdDev) ? telemetry.stdDev : 0;
         metric.value = telemetry.value;
         metric.ns = telemetry.namespace;
@@ -288,11 +292,11 @@ class EnvelopeFactory {
         } else {
             availabilityData.id = Util.w3cTraceId();
         }
-        availabilityData.name = telemetry.name?.substring(0, MAX_NAME_LENGTH);
+        availabilityData.name = telemetry.name?.substring(0, 1024);
         availabilityData.duration = Util.msToTimeSpan(telemetry.duration);
         availabilityData.success = telemetry.success;
         availabilityData.runLocation = telemetry.runLocation;
-        availabilityData.message = telemetry.message?.substring(0, MAX_PROPERTY_LENGTH);
+        availabilityData.message = telemetry.message?.substring(0, 8192);
         availabilityData.measurements = telemetry.measurements;
         availabilityData.properties = this.truncateProperties(telemetry);
 
@@ -308,9 +312,9 @@ class EnvelopeFactory {
     ): Contracts.Data<Contracts.PageViewData> {
         let pageViewData = new Contracts.PageViewData();
 
-        pageViewData.name = telemetry.name?.substring(0, MAX_NAME_LENGTH);
+        pageViewData.name = telemetry.name?.substring(0, 1024);
         pageViewData.duration = Util.msToTimeSpan(telemetry.duration);
-        pageViewData.url = telemetry.url?.substring(0, MAX_URL_LENGTH);
+        pageViewData.url = telemetry.url?.substring(0, 2048);
         pageViewData.measurements = telemetry.measurements;
         pageViewData.properties = this.truncateProperties(telemetry);
 
