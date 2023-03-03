@@ -7,7 +7,7 @@ you deploy them to help you discover and rapidly diagnose performance and other
 issues. Add this SDK to your Node.js services to include deep info about Node.js
 processes and their external dependencies such as database and cache services.
 You can use this SDK for your Node.js services hosted anywhere: your datacenter,
-Azure VMs and Web Apps, and even other public clouds. This soulution is based on OpenTelemetry, to learn more about OpenTelemetry concepts, see the [OpenTelemetry overview](opentelemetry-overview.md) or [OpenTelemetry FAQ](/azure/azure-monitor/faq#opentelemetry).
+Azure VMs and Web Apps, and even other public clouds. This solution is based on OpenTelemetry, to learn more about OpenTelemetry concepts, see the [OpenTelemetry overview](opentelemetry-overview.md) or [OpenTelemetry FAQ](/azure/azure-monitor/faq#opentelemetry).
 
 > *Important:* The Azure Monitor OpenTelemetry-based Offerings for Node.js applications are currently in preview.
 > See the [Supplemental Terms of Use for Microsoft Azure Previews](https://azure.microsoft.com/support/legal/preview-supplemental-terms/) for legal terms that apply to Azure features that are in beta, preview, or otherwise not yet released into general availability.
@@ -112,7 +112,7 @@ appInsights.start();
 | samplingRatio              | Sampling ration must take a value in the range [0,1], 1 meaning all data will sampled and 0 all Tracing data will be sampled out.                       | 1|
 | enableAutoCollectExceptions     | Sets the state of exception tracking. If true uncaught exceptions will be sent to Application Insights | true|
 | enableAutoCollectPerformance    | Sets the state of performance tracking. If true performance counters will be collected every second and sent to Application Insights | true|
-| enableAutoCollectStandarddMetrics | Sets the state of Standard Metrics tracking. If true Standard Metrics will be collected every minute and sent to Application Insights | true|
+| enableAutoCollectStandardMetrics | Sets the state of Standard Metrics tracking. If true Standard Metrics will be collected every minute and sent to Application Insights | true|
 | enableAutoCollectHeartbeat      | Sets the state of request tracking. If true HeartBeat metric data will be collected every 15 minutes and sent to Application Insights | true|
 | storageDirectory| Directory to store retriable telemetry when it fails to export| `Windows` %TEMP%\Microsoft\AzureMonitor `Non-Windows` %TMPDIR%/Microsoft/AzureMonitor|
 | disableOfflineStorage| Disable offline storage when telemetry cannot be exported | false |
@@ -120,8 +120,9 @@ appInsights.start();
 | instrumentations| Allow configuration of OpenTelemetry Instrumentations. |  {"http": { enabled: true },"azureSdk": { enabled: false },"mongoDb": { enabled: false },"mySql": { enabled: false },"postgreSql": { enabled: false },"redis": { enabled: false }}|
 | logInstrumentations| Allow configuration of Log Instrumentations. |  {"console": { enabled: false },"bunyan": { enabled: false },"winston": { enabled: false }}|
 | extendedMetrics       | Enable/Disable specific extended Metrics(gc, heap and loop).  |{"gc":false,"heap":false,"loop":false}|
+| resource       | Specify custom Opentelemetry Resource.   ||
 
-All these properties except aadTokenCredential could be configured using configuration file `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. These configuration values will be applied to all ApplicationInsightsClients created in the SDK. 
+All these properties except aadTokenCredential and resource could be configured using configuration file `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. These configuration values will be applied to all ApplicationInsightsClients created in the SDK. 
 
 
 ```json
@@ -194,28 +195,20 @@ You might set the Cloud Role Name and the Cloud Role Instance via [OpenTelemetry
 
 ```typescript
 const { ApplicationInsightsClient, ApplicationInsightsConfig } = require("applicationinsights");
+const { Resource } = require("@opentelemetry/resources");
 const { SemanticResourceAttributes } = require("@opentelemetry/semantic-conventions");
-
-const appInsights = new ApplicationInsightsClient(new ApplicationInsightsConfig());
-const traceResource = appInsights.getTraceResource();
-const metricResource = appInsights.getMetricResource();
-const logResource = appInsights.getLogResource();
 
 // ----------------------------------------
 // Setting role name and role instance
 // ----------------------------------------
-traceResource.attributes[SemanticResourceAttributes.SERVICE_NAME] = "my-helloworld-service";
-traceResource.attributes[SemanticResourceAttributes.SERVICE_NAMESPACE] = "my-namespace";
-traceResource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = "my-instance";
+const customResource = Resource.EMPTY;
+resource.attributes[SemanticResourceAttributes.SERVICE_NAME] = "my-helloworld-service";
+resource.attributes[SemanticResourceAttributes.SERVICE_NAMESPACE] = "my-namespace";
+resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = "my-instance";
 
-metricResource.attributes[SemanticResourceAttributes.SERVICE_NAME] = "my-helloworld-service";
-metricResource.attributes[SemanticResourceAttributes.SERVICE_NAMESPACE] = "my-namespace";
-metricResource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = "my-instance";
-
-logResource.attributes[SemanticResourceAttributes.SERVICE_NAME] = "my-helloworld-service";
-logResource.attributes[SemanticResourceAttributes.SERVICE_NAMESPACE] = "my-namespace";
-logResource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = "my-instance";
-
+let config = new ApplicationInsightsConfig();
+config.resource = customResource;
+const appInsights = new ApplicationInsightsClient(config);
 appInsights.start();
 ```
 

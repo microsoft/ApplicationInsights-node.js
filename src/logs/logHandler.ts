@@ -11,7 +11,6 @@ import { AutoCollectConsole } from "./console";
 import { AutoCollectExceptions } from "./exceptions";
 import { ApplicationInsightsConfig } from "../shared/configuration";
 import { Util } from "../shared/util";
-import { ResourceManager } from "../shared/resourceManager";
 import { Statsbeat } from "../metrics/statsbeat";
 import { parseStack } from "./exporters/exceptionUtils";
 import {
@@ -324,7 +323,7 @@ export class LogHandler {
 
     private _getTags() {
         const tags = <{ [key: string]: string }>{};
-        const attributes = ResourceManager.getInstance().getLogResource().attributes;
+        const attributes = this._config.resource.attributes;
         const serviceName = attributes[SemanticResourceAttributes.SERVICE_NAME];
         const serviceNamespace = attributes[SemanticResourceAttributes.SERVICE_NAMESPACE];
         if (serviceName) {

@@ -1,12 +1,13 @@
 import * as azureCore from "@azure/core-http";
 import { InstrumentationConfig } from "@opentelemetry/instrumentation";
+import { Resource } from "@opentelemetry/resources";
 
 export const ENV_AZURE_PREFIX = "APPSETTING_"; // Azure adds this prefix to all environment variables
 export const ENV_IKEY = "APPINSIGHTS_INSTRUMENTATIONKEY"; // This key is provided in the readme
 export const LEGACY_ENV_IKEY = "APPINSIGHTS_INSTRUMENTATION_KEY";
 export const ENV_QUCKPULSE_HOST = "APPINSIGHTS_QUICKPULSE_HOST";
 
-export interface IConfig {
+export interface IBaseConfig {
     /** Connection String used to send telemetry payloads to */
     connectionString: string;
     /** The rate of telemetry items tracked that should be transmitted (Default 1.0) */
@@ -51,8 +52,13 @@ export interface IConfig {
      * Disable offline storage when telemetry cannot be exported.
      */
     disableOfflineStorage: boolean;
+}
+
+export interface IConfig extends IBaseConfig {
     /** AAD TokenCredential to use to authenticate the app */
     aadTokenCredential?: azureCore.TokenCredential;
+    /** OpenTelemetry Resource */
+    resource?: Resource;
 }
 
 export interface InstrumentationsConfig {

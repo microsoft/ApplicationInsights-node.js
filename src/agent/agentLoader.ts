@@ -1,8 +1,9 @@
 import { ManagedIdentityCredential } from "@azure/identity";
-
 import { ApplicationInsightsClient } from "../applicationInsightsClient";
 import { ApplicationInsightsConfig } from "../shared";
 import { Util } from "../shared/util";
+import { ConsoleWriter } from "./diagnostics/writers/consoleWriter";
+import { DiagnosticLogger } from "./diagnostics/diagnosticLogger";
 import { StatusLogger } from "./diagnostics/statusLogger";
 import { DiagnosticMessageId, IDiagnosticLog, IDiagnosticLogger, NODE_JS_RUNTIME_MAJOR_VERSION } from "./types";
 
@@ -10,22 +11,58 @@ import { DiagnosticMessageId, IDiagnosticLog, IDiagnosticLogger, NODE_JS_RUNTIME
 const forceStart = process.env.APPLICATIONINSIGHTS_FORCE_START === "true";
 
 export class AgentLoader {
-    private _config: ApplicationInsightsConfig;
-    private _diagnosticLogger: IDiagnosticLogger;
-    private _statusLogger: StatusLogger;
+    private _canLoad: boolean;
+    protected _config: ApplicationInsightsConfig;
+    protected _instrumentationKey: string;
+    protected _diagnosticLogger: IDiagnosticLogger;
+    protected _statusLogger: StatusLogger;
     private _aadCredential: any; // Types not available as library should not be loaded in older versions of Node.js runtime
 
-    constructor(statusLogger: StatusLogger, diagnosticLogger: IDiagnosticLogger, config: ApplicationInsightsConfig) {
-        this._statusLogger = statusLogger;
-        this._diagnosticLogger = diagnosticLogger;
-        this._config = config;
-        // AAD Identity package no supported in older version of Node.js runtime
-        if (NODE_JS_RUNTIME_MAJOR_VERSION > 8) {
+    constructor() {
+        // Open Telemetry and AAD packages unsusable in older versions of Node.js runtime
+        if (NODE_JS_RUNTIME_MAJOR_VERSION <= 8) {
+            this._canLoad = false;
+        }
+        else {
+            this._canLoad = true;
             this._aadCredential = this._getAuthenticationCredential();
+            // Default config
+            this._config = new ApplicationInsightsConfig();
+            this._instrumentationKey = this._config.getInstrumentationKey();
+            this._config.disableOfflineStorage = false;
+            this._config.enableAutoCollectExceptions = true;
+            this._config.enableAutoCollectHeartbeat = true;
+            this._config.enableAutoCollectPerformance = true;
+            this._config.enableAutoCollectStandardMetrics = true;
+            this._config.samplingRate = 100;
+            this._config.instrumentations.azureSdk.enabled = true;
+            this._config.instrumentations.http.enabled = true;
+            this._config.instrumentations.mongoDb.enabled = true;
+            this._config.instrumentations.mySql.enabled = true;
+            this._config.instrumentations.postgreSql.enabled = true;
+            this._config.instrumentations.redis4.enabled = true;
+            this._config.instrumentations.redis.enabled = true;
+            this._config.logInstrumentations.bunyan.enabled = true;
+            this._config.logInstrumentations.console.enabled = true;
+            this._config.logInstrumentations.winston.enabled = true;
+
+            //Default diagnostic using console
+            this._diagnosticLogger = new DiagnosticLogger(this._instrumentationKey, new ConsoleWriter());
+            this._statusLogger = new StatusLogger(this._instrumentationKey, new ConsoleWriter());
         }
     }
 
+    // Exposed so ETW logger could be provider in IPA code
+    public setLogger(logger: IDiagnosticLogger) {
+        this._diagnosticLogger = logger;
+    }
+
     public initialize(): void {
+        if (!this._canLoad) {
+            const msg = `Cannot load Azure Monitor Application Insights Distro because of unsupported Node.js runtime, currently running in version ${NODE_JS_RUNTIME_MAJOR_VERSION}`;
+            console.log(msg);
+            return;
+        }
         if (this._validate()) {
             try {
                 // TODO: Set Prefix 

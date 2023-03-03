@@ -13,7 +13,7 @@ import {
 } from "@opentelemetry/sdk-metrics";
 import { ReadableSpan } from "@opentelemetry/sdk-trace-base";
 import { SemanticAttributes, SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
-import { ApplicationInsightsConfig, ResourceManager } from "../../shared";
+import { ApplicationInsightsConfig } from "../../shared";
 import { DependencyMetrics } from "../collection/dependencyMetrics";
 import { ExceptionMetrics } from "../collection/exceptionMetrics";
 import { RequestMetrics } from "../collection/requestMetrics";
@@ -35,7 +35,7 @@ export class StandardMetricsHandler {
     constructor(config: ApplicationInsightsConfig, options?: { collectionInterval: number }) {
         this._config = config;
         const meterProviderConfig: MeterProviderOptions = {
-            resource: ResourceManager.getInstance().getMetricResource(),
+            resource: this._config.resource,
             views: this._getViews(),
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);

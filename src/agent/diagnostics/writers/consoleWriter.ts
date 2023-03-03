@@ -1,4 +1,4 @@
-import { IAgentLogger } from "../types";
+import { IAgentLogger } from "../../types";
 
 
 export class ConsoleWriter implements IAgentLogger {

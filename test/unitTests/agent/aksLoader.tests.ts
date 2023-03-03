@@ -2,8 +2,8 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 
 import { AKSLoader } from "../../../src/agent/aksLoader";
-import { ConsoleWriter } from "../../../src/agent/diagnostics/consoleWriter";
 import { DiagnosticLogger } from "../../../src/agent/diagnostics/diagnosticLogger";
+import { FileWriter } from "../../../src/agent/diagnostics/writers/fileWriter";
 
 describe("agent/AKSLoader", () => {
     let originalEnv: NodeJS.ProcessEnv;
@@ -31,18 +31,18 @@ describe("agent/AKSLoader", () => {
         let diagnosticLogger: any = agent["_diagnosticLogger"];
         assert.equal(diagnosticLogger["_instrumentationKey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
         assert.ok(diagnosticLogger instanceof DiagnosticLogger);
-        assert.ok(diagnosticLogger["_agentLogger"] instanceof ConsoleWriter);
+        assert.ok(diagnosticLogger["_agentLogger"] instanceof FileWriter);
         let statusLogger: any = agent["_statusLogger"];
         assert.equal(statusLogger["_instrumentationKey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-        assert.ok(statusLogger["_agentLogger"] instanceof ConsoleWriter);
+        assert.ok(statusLogger["_agentLogger"] instanceof FileWriter);
         // Loader is using correct diagnostics
-        assert.equal(agent["_loader"]["_diagnosticLogger"], diagnosticLogger, "Wrong diagnosticLogger");
-        assert.equal(agent["_loader"]["_statusLogger"], statusLogger, "Wrong statusLogger");
+        assert.equal(agent["_diagnosticLogger"], diagnosticLogger, "Wrong diagnosticLogger");
+        assert.equal(agent["_statusLogger"], statusLogger, "Wrong statusLogger");
     });
 
     it("initialize", () => {
         const agent = new AKSLoader();
-        let stub = sandbox.stub(agent["_loader"], "initialize");
+        let stub = sandbox.stub(agent, "initialize");
         agent.initialize();
         // Agent Loader called
         assert.ok(stub.calledOnce);
