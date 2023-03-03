@@ -4,6 +4,12 @@ export const APPLICATION_INSIGHTS_SDK_VERSION = "2.5.0";
 export const DEFAULT_BREEZE_ENDPOINT = "https://dc.services.visualstudio.com";
 export const DEFAULT_LIVEMETRICS_ENDPOINT = "https://rt.services.visualstudio.com";
 export const DEFAULT_LIVEMETRICS_HOST = "rt.services.visualstudio.com";
+export const MAX_TELEMETRY_MESSAGE_LENGTH = 32768;
+export const MAX_PROPERTY_LENGTH = 8192;
+export const MAX_URL_LENGTH = 2048;
+export const MAX_NAME_LENGTH = 1024;
+export const MAX_SHORT_NAME_LENGTH = 512;
+export const MAX_KEY_LENGTH = 150;
 
 export enum QuickPulseCounter {
     // Memory
