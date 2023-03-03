@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 import { RequestOptions } from "http";
 import {
-    ApplicationInsightsSampler,
     AzureMonitorExporterOptions,
     AzureMonitorTraceExporter,
 } from "@azure/monitor-opentelemetry-exporter";
@@ -16,14 +15,14 @@ import { RedisInstrumentation as Redis4Instrumentation } from "@opentelemetry/in
 import { NodeTracerProvider, NodeTracerConfig } from "@opentelemetry/sdk-trace-node";
 import { BatchSpanProcessor, BufferConfig, Tracer } from "@opentelemetry/sdk-trace-base";
 import { HttpInstrumentation, HttpInstrumentationConfig, IgnoreOutgoingRequestFunction } from "@opentelemetry/instrumentation-http";
-
+import { ApplicationInsightsSampler } from "./applicationInsightsSampler";
 import { ApplicationInsightsConfig } from "../shared";
 import { TracerProvider } from "@opentelemetry/api";
 import { MetricHandler } from "../metrics/metricHandler";
 import { AzureSpanProcessor } from "./azureSpanProcessor";
-import { AzureHttpMetricsInstrumentation } from "../metrics/collection/azureHttpMetricsInstrumentation";
 import { AzureFunctionsHook } from "./azureFunctionsHook";
 import { Util } from "../shared/util";
+
 
 export class TraceHandler {
     private _exporter: AzureMonitorTraceExporter;
@@ -34,7 +33,6 @@ export class TraceHandler {
     private _tracerProvider: NodeTracerProvider;
     private _tracer: Tracer;
     private _azureFunctionsHook: AzureFunctionsHook;
-    private _perfCountersHttpInstrumentation: AzureHttpMetricsInstrumentation;
     private _httpInstrumentation: Instrumentation;
     private _azureSdkInstrumentation: Instrumentation;
     private _mongoDbInstrumentation: Instrumentation;
@@ -91,21 +89,11 @@ export class TraceHandler {
     }
 
     public start() {
-        if (this._metricHandler) {
-            if (!this._perfCountersHttpInstrumentation) {
-                this._perfCountersHttpInstrumentation =
-                    this._metricHandler.getPerCounterAzureHttpInstrumentation();
-                if (this._perfCountersHttpInstrumentation) {
-                    // Null when configured off
-                    this.addInstrumentation(this._perfCountersHttpInstrumentation);
-                }
-            }
-        }
         if (!this._httpInstrumentation) {
-            let httpInstrumentationConfig = (this._config.instrumentations.http as HttpInstrumentationConfig);
-            let providedIgnoreOutgoingRequestHook = httpInstrumentationConfig.ignoreOutgoingRequestHook;
-            let mergedIgnoreOutgoingRequestHook: IgnoreOutgoingRequestFunction = (request: RequestOptions) => {
-                let result = Util.getInstance().ignoreOutgoingRequestHook(request);
+            const httpInstrumentationConfig = (this._config.instrumentations.http as HttpInstrumentationConfig);
+            const providedIgnoreOutgoingRequestHook = httpInstrumentationConfig.ignoreOutgoingRequestHook;
+            const mergedIgnoreOutgoingRequestHook: IgnoreOutgoingRequestFunction = (request: RequestOptions) => {
+                const result = Util.getInstance().ignoreOutgoingRequestHook(request);
                 if (!result) { // Not internal call
                     if (providedIgnoreOutgoingRequestHook) { // Provided hook in config
                         return providedIgnoreOutgoingRequestHook(request);
@@ -115,11 +103,6 @@ export class TraceHandler {
             };
             httpInstrumentationConfig.ignoreOutgoingRequestHook = mergedIgnoreOutgoingRequestHook;
             this._httpInstrumentation = new HttpInstrumentation(this._config.instrumentations.http);
-            if (this._metricHandler && this._metricHandler.getStandardMetricsHandler()) {
-                this._httpInstrumentation.setMeterProvider(
-                    this._metricHandler.getStandardMetricsHandler().getMeterProvider()
-                );
-            }
             this.addInstrumentation(this._httpInstrumentation);
         }
         if (!this._azureSdkInstrumentation) {

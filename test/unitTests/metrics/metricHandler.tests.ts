@@ -32,7 +32,7 @@ describe("Library/MetricHandler", () => {
             const handler = new MetricHandler(_config);
             handler["_perfCounterMetricsHandler"]["_nativeMetrics"]["_metricsAvailable"] = false;
             handler.start();
-            assert.ok(handler.getStandardMetricsHandler());
+            assert.ok(handler["_standardMetricsHandler"]);
         });
 
         it("heartbeat metrics enablement during start", () => {

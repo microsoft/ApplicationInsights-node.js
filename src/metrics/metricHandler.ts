@@ -1,5 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import { SpanKind } from "@opentelemetry/api";
+import { ReadableSpan, Span, TimedEvent } from "@opentelemetry/sdk-trace-base";
+import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 import { ApplicationInsightsConfig } from "../shared";
 import {
     CustomMetricsHandler,
@@ -7,8 +10,7 @@ import {
     StandardMetricsHandler,
     PerformanceCounterMetricsHandler,
 } from "./handlers";
-import { AzureHttpMetricsInstrumentation } from "./collection/azureHttpMetricsInstrumentation";
-import { IMetricExceptionDimensions, IMetricTraceDimensions } from "./types";
+import { IMetricTraceDimensions, IStandardMetricBaseDimensions } from "./types";
 
 export class MetricHandler {
     private _config: ApplicationInsightsConfig;
@@ -43,6 +45,13 @@ export class MetricHandler {
         this._heartbeatHandler?.shutdown();
     }
 
+    public async flush(): Promise<void> {
+        await this._customMetricsHandler.flush();
+        await this._heartbeatHandler?.flush();
+        await this._standardMetricsHandler?.flush();
+        await this._perfCounterMetricsHandler?.flush();
+    }
+
     public getConfig(): ApplicationInsightsConfig {
         return this._config;
     }
@@ -51,26 +60,57 @@ export class MetricHandler {
         return this._customMetricsHandler;
     }
 
-    public getStandardMetricsHandler(): StandardMetricsHandler {
-        return this._standardMetricsHandler;
+    public markSpanAsProcceseded(span: Span): void {
+        if (this._config.enableAutoCollectStandardMetrics) {
+            if (span.kind === SpanKind.CLIENT) {
+                span.setAttributes({
+                    "_MS.ProcessedByMetricExtractors": "(Name:'Dependencies', Ver:'1.1')",
+                });
+            } else if (span.kind === SpanKind.SERVER) {
+                span.setAttributes({
+                    "_MS.ProcessedByMetricExtractors": "(Name:'Requests', Ver:'1.1')",
+                });
+            }
+        }
     }
 
-    public getPerCounterAzureHttpInstrumentation(): AzureHttpMetricsInstrumentation {
-        return this._perfCounterMetricsHandler?.getHttpMetricsInstrumentation();
+    public recordException(dimensions: IStandardMetricBaseDimensions): void {
+        this._standardMetricsHandler?.recordException(dimensions);
     }
 
-    public countException(dimensions: IMetricExceptionDimensions): void {
-        this._standardMetricsHandler?.getExceptionMetrics().countException(dimensions);
+    public recordTrace(dimensions: IMetricTraceDimensions): void {
+        this._standardMetricsHandler?.recordTrace(dimensions);
     }
 
-    public countTrace(dimensions: IMetricTraceDimensions): void {
-        this._standardMetricsHandler?.getTraceMetrics().countTrace(dimensions);
+    public recordSpan(span: ReadableSpan): void {
+        this._standardMetricsHandler?.recordSpan(span);
+        this._perfCounterMetricsHandler?.recordSpan(span);
     }
 
-    public async flush(): Promise<void> {
-        await this._customMetricsHandler.flush();
-        await this._heartbeatHandler?.flush();
-        await this._standardMetricsHandler?.flush();
-        await this._perfCounterMetricsHandler?.flush();
+    public recordSpanEvents(span: ReadableSpan): void {
+        if (span.events) {
+            span.events.forEach((event: TimedEvent) => {
+                const dimensions: IStandardMetricBaseDimensions = {
+                    cloudRoleInstance: "",
+                    cloudRoleName: "",
+                };
+                const serviceName =
+                    span.resource?.attributes[SemanticResourceAttributes.SERVICE_NAME];
+                const serviceNamespace =
+                    span.resource?.attributes[SemanticResourceAttributes.SERVICE_NAMESPACE];
+                if (serviceName) {
+                    if (serviceNamespace) {
+                        dimensions.cloudRoleInstance = `${serviceNamespace}.${serviceName}`;
+                    } else {
+                        dimensions.cloudRoleName = String(serviceName);
+                    }
+                }
+                if (event.name === "exception") {
+                    this._standardMetricsHandler?.recordException(dimensions);
+                } else {
+                    this._standardMetricsHandler?.recordTrace(dimensions);
+                }
+            });
+        }
     }
 }
