@@ -34,7 +34,7 @@ export class AgentLoader {
             this._config.enableAutoCollectHeartbeat = true;
             this._config.enableAutoCollectPerformance = true;
             this._config.enableAutoCollectStandardMetrics = true;
-            this._config.samplingRate = 100;
+            this._config.samplingRatio = 1; // Sample all telemetry by default
             this._config.instrumentations.azureSdk.enabled = true;
             this._config.instrumentations.http.enabled = true;
             this._config.instrumentations.mongoDb.enabled = true;

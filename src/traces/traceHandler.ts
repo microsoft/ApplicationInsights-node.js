@@ -48,7 +48,7 @@ export class TraceHandler {
         this._config = config;
         this._metricHandler = metricHandler;
         this._instrumentations = [];
-        const aiSampler = new ApplicationInsightsSampler(this._config.samplingRate);
+        const aiSampler = new ApplicationInsightsSampler(this._config.samplingRatio);
         const tracerConfig: NodeTracerConfig = {
             sampler: aiSampler,
             resource: this._config.resource,

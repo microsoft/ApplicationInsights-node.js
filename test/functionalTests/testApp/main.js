@@ -6,7 +6,7 @@ if (testconfig.AppInsightsEnabled) {
 
     let config = new ApplicationInsightsConfig();
     config.connectionString = `InstrumentationKey=${testconfig.InstrumentationKey};IngestionEndpoint=${testconfig.EndpointBaseAddress}`;
-    config.samplingRate = parseFloat(testconfig.SampleRate);
+    config.samplingRatio = parseFloat(testconfig.SampleRate);
     config.instrumentations["http"].enabled = true;
     config.instrumentations["azureSdk"].enabled = true;
     config.instrumentations["mongoDb"].enabled = true;
