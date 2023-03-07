@@ -11,7 +11,7 @@ export interface IBaseConfig {
     /** Connection String used to send telemetry payloads to */
     connectionString: string;
     /** The rate of telemetry items tracked that should be transmitted (Default 1.0) */
-    samplingRate: number;
+    samplingRatio: number;
     /**
      * Sets the state of exception tracking (enabled by default)
      * if true uncaught exceptions will be sent to Application Insights

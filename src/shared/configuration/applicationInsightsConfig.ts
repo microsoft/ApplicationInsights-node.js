@@ -24,7 +24,7 @@ const DEFAULT_ROLE_NAME = "Web";
 
 
 export class ApplicationInsightsConfig implements IConfig {
-    public samplingRate: number;
+    public samplingRatio: number;
     public aadTokenCredential?: azureCore.TokenCredential;
     public enableAutoCollectExceptions: boolean;
     public enableAutoCollectPerformance: boolean;
@@ -104,7 +104,7 @@ export class ApplicationInsightsConfig implements IConfig {
             this.enableAutoCollectStandardMetrics !== undefined
                 ? this.enableAutoCollectStandardMetrics
                 : true;
-        this.samplingRate = this.samplingRate !== undefined ? this.samplingRate : 1;
+        this.samplingRatio = this.samplingRatio !== undefined ? this.samplingRatio : 1;
         this.instrumentations = {
             http: { enabled: true },
             azureSdk: { enabled: false },
@@ -171,8 +171,8 @@ export class ApplicationInsightsConfig implements IConfig {
                 jsonConfig.enableAutoCollectStandardMetrics !== undefined
                     ? jsonConfig.enableAutoCollectStandardMetrics
                     : this.enableAutoCollectStandardMetrics;
-            this.samplingRate =
-                jsonConfig.samplingRate !== undefined ? jsonConfig.samplingRate : this.samplingRate;
+            this.samplingRatio =
+                jsonConfig.samplingRatio !== undefined ? jsonConfig.samplingRatio : this.samplingRatio;
             this.storageDirectory =
                 jsonConfig.storageDirectory !== undefined
                     ? jsonConfig.storageDirectory

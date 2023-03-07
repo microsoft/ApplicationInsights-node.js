@@ -9,7 +9,7 @@ export class JsonConfig implements IBaseConfig {
     private static _instance: JsonConfig;
 
     public connectionString: string;
-    public samplingRate: number;
+    public samplingRatio: number;
     public enableAutoCollectExceptions: boolean;
     public enableAutoCollectPerformance: boolean;
     public enableAutoCollectStandardMetrics: boolean;
@@ -48,7 +48,7 @@ export class JsonConfig implements IBaseConfig {
             if (jsonConfig.connectionString !== undefined) {
                 this.connectionString = jsonConfig.connectionString;
             }
-            this.samplingRate = jsonConfig.samplingRate;
+            this.samplingRatio = jsonConfig.samplingRatio;
             this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
             this.enableAutoCollectPerformance = jsonConfig.enableAutoCollectPerformance;
             this.enableAutoCollectStandardMetrics = jsonConfig.enableAutoCollectStandardMetrics;

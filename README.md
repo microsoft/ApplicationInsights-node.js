@@ -109,7 +109,7 @@ appInsights.start();
 |Property|Description|Default|
 | ------------------------------- |------------------------------------------------------------------------------------------------------------|-------|
 | connectionString                     | Application Insights Resource Connection String                                                    | |
-| samplingRatio              | Sampling ration must take a value in the range [0,1], 1 meaning all data will sampled and 0 all Tracing data will be sampled out.                       | 1|
+| samplingRatio              | Sampling ratio must take a value in the range [0,1], 1 meaning all data will sampled and 0 all Tracing data will be sampled out.                       | 1|
 | enableAutoCollectExceptions     | Sets the state of exception tracking. If true uncaught exceptions will be sent to Application Insights | true|
 | enableAutoCollectPerformance    | Sets the state of performance tracking. If true performance counters will be collected every second and sent to Application Insights | true|
 | enableAutoCollectStandardMetrics | Sets the state of Standard Metrics tracking. If true Standard Metrics will be collected every minute and sent to Application Insights | true|
@@ -128,7 +128,7 @@ All these properties except aadTokenCredential and resource could be configured 
 ```json
 {
     "connectionString": "<YOUR_CONNECTION_STRING>",
-    "samplingRate": 0.8,
+    "samplingRatio": 0.8,
     "enableAutoCollectExceptions": true,
     "enableAutoCollectHeartbeat": true,
     "instrumentations":{
@@ -221,7 +221,7 @@ You may want to enable sampling to reduce your data ingestion volume which reduc
 ```typescript
 const config = new ApplicationInsightsConfig();
 config.connectionString = "<YOUR_CONNECTION_STRING>";
-config.samplingRate = 0.1;
+config.samplingRatio = 0.1;
 const appInsights = new ApplicationInsightsClient(config);
 appInsights.start();
 ```
