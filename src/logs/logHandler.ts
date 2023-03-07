@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import { context, trace } from "@opentelemetry/api";
-import { IdGenerator, RandomIdGenerator } from "@opentelemetry/sdk-trace-base";
+import { IdGenerator, RandomIdGenerator, SamplingDecision, SamplingResult } from "@opentelemetry/sdk-trace-base";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
 import { BatchProcessor } from "./exporters/batchProcessor";
@@ -36,6 +36,7 @@ import {
 import { Logger } from "../shared/logging";
 import { IStandardMetricBaseDimensions, IMetricTraceDimensions } from "../metrics/types";
 import { MetricHandler } from "../metrics/metricHandler";
+import { ApplicationInsightsSampler } from "@azure/monitor-opentelemetry-exporter";
 
 export class LogHandler {
     // Statsbeat is instantiated here such that it can be accessed by the diagnostic-channel.
@@ -47,6 +48,7 @@ export class LogHandler {
     private _exceptions: AutoCollectExceptions;
     private _idGenerator: IdGenerator;
     private _metricHandler: MetricHandler;
+    private _aiSampler: ApplicationInsightsSampler;
 
     constructor(config: ApplicationInsightsConfig, metricHandler?: MetricHandler, statsbeat?: Statsbeat) {
         this._config = config;
@@ -57,6 +59,7 @@ export class LogHandler {
         this._exceptions = new AutoCollectExceptions(this);
         this._idGenerator = new RandomIdGenerator();
         this._metricHandler = metricHandler;
+        this._aiSampler = new ApplicationInsightsSampler(this._config.samplingRatio);
     }
 
     public start() {
@@ -85,7 +88,7 @@ export class LogHandler {
                 telemetry,
                 this._config.getInstrumentationKey()
             );
-            this._batchProcessor.send(envelope);
+            this._sendTelemetry(envelope);
         } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
         }
@@ -101,7 +104,7 @@ export class LogHandler {
                 telemetry,
                 this._config.getInstrumentationKey()
             );
-            this._batchProcessor.send(envelope);
+            this._sendTelemetry(envelope);
         } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
         }
@@ -129,7 +132,7 @@ export class LogHandler {
                     "_MS.ProcessedByMetricExtractors": "(Name:'Traces', Ver:'1.1')",
                 };
             }
-            this._batchProcessor.send(envelope);
+            this._sendTelemetry(envelope);
         } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
         }
@@ -161,7 +164,7 @@ export class LogHandler {
                     "_MS.ProcessedByMetricExtractors": "(Name:'Exceptions', Ver:'1.1')",
                 };
             }
-            this._batchProcessor.send(envelope);
+            this._sendTelemetry(envelope);
         } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
         }
@@ -174,9 +177,16 @@ export class LogHandler {
     public async trackEvent(telemetry: Contracts.EventTelemetry): Promise<void> {
         try {
             const envelope = this._eventToEnvelope(telemetry, this._config.getInstrumentationKey());
-            this._batchProcessor.send(envelope);
+            this._sendTelemetry(envelope);
         } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
+        }
+    }
+
+    private _sendTelemetry(envelope: Envelope) {
+        const result: SamplingResult = this._aiSampler.shouldSample(null, envelope.tags[KnownContextTagKeys.AiOperationId], null, null, null, null);
+        if (result.decision === SamplingDecision.RECORD_AND_SAMPLED) {
+            this._batchProcessor.send(envelope);
         }
     }
 
