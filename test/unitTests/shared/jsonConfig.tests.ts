@@ -75,7 +75,7 @@ describe("Json Config", () => {
                 config.connectionString,
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"
             );
-            assert.equal(config.samplingRate, 0.3, "Wrong samplingRate");
+            assert.equal(config.samplingRatio, 0.3, "Wrong samplingRatio");
             assert.equal(
                 config.enableAutoCollectExceptions,
                 false,

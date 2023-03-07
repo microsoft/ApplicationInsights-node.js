@@ -74,7 +74,7 @@ describe("Library/Config", () => {
                     config["_connectionString"],
                     "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"
                 );
-                assert.equal(config.samplingRate, 0.3, "Wrong samplingRate");
+                assert.equal(config.samplingRatio, 0.3, "Wrong samplingRatio");
                 assert.equal(config.disableOfflineStorage, true, "Wrong disableOfflineStorage");
                 assert.equal(config.storageDirectory, "testPath", "Wrong storageDirectory");
                 assert.equal(
@@ -113,7 +113,7 @@ describe("Library/Config", () => {
 
             it("Default config", () => {
                 const config = new ApplicationInsightsConfig();
-                assert.equal(config.samplingRate, 1, "Wrong samplingRate");
+                assert.equal(config.samplingRatio, 1, "Wrong samplingRatio");
                 assert.equal(
                     config.enableAutoCollectExceptions,
                     true,
@@ -191,7 +191,7 @@ describe("Library/Config", () => {
                 const config = new ApplicationInsightsConfig();
                 config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
                 assert(typeof config.getInstrumentationKey() === "string");
-                assert(typeof config.samplingRate === "number");
+                assert(typeof config.samplingRatio === "number");
             });
 
             it("instrumentation key validation-valid key passed", () => {
