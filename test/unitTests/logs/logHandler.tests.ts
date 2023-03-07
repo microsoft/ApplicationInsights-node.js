@@ -89,6 +89,25 @@ describe("Library/LogHandler", () => {
             });
         });
 
+        it("sampling", () => {
+            let otherConfig = new ApplicationInsightsConfig();
+            otherConfig.connectionString = _config.connectionString;
+            otherConfig.samplingRatio = 0;
+            const logHandler = new LogHandler(otherConfig);
+            const stub = sinon.stub(logHandler["_batchProcessor"], "send");
+            const telemetry: AvailabilityTelemetry = {
+                name: "TestName",
+                duration: 2000, //2 seconds
+                id: "testId",
+                runLocation: "testRunLocation",
+                message: "testMessage",
+                success: false,
+            };
+            logHandler.trackAvailability(telemetry);
+            assert.ok(stub.notCalled);
+        });
+
+
         it("trackAvailability", (done) => {
             const handler = new LogHandler(_config);
             const stub = sinon.stub(handler["_exporter"], "export").callsFake(
@@ -402,7 +421,7 @@ describe("Library/LogHandler", () => {
                 });
         });
 
-        it ("Logs Statsbeat initializd", () => {
+        it("Logs Statsbeat initializd", () => {
             const appInsights = new ApplicationInsightsClient(_config);
             assert.ok(appInsights["_logHandler"]["_exporter"]["_statsbeatMetrics"], "Statsbeat not initialized on the logsExporter.");
             appInsights["_logHandler"]["_exporter"]["_statsbeatMetrics"].countSuccess(100);
