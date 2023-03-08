@@ -59,6 +59,13 @@ export class StandardMetricsHandler {
         this._traceMetrics = new TraceMetrics(this._meter);
     }
 
+    public start() {
+        this._requestMetrics.enable(true);
+        this._dependencyMetrics.enable(true);
+        this._exceptionMetrics.enable(true);
+        this._traceMetrics.enable(true);
+    }
+
     public async flush(): Promise<void> {
         await this._meterProvider.forceFlush();
     }

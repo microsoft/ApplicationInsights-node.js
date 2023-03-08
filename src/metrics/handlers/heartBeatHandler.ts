@@ -19,7 +19,7 @@ import { ApplicationInsightsConfig, AzureVirtualMachine } from "../../shared";
 import { IVirtualMachineInfo } from "../../shared/azureVirtualMachine";
 import { Logger } from "../../shared/logging";
 
-const HeartBeatMetricName = "HeartBeat";
+const HeartBeatMetricName = "HeartbeatState";
 
 export class HeartBeatHandler {
     private _collectionInterval = 900000;
@@ -56,16 +56,29 @@ export class HeartBeatHandler {
         this._metricGaugeCallback = this._trackHeartBeat.bind(this);
     }
 
-    public async start() {
-        this._machineProperties = await this._getMachineProperties();
-        this._metricGauge.addCallback(this._metricGaugeCallback);
+    public enable(isEnabled: boolean) {
+        if (isEnabled) {
+            this._metricGauge.addCallback(this._metricGaugeCallback);
+        } else {
+            this._metricGauge.removeCallback(this._metricGaugeCallback);
+        }
+    }
+
+    public start() {
+        this.enable(true);
     }
 
     public async shutdown(): Promise<void> {
         await this._meterProvider.shutdown();
     }
 
-    private _trackHeartBeat(observableResult: ObservableResult) {
+    public async flush(): Promise<void> {
+        await this._meterProvider.forceFlush();
+    }
+
+    private async _trackHeartBeat(observableResult: ObservableResult) {
+        // Machine properties need to be recalculated each tine becasuse VM Id could change during execution
+        this._machineProperties = await this._getMachineProperties();
         observableResult.observe(0, this._machineProperties);
     }
 
@@ -106,9 +119,5 @@ export class HeartBeatHandler {
             }
         }
         return properties;
-    }
-
-    public async flush(): Promise<void> {
-        await this._meterProvider.forceFlush();
     }
 }

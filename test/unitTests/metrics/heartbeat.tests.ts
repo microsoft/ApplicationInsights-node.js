@@ -50,10 +50,10 @@ describe("AutoCollection/HeartBeat", () => {
             assert.strictEqual(scopeMetrics.length, 1, "scopeMetrics count");
             const metrics = scopeMetrics[0].metrics;
             assert.strictEqual(metrics.length, 1, "metrics count");
-            assert.equal(metrics[0].descriptor.name, "HeartBeat");
+            assert.equal(metrics[0].descriptor.name, "HeartbeatState");
         });
 
-        it("should not collect when disabled", async () => {
+        it("should not collect when shutdown", async () => {
             const mockExport = sandbox.stub(heartbeat["_azureExporter"], "export");
             heartbeat.start();
             heartbeat.shutdown();
