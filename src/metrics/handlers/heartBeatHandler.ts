@@ -1,3 +1,4 @@
+import * as crypto from "crypto";
 import * as os from "os";
 import {
     AzureMonitorExporterOptions,
@@ -15,9 +16,7 @@ import {
     PeriodicExportingMetricReaderOptions,
 } from "@opentelemetry/sdk-metrics";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
-import { ApplicationInsightsConfig, AzureVirtualMachine } from "../../shared";
-import { IVirtualMachineInfo } from "../../shared/azureVirtualMachine";
-import { Logger } from "../../shared/logging";
+import { ApplicationInsightsConfig } from "../../shared";
 
 const HeartBeatMetricName = "HeartbeatState";
 
@@ -30,13 +29,11 @@ export class HeartBeatHandler {
     private _meter: Meter;
     private _metricGauge: ObservableGauge;
     private _metricGaugeCallback: ObservableCallback;
-    private _isVM: boolean;
-    private _azureVm: AzureVirtualMachine;
     private _machineProperties: { [key: string]: string };
+    private _uniqueProcessId: string;
 
     constructor(config: ApplicationInsightsConfig, options?: { collectionInterval: number }) {
         this._config = config;
-        this._azureVm = new AzureVirtualMachine();
         this._meterProvider = new MeterProvider();
         const exporterConfig: AzureMonitorExporterOptions = {
             connectionString: config.connectionString,
@@ -77,46 +74,44 @@ export class HeartBeatHandler {
     }
 
     private async _trackHeartBeat(observableResult: ObservableResult) {
-        // Machine properties need to be recalculated each tine becasuse VM Id could change during execution
-        this._machineProperties = await this._getMachineProperties();
+        this._machineProperties = this._getMachineProperties();
         observableResult.observe(0, this._machineProperties);
     }
 
-    private async _getMachineProperties(): Promise<{ [key: string]: string }> {
+    private _getMachineProperties(): { [key: string]: string } {
         const properties: { [key: string]: string } = {};
-        // TODO: Add sdk property for attach scenarios, confirm if this is only expected when attach happens, older code doing this was present in Default.ts
         const sdkVersion =
             String(
                 this._config.resource.attributes[
                 SemanticResourceAttributes.TELEMETRY_SDK_VERSION
                 ]
             ) || null;
-        properties["sdk"] = sdkVersion;
+        properties["sdkVersion"] = sdkVersion;
         properties["osType"] = os.type();
+        properties["osVersion"] = os.release();
+        //  Random GUID that would help in analysis when app has stopped and restarted.
+        if (!this._uniqueProcessId) {
+            this._uniqueProcessId = crypto.randomBytes(16).toString("hex");
+        }
+        properties["processSessionId"] = this._uniqueProcessId;
+
         if (process.env.WEBSITE_SITE_NAME) {
-            // Web apps
-            properties["appSrv_SiteName"] = process.env.WEBSITE_SITE_NAME || "";
-            properties["appSrv_wsStamp"] = process.env.WEBSITE_HOME_STAMPNAME || "";
-            properties["appSrv_wsHost"] = process.env.WEBSITE_HOSTNAME || "";
-        } else if (process.env.FUNCTIONS_WORKER_RUNTIME) {
-            // Function apps
-            properties["azfunction_appId"] = process.env.WEBSITE_HOSTNAME;
-        } else {
-            if (this._isVM === undefined) {
-                try {
-                    const vmInfo: IVirtualMachineInfo = await this._azureVm.getAzureComputeMetadata(
-                        this._config
-                    );
-                    this._isVM = vmInfo.isVM;
-                    if (this._isVM) {
-                        properties["azInst_vmId"] = vmInfo.id;
-                        properties["azInst_subscriptionId"] = vmInfo.subscriptionId;
-                        properties["azInst_osType"] = vmInfo.osType;
-                    }
-                } catch (error) {
-                    Logger.getInstance().debug(error);
-                }
-            }
+            properties["appSrv_SiteName"] = process.env.WEBSITE_SITE_NAME;
+        }
+        if (process.env.WEBSITE_HOME_STAMPNAME) {
+            properties["appSrv_wsStamp"] = process.env.WEBSITE_HOME_STAMPNAME;
+        }
+        if (process.env.WEBSITE_HOSTNAME) {
+            properties["appSrv_wsHost"] = process.env.WEBSITE_HOSTNAME;
+        }
+        if (process.env.WEBSITE_OWNER_NAME) {
+            properties["appSrv_wsOwner"] = process.env.WEBSITE_OWNER_NAME;
+        }
+        if (process.env.WEBSITE_RESOURCE_GROUP) {
+            properties["appSrv_ResourceGroup"] = process.env.WEBSITE_RESOURCE_GROUP;
+        }
+        if (process.env.WEBSITE_SLOT_NAME) {
+            properties["appSrv_SlotName"] = process.env.WEBSITE_SLOT_NAME;
         }
         return properties;
     }
