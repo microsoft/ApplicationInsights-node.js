@@ -18,12 +18,6 @@ describe("AutoCollection/HeartBeat", () => {
         config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
         heartbeat = new HeartBeatHandler(config, { collectionInterval: 100 });
         sandbox.stub(heartbeat["_metricReader"]["_exporter"], "export");
-        sandbox.stub(heartbeat["_azureVm"], "getAzureComputeMetadata").callsFake(
-            () =>
-                new Promise((resolve, reject) => {
-                    resolve({ isVM: true });
-                })
-        );
     });
 
     beforeEach(() => {
@@ -50,10 +44,10 @@ describe("AutoCollection/HeartBeat", () => {
             assert.strictEqual(scopeMetrics.length, 1, "scopeMetrics count");
             const metrics = scopeMetrics[0].metrics;
             assert.strictEqual(metrics.length, 1, "metrics count");
-            assert.equal(metrics[0].descriptor.name, "HeartBeat");
+            assert.equal(metrics[0].descriptor.name, "HeartbeatState");
         });
 
-        it("should not collect when disabled", async () => {
+        it("should not collect when shutdown", async () => {
             const mockExport = sandbox.stub(heartbeat["_azureExporter"], "export");
             heartbeat.start();
             heartbeat.shutdown();
@@ -63,109 +57,104 @@ describe("AutoCollection/HeartBeat", () => {
     });
 
     describe("#_getMachineProperties()", () => {
-        it("should read correct web app values from environment variable", (done) => {
+        it("should read correct web app values from environment variables", () => {
             const env1 = <{ [id: string]: string }>{};
             env1["WEBSITE_SITE_NAME"] = "site_name";
             env1["WEBSITE_HOME_STAMPNAME"] = "stamp_name";
             env1["WEBSITE_HOSTNAME"] = "host_name";
+            env1["WEBSITE_OWNER_NAME"] = "owner_name";
+            env1["WEBSITE_RESOURCE_GROUP"] = "resource_group";
+            env1["WEBSITE_SLOT_NAME"] = "slot_name";
             process.env = env1;
 
-            heartbeat["_getMachineProperties"]()
-                .then((properties) => {
-                    const keys = Object.keys(properties);
-                    assert.equal(
-                        keys.length,
-                        5,
-                        "should have 5 kv pairs added when resource type is appSrv"
-                    );
-                    assert.equal(keys[0], "sdk", "sdk should be added as a key");
-                    assert.equal(keys[1], "osType", "osType should be added as a key");
-                    assert.equal(
-                        keys[2],
-                        "appSrv_SiteName",
-                        "appSrv_SiteName should be added as a key"
-                    );
-                    assert.equal(
-                        keys[3],
-                        "appSrv_wsStamp",
-                        "appSrv_wsStamp should be added as a key"
-                    );
-                    assert.equal(
-                        keys[4],
-                        "appSrv_wsHost",
-                        "appSrv_wsHost should be added as a key"
-                    );
-                    assert.equal(
-                        properties["sdk"],
-                        config.resource.attributes[
-                            SemanticResourceAttributes.TELEMETRY_SDK_VERSION
-                        ],
-                        "sdk version should be read from Context"
-                    );
-                    assert.equal(
-                        properties["osType"],
-                        os.type(),
-                        "osType should be read from os library"
-                    );
-                    assert.equal(
-                        properties["appSrv_SiteName"],
-                        "site_name",
-                        "appSrv_SiteName should be read from environment variable"
-                    );
-                    assert.equal(
-                        properties["appSrv_wsStamp"],
-                        "stamp_name",
-                        "appSrv_wsStamp should be read from environment variable"
-                    );
-                    assert.equal(
-                        properties["appSrv_wsHost"],
-                        "host_name",
-                        "appSrv_wsHost should be read from environment variable"
-                    );
-                    done();
-                })
-                .catch((error) => done(error));
-        });
-
-        it("should read correct function app values from environment variable", (done) => {
-            const env2 = <{ [id: string]: string }>{};
-            env2["FUNCTIONS_WORKER_RUNTIME"] = "nodejs";
-            env2["WEBSITE_HOSTNAME"] = "host_name";
-            process.env = env2;
-
-            heartbeat["_getMachineProperties"]().then((properties) => {
-                const keys = Object.keys(properties);
-                assert.equal(
-                    keys.length,
-                    3,
-                    "should have 3 kv pairs added when resource type is function app"
-                );
-                assert.equal(keys[0], "sdk", "sdk should be added as a key");
-                assert.equal(keys[1], "osType", "osType should be added as a key");
-                assert.equal(
-                    keys[2],
-                    "azfunction_appId",
-                    "azfunction_appId should be added as a key"
-                );
-                assert.equal(
-                    properties["sdk"],
-                    config.resource.attributes[
-                        SemanticResourceAttributes.TELEMETRY_SDK_VERSION
-                    ],
-                    "sdk version should be read from Context"
-                );
-                assert.equal(
-                    properties["osType"],
-                    os.type(),
-                    "osType should be read from os library"
-                );
-                assert.equal(
-                    properties["azfunction_appId"],
-                    "host_name",
-                    "azfunction_appId should be read from environment variable"
-                );
-                done();
-            });
+            const properties = heartbeat["_getMachineProperties"]();
+            const keys = Object.keys(properties);
+            assert.equal(
+                keys.length,
+                10,
+                "should have 10 kv pairs added when resource type is appSrv"
+            );
+            assert.equal(keys[0], "sdkVersion", "sdk should be added as a key");
+            assert.equal(keys[1], "osType", "osType should be added as a key");
+            assert.equal(keys[2], "osVersion", "osVersion should be added as a key");
+            assert.equal(keys[3], "processSessionId", "processSessionId should be added as a key");
+            assert.equal(
+                keys[4],
+                "appSrv_SiteName",
+                "appSrv_SiteName should be added as a key"
+            );
+            assert.equal(
+                keys[5],
+                "appSrv_wsStamp",
+                "appSrv_wsStamp should be added as a key"
+            );
+            assert.equal(
+                keys[6],
+                "appSrv_wsHost",
+                "appSrv_wsHost should be added as a key"
+            );
+            assert.equal(
+                keys[7],
+                "appSrv_wsOwner",
+                "appSrv_wsOwner should be added as a key"
+            );
+            assert.equal(
+                keys[8],
+                "appSrv_ResourceGroup",
+                "appSrv_ResourceGroup should be added as a key"
+            );
+            assert.equal(
+                keys[9],
+                "appSrv_SlotName",
+                "appSrv_SlotName should be added as a key"
+            );
+            assert.equal(
+                properties["sdkVersion"],
+                config.resource.attributes[
+                SemanticResourceAttributes.TELEMETRY_SDK_VERSION
+                ],
+                "sdk version should be read from Context"
+            );
+            assert.equal(
+                properties["osType"],
+                os.type(),
+                "osType should be read from os library"
+            );
+            assert.equal(
+                properties["osVersion"],
+                os.release(),
+                "osVersion should be read from os library"
+            );
+            assert.equal(
+                properties["appSrv_SiteName"],
+                "site_name",
+                "appSrv_SiteName should be read from environment variable"
+            );
+            assert.equal(
+                properties["appSrv_wsStamp"],
+                "stamp_name",
+                "appSrv_wsStamp should be read from environment variable"
+            );
+            assert.equal(
+                properties["appSrv_wsHost"],
+                "host_name",
+                "appSrv_wsHost should be read from environment variable"
+            );
+            assert.equal(
+                properties["appSrv_wsOwner"],
+                "owner_name",
+                "appSrv_wsOwner should be read from environment variable"
+            );
+            assert.equal(
+                properties["appSrv_ResourceGroup"],
+                "resource_group",
+                "appSrv_ResourceGroup should be read from environment variable"
+            );
+            assert.equal(
+                properties["appSrv_SlotName"],
+                "slot_name",
+                "appSrv_SlotName should be read from environment variable"
+            );
         });
     });
 });

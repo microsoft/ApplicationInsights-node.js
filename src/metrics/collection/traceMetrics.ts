@@ -28,12 +28,25 @@ export class TraceMetrics {
         this._tracesRateGauge = this._meter.createObservableGauge(MetricName.TRACE_RATE, {
             valueType: ValueType.DOUBLE,
         });
-        this._meter.addBatchObservableCallback(this._getTraceCount.bind(this), [
-            this._tracesCountGauge,
-        ]);
-        this._meter.addBatchObservableCallback(this._getTraceRate.bind(this), [
-            this._tracesRateGauge,
-        ]);
+       
+    }
+
+    public enable(isEnabled: boolean) {
+        if (isEnabled) {
+            this._meter.addBatchObservableCallback(this._getTraceCount.bind(this), [
+                this._tracesCountGauge,
+            ]);
+            this._meter.addBatchObservableCallback(this._getTraceRate.bind(this), [
+                this._tracesRateGauge,
+            ]);
+        } else {
+            this._meter.removeBatchObservableCallback(this._getTraceCount.bind(this), [
+                this._tracesCountGauge,
+            ]);
+            this._meter.removeBatchObservableCallback(this._getTraceRate.bind(this), [
+                this._tracesRateGauge,
+            ]);
+        }
     }
 
     public countTrace(dimensions: IMetricTraceDimensions) {

@@ -35,6 +35,7 @@ export class MetricHandler {
 
     public start() {
         this._perfCounterMetricsHandler?.start();
+        this._standardMetricsHandler?.start();
         this._heartbeatHandler?.start();
     }
 
