@@ -7,8 +7,9 @@ import { ExportResultCode } from "@opentelemetry/core";
 import { TraceHandler } from "../../../src/traces";
 import { MetricHandler } from "../../../src/metrics";
 import { ApplicationInsightsConfig } from "../../../src/shared";
-import { Instrumentation } from "@opentelemetry/instrumentation";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
+import { ReadableSpan, SpanProcessor } from "@opentelemetry/sdk-trace-base";
+import { Context, Span } from "@opentelemetry/api";
 
 describe("Library/TraceHandler", () => {
     let http: any = null;
@@ -148,7 +149,7 @@ describe("Library/TraceHandler", () => {
             if (isHttps) {
                 return new Promise((resolve, reject) => {
                     const req = https.request(options, (res: any) => {
-                        res.on("data", function () {});
+                        res.on("data", function () { });
                         res.on("end", () => {
                             resolve();
                         });
@@ -161,7 +162,7 @@ describe("Library/TraceHandler", () => {
             }
             return new Promise((resolve, reject) => {
                 const req = http.request(options, (res: any) => {
-                    res.on("data", function () {});
+                    res.on("data", function () { });
                     res.on("end", () => {
                         resolve();
                     });
@@ -328,6 +329,61 @@ describe("Library/TraceHandler", () => {
                     done(error);
                 });
         });
+
+        it("Custom Span processors", (done) => {
+            handler.start();
+            let customSpanProcessor: SpanProcessor = {
+                forceFlush: () => {
+                    return Promise.resolve();
+                },
+                onStart: (span: Span, context: Context) => {
+                    span.setAttribute("startAttribute", "SomeValue");
+                },
+                onEnd: (span: ReadableSpan) => {
+                    span.attributes["endAttribute"] = "SomeValue2";
+                },
+                shutdown: () => {
+                    return Promise.resolve();
+                }
+            };
+            handler.addSpanProcessor(customSpanProcessor);
+            makeHttpRequest(false)
+                .then(() => {
+                    handler
+                        .flush()
+                        .then(() => {
+                            assert.ok(exportStub.calledOnce, "Export called");
+                            const spans = exportStub.args[0][0];
+                            assert.equal(spans.length, 2);
+                            // Incoming request
+                            assert.equal(
+                                spans[0].attributes["startAttribute"],
+                                "SomeValue"
+                            );
+                            assert.equal(
+                                spans[0].attributes["endAttribute"],
+                                "SomeValue2"
+                            );
+                            // Outgoing request
+                            assert.equal(
+                                spans[1].attributes["startAttribute"],
+                                "SomeValue"
+                            );
+                            assert.equal(
+                                spans[1].attributes["endAttribute"],
+                                "SomeValue2"
+                            );
+                            done();
+                        })
+                        .catch((error) => {
+                            done(error);
+                        });
+                })
+                .catch((error) => {
+                    done(error);
+                });
+        });
+
 
         it("Span processing for pre aggregated metrics", (done) => {
             handler.start();
