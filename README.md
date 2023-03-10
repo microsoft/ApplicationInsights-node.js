@@ -274,8 +274,7 @@ class SpanEnrichingProcessor implements SpanProcessor{
     }
 }
 
-const tracerProvider = appInsights.getTraceHandler().getTracerProvider();
-tracerProvider.addSpanProcessor(new SpanEnrichingProcessor());
+appInsights.getTraceHandler().addSpanProcessor(new SpanEnrichingProcessor());
 appInsights.start();
 ```
 

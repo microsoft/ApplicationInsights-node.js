@@ -13,7 +13,7 @@ import { PgInstrumentation } from "@opentelemetry/instrumentation-pg";
 import { RedisInstrumentation } from "@opentelemetry/instrumentation-redis";
 import { RedisInstrumentation as Redis4Instrumentation } from "@opentelemetry/instrumentation-redis-4";
 import { NodeTracerProvider, NodeTracerConfig } from "@opentelemetry/sdk-trace-node";
-import { BatchSpanProcessor, BufferConfig, Tracer } from "@opentelemetry/sdk-trace-base";
+import { BatchSpanProcessor, BufferConfig, SpanProcessor, Tracer } from "@opentelemetry/sdk-trace-base";
 import { HttpInstrumentation, HttpInstrumentationConfig, IgnoreOutgoingRequestFunction } from "@opentelemetry/instrumentation-http";
 import { ApplicationInsightsSampler } from "./applicationInsightsSampler";
 import { ApplicationInsightsConfig } from "../shared";
@@ -147,6 +147,10 @@ export class TraceHandler {
                 instrumentation.enable();
             }
         });
+    }
+
+    public addSpanProcessor(spanProcessor: SpanProcessor) {
+        this._tracerProvider.addSpanProcessor(spanProcessor);
     }
 
     public addInstrumentation(instrumentation: Instrumentation) {
