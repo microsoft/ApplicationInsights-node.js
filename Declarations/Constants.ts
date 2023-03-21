@@ -135,7 +135,7 @@ export const DependencyTypeName = {
     QueueMessage: "Queue Message"
 }
 
-export const HeartBeatMetricName = "HeartBeat";
+export const HeartBeatMetricName = "HeartbeatState";
 
 export const StatsbeatTelemetryName = "Statsbeat";
 
