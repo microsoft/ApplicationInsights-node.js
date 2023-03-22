@@ -1,5 +1,5 @@
+import crypto = require("crypto");
 import os = require("os");
-import Vm = require("../Library/AzureVirtualMachine");
 import TelemetryClient = require("../Library/TelemetryClient");
 import Constants = require("../Declarations/Constants");
 import Config = require("../Library/Config");
@@ -14,7 +14,7 @@ class HeartBeat {
     private _handle: NodeJS.Timer | null;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
-    private _isVM: boolean;
+    private _uniqueProcessId: string;
 
     constructor(client: TelemetryClient) {
         if (!HeartBeat.INSTANCE) {
@@ -52,36 +52,37 @@ class HeartBeat {
     }
 
     public trackHeartBeat(config: Config, callback: () => void) {
-        let waiting: boolean = false;
         let properties: { [key: string]: string } = {};
         const sdkVersion = Context.sdkVersion; // "node" or "node-nativeperf"
-        properties["sdk"] = sdkVersion;
+        properties["sdkVersion"] = sdkVersion;
         properties["osType"] = os.type();
-        if (process.env.WEBSITE_SITE_NAME) { // Web apps
-            properties["appSrv_SiteName"] = process.env.WEBSITE_SITE_NAME || "";
-            properties["appSrv_wsStamp"] = process.env.WEBSITE_HOME_STAMPNAME || "";
-            properties["appSrv_wsHost"] = process.env.WEBSITE_HOSTNAME || "";
-        } else if (process.env.FUNCTIONS_WORKER_RUNTIME) { // Function apps
-            properties["azfunction_appId"] = process.env.WEBSITE_HOSTNAME;
-        } else if (config) {
-            if (this._isVM === undefined) {
-                waiting = true;
-                Vm.AzureVirtualMachine.getAzureComputeMetadata(config, (vmInfo) => {
-                    this._isVM = vmInfo.isVM;
-                    if (this._isVM) {
-                        properties["azInst_vmId"] = vmInfo.id;
-                        properties["azInst_subscriptionId"] = vmInfo.subscriptionId;
-                        properties["azInst_osType"] = vmInfo.osType;
-                    }
-                    this._client.trackMetric({ name: Constants.HeartBeatMetricName, value: 0, properties: properties });
-                    callback();
-                });
-            }
+        properties["osVersion"] = os.release();
+        //  Random GUID that would help in analysis when app has stopped and restarted.
+        if (!this._uniqueProcessId) {
+            this._uniqueProcessId = crypto.randomBytes(16).toString("hex");
         }
-        if (!waiting) {
-            this._client.trackMetric({ name: Constants.HeartBeatMetricName, value: 0, properties: properties });
-            callback();
+        properties["processSessionId"] = this._uniqueProcessId;
+
+        if (process.env.WEBSITE_SITE_NAME) {
+            properties["appSrv_SiteName"] = process.env.WEBSITE_SITE_NAME;
         }
+        if (process.env.WEBSITE_HOME_STAMPNAME) {
+            properties["appSrv_wsStamp"] = process.env.WEBSITE_HOME_STAMPNAME;
+        }
+        if (process.env.WEBSITE_HOSTNAME) {
+            properties["appSrv_wsHost"] = process.env.WEBSITE_HOSTNAME;
+        }
+        if (process.env.WEBSITE_OWNER_NAME) {
+            properties["appSrv_wsOwner"] = process.env.WEBSITE_OWNER_NAME;
+        }
+        if (process.env.WEBSITE_RESOURCE_GROUP) {
+            properties["appSrv_ResourceGroup"] = process.env.WEBSITE_RESOURCE_GROUP;
+        }
+        if (process.env.WEBSITE_SLOT_NAME) {
+            properties["appSrv_SlotName"] = process.env.WEBSITE_SLOT_NAME;
+        }
+        this._client.trackMetric({ name: Constants.HeartBeatMetricName, value: 0, properties: properties });
+        callback();
     }
 
     public dispose() {
