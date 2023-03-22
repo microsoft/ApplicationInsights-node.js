@@ -56,52 +56,38 @@ describe("AutoCollection/HeartBeat", () => {
             env1["WEBSITE_SITE_NAME"] = "site_name";
             env1["WEBSITE_HOME_STAMPNAME"] = "stamp_name";
             env1["WEBSITE_HOSTNAME"] = "host_name";
+            env1["WEBSITE_OWNER_NAME"] = "owner_name";
+            env1["WEBSITE_RESOURCE_GROUP"] = "resource_group";
+            env1["WEBSITE_SLOT_NAME"] = "slot_name";
             process.env = env1;
 
             heartbeat1["trackHeartBeat"](client.config, () => {
                 assert.equal(stub1.callCount, 1, "should call trackMetric for the appSrv heartbeat metric");
-                assert.equal(stub1.args[0][0].name, "HeartBeat", "should use correct name for heartbeat metric");
+                assert.equal(stub1.args[0][0].name, "HeartbeatState", "should use correct name for heartbeat metric");
                 assert.equal(stub1.args[0][0].value, 0, "value should be 0");
                 const keys1 = Object.keys(stub1.args[0][0].properties);
-                assert.equal(keys1.length, 5, "should have 5 kv pairs added when resource type is appSrv");
-                assert.equal(keys1[0], "sdk", "sdk should be added as a key");
+                assert.equal(keys1.length, 10, "should have 5 kv pairs added when resource type is appSrv");
+                assert.equal(keys1[0], "sdkVersion", "sdk should be added as a key");
                 assert.equal(keys1[1], "osType", "osType should be added as a key");
-                assert.equal(keys1[2], "appSrv_SiteName", "appSrv_SiteName should be added as a key");
-                assert.equal(keys1[3], "appSrv_wsStamp", "appSrv_wsStamp should be added as a key");
-                assert.equal(keys1[4], "appSrv_wsHost", "appSrv_wsHost should be added as a key");
+                assert.equal(keys1[2], "osVersion", "osVersion should be added as a key");
+                assert.equal(keys1[3], "processSessionId", "processSessionId should be added as a key");
+                assert.equal(keys1[4], "appSrv_SiteName", "appSrv_SiteName should be added as a key");
+                assert.equal(keys1[5], "appSrv_wsStamp", "appSrv_wsStamp should be added as a key");
+                assert.equal(keys1[6], "appSrv_wsHost", "appSrv_wsHost should be added as a key");
+                assert.equal(keys1[7], "appSrv_wsOwner", "appSrv_wsOwner should be added as a key");
+                assert.equal(keys1[8], "appSrv_ResourceGroup", "appSrv_ResourceGroup should be added as a key");
+                assert.equal(keys1[9], "appSrv_SlotName", "appSrv_SlotName should be added as a key");
                 const properties1 = stub1.args[0][0].properties;
-                assert.equal(properties1["sdk"], Context.sdkVersion, "sdk version should be read from Context");
+                assert.equal(properties1["sdkVersion"], Context.sdkVersion, "sdk version should be read from Context");
                 assert.equal(properties1["osType"], os.type(), "osType should be read from os library");
+                assert.equal(properties1["osVersion"],  os.release(), "osVersion should be read from envrionment variable");
+                assert.ok(properties1["processSessionId"], "processSessionId should be available");
                 assert.equal(properties1["appSrv_SiteName"], "site_name", "appSrv_SiteName should be read from envrionment variable");
                 assert.equal(properties1["appSrv_wsStamp"], "stamp_name", "appSrv_wsStamp should be read from envrionment variable");
                 assert.equal(properties1["appSrv_wsHost"], "host_name", "appSrv_wsHost should be read from envrionment variable");
-                done();
-            });
-        });
-
-        it("should read correct function app values from envrionment variable", (done) => {
-            const heartbeat2: HeartBeat = new HeartBeat(client);
-            heartbeat2.enable(true);
-            HeartBeat.INSTANCE.enable(true);
-            const stub2 = sandbox.stub(heartbeat2["_client"], "trackMetric");
-            var env2 = <{ [id: string]: string }>{};
-            env2["FUNCTIONS_WORKER_RUNTIME"] = "nodejs";
-            env2["WEBSITE_HOSTNAME"] = "host_name";
-            process.env = env2;
-
-            heartbeat2["trackHeartBeat"](client.config, () => {
-                assert.equal(stub2.callCount, 1, "should call trackMetric for the VM heartbeat metric");
-                assert.equal(stub2.args[0][0].name, "HeartBeat", "should use correct name for heartbeat metric");
-                assert.equal(stub2.args[0][0].value, 0, "value should be 0");
-                const keys2 = Object.keys(stub2.args[0][0].properties);
-                assert.equal(keys2.length, 3, "should have 3 kv pairs added when resource type is functiona app");
-                assert.equal(keys2[0], "sdk", "sdk should be added as a key");
-                assert.equal(keys2[1], "osType", "osType should be added as a key");
-                assert.equal(keys2[2], "azfunction_appId", "azfunction_appId should be added as a key");
-                const properties2 = stub2.args[0][0].properties;
-                assert.equal(properties2["sdk"], Context.sdkVersion, "sdk version should be read from Context");
-                assert.equal(properties2["osType"], os.type(), "osType should be read from os library");
-                assert.equal(properties2["azfunction_appId"], "host_name", "azfunction_appId should be read from envrionment variable");
+                assert.equal(properties1["appSrv_wsOwner"], "owner_name", "appSrv_wsOwner should be read from envrionment variable");
+                assert.equal(properties1["appSrv_ResourceGroup"], "resource_group", "appSrv_ResourceGroup should be read from envrionment variable");
+                assert.equal(properties1["appSrv_SlotName"], "slot_name", "appSrv_SlotName should be read from envrionment variable");
                 done();
             });
         });
