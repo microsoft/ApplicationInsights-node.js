@@ -52,18 +52,20 @@ export class AzureFunctionsHook {
                 try {
                     // Start an AI Correlation Context using the provided Function context
                     let extractedContext = CorrelationContextManager.startOperation(ctx);
-                    extractedContext.customProperties.setProperty("InvocationId", ctx.invocationId);
-                    if (ctx.traceContext.attributes) {
-                        extractedContext.customProperties.setProperty("ProcessId", ctx.traceContext.attributes["ProcessId"]);
-                        extractedContext.customProperties.setProperty("LogLevel", ctx.traceContext.attributes["LogLevel"]);
-                        extractedContext.customProperties.setProperty("Category", ctx.traceContext.attributes["Category"]);
-                        extractedContext.customProperties.setProperty("HostInstanceId", ctx.traceContext.attributes["HostInstanceId"]);
-                        extractedContext.customProperties.setProperty("AzFuncLiveLogsSessionId", ctx.traceContext.attributes["#AzFuncLiveLogsSessionId"]);
-                    }
-                    preInvocationContext.functionCallback = CorrelationContextManager.wrapCallback(preInvocationContext.functionCallback, extractedContext);
-                    if (this._isHttpTrigger(ctx) && this._autoGenerateIncomingRequests) {
-                        preInvocationContext.hookData.appInsightsExtractedContext = extractedContext;
-                        preInvocationContext.hookData.appInsightsStartTime = Date.now(); // Start trackRequest timer
+                    if (extractedContext) { // Will be null if CorrelationContextManager is not enabled, we should not try to propagate context in that case
+                        extractedContext.customProperties.setProperty("InvocationId", ctx.invocationId);
+                        if (ctx.traceContext.attributes) {
+                            extractedContext.customProperties.setProperty("ProcessId", ctx.traceContext.attributes["ProcessId"]);
+                            extractedContext.customProperties.setProperty("LogLevel", ctx.traceContext.attributes["LogLevel"]);
+                            extractedContext.customProperties.setProperty("Category", ctx.traceContext.attributes["Category"]);
+                            extractedContext.customProperties.setProperty("HostInstanceId", ctx.traceContext.attributes["HostInstanceId"]);
+                            extractedContext.customProperties.setProperty("AzFuncLiveLogsSessionId", ctx.traceContext.attributes["#AzFuncLiveLogsSessionId"]);
+                        }
+                        preInvocationContext.functionCallback = CorrelationContextManager.wrapCallback(preInvocationContext.functionCallback, extractedContext);
+                        if (this._isHttpTrigger(ctx) && this._autoGenerateIncomingRequests) {
+                            preInvocationContext.hookData.appInsightsExtractedContext = extractedContext;
+                            preInvocationContext.hookData.appInsightsStartTime = Date.now(); // Start trackRequest timer
+                        }
                     }
                 }
                 catch (err) {
