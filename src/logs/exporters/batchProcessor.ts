@@ -25,51 +25,50 @@ export class BatchProcessor {
     /**
      * Add a telemetry item to the send buffer
      */
-    public send(envelope: Envelope) {
+    public async send(envelope: Envelope): Promise<void> {
         // validate input
         if (!envelope) {
             Logger.getInstance().warn("Cannot send null/undefined telemetry");
             return;
         }
-        // enqueue the payload
-        this._buffer.push(envelope);
-        // flush if we would exceed the max-size limit by adding this item
-        if (this._buffer.length >= this._getBatchSize()) {
-            this.triggerSend();
-            return;
+        try {
+            // enqueue the payload
+            this._buffer.push(envelope);
+            // flush if we would exceed the max-size limit by adding this item
+            if (this._buffer.length >= this._getBatchSize()) {
+                await this.triggerSend();
+            }
+            // ensure an invocation timeout is set if anything is in the buffer
+            if (!this._timeoutHandle && this._buffer.length > 0) {
+                this._timeoutHandle = setTimeout(async () => {
+                    this._timeoutHandle = null;
+                    await this.triggerSend();
+                }, this._getBatchIntervalMs());
+                this._timeoutHandle.unref();
+            }
         }
-        // ensure an invocation timeout is set if anything is in the buffer
-        if (!this._timeoutHandle && this._buffer.length > 0) {
-            this._timeoutHandle = setTimeout(() => {
-                this._timeoutHandle = null;
-                this.triggerSend();
-            }, this._getBatchIntervalMs());
-            this._timeoutHandle.unref();
+        catch (error) {
+            Logger.getInstance().error(error);
         }
+
     }
 
     /**
      * Immediately send buffered data
      */
     public async triggerSend(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            if (this._buffer.length > 0) {
-                this._exporter.export(this._buffer, (result: ExportResult) => {
-                    if (result.code === ExportResultCode.SUCCESS) {
-                        resolve();
-                    } else {
-                        reject(result.error ?? new Error("Envelope export failed"));
-                    }
-                });
-            } else {
-                resolve();
-            }
-            // update lastSend time to enable throttling
-            this._lastSend = +new Date();
-            // clear buffer
-            this._buffer = [];
-            clearTimeout(this._timeoutHandle);
-            this._timeoutHandle = null;
-        });
+        if (this._buffer.length > 0) {
+            await this._exporter.export(this._buffer, (result: ExportResult) => {
+                if (result.code === ExportResultCode.FAILED) {
+                    Logger.getInstance().warn("Failed to send envelopes.");
+                }
+            });
+        }
+        // update lastSend time to enable throttling
+        this._lastSend = +new Date();
+        // clear buffer
+        this._buffer = [];
+        clearTimeout(this._timeoutHandle);
+        this._timeoutHandle = null;
     }
 }
