@@ -139,7 +139,7 @@ export class ApplicationInsightsConfig implements IConfig {
             resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] =
                 process.env.WEBSITE_INSTANCE_ID;
         }
-        const sdkVersion = Constants.APPLICATION_INSIGHTS_SDK_VERSION;
+        const sdkVersion = Constants.AZURE_MONITOR_DISTRO_VERSION;
         resource.attributes[SemanticResourceAttributes.TELEMETRY_SDK_LANGUAGE] =
             TelemetrySdkLanguageValues.NODEJS;
         resource.attributes[

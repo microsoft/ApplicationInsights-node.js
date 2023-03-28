@@ -42,17 +42,23 @@ describe("agent/AppServicesLoader", () => {
         assert.ok(statusLogger["_agentLogger"] instanceof FileWriter, "Wrong statusLogger agentLogger");
         assert.equal(statusLogger["_agentLogger"]["_filename"], "status_nodejs.json");
 
+        // Prefix Env variable should be set
+        assert.equal(process.env["AZURE_MONITOR_AGENT_PREFIX"].length, 3, "Missing prefix");
+
         if (isWindows) {
             assert.equal(diagnosticLogger["_agentLogger"]["_filepath"], "c:\\LogFiles\\ApplicationInsights\\status");
             assert.equal(statusLogger["_agentLogger"]["_filepath"], "c:\\LogFiles\\ApplicationInsights\\status");
+            assert.equal(process.env["AZURE_MONITOR_AGENT_PREFIX"], "aw_");
         }
         else {
             assert.equal(diagnosticLogger["_agentLogger"]["_filepath"], "/var/log/applicationinsights/");
             assert.equal(statusLogger["_agentLogger"]["_filepath"], "/var/log/applicationinsights/");
+            assert.equal(process.env["AZURE_MONITOR_AGENT_PREFIX"], "al_");
         }
         // Loader is using correct diagnostics
         assert.equal(agent["_diagnosticLogger"], diagnosticLogger, "Wrong diagnosticLogger");
         assert.equal(agent["_statusLogger"], statusLogger, "Wrong statusLogger");
+
     });
 
     it("initialize", () => {

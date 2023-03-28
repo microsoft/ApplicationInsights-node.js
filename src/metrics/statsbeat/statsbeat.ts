@@ -20,7 +20,7 @@ import { IVirtualMachineInfo } from "../../shared/azureVirtualMachine";
 import { MeterProvider, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions } from "@opentelemetry/sdk-metrics";
 import { AzureMonitorExporterOptions, AzureMonitorStatsbeatExporter } from "@azure/monitor-opentelemetry-exporter";
 import { BatchObservableResult, Meter, ObservableGauge, ObservableResult } from "@opentelemetry/api-metrics";
-import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../declarations/constants";
+import { AZURE_MONITOR_DISTRO_VERSION } from "../../declarations/constants";
 
 const STATSBEAT_LANGUAGE = "node";
 const AZURE_MONITOR_STATSBEAT_FEATURES = "AZURE_MONITOR_STATSBEAT_FEATURES";
@@ -44,7 +44,7 @@ export class Statsbeat {
 
     // Custom dimensions
     private _resourceProvider: string = StatsbeatResourceProvider.unknown;
-    private _sdkVersion: string = APPLICATION_INSIGHTS_SDK_VERSION;
+    private _sdkVersion: string = AZURE_MONITOR_DISTRO_VERSION;
     private _runtimeVersion: string = process.version;
     private _os: string = os.type();
     private _language: string = STATSBEAT_LANGUAGE;
@@ -118,7 +118,6 @@ export class Statsbeat {
 
         this._language = STATSBEAT_LANGUAGE;
         this._cikey = this._config.getInstrumentationKey();
-        this._sdkVersion = APPLICATION_INSIGHTS_SDK_VERSION;
         this._os = os.type();
         this._runtimeVersion = process.version;
 
