@@ -23,7 +23,7 @@ export class AzureFunctionsWriter implements IAgentLogger {
     }
 
     private _getAzureFnLog(log: any): string {
-        let output = `${AZURE_FUNCTIONS_DIAGNOSTIC_PREFIX} ${log.time},${log.level},${log.logger},\"${log.message}\",${this._appName},${this._instrumentationKey},${this._agentVersion},node.js`;
+        const output = `${AZURE_FUNCTIONS_DIAGNOSTIC_PREFIX} ${log.time},${log.level},${log.logger},\"${log.message}\",${this._appName},${this._instrumentationKey},${this._agentVersion},node.js`;
         return output;
     }
 }

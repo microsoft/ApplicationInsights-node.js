@@ -219,13 +219,13 @@ export class AgentLoader {
     protected _getVersionPrefix(rpType: AgentResourceProviderType): string {
         let rp = "u"; // Default unknown
         let os = "u"; // Default unknown
-        if (rpType == AgentResourceProviderType.aks) {
+        if (rpType === AgentResourceProviderType.aks) {
             rp = "k";
         }
-        else if (rpType == AgentResourceProviderType.appServices) {
+        else if (rpType === AgentResourceProviderType.appServices) {
             rp = "a";
         }
-        else if (rpType == AgentResourceProviderType.azureFunctions) {
+        else if (rpType === AgentResourceProviderType.azureFunctions) {
             rp = "f";
         }
         if (process.platform === 'win32') {

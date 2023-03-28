@@ -127,7 +127,7 @@ export class ApplicationInsightsConfig implements IConfig {
     }
 
     private _getDefaultResource(): Resource {
-        let resource = Resource.EMPTY;
+        const resource = Resource.EMPTY;
         resource.attributes[SemanticResourceAttributes.SERVICE_NAME] = DEFAULT_ROLE_NAME;
         if (process.env.WEBSITE_SITE_NAME) {
             // Azure Web apps and Functions

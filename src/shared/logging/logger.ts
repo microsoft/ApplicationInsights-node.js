@@ -50,7 +50,7 @@ export class Logger implements DiagLogger {
      * @param logLevel - The DiagLogLevel used to filter logs sent to the logger.
      * @param suppressOverrideMessage - Setting that suppress the warning message normally emitted when registering a logger when another logger is already registered.
      */
-    public updateLogLevel(logLevel: DiagLogLevel, suppressOverrideMessage: boolean = true) {
+    public updateLogLevel(logLevel: DiagLogLevel, suppressOverrideMessage = true) {
         this._diagLevel = logLevel;
 
         // Set OpenTelemetry Logger
