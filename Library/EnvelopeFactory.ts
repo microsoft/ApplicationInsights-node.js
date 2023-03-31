@@ -145,6 +145,9 @@ class EnvelopeFactory {
                 const propertiesValues = Object.values(telemetry.properties);
                 for (let i = 0; i < propertiesKeys.length; i++) {
                     if (propertiesKeys[i].length <= 150) {
+                        if (propertiesValues[i] == null) {
+                            propertiesValues[i] = "";
+                        }
                         if (typeof(propertiesValues[i]) === "object") {
                             propertiesValues[i] = Util.stringify(propertiesValues[i]);
                         }
