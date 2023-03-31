@@ -145,10 +145,16 @@ class EnvelopeFactory {
                 const propertiesValues = Object.values(telemetry.properties);
                 for (let i = 0; i < propertiesKeys.length; i++) {
                     if (propertiesKeys[i].length <= 150) {
-                        if (typeof(propertiesValues[i]) === "object") {
-                            propertiesValues[i] = Util.stringify(propertiesValues[i]);
+                        if (!Util.isDate(propertiesValues[i])) {
+                            if (propertiesValues[i] == null) {
+                                propertiesValues[i] = "";
+                            }
+                            if (typeof(propertiesValues[i]) === "object") {
+                                propertiesValues[i] = Util.stringify(propertiesValues[i]);
+                            }
+                            properties[propertiesKeys[i]] = String(propertiesValues[i]).substring(0, 8192);
                         }
-                        properties[propertiesKeys[i]] = String(propertiesValues[i]).substring(0, 8192);
+                        properties[propertiesKeys[i]] = propertiesValues[i];
                     }
                 }
                 return properties;

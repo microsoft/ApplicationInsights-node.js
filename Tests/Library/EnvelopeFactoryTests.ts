@@ -69,7 +69,12 @@ describe("Library/EnvelopeFactory", () => {
             eventTelemetry.properties = {
                 "prop1": false,
                 "prop2": 123,
-                "prop3": { "subProp1": "someValue" }
+                "prop3": { "subProp1": "someValue" },
+                "prop4": undefined,
+                "prop5": null,
+                "prop6": new Date("2023-03-30T01:02:03.004Z"),
+                "prop7": NaN,
+                "prop8": { "subprop1": { "subprop2": "value" } },
             };
             var env = EnvelopeFactory.createEnvelope(eventTelemetry, Contracts.TelemetryType.Event, (<any>commonProps), client1.context, client1.config);
             var envData: Contracts.Data<Contracts.EventData> = <Contracts.Data<Contracts.EventData>>env.data;
@@ -79,6 +84,11 @@ describe("Library/EnvelopeFactory", () => {
             assert.equal(envData.baseData.properties.prop1, "false");
             assert.equal(envData.baseData.properties.prop2, "123");
             assert.equal(envData.baseData.properties.prop3, "{\"subProp1\":\"someValue\"}");
+            assert.equal(envData.baseData.properties.prop4, "");
+            assert.equal(envData.baseData.properties.prop5, "");
+            assert.equal(envData.baseData.properties.prop6, "2023-03-30T01:02:03.004Z");
+            assert.equal(envData.baseData.properties.prop7, "NaN");
+            assert.equal(envData.baseData.properties.prop8, "{\"subprop1\":{\"subprop2\":\"value\"}}" );
         });
 
         it("should add Azure Functions correlation properties", function () {
