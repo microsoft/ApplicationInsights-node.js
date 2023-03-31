@@ -72,7 +72,7 @@ describe("Library/EnvelopeFactory", () => {
                 "prop3": { "subProp1": "someValue" },
                 "prop4": undefined,
                 "prop5": null,
-                "prop6": new Date('2023-03-30T01:02:03.004Z'),
+                "prop6": new Date("2023-03-30T01:02:03.004Z"),
                 "prop7": NaN,
             };
             var env = EnvelopeFactory.createEnvelope(eventTelemetry, Contracts.TelemetryType.Event, (<any>commonProps), client1.context, client1.config);
