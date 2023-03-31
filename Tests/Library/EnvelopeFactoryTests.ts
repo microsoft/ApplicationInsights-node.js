@@ -72,17 +72,13 @@ describe("Library/EnvelopeFactory", () => {
                 "prop3": { "subProp1": "someValue" },
                 "prop4": undefined,
                 "prop5": null,
-                "prop6": new Date("2023-03-30T01:02:03.004Z"),
+                "prop6": new Date('2023-03-30T01:02:03.004Z'),
                 "prop7": NaN,
             };
             var env = EnvelopeFactory.createEnvelope(eventTelemetry, Contracts.TelemetryType.Event, (<any>commonProps), client1.context, client1.config);
             var envData: Contracts.Data<Contracts.EventData> = <Contracts.Data<Contracts.EventData>>env.data;
 
             // check properties
-            console.log("UNDEFINED: ", envData.baseData.properties.prop4);
-            console.log("NULL: ", envData.baseData.properties.prop5);
-            console.log("DATE: ", envData.baseData.properties.prop6);
-            console.log("NaN: ", envData.baseData.properties.prop7, typeof(envData.baseData.properties.prop7));
             assert.equal(envData.baseData.properties.commonProperty, "123");
             assert.equal(envData.baseData.properties.prop1, "false");
             assert.equal(envData.baseData.properties.prop2, "123");
