@@ -1,4 +1,4 @@
-import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../../declarations/constants";
+import { AZURE_MONITOR_DISTRO_VERSION } from "../../../declarations/constants";
 import { AZURE_APP_NAME, IAgentLogger } from "../../types";
 
 const AZURE_FUNCTIONS_DIAGNOSTIC_PREFIX = "LanguageWorkerConsoleLogMS_APPLICATION_INSIGHTS_LOGS";
@@ -11,7 +11,7 @@ export class AzureFunctionsWriter implements IAgentLogger {
     constructor(instrumentationKey: string) {
         this._instrumentationKey = instrumentationKey;
         this._appName = AZURE_APP_NAME;
-        this._agentVersion = APPLICATION_INSIGHTS_SDK_VERSION;
+        this._agentVersion = AZURE_MONITOR_DISTRO_VERSION;
     }
 
     public log(log: any) {
@@ -23,7 +23,7 @@ export class AzureFunctionsWriter implements IAgentLogger {
     }
 
     private _getAzureFnLog(log: any): string {
-        let output = `${AZURE_FUNCTIONS_DIAGNOSTIC_PREFIX} ${log.time},${log.level},${log.logger},\"${log.message}\",${this._appName},${this._instrumentationKey},${this._agentVersion},node.js`;
+        const output = `${AZURE_FUNCTIONS_DIAGNOSTIC_PREFIX} ${log.time},${log.level},${log.logger},\"${log.message}\",${this._appName},${this._instrumentationKey},${this._agentVersion},node.js`;
         return output;
     }
 }

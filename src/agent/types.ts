@@ -2,6 +2,13 @@ export const LOGGER_NAME = "applicationinsights.extension.diagnostics";
 export const LOGGER_LANGUAGE = "nodejs";
 export const NODE_JS_RUNTIME_MAJOR_VERSION = parseInt(process.versions.node.split('.')[0], 10);
 export const AZURE_APP_NAME = process.env.WEBSITE_SITE_NAME || 'unknown';
+export const AZURE_MONITOR_AGENT_PREFIX = "AZURE_MONITOR_AGENT_PREFIX";
+
+export enum AgentResourceProviderType {
+    appServices,
+    azureFunctions,
+    aks
+}
 
 export interface IAgentLogger {
     log(message: any, ...optional: any[]): void;

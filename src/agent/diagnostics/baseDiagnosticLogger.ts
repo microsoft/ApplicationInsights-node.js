@@ -1,5 +1,5 @@
 import { IAgentLogger, IDiagnosticLog, IDiagnosticLogger, LOGGER_LANGUAGE, LOGGER_NAME } from "../types";
-import { APPLICATION_INSIGHTS_SDK_VERSION } from "../../declarations/constants";
+import { AZURE_MONITOR_DISTRO_VERSION } from "../../declarations/constants";
 
 
 export class BaseDiagnosticLogger implements IDiagnosticLogger {
@@ -19,7 +19,7 @@ export class BaseDiagnosticLogger implements IDiagnosticLogger {
         this._language = LOGGER_LANGUAGE;
         this._siteName = process.env.WEBSITE_SITE_NAME;
         this._extensionVersion = process.env.ApplicationInsightsAgent_EXTENSION_VERSION;
-        this._sdkVersion = APPLICATION_INSIGHTS_SDK_VERSION;
+        this._sdkVersion = AZURE_MONITOR_DISTRO_VERSION;
         this._subscriptionId = process.env.WEBSITE_OWNER_NAME ? process.env.WEBSITE_OWNER_NAME.split("+")[0] : null;
     }
 
