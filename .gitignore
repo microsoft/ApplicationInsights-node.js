@@ -1,5 +1,5 @@
 # Ignore build files
-out/
+out/Tests/**
 obj/
 *.tgz
 

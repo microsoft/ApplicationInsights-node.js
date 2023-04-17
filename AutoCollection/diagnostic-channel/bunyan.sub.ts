@@ -31,7 +31,7 @@ const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
                 bunyanError.name = log.err.name;
                 bunyanError.stack = log.err.stack;
                 client.trackException({ exception: bunyanError });
-                return;
+                // return;  For now, let's also log a trace message to avoid losing other properties of 'message'
             }
         }
         catch (err) {
