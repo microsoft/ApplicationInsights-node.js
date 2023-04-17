@@ -1,0 +1,1 @@
+{"version":3,"file":"MetricQuickPulse.js","sourceRoot":"","sources":["../../../../Declarations/Contracts/QuickPulseTypes/MetricQuickPulse.ts"],"names":[],"mappings":"","sourcesContent":["export interface MetricQuickPulse {\n    Name: string;\n\n    Value: number;\n\n    Weight: number;\n}\n"]}

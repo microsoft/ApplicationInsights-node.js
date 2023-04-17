@@ -1,0 +1,1 @@
+{"version":3,"file":"EventDocumentQuickPulse.js","sourceRoot":"","sources":["../../../../Declarations/Contracts/QuickPulseTypes/EventDocumentQuickPulse.ts"],"names":[],"mappings":"","sourcesContent":["import { DocumentQuickPulse } from \"./DocumentQuickPulse\";\n\nexport interface EventDocumentQuickPulse extends DocumentQuickPulse {\n    Name: string;\n}\n"]}
