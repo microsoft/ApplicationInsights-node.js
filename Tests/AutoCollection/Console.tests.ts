@@ -15,7 +15,7 @@ describe("AutoCollection/Console", () => {
     describe("#init and #dispose()", () => {
         it("init should enable and dispose should stop console autocollection", () => {
 
-            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setAutoCollectConsole(true);
+            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setAutoCollectConsole(true, false, false);
             var enableConsoleRequestsSpy = sinon.spy(Console.INSTANCE, "enable");
             appInsights.start();
 

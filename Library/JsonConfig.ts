@@ -49,6 +49,7 @@ export class JsonConfig implements IJsonConfig {
     public distributedTracingMode: DistributedTracingModes;
     public enableAutoCollectExternalLoggers: boolean;
     public enableAutoCollectConsole: boolean;
+    public enableBunyanErrAsTrace: boolean;
     public enableAutoCollectExceptions: boolean;
     public enableAutoCollectPerformance: boolean;
     public enableAutoCollectExtendedMetrics: boolean | IDisabledExtendedMetrics;

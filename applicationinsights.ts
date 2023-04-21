@@ -38,6 +38,7 @@ export enum DistributedTracingModes {
 let defaultConfig = _getDefaultAutoCollectConfig();
 let _isConsole = defaultConfig.isConsole();
 let _isConsoleLog = defaultConfig.isConsoleLog();
+let _isBunyanErrAsTrace = defaultConfig.isBunyanErrAsTrace(); // default to false
 let _isExceptions = defaultConfig.isExceptions();
 let _isPerformance = defaultConfig.isPerformance();
 let _isPreAggregatedMetrics = defaultConfig.isPreAggregatedMetrics();
@@ -68,7 +69,8 @@ function _getDefaultAutoCollectConfig() {
         isSendingLiveMetrics: () => false, // Off by default
         isNativePerformance: () => true,
         isSnippetInjection: () => false,
-        isAzureFunctions: () => false
+        isAzureFunctions: () => false,
+        isBunyanErrAsTrace: () => false,
     }
 }
 
@@ -143,7 +145,7 @@ export function setup(setupString?: string) {
 export function start() {
     if (!!defaultClient) {
         _isStarted = true;
-        _console.enable(_isConsole, _isConsoleLog);
+        _console.enable(_isConsole, _isConsoleLog, _isBunyanErrAsTrace);
         _exceptions.enable(_isExceptions);
         _performance.enable(_isPerformance);
         _preAggregatedMetrics.enable(_isPreAggregatedMetrics);
@@ -167,6 +169,7 @@ export function start() {
 function _initializeConfig() {
     _isConsole = defaultClient.config.enableAutoCollectExternalLoggers !== undefined ? defaultClient.config.enableAutoCollectExternalLoggers : _isConsole;
     _isConsoleLog = defaultClient.config.enableAutoCollectConsole !== undefined ? defaultClient.config.enableAutoCollectConsole : _isConsoleLog;
+    _isBunyanErrAsTrace = defaultClient.config.enableBunyanErrAsTrace !== undefined ? defaultClient.config.enableBunyanErrAsTrace : _isBunyanErrAsTrace;
     _isExceptions = defaultClient.config.enableAutoCollectExceptions !== undefined ? defaultClient.config.enableAutoCollectExceptions : _isExceptions;
     _isPerformance = defaultClient.config.enableAutoCollectPerformance !== undefined ? defaultClient.config.enableAutoCollectPerformance : _isPerformance;
     _isPreAggregatedMetrics = defaultClient.config.enableAutoCollectPreAggregatedMetrics !== undefined ? defaultClient.config.enableAutoCollectPreAggregatedMetrics : _isPreAggregatedMetrics;
@@ -250,13 +253,15 @@ export class Configuration {
      * Sets the state of console and logger tracking (enabled by default for third-party loggers only)
      * @param value if true logger activity will be sent to Application Insights
      * @param collectConsoleLog if true, logger autocollection will include console.log calls (default false)
+     * @param bunyanErrAsTrace if true, bunyan errors will be logged as traces instead of exceptions to preserve msg property data.
      * @returns {Configuration} this class
      */
-    public static setAutoCollectConsole(value: boolean, collectConsoleLog: boolean = false) {
+    public static setAutoCollectConsole(value: boolean, collectConsoleLog: boolean = false, bunyanErrAsTrace: boolean) {
         _isConsole = value;
         _isConsoleLog = collectConsoleLog;
+        _isBunyanErrAsTrace = bunyanErrAsTrace;
         if (_isStarted) {
-            _console.enable(value, collectConsoleLog);
+            _console.enable(value, collectConsoleLog, bunyanErrAsTrace);
         }
 
         return Configuration;
