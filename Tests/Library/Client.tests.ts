@@ -11,6 +11,7 @@ import Contracts = require("../../Declarations/Contracts");
 import RequestResponseHeaders = require("../../Library/RequestResponseHeaders");
 import Util = require("../../Library/Util");
 import EnvelopeFactory = require("../../Library/EnvelopeFactory");
+import Context = require("../../Library/Context");
 
 describe("Library/TelemetryClient", () => {
 
@@ -1016,7 +1017,7 @@ describe("Library/TelemetryClient", () => {
             env.WEBSITE_SITE_NAME = "testRole";
             env.WEBSITE_INSTANCE_ID = "627cc493-f310-47de-96bd-71410b7dec09";
             process.env = env;
-            client.setAutoPopulateAzureProperties(true);
+            client.context = new Context();// Create new context with env variables set
             client.track(testEventTelemetry, Contracts.TelemetryType.Event);
             process.env = originalEnv;
             assert.equal(sendStub.callCount, 1, "send called once");

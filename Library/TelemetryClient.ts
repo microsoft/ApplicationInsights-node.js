@@ -24,7 +24,6 @@ import { Tags } from "../Declarations/Contracts";
 class TelemetryClient {
     private static TAG = "TelemetryClient";
     private _telemetryProcessors: { (envelope: Contracts.EnvelopeTelemetry, contextObjects: { [name: string]: any; }): boolean; }[] = [];
-    private _enableAzureProperties: boolean = false;
     private _statsbeat: Statsbeat;
 
     public config: Config;
@@ -165,9 +164,6 @@ class TelemetryClient {
             if (telemetry.time) {
                 envelope.time = telemetry.time.toISOString();
             }
-            if (this._enableAzureProperties) {
-                TelemetryProcessors.azureRoleEnvironmentTelemetryProcessor(envelope, this.context);
-            }
             var accepted = this.runTelemetryProcessors(envelope, telemetry.contextObjects);
 
             // Ideally we would have a central place for "internal" telemetry processors and users can configure which ones are in use.
@@ -185,12 +181,13 @@ class TelemetryClient {
     }
 
     /**
+     *  @deprecated The method should not be called, Azure Properties will be added always when available
      * Automatically populate telemetry properties like RoleName when running in Azure
      *
       * @param value if true properties will be populated
      */
     public setAutoPopulateAzureProperties(value: boolean) {
-        this._enableAzureProperties = value;
+        // NO-OP
     }
 
     /**
