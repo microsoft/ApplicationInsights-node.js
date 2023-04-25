@@ -65,11 +65,11 @@
     "typescript": "~4.8.0"
   },
   "dependencies": {
-    "@azure/core-client": "^1.0.0",
     "@azure/core-auth": "^1.3.0",
+    "@azure/core-client": "^1.0.0",
     "@azure/core-rest-pipeline": "^1.9.2",
     "@azure/identity": "^3.1.3",
-    "@azure/monitor-opentelemetry-exporter": "1.0.0-beta.12",
+    "@azure/monitor-opentelemetry-exporter": "^1.0.0-beta.12",
     "@azure/opentelemetry-instrumentation-azure-sdk": "^1.0.0-beta.1",
     "@opentelemetry/api": "^1.4.1",
     "@opentelemetry/core": "^1.11.0",
