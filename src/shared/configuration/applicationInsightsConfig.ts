@@ -1,5 +1,5 @@
 import * as os from "os";
-import * as azureCore from "@azure/core-http";
+import { TokenCredential } from "@azure/core-auth";
 import { ConnectionStringParser } from "./connectionStringParser";
 import * as Constants from "../../declarations/constants";
 import {
@@ -25,7 +25,7 @@ const DEFAULT_ROLE_NAME = "Web";
 
 export class ApplicationInsightsConfig implements IConfig {
     public samplingRatio: number;
-    public aadTokenCredential?: azureCore.TokenCredential;
+    public aadTokenCredential?: TokenCredential;
     public enableAutoCollectExceptions: boolean;
     public enableAutoCollectPerformance: boolean;
     public enableAutoCollectStandardMetrics: boolean;

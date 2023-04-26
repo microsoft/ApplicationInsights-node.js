@@ -1,4 +1,4 @@
-import * as azureCore from "@azure/core-http";
+import { TokenCredential } from "@azure/core-auth";
 import { InstrumentationConfig } from "@opentelemetry/instrumentation";
 import { Resource } from "@opentelemetry/resources";
 
@@ -56,7 +56,7 @@ export interface IBaseConfig {
 
 export interface IConfig extends IBaseConfig {
     /** AAD TokenCredential to use to authenticate the app */
-    aadTokenCredential?: azureCore.TokenCredential;
+    aadTokenCredential?: TokenCredential;
     /** OpenTelemetry Resource */
     resource?: Resource;
 }
