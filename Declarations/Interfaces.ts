@@ -47,6 +47,10 @@ export interface IBaseConfig {
      */
     enableAutoCollectConsole: boolean;
     /**
+     * Sets tracking error logs from loggers (console, bunyan, winston) as traces. If true errors will be returned as traces
+     */
+    enableConsoleErrorToTrace: boolean;
+    /**
      * Sets the state of exception tracking (enabled by default)
      * if true uncaught exceptions will be sent to Application Insights
      */

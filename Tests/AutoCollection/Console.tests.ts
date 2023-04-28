@@ -15,7 +15,7 @@ describe("AutoCollection/Console", () => {
     describe("#init and #dispose()", () => {
         it("init should enable and dispose should stop console autocollection", () => {
 
-            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setAutoCollectConsole(true, false, false);
+            var appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").setAutoCollectConsole(true, false);
             var enableConsoleRequestsSpy = sinon.spy(Console.INSTANCE, "enable");
             appInsights.start();
 
@@ -63,5 +63,26 @@ describe("AutoCollection/Console", () => {
             trackExceptionStub.restore();
             trackTraceStub.restore();
         });
+    });
+
+    it("should log errors as traces when the flag is enabled", () => {
+        const appInsights = AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+        appInsights.start();
+
+        const trackTraceStub = sinon.stub(AppInsights.defaultClient, "trackTrace");
+        const trackExceptionStub = sinon.stub(AppInsights.defaultClient, "trackException");
+        AppInsights.defaultClient.config.enableConsoleErrorToTrace = true;
+
+        disable();
+        enable(true, AppInsights.defaultClient);
+        const dummyError = new Error("test error");
+        const errorEvent: console.IConsoleData = {
+            message: dummyError as any,
+            stderr: false, // log() should still log as ExceptionData
+        };
+        channel.publish("console", errorEvent);
+        assert.ok(trackTraceStub.calledOnce);
+        assert.ok(trackExceptionStub.notCalled);
+        assert.deepEqual(trackTraceStub.args[0][0].message, "Error: test error");
     });
 });

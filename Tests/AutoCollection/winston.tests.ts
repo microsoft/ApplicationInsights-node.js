@@ -48,4 +48,29 @@ describe("diagnostic-channel/winston", () => {
         trackExceptionStub.restore();
         trackTraceStub.restore();
     });
+
+    it("should log errors as traces when flag is enabled", () => {
+        AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+        AppInsights.start();
+
+        const trackExceptionStub = sinon.stub(AppInsights.defaultClient, "trackException");
+        const trackTraceStub = sinon.stub(AppInsights.defaultClient, "trackTrace");
+        AppInsights.defaultClient.config.enableConsoleErrorToTrace = true;
+
+        disable();
+        enable(true, AppInsights.defaultClient);
+
+        const dummyError = new Error("test error");
+        const errorEvent: winston.IWinstonData = {
+            message: dummyError as any,
+            meta: {},
+            level: "foo",
+            levelKind: "npm"
+        };
+
+        channel.publish("winston", errorEvent);
+        assert.ok(trackTraceStub.calledOnce);
+        assert.ok(trackExceptionStub.notCalled);
+        assert.deepEqual(trackTraceStub.args[0][0].message, "Error: test error");
+    });
 });

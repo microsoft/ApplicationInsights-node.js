@@ -26,7 +26,7 @@ describe("diagnostic-channel/bunyan", () => {
         const trackStub = sandbox.stub(AppInsights.defaultClient, "track");
 
         disable();
-        enable(true, AppInsights.defaultClient, false);
+        enable(true, AppInsights.defaultClient);
         const logEvent: bunyan.IBunyanData = {
             result: "test log",
             level: 50 // Error should still log as MessageData
@@ -56,7 +56,7 @@ describe("diagnostic-channel/bunyan", () => {
         AppInsights.start();
         const trackTraceStub = sandbox.stub(AppInsights.defaultClient, "trackTrace");
         disable();
-        enable(true, AppInsights.defaultClient, false);
+        enable(true, AppInsights.defaultClient);
         const logEvent: bunyan.IBunyanData = {
             result: "test log",
             level: 50 // Error should still log as MessageData
@@ -71,8 +71,10 @@ describe("diagnostic-channel/bunyan", () => {
         AppInsights.start();
             
         const trackTraceStub = sandbox.stub(AppInsights.defaultClient, "trackTrace");
+        const trackExceptionSpy = sandbox.spy(AppInsights.defaultClient, "trackException");
         disable();
-        enable(true, AppInsights.defaultClient, true);
+        AppInsights.defaultClient.config.enableConsoleErrorToTrace = true;
+        enable(true, AppInsights.defaultClient);
 
         const dummyError = { message: "Test Message", name: "Test Name", stack: "Test Stack" };
         const bunyanJson = Util.stringify({ err: dummyError });
@@ -82,15 +84,17 @@ describe("diagnostic-channel/bunyan", () => {
         };
         channel.publish("bunyan", errorEvent);
         assert.ok(trackTraceStub.calledOnce);
+        assert.ok(trackExceptionSpy.notCalled);
     });
 
     it("should call trackException when enableBunyanErrAsTrace is disabled", () => {
         AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
         AppInsights.start();
             
+        const trackTraceStub = sandbox.stub(AppInsights.defaultClient, "trackTrace");
         const trackExceptionSpy = sandbox.spy(AppInsights.defaultClient, "trackException");
         disable();
-        enable(true, AppInsights.defaultClient, false);
+        enable(true, AppInsights.defaultClient);
 
         const dummyError = { message: "Test Message", name: "Test Name", stack: "Test Stack" };
         const bunyanJson = Util.stringify({ err: dummyError });
@@ -100,6 +104,7 @@ describe("diagnostic-channel/bunyan", () => {
         };
         channel.publish("bunyan", errorEvent);
         assert.ok(trackExceptionSpy.calledOnce);
+        assert.ok(trackTraceStub.notCalled);
         assert.deepEqual(trackExceptionSpy.args[0][0].exception.message, dummyError.message);
         assert.deepEqual(trackExceptionSpy.args[0][0].exception.name, dummyError.name);
         assert.deepEqual(trackExceptionSpy.args[0][0].exception.stack, dummyError.stack);

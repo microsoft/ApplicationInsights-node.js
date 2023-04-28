@@ -49,7 +49,7 @@ export class JsonConfig implements IJsonConfig {
     public distributedTracingMode: DistributedTracingModes;
     public enableAutoCollectExternalLoggers: boolean;
     public enableAutoCollectConsole: boolean;
-    public enableBunyanErrAsTrace: boolean;
+    public enableConsoleErrorToTrace: boolean;
     public enableAutoCollectExceptions: boolean;
     public enableAutoCollectPerformance: boolean;
     public enableAutoCollectExtendedMetrics: boolean | IDisabledExtendedMetrics;
@@ -187,6 +187,9 @@ export class JsonConfig implements IJsonConfig {
             if (jsonConfig.webInstrumentationSrc != undefined) {
                 this.webInstrumentationSrc = jsonConfig.webInstrumentationSrc;
             }
+            if (jsonConfig.enableConsoleErrorToTrace != undefined) {
+                this.enableConsoleErrorToTrace = jsonConfig.enableConsoleErrorToTrace;
+            }
 
             this.endpointUrl = jsonConfig.endpointUrl;
             this.maxBatchSize = jsonConfig.maxBatchSize;
@@ -199,6 +202,7 @@ export class JsonConfig implements IJsonConfig {
             this.distributedTracingMode = jsonConfig.distributedTracingMode;
             this.enableAutoCollectExternalLoggers = jsonConfig.enableAutoCollectExternalLoggers;
             this.enableAutoCollectConsole = jsonConfig.enableAutoCollectConsole;
+            this.enableConsoleErrorToTrace = jsonConfig.enableConsoleErrorToTrace;
             this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
             this.enableAutoCollectPerformance = jsonConfig.enableAutoCollectPerformance;
             this.enableAutoCollectExtendedMetrics = jsonConfig.enableAutoCollectExtendedMetrics;

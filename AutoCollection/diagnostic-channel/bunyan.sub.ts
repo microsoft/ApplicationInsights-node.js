@@ -31,7 +31,7 @@ const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
                 let bunyanError = new Error(log.err.message);
                 bunyanError.name = log.err.name;
                 bunyanError.stack = log.err.stack;
-                if (client.config.enableBunyanErrAsTrace) {
+                if (client.config.enableConsoleErrorToTrace) {
                     client.trackTrace({ message: message, severity: AIlevel });
                     return;
                 }
@@ -46,7 +46,7 @@ const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
     });
 };
 
-export function enable(enabled: boolean, client: TelemetryClient, bunyanErrAsTrace: boolean) {
+export function enable(enabled: boolean, client: TelemetryClient) {
     if (enabled) {
         let clientFound = clients.find(c => c == client);
         if (clientFound) {
@@ -59,9 +59,6 @@ export function enable(enabled: boolean, client: TelemetryClient, bunyanErrAsTra
                     statsbeat.addInstrumentation(StatsbeatInstrumentation.BUNYAN);
                 }
             });
-        }
-        if (bunyanErrAsTrace) {
-            client.config.enableBunyanErrAsTrace = bunyanErrAsTrace;
         }
         clients.push(client);
     } else {

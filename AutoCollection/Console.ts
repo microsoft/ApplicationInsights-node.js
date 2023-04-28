@@ -20,10 +20,10 @@ class AutoCollectConsole {
         AutoCollectConsole.INSTANCE = this;
     }
 
-    public enable(isEnabled: boolean, collectConsoleLog: boolean, isBunyanErrAsTrace: boolean) {
+    public enable(isEnabled: boolean, collectConsoleLog: boolean) {
         if (DiagChannel.IsInitialized) {
             require("./diagnostic-channel/console.sub").enable(isEnabled && collectConsoleLog, this._client);
-            require("./diagnostic-channel/bunyan.sub").enable(isEnabled, this._client, isBunyanErrAsTrace);
+            require("./diagnostic-channel/bunyan.sub").enable(isEnabled, this._client);
             require("./diagnostic-channel/winston.sub").enable(isEnabled, this._client);
         }
     }
@@ -34,7 +34,7 @@ class AutoCollectConsole {
 
     public dispose() {
         AutoCollectConsole.INSTANCE = null;
-        this.enable(false, false, false);
+        this.enable(false, false);
     }
 }
 
