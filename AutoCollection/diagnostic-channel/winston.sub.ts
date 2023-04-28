@@ -44,14 +44,20 @@ const winstonToAILevelMap: { [key: string]: (og: string) => number } = {
 
 const subscriber = (event: IStandardEvent<winston.IWinstonData>) => {
     const message = event.data.message as Error | string;
+    const AIlevel = winstonToAILevelMap[event.data.levelKind](event.data.level);
     clients.forEach((client) => {
-        if (message instanceof Error) {
+        if (message instanceof Error && !client.config.enableLoggerErrorToTrace) {
             client.trackException({
                 exception: message,
                 properties: event.data.meta
+            });    
+        } else if (message instanceof Error) {
+            client.trackTrace({
+                message: message.toString(),
+                severity: AIlevel,
+                properties: event.data.meta
             });
         } else {
-            const AIlevel = winstonToAILevelMap[event.data.levelKind](event.data.level);
             client.trackTrace({
                 message: message,
                 severity: AIlevel,
