@@ -140,8 +140,6 @@ export function setupAndStart(aadTokenCredential?: azureCoreAuth.TokenCredential
                 .setAutoCollectHeartbeat(true)
                 .setUseDiskRetryCaching(true);
         }
-
-        _appInsights.defaultClient.setAutoPopulateAzureProperties(true);
         _appInsights.defaultClient.addTelemetryProcessor(prefixInternalSdkVersion);
         _appInsights.defaultClient.addTelemetryProcessor(copyOverPrefixInternalSdkVersionToHeartBeatMetric);
         if (aadTokenCredential) {

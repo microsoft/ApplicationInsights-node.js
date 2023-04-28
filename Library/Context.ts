@@ -43,10 +43,22 @@ class Context {
     }
 
     private _loadDeviceContext() {
+
+        let cloudRoleInstance = os && os.hostname();
+        let cloudRole = Context.DefaultRoleName;
+
+        // Try to get more accurate roleName and instance when running in Azure
+        if (process.env.WEBSITE_SITE_NAME) { // Azure Web apps and Functions
+            cloudRole = process.env.WEBSITE_SITE_NAME;
+        }
+        if (process.env.WEBSITE_INSTANCE_ID) {
+            cloudRoleInstance = process.env.WEBSITE_INSTANCE_ID;
+        }
+
         this.tags[this.keys.deviceId] = "";
-        this.tags[this.keys.cloudRoleInstance] = os && os.hostname();
+        this.tags[this.keys.cloudRoleInstance] = cloudRoleInstance;
         this.tags[this.keys.deviceOSVersion] = os && (os.type() + " " + os.release());
-        this.tags[this.keys.cloudRole] = Context.DefaultRoleName;
+        this.tags[this.keys.cloudRole] = cloudRole;
 
         // not yet supported tags
         this.tags["ai.device.osArchitecture"] = os && os.arch();

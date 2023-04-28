@@ -284,14 +284,6 @@ appInsights.defaultClient.context.tags[appInsights.defaultClient.context.keys.cl
 appInsights.start();
 ```
 
-If running in Azure App service or Azure functions the SDK will automatically populate the cloud role when following code is added:
-```javascript
-const appInsights = require("applicationinsights");
-appInsights.setup("<YOUR_CONNECTION_STRING>");
-appInsights.defaultClient.setAutoPopulateAzureProperties(true);
-appInsights.start();
-```
-
 ### Automatic web Instrumentation[Preview]
 
  Automatic web Instrumentation is currently in **Preview**. For node server with configuration `enableWebInstrumentation` set to `true` or environment variable `APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_ENABLED = true`, web Instrumentation will be enabled on node server response when all of the following requirements are met:
