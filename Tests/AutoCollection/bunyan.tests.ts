@@ -65,4 +65,48 @@ describe("diagnostic-channel/bunyan", () => {
         assert.ok(trackTraceStub.calledOnce);
         assert.deepEqual(trackTraceStub.args[0][0].message, "test log");
     });
+
+    it("should call trackTrace when enableBunyanErrAsTrace is enabled", () => {
+        AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
+        AppInsights.start();
+            
+        const trackTraceStub = sandbox.stub(AppInsights.defaultClient, "trackTrace");
+        const trackExceptionSpy = sandbox.spy(AppInsights.defaultClient, "trackException");
+        disable();
+        AppInsights.defaultClient.config.enableLoggerErrorToTrace = true;
+        enable(true, AppInsights.defaultClient);
+
+        const dummyError = { message: "Test Message", name: "Test Name", stack: "Test Stack" };
+        const bunyanJson = Util.stringify({ err: dummyError });
+        const errorEvent: bunyan.IBunyanData = {
+            result: bunyanJson,
+            level: 50
+        };
+        channel.publish("bunyan", errorEvent);
+        assert.ok(trackTraceStub.calledOnce);
+        assert.ok(trackExceptionSpy.notCalled);
+    });
+
+    it("should call trackException when enableBunyanErrAsTrace is disabled", () => {
+        AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
+        AppInsights.start();
+            
+        const trackTraceStub = sandbox.stub(AppInsights.defaultClient, "trackTrace");
+        const trackExceptionSpy = sandbox.spy(AppInsights.defaultClient, "trackException");
+        disable();
+        enable(true, AppInsights.defaultClient);
+
+        const dummyError = { message: "Test Message", name: "Test Name", stack: "Test Stack" };
+        const bunyanJson = Util.stringify({ err: dummyError });
+        const errorEvent: bunyan.IBunyanData = {
+            result: bunyanJson,
+            level: 50
+        };
+        channel.publish("bunyan", errorEvent);
+        assert.ok(trackExceptionSpy.calledOnce);
+        assert.ok(trackTraceStub.notCalled);
+        assert.deepEqual(trackExceptionSpy.args[0][0].exception.message, dummyError.message);
+        assert.deepEqual(trackExceptionSpy.args[0][0].exception.name, dummyError.name);
+        assert.deepEqual(trackExceptionSpy.args[0][0].exception.stack, dummyError.stack);
+    });
 });

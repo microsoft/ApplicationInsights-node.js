@@ -13,8 +13,12 @@ let clients: TelemetryClient[] = [];
 const subscriber = (event: IStandardEvent<consolePub.IConsoleData>) => {
     let message = event.data.message as Error | string;
     clients.forEach((client) => {
-        if (message instanceof Error) {
+        if (message instanceof Error && !client.config.enableLoggerErrorToTrace) {
             client.trackException({ exception: message });
+        }
+        else if(message instanceof Error) {
+            // If logging errors as traces return the error as a string and mark severity as error
+            client.trackTrace({ message: message.toString(), severity: (event.data.stderr ? SeverityLevel.Error : SeverityLevel.Information) });
         } else {
             // Message can have a trailing newline
             if (message.lastIndexOf("\n") == message.length - 1) {
