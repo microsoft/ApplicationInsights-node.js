@@ -71,7 +71,7 @@ describe("AutoCollection/Console", () => {
 
         const trackTraceStub = sinon.stub(AppInsights.defaultClient, "trackTrace");
         const trackExceptionStub = sinon.stub(AppInsights.defaultClient, "trackException");
-        AppInsights.defaultClient.config.enableConsoleErrorToTrace = true;
+        AppInsights.defaultClient.config.enableLoggerErrorToTrace = true;
 
         disable();
         enable(true, AppInsights.defaultClient);

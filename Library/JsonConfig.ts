@@ -49,7 +49,7 @@ export class JsonConfig implements IJsonConfig {
     public distributedTracingMode: DistributedTracingModes;
     public enableAutoCollectExternalLoggers: boolean;
     public enableAutoCollectConsole: boolean;
-    public enableConsoleErrorToTrace: boolean;
+    public enableLoggerErrorToTrace: boolean;
     public enableAutoCollectExceptions: boolean;
     public enableAutoCollectPerformance: boolean;
     public enableAutoCollectExtendedMetrics: boolean | IDisabledExtendedMetrics;
@@ -187,8 +187,8 @@ export class JsonConfig implements IJsonConfig {
             if (jsonConfig.webInstrumentationSrc != undefined) {
                 this.webInstrumentationSrc = jsonConfig.webInstrumentationSrc;
             }
-            if (jsonConfig.enableConsoleErrorToTrace != undefined) {
-                this.enableConsoleErrorToTrace = jsonConfig.enableConsoleErrorToTrace;
+            if (jsonConfig.enableLoggerErrorToTrace != undefined) {
+                this.enableLoggerErrorToTrace = jsonConfig.enableLoggerErrorToTrace;
             }
 
             this.endpointUrl = jsonConfig.endpointUrl;
@@ -202,7 +202,7 @@ export class JsonConfig implements IJsonConfig {
             this.distributedTracingMode = jsonConfig.distributedTracingMode;
             this.enableAutoCollectExternalLoggers = jsonConfig.enableAutoCollectExternalLoggers;
             this.enableAutoCollectConsole = jsonConfig.enableAutoCollectConsole;
-            this.enableConsoleErrorToTrace = jsonConfig.enableConsoleErrorToTrace;
+            this.enableLoggerErrorToTrace = jsonConfig.enableLoggerErrorToTrace;
             this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
             this.enableAutoCollectPerformance = jsonConfig.enableAutoCollectPerformance;
             this.enableAutoCollectExtendedMetrics = jsonConfig.enableAutoCollectExtendedMetrics;

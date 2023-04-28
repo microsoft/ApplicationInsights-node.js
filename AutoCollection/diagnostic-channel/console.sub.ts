@@ -13,7 +13,7 @@ let clients: TelemetryClient[] = [];
 const subscriber = (event: IStandardEvent<consolePub.IConsoleData>) => {
     let message = event.data.message as Error | string;
     clients.forEach((client) => {
-        if (message instanceof Error && !client.config.enableConsoleErrorToTrace) {
+        if (message instanceof Error && !client.config.enableLoggerErrorToTrace) {
             client.trackException({ exception: message });
         }
         else if(message instanceof Error) {

@@ -35,7 +35,7 @@ class Config implements IConfig {
     public ignoreLegacyHeaders: boolean;
     public aadTokenCredential?: azureCoreAuth.TokenCredential;
     public enableAutoCollectConsole: boolean;
-    public enableConsoleErrorToTrace: boolean;
+    public enableLoggerErrorToTrace: boolean;
     public enableAutoCollectExceptions: boolean;
     public enableAutoCollectPerformance: boolean;
     public enableAutoCollectExternalLoggers: boolean;
@@ -166,7 +166,7 @@ class Config implements IConfig {
         this.disableStatsbeat = jsonConfig.disableStatsbeat;
         this.distributedTracingMode = jsonConfig.distributedTracingMode;
         this.enableAutoCollectConsole = jsonConfig.enableAutoCollectConsole;
-        this.enableConsoleErrorToTrace = jsonConfig.enableConsoleErrorToTrace;
+        this.enableLoggerErrorToTrace = jsonConfig.enableLoggerErrorToTrace;
         this.enableAutoCollectDependencies = jsonConfig.enableAutoCollectDependencies;
         this.enableAutoCollectIncomingRequestAzureFunctions = jsonConfig.enableAutoCollectIncomingRequestAzureFunctions;
         this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;

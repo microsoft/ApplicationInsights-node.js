@@ -55,7 +55,7 @@ describe("diagnostic-channel/winston", () => {
 
         const trackExceptionStub = sinon.stub(AppInsights.defaultClient, "trackException");
         const trackTraceStub = sinon.stub(AppInsights.defaultClient, "trackTrace");
-        AppInsights.defaultClient.config.enableConsoleErrorToTrace = true;
+        AppInsights.defaultClient.config.enableLoggerErrorToTrace = true;
 
         disable();
         enable(true, AppInsights.defaultClient);

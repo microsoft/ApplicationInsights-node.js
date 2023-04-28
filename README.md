@@ -201,7 +201,7 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | distributedTracingMode          | Sets the distributed tracing modes (Default=AI)                                                            |
 | enableAutoCollectExternalLoggers| Sets the state of console. If true logger activity will be sent to Application Insights |
 | enableAutoCollectConsole        | Sets the state of logger tracking (enabled by default for third-party loggers only). If true, logger auto collection will include console.log calls (default false) |
-| enableConsoleErrorToTrace       | Sets tracking error logs from loggers (console, bunyan, winston) as traces. If true errors will be returned as traces |
+| enableLoggerErrorToTrace       | Sets tracking error logs from loggers (console, bunyan, and winston) as traces. If true errors will be returned as traces. By default errors are returned as exceptions and non-error properties will not be tracked. |
 | enableAutoCollectExceptions     | Sets the state of exception tracking (enabled by default). If true uncaught exceptions will be sent to Application Insights |
 | enableAutoCollectPerformance    | Sets the state of performance tracking (enabled by default). If true performance counters will be collected every second and sent to Application Insights |
 | enableAutoCollectExtendedMetrics| Sets the state of performance tracking (enabled by default). If true, extended metrics counters will be collected every minute and sent to Application Insights |

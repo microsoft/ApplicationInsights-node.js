@@ -38,7 +38,7 @@ export enum DistributedTracingModes {
 let defaultConfig = _getDefaultAutoCollectConfig();
 let _isConsole = defaultConfig.isConsole();
 let _isConsoleLog = defaultConfig.isConsoleLog();
-let _isConsoleErrorToTrace = defaultConfig.isConsoleErrorToTrace(); // default to false
+let _isLoggerErrorToTrace = defaultConfig.isLoggerErrorToTrace(); // default to false
 let _isExceptions = defaultConfig.isExceptions();
 let _isPerformance = defaultConfig.isPerformance();
 let _isPreAggregatedMetrics = defaultConfig.isPreAggregatedMetrics();
@@ -70,7 +70,7 @@ function _getDefaultAutoCollectConfig() {
         isNativePerformance: () => true,
         isSnippetInjection: () => false,
         isAzureFunctions: () => false,
-        isConsoleErrorToTrace: () => false,
+        isLoggerErrorToTrace: () => false,
     }
 }
 
@@ -169,7 +169,7 @@ export function start() {
 function _initializeConfig() {
     _isConsole = defaultClient.config.enableAutoCollectExternalLoggers !== undefined ? defaultClient.config.enableAutoCollectExternalLoggers : _isConsole;
     _isConsoleLog = defaultClient.config.enableAutoCollectConsole !== undefined ? defaultClient.config.enableAutoCollectConsole : _isConsoleLog;
-    _isConsoleErrorToTrace = defaultClient.config.enableConsoleErrorToTrace !== undefined ? defaultClient.config.enableConsoleErrorToTrace : _isConsoleErrorToTrace;
+    _isLoggerErrorToTrace = defaultClient.config.enableLoggerErrorToTrace !== undefined ? defaultClient.config.enableLoggerErrorToTrace : _isLoggerErrorToTrace;
     _isExceptions = defaultClient.config.enableAutoCollectExceptions !== undefined ? defaultClient.config.enableAutoCollectExceptions : _isExceptions;
     _isPerformance = defaultClient.config.enableAutoCollectPerformance !== undefined ? defaultClient.config.enableAutoCollectPerformance : _isPerformance;
     _isPreAggregatedMetrics = defaultClient.config.enableAutoCollectPreAggregatedMetrics !== undefined ? defaultClient.config.enableAutoCollectPreAggregatedMetrics : _isPreAggregatedMetrics;

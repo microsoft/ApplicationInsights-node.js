@@ -46,7 +46,7 @@ const subscriber = (event: IStandardEvent<winston.IWinstonData>) => {
     const message = event.data.message as Error | string;
     const AIlevel = winstonToAILevelMap[event.data.levelKind](event.data.level);
     clients.forEach((client) => {
-        if (message instanceof Error && !client.config.enableConsoleErrorToTrace) {
+        if (message instanceof Error && !client.config.enableLoggerErrorToTrace) {
             client.trackException({
                 exception: message,
                 properties: event.data.meta

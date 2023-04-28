@@ -31,7 +31,7 @@ const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
                 let bunyanError = new Error(log.err.message);
                 bunyanError.name = log.err.name;
                 bunyanError.stack = log.err.stack;
-                if (client.config.enableConsoleErrorToTrace) {
+                if (client.config.enableLoggerErrorToTrace) {
                     client.trackTrace({ message: message, severity: AIlevel });
                     return;
                 }

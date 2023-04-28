@@ -73,7 +73,7 @@ describe("diagnostic-channel/bunyan", () => {
         const trackTraceStub = sandbox.stub(AppInsights.defaultClient, "trackTrace");
         const trackExceptionSpy = sandbox.spy(AppInsights.defaultClient, "trackException");
         disable();
-        AppInsights.defaultClient.config.enableConsoleErrorToTrace = true;
+        AppInsights.defaultClient.config.enableLoggerErrorToTrace = true;
         enable(true, AppInsights.defaultClient);
 
         const dummyError = { message: "Test Message", name: "Test Name", stack: "Test Stack" };
