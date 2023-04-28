@@ -9,6 +9,7 @@ import Context = require("../../Library/Context");
 describe("Library/Context", () => {
     describe("#constructor()", () => {
         var stubs: Array<any> = [];
+        let originalEnv: NodeJS.ProcessEnv;
 
         before(() => {
             // Create custom package json
@@ -23,6 +24,7 @@ describe("Library/Context", () => {
         });
 
         beforeEach(() => {
+            originalEnv = process.env;
             stubs = [
                 sinon.stub(os, "hostname", () => "host"),
                 sinon.stub(os, "type", () => "type"),
@@ -33,6 +35,7 @@ describe("Library/Context", () => {
         });
 
         afterEach(() => {
+            process.env = originalEnv;
             stubs.forEach((s, i, arr) => s.restore());
         });
 
@@ -68,6 +71,16 @@ describe("Library/Context", () => {
 
             assert.equal(context.tags["ai.device.osArchitecture"], "arch");
             assert.equal(context.tags["ai.device.osPlatform"], "platform");
+        });
+
+        it("should correctly set Azure properties", () => {
+            const env = <{ [id: string]: string }>{};
+            env.WEBSITE_SITE_NAME = "testRole";
+            env.WEBSITE_INSTANCE_ID = "627cc493-f310-47de-96bd-71410b7dec09";
+            process.env = env;
+            var context = new Context();
+            assert.equal(context.tags[context.keys.cloudRole], "testRole");
+            assert.equal(context.tags[context.keys.cloudRoleInstance], "627cc493-f310-47de-96bd-71410b7dec09");
         });
 
         // TODO: Unreliable test, applicationVersion is being added during build
