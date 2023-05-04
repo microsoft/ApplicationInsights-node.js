@@ -1,7 +1,4 @@
-import {
-    AzureMonitorExporterOptions,
-    AzureMonitorMetricExporter,
-} from "@azure/monitor-opentelemetry-exporter";
+import { AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
 import { Attributes, Meter, SpanKind } from "@opentelemetry/api";
 import {
     DropAggregation,
@@ -39,13 +36,7 @@ export class StandardMetricsHandler {
             views: this._getViews(),
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);
-        const exporterConfig: AzureMonitorExporterOptions = {
-            connectionString: this._config.connectionString,
-            aadTokenCredential: this._config.aadTokenCredential,
-            storageDirectory: this._config.storageDirectory,
-            disableOfflineStorage: this._config.disableOfflineStorage,
-        };
-        this._azureExporter = new AzureMonitorMetricExporter(exporterConfig);
+        this._azureExporter = new AzureMonitorMetricExporter(this._config.azureMonitorExporterConfig);
         const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
             exporter: this._azureExporter as any,
             exportIntervalMillis: options?.collectionInterval || this._collectionInterval,
@@ -59,11 +50,11 @@ export class StandardMetricsHandler {
         this._traceMetrics = new TraceMetrics(this._meter);
     }
 
-    public start() {
-        this._requestMetrics.enable(true);
-        this._dependencyMetrics.enable(true);
-        this._exceptionMetrics.enable(true);
-        this._traceMetrics.enable(true);
+     /** 
+   * @deprecated This should not be used
+   */
+     public start() {
+        // No Op
     }
 
     public async flush(): Promise<void> {
@@ -71,6 +62,10 @@ export class StandardMetricsHandler {
     }
 
     public shutdown() {
+        this._meterProvider.shutdown();
+        this._dependencyMetrics.shutdown();
+        this._exceptionMetrics.shutdown();
+        this._traceMetrics.shutdown();
         this._meterProvider.shutdown();
     }
 

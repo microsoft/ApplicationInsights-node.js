@@ -44,26 +44,30 @@ export class RequestMetrics {
         );
         this._requestRateGaugeCallback = this._getRequestRate.bind(this);
         this._requestFailureRateGaugeCallback = this._getFailureRequestRate.bind(this);
+        this._lastRequestRate = {
+            count: this._totalCount,
+            time: +new Date(),
+            executionInterval: this._intervalExecutionTime,
+        };
+        this._lastFailureRequestRate = {
+            count: this._totalFailedCount,
+            time: +new Date(),
+            executionInterval: this._intervalExecutionTime,
+        };
+        this._requestRateGauge.addCallback(this._requestRateGaugeCallback);
+        this._requestFailureRateGauge.addCallback(this._requestFailureRateGaugeCallback);
     }
 
+    /** 
+    * @deprecated This should not be used
+    */
     public enable(isEnabled: boolean) {
-        if (isEnabled) {
-            this._lastRequestRate = {
-                count: this._totalCount,
-                time: +new Date(),
-                executionInterval: this._intervalExecutionTime,
-            };
-            this._lastFailureRequestRate = {
-                count: this._totalFailedCount,
-                time: +new Date(),
-                executionInterval: this._intervalExecutionTime,
-            };
-            this._requestRateGauge.addCallback(this._requestRateGaugeCallback);
-            this._requestFailureRateGauge.addCallback(this._requestFailureRateGaugeCallback);
-        } else {
-            this._requestRateGauge.removeCallback(this._requestRateGaugeCallback);
-            this._requestFailureRateGauge.removeCallback(this._requestFailureRateGaugeCallback);
-        }
+        // No Op
+    }
+
+    public shutdown() {
+        this._requestRateGauge.removeCallback(this._requestRateGaugeCallback);
+        this._requestFailureRateGauge.removeCallback(this._requestFailureRateGaugeCallback);
     }
 
     public getDurationHistogram(): Histogram {

@@ -15,9 +15,8 @@ describe("#StandardMetricsHandler", () => {
     before(() => {
         sandbox = sinon.createSandbox();
         const config = new ApplicationInsightsConfig();
-        config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
+        config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
         autoCollect = new StandardMetricsHandler(config, { collectionInterval: 100 });
-        autoCollect.start();
         sandbox.stub(autoCollect["_metricReader"]["_exporter"], "export");
     });
 

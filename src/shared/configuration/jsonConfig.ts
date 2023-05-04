@@ -1,24 +1,39 @@
 import * as fs from "fs";
 import * as path from "path";
+import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 import { Logger } from "../logging";
-import { IBaseConfig, IConfig, InstrumentationsConfig, LogInstrumentationsConfig } from "./types";
+import { IConfig, InstrumentationsConfig, LogInstrumentationsConfig } from "./types";
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 
-export class JsonConfig implements IBaseConfig {
+export class JsonConfig implements IConfig {
     private static _instance: JsonConfig;
 
-    public connectionString: string;
+    /** Azure Monitor Exporter Configuration */
+    public azureMonitorExporterConfig?: AzureMonitorExporterOptions;
     public samplingRatio: number;
     public enableAutoCollectExceptions: boolean;
     public enableAutoCollectPerformance: boolean;
     public enableAutoCollectStandardMetrics: boolean;
     public enableAutoCollectHeartbeat: boolean;
-    public disableOfflineStorage: boolean;
-    public storageDirectory: string;
     public instrumentations: InstrumentationsConfig;
     public logInstrumentations: LogInstrumentationsConfig;
     public extendedMetrics: { [type: string]: boolean };
+
+    /** Connection String used to send telemetry payloads to 
+     * @deprecated This config should not be used, use azureMonitorExporterConfig to configure Connection String
+    */
+    public connectionString: string;
+    /**
+    * Disable offline storage when telemetry cannot be exported.
+     * @deprecated This config should not be used, use azureMonitorExporterConfig to configure disableOfflineStorage
+    */
+    public disableOfflineStorage: boolean;
+    /**
+     * Directory to store retriable telemetry when it fails to export.
+      * @deprecated This config should not be used, use azureMonitorExporterConfig to configure storageDirectory
+     */
+    public storageDirectory: string;
 
     public static getInstance() {
         if (!JsonConfig._instance) {
@@ -45,6 +60,8 @@ export class JsonConfig implements IBaseConfig {
         }
         try {
             const jsonConfig: IConfig = JSON.parse(fs.readFileSync(tempDir, "utf8"));
+            this.azureMonitorExporterConfig = jsonConfig.azureMonitorExporterConfig;
+            
             if (jsonConfig.connectionString !== undefined) {
                 this.connectionString = jsonConfig.connectionString;
             }

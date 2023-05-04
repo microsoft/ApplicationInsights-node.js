@@ -9,7 +9,7 @@ import { LogExporter } from "./exporters";
 import * as Contracts from "../declarations/contracts";
 import { AutoCollectConsole } from "./console";
 import { AutoCollectExceptions } from "./exceptions";
-import { ApplicationInsightsConfig } from "../shared/configuration";
+import { ApplicationInsightsConfig, ConnectionStringParser } from "../shared/configuration";
 import { Util } from "../shared/util";
 import { Statsbeat } from "../metrics/statsbeat";
 import { parseStack } from "./exporters/exceptionUtils";
@@ -49,6 +49,7 @@ export class LogHandler {
     private _idGenerator: IdGenerator;
     private _metricHandler: MetricHandler;
     private _aiSampler: ApplicationInsightsSampler;
+    private _instrumentationKey: string;
 
     constructor(config: ApplicationInsightsConfig, metricHandler?: MetricHandler, statsbeat?: Statsbeat) {
         this._config = config;
@@ -56,15 +57,25 @@ export class LogHandler {
         this._exporter = new LogExporter(this._config, this.statsbeat);
         this._batchProcessor = new BatchProcessor(this._exporter);
         this._console = new AutoCollectConsole(this);
-        this._exceptions = new AutoCollectExceptions(this);
+        if (this._config.enableAutoCollectExceptions) {
+            this._exceptions = new AutoCollectExceptions(this);
+        }
+
         this._idGenerator = new RandomIdGenerator();
         this._metricHandler = metricHandler;
         this._aiSampler = new ApplicationInsightsSampler(this._config.samplingRatio);
+
+        const parser = new ConnectionStringParser();
+        const parsedConnectionString = parser.parse(this._config.azureMonitorExporterConfig.connectionString);
+        this._instrumentationKey = parsedConnectionString.instrumentationkey;
+        this._console.enable(this._config.logInstrumentations);
     }
 
+    /** 
+  * @deprecated This should not be used
+  */
     public start() {
-        this._console.enable(this._config.logInstrumentations);
-        this._exceptions.enable(this._config.enableAutoCollectExceptions);
+        // No Op
     }
 
     public async flush(): Promise<void> {
@@ -74,7 +85,7 @@ export class LogHandler {
     public async shutdown(): Promise<void> {
         this._console.shutdown();
         this._console = null;
-        this._exceptions.enable(false);
+        this._exceptions?.shutdown();
         this._exceptions = null;
     }
 
@@ -85,8 +96,7 @@ export class LogHandler {
     public async trackAvailability(telemetry: Contracts.AvailabilityTelemetry): Promise<void> {
         try {
             const envelope = this._availabilityToEnvelope(
-                telemetry,
-                this._config.getInstrumentationKey()
+                telemetry
             );
             this._sendTelemetry(envelope);
         } catch (err) {
@@ -101,8 +111,7 @@ export class LogHandler {
     public async trackPageView(telemetry: Contracts.PageViewTelemetry): Promise<void> {
         try {
             const envelope = this._pageViewToEnvelope(
-                telemetry,
-                this._config.getInstrumentationKey()
+                telemetry
             );
             this._sendTelemetry(envelope);
         } catch (err) {
@@ -116,7 +125,7 @@ export class LogHandler {
      */
     public async trackTrace(telemetry: Contracts.TraceTelemetry): Promise<void> {
         try {
-            const envelope = this._traceToEnvelope(telemetry, this._config.getInstrumentationKey());
+            const envelope = this._traceToEnvelope(telemetry);
             if (this._metricHandler?.getConfig().enableAutoCollectStandardMetrics) {
                 const baseData = envelope.data.baseData as MessageData;
                 const traceDimensions: IMetricTraceDimensions = {
@@ -148,8 +157,7 @@ export class LogHandler {
         }
         try {
             const envelope = this._exceptionToEnvelope(
-                telemetry,
-                this._config.getInstrumentationKey()
+                telemetry
             );
             if (this._metricHandler?.getConfig().enableAutoCollectStandardMetrics) {
                 const exceptionDimensions: IStandardMetricBaseDimensions = {
@@ -176,7 +184,7 @@ export class LogHandler {
      */
     public async trackEvent(telemetry: Contracts.EventTelemetry): Promise<void> {
         try {
-            const envelope = this._eventToEnvelope(telemetry, this._config.getInstrumentationKey());
+            const envelope = this._eventToEnvelope(telemetry);
             this._sendTelemetry(envelope);
         } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
@@ -193,11 +201,10 @@ export class LogHandler {
     private _logToEnvelope(
         telemetry: Telemetry,
         baseType: string,
-        baseData: MonitorDomain,
-        instrumentationKey: string
+        baseData: MonitorDomain
     ): Envelope {
         const version = 1;
-        const name = `Microsoft.ApplicationInsights.${instrumentationKey.replace(
+        const name = `Microsoft.ApplicationInsights.${this._instrumentationKey.replace(
             /-/g,
             ""
         )}.${baseType.substring(0, baseType.length - 4)}`;
@@ -211,7 +218,7 @@ export class LogHandler {
         const envelope: Envelope = {
             name: name,
             time: telemetry.time || new Date(),
-            instrumentationKey: instrumentationKey,
+            instrumentationKey: this._instrumentationKey,
             version: version,
             sampleRate: sampleRate,
             data: {
@@ -231,8 +238,7 @@ export class LogHandler {
      * @internal
      */
     private _availabilityToEnvelope(
-        telemetry: AvailabilityTelemetry,
-        instrumentationKey: string
+        telemetry: AvailabilityTelemetry
     ): Envelope {
         const baseType = "AvailabilityData";
         const baseData: AvailabilityData = {
@@ -245,7 +251,7 @@ export class LogHandler {
             measurements: telemetry.measurements,
             version: 2,
         };
-        const envelope = this._logToEnvelope(telemetry, baseType, baseData, instrumentationKey);
+        const envelope = this._logToEnvelope(telemetry, baseType, baseData);
         return envelope;
     }
 
@@ -254,8 +260,7 @@ export class LogHandler {
      * @internal
      */
     private _exceptionToEnvelope(
-        telemetry: ExceptionTelemetry,
-        instrumentationKey: string
+        telemetry: ExceptionTelemetry
     ): Envelope {
         const baseType = "ExceptionData";
         const stack = telemetry.exception["stack"];
@@ -273,7 +278,7 @@ export class LogHandler {
             measurements: telemetry.measurements,
             version: 2,
         };
-        const envelope = this._logToEnvelope(telemetry, baseType, baseData, instrumentationKey);
+        const envelope = this._logToEnvelope(telemetry, baseType, baseData);
         return envelope;
     }
 
@@ -281,7 +286,7 @@ export class LogHandler {
      * Trace to Azure envelope parsing.
      * @internal
      */
-    private _traceToEnvelope(telemetry: TraceTelemetry, instrumentationKey: string): Envelope {
+    private _traceToEnvelope(telemetry: TraceTelemetry): Envelope {
         const baseType = "MessageData";
         const baseData: MessageData = {
             message: telemetry.message,
@@ -289,7 +294,7 @@ export class LogHandler {
             measurements: telemetry.measurements,
             version: 2,
         };
-        const envelope = this._logToEnvelope(telemetry, baseType, baseData, instrumentationKey);
+        const envelope = this._logToEnvelope(telemetry, baseType, baseData);
         return envelope;
     }
 
@@ -298,8 +303,7 @@ export class LogHandler {
      * @internal
      */
     private _pageViewToEnvelope(
-        telemetry: PageViewTelemetry,
-        instrumentationKey: string
+        telemetry: PageViewTelemetry
     ): Envelope {
         const baseType = "PageViewData";
         const baseData: PageViewData = {
@@ -312,7 +316,7 @@ export class LogHandler {
             version: 2,
         };
 
-        const envelope = this._logToEnvelope(telemetry, baseType, baseData, instrumentationKey);
+        const envelope = this._logToEnvelope(telemetry, baseType, baseData);
         return envelope;
     }
 
@@ -320,14 +324,14 @@ export class LogHandler {
      * Event to Azure envelope parsing.
      * @internal
      */
-    private _eventToEnvelope(telemetry: EventTelemetry, instrumentationKey: string): Envelope {
+    private _eventToEnvelope(telemetry: EventTelemetry): Envelope {
         const baseType = "EventData";
         const baseData: TelemetryEventData = {
             name: telemetry.name,
             measurements: telemetry.measurements,
             version: 2,
         };
-        const envelope = this._logToEnvelope(telemetry, baseType, baseData, instrumentationKey);
+        const envelope = this._logToEnvelope(telemetry, baseType, baseData);
         return envelope;
     }
 

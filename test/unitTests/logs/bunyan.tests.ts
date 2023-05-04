@@ -25,7 +25,6 @@ describe("diagnostic-channel/bunyan", () => {
         config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
         config.logInstrumentations.bunyan.enabled = true;
         const handler = new LogHandler(config);
-        handler.start();
         const stub = sandbox.stub(handler, "trackException");
         const dummyError = { stack: "Test error" };
         const bunyanJson = Util.getInstance().stringify({ err: dummyError });
@@ -43,7 +42,6 @@ describe("diagnostic-channel/bunyan", () => {
         config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
         config.logInstrumentations.bunyan.enabled = true;
         const handler = new LogHandler(config);
-        handler.start();
         const stub = sandbox.stub(handler, "trackTrace");
         const logEvent: bunyan.IBunyanData = {
             result: "test log",
@@ -56,7 +54,7 @@ describe("diagnostic-channel/bunyan", () => {
 
     it("should notify multiple handlers", () => {
         const config = new ApplicationInsightsConfig();
-        config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
+        config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
         config.logInstrumentations.bunyan.enabled = true;
         const handler = new LogHandler(config);
         const secondHandler = new LogHandler(config);

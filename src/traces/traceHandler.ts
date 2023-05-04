@@ -78,6 +78,14 @@ export class TraceHandler {
         // TODO: Check for conflicts with multiple handlers available
         this._tracer = this._tracerProvider.getTracer("ApplicationInsightsTracer");
         this._azureFunctionsHook = new AzureFunctionsHook();
+        this._initialize();
+    }
+
+    /** 
+  * @deprecated This should not be used
+  */
+    public start() {
+        // No Op
     }
 
     public getTracerProvider(): TracerProvider {
@@ -88,7 +96,7 @@ export class TraceHandler {
         return this._tracer;
     }
 
-    public start() {
+    private _initialize() {
         if (!this._httpInstrumentation) {
             const httpInstrumentationConfig = (this._config.instrumentations.http as HttpInstrumentationConfig);
             const providedIgnoreOutgoingRequestHook = httpInstrumentationConfig.ignoreOutgoingRequestHook;

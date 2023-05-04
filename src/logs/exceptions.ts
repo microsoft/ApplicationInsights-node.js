@@ -19,71 +19,75 @@ export class AutoCollectExceptions {
         const nodeVer = process.versions.node.split(".");
         this._canUseUncaughtExceptionMonitor =
             parseInt(nodeVer[0]) > 13 || (parseInt(nodeVer[0]) === 13 && parseInt(nodeVer[1]) >= 7);
+
+        // For scenarios like Promise.reject(), an error won't be passed to the handle. Create a placeholder
+        // error for these scenarios.
+        if (this._canUseUncaughtExceptionMonitor) {
+            // Node.js >= 13.7.0, use uncaughtExceptionMonitor. It handles both promises and exceptions
+            this._exceptionListenerHandle = this._handleException.bind(
+                this,
+                false,
+                UNCAUGHT_EXCEPTION_MONITOR_HANDLER_NAME
+            ); // never rethrows
+            (<any>process).on(
+                UNCAUGHT_EXCEPTION_MONITOR_HANDLER_NAME,
+                this._exceptionListenerHandle
+            );
+        } else {
+            this._exceptionListenerHandle = this._handleException.bind(
+                this,
+                true,
+                UNCAUGHT_EXCEPTION_HANDLER_NAME
+            );
+            this._rejectionListenerHandle = this._handleException.bind(
+                this,
+                false,
+                UNHANDLED_REJECTION_HANDLER_NAME
+            ); // never rethrows
+            (<any>process).on(
+                UNCAUGHT_EXCEPTION_HANDLER_NAME,
+                this._exceptionListenerHandle
+            );
+            (<any>process).on(
+                UNHANDLED_REJECTION_HANDLER_NAME,
+                this._rejectionListenerHandle
+            );
+        }
     }
 
+    /** 
+  * @deprecated This should not be used
+  */
     public enable(isEnabled: boolean) {
-        if (isEnabled) {
-            if (!this._exceptionListenerHandle) {
-                // For scenarios like Promise.reject(), an error won't be passed to the handle. Create a placeholder
-                // error for these scenarios.
-                if (this._canUseUncaughtExceptionMonitor) {
-                    // Node.js >= 13.7.0, use uncaughtExceptionMonitor. It handles both promises and exceptions
-                    this._exceptionListenerHandle = this._handleException.bind(
-                        this,
-                        false,
-                        UNCAUGHT_EXCEPTION_MONITOR_HANDLER_NAME
-                    ); // never rethrows
-                    (<any>process).on(
-                        UNCAUGHT_EXCEPTION_MONITOR_HANDLER_NAME,
-                        this._exceptionListenerHandle
-                    );
-                } else {
-                    this._exceptionListenerHandle = this._handleException.bind(
-                        this,
-                        true,
-                        UNCAUGHT_EXCEPTION_HANDLER_NAME
-                    );
-                    this._rejectionListenerHandle = this._handleException.bind(
-                        this,
-                        false,
-                        UNHANDLED_REJECTION_HANDLER_NAME
-                    ); // never rethrows
-                    (<any>process).on(
+        // No Op
+    }
+
+
+    public shutdown() {
+        if (this._exceptionListenerHandle) {
+            if (this._canUseUncaughtExceptionMonitor) {
+                process.removeListener(
+                    UNCAUGHT_EXCEPTION_MONITOR_HANDLER_NAME,
+                    this._exceptionListenerHandle
+                );
+            } else {
+                if (this._exceptionListenerHandle) {
+                    process.removeListener(
                         UNCAUGHT_EXCEPTION_HANDLER_NAME,
                         this._exceptionListenerHandle
                     );
-                    (<any>process).on(
+                }
+                if (this._rejectionListenerHandle) {
+                    process.removeListener(
                         UNHANDLED_REJECTION_HANDLER_NAME,
                         this._rejectionListenerHandle
                     );
                 }
             }
-        } else {
-            if (this._exceptionListenerHandle) {
-                if (this._canUseUncaughtExceptionMonitor) {
-                    process.removeListener(
-                        UNCAUGHT_EXCEPTION_MONITOR_HANDLER_NAME,
-                        this._exceptionListenerHandle
-                    );
-                } else {
-                    if (this._exceptionListenerHandle) {
-                        process.removeListener(
-                            UNCAUGHT_EXCEPTION_HANDLER_NAME,
-                            this._exceptionListenerHandle
-                        );
-                    }
-                    if (this._rejectionListenerHandle) {
-                        process.removeListener(
-                            UNHANDLED_REJECTION_HANDLER_NAME,
-                            this._rejectionListenerHandle
-                        );
-                    }
-                }
-                this._exceptionListenerHandle = undefined;
-                this._rejectionListenerHandle = undefined;
-                delete this._exceptionListenerHandle;
-                delete this._rejectionListenerHandle;
-            }
+            this._exceptionListenerHandle = undefined;
+            this._rejectionListenerHandle = undefined;
+            delete this._exceptionListenerHandle;
+            delete this._rejectionListenerHandle;
         }
     }
 

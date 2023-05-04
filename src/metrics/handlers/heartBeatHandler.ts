@@ -1,9 +1,6 @@
 import * as crypto from "crypto";
 import * as os from "os";
-import {
-    AzureMonitorExporterOptions,
-    AzureMonitorMetricExporter,
-} from "@azure/monitor-opentelemetry-exporter";
+import { AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
 import {
     Meter,
     ObservableCallback,
@@ -35,13 +32,7 @@ export class HeartBeatHandler {
     constructor(config: ApplicationInsightsConfig, options?: { collectionInterval: number }) {
         this._config = config;
         this._meterProvider = new MeterProvider();
-        const exporterConfig: AzureMonitorExporterOptions = {
-            connectionString: config.connectionString,
-            aadTokenCredential: config.aadTokenCredential,
-            storageDirectory: config.storageDirectory,
-            disableOfflineStorage: config.disableOfflineStorage,
-        };
-        this._azureExporter = new AzureMonitorMetricExporter(exporterConfig);
+        this._azureExporter = new AzureMonitorMetricExporter(this._config.azureMonitorExporterConfig);
         const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
             exporter: this._azureExporter as any,
             exportIntervalMillis: options?.collectionInterval || this._collectionInterval,
@@ -51,18 +42,21 @@ export class HeartBeatHandler {
         this._meter = this._meterProvider.getMeter("ApplicationInsightsHeartBeatMeter");
         this._metricGauge = this._meter.createObservableGauge(HeartBeatMetricName);
         this._metricGaugeCallback = this._trackHeartBeat.bind(this);
+        this._metricGauge.addCallback(this._metricGaugeCallback);
     }
 
+    /** 
+ * @deprecated This should not be used
+ */
     public enable(isEnabled: boolean) {
-        if (isEnabled) {
-            this._metricGauge.addCallback(this._metricGaugeCallback);
-        } else {
-            this._metricGauge.removeCallback(this._metricGaugeCallback);
-        }
+
     }
 
+    /** 
+  * @deprecated This should not be used
+  */
     public start() {
-        this.enable(true);
+        // No Op
     }
 
     public async shutdown(): Promise<void> {

@@ -41,28 +41,32 @@ export class DependencyMetrics {
         );
         this._dependencyFailureRateGaugeCallback = this._getFailureDependencyRate.bind(this);
         this._dependencyRateGaugeCallback = this._getDependencyRate.bind(this);
+        this._lastDependencyRate = {
+            count: this._totalCount,
+            time: +new Date(),
+            executionInterval: this._intervalExecutionTime,
+        };
+        this._lastFailureDependencyRate = {
+            count: this._totalFailedCount,
+            time: +new Date(),
+            executionInterval: this._intervalExecutionTime,
+        };
+        this._dependencyFailureRateGauge.addCallback(this._dependencyFailureRateGaugeCallback);
+        this._dependencyRateGauge.addCallback(this._dependencyRateGaugeCallback);
     }
 
+    /** 
+   * @deprecated This should not be used
+   */
     public enable(isEnabled: boolean) {
-        if (isEnabled) {
-            this._lastDependencyRate = {
-                count: this._totalCount,
-                time: +new Date(),
-                executionInterval: this._intervalExecutionTime,
-            };
-            this._lastFailureDependencyRate = {
-                count: this._totalFailedCount,
-                time: +new Date(),
-                executionInterval: this._intervalExecutionTime,
-            };
-            this._dependencyFailureRateGauge.addCallback(this._dependencyFailureRateGaugeCallback);
-            this._dependencyRateGauge.addCallback(this._dependencyRateGaugeCallback);
-        } else {
-            this._dependencyFailureRateGauge.removeCallback(
-                this._dependencyFailureRateGaugeCallback
-            );
-            this._dependencyRateGauge.removeCallback(this._dependencyRateGaugeCallback);
-        }
+        // No Op
+    }
+
+    public shutdown() {
+        this._dependencyFailureRateGauge.removeCallback(
+            this._dependencyFailureRateGaugeCallback
+        );
+        this._dependencyRateGauge.removeCallback(this._dependencyRateGaugeCallback);
     }
 
     public getDurationHistogram(): Histogram {

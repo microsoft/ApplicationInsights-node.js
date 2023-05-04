@@ -19,7 +19,7 @@ describe("Library/TraceHandler", () => {
 
     before(() => {
         _config = new ApplicationInsightsConfig();
-        _config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
+        _config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
         sandbox = sinon.createSandbox();
     });
 
@@ -53,7 +53,6 @@ describe("Library/TraceHandler", () => {
                         resolve();
                     })
             );
-            handler.start();
             // Load Http modules, HTTP instrumentation hook will be created in OpenTelemetry
             http = require("http") as any;
             https = require("https") as any;
@@ -175,7 +174,7 @@ describe("Library/TraceHandler", () => {
         }
 
         it("http outgoing/incoming requests", (done) => {
-            handler.start();
+            handler["_initialize"]();
             makeHttpRequest(false)
                 .then(() => {
                     handler
@@ -253,7 +252,7 @@ describe("Library/TraceHandler", () => {
         });
 
         it("https outgoing/incoming requests", (done) => {
-            handler.start();
+            handler["_initialize"]();
             makeHttpRequest(true)
                 .then(() => {
                     handler
@@ -331,7 +330,7 @@ describe("Library/TraceHandler", () => {
         });
 
         it("Custom Span processors", (done) => {
-            handler.start();
+            handler["_initialize"]();
             let customSpanProcessor: SpanProcessor = {
                 forceFlush: () => {
                     return Promise.resolve();
@@ -386,7 +385,7 @@ describe("Library/TraceHandler", () => {
 
 
         it("Span processing for pre aggregated metrics", (done) => {
-            handler.start();
+            handler["_initialize"]();
             metricHandler.getConfig().enableAutoCollectStandardMetrics = true;
             makeHttpRequest(false)
                 .then(() => {
@@ -423,7 +422,7 @@ describe("Library/TraceHandler", () => {
                 ignoreOutgoingRequestHook: () => true,
             };
             handler["_httpInstrumentation"].setConfig(httpConfig);
-            handler.start();
+            handler["_initialize"]();
             makeHttpRequest(false)
                 .then(() => {
                     handler
@@ -450,7 +449,7 @@ describe("Library/TraceHandler", () => {
                 ignoreIncomingRequestHook: () => true,
             };
             handler["_httpInstrumentation"].setConfig(httpConfig);
-            handler.start();
+            handler["_initialize"]();
             makeHttpRequest(false)
                 .then(() => {
                     handler

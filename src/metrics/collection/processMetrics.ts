@@ -58,25 +58,29 @@ export class ProcessMetrics {
         this._processorTimeGaugeCallback = this._getProcessorTime.bind(this);
         this._processTimeGaugeCallback = this._getProcessTime.bind(this);
         this._memoryCommittedBytesGaugeCallback = this._getCommittedMemory.bind(this);
+        this._lastCpus = os.cpus();
+        this._lastAppCpuUsage = (process as any).cpuUsage();
+        this._lastHrtime = process.hrtime();
+        this._memoryPrivateBytesGauge.addCallback(this._memoryPrivateBytesGaugeCallback);
+        this._memoryAvailableBytesGauge.addCallback(this._memoryAvailableBytesGaugeCallback);
+        this._processTimeGauge.addCallback(this._processTimeGaugeCallback);
+        this._processorTimeGauge.addCallback(this._processorTimeGaugeCallback);
+        this._memoryCommittedBytesGauge.addCallback(this._memoryCommittedBytesGaugeCallback);
     }
 
+    /** 
+   * @deprecated This should not be used
+   */
     public enable(isEnabled: boolean) {
-        if (isEnabled) {
-            this._lastCpus = os.cpus();
-            this._lastAppCpuUsage = (process as any).cpuUsage();
-            this._lastHrtime = process.hrtime();
-            this._memoryPrivateBytesGauge.addCallback(this._memoryPrivateBytesGaugeCallback);
-            this._memoryAvailableBytesGauge.addCallback(this._memoryAvailableBytesGaugeCallback);
-            this._processTimeGauge.addCallback(this._processTimeGaugeCallback);
-            this._processorTimeGauge.addCallback(this._processorTimeGaugeCallback);
-            this._memoryCommittedBytesGauge.addCallback(this._memoryCommittedBytesGaugeCallback);
-        } else {
-            this._memoryPrivateBytesGauge.removeCallback(this._memoryPrivateBytesGaugeCallback);
-            this._memoryAvailableBytesGauge.removeCallback(this._memoryAvailableBytesGaugeCallback);
-            this._processTimeGauge.removeCallback(this._processTimeGaugeCallback);
-            this._processorTimeGauge.removeCallback(this._processorTimeGaugeCallback);
-            this._memoryCommittedBytesGauge.removeCallback(this._memoryCommittedBytesGaugeCallback);
-        }
+        // No Op
+    }
+
+    public shutdown() {
+        this._memoryPrivateBytesGauge.removeCallback(this._memoryPrivateBytesGaugeCallback);
+        this._memoryAvailableBytesGauge.removeCallback(this._memoryAvailableBytesGaugeCallback);
+        this._processTimeGauge.removeCallback(this._processTimeGaugeCallback);
+        this._processorTimeGauge.removeCallback(this._processorTimeGaugeCallback);
+        this._memoryCommittedBytesGauge.removeCallback(this._memoryCommittedBytesGaugeCallback);
     }
 
     private _getPrivateMemory(observableResult: ObservableResult) {
@@ -150,13 +154,13 @@ export class ProcessMetrics {
             const hrtime = process.hrtime();
             const totalApp =
                 appCpuUsage.user -
-                    this._lastAppCpuUsage.user +
-                    (appCpuUsage.system - this._lastAppCpuUsage.system) || 0;
+                this._lastAppCpuUsage.user +
+                (appCpuUsage.system - this._lastAppCpuUsage.system) || 0;
 
             if (typeof this._lastHrtime !== "undefined" && this._lastHrtime.length === 2) {
                 const elapsedTime =
                     (hrtime[0] - this._lastHrtime[0]) * 1e6 +
-                        (hrtime[1] - this._lastHrtime[1]) / 1e3 || 0; // convert to microseconds
+                    (hrtime[1] - this._lastHrtime[1]) / 1e3 || 0; // convert to microseconds
 
                 appCpuPercent = (100 * totalApp) / (elapsedTime * cpus.length);
             }

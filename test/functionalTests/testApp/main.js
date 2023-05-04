@@ -20,7 +20,6 @@ if (testconfig.AppInsightsEnabled) {
     config.enableAutoCollectExceptions = true;
 
     appInsights = new ApplicationInsightsClient(config);
-    appInsights.start();
 }
 
 var Tasks = require("./tasks");

@@ -36,7 +36,6 @@ describe("AutoCollection/HeartBeat", () => {
 
         it("should observe instruments during collection", async () => {
             const mockExport = sandbox.stub(heartbeat["_azureExporter"], "export");
-            heartbeat.start();
             await new Promise((resolve) => setTimeout(resolve, 120));
             assert.ok(mockExport.called);
             const resourceMetrics = mockExport.args[0][0];
@@ -49,7 +48,6 @@ describe("AutoCollection/HeartBeat", () => {
 
         it("should not collect when shutdown", async () => {
             const mockExport = sandbox.stub(heartbeat["_azureExporter"], "export");
-            heartbeat.start();
             heartbeat.shutdown();
             await new Promise((resolve) => setTimeout(resolve, 120));
             assert.ok(mockExport.notCalled);

@@ -33,21 +33,22 @@ export class MetricHandler {
         }
     }
 
+    /** 
+   * @deprecated This should not be used
+   */
     public start() {
-        this._perfCounterMetricsHandler?.start();
-        this._standardMetricsHandler?.start();
-        this._heartbeatHandler?.start();
+        // No Op
     }
 
     public async shutdown(): Promise<void> {
-        this._customMetricsHandler.shutdown();
+        this._customMetricsHandler?.shutdown();
         this._perfCounterMetricsHandler?.shutdown();
         this._standardMetricsHandler?.shutdown();
         this._heartbeatHandler?.shutdown();
     }
 
     public async flush(): Promise<void> {
-        await this._customMetricsHandler.flush();
+        await this._customMetricsHandler?.flush();
         await this._heartbeatHandler?.flush();
         await this._standardMetricsHandler?.flush();
         await this._perfCounterMetricsHandler?.flush();

@@ -1,4 +1,6 @@
-import { Resource } from "@opentelemetry/resources";
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { ApplicationInsightsConfig } from "./shared/configuration";
 import { Statsbeat } from "./metrics/statsbeat";
 import { Logger } from "./shared/logging";
@@ -20,7 +22,7 @@ export class ApplicationInsightsClient {
      */
     constructor(config?: ApplicationInsightsConfig) {
         this._config = config || new ApplicationInsightsConfig();
-        if (!this._config.connectionString || this._config.connectionString === "") {
+        if (!this._config.azureMonitorExporterConfig.connectionString || this._config.azureMonitorExporterConfig.connectionString === "") {
             throw new Error(
                 "Connection String not found, please provide it before starting Application Insights SDK."
             );
@@ -34,12 +36,6 @@ export class ApplicationInsightsClient {
         this._metricHandler = new MetricHandler(this._config);
         this._traceHandler = new TraceHandler(this._config, this._metricHandler);
         this._logHandler = new LogHandler(this._config, this._metricHandler, this._statsbeat);
-    }
-
-    public start() {
-        this._traceHandler.start();
-        this._metricHandler.start();
-        this._logHandler.start();
     }
 
     public getTraceHandler(): TraceHandler {
@@ -67,8 +63,8 @@ export class ApplicationInsightsClient {
     }
 
     /**
-     * Immediately send all queued telemetry.
-     */
+   *Try to send all queued telemetry if present.
+   */
     public async flush(): Promise<void> {
         try {
             await this._traceHandler.flush();
@@ -79,6 +75,9 @@ export class ApplicationInsightsClient {
         }
     }
 
+    /**
+  *Shutdown all handlers
+  */
     public async shutdown(): Promise<void> {
         this._traceHandler.shutdown();
         this._metricHandler.shutdown();

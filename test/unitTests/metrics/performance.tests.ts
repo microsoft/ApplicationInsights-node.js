@@ -17,7 +17,6 @@ describe("PerformanceCounterMetricsHandler", () => {
         config.extendedMetrics.loop = true;
         config.extendedMetrics.gc = true;
         autoCollect = new PerformanceCounterMetricsHandler(config, { collectionInterval: 100 });
-        autoCollect["_nativeMetrics"]["_metricsAvailable"] = false;
         sandbox.stub(autoCollect["_metricReader"]["_exporter"], "export");
     });
 
@@ -80,7 +79,6 @@ describe("PerformanceCounterMetricsHandler", () => {
 
         it("should observe instruments during collection", async () => {
             const mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
-            autoCollect.start();
             await new Promise((resolve) => setTimeout(resolve, 120));
             assert.ok(mockExport.called);
             const resourceMetrics = mockExport.args[0][0];
@@ -114,7 +112,6 @@ describe("PerformanceCounterMetricsHandler", () => {
 
         it("should not collect when disabled", async () => {
             const mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
-            autoCollect.start();
             autoCollect.shutdown();
             await new Promise((resolve) => setTimeout(resolve, 120));
             assert.ok(mockExport.notCalled);
@@ -122,12 +119,11 @@ describe("PerformanceCounterMetricsHandler", () => {
 
         it("should add correct views", () => {
             const config = new ApplicationInsightsConfig();
-            config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
+            config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
             config.extendedMetrics.heap = false;
             config.extendedMetrics.loop = false;
             config.extendedMetrics.gc = false;
             const autoCollect = new PerformanceCounterMetricsHandler(config);
-            autoCollect["_nativeMetrics"]["_metricsAvailable"] = false;
             let views = autoCollect["_getViews"]();
             assert.equal(views.length, 18); // All Native metrics ignore views are added
             config.extendedMetrics.heap = true;
