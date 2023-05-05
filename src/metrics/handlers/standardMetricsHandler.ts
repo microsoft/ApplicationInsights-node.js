@@ -66,7 +66,6 @@ export class StandardMetricsHandler {
         this._exceptionMetrics.shutdown();
         this._traceMetrics.shutdown();
         this._meterProvider.shutdown();
-        this._meterProvider.shutdown();
     }
 
     public recordException(dimensions: IMetricTraceDimensions): void {

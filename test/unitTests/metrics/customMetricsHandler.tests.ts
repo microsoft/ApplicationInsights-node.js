@@ -3,25 +3,34 @@ import * as sinon from "sinon";
 
 import { CustomMetricsHandler } from "../../../src/metrics/handlers/customMetricsHandler";
 import { ApplicationInsightsConfig } from "../../../src/shared";
+import { ExportResultCode } from "@opentelemetry/core";
 
 describe("#CustomMetricsHandler", () => {
-    let sandbox: sinon.SinonSandbox;
     let autoCollect: CustomMetricsHandler;
+    let exportStub: sinon.SinonStub;
 
     before(() => {
-        sandbox = sinon.createSandbox();
         const config = new ApplicationInsightsConfig();
         config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
         autoCollect = new CustomMetricsHandler(config, { collectionInterval: 100 });
-        sandbox.stub(autoCollect["_metricReader"]["_exporter"], "export");
+        exportStub = sinon.stub(autoCollect["_azureExporter"], "export").callsFake(
+            (spans: any, resultCallback: any) =>
+                new Promise((resolve, reject) => {
+                    resultCallback({
+                        code: ExportResultCode.SUCCESS,
+                    });
+                    resolve();
+                })
+        );
     });
 
     afterEach(() => {
-        sandbox.restore();
+        exportStub.resetHistory();
     });
 
     after(() => {
         autoCollect.shutdown();
+        exportStub.restore();
     });
 
     it("should create a meter", () => {
@@ -29,11 +38,10 @@ describe("#CustomMetricsHandler", () => {
     });
 
     it("should observe instruments during collection", async () => {
-        const mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
         autoCollect.getMeter().createCounter("testCounter", { description: "testDescription" });
         await new Promise((resolve) => setTimeout(resolve, 120));
-        assert.ok(mockExport.called);
-        const resourceMetrics = mockExport.args[0][0];
+        assert.ok(exportStub.called);
+        const resourceMetrics = exportStub.args[0][0];
         const scopeMetrics = resourceMetrics.scopeMetrics;
         assert.strictEqual(scopeMetrics.length, 1, "scopeMetrics count");
         const metrics = scopeMetrics[0].metrics;
@@ -43,10 +51,9 @@ describe("#CustomMetricsHandler", () => {
     });
 
     it("should not collect when disabled", async () => {
-        const mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
         autoCollect.getMeter().createCounter("testCounter", { description: "testDescription" });
         autoCollect.shutdown();
         await new Promise((resolve) => setTimeout(resolve, 120));
-        assert.ok(mockExport.notCalled);
+        assert.ok(exportStub.notCalled);
     });
 });

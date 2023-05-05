@@ -5,19 +5,27 @@ import * as os from "os";
 import { HeartBeatHandler } from "../../../src/metrics/handlers/heartBeatHandler";
 import { ApplicationInsightsConfig } from "../../../src/shared";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
+import { ExportResultCode } from "@opentelemetry/core";
 
 describe("AutoCollection/HeartBeat", () => {
-    let sandbox: sinon.SinonSandbox;
     let originalEnv: NodeJS.ProcessEnv;
     let config: ApplicationInsightsConfig;
     let heartbeat: HeartBeatHandler;
+    let exportStub: sinon.SinonStub;
 
     before(() => {
-        sandbox = sinon.createSandbox();
         config = new ApplicationInsightsConfig();
-        config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
+        config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
         heartbeat = new HeartBeatHandler(config, { collectionInterval: 100 });
-        sandbox.stub(heartbeat["_metricReader"]["_exporter"], "export");
+        exportStub = sinon.stub(heartbeat["_azureExporter"], "export").callsFake(
+            (spans: any, resultCallback: any) =>
+                new Promise((resolve, reject) => {
+                    resultCallback({
+                        code: ExportResultCode.SUCCESS,
+                    });
+                    resolve();
+                })
+        );
     });
 
     beforeEach(() => {
@@ -26,10 +34,11 @@ describe("AutoCollection/HeartBeat", () => {
 
     afterEach(() => {
         process.env = originalEnv;
-        sandbox.restore();
+        exportStub.resetHistory();
     });
 
     after(() => {
+        exportStub.restore();
         heartbeat.shutdown();
     });
 
@@ -39,10 +48,9 @@ describe("AutoCollection/HeartBeat", () => {
         });
 
         it("should observe instruments during collection", async () => {
-            const mockExport = sandbox.stub(heartbeat["_azureExporter"], "export");
             await new Promise((resolve) => setTimeout(resolve, 120));
-            assert.ok(mockExport.called);
-            const resourceMetrics = mockExport.args[0][0];
+            assert.ok(exportStub.called);
+            const resourceMetrics = exportStub.args[0][0];
             const scopeMetrics = resourceMetrics.scopeMetrics;
             assert.strictEqual(scopeMetrics.length, 1, "scopeMetrics count");
             const metrics = scopeMetrics[0].metrics;
@@ -51,10 +59,9 @@ describe("AutoCollection/HeartBeat", () => {
         });
 
         it("should not collect when shutdown", async () => {
-            const mockExport = sandbox.stub(heartbeat["_azureExporter"], "export");
             heartbeat.shutdown();
             await new Promise((resolve) => setTimeout(resolve, 120));
-            assert.ok(mockExport.notCalled);
+            assert.ok(exportStub.notCalled);
         });
     });
 
