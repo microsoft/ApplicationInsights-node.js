@@ -21,6 +21,7 @@ import { MeterProvider, PeriodicExportingMetricReader, PeriodicExportingMetricRe
 import { AzureMonitorExporterOptions, AzureMonitorStatsbeatExporter } from "@azure/monitor-opentelemetry-exporter";
 import { BatchObservableResult, Meter, ObservableGauge, ObservableResult } from "@opentelemetry/api-metrics";
 import { AZURE_MONITOR_DISTRO_VERSION } from "../../declarations/constants";
+import { ConnectionStringParser } from "../../shared/configuration";
 
 const STATSBEAT_LANGUAGE = "node";
 const AZURE_MONITOR_STATSBEAT_FEATURES = "AZURE_MONITOR_STATSBEAT_FEATURES";
@@ -36,7 +37,7 @@ export class Statsbeat {
     private _statsbeatConfig: ApplicationInsightsConfig;
     private _isVM: boolean | undefined;
     private _azureVm: AzureVirtualMachine;
-    
+
     private _networkStatsbeatMeter: Meter;
     private _networkStatsbeatMeterProvider: MeterProvider;
     private _networkAzureExporter: AzureMonitorStatsbeatExporter;
@@ -70,7 +71,11 @@ export class Statsbeat {
         this._isInitialized = false;
         this._networkStatsbeatCollection = [];
         this._config = config;
-        this._endpoint = this._config.getIngestionEndpoint();
+        // Parse connection string to get endpoint
+        const parser = new ConnectionStringParser();
+        const parsedConnectionString = parser.parse(this._config.azureMonitorExporterConfig.connectionString);
+        this._endpoint = parsedConnectionString.ingestionendpoint;
+        this._cikey = parsedConnectionString.instrumentationkey;
         this._connectionString = this._getConnectionString(this._endpoint);
         this._host = this._getShortHost(this._endpoint);
 
@@ -117,7 +122,6 @@ export class Statsbeat {
         );
 
         this._language = STATSBEAT_LANGUAGE;
-        this._cikey = this._config.getInstrumentationKey();
         this._os = os.type();
         this._runtimeVersion = process.version;
 
@@ -268,19 +272,19 @@ export class Statsbeat {
             const currentCounter = this._networkStatsbeatCollection[i];
             currentCounter.time = Number(new Date());
             const intervalRequests =
-              currentCounter.totalRequestCount - currentCounter.lastRequestCount || 0;
+                currentCounter.totalRequestCount - currentCounter.lastRequestCount || 0;
             currentCounter.averageRequestExecutionTime =
-              (currentCounter.intervalRequestExecutionTime -
-                currentCounter.lastIntervalRequestExecutionTime) /
+                (currentCounter.intervalRequestExecutionTime -
+                    currentCounter.lastIntervalRequestExecutionTime) /
                 intervalRequests || 0;
             currentCounter.lastIntervalRequestExecutionTime = currentCounter.intervalRequestExecutionTime; // reset
-      
+
             currentCounter.lastRequestCount = currentCounter.totalRequestCount;
             currentCounter.lastTime = currentCounter.time;
-          }
-          observableResult.observe(counter.averageRequestExecutionTime, attributes);
-      
-          counter.averageRequestExecutionTime = 0;
+        }
+        observableResult.observe(counter.averageRequestExecutionTime, attributes);
+
+        counter.averageRequestExecutionTime = 0;
     }
 
     public setCodelessAttach() {
@@ -392,9 +396,9 @@ export class Statsbeat {
             currentCounter.averageRequestExecutionTime =
                 (currentCounter.intervalRequestExecutionTime -
                     currentCounter.lastIntervalRequestExecutionTime) /
-                    intervalRequests || 0;
+                intervalRequests || 0;
             currentCounter.lastIntervalRequestExecutionTime =
-                    currentCounter.intervalRequestExecutionTime; // reset
+                currentCounter.intervalRequestExecutionTime; // reset
             currentCounter.lastRequestCount = currentCounter.totalRequestCount;
             currentCounter.lastTime = currentCounter.time;
         }
@@ -421,10 +425,10 @@ export class Statsbeat {
     private _getConnectionString(endpoint: string) {
         for (let i = 0; i < EU_ENDPOINTS.length; i++) {
             if (endpoint.includes(EU_ENDPOINTS[i])) {
-              return EU_CONNECTION_STRING;
+                return EU_CONNECTION_STRING;
             }
-          }
-          return NON_EU_CONNECTION_STRING;
+        }
+        return NON_EU_CONNECTION_STRING;
     }
 
     private async _getResourceProvider(): Promise<void> {
@@ -498,7 +502,7 @@ export class Statsbeat {
                 instrumentation: this._instrumentation,
                 feature: this._feature
             });
-        } catch(error) {
+        } catch (error) {
             Logger.getInstance().error("Failed call to JSON.stringify.", error);
         }
     }

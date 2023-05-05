@@ -36,10 +36,7 @@ describe("Library/LogHandler", () => {
         it("exception enablement during start", () => {
             _config.enableAutoCollectExceptions = true;
             const handler = new LogHandler(_config);
-            const stub = sinon.stub(handler["_exceptions"], "enable");
-            handler.start();
-            assert.ok(stub.calledOnce, "Enable called");
-            assert.equal(stub.args[0][0], true);
+            assert.ok(handler["_exceptions"], "Exceptions not enabled");
         });
     });
 
@@ -52,7 +49,6 @@ describe("Library/LogHandler", () => {
                 telemetry,
                 "TestData",
                 data,
-                "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
             );
             assert.equal(
                 envelope.name,
@@ -77,7 +73,7 @@ describe("Library/LogHandler", () => {
             const logHandler = new LogHandler(_config);
             const traceHandler = new TraceHandler(_config);
             traceHandler["_tracer"].startActiveSpan("test", () => {
-                const envelope = logHandler["_logToEnvelope"]({}, "", {}, "");
+                const envelope = logHandler["_logToEnvelope"]({}, "", {});
                 const spanContext = trace.getSpanContext(context.active());
                 assert.ok(isValidTraceId(envelope.tags["ai.operation.id"]), "Valid operation Id");
                 assert.ok(

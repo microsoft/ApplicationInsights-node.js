@@ -28,24 +28,28 @@ export class ExceptionMetrics {
         this._exceptionsRateGauge = this._meter.createObservableGauge(MetricName.EXCEPTION_RATE, {
             valueType: ValueType.DOUBLE,
         });
+        this._meter.addBatchObservableCallback(this._getExceptionCount.bind(this), [
+            this._exceptionsCountGauge,
+        ]);
+        this._meter.addBatchObservableCallback(this._getExceptionRate.bind(this), [
+            this._exceptionsRateGauge,
+        ]);
     }
 
+    /** 
+   * @deprecated This should not be used
+   */
     public enable(isEnabled: boolean) {
-        if (isEnabled) {
-            this._meter.addBatchObservableCallback(this._getExceptionCount.bind(this), [
-                this._exceptionsCountGauge,
-            ]);
-            this._meter.addBatchObservableCallback(this._getExceptionRate.bind(this), [
-                this._exceptionsRateGauge,
-            ]);
-        } else {
-            this._meter.removeBatchObservableCallback(this._getExceptionCount.bind(this), [
-                this._exceptionsCountGauge,
-            ]);
-            this._meter.removeBatchObservableCallback(this._getExceptionRate.bind(this), [
-                this._exceptionsRateGauge,
-            ]);
-        }
+        // No Op
+    }
+
+    public shutdown() {
+        this._meter.removeBatchObservableCallback(this._getExceptionCount.bind(this), [
+            this._exceptionsCountGauge,
+        ]);
+        this._meter.removeBatchObservableCallback(this._getExceptionRate.bind(this), [
+            this._exceptionsRateGauge,
+        ]);
     }
 
     public countException(dimensions: IStandardMetricBaseDimensions) {

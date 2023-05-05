@@ -1,7 +1,4 @@
-import {
-    AzureMonitorExporterOptions,
-    AzureMonitorMetricExporter,
-} from "@azure/monitor-opentelemetry-exporter";
+import { AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
 import { Meter } from "@opentelemetry/api";
 import {
     MeterProvider,
@@ -25,13 +22,7 @@ export class CustomMetricsHandler {
             resource: this._config.resource,
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);
-        const exporterConfig: AzureMonitorExporterOptions = {
-            connectionString: this._config.connectionString,
-            aadTokenCredential: this._config.aadTokenCredential,
-            storageDirectory: this._config.storageDirectory,
-            disableOfflineStorage: this._config.disableOfflineStorage,
-        };
-        this._azureExporter = new AzureMonitorMetricExporter(exporterConfig);
+        this._azureExporter = new AzureMonitorMetricExporter(this._config.azureMonitorExporterConfig);
         const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
             exporter: this._azureExporter as any,
             exportIntervalMillis: options?.collectionInterval || this._collectionInterval,

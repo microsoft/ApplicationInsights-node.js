@@ -6,6 +6,7 @@ import { ConsoleWriter } from "./diagnostics/writers/consoleWriter";
 import { DiagnosticLogger } from "./diagnostics/diagnosticLogger";
 import { StatusLogger } from "./diagnostics/statusLogger";
 import { AgentResourceProviderType, DiagnosticMessageId, IDiagnosticLog, IDiagnosticLogger, NODE_JS_RUNTIME_MAJOR_VERSION } from "./types";
+import { ConnectionStringParser } from "../shared/configuration";
 
 
 const forceStart = process.env.APPLICATIONINSIGHTS_FORCE_START === "true";
@@ -29,8 +30,7 @@ export class AgentLoader {
             this._aadCredential = this._getAuthenticationCredential();
             // Default config
             this._config = new ApplicationInsightsConfig();
-            this._instrumentationKey = this._config.getInstrumentationKey();
-            this._config.disableOfflineStorage = false;
+            this._config.azureMonitorExporterConfig.disableOfflineStorage = false;
             this._config.enableAutoCollectExceptions = true;
             this._config.enableAutoCollectHeartbeat = true;
             this._config.enableAutoCollectPerformance = true;
@@ -46,6 +46,10 @@ export class AgentLoader {
             this._config.logInstrumentations.bunyan.enabled = true;
             this._config.logInstrumentations.console.enabled = true;
             this._config.logInstrumentations.winston.enabled = true;
+
+            const parser = new ConnectionStringParser();
+            const parsedConnectionString = parser.parse(this._config.azureMonitorExporterConfig.connectionString);
+            this._instrumentationKey = parsedConnectionString.instrumentationkey;
 
             //Default diagnostic using console
             this._diagnosticLogger = new DiagnosticLogger(this._instrumentationKey, new ConsoleWriter());
@@ -72,7 +76,6 @@ export class AgentLoader {
                 // Initialize Distro
                 this._config.aadTokenCredential = this._aadCredential;
                 const appInsightsClient = new ApplicationInsightsClient(this._config);
-                appInsightsClient.start();
 
                 // Agent successfully initialized
                 const diagnosticLog: IDiagnosticLog = {
@@ -110,7 +113,7 @@ export class AgentLoader {
                 })
                 return false;
             }
-            if (!this._config.getInstrumentationKey()) {
+            if (!this._instrumentationKey) {
                 const diagnosticLog: IDiagnosticLog = {
                     message: "Azure Monitor Application Insights Distro wanted to be started, but no Connection String was provided",
                     messageId: DiagnosticMessageId.missingIkey

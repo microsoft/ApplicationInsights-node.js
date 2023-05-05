@@ -1,9 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import {
-    AzureMonitorExporterOptions,
-    AzureMonitorMetricExporter,
-} from "@azure/monitor-opentelemetry-exporter";
+import { AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
 import { Meter, SpanKind } from "@opentelemetry/api";
 import {
     DropAggregation,
@@ -43,13 +40,7 @@ export class PerformanceCounterMetricsHandler {
             views: this._getViews(),
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);
-        const exporterConfig: AzureMonitorExporterOptions = {
-            connectionString: this._config.connectionString,
-            aadTokenCredential: this._config.aadTokenCredential,
-            storageDirectory: this._config.storageDirectory,
-            disableOfflineStorage: this._config.disableOfflineStorage,
-        };
-        this._azureExporter = new AzureMonitorMetricExporter(exporterConfig);
+        this._azureExporter = new AzureMonitorMetricExporter(this._config.azureMonitorExporterConfig);
         const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
             exporter: this._azureExporter as any,
             exportIntervalMillis: options?.collectionInterval || this._collectionInterval,
@@ -62,14 +53,18 @@ export class PerformanceCounterMetricsHandler {
         this._nativeMetrics = new NativePerformanceMetrics(this._meter);
     }
 
-    public start() {
-        this._processMetrics.enable(true);
-        this._requestMetrics.enable(true);
-        this._nativeMetrics.enable(true);
+     /** 
+   * @deprecated This should not be used
+   */
+     public start() {
+        // No Op
     }
 
     public shutdown() {
         this._meterProvider.shutdown();
+        this._processMetrics.shutdown();
+        this._requestMetrics.shutdown();
+        this._nativeMetrics.shutdown();
     }
 
     public recordSpan(span: ReadableSpan): void {

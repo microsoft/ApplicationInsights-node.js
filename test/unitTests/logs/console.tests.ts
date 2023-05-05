@@ -25,7 +25,6 @@ describe("AutoCollection/Console", () => {
             config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
             config.logInstrumentations.console.enabled = true;
             const handler = new LogHandler(config);
-            handler.start();
             const stub = sandbox.stub(handler, "trackException");
             const dummyError = new Error("test error");
             const errorEvent: console.IConsoleData = {
@@ -43,7 +42,6 @@ describe("AutoCollection/Console", () => {
             config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
             config.logInstrumentations.console.enabled = true;
             const handler = new LogHandler(config);
-            handler.start();
             const stub = sandbox.stub(handler, "trackTrace");
             const logEvent: console.IConsoleData = {
                 message: "test log",
@@ -56,7 +54,7 @@ describe("AutoCollection/Console", () => {
 
         it("should notify multiple handlers", () => {
             const config = new ApplicationInsightsConfig();
-            config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
+            config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
             config.logInstrumentations.console.enabled = true;
             const handler = new LogHandler(config);
             const secondHandler = new LogHandler(config);

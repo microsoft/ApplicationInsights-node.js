@@ -25,7 +25,6 @@ describe("AutoCollection/Exceptions", () => {
     it("enable auto collection", () => {
         const processOnSpy = sandbox.spy(global.process, "on");
         const exceptions = new AutoCollectExceptions(null);
-        exceptions.enable(true);
         if (exceptions["_canUseUncaughtExceptionMonitor"]) {
             assert.equal(
                 processOnSpy.callCount,
@@ -47,8 +46,7 @@ describe("AutoCollection/Exceptions", () => {
     it("disables auto collection", () => {
         const processRemoveListenerSpy = sandbox.spy(global.process, "removeListener");
         const exceptions = new AutoCollectExceptions(null);
-        exceptions.enable(true);
-        exceptions.enable(false);
+        exceptions.shutdown();
         if (exceptions["_canUseUncaughtExceptionMonitor"]) {
             assert.equal(
                 processRemoveListenerSpy.callCount,

@@ -4,9 +4,6 @@ import { Logger } from "../../shared/logging";
 
 export class NativePerformanceMetrics {
     private _emitter: any;
-    private _metricsAvailable: boolean; // is the native metrics lib installed
-    private _isEnabled: boolean;
-    private _isInitialized: boolean;
     private _handle: NodeJS.Timer;
     private _meter: Meter;
     private _collectionInterval = 15000; // 15 seconds
@@ -39,36 +36,19 @@ export class NativePerformanceMetrics {
         this._memoryUsageNonHeapGauge = this._meter.createObservableGauge(
             NativeMetricsCounter.MEMORY_USAGE_NON_HEAP
         );
-    }
 
-    /**
-     * Start instance of native metrics agent.
-     *
-     * @param {boolean} isEnabled
-     * @memberof AutoCollectNativePerformance
-     */
-    public enable(isEnabled: boolean): void {
-        if (this._metricsAvailable === undefined && isEnabled && !this._isInitialized) {
-            // Try to require in the native-metrics library. If it's found initialize it, else do nothing and never try again.
-            try {
-                // eslint-disable-next-line @typescript-eslint/no-var-requires
-                const NativeMetricsEmitter = require("applicationinsights-native-metrics");
-                this._emitter = new NativeMetricsEmitter();
-                this._metricsAvailable = true;
-                Logger.getInstance().info("Native metrics module successfully loaded!");
-            } catch (err) {
-                // Package not available. Never try again
-                this._metricsAvailable = false;
-                return;
-            }
+        // Try to require in the native-metrics library. If it's found initialize it, else do nothing and never try again.
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
+            const NativeMetricsEmitter = require("applicationinsights-native-metrics");
+            this._emitter = new NativeMetricsEmitter();
+            Logger.getInstance().info("Native metrics module successfully loaded!");
+        } catch (err) {
+            // Package not available.
+            return;
         }
-        this._isEnabled = isEnabled;
-        if (this._isEnabled && !this._isInitialized) {
-            this._isInitialized = true;
-        }
-
         // Enable the emitter if we were able to construct one
-        if (this._isEnabled && this._emitter) {
+        if (this._emitter) {
             try {
                 // enable self
                 this._emitter.enable(true, this._collectionInterval);
@@ -88,16 +68,25 @@ export class NativePerformanceMetrics {
             this._heapMemoryTotalGauge.addCallback(this._getHeapTotal.bind(this));
             this._heapMemoryUsageGauge.addCallback(this._getHeapUsage.bind(this));
             this._memoryUsageNonHeapGauge.addCallback(this._getNonHeapUsage.bind(this));
-        } else if (this._emitter) {
-            if (this._handle) {
-                clearInterval(this._handle);
-                this._handle = undefined;
-            }
-            // Remove observable callbacks
-            this._heapMemoryTotalGauge.removeCallback(this._getHeapTotal);
-            this._heapMemoryUsageGauge.removeCallback(this._getHeapUsage);
-            this._memoryUsageNonHeapGauge.removeCallback(this._getNonHeapUsage);
         }
+    }
+
+    /** 
+   * @deprecated This should not be used
+   */
+    public enable(isEnabled: boolean) {
+        // No Op
+    }
+
+    public shutdown() {
+        if (this._handle) {
+            clearInterval(this._handle);
+            this._handle = undefined;
+        }
+        // Remove observable callbacks
+        this._heapMemoryTotalGauge.removeCallback(this._getHeapTotal);
+        this._heapMemoryUsageGauge.removeCallback(this._getHeapUsage);
+        this._memoryUsageNonHeapGauge.removeCallback(this._getNonHeapUsage);
     }
 
     private _getHeapUsage(observableResult: ObservableResult) {

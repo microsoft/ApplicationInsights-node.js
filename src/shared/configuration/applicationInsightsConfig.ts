@@ -1,6 +1,6 @@
 import * as os from "os";
 import { TokenCredential } from "@azure/core-auth";
-import { ConnectionStringParser } from "./connectionStringParser";
+import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 import * as Constants from "../../declarations/constants";
 import {
     ENV_AZURE_PREFIX,
@@ -11,7 +11,6 @@ import {
     LEGACY_ENV_IKEY,
     LogInstrumentationsConfig,
 } from "./types";
-import { ConnectionString } from "../../declarations/contracts";
 import { JsonConfig } from "./jsonConfig";
 import { Logger } from "../logging";
 import { Resource } from "@opentelemetry/resources";
@@ -24,8 +23,12 @@ const DEFAULT_ROLE_NAME = "Web";
 
 
 export class ApplicationInsightsConfig implements IConfig {
+    private _disableStatsbeat: boolean;
+    private _resource?: Resource;
+
+    /** Azure Monitor Exporter Configuration */
+    public azureMonitorExporterConfig?: AzureMonitorExporterOptions;
     public samplingRatio: number;
-    public aadTokenCredential?: TokenCredential;
     public enableAutoCollectExceptions: boolean;
     public enableAutoCollectPerformance: boolean;
     public enableAutoCollectStandardMetrics: boolean;
@@ -33,40 +36,63 @@ export class ApplicationInsightsConfig implements IConfig {
     public extendedMetrics: { [type: string]: boolean };
     public instrumentations: InstrumentationsConfig;
     public logInstrumentations: LogInstrumentationsConfig;
-    public disableOfflineStorage: boolean;
-    public storageDirectory: string;
 
-    private _disableStatsbeat: boolean;
-    private _connectionStringParser: ConnectionStringParser;
-    private _parsedConnectionString: ConnectionString;
-    private _connectionString: string;
-    private _resource?: Resource;
+    /** Connection String used to send telemetry payloads to 
+    * @deprecated This config should not be used, use azureMonitorExporterConfig to configure Connection String
+    */
+    public set connectionString(connectionString: string) {
+        this.azureMonitorExporterConfig.connectionString = connectionString;
+    }
+    public get connectionString(): string {
+        return this.azureMonitorExporterConfig.connectionString;
+    }
+    /** AAD TokenCredential to use to authenticate the app 
+   * @deprecated This config should not be used, use azureMonitorExporterConfig to configure aadTokenCredential
+   */
+    public set aadTokenCredential(aadTokenCredential: TokenCredential) {
+        this.azureMonitorExporterConfig.aadTokenCredential = aadTokenCredential;
+    }
+    public get aadTokenCredential() {
+        return this.azureMonitorExporterConfig.aadTokenCredential;
+    }
+    /**
+    * Disable offline storage when telemetry cannot be exported.
+     * @deprecated This config should not be used, use azureMonitorExporterConfig to configure disableOfflineStorage
+    */
+    public set disableOfflineStorage(disableOfflineStorage: boolean) {
+        this.azureMonitorExporterConfig.disableOfflineStorage = disableOfflineStorage;
+    }
+    public get disableOfflineStorage() {
+        return this.azureMonitorExporterConfig.disableOfflineStorage;
+    }
+    /**
+     * Directory to store retriable telemetry when it fails to export.
+      * @deprecated This config should not be used, use azureMonitorExporterConfig to configure storageDirectory
+     */
+    public set storageDirectory(storageDirectory: string) {
+        this.azureMonitorExporterConfig.storageDirectory = storageDirectory;
+    }
+    public get storageDirectory() {
+        return this.azureMonitorExporterConfig.storageDirectory;
+    }
 
     constructor() {
-        this._connectionStringParser = new ConnectionStringParser();
+        this.azureMonitorExporterConfig = {};
         // Load config values from env variables and JSON if available
-        this.connectionString = process.env[ENV_connectionString];
+        this.azureMonitorExporterConfig.connectionString = process.env[ENV_connectionString];
         this._disableStatsbeat = !!process.env[ENV_noStatsbeat];
         this._loadDefaultValues();
         this._mergeConfig();
 
-        if (!this.connectionString) {
+        if (!this.azureMonitorExporterConfig.connectionString) {
             // Try to build connection string using iKey environment variables
             // check for both the documented env variable and the azure-prefixed variable
             const instrumentationKey = this.getInstrunmentationKeyFromEnv();
             if (instrumentationKey) {
                 this.connectionString = `InstrumentationKey=${instrumentationKey};IngestionEndpoint=${Constants.DEFAULT_BREEZE_ENDPOINT}`;
+                this.azureMonitorExporterConfig.connectionString = this.connectionString;
             }
         }
-    }
-
-    public set connectionString(connectionString: string) {
-        this._connectionString = connectionString;
-        this._parsedConnectionString = this._connectionStringParser.parse(connectionString);
-    }
-
-    public get connectionString(): string {
-        return this._connectionString;
     }
 
     public set resource(resource: Resource) {
@@ -77,14 +103,26 @@ export class ApplicationInsightsConfig implements IConfig {
         return this._resource;
     }
 
+    /**
+     * Get Instrumentation Key
+      * @deprecated This method should not be used
+     */
     public getInstrumentationKey(): string {
-        return this._parsedConnectionString?.instrumentationkey;
+        return "";
     }
 
+    /**
+     * Get Instrumentation Key
+      * @deprecated This method should not be used
+     */
     public getIngestionEndpoint(): string {
-        return this._parsedConnectionString?.ingestionendpoint;
+        return "";
     }
 
+    /**
+     * Get Instrumentation Key
+      * @deprecated This method should not be used
+     */
     public getDisableStatsbeat(): boolean {
         return this._disableStatsbeat;
     }
@@ -151,6 +189,10 @@ export class ApplicationInsightsConfig implements IConfig {
     private _mergeConfig() {
         try {
             const jsonConfig = JsonConfig.getInstance();
+            this.azureMonitorExporterConfig =
+                jsonConfig.azureMonitorExporterConfig !== undefined
+                    ? jsonConfig.azureMonitorExporterConfig
+                    : this.azureMonitorExporterConfig;
             this.connectionString =
                 jsonConfig.connectionString !== undefined
                     ? jsonConfig.connectionString

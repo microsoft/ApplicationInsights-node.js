@@ -32,7 +32,18 @@ describe("Library/Config", () => {
 
     describe("#constructor", () => {
         describe("connection string && API && environment variable prioritization", () => {
-            it("connection string set via in code setup", () => {
+            it("connection string set via in configuration", () => {
+                const env = {
+                    [ENV_connectionString]: "InstrumentationKey=cs.env",
+                    [ENV_IKEY]: "ikey.env",
+                };
+                process.env = env;
+                const config = new ApplicationInsightsConfig();
+                config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=cs.code";
+                assert.deepEqual(config.azureMonitorExporterConfig.connectionString, "InstrumentationKey=cs.code");
+            });
+
+            it("connection string set via in configuration[Deprecated]", () => {
                 const env = {
                     [ENV_connectionString]: "InstrumentationKey=cs.env",
                     [ENV_IKEY]: "ikey.env",
@@ -40,7 +51,7 @@ describe("Library/Config", () => {
                 process.env = env;
                 const config = new ApplicationInsightsConfig();
                 config.connectionString = "InstrumentationKey=cs.code";
-                assert.deepEqual(config.getInstrumentationKey(), "cs.code");
+                assert.deepEqual(config.connectionString, "InstrumentationKey=cs.code");
             });
 
             it("connection string set via environment variable", () => {
@@ -50,14 +61,14 @@ describe("Library/Config", () => {
                 };
                 process.env = env;
                 const config = new ApplicationInsightsConfig();
-                assert.deepEqual(config.getInstrumentationKey(), "cs.env");
+                assert.deepEqual(config.azureMonitorExporterConfig.connectionString, "InstrumentationKey=cs.env");
             });
 
             it("instrumentation key set via environment variable", () => {
                 const env = { [ENV_IKEY]: "ikey.env" };
                 process.env = env;
                 const config = new ApplicationInsightsConfig();
-                assert.deepEqual(config.getInstrumentationKey(), "ikey.env");
+                assert.deepEqual(config.azureMonitorExporterConfig.connectionString, "InstrumentationKey=ikey.env;IngestionEndpoint=https://dc.services.visualstudio.com");
             });
 
             it("merge JSON config", () => {
@@ -71,12 +82,12 @@ describe("Library/Config", () => {
                 process.env = env;
                 const config = new ApplicationInsightsConfig();
                 assert.equal(
-                    config["_connectionString"],
+                    config.azureMonitorExporterConfig.connectionString,
                     "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"
                 );
                 assert.equal(config.samplingRatio, 0.3, "Wrong samplingRatio");
-                assert.equal(config.disableOfflineStorage, true, "Wrong disableOfflineStorage");
-                assert.equal(config.storageDirectory, "testPath", "Wrong storageDirectory");
+                assert.equal(config.azureMonitorExporterConfig.disableOfflineStorage, true, "Wrong disableOfflineStorage");
+                assert.equal(config.azureMonitorExporterConfig.storageDirectory, "testPath", "Wrong storageDirectory");
                 assert.equal(
                     config.enableAutoCollectExceptions,
                     false,
@@ -148,7 +159,7 @@ describe("Library/Config", () => {
                     undefined,
                     "Wrong disableOfflineStorage"
                 );
-                assert.equal(config.storageDirectory, undefined, "Wrong storageDirectory");
+                assert.equal(config.azureMonitorExporterConfig.storageDirectory, undefined, "Wrong storageDirectory");
                 assert.equal(config.logInstrumentations.console.enabled, false, "Wrong console");
                 assert.equal(config.logInstrumentations.bunyan.enabled, false, "Wrong bunyan");
                 assert.equal(config.logInstrumentations.winston.enabled, false, "Wrong winston");
@@ -176,7 +187,9 @@ describe("Library/Config", () => {
                 env[ENV_IKEY] = iKey;
                 process.env = env;
                 const config = new ApplicationInsightsConfig();
-                assert.equal(config.getInstrumentationKey(), iKey);
+                assert.equal(
+                    config.azureMonitorExporterConfig.connectionString,
+                    "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://dc.services.visualstudio.com");
             });
 
             it("should read iKey from azure environment", () => {
@@ -184,34 +197,36 @@ describe("Library/Config", () => {
                 env[ENV_AZURE_PREFIX + ENV_IKEY] = iKey;
                 process.env = env;
                 const config = new ApplicationInsightsConfig();
-                assert.equal(config.getInstrumentationKey(), iKey);
+                assert.equal(
+                    config.azureMonitorExporterConfig.connectionString,
+                    "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://dc.services.visualstudio.com");
             });
 
             it("should initialize valid values", () => {
                 const config = new ApplicationInsightsConfig();
-                config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
-                assert(typeof config.getInstrumentationKey() === "string");
+                config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
+                assert(typeof config.azureMonitorExporterConfig.connectionString === "string");
                 assert(typeof config.samplingRatio === "number");
             });
 
             it("instrumentation key validation-valid key passed", () => {
                 const warnStub = sandbox.stub(console, "warn");
                 const config = new ApplicationInsightsConfig();
-                config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
+                config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
                 assert.ok(warnStub.notCalled, "warning was not raised");
             });
 
             it("instrumentation key validation-invalid key passed", () => {
                 const warnStub = sandbox.stub(console, "warn");
                 const config = new ApplicationInsightsConfig();
-                config.connectionString = "InstrumentationKey=1aa11111bbbb1ccc8dddeeeeffff3333";
+                config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=1aa11111bbbb1ccc8dddeeeeffff3333";
                 assert.ok(warnStub.calledOn, "warning was raised");
             });
 
             it("instrumentation key validation-invalid key passed", () => {
                 const warnStub = sandbox.stub(console, "warn");
                 const config = new ApplicationInsightsConfig();
-                config.connectionString = "abc";
+                config.azureMonitorExporterConfig.connectionString = "abc";
                 assert.ok(warnStub.calledOn, "warning was raised");
             });
         });
