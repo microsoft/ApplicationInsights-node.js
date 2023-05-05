@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import { ApplicationInsightsSampler } from "@azure/monitor-opentelemetry-exporter";
 import { context, trace } from "@opentelemetry/api";
+import { SDK_INFO } from "@opentelemetry/core";
 import { IdGenerator, RandomIdGenerator, SamplingDecision, SamplingResult } from "@opentelemetry/sdk-trace-base";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
@@ -36,7 +38,7 @@ import {
 import { Logger } from "../shared/logging";
 import { IStandardMetricBaseDimensions, IMetricTraceDimensions } from "../metrics/types";
 import { MetricHandler } from "../metrics/metricHandler";
-import { ApplicationInsightsSampler } from "@azure/monitor-opentelemetry-exporter";
+import { AZURE_MONITOR_DISTRO_VERSION } from "../declarations/constants";
 
 export class LogHandler {
     // Statsbeat is instantiated here such that it can be accessed by the diagnostic-channel.
@@ -50,6 +52,7 @@ export class LogHandler {
     private _metricHandler: MetricHandler;
     private _aiSampler: ApplicationInsightsSampler;
     private _instrumentationKey: string;
+    private _aiInternalSdkVersion: string;
 
     constructor(config: ApplicationInsightsConfig, metricHandler?: MetricHandler, statsbeat?: Statsbeat) {
         this._config = config;
@@ -69,6 +72,14 @@ export class LogHandler {
         const parsedConnectionString = parser.parse(this._config.azureMonitorExporterConfig.connectionString);
         this._instrumentationKey = parsedConnectionString.instrumentationkey;
         this._console.enable(this._config.logInstrumentations);
+
+        const { node } = process.versions;
+        let nodeVersion = node.split(".");
+        let opentelemetryVersion = SDK_INFO[SemanticResourceAttributes.TELEMETRY_SDK_VERSION];
+        let prefix = process.env["AZURE_MONITOR_AGENT_PREFIX"]
+            ? process.env["AZURE_MONITOR_AGENT_PREFIX"]
+            : "";
+        this._aiInternalSdkVersion = `${prefix}node${nodeVersion}:otel${opentelemetryVersion}:dst${AZURE_MONITOR_DISTRO_VERSION}`;
     }
 
     /** 
@@ -349,9 +360,7 @@ export class LogHandler {
         }
         const serviceInstanceId = attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID];
         tags[KnownContextTagKeys.AiCloudRoleInstance] = String(serviceInstanceId);
-        tags[KnownContextTagKeys.AiInternalSdkVersion] = String(
-            attributes[SemanticResourceAttributes.TELEMETRY_SDK_VERSION]
-        );
+        tags[KnownContextTagKeys.AiInternalSdkVersion] = this._aiInternalSdkVersion;
 
         // Add Correlation headers
         const spanContext = trace.getSpanContext(context.active());

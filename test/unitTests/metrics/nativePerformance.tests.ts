@@ -14,29 +14,34 @@ class TestEmitter {
 describe("AutoCollection/NativePerformance", () => {
     let sandbox: sinon.SinonSandbox;
     let testMeter: Meter;
+    let testProvider: MeterProvider;
+    let autoCollect: NativePerformanceMetrics;
 
     before(() => {
         sandbox = sinon.createSandbox();
-        const testProvider = new MeterProvider();
+        testProvider = new MeterProvider();
         testMeter = testProvider.getMeter("test");
     });
 
     afterEach(() => {
         sandbox.restore();
+        autoCollect.shutdown();
+    });
+
+    after(() => {
+        testProvider.shutdown();
     });
 
     describe("#Metrics", () => {
         it("init should auto collection interval if native metrics packages is installed", () => {
-            const nativePerformance = new NativePerformanceMetrics(testMeter);
-            nativePerformance["_emitter"] = new TestEmitter();
-            assert.ok(!nativePerformance["_handle"]); // Package is not installed in test execution, TODO: Add test where this is available
+            autoCollect = new NativePerformanceMetrics(testMeter);
+            autoCollect["_emitter"] = new TestEmitter();
+            assert.ok(!autoCollect["_handle"]); // Package is not installed in test execution, TODO: Add test where this is available
         });
 
         it("Calling enable when metrics are not available should fail gracefully", () => {
-            let nativePerformance = null;
-
             assert.doesNotThrow(
-                () => nativePerformance = new NativePerformanceMetrics(testMeter),
+                () => autoCollect = new NativePerformanceMetrics(testMeter),
                 "Does not throw when native metrics are not available"
             );
         });

@@ -29,6 +29,10 @@ describe("AutoCollection/HeartBeat", () => {
         sandbox.restore();
     });
 
+    after(() => {
+        heartbeat.shutdown();
+    });
+
     describe("#Metrics", () => {
         it("should create instruments", () => {
             assert.ok(heartbeat["_metricGauge"], "_metricGauge not available");

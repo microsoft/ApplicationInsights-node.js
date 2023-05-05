@@ -61,10 +61,10 @@ export class PerformanceCounterMetricsHandler {
     }
 
     public shutdown() {
-        this._meterProvider.shutdown();
         this._processMetrics.shutdown();
         this._requestMetrics.shutdown();
         this._nativeMetrics.shutdown();
+        this._meterProvider.shutdown();
     }
 
     public recordSpan(span: ReadableSpan): void {

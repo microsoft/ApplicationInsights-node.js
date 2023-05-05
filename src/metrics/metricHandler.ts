@@ -54,6 +54,9 @@ export class MetricHandler {
         await this._perfCounterMetricsHandler?.flush();
     }
 
+    /** 
+   * @deprecated This should not be used
+   */
     public getConfig(): ApplicationInsightsConfig {
         return this._config;
     }
