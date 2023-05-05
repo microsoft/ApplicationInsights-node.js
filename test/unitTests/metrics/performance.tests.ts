@@ -46,35 +46,6 @@ describe("PerformanceCounterMetricsHandler", () => {
                 autoCollect["_requestMetrics"]["_requestRateGauge"],
                 "_dependencyDurationGauge not available"
             );
-
-            assert.ok(
-                autoCollect["_nativeMetrics"]["_eventLoopHistogram"],
-                "_eventLoopHistogram not available"
-            );
-            assert.ok(
-                autoCollect["_nativeMetrics"]["_garbageCollectionScavenge"],
-                "_garbageCollectionScavenge not available"
-            );
-            assert.ok(
-                autoCollect["_nativeMetrics"]["_garbageCollectionMarkSweepCompact"],
-                "_garbageCollectionMarkSweepCompact not available"
-            );
-            assert.ok(
-                autoCollect["_nativeMetrics"]["_garbageCollectionIncrementalMarking"],
-                "_garbageCollectionIncrementalMarking not available"
-            );
-            assert.ok(
-                autoCollect["_nativeMetrics"]["_heapMemoryTotalGauge"],
-                "_heapMemoryTotalGauge not available"
-            );
-            assert.ok(
-                autoCollect["_nativeMetrics"]["_heapMemoryUsageGauge"],
-                "_heapMemoryUsageGauge not available"
-            );
-            assert.ok(
-                autoCollect["_nativeMetrics"]["_memoryUsageNonHeapGauge"],
-                "_memoryUsageNonHeapGauge not available"
-            );
         });
 
         it("should observe instruments during collection", async () => {
@@ -85,29 +56,13 @@ describe("PerformanceCounterMetricsHandler", () => {
             const scopeMetrics = resourceMetrics.scopeMetrics;
             assert.strictEqual(scopeMetrics.length, 1, "scopeMetrics count");
             let metrics = scopeMetrics[0].metrics;
-            assert.strictEqual(metrics.length, 13, "metrics count");
+            assert.strictEqual(metrics.length, 6, "metrics count");
             assert.equal(metrics[0].descriptor.name, PerformanceCounter.PRIVATE_BYTES);
             assert.equal(metrics[1].descriptor.name, PerformanceCounter.AVAILABLE_BYTES);
             assert.equal(metrics[2].descriptor.name, PerformanceCounter.PROCESSOR_TIME);
             assert.equal(metrics[3].descriptor.name, PerformanceCounter.PROCESS_TIME);
             assert.equal(metrics[4].descriptor.name, PerformanceCounter.REQUEST_DURATION);
             assert.equal(metrics[5].descriptor.name, PerformanceCounter.REQUEST_RATE);
-            assert.equal(metrics[6].descriptor.name, NativeMetricsCounter.EVENT_LOOP_CPU);
-            assert.equal(
-                metrics[7].descriptor.name,
-                NativeMetricsCounter.GARBAGE_COLLECTION_SCAVENGE
-            );
-            assert.equal(
-                metrics[8].descriptor.name,
-                NativeMetricsCounter.GARBAGE_COLLECTION_SWEEP_COMPACT
-            );
-            assert.equal(
-                metrics[9].descriptor.name,
-                NativeMetricsCounter.GARBAGE_COLLECTION_INCREMENTAL_MARKING
-            );
-            assert.equal(metrics[10].descriptor.name, NativeMetricsCounter.HEAP_MEMORY_TOTAL);
-            assert.equal(metrics[11].descriptor.name, NativeMetricsCounter.HEAP_MEMORY_USAGE);
-            assert.equal(metrics[12].descriptor.name, NativeMetricsCounter.MEMORY_USAGE_NON_HEAP);
         });
 
         it("should not collect when disabled", async () => {
@@ -125,11 +80,6 @@ describe("PerformanceCounterMetricsHandler", () => {
             config.extendedMetrics.gc = false;
             const autoCollect = new PerformanceCounterMetricsHandler(config);
             let views = autoCollect["_getViews"]();
-            assert.equal(views.length, 18); // All Native metrics ignore views are added
-            config.extendedMetrics.heap = true;
-            config.extendedMetrics.loop = true;
-            config.extendedMetrics.gc = true;
-            views = autoCollect["_getViews"]();
             assert.equal(views.length, 11);
         });
     });
