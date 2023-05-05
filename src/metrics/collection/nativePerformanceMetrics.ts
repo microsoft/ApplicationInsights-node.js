@@ -49,12 +49,12 @@ export class NativePerformanceMetrics {
         }
         // Enable the emitter if we were able to construct one
         if (this._emitter) {
-            try {
-                // enable self
-                this._emitter.enable(true, this._collectionInterval);
-            } catch (err) {
-                Logger.getInstance().error("Native metrics enable failed", err);
-            }
+            // try {
+            //     // enable self
+            //     this._emitter.enable(true, this._collectionInterval);
+            // } catch (err) {
+            //     Logger.getInstance().error("Native metrics enable failed", err);
+            // }
 
             // Add histogram data collection
             if (!this._handle) {

@@ -50,7 +50,7 @@ export class PerformanceCounterMetricsHandler {
         this._meter = this._meterProvider.getMeter("ApplicationInsightsPerfMetricsMeter");
         this._processMetrics = new ProcessMetrics(this._meter);
         this._requestMetrics = new RequestMetrics(this._meter);
-        //this._nativeMetrics = new NativePerformanceMetrics(this._meter);
+        this._nativeMetrics = new NativePerformanceMetrics(this._meter);
     }
 
      /** 
