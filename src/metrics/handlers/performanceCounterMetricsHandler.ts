@@ -31,7 +31,6 @@ export class PerformanceCounterMetricsHandler {
     private _meter: Meter;
     private _processMetrics: ProcessMetrics;
     private _requestMetrics: RequestMetrics;
-    private _nativeMetrics: NativePerformanceMetrics;
 
     constructor(config: ApplicationInsightsConfig, options?: { collectionInterval: number }) {
         this._config = config;
@@ -50,7 +49,6 @@ export class PerformanceCounterMetricsHandler {
         this._meter = this._meterProvider.getMeter("ApplicationInsightsPerfMetricsMeter");
         this._processMetrics = new ProcessMetrics(this._meter);
         this._requestMetrics = new RequestMetrics(this._meter);
-        this._nativeMetrics = new NativePerformanceMetrics(this._meter);
     }
 
      /** 
@@ -143,54 +141,6 @@ export class PerformanceCounterMetricsHandler {
                 aggregation: new DropAggregation(),
             })
         );
-        if (!this._config.extendedMetrics?.gc) {
-            views.push(
-                new View({
-                    instrumentName: NativeMetricsCounter.GARBAGE_COLLECTION_INCREMENTAL_MARKING,
-                    aggregation: new DropAggregation(),
-                })
-            );
-            views.push(
-                new View({
-                    instrumentName: NativeMetricsCounter.GARBAGE_COLLECTION_SCAVENGE,
-                    aggregation: new DropAggregation(),
-                })
-            );
-            views.push(
-                new View({
-                    instrumentName: NativeMetricsCounter.GARBAGE_COLLECTION_SWEEP_COMPACT,
-                    aggregation: new DropAggregation(),
-                })
-            );
-        }
-        if (!this._config.extendedMetrics?.heap) {
-            views.push(
-                new View({
-                    instrumentName: NativeMetricsCounter.HEAP_MEMORY_TOTAL,
-                    aggregation: new DropAggregation(),
-                })
-            );
-            views.push(
-                new View({
-                    instrumentName: NativeMetricsCounter.HEAP_MEMORY_USAGE,
-                    aggregation: new DropAggregation(),
-                })
-            );
-            views.push(
-                new View({
-                    instrumentName: NativeMetricsCounter.MEMORY_USAGE_NON_HEAP,
-                    aggregation: new DropAggregation(),
-                })
-            );
-        }
-        if (!this._config.extendedMetrics?.loop) {
-            views.push(
-                new View({
-                    instrumentName: NativeMetricsCounter.EVENT_LOOP_CPU,
-                    aggregation: new DropAggregation(),
-                })
-            );
-        }
         return views;
     }
 
