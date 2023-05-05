@@ -49,7 +49,7 @@ export class HeartBeatHandler {
  * @deprecated This should not be used
  */
     public enable(isEnabled: boolean) {
-
+        // No Op
     }
 
     /** 
