@@ -37,38 +37,38 @@ export class NativePerformanceMetrics {
             NativeMetricsCounter.MEMORY_USAGE_NON_HEAP
         );
 
-        // Try to require in the native-metrics library. If it's found initialize it, else do nothing and never try again.
-        try {
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
-            const NativeMetricsEmitter = require("applicationinsights-native-metrics");
-            this._emitter = new NativeMetricsEmitter();
-            Logger.getInstance().info("Native metrics module successfully loaded!");
-        } catch (err) {
-            // Package not available.
-            return;
-        }
-        // Enable the emitter if we were able to construct one
-        if (this._emitter) {
-            // try {
-            //     // enable self
-            //     this._emitter.enable(true, this._collectionInterval);
-            // } catch (err) {
-            //     Logger.getInstance().error("Native metrics enable failed", err);
-            // }
+        // // Try to require in the native-metrics library. If it's found initialize it, else do nothing and never try again.
+        // try {
+        //     // eslint-disable-next-line @typescript-eslint/no-var-requires
+        //     const NativeMetricsEmitter = require("applicationinsights-native-metrics");
+        //     this._emitter = new NativeMetricsEmitter();
+        //     Logger.getInstance().info("Native metrics module successfully loaded!");
+        // } catch (err) {
+        //     // Package not available.
+        //     return;
+        // }
+        // // Enable the emitter if we were able to construct one
+        // if (this._emitter) {
+        //     try {
+        //         // enable self
+        //         this._emitter.enable(true, this._collectionInterval);
+        //     } catch (err) {
+        //         Logger.getInstance().error("Native metrics enable failed", err);
+        //     }
 
-            // Add histogram data collection
-            if (!this._handle) {
-                this._handle = setInterval(
-                    () => this._collectHistogramData(),
-                    this._collectionInterval
-                );
-                this._handle.unref();
-            }
-            // Add observable callbacks
-            this._heapMemoryTotalGauge.addCallback(this._getHeapTotal.bind(this));
-            this._heapMemoryUsageGauge.addCallback(this._getHeapUsage.bind(this));
-            this._memoryUsageNonHeapGauge.addCallback(this._getNonHeapUsage.bind(this));
-        }
+        //     // Add histogram data collection
+        //     if (!this._handle) {
+        //         this._handle = setInterval(
+        //             () => this._collectHistogramData(),
+        //             this._collectionInterval
+        //         );
+        //         this._handle.unref();
+        //     }
+        //     // Add observable callbacks
+        //     this._heapMemoryTotalGauge.addCallback(this._getHeapTotal.bind(this));
+        //     this._heapMemoryUsageGauge.addCallback(this._getHeapUsage.bind(this));
+        //     this._memoryUsageNonHeapGauge.addCallback(this._getNonHeapUsage.bind(this));
+        // }
     }
 
     /** 
