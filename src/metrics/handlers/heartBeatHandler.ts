@@ -60,6 +60,7 @@ export class HeartBeatHandler {
     }
 
     public async shutdown(): Promise<void> {
+        this._metricGauge.removeCallback(this._metricGaugeCallback);
         await this._meterProvider.shutdown();
     }
 

@@ -62,7 +62,6 @@ export class StandardMetricsHandler {
     }
 
     public shutdown() {
-        this._meterProvider.shutdown();
         this._dependencyMetrics.shutdown();
         this._exceptionMetrics.shutdown();
         this._traceMetrics.shutdown();

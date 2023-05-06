@@ -21,6 +21,10 @@ import { ApplicationInsightsClient } from "../../../src";
 
 describe("Library/LogHandler", () => {
     let sandbox: sinon.SinonSandbox;
+    let handler: LogHandler;
+    let traceHandler: TraceHandler;
+    let stub: sinon.SinonStub;
+    let metricHandler: MetricHandler;
     const _config = new ApplicationInsightsConfig();
     _config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://westus.in.applicationinsights.azure.com/;LiveEndpoint=https://west.live.monitor.azure.com/";
 
@@ -30,19 +34,39 @@ describe("Library/LogHandler", () => {
 
     afterEach(() => {
         sandbox.restore();
+        handler.shutdown();
+        if (traceHandler) {
+            traceHandler.shutdown();
+        }
+        if (metricHandler) {
+            metricHandler.shutdown();
+        }
     });
+
+    function createLogHandler(config: ApplicationInsightsConfig, metricHandler?: MetricHandler) {
+        handler = new LogHandler(config, metricHandler);
+        stub = sinon.stub(handler["_exporter"], "export").callsFake(
+            (envelopes: any, resultCallback: any) =>
+                new Promise((resolve, reject) => {
+                    resultCallback({
+                        code: ExportResultCode.SUCCESS,
+                    });
+                    resolve();
+                })
+        );
+    }
 
     describe("#autoCollect", () => {
         it("exception enablement during start", () => {
             _config.enableAutoCollectExceptions = true;
-            const handler = new LogHandler(_config);
+            createLogHandler(_config);
             assert.ok(handler["_exceptions"], "Exceptions not enabled");
         });
     });
 
     describe("#manual track APIs", () => {
         it("_logToEnvelope", () => {
-            const handler = new LogHandler(_config);
+            createLogHandler(_config);
             const telemetry: Telemetry = {};
             const data: MonitorDomain = {};
             const envelope = handler["_logToEnvelope"](
@@ -64,16 +88,24 @@ describe("Library/LogHandler", () => {
             assert.equal(envelope.tags["ai.cloud.role"], "Web");
             assert.equal(envelope.tags["ai.cloud.roleInstance"], os.hostname());
             assert.ok(
-                envelope.tags["ai.internal.sdkVersion"].indexOf("node") == 0,
+                envelope.tags["ai.internal.sdkVersion"].indexOf("node") > 0,
+                "Incorrect SDK version"
+            );
+            assert.ok(
+                envelope.tags["ai.internal.sdkVersion"].indexOf(":otel") > 0,
+                "Incorrect SDK version"
+            );
+            assert.ok(
+                envelope.tags["ai.internal.sdkVersion"].indexOf(":dst") > 0,
                 "Incorrect SDK version"
             );
         });
 
         it("tracing", () => {
-            const logHandler = new LogHandler(_config);
-            const traceHandler = new TraceHandler(_config);
+            createLogHandler(_config);
+            traceHandler = new TraceHandler(_config);
             traceHandler["_tracer"].startActiveSpan("test", () => {
-                const envelope = logHandler["_logToEnvelope"]({}, "", {});
+                const envelope = handler["_logToEnvelope"]({}, "", {});
                 const spanContext = trace.getSpanContext(context.active());
                 assert.ok(isValidTraceId(envelope.tags["ai.operation.id"]), "Valid operation Id");
                 assert.ok(
@@ -89,8 +121,8 @@ describe("Library/LogHandler", () => {
             let otherConfig = new ApplicationInsightsConfig();
             otherConfig.connectionString = _config.connectionString;
             otherConfig.samplingRatio = 0;
-            const logHandler = new LogHandler(otherConfig);
-            const stub = sinon.stub(logHandler["_batchProcessor"], "send");
+            createLogHandler(otherConfig);
+            const stub = sinon.stub(handler["_batchProcessor"], "send");
             const telemetry: AvailabilityTelemetry = {
                 name: "TestName",
                 duration: 2000, //2 seconds
@@ -99,22 +131,13 @@ describe("Library/LogHandler", () => {
                 message: "testMessage",
                 success: false,
             };
-            logHandler.trackAvailability(telemetry);
+            handler.trackAvailability(telemetry);
             assert.ok(stub.notCalled);
         });
 
 
         it("trackAvailability", (done) => {
-            const handler = new LogHandler(_config);
-            const stub = sinon.stub(handler["_exporter"], "export").callsFake(
-                (envelopes: any, resultCallback: any) =>
-                    new Promise((resolve, reject) => {
-                        resultCallback({
-                            code: ExportResultCode.SUCCESS,
-                        });
-                        resolve();
-                    })
-            );
+            createLogHandler(_config);
             const telemetry: AvailabilityTelemetry = {
                 name: "TestName",
                 duration: 2000, //2 seconds
@@ -156,16 +179,7 @@ describe("Library/LogHandler", () => {
         });
 
         it("trackPageView", (done) => {
-            const handler = new LogHandler(_config);
-            const stub = sinon.stub(handler["_exporter"], "export").callsFake(
-                (envelopes: any, resultCallback: any) =>
-                    new Promise((resolve, reject) => {
-                        resultCallback({
-                            code: ExportResultCode.SUCCESS,
-                        });
-                        resolve();
-                    })
-            );
+            createLogHandler(_config);
             const telemetry: PageViewTelemetry = {
                 name: "TestName",
                 duration: 2000, //2 seconds
@@ -205,16 +219,7 @@ describe("Library/LogHandler", () => {
         });
 
         it("trackTrace", (done) => {
-            const handler = new LogHandler(_config);
-            const stub = sinon.stub(handler["_exporter"], "export").callsFake(
-                (envelopes: any, resultCallback: any) =>
-                    new Promise((resolve, reject) => {
-                        resultCallback({
-                            code: ExportResultCode.SUCCESS,
-                        });
-                        resolve();
-                    })
-            );
+            createLogHandler(_config);
             const telemetry: TraceTelemetry = {
                 message: "testMessage",
                 severity: "Information",
@@ -249,16 +254,7 @@ describe("Library/LogHandler", () => {
         });
 
         it("trackException", (done) => {
-            const handler = new LogHandler(_config);
-            const stub = sinon.stub(handler["_exporter"], "export").callsFake(
-                (envelopes: any, resultCallback: any) =>
-                    new Promise((resolve, reject) => {
-                        resultCallback({
-                            code: ExportResultCode.SUCCESS,
-                        });
-                        resolve();
-                    })
-            );
+            createLogHandler(_config);
             const measurements: { [key: string]: number } = {};
             measurements["test"] = 123;
             const telemetry: ExceptionTelemetry = {
@@ -304,16 +300,7 @@ describe("Library/LogHandler", () => {
         });
 
         it("trackEvent", (done) => {
-            const handler = new LogHandler(_config);
-            const stub = sinon.stub(handler["_exporter"], "export").callsFake(
-                (envelopes: any, resultCallback: any) =>
-                    new Promise((resolve, reject) => {
-                        resultCallback({
-                            code: ExportResultCode.SUCCESS,
-                        });
-                        resolve();
-                    })
-            );
+            createLogHandler(_config);
             const measurements: { [key: string]: number } = {};
             measurements["test"] = 123;
             const telemetry: EventTelemetry = {
@@ -351,17 +338,9 @@ describe("Library/LogHandler", () => {
 
         it("Exception standard metrics processed", (done) => {
             _config.enableAutoCollectStandardMetrics = true;
-            const metricHandler = new MetricHandler(_config);
-            const handler = new LogHandler(_config, metricHandler);
-            const stub = sinon.stub(handler["_exporter"], "export").callsFake(
-                (envelopes: any, resultCallback: any) =>
-                    new Promise((resolve, reject) => {
-                        resultCallback({
-                            code: ExportResultCode.SUCCESS,
-                        });
-                        resolve();
-                    })
-            );
+            metricHandler = new MetricHandler(_config);
+            createLogHandler(_config, metricHandler);
+
             const telemetry: ExceptionTelemetry = {
                 exception: new Error("TestError"),
                 severity: "Critical",
@@ -385,17 +364,8 @@ describe("Library/LogHandler", () => {
 
         it("Trace standard metrics processed", (done) => {
             _config.enableAutoCollectStandardMetrics = true;
-            const metricHandler = new MetricHandler(_config);
-            const handler = new LogHandler(_config, metricHandler);
-            const stub = sinon.stub(handler["_exporter"], "export").callsFake(
-                (envelopes: any, resultCallback: any) =>
-                    new Promise((resolve, reject) => {
-                        resultCallback({
-                            code: ExportResultCode.SUCCESS,
-                        });
-                        resolve();
-                    })
-            );
+            metricHandler = new MetricHandler(_config);
+            createLogHandler(_config, metricHandler);
             const telemetry: TraceTelemetry = {
                 message: "testMessage",
                 severity: "Information",
@@ -424,6 +394,7 @@ describe("Library/LogHandler", () => {
             const logsStatsbeatCollection = appInsights["_logHandler"]["_exporter"]["_statsbeatMetrics"]["_networkStatsbeatCollection"];
             assert.strictEqual(logsStatsbeatCollection[0].totalSuccesfulRequestCount, 1);
             assert.strictEqual(logsStatsbeatCollection[0].intervalRequestExecutionTime, 100);
+            appInsights.shutdown();
         });
     });
 });
