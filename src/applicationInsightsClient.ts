@@ -38,6 +38,13 @@ export class ApplicationInsightsClient {
         this._logHandler = new LogHandler(this._config, this._metricHandler, this._statsbeat);
     }
 
+    /** 
+* @deprecated This should not be used
+*/
+    public start() {
+        // No Op
+    }
+
     public getTraceHandler(): TraceHandler {
         return this._traceHandler;
     }
