@@ -7,24 +7,33 @@ import * as sinon from "sinon";
 import { StandardMetricsHandler } from "../../../src/metrics/handlers/standardMetricsHandler";
 import { IStandardMetricBaseDimensions, StandardMetric } from "../../../src/metrics/types";
 import { ApplicationInsightsConfig } from "../../../src/shared";
+import { ExportResultCode } from "@opentelemetry/core";
 
 describe("#StandardMetricsHandler", () => {
-    let sandbox: sinon.SinonSandbox;
+    let exportStub: sinon.SinonStub;
     let autoCollect: StandardMetricsHandler;
 
     before(() => {
-        sandbox = sinon.createSandbox();
         const config = new ApplicationInsightsConfig();
         config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
         autoCollect = new StandardMetricsHandler(config, { collectionInterval: 100 });
-        sandbox.stub(autoCollect["_metricReader"]["_exporter"], "export");
+        exportStub = sinon.stub(autoCollect["_azureExporter"], "export").callsFake(
+            (spans: any, resultCallback: any) =>
+                new Promise((resolve, reject) => {
+                    resultCallback({
+                        code: ExportResultCode.SUCCESS,
+                    });
+                    resolve();
+                })
+        );
     });
 
     afterEach(() => {
-        sandbox.restore();
+        exportStub.resetHistory();
     });
 
     after(() => {
+        exportStub.restore();
         autoCollect.shutdown();
     });
 
@@ -40,7 +49,6 @@ describe("#StandardMetricsHandler", () => {
     });
 
     it("should observe instruments during collection", async () => {
-        const mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
         let resource = {
             attributes: {} as any
         };
@@ -98,8 +106,8 @@ describe("#StandardMetricsHandler", () => {
         }
 
         await new Promise((resolve) => setTimeout(resolve, 120));
-        assert.ok(mockExport.called);
-        const resourceMetrics = mockExport.args[0][0];
+        assert.ok(exportStub.called);
+        const resourceMetrics = exportStub.args[0][0];
         const scopeMetrics = resourceMetrics.scopeMetrics;
         assert.strictEqual(scopeMetrics.length, 1, "scopeMetrics count");
         const metrics = scopeMetrics[0].metrics;
@@ -110,7 +118,7 @@ describe("#StandardMetricsHandler", () => {
         assert.equal(metrics[3].descriptor.name, StandardMetric.TRACE_COUNT);
 
         // Requests
-        
+
         assert.strictEqual(metrics[0].dataPoints.length, 3, "dataPoints count");
         assert.strictEqual((metrics[0].dataPoints[0].value as Histogram).count, 1, "dataPoint count");
         assert.strictEqual((metrics[0].dataPoints[0].value as Histogram).min, 654321, "dataPoint min");
@@ -219,9 +227,8 @@ describe("#StandardMetricsHandler", () => {
     });
 
     it("should not collect when disabled", async () => {
-        const mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
         autoCollect.shutdown();
         await new Promise((resolve) => setTimeout(resolve, 120));
-        assert.ok(mockExport.notCalled);
+        assert.ok(exportStub.notCalled);
     });
 });

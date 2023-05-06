@@ -4,28 +4,46 @@ import * as sinon from "sinon";
 import { PerformanceCounterMetricsHandler } from "../../../src/metrics/handlers";
 import { NativeMetricsCounter, PerformanceCounter } from "../../../src/metrics/types";
 import { ApplicationInsightsConfig } from "../../../src/shared";
+import { ExportResultCode } from "@opentelemetry/core";
 
 describe("PerformanceCounterMetricsHandler", () => {
-    let sandbox: sinon.SinonSandbox;
     let autoCollect: PerformanceCounterMetricsHandler;
+    let config: ApplicationInsightsConfig;
+    let exportStub: sinon.SinonStub;
 
     before(() => {
-        sandbox = sinon.createSandbox();
-        const config = new ApplicationInsightsConfig();
-        config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
+        config = new ApplicationInsightsConfig();
+        config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
         config.extendedMetrics.heap = true;
         config.extendedMetrics.loop = true;
         config.extendedMetrics.gc = true;
-        autoCollect = new PerformanceCounterMetricsHandler(config, { collectionInterval: 100 });
-        sandbox.stub(autoCollect["_metricReader"]["_exporter"], "export");
     });
 
     afterEach(() => {
-        sandbox.restore();
+        exportStub.resetHistory();
+        autoCollect.shutdown();
     });
+
+    after(() => {
+        exportStub.restore();
+    });
+
+    function createAutoCollect(customConfig?: ApplicationInsightsConfig) {
+        autoCollect = new PerformanceCounterMetricsHandler(customConfig || config, { collectionInterval: 100 });
+        exportStub = sinon.stub(autoCollect["_azureExporter"], "export").callsFake(
+            (spans: any, resultCallback: any) =>
+                new Promise((resolve, reject) => {
+                    resultCallback({
+                        code: ExportResultCode.SUCCESS,
+                    });
+                    resolve();
+                })
+        );
+    }
 
     describe("#Metrics", () => {
         it("should create instruments", () => {
+            createAutoCollect();
             assert.ok(
                 autoCollect["_processMetrics"]["_memoryPrivateBytesGauge"],
                 "_memoryPrivateBytesGauge not available"
@@ -49,10 +67,10 @@ describe("PerformanceCounterMetricsHandler", () => {
         });
 
         it("should observe instruments during collection", async () => {
-            const mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
+            createAutoCollect();
             await new Promise((resolve) => setTimeout(resolve, 120));
-            assert.ok(mockExport.called);
-            const resourceMetrics = mockExport.args[0][0];
+            assert.ok(exportStub.called);
+            const resourceMetrics = exportStub.args[0][0];
             const scopeMetrics = resourceMetrics.scopeMetrics;
             assert.strictEqual(scopeMetrics.length, 1, "scopeMetrics count");
             let metrics = scopeMetrics[0].metrics;
@@ -66,10 +84,10 @@ describe("PerformanceCounterMetricsHandler", () => {
         });
 
         it("should not collect when disabled", async () => {
-            const mockExport = sandbox.stub(autoCollect["_azureExporter"], "export");
+            createAutoCollect();
             autoCollect.shutdown();
             await new Promise((resolve) => setTimeout(resolve, 120));
-            assert.ok(mockExport.notCalled);
+            assert.ok(exportStub.notCalled);
         });
 
         it("should add correct views", () => {
@@ -78,7 +96,7 @@ describe("PerformanceCounterMetricsHandler", () => {
             config.extendedMetrics.heap = false;
             config.extendedMetrics.loop = false;
             config.extendedMetrics.gc = false;
-            const autoCollect = new PerformanceCounterMetricsHandler(config);
+            createAutoCollect(config);
             let views = autoCollect["_getViews"]();
             assert.equal(views.length, 11);
         });

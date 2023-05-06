@@ -71,6 +71,8 @@ describe("Library/TraceHandler", () => {
             exportStub.restore();
             mockHttpServer.close();
             mockHttpsServer.close();
+            metricHandler.shutdown();
+            handler.shutdown();
         });
 
         function createMockServers() {
