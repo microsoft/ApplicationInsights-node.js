@@ -182,6 +182,21 @@ Other OpenTelemetry Instrumentations are available [here](https://github.com/ope
     
 ```
 
+## Add other OpenTelemetry Exporters
+
+You can include other OpenTelemetry Exporters adding a new SpanProcessor to the TracerProvider created internally:
+
+```typescript
+const { ApplicationInsightsClient, ApplicationInsightsConfig } = require("applicationinsights");
+const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
+const { BatchSpanProcessor } = require("@opentelemetry/sdk-trace-base");
+
+const appInsights = new ApplicationInsightsClient(new ApplicationInsightsConfig());
+const otlpExporter = new OTLPTraceExporter(collectorOptions);
+const spanProcessor = new BatchSpanProcessor(otlpExporter);
+appInsights.getTraceHandler().addSpanProcessor(spanProcessor);
+```
+
 ## Set the Cloud Role Name and the Cloud Role Instance
 
 You might set the Cloud Role Name and the Cloud Role Instance via [OpenTelemetry Resource](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/sdk.md#resource-sdk) attributes. This step updates Cloud Role Name and Cloud Role Instance from their default values to something that makes sense to your team. They'll appear on the Application Map as the name underneath a node. Cloud Role Name uses `service.namespace` and `service.name` attributes, although it falls back to `service.name` if `service.namespace` isn't set. Cloud Role Instance uses the `service.instance.id` attribute value.

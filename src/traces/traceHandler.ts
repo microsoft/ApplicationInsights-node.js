@@ -17,7 +17,6 @@ import { BatchSpanProcessor, BufferConfig, SpanProcessor, Tracer } from "@opente
 import { HttpInstrumentation, HttpInstrumentationConfig, IgnoreOutgoingRequestFunction } from "@opentelemetry/instrumentation-http";
 import { ApplicationInsightsSampler } from "./applicationInsightsSampler";
 import { ApplicationInsightsConfig } from "../shared";
-import { TracerProvider } from "@opentelemetry/api";
 import { MetricHandler } from "../metrics/metricHandler";
 import { AzureSpanProcessor } from "./azureSpanProcessor";
 import { AzureFunctionsHook } from "./azureFunctionsHook";
@@ -88,7 +87,7 @@ export class TraceHandler {
         // No Op
     }
 
-    public getTracerProvider(): TracerProvider {
+    public getTracerProvider(): NodeTracerProvider {
         return this._tracerProvider;
     }
 
