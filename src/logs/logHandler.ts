@@ -74,7 +74,7 @@ export class LogHandler {
         this._console.enable(this._config.logInstrumentations);
 
         const { node } = process.versions;
-        let nodeVersion = node.split(".");
+        let [nodeVersion] = node.split(".");
         let opentelemetryVersion = SDK_INFO[SemanticResourceAttributes.TELEMETRY_SDK_VERSION];
         let prefix = process.env["AZURE_MONITOR_AGENT_PREFIX"]
             ? process.env["AZURE_MONITOR_AGENT_PREFIX"]
