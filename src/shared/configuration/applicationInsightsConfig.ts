@@ -13,7 +13,7 @@ import {
 } from "./types";
 import { JsonConfig } from "./jsonConfig";
 import { Logger } from "../logging";
-import { Resource } from "@opentelemetry/resources";
+import { Resource, ResourceDetectionConfig, detectResourcesSync, envDetectorSync } from "@opentelemetry/resources";
 import { SemanticResourceAttributes, TelemetrySdkLanguageValues } from "@opentelemetry/semantic-conventions";
 
 // Azure Connection String
@@ -165,14 +165,21 @@ export class ApplicationInsightsConfig implements IConfig {
     }
 
     private _getDefaultResource(): Resource {
-        const resource = Resource.EMPTY;
-        resource.attributes[SemanticResourceAttributes.SERVICE_NAME] = DEFAULT_ROLE_NAME;
+        let resource = Resource.EMPTY;
+        // Load resource attributes from env
+        let detectResourceConfig: ResourceDetectionConfig = {
+            detectors: [envDetectorSync]
+        };
+        const envResource =detectResourcesSync(detectResourceConfig);
+        resource = resource.merge(envResource);
+
+        resource.attributes[SemanticResourceAttributes.SERVICE_NAME] = resource.attributes[SemanticResourceAttributes.SERVICE_NAME] || DEFAULT_ROLE_NAME;
         if (process.env.WEBSITE_SITE_NAME) {
             // Azure Web apps and Functions
             resource.attributes[SemanticResourceAttributes.SERVICE_NAME] =
                 process.env.WEBSITE_SITE_NAME;
         }
-        resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = os && os.hostname();
+        resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] || os && os.hostname();
         if (process.env.WEBSITE_INSTANCE_ID) {
             resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] =
                 process.env.WEBSITE_INSTANCE_ID;
