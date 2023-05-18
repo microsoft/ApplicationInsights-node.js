@@ -275,6 +275,39 @@ describe("Library/Config", () => {
             );
         });
 
+        it("OTEL_RESOURCE_ATTRIBUTES", () => {
+            const env = <{ [id: string]: string }>{};
+            const originalEnv = process.env;
+            env.OTEL_RESOURCE_ATTRIBUTES = "service.name=testServiceName,service.instance.id=testServiceInstance,k8s.cluster.name=testClusterName,k8s.node.name=testNodeName";
+            process.env = env;
+            const config = new ApplicationInsightsConfig();
+            process.env = originalEnv;
+            assert.equal(
+                config.resource.attributes[
+                SemanticResourceAttributes.SERVICE_NAME
+                ],
+                "testServiceName"
+            );
+            assert.equal(
+                config.resource.attributes[
+                SemanticResourceAttributes.SERVICE_INSTANCE_ID
+                ],
+                "testServiceInstance"
+            );
+            assert.equal(
+                config.resource.attributes[
+                SemanticResourceAttributes.K8S_CLUSTER_NAME
+                ],
+                "testClusterName"
+            );
+            assert.equal(
+                config.resource.attributes[
+                SemanticResourceAttributes.K8S_NODE_NAME
+                ],
+                "testNodeName"
+            );
+        });
+
         it("should correctly set Azure attributes", () => {
             const env = <{ [id: string]: string }>{};
             const originalEnv = process.env;
