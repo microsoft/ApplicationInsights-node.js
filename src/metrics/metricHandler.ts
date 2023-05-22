@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { SpanKind } from "@opentelemetry/api";
-import { ReadableSpan, Span, TimedEvent } from "@opentelemetry/sdk-trace-base";
-import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
+import { LogRecord } from "@opentelemetry/sdk-logs";
+import { ReadableSpan, Span } from "@opentelemetry/sdk-trace-base";
 import { ApplicationInsightsConfig } from "../shared";
 import {
     CustomMetricsHandler,
@@ -10,7 +9,7 @@ import {
     StandardMetricsHandler,
     PerformanceCounterMetricsHandler,
 } from "./handlers";
-import { IMetricTraceDimensions, IStandardMetricBaseDimensions } from "./types";
+
 
 export class MetricHandler {
     private _config: ApplicationInsightsConfig;
@@ -66,25 +65,11 @@ export class MetricHandler {
     }
 
     public markSpanAsProcceseded(span: Span): void {
-        if (this._config.enableAutoCollectStandardMetrics) {
-            if (span.kind === SpanKind.CLIENT) {
-                span.setAttributes({
-                    "_MS.ProcessedByMetricExtractors": "(Name:'Dependencies', Ver:'1.1')",
-                });
-            } else if (span.kind === SpanKind.SERVER) {
-                span.setAttributes({
-                    "_MS.ProcessedByMetricExtractors": "(Name:'Requests', Ver:'1.1')",
-                });
-            }
-        }
+        this._standardMetricsHandler?.markSpanAsProcceseded(span);
     }
 
-    public recordException(dimensions: IStandardMetricBaseDimensions): void {
-        this._standardMetricsHandler?.recordException(dimensions);
-    }
-
-    public recordTrace(dimensions: IMetricTraceDimensions): void {
-        this._standardMetricsHandler?.recordTrace(dimensions);
+    public markLogsAsProcceseded(logRecord: LogRecord): void {
+        this._standardMetricsHandler?.markLogsAsProcceseded(logRecord);
     }
 
     public recordSpan(span: ReadableSpan): void {
@@ -93,29 +78,10 @@ export class MetricHandler {
     }
 
     public recordSpanEvents(span: ReadableSpan): void {
-        if (span.events) {
-            span.events.forEach((event: TimedEvent) => {
-                const dimensions: IStandardMetricBaseDimensions = {
-                    cloudRoleInstance: "",
-                    cloudRoleName: "",
-                };
-                const serviceName =
-                    span.resource?.attributes[SemanticResourceAttributes.SERVICE_NAME];
-                const serviceNamespace =
-                    span.resource?.attributes[SemanticResourceAttributes.SERVICE_NAMESPACE];
-                if (serviceName) {
-                    if (serviceNamespace) {
-                        dimensions.cloudRoleInstance = `${serviceNamespace}.${serviceName}`;
-                    } else {
-                        dimensions.cloudRoleName = String(serviceName);
-                    }
-                }
-                if (event.name === "exception") {
-                    this._standardMetricsHandler?.recordException(dimensions);
-                } else {
-                    this._standardMetricsHandler?.recordTrace(dimensions);
-                }
-            });
-        }
+        this._standardMetricsHandler?.recordSpanEvents(span);
+    }
+
+    public recordLog(logRecord: LogRecord): void {
+        this._standardMetricsHandler?.recordLog(logRecord);
     }
 }

@@ -3,7 +3,6 @@ import * as os from "os";
 import * as sinon from "sinon";
 import { isValidTraceId, isValidSpanId, context, trace } from "@opentelemetry/api";
 import { ExportResultCode } from "@opentelemetry/core";
-
 import { LogHandler } from "../../../src/logs";
 import { MetricHandler } from "../../../src/metrics";
 import { TraceHandler } from "../../../src/traces";
@@ -17,7 +16,8 @@ import {
     Telemetry,
 } from "../../../src/declarations/contracts";
 import { MonitorDomain } from "../../../src/declarations/generated";
-import { ApplicationInsightsClient } from "../../../src";
+import { Resource } from "@opentelemetry/resources";
+
 
 describe("Library/LogHandler", () => {
     let sandbox: sinon.SinonSandbox;
@@ -26,7 +26,7 @@ describe("Library/LogHandler", () => {
     let stub: sinon.SinonStub;
     let metricHandler: MetricHandler;
     const _config = new ApplicationInsightsConfig();
-    _config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://westus.in.applicationinsights.azure.com/;LiveEndpoint=https://west.live.monitor.azure.com/";
+    _config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://westus.in.applicationinsights.azure.com/;LiveEndpoint=https://west.live.monitor.azure.com/";
 
     before(() => {
         sandbox = sinon.createSandbox();
@@ -66,75 +66,41 @@ describe("Library/LogHandler", () => {
 
     describe("#manual track APIs", () => {
         it("_logToEnvelope", () => {
+            let testResource = new Resource({
+                "testAttribute": "testValue"
+            });
+            _config.resource = testResource;
             createLogHandler(_config);
             const telemetry: Telemetry = {};
             const data: MonitorDomain = {};
-            const envelope = handler["_logToEnvelope"](
+            const logRecord = handler["_telemetryToLogRecord"](
                 telemetry,
                 "TestData",
                 data,
             );
-            assert.equal(
-                envelope.name,
-                "Microsoft.ApplicationInsights.1aa11111bbbb1ccc8dddeeeeffff3333.Test"
-            );
-            assert.equal(envelope.version, "1");
-            assert.equal(envelope.instrumentationKey, "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-            assert.equal(envelope.sampleRate, "100");
-            assert.ok(envelope.time);
-            assert.equal(envelope.data.baseType, "TestData");
-            assert.ok(isValidTraceId(envelope.tags["ai.operation.id"]), "Valid operation Id");
-            assert.equal(envelope.tags["ai.operation.parentId"], undefined);
-            assert.equal(envelope.tags["ai.cloud.role"], "Web");
-            assert.equal(envelope.tags["ai.cloud.roleInstance"], os.hostname());
-            assert.ok(
-                envelope.tags["ai.internal.sdkVersion"].indexOf("node") > 0,
-                "Incorrect SDK version"
-            );
-            assert.ok(
-                envelope.tags["ai.internal.sdkVersion"].indexOf(":otel") > 0,
-                "Incorrect SDK version"
-            );
-            assert.ok(
-                envelope.tags["ai.internal.sdkVersion"].indexOf(":dst") > 0,
-                "Incorrect SDK version"
-            );
+            assert.equal(logRecord.body, "TestData");
+            assert.equal(logRecord.attributes["testAttribute"], "testValue");
+            assert.equal(logRecord.attributes["service.name"], os.hostname());
+            assert.equal(logRecord.attributes["service.instance.id"], os.hostname());
+            assert.ok(logRecord.hrTime);
         });
 
         it("tracing", () => {
             createLogHandler(_config);
             traceHandler = new TraceHandler(_config);
             traceHandler["_tracer"].startActiveSpan("test", () => {
-                const envelope = handler["_logToEnvelope"]({}, "", {});
-                const spanContext = trace.getSpanContext(context.active());
-                assert.ok(isValidTraceId(envelope.tags["ai.operation.id"]), "Valid operation Id");
-                assert.ok(
-                    isValidSpanId(envelope.tags["ai.operation.parentId"]),
-                    "Valid parent operation Id"
+                const logRecord = handler["_telemetryToLogRecord"](
+                    {},
+                    "TestData",
+                    {},
                 );
-                assert.equal(envelope.tags["ai.operation.id"], spanContext.traceId);
-                assert.equal(envelope.tags["ai.operation.parentId"], spanContext.spanId);
+                const spanContext = trace.getSpanContext(context.active());
+                assert.ok(isValidTraceId(logRecord.spanContext.traceId), "Valid trace Id");
+                assert.ok(isValidSpanId(logRecord.spanContext.spanId), "Valid span Id");
+                assert.equal(logRecord.spanContext.traceId, spanContext.traceId);
+                assert.equal(logRecord.spanContext.spanId, spanContext.spanId);
             });
         });
-
-        it("sampling", () => {
-            let otherConfig = new ApplicationInsightsConfig();
-            otherConfig.connectionString = _config.connectionString;
-            otherConfig.samplingRatio = 0;
-            createLogHandler(otherConfig);
-            const stub = sinon.stub(handler["_batchProcessor"], "send");
-            const telemetry: AvailabilityTelemetry = {
-                name: "TestName",
-                duration: 2000, //2 seconds
-                id: "testId",
-                runLocation: "testRunLocation",
-                message: "testMessage",
-                success: false,
-            };
-            handler.trackAvailability(telemetry);
-            assert.ok(stub.notCalled);
-        });
-
 
         it("trackAvailability", (done) => {
             createLogHandler(_config);
@@ -385,16 +351,6 @@ describe("Library/LogHandler", () => {
                 .catch((error) => {
                     done(error);
                 });
-        });
-
-        it("Logs Statsbeat initializd", () => {
-            const appInsights = new ApplicationInsightsClient(_config);
-            assert.ok(appInsights["_logHandler"]["_exporter"]["_statsbeatMetrics"], "Statsbeat not initialized on the logsExporter.");
-            appInsights["_logHandler"]["_exporter"]["_statsbeatMetrics"].countSuccess(100);
-            const logsStatsbeatCollection = appInsights["_logHandler"]["_exporter"]["_statsbeatMetrics"]["_networkStatsbeatCollection"];
-            assert.strictEqual(logsStatsbeatCollection[0].totalSuccesfulRequestCount, 1);
-            assert.strictEqual(logsStatsbeatCollection[0].intervalRequestExecutionTime, 100);
-            appInsights.shutdown();
         });
     });
 });
