@@ -6,14 +6,16 @@ import {
     PeriodicExportingMetricReader,
     PeriodicExportingMetricReaderOptions,
 } from "@opentelemetry/sdk-metrics";
+import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { ApplicationInsightsConfig } from "../../shared";
+
 
 export class CustomMetricsHandler {
     private _config: ApplicationInsightsConfig;
     private _collectionInterval = 60000; // 60 seconds
     private _meterProvider: MeterProvider;
-    private _azureExporter: AzureMonitorMetricExporter;
-    private _metricReader: PeriodicExportingMetricReader;
+    private _azureMonitorExporter: AzureMonitorMetricExporter;
+    private _otlpExporter: OTLPMetricExporter;
     private _meter: Meter;
 
     constructor(config: ApplicationInsightsConfig, options?: { collectionInterval: number }) {
@@ -22,13 +24,22 @@ export class CustomMetricsHandler {
             resource: this._config.resource,
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);
-        this._azureExporter = new AzureMonitorMetricExporter(this._config.azureMonitorExporterConfig);
+        this._azureMonitorExporter = new AzureMonitorMetricExporter(this._config.azureMonitorExporterConfig);
         const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
-            exporter: this._azureExporter as any,
+            exporter: this._azureMonitorExporter,
             exportIntervalMillis: options?.collectionInterval || this._collectionInterval,
         };
-        this._metricReader = new PeriodicExportingMetricReader(metricReaderOptions);
-        this._meterProvider.addMetricReader(this._metricReader);
+        const azureMonitorMetricReader = new PeriodicExportingMetricReader(metricReaderOptions);
+        this._meterProvider.addMetricReader(azureMonitorMetricReader);
+
+        if (config.otlpMetricExporterConfig?.enabled) {
+            this._otlpExporter = new OTLPMetricExporter(config.otlpMetricExporterConfig.baseConfig);
+            const otlpMetricReader = new PeriodicExportingMetricReader({
+                exporter: this._otlpExporter,
+                exportIntervalMillis: options?.collectionInterval || this._collectionInterval,
+            });
+            this._meterProvider.addMetricReader(otlpMetricReader);
+        }
         this._meter = this._meterProvider.getMeter("ApplicationInsightsCustomMetricsMeter");
     }
 

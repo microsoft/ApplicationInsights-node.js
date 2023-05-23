@@ -30,7 +30,7 @@ describe("PerformanceCounterMetricsHandler", () => {
 
     function createAutoCollect(customConfig?: ApplicationInsightsConfig) {
         autoCollect = new PerformanceCounterMetricsHandler(customConfig || config, { collectionInterval: 100 });
-        exportStub = sinon.stub(autoCollect["_azureExporter"], "export").callsFake(
+        exportStub = sinon.stub(autoCollect["_azureMonitorExporter"], "export").callsFake(
             (spans: any, resultCallback: any) =>
                 new Promise((resolve, reject) => {
                     resultCallback({

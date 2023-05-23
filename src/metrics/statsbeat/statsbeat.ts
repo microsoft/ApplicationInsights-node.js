@@ -82,7 +82,6 @@ export class Statsbeat {
         this._azureVm = new AzureVirtualMachine();
         this._statsbeatConfig = new ApplicationInsightsConfig();
         this._statsbeatConfig.connectionString = this._connectionString;
-        this._statsbeatConfig.enableAutoCollectHeartbeat = false;
         this._statsbeatConfig.enableAutoCollectPerformance = false;
         this._statsbeatConfig.enableAutoCollectStandardMetrics = false;
 

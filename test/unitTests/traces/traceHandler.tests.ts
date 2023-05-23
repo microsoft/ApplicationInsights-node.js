@@ -20,6 +20,7 @@ describe("Library/TraceHandler", () => {
     before(() => {
         _config = new ApplicationInsightsConfig();
         _config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
+        _config.otlpTraceExporterConfig.enabled = true;
         sandbox = sinon.createSandbox();
     });
 
@@ -29,6 +30,7 @@ describe("Library/TraceHandler", () => {
 
     describe("#autoCollection of HTTP/HTTPS requests", () => {
         let exportStub: sinon.SinonStub;
+        let otlpExportStub: sinon.SinonStub;
         let handler: TraceHandler = null;
         let metricHandler: MetricHandler = null;
         let mockHttpServer: any;
@@ -44,13 +46,22 @@ describe("Library/TraceHandler", () => {
             _config.instrumentations.http = httpConfig;
             metricHandler = new MetricHandler(_config);
             handler = new TraceHandler(_config, metricHandler);
-            exportStub = sinon.stub(handler["_exporter"], "export").callsFake(
+            exportStub = sinon.stub(handler["_azureMonitorExporter"], "export").callsFake(
                 (spans: any, resultCallback: any) =>
                     new Promise((resolve, reject) => {
                         resultCallback({
                             code: ExportResultCode.SUCCESS,
                         });
                         resolve();
+                    })
+            );
+            otlpExportStub = sinon.stub(handler["_otlpExporter"], "export").callsFake(
+                (spans: any, resultCallback: any) =>
+                    new Promise((resolve, reject) => {
+                        resultCallback({
+                            code: ExportResultCode.SUCCESS,
+                        });
+                        resolve(null);
                     })
             );
             // Load Http modules, HTTP instrumentation hook will be created in OpenTelemetry
@@ -65,10 +76,12 @@ describe("Library/TraceHandler", () => {
 
         afterEach(() => {
             exportStub.resetHistory();
+            otlpExportStub.resetHistory();
         });
 
         after(() => {
             exportStub.restore();
+            otlpExportStub.restore();
             mockHttpServer.close();
             mockHttpsServer.close();
             metricHandler.shutdown();
@@ -311,6 +324,84 @@ describe("Library/TraceHandler", () => {
                             );
                             assert.equal(spans[1].attributes["net.peer.name"], "localhost");
                             assert.equal(spans[1].attributes["net.peer.port"], mockHttpsServerPort);
+
+                            assert.equal(
+                                spans[0]["_spanContext"]["traceId"],
+                                spans[1]["_spanContext"]["traceId"]
+                            );
+                            assert.notEqual(
+                                spans[0]["_spanContext"]["spanId"],
+                                spans[1]["_spanContext"]["spanId"]
+                            );
+                            done();
+                        })
+                        .catch((error) => {
+                            done(error);
+                        });
+                })
+                .catch((error) => {
+                    done(error);
+                });
+        });
+
+        it("OTLP Export", (done) => {
+            handler["_initialize"]();
+            makeHttpRequest(false)
+                .then(() => {
+                    handler
+                        .flush()
+                        .then(() => {
+                            assert.ok(otlpExportStub.calledOnce, "Export called");
+                            const spans = otlpExportStub.args[0][0];
+                            assert.equal(spans.length, 2);
+                            // Incoming request
+                            assert.equal(spans[0].name, "HTTP GET");
+                            assert.equal(
+                                spans[0].instrumentationLibrary.name,
+                                "@opentelemetry/instrumentation-http"
+                            );
+                            assert.equal(spans[0].kind, 1, "Span Kind");
+                            assert.equal(spans[0].status.code, 0, "Span Success"); // Success
+                            assert.ok(spans[0].startTime);
+                            assert.ok(spans[0].endTime);
+                            assert.equal(
+                                spans[0].attributes["http.host"],
+                                `localhost:${mockHttpServerPort}`
+                            );
+                            assert.equal(spans[0].attributes["http.method"], "GET");
+                            assert.equal(spans[0].attributes["http.status_code"], "200");
+                            assert.equal(spans[0].attributes["http.status_text"], "OK");
+                            assert.equal(spans[0].attributes["http.target"], "/test");
+                            assert.equal(
+                                spans[0].attributes["http.url"],
+                                `http://localhost:${mockHttpServerPort}/test`
+                            );
+                            assert.equal(spans[0].attributes["net.host.name"], "localhost");
+                            assert.equal(spans[0].attributes["net.host.port"], mockHttpServerPort);
+                            // Outgoing request
+                            assert.equal(spans[1].name, "HTTP GET");
+                            assert.equal(
+                                spans[1].instrumentationLibrary.name,
+                                "@opentelemetry/instrumentation-http"
+                            );
+                            assert.equal(spans[1].kind, 2, "Span Kind");
+                            assert.equal(spans[1].status.code, 0, "Span Success"); // Success
+                            assert.ok(spans[1].startTime);
+                            assert.ok(spans[1].endTime);
+                            assert.equal(
+                                spans[1].attributes["http.host"],
+                                `localhost:${mockHttpServerPort}`
+                            );
+                            assert.equal(spans[1].attributes["http.method"], "GET");
+                            assert.equal(spans[1].attributes["http.status_code"], "200");
+                            assert.equal(spans[1].attributes["http.status_text"], "OK");
+                            assert.equal(spans[1].attributes["http.target"], "/test");
+                            assert.equal(
+                                spans[1].attributes["http.url"],
+                                `http://localhost:${mockHttpServerPort}/test`
+                            );
+                            assert.equal(spans[1].attributes["net.peer.name"], "localhost");
+                            assert.equal(spans[1].attributes["net.peer.port"], mockHttpServerPort);
 
                             assert.equal(
                                 spans[0]["_spanContext"]["traceId"],

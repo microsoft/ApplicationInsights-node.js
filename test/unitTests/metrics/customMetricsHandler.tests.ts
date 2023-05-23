@@ -8,12 +8,14 @@ import { ExportResultCode } from "@opentelemetry/core";
 describe("#CustomMetricsHandler", () => {
     let autoCollect: CustomMetricsHandler;
     let exportStub: sinon.SinonStub;
+    let otlpExportStub: sinon.SinonStub;
 
     before(() => {
         const config = new ApplicationInsightsConfig();
         config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
+        config.otlpMetricExporterConfig.enabled = true;
         autoCollect = new CustomMetricsHandler(config, { collectionInterval: 100 });
-        exportStub = sinon.stub(autoCollect["_azureExporter"], "export").callsFake(
+        exportStub = sinon.stub(autoCollect["_azureMonitorExporter"], "export").callsFake(
             (spans: any, resultCallback: any) =>
                 new Promise((resolve, reject) => {
                     resultCallback({
@@ -22,15 +24,26 @@ describe("#CustomMetricsHandler", () => {
                     resolve();
                 })
         );
+        otlpExportStub = sinon.stub(autoCollect["_otlpExporter"], "export").callsFake(
+            (spans: any, resultCallback: any) =>
+                new Promise((resolve, reject) => {
+                    resultCallback({
+                        code: ExportResultCode.SUCCESS,
+                    });
+                    resolve(null);
+                })
+        );
     });
 
     afterEach(() => {
         exportStub.resetHistory();
+        otlpExportStub.resetHistory();
     });
 
     after(() => {
         autoCollect.shutdown();
         exportStub.restore();
+        otlpExportStub.restore();
     });
 
     it("should create a meter", () => {
@@ -48,6 +61,10 @@ describe("#CustomMetricsHandler", () => {
         assert.strictEqual(metrics.length, 1, "metrics count");
         assert.equal(metrics[0].descriptor.name, "testCounter");
         assert.equal(metrics[0].descriptor.description, "testDescription");
+
+        assert.ok(otlpExportStub.called);
+        assert.strictEqual(otlpExportStub.args[0][0].scopeMetrics.length, 1, "scopeMetrics count");
+        assert.strictEqual(otlpExportStub.args[0][0].scopeMetrics[0].metrics.length, 1, "metrics count");
     });
 
     it("should not collect when disabled", async () => {

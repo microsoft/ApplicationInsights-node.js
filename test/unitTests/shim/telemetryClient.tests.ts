@@ -33,7 +33,7 @@ describe("shim/TelemetryClient", () => {
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
             );
             const stub = sinon
-                .stub(client.client.getTraceHandler()["_exporter"], "export")
+                .stub(client.client.getTraceHandler()["_azureMonitorExporter"], "export")
                 .callsFake(
                     (spans: any, resultCallback: any) =>
                         new Promise((resolve, reject) => {
@@ -78,7 +78,7 @@ describe("shim/TelemetryClient", () => {
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
             );
             const stub = sinon
-                .stub(client.client.getTraceHandler()["_exporter"], "export")
+                .stub(client.client.getTraceHandler()["_azureMonitorExporter"], "export")
                 .callsFake(
                     (spans: any, resultCallback: any) =>
                         new Promise((resolve, reject) => {
@@ -120,7 +120,7 @@ describe("shim/TelemetryClient", () => {
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
             );
             const stub = sinon
-                .stub(client.client.getTraceHandler()["_exporter"], "export")
+                .stub(client.client.getTraceHandler()["_azureMonitorExporter"], "export")
                 .callsFake(
                     (spans: any, resultCallback: any) =>
                         new Promise((resolve, reject) => {
