@@ -6,7 +6,6 @@ import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions"
 import { ApplicationInsightsConfig } from "../shared";
 import {
     CustomMetricsHandler,
-    HeartBeatHandler,
     StandardMetricsHandler,
     PerformanceCounterMetricsHandler,
 } from "./handlers";
@@ -16,7 +15,6 @@ export class MetricHandler {
     private _config: ApplicationInsightsConfig;
     private _perfCounterMetricsHandler: PerformanceCounterMetricsHandler;
     private _standardMetricsHandler: StandardMetricsHandler;
-    private _heartbeatHandler: HeartBeatHandler;
     private _customMetricsHandler: CustomMetricsHandler;
 
     constructor(config: ApplicationInsightsConfig) {
@@ -27,9 +25,6 @@ export class MetricHandler {
         }
         if (this._config.enableAutoCollectPerformance) {
             this._perfCounterMetricsHandler = new PerformanceCounterMetricsHandler(this._config);
-        }
-        if (this._config.enableAutoCollectHeartbeat) {
-            this._heartbeatHandler = new HeartBeatHandler(this._config);
         }
     }
 
@@ -44,12 +39,10 @@ export class MetricHandler {
         this._customMetricsHandler?.shutdown();
         this._perfCounterMetricsHandler?.shutdown();
         this._standardMetricsHandler?.shutdown();
-        this._heartbeatHandler?.shutdown();
     }
 
     public async flush(): Promise<void> {
         await this._customMetricsHandler?.flush();
-        await this._heartbeatHandler?.flush();
         await this._standardMetricsHandler?.flush();
         await this._perfCounterMetricsHandler?.flush();
     }

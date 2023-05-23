@@ -10,19 +10,21 @@ import {
 } from "@opentelemetry/sdk-metrics";
 import { ReadableSpan } from "@opentelemetry/sdk-trace-base";
 import { SemanticAttributes, SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
+import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { ApplicationInsightsConfig } from "../../shared";
 import { DependencyMetrics } from "../collection/dependencyMetrics";
 import { ExceptionMetrics } from "../collection/exceptionMetrics";
 import { RequestMetrics } from "../collection/requestMetrics";
 import { TraceMetrics } from "../collection/traceMetrics";
-import { IMetricDependencyDimensions, IMetricRequestDimensions, IMetricTraceDimensions, IStandardMetricBaseDimensions, MetricName, PreAggregatedMetricPropertyNames, StandardMetric, StandardMetricIds } from "../types";
+import { IMetricDependencyDimensions, IMetricRequestDimensions, IMetricTraceDimensions, IStandardMetricBaseDimensions, MetricName, StandardMetric, StandardMetricIds } from "../types";
+
 
 export class StandardMetricsHandler {
     private _config: ApplicationInsightsConfig;
     private _collectionInterval = 60000; // 60 seconds
     private _meterProvider: MeterProvider;
-    private _azureExporter: AzureMonitorMetricExporter;
-    private _metricReader: PeriodicExportingMetricReader;
+    private _azureMonitorExporter: AzureMonitorMetricExporter;
+    private _otlpExporter: OTLPMetricExporter;
     private _meter: Meter;
     private _dependencyMetrics: DependencyMetrics;
     private _requestMetrics: RequestMetrics;
@@ -36,13 +38,23 @@ export class StandardMetricsHandler {
             views: this._getViews(),
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);
-        this._azureExporter = new AzureMonitorMetricExporter(this._config.azureMonitorExporterConfig);
+        this._azureMonitorExporter = new AzureMonitorMetricExporter(this._config.azureMonitorExporterConfig);
         const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
-            exporter: this._azureExporter as any,
+            exporter: this._azureMonitorExporter,
             exportIntervalMillis: options?.collectionInterval || this._collectionInterval,
         };
-        this._metricReader = new PeriodicExportingMetricReader(metricReaderOptions);
-        this._meterProvider.addMetricReader(this._metricReader);
+        const azureMonitorMetricReader = new PeriodicExportingMetricReader(metricReaderOptions);
+        this._meterProvider.addMetricReader(azureMonitorMetricReader);
+
+        if (config.otlpMetricExporterConfig?.enabled) {
+            this._otlpExporter = new OTLPMetricExporter(config.otlpMetricExporterConfig.baseConfig);
+            const otlpMetricReader = new PeriodicExportingMetricReader({
+                exporter: this._otlpExporter,
+                exportIntervalMillis: options?.collectionInterval || this._collectionInterval,
+            });
+            this._meterProvider.addMetricReader(otlpMetricReader);
+        }
+
         this._meter = this._meterProvider.getMeter("ApplicationInsightsStandardMetricsMeter");
         this._requestMetrics = new RequestMetrics(this._meter);
         this._dependencyMetrics = new DependencyMetrics(this._meter);

@@ -111,7 +111,6 @@ const appInsights = new ApplicationInsightsClient(config);
 | enableAutoCollectExceptions     | Sets the state of exception tracking. If true uncaught exceptions will be sent to Application Insights | true|
 | enableAutoCollectPerformance    | Sets the state of performance tracking. If true performance counters will be collected every second and sent to Application Insights | true|
 | enableAutoCollectStandardMetrics | Sets the state of Standard Metrics tracking. If true Standard Metrics will be collected every minute and sent to Application Insights | true|
-| enableAutoCollectHeartbeat      | Sets the state of request tracking. If true HeartBeat metric data will be collected every 15 minutes and sent to Application Insights | true|
 | instrumentations| Allow configuration of OpenTelemetry Instrumentations. |  {"http": { enabled: true },"azureSdk": { enabled: false },"mongoDb": { enabled: false },"mySql": { enabled: false },"postgreSql": { enabled: false },"redis": { enabled: false }}|
 | logInstrumentations| Allow configuration of Log Instrumentations. |  {"console": { enabled: false },"bunyan": { enabled: false },"winston": { enabled: false }}|
 | extendedMetrics       | Enable/Disable specific extended Metrics(gc, heap and loop).  |{"gc":false,"heap":false,"loop":false}|
@@ -125,7 +124,6 @@ All these properties except aadTokenCredential and resource could be configured 
     "azureMonitorExporterConfig": {"connectionString":"<YOUR_CONNECTION_STRING>"},
     "samplingRatio": 0.8,
     "enableAutoCollectExceptions": true,
-    "enableAutoCollectHeartbeat": true,
     "instrumentations":{
         "azureSdk": {
             "enabled": false
