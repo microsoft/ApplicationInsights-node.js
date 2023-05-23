@@ -5,6 +5,11 @@ import { Logger } from "../shared/logging";
 import { ICorrelationContext, Context, HttpRequest } from "./types";
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
+import { AutoCollectConsole } from "../logs/console";
+import { TraceHandler } from "../traces";
+import { MetricHandler } from "../metrics";
+import { LogHandler } from "../logs";
+import { ApplicationInsightsConfig } from "../shared";
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
@@ -17,6 +22,9 @@ export { Contracts, HttpRequest, TelemetryClient };
 export let defaultClient: TelemetryClient;
 // export let liveMetricsClient: QuickPulseStateManager;
 
+let _setupString: string;
+let _config: ApplicationInsightsConfig;
+
 /**
  * Initializes the default client. Should be called after setting
  * configuration options.
@@ -28,10 +36,10 @@ export let defaultClient: TelemetryClient;
  * and start the SDK.
  */
 export function setup(setupString?: string) {
-    if (!defaultClient) {
-        defaultClient = new TelemetryClient(setupString);
-    } else {
-        Logger.getInstance().info("The default client is already setup");
+    // Save the setup string and create a config to modify with other functions in this file
+    _setupString = setupString;
+    if (!_config) {
+        _config = new ApplicationInsightsConfig();
     }
     return Configuration;
 }
@@ -43,6 +51,10 @@ export function setup(setupString?: string) {
  * @returns {ApplicationInsights} this class
  */
 export function start() {
+    if (!defaultClient) {
+        // Creates a new TelemetryClient that uses the _config we configure via the other functions in this file
+        defaultClient = new TelemetryClient(_setupString, _config);
+    }
     return Configuration;
 }
 
@@ -98,6 +110,12 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectConsole(value: boolean, collectConsoleLog = false) {
+        if (_config) {
+            _config.logInstrumentations.bunyan.enabled = value;
+            _config.logInstrumentations.winston.enabled = value;
+            // TODO: Should collectConsoleLog not be set to something that the customer can edit?
+            _config.logInstrumentations.console.enabled = collectConsoleLog;
+        }
         return Configuration;
     }
 

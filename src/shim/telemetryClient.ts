@@ -22,15 +22,15 @@ export class TelemetryClient {
      * Constructs a new client of the client
      * @param setupString the Connection String or Instrumentation Key to use (read from environment variable if not specified)
      */
-    constructor(setupString?: string) {
+    constructor(setupString?: string, config?: ApplicationInsightsConfig) {
         this.commonProperties = {};
         this.context = new Context();
-        const config = new ApplicationInsightsConfig();
         if (setupString) {
+            this.config = config;
             // TODO: Add Support for iKey as well
-            config.connectionString = setupString;
+            this.config.connectionString = setupString;
         }
-        this.client = new ApplicationInsightsClient(config);
+        this.client = new ApplicationInsightsClient(this.config);
         this.config = this.client.getConfig();
     }
 
