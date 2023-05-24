@@ -2,7 +2,6 @@
 
 import * as os from "os";
 import * as path from "path";
-import * as fs from "fs";
 import * as DataModel from "./DataModel";
 import { FileWriter, homedir } from "./FileWriter";
 import { APPLICATION_INSIGHTS_SDK_VERSION } from "../Declarations/Constants";

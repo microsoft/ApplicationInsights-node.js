@@ -2,7 +2,6 @@
 
 import * as path from "path";
 import * as fs from "fs";
-import * as os from "os";
 import * as DataModel from "./DataModel";
 import * as FileHelpers from "./Helpers/FileHelpers";
 
@@ -25,7 +24,7 @@ export class FileWriter implements DataModel.AgentLogger {
     private static DEFAULT_OPTIONS: FileWriterOptions = {
         append: false,
         deleteOnExit: true,
-        sizeLimit: 10*1024,
+        sizeLimit: 10 * 1024,
         renamePolicy: "stop",
         chmod: 0o644 // rw/r/r
     }
@@ -46,38 +45,43 @@ export class FileWriter implements DataModel.AgentLogger {
     }
 
     public log(message: any) {
-        if (this._ready) {
-            let data = typeof message === "object"
-                ? JSON.stringify(message)
-                : message.toString();
+        try {
+            if (this._ready) {
+                let data = typeof message === "object"
+                    ? JSON.stringify(message)
+                    : message.toString();
 
-            // Check if existing file needs to be renamed
-            this._shouldRenameFile((err, shouldRename) => {
-                if (err) return;
+                // Check if existing file needs to be renamed
+                this._shouldRenameFile((err, shouldRename) => {
+                    if (err) return;
 
-                if (shouldRename) {
-                    if (this._options.renamePolicy === "rolling") {
-                        FileHelpers.renameCurrentFile(this._filepath, this._filename, (renameErr, renamedFullpath) => {
-                            if (renameErr) return;
-                            FileWriter._fullpathsToDelete.push(renamedFullpath);
-                            this._options.append
-                                ? this._appendFile(data + "\n")
-                                : this._writeFile(data);
-                        });
-                    } else if (this._options.renamePolicy === "overwrite") {
-                        // Clear the current file
-                        this._writeFile(data);
-                    } else if (this._options.renamePolicy === "stop") {
-                        // Stop future logging
-                        this._ready = false;
+                    if (shouldRename) {
+                        if (this._options.renamePolicy === "rolling") {
+                            FileHelpers.renameCurrentFile(this._filepath, this._filename, (renameErr, renamedFullpath) => {
+                                if (renameErr) return;
+                                FileWriter._fullpathsToDelete.push(renamedFullpath);
+                                this._options.append
+                                    ? this._appendFile(data + "\n")
+                                    : this._writeFile(data);
+                            });
+                        } else if (this._options.renamePolicy === "overwrite") {
+                            // Clear the current file
+                            this._writeFile(data);
+                        } else if (this._options.renamePolicy === "stop") {
+                            // Stop future logging
+                            this._ready = false;
+                        }
+                    } else {
+                        this._options.append
+                            ? this._appendFile(data + "\n")
+                            : this._writeFile(data);
                     }
-                } else {
-                    this._options.append
-                    ? this._appendFile(data + "\n")
-                    : this._writeFile(data);
-                }
-            });
-
+                });
+            }
+        }
+        catch (error) {
+            console.log(message)
+            console.log("Failed to log to file." + error)
         }
     }
 

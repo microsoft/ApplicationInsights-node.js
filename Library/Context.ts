@@ -24,22 +24,20 @@ class Context {
     }
 
     private _loadApplicationContext(packageJsonPath?: string) {
-        // note: this should return the host package.json
-        packageJsonPath = packageJsonPath || path.resolve(__dirname, "../../../../package.json");
-
-        if (!Context.appVersion[packageJsonPath]) {
-            Context.appVersion[packageJsonPath] = "unknown";
-            try {
+        try {
+            packageJsonPath = packageJsonPath || path.resolve(__dirname, "../../../../package.json");
+            if (!Context.appVersion[packageJsonPath]) {
+                Context.appVersion[packageJsonPath] = "unknown";
                 let packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
                 if (packageJson && typeof packageJson.version === "string") {
                     Context.appVersion[packageJsonPath] = packageJson.version;
                 }
-            } catch (exception) {
-                Logging.info("unable to read app version: ", exception);
             }
+            this.tags[this.keys.applicationVersion] = Context.appVersion[packageJsonPath];
         }
-
-        this.tags[this.keys.applicationVersion] = Context.appVersion[packageJsonPath];
+        catch (exception) {
+            Logging.info("Failed to read app version: ", exception);
+        }
     }
 
     private _loadDeviceContext() {
