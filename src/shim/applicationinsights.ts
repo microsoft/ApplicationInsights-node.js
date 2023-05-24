@@ -182,9 +182,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectHeartbeat(value: boolean) {
-        if (_config) {
-            _config.enableAutoCollectHeartbeat = value;
-        }
+        /**
+         * Not implemented
+         */
         return Configuration;
     }
 
