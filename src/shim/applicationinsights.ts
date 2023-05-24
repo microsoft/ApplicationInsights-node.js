@@ -31,7 +31,7 @@ export interface IDisabledExtendedMetrics {
     [ExtendedMetricType.loop]?: boolean;
 }
 
-let _setupString: string;
+let _setupString: string|undefined;
 let _config: ApplicationInsightsConfig;
 
 /**
