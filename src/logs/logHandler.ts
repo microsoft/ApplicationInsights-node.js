@@ -74,9 +74,9 @@ export class LogHandler {
         this._console.enable(this._config.logInstrumentations);
 
         const { node } = process.versions;
-        let [nodeVersion] = node.split(".");
-        let opentelemetryVersion = SDK_INFO[SemanticResourceAttributes.TELEMETRY_SDK_VERSION];
-        let prefix = process.env["AZURE_MONITOR_AGENT_PREFIX"]
+        const [nodeVersion] = node.split(".");
+        const opentelemetryVersion = SDK_INFO[SemanticResourceAttributes.TELEMETRY_SDK_VERSION];
+        const prefix = process.env["AZURE_MONITOR_AGENT_PREFIX"]
             ? process.env["AZURE_MONITOR_AGENT_PREFIX"]
             : "";
         this._aiInternalSdkVersion = `${prefix}node${nodeVersion}:otel${opentelemetryVersion}:dst${AZURE_MONITOR_DISTRO_VERSION}`;
