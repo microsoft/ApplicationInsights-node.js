@@ -2,20 +2,19 @@ import * as fs from "fs";
 import * as path from "path";
 import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 import { Logger } from "../logging";
-import { IConfig, InstrumentationsConfig, LogInstrumentationsConfig } from "./types";
+import { IConfig, InstrumentationsConfig, LogInstrumentationsConfig, OTLPExporterConfig } from "./types";
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 
 export class JsonConfig implements IConfig {
     private static _instance: JsonConfig;
-
-    /** Azure Monitor Exporter Configuration */
     public azureMonitorExporterConfig?: AzureMonitorExporterOptions;
+    public otlpTraceExporterConfig?: OTLPExporterConfig;
+    public otlpMetricExporterConfig?: OTLPExporterConfig;
     public samplingRatio: number;
     public enableAutoCollectExceptions: boolean;
     public enableAutoCollectPerformance: boolean;
     public enableAutoCollectStandardMetrics: boolean;
-    public enableAutoCollectHeartbeat: boolean;
     public instrumentations: InstrumentationsConfig;
     public logInstrumentations: LogInstrumentationsConfig;
     public extendedMetrics: { [type: string]: boolean };
@@ -61,7 +60,9 @@ export class JsonConfig implements IConfig {
         try {
             const jsonConfig: IConfig = JSON.parse(fs.readFileSync(tempDir, "utf8"));
             this.azureMonitorExporterConfig = jsonConfig.azureMonitorExporterConfig;
-            
+            this.otlpMetricExporterConfig = jsonConfig.otlpMetricExporterConfig;
+            this.otlpTraceExporterConfig = jsonConfig.otlpTraceExporterConfig;
+
             if (jsonConfig.connectionString !== undefined) {
                 this.connectionString = jsonConfig.connectionString;
             }
@@ -69,7 +70,6 @@ export class JsonConfig implements IConfig {
             this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
             this.enableAutoCollectPerformance = jsonConfig.enableAutoCollectPerformance;
             this.enableAutoCollectStandardMetrics = jsonConfig.enableAutoCollectStandardMetrics;
-            this.enableAutoCollectHeartbeat = jsonConfig.enableAutoCollectHeartbeat;
             this.disableOfflineStorage = jsonConfig.disableOfflineStorage;
             this.storageDirectory = jsonConfig.storageDirectory;
             this.instrumentations = jsonConfig.instrumentations;

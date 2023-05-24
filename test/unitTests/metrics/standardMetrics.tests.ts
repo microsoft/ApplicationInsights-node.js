@@ -11,13 +11,15 @@ import { ExportResultCode } from "@opentelemetry/core";
 
 describe("#StandardMetricsHandler", () => {
     let exportStub: sinon.SinonStub;
+    let otlpExportStub: sinon.SinonStub;
     let autoCollect: StandardMetricsHandler;
 
     before(() => {
         const config = new ApplicationInsightsConfig();
         config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
+        config.otlpMetricExporterConfig.enabled = true;
         autoCollect = new StandardMetricsHandler(config, { collectionInterval: 100 });
-        exportStub = sinon.stub(autoCollect["_azureExporter"], "export").callsFake(
+        exportStub = sinon.stub(autoCollect["_azureMonitorExporter"], "export").callsFake(
             (spans: any, resultCallback: any) =>
                 new Promise((resolve, reject) => {
                     resultCallback({
@@ -26,14 +28,25 @@ describe("#StandardMetricsHandler", () => {
                     resolve();
                 })
         );
+        otlpExportStub = sinon.stub(autoCollect["_otlpExporter"], "export").callsFake(
+            (spans: any, resultCallback: any) =>
+                new Promise((resolve, reject) => {
+                    resultCallback({
+                        code: ExportResultCode.SUCCESS,
+                    });
+                    resolve(null);
+                })
+        );
     });
 
     afterEach(() => {
         exportStub.resetHistory();
+        otlpExportStub.resetHistory();
     });
 
     after(() => {
         exportStub.restore();
+        otlpExportStub.restore();
         autoCollect.shutdown();
     });
 
@@ -106,6 +119,7 @@ describe("#StandardMetricsHandler", () => {
         }
 
         await new Promise((resolve) => setTimeout(resolve, 120));
+
         assert.ok(exportStub.called);
         const resourceMetrics = exportStub.args[0][0];
         const scopeMetrics = resourceMetrics.scopeMetrics;
@@ -224,11 +238,17 @@ describe("#StandardMetricsHandler", () => {
             metrics[3].dataPoints[1].attributes["cloudRoleName"],
             "testcloudRoleName2"
         );
+
+        // OTLP export
+        assert.ok(otlpExportStub.called);
+        assert.strictEqual(otlpExportStub.args[0][0].scopeMetrics.length, 1, "scopeMetrics count");
+        assert.strictEqual(otlpExportStub.args[0][0].scopeMetrics[0].metrics.length, 4, "metrics count");
     });
 
     it("should not collect when disabled", async () => {
         autoCollect.shutdown();
         await new Promise((resolve) => setTimeout(resolve, 120));
         assert.ok(exportStub.notCalled);
+        assert.ok(otlpExportStub.notCalled);
     });
 });

@@ -10,10 +10,11 @@ import {
     InstrumentationsConfig,
     LEGACY_ENV_IKEY,
     LogInstrumentationsConfig,
+    OTLPExporterConfig,
 } from "./types";
 import { JsonConfig } from "./jsonConfig";
 import { Logger } from "../logging";
-import { Resource } from "@opentelemetry/resources";
+import { Resource, ResourceDetectionConfig, detectResourcesSync, envDetectorSync } from "@opentelemetry/resources";
 import { SemanticResourceAttributes, TelemetrySdkLanguageValues } from "@opentelemetry/semantic-conventions";
 
 // Azure Connection String
@@ -25,14 +26,13 @@ const DEFAULT_ROLE_NAME = "Web";
 export class ApplicationInsightsConfig implements IConfig {
     private _disableStatsbeat: boolean;
     private _resource?: Resource;
-
-    /** Azure Monitor Exporter Configuration */
     public azureMonitorExporterConfig?: AzureMonitorExporterOptions;
+    public otlpTraceExporterConfig?: OTLPExporterConfig;
+    public otlpMetricExporterConfig?: OTLPExporterConfig;
     public samplingRatio: number;
     public enableAutoCollectExceptions: boolean;
     public enableAutoCollectPerformance: boolean;
     public enableAutoCollectStandardMetrics: boolean;
-    public enableAutoCollectHeartbeat: boolean;
     public extendedMetrics: { [type: string]: boolean };
     public instrumentations: InstrumentationsConfig;
     public logInstrumentations: LogInstrumentationsConfig;
@@ -78,6 +78,8 @@ export class ApplicationInsightsConfig implements IConfig {
 
     constructor() {
         this.azureMonitorExporterConfig = {};
+        this.otlpMetricExporterConfig = {};
+        this.otlpTraceExporterConfig = {};
         // Load config values from env variables and JSON if available
         this.azureMonitorExporterConfig.connectionString = process.env[ENV_connectionString];
         this._disableStatsbeat = !!process.env[ENV_noStatsbeat];
@@ -132,8 +134,6 @@ export class ApplicationInsightsConfig implements IConfig {
             this.enableAutoCollectExceptions !== undefined
                 ? this.enableAutoCollectExceptions
                 : true;
-        this.enableAutoCollectHeartbeat =
-            this.enableAutoCollectHeartbeat !== undefined ? this.enableAutoCollectHeartbeat : true;
         this.enableAutoCollectPerformance =
             this.enableAutoCollectPerformance !== undefined
                 ? this.enableAutoCollectPerformance
@@ -165,14 +165,21 @@ export class ApplicationInsightsConfig implements IConfig {
     }
 
     private _getDefaultResource(): Resource {
-        const resource = Resource.EMPTY;
-        resource.attributes[SemanticResourceAttributes.SERVICE_NAME] = DEFAULT_ROLE_NAME;
+        let resource = Resource.EMPTY;
+        // Load resource attributes from env
+        let detectResourceConfig: ResourceDetectionConfig = {
+            detectors: [envDetectorSync]
+        };
+        const envResource = detectResourcesSync(detectResourceConfig);
+        resource = resource.merge(envResource);
+
+        resource.attributes[SemanticResourceAttributes.SERVICE_NAME] = resource.attributes[SemanticResourceAttributes.SERVICE_NAME] || DEFAULT_ROLE_NAME;
         if (process.env.WEBSITE_SITE_NAME) {
             // Azure Web apps and Functions
             resource.attributes[SemanticResourceAttributes.SERVICE_NAME] =
                 process.env.WEBSITE_SITE_NAME;
         }
-        resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = os && os.hostname();
+        resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] || os && os.hostname();
         if (process.env.WEBSITE_INSTANCE_ID) {
             resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] =
                 process.env.WEBSITE_INSTANCE_ID;
@@ -193,6 +200,14 @@ export class ApplicationInsightsConfig implements IConfig {
                 jsonConfig.azureMonitorExporterConfig !== undefined
                     ? jsonConfig.azureMonitorExporterConfig
                     : this.azureMonitorExporterConfig;
+            this.otlpMetricExporterConfig =
+                jsonConfig.otlpMetricExporterConfig !== undefined
+                    ? jsonConfig.otlpMetricExporterConfig
+                    : this.otlpMetricExporterConfig;
+            this.otlpTraceExporterConfig =
+                jsonConfig.otlpTraceExporterConfig !== undefined
+                    ? jsonConfig.otlpTraceExporterConfig
+                    : this.otlpTraceExporterConfig;
             this.connectionString =
                 jsonConfig.connectionString !== undefined
                     ? jsonConfig.connectionString
@@ -201,10 +216,6 @@ export class ApplicationInsightsConfig implements IConfig {
                 jsonConfig.enableAutoCollectExceptions !== undefined
                     ? jsonConfig.enableAutoCollectExceptions
                     : this.enableAutoCollectExceptions;
-            this.enableAutoCollectHeartbeat =
-                jsonConfig.enableAutoCollectHeartbeat !== undefined
-                    ? jsonConfig.enableAutoCollectHeartbeat
-                    : this.enableAutoCollectHeartbeat;
             this.enableAutoCollectPerformance =
                 jsonConfig.enableAutoCollectPerformance !== undefined
                     ? jsonConfig.enableAutoCollectPerformance

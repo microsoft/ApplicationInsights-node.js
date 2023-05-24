@@ -43,7 +43,7 @@ describe("Json Config", () => {
             process.env = env;
             const config = JsonConfig.getInstance();
             assert.equal(
-                config.connectionString,
+                config.azureMonitorExporterConfig.connectionString,
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"
             );
         });
@@ -55,7 +55,7 @@ describe("Json Config", () => {
             process.env = env;
             const config = JsonConfig.getInstance();
             assert.equal(
-                config.connectionString,
+                config.azureMonitorExporterConfig.connectionString,
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"
             );
         });
@@ -72,9 +72,17 @@ describe("Json Config", () => {
             process.env = env;
             const config = JsonConfig.getInstance();
             assert.equal(
-                config.connectionString,
+                config.azureMonitorExporterConfig.connectionString,
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"
             );
+            assert.equal(config.azureMonitorExporterConfig.disableOfflineStorage, true);
+            assert.equal(config.azureMonitorExporterConfig.storageDirectory, "testPath");
+            assert.equal(config.otlpTraceExporterConfig.enabled, true);
+            assert.equal(config.otlpTraceExporterConfig.baseConfig.keepAlive, false);
+            assert.equal(config.otlpTraceExporterConfig.baseConfig.url, "someurlfortraces");
+            assert.equal(config.otlpMetricExporterConfig.enabled, true);
+            assert.equal(config.otlpMetricExporterConfig.baseConfig.keepAlive, true);
+            assert.equal(config.otlpMetricExporterConfig.baseConfig.url, "someurlformetrics");
             assert.equal(config.samplingRatio, 0.3, "Wrong samplingRatio");
             assert.equal(
                 config.enableAutoCollectExceptions,
@@ -90,11 +98,6 @@ describe("Json Config", () => {
                 config.enableAutoCollectStandardMetrics,
                 false,
                 "Wrong enableAutoCollectStandardMetrics"
-            );
-            assert.equal(
-                config.enableAutoCollectHeartbeat,
-                false,
-                "Wrong enableAutoCollectHeartbeat"
             );
             assert.equal(config.extendedMetrics.loop, true, "Wrong loop");
             assert.equal(config.extendedMetrics.gc, true, "Wrong gc");
@@ -121,7 +124,7 @@ describe("Json Config", () => {
             process.env = env;
             const config = JsonConfig.getInstance();
             assert.equal(
-                config.connectionString,
+                config.azureMonitorExporterConfig.connectionString,
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"
             );
         });

@@ -1,5 +1,6 @@
 import { TokenCredential } from "@azure/core-auth";
 import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
+import { OTLPExporterNodeConfigBase } from '@opentelemetry/otlp-exporter-base';
 import { InstrumentationConfig } from "@opentelemetry/instrumentation";
 import { Resource } from "@opentelemetry/resources";
 
@@ -11,6 +12,10 @@ export const ENV_QUCKPULSE_HOST = "APPINSIGHTS_QUICKPULSE_HOST";
 export interface IConfig {
     /** Azure Monitor Exporter Configuration */
     azureMonitorExporterConfig?: AzureMonitorExporterOptions;
+    /** OTLP Trace Exporter Configuration */
+    otlpTraceExporterConfig?: OTLPExporterConfig;
+    /** OTLP Metric Exporter Configuration */
+    otlpMetricExporterConfig?: OTLPExporterConfig;
     /** The rate of telemetry items tracked that should be transmitted (Default 1.0) */
     samplingRatio?: number;
     /**
@@ -28,11 +33,6 @@ export interface IConfig {
      * if true Standard metrics will be collected every minute and sent to Application Insights
      */
     enableAutoCollectStandardMetrics?: boolean;
-    /**
-     * Sets the state of request tracking (enabled by default)
-     * if true HeartBeat metric data will be collected every 15 minutes and sent to Application Insights
-     */
-    enableAutoCollectHeartbeat?: boolean;
     /**
      * OpenTelemetry Instrumentations configuration included as part of Application Insights (azureSdk, http, mongoDb, mySql, postgreSql, redis, redis4)
      */
@@ -88,4 +88,9 @@ export const enum ExtendedMetricType {
     gc = "gc",
     heap = "heap",
     loop = "loop",
+}
+
+export interface OTLPExporterConfig {
+    baseConfig?: OTLPExporterNodeConfigBase,
+    enabled?: boolean
 }
