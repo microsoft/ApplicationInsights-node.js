@@ -118,20 +118,36 @@ export class JsonConfig implements IJsonConfig {
     }
 
     private _loadJsonFile() {
-        let configFileName = "applicationinsights.json";
-        let rootPath = path.join(__dirname, "../../"); // Root of applicationinsights folder (__dirname = ../out/Library)
-        let tempDir = path.join(rootPath, configFileName); // default
-        let configFile = process.env[ENV_CONFIGURATION_FILE];
-        if (configFile) {
-            if (path.isAbsolute(configFile)) {
-                tempDir = configFile;
+        let jsonString = "";
+        const contentJsonConfig = process.env["APPLICATIONINSIGHTS_CONFIGURATION_CONTENT"];
+        // JSON string added directly in env variable
+        if (contentJsonConfig) {
+            jsonString = contentJsonConfig;
+        }
+        // JSON file
+        else {
+            let configFileName = "applicationinsights.json";
+            let rootPath = path.join(__dirname, "../../"); // Root of applicationinsights folder (__dirname = ../out/Library)
+            let tempDir = path.join(rootPath, configFileName); // default
+            let configFile = process.env[ENV_CONFIGURATION_FILE];
+            if (configFile) {
+                if (path.isAbsolute(configFile)) {
+                    tempDir = configFile;
+                }
+                else {
+                    tempDir = path.join(rootPath, configFile);// Relative path to applicationinsights folder
+                }
             }
-            else {
-                tempDir = path.join(rootPath, configFile);// Relative path to applicationinsights folder
+            try {
+                jsonString = fs.readFileSync(tempDir, "utf8");
+            }
+            catch (err) {
+                Logging.info("Failed to read JSON config file: ", err);
             }
         }
+
         try {
-            const jsonConfig: IJsonConfig = JSON.parse(fs.readFileSync(tempDir, "utf8"));
+            const jsonConfig: IJsonConfig = JSON.parse(jsonString);
             if (jsonConfig.disableStatsbeat != undefined) {
                 this.disableStatsbeat = jsonConfig.disableStatsbeat;
             }
@@ -222,7 +238,7 @@ export class JsonConfig implements IJsonConfig {
             this.quickPulseHost = jsonConfig.quickPulseHost;
         }
         catch (err) {
-            Logging.info("Missing or invalid JSON config file: ", err);
+            Logging.info("Invalid JSON config file: ", err);
         }
     }
 }

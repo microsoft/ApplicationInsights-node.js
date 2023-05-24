@@ -176,15 +176,15 @@ function _initializeConfig() {
     _isHeartBeat = defaultClient.config.enableAutoCollectHeartbeat !== undefined ? defaultClient.config.enableAutoCollectHeartbeat : _isHeartBeat;
     _isRequests = defaultClient.config.enableAutoCollectRequests !== undefined ? defaultClient.config.enableAutoCollectRequests : _isRequests;
     _isDependencies = defaultClient.config.enableAutoDependencyCorrelation !== undefined ? defaultClient.config.enableAutoDependencyCorrelation : _isDependencies;
+    _isDiskRetry = defaultClient.config.enableUseDiskRetryCaching !== undefined ? defaultClient.config.enableUseDiskRetryCaching : _isDiskRetry;
     _isCorrelating = defaultClient.config.enableAutoDependencyCorrelation !== undefined ? defaultClient.config.enableAutoDependencyCorrelation : _isCorrelating;
     _forceClsHooked = defaultClient.config.enableUseAsyncHooks !== undefined ? defaultClient.config.enableUseAsyncHooks : _forceClsHooked;
-    _isSnippetInjection = defaultClient.config.enableWebInstrumentation !== undefined ? defaultClient.config.enableWebInstrumentation : _isSnippetInjection;
+    _isSendingLiveMetrics = defaultClient.config.enableSendLiveMetrics !== undefined ? defaultClient.config.enableSendLiveMetrics : _isSendingLiveMetrics;
     _isSnippetInjection = defaultClient.config.enableAutoWebSnippetInjection === true ? true : _isSnippetInjection;
     _isAzureFunctions = defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions !== undefined ? defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions : _isAzureFunctions;
     const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(defaultClient.config.enableAutoCollectExtendedMetrics, defaultClient.config);
     _isNativePerformance = extendedMetricsConfig.isEnabled;
     _disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
-
 }
 
 /**

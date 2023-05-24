@@ -13,10 +13,10 @@ class InternalAzureLogger {
     private TAG = "Logger";
     private _cleanupTimeOut = 60 * 30 * 1000; // 30 minutes;
     private static _fileCleanupTimer: NodeJS.Timer = null;
-    private _tempDir: string;
-    public _logFileName: string;
-    private _fileFullPath: string;
-    private _backUpNameFormat: string;
+    private _tempDir: string = "";
+    public _logFileName: string = "";
+    private _fileFullPath: string = "";
+    private _backUpNameFormat: string = "";
     private _logToFile = false;
     private _logToConsole = true;
 
@@ -30,6 +30,7 @@ class InternalAzureLogger {
             this._logToFile = true;
             this._logToConsole = false;
         }
+
         this.maxSizeBytes = 50000;
         this.maxHistory = 1;
         this._logFileName = "applicationinsights.log";
@@ -49,13 +50,13 @@ class InternalAzureLogger {
         }
         this._fileFullPath = path.join(this._tempDir, this._logFileName);
         this._backUpNameFormat = "." + this._logFileName; // {currentime}.applicationinsights.log
-
         if (this._logToFile) {
             if (!InternalAzureLogger._fileCleanupTimer) {
                 InternalAzureLogger._fileCleanupTimer = setInterval(() => { this._fileCleanupTask(); }, this._cleanupTimeOut);
                 InternalAzureLogger._fileCleanupTimer.unref();
             }
         }
+
     }
 
     public info(message?: any, ...optionalParams: any[]) {

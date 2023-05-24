@@ -256,6 +256,8 @@ process.env.APPLICATIONINSIGHTS_CONFIGURATION_FILE = "C:/applicationinsights/con
 // Application Insights SDK setup....
 ```
 
+Alternatively, instead of using a configuration file, you can specify the entire content of the JSON configuration via the environment variable APPLICATIONINSIGHTS_CONFIGURATION_CONTENT.
+
 ### Sampling
 
 By default, the SDK will send all collected data to the Application Insights service. If you collect a lot of data, you might want to enable sampling to reduce the amount of data sent. Set the `samplingPercentage` field on the Config object of a Client to accomplish this. Setting `samplingPercentage` to 100 (the default) means all data will be sent, and 0 means nothing will be sent.
