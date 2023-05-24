@@ -5,11 +5,8 @@ import { Logger } from "../shared/logging";
 import { ICorrelationContext, Context, HttpRequest } from "./types";
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
-import { AutoCollectConsole } from "../logs/console";
-import { TraceHandler } from "../traces";
-import { MetricHandler } from "../metrics";
-import { LogHandler } from "../logs";
 import { ApplicationInsightsConfig } from "../shared";
+import { ExtendedMetricType } from "../shared/configuration/types";
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
@@ -21,6 +18,18 @@ export { Contracts, HttpRequest, TelemetryClient };
  */
 export let defaultClient: TelemetryClient;
 // export let liveMetricsClient: QuickPulseStateManager;
+
+/**
+ * Interface which defines which specific extended metrics should be disabled
+ *
+ * @export
+ * @interface IDisabledExtendedMetrics
+ */
+export interface IDisabledExtendedMetrics {
+    [ExtendedMetricType.gc]?: boolean;
+    [ExtendedMetricType.heap]?: boolean;
+    [ExtendedMetricType.loop]?: boolean;
+}
 
 let _setupString: string;
 let _config: ApplicationInsightsConfig;
@@ -113,7 +122,6 @@ export class Configuration {
         if (_config) {
             _config.logInstrumentations.bunyan.enabled = value;
             _config.logInstrumentations.winston.enabled = value;
-            // TODO: Should collectConsoleLog not be set to something that the customer can edit?
             _config.logInstrumentations.console.enabled = collectConsoleLog;
         }
         return Configuration;
@@ -125,6 +133,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectExceptions(value: boolean) {
+        if (_config) {
+            _config.enableAutoCollectExceptions = value;
+        }
         return Configuration;
     }
 
@@ -135,6 +146,21 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: any) {
+        if (_config) {
+            _config.enableAutoCollectPerformance = value;
+            if (typeof collectExtendedMetrics === "object") {
+                _config.extendedMetrics = { ...collectExtendedMetrics }
+            }
+            if (collectExtendedMetrics === "boolean") {
+                if (!collectExtendedMetrics) {
+                    _config.extendedMetrics = {
+                        [ExtendedMetricType.gc]: true,
+                        [ExtendedMetricType.heap]: true,
+                        [ExtendedMetricType.loop]: true
+                    }
+                }
+            }
+        }
         return Configuration;
     }
 
@@ -144,6 +170,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectPreAggregatedMetrics(value: boolean) {
+        if (_config) {
+            _config.enableAutoCollectStandardMetrics = value;
+        }
         return Configuration;
     }
 
@@ -153,6 +182,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectHeartbeat(value: boolean) {
+        if (_config) {
+            _config.enableAutoCollectHeartbeat = value;
+        }
         return Configuration;
     }
 
@@ -162,6 +194,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectRequests(value: boolean) {
+        /**
+         * Not implemented
+         */
         return Configuration;
     }
 
@@ -171,6 +206,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectDependencies(value: boolean) {
+        /**
+         * Not implemented
+         */
         return Configuration;
     }
 
@@ -181,6 +219,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoDependencyCorrelation(value: boolean, useAsyncHooks?: boolean) {
+        /**
+         * Not implemented
+         */
         return Configuration;
     }
 
@@ -220,6 +261,9 @@ export class Configuration {
      * @param enable if true, enables communication with the live metrics service
      */
     public static setSendLiveMetrics(enable = false) {
+        /**
+         * Not implemented
+         */
         return Configuration;
     }
 }
