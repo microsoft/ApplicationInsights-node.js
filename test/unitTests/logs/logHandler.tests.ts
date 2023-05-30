@@ -46,7 +46,7 @@ describe("Library/LogHandler", () => {
     function createLogHandler(config: ApplicationInsightsConfig, metricHandler?: MetricHandler) {
         handler = new LogHandler(config, metricHandler);
         stub = sinon.stub(handler["_exporter"], "export").callsFake(
-            (envelopes: any, resultCallback: any) =>
+            (logs: any, resultCallback: any) =>
                 new Promise((resolve, reject) => {
                     resultCallback({
                         code: ExportResultCode.SUCCESS,
@@ -66,22 +66,19 @@ describe("Library/LogHandler", () => {
 
     describe("#manual track APIs", () => {
         it("_logToEnvelope", () => {
-            let testResource = new Resource({
-                "testAttribute": "testValue"
-            });
-            _config.resource = testResource;
             createLogHandler(_config);
-            const telemetry: Telemetry = {};
+            const telemetry: Telemetry = {
+                properties: { "testAttribute": "testValue" }
+            };
             const data: MonitorDomain = {};
             const logRecord = handler["_telemetryToLogRecord"](
                 telemetry,
                 "TestData",
                 data,
             );
-            assert.equal(logRecord.body, "TestData");
+            assert.equal(logRecord.body, "{}");
             assert.equal(logRecord.attributes["testAttribute"], "testValue");
-            assert.equal(logRecord.attributes["service.name"], os.hostname());
-            assert.equal(logRecord.attributes["service.instance.id"], os.hostname());
+            assert.equal(logRecord.attributes["_MS.baseType"], "TestData");
             assert.ok(logRecord.hrTime);
         });
 
@@ -117,26 +114,26 @@ describe("Library/LogHandler", () => {
                 .flush()
                 .then(() => {
                     assert.ok(stub.calledOnce, "Export called");
-                    const envelopes = stub.args[0][0];
-                    assert.equal(envelopes.length, 1);
+                    const logs = stub.args[0][0];
+                    assert.equal(logs.length, 1);
                     assert.equal(
-                        envelopes[0].name,
-                        "Microsoft.ApplicationInsights.1aa11111bbbb1ccc8dddeeeeffff3333.Availability"
+                        logs[0].name,
+                        "Microsoft.ApplicationInsights.Availability"
                     );
-                    assert.equal(envelopes[0].version, "1");
+                    assert.equal(logs[0].version, "1");
                     assert.equal(
-                        envelopes[0].instrumentationKey,
+                        logs[0].instrumentationKey,
                         "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
                     );
-                    assert.equal(envelopes[0].sampleRate, "100");
-                    assert.ok(envelopes[0].time);
-                    assert.equal(envelopes[0].data.baseType, "AvailabilityData");
-                    assert.equal(envelopes[0].data.baseData["id"], "testId");
-                    assert.equal(envelopes[0].data.baseData["duration"], "00:00:02.000");
-                    assert.equal(envelopes[0].data.baseData["success"], false);
-                    assert.equal(envelopes[0].data.baseData["runLocation"], "testRunLocation");
-                    assert.equal(envelopes[0].data.baseData["message"], "testMessage");
-                    assert.equal(envelopes[0].data.baseData["version"], "2");
+                    assert.equal(logs[0].sampleRate, "100");
+                    assert.ok(logs[0].time);
+                    assert.equal(logs[0].data.baseType, "AvailabilityData");
+                    assert.equal(logs[0].data.baseData["id"], "testId");
+                    assert.equal(logs[0].data.baseData["duration"], "00:00:02.000");
+                    assert.equal(logs[0].data.baseData["success"], false);
+                    assert.equal(logs[0].data.baseData["runLocation"], "testRunLocation");
+                    assert.equal(logs[0].data.baseData["message"], "testMessage");
+                    assert.equal(logs[0].data.baseData["version"], "2");
                     done();
                 })
                 .catch((error) => {
@@ -158,25 +155,12 @@ describe("Library/LogHandler", () => {
                 .flush()
                 .then(() => {
                     assert.ok(stub.calledOnce, "Export called");
-                    const envelopes = stub.args[0][0];
-                    assert.equal(envelopes.length, 1);
-                    assert.equal(
-                        envelopes[0].name,
-                        "Microsoft.ApplicationInsights.1aa11111bbbb1ccc8dddeeeeffff3333.PageView"
-                    );
-                    assert.equal(envelopes[0].version, "1");
-                    assert.equal(
-                        envelopes[0].instrumentationKey,
-                        "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
-                    );
-                    assert.equal(envelopes[0].sampleRate, "100");
-                    assert.ok(envelopes[0].time);
-                    assert.equal(envelopes[0].data.baseType, "PageViewData");
-                    assert.equal(envelopes[0].data.baseData["id"], "testId");
-                    assert.equal(envelopes[0].data.baseData["duration"], "00:00:02.000");
-                    assert.equal(envelopes[0].data.baseData["referredUri"], "testReferredUri");
-                    assert.equal(envelopes[0].data.baseData["url"], "testUrl");
-                    assert.equal(envelopes[0].data.baseData["version"], "2");
+                    const logs = stub.args[0][0];
+                    assert.equal(logs.length, 1);
+
+                    assert.equal(logs[0].body, "{}");
+                    assert.equal(logs[0].attributes["_MS.baseType"], "PageViewData");
+                    assert.ok(logs[0].hrTime);
                     done();
                 })
                 .catch((error) => {
@@ -195,23 +179,23 @@ describe("Library/LogHandler", () => {
                 .flush()
                 .then(() => {
                     assert.ok(stub.calledOnce, "Export called");
-                    const envelopes = stub.args[0][0];
-                    assert.equal(envelopes.length, 1);
+                    const logs = stub.args[0][0];
+                    assert.equal(logs.length, 1);
                     assert.equal(
-                        envelopes[0].name,
+                        logs[0].name,
                         "Microsoft.ApplicationInsights.1aa11111bbbb1ccc8dddeeeeffff3333.Message"
                     );
-                    assert.equal(envelopes[0].version, "1");
+                    assert.equal(logs[0].version, "1");
                     assert.equal(
-                        envelopes[0].instrumentationKey,
+                        logs[0].instrumentationKey,
                         "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
                     );
-                    assert.equal(envelopes[0].sampleRate, "100");
-                    assert.ok(envelopes[0].time);
-                    assert.equal(envelopes[0].data.baseType, "MessageData");
-                    assert.equal(envelopes[0].data.baseData["message"], "testMessage");
-                    assert.equal(envelopes[0].data.baseData["severityLevel"], "Information");
-                    assert.equal(envelopes[0].data.baseData["version"], "2");
+                    assert.equal(logs[0].sampleRate, "100");
+                    assert.ok(logs[0].time);
+                    assert.equal(logs[0].data.baseType, "MessageData");
+                    assert.equal(logs[0].data.baseData["message"], "testMessage");
+                    assert.equal(logs[0].data.baseData["severityLevel"], "Information");
+                    assert.equal(logs[0].data.baseData["version"], "2");
                     done();
                 })
                 .catch((error) => {
@@ -233,31 +217,31 @@ describe("Library/LogHandler", () => {
                 .flush()
                 .then(() => {
                     assert.ok(stub.calledOnce, "Export called");
-                    const envelopes = stub.args[0][0];
-                    assert.equal(envelopes.length, 1);
+                    const logs = stub.args[0][0];
+                    assert.equal(logs.length, 1);
                     assert.equal(
-                        envelopes[0].name,
+                        logs[0].name,
                         "Microsoft.ApplicationInsights.1aa11111bbbb1ccc8dddeeeeffff3333.Exception"
                     );
-                    assert.equal(envelopes[0].version, "1");
+                    assert.equal(logs[0].version, "1");
                     assert.equal(
-                        envelopes[0].instrumentationKey,
+                        logs[0].instrumentationKey,
                         "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
                     );
-                    assert.equal(envelopes[0].sampleRate, "100");
-                    assert.ok(envelopes[0].time);
-                    assert.equal(envelopes[0].data.baseType, "ExceptionData");
-                    assert.equal(envelopes[0].data.baseData["exceptions"].length, 1);
-                    assert.equal(envelopes[0].data.baseData["exceptions"][0].message, "TestError");
-                    assert.equal(envelopes[0].data.baseData["exceptions"][0]["typeName"], "Error");
+                    assert.equal(logs[0].sampleRate, "100");
+                    assert.ok(logs[0].time);
+                    assert.equal(logs[0].data.baseType, "ExceptionData");
+                    assert.equal(logs[0].data.baseData["exceptions"].length, 1);
+                    assert.equal(logs[0].data.baseData["exceptions"][0].message, "TestError");
+                    assert.equal(logs[0].data.baseData["exceptions"][0]["typeName"], "Error");
                     assert.ok(
-                        envelopes[0].data.baseData["exceptions"][0]["parsedStack"],
+                        logs[0].data.baseData["exceptions"][0]["parsedStack"],
                         "Parsedstack not available"
                     );
-                    assert.equal(envelopes[0].data.baseData["exceptions"][0]["hasFullStack"], true);
-                    assert.equal(envelopes[0].data.baseData["severityLevel"], "Critical");
-                    assert.equal(envelopes[0].data.baseData["measurements"]["test"], "123");
-                    assert.equal(envelopes[0].data.baseData["version"], "2");
+                    assert.equal(logs[0].data.baseData["exceptions"][0]["hasFullStack"], true);
+                    assert.equal(logs[0].data.baseData["severityLevel"], "Critical");
+                    assert.equal(logs[0].data.baseData["measurements"]["test"], "123");
+                    assert.equal(logs[0].data.baseData["version"], "2");
                     done();
                 })
                 .catch((error) => {
@@ -278,23 +262,23 @@ describe("Library/LogHandler", () => {
                 .flush()
                 .then(() => {
                     assert.ok(stub.calledOnce, "Export called");
-                    const envelopes = stub.args[0][0];
-                    assert.equal(envelopes.length, 1);
+                    const logs = stub.args[0][0];
+                    assert.equal(logs.length, 1);
                     assert.equal(
-                        envelopes[0].name,
+                        logs[0].name,
                         "Microsoft.ApplicationInsights.1aa11111bbbb1ccc8dddeeeeffff3333.Event"
                     );
-                    assert.equal(envelopes[0].version, "1");
+                    assert.equal(logs[0].version, "1");
                     assert.equal(
-                        envelopes[0].instrumentationKey,
+                        logs[0].instrumentationKey,
                         "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
                     );
-                    assert.equal(envelopes[0].sampleRate, "100");
-                    assert.ok(envelopes[0].time);
-                    assert.equal(envelopes[0].data.baseType, "EventData");
-                    assert.equal(envelopes[0].data.baseData["name"], "TestName");
-                    assert.equal(envelopes[0].data.baseData["measurements"]["test"], "123");
-                    assert.equal(envelopes[0].data.baseData["version"], "2");
+                    assert.equal(logs[0].sampleRate, "100");
+                    assert.ok(logs[0].time);
+                    assert.equal(logs[0].data.baseType, "EventData");
+                    assert.equal(logs[0].data.baseData["name"], "TestName");
+                    assert.equal(logs[0].data.baseData["measurements"]["test"], "123");
+                    assert.equal(logs[0].data.baseData["version"], "2");
                     done();
                 })
                 .catch((error) => {
@@ -315,10 +299,10 @@ describe("Library/LogHandler", () => {
             handler
                 .flush()
                 .then(() => {
-                    const envelopes = stub.args[0][0];
-                    assert.equal(envelopes.length, 1);
+                    const logs = stub.args[0][0];
+                    assert.equal(logs.length, 1);
                     assert.equal(
-                        envelopes[0].data.baseData["properties"]["_MS.ProcessedByMetricExtractors"],
+                        logs[0].data.baseData["properties"]["_MS.ProcessedByMetricExtractors"],
                         "(Name:'Exceptions', Ver:'1.1')"
                     );
                     done();
@@ -340,10 +324,10 @@ describe("Library/LogHandler", () => {
             handler
                 .flush()
                 .then(() => {
-                    const envelopes = stub.args[0][0];
-                    assert.equal(envelopes.length, 1);
+                    const logs = stub.args[0][0];
+                    assert.equal(logs.length, 1);
                     assert.equal(
-                        envelopes[0].data.baseData["properties"]["_MS.ProcessedByMetricExtractors"],
+                        logs[0].data.baseData["properties"]["_MS.ProcessedByMetricExtractors"],
                         "(Name:'Traces', Ver:'1.1')"
                     );
                     done();

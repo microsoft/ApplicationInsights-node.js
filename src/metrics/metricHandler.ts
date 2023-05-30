@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { LogRecord } from "@opentelemetry/sdk-logs";
+import { LogRecord } from "@opentelemetry/api-logs";
 import { ReadableSpan, Span } from "@opentelemetry/sdk-trace-base";
 import { ApplicationInsightsConfig } from "../shared";
 import {

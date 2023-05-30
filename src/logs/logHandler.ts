@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { LogRecord, LoggerProvider, LoggerConfig, SimpleLogRecordProcessor, Logger as OtelLogger } from "@opentelemetry/sdk-logs";
+import { LogRecord } from "@opentelemetry/api-logs";
+import { LoggerProvider, LoggerConfig, SimpleLogRecordProcessor, Logger as OtelLogger } from "@opentelemetry/sdk-logs";
 import { LoggerProviderConfig } from "@opentelemetry/sdk-logs/build/src/types";
 import { IdGenerator, RandomIdGenerator } from "@opentelemetry/sdk-trace-base";
 import { AzureMonitorLogExporter } from "./logExporter";
@@ -29,6 +30,7 @@ import {
 } from "../declarations/contracts";
 import { Logger } from "../shared/logging";
 import { MetricHandler } from "../metrics/metricHandler";
+import { Attributes } from "@opentelemetry/api";
 
 
 export class LogHandler {
@@ -103,7 +105,7 @@ export class LogHandler {
      */
     public async trackAvailability(telemetry: Contracts.AvailabilityTelemetry): Promise<void> {
         try {
-            const logRecord = this._availabilityToEnvelope(
+            const logRecord = this._availabilityToLogRecord(
                 telemetry
             );
             this._logger.emit(logRecord);
@@ -118,7 +120,7 @@ export class LogHandler {
      */
     public async trackPageView(telemetry: Contracts.PageViewTelemetry): Promise<void> {
         try {
-            const logRecord = this._pageViewToEnvelope(
+            const logRecord = this._pageViewToLogRecord(
                 telemetry
             );
             this._logger.emit(logRecord);
@@ -133,7 +135,7 @@ export class LogHandler {
      */
     public async trackTrace(telemetry: Contracts.TraceTelemetry): Promise<void> {
         try {
-            const logRecord = this._traceToEnvelope(telemetry);
+            const logRecord = this._traceToLogRecord(telemetry);
             this._metricHandler?.recordLog(logRecord);
             this._logger.emit(logRecord);
         } catch (err) {
@@ -150,7 +152,7 @@ export class LogHandler {
             telemetry.exception = new Error(telemetry.exception.toString());
         }
         try {
-            const logRecord = this._exceptionToEnvelope(
+            const logRecord = this._exceptionToLogRecord(
                 telemetry
             );
             this._metricHandler?.recordLog(logRecord);
@@ -166,7 +168,7 @@ export class LogHandler {
      */
     public async trackEvent(telemetry: Contracts.EventTelemetry): Promise<void> {
         try {
-            const logRecord = this._eventToEnvelope(telemetry);
+            const logRecord = this._eventToLogRecord(telemetry);
             this._logger.emit(logRecord);
         } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
@@ -178,17 +180,24 @@ export class LogHandler {
         baseType: string,
         baseData: MonitorDomain
     ): LogRecord {
-
-        const record: LogRecord = new LogRecord(this._logger, {});
-        // TODO: We need to define special contract between distro and exporter to support all type of telemetry
-        return record;
+        try {
+            const attributes: Attributes = {
+                ...telemetry.properties,
+            };
+            const record: LogRecord = { attributes: attributes, body: JSON.stringify(baseData) };
+            record.attributes["_MS.baseType"] = baseType;
+            return record;
+        }
+        catch (err) {
+            Logger.getInstance().warn("Failed to convert telemetry event to Log Record.", err);
+        }
     }
 
     /**
-     * Availability Log to Azure envelope parsing.
+     * Availability Log to LogRecord parsing.
      * @internal
      */
-    private _availabilityToEnvelope(
+    private _availabilityToLogRecord(
         telemetry: AvailabilityTelemetry
     ): LogRecord {
         const baseType = "AvailabilityData";
@@ -207,10 +216,10 @@ export class LogHandler {
     }
 
     /**
-     * Exception to Azure envelope parsing.
+     * Exception to LogRecord parsing.
      * @internal
      */
-    private _exceptionToEnvelope(
+    private _exceptionToLogRecord(
         telemetry: ExceptionTelemetry
     ): LogRecord {
         const baseType = "ExceptionData";
@@ -234,10 +243,10 @@ export class LogHandler {
     }
 
     /**
-     * Trace to Azure envelope parsing.
+     * Trace to LogRecord parsing.
      * @internal
      */
-    private _traceToEnvelope(telemetry: TraceTelemetry): LogRecord {
+    private _traceToLogRecord(telemetry: TraceTelemetry): LogRecord {
         const baseType = "MessageData";
         const baseData: MessageData = {
             message: telemetry.message,
@@ -250,10 +259,10 @@ export class LogHandler {
     }
 
     /**
-     * PageView to Azure envelope parsing.
+     * PageView to LogRecord parsing.
      * @internal
      */
-    private _pageViewToEnvelope(
+    private _pageViewToLogRecord(
         telemetry: PageViewTelemetry
     ): LogRecord {
         const baseType = "PageViewData";
@@ -272,10 +281,10 @@ export class LogHandler {
     }
 
     /**
-     * Event to Azure envelope parsing.
+     * Event to LogRecord parsing.
      * @internal
      */
-    private _eventToEnvelope(telemetry: EventTelemetry): LogRecord {
+    private _eventToLogRecord(telemetry: EventTelemetry): LogRecord {
         const baseType = "EventData";
         const baseData: TelemetryEventData = {
             name: telemetry.name,
