@@ -123,12 +123,12 @@ export class AzureFunctionsHook {
                 }
             }
         } else {
-            statusCode = 500;
+            statusCode = undefined;
         }
         this._client.trackRequest({
             name: request.method + " " + request.url,
             resultCode: statusCode,
-            success: (0 < statusCode) && (statusCode < 400),
+            success: typeof(statusCode) === "number" ? (0 < statusCode) && (statusCode < 400) : undefined,
             url: request.url,
             time: new Date(startTime),
             duration: Date.now() - startTime,
