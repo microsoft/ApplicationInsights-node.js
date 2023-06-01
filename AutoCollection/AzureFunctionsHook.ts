@@ -109,22 +109,26 @@ export class AzureFunctionsHook {
 
     private _createIncomingRequestTelemetry(request: HttpRequest, response: HttpResponse, startTime: number, parentId: string) {
         let statusCode: string | number = 200; //Default
-        for (const value of [response.statusCode, response.status]) {
-            if (typeof value === "number" && Number.isInteger(value)) {
-                statusCode = value;
-                break;
-            } else if (typeof value === "string") {
-                const parsedVal = parseInt(value);
-                if (!isNaN(parsedVal)) {
-                    statusCode = parsedVal;
+        if (response) {
+            for (const value of [response.statusCode, response.status]) {
+                if (typeof value === "number" && Number.isInteger(value)) {
+                    statusCode = value;
                     break;
+                } else if (typeof value === "string") {
+                    const parsedVal = parseInt(value);
+                    if (!isNaN(parsedVal)) {
+                        statusCode = parsedVal;
+                        break;
+                    }
                 }
             }
+        } else {
+            statusCode = undefined;
         }
         this._client.trackRequest({
             name: request.method + " " + request.url,
             resultCode: statusCode,
-            success: (0 < statusCode) && (statusCode < 400),
+            success: typeof(statusCode) === "number" ? (0 < statusCode) && (statusCode < 400) : undefined,
             url: request.url,
             time: new Date(startTime),
             duration: Date.now() - startTime,
