@@ -5,6 +5,8 @@ import { Logger } from "../shared/logging";
 import { ICorrelationContext, Context, HttpRequest } from "./types";
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
+import { ApplicationInsightsConfig } from "../shared";
+import { ExtendedMetricType } from "../shared/configuration/types";
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
@@ -18,6 +20,21 @@ export let defaultClient: TelemetryClient;
 // export let liveMetricsClient: QuickPulseStateManager;
 
 /**
+ * Interface which defines which specific extended metrics should be disabled
+ *
+ * @export
+ * @interface IDisabledExtendedMetrics
+ */
+export interface IDisabledExtendedMetrics {
+    [ExtendedMetricType.gc]?: boolean;
+    [ExtendedMetricType.heap]?: boolean;
+    [ExtendedMetricType.loop]?: boolean;
+}
+
+let _setupString: string|undefined;
+let _config: ApplicationInsightsConfig;
+
+/**
  * Initializes the default client. Should be called after setting
  * configuration options.
  *
@@ -28,10 +45,13 @@ export let defaultClient: TelemetryClient;
  * and start the SDK.
  */
 export function setup(setupString?: string) {
-    if (!defaultClient) {
-        defaultClient = new TelemetryClient(setupString);
+    // Save the setup string and create a config to modify with other functions in this file
+    _setupString = setupString;
+    if (!_config) {
+        _config = new ApplicationInsightsConfig();
+        _config.azureMonitorExporterConfig.connectionString = _setupString;
     } else {
-        Logger.getInstance().info("The default client is already setup");
+        Logger.getInstance().info("Cannot run applicationinsights.setup() more than once.");
     }
     return Configuration;
 }
@@ -43,6 +63,12 @@ export function setup(setupString?: string) {
  * @returns {ApplicationInsights} this class
  */
 export function start() {
+    if (!defaultClient) {
+        // Creates a new TelemetryClient that uses the _config we configure via the other functions in this file
+        defaultClient = new TelemetryClient(_config);
+    } else {
+        Logger.getInstance().info("Cannot run applicationinsights.start() more than once.");
+    }
     return Configuration;
 }
 
@@ -60,6 +86,7 @@ export function start() {
  * @returns A plain object for request storage or null if automatic dependency correlation is disabled.
  */
 export function getCorrelationContext(): ICorrelationContext {
+    // TODO: Implement this
     return null;
 }
 
@@ -71,6 +98,7 @@ export function startOperation(
     arg1: Context | (IncomingMessage | HttpRequest) | SpanContext,
     arg2?: HttpRequest | string
 ): ICorrelationContext | null {
+    // TODO: Implement this
     return null;
 }
 
@@ -81,6 +109,7 @@ export function startOperation(
  * correctly to an asynchronous callback.
  */
 export function wrapWithCorrelationContext<T>(fn: T, context?: ICorrelationContext): T {
+    // TODO: Implement this
     return null;
 }
 
@@ -98,6 +127,11 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectConsole(value: boolean, collectConsoleLog = false) {
+        if (_config) {
+            _config.logInstrumentations.bunyan.enabled = value;
+            _config.logInstrumentations.winston.enabled = value;
+            _config.logInstrumentations.console.enabled = collectConsoleLog;
+        }
         return Configuration;
     }
 
@@ -107,6 +141,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectExceptions(value: boolean) {
+        if (_config) {
+            _config.enableAutoCollectExceptions = value;
+        }
         return Configuration;
     }
 
@@ -117,6 +154,21 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: any) {
+        if (_config) {
+            _config.enableAutoCollectPerformance = value;
+            if (typeof collectExtendedMetrics === "object") {
+                _config.extendedMetrics = { ...collectExtendedMetrics }
+            }
+            if (collectExtendedMetrics === "boolean") {
+                if (!collectExtendedMetrics) {
+                    _config.extendedMetrics = {
+                        [ExtendedMetricType.gc]: true,
+                        [ExtendedMetricType.heap]: true,
+                        [ExtendedMetricType.loop]: true
+                    }
+                }
+            }
+        }
         return Configuration;
     }
 
@@ -126,6 +178,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectPreAggregatedMetrics(value: boolean) {
+        if (_config) {
+            _config.enableAutoCollectStandardMetrics = value;
+        }
         return Configuration;
     }
 
@@ -135,6 +190,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectHeartbeat(value: boolean) {
+        Logger.getInstance().info("Heartbeat is not implemented and this method is a no-op.");
         return Configuration;
     }
 
@@ -144,6 +200,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectRequests(value: boolean) {
+        // TODO: Implement this
         return Configuration;
     }
 
@@ -153,6 +210,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectDependencies(value: boolean) {
+        // TODO: Implement this
         return Configuration;
     }
 
@@ -163,6 +221,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoDependencyCorrelation(value: boolean, useAsyncHooks?: boolean) {
+        // TODO: Implement this
         return Configuration;
     }
 
@@ -202,6 +261,7 @@ export class Configuration {
      * @param enable if true, enables communication with the live metrics service
      */
     public static setSendLiveMetrics(enable = false) {
+        Logger.getInstance().info("Live Metrics is not implemented and this method is a no-op.");
         return Configuration;
     }
 }
