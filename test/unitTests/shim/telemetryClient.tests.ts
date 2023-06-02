@@ -31,8 +31,7 @@ describe("shim/TelemetryClient", () => {
     describe("#manual track APIs", () => {
         it("trackDependency http", (done) => {
             const client = new TelemetryClient(
-                "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
-                new ApplicationInsightsConfig()
+                "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
             );
             const stub = sinon
                 .stub(client.client.getTraceHandler()["_azureMonitorExporter"], "export")
@@ -77,8 +76,7 @@ describe("shim/TelemetryClient", () => {
 
         it("trackDependency DB", (done) => {
             const client = new TelemetryClient(
-                "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
-                new ApplicationInsightsConfig()
+                "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
             );
             const stub = sinon
                 .stub(client.client.getTraceHandler()["_azureMonitorExporter"], "export")
@@ -120,8 +118,7 @@ describe("shim/TelemetryClient", () => {
 
         it("trackRequest", (done) => {
             const client = new TelemetryClient(
-                "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
-                new ApplicationInsightsConfig()
+                "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
             );
             const stub = sinon
                 .stub(client.client.getTraceHandler()["_azureMonitorExporter"], "export")
