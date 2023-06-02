@@ -3,7 +3,7 @@
   "author": "Microsoft Application Insights Team",
   "license": "MIT",
   "bugs": "https://github.com/microsoft/ApplicationInsights-node.js/issues",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "description": "Microsoft Application Insights module for Node.js",
   "repository": {
     "type": "git",
