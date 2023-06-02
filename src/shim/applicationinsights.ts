@@ -49,6 +49,9 @@ export function setup(setupString?: string) {
     _setupString = setupString;
     if (!_config) {
         _config = new ApplicationInsightsConfig();
+        _config.azureMonitorExporterConfig.connectionString = _setupString;
+    } else {
+        Logger.getInstance().info("Cannot run applicationinsights.setup() more than once.");
     }
     return Configuration;
 }
@@ -62,7 +65,9 @@ export function setup(setupString?: string) {
 export function start() {
     if (!defaultClient) {
         // Creates a new TelemetryClient that uses the _config we configure via the other functions in this file
-        defaultClient = new TelemetryClient(_setupString, _config);
+        defaultClient = new TelemetryClient(_config);
+    } else {
+        Logger.getInstance().info("Cannot run applicationinsights.start() more than once.");
     }
     return Configuration;
 }
@@ -81,6 +86,7 @@ export function start() {
  * @returns A plain object for request storage or null if automatic dependency correlation is disabled.
  */
 export function getCorrelationContext(): ICorrelationContext {
+    // TODO: Implement this
     return null;
 }
 
@@ -92,6 +98,7 @@ export function startOperation(
     arg1: Context | (IncomingMessage | HttpRequest) | SpanContext,
     arg2?: HttpRequest | string
 ): ICorrelationContext | null {
+    // TODO: Implement this
     return null;
 }
 
@@ -102,6 +109,7 @@ export function startOperation(
  * correctly to an asynchronous callback.
  */
 export function wrapWithCorrelationContext<T>(fn: T, context?: ICorrelationContext): T {
+    // TODO: Implement this
     return null;
 }
 
@@ -182,9 +190,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectHeartbeat(value: boolean) {
-        /**
-         * Not implemented
-         */
+        Logger.getInstance().info("Heartbeat is not implemented and this method is a no-op.");
         return Configuration;
     }
 
@@ -194,9 +200,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectRequests(value: boolean) {
-        /**
-         * Not implemented
-         */
+        // TODO: Implement this
         return Configuration;
     }
 
@@ -206,9 +210,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectDependencies(value: boolean) {
-        /**
-         * Not implemented
-         */
+        // TODO: Implement this
         return Configuration;
     }
 
@@ -219,9 +221,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoDependencyCorrelation(value: boolean, useAsyncHooks?: boolean) {
-        /**
-         * Not implemented
-         */
+        // TODO: Implement this
         return Configuration;
     }
 
@@ -261,9 +261,7 @@ export class Configuration {
      * @param enable if true, enables communication with the live metrics service
      */
     public static setSendLiveMetrics(enable = false) {
-        /**
-         * Not implemented
-         */
+        Logger.getInstance().info("Live Metrics is not implemented and this method is a no-op.");
         return Configuration;
     }
 }

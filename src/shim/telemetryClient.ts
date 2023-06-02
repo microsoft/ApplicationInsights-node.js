@@ -30,7 +30,7 @@ export class TelemetryClient {
                 this.config = options;
             } else {
                 // TODO: Add Support for iKey as well
-                this.config.connectionString = options;
+                this.config.azureMonitorExporterConfig.connectionString = options;
             }
         }
         this.client = new ApplicationInsightsClient(this.config);
