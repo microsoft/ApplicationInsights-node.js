@@ -5,11 +5,12 @@ import { LogRecord, LogRecordProcessor } from "@opentelemetry/sdk-logs";
 
 
 export class AzureLogProcessor implements LogRecordProcessor {
-    constructor(private readonly _metricHandler: MetricHandler) { }
+    constructor(private readonly _metricHandler?: MetricHandler) { }
 
     public onEmit(logRecord: LogRecord): void {
          // Record standard metrics
-         this._metricHandler.recordLog(logRecord);
+         this._metricHandler?.markLogsAsProcceseded(logRecord);
+         this._metricHandler?.recordLog(logRecord);
     }
 
     public forceFlush(): Promise<void> {

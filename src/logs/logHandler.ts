@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import { LogRecord } from "@opentelemetry/api-logs";
-import { LoggerProvider, LoggerConfig, SimpleLogRecordProcessor, Logger as OtelLogger } from "@opentelemetry/sdk-logs";
+import { LoggerProvider, SimpleLogRecordProcessor, Logger as OtelLogger, LogRecord as SDKLogRecord } from "@opentelemetry/sdk-logs";
 import { LoggerProviderConfig } from "@opentelemetry/sdk-logs/build/src/types";
 import { IdGenerator, RandomIdGenerator } from "@opentelemetry/sdk-trace-base";
 import { AzureMonitorLogExporter } from "./logExporter";
@@ -31,6 +31,7 @@ import {
 import { Logger } from "../shared/logging";
 import { MetricHandler } from "../metrics/metricHandler";
 import { Attributes } from "@opentelemetry/api";
+import { AzureLogProcessor } from "./azureLogProcessor";
 
 
 export class LogHandler {
@@ -40,6 +41,7 @@ export class LogHandler {
     private _logger: OtelLogger;
     private _exporter: AzureMonitorLogExporter;
     private _logRecordProcessor: SimpleLogRecordProcessor;
+    private _azureLogProccessor: AzureLogProcessor;
     private _console: AutoCollectConsole;
     private _exceptions: AutoCollectExceptions;
     private _idGenerator: IdGenerator;
@@ -55,10 +57,10 @@ export class LogHandler {
         this._exporter = new AzureMonitorLogExporter(this._config.azureMonitorExporterConfig);
         this._logRecordProcessor = new SimpleLogRecordProcessor(this._exporter);
         this._loggerProvider.addLogRecordProcessor(this._logRecordProcessor);
-        const loggerConfig: LoggerConfig = {
-            includeTraceContext: true
-        };
-        this._logger = this._loggerProvider.getLogger("AzureMonitorLogger", undefined, loggerConfig) as OtelLogger;
+        this._azureLogProccessor = new AzureLogProcessor(this._metricHandler);
+        this._loggerProvider.addLogRecordProcessor(this._azureLogProccessor);
+
+        this._logger = this._loggerProvider.getLogger("AzureMonitorLogger", undefined) as OtelLogger;
         this._console = new AutoCollectConsole(this);
         if (this._config.enableAutoCollectExceptions) {
             this._exceptions = new AutoCollectExceptions(this);
@@ -135,7 +137,7 @@ export class LogHandler {
      */
     public async trackTrace(telemetry: Contracts.TraceTelemetry): Promise<void> {
         try {
-            const logRecord = this._traceToLogRecord(telemetry);
+            const logRecord = this._traceToLogRecord(telemetry) as SDKLogRecord;
             this._metricHandler?.recordLog(logRecord);
             this._logger.emit(logRecord);
         } catch (err) {
@@ -154,7 +156,7 @@ export class LogHandler {
         try {
             const logRecord = this._exceptionToLogRecord(
                 telemetry
-            );
+            ) as SDKLogRecord;
             this._metricHandler?.recordLog(logRecord);
             this._logger.emit(logRecord);
         } catch (err) {

@@ -111,14 +111,22 @@ export class StandardMetricsHandler {
 
     public markLogsAsProcceseded(logRecord: LogRecord): void {
         if (this._config.enableAutoCollectStandardMetrics) {
-            if (logRecord.attributes[SemanticAttributes.EXCEPTION_MESSAGE] || logRecord.attributes[SemanticAttributes.EXCEPTION_TYPE]) {
-                logRecord.setAttributes({
-                    "_MS.ProcessedByMetricExtractors": "(Name:'Exceptions', Ver:'1.1')",
-                });
-            } else {
-                logRecord.setAttributes({
-                    "_MS.ProcessedByMetricExtractors": "(Name:'Traces', Ver:'1.1')",
-                });
+            // If Application Insights Legacy logs
+            const baseType = logRecord.attributes["_MS.baseType"];
+            if (baseType) {
+                if (baseType == "ExceptionData") {
+                    logRecord.setAttribute("_MS.ProcessedByMetricExtractors", "(Name:'Exceptions', Ver:'1.1')");
+                }
+                else if (baseType == "MessageData") {
+                    logRecord.setAttribute("_MS.ProcessedByMetricExtractors", "(Name:'Traces', Ver:'1.1')");
+                }
+            }
+            else {
+                if (logRecord.attributes[SemanticAttributes.EXCEPTION_MESSAGE] || logRecord.attributes[SemanticAttributes.EXCEPTION_TYPE]) {
+                    logRecord.setAttribute("_MS.ProcessedByMetricExtractors", "(Name:'Exceptions', Ver:'1.1')");
+                } else {
+                    logRecord.setAttribute("_MS.ProcessedByMetricExtractors", "(Name:'Traces', Ver:'1.1')");
+                }
             }
         }
     }

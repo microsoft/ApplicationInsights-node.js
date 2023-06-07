@@ -186,7 +186,7 @@ describe("Library/TraceHandler", () => {
                             const spans = exportStub.args[0][0];
                             assert.equal(spans.length, 2);
                             // Incoming request
-                            assert.equal(spans[0].name, "HTTP GET");
+                            assert.equal(spans[0].name, "GET");
                             assert.equal(
                                 spans[0].instrumentationLibrary.name,
                                 "@opentelemetry/instrumentation-http"
@@ -210,7 +210,7 @@ describe("Library/TraceHandler", () => {
                             assert.equal(spans[0].attributes["net.host.name"], "localhost");
                             assert.equal(spans[0].attributes["net.host.port"], mockHttpServerPort);
                             // Outgoing request
-                            assert.equal(spans[1].name, "HTTP GET");
+                            assert.equal(spans[1].name, "GET");
                             assert.equal(
                                 spans[1].instrumentationLibrary.name,
                                 "@opentelemetry/instrumentation-http"
@@ -264,7 +264,7 @@ describe("Library/TraceHandler", () => {
                             const spans = exportStub.args[0][0];
                             assert.equal(spans.length, 2);
                             // Incoming request
-                            assert.equal(spans[0].name, "HTTPS GET");
+                            assert.equal(spans[0].name, "GET");
                             assert.equal(
                                 spans[0].instrumentationLibrary.name,
                                 "@opentelemetry/instrumentation-http"
@@ -288,7 +288,7 @@ describe("Library/TraceHandler", () => {
                             assert.equal(spans[0].attributes["net.host.name"], "localhost");
                             assert.equal(spans[0].attributes["net.host.port"], mockHttpsServerPort);
                             // Outgoing request
-                            assert.equal(spans[1].name, "HTTPS GET");
+                            assert.equal(spans[1].name, "GET");
                             assert.equal(
                                 spans[1].instrumentationLibrary.name,
                                 "@opentelemetry/instrumentation-http"
