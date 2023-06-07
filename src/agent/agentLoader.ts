@@ -31,7 +31,6 @@ export class AgentLoader {
             this._config = new ApplicationInsightsConfig();
             this._config.azureMonitorExporterConfig.disableOfflineStorage = false;
             this._config.enableAutoCollectExceptions = true;
-            this._config.enableAutoCollectHeartbeat = true;
             this._config.enableAutoCollectPerformance = true;
             this._config.enableAutoCollectStandardMetrics = true;
             this._config.samplingRatio = 1; // Sample all telemetry by default

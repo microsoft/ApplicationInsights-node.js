@@ -5,6 +5,7 @@ import { ExportResultCode } from "@opentelemetry/core";
 import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations/contracts";
 import { TelemetryClient } from "../../../src/shim/telemetryClient";
 import { DEFAULT_BREEZE_ENDPOINT } from "../../../src/declarations/constants";
+import { ApplicationInsightsConfig } from "../../../src/shared/configuration/applicationInsightsConfig";
 
 describe("shim/TelemetryClient", () => {
     let sandbox: sinon.SinonSandbox;
@@ -33,7 +34,7 @@ describe("shim/TelemetryClient", () => {
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
             );
             const stub = sinon
-                .stub(client.client.getTraceHandler()["_exporter"], "export")
+                .stub(client.client.getTraceHandler()["_azureMonitorExporter"], "export")
                 .callsFake(
                     (spans: any, resultCallback: any) =>
                         new Promise((resolve, reject) => {
@@ -78,7 +79,7 @@ describe("shim/TelemetryClient", () => {
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
             );
             const stub = sinon
-                .stub(client.client.getTraceHandler()["_exporter"], "export")
+                .stub(client.client.getTraceHandler()["_azureMonitorExporter"], "export")
                 .callsFake(
                     (spans: any, resultCallback: any) =>
                         new Promise((resolve, reject) => {
@@ -120,7 +121,7 @@ describe("shim/TelemetryClient", () => {
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
             );
             const stub = sinon
-                .stub(client.client.getTraceHandler()["_exporter"], "export")
+                .stub(client.client.getTraceHandler()["_azureMonitorExporter"], "export")
                 .callsFake(
                     (spans: any, resultCallback: any) =>
                         new Promise((resolve, reject) => {

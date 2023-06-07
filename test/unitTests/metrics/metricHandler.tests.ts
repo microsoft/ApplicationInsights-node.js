@@ -27,7 +27,7 @@ describe("Library/MetricHandler", () => {
         it("performance enablement during start", () => {
             _config.enableAutoCollectPerformance = true;
             handler = new MetricHandler(_config);
-            exportStub = sinon.stub(handler["_perfCounterMetricsHandler"]["_azureExporter"], "export").callsFake(
+            exportStub = sinon.stub(handler["_perfCounterMetricsHandler"]["_azureMonitorExporter"], "export").callsFake(
                 (spans: any, resultCallback: any) =>
                     new Promise((resolve, reject) => {
                         resultCallback({
@@ -42,7 +42,7 @@ describe("Library/MetricHandler", () => {
         it("preAggregated metrics enablement during start", () => {
             _config.enableAutoCollectStandardMetrics = true;
             handler = new MetricHandler(_config);
-            exportStub = sinon.stub(handler["_standardMetricsHandler"]["_azureExporter"], "export").callsFake(
+            exportStub = sinon.stub(handler["_standardMetricsHandler"]["_azureMonitorExporter"], "export").callsFake(
                 (spans: any, resultCallback: any) =>
                     new Promise((resolve, reject) => {
                         resultCallback({
@@ -52,21 +52,6 @@ describe("Library/MetricHandler", () => {
                     })
             );
             assert.ok(handler["_standardMetricsHandler"], "preAggregated metrics not loaded");
-        });
-
-        it("heartbeat metrics enablement during start", () => {
-            _config.enableAutoCollectHeartbeat = true;
-            handler = new MetricHandler(_config);
-            exportStub = sinon.stub(handler["_heartbeatHandler"]["_azureExporter"], "export").callsFake(
-                (spans: any, resultCallback: any) =>
-                    new Promise((resolve, reject) => {
-                        resultCallback({
-                            code: ExportResultCode.SUCCESS,
-                        });
-                        resolve();
-                    })
-            );
-            assert.ok(handler["_heartbeatHandler"], "Heartbeat metrics not loaded");
         });
     });
 });

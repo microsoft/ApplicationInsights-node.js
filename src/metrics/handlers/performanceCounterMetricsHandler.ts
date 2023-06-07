@@ -10,24 +10,21 @@ import {
     PeriodicExportingMetricReaderOptions,
     View,
 } from "@opentelemetry/sdk-metrics";
+import { ReadableSpan } from "@opentelemetry/sdk-trace-base";
 import {
     MetricName,
-    NativeMetricsCounter,
     PerformanceCounter,
 } from "../types";
 import { ProcessMetrics } from "../collection/processMetrics";
 import { RequestMetrics } from "../collection/requestMetrics";
 import { ApplicationInsightsConfig } from "../../shared";
-import { NativePerformanceMetrics } from "../collection/nativePerformanceMetrics";
-import { ReadableSpan } from "@opentelemetry/sdk-trace-base";
 
 
 export class PerformanceCounterMetricsHandler {
     private _config: ApplicationInsightsConfig;
     private _collectionInterval = 60000; // 60 seconds
     private _meterProvider: MeterProvider;
-    private _azureExporter: AzureMonitorMetricExporter;
-    private _metricReader: PeriodicExportingMetricReader;
+    private _azureMonitorExporter: AzureMonitorMetricExporter;
     private _meter: Meter;
     private _processMetrics: ProcessMetrics;
     private _requestMetrics: RequestMetrics;
@@ -39,22 +36,22 @@ export class PerformanceCounterMetricsHandler {
             views: this._getViews(),
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);
-        this._azureExporter = new AzureMonitorMetricExporter(this._config.azureMonitorExporterConfig);
+        this._azureMonitorExporter = new AzureMonitorMetricExporter(this._config.azureMonitorExporterConfig);
         const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
-            exporter: this._azureExporter as any,
+            exporter: this._azureMonitorExporter,
             exportIntervalMillis: options?.collectionInterval || this._collectionInterval,
         };
-        this._metricReader = new PeriodicExportingMetricReader(metricReaderOptions);
-        this._meterProvider.addMetricReader(this._metricReader);
+        const azureMonitorMetricReader = new PeriodicExportingMetricReader(metricReaderOptions);
+        this._meterProvider.addMetricReader(azureMonitorMetricReader);
         this._meter = this._meterProvider.getMeter("ApplicationInsightsPerfMetricsMeter");
         this._processMetrics = new ProcessMetrics(this._meter);
         this._requestMetrics = new RequestMetrics(this._meter);
     }
 
-     /** 
-   * @deprecated This should not be used
-   */
-     public start() {
+    /** 
+  * @deprecated This should not be used
+  */
+    public start() {
         // No Op
     }
 

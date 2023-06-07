@@ -51,7 +51,7 @@ describe("Library/Config", () => {
                 process.env = env;
                 const config = new ApplicationInsightsConfig();
                 config.connectionString = "InstrumentationKey=cs.code";
-                assert.deepEqual(config.connectionString, "InstrumentationKey=cs.code");
+                assert.deepEqual(config.azureMonitorExporterConfig.connectionString, "InstrumentationKey=cs.code");
             });
 
             it("connection string set via environment variable", () => {
@@ -88,6 +88,15 @@ describe("Library/Config", () => {
                 assert.equal(config.samplingRatio, 0.3, "Wrong samplingRatio");
                 assert.equal(config.azureMonitorExporterConfig.disableOfflineStorage, true, "Wrong disableOfflineStorage");
                 assert.equal(config.azureMonitorExporterConfig.storageDirectory, "testPath", "Wrong storageDirectory");
+                assert.equal(config.otlpTraceExporterConfig.enabled, true, "Wrong otlpTraceExporterConfig enabled");
+                assert.equal(config.otlpTraceExporterConfig.baseConfig.keepAlive, false, "Wrong otlpTraceExporterConfig keepAlive");
+                assert.equal(config.otlpTraceExporterConfig.baseConfig.url, "someurlfortraces", "Wrong otlpTraceExporterConfig url");
+
+                assert.equal(config.otlpMetricExporterConfig.enabled, true, "Wrong otlpMetricExporterConfig enabled");
+                assert.equal(config.otlpMetricExporterConfig.baseConfig.keepAlive, true, "Wrong otlpMetricExporterConfig keepAlive");
+                assert.equal(config.otlpMetricExporterConfig.baseConfig.url, "someurlformetrics", "Wrong otlpMetricExporterConfig url");
+
+
                 assert.equal(
                     config.enableAutoCollectExceptions,
                     false,
@@ -102,11 +111,6 @@ describe("Library/Config", () => {
                     config.enableAutoCollectStandardMetrics,
                     false,
                     "Wrong enableAutoCollectStandardMetrics"
-                );
-                assert.equal(
-                    config.enableAutoCollectHeartbeat,
-                    false,
-                    "Wrong enableAutoCollectHeartbeat"
                 );
                 assert.equal(config.extendedMetrics.loop, true, "Wrong loop");
                 assert.equal(config.extendedMetrics.gc, true, "Wrong gc");
@@ -140,11 +144,6 @@ describe("Library/Config", () => {
                     true,
                     "Wrong enableAutoCollectStandardMetrics"
                 );
-                assert.equal(
-                    config.enableAutoCollectHeartbeat,
-                    true,
-                    "Wrong enableAutoCollectHeartbeat"
-                );
                 assert.equal(config.extendedMetrics.loop, false, "Wrong loop");
                 assert.equal(config.extendedMetrics.gc, false, "Wrong gc");
                 assert.equal(config.extendedMetrics.heap, false, "Wrong heap");
@@ -155,11 +154,15 @@ describe("Library/Config", () => {
                 assert.equal(config.instrumentations.redis.enabled, false, "Wrong redis");
                 assert.equal(config.instrumentations.redis4.enabled, false, "Wrong redis4");
                 assert.equal(
-                    config.disableOfflineStorage,
+                    config.azureMonitorExporterConfig.disableOfflineStorage,
                     undefined,
                     "Wrong disableOfflineStorage"
                 );
                 assert.equal(config.azureMonitorExporterConfig.storageDirectory, undefined, "Wrong storageDirectory");
+                assert.equal(config.otlpMetricExporterConfig.enabled, undefined, "Wrong otlpMetricExporterConfig.enabled");
+                assert.equal(config.otlpMetricExporterConfig.baseConfig, undefined, "Wrong otlpMetricExporterConfig.baseConfig");
+                assert.equal(config.otlpTraceExporterConfig.enabled, undefined, "Wrong otlpTraceExporterConfig.enabled");
+                assert.equal(config.otlpTraceExporterConfig.baseConfig, undefined, "Wrong otlpTraceExporterConfig.baseConfig");
                 assert.equal(config.logInstrumentations.console.enabled, false, "Wrong console");
                 assert.equal(config.logInstrumentations.bunyan.enabled, false, "Wrong bunyan");
                 assert.equal(config.logInstrumentations.winston.enabled, false, "Wrong winston");

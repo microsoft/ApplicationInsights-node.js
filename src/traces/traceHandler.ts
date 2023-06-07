@@ -1,10 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import { RequestOptions } from "http";
-import {
-    AzureMonitorExporterOptions,
-    AzureMonitorTraceExporter,
-} from "@azure/monitor-opentelemetry-exporter";
+import { AzureMonitorTraceExporter, } from "@azure/monitor-opentelemetry-exporter";
 import { Instrumentation } from "@opentelemetry/instrumentation";
 import { createAzureSdkInstrumentation } from "@azure/opentelemetry-instrumentation-azure-sdk";
 import { MongoDBInstrumentation } from "@opentelemetry/instrumentation-mongodb";
@@ -15,6 +12,7 @@ import { RedisInstrumentation as Redis4Instrumentation } from "@opentelemetry/in
 import { NodeTracerProvider, NodeTracerConfig } from "@opentelemetry/sdk-trace-node";
 import { BatchSpanProcessor, BufferConfig, SpanProcessor, Tracer } from "@opentelemetry/sdk-trace-base";
 import { HttpInstrumentation, HttpInstrumentationConfig, IgnoreOutgoingRequestFunction } from "@opentelemetry/instrumentation-http";
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { ApplicationInsightsSampler } from "./applicationInsightsSampler";
 import { ApplicationInsightsConfig } from "../shared";
 import { MetricHandler } from "../metrics/metricHandler";
@@ -24,8 +22,8 @@ import { Util } from "../shared/util";
 
 
 export class TraceHandler {
-    private _exporter: AzureMonitorTraceExporter;
-    private _spanProcessor: BatchSpanProcessor;
+    private _azureMonitorExporter: AzureMonitorTraceExporter;
+    private _otlpExporter: OTLPTraceExporter;
     private _config: ApplicationInsightsConfig;
     private _metricHandler: MetricHandler;
     private _instrumentations: Instrumentation[];
@@ -54,25 +52,26 @@ export class TraceHandler {
             forceFlushTimeoutMillis: 30000,
         };
         this._tracerProvider = new NodeTracerProvider(tracerConfig);
-        const exporterConfig: AzureMonitorExporterOptions = {
-            connectionString: this._config.connectionString,
-            aadTokenCredential: this._config.aadTokenCredential,
-            storageDirectory: this._config.storageDirectory,
-            disableOfflineStorage: this._config.disableOfflineStorage,
-        };
-        this._exporter = new AzureMonitorTraceExporter(exporterConfig);
+        this._azureMonitorExporter = new AzureMonitorTraceExporter(config.azureMonitorExporterConfig);
         const bufferConfig: BufferConfig = {
             maxExportBatchSize: 512,
             scheduledDelayMillis: 5000,
             exportTimeoutMillis: 30000,
             maxQueueSize: 2048,
         };
-        this._spanProcessor = new BatchSpanProcessor(this._exporter, bufferConfig);
-        this._tracerProvider.addSpanProcessor(this._spanProcessor);
+        let azureMonitorSpanProcessor = new BatchSpanProcessor(this._azureMonitorExporter, bufferConfig);
+        this._tracerProvider.addSpanProcessor(azureMonitorSpanProcessor);
         if (this._metricHandler) {
             const azureSpanProcessor = new AzureSpanProcessor(this._metricHandler);
             this._tracerProvider.addSpanProcessor(azureSpanProcessor);
         }
+
+        if (config.otlpTraceExporterConfig?.enabled) {
+            this._otlpExporter = new OTLPTraceExporter(config.otlpTraceExporterConfig.baseConfig);
+            let otlpSpanProcessor = new BatchSpanProcessor(this._otlpExporter, bufferConfig);
+            this._tracerProvider.addSpanProcessor(otlpSpanProcessor);
+        }
+
         this._tracerProvider.register();
         // TODO: Check for conflicts with multiple handlers available
         this._tracer = this._tracerProvider.getTracer("ApplicationInsightsTracer");
