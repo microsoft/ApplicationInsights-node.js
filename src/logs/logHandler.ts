@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import { AzureMonitorLogExporter } from "@azure/monitor-opentelemetry-exporter";
 import { LogRecord } from "@opentelemetry/api-logs";
 import { LoggerProvider, SimpleLogRecordProcessor, Logger as OtelLogger, LogRecord as SDKLogRecord } from "@opentelemetry/sdk-logs";
 import { LoggerProviderConfig } from "@opentelemetry/sdk-logs/build/src/types";
 import { IdGenerator, RandomIdGenerator } from "@opentelemetry/sdk-trace-base";
-import { AzureMonitorLogExporter } from "./logExporter";
 import * as Contracts from "../declarations/contracts";
 import { AutoCollectConsole } from "./console";
 import { AutoCollectExceptions, parseStack } from "./exceptions";
