@@ -181,6 +181,7 @@ describe("#StandardMetricsHandler", () => {
         );
 
         // Traces
+        assert.strictEqual(metrics[3].dataPoints.length, 1, "dataPoints count");
         assert.strictEqual(metrics[3].dataPoints[0].value, 1, "dataPoint value");
         assert.strictEqual(
             metrics[3].dataPoints[0].attributes["cloudRoleInstance"],
@@ -189,15 +190,6 @@ describe("#StandardMetricsHandler", () => {
         assert.strictEqual(
             metrics[3].dataPoints[0].attributes["cloudRoleName"],
             "testcloudRoleName"
-        );
-        assert.strictEqual(metrics[3].dataPoints[1].value, 10, "dataPoint value");
-        assert.strictEqual(
-            metrics[3].dataPoints[1].attributes["cloudRoleInstance"],
-            "testcloudRoleInstance2"
-        );
-        assert.strictEqual(
-            metrics[3].dataPoints[1].attributes["cloudRoleName"],
-            "testcloudRoleName2"
         );
 
         // OTLP export

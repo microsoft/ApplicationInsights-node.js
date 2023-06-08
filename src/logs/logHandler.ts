@@ -55,7 +55,7 @@ export class LogHandler {
         };
         this._loggerProvider = new LoggerProvider(loggerProviderConfig);
         this._exporter = new AzureMonitorLogExporter(this._config.azureMonitorExporterConfig);
-        this._logRecordProcessor = new SimpleLogRecordProcessor(this._exporter);
+        this._logRecordProcessor = new SimpleLogRecordProcessor(this._exporter as any);
         this._loggerProvider.addLogRecordProcessor(this._logRecordProcessor);
         this._azureLogProccessor = new AzureLogProcessor(this._metricHandler);
         this._loggerProvider.addLogRecordProcessor(this._azureLogProccessor);
