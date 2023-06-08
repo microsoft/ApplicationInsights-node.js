@@ -58,7 +58,7 @@ export class AgentLoader {
             const kvPairs = connectionString.split(";");
             for (let i = 0; i < kvPairs.length; i++) {
                 const kvParts = kvPairs[i].split("=");
-                if (kvParts.length === 2 && kvParts[0].toLowerCase() == "instrumentationkey") {
+                if (kvParts.length === 2 && kvParts[0].toLowerCase() === "instrumentationkey") {
                     return kvParts[1];
                 }
             }

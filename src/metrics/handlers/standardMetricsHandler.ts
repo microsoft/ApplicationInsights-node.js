@@ -83,7 +83,7 @@ export class StandardMetricsHandler {
     }
 
     public recordLog(logRecord: LogRecord): void {
-        let dimensions = this._getStandardMetricBaseDimensions(logRecord.resource);
+        const dimensions = this._getStandardMetricBaseDimensions(logRecord.resource);
         if (logRecord.attributes[SemanticAttributes.EXCEPTION_MESSAGE] || logRecord.attributes[SemanticAttributes.EXCEPTION_TYPE]) {
             dimensions.metricId = StandardMetricIds.EXCEPTION_COUNT;
             this._exceptionMetrics.countException(dimensions);
@@ -108,7 +108,7 @@ export class StandardMetricsHandler {
     public recordSpanEvents(span: ReadableSpan): void {
         if (span.events) {
             span.events.forEach((event: TimedEvent) => {
-                let dimensions = this._getStandardMetricBaseDimensions(span.resource);
+                const dimensions = this._getStandardMetricBaseDimensions(span.resource);
                 if (event.name === "exception") {
                     dimensions.metricId = StandardMetricIds.EXCEPTION_COUNT;
                     this._exceptionMetrics.countException(dimensions);
@@ -125,10 +125,10 @@ export class StandardMetricsHandler {
             // If Application Insights Legacy logs
             const baseType = logRecord.attributes["_MS.baseType"];
             if (baseType) {
-                if (baseType == "ExceptionData") {
+                if (baseType === "ExceptionData") {
                     logRecord.setAttribute("_MS.ProcessedByMetricExtractors", "(Name:'Exceptions', Ver:'1.1')");
                 }
-                else if (baseType == "MessageData") {
+                else if (baseType === "MessageData") {
                     logRecord.setAttribute("_MS.ProcessedByMetricExtractors", "(Name:'Traces', Ver:'1.1')");
                 }
             }

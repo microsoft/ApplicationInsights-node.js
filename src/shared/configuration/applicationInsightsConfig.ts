@@ -164,7 +164,7 @@ export class ApplicationInsightsConfig implements IConfig {
     private _getDefaultResource(): Resource {
         let resource = Resource.EMPTY;
         // Load resource attributes from env
-        let detectResourceConfig: ResourceDetectionConfig = {
+        const detectResourceConfig: ResourceDetectionConfig = {
             detectors: [envDetectorSync]
         };
         const envResource = detectResourcesSync(detectResourceConfig);
