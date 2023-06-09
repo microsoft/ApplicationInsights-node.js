@@ -4,6 +4,7 @@ import * as sinon from "sinon";
 import { AppServicesLoader } from "../../../src/agent/appServicesLoader";
 import { DiagnosticLogger } from "../../../src/agent/diagnostics/diagnosticLogger";
 import { FileWriter } from "../../../src/agent/diagnostics/writers/fileWriter";
+import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
 describe("agent/AppServicesLoader", () => {
     let originalEnv: NodeJS.ProcessEnv;
@@ -67,5 +68,27 @@ describe("agent/AppServicesLoader", () => {
         agent.initialize();
         // Agent Loader called
         assert.ok(stub.calledOnce);
+    });
+
+    it("should correctly set Azure Resource Attributes", () => {
+        const env = <{ [id: string]: string }>{};
+        const originalEnv = process.env;
+        env.WEBSITE_SITE_NAME = "testRole";
+        env.WEBSITE_INSTANCE_ID = "testRoleInstanceId";
+        process.env = env;
+        const agent = new AppServicesLoader();
+        let stub = sandbox.stub(agent, "initialize");
+        agent.initialize();
+        process.env = originalEnv;
+        // Agent Loader called
+        assert.ok(stub.calledOnce);
+        assert.equal(
+            agent["_config"].resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID],
+            "testRoleInstanceId"
+        );
+        assert.equal(
+            agent["_config"].resource.attributes[SemanticResourceAttributes.SERVICE_NAME],
+            "testRole"
+        );
     });
 });

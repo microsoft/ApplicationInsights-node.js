@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { ManagedIdentityCredential } from "@azure/identity";
 import { ApplicationInsightsClient } from "../applicationInsightsClient";
 import { ApplicationInsightsConfig } from "../shared";

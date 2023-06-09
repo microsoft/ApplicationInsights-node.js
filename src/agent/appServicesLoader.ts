@@ -1,5 +1,11 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import * as os from 'os';
 import * as path from 'path';
+import { Attributes } from '@opentelemetry/api';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { Resource } from '@opentelemetry/resources';
 import { DiagnosticLogger } from './diagnostics/diagnosticLogger';
 import { FileWriter } from "./diagnostics/writers/fileWriter";
 import { StatusLogger } from "./diagnostics/statusLogger";
@@ -12,6 +18,19 @@ export class AppServicesLoader extends AgentLoader {
     constructor() {
         super();
         if (this._canLoad) {
+            // Azure App Services specific configuration
+            const resourceAttributes: Attributes = {};
+            if (process.env.WEBSITE_SITE_NAME) {
+                resourceAttributes[SemanticResourceAttributes.SERVICE_NAME] =
+                    process.env.WEBSITE_SITE_NAME;
+            }
+            if (process.env.WEBSITE_INSTANCE_ID) {
+                resourceAttributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] =
+                    process.env.WEBSITE_INSTANCE_ID;
+            }
+            const resource = new Resource(resourceAttributes);
+            this._config.resource = resource;
+
             let statusLogDir = '/var/log/applicationinsights/';
             if (this._isWindows) {
                 if (process.env.HOME) {
