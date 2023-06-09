@@ -58,7 +58,7 @@ module.exports.TestValidation = class TestValidation {
                 const findItem = (correlationId, type, fn, stepName, childContract) => {
                     const _correlationId = correlationId;
                     if (!type) return true;
-                    for (var i = 0; i<dataSet.length; i++) {
+                    for (var i = 0; i < dataSet.length; i++) {
                         var item = dataSet[i];
                         try {
                             if (item.data.baseType === type && item.tags['ai.operation.parentId'] === (_correlationId) && baseValidator(item) && fn(item)) {
@@ -75,12 +75,12 @@ module.exports.TestValidation = class TestValidation {
                     }
                     const telemetry = this.ingestion.telemetry;
                     const correlTelemetry = this.ingestion.correlatedTelemetry;
-                    Utils.Logging.error("FAILED EXPECTATION - Could not find expected "+type+" child telemetry for rule "+stepName+"!");
+                    Utils.Logging.error("FAILED EXPECTATION - Could not find expected " + type + " child telemetry for rule " + stepName + "!");
                     return false;
                 };
 
                 // Find all expected items
-                test.steps.forEach((step)=>{
+                test.steps.forEach((step) => {
                     const expectation = TaskExpectations[step];
                     const success = findItem(correlationId, expectation.expectedTelemetryType, expectation.telemetryVerifier, step, expectation.childContract);
 
@@ -90,7 +90,7 @@ module.exports.TestValidation = class TestValidation {
                 });
 
                 // Did we find all of the items in the data set?
-                if (dataSet.length > 1){
+                if (dataSet.length > 1) {
                     Utils.Logging.error("FAILED EXPECTATION - Unexpected child telemetry item(s)!");
                     Utils.Logging.error(JSON.stringify(dataSet, null, 2));
                     hadFailed = true;
@@ -114,14 +114,14 @@ module.exports.TestValidation = class TestValidation {
         let success = true;
         return Utils.Logging.enterSubunit("Validating performance counters...")
             .then(() => {
-                Utils.Logging.info("Expecting "+ expectedEach + " instance(s) each of all " + perfTypes.length + " performance counters");
+                Utils.Logging.info("Expecting " + expectedEach + " instance(s) each of all " + perfTypes.length + " performance counters");
                 const metricTelemetry = this.ingestion.telemetry["MetricData"];
                 perfTypes.forEach((metricType) => {
                     let count = 0;
                     if (metricTelemetry) {
-                        for (let i = 0; i<metricTelemetry.length; i++) {
+                        for (let i = 0; i < metricTelemetry.length; i++) {
                             const telemetry = metricTelemetry[i];
-                            if (telemetry && telemetry.data.baseData.metrics[0].name === metricType) {
+                            if (telemetry && telemetry.data.baseData.metrics && telemetry.data.baseData.metrics.length > 0 && telemetry.data.baseData.metrics[0].name === metricType) {
                                 count++;
                             }
                         }

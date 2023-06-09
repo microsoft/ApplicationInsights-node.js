@@ -19,12 +19,10 @@ import { SemanticResourceAttributes, TelemetrySdkLanguageValues } from "@opentel
 
 // Azure Connection String
 const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
-const ENV_noStatsbeat = "APPLICATION_INSIGHTS_NO_STATSBEAT";
 const DEFAULT_ROLE_NAME = "Web";
 
 
 export class ApplicationInsightsConfig implements IConfig {
-    private _disableStatsbeat: boolean;
     private _resource?: Resource;
     public azureMonitorExporterConfig?: AzureMonitorExporterOptions;
     public otlpTraceExporterConfig?: OTLPExporterConfig;
@@ -82,7 +80,6 @@ export class ApplicationInsightsConfig implements IConfig {
         this.otlpTraceExporterConfig = {};
         // Load config values from env variables and JSON if available
         this.azureMonitorExporterConfig.connectionString = process.env[ENV_connectionString];
-        this._disableStatsbeat = !!process.env[ENV_noStatsbeat];
         this._loadDefaultValues();
         this._mergeConfig();
 
@@ -126,7 +123,7 @@ export class ApplicationInsightsConfig implements IConfig {
       * @deprecated This method should not be used
      */
     public getDisableStatsbeat(): boolean {
-        return this._disableStatsbeat;
+        return false;
     }
 
     private _loadDefaultValues() {
@@ -167,7 +164,7 @@ export class ApplicationInsightsConfig implements IConfig {
     private _getDefaultResource(): Resource {
         let resource = Resource.EMPTY;
         // Load resource attributes from env
-        let detectResourceConfig: ResourceDetectionConfig = {
+        const detectResourceConfig: ResourceDetectionConfig = {
             detectors: [envDetectorSync]
         };
         const envResource = detectResourcesSync(detectResourceConfig);

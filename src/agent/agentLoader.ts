@@ -6,7 +6,6 @@ import { ConsoleWriter } from "./diagnostics/writers/consoleWriter";
 import { DiagnosticLogger } from "./diagnostics/diagnosticLogger";
 import { StatusLogger } from "./diagnostics/statusLogger";
 import { AgentResourceProviderType, DiagnosticMessageId, IDiagnosticLog, IDiagnosticLogger, NODE_JS_RUNTIME_MAJOR_VERSION } from "./types";
-import { ConnectionStringParser } from "../shared/configuration";
 
 
 const forceStart = process.env.APPLICATIONINSIGHTS_FORCE_START === "true";
@@ -45,16 +44,26 @@ export class AgentLoader {
             this._config.logInstrumentations.bunyan.enabled = true;
             this._config.logInstrumentations.console.enabled = true;
             this._config.logInstrumentations.winston.enabled = true;
-
-            const parser = new ConnectionStringParser();
-            const parsedConnectionString = parser.parse(this._config.azureMonitorExporterConfig.connectionString);
-            this._instrumentationKey = parsedConnectionString.instrumentationkey;
+            this._instrumentationKey = this._getInstrumentationKey(this._config.azureMonitorExporterConfig.connectionString);
 
             //Default diagnostic using console
             this._diagnosticLogger = new DiagnosticLogger(this._instrumentationKey, new ConsoleWriter());
             this._statusLogger = new StatusLogger(this._instrumentationKey, new ConsoleWriter());
             this._isWindows = process.platform === 'win32';
         }
+    }
+
+    private _getInstrumentationKey(connectionString: string) {
+        if (connectionString) {
+            const kvPairs = connectionString.split(";");
+            for (let i = 0; i < kvPairs.length; i++) {
+                const kvParts = kvPairs[i].split("=");
+                if (kvParts.length === 2 && kvParts[0].toLowerCase() === "instrumentationkey") {
+                    return kvParts[1];
+                }
+            }
+        }
+        return "";
     }
 
     // Exposed so ETW logger could be provider in IPA code

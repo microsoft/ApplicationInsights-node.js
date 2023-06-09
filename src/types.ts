@@ -1,0 +1,21 @@
+
+
+export const AZURE_MONITOR_STATSBEAT_FEATURES = "AZURE_MONITOR_STATSBEAT_FEATURES";
+
+export enum StatsbeatFeature {
+    DISK_RETRY = 0,
+    AAD_HANDLING = 1,
+    WEB_SNIPPET = 2,
+    DISTRO = 4,
+}
+
+export enum StatsbeatInstrumentation {
+    AZURE_CORE_TRACING = 0,
+    MONGODB = 1,
+    MYSQL = 2,
+    REDIS = 4,
+    POSTGRES = 8,
+    BUNYAN = 16,
+    WINSTON = 32,
+    CONSOLE = 64,
+}

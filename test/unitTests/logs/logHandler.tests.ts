@@ -1,9 +1,9 @@
 import * as assert from "assert";
-import * as os from "os";
 import * as sinon from "sinon";
-import { isValidTraceId, isValidSpanId, context, trace } from "@opentelemetry/api";
+import { trace, context, isValidTraceId, isValidSpanId } from "@opentelemetry/api";
+import { LogRecord as APILogRecord } from "@opentelemetry/api-logs";
+import { LogRecord } from "@opentelemetry/sdk-logs";
 import { ExportResultCode } from "@opentelemetry/core";
-
 import { LogHandler } from "../../../src/logs";
 import { MetricHandler } from "../../../src/metrics";
 import { TraceHandler } from "../../../src/traces";
@@ -16,8 +16,8 @@ import {
     EventTelemetry,
     Telemetry,
 } from "../../../src/declarations/contracts";
-import { MonitorDomain } from "../../../src/declarations/generated";
-import { ApplicationInsightsClient } from "../../../src";
+import { AvailabilityData, MessageData, MonitorDomain, PageViewData, TelemetryEventData, TelemetryExceptionData } from "../../../src/declarations/generated";
+
 
 describe("Library/LogHandler", () => {
     let sandbox: sinon.SinonSandbox;
@@ -26,7 +26,7 @@ describe("Library/LogHandler", () => {
     let stub: sinon.SinonStub;
     let metricHandler: MetricHandler;
     const _config = new ApplicationInsightsConfig();
-    _config.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://westus.in.applicationinsights.azure.com/;LiveEndpoint=https://west.live.monitor.azure.com/";
+    _config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://westus.in.applicationinsights.azure.com/;LiveEndpoint=https://west.live.monitor.azure.com/";
 
     before(() => {
         sandbox = sinon.createSandbox();
@@ -46,7 +46,7 @@ describe("Library/LogHandler", () => {
     function createLogHandler(config: ApplicationInsightsConfig, metricHandler?: MetricHandler) {
         handler = new LogHandler(config, metricHandler);
         stub = sinon.stub(handler["_exporter"], "export").callsFake(
-            (envelopes: any, resultCallback: any) =>
+            (logs: any, resultCallback: any) =>
                 new Promise((resolve, reject) => {
                     resultCallback({
                         code: ExportResultCode.SUCCESS,
@@ -56,6 +56,43 @@ describe("Library/LogHandler", () => {
         );
     }
 
+    describe("#logger", () => {
+        it("constructor", () => {
+            createLogHandler(_config);
+            assert.ok(handler.getLoggerProvider(), "LoggerProvider not available");
+            assert.ok(handler.getLogger(), "Logger not available");
+        });
+
+        it("tracing", (done) => {
+            createLogHandler(_config);
+            traceHandler = new TraceHandler(_config);
+            traceHandler["_tracer"].startActiveSpan("test", () => {
+                // Generate Log record
+                const logRecord: APILogRecord = {
+                    attributes: {}, body: "testRecord"
+                };
+                handler.getLogger().emit(logRecord);
+                handler
+                    .flush()
+                    .then(() => {
+                        assert.ok(stub.calledOnce, "Export called");
+                        const logs = stub.args[0][0];
+                        assert.equal(logs.length, 1);
+                        const spanContext = trace.getSpanContext(context.active());
+                        assert.ok(isValidTraceId(logs[0].spanContext.traceId), "Valid trace Id");
+                        assert.ok(isValidSpanId(logs[0].spanContext.spanId), "Valid span Id");
+                        assert.equal(logs[0].spanContext.traceId, spanContext.traceId);
+                        assert.equal(logs[0].spanContext.spanId, spanContext.spanId);
+                        done();
+                    })
+                    .catch((error) => {
+                        done(error);
+                    });
+            });
+        });
+    });
+
+
     describe("#autoCollect", () => {
         it("exception enablement during start", () => {
             _config.enableAutoCollectExceptions = true;
@@ -64,77 +101,23 @@ describe("Library/LogHandler", () => {
         });
     });
 
+
     describe("#manual track APIs", () => {
         it("_logToEnvelope", () => {
             createLogHandler(_config);
-            const telemetry: Telemetry = {};
+            const telemetry: Telemetry = {
+                properties: { "testAttribute": "testValue" }
+            };
             const data: MonitorDomain = {};
-            const envelope = handler["_logToEnvelope"](
+            const logRecord = handler["_telemetryToLogRecord"](
                 telemetry,
                 "TestData",
                 data,
-            );
-            assert.equal(
-                envelope.name,
-                "Microsoft.ApplicationInsights.1aa11111bbbb1ccc8dddeeeeffff3333.Test"
-            );
-            assert.equal(envelope.version, "1");
-            assert.equal(envelope.instrumentationKey, "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-            assert.equal(envelope.sampleRate, "100");
-            assert.ok(envelope.time);
-            assert.equal(envelope.data.baseType, "TestData");
-            assert.ok(isValidTraceId(envelope.tags["ai.operation.id"]), "Valid operation Id");
-            assert.equal(envelope.tags["ai.operation.parentId"], undefined);
-            assert.equal(envelope.tags["ai.cloud.role"], "Web");
-            assert.equal(envelope.tags["ai.cloud.roleInstance"], os.hostname());
-            assert.ok(
-                envelope.tags["ai.internal.sdkVersion"].indexOf("node") > 0,
-                "Incorrect SDK version"
-            );
-            assert.ok(
-                envelope.tags["ai.internal.sdkVersion"].indexOf(":otel") > 0,
-                "Incorrect SDK version"
-            );
-            assert.ok(
-                envelope.tags["ai.internal.sdkVersion"].indexOf(":dst") > 0,
-                "Incorrect SDK version"
-            );
+            ) as LogRecord;
+            assert.equal(logRecord.body, "{}");
+            assert.equal(logRecord.attributes["testAttribute"], "testValue");
+            assert.equal(logRecord.attributes["_MS.baseType"], "TestData");
         });
-
-        it("tracing", () => {
-            createLogHandler(_config);
-            traceHandler = new TraceHandler(_config);
-            traceHandler["_tracer"].startActiveSpan("test", () => {
-                const envelope = handler["_logToEnvelope"]({}, "", {});
-                const spanContext = trace.getSpanContext(context.active());
-                assert.ok(isValidTraceId(envelope.tags["ai.operation.id"]), "Valid operation Id");
-                assert.ok(
-                    isValidSpanId(envelope.tags["ai.operation.parentId"]),
-                    "Valid parent operation Id"
-                );
-                assert.equal(envelope.tags["ai.operation.id"], spanContext.traceId);
-                assert.equal(envelope.tags["ai.operation.parentId"], spanContext.spanId);
-            });
-        });
-
-        it("sampling", () => {
-            let otherConfig = new ApplicationInsightsConfig();
-            otherConfig.connectionString = _config.connectionString;
-            otherConfig.samplingRatio = 0;
-            createLogHandler(otherConfig);
-            const stub = sinon.stub(handler["_batchProcessor"], "send");
-            const telemetry: AvailabilityTelemetry = {
-                name: "TestName",
-                duration: 2000, //2 seconds
-                id: "testId",
-                runLocation: "testRunLocation",
-                message: "testMessage",
-                success: false,
-            };
-            handler.trackAvailability(telemetry);
-            assert.ok(stub.notCalled);
-        });
-
 
         it("trackAvailability", (done) => {
             createLogHandler(_config);
@@ -151,26 +134,18 @@ describe("Library/LogHandler", () => {
                 .flush()
                 .then(() => {
                     assert.ok(stub.calledOnce, "Export called");
-                    const envelopes = stub.args[0][0];
-                    assert.equal(envelopes.length, 1);
-                    assert.equal(
-                        envelopes[0].name,
-                        "Microsoft.ApplicationInsights.1aa11111bbbb1ccc8dddeeeeffff3333.Availability"
-                    );
-                    assert.equal(envelopes[0].version, "1");
-                    assert.equal(
-                        envelopes[0].instrumentationKey,
-                        "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
-                    );
-                    assert.equal(envelopes[0].sampleRate, "100");
-                    assert.ok(envelopes[0].time);
-                    assert.equal(envelopes[0].data.baseType, "AvailabilityData");
-                    assert.equal(envelopes[0].data.baseData["id"], "testId");
-                    assert.equal(envelopes[0].data.baseData["duration"], "00:00:02.000");
-                    assert.equal(envelopes[0].data.baseData["success"], false);
-                    assert.equal(envelopes[0].data.baseData["runLocation"], "testRunLocation");
-                    assert.equal(envelopes[0].data.baseData["message"], "testMessage");
-                    assert.equal(envelopes[0].data.baseData["version"], "2");
+                    const logs = stub.args[0][0];
+                    assert.equal(logs.length, 1);
+                    let baseData = JSON.parse(logs[0].body) as AvailabilityData;
+                    assert.equal(baseData.version, 2);
+                    assert.equal(baseData.id, "testId");
+                    assert.equal(baseData.name, "TestName");
+                    assert.equal(baseData.duration, "00:00:02.000");
+                    assert.equal(baseData.success, false);
+                    assert.equal(baseData.runLocation, "testRunLocation");
+                    assert.equal(baseData.message, "testMessage");
+                    assert.equal(logs[0].attributes["_MS.baseType"], "AvailabilityData");
+                    assert.equal(logs[0].instrumentationScope.name, "AzureMonitorLogger");
                     done();
                 })
                 .catch((error) => {
@@ -192,25 +167,17 @@ describe("Library/LogHandler", () => {
                 .flush()
                 .then(() => {
                     assert.ok(stub.calledOnce, "Export called");
-                    const envelopes = stub.args[0][0];
-                    assert.equal(envelopes.length, 1);
-                    assert.equal(
-                        envelopes[0].name,
-                        "Microsoft.ApplicationInsights.1aa11111bbbb1ccc8dddeeeeffff3333.PageView"
-                    );
-                    assert.equal(envelopes[0].version, "1");
-                    assert.equal(
-                        envelopes[0].instrumentationKey,
-                        "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
-                    );
-                    assert.equal(envelopes[0].sampleRate, "100");
-                    assert.ok(envelopes[0].time);
-                    assert.equal(envelopes[0].data.baseType, "PageViewData");
-                    assert.equal(envelopes[0].data.baseData["id"], "testId");
-                    assert.equal(envelopes[0].data.baseData["duration"], "00:00:02.000");
-                    assert.equal(envelopes[0].data.baseData["referredUri"], "testReferredUri");
-                    assert.equal(envelopes[0].data.baseData["url"], "testUrl");
-                    assert.equal(envelopes[0].data.baseData["version"], "2");
+                    const logs = stub.args[0][0];
+                    assert.equal(logs.length, 1);
+                    let baseData = JSON.parse(logs[0].body) as PageViewData;
+                    assert.equal(baseData.version, 2);
+                    assert.equal(baseData.id, "testId");
+                    assert.equal(baseData.name, "TestName");
+                    assert.equal(baseData.duration, "00:00:02.000");
+                    assert.equal(baseData.referredUri, "testReferredUri");
+                    assert.equal(baseData.url, "testUrl");
+                    assert.equal(logs[0].attributes["_MS.baseType"], "PageViewData");
+                    assert.equal(logs[0].instrumentationScope.name, "AzureMonitorLogger");
                     done();
                 })
                 .catch((error) => {
@@ -229,23 +196,14 @@ describe("Library/LogHandler", () => {
                 .flush()
                 .then(() => {
                     assert.ok(stub.calledOnce, "Export called");
-                    const envelopes = stub.args[0][0];
-                    assert.equal(envelopes.length, 1);
-                    assert.equal(
-                        envelopes[0].name,
-                        "Microsoft.ApplicationInsights.1aa11111bbbb1ccc8dddeeeeffff3333.Message"
-                    );
-                    assert.equal(envelopes[0].version, "1");
-                    assert.equal(
-                        envelopes[0].instrumentationKey,
-                        "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
-                    );
-                    assert.equal(envelopes[0].sampleRate, "100");
-                    assert.ok(envelopes[0].time);
-                    assert.equal(envelopes[0].data.baseType, "MessageData");
-                    assert.equal(envelopes[0].data.baseData["message"], "testMessage");
-                    assert.equal(envelopes[0].data.baseData["severityLevel"], "Information");
-                    assert.equal(envelopes[0].data.baseData["version"], "2");
+                    const logs = stub.args[0][0];
+                    assert.equal(logs.length, 1);
+                    let baseData = JSON.parse(logs[0].body) as MessageData;
+                    assert.equal(baseData.version, 2);
+                    assert.equal(baseData.message, "testMessage");
+                    assert.equal(baseData.severityLevel, "Information");
+                    assert.equal(logs[0].attributes["_MS.baseType"], "MessageData");
+                    assert.equal(logs[0].instrumentationScope.name, "AzureMonitorLogger");
                     done();
                 })
                 .catch((error) => {
@@ -267,31 +225,16 @@ describe("Library/LogHandler", () => {
                 .flush()
                 .then(() => {
                     assert.ok(stub.calledOnce, "Export called");
-                    const envelopes = stub.args[0][0];
-                    assert.equal(envelopes.length, 1);
-                    assert.equal(
-                        envelopes[0].name,
-                        "Microsoft.ApplicationInsights.1aa11111bbbb1ccc8dddeeeeffff3333.Exception"
-                    );
-                    assert.equal(envelopes[0].version, "1");
-                    assert.equal(
-                        envelopes[0].instrumentationKey,
-                        "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
-                    );
-                    assert.equal(envelopes[0].sampleRate, "100");
-                    assert.ok(envelopes[0].time);
-                    assert.equal(envelopes[0].data.baseType, "ExceptionData");
-                    assert.equal(envelopes[0].data.baseData["exceptions"].length, 1);
-                    assert.equal(envelopes[0].data.baseData["exceptions"][0].message, "TestError");
-                    assert.equal(envelopes[0].data.baseData["exceptions"][0]["typeName"], "Error");
-                    assert.ok(
-                        envelopes[0].data.baseData["exceptions"][0]["parsedStack"],
-                        "Parsedstack not available"
-                    );
-                    assert.equal(envelopes[0].data.baseData["exceptions"][0]["hasFullStack"], true);
-                    assert.equal(envelopes[0].data.baseData["severityLevel"], "Critical");
-                    assert.equal(envelopes[0].data.baseData["measurements"]["test"], "123");
-                    assert.equal(envelopes[0].data.baseData["version"], "2");
+                    const logs = stub.args[0][0];
+                    assert.equal(logs.length, 1);
+                    let baseData = JSON.parse(logs[0].body) as TelemetryExceptionData;
+                    assert.equal(baseData.version, 2);
+                    assert.equal(baseData.severityLevel, "Critical");
+                    assert.equal(baseData.exceptions[0].message, "TestError");
+                    assert.equal(baseData.exceptions[0].typeName, "Error");
+                    assert.equal(baseData.measurements["test"], 123);
+                    assert.equal(logs[0].attributes["_MS.baseType"], "ExceptionData");
+                    assert.equal(logs[0].instrumentationScope.name, "AzureMonitorLogger");
                     done();
                 })
                 .catch((error) => {
@@ -312,23 +255,14 @@ describe("Library/LogHandler", () => {
                 .flush()
                 .then(() => {
                     assert.ok(stub.calledOnce, "Export called");
-                    const envelopes = stub.args[0][0];
-                    assert.equal(envelopes.length, 1);
-                    assert.equal(
-                        envelopes[0].name,
-                        "Microsoft.ApplicationInsights.1aa11111bbbb1ccc8dddeeeeffff3333.Event"
-                    );
-                    assert.equal(envelopes[0].version, "1");
-                    assert.equal(
-                        envelopes[0].instrumentationKey,
-                        "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
-                    );
-                    assert.equal(envelopes[0].sampleRate, "100");
-                    assert.ok(envelopes[0].time);
-                    assert.equal(envelopes[0].data.baseType, "EventData");
-                    assert.equal(envelopes[0].data.baseData["name"], "TestName");
-                    assert.equal(envelopes[0].data.baseData["measurements"]["test"], "123");
-                    assert.equal(envelopes[0].data.baseData["version"], "2");
+                    const logs = stub.args[0][0];
+                    assert.equal(logs.length, 1);
+                    let baseData = JSON.parse(logs[0].body) as TelemetryEventData;
+                    assert.equal(baseData.version, 2);
+                    assert.equal(baseData.name, "TestName");
+                    assert.equal(baseData.measurements["test"], 123);
+                    assert.equal(logs[0].attributes["_MS.baseType"], "EventData");
+                    assert.equal(logs[0].instrumentationScope.name, "AzureMonitorLogger");
                     done();
                 })
                 .catch((error) => {
@@ -346,15 +280,20 @@ describe("Library/LogHandler", () => {
                 severity: "Critical",
             };
             handler.trackException(telemetry);
+            // Generate exception Log record
+            const logRecord: APILogRecord = {
+                attributes: {
+                    "exception.type": "TestError"
+                }, body: "testErrorRecord"
+            };
+            handler.getLogger().emit(logRecord);
             handler
                 .flush()
                 .then(() => {
-                    const envelopes = stub.args[0][0];
-                    assert.equal(envelopes.length, 1);
-                    assert.equal(
-                        envelopes[0].data.baseData["properties"]["_MS.ProcessedByMetricExtractors"],
-                        "(Name:'Exceptions', Ver:'1.1')"
-                    );
+                    let result = stub.args;
+                    assert.equal(result.length, 2);
+                    assert.equal(result[0][0][0].attributes["_MS.ProcessedByMetricExtractors"], "(Name:'Exceptions', Ver:'1.1')");
+                    assert.equal(result[1][0][0].attributes["_MS.ProcessedByMetricExtractors"], "(Name:'Exceptions', Ver:'1.1')");
                     done();
                 })
                 .catch((error) => {
@@ -371,30 +310,24 @@ describe("Library/LogHandler", () => {
                 severity: "Information",
             };
             handler.trackTrace(telemetry);
+            // Generate Log record
+            const logRecord: APILogRecord = {
+                attributes: {}, body: "testRecord"
+            };
+            handler.getLogger().emit(logRecord);
+
             handler
                 .flush()
                 .then(() => {
-                    const envelopes = stub.args[0][0];
-                    assert.equal(envelopes.length, 1);
-                    assert.equal(
-                        envelopes[0].data.baseData["properties"]["_MS.ProcessedByMetricExtractors"],
-                        "(Name:'Traces', Ver:'1.1')"
-                    );
+                    let result = stub.args;
+                    assert.equal(result.length, 2);
+                    assert.equal(result[0][0][0].attributes["_MS.ProcessedByMetricExtractors"], "(Name:'Traces', Ver:'1.1')");
+                    assert.equal(result[1][0][0].attributes["_MS.ProcessedByMetricExtractors"], "(Name:'Traces', Ver:'1.1')");
                     done();
                 })
                 .catch((error) => {
                     done(error);
                 });
-        });
-
-        it("Logs Statsbeat initializd", () => {
-            const appInsights = new ApplicationInsightsClient(_config);
-            assert.ok(appInsights["_logHandler"]["_exporter"]["_statsbeatMetrics"], "Statsbeat not initialized on the logsExporter.");
-            appInsights["_logHandler"]["_exporter"]["_statsbeatMetrics"].countSuccess(100);
-            const logsStatsbeatCollection = appInsights["_logHandler"]["_exporter"]["_statsbeatMetrics"]["_networkStatsbeatCollection"];
-            assert.strictEqual(logsStatsbeatCollection[0].totalSuccesfulRequestCount, 1);
-            assert.strictEqual(logsStatsbeatCollection[0].intervalRequestExecutionTime, 100);
-            appInsights.shutdown();
         });
     });
 });

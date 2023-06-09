@@ -171,11 +171,9 @@ describe("Library/Config", () => {
             it("Should take configurations from environment variables", () => {
                 const env = <{ [id: string]: string }>{};
                 env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "TestConnectionString";
-                env["APPLICATION_INSIGHTS_NO_STATSBEAT"] = "true";
                 process.env = env;
                 const config = new ApplicationInsightsConfig();
                 assert.equal(config.connectionString, "TestConnectionString");
-                assert.equal(config["_disableStatsbeat"], true);
             });
         });
 

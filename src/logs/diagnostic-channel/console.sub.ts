@@ -2,10 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
 import { console as consolePub } from "diagnostic-channel-publishers";
-
 import { LogHandler } from "../logHandler";
 import { KnownSeverityLevel } from "../../declarations/generated";
-import { StatsbeatInstrumentation } from "../../metrics/statsbeat/types";
 
 let handlers: LogHandler[] = [];
 
@@ -36,16 +34,7 @@ export function enable(enabled: boolean, handler: LogHandler) {
             return;
         }
         if (handlers.length === 0) {
-            channel.subscribe<consolePub.IConsoleData>(
-                "console",
-                subscriber,
-                trueFilter,
-                (module, version) => {
-                    if (handler.statsbeat) {
-                        handler.statsbeat.addInstrumentation(StatsbeatInstrumentation.CONSOLE);
-                    }
-                }
-            );
+            channel.subscribe<consolePub.IConsoleData>("console", subscriber, trueFilter);
         }
         handlers.push(handler);
     } else {
