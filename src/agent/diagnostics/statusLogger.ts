@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import * as os from "os";
 import { FileWriter } from "./writers/fileWriter";
 import { IAgentLogger, IStatusContract, LOGGER_LANGUAGE } from "../types";

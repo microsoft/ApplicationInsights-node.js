@@ -40,7 +40,10 @@ describe("Library/Config", () => {
                 process.env = env;
                 const config = new ApplicationInsightsConfig();
                 config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=cs.code";
-                assert.deepEqual(config.azureMonitorExporterConfig.connectionString, "InstrumentationKey=cs.code");
+                assert.deepEqual(
+                    config.azureMonitorExporterConfig.connectionString,
+                    "InstrumentationKey=cs.code"
+                );
             });
 
             it("connection string set via in configuration[Deprecated]", () => {
@@ -51,7 +54,10 @@ describe("Library/Config", () => {
                 process.env = env;
                 const config = new ApplicationInsightsConfig();
                 config.connectionString = "InstrumentationKey=cs.code";
-                assert.deepEqual(config.azureMonitorExporterConfig.connectionString, "InstrumentationKey=cs.code");
+                assert.deepEqual(
+                    config.azureMonitorExporterConfig.connectionString,
+                    "InstrumentationKey=cs.code"
+                );
             });
 
             it("connection string set via environment variable", () => {
@@ -61,14 +67,20 @@ describe("Library/Config", () => {
                 };
                 process.env = env;
                 const config = new ApplicationInsightsConfig();
-                assert.deepEqual(config.azureMonitorExporterConfig.connectionString, "InstrumentationKey=cs.env");
+                assert.deepEqual(
+                    config.azureMonitorExporterConfig.connectionString,
+                    "InstrumentationKey=cs.env"
+                );
             });
 
             it("instrumentation key set via environment variable", () => {
                 const env = { [ENV_IKEY]: "ikey.env" };
                 process.env = env;
                 const config = new ApplicationInsightsConfig();
-                assert.deepEqual(config.azureMonitorExporterConfig.connectionString, "InstrumentationKey=ikey.env;IngestionEndpoint=https://dc.services.visualstudio.com");
+                assert.deepEqual(
+                    config.azureMonitorExporterConfig.connectionString,
+                    "InstrumentationKey=ikey.env;IngestionEndpoint=https://dc.services.visualstudio.com"
+                );
             });
 
             it("merge JSON config", () => {
@@ -86,16 +98,47 @@ describe("Library/Config", () => {
                     "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"
                 );
                 assert.equal(config.samplingRatio, 0.3, "Wrong samplingRatio");
-                assert.equal(config.azureMonitorExporterConfig.disableOfflineStorage, true, "Wrong disableOfflineStorage");
-                assert.equal(config.azureMonitorExporterConfig.storageDirectory, "testPath", "Wrong storageDirectory");
-                assert.equal(config.otlpTraceExporterConfig.enabled, true, "Wrong otlpTraceExporterConfig enabled");
-                assert.equal(config.otlpTraceExporterConfig.baseConfig.keepAlive, false, "Wrong otlpTraceExporterConfig keepAlive");
-                assert.equal(config.otlpTraceExporterConfig.baseConfig.url, "someurlfortraces", "Wrong otlpTraceExporterConfig url");
+                assert.equal(
+                    config.azureMonitorExporterConfig.disableOfflineStorage,
+                    true,
+                    "Wrong disableOfflineStorage"
+                );
+                assert.equal(
+                    config.azureMonitorExporterConfig.storageDirectory,
+                    "testPath",
+                    "Wrong storageDirectory"
+                );
+                assert.equal(
+                    config.otlpTraceExporterConfig.enabled,
+                    true,
+                    "Wrong otlpTraceExporterConfig enabled"
+                );
+                assert.equal(
+                    config.otlpTraceExporterConfig.baseConfig.keepAlive,
+                    false,
+                    "Wrong otlpTraceExporterConfig keepAlive"
+                );
+                assert.equal(
+                    config.otlpTraceExporterConfig.baseConfig.url,
+                    "someurlfortraces",
+                    "Wrong otlpTraceExporterConfig url"
+                );
 
-                assert.equal(config.otlpMetricExporterConfig.enabled, true, "Wrong otlpMetricExporterConfig enabled");
-                assert.equal(config.otlpMetricExporterConfig.baseConfig.keepAlive, true, "Wrong otlpMetricExporterConfig keepAlive");
-                assert.equal(config.otlpMetricExporterConfig.baseConfig.url, "someurlformetrics", "Wrong otlpMetricExporterConfig url");
-
+                assert.equal(
+                    config.otlpMetricExporterConfig.enabled,
+                    true,
+                    "Wrong otlpMetricExporterConfig enabled"
+                );
+                assert.equal(
+                    config.otlpMetricExporterConfig.baseConfig.keepAlive,
+                    true,
+                    "Wrong otlpMetricExporterConfig keepAlive"
+                );
+                assert.equal(
+                    config.otlpMetricExporterConfig.baseConfig.url,
+                    "someurlformetrics",
+                    "Wrong otlpMetricExporterConfig url"
+                );
 
                 assert.equal(
                     config.enableAutoCollectExceptions,
@@ -158,11 +201,31 @@ describe("Library/Config", () => {
                     undefined,
                     "Wrong disableOfflineStorage"
                 );
-                assert.equal(config.azureMonitorExporterConfig.storageDirectory, undefined, "Wrong storageDirectory");
-                assert.equal(config.otlpMetricExporterConfig.enabled, undefined, "Wrong otlpMetricExporterConfig.enabled");
-                assert.equal(config.otlpMetricExporterConfig.baseConfig, undefined, "Wrong otlpMetricExporterConfig.baseConfig");
-                assert.equal(config.otlpTraceExporterConfig.enabled, undefined, "Wrong otlpTraceExporterConfig.enabled");
-                assert.equal(config.otlpTraceExporterConfig.baseConfig, undefined, "Wrong otlpTraceExporterConfig.baseConfig");
+                assert.equal(
+                    config.azureMonitorExporterConfig.storageDirectory,
+                    undefined,
+                    "Wrong storageDirectory"
+                );
+                assert.equal(
+                    config.otlpMetricExporterConfig.enabled,
+                    undefined,
+                    "Wrong otlpMetricExporterConfig.enabled"
+                );
+                assert.equal(
+                    config.otlpMetricExporterConfig.baseConfig,
+                    undefined,
+                    "Wrong otlpMetricExporterConfig.baseConfig"
+                );
+                assert.equal(
+                    config.otlpTraceExporterConfig.enabled,
+                    undefined,
+                    "Wrong otlpTraceExporterConfig.enabled"
+                );
+                assert.equal(
+                    config.otlpTraceExporterConfig.baseConfig,
+                    undefined,
+                    "Wrong otlpTraceExporterConfig.baseConfig"
+                );
                 assert.equal(config.logInstrumentations.console.enabled, false, "Wrong console");
                 assert.equal(config.logInstrumentations.bunyan.enabled, false, "Wrong bunyan");
                 assert.equal(config.logInstrumentations.winston.enabled, false, "Wrong winston");
@@ -190,7 +253,8 @@ describe("Library/Config", () => {
                 const config = new ApplicationInsightsConfig();
                 assert.equal(
                     config.azureMonitorExporterConfig.connectionString,
-                    "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://dc.services.visualstudio.com");
+                    "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://dc.services.visualstudio.com"
+                );
             });
 
             it("should read iKey from azure environment", () => {
@@ -200,12 +264,14 @@ describe("Library/Config", () => {
                 const config = new ApplicationInsightsConfig();
                 assert.equal(
                     config.azureMonitorExporterConfig.connectionString,
-                    "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://dc.services.visualstudio.com");
+                    "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://dc.services.visualstudio.com"
+                );
             });
 
             it("should initialize valid values", () => {
                 const config = new ApplicationInsightsConfig();
-                config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
+                config.azureMonitorExporterConfig.connectionString =
+                    "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
                 assert(typeof config.azureMonitorExporterConfig.connectionString === "string");
                 assert(typeof config.samplingRatio === "number");
             });
@@ -213,14 +279,16 @@ describe("Library/Config", () => {
             it("instrumentation key validation-valid key passed", () => {
                 const warnStub = sandbox.stub(console, "warn");
                 const config = new ApplicationInsightsConfig();
-                config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
+                config.azureMonitorExporterConfig.connectionString =
+                    "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
                 assert.ok(warnStub.notCalled, "warning was not raised");
             });
 
             it("instrumentation key validation-invalid key passed", () => {
                 const warnStub = sandbox.stub(console, "warn");
                 const config = new ApplicationInsightsConfig();
-                config.azureMonitorExporterConfig.connectionString = "InstrumentationKey=1aa11111bbbb1ccc8dddeeeeffff3333";
+                config.azureMonitorExporterConfig.connectionString =
+                    "InstrumentationKey=1aa11111bbbb1ccc8dddeeeeffff3333";
                 assert.ok(warnStub.calledOn, "warning was raised");
             });
 
@@ -234,100 +302,78 @@ describe("Library/Config", () => {
     });
 
     describe("OpenTelemetry Resource", () => {
-
-        beforeEach(() => {
-            sandbox.stub(os, "hostname").callsFake(() => "host");
-        });
-
         it("should allow custom resource to be configured", () => {
             let customAttributes: any = {};
             customAttributes[SemanticResourceAttributes.SERVICE_NAME] = "testServiceName";
-            customAttributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = "testServiceInstanceId";
+            customAttributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] =
+                "testServiceInstanceId";
             customAttributes[SemanticResourceAttributes.CONTAINER_ID] = "testContainerId";
             let customResource = new Resource(customAttributes);
             const config = new ApplicationInsightsConfig();
             config.resource = customResource;
-            assert.strictEqual(config.resource.attributes[SemanticResourceAttributes.SERVICE_NAME], "testServiceName");
-            assert.strictEqual(config.resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID], "testServiceInstanceId");
-            assert.strictEqual(config.resource.attributes[SemanticResourceAttributes.CONTAINER_ID], "testContainerId");
+            assert.strictEqual(
+                config.resource.attributes[SemanticResourceAttributes.SERVICE_NAME],
+                "testServiceName"
+            );
+            assert.strictEqual(
+                config.resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID],
+                "testServiceInstanceId"
+            );
+            assert.strictEqual(
+                config.resource.attributes[SemanticResourceAttributes.CONTAINER_ID],
+                "testContainerId"
+            );
         });
 
         it("Default values", () => {
-            const packageJsonPath = path.resolve(__dirname, "../../../../", "./package.json");
-            const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
             const config = new ApplicationInsightsConfig();
             assert.equal(
                 config.resource.attributes[
-                    SemanticResourceAttributes.TELEMETRY_SDK_VERSION
+                    SemanticResourceAttributes.TELEMETRY_SDK_NAME
                 ].toString(),
-                `node:${packageJson.version}`
+                "opentelemetry"
+            );
+            assert.ok(
+                config.resource.attributes[SemanticResourceAttributes.SERVICE_NAME]
+                    .toString()
+                    .startsWith("unknown_service:"),
+                "Wrong SERVICE_NAME"
+            );
+            assert.ok(
+                config.resource.attributes[
+                    SemanticResourceAttributes.TELEMETRY_SDK_VERSION
+                ].toString().length > 0,
+                "Wrong TELEMETRY_SDK_VERSION"
             );
             assert.equal(
-                config.resource.attributes[
-                SemanticResourceAttributes.SERVICE_INSTANCE_ID
-                ],
-                "host"
-            );
-            assert.equal(
-                config.resource.attributes[
-                SemanticResourceAttributes.SERVICE_NAME
-                ],
-                "Web"
+                config.resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID],
+                undefined
             );
         });
 
         it("OTEL_RESOURCE_ATTRIBUTES", () => {
             const env = <{ [id: string]: string }>{};
             const originalEnv = process.env;
-            env.OTEL_RESOURCE_ATTRIBUTES = "service.name=testServiceName,service.instance.id=testServiceInstance,k8s.cluster.name=testClusterName,k8s.node.name=testNodeName";
+            env.OTEL_RESOURCE_ATTRIBUTES =
+                "service.name=testServiceName,service.instance.id=testServiceInstance,k8s.cluster.name=testClusterName,k8s.node.name=testNodeName";
             process.env = env;
             const config = new ApplicationInsightsConfig();
             process.env = originalEnv;
             assert.equal(
-                config.resource.attributes[
-                SemanticResourceAttributes.SERVICE_NAME
-                ],
+                config.resource.attributes[SemanticResourceAttributes.SERVICE_NAME],
                 "testServiceName"
             );
             assert.equal(
-                config.resource.attributes[
-                SemanticResourceAttributes.SERVICE_INSTANCE_ID
-                ],
+                config.resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID],
                 "testServiceInstance"
             );
             assert.equal(
-                config.resource.attributes[
-                SemanticResourceAttributes.K8S_CLUSTER_NAME
-                ],
+                config.resource.attributes[SemanticResourceAttributes.K8S_CLUSTER_NAME],
                 "testClusterName"
             );
             assert.equal(
-                config.resource.attributes[
-                SemanticResourceAttributes.K8S_NODE_NAME
-                ],
+                config.resource.attributes[SemanticResourceAttributes.K8S_NODE_NAME],
                 "testNodeName"
-            );
-        });
-
-        it("should correctly set Azure attributes", () => {
-            const env = <{ [id: string]: string }>{};
-            const originalEnv = process.env;
-            env.WEBSITE_SITE_NAME = "testRole";
-            env.WEBSITE_INSTANCE_ID = "testRoleInstanceId";
-            process.env = env;
-            const config = new ApplicationInsightsConfig();
-            process.env = originalEnv;
-            assert.equal(
-                config.resource.attributes[
-                SemanticResourceAttributes.SERVICE_INSTANCE_ID
-                ],
-                "testRoleInstanceId"
-            );
-            assert.equal(
-                config.resource.attributes[
-                SemanticResourceAttributes.SERVICE_NAME
-                ],
-                "testRole"
             );
         });
     });

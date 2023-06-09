@@ -4,6 +4,7 @@ import * as sinon from "sinon";
 import { AzureFunctionsLoader } from "../../../src/agent/azureFunctionsLoader";
 import { DiagnosticLogger } from "../../../src/agent/diagnostics/diagnosticLogger";
 import { AzureFunctionsWriter } from "../../../src/agent/diagnostics/writers/azureFunctionsWriter";
+import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
 describe("agent/AzureFunctionsLoader", () => {
     let originalEnv: NodeJS.ProcessEnv;
@@ -24,12 +25,16 @@ describe("agent/AzureFunctionsLoader", () => {
 
     it("constructor", () => {
         const env = {
-            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]:
+                "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
         };
         process.env = env;
         const agent = new AzureFunctionsLoader();
         let diagnosticLogger: any = agent["_diagnosticLogger"];
-        assert.equal(diagnosticLogger["_instrumentationKey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+        assert.equal(
+            diagnosticLogger["_instrumentationKey"],
+            "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
+        );
         assert.ok(diagnosticLogger instanceof DiagnosticLogger);
         assert.ok(diagnosticLogger["_agentLogger"] instanceof AzureFunctionsWriter);
         let statusLogger: any = agent["_statusLogger"];
@@ -52,5 +57,27 @@ describe("agent/AzureFunctionsLoader", () => {
         // Custom config
         assert.equal(agent["_config"].enableAutoCollectStandardMetrics, false);
         assert.equal(agent["_config"].enableAutoCollectPerformance, false);
+    });
+
+    it("should correctly set Azure Resource Attributes", () => {
+        const env = <{ [id: string]: string }>{};
+        const originalEnv = process.env;
+        env.WEBSITE_SITE_NAME = "testRole";
+        env.WEBSITE_INSTANCE_ID = "testRoleInstanceId";
+        process.env = env;
+        const agent = new AzureFunctionsLoader();
+        let stub = sandbox.stub(agent, "initialize");
+        agent.initialize();
+        process.env = originalEnv;
+        // Agent Loader called
+        assert.ok(stub.calledOnce);
+        assert.equal(
+            agent["_config"].resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID],
+            "testRoleInstanceId"
+        );
+        assert.equal(
+            agent["_config"].resource.attributes[SemanticResourceAttributes.SERVICE_NAME],
+            "testRole"
+        );
     });
 });

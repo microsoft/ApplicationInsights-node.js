@@ -15,11 +15,10 @@ import {
 import { JsonConfig } from "./jsonConfig";
 import { Logger } from "../logging";
 import { Resource, ResourceDetectionConfig, detectResourcesSync, envDetectorSync } from "@opentelemetry/resources";
-import { SemanticResourceAttributes, TelemetrySdkLanguageValues } from "@opentelemetry/semantic-conventions";
+
 
 // Azure Connection String
 const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
-const DEFAULT_ROLE_NAME = "Web";
 
 
 export class ApplicationInsightsConfig implements IConfig {
@@ -162,31 +161,13 @@ export class ApplicationInsightsConfig implements IConfig {
     }
 
     private _getDefaultResource(): Resource {
-        let resource = Resource.EMPTY;
+        let resource = Resource.default();
         // Load resource attributes from env
         const detectResourceConfig: ResourceDetectionConfig = {
             detectors: [envDetectorSync]
         };
         const envResource = detectResourcesSync(detectResourceConfig);
         resource = resource.merge(envResource);
-
-        resource.attributes[SemanticResourceAttributes.SERVICE_NAME] = resource.attributes[SemanticResourceAttributes.SERVICE_NAME] || DEFAULT_ROLE_NAME;
-        if (process.env.WEBSITE_SITE_NAME) {
-            // Azure Web apps and Functions
-            resource.attributes[SemanticResourceAttributes.SERVICE_NAME] =
-                process.env.WEBSITE_SITE_NAME;
-        }
-        resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] || os && os.hostname();
-        if (process.env.WEBSITE_INSTANCE_ID) {
-            resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] =
-                process.env.WEBSITE_INSTANCE_ID;
-        }
-        const sdkVersion = Constants.AZURE_MONITOR_DISTRO_VERSION;
-        resource.attributes[SemanticResourceAttributes.TELEMETRY_SDK_LANGUAGE] =
-            TelemetrySdkLanguageValues.NODEJS;
-        resource.attributes[
-            SemanticResourceAttributes.TELEMETRY_SDK_VERSION
-        ] = `node:${sdkVersion}`;
         return resource;
     }
 

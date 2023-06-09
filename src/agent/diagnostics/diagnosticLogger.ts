@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { IAgentLogger, IDiagnosticLog } from "../types";
 import { BaseDiagnosticLogger } from "./baseDiagnosticLogger";
 
