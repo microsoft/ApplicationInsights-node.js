@@ -14,81 +14,84 @@ import {
 } from "./types";
 import { JsonConfig } from "./jsonConfig";
 import { Logger } from "../logging";
-import { Resource, ResourceDetectionConfig, detectResourcesSync, envDetectorSync } from "@opentelemetry/resources";
-
+import {
+    Resource,
+    ResourceDetectionConfig,
+    detectResourcesSync,
+    envDetectorSync,
+} from "@opentelemetry/resources";
 
 // Azure Connection String
 const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
 
-
 export class ApplicationInsightsConfig implements IConfig {
-    private _resource?: Resource;
-    public azureMonitorExporterConfig?: AzureMonitorExporterOptions;
-    public otlpTraceExporterConfig?: OTLPExporterConfig;
-    public otlpMetricExporterConfig?: OTLPExporterConfig;
+    private _resource: Resource;
+    private _azureMonitorExporterConfig: AzureMonitorExporterOptions;
+    private _otlpTraceExporterConfig: OTLPExporterConfig;
+    private _otlpMetricExporterConfig: OTLPExporterConfig;
+    private _instrumentations: InstrumentationsConfig;
+    private _logInstrumentations: LogInstrumentationsConfig;
     public samplingRatio: number;
     public enableAutoCollectExceptions: boolean;
     public enableAutoCollectPerformance: boolean;
     public enableAutoCollectStandardMetrics: boolean;
     public extendedMetrics: { [type: string]: boolean };
-    public instrumentations: InstrumentationsConfig;
-    public logInstrumentations: LogInstrumentationsConfig;
 
-    /** Connection String used to send telemetry payloads to 
-    * @deprecated This config should not be used, use azureMonitorExporterConfig to configure Connection String
-    */
+    /** Connection String used to send telemetry payloads to
+     * @deprecated This config should not be used, use azureMonitorExporterConfig to configure Connection String
+     */
     public set connectionString(connectionString: string) {
-        this.azureMonitorExporterConfig.connectionString = connectionString;
+        this._azureMonitorExporterConfig.connectionString = connectionString;
     }
     public get connectionString(): string {
-        return this.azureMonitorExporterConfig.connectionString;
+        return this._azureMonitorExporterConfig.connectionString;
     }
-    /** AAD TokenCredential to use to authenticate the app 
-   * @deprecated This config should not be used, use azureMonitorExporterConfig to configure aadTokenCredential
-   */
+    /** AAD TokenCredential to use to authenticate the app
+     * @deprecated This config should not be used, use azureMonitorExporterConfig to configure aadTokenCredential
+     */
     public set aadTokenCredential(aadTokenCredential: TokenCredential) {
-        this.azureMonitorExporterConfig.aadTokenCredential = aadTokenCredential;
+        this._azureMonitorExporterConfig.aadTokenCredential = aadTokenCredential;
     }
     public get aadTokenCredential() {
-        return this.azureMonitorExporterConfig.aadTokenCredential;
+        return this._azureMonitorExporterConfig.aadTokenCredential;
     }
     /**
-    * Disable offline storage when telemetry cannot be exported.
+     * Disable offline storage when telemetry cannot be exported.
      * @deprecated This config should not be used, use azureMonitorExporterConfig to configure disableOfflineStorage
-    */
+     */
     public set disableOfflineStorage(disableOfflineStorage: boolean) {
-        this.azureMonitorExporterConfig.disableOfflineStorage = disableOfflineStorage;
+        this._azureMonitorExporterConfig.disableOfflineStorage = disableOfflineStorage;
     }
     public get disableOfflineStorage() {
-        return this.azureMonitorExporterConfig.disableOfflineStorage;
+        return this._azureMonitorExporterConfig.disableOfflineStorage;
     }
     /**
      * Directory to store retriable telemetry when it fails to export.
-      * @deprecated This config should not be used, use azureMonitorExporterConfig to configure storageDirectory
+     * @deprecated This config should not be used, use azureMonitorExporterConfig to configure storageDirectory
      */
     public set storageDirectory(storageDirectory: string) {
-        this.azureMonitorExporterConfig.storageDirectory = storageDirectory;
+        this._azureMonitorExporterConfig.storageDirectory = storageDirectory;
     }
     public get storageDirectory() {
-        return this.azureMonitorExporterConfig.storageDirectory;
+        return this._azureMonitorExporterConfig.storageDirectory;
     }
 
     constructor() {
-        this.azureMonitorExporterConfig = {};
+        this._azureMonitorExporterConfig = {};
         this.otlpMetricExporterConfig = {};
         this.otlpTraceExporterConfig = {};
         // Load config values from env variables and JSON if available
-        this.azureMonitorExporterConfig.connectionString = process.env[ENV_connectionString];
+        this._azureMonitorExporterConfig.connectionString = process.env[ENV_connectionString];
         this._loadDefaultValues();
         this._mergeConfig();
 
-        if (!this.azureMonitorExporterConfig.connectionString) {
+        if (!this._azureMonitorExporterConfig.connectionString) {
             // Try to build connection string using iKey environment variables
             // check for both the documented env variable and the azure-prefixed variable
             const instrumentationKey = this.getInstrunmentationKeyFromEnv();
             if (instrumentationKey) {
                 this.connectionString = `InstrumentationKey=${instrumentationKey};IngestionEndpoint=${Constants.DEFAULT_BREEZE_ENDPOINT}`;
-                this.azureMonitorExporterConfig.connectionString = this.connectionString;
+                this._azureMonitorExporterConfig.connectionString = this.connectionString;
             }
         }
     }
@@ -101,9 +104,49 @@ export class ApplicationInsightsConfig implements IConfig {
         return this._resource;
     }
 
+    public set azureMonitorExporterConfig(value: AzureMonitorExporterOptions) {
+        this._azureMonitorExporterConfig = Object.assign(this._azureMonitorExporterConfig, value);
+    }
+
+    public get azureMonitorExporterConfig(): AzureMonitorExporterOptions {
+        return this._azureMonitorExporterConfig;
+    }
+
+    public set otlpTraceExporterConfig(value: OTLPExporterConfig) {
+        this._otlpTraceExporterConfig = Object.assign(this._otlpTraceExporterConfig, value);
+    }
+
+    public get otlpTraceExporterConfig(): OTLPExporterConfig {
+        return this._otlpTraceExporterConfig;
+    }
+
+    public set otlpMetricExporterConfig(value: OTLPExporterConfig) {
+        this._otlpMetricExporterConfig = Object.assign(this._otlpMetricExporterConfig, value);
+    }
+
+    public get otlpMetricExporterConfig(): OTLPExporterConfig {
+        return this._otlpMetricExporterConfig;
+    }
+
+    public set instrumentations(value: InstrumentationsConfig) {
+        this._instrumentations = Object.assign(this._instrumentations, value);
+    }
+
+    public get instrumentations(): InstrumentationsConfig {
+        return this._instrumentations;
+    }
+
+    public set logInstrumentations(value: LogInstrumentationsConfig) {
+        this._logInstrumentations = Object.assign(this._logInstrumentations, value);
+    }
+
+    public get logInstrumentations(): LogInstrumentationsConfig {
+        return this._logInstrumentations;
+    }
+
     /**
      * Get Instrumentation Key
-      * @deprecated This method should not be used
+     * @deprecated This method should not be used
      */
     public getInstrumentationKey(): string {
         return "";
@@ -111,7 +154,7 @@ export class ApplicationInsightsConfig implements IConfig {
 
     /**
      * Get Instrumentation Key
-      * @deprecated This method should not be used
+     * @deprecated This method should not be used
      */
     public getIngestionEndpoint(): string {
         return "";
@@ -119,7 +162,7 @@ export class ApplicationInsightsConfig implements IConfig {
 
     /**
      * Get Instrumentation Key
-      * @deprecated This method should not be used
+     * @deprecated This method should not be used
      */
     public getDisableStatsbeat(): boolean {
         return false;
@@ -164,7 +207,7 @@ export class ApplicationInsightsConfig implements IConfig {
         let resource = Resource.default();
         // Load resource attributes from env
         const detectResourceConfig: ResourceDetectionConfig = {
-            detectors: [envDetectorSync]
+            detectors: [envDetectorSync],
         };
         const envResource = detectResourcesSync(detectResourceConfig);
         resource = resource.merge(envResource);
@@ -174,10 +217,10 @@ export class ApplicationInsightsConfig implements IConfig {
     private _mergeConfig() {
         try {
             const jsonConfig = JsonConfig.getInstance();
-            this.azureMonitorExporterConfig =
+            this._azureMonitorExporterConfig =
                 jsonConfig.azureMonitorExporterConfig !== undefined
                     ? jsonConfig.azureMonitorExporterConfig
-                    : this.azureMonitorExporterConfig;
+                    : this._azureMonitorExporterConfig;
             this.otlpMetricExporterConfig =
                 jsonConfig.otlpMetricExporterConfig !== undefined
                     ? jsonConfig.otlpMetricExporterConfig
@@ -203,7 +246,9 @@ export class ApplicationInsightsConfig implements IConfig {
                     ? jsonConfig.enableAutoCollectStandardMetrics
                     : this.enableAutoCollectStandardMetrics;
             this.samplingRatio =
-                jsonConfig.samplingRatio !== undefined ? jsonConfig.samplingRatio : this.samplingRatio;
+                jsonConfig.samplingRatio !== undefined
+                    ? jsonConfig.samplingRatio
+                    : this.samplingRatio;
             this.storageDirectory =
                 jsonConfig.storageDirectory !== undefined
                     ? jsonConfig.storageDirectory
