@@ -78,8 +78,11 @@ export class ApplicationInsightsConfig implements IConfig {
 
     constructor() {
         this._azureMonitorExporterConfig = {};
-        this.otlpMetricExporterConfig = {};
-        this.otlpTraceExporterConfig = {};
+        this._otlpMetricExporterConfig = {};
+        this._otlpTraceExporterConfig = {};
+        this._instrumentations = {};
+        this._logInstrumentations = {};
+        this.extendedMetrics = {};
         // Load config values from env variables and JSON if available
         this._azureMonitorExporterConfig.connectionString = process.env[ENV_connectionString];
         this._loadDefaultValues();
@@ -196,7 +199,6 @@ export class ApplicationInsightsConfig implements IConfig {
             bunyan: { enabled: false },
             winston: { enabled: false },
         };
-        this.extendedMetrics = {};
         this.extendedMetrics[ExtendedMetricType.gc] = false;
         this.extendedMetrics[ExtendedMetricType.heap] = false;
         this.extendedMetrics[ExtendedMetricType.loop] = false;
