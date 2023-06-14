@@ -1,12 +1,13 @@
 import { IncomingMessage } from "http";
-import { DiagLogLevel, SpanContext } from "@opentelemetry/api";
+import { DiagLogLevel, SpanContext, Context } from "@opentelemetry/api";
 
 import { Logger } from "../shared/logging";
-import { ICorrelationContext, Context, HttpRequest } from "./types";
+import { ICorrelationContext, HttpRequest } from "./types";
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
 import { ApplicationInsightsConfig } from "../shared";
 import { ExtendedMetricType } from "../shared/configuration/types";
+import { CorrelationContextManager } from "./correlationContextManager";
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
@@ -33,6 +34,7 @@ export interface IDisabledExtendedMetrics {
 
 let _setupString: string|undefined;
 let _config: ApplicationInsightsConfig;
+const _correlationContextManager: CorrelationContextManager = new CorrelationContextManager();
 
 /**
  * Initializes the default client. Should be called after setting
@@ -86,8 +88,10 @@ export function start() {
  * @returns A plain object for request storage or null if automatic dependency correlation is disabled.
  */
 export function getCorrelationContext(): ICorrelationContext {
+    // TODO: Determine what happens if the customer attempts to disable autoDependencyCorrelation
     // TODO: Implement this
-    return null;
+    
+    return this._correlationContextManager.getCorrelationContext();
 }
 
 /**
