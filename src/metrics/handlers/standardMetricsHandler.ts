@@ -1,5 +1,6 @@
 import { AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
 import { Attributes, Meter, SpanKind } from "@opentelemetry/api";
+import { LogRecord } from "@opentelemetry/sdk-logs";
 import {
     DropAggregation,
     MeterProvider,
@@ -8,7 +9,7 @@ import {
     PeriodicExportingMetricReaderOptions,
     View,
 } from "@opentelemetry/sdk-metrics";
-import { ReadableSpan } from "@opentelemetry/sdk-trace-base";
+import { ReadableSpan, Span, TimedEvent } from "@opentelemetry/sdk-trace-base";
 import { SemanticAttributes, SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { ApplicationInsightsConfig } from "../../shared";
@@ -16,7 +17,8 @@ import { DependencyMetrics } from "../collection/dependencyMetrics";
 import { ExceptionMetrics } from "../collection/exceptionMetrics";
 import { RequestMetrics } from "../collection/requestMetrics";
 import { TraceMetrics } from "../collection/traceMetrics";
-import { IMetricDependencyDimensions, IMetricRequestDimensions, IMetricTraceDimensions, IStandardMetricBaseDimensions, MetricName, StandardMetric, StandardMetricIds } from "../types";
+import { IMetricDependencyDimensions, IMetricRequestDimensions, IStandardMetricBaseDimensions, MetricName, StandardMetric, StandardMetricIds } from "../types";
+import { Resource } from "@opentelemetry/resources";
 
 
 export class StandardMetricsHandler {
@@ -62,10 +64,10 @@ export class StandardMetricsHandler {
         this._traceMetrics = new TraceMetrics(this._meter);
     }
 
-     /** 
-   * @deprecated This should not be used
-   */
-     public start() {
+    /** 
+  * @deprecated This should not be used
+  */
+    public start() {
         // No Op
     }
 
@@ -80,15 +82,18 @@ export class StandardMetricsHandler {
         this._meterProvider.shutdown();
     }
 
-    public recordException(dimensions: IMetricTraceDimensions): void {
-        dimensions.metricId = StandardMetricIds.EXCEPTION_COUNT;
-        this._exceptionMetrics.countException(dimensions);
+    public recordLog(logRecord: LogRecord): void {
+        const dimensions = this._getStandardMetricBaseDimensions(logRecord.resource);
+        if (logRecord.attributes[SemanticAttributes.EXCEPTION_MESSAGE] || logRecord.attributes[SemanticAttributes.EXCEPTION_TYPE]) {
+            dimensions.metricId = StandardMetricIds.EXCEPTION_COUNT;
+            this._exceptionMetrics.countException(dimensions);
+        }
+        else {
+            dimensions.metricId = StandardMetricIds.TRACE_COUNT;
+            this._traceMetrics.countTrace(dimensions);
+        }
     }
 
-    public recordTrace(dimensions: IMetricTraceDimensions): void {
-        dimensions.metricId = StandardMetricIds.TRACE_COUNT;
-        this._traceMetrics.countTrace(dimensions);
-    }
 
     public recordSpan(span: ReadableSpan): void {
         const durationMs = span.duration[0];
@@ -100,8 +105,59 @@ export class StandardMetricsHandler {
         }
     }
 
+    public recordSpanEvents(span: ReadableSpan): void {
+        if (span.events) {
+            span.events.forEach((event: TimedEvent) => {
+                const dimensions = this._getStandardMetricBaseDimensions(span.resource);
+                if (event.name === "exception") {
+                    dimensions.metricId = StandardMetricIds.EXCEPTION_COUNT;
+                    this._exceptionMetrics.countException(dimensions);
+                } else {
+                    dimensions.metricId = StandardMetricIds.TRACE_COUNT;
+                    this._traceMetrics.countTrace(dimensions);
+                }
+            });
+        }
+    }
+
+    public markLogsAsProcceseded(logRecord: LogRecord): void {
+        if (this._config.enableAutoCollectStandardMetrics) {
+            // If Application Insights Legacy logs
+            const baseType = logRecord.attributes["_MS.baseType"];
+            if (baseType) {
+                if (baseType === "ExceptionData") {
+                    logRecord.setAttribute("_MS.ProcessedByMetricExtractors", "(Name:'Exceptions', Ver:'1.1')");
+                }
+                else if (baseType === "MessageData") {
+                    logRecord.setAttribute("_MS.ProcessedByMetricExtractors", "(Name:'Traces', Ver:'1.1')");
+                }
+            }
+            else {
+                if (logRecord.attributes[SemanticAttributes.EXCEPTION_MESSAGE] || logRecord.attributes[SemanticAttributes.EXCEPTION_TYPE]) {
+                    logRecord.setAttribute("_MS.ProcessedByMetricExtractors", "(Name:'Exceptions', Ver:'1.1')");
+                } else {
+                    logRecord.setAttribute("_MS.ProcessedByMetricExtractors", "(Name:'Traces', Ver:'1.1')");
+                }
+            }
+        }
+    }
+
+    public markSpanAsProcceseded(span: Span): void {
+        if (this._config.enableAutoCollectStandardMetrics) {
+            if (span.kind === SpanKind.CLIENT) {
+                span.setAttributes({
+                    "_MS.ProcessedByMetricExtractors": "(Name:'Dependencies', Ver:'1.1')",
+                });
+            } else if (span.kind === SpanKind.SERVER) {
+                span.setAttributes({
+                    "_MS.ProcessedByMetricExtractors": "(Name:'Requests', Ver:'1.1')",
+                });
+            }
+        }
+    }
+
     private _getStandardMetricRequestDimensions(span: ReadableSpan): Attributes {
-        const dimensions: IMetricRequestDimensions = this._getStandardMetricBaseDimensions(span);
+        const dimensions: IMetricRequestDimensions = this._getStandardMetricBaseDimensions(span.resource);
         dimensions.metricId = StandardMetricIds.REQUEST_DURATION;
         const statusCode = String(span.attributes["http.status_code"]);
         dimensions.requestResultCode = statusCode;
@@ -110,7 +166,7 @@ export class StandardMetricsHandler {
     }
 
     private _getStandardMetricDependencyDimensions(span: ReadableSpan): Attributes {
-        const dimensions: IMetricDependencyDimensions = this._getStandardMetricBaseDimensions(span);
+        const dimensions: IMetricDependencyDimensions = this._getStandardMetricBaseDimensions(span.resource);
         dimensions.metricId = StandardMetricIds.DEPENDENCY_DURATION;
         const statusCode = String(span.attributes["http.status_code"]);
         dimensions.dependencyTarget = this._getDependencyTarget(span.attributes);
@@ -120,13 +176,13 @@ export class StandardMetricsHandler {
         return dimensions as Attributes;
     }
 
-    private _getStandardMetricBaseDimensions(span: ReadableSpan): IStandardMetricBaseDimensions {
+    private _getStandardMetricBaseDimensions(resource: Resource): IStandardMetricBaseDimensions {
         const dimensions: IStandardMetricBaseDimensions = {};
         dimensions.IsAutocollected = "True";
-        if (span.resource) {
-            const spanResourceAttributes = span.resource.attributes;
-            const serviceName = spanResourceAttributes[SemanticResourceAttributes.SERVICE_NAME];
-            const serviceNamespace = spanResourceAttributes[SemanticResourceAttributes.SERVICE_NAMESPACE];
+        if (resource) {
+            const resourceAttributes = resource.attributes;
+            const serviceName = resourceAttributes[SemanticResourceAttributes.SERVICE_NAME];
+            const serviceNamespace = resourceAttributes[SemanticResourceAttributes.SERVICE_NAMESPACE];
             if (serviceName) {
                 if (serviceNamespace) {
                     dimensions.cloudRoleName = `${serviceNamespace}.${serviceName}`;
@@ -134,7 +190,7 @@ export class StandardMetricsHandler {
                     dimensions.cloudRoleName = String(serviceName);
                 }
             }
-            const serviceInstanceId = spanResourceAttributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID];
+            const serviceInstanceId = resourceAttributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID];
             dimensions.cloudRoleInstance = String(serviceInstanceId);
         }
         return dimensions;

@@ -2,9 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
 import { winston } from "diagnostic-channel-publishers";
-
 import { LogHandler } from "../logHandler";
-import { StatsbeatInstrumentation } from "../../metrics/statsbeat/types";
 import { KnownSeverityLevel } from "../../declarations/generated";
 
 let handlers: LogHandler[] = [];
@@ -67,16 +65,7 @@ export function enable(enabled: boolean, handler: LogHandler) {
             return;
         }
         if (handlers.length === 0) {
-            channel.subscribe<winston.IWinstonData>(
-                "winston",
-                subscriber,
-                trueFilter,
-                (module: string, version: string) => {
-                    if (handler.statsbeat) {
-                        handler.statsbeat.addInstrumentation(StatsbeatInstrumentation.WINSTON);
-                    }
-                }
-            );
+            channel.subscribe<winston.IWinstonData>("winston", subscriber, trueFilter);
         }
         handlers.push(handler);
     } else {
