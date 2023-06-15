@@ -5,6 +5,7 @@ import { ExportResultCode } from "@opentelemetry/core";
 import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations/contracts";
 import { TelemetryClient } from "../../../src/shim/telemetryClient";
 import { DEFAULT_BREEZE_ENDPOINT } from "../../../src/declarations/constants";
+import { ApplicationInsightsConfig } from "../../../src/shared/configuration/applicationInsightsConfig";
 
 describe("shim/TelemetryClient", () => {
     let sandbox: sinon.SinonSandbox;

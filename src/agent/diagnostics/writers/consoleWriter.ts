@@ -1,5 +1,7 @@
-import { IAgentLogger } from "../../types";
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
+import { IAgentLogger } from "../../types";
 
 export class ConsoleWriter implements IAgentLogger {
     log(message?: any, ...optional: any[]) {

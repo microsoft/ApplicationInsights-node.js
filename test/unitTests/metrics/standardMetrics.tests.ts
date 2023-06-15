@@ -1,13 +1,15 @@
+import * as assert from "assert";
+import * as sinon from "sinon";
 import { SpanKind } from "@opentelemetry/api";
 import { Histogram } from "@opentelemetry/sdk-metrics";
 import { SemanticAttributes, SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
-import * as assert from "assert";
-import * as sinon from "sinon";
-
-import { StandardMetricsHandler } from "../../../src/metrics/handlers/standardMetricsHandler";
-import { IStandardMetricBaseDimensions, StandardMetric } from "../../../src/metrics/types";
-import { ApplicationInsightsConfig } from "../../../src/shared";
 import { ExportResultCode } from "@opentelemetry/core";
+import { LoggerProvider, LogRecord, Logger } from "@opentelemetry/sdk-logs";
+import { Resource } from "@opentelemetry/resources";
+import { StandardMetricsHandler } from "../../../src/metrics/handlers/standardMetricsHandler";
+import { StandardMetric } from "../../../src/metrics/types";
+import { ApplicationInsightsConfig } from "../../../src/shared";
+
 
 describe("#StandardMetricsHandler", () => {
     let exportStub: sinon.SinonStub;
@@ -62,19 +64,19 @@ describe("#StandardMetricsHandler", () => {
     });
 
     it("should observe instruments during collection", async () => {
-        let resource = {
-            attributes: {} as any
-        };
+        let resource = new Resource({});
+        resource.attributes[SemanticResourceAttributes.SERVICE_NAME] = "testcloudRoleName";
+        resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = "testcloudRoleInstance";
 
-        let dimensions: IStandardMetricBaseDimensions = {
-            cloudRoleInstance: "testcloudRoleInstance",
-            cloudRoleName: "testcloudRoleName",
-        };
-        autoCollect.recordException(dimensions);
-        autoCollect.recordTrace(dimensions);
+        let loggerProvider = new LoggerProvider({ resource: resource });
+        let logger = loggerProvider.getLogger("testLogger") as Logger;
 
-        resource.attributes[SemanticResourceAttributes.SERVICE_NAME] = dimensions.cloudRoleName;
-        resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = dimensions.cloudRoleInstance;
+        let traceLog = new LogRecord(logger, {
+            body: "testMessage"
+        });
+        autoCollect.recordLog(traceLog as any);
+        traceLog.attributes["exception.type"] = "testExceptionType";
+        autoCollect.recordLog(traceLog as any);
 
         let clientSpan: any = {
             kind: SpanKind.CLIENT,
@@ -86,8 +88,6 @@ describe("#StandardMetricsHandler", () => {
         };
         clientSpan.attributes[SemanticAttributes.PEER_SERVICE] = "testPeerService";
         autoCollect.recordSpan(clientSpan);
-        clientSpan.attributes["http.status_code"] = "400";
-        autoCollect.recordSpan(clientSpan);
 
         let serverSpan: any = {
             kind: SpanKind.SERVER,
@@ -98,20 +98,11 @@ describe("#StandardMetricsHandler", () => {
             resource: resource
         };
         autoCollect.recordSpan(serverSpan);
+
+        // Different dimensions
         serverSpan.attributes["http.status_code"] = "400";
-        autoCollect.recordSpan(serverSpan);
-
-
-        dimensions = {
-            cloudRoleInstance: "testcloudRoleInstance2",
-            cloudRoleName: "testcloudRoleName2",
-        };
-        resource.attributes[SemanticResourceAttributes.SERVICE_NAME] = dimensions.cloudRoleName;
-        resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = dimensions.cloudRoleInstance;
-
+        clientSpan.attributes["http.status_code"] = "400";
         for (let i = 0; i < 10; i++) {
-            autoCollect.recordException(dimensions);
-            autoCollect.recordTrace(dimensions);
             clientSpan.duration[0] = i * 100000;
             autoCollect.recordSpan(clientSpan);
             serverSpan.duration[0] = i * 100000;
@@ -132,8 +123,7 @@ describe("#StandardMetricsHandler", () => {
         assert.equal(metrics[3].descriptor.name, StandardMetric.TRACE_COUNT);
 
         // Requests
-
-        assert.strictEqual(metrics[0].dataPoints.length, 3, "dataPoints count");
+        assert.strictEqual(metrics[0].dataPoints.length, 2, "dataPoints count");
         assert.strictEqual((metrics[0].dataPoints[0].value as Histogram).count, 1, "dataPoint count");
         assert.strictEqual((metrics[0].dataPoints[0].value as Histogram).min, 654321, "dataPoint min");
         assert.strictEqual((metrics[0].dataPoints[0].value as Histogram).max, 654321, "dataPoint max");
@@ -145,10 +135,10 @@ describe("#StandardMetricsHandler", () => {
         assert.strictEqual(metrics[0].dataPoints[0].attributes["requestResultCode"], "200");
         assert.strictEqual(metrics[0].dataPoints[0].attributes["requestSuccess"], "True");
 
-        assert.strictEqual((metrics[0].dataPoints[1].value as Histogram).count, 1, "dataPoint count");
-        assert.strictEqual((metrics[0].dataPoints[1].value as Histogram).min, 654321, "dataPoint min");
-        assert.strictEqual((metrics[0].dataPoints[1].value as Histogram).max, 654321, "dataPoint max");
-        assert.strictEqual((metrics[0].dataPoints[1].value as Histogram).sum, 654321, "dataPoint sum");
+        assert.strictEqual((metrics[0].dataPoints[1].value as Histogram).count, 10, "dataPoint count");
+        assert.strictEqual((metrics[0].dataPoints[1].value as Histogram).min, 0, "dataPoint min");
+        assert.strictEqual((metrics[0].dataPoints[1].value as Histogram).max, 900000, "dataPoint max");
+        assert.strictEqual((metrics[0].dataPoints[1].value as Histogram).sum, 4500000, "dataPoint sum");
         assert.strictEqual(metrics[0].dataPoints[1].attributes["cloudRoleInstance"], "testcloudRoleInstance");
         assert.strictEqual(metrics[0].dataPoints[1].attributes["cloudRoleName"], "testcloudRoleName");
         assert.strictEqual(metrics[0].dataPoints[1].attributes["IsAutocollected"], "True");
@@ -156,19 +146,8 @@ describe("#StandardMetricsHandler", () => {
         assert.strictEqual(metrics[0].dataPoints[1].attributes["requestResultCode"], "400");
         assert.strictEqual(metrics[0].dataPoints[1].attributes["requestSuccess"], "False");
 
-        assert.strictEqual((metrics[0].dataPoints[2].value as Histogram).count, 10, "dataPoint count");
-        assert.strictEqual((metrics[0].dataPoints[2].value as Histogram).min, 0, "dataPoint min");
-        assert.strictEqual((metrics[0].dataPoints[2].value as Histogram).max, 900000, "dataPoint max");
-        assert.strictEqual((metrics[0].dataPoints[2].value as Histogram).sum, 4500000, "dataPoint sum");
-        assert.strictEqual(metrics[0].dataPoints[2].attributes["cloudRoleInstance"], "testcloudRoleInstance2");
-        assert.strictEqual(metrics[0].dataPoints[2].attributes["cloudRoleName"], "testcloudRoleName2");
-        assert.strictEqual(metrics[0].dataPoints[2].attributes["IsAutocollected"], "True");
-        assert.strictEqual(metrics[0].dataPoints[2].attributes["metricId"], "requests/duration");
-        assert.strictEqual(metrics[0].dataPoints[2].attributes["requestResultCode"], "400");
-        assert.strictEqual(metrics[0].dataPoints[2].attributes["requestSuccess"], "False");
-
         // Dependencies
-        assert.strictEqual(metrics[1].dataPoints.length, 3, "dataPoints count");
+        assert.strictEqual(metrics[1].dataPoints.length, 2, "dataPoints count");
         assert.strictEqual((metrics[1].dataPoints[0].value as Histogram).count, 1, "dataPoint count");
         assert.strictEqual((metrics[1].dataPoints[0].value as Histogram).min, 123456, "dataPoint min");
         assert.strictEqual((metrics[1].dataPoints[0].value as Histogram).max, 123456, "dataPoint max");
@@ -179,28 +158,18 @@ describe("#StandardMetricsHandler", () => {
         assert.strictEqual(metrics[1].dataPoints[0].attributes["dependencyType"], "http");
         assert.strictEqual(metrics[1].dataPoints[0].attributes["dependencySuccess"], "True");
 
-        assert.strictEqual((metrics[1].dataPoints[1].value as Histogram).count, 1, "dataPoint count");
-        assert.strictEqual((metrics[1].dataPoints[1].value as Histogram).min, 123456, "dataPoint min");
-        assert.strictEqual((metrics[1].dataPoints[1].value as Histogram).max, 123456, "dataPoint max");
-        assert.strictEqual((metrics[1].dataPoints[1].value as Histogram).sum, 123456, "dataPoint sum");
+        assert.strictEqual((metrics[1].dataPoints[1].value as Histogram).count, 10, "dataPoint count");
+        assert.strictEqual((metrics[1].dataPoints[1].value as Histogram).min, 0, "dataPoint min");
+        assert.strictEqual((metrics[1].dataPoints[1].value as Histogram).max, 900000, "dataPoint max");
+        assert.strictEqual((metrics[1].dataPoints[1].value as Histogram).sum, 4500000, "dataPoint sum");
         assert.strictEqual(metrics[1].dataPoints[1].attributes["metricId"], "dependencies/duration");
         assert.strictEqual(metrics[1].dataPoints[1].attributes["dependencyTarget"], "testPeerService");
         assert.strictEqual(metrics[1].dataPoints[1].attributes["dependencyResultCode"], "400");
         assert.strictEqual(metrics[1].dataPoints[1].attributes["dependencyType"], "http");
         assert.strictEqual(metrics[1].dataPoints[1].attributes["dependencySuccess"], "False");
 
-        assert.strictEqual((metrics[1].dataPoints[2].value as Histogram).count, 10, "dataPoint count");
-        assert.strictEqual((metrics[1].dataPoints[2].value as Histogram).min, 0, "dataPoint min");
-        assert.strictEqual((metrics[1].dataPoints[2].value as Histogram).max, 900000, "dataPoint max");
-        assert.strictEqual((metrics[1].dataPoints[2].value as Histogram).sum, 4500000, "dataPoint sum");
-        assert.strictEqual(metrics[1].dataPoints[2].attributes["metricId"], "dependencies/duration");
-        assert.strictEqual(metrics[1].dataPoints[2].attributes["dependencyTarget"], "testPeerService");
-        assert.strictEqual(metrics[1].dataPoints[2].attributes["dependencyResultCode"], "400");
-        assert.strictEqual(metrics[1].dataPoints[2].attributes["dependencyType"], "http");
-        assert.strictEqual(metrics[1].dataPoints[2].attributes["dependencySuccess"], "False");
-
         // Exceptions
-        assert.strictEqual(metrics[2].dataPoints.length, 2, "dataPoints count");
+        assert.strictEqual(metrics[2].dataPoints.length, 1, "dataPoints count");
         assert.strictEqual(metrics[2].dataPoints[0].value, 1, "dataPoint value");
         assert.strictEqual(
             metrics[2].dataPoints[0].attributes["cloudRoleInstance"],
@@ -210,16 +179,9 @@ describe("#StandardMetricsHandler", () => {
             metrics[2].dataPoints[0].attributes["cloudRoleName"],
             "testcloudRoleName"
         );
-        assert.strictEqual(metrics[2].dataPoints[1].value, 10, "dataPoint value");
-        assert.strictEqual(
-            metrics[2].dataPoints[1].attributes["cloudRoleInstance"],
-            "testcloudRoleInstance2"
-        );
-        assert.strictEqual(
-            metrics[2].dataPoints[1].attributes["cloudRoleName"],
-            "testcloudRoleName2"
-        );
+
         // Traces
+        assert.strictEqual(metrics[3].dataPoints.length, 1, "dataPoints count");
         assert.strictEqual(metrics[3].dataPoints[0].value, 1, "dataPoint value");
         assert.strictEqual(
             metrics[3].dataPoints[0].attributes["cloudRoleInstance"],
@@ -228,15 +190,6 @@ describe("#StandardMetricsHandler", () => {
         assert.strictEqual(
             metrics[3].dataPoints[0].attributes["cloudRoleName"],
             "testcloudRoleName"
-        );
-        assert.strictEqual(metrics[3].dataPoints[1].value, 10, "dataPoint value");
-        assert.strictEqual(
-            metrics[3].dataPoints[1].attributes["cloudRoleInstance"],
-            "testcloudRoleInstance2"
-        );
-        assert.strictEqual(
-            metrics[3].dataPoints[1].attributes["cloudRoleName"],
-            "testcloudRoleName2"
         );
 
         // OTLP export

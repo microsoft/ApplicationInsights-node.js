@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { AZURE_MONITOR_DISTRO_VERSION } from "../../../declarations/constants";
 import { AZURE_APP_NAME, IAgentLogger } from "../../types";
 

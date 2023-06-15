@@ -1,31 +1,24 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { ApplicationInsightsSampler } from "@azure/monitor-opentelemetry-exporter";
-import { context, trace } from "@opentelemetry/api";
-import { SDK_INFO } from "@opentelemetry/core";
-import { IdGenerator, RandomIdGenerator, SamplingDecision, SamplingResult } from "@opentelemetry/sdk-trace-base";
-import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
-
-import { BatchProcessor } from "./exporters/batchProcessor";
-import { LogExporter } from "./exporters";
+import { AzureMonitorLogExporter } from "@azure/monitor-opentelemetry-exporter";
+import { LogRecord } from "@opentelemetry/api-logs";
+import { LoggerProvider, SimpleLogRecordProcessor, Logger as OtelLogger, LogRecord as SDKLogRecord } from "@opentelemetry/sdk-logs";
+import { LoggerProviderConfig } from "@opentelemetry/sdk-logs/build/src/types";
+import { IdGenerator, RandomIdGenerator } from "@opentelemetry/sdk-trace-base";
 import * as Contracts from "../declarations/contracts";
 import { AutoCollectConsole } from "./console";
-import { AutoCollectExceptions } from "./exceptions";
-import { ApplicationInsightsConfig, ConnectionStringParser } from "../shared/configuration";
+import { AutoCollectExceptions, parseStack } from "./exceptions";
+import { ApplicationInsightsConfig } from "../shared/configuration";
 import { Util } from "../shared/util";
-import { Statsbeat } from "../metrics/statsbeat";
-import { parseStack } from "./exporters/exceptionUtils";
 import {
     AvailabilityData,
     TelemetryExceptionData,
     MessageData,
     MonitorDomain,
     PageViewData,
-    TelemetryItem as Envelope,
     TelemetryExceptionDetails,
     KnownSeverityLevel,
     TelemetryEventData,
-    KnownContextTagKeys,
 } from "../declarations/generated";
 import {
     AvailabilityTelemetry,
@@ -36,50 +29,58 @@ import {
     Telemetry,
 } from "../declarations/contracts";
 import { Logger } from "../shared/logging";
-import { IStandardMetricBaseDimensions, IMetricTraceDimensions } from "../metrics/types";
 import { MetricHandler } from "../metrics/metricHandler";
-import { AZURE_MONITOR_DISTRO_VERSION } from "../declarations/constants";
+import { Attributes } from "@opentelemetry/api";
+import { AzureLogProcessor } from "./azureLogProcessor";
+
 
 export class LogHandler {
-    // Statsbeat is instantiated here such that it can be accessed by the diagnostic-channel.
-    public statsbeat: Statsbeat;
     private _config: ApplicationInsightsConfig;
-    private _batchProcessor: BatchProcessor;
-    private _exporter: LogExporter;
+    private _metricHandler: MetricHandler;
+    private _loggerProvider: LoggerProvider;
+    private _logger: OtelLogger;
+    private _exporter: AzureMonitorLogExporter;
+    private _logRecordProcessor: SimpleLogRecordProcessor;
+    private _azureLogProccessor: AzureLogProcessor;
     private _console: AutoCollectConsole;
     private _exceptions: AutoCollectExceptions;
     private _idGenerator: IdGenerator;
-    private _metricHandler: MetricHandler;
-    private _aiSampler: ApplicationInsightsSampler;
-    private _instrumentationKey: string;
-    private _aiInternalSdkVersion: string;
 
-    constructor(config: ApplicationInsightsConfig, metricHandler?: MetricHandler, statsbeat?: Statsbeat) {
+    constructor(config: ApplicationInsightsConfig, metricHandler?: MetricHandler) {
         this._config = config;
-        this.statsbeat = statsbeat;
-        this._exporter = new LogExporter(this._config, this.statsbeat);
-        this._batchProcessor = new BatchProcessor(this._exporter);
+        this._metricHandler = metricHandler;
+        this._exporter = new AzureMonitorLogExporter(this._config);
+        const loggerProviderConfig: LoggerProviderConfig = {
+            resource: this._config.resource,
+        };
+        this._loggerProvider = new LoggerProvider(loggerProviderConfig);
+        this._exporter = new AzureMonitorLogExporter(this._config.azureMonitorExporterConfig);
+        this._logRecordProcessor = new SimpleLogRecordProcessor(this._exporter as any);
+        this._loggerProvider.addLogRecordProcessor(this._logRecordProcessor);
+        this._azureLogProccessor = new AzureLogProcessor(this._metricHandler);
+        this._loggerProvider.addLogRecordProcessor(this._azureLogProccessor);
+
+        this._logger = this._loggerProvider.getLogger("AzureMonitorLogger", undefined) as OtelLogger;
         this._console = new AutoCollectConsole(this);
         if (this._config.enableAutoCollectExceptions) {
             this._exceptions = new AutoCollectExceptions(this);
         }
-
         this._idGenerator = new RandomIdGenerator();
-        this._metricHandler = metricHandler;
-        this._aiSampler = new ApplicationInsightsSampler(this._config.samplingRatio);
-
-        const parser = new ConnectionStringParser();
-        const parsedConnectionString = parser.parse(this._config.azureMonitorExporterConfig.connectionString);
-        this._instrumentationKey = parsedConnectionString.instrumentationkey;
         this._console.enable(this._config.logInstrumentations);
+    }
 
-        const { node } = process.versions;
-        let [nodeVersion] = node.split(".");
-        let opentelemetryVersion = SDK_INFO[SemanticResourceAttributes.TELEMETRY_SDK_VERSION];
-        let prefix = process.env["AZURE_MONITOR_AGENT_PREFIX"]
-            ? process.env["AZURE_MONITOR_AGENT_PREFIX"]
-            : "";
-        this._aiInternalSdkVersion = `${prefix}node${nodeVersion}:otel${opentelemetryVersion}:dst${AZURE_MONITOR_DISTRO_VERSION}`;
+    /**
+ *Get OpenTelemetry LoggerProvider
+ */
+    public getLoggerProvider(): LoggerProvider {
+        return this._loggerProvider;
+    }
+
+    /**
+     *Get OpenTelemetry Logger
+     */
+    public getLogger(): OtelLogger {
+        return this._logger;
     }
 
     /** 
@@ -90,7 +91,7 @@ export class LogHandler {
     }
 
     public async flush(): Promise<void> {
-        await this._batchProcessor.triggerSend();
+        return this._loggerProvider.forceFlush();
     }
 
     public async shutdown(): Promise<void> {
@@ -106,10 +107,10 @@ export class LogHandler {
      */
     public async trackAvailability(telemetry: Contracts.AvailabilityTelemetry): Promise<void> {
         try {
-            const envelope = this._availabilityToEnvelope(
+            const logRecord = this._availabilityToLogRecord(
                 telemetry
             );
-            this._sendTelemetry(envelope);
+            this._logger.emit(logRecord);
         } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
         }
@@ -121,10 +122,10 @@ export class LogHandler {
      */
     public async trackPageView(telemetry: Contracts.PageViewTelemetry): Promise<void> {
         try {
-            const envelope = this._pageViewToEnvelope(
+            const logRecord = this._pageViewToLogRecord(
                 telemetry
             );
-            this._sendTelemetry(envelope);
+            this._logger.emit(logRecord);
         } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
         }
@@ -136,23 +137,9 @@ export class LogHandler {
      */
     public async trackTrace(telemetry: Contracts.TraceTelemetry): Promise<void> {
         try {
-            const envelope = this._traceToEnvelope(telemetry);
-            if (this._metricHandler?.getConfig().enableAutoCollectStandardMetrics) {
-                const baseData = envelope.data.baseData as MessageData;
-                const traceDimensions: IMetricTraceDimensions = {
-                    cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
-                    cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole],
-                    traceSeverityLevel: baseData.severity
-                };
-                this._metricHandler.recordTrace(traceDimensions);
-                // Mark envelope as processed
-                const traceData: TraceTelemetry = (envelope.data as any).baseData;
-                traceData.properties = {
-                    ...traceData.properties,
-                    "_MS.ProcessedByMetricExtractors": "(Name:'Traces', Ver:'1.1')",
-                };
-            }
-            this._sendTelemetry(envelope);
+            const logRecord = this._traceToLogRecord(telemetry) as SDKLogRecord;
+            this._metricHandler?.recordLog(logRecord);
+            this._logger.emit(logRecord);
         } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
         }
@@ -167,23 +154,11 @@ export class LogHandler {
             telemetry.exception = new Error(telemetry.exception.toString());
         }
         try {
-            const envelope = this._exceptionToEnvelope(
+            const logRecord = this._exceptionToLogRecord(
                 telemetry
-            );
-            if (this._metricHandler?.getConfig().enableAutoCollectStandardMetrics) {
-                const exceptionDimensions: IStandardMetricBaseDimensions = {
-                    cloudRoleInstance: envelope.tags[KnownContextTagKeys.AiCloudRoleInstance],
-                    cloudRoleName: envelope.tags[KnownContextTagKeys.AiCloudRole]
-                };
-                this._metricHandler.recordException(exceptionDimensions);
-                // Mark envelope as processed
-                const exceptionData: TelemetryExceptionData = (envelope.data as any).baseData;
-                exceptionData.properties = {
-                    ...exceptionData.properties,
-                    "_MS.ProcessedByMetricExtractors": "(Name:'Exceptions', Ver:'1.1')",
-                };
-            }
-            this._sendTelemetry(envelope);
+            ) as SDKLogRecord;
+            this._metricHandler?.recordLog(logRecord);
+            this._logger.emit(logRecord);
         } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
         }
@@ -195,62 +170,38 @@ export class LogHandler {
      */
     public async trackEvent(telemetry: Contracts.EventTelemetry): Promise<void> {
         try {
-            const envelope = this._eventToEnvelope(telemetry);
-            this._sendTelemetry(envelope);
+            const logRecord = this._eventToLogRecord(telemetry);
+            this._logger.emit(logRecord);
         } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
         }
     }
 
-    private _sendTelemetry(envelope: Envelope) {
-        const result: SamplingResult = this._aiSampler.shouldSample(null, envelope.tags[KnownContextTagKeys.AiOperationId], null, null, null, null);
-        if (result.decision === SamplingDecision.RECORD_AND_SAMPLED) {
-            this._batchProcessor.send(envelope);
-        }
-    }
-
-    private _logToEnvelope(
+    private _telemetryToLogRecord(
         telemetry: Telemetry,
         baseType: string,
         baseData: MonitorDomain
-    ): Envelope {
-        const version = 1;
-        const name = `Microsoft.ApplicationInsights.${this._instrumentationKey.replace(
-            /-/g,
-            ""
-        )}.${baseType.substring(0, baseType.length - 4)}`;
-        const sampleRate = 100; // TODO: Log sampling not supported yet
-        let properties = {};
-        if (telemetry.properties) {
-            // sanitize properties
-            properties = Util.getInstance().validateStringMap(telemetry.properties);
+    ): LogRecord {
+        try {
+            const attributes: Attributes = {
+                ...telemetry.properties,
+            };
+            const record: LogRecord = { attributes: attributes, body: JSON.stringify(baseData) };
+            record.attributes["_MS.baseType"] = baseType;
+            return record;
         }
-        const tags = this._getTags();
-        const envelope: Envelope = {
-            name: name,
-            time: telemetry.time || new Date(),
-            instrumentationKey: this._instrumentationKey,
-            version: version,
-            sampleRate: sampleRate,
-            data: {
-                baseType,
-                baseData: {
-                    ...baseData,
-                    properties,
-                },
-            },
-            tags: tags,
-        };
-        return envelope;
+        catch (err) {
+            Logger.getInstance().warn("Failed to convert telemetry event to Log Record.", err);
+        }
     }
 
     /**
-     * Availability Log to Azure envelope parsing.
+     * Availability Log to LogRecord parsing.
      * @internal
      */
-    private _availabilityToEnvelope(
+    private _availabilityToLogRecord(
         telemetry: AvailabilityTelemetry
-    ): Envelope {
+    ): LogRecord {
         const baseType = "AvailabilityData";
         const baseData: AvailabilityData = {
             id: telemetry.id || this._idGenerator.generateSpanId(),
@@ -262,17 +213,17 @@ export class LogHandler {
             measurements: telemetry.measurements,
             version: 2,
         };
-        const envelope = this._logToEnvelope(telemetry, baseType, baseData);
-        return envelope;
+        const record = this._telemetryToLogRecord(telemetry, baseType, baseData);
+        return record;
     }
 
     /**
-     * Exception to Azure envelope parsing.
+     * Exception to LogRecord parsing.
      * @internal
      */
-    private _exceptionToEnvelope(
+    private _exceptionToLogRecord(
         telemetry: ExceptionTelemetry
-    ): Envelope {
+    ): LogRecord {
         const baseType = "ExceptionData";
         const stack = telemetry.exception["stack"];
         const parsedStack = parseStack(stack);
@@ -289,15 +240,15 @@ export class LogHandler {
             measurements: telemetry.measurements,
             version: 2,
         };
-        const envelope = this._logToEnvelope(telemetry, baseType, baseData);
-        return envelope;
+        const record = this._telemetryToLogRecord(telemetry, baseType, baseData);
+        return record;
     }
 
     /**
-     * Trace to Azure envelope parsing.
+     * Trace to LogRecord parsing.
      * @internal
      */
-    private _traceToEnvelope(telemetry: TraceTelemetry): Envelope {
+    private _traceToLogRecord(telemetry: TraceTelemetry): LogRecord {
         const baseType = "MessageData";
         const baseData: MessageData = {
             message: telemetry.message,
@@ -305,17 +256,17 @@ export class LogHandler {
             measurements: telemetry.measurements,
             version: 2,
         };
-        const envelope = this._logToEnvelope(telemetry, baseType, baseData);
-        return envelope;
+        const record = this._telemetryToLogRecord(telemetry, baseType, baseData);
+        return record;
     }
 
     /**
-     * PageView to Azure envelope parsing.
+     * PageView to LogRecord parsing.
      * @internal
      */
-    private _pageViewToEnvelope(
+    private _pageViewToLogRecord(
         telemetry: PageViewTelemetry
-    ): Envelope {
+    ): LogRecord {
         const baseType = "PageViewData";
         const baseData: PageViewData = {
             id: telemetry.id || this._idGenerator.generateSpanId(),
@@ -327,49 +278,22 @@ export class LogHandler {
             version: 2,
         };
 
-        const envelope = this._logToEnvelope(telemetry, baseType, baseData);
-        return envelope;
+        const record = this._telemetryToLogRecord(telemetry, baseType, baseData);
+        return record;
     }
 
     /**
-     * Event to Azure envelope parsing.
+     * Event to LogRecord parsing.
      * @internal
      */
-    private _eventToEnvelope(telemetry: EventTelemetry): Envelope {
+    private _eventToLogRecord(telemetry: EventTelemetry): LogRecord {
         const baseType = "EventData";
         const baseData: TelemetryEventData = {
             name: telemetry.name,
             measurements: telemetry.measurements,
             version: 2,
         };
-        const envelope = this._logToEnvelope(telemetry, baseType, baseData);
-        return envelope;
-    }
-
-    private _getTags() {
-        const tags = <{ [key: string]: string }>{};
-        const attributes = this._config.resource.attributes;
-        const serviceName = attributes[SemanticResourceAttributes.SERVICE_NAME];
-        const serviceNamespace = attributes[SemanticResourceAttributes.SERVICE_NAMESPACE];
-        if (serviceName) {
-            if (serviceNamespace) {
-                tags[KnownContextTagKeys.AiCloudRole] = `${serviceNamespace}.${serviceName}`;
-            } else {
-                tags[KnownContextTagKeys.AiCloudRole] = String(serviceName);
-            }
-        }
-        const serviceInstanceId = attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID];
-        tags[KnownContextTagKeys.AiCloudRoleInstance] = String(serviceInstanceId);
-        tags[KnownContextTagKeys.AiInternalSdkVersion] = this._aiInternalSdkVersion;
-
-        // Add Correlation headers
-        const spanContext = trace.getSpanContext(context.active());
-        if (spanContext) {
-            tags[KnownContextTagKeys.AiOperationId] = spanContext.traceId;
-            tags[KnownContextTagKeys.AiOperationParentId] = spanContext.spanId;
-        } else {
-            tags[KnownContextTagKeys.AiOperationId] = this._idGenerator.generateTraceId();
-        }
-        return tags;
+        const record = this._telemetryToLogRecord(telemetry, baseType, baseData);
+        return record;
     }
 }

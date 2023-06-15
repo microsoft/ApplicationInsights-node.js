@@ -59,7 +59,7 @@ export class TraceHandler {
             exportTimeoutMillis: 30000,
             maxQueueSize: 2048,
         };
-        let azureMonitorSpanProcessor = new BatchSpanProcessor(this._azureMonitorExporter, bufferConfig);
+        const azureMonitorSpanProcessor = new BatchSpanProcessor(this._azureMonitorExporter, bufferConfig);
         this._tracerProvider.addSpanProcessor(azureMonitorSpanProcessor);
         if (this._metricHandler) {
             const azureSpanProcessor = new AzureSpanProcessor(this._metricHandler);
@@ -68,7 +68,7 @@ export class TraceHandler {
 
         if (config.otlpTraceExporterConfig?.enabled) {
             this._otlpExporter = new OTLPTraceExporter(config.otlpTraceExporterConfig.baseConfig);
-            let otlpSpanProcessor = new BatchSpanProcessor(this._otlpExporter, bufferConfig);
+            const otlpSpanProcessor = new BatchSpanProcessor(this._otlpExporter, bufferConfig);
             this._tracerProvider.addSpanProcessor(otlpSpanProcessor);
         }
 
