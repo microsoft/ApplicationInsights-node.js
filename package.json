@@ -69,7 +69,7 @@
     "@azure/core-auth": "^1.4.0",
     "@azure/core-rest-pipeline": "1.10.1",
     "@azure/core-util": "1.2.0",
-    "@azure/opentelemetry-instrumentation-azure-sdk": "^1.0.0-beta.3",
+    "@azure/opentelemetry-instrumentation-azure-sdk": "^1.0.0-beta.4",
     "@microsoft/applicationinsights-web-snippet": "^1.0.1",
     "@opentelemetry/api": "^1.0.4",
     "@opentelemetry/core": "^1.12.0",
