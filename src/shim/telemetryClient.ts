@@ -35,7 +35,6 @@ export class TelemetryClient {
             }
         }
         this.client = new ApplicationInsightsClient(this.config);
-        this.config = this.client.getConfig();
     }
 
     /**
