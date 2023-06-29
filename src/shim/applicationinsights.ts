@@ -35,7 +35,6 @@ export interface IDisabledExtendedMetrics {
 let _setupString: string|undefined;
 let _config: ApplicationInsightsConfig;
 // TODO: Consider making this static (multiple instances of a context manager doens't make much sense to me)
-let _correlationContextManager: CorrelationContextManager = new CorrelationContextManager();
 
 /**
  * Initializes the default client. Should be called after setting
@@ -90,9 +89,7 @@ export function start() {
  */
 export function getCorrelationContext(): ICorrelationContext {
     // TODO: Determine what happens if the customer attempts to disable autoDependencyCorrelation
-    // TODO: Implement this
-    
-    return this._correlationContextManager.getCurrentContext();
+    return CorrelationContextManager.getCurrentContext();
 }
 
 /**
