@@ -5,6 +5,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { makeStatusDirs, renameCurrentFile } from "./fileHelpers";
 import { IAgentLogger } from "../../types";
+import { Util } from "../../../shim/util";
 
 export interface FileWriterOptions {
     append: boolean; // Overwrite or append on file write (false)
@@ -49,7 +50,7 @@ export class FileWriter implements IAgentLogger {
     public log(message: any) {
         if (this._ready) {
             const data = typeof message === "object"
-                ? JSON.stringify(message)
+                ? Util.getInstance().stringify(message)
                 : message.toString();
 
             // Check if existing file needs to be renamed

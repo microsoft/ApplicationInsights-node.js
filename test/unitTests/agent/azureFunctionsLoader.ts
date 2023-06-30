@@ -55,8 +55,8 @@ describe("agent/AzureFunctionsLoader", () => {
         // Agent Loader called
         assert.ok(stub.calledOnce);
         // Custom config
-        assert.equal(agent["_config"].enableAutoCollectStandardMetrics, false);
-        assert.equal(agent["_config"].enableAutoCollectPerformance, false);
+        assert.equal(agent["_options"].enableAutoCollectStandardMetrics, false);
+        assert.equal(agent["_options"].enableAutoCollectPerformance, false);
     });
 
     it("should correctly set Azure Resource Attributes", () => {
@@ -72,11 +72,11 @@ describe("agent/AzureFunctionsLoader", () => {
         // Agent Loader called
         assert.ok(stub.calledOnce);
         assert.equal(
-            agent["_config"].resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID],
+            agent["_options"].resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID],
             "testRoleInstanceId"
         );
         assert.equal(
-            agent["_config"].resource.attributes[SemanticResourceAttributes.SERVICE_NAME],
+            agent["_options"].resource.attributes[SemanticResourceAttributes.SERVICE_NAME],
             "testRole"
         );
     });

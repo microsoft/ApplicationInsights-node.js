@@ -1,7 +1,7 @@
 ﻿import * as assert from "assert";
 import * as sinon from "sinon";
 
-import { Util } from "../../../src/shared/util";
+import { Util } from "../../../src/shim/util";
 
 describe("Library/Util", () => {
     let sandbox: sinon.SinonSandbox;

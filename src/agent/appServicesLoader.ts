@@ -29,7 +29,7 @@ export class AppServicesLoader extends AgentLoader {
                     process.env.WEBSITE_INSTANCE_ID;
             }
             const resource = new Resource(resourceAttributes);
-            this._config.resource = resource;
+            this._options.resource = resource;
 
             let statusLogDir = '/var/log/applicationinsights/';
             if (this._isWindows) {

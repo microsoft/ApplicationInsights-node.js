@@ -83,11 +83,11 @@ describe("agent/AppServicesLoader", () => {
         // Agent Loader called
         assert.ok(stub.calledOnce);
         assert.equal(
-            agent["_config"].resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID],
+            agent["_options"].resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID],
             "testRoleInstanceId"
         );
         assert.equal(
-            agent["_config"].resource.attributes[SemanticResourceAttributes.SERVICE_NAME],
+            agent["_options"].resource.attributes[SemanticResourceAttributes.SERVICE_NAME],
             "testRole"
         );
     });

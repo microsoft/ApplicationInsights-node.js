@@ -1,10 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Logger } from "./shared/logging";
+import { ApplicationInsightsConfig } from "./applicationInsightsConfig";
+import { Logger } from "./shim/logging";
 import { AzureMonitorOpenTelemetryClient, AzureMonitorOpenTelemetryOptions } from "@azure/monitor-opentelemetry";
 
-
+/** 
+* @deprecated Use TelemetryClient instead
+*/
 export class ApplicationInsightsClient {
     private _client: AzureMonitorOpenTelemetryClient;
 
@@ -14,6 +17,29 @@ export class ApplicationInsightsClient {
      */
     constructor(options?: AzureMonitorOpenTelemetryOptions) {
         this._client = new AzureMonitorOpenTelemetryClient(options);
+    }
+
+    public start() {
+        // No Op
+    }
+
+    public getTraceHandler(): any {
+        return this._client["_traceHandler"];
+    }
+
+    public getMetricHandler(): any {
+        return this._client["_metricHandler"];
+    }
+
+    public getLogHandler(): any {
+        return this._client["_logHandler"];
+    }
+
+    /**
+     * @deprecated This method should not be used
+     */
+    public getConfig(): ApplicationInsightsConfig {
+        return null;
     }
 
     public getLogger(): Logger {
