@@ -34,7 +34,6 @@ export interface IDisabledExtendedMetrics {
 
 let _setupString: string|undefined;
 let _config: ApplicationInsightsConfig;
-// TODO: Consider making this static (multiple instances of a context manager doens't make much sense to me)
 
 /**
  * Initializes the default client. Should be called after setting
