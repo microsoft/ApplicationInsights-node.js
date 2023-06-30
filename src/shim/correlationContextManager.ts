@@ -1,27 +1,41 @@
 import * as events from "events";
 import * as http from "http";
-import { context, Context, SpanContext, createContextKey } from "@opentelemetry/api";
-import { ICorrelationContext, ITraceparent, ITracestate, HttpRequest, OpenTelmetrySpan } from "./types";
+import { context, Context, SpanContext, createContextKey, trace, Attributes } from "@opentelemetry/api";
+import { Span } from "@opentelemetry/sdk-trace-base";
+import { ICorrelationContext, ITraceparent, ITracestate, HttpRequest } from "./types";
 import { Logger } from "../shared/logging";
+import Traceparent = require("./util/Traceparent");
+import Tracestate = require("./util/Tracestate");
 
 export class CorrelationContextManager {
+
+    public static spanToContextObject(spanContext: SpanContext, parentId?: string, name?: string, customProperties?: Attributes, traceState?: string): ICorrelationContext {
+        const traceContext = new Traceparent();
+        const tracestate = new Tracestate(traceState);
+        traceContext.traceId = spanContext.traceId;
+        traceContext.spanId = spanContext.spanId;
+        traceContext.traceFlag = Traceparent.formatOpenTelemetryTraceFlags(spanContext.traceFlags) || Traceparent.DEFAULT_TRACE_FLAG;
+        traceContext.parentId = parentId;
+
+        let serializedAttributes: string;
+        try {
+            serializedAttributes = JSON.stringify(customProperties);
+        } catch (error) {
+            Logger.getInstance().warn("Could not serialize customProperties. Dropping custom properties.");
+        }
+        return this.generateContextObject(traceContext.traceId, traceContext.parentId, name, serializedAttributes, traceContext, tracestate);
+    }
+
     /**
      *  Provides the current Context.
      *  The context is the most recent one entered into for the current
      *  logical chain of execution, including across asynchronous calls.
      */
     public static getCurrentContext(): ICorrelationContext {
-        const ctx = context.active();
+        // Gets the active span and extracts the context to populate and return the ICorrelationContext object
+        const activeSpan: Span = trace.getSpan(context.active()) as Span;
 
-        // TODO: Add support for remaining parameters of the generateContextObject() method
-        const spanContextKey = createContextKey('OpenTelemetry Context Key SPAN');
-        const span: OpenTelmetrySpan = ctx.getValue(spanContextKey) as OpenTelmetrySpan;
-
-        // TODO: Convert OTel TraceState => ITraceState before passing
-
-        return this.generateContextObject(
-            span._spanContext.traceId
-        );
+        return this.spanToContextObject(activeSpan.spanContext(), activeSpan.parentSpanId, activeSpan.name, activeSpan.attributes, activeSpan.spanContext()?.traceState?.serialize());
     }
 
     /**
@@ -44,19 +58,9 @@ export class CorrelationContextManager {
                 traceparent: traceparent,
                 tracestate: tracestate,
             },
-            // TODO: Pass the correlationContextHeader to the customProperties creation method
-            customProperties: null
+            // Pass Span attributes as custom properties
+            customProperties: new CustomPropertiesImpl(correlationContextHeader),
         }
-    }
-
-    private static _parseContextObject(context: ICorrelationContext): Context {
-        let openTelemetryContext: Context;
-
-        openTelemetryContext.setValue(Symbol("operationId"), context.operation.id);
-        openTelemetryContext.setValue(Symbol("operationName"), context.operation.name);
-        openTelemetryContext.setValue(Symbol("parentId"), context.operation.parentId);
-
-        return openTelemetryContext;
     }
 
     /**
@@ -65,11 +69,15 @@ export class CorrelationContextManager {
      *  will receive this Context object on calls to GetCurrentContext.
      */
     public static runWithContext(ctx: ICorrelationContext, fn: () => any): any {
-        // TODO: figure out how to take an ICorrelationContext, convert to OTel Context, then call the .with() method
-        // TODO: Create helper functions for converting ICorrelationContext <=> Context
+        // Creates a new SpanContext containing the values from the ICorrelationContext object, then sets the active context to the new span context
+        const contextName = createContextKey(ctx.operation.name);
+        const spanContext: SpanContext = {
+            traceId: ctx.operation.id,
+            spanId: ctx.operation.traceparent.spanId,
+            traceFlags: parseInt(ctx.operation.traceparent.traceFlag, 10),
+        };
 
-        const openTelemetryContext: Context = this._parseContextObject(ctx);
-        return context.with(openTelemetryContext, fn);
+        return context.with(context.active().setValue(contextName, spanContext), fn);
     }
 
     /**
@@ -119,5 +127,73 @@ export class CorrelationContextManager {
      */
     public static reset() {
         throw new Error("Not implemented");
+    }
+}
+
+export interface CustomProperties {
+    /**
+     * Get a custom property from the correlation context
+     */
+    getProperty(key: string): string;
+    /**
+     * Store a custom property in the correlation context.
+     * Do not store sensitive information here.
+     * Properties stored here are exposed via outgoing HTTP headers for correlating data cross-component.
+     * The characters ',' and '=' are disallowed within keys or values.
+     */
+    setProperty(key: string, value: string): void;
+}
+
+export interface PrivateCustomProperties extends CustomProperties {
+    addHeaderData(header: string): void;
+    serializeToHeader(): string;
+}
+
+class CustomPropertiesImpl implements PrivateCustomProperties {
+    private static bannedCharacters = /[,=]/;
+    private props: { key: string, value: string }[] = [];
+
+    public constructor(header: string) {
+        this.addHeaderData(header);
+    }
+
+    public addHeaderData(header?: string) {
+        const keyvals = header ? header.split(", ") : [];
+        this.props = keyvals.map((keyval) => {
+            const parts = keyval.split("=");
+            return { key: parts[0], value: parts[1] };
+        }).concat(this.props);
+    }
+
+    public serializeToHeader() {
+        return this.props.map((keyval) => `${keyval.key}=${keyval.value}`).join(", ");
+    }
+
+    public getProperty(prop: string) {
+        for (let i = 0; i < this.props.length; ++i) {
+            const keyval = this.props[i]
+            if (keyval.key === prop) {
+                return keyval.value;
+            }
+        }
+        return;
+    }
+
+    // TODO: Strictly according to the spec, properties which are recieved from
+    // an incoming request should be left untouched, while we may add our own new
+    // properties. The logic here will need to change to track that.
+    public setProperty(prop: string, val: string) {
+        if (CustomPropertiesImpl.bannedCharacters.test(prop) || CustomPropertiesImpl.bannedCharacters.test(val)) {
+            Logger.getInstance().warn(`Correlation context property keys and values must not contain ',' or '='. setProperty was called with key: ${ prop } and value: ${ val}`);
+            return;
+        }
+        for (let i = 0; i < this.props.length; ++i) {
+            const keyval = this.props[i];
+            if (keyval.key === prop) {
+                keyval.value = val;
+                return;
+            }
+        }
+        this.props.push({ key: prop, value: val });
     }
 }

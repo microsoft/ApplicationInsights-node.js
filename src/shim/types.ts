@@ -1,5 +1,3 @@
-import { TraceFlags, TraceState } from "@opentelemetry/api";
-
 export interface ITraceparent {
     legacyRootId: string;
     parentId: string;
@@ -25,15 +23,6 @@ export interface ICorrelationContext {
      *  Properties here are exposed via outgoing HTTP headers for correlating data cross-component.
      */
     customProperties: ICustomProperties;
-}
-
-export interface OpenTelmetrySpan {
-    _spanContext: {
-        traceId: string,
-        spanId: string,
-        traceFlags: TraceFlags,
-        traceState: TraceState,
-    }
 }
 
 export interface ICustomProperties {
