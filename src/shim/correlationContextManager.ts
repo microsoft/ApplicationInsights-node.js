@@ -1,11 +1,12 @@
 import * as events from "events";
 import * as http from "http";
-import { context, Context, SpanContext, createContextKey, trace, Attributes } from "@opentelemetry/api";
+import { context, SpanContext, createContextKey, trace, Attributes } from "@opentelemetry/api";
 import { Span } from "@opentelemetry/sdk-trace-base";
 import { ICorrelationContext, ITraceparent, ITracestate, HttpRequest } from "./types";
 import { Logger } from "../shared/logging";
 import Traceparent = require("./util/Traceparent");
 import Tracestate = require("./util/Tracestate");
+import * as azureFunctionsTypes from "@azure/functions";
 
 export class CorrelationContextManager {
 
@@ -71,11 +72,7 @@ export class CorrelationContextManager {
     public static runWithContext(ctx: ICorrelationContext, fn: () => any): any {
         // Creates a new SpanContext containing the values from the ICorrelationContext object, then sets the active context to the new span context
         const contextName = createContextKey(ctx.operation.name);
-        const spanContext: SpanContext = {
-            traceId: ctx.operation.id,
-            spanId: ctx.operation.traceparent.spanId,
-            traceFlags: parseInt(ctx.operation.traceparent.traceFlag, 10),
-        };
+        const spanContext = this._contextObjectToSpanContext(ctx);
 
         return context.with(context.active().setValue(contextName, spanContext), fn);
     }
@@ -84,7 +81,7 @@ export class CorrelationContextManager {
      * Wrapper for cls-hooked bindEmitter method
      */
     public static wrapEmitter(emitter: events.EventEmitter): void {
-        throw new Error("Not implemented");
+        context.bind(context.active(), emitter);
     }
 
     /**
@@ -94,8 +91,10 @@ export class CorrelationContextManager {
      *
      *  The supplied callback will be given the same context that was present for
      *  the call to wrapCallback.  */
-    public static wrapCallback<T>(fn: T, context?: ICorrelationContext): T {
-        throw new Error("Not implemented");
+    public static wrapCallback<T>(fn: T, ctx?: ICorrelationContext): T {
+        const contextName = createContextKey(ctx.operation.name);
+        const spanContext = this._contextObjectToSpanContext(ctx);
+        return context.bind(context.active().setValue(contextName, spanContext), fn);
     }
 
     /**
@@ -109,10 +108,89 @@ export class CorrelationContextManager {
      * Create new correlation context.
      */
     public static startOperation(
-        context: Context | (http.IncomingMessage | HttpRequest) | SpanContext,
+        input: azureFunctionsTypes.Context | (http.IncomingMessage | azureFunctionsTypes.HttpRequest) | SpanContext | Span,
         request?: HttpRequest | string
     ): ICorrelationContext | null {
-        throw new Error("Not implemented");
+        const traceContext = input && (input as azureFunctionsTypes.Context).traceContext || null;
+        const span = input && (input as Span).spanContext ? input as Span : null;
+        const spanContext = input && (input as SpanContext).traceId ? input as SpanContext : null;
+        const headers = input && (input as http.IncomingMessage | azureFunctionsTypes.HttpRequest).headers;
+
+        // OpenTelemetry Span
+        if (span) {
+            return this.spanToContextObject(span.spanContext(), span.parentSpanId, span.name);
+        }
+
+        // OpenTelemetry SpanContext
+        if (spanContext) {
+            return this.spanToContextObject(spanContext, `|${spanContext.traceId}.${spanContext.spanId}.`, typeof request === "string" ? request : "");
+        }
+
+        let operationName = typeof request === "string" ? request : "";
+        
+        // AzFunction TraceContext
+        if (traceContext) {
+            let traceparent = null;
+            let tracestate = null;
+            operationName = traceContext.attributes["OperationName"] || operationName;
+            if (request) {
+                const azureFnRequest = request as azureFunctionsTypes.HttpRequest;
+                if (azureFnRequest.headers) {
+                    if (azureFnRequest.headers.traceparent) {
+                        traceparent = new Traceparent(azureFnRequest.headers.traceparent);
+                    } else if (azureFnRequest.headers["request-id"]) {
+                        traceparent = new Traceparent(null);
+                    }
+                    if (azureFnRequest.headers.tracestate) {
+                        tracestate = new Tracestate(azureFnRequest.headers.tracestate);
+                    }
+                }
+            }
+            if (!traceparent) {
+                traceparent = new Traceparent(traceContext.traceparent);
+            }
+            if (!tracestate) {
+                tracestate = new Tracestate(traceContext.tracestate);
+            }
+
+            // TODO: Add support for operationName
+            let correlationContextHeader = undefined;
+            if (typeof request === "object") {
+                correlationContextHeader = request.headers["correlation-context"] ? request.headers["correlation-context"].toString() : null;
+                // operationName = parser.getOperationName({});
+            }
+            const correlationContext = CorrelationContextManager.generateContextObject(
+                traceparent.traceId,
+                traceparent.parentId,
+                operationName,
+                correlationContextHeader,
+                traceparent,
+                tracestate
+            );
+
+            return correlationContext;
+        }
+
+        // TOOD: Add support for operationName
+        // No TraceContext available, parse as http.IncomingMessage
+        if (headers) {
+            const traceparent = new Traceparent(headers.traceparent ? headers.traceparent.toString() : null);
+            // const tracestate = new Tracestate(headers.tracestate ? headers.tracestate.toString() : null);
+            // const parser = new HttpRequestParser(input as http.IncomingMessage | azureFunctionsTypes.HttpRequest);
+            const correlationContext = CorrelationContextManager.generateContextObject(
+                traceparent.traceId,
+                traceparent.parentId,
+                // parser.getOperationName({}),
+                headers["correlation-context"] ? headers["correlation-context"].toString() : null,
+                // traceparent,
+                // tracestate
+            );
+
+            return correlationContext;
+        }
+
+        Logger.getInstance().warn("startOperation was called with invalid arguments");
+        return null;
     }
 
     /**
@@ -126,7 +204,15 @@ export class CorrelationContextManager {
      * Reset the namespace
      */
     public static reset() {
-        throw new Error("Not implemented");
+        Logger.getInstance().info("This is a no-op and exists only for compatibility reasons.");
+    }
+
+    private static _contextObjectToSpanContext(ctx: ICorrelationContext): SpanContext {
+        return {
+            traceId: ctx.operation.id,
+            spanId: ctx.operation.traceparent.spanId,
+            traceFlags: parseInt(ctx.operation.traceparent.traceFlag, 10),
+        };
     }
 }
 

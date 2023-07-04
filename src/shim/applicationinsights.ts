@@ -1,5 +1,5 @@
-import { IncomingMessage } from "http";
-import { DiagLogLevel, SpanContext, Context } from "@opentelemetry/api";
+import * as http from "http";
+import { DiagLogLevel, SpanContext } from "@opentelemetry/api";
 
 import { Logger } from "../shared/logging";
 import { ICorrelationContext, HttpRequest } from "./types";
@@ -8,6 +8,8 @@ import * as Contracts from "../declarations/contracts";
 import { ApplicationInsightsConfig } from "../shared";
 import { ExtendedMetricType } from "../shared/configuration/types";
 import { CorrelationContextManager } from "./correlationContextManager";
+import * as azureFunctionsTypes from "@azure/functions";
+import { Span } from "@opentelemetry/sdk-trace-base";
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
@@ -96,11 +98,10 @@ export function getCorrelationContext(): ICorrelationContext {
  * Starts a fresh context or propagates the current internal one.
  */
 export function startOperation(
-    arg1: Context | (IncomingMessage | HttpRequest) | SpanContext,
+    arg1: azureFunctionsTypes.Context | (http.IncomingMessage | azureFunctionsTypes.HttpRequest) | SpanContext | Span,
     arg2?: HttpRequest | string
 ): ICorrelationContext | null {
-    // TODO: Implement this
-    return null;
+    return CorrelationContextManager.startOperation(arg1, arg2);
 }
 
 /**
@@ -110,8 +111,7 @@ export function startOperation(
  * correctly to an asynchronous callback.
  */
 export function wrapWithCorrelationContext<T>(fn: T, context?: ICorrelationContext): T {
-    // TODO: Implement this
-    return null;
+    return CorrelationContextManager.wrapCallback<T>(fn, context);
 }
 
 /**
