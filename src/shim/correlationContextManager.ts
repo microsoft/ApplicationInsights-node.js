@@ -7,6 +7,7 @@ import { Logger } from "../shared/logging";
 import Traceparent = require("./util/Traceparent");
 import Tracestate = require("./util/Tracestate");
 import * as azureFunctionsTypes from "@azure/functions";
+import url = require("url");
 
 export class CorrelationContextManager {
 
@@ -18,13 +19,7 @@ export class CorrelationContextManager {
         traceContext.traceFlag = Traceparent.formatOpenTelemetryTraceFlags(spanContext.traceFlags) || Traceparent.DEFAULT_TRACE_FLAG;
         traceContext.parentId = parentId;
 
-        let serializedAttributes: string;
-        try {
-            serializedAttributes = JSON.stringify(customProperties);
-        } catch (error) {
-            Logger.getInstance().warn("Could not serialize customProperties. Dropping custom properties.");
-        }
-        return this.generateContextObject(traceContext.traceId, traceContext.parentId, name, serializedAttributes, traceContext, tracestate);
+        return this.generateContextObject(traceContext.traceId, traceContext.parentId, name, null, traceContext, tracestate);
     }
 
     /**
@@ -36,7 +31,7 @@ export class CorrelationContextManager {
         // Gets the active span and extracts the context to populate and return the ICorrelationContext object
         const activeSpan: Span = trace.getSpan(context.active()) as Span;
 
-        return this.spanToContextObject(activeSpan.spanContext(), activeSpan.parentSpanId, activeSpan.name, activeSpan.attributes, activeSpan.spanContext()?.traceState?.serialize());
+        return this.spanToContextObject(activeSpan.spanContext(), activeSpan.parentSpanId, activeSpan.name, null, activeSpan.spanContext()?.traceState?.serialize());
     }
 
     /**
@@ -171,19 +166,17 @@ export class CorrelationContextManager {
             return correlationContext;
         }
 
-        // TOOD: Add support for operationName
         // No TraceContext available, parse as http.IncomingMessage
         if (headers) {
             const traceparent = new Traceparent(headers.traceparent ? headers.traceparent.toString() : null);
-            // const tracestate = new Tracestate(headers.tracestate ? headers.tracestate.toString() : null);
-            // const parser = new HttpRequestParser(input as http.IncomingMessage | azureFunctionsTypes.HttpRequest);
+            const tracestate = new Tracestate(headers.tracestate ? headers.tracestate.toString() : null);
             const correlationContext = CorrelationContextManager.generateContextObject(
                 traceparent.traceId,
                 traceparent.parentId,
-                // parser.getOperationName({}),
+                this._getOperationName({}, request as http.IncomingMessage | HttpRequest),
                 headers["correlation-context"] ? headers["correlation-context"].toString() : null,
-                // traceparent,
-                // tracestate
+                traceparent,
+                tracestate
             );
 
             return correlationContext;
@@ -191,6 +184,58 @@ export class CorrelationContextManager {
 
         Logger.getInstance().warn("startOperation was called with invalid arguments");
         return null;
+    }
+
+    /**
+     * Gets the operation name for Azure Functions requests
+     */
+    private static _getOperationName(tags: { [key: string]: string}, request: http.IncomingMessage | HttpRequest) {
+        if (tags["ai.operation.name"]) {
+            return tags["ai.operation.name"];
+        }
+        let pathName = "";
+        try { 
+            pathName = new url.URL(this._getAbsoluteUrl(request)).pathname;
+        } catch (ex) {
+            // Ignore errors
+        }
+        let operationName = pathName.split("/").pop();
+        if (pathName) {
+            operationName += ` ${pathName}`;
+        }
+        return operationName;
+    }
+
+    /**
+     * Helper to get an absolute url from request object
+     */
+    private static _getAbsoluteUrl(request: http.IncomingMessage | HttpRequest): string {
+        if (!request.headers) {
+            return request.url;
+        }
+
+        const encrypted = (<any>request).connection ? ((<any>request).connection as any).encrypted : null;
+
+        const protocol = (encrypted || request.headers["x-forwarded-proto"] === "https") ? "https" : "http";
+
+        const baseUrl = `${protocol}://${request.headers.host}/`;
+
+        let pathName = "";
+        let search = "";
+        try {
+            const requestUrl = new url.URL(request.url, baseUrl);
+            pathName = requestUrl.pathname;
+            search = requestUrl.search;
+        }
+        catch (ex) {
+            // Ignore errors
+        }
+        return url.format({
+            protocol: protocol,
+            host: request.headers.host,
+            pathname: pathName,
+            search: search
+        });
     }
 
     /**
@@ -244,7 +289,7 @@ class CustomPropertiesImpl implements PrivateCustomProperties {
     }
 
     public addHeaderData(header?: string) {
-        const keyvals = header ? header.split(", ") : [];
+        const keyvals = header ? header.split(",") : [];
         this.props = keyvals.map((keyval) => {
             const parts = keyval.split("=");
             return { key: parts[0], value: parts[1] };

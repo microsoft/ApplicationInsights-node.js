@@ -89,7 +89,6 @@ export function start() {
  * @returns A plain object for request storage or null if automatic dependency correlation is disabled.
  */
 export function getCorrelationContext(): ICorrelationContext {
-    // TODO: Determine what happens if the customer attempts to disable autoDependencyCorrelation
     return CorrelationContextManager.getCurrentContext();
 }
 

@@ -1,4 +1,3 @@
-import * as os from "os";
 import { TokenCredential } from "@azure/core-auth";
 import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 import * as Constants from "../../declarations/constants";
