@@ -44,7 +44,7 @@ export class AgentLoader {
                 enableAutoCollectExceptions: true,
                 enableAutoCollectPerformance: true,
                 enableAutoCollectStandardMetrics: true,
-                samplingRatio: 1,  // Sample all telemetry by default
+                samplingRatio: 1, // Sample all telemetry by default
                 instrumentationOptions: {
                     azureSdk: {
                         enabled: true
@@ -159,7 +159,7 @@ export class AgentLoader {
                 })
                 return false;
             }
-            if (this._instrumentationKey == "unknown") {
+            if (this._instrumentationKey === "unknown") {
                 const diagnosticLog: IDiagnosticLog = {
                     message: "Azure Monitor Application Insights Distro wanted to be started, but no Connection String was provided",
                     messageId: DiagnosticMessageId.missingIkey

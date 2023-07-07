@@ -85,6 +85,7 @@ export class NativeMetrics {
     private _initialize() {
         // Try to require in the native-metrics library. If it's found initialize it, else do nothing and never try again.
         try {
+             // eslint-disable-next-line @typescript-eslint/no-var-requires
             const NativeMetricsEmitter = require("applicationinsights-native-metrics");
             this._emitter = new NativeMetricsEmitter();
             Logger.getInstance().info("Native metrics module successfully loaded!");
