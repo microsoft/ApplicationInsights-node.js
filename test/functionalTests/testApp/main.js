@@ -5,7 +5,9 @@ if (testconfig.AppInsightsEnabled) {
     const { TelemetryClient } = require("applicationinsights");
 
     let options = {
-        connectionString: `InstrumentationKey=${testconfig.InstrumentationKey};IngestionEndpoint=${testconfig.EndpointBaseAddress}`,
+        azureMonitorExporterConfig: {
+            connectionString:`InstrumentationKey=${testconfig.InstrumentationKey};IngestionEndpoint=${testconfig.EndpointBaseAddress}`
+        },
         samplingRatio: parseFloat(testconfig.SampleRate),
         instrumentationOptions: {
             azureSdk: {
