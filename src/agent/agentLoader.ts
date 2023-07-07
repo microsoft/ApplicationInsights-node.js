@@ -70,7 +70,7 @@ export class AgentLoader {
                 }
             };
 
-            let connectionString = process.env[ENV_connectionString];
+            const connectionString = process.env[ENV_connectionString];
             if (connectionString) {
                 this._instrumentationKey = this._getInstrumentationKey(connectionString);
             }

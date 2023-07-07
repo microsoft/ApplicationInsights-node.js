@@ -14,7 +14,7 @@ export class ApplicationInsightsConfig implements ApplicationInsightsOptions {
     // ApplicationInsightsOptions
     public otlpTraceExporterConfig?: OTLPExporterConfig;
     public otlpMetricExporterConfig?: OTLPExporterConfig;
-    public  enableAutoCollectExceptions?: boolean;
+    public enableAutoCollectExceptions?: boolean;
     public extendedMetrics: { [type: string]: boolean };
     public logInstrumentations?: LogInstrumentationsConfig;
     // AzureMonitorOpenTelemetryOptions
