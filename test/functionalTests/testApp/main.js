@@ -14,7 +14,14 @@ if (testconfig.AppInsightsEnabled) {
                 enabled: true
             },
             http: {
-                enabled: true
+                enabled: true,
+                ignoreOutgoingRequestHook: (options) => {
+                    // Ignore outgoing requests with /test path
+                    if (options.path === '/v2.1/track') {
+                        return true;
+                    }
+                    return false;
+                }
             },
             mongoDb: {
                 enabled: true
