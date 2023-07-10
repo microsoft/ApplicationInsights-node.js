@@ -1,41 +1,74 @@
-import * as Contracts from "../declarations/contracts";
-import { TelemetryItem as Envelope } from "../declarations/generated";
-import { Context } from "./context";
-import { ApplicationInsightsClient } from "../applicationInsightsClient";
-import { ApplicationInsightsConfig } from "../shared";
-import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import { LogRecord } from "@opentelemetry/api-logs";
+import { LogRecord as SDKLogRecord } from "@opentelemetry/sdk-logs";
+import { AzureMonitorOpenTelemetryClient } from "@azure/monitor-opentelemetry";
 import { Attributes, context, SpanKind, SpanOptions, SpanStatusCode } from "@opentelemetry/api";
-import { Logger } from "../shared/logging";
-import { Util } from "../shared/util";
+import { IdGenerator, RandomIdGenerator } from "@opentelemetry/sdk-trace-base";
+import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
+import * as Contracts from "../declarations/contracts";
+import { AvailabilityData, TelemetryItem as Envelope, KnownSeverityLevel, MessageData, MonitorDomain, PageViewData, TelemetryEventData, TelemetryExceptionData, TelemetryExceptionDetails } from "../declarations/generated";
+import { Context } from "./context";
+import { Logger } from "./logging";
+import { Util } from "./util";
+import { AutoCollectConsole } from "./autoCollection/console";
+import { AutoCollectExceptions, parseStack } from "./autoCollection/exceptions";
+import { ApplicationInsightsOptions } from "../types";
+import { InternalConfig } from "./configuration/internal";
+
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
  * and manually trigger immediate sending (flushing)
  */
 export class TelemetryClient {
-    public client: ApplicationInsightsClient;
+    private readonly _internalConfig: InternalConfig;
+    private _options: ApplicationInsightsOptions;
+    private _client: AzureMonitorOpenTelemetryClient;
+    private _console: AutoCollectConsole;
+    private _exceptions: AutoCollectExceptions;
+    private _idGenerator: IdGenerator;
     public context: Context;
-    public config: ApplicationInsightsConfig;
     public commonProperties: { [key: string]: string }; // TODO: Add setter so Resources are updated
 
     /**
      * Constructs a new client of the client
      * @param setupString the Connection String or Instrumentation Key to use (read from environment variable if not specified)
      */
-    constructor(options?: string | ApplicationInsightsConfig) {
+    constructor(input?: string | ApplicationInsightsOptions) {
         this.commonProperties = {};
         this.context = new Context();
-        if (options) {
-            if (typeof(options) === "object") {
-                this.config = options;
+        if (input) {
+            if (typeof (input) === "object") {
+                this._options = input;
             } else {
-                this.config = new ApplicationInsightsConfig();
                 // TODO: Add Support for iKey as well
-                this.config.azureMonitorExporterConfig.connectionString = options;
+                this._options = {
+                    azureMonitorExporterConfig: {
+                        connectionString: input
+                    }
+                };
             }
         }
-        this.client = new ApplicationInsightsClient(this.config);
-        this.config = this.client.getConfig();
+        // Internal config with extra configuration not available in Azure Monitor Distro
+        this._internalConfig = new InternalConfig(this._options);
+
+        this._client = new AzureMonitorOpenTelemetryClient(this._options);
+        this._console = new AutoCollectConsole(this);
+        if (this._internalConfig.enableAutoCollectExceptions) {
+            this._exceptions = new AutoCollectExceptions(this);
+        }
+        this._idGenerator = new RandomIdGenerator();
+        this._console.enable(this._internalConfig.logInstrumentations);
+    }
+
+    public getAzureMonitorOpenTelemetryClient(): AzureMonitorOpenTelemetryClient {
+        return this._client;
+    }
+
+    public getInternalConfig(): InternalConfig {
+        return this._internalConfig;
     }
 
     /**
@@ -43,7 +76,14 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackAvailability(telemetry: Contracts.AvailabilityTelemetry): void {
-        this.client.getLogHandler().trackAvailability(telemetry);
+        try {
+            const logRecord = this._availabilityToLogRecord(
+                telemetry
+            );
+            this._client.getLogger().emit(logRecord);
+        } catch (err) {
+            Logger.getInstance().error("Failed to send telemetry.", err);
+        }
     }
 
     /**
@@ -51,7 +91,14 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackPageView(telemetry: Contracts.PageViewTelemetry): void {
-        this.client.getLogHandler().trackPageView(telemetry);
+        try {
+            const logRecord = this._pageViewToLogRecord(
+                telemetry
+            );
+            this._client.getLogger().emit(logRecord);
+        } catch (err) {
+            Logger.getInstance().error("Failed to send telemetry.", err);
+        }
     }
 
     /**
@@ -59,7 +106,12 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackTrace(telemetry: Contracts.TraceTelemetry): void {
-        this.client.getLogHandler().trackTrace(telemetry);
+        try {
+            const logRecord = this._traceToLogRecord(telemetry) as SDKLogRecord;
+            this._client.getLogger().emit(logRecord);
+        } catch (err) {
+            Logger.getInstance().error("Failed to send telemetry.", err);
+        }
     }
 
     /**
@@ -67,7 +119,17 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackException(telemetry: Contracts.ExceptionTelemetry): void {
-        this.client.getLogHandler().trackException(telemetry);
+        if (telemetry && telemetry.exception && !Util.getInstance().isError(telemetry.exception)) {
+            telemetry.exception = new Error(telemetry.exception.toString());
+        }
+        try {
+            const logRecord = this._exceptionToLogRecord(
+                telemetry
+            ) as SDKLogRecord;
+            this._client.getLogger().emit(logRecord);
+        } catch (err) {
+            Logger.getInstance().error("Failed to send telemetry.", err);
+        }
     }
 
     /**
@@ -75,7 +137,12 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackEvent(telemetry: Contracts.EventTelemetry): void {
-        this.client.getLogHandler().trackEvent(telemetry);
+        try {
+            const logRecord = this._eventToLogRecord(telemetry);
+            this._client.getLogger().emit(logRecord);
+        } catch (err) {
+            Logger.getInstance().error("Failed to send telemetry.", err);
+        }
     }
 
     /**
@@ -115,8 +182,7 @@ export class TelemetryClient {
             attributes: attributes,
             startTime: startTime,
         };
-        const span: any = this.client
-            .getTraceHandler()
+        const span: any = this._client
             .getTracer()
             .startSpan(telemetry.name, options, ctx);
         span.setStatus({
@@ -169,8 +235,7 @@ export class TelemetryClient {
             attributes: attributes,
             startTime: startTime,
         };
-        const span: any = this.client
-            .getTraceHandler()
+        const span: any = this._client
             .getTracer()
             .startSpan(telemetry.name, options, ctx);
         span.setStatus({
@@ -183,7 +248,18 @@ export class TelemetryClient {
      * Immediately send all queued telemetry.
      */
     public async flush(): Promise<void> {
-        this.client.flush();
+        this._client.flush();
+    }
+
+    /**
+     * Shutdown client
+     */
+    public async shutdown(): Promise<void> {
+        this._client.shutdown();
+        this._console.shutdown();
+        this._console = null;
+        this._exceptions?.shutdown();
+        this._exceptions = null;
     }
 
     /**
@@ -239,5 +315,125 @@ export class TelemetryClient {
      */
     public clearTelemetryProcessors() {
         throw new Error("Not implemented");
+    }
+
+    private _telemetryToLogRecord(
+        telemetry: Contracts.Telemetry,
+        baseType: string,
+        baseData: MonitorDomain
+    ): LogRecord {
+        try {
+            const attributes: Attributes = {
+                ...telemetry.properties,
+            };
+            const record: LogRecord = { attributes: attributes, body: Util.getInstance().stringify(baseData) };
+            record.attributes["_MS.baseType"] = baseType;
+            return record;
+        }
+        catch (err) {
+            Logger.getInstance().warn("Failed to convert telemetry event to Log Record.", err);
+        }
+    }
+
+    /**
+     * Availability Log to LogRecord parsing.
+     * @internal
+     */
+    private _availabilityToLogRecord(
+        telemetry: Contracts.AvailabilityTelemetry
+    ): LogRecord {
+        const baseType = "AvailabilityData";
+        const baseData: AvailabilityData = {
+            id: telemetry.id || this._idGenerator.generateSpanId(),
+            name: telemetry.name,
+            duration: Util.getInstance().msToTimeSpan(telemetry.duration),
+            success: telemetry.success,
+            runLocation: telemetry.runLocation,
+            message: telemetry.message,
+            measurements: telemetry.measurements,
+            version: 2,
+        };
+        const record = this._telemetryToLogRecord(telemetry, baseType, baseData);
+        return record;
+    }
+
+    /**
+     * Exception to LogRecord parsing.
+     * @internal
+     */
+    private _exceptionToLogRecord(
+        telemetry: Contracts.ExceptionTelemetry
+    ): LogRecord {
+        const baseType = "ExceptionData";
+        const stack = telemetry.exception["stack"];
+        const parsedStack = parseStack(stack);
+        const exceptionDetails: TelemetryExceptionDetails = {
+            message: telemetry.exception.message,
+            typeName: telemetry.exception.name,
+            parsedStack: parsedStack,
+            hasFullStack: Util.getInstance().isArray(parsedStack) && parsedStack.length > 0,
+        };
+
+        const baseData: TelemetryExceptionData = {
+            severityLevel: telemetry.severity || KnownSeverityLevel.Error,
+            exceptions: [exceptionDetails],
+            measurements: telemetry.measurements,
+            version: 2,
+        };
+        const record = this._telemetryToLogRecord(telemetry, baseType, baseData);
+        return record;
+    }
+
+    /**
+     * Trace to LogRecord parsing.
+     * @internal
+     */
+    private _traceToLogRecord(telemetry: Contracts.TraceTelemetry): LogRecord {
+        const baseType = "MessageData";
+        const baseData: MessageData = {
+            message: telemetry.message,
+            severityLevel: telemetry.severity || KnownSeverityLevel.Information,
+            measurements: telemetry.measurements,
+            version: 2,
+        };
+        const record = this._telemetryToLogRecord(telemetry, baseType, baseData);
+        return record;
+    }
+
+    /**
+     * PageView to LogRecord parsing.
+     * @internal
+     */
+    private _pageViewToLogRecord(
+        telemetry: Contracts.PageViewTelemetry
+    ): LogRecord {
+        const baseType = "PageViewData";
+        const baseData: PageViewData = {
+            id: telemetry.id || this._idGenerator.generateSpanId(),
+            name: telemetry.name,
+            duration: Util.getInstance().msToTimeSpan(telemetry.duration),
+            url: telemetry.url,
+            referredUri: telemetry.referredUri,
+            measurements: telemetry.measurements,
+            version: 2,
+        };
+
+        const record = this._telemetryToLogRecord(telemetry, baseType, baseData);
+        return record;
+    }
+
+    /**
+     * Event to LogRecord parsing.
+     * @internal
+     */
+    private _eventToLogRecord(telemetry: Contracts.EventTelemetry): LogRecord {
+        const baseType = "EventData";
+        const baseData: TelemetryEventData = {
+            name: telemetry.name,
+            measurements: telemetry.measurements,
+            version: 2,
+        };
+        const record = this._telemetryToLogRecord(telemetry, baseType, baseData);
+        return record;
     }
 }

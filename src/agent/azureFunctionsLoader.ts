@@ -15,8 +15,8 @@ export class AzureFunctionsLoader extends AgentLoader {
         super();
         if (this._canLoad) {
             // Azure Fn specific configuration
-            this._config.enableAutoCollectPerformance = false;
-            this._config.enableAutoCollectStandardMetrics = false;
+            this._options.enableAutoCollectPerformance = false;
+            this._options.enableAutoCollectStandardMetrics = false;
             const resourceAttributes: Attributes = {};
             if (process.env.WEBSITE_SITE_NAME) {
                 resourceAttributes[SemanticResourceAttributes.SERVICE_NAME] =
@@ -27,7 +27,7 @@ export class AzureFunctionsLoader extends AgentLoader {
                     process.env.WEBSITE_INSTANCE_ID;
             }
             const resource = new Resource(resourceAttributes);
-            this._config.resource = resource;
+            this._options.resource = resource;
 
             const writer = new AzureFunctionsWriter(this._instrumentationKey);
             this._diagnosticLogger = new DiagnosticLogger(this._instrumentationKey, writer);
