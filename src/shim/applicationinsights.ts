@@ -121,6 +121,14 @@ export class Configuration {
     public static start = start;
 
     /**
+     * Only W3C traing mode is currently suppported so this method informs the user if they attempt to set the value.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    public static setDistributedTracingMode(value: number) {
+        Logger.getInstance().info("Setting distributedTracingMode will not affect correlation headers as only W3C is currently supported.");
+    }
+
+    /**
      * Sets the state of console and logger tracking (enabled by default for third-party loggers only)
      * @param value if true logger activity will be sent to Application Insights
      * @param collectConsoleLog if true, logger autocollection will include console.log calls (default false)
