@@ -10,6 +10,7 @@ import url = require("url");
 export class CorrelationContextManager {
 
     public static spanToContextObject(spanContext: SpanContext, parentId?: string, name?: string, traceState?: TraceState): ICorrelationContext {
+        // Generate a basic ITraceparent to satisfy the ICorrelationContext interface
         const traceContext: ITraceparent = {
             legacyRootId: "",
             traceId: spanContext.traceId,
@@ -98,8 +99,10 @@ export class CorrelationContextManager {
     }
 
     /**
-     *  Enables the CorrelationContextManager.
+     * Enables the CorrelationContextManager.
+     * Ignore unused parameter forceClsHooked as it is only used to satisfy backward compatibility 
      */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public static enable(forceClsHooked?: boolean) {
         Logger.getInstance().info("Enabling the context manager is no longer necessary and this method is a no-op.");
     }
