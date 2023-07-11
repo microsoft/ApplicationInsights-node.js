@@ -1,16 +1,15 @@
 import * as events from "events";
 import * as http from "http";
-import { context, SpanContext, createContextKey, trace } from "@opentelemetry/api";
+import { context, SpanContext, createContextKey, trace, TraceState } from "@opentelemetry/api";
 import { Span } from "@opentelemetry/sdk-trace-base";
 import { ICorrelationContext, ITraceparent, ITracestate, HttpRequest, ICustomProperties } from "./types";
 import { Logger } from "../shared/logging";
-import Tracestate = require("./util/Tracestate");
 import * as azureFunctionsTypes from "@azure/functions";
 import url = require("url");
 
 export class CorrelationContextManager {
 
-    public static spanToContextObject(spanContext: SpanContext, parentId?: string, name?: string, traceState?: string): ICorrelationContext {
+    public static spanToContextObject(spanContext: SpanContext, parentId?: string, name?: string, traceState?: TraceState): ICorrelationContext {
         const traceContext: ITraceparent = {
             legacyRootId: "",
             traceId: spanContext.traceId,
@@ -19,9 +18,8 @@ export class CorrelationContextManager {
             parentId: parentId,
             version: "00"
         };
-        const tracestate = new Tracestate(traceState);
 
-        return this.generateContextObject(traceContext.traceId, traceContext.parentId, name, null, traceContext, tracestate);
+        return this.generateContextObject(traceContext.traceId, traceContext.parentId, name, traceContext, traceState);
     }
 
     /**
@@ -33,7 +31,7 @@ export class CorrelationContextManager {
         // Gets the active span and extracts the context to populate and return the ICorrelationContext object
         const activeSpan: Span = trace.getSpan(context.active()) as Span;
 
-        return this.spanToContextObject(activeSpan.spanContext(), activeSpan.parentSpanId, activeSpan.name, activeSpan.spanContext()?.traceState?.serialize());
+        return this.spanToContextObject(activeSpan.spanContext(), activeSpan.parentSpanId, activeSpan.name, activeSpan.spanContext()?.traceState);
     }
 
     /**
@@ -43,18 +41,23 @@ export class CorrelationContextManager {
         operationId: string,
         parentId?: string,
         operationName?: string,
-        correlationContextHeader?: string,
         traceparent?: ITraceparent,
-        tracestate?: ITracestate
+        tracestate?: TraceState
     ): ICorrelationContext {
         parentId = parentId || operationId;
+
+        // Cast OpenTelemetry TraceState object to ITracestate object
+        const ITraceState: ITracestate = {
+            fieldmap: tracestate.serialize().split(",")
+        };
+        
         return {
             operation: {
                 name: operationName,
                 id: operationId,
                 parentId: parentId,
                 traceparent: traceparent,
-                tracestate: tracestate,
+                tracestate: ITraceState,
             },
             // Headers are not being used so custom properties will always be stubbed out
             customProperties: {} as ICustomProperties,
