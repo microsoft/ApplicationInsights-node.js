@@ -1,23 +1,25 @@
 import * as events from "events";
 import * as http from "http";
-import { context, SpanContext, createContextKey, trace, Attributes } from "@opentelemetry/api";
+import { context, SpanContext, createContextKey, trace } from "@opentelemetry/api";
 import { Span } from "@opentelemetry/sdk-trace-base";
-import { ICorrelationContext, ITraceparent, ITracestate, HttpRequest } from "./types";
+import { ICorrelationContext, ITraceparent, ITracestate, HttpRequest, ICustomProperties } from "./types";
 import { Logger } from "../shared/logging";
-import Traceparent = require("./util/Traceparent");
 import Tracestate = require("./util/Tracestate");
 import * as azureFunctionsTypes from "@azure/functions";
 import url = require("url");
 
 export class CorrelationContextManager {
 
-    public static spanToContextObject(spanContext: SpanContext, parentId?: string, name?: string, customProperties?: Attributes, traceState?: string): ICorrelationContext {
-        const traceContext = new Traceparent();
+    public static spanToContextObject(spanContext: SpanContext, parentId?: string, name?: string, traceState?: string): ICorrelationContext {
+        const traceContext: ITraceparent = {
+            legacyRootId: "",
+            traceId: spanContext.traceId,
+            spanId: spanContext.spanId,
+            traceFlag: spanContext.traceFlags.toString(),
+            parentId: parentId,
+            version: "00"
+        };
         const tracestate = new Tracestate(traceState);
-        traceContext.traceId = spanContext.traceId;
-        traceContext.spanId = spanContext.spanId;
-        traceContext.traceFlag = Traceparent.formatOpenTelemetryTraceFlags(spanContext.traceFlags) || Traceparent.DEFAULT_TRACE_FLAG;
-        traceContext.parentId = parentId;
 
         return this.generateContextObject(traceContext.traceId, traceContext.parentId, name, null, traceContext, tracestate);
     }
@@ -31,7 +33,7 @@ export class CorrelationContextManager {
         // Gets the active span and extracts the context to populate and return the ICorrelationContext object
         const activeSpan: Span = trace.getSpan(context.active()) as Span;
 
-        return this.spanToContextObject(activeSpan.spanContext(), activeSpan.parentSpanId, activeSpan.name, null, activeSpan.spanContext()?.traceState?.serialize());
+        return this.spanToContextObject(activeSpan.spanContext(), activeSpan.parentSpanId, activeSpan.name, activeSpan.spanContext()?.traceState?.serialize());
     }
 
     /**
@@ -54,8 +56,8 @@ export class CorrelationContextManager {
                 traceparent: traceparent,
                 tracestate: tracestate,
             },
-            // Pass Span attributes as custom properties
-            customProperties: new CustomPropertiesImpl(correlationContextHeader),
+            // Headers are not being used so custom properties will always be stubbed out
+            customProperties: {} as ICustomProperties,
         }
     }
 
@@ -169,73 +171,5 @@ export class CorrelationContextManager {
             spanId: ctx.operation.traceparent.spanId,
             traceFlags: parseInt(ctx.operation.traceparent.traceFlag, 10),
         };
-    }
-}
-
-export interface CustomProperties {
-    /**
-     * Get a custom property from the correlation context
-     */
-    getProperty(key: string): string;
-    /**
-     * Store a custom property in the correlation context.
-     * Do not store sensitive information here.
-     * Properties stored here are exposed via outgoing HTTP headers for correlating data cross-component.
-     * The characters ',' and '=' are disallowed within keys or values.
-     */
-    setProperty(key: string, value: string): void;
-}
-
-export interface PrivateCustomProperties extends CustomProperties {
-    addHeaderData(header: string): void;
-    serializeToHeader(): string;
-}
-
-class CustomPropertiesImpl implements PrivateCustomProperties {
-    private static bannedCharacters = /[,=]/;
-    private props: { key: string, value: string }[] = [];
-
-    public constructor(header: string) {
-        this.addHeaderData(header);
-    }
-
-    public addHeaderData(header?: string) {
-        const keyvals = header ? header.split(",") : [];
-        this.props = keyvals.map((keyval) => {
-            const parts = keyval.split("=");
-            return { key: parts[0], value: parts[1] };
-        }).concat(this.props);
-    }
-
-    public serializeToHeader() {
-        return this.props.map((keyval) => `${keyval.key}=${keyval.value}`).join(", ");
-    }
-
-    public getProperty(prop: string) {
-        for (let i = 0; i < this.props.length; ++i) {
-            const keyval = this.props[i]
-            if (keyval.key === prop) {
-                return keyval.value;
-            }
-        }
-        return;
-    }
-
-    // TODO: Strictly according to the spec, properties which are recieved from
-    // an incoming request should be left untouched, while we may add our own new
-    // properties. The logic here will need to change to track that.
-    public setProperty(prop: string, val: string) {
-        if (CustomPropertiesImpl.bannedCharacters.test(prop) || CustomPropertiesImpl.bannedCharacters.test(val)) {
-            Logger.getInstance().warn(`Correlation context property keys and values must not contain ',' or '='. setProperty was called with key: ${ prop } and value: ${ val}`);
-            return;
-        }
-        for (let i = 0; i < this.props.length; ++i) {
-            const keyval = this.props[i];
-            if (keyval.key === prop) {
-                keyval.value = val;
-                return;
-            }
-        }
-        this.props.push({ key: prop, value: val });
     }
 }
