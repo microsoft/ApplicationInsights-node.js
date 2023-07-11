@@ -78,7 +78,7 @@ export class CorrelationContextManager {
     public static wrapEmitter(emitter: events.EventEmitter): void {
         context.bind(context.active(), emitter);
     }
-
+    
     /**
      *  Patches a callback to restore the correct Context when getCurrentContext
      *  is run within it. This is necessary if automatic correlation fails to work
@@ -111,99 +111,9 @@ export class CorrelationContextManager {
         const spanContext = input && (input as SpanContext).traceId ? input as SpanContext : null;
         const headers = input && (input as http.IncomingMessage | azureFunctionsTypes.HttpRequest).headers;
 
-        // OpenTelemetry Span
-        if (span) {
-            return this.spanToContextObject(span.spanContext(), span.parentSpanId, span.name);
-        }
+        // TODO: THIS ALL NEEDS REDONE
 
-        // OpenTelemetry SpanContext
-        if (spanContext) {
-            return this.spanToContextObject(spanContext, `|${spanContext.traceId}.${spanContext.spanId}.`, typeof request === "string" ? request : "");
-        }
-
-        let operationName = typeof request === "string" ? request : "";
-        
-        // AzFunction TraceContext
-        if (traceContext) {
-            let traceparent = null;
-            let tracestate = null;
-            operationName = traceContext.attributes["OperationName"] || operationName;
-            if (request) {
-                const azureFnRequest = request as azureFunctionsTypes.HttpRequest;
-                if (azureFnRequest.headers) {
-                    if (azureFnRequest.headers.traceparent) {
-                        traceparent = new Traceparent(azureFnRequest.headers.traceparent);
-                    } else if (azureFnRequest.headers["request-id"]) {
-                        traceparent = new Traceparent(null);
-                    }
-                    if (azureFnRequest.headers.tracestate) {
-                        tracestate = new Tracestate(azureFnRequest.headers.tracestate);
-                    }
-                }
-            }
-            if (!traceparent) {
-                traceparent = new Traceparent(traceContext.traceparent);
-            }
-            if (!tracestate) {
-                tracestate = new Tracestate(traceContext.tracestate);
-            }
-
-            // TODO: Add support for operationName
-            let correlationContextHeader = undefined;
-            if (typeof request === "object") {
-                correlationContextHeader = request.headers["correlation-context"] ? request.headers["correlation-context"].toString() : null;
-                // operationName = parser.getOperationName({});
-            }
-            const correlationContext = CorrelationContextManager.generateContextObject(
-                traceparent.traceId,
-                traceparent.parentId,
-                operationName,
-                correlationContextHeader,
-                traceparent,
-                tracestate
-            );
-
-            return correlationContext;
-        }
-
-        // No TraceContext available, parse as http.IncomingMessage
-        if (headers) {
-            const traceparent = new Traceparent(headers.traceparent ? headers.traceparent.toString() : null);
-            const tracestate = new Tracestate(headers.tracestate ? headers.tracestate.toString() : null);
-            const correlationContext = CorrelationContextManager.generateContextObject(
-                traceparent.traceId,
-                traceparent.parentId,
-                this._getOperationName({}, request as http.IncomingMessage | HttpRequest),
-                headers["correlation-context"] ? headers["correlation-context"].toString() : null,
-                traceparent,
-                tracestate
-            );
-
-            return correlationContext;
-        }
-
-        Logger.getInstance().warn("startOperation was called with invalid arguments");
         return null;
-    }
-
-    /**
-     * Gets the operation name for Azure Functions requests
-     */
-    private static _getOperationName(tags: { [key: string]: string}, request: http.IncomingMessage | HttpRequest) {
-        if (tags["ai.operation.name"]) {
-            return tags["ai.operation.name"];
-        }
-        let pathName = "";
-        try { 
-            pathName = new url.URL(this._getAbsoluteUrl(request)).pathname;
-        } catch (ex) {
-            // Ignore errors
-        }
-        let operationName = pathName.split("/").pop();
-        if (pathName) {
-            operationName += ` ${pathName}`;
-        }
-        return operationName;
     }
 
     /**
@@ -242,6 +152,7 @@ export class CorrelationContextManager {
      *  Disables the CorrelationContextManager.
      */
     public static disable() {
+        Logger.getInstance().warn("It will not be possible to re-enable the current context manager after disabling it!");
         context.disable();
     }
 
