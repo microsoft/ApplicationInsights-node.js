@@ -3,7 +3,7 @@
 
 import { TokenCredential } from "@azure/core-auth";
 import { Resource } from "@opentelemetry/resources";
-import { ApplicationInsightsOptions, LogInstrumentationsConfig, OTLPExporterConfig } from "./types";
+import { ApplicationInsightsOptions, LogInstrumentationsConfig } from "./types";
 import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 import { InstrumentationOptions } from "@azure/monitor-opentelemetry";
 
@@ -12,8 +12,6 @@ import { InstrumentationOptions } from "@azure/monitor-opentelemetry";
 */
 export class ApplicationInsightsConfig implements ApplicationInsightsOptions {
     // ApplicationInsightsOptions
-    public otlpTraceExporterConfig?: OTLPExporterConfig;
-    public otlpMetricExporterConfig?: OTLPExporterConfig;
     public enableAutoCollectExceptions?: boolean;
     public extendedMetrics: { [type: string]: boolean };
     public logInstrumentations?: LogInstrumentationsConfig;

@@ -11,6 +11,7 @@ import { Attributes } from "@opentelemetry/api";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
 export class AzureFunctionsLoader extends AgentLoader {
+    
     constructor() {
         super();
         if (this._canLoad) {

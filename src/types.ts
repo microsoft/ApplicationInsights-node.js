@@ -2,21 +2,11 @@
 // Licensed under the MIT license.
 
 import { AzureMonitorOpenTelemetryOptions } from "@azure/monitor-opentelemetry";
-import { OTLPExporterNodeConfigBase } from '@opentelemetry/otlp-exporter-base';
-
-export interface OTLPExporterConfig {
-    baseConfig?: OTLPExporterNodeConfigBase,
-    enabled?: boolean
-}
 
 /**
  * Azure Monitor OpenTelemetry Options
  */
 export interface ApplicationInsightsOptions extends AzureMonitorOpenTelemetryOptions {
-    /** OTLP Trace Exporter Configuration */
-    otlpTraceExporterConfig?: OTLPExporterConfig;
-    /** OTLP Metric Exporter Configuration */
-    otlpMetricExporterConfig?: OTLPExporterConfig;
     /**
    * Sets the state of exception tracking (enabled by default)
    * if true uncaught exceptions will be sent to Application Insights

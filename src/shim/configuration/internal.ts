@@ -1,18 +1,14 @@
 import { JsonConfig } from "./jsonConfig";
 import { Logger } from "../logging";
-import { ApplicationInsightsOptions, ExtendedMetricType, LogInstrumentationsConfig, OTLPExporterConfig } from "../../types";
+import { ApplicationInsightsOptions, ExtendedMetricType, LogInstrumentationsConfig } from "../../types";
 
 
 export class InternalConfig implements ApplicationInsightsOptions {
-    private _otlpTraceExporterConfig: OTLPExporterConfig;
-    private _otlpMetricExporterConfig: OTLPExporterConfig;
     private _logInstrumentations: LogInstrumentationsConfig;
     public enableAutoCollectExceptions: boolean;
     public extendedMetrics: { [type: string]: boolean };
 
     constructor(options?: ApplicationInsightsOptions) {
-        this._otlpMetricExporterConfig = {};
-        this._otlpTraceExporterConfig = {};
         this.extendedMetrics = {};
         // Load config values from env variables and JSON if available
         this._loadDefaultValues();
@@ -21,27 +17,8 @@ export class InternalConfig implements ApplicationInsightsOptions {
         if (options) {
             this.enableAutoCollectExceptions =
                 options.enableAutoCollectExceptions || this.enableAutoCollectExceptions;
-            this.otlpMetricExporterConfig =
-                options.otlpMetricExporterConfig || this.otlpMetricExporterConfig;
-            this.otlpTraceExporterConfig = options.otlpTraceExporterConfig || this.otlpTraceExporterConfig;
             this.logInstrumentations = options.logInstrumentations || this.logInstrumentations;
         }
-    }
-
-    public set otlpTraceExporterConfig(value: OTLPExporterConfig) {
-        this._otlpTraceExporterConfig = Object.assign(this._otlpTraceExporterConfig, value);
-    }
-
-    public get otlpTraceExporterConfig(): OTLPExporterConfig {
-        return this._otlpTraceExporterConfig;
-    }
-
-    public set otlpMetricExporterConfig(value: OTLPExporterConfig) {
-        this._otlpMetricExporterConfig = Object.assign(this._otlpMetricExporterConfig, value);
-    }
-
-    public get otlpMetricExporterConfig(): OTLPExporterConfig {
-        return this._otlpMetricExporterConfig;
     }
 
     public set logInstrumentations(value: LogInstrumentationsConfig) {
@@ -78,14 +55,6 @@ export class InternalConfig implements ApplicationInsightsOptions {
     private _mergeConfig() {
         try {
             const jsonConfig = JsonConfig.getInstance();
-            this.otlpMetricExporterConfig =
-                jsonConfig.otlpMetricExporterConfig !== undefined
-                    ? jsonConfig.otlpMetricExporterConfig
-                    : this.otlpMetricExporterConfig;
-            this.otlpTraceExporterConfig =
-                jsonConfig.otlpTraceExporterConfig !== undefined
-                    ? jsonConfig.otlpTraceExporterConfig
-                    : this.otlpTraceExporterConfig;
             this.enableAutoCollectExceptions =
                 jsonConfig.enableAutoCollectExceptions !== undefined
                     ? jsonConfig.enableAutoCollectExceptions
