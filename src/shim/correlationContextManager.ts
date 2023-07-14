@@ -1,11 +1,10 @@
 import * as events from "events";
 import * as http from "http";
-import { context, SpanContext, createContextKey, trace, TraceState } from "@opentelemetry/api";
+import { context, SpanContext, createContextKey, trace, TraceState, propagation, Context } from "@opentelemetry/api";
 import { Span } from "@opentelemetry/sdk-trace-base";
 import { ICorrelationContext, ITraceparent, ITracestate, HttpRequest, ICustomProperties } from "./types";
 import { Logger } from "../shared/logging";
 import * as azureFunctionsTypes from "@azure/functions";
-import url = require("url");
 
 export class CorrelationContextManager {
 
@@ -16,7 +15,7 @@ export class CorrelationContextManager {
             traceId: spanContext.traceId,
             spanId: spanContext.spanId,
             traceFlag: spanContext.traceFlags.toString(),
-            parentId: parentId,
+            parentId: parentId || spanContext.traceId,
             version: "00"
         };
 
@@ -49,7 +48,7 @@ export class CorrelationContextManager {
 
         // Cast OpenTelemetry TraceState object to ITracestate object
         const ITraceState: ITracestate = {
-            fieldmap: tracestate.serialize().split(",")
+            fieldmap: tracestate?.serialize()?.split(",")
         };
         
         return {
@@ -119,41 +118,38 @@ export class CorrelationContextManager {
         const spanContext = input && (input as SpanContext).traceId ? input as SpanContext : null;
         const headers = input && (input as http.IncomingMessage | azureFunctionsTypes.HttpRequest).headers;
 
-        // TODO: THIS ALL NEEDS REDONE
+        // OpenTelemetry Span or SpanContext
+        if (span || spanContext) {
+            const activeContext: Context = propagation.extract(context.active(), span || spanContext);
+            const activeSpan: Span = trace.getSpan(activeContext) as Span;
 
-        return null;
-    }
-
-    /**
-     * Helper to get an absolute url from request object
-     */
-    private static _getAbsoluteUrl(request: http.IncomingMessage | HttpRequest): string {
-        if (!request.headers) {
-            return request.url;
+            return this.spanToContextObject(activeSpan.spanContext(), activeSpan.parentSpanId, activeSpan.name, activeSpan.spanContext()?.traceState);
         }
 
-        const encrypted = (<any>request).connection ? ((<any>request).connection as any).encrypted : null;
+        // AzFunction TraceContext
+        if (traceContext) {
+            // Use the headers on the request from Az Fns to extract context and then set that as the active context
+                const azureFnRequest = request as azureFunctionsTypes.HttpRequest;
 
-        const protocol = (encrypted || request.headers["x-forwarded-proto"] === "https") ? "https" : "http";
+                // If the traceparent isn't defined on the headers set it to the request-id
+                if (!azureFnRequest.headers.traceparent) {
+                    azureFnRequest.headers.traceparent = azureFnRequest.headers["request-id"];
+                }
 
-        const baseUrl = `${protocol}://${request.headers.host}/`;
+                // If the request was passed to the function - extract the context from the headers, if not use the traceContext
+                const activeContext = propagation.extract(context.active(), azureFnRequest?.headers || traceContext);
 
-        let pathName = "";
-        let search = "";
-        try {
-            const requestUrl = new url.URL(request.url, baseUrl);
-            pathName = requestUrl.pathname;
-            search = requestUrl.search;
+                const activeSpan: Span = trace.getSpan(activeContext) as Span;
+                return this.spanToContextObject(activeSpan.spanContext(), activeSpan.parentSpanId, activeSpan.name, activeSpan.spanContext()?.traceState);
         }
-        catch (ex) {
-            // Ignore errors
+
+        // If no TraceContext is available, extract context from the headers object
+        if (headers) {
+                const activeContext = propagation.extract(context.active(), headers);
+
+                const activeSpan: Span = trace.getSpan(activeContext) as Span;
+                return this.spanToContextObject(activeSpan.spanContext(), activeSpan.parentSpanId, activeSpan.name, activeSpan.spanContext()?.traceState);
         }
-        return url.format({
-            protocol: protocol,
-            host: request.headers.host,
-            pathname: pathName,
-            search: search
-        });
     }
 
     /**
