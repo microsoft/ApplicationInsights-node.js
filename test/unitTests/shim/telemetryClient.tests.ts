@@ -42,7 +42,7 @@ describe("shim/TelemetryClient", () => {
         client = new TelemetryClient(
             "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
         );
-        traceExportStub = sinon.stub(client["_client"]["_traceHandler"]["_azureExporter"], "export").callsFake(
+        traceExportStub = sinon.stub(client.getAzureMonitorOpenTelemetryClient()["_traceHandler"]["_azureExporter"], "export").callsFake(
             (data: any, resultCallback: any) =>
                 new Promise((resolve) => {
                     resultCallback({
@@ -51,7 +51,7 @@ describe("shim/TelemetryClient", () => {
                     resolve(data);
                 })
         );
-        logExportStub = sinon.stub(client["_client"]["_logHandler"]["_azureExporter"], "export").callsFake(
+        logExportStub = sinon.stub(client.getAzureMonitorOpenTelemetryClient()["_logHandler"]["_azureExporter"], "export").callsFake(
             (data: any, resultCallback: any) =>
                 new Promise((resolve) => {
                     resultCallback({
@@ -90,7 +90,7 @@ describe("shim/TelemetryClient", () => {
                     assert.equal(spans[0].attributes["peer.service"], "TestTarget");
                     done();
                 })
-                .catch((error) => {
+                .catch((error: Error) => {
                     done(error);
                 });
         });
@@ -119,7 +119,7 @@ describe("shim/TelemetryClient", () => {
                     assert.equal(spans[0].attributes["db.statement"], "SELECT * FROM test");
                     done();
                 })
-                .catch((error) => {
+                .catch((error: Error) => {
                     done(error);
                 });
         });
@@ -149,7 +149,7 @@ describe("shim/TelemetryClient", () => {
                     assert.equal(spans[0].attributes["http.url"], "http://test.com");
                     done();
                 })
-                .catch((error) => {
+                .catch((error: Error) => {
                     done(error);
                 });
         });
@@ -181,8 +181,7 @@ describe("shim/TelemetryClient", () => {
                 success: false,
             };
             client.trackAvailability(telemetry);
-            client
-                .flush()
+            client.getAzureMonitorOpenTelemetryClient()["_logHandler"].flush()
                 .then(() => {
                     assert.ok(logExportStub.calledOnce, "Export called");
                     const logs = logExportStub.args[0][0];
@@ -199,7 +198,7 @@ describe("shim/TelemetryClient", () => {
                     assert.equal(logs[0].instrumentationScope.name, "AzureMonitorLogger");
                     done();
                 })
-                .catch((error) => {
+                .catch((error: Error) => {
                     done(error);
                 });
         });
@@ -214,8 +213,7 @@ describe("shim/TelemetryClient", () => {
                 url: "testUrl",
             };
             client.trackPageView(telemetry);
-            client
-                .flush()
+            client.getAzureMonitorOpenTelemetryClient()["_logHandler"].flush()
                 .then(() => {
                     assert.ok(logExportStub.calledOnce, "Export called");
                     const logs = logExportStub.args[0][0];
@@ -231,7 +229,7 @@ describe("shim/TelemetryClient", () => {
                     assert.equal(logs[0].instrumentationScope.name, "AzureMonitorLogger");
                     done();
                 })
-                .catch((error) => {
+                .catch((error: Error) => {
                     done(error);
                 });
         });
@@ -243,8 +241,7 @@ describe("shim/TelemetryClient", () => {
                 severity: "Information",
             };
             client.trackTrace(telemetry);
-            client
-                .flush()
+            client.getAzureMonitorOpenTelemetryClient()["_logHandler"].flush()
                 .then(() => {
                     assert.ok(logExportStub.calledOnce, "Export called");
                     const logs = logExportStub.args[0][0];
@@ -257,7 +254,7 @@ describe("shim/TelemetryClient", () => {
                     assert.equal(logs[0].instrumentationScope.name, "AzureMonitorLogger");
                     done();
                 })
-                .catch((error) => {
+                .catch((error: Error) => {
                     done(error);
                 });
         });
@@ -272,8 +269,7 @@ describe("shim/TelemetryClient", () => {
                 measurements: measurements,
             };
             client.trackException(telemetry);
-            client
-                .flush()
+            client.getAzureMonitorOpenTelemetryClient()["_logHandler"].flush()
                 .then(() => {
                     assert.ok(logExportStub.calledOnce, "Export called");
                     const logs = logExportStub.args[0][0];
@@ -288,7 +284,7 @@ describe("shim/TelemetryClient", () => {
                     assert.equal(logs[0].instrumentationScope.name, "AzureMonitorLogger");
                     done();
                 })
-                .catch((error) => {
+                .catch((error: Error) => {
                     done(error);
                 });
         });
@@ -302,8 +298,7 @@ describe("shim/TelemetryClient", () => {
                 measurements: measurements,
             };
             client.trackEvent(telemetry);
-            client
-                .flush()
+            client.getAzureMonitorOpenTelemetryClient()["_logHandler"].flush()
                 .then(() => {
                     assert.ok(logExportStub.calledOnce, "Export called");
                     const logs = logExportStub.args[0][0];
@@ -316,7 +311,7 @@ describe("shim/TelemetryClient", () => {
                     assert.equal(logs[0].instrumentationScope.name, "AzureMonitorLogger");
                     done();
                 })
-                .catch((error) => {
+                .catch((error: Error) => {
                     done(error);
                 });
         });

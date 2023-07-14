@@ -1,15 +1,13 @@
 import * as fs from "fs";
 import * as path from "path";
 import { Logger } from "../logging";
-import { ApplicationInsightsOptions, LogInstrumentationsConfig, OTLPExporterConfig } from "../../types";
+import { ApplicationInsightsOptions, LogInstrumentationsConfig } from "../../types";
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 const ENV_CONTENT = "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT";
 
 export class JsonConfig implements ApplicationInsightsOptions {
     private static _instance: JsonConfig;
-    public otlpTraceExporterConfig?: OTLPExporterConfig;
-    public otlpMetricExporterConfig?: OTLPExporterConfig;
     public enableAutoCollectExceptions: boolean;
     public logInstrumentations: LogInstrumentationsConfig;
     public extendedMetrics: { [type: string]: boolean };
@@ -53,8 +51,6 @@ export class JsonConfig implements ApplicationInsightsOptions {
         }
         try {
             const jsonConfig: ApplicationInsightsOptions = JSON.parse(jsonString);
-            this.otlpMetricExporterConfig = jsonConfig.otlpMetricExporterConfig;
-            this.otlpTraceExporterConfig = jsonConfig.otlpTraceExporterConfig;
             this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
             this.logInstrumentations = jsonConfig.logInstrumentations;
             this.extendedMetrics = jsonConfig.extendedMetrics;
