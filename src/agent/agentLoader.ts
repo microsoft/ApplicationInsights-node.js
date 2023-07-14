@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import { ManagedIdentityCredential } from "@azure/identity";
-import { TelemetryClient } from "../shim/telemetryClient";
+import { AzureMonitorOpenTelemetryClient } from "@azure/monitor-opentelemetry";
 import { Util } from "../shim/util";
 import { ConsoleWriter } from "./diagnostics/writers/consoleWriter";
 import { DiagnosticLogger } from "./diagnostics/diagnosticLogger";
@@ -110,7 +110,7 @@ export class AgentLoader {
         this._diagnosticLogger = logger;
     }
 
-    public initialize(): void {
+    public initialize(): AzureMonitorOpenTelemetryClient {
         if (!this._canLoad) {
             const msg = `Cannot load Azure Monitor Application Insights Distro because of unsupported Node.js runtime, currently running in version ${NODE_JS_RUNTIME_MAJOR_VERSION}`;
             console.log(msg);
@@ -118,11 +118,9 @@ export class AgentLoader {
         }
         if (this._validate()) {
             try {
-                // TODO: Set Prefix 
-
                 // Initialize Distro
                 this._options.azureMonitorExporterConfig.aadTokenCredential = this._aadCredential;
-                const appInsightsClient = new TelemetryClient(this._options);
+                const appInsightsClient = new AzureMonitorOpenTelemetryClient(this._options);
                 // Agent successfully initialized
                 const diagnosticLog: IDiagnosticLog = {
                     message: "Azure Monitor Application Insights Distro was started succesfully.",
@@ -132,6 +130,7 @@ export class AgentLoader {
                 this._statusLogger.logStatus({
                     AgentInitializedSuccessfully: true
                 });
+                return appInsightsClient;
 
             }
             catch (error) {

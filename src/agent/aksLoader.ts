@@ -11,9 +11,15 @@ import { AgentResourceProviderType, AZURE_MONITOR_AGENT_PREFIX } from './types';
 
 
 export class AKSLoader extends AgentLoader {
+
     constructor() {
         super();
         if (this._canLoad) {
+            // AKS specific configuration
+            this._options.otlpMetricExporterConfig = {
+                enabled: true
+            };
+
             let statusLogDir = '/var/log/applicationinsights/';
             if (this._isWindows) {
                 if (process.env.HOME) {
