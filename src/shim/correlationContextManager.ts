@@ -1,6 +1,6 @@
 import * as events from "events";
 import * as http from "http";
-import { context, SpanContext, createContextKey, trace, TraceState, propagation, Context } from "@opentelemetry/api";
+import { context, SpanContext, createContextKey, trace, TraceState, Context } from "@opentelemetry/api";
 import { Span } from "@opentelemetry/sdk-trace-base";
 import { ICorrelationContext, ITraceparent, ITracestate, HttpRequest, ICustomProperties } from "./types";
 import { Logger } from "../shared/logging";
@@ -15,7 +15,7 @@ export class CorrelationContextManager {
             traceId: spanContext.traceId,
             spanId: spanContext.spanId,
             traceFlag: spanContext.traceFlags.toString(),
-            parentId: parentId || spanContext.traceId,
+            parentId: parentId,
             version: "00"
         };
 
@@ -112,44 +112,102 @@ export class CorrelationContextManager {
     public static startOperation(
         input: azureFunctionsTypes.Context | (http.IncomingMessage | azureFunctionsTypes.HttpRequest) | SpanContext | Span,
         request?: HttpRequest | string
-    ): ICorrelationContext | null {
+    ): ICorrelationContext {
         const traceContext = input && (input as azureFunctionsTypes.Context).traceContext || null;
         const span = input && (input as Span).spanContext ? input as Span : null;
         const spanContext = input && (input as SpanContext).traceId ? input as SpanContext : null;
         const headers = input && (input as http.IncomingMessage | azureFunctionsTypes.HttpRequest).headers;
 
-        // OpenTelemetry Span or SpanContext
-        if (span || spanContext) {
-            const activeContext: Context = propagation.extract(context.active(), span || spanContext);
-            const activeSpan: Span = trace.getSpan(activeContext) as Span;
-
-            return this.spanToContextObject(activeSpan.spanContext(), activeSpan.parentSpanId, activeSpan.name, activeSpan.spanContext()?.traceState);
+        if (span) {
+            trace.setSpanContext(context.active(), span.spanContext());
+            return this.spanToContextObject(
+                span.spanContext(),
+                span.parentSpanId,
+            );
         }
 
-        // AzFunction TraceContext
+        // TODO: Make final determination on if we should use the below parentId construction or not (OTel seems to show parentId as just a 16 bit string)
+        if (spanContext) {
+            trace.setSpanContext(context.active(), spanContext);
+            return this.spanToContextObject(
+                spanContext,
+                `${spanContext.traceId}-${spanContext.spanId}`,
+            );
+        }
+
         if (traceContext) {
-            // Use the headers on the request from Az Fns to extract context and then set that as the active context
-                const azureFnRequest = request as azureFunctionsTypes.HttpRequest;
+            // Use the headers on the request from Azure Functions to set the active context
+            let traceparent = null;
+            let tracestate = null;
+            const azureFnRequest = request as azureFunctionsTypes.HttpRequest;
 
-                // If the traceparent isn't defined on the headers set it to the request-id
-                if (!azureFnRequest.headers.traceparent) {
-                    azureFnRequest.headers.traceparent = azureFnRequest.headers["request-id"];
-                }
+            // If the traceparent isn't defined on the azure function headers set it to the request-id
+            if (azureFnRequest?.headers) {
+                traceparent = azureFnRequest.headers.traceparent ? azureFnRequest.headers.traceparent : azureFnRequest.headers["request-id"];
+                tracestate = azureFnRequest.headers.tracestate;
+            }
 
-                // If the request was passed to the function - extract the context from the headers, if not use the traceContext
-                const activeContext = propagation.extract(context.active(), azureFnRequest?.headers || traceContext);
+            if (!traceparent) {
+                traceparent = traceContext.traceparent;
+            }
+            if (!tracestate) {
+                tracestate = traceContext.tracestate;
+            }
 
-                const activeSpan: Span = trace.getSpan(activeContext) as Span;
-                return this.spanToContextObject(activeSpan.spanContext(), activeSpan.parentSpanId, activeSpan.name, activeSpan.spanContext()?.traceState);
+            const traceArray: string[] = traceparent.split("-");
+
+            // TODO: Clean up duplicate tracestate code
+            // TODO: Make final determination on if we can populate spanId with only the traceparent
+            let tracestateObj: TraceState;
+            tracestate.split(",").forEach((pair) => {
+                const kv = pair.split("=");
+                tracestateObj.set(kv[0], kv[1]);
+            });
+
+            return this.generateContextObject(
+                traceArray[0],
+                traceArray[1],
+                null,
+                {
+                    legacyRootId: "",
+                    parentId: traceArray[0],
+                    spanId: "",
+                    traceFlag: "",
+                    traceId: traceArray[1],
+                    version: "00",
+                },
+                tracestateObj
+            );
         }
 
-        // If no TraceContext is available, extract context from the headers object
         if (headers) {
-                const activeContext = propagation.extract(context.active(), headers);
+            const traceparent = headers.traceparent ? headers.traceparent.toString() : null;
+            const tracestate = headers.tracestate ? headers.tracestate.toString() : null;
 
-                const activeSpan: Span = trace.getSpan(activeContext) as Span;
-                return this.spanToContextObject(activeSpan.spanContext(), activeSpan.parentSpanId, activeSpan.name, activeSpan.spanContext()?.traceState);
+            let tracestateObj: TraceState;
+            tracestate.split(",").forEach((pair) => {
+                const kv = pair.split("=");
+                tracestateObj.set(kv[0], kv[1]);
+            });
+
+            return this.generateContextObject(
+                traceparent[0],
+                traceparent[1],
+                null,
+                {
+                    legacyRootId: "",
+                    parentId: traceparent[0],
+                    spanId: "",
+                    traceFlag: "",
+                    traceId: traceparent[1],
+                    version: "00",
+                },
+                tracestateObj
+            );
+
         }
+        Logger.getInstance().warn("startOperation was called with invalid arguments");
+        return null;
     }
 
     /**
