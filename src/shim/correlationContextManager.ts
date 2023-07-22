@@ -1,6 +1,6 @@
 import * as events from "events";
 import * as http from "http";
-import { context, SpanContext, createContextKey, trace, TraceState, Context } from "@opentelemetry/api";
+import { context, SpanContext, createContextKey, trace, TraceState } from "@opentelemetry/api";
 import { Span } from "@opentelemetry/sdk-trace-base";
 import { ICorrelationContext, ITraceparent, ITracestate, HttpRequest, ICustomProperties } from "./types";
 import { Logger } from "../shared/logging";
@@ -8,6 +8,14 @@ import * as azureFunctionsTypes from "@azure/functions";
 
 export class CorrelationContextManager {
 
+    /**
+     * Converts an OpenTelemetry SpanContext object to an ICorrelationContext object for backwards compatibility with ApplicationInsights
+     * @param spanContext OpenTelmetry SpanContext object
+     * @param parentId spanId of the parent span
+     * @param name OpenTelemetry human readable name of the span
+     * @param traceState String of key value pairs for additional trace context
+     * @returns ICorrelationContext object
+     */
     public static spanToContextObject(spanContext: SpanContext, parentId?: string, name?: string, traceState?: TraceState): ICorrelationContext {
         // Generate a basic ITraceparent to satisfy the ICorrelationContext interface
         const traceContext: ITraceparent = {
@@ -23,9 +31,10 @@ export class CorrelationContextManager {
     }
 
     /**
-     *  Provides the current Context.
-     *  The context is the most recent one entered into for the current
-     *  logical chain of execution, including across asynchronous calls.
+     * Provides the current Context.
+     * The context is the most recent one entered into for the current
+     * logical chain of execution, including across asynchronous calls.
+     * @returns ICorrelationContext object
      */
     public static getCurrentContext(): ICorrelationContext {
         // Gets the active span and extracts the context to populate and return the ICorrelationContext object
@@ -35,7 +44,13 @@ export class CorrelationContextManager {
     }
 
     /**
-     *  A helper to generate objects conforming to the CorrelationContext interface
+     * Helper to generate objects conforming to the CorrelationContext interface
+     * @param operationId String assigned to a series of related telemetry items - equivalent to OpenTelemetry traceId
+     * @param parentId spanId of the parent span
+     * @param operationName Human readable name of the span
+     * @param traceparent Context conveying string in the format version-traceId-spanId-traceFlag
+     * @param tracestate String of key value pairs for additional trace context
+     * @returns ICorrelationContext object
      */
     public static generateContextObject(
         operationId: string,
@@ -65,12 +80,15 @@ export class CorrelationContextManager {
     }
 
     /**
-     *  Runs a function inside a given Context.
-     *  All logical children of the execution path that entered this Context
-     *  will receive this Context object on calls to GetCurrentContext.
+     * Runs a function inside a given Context.
+     * All logical children of the execution path that entered this Context
+     * will receive this Context object on calls to GetCurrentContext.
+     * @param ctx Context to run the function within
+     * @param fn Function to run within the stated context
+     * @returns any
      */
     public static runWithContext(ctx: ICorrelationContext, fn: () => any): any {
-        // Creates a new SpanContext containing the values from the ICorrelationContext object, then sets the active context to the new span context
+        // Creates a new SpanContext containing the values from the ICorrelationContext object, then sets the active context to the new spanContext
         const contextName = createContextKey(ctx.operation.name);
         const spanContext = this._contextObjectToSpanContext(ctx);
 
@@ -79,18 +97,22 @@ export class CorrelationContextManager {
 
     /**
      * Wrapper for cls-hooked bindEmitter method
+     * @param emitter emitter to bind to the current context
      */
     public static wrapEmitter(emitter: events.EventEmitter): void {
         context.bind(context.active(), emitter);
     }
     
     /**
-     *  Patches a callback to restore the correct Context when getCurrentContext
-     *  is run within it. This is necessary if automatic correlation fails to work
-     *  with user-included libraries.
-     *
-     *  The supplied callback will be given the same context that was present for
-     *  the call to wrapCallback.  */
+     * Patches a callback to restore the correct Context when getCurrentContext
+     * is run within it. This is necessary if automatic correlation fails to work
+     * with user-included libraries.
+     * The supplied callback will be given the same context that was present for
+     * the call to wrapCallback
+     * @param fn Function to be wrapped in the provided context
+     * @param ctx Context to run the function within
+     * @returns Generic type T
+     */
     public static wrapCallback<T>(fn: T, ctx?: ICorrelationContext): T {
         const contextName = createContextKey(ctx.operation.name);
         const spanContext = this._contextObjectToSpanContext(ctx);
@@ -98,8 +120,8 @@ export class CorrelationContextManager {
     }
 
     /**
-     * Enables the CorrelationContextManager.
-     * Ignore unused parameter forceClsHooked as it is only used to satisfy backward compatibility 
+     * Enables the CorrelationContextManager
+     * @param forceClsHooked unused parameter used to satisfy backward compatibility
      */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public static enable(forceClsHooked?: boolean) {
@@ -107,7 +129,10 @@ export class CorrelationContextManager {
     }
 
     /**
-     * Create new correlation context.
+     * Creates a new correlation context
+     * @param input Any kind of object we can extract context information from
+     * @param request HTTP request we can pull context information from in the form of the request's headers
+     * @returns IcorrelationContext object
      */
     public static startOperation(
         input: azureFunctionsTypes.Context | (http.IncomingMessage | azureFunctionsTypes.HttpRequest) | SpanContext | Span,
@@ -211,7 +236,7 @@ export class CorrelationContextManager {
     }
 
     /**
-     *  Disables the CorrelationContextManager.
+     * Disables the CorrelationContextManager
      */
     public static disable() {
         Logger.getInstance().warn("It will not be possible to re-enable the current context manager after disabling it!");
@@ -219,12 +244,17 @@ export class CorrelationContextManager {
     }
 
     /**
-     * Reset the namespace
+     * Resets the namespace
      */
     public static reset() {
         Logger.getInstance().info("This is a no-op and exists only for compatibility reasons.");
     }
 
+    /**
+     * Converts ApplicationInsights' ICorrelationContext to an OpenTelemetry SpanContext
+     * @param ctx ICorrelationContext object to convert to a SpanContext
+     * @returns OpenTelemetry SpanContext
+     */
     private static _contextObjectToSpanContext(ctx: ICorrelationContext): SpanContext {
         return {
             traceId: ctx.operation.id,
