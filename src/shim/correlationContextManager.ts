@@ -1,6 +1,6 @@
 import * as events from "events";
 import * as http from "http";
-import { context, SpanContext, createContextKey, trace, TraceState } from "@opentelemetry/api";
+import { context, SpanContext, createContextKey, trace, Context, TraceState } from "@opentelemetry/api";
 import { Span } from "@opentelemetry/sdk-trace-base";
 import { ICorrelationContext, ITraceparent, ITracestate, HttpRequest, ICustomProperties } from "./types";
 import { Logger } from "../shared/logging";
@@ -22,7 +22,7 @@ export class CorrelationContextManager {
             legacyRootId: "",
             traceId: spanContext.traceId,
             spanId: spanContext.spanId,
-            traceFlag: spanContext.traceFlags.toString(),
+            traceFlag: spanContext.traceFlags?.toString(),
             parentId: parentId,
             version: "00"
         };
@@ -39,6 +39,7 @@ export class CorrelationContextManager {
     public static getCurrentContext(): ICorrelationContext {
         // Gets the active span and extracts the context to populate and return the ICorrelationContext object
         const activeSpan: Span = trace.getSpan(context.active()) as Span;
+        activeSpan.parentSpanId;
 
         return this.spanToContextObject(activeSpan.spanContext(), activeSpan.parentSpanId, activeSpan.name, activeSpan.spanContext()?.traceState);
     }
@@ -59,8 +60,6 @@ export class CorrelationContextManager {
         traceparent?: ITraceparent,
         tracestate?: TraceState
     ): ICorrelationContext {
-        parentId = parentId || operationId;
-
         // Cast OpenTelemetry TraceState object to ITracestate object
         const ITraceState: ITracestate = {
             fieldmap: tracestate?.serialize()?.split(",")
@@ -75,7 +74,10 @@ export class CorrelationContextManager {
                 tracestate: ITraceState,
             },
             // Headers are not being used so custom properties will always be stubbed out
-            customProperties: {} as ICustomProperties,
+            customProperties: {
+                getProperty(prop: string) { return "" },
+                setProperty(prop: string) { return "" },
+            } as ICustomProperties,
         }
     }
 
@@ -88,11 +90,9 @@ export class CorrelationContextManager {
      * @returns any
      */
     public static runWithContext(ctx: ICorrelationContext, fn: () => any): any {
-        // Creates a new SpanContext containing the values from the ICorrelationContext object, then sets the active context to the new spanContext
-        const contextName = createContextKey(ctx.operation.name);
-        const spanContext = this._contextObjectToSpanContext(ctx);
-
-        return context.with(context.active().setValue(contextName, spanContext), fn);
+        // Creates a new Context object containing the values from the ICorrelationContext object, then sets the active context to the new Context
+        const newContext: Context = trace.setSpanContext(context.active(), this._contextObjectToSpanContext(ctx));
+        return context.with(newContext, fn);
     }
 
     /**
@@ -151,12 +151,10 @@ export class CorrelationContextManager {
             );
         }
 
-        // TODO: Make final determination on if we should use the below parentId construction or not (OTel seems to show parentId as just a 16 bit string)
         if (spanContext) {
             trace.setSpanContext(context.active(), spanContext);
             return this.spanToContextObject(
                 spanContext,
-                `${spanContext.traceId}-${spanContext.spanId}`,
             );
         }
 
@@ -168,6 +166,7 @@ export class CorrelationContextManager {
 
             // If the traceparent isn't defined on the azure function headers set it to the request-id
             if (azureFnRequest?.headers) {
+                // request-id is a GUID-based unique identifier for the request
                 traceparent = azureFnRequest.headers.traceparent ? azureFnRequest.headers.traceparent : azureFnRequest.headers["request-id"];
                 tracestate = azureFnRequest.headers.tracestate;
             }
@@ -258,8 +257,8 @@ export class CorrelationContextManager {
     private static _contextObjectToSpanContext(ctx: ICorrelationContext): SpanContext {
         return {
             traceId: ctx.operation.id,
-            spanId: ctx.operation.traceparent.spanId,
-            traceFlags: parseInt(ctx.operation.traceparent.traceFlag, 10),
+            spanId: ctx.operation.traceparent?.spanId ?? "",
+            traceFlags: ctx.operation.traceparent?.traceFlag ? Number(ctx.operation.traceparent?.traceFlag) : undefined,
         };
     }
 }
