@@ -110,13 +110,23 @@ export class CorrelationContextManager {
      * The supplied callback will be given the same context that was present for
      * the call to wrapCallback
      * @param fn Function to be wrapped in the provided context
-     * @param ctx Context to run the function within
+     * @param ctx Context to bind the function to
      * @returns Generic type T
      */
     public static wrapCallback<T>(fn: T, ctx?: ICorrelationContext): T {
-        const contextName = createContextKey(ctx.operation.name);
-        const spanContext = this._contextObjectToSpanContext(ctx);
-        return context.bind(context.active().setValue(contextName, spanContext), fn);
+        try {
+            if (ctx) {
+                // Create the new context and bind it if context is passed
+                const newContext: Context = trace.setSpanContext(context.active(), this._contextObjectToSpanContext(ctx));
+                return context.bind(newContext, fn);
+            }
+            // If no context is passed, bind to the current context
+            return context.bind(context.active(), fn);
+            
+        } catch (error) {
+            Logger.getInstance().error("Error binding to session context", error);
+            return fn;
+        }
     }
 
     /**
