@@ -1,6 +1,7 @@
 import * as events from "events";
 import * as http from "http";
-import { context, SpanContext, createContextKey, trace, Context, TraceState } from "@opentelemetry/api";
+import { context, SpanContext, trace, Context } from "@opentelemetry/api";
+import { TraceState } from "@opentelemetry/core";
 import { Span } from "@opentelemetry/sdk-trace-base";
 import { ICorrelationContext, ITraceparent, ITracestate, HttpRequest, ICustomProperties } from "./types";
 import { Logger } from "../shared/logging";
@@ -20,9 +21,9 @@ export class CorrelationContextManager {
         // Generate a basic ITraceparent to satisfy the ICorrelationContext interface
         const traceContext: ITraceparent = {
             legacyRootId: "",
-            traceId: spanContext.traceId,
-            spanId: spanContext.spanId,
-            traceFlag: spanContext.traceFlags?.toString(),
+            traceId: spanContext?.traceId,
+            spanId: spanContext?.spanId,
+            traceFlag: spanContext?.traceFlags?.toString(),
             parentId: parentId,
             version: "00"
         };
@@ -36,12 +37,14 @@ export class CorrelationContextManager {
      * logical chain of execution, including across asynchronous calls.
      * @returns ICorrelationContext object
      */
-    public static getCurrentContext(): ICorrelationContext {
+    public static getCurrentContext(): ICorrelationContext | null {
         // Gets the active span and extracts the context to populate and return the ICorrelationContext object
         const activeSpan: Span = trace.getSpan(context.active()) as Span;
-        activeSpan.parentSpanId;
+        if (!activeSpan) { return null; }
+        activeSpan?.parentSpanId;
+        const traceStateObj: TraceState = new TraceState(activeSpan?.spanContext()?.traceState?.serialize());
 
-        return this.spanToContextObject(activeSpan.spanContext(), activeSpan.parentSpanId, activeSpan.name, activeSpan.spanContext()?.traceState);
+        return this.spanToContextObject(activeSpan?.spanContext(), activeSpan?.parentSpanId, activeSpan?.name, traceStateObj);
     }
 
     /**
@@ -192,20 +195,20 @@ export class CorrelationContextManager {
 
             // TODO: Clean up duplicate tracestate code
             // TODO: Make final determination on if we can populate spanId with only the traceparent
-            let tracestateObj: TraceState;
+            const tracestateObj: TraceState = new TraceState();
             tracestate.split(",").forEach((pair) => {
                 const kv = pair.split("=");
                 tracestateObj.set(kv[0], kv[1]);
             });
 
             return this.generateContextObject(
-                traceArray[0],
                 traceArray[1],
+                traceArray[2],
                 null,
                 {
                     legacyRootId: "",
-                    parentId: traceArray[0],
-                    spanId: "",
+                    parentId: "",
+                    spanId: traceArray[2],
                     traceFlag: "",
                     traceId: traceArray[1],
                     version: "00",

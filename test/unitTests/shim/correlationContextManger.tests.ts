@@ -5,7 +5,6 @@ import sinon = require("sinon");
 import { SpanContext } from "@opentelemetry/api";
 import * as azureFunctionTypes from "@azure/functions";
 
-
 const customProperties = {
     getProperty(prop: string) { return "" },
     setProperty(prop: string) { return "" },
@@ -28,7 +27,7 @@ const testContext: ICorrelationContext = {
             // Will always be version 00
             version: "00",
         },
-        tracestate: { fieldmap: undefined }
+        tracestate: { fieldmap: [""] }
     },
     customProperties
 };
@@ -46,7 +45,7 @@ const testContext2: ICorrelationContext = {
             traceFlag: "1",
             version: "00",
         },
-        tracestate: { fieldmap: undefined }
+        tracestate: { fieldmap: [""] }
     },
     customProperties
 }
@@ -136,10 +135,28 @@ describe("#startOperation()", () => {
         traceFlags: 0,
     };
 
-    const testFunctionContext: azureFunctionTypes.TraceContext = {
-        traceparent: "00-testtraceid-testspanid-00",
+    const testFunctionTraceContext: azureFunctionTypes.TraceContext = {
+        traceparent: "00-testtraceid-testspanid",
         tracestate: "",
         attributes: {},
+    };
+
+    const testFunctionContext: azureFunctionTypes.Context = {
+        invocationId: "test",
+        executionContext: {
+            invocationId: '',
+            functionName: '',
+            functionDirectory: '',
+            retryContext: undefined
+        },
+        bindings: {},
+        bindingData: {
+            invocationId: ''
+        },
+        traceContext: testFunctionTraceContext,
+        bindingDefinitions: [],
+        log: { error() {}, warn() {}, info() {}, verbose() {} } as azureFunctionTypes.Logger,
+        done: () => { },  
     };
 
     const testRequest = {
@@ -147,9 +164,64 @@ describe("#startOperation()", () => {
         url: "/search",
         headers: {
             host: "bing.com",
-            traceparent: testFunctionContext.traceparent,
+            traceparent: testFunctionContext.traceContext.traceparent,
         },
         query: { q: 'test' },
         params: {}
     };
+
+    describe("#Azure Functions", () => {
+        it("should start a new context with the 2nd arg http request", () => {
+            const context = CorrelationContextManager.startOperation(testFunctionContext, testRequest);
+            assert.ok(context.operation);
+            assert.deepEqual(context.operation.id, testFunctionTraceContext.traceparent.split("-")[1]);
+            assert.deepEqual(context.operation.parentId, testFunctionTraceContext.traceparent.split("-")[2]);
+            assert.deepEqual(
+                `${context.operation.traceparent.version}-${context.operation.traceparent.traceId}-${context.operation.traceparent.spanId}`,
+                testFunctionTraceContext.traceparent
+            );
+        });
+
+        it("should start a new context with 2nd arg string", () => {
+            const context = CorrelationContextManager.startOperation(testFunctionContext, "GET /foo");
+            assert.ok(context.operation);
+            assert.deepEqual(context.operation.id, testFunctionTraceContext.traceparent.split("-")[1]);
+            assert.deepEqual(context.operation.parentId, testFunctionTraceContext.traceparent.split("-")[2]);
+            assert.deepEqual(
+                `${context.operation.traceparent.version}-${context.operation.traceparent.traceId}-${context.operation.traceparent.spanId}`,
+                testFunctionTraceContext.traceparent
+            );
+        });
+
+        it("should start a new context with no request", () => {
+            const context = CorrelationContextManager.startOperation(testFunctionContext, "GET /test");
+            assert.ok(context.operation);
+            assert.deepEqual(context.operation.id, testFunctionTraceContext.traceparent.split("-")[1]);
+            assert.deepEqual(context.operation.parentId, testFunctionTraceContext.traceparent.split("-")[2]);
+            assert.deepEqual(
+                `${context.operation.traceparent.version}-${context.operation.traceparent.traceId}-${context.operation.traceparent.spanId}`,
+                testFunctionTraceContext.traceparent
+            );
+        });
+    });
+
+    describe("#SpanContext", () => {
+        it("shoul start a new context using SpanContext", () => {
+            const context = CorrelationContextManager.startOperation(testSpanContext, "GET /test");
+
+            assert.ok(context.operation);
+            assert.deepEqual(context.operation.id, testSpanContext.traceId);
+            assert.deepEqual(context.operation.parentId, context.operation.parentId);
+        });
+    });
+
+    /**
+     * This test must occur last as it will disable context
+     */
+    describe("#Context.Disable", () => {
+        it("should return null if the context is disabled", () => {
+            CorrelationContextManager.disable();
+            assert.strictEqual(CorrelationContextManager.getCurrentContext(), null);
+        });
+    });
 });
