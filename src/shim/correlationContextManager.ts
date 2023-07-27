@@ -4,7 +4,7 @@ import { context, SpanContext, trace, Context } from "@opentelemetry/api";
 import { TraceState } from "@opentelemetry/core";
 import { Span } from "@opentelemetry/sdk-trace-base";
 import { ICorrelationContext, ITraceparent, ITracestate, HttpRequest, ICustomProperties } from "./types";
-import { Logger } from "../shared/logging";
+import { Logger } from "./logging";
 import * as azureFunctionsTypes from "@azure/functions";
 
 export class CorrelationContextManager {
