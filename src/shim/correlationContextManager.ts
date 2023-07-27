@@ -171,32 +171,38 @@ export class CorrelationContextManager {
             );
         }
 
-        if (traceContext) {
-            // Use the headers on the request from Azure Functions to set the active context
+        if (traceContext || headers) {
             let traceparent = null;
             let tracestate = null;
-            const azureFnRequest = request as azureFunctionsTypes.HttpRequest;
+            if (traceContext) {
+                // Use the headers on the request from Azure Functions to set the active context
+                const azureFnRequest = request as azureFunctionsTypes.HttpRequest;
 
-            // If the traceparent isn't defined on the azure function headers set it to the request-id
-            if (azureFnRequest?.headers) {
-                // request-id is a GUID-based unique identifier for the request
-                traceparent = azureFnRequest.headers.traceparent ? azureFnRequest.headers.traceparent : azureFnRequest.headers["request-id"];
-                tracestate = azureFnRequest.headers.tracestate;
+                // If the traceparent isn't defined on the azure function headers set it to the request-id
+                if (azureFnRequest?.headers) {
+                    // request-id is a GUID-based unique identifier for the request
+                    traceparent = azureFnRequest.headers.traceparent ? azureFnRequest.headers.traceparent : azureFnRequest.headers["request-id"];
+                    tracestate = azureFnRequest.headers.tracestate;
+                }
+
+                if (!traceparent) {
+                    traceparent = traceContext.traceparent;
+                }
+                if (!tracestate) {
+                    tracestate = traceContext.tracestate;
+                }
             }
 
-            if (!traceparent) {
-                traceparent = traceContext.traceparent;
-            }
-            if (!tracestate) {
-                tracestate = traceContext.tracestate;
+            // If headers is defined instead of traceContext, use the headers to set the traceparent and tracestate
+            if (headers) {
+                traceparent = headers.traceparent ? headers.traceparent.toString() : null;
+                tracestate = headers.tracestate ? headers.tracestate.toString() : tracestate;
             }
 
-            const traceArray: string[] = traceparent.split("-");
+            const traceArray: string[] = traceparent?.split("-");
 
-            // TODO: Clean up duplicate tracestate code
-            // TODO: Make final determination on if we can populate spanId with only the traceparent
             const tracestateObj: TraceState = new TraceState();
-            tracestate.split(",").forEach((pair) => {
+            tracestate?.split(",").forEach((pair) => {
                 const kv = pair.split("=");
                 tracestateObj.set(kv[0], kv[1]);
             });
@@ -215,33 +221,6 @@ export class CorrelationContextManager {
                 },
                 tracestateObj
             );
-        }
-
-        if (headers) {
-            const traceparent = headers.traceparent ? headers.traceparent.toString() : null;
-            const tracestate = headers.tracestate ? headers.tracestate.toString() : null;
-
-            let tracestateObj: TraceState;
-            tracestate.split(",").forEach((pair) => {
-                const kv = pair.split("=");
-                tracestateObj.set(kv[0], kv[1]);
-            });
-
-            return this.generateContextObject(
-                traceparent[0],
-                traceparent[1],
-                null,
-                {
-                    legacyRootId: "",
-                    parentId: traceparent[0],
-                    spanId: "",
-                    traceFlag: "",
-                    traceId: traceparent[1],
-                    version: "00",
-                },
-                tracestateObj
-            );
-
         }
         Logger.getInstance().warn("startOperation was called with invalid arguments");
         return null;

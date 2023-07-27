@@ -14,7 +14,6 @@ const testContext: ICorrelationContext = {
     operation: {
         id: "test",
         name: undefined,
-        // TODO: parentId cannot be passed in the spanContext object - determine if this can navigated around
         parentId: undefined,
         traceparent: {
             // No support for legacyRootId
@@ -159,7 +158,7 @@ describe("#startOperation()", () => {
         done: () => { },  
     };
 
-    const testRequest = {
+    const testRequest: azureFunctionTypes.HttpRequest = {
         method: "GET",
         url: "/search",
         headers: {
@@ -167,7 +166,13 @@ describe("#startOperation()", () => {
             traceparent: testFunctionContext.traceContext.traceparent,
         },
         query: { q: 'test' },
-        params: {}
+        params: {},
+        user: null,
+        body: {},
+        rawBody: {},
+        bufferBody: undefined,
+        get(header: string) { return this.headers[header.toLowerCase()] },
+        parseFormBody: undefined,
     };
 
     describe("#Azure Functions", () => {
@@ -206,12 +211,26 @@ describe("#startOperation()", () => {
     });
 
     describe("#SpanContext", () => {
-        it("shoul start a new context using SpanContext", () => {
+        it("should start a new context using SpanContext", () => {
             const context = CorrelationContextManager.startOperation(testSpanContext, "GET /test");
 
             assert.ok(context.operation);
             assert.deepEqual(context.operation.id, testSpanContext.traceId);
             assert.deepEqual(context.operation.parentId, context.operation.parentId);
+        });
+    });
+
+    describe("#headers", () => {
+        it("should start a new context using the headers from an HTTP request", () => {
+            const context = CorrelationContextManager.startOperation(testRequest, "GET /test");
+
+            assert.ok(context.operation);
+            assert.deepEqual(context.operation.id, testFunctionTraceContext?.traceparent?.split("-")[1]);
+            assert.deepEqual(context.operation.parentId, testFunctionTraceContext.traceparent.split("-")[2]);
+            assert.deepEqual(
+                `${context.operation.traceparent.version}-${context.operation.traceparent.traceId}-${context.operation.traceparent.spanId}`,
+                testFunctionTraceContext.traceparent
+            );
         });
     });
 
