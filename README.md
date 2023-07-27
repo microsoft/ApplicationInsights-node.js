@@ -1,8 +1,8 @@
-# Azure Monitor Application Insights Distro for Node.js (Preview)
+# Application Insights for Node.js (Beta)
 
+> *Important:* Breaking changes were introduced in version 3.0.0-beta.7, please take a look at release [details](https://github.com/microsoft/ApplicationInsights-node.js/releases/tag/3.0.0-beta.7).
 
-
-Azure Monitor Application Insights Distro SDK monitors your backend services and components after
+Application Insights SDK monitors your backend services and components after
 you deploy them to help you discover and rapidly diagnose performance and other
 issues. Add this SDK to your Node.js services to include deep info about Node.js
 processes and their external dependencies such as database and cache services.
@@ -33,8 +33,7 @@ Consider whether this preview is right for you. It *enables distributed tracing,
 
 
 ## Get started
-
-Follow the steps in this section to instrument your application with OpenTelemetry.
+Application Insights SDK internally consumes [Azure Monitor OpenTelemetry for JavaScript](https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/monitor/monitor-opentelemetry), all relevant documentation is available in that package repository, it also exposes previous functionalities and APIs that were previously available to have a smother transtion for customers using previous versions of the package, including manual track APIs, for new customers we recommend to use @azure/monitor-opentelemetry instead.
 
 ### Prerequisites
 
@@ -45,40 +44,32 @@ Follow the steps in this section to instrument your application with OpenTelemet
   - [OpenTelemetry supported runtimes](https://github.com/open-telemetry/opentelemetry-js#supported-runtimes)
   - [Azure Monitor OpenTelemetry Exporter supported runtimes](https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/monitor/monitor-opentelemetry-exporter#currently-supported-environments)
 
-
 ### Install the library
 
 ```sh
 npm install applicationinsights@beta
 ```
 
-The following packages are also used for some specific scenarios described later in this article:
+### Enable Application Insights
 
-```sh
-npm install @opentelemetry/api
-npm install @opentelemetry/sdk-trace-base
-npm install @opentelemetry/semantic-conventions
-npm install @opentelemetry/instrumentation-http
-```
-
-### Enable Azure Monitor Application Insights
-
-> *Important:* `ApplicationInsightsClient` must be setup *and* started *before* you import anything else. There may be resulting telemetry loss if other libraries are imported first.
+> *Important:* `TelemetryClient` must be setup *and* started *before* you import anything else. There may be resulting telemetry loss if other libraries are imported first.
 
 
 ```typescript
-const { ApplicationInsightsClient, ApplicationInsightsConfig } = require("applicationinsights");
+const { TelemetryClient, ApplicationInsightsOptions } = require("applicationinsights");
 
-const config = new ApplicationInsightsConfig();
-config.azureMonitorExporterConfig.connectionString = "<YOUR_CONNECTION_STRING>";
-const appInsights = new ApplicationInsightsClient(config);
+const config : ApplicationInsightsOptions = {
+    azureMonitorExporterConfig: {
+        connectionString: process.env["APPLICATIONINSIGHTS_CONNECTION_STRING"] || "<your connection string>"
+    }
+};
+const appInsights = new TelemetryClient(config);
 ```
 
 * If the Connection String is set in the environment variable
-  APPLICATIONINSIGHTS\_CONNECTION\_STRING, `ApplicationInsightsConfig` constructor can be called with no
+  APPLICATIONINSIGHTS\_CONNECTION\_STRING, `TelemetryClient` constructor can be called with no
   arguments. This makes it easy to use different connection strings for different
   environments.
-
 
 
 ## Configuration
@@ -86,19 +77,42 @@ const appInsights = new ApplicationInsightsClient(config);
 The ApplicationInsightsConfig object provides a number of options to setup SDK behavior.
 
 ```typescript
-const config = new ApplicationInsightsConfig();
-config.azureMonitorExporterConfig.connectionString = "<YOUR_CONNECTION_STRING>";
-config.samplingRatio = 1;
-config.enableAutoCollectExtendedMetrics = false;
-config.instrumentations =  {
-  "http": { enabled: true },
-  "azureSdk": { enabled: false },
-  "mongoDb": { enabled: false },
-  "mySql": { enabled: false },
-  "postgreSql": { enabled: false },
-  "redis": { enabled: false }
+const config : ApplicationInsightsOptions = {
+     azureMonitorExporterConfig: {
+        // Offline storage
+        storageDirectory: "c://azureMonitor",
+        // Automatic retries
+        disableOfflineStorage: false,
+        // Application Insights Connection String
+        connectionString:   process.env["APPLICATIONINSIGHTS_CONNECTION_STRING"] || "<your connection string>",
+    },
+    samplingRatio: 1,
+    enableAutoCollectExceptions: true,
+    enableAutoCollectStandardMetrics: true,
+    enableAutoCollectPerformance: true,
+    instrumentationOptions: {
+        azureSdk: { enabled: true },
+        http: { enabled: true },
+        mongoDb: { enabled: true },
+        mySql: { enabled: true },
+        postgreSql: { enabled: true },
+        redis: { enabled: true },
+        redis4: { enabled: true },
+    },
+    resource: resource,
+    logInstrumentations: {
+        console: { enabled: true},
+        bunyan: { enabled: true},
+        winston: { enabled: true},
+    },
+    extendedMetrics:{
+        gc: true,
+        heap: true,
+        loop: true
+    }
+
 };
-const appInsights = new ApplicationInsightsClient(config);
+const appInsights = new TelemetryClient(config);
 
 ```
 
@@ -106,17 +120,12 @@ const appInsights = new ApplicationInsightsClient(config);
 
 |Property|Description|Default|
 | ------------------------------- |------------------------------------------------------------------------------------------------------------|-------|
-| azureMonitorExporterConfig                     | Azure Monitor OpenTelemetry Exporter Configuration, include configuration for Connection String, disableOfflineStorage, storageDirectory and aadTokenCredential   [More info here](https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/monitor/monitor-opentelemetry-exporter)                                                | { connectionString:"", disableOfflineStorage:false }|
-| samplingRatio              | Sampling ratio must take a value in the range [0,1], 1 meaning all data will sampled and 0 all Tracing data will be sampled out.                       | 1|
+| ...                     | Azure Monitor OpenTelemetry Configuration   [More info here](https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/monitor/monitor-opentelemetry#configuration)                                                | |
 | enableAutoCollectExceptions     | Sets the state of exception tracking. If true uncaught exceptions will be sent to Application Insights | true|
-| enableAutoCollectPerformance    | Sets the state of performance tracking. If true performance counters will be collected every second and sent to Application Insights | true|
-| enableAutoCollectStandardMetrics | Sets the state of Standard Metrics tracking. If true Standard Metrics will be collected every minute and sent to Application Insights | true|
-| instrumentations| Allow configuration of OpenTelemetry Instrumentations. |  {"http": { enabled: true },"azureSdk": { enabled: false },"mongoDb": { enabled: false },"mySql": { enabled: false },"postgreSql": { enabled: false },"redis": { enabled: false }}|
 | logInstrumentations| Allow configuration of Log Instrumentations. |  {"console": { enabled: false },"bunyan": { enabled: false },"winston": { enabled: false }}|
 | extendedMetrics       | Enable/Disable specific extended Metrics(gc, heap and loop).  |{"gc":false,"heap":false,"loop":false}|
-| resource       | Specify custom Opentelemetry Resource.   ||
 
-All these properties except aadTokenCredential and resource could be configured using configuration file `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. These configuration values will be applied to all ApplicationInsightsClients created in the SDK. 
+Configuration could be set using configuration file  `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. These configuration values will be applied to all ApplicationInsightsClients created in the SDK. 
 
 
 ```json
@@ -124,7 +133,7 @@ All these properties except aadTokenCredential and resource could be configured 
     "azureMonitorExporterConfig": {"connectionString":"<YOUR_CONNECTION_STRING>"},
     "samplingRatio": 0.8,
     "enableAutoCollectExceptions": true,
-    "instrumentations":{
+    "instrumentationOptions":{
         "azureSdk": {
             "enabled": false
         }
@@ -146,273 +155,6 @@ process.env.APPLICATIONINSIGHTS_CONFIGURATION_FILE = "C:/applicationinsights/con
 
 // Application Insights SDK setup....
 ```
-
-
-
-## Instrumentation libraries
-
-The following OpenTelemetry Instrumentation libraries are included as part of Azure Monitor Application Insights Distro.
-
-> *Warning:* Instrumentation libraries are based on experimental OpenTelemetry specifications. Microsoft's *preview* support commitment is to ensure that the following libraries emit data to Azure Monitor Application Insights, but it's possible that breaking changes or experimental mapping will block some data elements.
-
-### Distributed Tracing
-
-  - [HTTP/HTTPS](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-http)
-  - [MongoDB](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mongodb)
-  - [MySQL](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-mysql)
-  - [Postgres](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-pg)
-  - [Redis](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-redis)
-  - [Redis-4](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node/opentelemetry-instrumentation-redis-4)
-  - [Azure SDK](https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/instrumentation/opentelemetry-instrumentation-azure-sdk)
-
-### Metrics
-- [HTTP/HTTPS](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-http) 
-
-Other OpenTelemetry Instrumentations are available [here](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/node) and could be added using TraceHandler in ApplicationInsightsClient.
-
- ```typescript
-    const { ApplicationInsightsClient, ApplicationInsightsConfig } = require("applicationinsights");
-    const { ExpressInstrumentation } = require('@opentelemetry/instrumentation-express');
-
-    const appInsights = new ApplicationInsightsClient(new ApplicationInsightsConfig());
-    const traceHandler = appInsights.getTraceHandler();
-    traceHandler.addInstrumentation(new ExpressInstrumentation());
-    
-```
-
-## Add other OpenTelemetry Exporters
-
-You can include other OpenTelemetry Exporters adding a new SpanProcessor to the TracerProvider created internally:
-
-```typescript
-const { ApplicationInsightsClient, ApplicationInsightsConfig } = require("applicationinsights");
-const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
-const { BatchSpanProcessor } = require("@opentelemetry/sdk-trace-base");
-
-const appInsights = new ApplicationInsightsClient(new ApplicationInsightsConfig());
-const otlpExporter = new OTLPTraceExporter(collectorOptions);
-const spanProcessor = new BatchSpanProcessor(otlpExporter);
-appInsights.getTraceHandler().addSpanProcessor(spanProcessor);
-```
-
-## Set the Cloud Role Name and the Cloud Role Instance
-
-You might set the Cloud Role Name and the Cloud Role Instance via [OpenTelemetry Resource](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/sdk.md#resource-sdk) attributes. This step updates Cloud Role Name and Cloud Role Instance from their default values to something that makes sense to your team. They'll appear on the Application Map as the name underneath a node. Cloud Role Name uses `service.namespace` and `service.name` attributes, although it falls back to `service.name` if `service.namespace` isn't set. Cloud Role Instance uses the `service.instance.id` attribute value.
-
-
-```typescript
-const { ApplicationInsightsClient, ApplicationInsightsConfig } = require("applicationinsights");
-const { Resource } = require("@opentelemetry/resources");
-const { SemanticResourceAttributes } = require("@opentelemetry/semantic-conventions");
-
-// ----------------------------------------
-// Setting role name and role instance
-// ----------------------------------------
-const customResource = Resource.EMPTY;
-resource.attributes[SemanticResourceAttributes.SERVICE_NAME] = "my-helloworld-service";
-resource.attributes[SemanticResourceAttributes.SERVICE_NAMESPACE] = "my-namespace";
-resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = "my-instance";
-
-let config = new ApplicationInsightsConfig();
-config.resource = customResource;
-const appInsights = new ApplicationInsightsClient(config);
-```
-
-For information on standard attributes for resources, see [Resource Semantic Conventions](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/semantic_conventions/README.md).
-
-## Enable Sampling
-
-You may want to enable sampling to reduce your data ingestion volume which reduces your cost. Azure Monitor provides a custom *fixed-rate* sampler that populates events with a "sampling ratio", which Application Insights converts to "ItemCount". This ensures accurate experiences and event counts. The sampler is designed to preserve your traces across services. The sampler expects a sample rate of between 0 and 1 inclusive. A rate of 0.1 means approximately 10% of your telemetry will be sent. 
-
-```typescript
-const config = new ApplicationInsightsConfig();
-config.azureMonitorExporterConfig.connectionString = "<YOUR_CONNECTION_STRING>";
-config.samplingRatio = 0.1;
-const appInsights = new ApplicationInsightsClient(config);
-```
-
----
-
-> *Tip:* If you're not sure where to set the sampling rate, start at 5% (i.e., 0.05 sampling ratio) and adjust the rate based on the accuracy of the operations shown in the failures and performance blades. A higher rate generally results in higher accuracy.
-
-
-## Modify telemetry
-
-This section explains how to modify telemetry.
-
-### Add span attributes
-
-To add span attributes, use either of the following two ways:
-
-* Use options provided by [instrumentation libraries](#instrumentation-libraries).
-* Add a custom span processor.
-
-These attributes might include adding a custom property to your telemetry. You might also use attributes to set optional fields in the Application Insights schema, like Client IP.
-
-> *Tip:* The advantage of using options provided by instrumentation libraries, when they're available, is that the entire context is available. As a result, users can select to add or filter more attributes. For example, the enrich option in the HttpClient instrumentation library gives users access to the httpRequestMessage itself. They can select anything from it and store it as an attribute.
-
-#### Add a custom property to a Trace
-
-Any [attributes](#add-span-attributes) you add to spans are exported as custom properties. They populate the _customDimensions_ field in the requests or the dependencies tables in Application Insights.
-
-Use a custom processor:
-
-```typescript
-const { ApplicationInsightsClient, ApplicationInsightsConfig } = require("applicationinsights");
-const { ReadableSpan, Span, SpanProcessor } = require("@opentelemetry/sdk-trace-base");
-const { SemanticAttributes } = require("@opentelemetry/semantic-conventions");
-
-const appInsights = new ApplicationInsightsClient(new ApplicationInsightsConfig());
-
-class SpanEnrichingProcessor implements SpanProcessor{
-    forceFlush(): Promise<void>{
-        return Promise.resolve();
-    }
-    shutdown(): Promise<void>{
-        return Promise.resolve();
-    }
-    onStart(_span: Span): void{}
-    onEnd(span: ReadableSpan){
-        span.attributes["CustomDimension1"] = "value1";
-        span.attributes["CustomDimension2"] = "value2";
-        span.attributes[SemanticAttributes.HTTP_CLIENT_IP] = "<IP Address>";
-    }
-}
-
-appInsights.getTraceHandler().addSpanProcessor(new SpanEnrichingProcessor());
-```
-
-### Filter telemetry
-
-You might use the following ways to filter out telemetry before it leaves your application.
-
-1. Exclude the URL option provided by many HTTP instrumentation libraries.
-
-    The following example shows how to exclude a certain URL from being tracked by using the [HTTP/HTTPS instrumentation library](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation-http):
-    
-    ```typescript
-    const { ApplicationInsightsClient, ApplicationInsightsConfig } = require("applicationinsights");
-    const { IncomingMessage } = require("http");
-    const { RequestOptions } = require("https");
-    const { HttpInstrumentationConfig }= require("@opentelemetry/instrumentation-http");
-
-    const httpInstrumentationConfig: HttpInstrumentationConfig = {
-        enabled: true,
-        ignoreIncomingRequestHook: (request: IncomingMessage) => {
-            // Ignore OPTIONS incoming requests
-            if (request.method === 'OPTIONS') {
-                return true;
-            }
-            return false;
-        },
-        ignoreOutgoingRequestHook: (options: RequestOptions) => {
-            // Ignore outgoing requests with /test path
-            if (options.path === '/test') {
-                return true;
-            }
-            return false;
-        }
-    };
-    const config = new ApplicationInsightsConfig();
-    config.instrumentations.http = httpInstrumentationConfig;
-    const appInsights = new ApplicationInsightsClient(config);
-    
-    ```
-
-1. Use a custom processor. You can use a custom span processor to exclude certain spans from being exported. To mark spans to not be exported, set `TraceFlag` to `DEFAULT`.
-Use the add [custom property example](#add-a-custom-property-to-a-trace), but replace the following lines of code:
-
-    ```typescript
-    ...
-    import { SpanKind, TraceFlags } from "@opentelemetry/api";
-    
-    class SpanEnrichingProcessor implements SpanProcessor{
-        ...
-    
-        onEnd(span: ReadableSpan) {
-            if(span.kind == SpanKind.INTERNAL){
-                span.spanContext().traceFlags = TraceFlags.NONE;
-            }
-        }
-    }
-    ```
-
-## Custom telemetry
-
-This section explains how to collect custom telemetry from your application.
-
-### Add Custom Metrics
-
-You may want to collect metrics beyond what is collected by [instrumentation libraries](#instrumentation-libraries).
-
-The OpenTelemetry API offers six metric "instruments" to cover a variety of metric scenarios and you'll need to pick the correct "Aggregation Type" when visualizing metrics in Metrics Explorer. This requirement is true when using the OpenTelemetry Metric API to send metrics and when using an instrumentation library.
-
-
-The following table shows the recommended aggregation types] for each of the OpenTelemetry Metric Instruments.
-
-| OpenTelemetry Instrument                             | Azure Monitor Aggregation Type                             |
-|------------------------------------------------------|------------------------------------------------------------|
-| Counter                                              | Sum                                                        |
-| Asynchronous Counter                                 | Sum                                                        |
-| Histogram                                            | Average, Sum, Count (Max, Min for Python and Node.js only) |
-| Asynchronous Gauge                                   | Average                                                    |
-| UpDownCounter (Python and Node.js only)              | Sum                                                        |
-| Asynchronous UpDownCounter (Python and Node.js only) | Sum                                                        |
-
->> *Caution:* Aggregation types beyond what's shown in the table typically aren't meaningful.
-
-The [OpenTelemetry Specification](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#instrument)
-describes the instruments and provides examples of when you might use each one.
-
-```typescript
-    const { ApplicationInsightsClient, ApplicationInsightsConfig } = require("applicationinsights");
-
-    const appInsights = new ApplicationInsightsClient(new ApplicationInsightsConfig());
-    
-    const customMetricsHandler = appInsights.getMetricHandler().getCustomMetricsHandler();
-    const meter =  customMetricsHandler.getMeter();\
-
-    let histogram = meter.createHistogram("histogram");
-
-    let counter = meter.createCounter("counter");
-
-    let gauge = meter.createObservableGauge("gauge");
-    gauge.addCallback((observableResult: ObservableResult) => {
-        let randomNumber = Math.floor(Math.random() * 100);
-        observableResult.observe(randomNumber, {"testKey": "testValue"});
-    });
-
-    histogram.record(1, { "testKey": "testValue" });
-    histogram.record(30, { "testKey": "testValue2" });
-    histogram.record(100, { "testKey2": "testValue" });
-
-    counter.add(1, { "testKey": "testValue" });
-    counter.add(5, { "testKey2": "testValue" });
-    counter.add(3, { "testKey": "testValue2" });
-```
-
-
-### Add Custom Exceptions
-
-Select instrumentation libraries automatically support exceptions to Application Insights.
-However, you may want to manually report exceptions beyond what instrumention libraries report.
-For instance, exceptions caught by your code are *not* ordinarily not reported, and you may wish to report them
-and thus draw attention to them in relevant experiences including the failures blade and end-to-end transaction view.
-
-```typescript
-const { ApplicationInsightsClient, ApplicationInsightsConfig } = require("applicationinsights");
-
-const appInsights = new ApplicationInsightsClient(new ApplicationInsightsConfig());
-const tracer = appInsights.getTraceHandler().getTracer();
-let span = tracer.startSpan("hello");
-try{
-    throw new Error("Test Error");
-}
-catch(error){
-    span.recordException(error);
-}
-```
-
 ## Troubleshooting
 
 ### Self-diagnostics

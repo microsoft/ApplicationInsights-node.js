@@ -2,20 +2,26 @@
 // Licensed under the MIT license.
 
 import { ManagedIdentityCredential } from "@azure/identity";
-import { ApplicationInsightsClient } from "../applicationInsightsClient";
-import { ApplicationInsightsConfig } from "../shared";
-import { Util } from "../shared/util";
+import { AzureMonitorOpenTelemetryClient } from "@azure/monitor-opentelemetry";
+import { Util } from "../shim/util";
 import { ConsoleWriter } from "./diagnostics/writers/consoleWriter";
 import { DiagnosticLogger } from "./diagnostics/diagnosticLogger";
 import { StatusLogger } from "./diagnostics/statusLogger";
 import { AgentResourceProviderType, DiagnosticMessageId, IDiagnosticLog, IDiagnosticLogger, NODE_JS_RUNTIME_MAJOR_VERSION } from "./types";
+import { ApplicationInsightsOptions } from "../types";
 
 
 const forceStart = process.env.APPLICATIONINSIGHTS_FORCE_START === "true";
+// Azure Connection String
+const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
+const ENV_AZURE_PREFIX = "APPSETTING_"; // Azure adds this prefix to all environment variables
+const ENV_IKEY = "APPINSIGHTS_INSTRUMENTATIONKEY"; // This key is provided in the readme
+const LEGACY_ENV_IKEY = "APPINSIGHTS_INSTRUMENTATION_KEY";
+
 
 export class AgentLoader {
     protected _canLoad: boolean;
-    protected _config: ApplicationInsightsConfig;
+    protected _options: ApplicationInsightsOptions;
     protected _instrumentationKey: string;
     protected _diagnosticLogger: IDiagnosticLogger;
     protected _statusLogger: StatusLogger;
@@ -30,24 +36,54 @@ export class AgentLoader {
         else {
             this._canLoad = true;
             this._aadCredential = this._getAuthenticationCredential();
-            // Default config
-            this._config = new ApplicationInsightsConfig();
-            this._config.azureMonitorExporterConfig.disableOfflineStorage = false;
-            this._config.enableAutoCollectExceptions = true;
-            this._config.enableAutoCollectPerformance = true;
-            this._config.enableAutoCollectStandardMetrics = true;
-            this._config.samplingRatio = 1; // Sample all telemetry by default
-            this._config.instrumentations.azureSdk.enabled = true;
-            this._config.instrumentations.http.enabled = true;
-            this._config.instrumentations.mongoDb.enabled = true;
-            this._config.instrumentations.mySql.enabled = true;
-            this._config.instrumentations.postgreSql.enabled = true;
-            this._config.instrumentations.redis4.enabled = true;
-            this._config.instrumentations.redis.enabled = true;
-            this._config.logInstrumentations.bunyan.enabled = true;
-            this._config.logInstrumentations.console.enabled = true;
-            this._config.logInstrumentations.winston.enabled = true;
-            this._instrumentationKey = this._getInstrumentationKey(this._config.azureMonitorExporterConfig.connectionString);
+            // Default options
+            this._options = {
+                azureMonitorExporterConfig: {
+                    disableOfflineStorage: false,
+                },
+                enableAutoCollectExceptions: true,
+                enableAutoCollectPerformance: true,
+                enableAutoCollectStandardMetrics: true,
+                samplingRatio: 1, // Sample all telemetry by default
+                instrumentationOptions: {
+                    azureSdk: {
+                        enabled: true
+                    },
+                    http: {
+                        enabled: true
+                    },
+                    mongoDb: {
+                        enabled: true
+                    },
+                    mySql: {
+                        enabled: true
+                    },
+                    postgreSql: {
+                        enabled: true
+                    },
+                    redis4: {
+                        enabled: true
+                    },
+                    redis: {
+                        enabled: true
+                    },
+                }
+            };
+
+            const connectionString = process.env[ENV_connectionString];
+            if (connectionString) {
+                this._instrumentationKey = this._getInstrumentationKey(connectionString);
+            }
+            else {
+                const instrumentationKey =
+                    process.env[ENV_IKEY] ||
+                    process.env[ENV_AZURE_PREFIX + ENV_IKEY] ||
+                    process.env[LEGACY_ENV_IKEY] ||
+                    process.env[ENV_AZURE_PREFIX + LEGACY_ENV_IKEY];
+                this._instrumentationKey = instrumentationKey || "unknown";
+
+            }
+
 
             //Default diagnostic using console
             this._diagnosticLogger = new DiagnosticLogger(this._instrumentationKey, new ConsoleWriter());
@@ -74,7 +110,7 @@ export class AgentLoader {
         this._diagnosticLogger = logger;
     }
 
-    public initialize(): void {
+    public initialize(): AzureMonitorOpenTelemetryClient {
         if (!this._canLoad) {
             const msg = `Cannot load Azure Monitor Application Insights Distro because of unsupported Node.js runtime, currently running in version ${NODE_JS_RUNTIME_MAJOR_VERSION}`;
             console.log(msg);
@@ -82,12 +118,9 @@ export class AgentLoader {
         }
         if (this._validate()) {
             try {
-                // TODO: Set Prefix 
-
                 // Initialize Distro
-                this._config.aadTokenCredential = this._aadCredential;
-                const appInsightsClient = new ApplicationInsightsClient(this._config);
-
+                this._options.azureMonitorExporterConfig.aadTokenCredential = this._aadCredential;
+                const appInsightsClient = new AzureMonitorOpenTelemetryClient(this._options);
                 // Agent successfully initialized
                 const diagnosticLog: IDiagnosticLog = {
                     message: "Azure Monitor Application Insights Distro was started succesfully.",
@@ -97,6 +130,7 @@ export class AgentLoader {
                 this._statusLogger.logStatus({
                     AgentInitializedSuccessfully: true
                 });
+                return appInsightsClient;
 
             }
             catch (error) {
@@ -124,7 +158,7 @@ export class AgentLoader {
                 })
                 return false;
             }
-            if (!this._instrumentationKey) {
+            if (this._instrumentationKey === "unknown") {
                 const diagnosticLog: IDiagnosticLog = {
                     message: "Azure Monitor Application Insights Distro wanted to be started, but no Connection String was provided",
                     messageId: DiagnosticMessageId.missingIkey

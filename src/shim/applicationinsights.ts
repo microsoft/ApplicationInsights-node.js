@@ -1,19 +1,19 @@
 import * as http from "http";
 import { DiagLogLevel, SpanContext } from "@opentelemetry/api";
 
-import { Logger } from "../shared/logging";
-import { ICorrelationContext, HttpRequest } from "./types";
-import { TelemetryClient } from "./telemetryClient";
-import * as Contracts from "../declarations/contracts";
-import { ApplicationInsightsConfig } from "../shared";
-import { ExtendedMetricType } from "../shared/configuration/types";
 import { CorrelationContextManager } from "./correlationContextManager";
 import * as azureFunctionsTypes from "@azure/functions";
 import { Span } from "@opentelemetry/sdk-trace-base";
+import { Logger } from "./logging";
+import { ICorrelationContext, HttpRequest } from "./types";
+import { TelemetryClient } from "./telemetryClient";
+import * as Contracts from "../declarations/contracts";
+import { ApplicationInsightsOptions, ExtendedMetricType } from "../types";
+import { DistributedTracingModes } from "../shim/types";
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
-export { Contracts, HttpRequest, TelemetryClient };
+export { Contracts, DistributedTracingModes, HttpRequest, TelemetryClient };
 
 /**
  * The default client, initialized when setup was called. To initialize a different client
@@ -22,20 +22,9 @@ export { Contracts, HttpRequest, TelemetryClient };
 export let defaultClient: TelemetryClient;
 // export let liveMetricsClient: QuickPulseStateManager;
 
-/**
- * Interface which defines which specific extended metrics should be disabled
- *
- * @export
- * @interface IDisabledExtendedMetrics
- */
-export interface IDisabledExtendedMetrics {
-    [ExtendedMetricType.gc]?: boolean;
-    [ExtendedMetricType.heap]?: boolean;
-    [ExtendedMetricType.loop]?: boolean;
-}
 
-let _setupString: string|undefined;
-let _config: ApplicationInsightsConfig;
+let _setupString: string | undefined;
+let _options: ApplicationInsightsOptions;
 
 /**
  * Initializes the default client. Should be called after setting
@@ -50,9 +39,8 @@ let _config: ApplicationInsightsConfig;
 export function setup(setupString?: string) {
     // Save the setup string and create a config to modify with other functions in this file
     _setupString = setupString;
-    if (!_config) {
-        _config = new ApplicationInsightsConfig();
-        _config.azureMonitorExporterConfig.connectionString = _setupString;
+    if (!_options) {
+        _options = { azureMonitorExporterConfig: { connectionString: _setupString } };
     } else {
         Logger.getInstance().info("Cannot run applicationinsights.setup() more than once.");
     }
@@ -68,7 +56,7 @@ export function setup(setupString?: string) {
 export function start() {
     if (!defaultClient) {
         // Creates a new TelemetryClient that uses the _config we configure via the other functions in this file
-        defaultClient = new TelemetryClient(_config);
+        defaultClient = new TelemetryClient(_options);
     } else {
         Logger.getInstance().info("Cannot run applicationinsights.start() more than once.");
     }
@@ -135,10 +123,10 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectConsole(value: boolean, collectConsoleLog = false) {
-        if (_config) {
-            _config.logInstrumentations.bunyan.enabled = value;
-            _config.logInstrumentations.winston.enabled = value;
-            _config.logInstrumentations.console.enabled = collectConsoleLog;
+        if (_options) {
+            _options.logInstrumentations.bunyan.enabled = value;
+            _options.logInstrumentations.winston.enabled = value;
+            _options.logInstrumentations.console.enabled = collectConsoleLog;
         }
         return Configuration;
     }
@@ -149,8 +137,8 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectExceptions(value: boolean) {
-        if (_config) {
-            _config.enableAutoCollectExceptions = value;
+        if (_options) {
+            _options.enableAutoCollectExceptions = value;
         }
         return Configuration;
     }
@@ -162,14 +150,14 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: any) {
-        if (_config) {
-            _config.enableAutoCollectPerformance = value;
+        if (_options) {
+            _options.enableAutoCollectPerformance = value;
             if (typeof collectExtendedMetrics === "object") {
-                _config.extendedMetrics = { ...collectExtendedMetrics }
+                _options.extendedMetrics = { ...collectExtendedMetrics }
             }
             if (collectExtendedMetrics === "boolean") {
                 if (!collectExtendedMetrics) {
-                    _config.extendedMetrics = {
+                    _options.extendedMetrics = {
                         [ExtendedMetricType.gc]: true,
                         [ExtendedMetricType.heap]: true,
                         [ExtendedMetricType.loop]: true
@@ -186,8 +174,8 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectPreAggregatedMetrics(value: boolean) {
-        if (_config) {
-            _config.enableAutoCollectStandardMetrics = value;
+        if (_options) {
+            _options.enableAutoCollectStandardMetrics = value;
         }
         return Configuration;
     }
@@ -279,7 +267,7 @@ export class Configuration {
  */
 export function dispose() {
     if (defaultClient) {
-        defaultClient.client.shutdown();
+        defaultClient.shutdown();
     }
     defaultClient = null;
 }

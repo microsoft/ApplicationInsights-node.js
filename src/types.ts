@@ -1,21 +1,35 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
+import { AzureMonitorOpenTelemetryOptions } from "@azure/monitor-opentelemetry";
 
-export const AZURE_MONITOR_STATSBEAT_FEATURES = "AZURE_MONITOR_STATSBEAT_FEATURES";
-
-export enum StatsbeatFeature {
-    DISK_RETRY = 0,
-    AAD_HANDLING = 1,
-    WEB_SNIPPET = 2,
-    DISTRO = 4,
+/**
+ * Azure Monitor OpenTelemetry Options
+ */
+export interface ApplicationInsightsOptions extends AzureMonitorOpenTelemetryOptions {
+    /**
+   * Sets the state of exception tracking (enabled by default)
+   * if true uncaught exceptions will be sent to Application Insights
+   */
+    enableAutoCollectExceptions?: boolean;
+    /**
+    * Log Instrumentations configuration included as part of Application Insights (console, bunyan, winston)
+    */
+    logInstrumentations?: LogInstrumentationsConfig;
+     /**
+     * Specific extended metrics, applicationinsights-native-metrics package need to be available
+     */
+     extendedMetrics?: { [type: string]: boolean };
 }
 
-export enum StatsbeatInstrumentation {
-    AZURE_CORE_TRACING = 0,
-    MONGODB = 1,
-    MYSQL = 2,
-    REDIS = 4,
-    POSTGRES = 8,
-    BUNYAN = 16,
-    WINSTON = 32,
-    CONSOLE = 64,
+export interface LogInstrumentationsConfig {
+    console?: { enabled: boolean };
+    bunyan?: { enabled: boolean };
+    winston?: { enabled: boolean };
+}
+
+export const enum ExtendedMetricType {
+    gc = "gc",
+    heap = "heap",
+    loop = "loop",
 }

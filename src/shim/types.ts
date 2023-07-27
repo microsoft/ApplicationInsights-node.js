@@ -1,3 +1,31 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+export enum DistributedTracingModes {
+    /**
+     * Send Application Insights correlation headers
+     */
+    AI = 0,
+
+    /**
+     * (Default) Send both W3C Trace Context headers and back-compatibility Application Insights headers
+     */
+    AI_AND_W3C
+}
+
+/**
+ * Interface which defines which specific extended metrics should be disabled
+ *
+ * @export
+ * @interface IDisabledExtendedMetrics
+ */
+export interface IDisabledExtendedMetrics {
+    gc?: boolean;
+    heap?: boolean;
+    loop?: boolean;
+}
+
+
 export interface ITraceparent {
     legacyRootId: string;
     parentId: string;
@@ -69,9 +97,9 @@ export interface TraceContext {
     tracestate: string | null | undefined;
     /** Holds additional properties being sent as part of request telemetry. */
     attributes:
-        | {
-              [k: string]: string;
-          }
-        | null
-        | undefined;
+    | {
+        [k: string]: string;
+    }
+    | null
+    | undefined;
 }
