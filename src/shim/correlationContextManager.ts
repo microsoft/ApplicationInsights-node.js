@@ -1,88 +1,256 @@
 import * as events from "events";
 import * as http from "http";
-
-import { SpanContext } from "@opentelemetry/api";
-import { ICorrelationContext, ITraceparent, ITracestate, Context, HttpRequest } from "./types";
+import { context, SpanContext, trace, Context } from "@opentelemetry/api";
+import { TraceState } from "@opentelemetry/core";
+import { Span } from "@opentelemetry/sdk-trace-base";
+import { ICorrelationContext, ITraceparent, ITracestate, HttpRequest, ICustomProperties } from "./types";
+import { Logger } from "./logging";
+import * as azureFunctionsTypes from "@azure/functions";
 
 export class CorrelationContextManager {
+
     /**
-     *  Provides the current Context.
-     *  The context is the most recent one entered into for the current
-     *  logical chain of execution, including across asynchronous calls.
+     * Converts an OpenTelemetry SpanContext object to an ICorrelationContext object for backwards compatibility with ApplicationInsights
+     * @param spanContext OpenTelmetry SpanContext object
+     * @param parentId spanId of the parent span
+     * @param name OpenTelemetry human readable name of the span
+     * @param traceState String of key value pairs for additional trace context
+     * @returns ICorrelationContext object
      */
-    public getCurrentContext(): ICorrelationContext | null {
-        throw new Error("Not implemented");
+    public static spanToContextObject(spanContext: SpanContext, parentId?: string, name?: string, traceState?: TraceState): ICorrelationContext {
+        // Generate a basic ITraceparent to satisfy the ICorrelationContext interface
+        const traceContext: ITraceparent = {
+            legacyRootId: "",
+            traceId: spanContext?.traceId,
+            spanId: spanContext?.spanId,
+            traceFlag: spanContext?.traceFlags?.toString(),
+            parentId: parentId,
+            version: "00"
+        };
+
+        return this.generateContextObject(traceContext.traceId, traceContext.parentId, name, traceContext, traceState);
     }
 
     /**
-     *  A helper to generate objects conforming to the CorrelationContext interface
+     * Provides the current Context.
+     * The context is the most recent one entered into for the current
+     * logical chain of execution, including across asynchronous calls.
+     * @returns ICorrelationContext object
      */
-    public generateContextObject(
+    public static getCurrentContext(): ICorrelationContext | null {
+        // Gets the active span and extracts the context to populate and return the ICorrelationContext object
+        const activeSpan: Span = trace.getSpan(context.active()) as Span;
+        if (!activeSpan) { return null; }
+        activeSpan?.parentSpanId;
+        const traceStateObj: TraceState = new TraceState(activeSpan?.spanContext()?.traceState?.serialize());
+
+        return this.spanToContextObject(activeSpan?.spanContext(), activeSpan?.parentSpanId, activeSpan?.name, traceStateObj);
+    }
+
+    /**
+     * Helper to generate objects conforming to the CorrelationContext interface
+     * @param operationId String assigned to a series of related telemetry items - equivalent to OpenTelemetry traceId
+     * @param parentId spanId of the parent span
+     * @param operationName Human readable name of the span
+     * @param traceparent Context conveying string in the format version-traceId-spanId-traceFlag
+     * @param tracestate String of key value pairs for additional trace context
+     * @returns ICorrelationContext object
+     */
+    public static generateContextObject(
         operationId: string,
         parentId?: string,
         operationName?: string,
-        correlationContextHeader?: string,
         traceparent?: ITraceparent,
-        tracestate?: ITracestate
+        tracestate?: TraceState
     ): ICorrelationContext {
-        throw new Error("Not implemented");
+        // Cast OpenTelemetry TraceState object to ITracestate object
+        const ITraceState: ITracestate = {
+            fieldmap: tracestate?.serialize()?.split(",")
+        };
+        
+        return {
+            operation: {
+                name: operationName,
+                id: operationId,
+                parentId: parentId,
+                traceparent: traceparent,
+                tracestate: ITraceState,
+            },
+            // Headers are not being used so custom properties will always be stubbed out
+            customProperties: {
+                getProperty(prop: string) { return "" },
+                setProperty(prop: string) { return "" },
+            } as ICustomProperties,
+        }
     }
 
     /**
-     *  Runs a function inside a given Context.
-     *  All logical children of the execution path that entered this Context
-     *  will receive this Context object on calls to GetCurrentContext.
+     * Runs a function inside a given Context.
+     * All logical children of the execution path that entered this Context
+     * will receive this Context object on calls to GetCurrentContext.
+     * @param ctx Context to run the function within
+     * @param fn Function to run within the stated context
+     * @returns any
      */
-    public runWithContext(context: ICorrelationContext, fn: () => any): any {
-        throw new Error("Not implemented");
+    public static runWithContext(ctx: ICorrelationContext, fn: () => any): any {
+        // Creates a new Context object containing the values from the ICorrelationContext object, then sets the active context to the new Context
+        const newContext: Context = trace.setSpanContext(context.active(), this._contextObjectToSpanContext(ctx));
+        return context.with(newContext, fn);
     }
 
     /**
      * Wrapper for cls-hooked bindEmitter method
+     * @param emitter emitter to bind to the current context
      */
-    public wrapEmitter(emitter: events.EventEmitter): void {
-        throw new Error("Not implemented");
+    public static wrapEmitter(emitter: events.EventEmitter): void {
+        context.bind(context.active(), emitter);
+    }
+    
+    /**
+     * Patches a callback to restore the correct Context when getCurrentContext
+     * is run within it. This is necessary if automatic correlation fails to work
+     * with user-included libraries.
+     * The supplied callback will be given the same context that was present for
+     * the call to wrapCallback
+     * @param fn Function to be wrapped in the provided context
+     * @param ctx Context to bind the function to
+     * @returns Generic type T
+     */
+    public static wrapCallback<T>(fn: T, ctx?: ICorrelationContext): T {
+        try {
+            if (ctx) {
+                // Create the new context and bind it if context is passed
+                const newContext: Context = trace.setSpanContext(context.active(), this._contextObjectToSpanContext(ctx));
+                return context.bind(newContext, fn);
+            }
+            // If no context is passed, bind to the current context
+            return context.bind(context.active(), fn);
+            
+        } catch (error) {
+            Logger.getInstance().error("Error binding to session context", error);
+            return fn;
+        }
     }
 
     /**
-     *  Patches a callback to restore the correct Context when getCurrentContext
-     *  is run within it. This is necessary if automatic correlation fails to work
-     *  with user-included libraries.
-     *
-     *  The supplied callback will be given the same context that was present for
-     *  the call to wrapCallback.  */
-    public wrapCallback<T>(fn: T, context?: ICorrelationContext): T {
-        throw new Error("Not implemented");
+     * Enables the CorrelationContextManager
+     * @param forceClsHooked unused parameter used to satisfy backward compatibility
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    public static enable(forceClsHooked?: boolean) {
+        Logger.getInstance().info("Enabling the context manager is no longer necessary and this method is a no-op.");
     }
 
     /**
-     *  Enables the CorrelationContextManager.
+     * Creates a new correlation context
+     * @param input Any kind of object we can extract context information from
+     * @param request HTTP request we can pull context information from in the form of the request's headers
+     * @returns IcorrelationContext object
      */
-    public enable(forceClsHooked?: boolean) {
-        throw new Error("Not implemented");
-    }
-
-    /**
-     * Create new correlation context.
-     */
-    public startOperation(
-        context: Context | (http.IncomingMessage | HttpRequest) | SpanContext,
+    public static startOperation(
+        input: azureFunctionsTypes.Context | (http.IncomingMessage | azureFunctionsTypes.HttpRequest) | SpanContext | Span,
         request?: HttpRequest | string
-    ): ICorrelationContext | null {
-        throw new Error("Not implemented");
+    ): ICorrelationContext {
+        const traceContext = input && (input as azureFunctionsTypes.Context).traceContext || null;
+        const span = input && (input as Span).spanContext ? input as Span : null;
+        const spanContext = input && (input as SpanContext).traceId ? input as SpanContext : null;
+        const headers = input && (input as http.IncomingMessage | azureFunctionsTypes.HttpRequest).headers;
+
+        if (span) {
+            trace.setSpanContext(context.active(), span.spanContext());
+            return this.spanToContextObject(
+                span.spanContext(),
+                span.parentSpanId,
+            );
+        }
+
+        if (spanContext) {
+            trace.setSpanContext(context.active(), spanContext);
+            return this.spanToContextObject(
+                spanContext,
+            );
+        }
+
+        if (traceContext || headers) {
+            let traceparent = null;
+            let tracestate = null;
+            if (traceContext) {
+                // Use the headers on the request from Azure Functions to set the active context
+                const azureFnRequest = request as azureFunctionsTypes.HttpRequest;
+
+                // If the traceparent isn't defined on the azure function headers set it to the request-id
+                if (azureFnRequest?.headers) {
+                    // request-id is a GUID-based unique identifier for the request
+                    traceparent = azureFnRequest.headers.traceparent ? azureFnRequest.headers.traceparent : azureFnRequest.headers["request-id"];
+                    tracestate = azureFnRequest.headers.tracestate;
+                }
+
+                if (!traceparent) {
+                    traceparent = traceContext.traceparent;
+                }
+                if (!tracestate) {
+                    tracestate = traceContext.tracestate;
+                }
+            }
+
+            // If headers is defined instead of traceContext, use the headers to set the traceparent and tracestate
+            if (headers) {
+                traceparent = headers.traceparent ? headers.traceparent.toString() : null;
+                tracestate = headers.tracestate ? headers.tracestate.toString() : tracestate;
+            }
+
+            const traceArray: string[] = traceparent?.split("-");
+
+            const tracestateObj: TraceState = new TraceState();
+            tracestate?.split(",").forEach((pair) => {
+                const kv = pair.split("=");
+                tracestateObj.set(kv[0], kv[1]);
+            });
+
+            return this.generateContextObject(
+                traceArray[1],
+                traceArray[2],
+                null,
+                {
+                    legacyRootId: "",
+                    parentId: "",
+                    spanId: traceArray[2],
+                    traceFlag: "",
+                    traceId: traceArray[1],
+                    version: "00",
+                },
+                tracestateObj
+            );
+        }
+        Logger.getInstance().warn("startOperation was called with invalid arguments");
+        return null;
     }
 
     /**
-     *  Disables the CorrelationContextManager.
+     * Disables the CorrelationContextManager
      */
-    public disable() {
-        throw new Error("Not implemented");
+    public static disable() {
+        Logger.getInstance().warn("It will not be possible to re-enable the current context manager after disabling it!");
+        context.disable();
     }
 
     /**
-     * Reset the namespace
+     * Resets the namespace
      */
-    public reset() {
-        throw new Error("Not implemented");
+    public static reset() {
+        Logger.getInstance().info("This is a no-op and exists only for compatibility reasons.");
+    }
+
+    /**
+     * Converts ApplicationInsights' ICorrelationContext to an OpenTelemetry SpanContext
+     * @param ctx ICorrelationContext object to convert to a SpanContext
+     * @returns OpenTelemetry SpanContext
+     */
+    private static _contextObjectToSpanContext(ctx: ICorrelationContext): SpanContext {
+        return {
+            traceId: ctx.operation.id,
+            spanId: ctx.operation.traceparent?.spanId ?? "",
+            traceFlags: ctx.operation.traceparent?.traceFlag ? Number(ctx.operation.traceparent?.traceFlag) : undefined,
+        };
     }
 }

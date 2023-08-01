@@ -1,13 +1,15 @@
-import { IncomingMessage } from "http";
+import * as http from "http";
 import { DiagLogLevel, SpanContext } from "@opentelemetry/api";
 
+import { CorrelationContextManager } from "./correlationContextManager";
+import * as azureFunctionsTypes from "@azure/functions";
+import { Span } from "@opentelemetry/sdk-trace-base";
 import { Logger } from "./logging";
-import { ICorrelationContext, Context, HttpRequest } from "./types";
+import { ICorrelationContext, HttpRequest } from "./types";
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
 import { ApplicationInsightsOptions, ExtendedMetricType } from "../types";
 import { DistributedTracingModes } from "../shim/types";
-
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
@@ -75,8 +77,7 @@ export function start() {
  * @returns A plain object for request storage or null if automatic dependency correlation is disabled.
  */
 export function getCorrelationContext(): ICorrelationContext {
-    // TODO: Implement this
-    return null;
+    return CorrelationContextManager.getCurrentContext();
 }
 
 /**
@@ -84,11 +85,10 @@ export function getCorrelationContext(): ICorrelationContext {
  * Starts a fresh context or propagates the current internal one.
  */
 export function startOperation(
-    arg1: Context | (IncomingMessage | HttpRequest) | SpanContext,
+    arg1: azureFunctionsTypes.Context | (http.IncomingMessage | azureFunctionsTypes.HttpRequest) | SpanContext | Span,
     arg2?: HttpRequest | string
 ): ICorrelationContext | null {
-    // TODO: Implement this
-    return null;
+    return CorrelationContextManager.startOperation(arg1, arg2);
 }
 
 /**
@@ -98,8 +98,7 @@ export function startOperation(
  * correctly to an asynchronous callback.
  */
 export function wrapWithCorrelationContext<T>(fn: T, context?: ICorrelationContext): T {
-    // TODO: Implement this
-    return null;
+    return CorrelationContextManager.wrapCallback<T>(fn, context);
 }
 
 /**
@@ -108,6 +107,14 @@ export function wrapWithCorrelationContext<T>(fn: T, context?: ICorrelationConte
 export class Configuration {
     // Convenience shortcut to ApplicationInsights.start
     public static start = start;
+
+    /**
+     * Only W3C traing mode is currently suppported so this method informs the user if they attempt to set the value.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    public static setDistributedTracingMode(value: number) {
+        Logger.getInstance().info("Setting distributedTracingMode will not affect correlation headers as only W3C is currently supported.");
+    }
 
     /**
      * Sets the state of console and logger tracking (enabled by default for third-party loggers only)
