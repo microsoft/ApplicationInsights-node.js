@@ -1,4 +1,4 @@
-import { IncomingMessage } from "http";
+import { IncomingMessage, RequestOptions } from "http";
 import { DiagLogLevel, SpanContext } from "@opentelemetry/api";
 
 import { Logger } from "./logging";
@@ -7,6 +7,7 @@ import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
 import { ApplicationInsightsOptions, ExtendedMetricType } from "../types";
 import { DistributedTracingModes } from "../shim/types";
+import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 
 
 // We export these imports so that SDK users may use these classes directly.
@@ -189,7 +190,16 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectRequests(value: boolean) {
-        // TODO: Implement this
+        if (!value) {
+            if (_options) {
+                _options.instrumentationOptions = {
+                    http: {
+                        enabled: true,
+                        ignoreIncomingRequestHook: (request: IncomingMessage) => true,
+                    } as HttpInstrumentationConfig
+                };
+            }
+        }
         return Configuration;
     }
 
@@ -199,7 +209,16 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectDependencies(value: boolean) {
-        // TODO: Implement this
+        if (!value) {
+            if (_options) {
+                _options.instrumentationOptions = {
+                    http: {
+                        enabled: true,
+                        ignoreOutgoingRequestHook: (request: RequestOptions) => true,
+                    } as HttpInstrumentationConfig
+                };
+            }
+        }
         return Configuration;
     }
 
@@ -210,7 +229,8 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoDependencyCorrelation(value: boolean, useAsyncHooks?: boolean) {
-        // TODO: Implement this
+        // TODO: Just disable the correlationContext - give warning.
+        // If using old flag, give warning
         return Configuration;
     }
 
