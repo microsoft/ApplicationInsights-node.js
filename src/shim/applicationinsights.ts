@@ -1,4 +1,3 @@
-
 import * as http from "http";
 import { DiagLogLevel, SpanContext } from "@opentelemetry/api";
 
@@ -59,6 +58,11 @@ export function start() {
     if (!defaultClient) {
         // Creates a new TelemetryClient that uses the _config we configure via the other functions in this file
         defaultClient = new TelemetryClient(_options);
+        const httpOptions: HttpInstrumentationConfig | undefined = _options.instrumentationOptions.http;
+        if (httpOptions?.ignoreIncomingRequestHook && httpOptions?.ignoreOutgoingRequestHook) {
+            _options.instrumentationOptions.http.enabled = false;
+            Logger.getInstance().info("Both ignoreIncomingRequestHook and ignoreOutgoingRequestHook are set to true. Disabling http instrumentation.");
+        }
     } else {
         Logger.getInstance().info("Cannot run applicationinsights.start() more than once.");
     }
@@ -203,6 +207,7 @@ export class Configuration {
                 _options.instrumentationOptions = {
                     http: {
                         enabled: true,
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         ignoreIncomingRequestHook: (request: http.IncomingMessage) => true,
                     } as HttpInstrumentationConfig
                 };
@@ -222,6 +227,7 @@ export class Configuration {
                 _options.instrumentationOptions = {
                     http: {
                         enabled: true,
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         ignoreOutgoingRequestHook: (request: http.RequestOptions) => true,
                     } as HttpInstrumentationConfig
                 };
@@ -237,8 +243,10 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoDependencyCorrelation(value: boolean, useAsyncHooks?: boolean) {
-        // TODO: Just disable the correlationContext - give warning.
-        // If using old flag, give warning
+        CorrelationContextManager.disable();
+        if (useAsyncHooks === false) {
+            Logger.getInstance().warn("The use of non async hooks is no longer supported.");
+        }
         return Configuration;
     }
 
@@ -252,6 +260,12 @@ export class Configuration {
      * @param maxBytesOnDisk The maximum size (in bytes) that the created temporary directory for cache events can grow to, before caching is disabled.
      * @returns {Configuration} this class
      */
+    public static setUseDiskRetryCaching(value: boolean, resendInterval?: number, maxBytesOnDisk?: number) {
+        if (defaultClient) {
+            defaultClient.setUseDiskRetryCaching(value, resendInterval, maxBytesOnDisk);
+        }
+        return Configuration;
+    }
 
     /**
      * Enables debug and warning Logger for AppInsights itself.
