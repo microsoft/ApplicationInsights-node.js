@@ -197,6 +197,17 @@ export class Configuration {
     }
 
     /**
+     * Sets the state of Web snippet injection
+     * @param value if true Web snippet will try to be injected in server response
+     * @param WebSnippetConnectionString if provided, Web snippet injection will use this ConnectionString. Default to use the connectionString in Node.js app initialization.
+     * @returns {Configuration} this class
+     */
+    public static enableWebInstrumentation(value: boolean, WebSnippetConnectionString?: string) {
+        Logger.getInstance().info("Web snippet injection is not implemented and this method is a no-op.");
+        return Configuration;
+    }
+
+    /**
      * Sets the state of request tracking (enabled by default)
      * @param value if true requests will be sent to Application Insights
      * @returns {Configuration} this class
@@ -273,7 +284,7 @@ export class Configuration {
      * @param enableWarningLogger if true, enables warning Logger
      * @returns {Configuration} this class
      */
-    public static setInternalLogger(enableDebugLogger = false, enableWarningLogger = true) {
+    public static setInternalLogging(enableDebugLogger = false, enableWarningLogger = true) {
         if (enableDebugLogger) {
             Logger.getInstance().updateLogLevel(DiagLogLevel.DEBUG);
             return Configuration;
@@ -284,6 +295,16 @@ export class Configuration {
         }
         // Default
         Logger.getInstance().updateLogLevel(DiagLogLevel.INFO);
+        return Configuration;
+    }
+
+    /**
+     * Enable automatic incoming request tracking when using Azure Functions
+     * @param value if true auto collection of incoming requests will be enabled
+     * @returns {Configuration} this class
+     */
+    public static setAutoCollectIncomingRequestAzureFunctions(value: boolean) {
+        Logger.getInstance().info("Auto collect incoming request is not implemented and this method is a no-op.");
         return Configuration;
     }
 
