@@ -436,4 +436,17 @@ export class TelemetryClient {
         const record = this._telemetryToLogRecord(telemetry, baseType, baseData);
         return record;
     }
+
+    // TODO: Support these three methods from former NodeClient class that extended TelemetryClient?
+    public trackNodeHttpRequestSync(telemetry: Contracts.NodeHttpRequestTelemetry): void {
+        return;
+    }
+
+    public trackNodeHttpRequest(telemetry: Contracts.NodeHttpRequestTelemetry) {
+        return;
+    }
+
+    public trackNodeHttpDependency(telemetry: Contracts.NodeHttpRequestTelemetry) {
+        return;
+    }
 }
