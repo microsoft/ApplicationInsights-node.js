@@ -449,15 +449,15 @@ export class TelemetryClient {
     }
 
     // TODO: Support these three methods from former NodeClient class that extended TelemetryClient?
-    public trackNodeHttpRequestSync(telemetry: Contracts.NodeHttpRequestTelemetry): void {
-        return;
+    public trackNodeHttpRequestSync(telemetry: Contracts.NodeHttpRequestTelemetry) {
+        Logger.getInstance().warn("trackNodeHttpRequestSync is not implemented and is a no-op.");
     }
 
     public trackNodeHttpRequest(telemetry: Contracts.NodeHttpRequestTelemetry) {
-        return;
+        Logger.getInstance().warn("trackNodeHttpRequest is not implemented and is a no-op.");
     }
 
     public trackNodeHttpDependency(telemetry: Contracts.NodeHttpRequestTelemetry) {
-        return;
+        Logger.getInstance().warn("trackNodeHttpDependency is not implemented and is a no-op.");
     }
 }
