@@ -5,11 +5,10 @@ import { CorrelationContextManager } from "./correlationContextManager";
 import * as azureFunctionsTypes from "@azure/functions";
 import { Span } from "@opentelemetry/sdk-trace-base";
 import { Logger } from "./logging";
-import { ICorrelationContext, HttpRequest } from "./types";
+import { ICorrelationContext, HttpRequest, DistributedTracingModes } from "./types";
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
 import { ApplicationInsightsOptions, ExtendedMetricType } from "../types";
-import { DistributedTracingModes } from "../shim/types";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 
 // We export these imports so that SDK users may use these classes directly.
@@ -58,7 +57,7 @@ export function start() {
     if (!defaultClient) {
         // Creates a new TelemetryClient that uses the _config we configure via the other functions in this file
         defaultClient = new TelemetryClient(_options);
-        const httpOptions: HttpInstrumentationConfig | undefined = _options.instrumentationOptions.http;
+        const httpOptions: HttpInstrumentationConfig | undefined = _options?.instrumentationOptions?.http;
         if (httpOptions?.ignoreIncomingRequestHook && httpOptions?.ignoreOutgoingRequestHook) {
             _options.instrumentationOptions.http.enabled = false;
             Logger.getInstance().info("Both ignoreIncomingRequestHook and ignoreOutgoingRequestHook are set to true. Disabling http instrumentation.");
