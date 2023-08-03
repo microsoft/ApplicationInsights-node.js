@@ -16,7 +16,7 @@ import { AutoCollectConsole } from "./autoCollection/console";
 import { AutoCollectExceptions, parseStack } from "./autoCollection/exceptions";
 import { ApplicationInsightsOptions } from "../types";
 import { InternalConfig } from "./configuration/internal";
-
+import { IConfig } from "../shim/types";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -31,6 +31,7 @@ export class TelemetryClient {
     private _idGenerator: IdGenerator;
     public context: Context;
     public commonProperties: { [key: string]: string }; // TODO: Add setter so Resources are updated
+    public config: IConfig;
 
     /**
      * Constructs a new client of the client
@@ -51,6 +52,16 @@ export class TelemetryClient {
                 };
             }
         }
+
+        // enableAutoCollectConsole
+        if (this.config) {
+            this._options.logInstrumentations.bunyan.enabled = this.config.enableAutoCollectConsole;
+            this._options.logInstrumentations.winston.enabled = this.config.enableAutoCollectConsole;
+            this._options.logInstrumentations.console.enabled = this.config.enableAutoCollectConsole;
+        }
+
+        // TODO: Add remaining TelemetryClient config values
+
         // Internal config with extra configuration not available in Azure Monitor Distro
         this._internalConfig = new InternalConfig(this._options);
 
@@ -307,7 +318,7 @@ export class TelemetryClient {
             contextObjects?: { [name: string]: any }
         ) => boolean
     ) {
-        throw new Error("Not implemented");
+        Logger.getInstance().warn("addTelemetryProcessor is not supported via the ApplicationInsights shim. Please upgrade to the ApplicationInsights SDK beta.");
     }
 
     /*
