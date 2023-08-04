@@ -53,15 +53,6 @@ export class TelemetryClient {
             }
         }
 
-        // enableAutoCollectConsole
-        if (this.config) {
-            this._options.logInstrumentations.bunyan.enabled = this.config.enableAutoCollectConsole;
-            this._options.logInstrumentations.winston.enabled = this.config.enableAutoCollectConsole;
-            this._options.logInstrumentations.console.enabled = this.config.enableAutoCollectConsole;
-        }
-
-        // TODO: Add remaining TelemetryClient config values
-
         // Internal config with extra configuration not available in Azure Monitor Distro
         this._internalConfig = new InternalConfig(this._options);
 
@@ -448,7 +439,6 @@ export class TelemetryClient {
         return record;
     }
 
-    // TODO: Support these three methods from former NodeClient class that extended TelemetryClient?
     public trackNodeHttpRequestSync(telemetry: Contracts.NodeHttpRequestTelemetry) {
         Logger.getInstance().warn("trackNodeHttpRequestSync is not implemented and is a no-op.");
     }
