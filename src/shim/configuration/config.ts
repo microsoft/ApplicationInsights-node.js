@@ -1,9 +1,10 @@
-import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics } from "../types";
+import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrumentationConfig } from "../types";
 import http = require("http");
 import https = require("https");
 import azureCoreAuth = require("@azure/core-auth");
 import { Logger } from "../logging";
 import constants = require("../../declarations/constants");
+import ConnectionStringParser = require("../util/connectionStringParser");
 
 class config implements IConfig {
 
@@ -61,7 +62,7 @@ class config implements IConfig {
     // public enableAutoWebSnippetInjection: boolean;
 
     // public correlationId: string; // TODO: Should be private NOTE: This is not noted in the README
-    // private _connectionString: string;
+    private _connectionString: string;
     private _endpointBase: string = constants.DEFAULT_BREEZE_ENDPOINT;
     // private _profileQueryEndpoint: string;
 
@@ -89,9 +90,9 @@ class config implements IConfig {
         this.disableAppInsights = this.disableAppInsights || false;
         this.samplingPercentage = this.samplingPercentage || 100;
         this.correlationIdRetryIntervalMs = this.correlationIdRetryIntervalMs || 30 * 1000;
-        this.enableWebInstrumentation = this.enableWebInstrumentation || this.enableAutoWebSnippetInjection || false;
+        // this.enableWebInstrumentation = this.enableWebInstrumentation || this.enableAutoWebSnippetInjection || false;
         this.webInstrumentationConfig = this.webInstrumentationConfig || null;
-        this.enableAutoWebSnippetInjection = this.enableWebInstrumentation;
+        // this.enableAutoWebSnippetInjection = this.enableWebInstrumentation;
         this.correlationHeaderExcludedDomains =
             this.correlationHeaderExcludedDomains ||
             [
@@ -103,25 +104,25 @@ class config implements IConfig {
                 "*.core.eaglex.ic.gov"
             ];
 
-        this.ignoreLegacyHeaders = this.ignoreLegacyHeaders || false;
-        this.profileQueryEndpoint = csCode.ingestionendpoint || csEnv.ingestionendpoint || process.env[Config.ENV_profileQueryEndpoint] || this._endpointBase;
-        this.quickPulseHost = this.quickPulseHost || csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_HOST;
+        // this.ignoreLegacyHeaders = this.ignoreLegacyHeaders || false;
+        // this.profileQueryEndpoint = csCode.ingestionendpoint || csEnv.ingestionendpoint || process.env[Config.ENV_profileQueryEndpoint] || this._endpointBase;
+        // this.quickPulseHost = this.quickPulseHost || csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_HOST;
         this.webInstrumentationConnectionString = this.webInstrumentationConnectionString || this._webInstrumentationConnectionString || "";
         this.webSnippetConnectionString = this.webInstrumentationConnectionString;
         // Parse quickPulseHost if it starts with http(s)://
-        if (this.quickPulseHost.match(/^https?:\/\//)) {
-            this.quickPulseHost = new url.URL(this.quickPulseHost).host;
-        }
+        // if (this.quickPulseHost.match(/^https?:\/\//)) {
+            // this.quickPulseHost = new url.URL(this.quickPulseHost).host;
+        // }
     }
 
     public set profileQueryEndpoint(endpoint: string) {
-        this._profileQueryEndpoint = endpoint;
-        this.correlationId = CorrelationIdManager.correlationIdPrefix;
+        // this._profileQueryEndpoint = endpoint;
+        // this.correlationId = CorrelationIdManager.correlationIdPrefix;
     }
 
-    public get profileQueryEndpoint() {
-        return this._profileQueryEndpoint;
-    }
+    // public get profileQueryEndpoint() {
+        // return this._profileQueryEndpoint;
+    // }
 
     public set instrumentationKey(iKey: string) {
         if (!config._validateInstrumentationKey(iKey)) {

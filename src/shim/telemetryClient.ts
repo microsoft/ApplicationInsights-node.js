@@ -17,6 +17,7 @@ import { AutoCollectExceptions, parseStack } from "./autoCollection/exceptions";
 import { ApplicationInsightsOptions } from "../types";
 import { InternalConfig } from "./configuration/internal";
 import { IConfig } from "../shim/types";
+import Config = require("./configuration/config");
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -38,6 +39,10 @@ export class TelemetryClient {
      * @param setupString the Connection String or Instrumentation Key to use (read from environment variable if not specified)
      */
     constructor(input?: string | ApplicationInsightsOptions) {
+        // If the user does not pass a new connectionString, use the one defined in the _options
+        const config = new Config(typeof(input) === "string" ? input : input?.azureMonitorExporterConfig?.connectionString);
+        this.config = config;
+
         this.commonProperties = {};
         this.context = new Context();
         if (input) {
@@ -47,8 +52,13 @@ export class TelemetryClient {
                 // TODO: Add Support for iKey as well
                 this._options = {
                     azureMonitorExporterConfig: {
-                        connectionString: input
-                    }
+                        // TODO: Ensure they can pass connection string via config.
+                        connectionString: input,
+                        aadTokenCredential: config.aadTokenCredential,
+                        disableOfflineStorage: !config.enableUseDiskRetryCaching,
+                        endpoint: config.endpointUrl,
+                    },
+                    samplingRatio: config.samplingPercentage / 100,
                 };
             }
         }
