@@ -60,7 +60,7 @@ export class TelemetryClient {
                 };
             }
         }
-        if (process.env.APPLICATION_INSIGHTS_SHIM_CONFIGURATION) {
+        if (process.env.APPLICATION_INSIGHTS_SHIM_CONFIGURATION !== "true") {
             this.initializeAzureMonitorClient(this._options);
         }
     }
