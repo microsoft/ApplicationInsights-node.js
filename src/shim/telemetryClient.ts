@@ -87,7 +87,7 @@ export class TelemetryClient {
             http: {
                 ...input?.instrumentationOptions?.http,
                 ignoreOutgoingUrls: this.config.correlationHeaderExcludedDomains,
-            } as HttpInstrumentationConfig
+            } as HttpInstrumentationConfig,
         }
 
         // AAD Token Credential
@@ -96,13 +96,19 @@ export class TelemetryClient {
         }
 
         // enableAutoCollectConsole
-        if (this.config.enableAutoCollectConsole) {
-            Configuration.setAutoCollectConsole(true, true);
+        if (typeof(this.config.enableAutoCollectConsole) === "boolean") {
+            const setting: boolean = this.config.enableAutoCollectConsole;
+            Configuration.setAutoCollectConsole(setting, setting);
         }
 
         // enableAutoCollectExceptions
         if (this.config.enableAutoCollectExceptions) {
             Configuration.setAutoCollectExceptions(true);
+        }
+
+        // enableAutoCollectDependencies
+        if (typeof(this.config.enableAutoCollectDependencies) === "boolean") {
+            Configuration.setAutoCollectDependencies(this.config.enableAutoCollectDependencies);
         }
 
         // enableAutoCollectPerformance
@@ -116,8 +122,9 @@ export class TelemetryClient {
      * @param input Set of options to configure the Azure Monitor Client
      */
     public initializeAzureMonitorClient(input?: ApplicationInsightsOptions) {
-        // this._parseConfig(input);
-
+        if (process.env.APPLICATION_INSIGHTS_SHIM_CONFIGURATION === "true") {
+            this._parseConfig(input);
+        }    
         this._internalConfig = new InternalConfig(this._options);
         this._client = new AzureMonitorOpenTelemetryClient(this._options);
         this._console = new AutoCollectConsole(this);
