@@ -60,6 +60,11 @@ export class TelemetryClient {
                 };
             }
         }
+
+        // If not running with shim configuration we should autatically init the AzMonClient
+        if (process.env.APPLICATION_INSIGHTS_SHIM_CONFIGURATION !== "true") {
+            this.initializeAzureMonitorClient(this._options);
+        }
     }
 
     private _parseConfig(input?: ApplicationInsightsOptions) {

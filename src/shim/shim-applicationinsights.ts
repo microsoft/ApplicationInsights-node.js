@@ -44,7 +44,9 @@ export function setup(setupString?: string) {
     } else {
         Logger.getInstance().info("Cannot run applicationinsights.setup() more than once.");
     }
-    defaultClient = new TelemetryClient(_options);
+    // Set flag saying we're using the shim
+    process.env["APPLICATION_INSIGHTS_SHIM_CONFIGURATION"] = "true";
+    defaultClient = new TelemetryClient(_options);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
     return Configuration;
 }
 
