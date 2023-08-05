@@ -60,6 +60,9 @@ export class TelemetryClient {
                 };
             }
         }
+        if (process.env.APPLICATION_INSIGHTS_SHIM_CONFIGURATION) {
+            this.initializeAzureMonitorClient(this._options);
+        }
     }
 
     private _parseConfig(input?: ApplicationInsightsOptions) {
