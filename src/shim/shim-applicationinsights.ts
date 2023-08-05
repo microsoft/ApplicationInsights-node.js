@@ -44,6 +44,7 @@ export function setup(setupString?: string) {
     } else {
         Logger.getInstance().info("Cannot run applicationinsights.setup() more than once.");
     }
+    defaultClient = new TelemetryClient(_options);
     return Configuration;
 }
 
@@ -54,16 +55,12 @@ export function setup(setupString?: string) {
  * @returns {ApplicationInsights} this class
  */
 export function start() {
-    if (!defaultClient) {
-        // Creates a new TelemetryClient that uses the _config we configure via the other functions in this file
-        defaultClient = new TelemetryClient(_options);
-        const httpOptions: HttpInstrumentationConfig | undefined = _options?.instrumentationOptions?.http;
-        if (httpOptions?.ignoreIncomingRequestHook && httpOptions?.ignoreOutgoingRequestHook) {
-            _options.instrumentationOptions.http.enabled = false;
-            Logger.getInstance().info("Both ignoreIncomingRequestHook and ignoreOutgoingRequestHook are set to true. Disabling http instrumentation.");
-        }
-    } else {
-        Logger.getInstance().info("Cannot run applicationinsights.start() more than once.");
+    // Creates a new TelemetryClient that uses the _config we configure via the other functions in this file
+    defaultClient.initializeAzureMonitorClient(_options);
+    const httpOptions: HttpInstrumentationConfig | undefined = _options?.instrumentationOptions?.http;
+    if (httpOptions?.ignoreIncomingRequestHook && httpOptions?.ignoreOutgoingRequestHook) {
+        _options.instrumentationOptions.http.enabled = false;
+        Logger.getInstance().info("Both ignoreIncomingRequestHook and ignoreOutgoingRequestHook are set to true. Disabling http instrumentation.");
     }
     return Configuration;
 }

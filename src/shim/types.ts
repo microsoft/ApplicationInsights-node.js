@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import { TokenCredential } from "@azure/core-auth";
+
 export enum DistributedTracingModes {
     /**
      * Send Application Insights correlation headers
@@ -295,6 +297,9 @@ export interface IConfig {
         * see more details at: https://github.com/microsoft/ApplicationInsights-JS
         */
         webInstrumentationSrc?: string;
+
+            /** AAD TokenCredential to use to authenticate the app */
+        aadTokenCredential?: TokenCredential;
 }
 
 export interface IWebInstrumentationConfig {

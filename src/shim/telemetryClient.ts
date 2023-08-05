@@ -18,13 +18,15 @@ import { ApplicationInsightsOptions } from "../types";
 import { InternalConfig } from "./configuration/internal";
 import { IConfig } from "../shim/types";
 import Config = require("./configuration/config");
+import { dispose, Configuration } from "./shim-applicationinsights";
+import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
  * and manually trigger immediate sending (flushing)
  */
 export class TelemetryClient {
-    private readonly _internalConfig: InternalConfig;
+    private _internalConfig: InternalConfig;
     private _options: ApplicationInsightsOptions;
     private _client: AzureMonitorOpenTelemetryClient;
     private _console: AutoCollectConsole;
@@ -54,18 +56,66 @@ export class TelemetryClient {
                     azureMonitorExporterConfig: {
                         // TODO: Ensure they can pass connection string via config.
                         connectionString: input,
-                        aadTokenCredential: config.aadTokenCredential,
-                        disableOfflineStorage: !config.enableUseDiskRetryCaching,
-                        endpoint: config.endpointUrl,
-                    },
-                    samplingRatio: config.samplingPercentage / 100,
+                    }
                 };
             }
         }
+    }
 
-        // Internal config with extra configuration not available in Azure Monitor Distro
+    private _parseConfig(input?: ApplicationInsightsOptions) {
+        if (this.config.disableAppInsights) {
+            dispose();
+        }
+
+        // TODO: Figure out to how to prioritize config vs. input (options) data
+        this._options = input;
+
+        /*
+        // endpointUrl TODO: Fix endpointUrl breaking the exporter
+        if (this.config.endpointUrl) {
+            this._options.azureMonitorExporterConfig.endpoint = this.config.endpointUrl;
+        }
+        */
+        // samplingRatio
+        this._options.samplingRatio = this.config.samplingPercentage ? this.config.samplingPercentage / 100 : 1;
+
+        // correlationHeaderExcludedDomains
+        this._options.instrumentationOptions = {
+            http: {
+                ...input?.instrumentationOptions?.http,
+                ignoreOutgoingUrls: this.config.correlationHeaderExcludedDomains,
+            } as HttpInstrumentationConfig
+        }
+
+        // AAD Token Credential
+        if (this.config.aadTokenCredential) {
+            this._options.azureMonitorExporterConfig.aadTokenCredential = this.config.aadTokenCredential;
+        }
+
+        // enableAutoCollectConsole
+        if (this.config.enableAutoCollectConsole) {
+            Configuration.setAutoCollectConsole(true, true);
+        }
+
+        // enableAutoCollectExceptions
+        if (this.config.enableAutoCollectExceptions) {
+            Configuration.setAutoCollectExceptions(true);
+        }
+
+        // enableAutoCollectPerformance
+        if (this.config.enableAutoCollectPerformance) {
+            this._options.enableAutoCollectPerformance = true;
+        }
+    }
+
+    /**
+     * @internal Used to initialize the Azure Monitor Client seperately from the constructor in order to allow for client.config to be set before initialization
+     * @param input Set of options to configure the Azure Monitor Client
+     */
+    public initializeAzureMonitorClient(input?: ApplicationInsightsOptions) {
+        this._parseConfig(input);
+
         this._internalConfig = new InternalConfig(this._options);
-
         this._client = new AzureMonitorOpenTelemetryClient(this._options);
         this._console = new AutoCollectConsole(this);
         if (this._internalConfig.enableAutoCollectExceptions) {
