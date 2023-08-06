@@ -79,12 +79,16 @@ class config implements IConfig {
 
         const instrumentationKeyEnv: string | undefined = this._instrumentationKey;
         this.instrumentationKey = csCode.instrumentationkey || iKeyCode /* === instrumentationKey */ || csEnv.instrumentationkey || instrumentationKeyEnv;
-        let endpoint = `${this.endpointUrl || csCode.ingestionendpoint || csEnv.ingestionendpoint || this._endpointBase}`;
-        if (endpoint.endsWith("/")) {
-            // Remove extra '/' if present
-            endpoint = endpoint.slice(0, -1);
+
+        // If user defines a custom endpointUrl - set a new endpoint
+        if (this.endpointUrl) {
+            let endpoint = `${this.endpointUrl || csCode.ingestionendpoint || csEnv.ingestionendpoint || this._endpointBase}`;
+            if (endpoint.endsWith("/")) {
+                // Remove extra '/' if present
+                endpoint = endpoint.slice(0, -1);
+            }
+            this.endpointUrl = `${endpoint}/v2.1/track`;
         }
-        this.endpointUrl = `${endpoint}/v2.1/track`;
         this.maxBatchSize = this.maxBatchSize || 250;
         this.maxBatchIntervalMs = this.maxBatchIntervalMs || 15000;
         this.disableAppInsights = this.disableAppInsights || false;

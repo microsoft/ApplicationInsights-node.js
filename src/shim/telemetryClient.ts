@@ -14,7 +14,7 @@ import { Logger } from "./logging";
 import { Util } from "./util";
 import { AutoCollectConsole } from "./autoCollection/console";
 import { AutoCollectExceptions, parseStack } from "./autoCollection/exceptions";
-import { ApplicationInsightsOptions } from "../types";
+import { ApplicationInsightsOptions, ExtendedMetricType } from "../types";
 import { InternalConfig } from "./configuration/internal";
 import { IConfig } from "../shim/types";
 import Config = require("./configuration/config");
@@ -66,23 +66,20 @@ export class TelemetryClient {
     }
 
     private _parseConfig(input?: ApplicationInsightsOptions) {
+        const resendInterval: number | undefined = this.config.enableResendInterval;
         if (this.config.disableAppInsights) {
             dispose();
         }
-
-        // TODO: Figure out to how to prioritize config vs. input (options) data
         this._options = input;
 
-        /*
-        // endpointUrl TODO: Fix endpointUrl breaking the exporter
+        /* endpointUrl TODO: Fix endpointUrl breaking the exporter
         if (this.config.endpointUrl) {
             this._options.azureMonitorExporterConfig.endpoint = this.config.endpointUrl;
         }
         */
-        // samplingRatio
+
         this._options.samplingRatio = this.config.samplingPercentage ? this.config.samplingPercentage / 100 : 1;
 
-        // correlationHeaderExcludedDomains
         this._options.instrumentationOptions = {
             http: {
                 ...input?.instrumentationOptions?.http,
@@ -90,31 +87,110 @@ export class TelemetryClient {
             } as HttpInstrumentationConfig,
         }
 
-        // AAD Token Credential
         if (this.config.aadTokenCredential) {
             this._options.azureMonitorExporterConfig.aadTokenCredential = this.config.aadTokenCredential;
         }
 
-        // enableAutoCollectConsole
         if (typeof(this.config.enableAutoCollectConsole) === "boolean") {
             const setting: boolean = this.config.enableAutoCollectConsole;
             Configuration.setAutoCollectConsole(setting, setting);
         }
 
-        // enableAutoCollectExceptions
-        if (this.config.enableAutoCollectExceptions) {
-            Configuration.setAutoCollectExceptions(true);
+        if (typeof(this.config.enableAutoCollectExceptions) === "boolean") {
+            Configuration.setAutoCollectExceptions(this.config.enableAutoCollectExceptions);
         }
 
-        // enableAutoCollectDependencies
         if (typeof(this.config.enableAutoCollectDependencies) === "boolean") {
             Configuration.setAutoCollectDependencies(this.config.enableAutoCollectDependencies);
         }
 
-        // enableAutoCollectPerformance
-        if (this.config.enableAutoCollectPerformance) {
-            this._options.enableAutoCollectPerformance = true;
+        if (typeof(this.config.enableAutoCollectRequests) === "boolean") {
+            Configuration.setAutoCollectRequests(this.config.enableAutoCollectRequests);
         }
+
+        if (typeof(this.config.enableAutoCollectPerformance) === "boolean") {
+            this._options.enableAutoCollectPerformance = this.config.enableAutoCollectPerformance;
+        }
+
+        if (typeof(this.config.enableAutoCollectExternalLoggers) === "boolean") {
+            this._options.logInstrumentations.console.enabled = this.config.enableAutoCollectExternalLoggers;
+        }
+
+        if (typeof(this.config.enableAutoCollectPreAggregatedMetrics) === "boolean") {
+            this._options.enableAutoCollectStandardMetrics = this.config.enableAutoCollectPreAggregatedMetrics;
+        }
+
+        if (typeof(this.config.enableAutoCollectHeartbeat) === "boolean") {
+            Configuration.setAutoCollectHeartbeat(this.config.enableAutoCollectHeartbeat);
+        }
+
+        if (typeof(this.config.enableAutoDependencyCorrelation) === "boolean") {
+            Configuration.setAutoDependencyCorrelation(this.config.enableAutoDependencyCorrelation);
+        }
+
+        if (typeof(this.config.enableAutoCollectIncomingRequestAzureFunctions) === "boolean") {
+            Configuration.setAutoCollectIncomingRequestAzureFunctions(this.config.enableAutoCollectIncomingRequestAzureFunctions);
+        }
+
+        if (typeof(this.config.enableSendLiveMetrics) === "boolean") {
+            Configuration.setSendLiveMetrics(this.config.enableSendLiveMetrics);
+        }
+
+        if (typeof(this.config.enableUseDiskRetryCaching) === "boolean") {
+            Configuration.setUseDiskRetryCaching(this.config.enableUseDiskRetryCaching);
+        }
+
+        if (this.config.enableUseAsyncHooks === false) {
+            Logger.getInstance().warn("The use of non async hooks is no longer supported.");
+        }
+
+        if (typeof(this.config.distributedTracingMode) === "boolean") {
+            Configuration.setDistributedTracingMode(this.config.distributedTracingMode);
+        }
+
+        if (typeof(this.config.enableAutoCollectExtendedMetrics) === "boolean") {
+            const setting = this.config.enableAutoCollectExtendedMetrics;
+            this._options.extendedMetrics = {
+                [ExtendedMetricType.gc]: setting,
+                [ExtendedMetricType.heap]: setting,
+                [ExtendedMetricType.loop]: setting,
+            }
+        }
+
+        if (this.config.enableResendInterval) {
+            Configuration.setUseDiskRetryCaching(true, this.config.enableResendInterval);
+        }
+
+        if (this.config.enableMaxBytesOnDisk) {
+            Configuration.setUseDiskRetryCaching(true, resendInterval, this.config.enableMaxBytesOnDisk);
+        }
+
+        if (typeof(this.config.enableInternalDebugLogging) === "boolean") {
+            Configuration.setInternalLogging(this.config.enableInternalDebugLogging);
+        }
+
+        if (typeof(this.config.enableInternalWarningLogging) === "boolean") {
+            // If enableInternalDebugLogging is undefined then it should default to false in the Configuration
+            Configuration.setInternalLogging(this.config.enableInternalDebugLogging, this.config.enableInternalWarningLogging);
+        }
+
+        // Disable or enable all extended metrics
+        if (this.config.disableAllExtendedMetrics === true) {
+            for (const type in this._options.extendedMetrics) {
+                this._options.extendedMetrics[type] = false;
+            }
+        }
+
+        if (typeof(this.config.disableStatsbeat) === "boolean") {
+            Logger.getInstance().warn("The disableStatsbeat configuration option is deprecated.");
+        }
+
+        if (this.config.extendedMetricDisablers) {
+            const disabler = this.config.extendedMetricDisablers;
+            this._options.extendedMetrics[disabler] = false;
+        }
+
+        
     }
 
     /**
