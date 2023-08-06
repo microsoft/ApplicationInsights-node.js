@@ -20,6 +20,9 @@ import { IConfig } from "../shim/types";
 import Config = require("./configuration/config");
 import { dispose, Configuration } from "./shim-applicationinsights";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
+import bunyan = require("./autoCollection/diagnostic-channel/bunyan.sub");
+import console = require("./autoCollection/diagnostic-channel/console.sub");
+import winston = require("./autoCollection/diagnostic-channel/winston.sub");
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -190,7 +193,19 @@ export class TelemetryClient {
             this._options.extendedMetrics[disabler] = false;
         }
 
+        if (this.config.noDiagnosticChannel === true) {
+            bunyan.enable(false, this);
+            console.enable(false, this);
+            winston.enable(false, this);
+        }
         
+        if (this.config.noPatchModules) {
+            Logger.getInstance().warn("The noPatchModules configuration option is not supported by the shim.");
+        }
+
+        if (this.config.noHttpAgentKeepAlive) {
+            Logger.getInstance().warn("The noHttpAgentKeepAlive configuration option is not supported by the shim.");
+        }
     }
 
     /**

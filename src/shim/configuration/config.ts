@@ -41,8 +41,6 @@ class config implements IConfig {
     public enableSendLiveMetrics: boolean;
     public enableUseDiskRetryCaching: boolean;
     public enableUseAsyncHooks: boolean;
-
-    // TODO: Alert the user that we no longer support AI tracing mode
     public distributedTracingMode: DistributedTracingModes;
 
     public enableAutoCollectExtendedMetrics: boolean | IDisabledExtendedMetrics;
@@ -57,17 +55,21 @@ class config implements IConfig {
     public enableWebInstrumentation: boolean;
     public webInstrumentationConfig: IWebInstrumentationConfig[];
     public webInstrumentationSrc: string;
+    public noPatchModules: string;
+    public noHttpAgentKeepAlive: boolean;
     
     // To Be deprecated.
-    // public enableAutoWebSnippetInjection: boolean;
+    public enableAutoWebSnippetInjection: boolean;
 
-    // public correlationId: string; // TODO: Should be private NOTE: This is not noted in the README
+    public correlationId: string; // TODO: Should be private NOTE: This is not noted in the README
     private _connectionString: string;
     private _endpointBase: string = constants.DEFAULT_BREEZE_ENDPOINT;
-    // private _profileQueryEndpoint: string;
 
     private _instrumentationKey: string;
     public _webInstrumentationConnectionString: string;
+
+    // Added to maintain parity between JSON config and setting manually in the shim
+    public noDiagnosticChannel: boolean;
 
     constructor(setupString?: string) {
         const connectionStringEnv: string | undefined = this._connectionString;
@@ -108,25 +110,10 @@ class config implements IConfig {
                 "*.core.eaglex.ic.gov"
             ];
 
-        // this.ignoreLegacyHeaders = this.ignoreLegacyHeaders || false;
-        // this.profileQueryEndpoint = csCode.ingestionendpoint || csEnv.ingestionendpoint || process.env[Config.ENV_profileQueryEndpoint] || this._endpointBase;
-        // this.quickPulseHost = this.quickPulseHost || csCode.liveendpoint || csEnv.liveendpoint || process.env[Config.ENV_quickPulseHost] || Constants.DEFAULT_LIVEMETRICS_HOST;
+        this.ignoreLegacyHeaders = this.ignoreLegacyHeaders || false;
         this.webInstrumentationConnectionString = this.webInstrumentationConnectionString || this._webInstrumentationConnectionString || "";
         this.webSnippetConnectionString = this.webInstrumentationConnectionString;
-        // Parse quickPulseHost if it starts with http(s)://
-        // if (this.quickPulseHost.match(/^https?:\/\//)) {
-            // this.quickPulseHost = new url.URL(this.quickPulseHost).host;
-        // }
     }
-
-    public set profileQueryEndpoint(endpoint: string) {
-        // this._profileQueryEndpoint = endpoint;
-        // this.correlationId = CorrelationIdManager.correlationIdPrefix;
-    }
-
-    // public get profileQueryEndpoint() {
-        // return this._profileQueryEndpoint;
-    // }
 
     public set instrumentationKey(iKey: string) {
         if (!config._validateInstrumentationKey(iKey)) {

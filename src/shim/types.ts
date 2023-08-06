@@ -298,8 +298,30 @@ export interface IConfig {
         */
         webInstrumentationSrc?: string;
 
-            /** AAD TokenCredential to use to authenticate the app */
+        /** AAD TokenCredential to use to authenticate the app */
         aadTokenCredential?: TokenCredential;
+
+        /**
+        * In order to track context across asynchronous calls,
+        * some changes are required in third party libraries such as mongodb and redis.
+        * By default ApplicationInsights will use diagnostic-channel-publishers to monkey-patch some of these libraries.
+        * This property is to disable the feature.
+        * Note that by setting this flag, events may no longer be correctly associated with the right operation.
+        */
+        noDiagnosticChannel: boolean;
+
+        /**
+        * Disable individual monkey-patches.
+        * Set `noPatchModules` to a comma separated list of packages to disable.
+        * e.g. `"noPatchModules": "console,redis"` to avoid patching the console and redis packages.
+        * The following modules are available: `azuresdk, bunyan, console, mongodb, mongodb-core, mysql, redis, winston, pg`, and `pg-pool`.
+        */
+        noPatchModules: string;
+
+        /**
+        * HTTPS without a passed in agent
+        */
+        noHttpAgentKeepAlive: boolean;
 }
 
 export interface IWebInstrumentationConfig {
