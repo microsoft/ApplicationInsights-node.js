@@ -110,7 +110,7 @@ class config implements IConfig {
                 "*.core.eaglex.ic.gov"
             ];
 
-        this.ignoreLegacyHeaders = this.ignoreLegacyHeaders || false;
+        this.ignoreLegacyHeaders = true;
         this.webInstrumentationConnectionString = this.webInstrumentationConnectionString || this._webInstrumentationConnectionString || "";
         this.webSnippetConnectionString = this.webInstrumentationConnectionString;
     }

@@ -59,7 +59,7 @@ export class TelemetryClient {
                     azureMonitorExporterConfig: {
                         // TODO: Ensure they can pass connection string via config.
                         connectionString: input,
-                    }
+                    },
                 };
             }
         }
@@ -73,7 +73,11 @@ export class TelemetryClient {
         if (this.config.disableAppInsights) {
             dispose();
         }
-        this._options = input;
+
+        // If we have a defined input (in the case that we are initializing from the start method) then we should use that
+        if (input) {
+            this._options = input;
+        }
 
         /* endpointUrl TODO: Fix endpointUrl breaking the exporter
         if (this.config.endpointUrl) {
@@ -81,7 +85,7 @@ export class TelemetryClient {
         }
         */
 
-        this._options.samplingRatio = this.config.samplingPercentage ? this.config.samplingPercentage / 100 : 1;
+        this._options.samplingRatio = this.config.samplingPercentage ? (this.config.samplingPercentage / 100) : 1;
 
         this._options.instrumentationOptions = {
             http: {
@@ -205,6 +209,10 @@ export class TelemetryClient {
 
         if (this.config.noHttpAgentKeepAlive) {
             Logger.getInstance().warn("The noHttpAgentKeepAlive configuration option is not supported by the shim.");
+        }
+
+        if (this.config.ignoreLegacyHeaders === false) {
+            Logger.getInstance().warn("LegacyHeaders are not supported by the shim.");
         }
     }
 
