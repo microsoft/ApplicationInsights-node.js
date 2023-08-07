@@ -208,6 +208,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectRequests(value: boolean) {
+        /*
         if (_options) {
             if (!value) {
                 _options.instrumentationOptions = {
@@ -227,6 +228,7 @@ export class Configuration {
                 };
             }
         }
+        */
         return Configuration;
     }
 
@@ -236,6 +238,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectDependencies(value: boolean) {
+        /*
         if (_options) {
             if (!value) {
                 _options.instrumentationOptions = {
@@ -255,6 +258,8 @@ export class Configuration {
                 };
             }
         }
+        */
+        return Configuration
     }
 
     /**
