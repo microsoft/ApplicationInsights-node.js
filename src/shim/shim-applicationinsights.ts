@@ -208,15 +208,17 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectRequests(value: boolean) {
-        /*
         if (_options) {
-            if (!value) {
+            if (value === false) {
                 _options.instrumentationOptions = {
                     http: {
                         enabled: true,
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         ignoreIncomingRequestHook: (request: http.RequestOptions) => true,
-                    } as HttpInstrumentationConfig
+                    } as HttpInstrumentationConfig,
+                    mongoDb: {
+                        enabled: true,
+                    }
                 };
             } else {
                 _options.instrumentationOptions = {
@@ -224,11 +226,13 @@ export class Configuration {
                         enabled: true,
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         ignoreIncomingRequestHook: (request: http.RequestOptions) => false,
-                    } as HttpInstrumentationConfig
+                    } as HttpInstrumentationConfig,
+                    mongoDb: {
+                        enabled: true,
+                    }
                 };
             }
         }
-        */
         return Configuration;
     }
 
@@ -238,15 +242,17 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectDependencies(value: boolean) {
-        /*
         if (_options) {
-            if (!value) {
+            if (value === false) {
                 _options.instrumentationOptions = {
                     http: {
                         enabled: true,
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         ignoreOutgoingRequestHook: (request: http.RequestOptions) => true,
-                    } as HttpInstrumentationConfig
+                    } as HttpInstrumentationConfig,
+                    mongoDb: {
+                        enabled: true,
+                    }
                 };
             } else {
                 _options.instrumentationOptions = {
@@ -254,12 +260,13 @@ export class Configuration {
                         enabled: true,
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         ignoreOutgoingRequestHook: (request: http.RequestOptions) => false,
-                    } as HttpInstrumentationConfig
+                    } as HttpInstrumentationConfig,
+                    mongoDb: {
+                        enabled: true,
+                    }
                 };
             }
         }
-        */
-        return Configuration
     }
 
     /**

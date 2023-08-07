@@ -103,11 +103,11 @@ export class TelemetryClient {
         }
 
         if (typeof(this.config.enableAutoCollectDependencies) === "boolean") {
-            // Configuration.setAutoCollectDependencies(this.config.enableAutoCollectDependencies);
+            Configuration.setAutoCollectDependencies(this.config.enableAutoCollectDependencies);
         }
 
         if (typeof(this.config.enableAutoCollectRequests) === "boolean") {
-            // Configuration.setAutoCollectRequests(this.config.enableAutoCollectRequests);
+            Configuration.setAutoCollectRequests(this.config.enableAutoCollectRequests);
         }
 
         if (typeof(this.config.enableAutoCollectPerformance) === "boolean") {
