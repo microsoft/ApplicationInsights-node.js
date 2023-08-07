@@ -215,10 +215,7 @@ export class Configuration {
                         enabled: true,
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         ignoreIncomingRequestHook: (request: http.RequestOptions) => true,
-                    } as HttpInstrumentationConfig,
-                    mongoDb: {
-                        enabled: true,
-                    }
+                    } as HttpInstrumentationConfig
                 };
             } else {
                 _options.instrumentationOptions = {
@@ -226,10 +223,7 @@ export class Configuration {
                         enabled: true,
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         ignoreIncomingRequestHook: (request: http.RequestOptions) => false,
-                    } as HttpInstrumentationConfig,
-                    mongoDb: {
-                        enabled: true,
-                    }
+                    } as HttpInstrumentationConfig
                 };
             }
         }
@@ -249,10 +243,7 @@ export class Configuration {
                         enabled: true,
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         ignoreOutgoingRequestHook: (request: http.RequestOptions) => true,
-                    } as HttpInstrumentationConfig,
-                    mongoDb: {
-                        enabled: true,
-                    }
+                    } as HttpInstrumentationConfig
                 };
             } else {
                 _options.instrumentationOptions = {
@@ -260,10 +251,7 @@ export class Configuration {
                         enabled: true,
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         ignoreOutgoingRequestHook: (request: http.RequestOptions) => false,
-                    } as HttpInstrumentationConfig,
-                    mongoDb: {
-                        enabled: true,
-                    }
+                    } as HttpInstrumentationConfig
                 };
             }
         }
