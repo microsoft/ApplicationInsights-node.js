@@ -103,11 +103,11 @@ export class TelemetryClient {
         }
 
         if (typeof(this.config.enableAutoCollectDependencies) === "boolean") {
-            Configuration.setAutoCollectDependencies(this.config.enableAutoCollectDependencies);
+            // Configuration.setAutoCollectDependencies(this.config.enableAutoCollectDependencies);
         }
 
         if (typeof(this.config.enableAutoCollectRequests) === "boolean") {
-            Configuration.setAutoCollectRequests(this.config.enableAutoCollectRequests);
+            // Configuration.setAutoCollectRequests(this.config.enableAutoCollectRequests);
         }
 
         if (typeof(this.config.enableAutoCollectPerformance) === "boolean") {
@@ -216,7 +216,7 @@ export class TelemetryClient {
      * @param input Set of options to configure the Azure Monitor Client
      */
     public start(input?: ApplicationInsightsOptions) {
-        // this._parseConfig(input);
+        this._parseConfig(input);
         this._internalConfig = new InternalConfig(this._options);
         this._client = new AzureMonitorOpenTelemetryClient(this._options);
         this._console = new AutoCollectConsole(this);
