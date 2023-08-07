@@ -1,6 +1,5 @@
 import * as http from "http";
 import { DiagLogLevel, SpanContext } from "@opentelemetry/api";
-
 import { CorrelationContextManager } from "./correlationContextManager";
 import * as azureFunctionsTypes from "@azure/functions";
 import { Span } from "@opentelemetry/sdk-trace-base";
@@ -44,8 +43,6 @@ export function setup(setupString?: string) {
     } else {
         Logger.getInstance().info("Cannot run applicationinsights.setup() more than once.");
     }
-    // Set flag to indicate usage of the shim
-    process.env["APPLICATION_INSIGHTS_SHIM_CONFIGURATION"] = "true";
     defaultClient = new TelemetryClient(_options);
     return Configuration;
 }
@@ -58,12 +55,12 @@ export function setup(setupString?: string) {
  */
 export function start() {
     // Creates a new TelemetryClient that uses the _config we configure via the other functions in this file
-    defaultClient.initializeAzureMonitorClient(_options);
     const httpOptions: HttpInstrumentationConfig | undefined = _options?.instrumentationOptions?.http;
     if (httpOptions?.ignoreIncomingRequestHook && httpOptions?.ignoreOutgoingRequestHook) {
         _options.instrumentationOptions.http.enabled = false;
         Logger.getInstance().info("Both ignoreIncomingRequestHook and ignoreOutgoingRequestHook are set to true. Disabling http instrumentation.");
     }
+    defaultClient.start(_options);
     return Configuration;
 }
 
@@ -211,13 +208,21 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectRequests(value: boolean) {
-        if (!value) {
-            if (_options) {
+        if (_options) {
+            if (!value) {
                 _options.instrumentationOptions = {
                     http: {
                         enabled: true,
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                        ignoreIncomingRequestHook: (request: http.IncomingMessage) => true,
+                        ignoreIncomingRequestHook: (request: http.RequestOptions) => true,
+                    } as HttpInstrumentationConfig
+                };
+            } else {
+                _options.instrumentationOptions = {
+                    http: {
+                        enabled: true,
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                        ignoreIncomingRequestHook: (request: http.RequestOptions) => false,
                     } as HttpInstrumentationConfig
                 };
             }
@@ -231,8 +236,8 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectDependencies(value: boolean) {
-        if (!value) {
-            if (_options) {
+        if (_options) {
+            if (!value) {
                 _options.instrumentationOptions = {
                     http: {
                         enabled: true,
@@ -240,9 +245,16 @@ export class Configuration {
                         ignoreOutgoingRequestHook: (request: http.RequestOptions) => true,
                     } as HttpInstrumentationConfig
                 };
+            } else {
+                _options.instrumentationOptions = {
+                    http: {
+                        enabled: true,
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                        ignoreOutgoingRequestHook: (request: http.RequestOptions) => false,
+                    } as HttpInstrumentationConfig
+                };
             }
         }
-        return Configuration;
     }
 
     /**

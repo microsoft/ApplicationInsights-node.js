@@ -42,6 +42,7 @@ describe("shim/TelemetryClient", () => {
         client = new TelemetryClient(
             "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
         );
+        client.start();
         traceExportStub = sinon.stub(client.getAzureMonitorOpenTelemetryClient()["_traceHandler"]["_azureExporter"], "export").callsFake(
             (data: any, resultCallback: any) =>
                 new Promise((resolve) => {

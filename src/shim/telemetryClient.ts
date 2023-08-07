@@ -63,27 +63,18 @@ export class TelemetryClient {
                 };
             }
         }
-        if (process.env.APPLICATION_INSIGHTS_SHIM_CONFIGURATION !== "true") {
-            this.initializeAzureMonitorClient(this._options);
-        }
     }
 
     private _parseConfig(input?: ApplicationInsightsOptions) {
-        const resendInterval: number | undefined = this.config.enableResendInterval;
-        if (this.config.disableAppInsights) {
-            dispose();
-        }
-
         // If we have a defined input (in the case that we are initializing from the start method) then we should use that
         if (input) {
             this._options = input;
         }
 
-        /* endpointUrl TODO: Fix endpointUrl breaking the exporter
-        if (this.config.endpointUrl) {
-            this._options.azureMonitorExporterConfig.endpoint = this.config.endpointUrl;
+        const resendInterval: number | undefined = this.config.enableResendInterval;
+        if (this.config.disableAppInsights) {
+            dispose();
         }
-        */
 
         this._options.samplingRatio = this.config.samplingPercentage ? (this.config.samplingPercentage / 100) : 1;
 
@@ -220,10 +211,8 @@ export class TelemetryClient {
      * @internal Used to initialize the Azure Monitor Client seperately from the constructor in order to allow for client.config to be set before initialization
      * @param input Set of options to configure the Azure Monitor Client
      */
-    public initializeAzureMonitorClient(input?: ApplicationInsightsOptions) {
-        if (process.env.APPLICATION_INSIGHTS_SHIM_CONFIGURATION === "true") {
-            this._parseConfig(input);
-        }    
+    public start(input?: ApplicationInsightsOptions) {
+        this._parseConfig(input);
         this._internalConfig = new InternalConfig(this._options);
         this._client = new AzureMonitorOpenTelemetryClient(this._options);
         this._console = new AutoCollectConsole(this);

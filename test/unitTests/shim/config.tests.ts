@@ -40,7 +40,7 @@ describe("shim/configuration/config", () => {
             telemetryClient.config.samplingPercentage = 50;
             // correlationRetryIntervalMs
             // ignoreLegacyHeaders - seperate test
-            telemetryClient.initializeAzureMonitorClient();
+            telemetryClient.start();
             console.log("TELCLIENT: ", telemetryClient);
             assert.equal(telemetryClient["_options"].samplingRatio, 0.5);
         });
