@@ -65,6 +65,10 @@ export class TelemetryClient {
         }
     }
 
+    /**
+     * Parse the config property to set the appropriate values on the ApplicationInsightsOptions
+     * @param input 
+     */
     private _parseConfig(input?: ApplicationInsightsOptions) {
         // If we have a defined input (in the case that we are initializing from the start method) then we should use that
         if (input) {
@@ -208,7 +212,7 @@ export class TelemetryClient {
     }
 
     /**
-     * @internal Used to initialize the Azure Monitor Client seperately from the constructor in order to allow for client.config to be set before initialization
+     * Starts automatic collection of telemetry. Prior to calling start no telemetry will be collected
      * @param input Set of options to configure the Azure Monitor Client
      */
     public start(input?: ApplicationInsightsOptions) {
