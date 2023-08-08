@@ -1,4 +1,4 @@
-﻿import ContextTagKeys = require("./util/ContextTagKeys");
+﻿import ContextTagKeys = require("./util/contextTagKeys");
 
 export class Context {
     public keys: ContextTagKeys;
