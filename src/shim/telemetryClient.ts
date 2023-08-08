@@ -221,9 +221,9 @@ export class TelemetryClient {
      * @param input Set of options to configure the Azure Monitor Client
      */
     public initializeAzureMonitorClient(input?: ApplicationInsightsOptions) {
-        //if (process.env.APPLICATION_INSIGHTS_SHIM_CONFIGURATION === "true") {
+        if (process.env.APPLICATION_INSIGHTS_SHIM_CONFIGURATION === "true") {
             this._parseConfig(input);
-        //}    
+        }    
         this._internalConfig = new InternalConfig(this._options);
         this._client = new AzureMonitorOpenTelemetryClient(this._options);
         this._console = new AutoCollectConsole(this);
