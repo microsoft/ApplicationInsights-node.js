@@ -196,10 +196,51 @@ export class TelemetryClient {
             bunyan.enable(false, this);
             console.enable(false, this);
             winston.enable(false, this);
+            this._options.instrumentationOptions = {
+                azureSdk: { enabled: false },
+                http: { enabled: false },
+                mongoDb: { enabled: false },
+                mySql: { enabled: false },
+                redis: { enabled: false },
+                redis4: { enabled: false },
+                postgreSql: { enabled: false },
+            }
         }
         
         if (this.config.noPatchModules) {
-            Logger.getInstance().warn("The noPatchModules configuration option is not supported by the shim.");
+            const modules: string[] = this.config.noPatchModules?.split(",");
+            for (const module of modules) {
+                if (module === "bunyan") {
+                    bunyan.enable(false, this);
+                }
+                if (module === "console") {
+                    console.enable(false, this);
+                }
+                if (module === "winston") {
+                    winston.enable(false, this);
+                }
+                if (module === "azuresdk") {
+                    this._options.instrumentationOptions.azureSdk.enabled = false;
+                }
+                if (module === "http") {
+                    this._options.instrumentationOptions.http.enabled = false;
+                }
+                if (module === "mongodb") {
+                    this._options.instrumentationOptions.mongoDb.enabled = false;
+                }
+                if (module === "mysql") {
+                    this._options.instrumentationOptions.mySql.enabled = false;
+                }
+                if (module === "redis") {
+                    this._options.instrumentationOptions.redis.enabled = false;
+                }
+                if (module === "redis4") {
+                    this._options.instrumentationOptions.redis4.enabled = false;
+                }
+                if (module === "pg") {
+                    this._options.instrumentationOptions.postgreSql.enabled = false;
+                }
+            }
         }
 
         if (this.config.noHttpAgentKeepAlive) {
