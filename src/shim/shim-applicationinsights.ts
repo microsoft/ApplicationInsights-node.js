@@ -19,6 +19,11 @@ export { Contracts, DistributedTracingModes, HttpRequest, TelemetryClient };
  * with its own configuration, use `new TelemetryClient(instrumentationKey?)`.
  */
 export let defaultClient: TelemetryClient;
+
+/**
+ * Flag to let the TelemetryClient know that setup has been called from the shim
+ */
+export let _setupCalled = false;
 // export let liveMetricsClient: QuickPulseStateManager;
 
 
@@ -36,6 +41,7 @@ let _options: ApplicationInsightsOptions;
  * and start the SDK.
  */
 export function setup(setupString?: string) {
+    _setupCalled = true;
     // Save the setup string and create a config to modify with other functions in this file
     _setupString = setupString;
     if (!_options) {

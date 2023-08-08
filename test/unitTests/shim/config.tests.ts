@@ -30,6 +30,7 @@ describe("shim/configuration/config", () => {
         });
         */
         it("should initialize config values", () => {
+            applicationInsights.setup(connectionString);
             // instrumentationKey
             // endpointUrl
             // proxyHttpUrl

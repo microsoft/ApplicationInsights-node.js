@@ -18,7 +18,7 @@ import { ApplicationInsightsOptions, ExtendedMetricType } from "../types";
 import { InternalConfig } from "./configuration/internal";
 import { IConfig } from "../shim/types";
 import Config = require("./configuration/config");
-import { dispose, Configuration } from "./shim-applicationinsights";
+import { dispose, Configuration, _setupCalled } from "./shim-applicationinsights";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import bunyan = require("./autoCollection/diagnostic-channel/bunyan.sub");
 import console = require("./autoCollection/diagnostic-channel/console.sub");
@@ -216,7 +216,9 @@ export class TelemetryClient {
      * @param input Set of options to configure the Azure Monitor Client
      */
     public start(input?: ApplicationInsightsOptions) {
-        this._parseConfig(input);
+        if (_setupCalled) {
+            this._parseConfig(input);
+        }
         this._internalConfig = new InternalConfig(this._options);
         this._client = new AzureMonitorOpenTelemetryClient(this._options);
         this._console = new AutoCollectConsole(this);
