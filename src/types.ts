@@ -8,18 +8,18 @@ import { AzureMonitorOpenTelemetryOptions } from "@azure/monitor-opentelemetry";
  */
 export interface ApplicationInsightsOptions extends AzureMonitorOpenTelemetryOptions {
     /**
-   * Sets the state of exception tracking (enabled by default)
-   * if true uncaught exceptions will be sent to Application Insights
-   */
+     * Sets the state of exception tracking (enabled by default)
+     * if true uncaught exceptions will be sent to Application Insights
+     */
     enableAutoCollectExceptions?: boolean;
     /**
-    * Log Instrumentations configuration included as part of Application Insights (console, bunyan, winston)
-    */
+     * Log Instrumentations configuration included as part of Application Insights (console, bunyan, winston)
+     */
     logInstrumentations?: LogInstrumentationsConfig;
-     /**
+    /**
      * Specific extended metrics, applicationinsights-native-metrics package need to be available
      */
-     extendedMetrics?: { [type: string]: boolean };
+    extendedMetrics?: { [type: string]: boolean };
 }
 
 export interface LogInstrumentationsConfig {

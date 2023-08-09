@@ -80,6 +80,10 @@ export class TelemetryClient {
             dispose();
         }
 
+        if (this.config.instrumentationKey && this.config.endpointUrl) {
+            this._options.azureMonitorExporterConfig.connectionString = `InstrumentationKey=${this.config.instrumentationKey};IngestionEndpoint=${this.config.endpointUrl}`;
+        }
+
         this._options.samplingRatio = this.config.samplingPercentage ? (this.config.samplingPercentage / 100) : 1;
 
         this._options.instrumentationOptions = {
@@ -243,12 +247,22 @@ export class TelemetryClient {
             }
         }
 
-        if (this.config.noHttpAgentKeepAlive) {
-            Logger.getInstance().warn("The noHttpAgentKeepAlive configuration option is not supported by the shim.");
+        if (typeof(this.config.noHttpAgentKeepAlive) === "boolean") {
+            this._options.otlpTraceExporterConfig.keepAlive = false;
+            this._options.otlpMetricExporterConfig.keepAlive = false;
+            this._options.otlpLogExporterConfig.keepAlive = false;
         }
 
         if (this.config.ignoreLegacyHeaders === false) {
             Logger.getInstance().warn("LegacyHeaders are not supported by the shim.");
+        }
+
+        if (this.config.proxyHttpUrl || this.config.proxyHttpsUrl) {
+            const proxyUrl = new URL(this.config.proxyHttpsUrl || this.config.proxyHttpUrl);
+            this._options.azureMonitorExporterConfig.proxyOptions = {
+                host: proxyUrl.hostname,
+                port: Number(proxyUrl.port),
+            }
         }
     }
 
@@ -259,6 +273,12 @@ export class TelemetryClient {
     public start(input?: ApplicationInsightsOptions) {
         if (_setupCalled) {
             this._parseConfig(input);
+            /* TODO: Handle context tags
+            for (const key in this.context.tags) {
+                const contextKey = createContextKey(key);
+                context.with(contextKey, this.context.tags[key]);
+            }
+            */
         }
         this._internalConfig = new InternalConfig(this._options);
         this._client = new AzureMonitorOpenTelemetryClient(this._options);

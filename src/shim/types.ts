@@ -2,6 +2,8 @@
 // Licensed under the MIT license.
 
 import { TokenCredential } from "@azure/core-auth";
+import * as http from "http";
+import https = require("https");
 
 export enum DistributedTracingModes {
     /**
@@ -322,6 +324,12 @@ export interface IConfig {
         * HTTPS without a passed in agent
         */
         noHttpAgentKeepAlive: boolean;
+
+        /** An http.Agent to use for SDK HTTP traffic (Optional, Default undefined) */
+        httpAgent: http.Agent;
+
+        /** An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined) */
+        httpsAgent: https.Agent;
 }
 
 export interface IWebInstrumentationConfig {
