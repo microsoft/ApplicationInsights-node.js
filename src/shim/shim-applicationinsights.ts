@@ -7,7 +7,7 @@ import { Logger } from "./logging";
 import { ICorrelationContext, HttpRequest, DistributedTracingModes } from "./types";
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
-import { ApplicationInsightsOptions, ExtendedMetricType } from "../types";
+import { ApplicationInsightsOptions } from "../types";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import ConfigHelper = require("./util/configHelper");
 

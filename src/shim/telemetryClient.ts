@@ -293,8 +293,32 @@ export class TelemetryClient {
                 port: Number(proxyUrl.port),
             }
         }
-    }
 
+        if (this.config.maxBatchSize) {
+            Logger.getInstance().warn("The maxBatchSize configuration option is not supported by the shim.");
+        }
+
+        if (this.config.maxBatchIntervalMs) {
+            Logger.getInstance().warn("The maxBatchIntervalMs configuration option is not supported by the shim.");
+        }
+
+        if (this.config.correlationIdRetryIntervalMs) {
+            Logger.getInstance().warn("The correlationIdRetryIntervalMs configuration option is not supported by the shim.");
+        }
+
+        if (this.config.enableLoggerErrorToTrace) {
+            Logger.getInstance().warn("The enableLoggerErrorToTrace configuration option is not supported by the shim.");
+        }
+
+        if (this.config.httpAgent || this.config.httpsAgent) {
+            Logger.getInstance().warn("The httpAgent and httpsAgent configuration options are not supported by the shim.");
+        }
+
+        if (this.config.enableWebInstrumentation || this.config.webInstrumentationConfig || this.config.webInstrumentationSrc || this.config.webInstrumentationConnectionString) {
+            Logger.getInstance().warn("The webInstrumentation configuration options are not supported by the shim.");
+        }
+    }
+    
     /**
      * Starts automatic collection of telemetry. Prior to calling start no telemetry will be collected
      * @param input Set of options to configure the Azure Monitor Client
