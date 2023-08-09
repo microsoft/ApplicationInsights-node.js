@@ -57,7 +57,6 @@ export class TelemetryClient {
                 // TODO: Add Support for iKey as well
                 this._options = {
                     azureMonitorExporterConfig: {
-                        // TODO: Ensure they can pass connection string via config.
                         connectionString: input,
                     },
                 };
@@ -97,6 +96,7 @@ export class TelemetryClient {
             this._options.azureMonitorExporterConfig.aadTokenCredential = this.config.aadTokenCredential;
         }
 
+        // TODO: If merging this with the verison in shim-applicationInsights, add this
         if (typeof(this.config.enableAutoCollectConsole) === "boolean") {
             const setting: boolean = this.config.enableAutoCollectConsole;
             this._options.logInstrumentations = {
@@ -114,6 +114,7 @@ export class TelemetryClient {
             if (!this.config.enableAutoCollectDependencies) {
                 this._options.instrumentationOptions = {
                     http: {
+                        ...this._options.instrumentationOptions?.http,
                         enabled: true,
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         ignoreOutgoingRequestHook: (request) => true,
@@ -122,6 +123,7 @@ export class TelemetryClient {
             } else {
                 this._options.instrumentationOptions = {
                     http: {
+                        ...this._options.instrumentationOptions?.http,
                         enabled: true,
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         ignoreOutgoingRequestHook: (request) => false,
@@ -136,6 +138,7 @@ export class TelemetryClient {
             if (!this.config.enableAutoCollectRequests) {
                 this._options.instrumentationOptions = {
                     http: {
+                        ...this._options.instrumentationOptions?.http,
                         enabled: true,
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         ignoreIncomingRequestHook: (request) => true,
@@ -144,6 +147,7 @@ export class TelemetryClient {
             } else {
                 this._options.instrumentationOptions = {
                     http: {
+                        ...this._options.instrumentationOptions?.http,
                         enabled: true,
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         ignoreIncomingRequestHook: (request) => false,
@@ -297,9 +301,18 @@ export class TelemetryClient {
         }
 
         if (typeof(this.config.noHttpAgentKeepAlive) === "boolean") {
-            this._options.otlpTraceExporterConfig.keepAlive = false;
-            this._options.otlpMetricExporterConfig.keepAlive = false;
-            this._options.otlpLogExporterConfig.keepAlive = false;
+            this._options.otlpTraceExporterConfig = {
+                ...this._options.otlpTraceExporterConfig,
+                keepAlive: !this.config.noHttpAgentKeepAlive,
+            }
+            this._options.otlpMetricExporterConfig = {
+                ...this._options.otlpMetricExporterConfig,
+                keepAlive: !this.config.noHttpAgentKeepAlive,
+            }
+            this._options.otlpLogExporterConfig = {
+                ...this._options.otlpLogExporterConfig,
+                keepAlive: !this.config.noHttpAgentKeepAlive,
+            }
         }
 
         if (this.config.ignoreLegacyHeaders === false) {

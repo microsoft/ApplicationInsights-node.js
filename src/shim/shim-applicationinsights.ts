@@ -272,7 +272,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoDependencyCorrelation(value: boolean, useAsyncHooks?: boolean) {
-        CorrelationContextManager.disable();
+        if (!value) {
+            CorrelationContextManager.disable();
+        }
         if (useAsyncHooks === false) {
             Logger.getInstance().warn("The use of non async hooks is no longer supported.");
         }
