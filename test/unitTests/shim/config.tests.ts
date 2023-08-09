@@ -65,6 +65,7 @@ describe("shim/configuration/config", () => {
             telemetryClient.config.enableAutoDependencyCorrelation = false;
             telemetryClient.config.noHttpAgentKeepAlive = true;
             telemetryClient.config.aadTokenCredential = new TestTokenCredential();
+            telemetryClient.config.maxBatchIntervalMs = 1000;
             telemetryClient.start();
 
             assert.equal(telemetryClient["_options"].samplingRatio, 0.5);
@@ -84,6 +85,18 @@ describe("shim/configuration/config", () => {
             assert.equal(telemetryClient["_options"].otlpMetricExporterConfig.keepAlive, false);
             assert.equal(telemetryClient["_options"].otlpLogExporterConfig.keepAlive, false);
             assert.equal(telemetryClient["_options"].azureMonitorExporterConfig.aadTokenCredential, telemetryClient.config.aadTokenCredential);
+            assert.equal(
+                JSON.stringify(telemetryClient["_options"].otlpTraceExporterConfig),
+                JSON.stringify({keepAlive: false, timeoutMillis: 1000})
+            );
+            assert.equal(
+                JSON.stringify(telemetryClient["_options"].otlpMetricExporterConfig),
+                JSON.stringify({keepAlive: false, timeoutMillis: 1000})
+            );
+            assert.equal(
+                JSON.stringify(telemetryClient["_options"].otlpLogExporterConfig),
+                JSON.stringify({keepAlive: false, timeoutMillis: 1000})
+            );
         });
 
         it("should activate internal loggers", () => {

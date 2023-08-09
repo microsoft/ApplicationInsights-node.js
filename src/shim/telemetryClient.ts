@@ -299,7 +299,9 @@ export class TelemetryClient {
         }
 
         if (this.config.maxBatchIntervalMs) {
-            Logger.getInstance().warn("The maxBatchIntervalMs configuration option is not supported by the shim.");
+            this._options.otlpTraceExporterConfig = { ...this._options.otlpTraceExporterConfig, timeoutMillis: this.config.maxBatchIntervalMs };
+            this._options.otlpMetricExporterConfig = { ...this._options.otlpMetricExporterConfig, timeoutMillis: this.config.maxBatchIntervalMs };
+            this._options.otlpLogExporterConfig = { ...this._options.otlpLogExporterConfig, timeoutMillis: this.config.maxBatchIntervalMs };
         }
 
         if (this.config.correlationIdRetryIntervalMs) {
