@@ -131,9 +131,11 @@ export class Configuration {
      */
     public static setAutoCollectConsole(value: boolean, collectConsoleLog = false) {
         if (_options) {
-            _options.logInstrumentations.bunyan.enabled = value;
-            _options.logInstrumentations.winston.enabled = value;
-            _options.logInstrumentations.console.enabled = collectConsoleLog;
+            _options.logInstrumentations = {
+                bunyan: { enabled: value },
+                winston: { enabled: value },
+                console: { enabled: collectConsoleLog },
+            }
         }
         return Configuration;
     }

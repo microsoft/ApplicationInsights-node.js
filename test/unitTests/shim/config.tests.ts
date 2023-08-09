@@ -1,6 +1,7 @@
 import assert = require('assert');
 import sinon = require('sinon');
 import { TelemetryClient } from '../../../applicationinsights';
+import { HttpInstrumentationConfig } from '@opentelemetry/instrumentation-http';
 const applicationInsights = require('../../../applicationinsights');
 
 describe("shim/configuration/config", () => {
@@ -23,27 +24,31 @@ describe("shim/configuration/config", () => {
 
     describe("#constructor()", () => {
         const telemetryClient = new TelemetryClient(connectionString);
-        /*
-        it("should initialize connection string via config", () => {
-            console.log("TELCLIENT: ", telemetryClient);
-            assert.equal(telemetryClient["_options"].azureMonitorExporterConfig.connectionString, connectionString);
-        });
-        */
         it("should initialize config values", () => {
             applicationInsights.setup(connectionString);
-            // instrumentationKey
-            // endpointUrl
-            // proxyHttpUrl
-            // proxyHttpsUrl
-            // maxBatchSize
-            // maxBatchIntervalMs
-            // disableAppInsights - separate test
+            telemetryClient.config.instrumentationKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
+            telemetryClient.config.endpointUrl = "https://centralus-0.in.applicationinsights.azure.com/";
+            telemetryClient.config.proxyHttpUrl = "http://localhost:8888",
+            telemetryClient.config.proxyHttpsUrl = "https://localhost:3000",
+            telemetryClient.config.correlationHeaderExcludedDomains = ["https://www.bing.com"],
             telemetryClient.config.samplingPercentage = 50;
-            // correlationRetryIntervalMs
-            // ignoreLegacyHeaders - seperate test
+            telemetryClient.config.enableAutoCollectExternalLoggers = true;
+            telemetryClient.config.enableAutoCollectExceptions = true;
+            telemetryClient.config.enableAutoCollectConsole = true;
+            telemetryClient.config.enableAutoCollectExceptions = true;
+            telemetryClient.config.enableAutoCollectPerformance = true;
             telemetryClient.start();
-            console.log("TELCLIENT: ", telemetryClient);
+
             assert.equal(telemetryClient["_options"].samplingRatio, 0.5);
+            assert.equal(telemetryClient["_options"].azureMonitorExporterConfig.connectionString, connectionString);
+            assert.equal(telemetryClient["_options"].azureMonitorExporterConfig.proxyOptions.host, "localhost");
+            assert.equal(telemetryClient["_options"].azureMonitorExporterConfig.proxyOptions.port, 3000);
+            const ignoreOutgoingUrls = telemetryClient["_options"].instrumentationOptions.http as HttpInstrumentationConfig;
+            assert.equal(ignoreOutgoingUrls.ignoreOutgoingUrls, "https://www.bing.com");
+            assert.equal(JSON.stringify(telemetryClient["_options"].logInstrumentations), JSON.stringify({ console: { enabled: true }, winston: { enabled: true }, bunyan: { enabled: true } }));
+            assert.equal(telemetryClient["_options"].enableAutoCollectExceptions, true);
+            assert.equal(telemetryClient["_options"].enableAutoCollectPerformance, true);
+            assert.equal(JSON.stringify(telemetryClient["_options"].extendedMetrics), JSON.stringify({ gc: true, heap: true, loop: true }));
         });
 
         it("should disableAppInsights", () => {

@@ -99,27 +99,76 @@ export class TelemetryClient {
 
         if (typeof(this.config.enableAutoCollectConsole) === "boolean") {
             const setting: boolean = this.config.enableAutoCollectConsole;
-            Configuration.setAutoCollectConsole(setting, setting);
+            this._options.logInstrumentations = {
+                ...this._options.logInstrumentations,
+                console: { enabled: setting },
+            }
         }
 
         if (typeof(this.config.enableAutoCollectExceptions) === "boolean") {
-            Configuration.setAutoCollectExceptions(this.config.enableAutoCollectExceptions);
+            this._options.enableAutoCollectExceptions = this.config.enableAutoCollectExceptions;
         }
 
         if (typeof(this.config.enableAutoCollectDependencies) === "boolean") {
-            Configuration.setAutoCollectDependencies(this.config.enableAutoCollectDependencies);
+            // TODO: Move reused code out of here
+            if (!this.config.enableAutoCollectDependencies) {
+                this._options.instrumentationOptions = {
+                    http: {
+                        enabled: true,
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                        ignoreOutgoingRequestHook: (request) => true,
+                    } as HttpInstrumentationConfig
+                };
+            } else {
+                this._options.instrumentationOptions = {
+                    http: {
+                        enabled: true,
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                        ignoreOutgoingRequestHook: (request) => false,
+                    } as HttpInstrumentationConfig
+                };
+            }
         }
 
         if (typeof(this.config.enableAutoCollectRequests) === "boolean") {
-            Configuration.setAutoCollectRequests(this.config.enableAutoCollectRequests);
+            // Cannot use shim-applicationinsights logic here as once .start is called the options in applicationinsights are no longer sent
+            // TODO: Move these methods into a new file so we don't rewrite multiple times
+            if (!this.config.enableAutoCollectRequests) {
+                this._options.instrumentationOptions = {
+                    http: {
+                        enabled: true,
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                        ignoreIncomingRequestHook: (request) => true,
+                    } as HttpInstrumentationConfig
+                };
+            } else {
+                this._options.instrumentationOptions = {
+                    http: {
+                        enabled: true,
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                        ignoreIncomingRequestHook: (request) => false,
+                    } as HttpInstrumentationConfig
+                };
+            }
         }
 
+        // TODO: Remove similar logic here and in the shim-applicationinsights
         if (typeof(this.config.enableAutoCollectPerformance) === "boolean") {
-            this._options.enableAutoCollectPerformance = this.config.enableAutoCollectPerformance;
+            const value = this.config.enableAutoCollectPerformance;
+            this._options.enableAutoCollectPerformance = value;
+            this._options.extendedMetrics = {
+                [ExtendedMetricType.gc]: value,
+                [ExtendedMetricType.heap]: value,
+                [ExtendedMetricType.loop]: value,
+            }
         }
 
         if (typeof(this.config.enableAutoCollectExternalLoggers) === "boolean") {
-            this._options.logInstrumentations.console.enabled = this.config.enableAutoCollectExternalLoggers;
+            this._options.logInstrumentations = {
+                ...this._options.logInstrumentations,
+                winston: { enabled: this.config.enableAutoCollectExternalLoggers },
+                bunyan: { enabled: this.config.enableAutoCollectExternalLoggers },
+            }
         }
 
         if (typeof(this.config.enableAutoCollectPreAggregatedMetrics) === "boolean") {
@@ -273,12 +322,6 @@ export class TelemetryClient {
     public start(input?: ApplicationInsightsOptions) {
         if (_setupCalled) {
             this._parseConfig(input);
-            /* TODO: Handle context tags
-            for (const key in this.context.tags) {
-                const contextKey = createContextKey(key);
-                context.with(contextKey, this.context.tags[key]);
-            }
-            */
         }
         this._internalConfig = new InternalConfig(this._options);
         this._client = new AzureMonitorOpenTelemetryClient(this._options);
