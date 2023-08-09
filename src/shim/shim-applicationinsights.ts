@@ -9,6 +9,7 @@ import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
 import { ApplicationInsightsOptions, ExtendedMetricType } from "../types";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
+import ConfigHelper = require("./util/configHelper");
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
@@ -159,21 +160,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: any) {
-        if (_options) {
-            _options.enableAutoCollectPerformance = value;
-            if (typeof collectExtendedMetrics === "object") {
-                _options.extendedMetrics = { ...collectExtendedMetrics }
-            }
-            if (collectExtendedMetrics === "boolean") {
-                if (!collectExtendedMetrics) {
-                    _options.extendedMetrics = {
-                        [ExtendedMetricType.gc]: true,
-                        [ExtendedMetricType.heap]: true,
-                        [ExtendedMetricType.loop]: true
-                    }
-                }
-            }
-        }
+        ConfigHelper.setAutoCollectPerformance(_options, value, collectExtendedMetrics);
         return Configuration;
     }
 
@@ -216,25 +203,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectRequests(value: boolean) {
-        if (_options) {
-            if (value === false) {
-                _options.instrumentationOptions = {
-                    http: {
-                        enabled: true,
-                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                        ignoreIncomingRequestHook: (request: http.RequestOptions) => true,
-                    } as HttpInstrumentationConfig
-                };
-            } else {
-                _options.instrumentationOptions = {
-                    http: {
-                        enabled: true,
-                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                        ignoreIncomingRequestHook: (request: http.RequestOptions) => false,
-                    } as HttpInstrumentationConfig
-                };
-            }
-        }
+        ConfigHelper.setAutoCollectRequests(_options, value);
         return Configuration;
     }
 
@@ -244,25 +213,8 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectDependencies(value: boolean) {
-        if (_options) {
-            if (value === false) {
-                _options.instrumentationOptions = {
-                    http: {
-                        enabled: true,
-                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                        ignoreOutgoingRequestHook: (request: http.RequestOptions) => true,
-                    } as HttpInstrumentationConfig
-                };
-            } else {
-                _options.instrumentationOptions = {
-                    http: {
-                        enabled: true,
-                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                        ignoreOutgoingRequestHook: (request: http.RequestOptions) => false,
-                    } as HttpInstrumentationConfig
-                };
-            }
-        }
+        ConfigHelper.setAutoCollectDependencies(_options, value);
+        return Configuration;
     }
 
     /**

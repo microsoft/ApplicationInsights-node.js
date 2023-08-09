@@ -4,7 +4,7 @@
 import { LogRecord } from "@opentelemetry/api-logs";
 import { LogRecord as SDKLogRecord } from "@opentelemetry/sdk-logs";
 import { AzureMonitorOpenTelemetryClient } from "@azure/monitor-opentelemetry";
-import { Attributes, context, SpanKind, SpanOptions, SpanStatusCode } from "@opentelemetry/api";
+import { Attributes, context, DiagLogLevel, SpanKind, SpanOptions, SpanStatusCode } from "@opentelemetry/api";
 import { IdGenerator, RandomIdGenerator } from "@opentelemetry/sdk-trace-base";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 import * as Contracts from "../declarations/contracts";
@@ -23,6 +23,7 @@ import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import bunyan = require("./autoCollection/diagnostic-channel/bunyan.sub");
 import console = require("./autoCollection/diagnostic-channel/console.sub");
 import winston = require("./autoCollection/diagnostic-channel/winston.sub");
+import ConfigHelper = require("./util/configHelper");
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -96,7 +97,6 @@ export class TelemetryClient {
             this._options.azureMonitorExporterConfig.aadTokenCredential = this.config.aadTokenCredential;
         }
 
-        // TODO: If merging this with the verison in shim-applicationInsights, add this
         if (typeof(this.config.enableAutoCollectConsole) === "boolean") {
             const setting: boolean = this.config.enableAutoCollectConsole;
             this._options.logInstrumentations = {
@@ -110,61 +110,15 @@ export class TelemetryClient {
         }
 
         if (typeof(this.config.enableAutoCollectDependencies) === "boolean") {
-            // TODO: Move reused code out of here
-            if (!this.config.enableAutoCollectDependencies) {
-                this._options.instrumentationOptions = {
-                    http: {
-                        ...this._options.instrumentationOptions?.http,
-                        enabled: true,
-                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                        ignoreOutgoingRequestHook: (request) => true,
-                    } as HttpInstrumentationConfig
-                };
-            } else {
-                this._options.instrumentationOptions = {
-                    http: {
-                        ...this._options.instrumentationOptions?.http,
-                        enabled: true,
-                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                        ignoreOutgoingRequestHook: (request) => false,
-                    } as HttpInstrumentationConfig
-                };
-            }
+            ConfigHelper.setAutoCollectDependencies(this._options, this.config.enableAutoCollectDependencies);
         }
 
         if (typeof(this.config.enableAutoCollectRequests) === "boolean") {
-            // Cannot use shim-applicationinsights logic here as once .start is called the options in applicationinsights are no longer sent
-            // TODO: Move these methods into a new file so we don't rewrite multiple times
-            if (!this.config.enableAutoCollectRequests) {
-                this._options.instrumentationOptions = {
-                    http: {
-                        ...this._options.instrumentationOptions?.http,
-                        enabled: true,
-                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                        ignoreIncomingRequestHook: (request) => true,
-                    } as HttpInstrumentationConfig
-                };
-            } else {
-                this._options.instrumentationOptions = {
-                    http: {
-                        ...this._options.instrumentationOptions?.http,
-                        enabled: true,
-                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                        ignoreIncomingRequestHook: (request) => false,
-                    } as HttpInstrumentationConfig
-                };
-            }
+            ConfigHelper.setAutoCollectRequests(this._options, this.config.enableAutoCollectRequests);
         }
 
-        // TODO: Remove similar logic here and in the shim-applicationinsights
         if (typeof(this.config.enableAutoCollectPerformance) === "boolean") {
-            const value = this.config.enableAutoCollectPerformance;
-            this._options.enableAutoCollectPerformance = value;
-            this._options.extendedMetrics = {
-                [ExtendedMetricType.gc]: value,
-                [ExtendedMetricType.heap]: value,
-                [ExtendedMetricType.loop]: value,
-            }
+            ConfigHelper.setAutoCollectPerformance(this._options, this.config.enableAutoCollectPerformance);
         }
 
         if (typeof(this.config.enableAutoCollectExternalLoggers) === "boolean") {
@@ -225,12 +179,15 @@ export class TelemetryClient {
         }
 
         if (typeof(this.config.enableInternalDebugLogging) === "boolean") {
-            Configuration.setInternalLogging(this.config.enableInternalDebugLogging);
+            if (this.config.enableInternalDebugLogging) {
+                Logger.getInstance().updateLogLevel(DiagLogLevel.DEBUG);
+            }
         }
 
         if (typeof(this.config.enableInternalWarningLogging) === "boolean") {
-            // If enableInternalDebugLogging is undefined then it should default to false in the Configuration
-            Configuration.setInternalLogging(this.config.enableInternalDebugLogging, this.config.enableInternalWarningLogging);
+            if (this.config.enableInternalWarningLogging) {
+                Logger.getInstance().updateLogLevel(DiagLogLevel.WARN);
+            }
         }
 
         // Disable or enable all extended metrics
@@ -238,6 +195,11 @@ export class TelemetryClient {
             for (const type in this._options.extendedMetrics) {
                 this._options.extendedMetrics[type] = false;
             }
+            this._options.extendedMetrics = {
+                [ExtendedMetricType.gc]: false,
+                [ExtendedMetricType.heap]: false,
+                [ExtendedMetricType.loop]: false,
+            };
         }
 
         if (typeof(this.config.disableStatsbeat) === "boolean") {
@@ -253,6 +215,11 @@ export class TelemetryClient {
             bunyan.enable(false, this);
             console.enable(false, this);
             winston.enable(false, this);
+            this._options.logInstrumentations = {
+                bunyan: { enabled: false },
+                console: { enabled: false },
+                winston: { enabled: false },
+            };
             this._options.instrumentationOptions = {
                 azureSdk: { enabled: false },
                 http: { enabled: false },
@@ -261,7 +228,7 @@ export class TelemetryClient {
                 redis: { enabled: false },
                 redis4: { enabled: false },
                 postgreSql: { enabled: false },
-            }
+            };
         }
         
         if (this.config.noPatchModules) {

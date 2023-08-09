@@ -5,6 +5,8 @@ import { HttpInstrumentationConfig } from '@opentelemetry/instrumentation-http';
 import { CorrelationContextManager } from '../../../src/shim/correlationContextManager';
 const applicationInsights = require('../../../applicationinsights');
 import azureCoreAuth = require("@azure/core-auth");
+import { Logger } from "../../../src/shim/logging"
+import { DiagLogLevel } from '@opentelemetry/api';
 
 class TestTokenCredential implements azureCoreAuth.TokenCredential {
     private _expiresOn: Date;
@@ -42,8 +44,8 @@ describe("shim/configuration/config", () => {
     })
 
     describe("#constructor()", () => {
-        const telemetryClient = new TelemetryClient(connectionString);
         it("should initialize config values", () => {
+            const telemetryClient = new TelemetryClient(connectionString);
             const disableContextSpy = sandbox.spy(CorrelationContextManager, "disable");
             applicationInsights.setup(connectionString);
             telemetryClient.config.instrumentationKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
@@ -84,9 +86,70 @@ describe("shim/configuration/config", () => {
             assert.equal(telemetryClient["_options"].azureMonitorExporterConfig.aadTokenCredential, telemetryClient.config.aadTokenCredential);
         });
 
-        // TODO: Create internal logging tests
-        // TODO: Create disableAllExtendedMetrics test and extendedMetricsDisablers
-        // TODO: Test unsubscribig from diagnostic channel for noDiagnosticChannel and noPatchModules
+        it("should activate internal loggers", () => {
+            const telemetryClient = new TelemetryClient(connectionString);
+            assert.equal(Logger.getInstance()["_diagLevel"], DiagLogLevel.WARN);
+            telemetryClient.config.enableInternalDebugLogging = true;
+            telemetryClient.start();
+            assert.equal(Logger.getInstance()["_diagLevel"], DiagLogLevel.DEBUG);
+        });
+
+        it("should disableALlExtenededMetrics", () => {
+            const telemetryClient = new TelemetryClient(connectionString);
+            telemetryClient.config.disableAllExtendedMetrics = true;
+            telemetryClient.start();
+            assert.equal(JSON.stringify(telemetryClient["_options"].extendedMetrics), JSON.stringify({ gc: false, heap: false, loop: false }));
+        });
+
+        it("should unsubscribe when noDiagnosticChannel is set", () => {
+            const telemetryClient = new TelemetryClient(connectionString);
+            telemetryClient.config.noDiagnosticChannel = true;
+            telemetryClient.start();
+            assert.equal(JSON.stringify(telemetryClient["_options"].instrumentationOptions), JSON.stringify({
+                azureSdk: {
+                    ...telemetryClient["_options"].instrumentationOptions.azureSdk,
+                    enabled: false
+                },
+                http: {
+                    ...telemetryClient["_options"].instrumentationOptions.http,
+                    enabled: false
+                },
+                mongoDb: {
+                    ...telemetryClient["_options"].instrumentationOptions.mongoDb,
+                    enabled: false
+                },
+                mySql: {
+                    ...telemetryClient["_options"].instrumentationOptions.mySql,
+                    enabled: false
+                },
+                redis: {
+                    ...telemetryClient["_options"].instrumentationOptions.redis,
+                    enabled: false
+                },
+                redis4: {
+                    ...telemetryClient["_options"].instrumentationOptions.redis4,
+                    enabled: false
+                },
+                postgreSql: {
+                    ...telemetryClient["_options"].instrumentationOptions.postgreSql,
+                    enabled: false
+                }
+            }));
+            assert.equal(JSON.stringify(telemetryClient["_options"].logInstrumentations), JSON.stringify({
+                bunyan: {
+                    ...telemetryClient["_options"].logInstrumentations.bunyan,
+                    enabled: false
+                },
+                console: {
+                    ...telemetryClient["_options"].logInstrumentations.console,
+                    enabled: false
+                },
+                winston: {
+                    ...telemetryClient["_options"].logInstrumentations.winston,
+                    enabled: false
+                }
+            }));
+        });
 
         it("should disableAppInsights", () => {
             applicationInsights.setup(connectionString);
