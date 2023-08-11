@@ -63,6 +63,10 @@ export class TelemetryClient {
                 };
             }
         }
+        // If not running the shim, we should start the AzureMonitorClient as a part of the constructor
+        if (!_setupCalled) {
+            this.start();
+        }
     }
 
     /**
@@ -211,77 +215,6 @@ export class TelemetryClient {
             this._options.extendedMetrics[disabler] = false;
         }
 
-        if (this.config.noDiagnosticChannel === true) {
-            bunyan.enable(false, this);
-            console.enable(false, this);
-            winston.enable(false, this);
-            this._options.logInstrumentations = {
-                bunyan: { enabled: false },
-                console: { enabled: false },
-                winston: { enabled: false },
-            };
-            this._options.instrumentationOptions = {
-                azureSdk: { enabled: false },
-                http: { enabled: false },
-                mongoDb: { enabled: false },
-                mySql: { enabled: false },
-                redis: { enabled: false },
-                redis4: { enabled: false },
-                postgreSql: { enabled: false },
-            };
-        }
-        
-        if (this.config.noPatchModules) {
-            const modules: string[] = this.config.noPatchModules?.split(",");
-            for (const module of modules) {
-                if (module === "bunyan") {
-                    bunyan.enable(false, this);
-                }
-                if (module === "console") {
-                    console.enable(false, this);
-                }
-                if (module === "winston") {
-                    winston.enable(false, this);
-                }
-                if (module === "azuresdk") {
-                    this._options.instrumentationOptions.azureSdk.enabled = false;
-                }
-                if (module === "http") {
-                    this._options.instrumentationOptions.http.enabled = false;
-                }
-                if (module === "mongodb") {
-                    this._options.instrumentationOptions.mongoDb.enabled = false;
-                }
-                if (module === "mysql") {
-                    this._options.instrumentationOptions.mySql.enabled = false;
-                }
-                if (module === "redis") {
-                    this._options.instrumentationOptions.redis.enabled = false;
-                }
-                if (module === "redis4") {
-                    this._options.instrumentationOptions.redis4.enabled = false;
-                }
-                if (module === "pg") {
-                    this._options.instrumentationOptions.postgreSql.enabled = false;
-                }
-            }
-        }
-
-        if (typeof(this.config.noHttpAgentKeepAlive) === "boolean") {
-            this._options.otlpTraceExporterConfig = {
-                ...this._options.otlpTraceExporterConfig,
-                keepAlive: !this.config.noHttpAgentKeepAlive,
-            }
-            this._options.otlpMetricExporterConfig = {
-                ...this._options.otlpMetricExporterConfig,
-                keepAlive: !this.config.noHttpAgentKeepAlive,
-            }
-            this._options.otlpLogExporterConfig = {
-                ...this._options.otlpLogExporterConfig,
-                keepAlive: !this.config.noHttpAgentKeepAlive,
-            }
-        }
-
         if (this.config.ignoreLegacyHeaders === false) {
             Logger.getInstance().warn("LegacyHeaders are not supported by the shim.");
         }
@@ -326,6 +259,7 @@ export class TelemetryClient {
      * @param input Set of options to configure the Azure Monitor Client
      */
     public start(input?: ApplicationInsightsOptions) {
+        // Only parse config if we're running the shim
         if (_setupCalled) {
             // Need to create the internalConfig based on the JSON, then modifiy it with the _parseConfig()
             this._internalConfig = new InternalConfig(this._options);
