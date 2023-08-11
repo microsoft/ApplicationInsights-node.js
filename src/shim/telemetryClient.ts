@@ -63,6 +63,7 @@ export class TelemetryClient {
                 };
             }
         }
+        // If not running the shim, we should start the AzureMonitorClient as a part of the constructor
         if (!_setupCalled) {
             this.start();
         }
@@ -258,9 +259,10 @@ export class TelemetryClient {
      * @param input Set of options to configure the Azure Monitor Client
      */
     public start(input?: ApplicationInsightsOptions) {
-        //if (_setupCalled) {
+        // Only parse config if we're running the shim
+        if (_setupCalled) {
             this._parseConfig(input);
-        //}
+        }
         this._internalConfig = new InternalConfig(this._options);
         this._client = new AzureMonitorOpenTelemetryClient(this._options);
         this._console = new AutoCollectConsole(this);
