@@ -4,7 +4,6 @@ import https = require("https");
 import azureCoreAuth = require("@azure/core-auth");
 import { Logger } from "../logging";
 import constants = require("../../declarations/constants");
-import ConnectionStringParser = require("../util/connectionStringParser");
 
 class config implements IConfig {
 
@@ -72,25 +71,8 @@ class config implements IConfig {
     public noDiagnosticChannel: boolean;
 
     constructor(setupString?: string) {
-        const connectionStringEnv: string | undefined = this._connectionString;
-        const csCode = ConnectionStringParser.parse(setupString);
-        const csEnv = ConnectionStringParser.parse(connectionStringEnv);
-        const iKeyCode = !csCode.instrumentationkey && Object.keys(csCode).length > 0
-            ? null // CS was valid but instrumentation key was not provided, null and grab from env var
-            : setupString; // CS was invalid, so it must be an ikey
+        this.instrumentationKey = setupString;
 
-        const instrumentationKeyEnv: string | undefined = this._instrumentationKey;
-        this.instrumentationKey = csCode.instrumentationkey || iKeyCode /* === instrumentationKey */ || csEnv.instrumentationkey || instrumentationKeyEnv;
-
-        // If user defines a custom endpointUrl - set a new endpoint
-        if (this.endpointUrl) {
-            let endpoint = `${this.endpointUrl || csCode.ingestionendpoint || csEnv.ingestionendpoint || this._endpointBase}`;
-            if (endpoint.endsWith("/")) {
-                // Remove extra '/' if present
-                endpoint = endpoint.slice(0, -1);
-            }
-            this.endpointUrl = `${endpoint}/v2.1/track`;
-        }
         this.maxBatchSize = this.maxBatchSize || 250;
         this.maxBatchIntervalMs = this.maxBatchIntervalMs || 15000;
         this.disableAppInsights = this.disableAppInsights || false;
