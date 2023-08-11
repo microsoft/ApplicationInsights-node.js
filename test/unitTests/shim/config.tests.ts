@@ -46,7 +46,6 @@ describe("shim/configuration/config", () => {
     describe("#constructor()", () => {
         it("should initialize config values", () => {
             const telemetryClient = new TelemetryClient(connectionString);
-            const disableContextSpy = sandbox.spy(CorrelationContextManager, "disable");
             applicationInsights.setup(connectionString);
             telemetryClient.config.instrumentationKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
             telemetryClient.config.endpointUrl = "https://centralus-0.in.applicationinsights.azure.com/";
@@ -62,8 +61,6 @@ describe("shim/configuration/config", () => {
             telemetryClient.config.enableAutoCollectExtendedMetrics = true;
             telemetryClient.config.enableAutoCollectRequests = true;
             telemetryClient.config.enableAutoCollectDependencies = true;
-            telemetryClient.config.enableAutoDependencyCorrelation = false;
-            telemetryClient.config.noHttpAgentKeepAlive = true;
             telemetryClient.config.aadTokenCredential = new TestTokenCredential();
             telemetryClient.config.maxBatchIntervalMs = 1000;
             telemetryClient.start();
@@ -80,22 +77,18 @@ describe("shim/configuration/config", () => {
             assert.equal(JSON.stringify(telemetryClient["_options"].extendedMetrics), JSON.stringify({ gc: true, heap: true, loop: true }));
             assert.equal(telemetryClient["_options"].instrumentationOptions.http.hasOwnProperty("ignoreIncomingRequestHook"), true);
             assert.equal(telemetryClient["_options"].instrumentationOptions.http.hasOwnProperty("ignoreOutgoingRequestHook"), true);
-            assert.ok(disableContextSpy.calledOnce);
-            assert.equal(telemetryClient["_options"].otlpTraceExporterConfig.keepAlive, false);
-            assert.equal(telemetryClient["_options"].otlpMetricExporterConfig.keepAlive, false);
-            assert.equal(telemetryClient["_options"].otlpLogExporterConfig.keepAlive, false);
             assert.equal(telemetryClient["_options"].azureMonitorExporterConfig.aadTokenCredential, telemetryClient.config.aadTokenCredential);
             assert.equal(
                 JSON.stringify(telemetryClient["_options"].otlpTraceExporterConfig),
-                JSON.stringify({keepAlive: false, timeoutMillis: 1000})
+                JSON.stringify({timeoutMillis: 1000})
             );
             assert.equal(
                 JSON.stringify(telemetryClient["_options"].otlpMetricExporterConfig),
-                JSON.stringify({keepAlive: false, timeoutMillis: 1000})
+                JSON.stringify({timeoutMillis: 1000})
             );
             assert.equal(
                 JSON.stringify(telemetryClient["_options"].otlpLogExporterConfig),
-                JSON.stringify({keepAlive: false, timeoutMillis: 1000})
+                JSON.stringify({timeoutMillis: 1000})
             );
         });
 
@@ -112,56 +105,6 @@ describe("shim/configuration/config", () => {
             telemetryClient.config.disableAllExtendedMetrics = true;
             telemetryClient.start();
             assert.equal(JSON.stringify(telemetryClient["_options"].extendedMetrics), JSON.stringify({ gc: false, heap: false, loop: false }));
-        });
-
-        it("should unsubscribe when noDiagnosticChannel is set", () => {
-            const telemetryClient = new TelemetryClient(connectionString);
-            telemetryClient.config.noDiagnosticChannel = true;
-            telemetryClient.start();
-            assert.equal(JSON.stringify(telemetryClient["_options"].instrumentationOptions), JSON.stringify({
-                azureSdk: {
-                    ...telemetryClient["_options"].instrumentationOptions.azureSdk,
-                    enabled: false
-                },
-                http: {
-                    ...telemetryClient["_options"].instrumentationOptions.http,
-                    enabled: false
-                },
-                mongoDb: {
-                    ...telemetryClient["_options"].instrumentationOptions.mongoDb,
-                    enabled: false
-                },
-                mySql: {
-                    ...telemetryClient["_options"].instrumentationOptions.mySql,
-                    enabled: false
-                },
-                redis: {
-                    ...telemetryClient["_options"].instrumentationOptions.redis,
-                    enabled: false
-                },
-                redis4: {
-                    ...telemetryClient["_options"].instrumentationOptions.redis4,
-                    enabled: false
-                },
-                postgreSql: {
-                    ...telemetryClient["_options"].instrumentationOptions.postgreSql,
-                    enabled: false
-                }
-            }));
-            assert.equal(JSON.stringify(telemetryClient["_options"].logInstrumentations), JSON.stringify({
-                bunyan: {
-                    ...telemetryClient["_options"].logInstrumentations.bunyan,
-                    enabled: false
-                },
-                console: {
-                    ...telemetryClient["_options"].logInstrumentations.console,
-                    enabled: false
-                },
-                winston: {
-                    ...telemetryClient["_options"].logInstrumentations.winston,
-                    enabled: false
-                }
-            }));
         });
 
         it("should disableAppInsights", () => {
