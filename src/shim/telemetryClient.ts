@@ -327,9 +327,10 @@ export class TelemetryClient {
      */
     public start(input?: ApplicationInsightsOptions) {
         if (_setupCalled) {
+            // Need to create the internalConfig based on the JSON, then modifiy it with the _parseConfig()
+            this._internalConfig = new InternalConfig(this._options);
             this._parseConfig(input);
         }
-        this._internalConfig = new InternalConfig(this._options);
         this._client = new AzureMonitorOpenTelemetryClient(this._options);
         this._console = new AutoCollectConsole(this);
         if (this._internalConfig.enableAutoCollectExceptions) {
