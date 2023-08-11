@@ -53,6 +53,7 @@ if (testconfig.AppInsightsEnabled) {
     };
 
     appInsights = new TelemetryClient(options);
+    appInsights.start();
     }
 
     var Tasks = require("./tasks");

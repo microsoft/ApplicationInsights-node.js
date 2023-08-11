@@ -63,6 +63,9 @@ export class TelemetryClient {
                 };
             }
         }
+        if (!_setupCalled) {
+            this.start();
+        }
     }
 
     /**
@@ -255,7 +258,9 @@ export class TelemetryClient {
      * @param input Set of options to configure the Azure Monitor Client
      */
     public start(input?: ApplicationInsightsOptions) {
-        this._parseConfig(input);
+        if (_setupCalled) {
+            this._parseConfig(input);
+        }
         this._internalConfig = new InternalConfig(this._options);
         this._client = new AzureMonitorOpenTelemetryClient(this._options);
         this._console = new AutoCollectConsole(this);
