@@ -2,9 +2,15 @@ import * as fs from "fs";
 import * as path from "path";
 import { Logger } from "../logging";
 import { ApplicationInsightsOptions, LogInstrumentationsConfig } from "../../types";
+import { DistributedTracingModes, IDisabledExtendedMetrics, IJsonConfig } from "../types";
+import * as http from "http";
+import * as https from "https";
+import azureCoreAuth = require("@azure/core-auth");
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 const ENV_CONTENT = "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT";
+
+// Shim environment variables
 const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
 const ENV_azurePrefix = "APPSETTING_"; // Azure adds this prefix to all environment variables
 const ENV_instrumentationKey = "APPINSIGHTS_INSTRUMENTATIONKEY";
@@ -18,13 +24,13 @@ const ENV_noStatsbeat = "APPLICATION_INSIGHTS_NO_STATSBEAT";
 const ENV_noHttpAgentKeepAlive = "APPLICATION_INSIGHTS_NO_HTTP_AGENT_KEEP_ALIVE";
 const ENV_noPatchModules = "APPLICATION_INSIGHTS_NO_PATCH_MODULES";
 
-export class JsonConfig implements ApplicationInsightsOptions {
+export class JsonConfig implements IJsonConfig, ApplicationInsightsOptions {
     private static _instance: JsonConfig;
-    public enableAutoCollectExceptions: boolean;
+
+    // Shim values
+    public endpointUrl: string;
     public connectionString: string;
     public instrumentationKey: string;
-    public logInstrumentations: LogInstrumentationsConfig;
-    public extendedMetrics: { [type: string]: boolean };
     public disableAllExtendedMetrics: boolean;
     public extendedMetricDisablers: string;
     public proxyHttpUrl: string;
@@ -33,6 +39,42 @@ export class JsonConfig implements ApplicationInsightsOptions {
     public disableStatsbeat: boolean;
     public noHttpAgentKeepAlive: boolean;
     public noPatchModules: string;
+    public maxBatchSize: number;
+    public maxBatchIntervalMs: number;
+    public disableAppInsights: boolean;
+    public samplingPercentage: number;
+    public correlationIdRetryIntervalMs: number;
+    public correlationHeaderExcludedDomains: string[];
+    public httpAgent: http.Agent;
+    public httpsAgent: https.Agent;
+    public ignoreLegacyHeaders: boolean;
+    public aadTokenCredential?: azureCoreAuth.TokenCredential;
+    public enableAutoCollectConsole: boolean;
+    public enableLoggerErrorToTrace: boolean;
+    public enableAutoCollectPerformance: boolean;
+    public enableAutoCollectExternalLoggers: boolean;
+    public enableAutoCollectPreAggregatedMetrics: boolean;
+    public enableAutoCollectHeartbeat: boolean;
+    public enableAutoCollectRequests: boolean;
+    public enableAutoCollectDependencies: boolean;
+    public enableAutoDependencyCorrelation: boolean;
+    public enableAutoCollectIncomingRequestAzureFunctions: boolean;
+    public enableSendLiveMetrics: boolean;
+    public enableUseDiskRetryCaching: boolean;
+    public enableUseAsyncHooks: boolean;
+    public distributedTracingMode: DistributedTracingModes;
+    public enableAutoCollectExtendedMetrics: boolean | IDisabledExtendedMetrics;
+    public enableResendInterval: number;
+    public enableMaxBytesOnDisk: number;
+    public enableInternalDebugLogging: boolean;
+    public enableInternalWarningLogging: boolean;
+    public quickPulseHost: string;
+    public enableWebInstrumentation: boolean;
+
+    // Distro values
+    public enableAutoCollectExceptions: boolean;
+    public logInstrumentations: LogInstrumentationsConfig;
+    public extendedMetrics: { [type: string]: boolean };
 
     public static getInstance() {
         if (!JsonConfig._instance) {
@@ -42,7 +84,7 @@ export class JsonConfig implements ApplicationInsightsOptions {
     }
 
     constructor() {
-        // Load env variables first
+        // Load environment variables first
         this.connectionString = process.env[ENV_connectionString];
         this.instrumentationKey = process.env[ENV_instrumentationKey]
             || process.env[ENV_azurePrefix + ENV_instrumentationKey]
@@ -72,7 +114,7 @@ export class JsonConfig implements ApplicationInsightsOptions {
         // JSON file
         else {
             const configFileName = "applicationinsights.json";
-            const rootPath = path.join(__dirname, "../../../"); // Root of folder (__dirname = ../dist-esm/src)
+            const rootPath = path.join(__dirname, "../../../../"); // Root of folder (__dirname = ../dist-esm/src)
             let tempDir = path.join(rootPath, configFileName); // default
             const configFile = process.env[ENV_CONFIGURATION_FILE];
             if (configFile) {
@@ -89,10 +131,19 @@ export class JsonConfig implements ApplicationInsightsOptions {
             }
         }
         try {
-            const jsonConfig: ApplicationInsightsOptions = JSON.parse(jsonString);
+            const jsonConfig: ApplicationInsightsOptions & IJsonConfig = JSON.parse(jsonString);
             this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
-            this.logInstrumentations = jsonConfig.logInstrumentations;
+            this.logInstrumentations = jsonConfig?.logInstrumentations ? jsonConfig?.logInstrumentations : {};
             this.extendedMetrics = jsonConfig.extendedMetrics;
+
+            // Shim values supported
+            // this.endpointUrl = jsonConfig.endpointUrl; TODO: Determine if we support this via JSON
+            this.samplingPercentage = jsonConfig.samplingPercentage;
+
+            // Shim values not supported
+            this.maxBatchSize = jsonConfig.maxBatchSize;
+            this.maxBatchIntervalMs = jsonConfig.maxBatchIntervalMs;
+            this.disableAppInsights = jsonConfig.disableAppInsights;
         } catch (err) {
             Logger.getInstance().info("Missing or invalid JSON config file: ", err);
         }

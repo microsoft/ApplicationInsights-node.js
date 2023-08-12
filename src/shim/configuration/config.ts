@@ -3,7 +3,6 @@ import http = require("http");
 import https = require("https");
 import azureCoreAuth = require("@azure/core-auth");
 import { Logger } from "../logging";
-import constants = require("../../declarations/constants");
 
 class config implements IConfig {
 
@@ -61,8 +60,6 @@ class config implements IConfig {
     public enableAutoWebSnippetInjection: boolean;
 
     public correlationId: string; // TODO: Should be private NOTE: This is not noted in the README
-    private _connectionString: string;
-    private _endpointBase: string = constants.DEFAULT_BREEZE_ENDPOINT;
 
     private _instrumentationKey: string;
     public _webInstrumentationConnectionString: string;
@@ -72,12 +69,6 @@ class config implements IConfig {
 
     constructor(setupString?: string) {
         this.instrumentationKey = setupString;
-
-        this.maxBatchSize = this.maxBatchSize || 250;
-        this.maxBatchIntervalMs = this.maxBatchIntervalMs || 15000;
-        this.disableAppInsights = this.disableAppInsights || false;
-        this.samplingPercentage = this.samplingPercentage || 100;
-        this.correlationIdRetryIntervalMs = this.correlationIdRetryIntervalMs || 30 * 1000;
         // this.enableWebInstrumentation = this.enableWebInstrumentation || this.enableAutoWebSnippetInjection || false;
         this.webInstrumentationConfig = this.webInstrumentationConfig || null;
         // this.enableAutoWebSnippetInjection = this.enableWebInstrumentation;

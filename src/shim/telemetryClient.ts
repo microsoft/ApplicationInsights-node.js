@@ -20,10 +20,8 @@ import { IConfig } from "../shim/types";
 import Config = require("./configuration/config");
 import { dispose, Configuration, _setupCalled } from "./shim-applicationinsights";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
-import bunyan = require("./autoCollection/diagnostic-channel/bunyan.sub");
-import console = require("./autoCollection/diagnostic-channel/console.sub");
-import winston = require("./autoCollection/diagnostic-channel/winston.sub");
 import ConfigHelper = require("./util/configHelper");
+import { JsonConfig } from "./configuration/jsonConfig";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -73,7 +71,7 @@ export class TelemetryClient {
      * Parse the config property to set the appropriate values on the ApplicationInsightsOptions
      * @param input 
      */
-    private _parseConfig(input?: ApplicationInsightsOptions) {
+    private _parseConfig(jsonConfig: JsonConfig, input?: ApplicationInsightsOptions) {
         // If we have a defined input (in the case that we are initializing from the start method) then we should use that
         if (input) {
             this._options = input;
@@ -88,7 +86,13 @@ export class TelemetryClient {
             this._options.azureMonitorExporterConfig.connectionString = `InstrumentationKey=${this.config.instrumentationKey};IngestionEndpoint=${this.config.endpointUrl}`;
         }
 
-        this._options.samplingRatio = this.config.samplingPercentage ? (this.config.samplingPercentage / 100) : 1;
+        if (this.config.samplingPercentage) {
+            this._options.samplingRatio = this.config.samplingPercentage / 100;
+        } else {
+            if (!jsonConfig.samplingPercentage) {
+                this._options.samplingRatio = 1;
+            }
+        }
 
         this._options.instrumentationOptions = {
             http: {
@@ -253,6 +257,15 @@ export class TelemetryClient {
             Logger.getInstance().warn("The webInstrumentation configuration options are not supported by the shim.");
         }
     }
+
+    /**
+     * Parse the JSON config file to set the appropriate values on the ApplicationInsightsOptions
+     */
+    private _parseJson(jsonConfig: JsonConfig) {
+        if (jsonConfig.samplingPercentage) {
+            this._options.samplingRatio = jsonConfig.samplingPercentage / 100;
+        }
+    }
     
     /**
      * Starts automatic collection of telemetry. Prior to calling start no telemetry will be collected
@@ -261,10 +274,12 @@ export class TelemetryClient {
     public start(input?: ApplicationInsightsOptions) {
         // Only parse config if we're running the shim
         if (_setupCalled) {
+            const jsonConfig = JsonConfig.getInstance();
             // Need to create the internalConfig based on the JSON, then modifiy it with the _parseConfig()
-            this._internalConfig = new InternalConfig(this._options);
-            this._parseConfig(input);
+            this._parseJson(jsonConfig);
+            this._parseConfig(jsonConfig, input);
         }
+        this._internalConfig = new InternalConfig(this._options);
         this._client = new AzureMonitorOpenTelemetryClient(this._options);
         this._console = new AutoCollectConsole(this);
         if (this._internalConfig.enableAutoCollectExceptions) {
