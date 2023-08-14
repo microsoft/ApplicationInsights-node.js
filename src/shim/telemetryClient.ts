@@ -20,9 +20,6 @@ import { IConfig } from "../shim/types";
 import Config = require("./configuration/config");
 import { dispose, Configuration, _setupCalled } from "./shim-applicationinsights";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
-import bunyan = require("./autoCollection/diagnostic-channel/bunyan.sub");
-import console = require("./autoCollection/diagnostic-channel/console.sub");
-import winston = require("./autoCollection/diagnostic-channel/winston.sub");
 import ConfigHelper = require("./util/configHelper");
 
 /**
@@ -517,7 +514,7 @@ export class TelemetryClient {
             contextObjects?: { [name: string]: any }
         ) => boolean
     ) {
-        Logger.getInstance().warn("addTelemetryProcessor is not supported via the ApplicationInsights shim. Please upgrade to the ApplicationInsights SDK beta.");
+        Logger.getInstance().warn("addTelemetryProcessor is not supported in ApplicationInsights any longer.");
     }
 
     /*
