@@ -645,14 +645,14 @@ export class TelemetryClient {
     }
 
     public trackNodeHttpRequestSync(telemetry: Contracts.NodeHttpRequestTelemetry) {
-        Logger.getInstance().warn("trackNodeHttpRequestSync is not implemented and is a no-op.");
+        Logger.getInstance().warn("trackNodeHttpRequestSync is not implemented and is a no-op. Please use trackRequest instead.");
     }
 
     public trackNodeHttpRequest(telemetry: Contracts.NodeHttpRequestTelemetry) {
-        Logger.getInstance().warn("trackNodeHttpRequest is not implemented and is a no-op.");
+        Logger.getInstance().warn("trackNodeHttpRequest is not implemented and is a no-op. Please use trackRequest instead.");
     }
 
     public trackNodeHttpDependency(telemetry: Contracts.NodeHttpRequestTelemetry) {
-        Logger.getInstance().warn("trackNodeHttpDependency is not implemented and is a no-op.");
+        Logger.getInstance().warn("trackNodeHttpDependency is not implemented and is a no-op. Please use trackDependency instead.");
     }
 }
