@@ -61,8 +61,8 @@
   },
   "dependencies": {
     "@azure/core-auth": "^1.5.0",
-    "@azure/core-rest-pipeline": "1.12.0",
-    "@azure/core-util": "1.4.0",
+    "@azure/core-rest-pipeline": "1.10.1",
+    "@azure/core-util": "1.2.0",
     "@azure/opentelemetry-instrumentation-azure-sdk": "^1.0.0-beta.5",
     "@microsoft/applicationinsights-web-snippet": "^1.0.1",
     "@opentelemetry/api": "^1.4.1",
