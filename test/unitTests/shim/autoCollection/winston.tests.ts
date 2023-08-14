@@ -29,6 +29,7 @@ describe("diagnostic-channel/winston", () => {
             }
         };
         const client = new TelemetryClient(config);
+        client.start();
         const stub = sandbox.stub(client, "trackException");
         const dummyError = new Error("test error");
         const errorEvent: winston.IWinstonData = {
@@ -52,6 +53,7 @@ describe("diagnostic-channel/winston", () => {
             }
         };
         const client = new TelemetryClient(config);
+        client.start();
         const stub = sandbox.stub(client, "trackTrace");
         const logEvent: winston.IWinstonData = {
             message: "test log",
@@ -74,7 +76,9 @@ describe("diagnostic-channel/winston", () => {
             }
         };
         const client = new TelemetryClient(config);
+        client.start();
         const secondClient = new TelemetryClient(config);
+        secondClient.start();
         const stub = sandbox.stub(client, "trackTrace");
         const secondStub = sandbox.stub(secondClient, "trackTrace");
         enable(true, client);

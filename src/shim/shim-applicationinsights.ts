@@ -1,15 +1,15 @@
 import * as http from "http";
 import { DiagLogLevel, SpanContext } from "@opentelemetry/api";
-
 import { CorrelationContextManager } from "./correlationContextManager";
 import * as azureFunctionsTypes from "@azure/functions";
 import { Span } from "@opentelemetry/sdk-trace-base";
 import { Logger } from "./logging";
-import { ICorrelationContext, HttpRequest } from "./types";
+import { ICorrelationContext, HttpRequest, DistributedTracingModes } from "./types";
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
-import { ApplicationInsightsOptions, ExtendedMetricType } from "../types";
-import { DistributedTracingModes } from "../shim/types";
+import { ApplicationInsightsOptions } from "../types";
+import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
+import ConfigHelper = require("./util/configHelper");
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
@@ -20,6 +20,11 @@ export { Contracts, DistributedTracingModes, HttpRequest, TelemetryClient };
  * with its own configuration, use `new TelemetryClient(instrumentationKey?)`.
  */
 export let defaultClient: TelemetryClient;
+
+/**
+ * Flag to let the TelemetryClient know that setup has been called from the shim
+ */
+export let _setupCalled = false;
 // export let liveMetricsClient: QuickPulseStateManager;
 
 
@@ -37,6 +42,7 @@ let _options: ApplicationInsightsOptions;
  * and start the SDK.
  */
 export function setup(setupString?: string) {
+    _setupCalled = true;
     // Save the setup string and create a config to modify with other functions in this file
     _setupString = setupString;
     if (!_options) {
@@ -44,6 +50,7 @@ export function setup(setupString?: string) {
     } else {
         Logger.getInstance().info("Cannot run applicationinsights.setup() more than once.");
     }
+    defaultClient = new TelemetryClient(_options);
     return Configuration;
 }
 
@@ -54,12 +61,13 @@ export function setup(setupString?: string) {
  * @returns {ApplicationInsights} this class
  */
 export function start() {
-    if (!defaultClient) {
-        // Creates a new TelemetryClient that uses the _config we configure via the other functions in this file
-        defaultClient = new TelemetryClient(_options);
-    } else {
-        Logger.getInstance().info("Cannot run applicationinsights.start() more than once.");
+    // Creates a new TelemetryClient that uses the _config we configure via the other functions in this file
+    const httpOptions: HttpInstrumentationConfig | undefined = _options?.instrumentationOptions?.http;
+    if (httpOptions?.ignoreIncomingRequestHook && httpOptions?.ignoreOutgoingRequestHook) {
+        _options.instrumentationOptions.http.enabled = false;
+        Logger.getInstance().info("Both ignoreIncomingRequestHook and ignoreOutgoingRequestHook are set to true. Disabling http instrumentation.");
     }
+    defaultClient.start(_options);
     return Configuration;
 }
 
@@ -124,9 +132,11 @@ export class Configuration {
      */
     public static setAutoCollectConsole(value: boolean, collectConsoleLog = false) {
         if (_options) {
-            _options.logInstrumentations.bunyan.enabled = value;
-            _options.logInstrumentations.winston.enabled = value;
-            _options.logInstrumentations.console.enabled = collectConsoleLog;
+            _options.logInstrumentations = {
+                bunyan: { enabled: value },
+                winston: { enabled: value },
+                console: { enabled: collectConsoleLog },
+            }
         }
         return Configuration;
     }
@@ -150,21 +160,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: any) {
-        if (_options) {
-            _options.enableAutoCollectPerformance = value;
-            if (typeof collectExtendedMetrics === "object") {
-                _options.extendedMetrics = { ...collectExtendedMetrics }
-            }
-            if (collectExtendedMetrics === "boolean") {
-                if (!collectExtendedMetrics) {
-                    _options.extendedMetrics = {
-                        [ExtendedMetricType.gc]: true,
-                        [ExtendedMetricType.heap]: true,
-                        [ExtendedMetricType.loop]: true
-                    }
-                }
-            }
-        }
+        ConfigHelper.setAutoCollectPerformance(_options, value, collectExtendedMetrics);
         return Configuration;
     }
 
@@ -191,12 +187,23 @@ export class Configuration {
     }
 
     /**
+     * Sets the state of Web snippet injection
+     * @param value if true Web snippet will try to be injected in server response
+     * @param WebSnippetConnectionString if provided, Web snippet injection will use this ConnectionString. Default to use the connectionString in Node.js app initialization.
+     * @returns {Configuration} this class
+     */
+    public static enableWebInstrumentation(value: boolean, WebSnippetConnectionString?: string) {
+        Logger.getInstance().info("Web snippet injection is not implemented and this method is a no-op.");
+        return Configuration;
+    }
+
+    /**
      * Sets the state of request tracking (enabled by default)
      * @param value if true requests will be sent to Application Insights
      * @returns {Configuration} this class
      */
     public static setAutoCollectRequests(value: boolean) {
-        // TODO: Implement this
+        ConfigHelper.setAutoCollectRequests(_options, value);
         return Configuration;
     }
 
@@ -206,7 +213,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectDependencies(value: boolean) {
-        // TODO: Implement this
+        ConfigHelper.setAutoCollectDependencies(_options, value);
         return Configuration;
     }
 
@@ -217,7 +224,12 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoDependencyCorrelation(value: boolean, useAsyncHooks?: boolean) {
-        // TODO: Implement this
+        if (!value) {
+            CorrelationContextManager.disable();
+        }
+        if (useAsyncHooks === false) {
+            Logger.getInstance().warn("The use of non async hooks is no longer supported.");
+        }
         return Configuration;
     }
 
@@ -231,6 +243,12 @@ export class Configuration {
      * @param maxBytesOnDisk The maximum size (in bytes) that the created temporary directory for cache events can grow to, before caching is disabled.
      * @returns {Configuration} this class
      */
+    public static setUseDiskRetryCaching(value: boolean, resendInterval?: number, maxBytesOnDisk?: number) {
+        if (defaultClient) {
+            defaultClient.setUseDiskRetryCaching(value, resendInterval, maxBytesOnDisk);
+        }
+        return Configuration;
+    }
 
     /**
      * Enables debug and warning Logger for AppInsights itself.
@@ -238,7 +256,7 @@ export class Configuration {
      * @param enableWarningLogger if true, enables warning Logger
      * @returns {Configuration} this class
      */
-    public static setInternalLogger(enableDebugLogger = false, enableWarningLogger = true) {
+    public static setInternalLogging(enableDebugLogger = false, enableWarningLogger = true) {
         if (enableDebugLogger) {
             Logger.getInstance().updateLogLevel(DiagLogLevel.DEBUG);
             return Configuration;
@@ -249,6 +267,16 @@ export class Configuration {
         }
         // Default
         Logger.getInstance().updateLogLevel(DiagLogLevel.INFO);
+        return Configuration;
+    }
+
+    /**
+     * Enable automatic incoming request tracking when using Azure Functions
+     * @param value if true auto collection of incoming requests will be enabled
+     * @returns {Configuration} this class
+     */
+    public static setAutoCollectIncomingRequestAzureFunctions(value: boolean) {
+        Logger.getInstance().info("Auto collect incoming request is not implemented and this method is a no-op.");
         return Configuration;
     }
 

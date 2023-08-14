@@ -4,7 +4,7 @@
 import { LogRecord } from "@opentelemetry/api-logs";
 import { LogRecord as SDKLogRecord } from "@opentelemetry/sdk-logs";
 import { AzureMonitorOpenTelemetryClient } from "@azure/monitor-opentelemetry";
-import { Attributes, context, SpanKind, SpanOptions, SpanStatusCode } from "@opentelemetry/api";
+import { Attributes, context, DiagLogLevel, SpanKind, SpanOptions, SpanStatusCode } from "@opentelemetry/api";
 import { IdGenerator, RandomIdGenerator } from "@opentelemetry/sdk-trace-base";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 import * as Contracts from "../declarations/contracts";
@@ -14,16 +14,20 @@ import { Logger } from "./logging";
 import { Util } from "./util";
 import { AutoCollectConsole } from "./autoCollection/console";
 import { AutoCollectExceptions, parseStack } from "./autoCollection/exceptions";
-import { ApplicationInsightsOptions } from "../types";
+import { ApplicationInsightsOptions, ExtendedMetricType } from "../types";
 import { InternalConfig } from "./configuration/internal";
-
+import { IConfig } from "../shim/types";
+import Config = require("./configuration/config");
+import { dispose, Configuration, _setupCalled } from "./shim-applicationinsights";
+import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
+import ConfigHelper = require("./util/configHelper");
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
  * and manually trigger immediate sending (flushing)
  */
 export class TelemetryClient {
-    private readonly _internalConfig: InternalConfig;
+    private _internalConfig: InternalConfig;
     private _options: ApplicationInsightsOptions;
     private _client: AzureMonitorOpenTelemetryClient;
     private _console: AutoCollectConsole;
@@ -31,12 +35,17 @@ export class TelemetryClient {
     private _idGenerator: IdGenerator;
     public context: Context;
     public commonProperties: { [key: string]: string }; // TODO: Add setter so Resources are updated
+    public config: IConfig;
 
     /**
      * Constructs a new client of the client
      * @param setupString the Connection String or Instrumentation Key to use (read from environment variable if not specified)
      */
     constructor(input?: string | ApplicationInsightsOptions) {
+        // If the user does not pass a new connectionString, use the one defined in the _options
+        const config = new Config(typeof(input) === "string" ? input : input?.azureMonitorExporterConfig?.connectionString);
+        this.config = config;
+
         this.commonProperties = {};
         this.context = new Context();
         if (input) {
@@ -46,14 +55,212 @@ export class TelemetryClient {
                 // TODO: Add Support for iKey as well
                 this._options = {
                     azureMonitorExporterConfig: {
-                        connectionString: input
-                    }
+                        connectionString: input,
+                    },
                 };
             }
         }
-        // Internal config with extra configuration not available in Azure Monitor Distro
-        this._internalConfig = new InternalConfig(this._options);
+        // If not running the shim, we should start the AzureMonitorClient as a part of the constructor
+        if (!_setupCalled) {
+            this.start();
+        }
+    }
 
+    /**
+     * Parse the config property to set the appropriate values on the ApplicationInsightsOptions
+     * @param input 
+     */
+    private _parseConfig(input?: ApplicationInsightsOptions) {
+        // If we have a defined input (in the case that we are initializing from the start method) then we should use that
+        if (input) {
+            this._options = input;
+        }
+
+        const resendInterval: number | undefined = this.config.enableResendInterval;
+        if (this.config.disableAppInsights) {
+            dispose();
+        }
+
+        if (this.config.instrumentationKey && this.config.endpointUrl) {
+            this._options.azureMonitorExporterConfig.connectionString = `InstrumentationKey=${this.config.instrumentationKey};IngestionEndpoint=${this.config.endpointUrl}`;
+        }
+
+        this._options.samplingRatio = this.config.samplingPercentage ? (this.config.samplingPercentage / 100) : 1;
+
+        this._options.instrumentationOptions = {
+            http: {
+                ...input?.instrumentationOptions?.http,
+                ignoreOutgoingUrls: this.config.correlationHeaderExcludedDomains,
+            } as HttpInstrumentationConfig,
+        }
+
+        if (this.config.aadTokenCredential) {
+            this._options.azureMonitorExporterConfig.aadTokenCredential = this.config.aadTokenCredential;
+        }
+
+        if (typeof(this.config.enableAutoCollectConsole) === "boolean") {
+            const setting: boolean = this.config.enableAutoCollectConsole;
+            this._options.logInstrumentations = {
+                ...this._options.logInstrumentations,
+                console: { enabled: setting },
+            }
+        }
+
+        if (typeof(this.config.enableAutoCollectExceptions) === "boolean") {
+            this._options.enableAutoCollectExceptions = this.config.enableAutoCollectExceptions;
+        }
+
+        if (typeof(this.config.enableAutoCollectDependencies) === "boolean") {
+            ConfigHelper.setAutoCollectDependencies(this._options, this.config.enableAutoCollectDependencies);
+        }
+
+        if (typeof(this.config.enableAutoCollectRequests) === "boolean") {
+            ConfigHelper.setAutoCollectRequests(this._options, this.config.enableAutoCollectRequests);
+        }
+
+        if (typeof(this.config.enableAutoCollectPerformance) === "boolean") {
+            ConfigHelper.setAutoCollectPerformance(this._options, this.config.enableAutoCollectPerformance);
+        }
+
+        if (typeof(this.config.enableAutoCollectExternalLoggers) === "boolean") {
+            this._options.logInstrumentations = {
+                ...this._options.logInstrumentations,
+                winston: { enabled: this.config.enableAutoCollectExternalLoggers },
+                bunyan: { enabled: this.config.enableAutoCollectExternalLoggers },
+            }
+        }
+
+        if (typeof(this.config.enableAutoCollectPreAggregatedMetrics) === "boolean") {
+            this._options.enableAutoCollectStandardMetrics = this.config.enableAutoCollectPreAggregatedMetrics;
+        }
+
+        if (typeof(this.config.enableAutoCollectHeartbeat) === "boolean") {
+            Configuration.setAutoCollectHeartbeat(this.config.enableAutoCollectHeartbeat);
+        }
+
+        if (typeof(this.config.enableAutoDependencyCorrelation) === "boolean") {
+            Configuration.setAutoDependencyCorrelation(this.config.enableAutoDependencyCorrelation);
+        }
+
+        if (typeof(this.config.enableAutoCollectIncomingRequestAzureFunctions) === "boolean") {
+            Configuration.setAutoCollectIncomingRequestAzureFunctions(this.config.enableAutoCollectIncomingRequestAzureFunctions);
+        }
+
+        if (typeof(this.config.enableSendLiveMetrics) === "boolean") {
+            Configuration.setSendLiveMetrics(this.config.enableSendLiveMetrics);
+        }
+
+        if (typeof(this.config.enableUseDiskRetryCaching) === "boolean") {
+            Configuration.setUseDiskRetryCaching(this.config.enableUseDiskRetryCaching);
+        }
+
+        if (this.config.enableUseAsyncHooks === false) {
+            Logger.getInstance().warn("The use of non async hooks is no longer supported.");
+        }
+
+        if (typeof(this.config.distributedTracingMode) === "boolean") {
+            Configuration.setDistributedTracingMode(this.config.distributedTracingMode);
+        }
+
+        if (typeof(this.config.enableAutoCollectExtendedMetrics) === "boolean") {
+            const setting = this.config.enableAutoCollectExtendedMetrics;
+            this._options.extendedMetrics = {
+                [ExtendedMetricType.gc]: setting,
+                [ExtendedMetricType.heap]: setting,
+                [ExtendedMetricType.loop]: setting,
+            }
+        }
+
+        if (this.config.enableResendInterval) {
+            Configuration.setUseDiskRetryCaching(true, this.config.enableResendInterval);
+        }
+
+        if (this.config.enableMaxBytesOnDisk) {
+            Configuration.setUseDiskRetryCaching(true, resendInterval, this.config.enableMaxBytesOnDisk);
+        }
+
+        if (typeof(this.config.enableInternalDebugLogging) === "boolean") {
+            if (this.config.enableInternalDebugLogging) {
+                Logger.getInstance().updateLogLevel(DiagLogLevel.DEBUG);
+            }
+        }
+
+        if (typeof(this.config.enableInternalWarningLogging) === "boolean") {
+            if (this.config.enableInternalWarningLogging) {
+                Logger.getInstance().updateLogLevel(DiagLogLevel.WARN);
+            }
+        }
+
+        // Disable or enable all extended metrics
+        if (this.config.disableAllExtendedMetrics === true) {
+            for (const type in this._options.extendedMetrics) {
+                this._options.extendedMetrics[type] = false;
+            }
+            this._options.extendedMetrics = {
+                [ExtendedMetricType.gc]: false,
+                [ExtendedMetricType.heap]: false,
+                [ExtendedMetricType.loop]: false,
+            };
+        }
+
+        if (typeof(this.config.disableStatsbeat) === "boolean") {
+            Logger.getInstance().warn("The disableStatsbeat configuration option is deprecated.");
+        }
+
+        if (this.config.extendedMetricDisablers) {
+            const disabler = this.config.extendedMetricDisablers;
+            this._options.extendedMetrics[disabler] = false;
+        }
+
+        if (this.config.ignoreLegacyHeaders === false) {
+            Logger.getInstance().warn("LegacyHeaders are not supported by the shim.");
+        }
+
+        if (this.config.proxyHttpUrl || this.config.proxyHttpsUrl) {
+            const proxyUrl = new URL(this.config.proxyHttpsUrl || this.config.proxyHttpUrl);
+            this._options.azureMonitorExporterConfig.proxyOptions = {
+                host: proxyUrl.hostname,
+                port: Number(proxyUrl.port),
+            }
+        }
+
+        if (this.config.maxBatchSize) {
+            Logger.getInstance().warn("The maxBatchSize configuration option is not supported by the shim.");
+        }
+
+        if (this.config.maxBatchIntervalMs) {
+            this._options.otlpTraceExporterConfig = { ...this._options.otlpTraceExporterConfig, timeoutMillis: this.config.maxBatchIntervalMs };
+            this._options.otlpMetricExporterConfig = { ...this._options.otlpMetricExporterConfig, timeoutMillis: this.config.maxBatchIntervalMs };
+            this._options.otlpLogExporterConfig = { ...this._options.otlpLogExporterConfig, timeoutMillis: this.config.maxBatchIntervalMs };
+        }
+
+        if (this.config.correlationIdRetryIntervalMs) {
+            Logger.getInstance().warn("The correlationIdRetryIntervalMs configuration option is not supported by the shim.");
+        }
+
+        if (this.config.enableLoggerErrorToTrace) {
+            Logger.getInstance().warn("The enableLoggerErrorToTrace configuration option is not supported by the shim.");
+        }
+
+        if (this.config.httpAgent || this.config.httpsAgent) {
+            Logger.getInstance().warn("The httpAgent and httpsAgent configuration options are not supported by the shim.");
+        }
+
+        if (this.config.enableWebInstrumentation || this.config.webInstrumentationConfig || this.config.webInstrumentationSrc || this.config.webInstrumentationConnectionString) {
+            Logger.getInstance().warn("The webInstrumentation configuration options are not supported by the shim.");
+        }
+    }
+    
+    /**
+     * Starts automatic collection of telemetry. Prior to calling start no telemetry will be collected
+     * @param input Set of options to configure the Azure Monitor Client
+     */
+    public start(input?: ApplicationInsightsOptions) {
+        // Only parse config if we're running the shim
+        if (_setupCalled) {
+            this._parseConfig(input);
+        }
+        this._internalConfig = new InternalConfig(this._options);
         this._client = new AzureMonitorOpenTelemetryClient(this._options);
         this._console = new AutoCollectConsole(this);
         if (this._internalConfig.enableAutoCollectExceptions) {
@@ -307,7 +514,7 @@ export class TelemetryClient {
             contextObjects?: { [name: string]: any }
         ) => boolean
     ) {
-        throw new Error("Not implemented");
+        Logger.getInstance().warn("addTelemetryProcessor is not supported in ApplicationInsights any longer.");
     }
 
     /*
@@ -435,5 +642,17 @@ export class TelemetryClient {
         };
         const record = this._telemetryToLogRecord(telemetry, baseType, baseData);
         return record;
+    }
+
+    public trackNodeHttpRequestSync(telemetry: Contracts.NodeHttpRequestTelemetry) {
+        Logger.getInstance().warn("trackNodeHttpRequestSync is not implemented and is a no-op. Please use trackRequest instead.");
+    }
+
+    public trackNodeHttpRequest(telemetry: Contracts.NodeHttpRequestTelemetry) {
+        Logger.getInstance().warn("trackNodeHttpRequest is not implemented and is a no-op. Please use trackRequest instead.");
+    }
+
+    public trackNodeHttpDependency(telemetry: Contracts.NodeHttpRequestTelemetry) {
+        Logger.getInstance().warn("trackNodeHttpDependency is not implemented and is a no-op. Please use trackDependency instead.");
     }
 }

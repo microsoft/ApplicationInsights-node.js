@@ -30,6 +30,7 @@ describe("AutoCollection/Console", () => {
                 }
             };
             const client = new TelemetryClient(config);
+            client.start();
             const stub = sandbox.stub(client, "trackException");
             const dummyError = new Error("test error");
             const errorEvent: console.IConsoleData = {
@@ -52,6 +53,7 @@ describe("AutoCollection/Console", () => {
                 }
             };
             const client = new TelemetryClient(config);
+            client.start();
             const stub = sandbox.stub(client, "trackTrace");
             const logEvent: console.IConsoleData = {
                 message: "test log",
@@ -72,7 +74,9 @@ describe("AutoCollection/Console", () => {
                 }
             };
             const client = new TelemetryClient(config);
+            client.start();
             const secondClient = new TelemetryClient(config);
+            secondClient.start();
             const stub = sandbox.stub(client, "trackTrace");
             const secondStub = sandbox.stub(secondClient, "trackTrace");
             enable(true, client);

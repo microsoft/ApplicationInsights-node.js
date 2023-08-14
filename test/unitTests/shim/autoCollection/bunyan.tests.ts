@@ -30,6 +30,7 @@ describe("diagnostic-channel/bunyan", () => {
             }
         };
         const client = new TelemetryClient(config);
+        client.start();
         const stub = sandbox.stub(client, "trackException");
         const dummyError = { stack: "Test error" };
         const bunyanJson = Util.getInstance().stringify({ err: dummyError });
@@ -52,6 +53,7 @@ describe("diagnostic-channel/bunyan", () => {
             }
         };
         const client = new TelemetryClient(config);
+        client.start();
         const stub = sandbox.stub(client, "trackTrace");
         const logEvent: bunyan.IBunyanData = {
             result: "test log",
@@ -72,7 +74,9 @@ describe("diagnostic-channel/bunyan", () => {
             }
         };
         const client = new TelemetryClient(config);
+        client.start();
         const secondClient = new TelemetryClient(config);
+        secondClient.start();
         const stub = sandbox.stub(client, "trackTrace");
         const secondStub = sandbox.stub(secondClient, "trackTrace");
         enable(true, client);
