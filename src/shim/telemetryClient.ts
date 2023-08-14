@@ -533,7 +533,7 @@ export class TelemetryClient {
             contextObjects?: { [name: string]: any }
         ) => boolean
     ) {
-        Logger.getInstance().warn("addTelemetryProcessor is not supported via the ApplicationInsights shim. Please upgrade to the ApplicationInsights SDK beta.");
+        Logger.getInstance().warn("addTelemetryProcessor is not supported in ApplicationInsights any longer.");
     }
 
     /*
@@ -664,14 +664,14 @@ export class TelemetryClient {
     }
 
     public trackNodeHttpRequestSync(telemetry: Contracts.NodeHttpRequestTelemetry) {
-        Logger.getInstance().warn("trackNodeHttpRequestSync is not implemented and is a no-op.");
+        Logger.getInstance().warn("trackNodeHttpRequestSync is not implemented and is a no-op. Please use trackRequest instead.");
     }
 
     public trackNodeHttpRequest(telemetry: Contracts.NodeHttpRequestTelemetry) {
-        Logger.getInstance().warn("trackNodeHttpRequest is not implemented and is a no-op.");
+        Logger.getInstance().warn("trackNodeHttpRequest is not implemented and is a no-op. Please use trackRequest instead.");
     }
 
     public trackNodeHttpDependency(telemetry: Contracts.NodeHttpRequestTelemetry) {
-        Logger.getInstance().warn("trackNodeHttpDependency is not implemented and is a no-op.");
+        Logger.getInstance().warn("trackNodeHttpDependency is not implemented and is a no-op. Please use trackDependency instead.");
     }
 }
