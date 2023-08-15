@@ -1,38 +1,34 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { LogRecord } from "@opentelemetry/api-logs";
+import { Logger as OtelLogger, LogRecord, logs } from "@opentelemetry/api-logs";
 import { LogRecord as SDKLogRecord } from "@opentelemetry/sdk-logs";
-import { AzureMonitorOpenTelemetryClient } from "@azure/monitor-opentelemetry";
 import { Attributes, context, DiagLogLevel, SpanKind, SpanOptions, SpanStatusCode } from "@opentelemetry/api";
+import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { IdGenerator, RandomIdGenerator } from "@opentelemetry/sdk-trace-base";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
+
 import * as Contracts from "../declarations/contracts";
 import { AvailabilityData, TelemetryItem as Envelope, KnownSeverityLevel, MessageData, MonitorDomain, PageViewData, TelemetryEventData, TelemetryExceptionData, TelemetryExceptionDetails } from "../declarations/generated";
 import { Context } from "./context";
 import { Logger } from "../shared/logging";
 import { Util } from "../shared/util";
-import { AutoCollectConsole } from "../logs/console";
-import { AutoCollectExceptions, parseStack } from "../logs/exceptions";
 import { ApplicationInsightsOptions, ExtendedMetricType } from "../types";
-import { InternalConfig } from "../shared/configuration/internal";
 import { IConfig } from "../shim/types";
 import Config = require("./config");
 import { dispose, Configuration, _setupCalled } from "./shim-applicationinsights";
-import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import ConfigHelper = require("../shared/util/configHelper");
+import { ApplicationInsightsClient } from "../applicationInsightsClient";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
  * and manually trigger immediate sending (flushing)
  */
 export class TelemetryClient {
-    private _internalConfig: InternalConfig;
     private _options: ApplicationInsightsOptions;
-    private _client: AzureMonitorOpenTelemetryClient;
-    private _console: AutoCollectConsole;
-    private _exceptions: AutoCollectExceptions;
+    private _client: ApplicationInsightsClient;
     private _idGenerator: IdGenerator;
+    private _logger: OtelLogger;
     public context: Context;
     public commonProperties: { [key: string]: string }; // TODO: Add setter so Resources are updated
     public config: IConfig;
@@ -43,11 +39,12 @@ export class TelemetryClient {
      */
     constructor(input?: string | ApplicationInsightsOptions) {
         // If the user does not pass a new connectionString, use the one defined in the _options
-        const config = new Config(typeof(input) === "string" ? input : input?.azureMonitorExporterConfig?.connectionString);
+        const config = new Config(typeof (input) === "string" ? input : input?.azureMonitorExporterConfig?.connectionString);
         this.config = config;
 
         this.commonProperties = {};
         this.context = new Context();
+        this._idGenerator = new RandomIdGenerator();
         if (input) {
             if (typeof (input) === "object") {
                 this._options = input;
@@ -98,59 +95,59 @@ export class TelemetryClient {
             this._options.azureMonitorExporterConfig.aadTokenCredential = this.config.aadTokenCredential;
         }
 
-        if (typeof(this.config.enableAutoCollectConsole) === "boolean") {
+        if (typeof (this.config.enableAutoCollectConsole) === "boolean") {
             const setting: boolean = this.config.enableAutoCollectConsole;
-            this._options.logInstrumentations = {
-                ...this._options.logInstrumentations,
+            this._options.logInstrumentationOptions = {
+                ...this._options.logInstrumentationOptions,
                 console: { enabled: setting },
             }
         }
 
-        if (typeof(this.config.enableAutoCollectExceptions) === "boolean") {
+        if (typeof (this.config.enableAutoCollectExceptions) === "boolean") {
             this._options.enableAutoCollectExceptions = this.config.enableAutoCollectExceptions;
         }
 
-        if (typeof(this.config.enableAutoCollectDependencies) === "boolean") {
+        if (typeof (this.config.enableAutoCollectDependencies) === "boolean") {
             ConfigHelper.setAutoCollectDependencies(this._options, this.config.enableAutoCollectDependencies);
         }
 
-        if (typeof(this.config.enableAutoCollectRequests) === "boolean") {
+        if (typeof (this.config.enableAutoCollectRequests) === "boolean") {
             ConfigHelper.setAutoCollectRequests(this._options, this.config.enableAutoCollectRequests);
         }
 
-        if (typeof(this.config.enableAutoCollectPerformance) === "boolean") {
+        if (typeof (this.config.enableAutoCollectPerformance) === "boolean") {
             ConfigHelper.setAutoCollectPerformance(this._options, this.config.enableAutoCollectPerformance);
         }
 
-        if (typeof(this.config.enableAutoCollectExternalLoggers) === "boolean") {
-            this._options.logInstrumentations = {
-                ...this._options.logInstrumentations,
+        if (typeof (this.config.enableAutoCollectExternalLoggers) === "boolean") {
+            this._options.logInstrumentationOptions = {
+                ...this._options.logInstrumentationOptions,
                 winston: { enabled: this.config.enableAutoCollectExternalLoggers },
                 bunyan: { enabled: this.config.enableAutoCollectExternalLoggers },
             }
         }
 
-        if (typeof(this.config.enableAutoCollectPreAggregatedMetrics) === "boolean") {
-            this._options.enableAutoCollectStandardMetrics = this.config.enableAutoCollectPreAggregatedMetrics;
+        if (typeof (this.config.enableAutoCollectPreAggregatedMetrics) === "boolean") {
+            // TODO: Add support for this config in shim
         }
 
-        if (typeof(this.config.enableAutoCollectHeartbeat) === "boolean") {
+        if (typeof (this.config.enableAutoCollectHeartbeat) === "boolean") {
             Configuration.setAutoCollectHeartbeat(this.config.enableAutoCollectHeartbeat);
         }
 
-        if (typeof(this.config.enableAutoDependencyCorrelation) === "boolean") {
+        if (typeof (this.config.enableAutoDependencyCorrelation) === "boolean") {
             Configuration.setAutoDependencyCorrelation(this.config.enableAutoDependencyCorrelation);
         }
 
-        if (typeof(this.config.enableAutoCollectIncomingRequestAzureFunctions) === "boolean") {
+        if (typeof (this.config.enableAutoCollectIncomingRequestAzureFunctions) === "boolean") {
             Configuration.setAutoCollectIncomingRequestAzureFunctions(this.config.enableAutoCollectIncomingRequestAzureFunctions);
         }
 
-        if (typeof(this.config.enableSendLiveMetrics) === "boolean") {
+        if (typeof (this.config.enableSendLiveMetrics) === "boolean") {
             Configuration.setSendLiveMetrics(this.config.enableSendLiveMetrics);
         }
 
-        if (typeof(this.config.enableUseDiskRetryCaching) === "boolean") {
+        if (typeof (this.config.enableUseDiskRetryCaching) === "boolean") {
             Configuration.setUseDiskRetryCaching(this.config.enableUseDiskRetryCaching);
         }
 
@@ -158,11 +155,11 @@ export class TelemetryClient {
             Logger.getInstance().warn("The use of non async hooks is no longer supported.");
         }
 
-        if (typeof(this.config.distributedTracingMode) === "boolean") {
+        if (typeof (this.config.distributedTracingMode) === "boolean") {
             Configuration.setDistributedTracingMode(this.config.distributedTracingMode);
         }
 
-        if (typeof(this.config.enableAutoCollectExtendedMetrics) === "boolean") {
+        if (typeof (this.config.enableAutoCollectExtendedMetrics) === "boolean") {
             const setting = this.config.enableAutoCollectExtendedMetrics;
             this._options.extendedMetrics = {
                 [ExtendedMetricType.gc]: setting,
@@ -179,13 +176,13 @@ export class TelemetryClient {
             Configuration.setUseDiskRetryCaching(true, resendInterval, this.config.enableMaxBytesOnDisk);
         }
 
-        if (typeof(this.config.enableInternalDebugLogging) === "boolean") {
+        if (typeof (this.config.enableInternalDebugLogging) === "boolean") {
             if (this.config.enableInternalDebugLogging) {
                 Logger.getInstance().updateLogLevel(DiagLogLevel.DEBUG);
             }
         }
 
-        if (typeof(this.config.enableInternalWarningLogging) === "boolean") {
+        if (typeof (this.config.enableInternalWarningLogging) === "boolean") {
             if (this.config.enableInternalWarningLogging) {
                 Logger.getInstance().updateLogLevel(DiagLogLevel.WARN);
             }
@@ -203,7 +200,7 @@ export class TelemetryClient {
             };
         }
 
-        if (typeof(this.config.disableStatsbeat) === "boolean") {
+        if (typeof (this.config.disableStatsbeat) === "boolean") {
             Logger.getInstance().warn("The disableStatsbeat configuration option is deprecated.");
         }
 
@@ -250,7 +247,7 @@ export class TelemetryClient {
             Logger.getInstance().warn("The webInstrumentation configuration options are not supported by the shim.");
         }
     }
-    
+
     /**
      * Starts automatic collection of telemetry. Prior to calling start no telemetry will be collected
      * @param input Set of options to configure the Azure Monitor Client
@@ -260,22 +257,7 @@ export class TelemetryClient {
         if (_setupCalled) {
             this._parseConfig(input);
         }
-        this._internalConfig = new InternalConfig(this._options);
-        this._client = new AzureMonitorOpenTelemetryClient(this._options);
-        this._console = new AutoCollectConsole(this);
-        if (this._internalConfig.enableAutoCollectExceptions) {
-            this._exceptions = new AutoCollectExceptions(this);
-        }
-        this._idGenerator = new RandomIdGenerator();
-        this._console.enable(this._internalConfig.logInstrumentations);
-    }
 
-    public getAzureMonitorOpenTelemetryClient(): AzureMonitorOpenTelemetryClient {
-        return this._client;
-    }
-
-    public getInternalConfig(): InternalConfig {
-        return this._internalConfig;
     }
 
     /**
@@ -287,7 +269,7 @@ export class TelemetryClient {
             const logRecord = this._availabilityToLogRecord(
                 telemetry
             );
-            this._client.getLogger().emit(logRecord);
+            this._logger.emit(logRecord);
         } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
         }
@@ -302,7 +284,7 @@ export class TelemetryClient {
             const logRecord = this._pageViewToLogRecord(
                 telemetry
             );
-            this._client.getLogger().emit(logRecord);
+            this._logger.emit(logRecord);
         } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
         }
@@ -315,7 +297,7 @@ export class TelemetryClient {
     public trackTrace(telemetry: Contracts.TraceTelemetry): void {
         try {
             const logRecord = this._traceToLogRecord(telemetry) as SDKLogRecord;
-            this._client.getLogger().emit(logRecord);
+            this._logger.emit(logRecord);
         } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
         }
@@ -333,7 +315,7 @@ export class TelemetryClient {
             const logRecord = this._exceptionToLogRecord(
                 telemetry
             ) as SDKLogRecord;
-            this._client.getLogger().emit(logRecord);
+            this._logger.emit(logRecord);
         } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
         }
@@ -346,7 +328,7 @@ export class TelemetryClient {
     public trackEvent(telemetry: Contracts.EventTelemetry): void {
         try {
             const logRecord = this._eventToLogRecord(telemetry);
-            this._client.getLogger().emit(logRecord);
+            this._logger.emit(logRecord);
         } catch (err) {
             Logger.getInstance().error("Failed to send telemetry.", err);
         }
@@ -450,25 +432,6 @@ export class TelemetryClient {
         });
         span.end(endTime);
     }
-
-    /**
-     * Immediately send all queued telemetry.
-     */
-    public async flush(): Promise<void> {
-        this._client.flush();
-    }
-
-    /**
-     * Shutdown client
-     */
-    public async shutdown(): Promise<void> {
-        this._client.shutdown();
-        this._console.shutdown();
-        this._console = null;
-        this._exceptions?.shutdown();
-        this._exceptions = null;
-    }
-
     /**
      * Generic track method for all telemetry types
      * @param data the telemetry to send
@@ -524,6 +487,18 @@ export class TelemetryClient {
         throw new Error("Not implemented");
     }
 
+    public trackNodeHttpRequestSync(telemetry: Contracts.NodeHttpRequestTelemetry) {
+        Logger.getInstance().warn("trackNodeHttpRequestSync is not implemented and is a no-op. Please use trackRequest instead.");
+    }
+
+    public trackNodeHttpRequest(telemetry: Contracts.NodeHttpRequestTelemetry) {
+        Logger.getInstance().warn("trackNodeHttpRequest is not implemented and is a no-op. Please use trackRequest instead.");
+    }
+
+    public trackNodeHttpDependency(telemetry: Contracts.NodeHttpRequestTelemetry) {
+        Logger.getInstance().warn("trackNodeHttpDependency is not implemented and is a no-op. Please use trackDependency instead.");
+    }
+
     private _telemetryToLogRecord(
         telemetry: Contracts.Telemetry,
         baseType: string,
@@ -543,9 +518,9 @@ export class TelemetryClient {
     }
 
     /**
-     * Availability Log to LogRecord parsing.
-     * @internal
-     */
+    * Availability Log to LogRecord parsing.
+    * @internal
+    */
     private _availabilityToLogRecord(
         telemetry: Contracts.AvailabilityTelemetry
     ): LogRecord {
@@ -642,17 +617,5 @@ export class TelemetryClient {
         };
         const record = this._telemetryToLogRecord(telemetry, baseType, baseData);
         return record;
-    }
-
-    public trackNodeHttpRequestSync(telemetry: Contracts.NodeHttpRequestTelemetry) {
-        Logger.getInstance().warn("trackNodeHttpRequestSync is not implemented and is a no-op. Please use trackRequest instead.");
-    }
-
-    public trackNodeHttpRequest(telemetry: Contracts.NodeHttpRequestTelemetry) {
-        Logger.getInstance().warn("trackNodeHttpRequest is not implemented and is a no-op. Please use trackRequest instead.");
-    }
-
-    public trackNodeHttpDependency(telemetry: Contracts.NodeHttpRequestTelemetry) {
-        Logger.getInstance().warn("trackNodeHttpDependency is not implemented and is a no-op. Please use trackDependency instead.");
     }
 }

@@ -1,14 +1,15 @@
 import * as http from "http";
-import { DiagLogLevel, SpanContext } from "@opentelemetry/api";
-import { CorrelationContextManager } from "./correlationContextManager";
 import * as azureFunctionsTypes from "@azure/functions";
+import { DiagLogLevel, SpanContext } from "@opentelemetry/api";
 import { Span } from "@opentelemetry/sdk-trace-base";
+import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
+
+import { CorrelationContextManager } from "./correlationContextManager";
 import { Logger } from "../shared/logging";
 import { ICorrelationContext, HttpRequest, DistributedTracingModes } from "./types";
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
 import { ApplicationInsightsOptions } from "../types";
-import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import ConfigHelper = require("../shared/util/configHelper");
 
 // We export these imports so that SDK users may use these classes directly.
@@ -132,7 +133,7 @@ export class Configuration {
      */
     public static setAutoCollectConsole(value: boolean, collectConsoleLog = false) {
         if (_options) {
-            _options.logInstrumentations = {
+            _options.logInstrumentationOptions = {
                 bunyan: { enabled: value },
                 winston: { enabled: value },
                 console: { enabled: collectConsoleLog },
@@ -171,7 +172,8 @@ export class Configuration {
      */
     public static setAutoCollectPreAggregatedMetrics(value: boolean) {
         if (_options) {
-            _options.enableAutoCollectStandardMetrics = value;
+            // TODO: Add support to disable
+            process.env["APPLICATION_INSIGHTS_NO_STANDARD_METRICS "] = "disable";
         }
         return Configuration;
     }

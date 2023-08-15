@@ -3,9 +3,9 @@
 import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
 import { bunyan } from "diagnostic-channel-publishers";
 import { KnownSeverityLevel } from "../../declarations/generated";
-import { TelemetryClient } from "../../shim/telemetryClient";
+import { ApplicationInsightsClient } from "../../applicationInsightsClient";
 
-let clients: TelemetryClient[] = [];
+let clients: ApplicationInsightsClient[] = [];
 
 // Mapping from bunyan levels defined at https://github.com/trentm/node-bunyan/blob/master/lib/bunyan.js#L256
 const bunyanToAILevelMap: { [key: number]: string } = {
@@ -35,7 +35,7 @@ const subscriber = (event: IStandardEvent<bunyan.IBunyanData>) => {
     });
 };
 
-export function enable(enabled: boolean, client: TelemetryClient) {
+export function enable(enabled: boolean, client: ApplicationInsightsClient) {
     if (enabled) {
         const handlerFound = clients.find((c) => c === client);
         if (handlerFound) {

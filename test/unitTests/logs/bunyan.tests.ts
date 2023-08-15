@@ -5,7 +5,7 @@ import { bunyan } from "diagnostic-channel-publishers";
 
 import { enable, dispose } from "../../../src/logs/diagnostic-channel/bunyan.sub";
 import { Util } from "../../../src/shared/util";
-import { TelemetryClient } from "../../../src";
+import { ApplicationInsightsClient } from "../../../src";
 import { ApplicationInsightsOptions } from "../../../src/types";
 
 describe("diagnostic-channel/bunyan", () => {
@@ -25,12 +25,11 @@ describe("diagnostic-channel/bunyan", () => {
             azureMonitorExporterConfig: {
                 connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;"
             },
-            logInstrumentations: {
+            logInstrumentationOptions: {
                 bunyan: { enabled: true }
             }
         };
-        const client = new TelemetryClient(config);
-        client.start();
+        const client = new ApplicationInsightsClient(config);
         const stub = sandbox.stub(client, "trackException");
         const dummyError = { stack: "Test error" };
         const bunyanJson = Util.getInstance().stringify({ err: dummyError });
@@ -48,12 +47,11 @@ describe("diagnostic-channel/bunyan", () => {
             azureMonitorExporterConfig: {
                 connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;"
             },
-            logInstrumentations: {
+            logInstrumentationOptions: {
                 bunyan: { enabled: true }
             }
         };
-        const client = new TelemetryClient(config);
-        client.start();
+        const client = new ApplicationInsightsClient(config);
         const stub = sandbox.stub(client, "trackTrace");
         const logEvent: bunyan.IBunyanData = {
             result: "test log",
@@ -69,14 +67,12 @@ describe("diagnostic-channel/bunyan", () => {
             azureMonitorExporterConfig: {
                 connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;"
             },
-            logInstrumentations: {
+            logInstrumentationOptions: {
                 bunyan: { enabled: true }
             }
         };
-        const client = new TelemetryClient(config);
-        client.start();
-        const secondClient = new TelemetryClient(config);
-        secondClient.start();
+        const client = new ApplicationInsightsClient(config);
+        const secondClient = new ApplicationInsightsClient(config);
         const stub = sandbox.stub(client, "trackTrace");
         const secondStub = sandbox.stub(secondClient, "trackTrace");
         enable(true, client);

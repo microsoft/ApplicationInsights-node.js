@@ -1,6 +1,6 @@
 import assert = require('assert');
 import sinon = require('sinon');
-import { TelemetryClient } from '../../../applicationinsights';
+import { TelemetryClient } from '../../..';
 import { HttpInstrumentationConfig } from '@opentelemetry/instrumentation-http';
 const applicationInsights = require('../../../applicationinsights');
 import azureCoreAuth = require("@azure/core-auth");
@@ -70,7 +70,7 @@ describe("shim/configuration/config", () => {
             assert.equal(telemetryClient["_options"].azureMonitorExporterConfig.proxyOptions.port, 3000);
             const ignoreOutgoingUrls = telemetryClient["_options"].instrumentationOptions.http as HttpInstrumentationConfig;
             assert.equal(ignoreOutgoingUrls.ignoreOutgoingUrls, "https://www.bing.com");
-            assert.equal(JSON.stringify(telemetryClient["_options"].logInstrumentations), JSON.stringify({ console: { enabled: true }, winston: { enabled: true }, bunyan: { enabled: true } }));
+            assert.equal(JSON.stringify(telemetryClient["_options"].logInstrumentationOptions), JSON.stringify({ console: { enabled: true }, winston: { enabled: true }, bunyan: { enabled: true } }));
             assert.equal(telemetryClient["_options"].enableAutoCollectExceptions, true);
             assert.equal(telemetryClient["_options"].enableAutoCollectPerformance, true);
             assert.equal(JSON.stringify(telemetryClient["_options"].extendedMetrics), JSON.stringify({ gc: true, heap: true, loop: true }));

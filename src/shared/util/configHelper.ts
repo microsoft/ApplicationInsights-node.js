@@ -68,7 +68,7 @@ export function setAutoCollectDependencies(options: ApplicationInsightsOptions, 
 
 export function setAutoCollectConsole(options: ApplicationInsightsOptions, value: boolean, enableConsole: boolean, collectConsoleLog = false) {
     if (options) {
-        options.logInstrumentations = {
+        options.logInstrumentationOptions = {
             bunyan: { enabled: value },
             winston: { enabled: value },
             console: { enabled: collectConsoleLog },

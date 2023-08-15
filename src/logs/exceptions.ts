@@ -1,5 +1,5 @@
+import { ApplicationInsightsClient } from "../applicationInsightsClient";
 import { Util } from "../shared/util";
-import { TelemetryClient } from "../shim/telemetryClient";
 
 type ExceptionHandle = "uncaughtExceptionMonitor" | "uncaughtException" | "unhandledRejection";
 const UNCAUGHT_EXCEPTION_MONITOR_HANDLER_NAME: ExceptionHandle = "uncaughtExceptionMonitor";
@@ -12,9 +12,9 @@ export class AutoCollectExceptions {
     private _canUseUncaughtExceptionMonitor = false;
     private _exceptionListenerHandle?: (error: Error | undefined) => void;
     private _rejectionListenerHandle?: (error: Error | undefined) => void;
-    private _client: TelemetryClient;
+    private _client: ApplicationInsightsClient;
 
-    constructor(client: TelemetryClient) {
+    constructor(client: ApplicationInsightsClient) {
         this._client = client;
         // Only use for 13.7.0+
         const nodeVer = process.versions.node.split(".");
@@ -55,14 +55,6 @@ export class AutoCollectExceptions {
             );
         }
     }
-
-    /** 
-  * @deprecated This should not be used
-  */
-    public enable(isEnabled: boolean) {
-        // No Op
-    }
-
 
     public shutdown() {
         if (this._exceptionListenerHandle) {

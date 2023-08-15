@@ -4,7 +4,7 @@ import { channel } from "diagnostic-channel";
 import { winston } from "diagnostic-channel-publishers";
 
 import { enable, dispose } from "../../../src/logs/diagnostic-channel/winston.sub";
-import { TelemetryClient } from "../../../src";
+import { ApplicationInsightsClient } from "../../../src";
 import { ApplicationInsightsOptions } from "../../../src/types";
 
 describe("diagnostic-channel/winston", () => {
@@ -24,12 +24,11 @@ describe("diagnostic-channel/winston", () => {
             azureMonitorExporterConfig: {
                 connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;"
             },
-            logInstrumentations: {
+            logInstrumentationOptions: {
                 winston: { enabled: true }
             }
         };
-        const client = new TelemetryClient(config);
-        client.start();
+        const client = new ApplicationInsightsClient(config);
         const stub = sandbox.stub(client, "trackException");
         const dummyError = new Error("test error");
         const errorEvent: winston.IWinstonData = {
@@ -48,12 +47,11 @@ describe("diagnostic-channel/winston", () => {
             azureMonitorExporterConfig: {
                 connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;"
             },
-            logInstrumentations: {
+            logInstrumentationOptions: {
                 winston: { enabled: true }
             }
         };
-        const client = new TelemetryClient(config);
-        client.start();
+        const client = new ApplicationInsightsClient(config);
         const stub = sandbox.stub(client, "trackTrace");
         const logEvent: winston.IWinstonData = {
             message: "test log",
@@ -71,14 +69,12 @@ describe("diagnostic-channel/winston", () => {
             azureMonitorExporterConfig: {
                 connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;"
             },
-            logInstrumentations: {
+            logInstrumentationOptions: {
                 winston: { enabled: true }
             }
         };
-        const client = new TelemetryClient(config);
-        client.start();
-        const secondClient = new TelemetryClient(config);
-        secondClient.start();
+        const client = new ApplicationInsightsClient(config);
+        const secondClient = new ApplicationInsightsClient(config);
         const stub = sandbox.stub(client, "trackTrace");
         const secondStub = sandbox.stub(secondClient, "trackTrace");
         enable(true, client);

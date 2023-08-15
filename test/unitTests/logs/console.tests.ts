@@ -4,7 +4,7 @@ import { channel } from "diagnostic-channel";
 import { console } from "diagnostic-channel-publishers";
 
 import { enable, dispose } from "../../../src/logs/diagnostic-channel/console.sub";
-import { TelemetryClient } from "../../../src";
+import { ApplicationInsightsClient } from "../../../src";
 import { ApplicationInsightsOptions } from "../../../src/types";
 
 describe("AutoCollection/Console", () => {
@@ -25,12 +25,11 @@ describe("AutoCollection/Console", () => {
                 azureMonitorExporterConfig: {
                     connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;"
                 },
-                logInstrumentations: {
+                logInstrumentationOptions: {
                     console: { enabled: true }
                 }
             };
-            const client = new TelemetryClient(config);
-            client.start();
+            const client = new ApplicationInsightsClient(config);
             const stub = sandbox.stub(client, "trackException");
             const dummyError = new Error("test error");
             const errorEvent: console.IConsoleData = {
@@ -48,12 +47,11 @@ describe("AutoCollection/Console", () => {
                 azureMonitorExporterConfig: {
                     connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;"
                 },
-                logInstrumentations: {
+                logInstrumentationOptions: {
                     console: { enabled: true }
                 }
             };
-            const client = new TelemetryClient(config);
-            client.start();
+            const client = new ApplicationInsightsClient(config);
             const stub = sandbox.stub(client, "trackTrace");
             const logEvent: console.IConsoleData = {
                 message: "test log",
@@ -69,14 +67,12 @@ describe("AutoCollection/Console", () => {
                 azureMonitorExporterConfig: {
                     connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;"
                 },
-                logInstrumentations: {
+                logInstrumentationOptions: {
                     console: { enabled: true }
                 }
             };
-            const client = new TelemetryClient(config);
-            client.start();
-            const secondClient = new TelemetryClient(config);
-            secondClient.start();
+            const client = new ApplicationInsightsClient(config);
+            const secondClient = new ApplicationInsightsClient(config);
             const stub = sandbox.stub(client, "trackTrace");
             const secondStub = sandbox.stub(secondClient, "trackTrace");
             enable(true, client);

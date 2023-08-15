@@ -39,7 +39,7 @@ if (testconfig.AppInsightsEnabled) {
                 enabled: true
             }
         },
-        logInstrumentations: {
+        logInstrumentationOptions: {
             console: {
                 enabled: true,
             },
