@@ -1,5 +1,5 @@
-import { Util } from "../util";
-import { TelemetryClient } from "../telemetryClient";
+import { Util } from "../shared/util";
+import { TelemetryClient } from "../shim/telemetryClient";
 
 type ExceptionHandle = "uncaughtExceptionMonitor" | "uncaughtException" | "unhandledRejection";
 const UNCAUGHT_EXCEPTION_MONITOR_HANDLER_NAME: ExceptionHandle = "uncaughtExceptionMonitor";

@@ -3,10 +3,10 @@ import * as sinon from "sinon";
 import { channel } from "diagnostic-channel";
 import { bunyan } from "diagnostic-channel-publishers";
 
-import { enable, dispose } from "../../../../src/shim/autoCollection/diagnostic-channel/bunyan.sub";
-import { Util } from "../../../../src/shim/util";
-import { TelemetryClient } from "../../../../src";
-import { ApplicationInsightsOptions } from "../../../../src/types";
+import { enable, dispose } from "../../../src/logs/diagnostic-channel/bunyan.sub";
+import { Util } from "../../../src/shared/util";
+import { TelemetryClient } from "../../../src";
+import { ApplicationInsightsOptions } from "../../../src/types";
 
 describe("diagnostic-channel/bunyan", () => {
     let sandbox: sinon.SinonSandbox;

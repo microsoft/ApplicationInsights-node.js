@@ -1,6 +1,6 @@
-import { LogInstrumentationsConfig } from "../../types";
+import { LogInstrumentationsConfig } from "../types";
 import { enablePublishers } from "./diagnostic-channel/initialization";
-import { TelemetryClient } from "../telemetryClient";
+import { TelemetryClient } from "../shim/telemetryClient";
 enablePublishers();
 
 export class AutoCollectConsole {

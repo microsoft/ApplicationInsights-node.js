@@ -2,10 +2,9 @@ import assert = require('assert');
 import sinon = require('sinon');
 import { TelemetryClient } from '../../../applicationinsights';
 import { HttpInstrumentationConfig } from '@opentelemetry/instrumentation-http';
-import { CorrelationContextManager } from '../../../src/shim/correlationContextManager';
 const applicationInsights = require('../../../applicationinsights');
 import azureCoreAuth = require("@azure/core-auth");
-import { Logger } from "../../../src/shim/logging"
+import { Logger } from "../../../src/shared/logging"
 import { DiagLogLevel } from '@opentelemetry/api';
 
 class TestTokenCredential implements azureCoreAuth.TokenCredential {

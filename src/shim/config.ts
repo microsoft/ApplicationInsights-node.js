@@ -1,9 +1,9 @@
-import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrumentationConfig } from "../types";
+import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrumentationConfig } from "./types";
 import http = require("http");
 import https = require("https");
 import azureCoreAuth = require("@azure/core-auth");
-import { Logger } from "../logging";
-import constants = require("../../declarations/constants");
+import { Logger } from "../shared/logging";
+import constants = require("../declarations/constants");
 
 class config implements IConfig {
 

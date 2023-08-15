@@ -3,7 +3,7 @@
 
 import { ManagedIdentityCredential } from "@azure/identity";
 import { AzureMonitorOpenTelemetryClient } from "@azure/monitor-opentelemetry";
-import { Util } from "../shim/util";
+import { Util } from "../shared/util";
 import { ConsoleWriter } from "./diagnostics/writers/consoleWriter";
 import { DiagnosticLogger } from "./diagnostics/diagnosticLogger";
 import { StatusLogger } from "./diagnostics/statusLogger";

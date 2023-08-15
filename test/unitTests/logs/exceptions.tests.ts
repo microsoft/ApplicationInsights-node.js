@@ -1,7 +1,7 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
 
-import { AutoCollectExceptions } from "../../../../src/shim/autoCollection/exceptions";
+import { AutoCollectExceptions } from "../../../src/logs/exceptions";
 
 describe("AutoCollection/Exceptions", () => {
     let sandbox: sinon.SinonSandbox;

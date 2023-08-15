@@ -1,4 +1,4 @@
-import { Logger } from "./logging";
+import { Logger } from "../shared/logging";
 import { Contracts, TelemetryClient } from "./shim-applicationinsights";
 
 class NodeClient extends TelemetryClient {

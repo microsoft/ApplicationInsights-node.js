@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Util } from "../../../shim/util";
+import { Util } from "../../../shared/util";
 import { IAgentLogger } from "../../types";
 
 export class ConsoleWriter implements IAgentLogger {
