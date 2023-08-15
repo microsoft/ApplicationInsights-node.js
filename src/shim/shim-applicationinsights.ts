@@ -3,13 +3,13 @@ import { DiagLogLevel, SpanContext } from "@opentelemetry/api";
 import { CorrelationContextManager } from "./correlationContextManager";
 import * as azureFunctionsTypes from "@azure/functions";
 import { Span } from "@opentelemetry/sdk-trace-base";
-import { Logger } from "./logging";
+import { Logger } from "../shared/logging";
 import { ICorrelationContext, HttpRequest, DistributedTracingModes } from "./types";
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
 import { ApplicationInsightsOptions } from "../types";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
-import ConfigHelper = require("./util/configHelper");
+import ConfigHelper = require("../shared/util/configHelper");
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected

@@ -5,7 +5,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { makeStatusDirs, renameCurrentFile } from "./fileHelpers";
 import { IAgentLogger } from "../../types";
-import { Util } from "../../../shim/util";
+import { Util } from "../../../shared/util";
 
 export interface FileWriterOptions {
     append: boolean; // Overwrite or append on file write (false)

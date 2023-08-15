@@ -3,9 +3,9 @@ import * as sinon from "sinon";
 import { channel } from "diagnostic-channel";
 import { winston } from "diagnostic-channel-publishers";
 
-import { enable, dispose } from "../../../../src/shim/autoCollection/diagnostic-channel/winston.sub";
-import { TelemetryClient } from "../../../../src";
-import { ApplicationInsightsOptions } from "../../../../src/types";
+import { enable, dispose } from "../../../src/logs/diagnostic-channel/winston.sub";
+import { TelemetryClient } from "../../../src";
+import { ApplicationInsightsOptions } from "../../../src/types";
 
 describe("diagnostic-channel/winston", () => {
     let sandbox: sinon.SinonSandbox;

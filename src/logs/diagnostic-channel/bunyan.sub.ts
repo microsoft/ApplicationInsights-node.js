@@ -2,8 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
 import { bunyan } from "diagnostic-channel-publishers";
-import { KnownSeverityLevel } from "../../../declarations/generated";
-import { TelemetryClient } from "../../telemetryClient";
+import { KnownSeverityLevel } from "../../declarations/generated";
+import { TelemetryClient } from "../../shim/telemetryClient";
 
 let clients: TelemetryClient[] = [];
 

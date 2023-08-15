@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import { ApplicationInsightsConfig } from "./applicationInsightsConfig";
-import { Logger } from "./shim/logging";
+import { Logger } from "./shared/logging";
 import { AzureMonitorOpenTelemetryClient, AzureMonitorOpenTelemetryOptions } from "@azure/monitor-opentelemetry";
 
 /** 
