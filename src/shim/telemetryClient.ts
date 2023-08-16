@@ -5,6 +5,7 @@ import { LogRecord } from "@opentelemetry/api-logs";
 import { LogRecord as SDKLogRecord } from "@opentelemetry/sdk-logs";
 import { AzureMonitorOpenTelemetryClient } from "@azure/monitor-opentelemetry";
 import { Attributes, context, DiagLogLevel, SpanKind, SpanOptions, SpanStatusCode } from "@opentelemetry/api";
+import { Attributes, context, DiagLogLevel, SpanKind, SpanOptions, SpanStatusCode } from "@opentelemetry/api";
 import { IdGenerator, RandomIdGenerator } from "@opentelemetry/sdk-trace-base";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 import * as Contracts from "../declarations/contracts";
@@ -14,6 +15,7 @@ import { Logger } from "./logging";
 import { Util } from "./util";
 import { AutoCollectConsole } from "./autoCollection/console";
 import { AutoCollectExceptions, parseStack } from "./autoCollection/exceptions";
+import { ApplicationInsightsOptions, ExtendedMetricType } from "../types";
 import { ApplicationInsightsOptions, ExtendedMetricType } from "../types";
 import { InternalConfig } from "./configuration/internal";
 import { IConfig } from "../shim/types";
@@ -29,6 +31,7 @@ import { JsonConfig } from "./configuration/jsonConfig";
  */
 export class TelemetryClient {
     private _internalConfig: InternalConfig;
+    private _internalConfig: InternalConfig;
     private _options: ApplicationInsightsOptions;
     private _client: AzureMonitorOpenTelemetryClient;
     private _console: AutoCollectConsole;
@@ -37,12 +40,17 @@ export class TelemetryClient {
     public context: Context;
     public commonProperties: { [key: string]: string }; // TODO: Add setter so Resources are updated
     public config: IConfig;
+    public config: IConfig;
 
     /**
      * Constructs a new client of the client
      * @param setupString the Connection String or Instrumentation Key to use (read from environment variable if not specified)
      */
     constructor(input?: string | ApplicationInsightsOptions) {
+        // If the user does not pass a new connectionString, use the one defined in the _options
+        const config = new Config(typeof(input) === "string" ? input : input?.azureMonitorExporterConfig?.connectionString);
+        this.config = config;
+
         // If the user does not pass a new connectionString, use the one defined in the _options
         const config = new Config(typeof(input) === "string" ? input : input?.azureMonitorExporterConfig?.connectionString);
         this.config = config;
@@ -56,6 +64,8 @@ export class TelemetryClient {
                 // TODO: Add Support for iKey as well
                 this._options = {
                     azureMonitorExporterConfig: {
+                        connectionString: input,
+                    },
                         connectionString: input,
                     },
                 };
@@ -736,6 +746,7 @@ export class TelemetryClient {
         ) => boolean
     ) {
         Logger.getInstance().warn("addTelemetryProcessor is not supported in ApplicationInsights any longer.");
+        Logger.getInstance().warn("addTelemetryProcessor is not supported in ApplicationInsights any longer.");
     }
 
     /*
@@ -863,6 +874,18 @@ export class TelemetryClient {
         };
         const record = this._telemetryToLogRecord(telemetry, baseType, baseData);
         return record;
+    }
+
+    public trackNodeHttpRequestSync(telemetry: Contracts.NodeHttpRequestTelemetry) {
+        Logger.getInstance().warn("trackNodeHttpRequestSync is not implemented and is a no-op. Please use trackRequest instead.");
+    }
+
+    public trackNodeHttpRequest(telemetry: Contracts.NodeHttpRequestTelemetry) {
+        Logger.getInstance().warn("trackNodeHttpRequest is not implemented and is a no-op. Please use trackRequest instead.");
+    }
+
+    public trackNodeHttpDependency(telemetry: Contracts.NodeHttpRequestTelemetry) {
+        Logger.getInstance().warn("trackNodeHttpDependency is not implemented and is a no-op. Please use trackDependency instead.");
     }
 
     public trackNodeHttpRequestSync(telemetry: Contracts.NodeHttpRequestTelemetry) {
