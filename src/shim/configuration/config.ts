@@ -3,6 +3,7 @@ import http = require("http");
 import https = require("https");
 import azureCoreAuth = require("@azure/core-auth");
 import { Logger } from "../logging";
+import { JsonConfig } from "./jsonConfig";
 
 class config implements IConfig {
 
@@ -68,12 +69,13 @@ class config implements IConfig {
     public noDiagnosticChannel: boolean;
 
     constructor(setupString?: string) {
-        this.instrumentationKey = setupString;
+        this.instrumentationKey = setupString.split("=")[1].split(";")[0];
         // this.enableWebInstrumentation = this.enableWebInstrumentation || this.enableAutoWebSnippetInjection || false;
         this.webInstrumentationConfig = this.webInstrumentationConfig || null;
         // this.enableAutoWebSnippetInjection = this.enableWebInstrumentation;
         this.correlationHeaderExcludedDomains =
             this.correlationHeaderExcludedDomains ||
+            JsonConfig.getInstance().correlationHeaderExcludedDomains ||
             [
                 "*.core.windows.net",
                 "*.core.chinacloudapi.cn",

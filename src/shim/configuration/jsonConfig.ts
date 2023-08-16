@@ -137,13 +137,39 @@ export class JsonConfig implements IJsonConfig, ApplicationInsightsOptions {
             this.extendedMetrics = jsonConfig.extendedMetrics;
 
             // Shim values supported
-            // this.endpointUrl = jsonConfig.endpointUrl; TODO: Determine if we support this via JSON
+            this.instrumentationKey = jsonConfig.instrumentationKey;
+            this.endpointUrl = jsonConfig.endpointUrl;
             this.samplingPercentage = jsonConfig.samplingPercentage;
+            this.enableAutoCollectExternalLoggers = jsonConfig.enableAutoCollectExternalLoggers;
+            this.enableAutoCollectConsole = jsonConfig.enableAutoCollectConsole;
+            this.enableLoggerErrorToTrace = jsonConfig.enableLoggerErrorToTrace;
+            this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
+            this.enableAutoCollectPerformance = jsonConfig.enableAutoCollectPerformance;
 
             // Shim values not supported
             this.maxBatchSize = jsonConfig.maxBatchSize;
             this.maxBatchIntervalMs = jsonConfig.maxBatchIntervalMs;
             this.disableAppInsights = jsonConfig.disableAppInsights;
+            this.correlationHeaderExcludedDomains = jsonConfig.correlationHeaderExcludedDomains;
+            this.ignoreLegacyHeaders = jsonConfig.ignoreLegacyHeaders;
+            this.distributedTracingMode = jsonConfig.distributedTracingMode;
+            this.enableAutoCollectExtendedMetrics = jsonConfig.enableAutoCollectExtendedMetrics;
+            this.enableAutoCollectHeartbeat = jsonConfig.enableAutoCollectHeartbeat;
+            this.enableAutoCollectRequests = jsonConfig.enableAutoCollectRequests;
+            this.enableAutoCollectDependencies = jsonConfig.enableAutoCollectDependencies;
+            this.enableAutoCollectIncomingRequestAzureFunctions = jsonConfig.enableAutoCollectIncomingRequestAzureFunctions;
+            this.enableUseAsyncHooks = jsonConfig.enableUseAsyncHooks;
+            this.enableUseDiskRetryCaching = jsonConfig.enableUseDiskRetryCaching;
+            this.enableResendInterval = jsonConfig.enableResendInterval;
+            this.enableMaxBytesOnDisk = jsonConfig.enableMaxBytesOnDisk;
+            this.enableInternalDebugLogging = jsonConfig.enableInternalDebugLogging;
+            this.enableInternalWarningLogging = jsonConfig.enableInternalWarningLogging;
+            this.enableSendLiveMetrics = jsonConfig.enableSendLiveMetrics;
+            this.disableAllExtendedMetrics = jsonConfig.disableAllExtendedMetrics;
+            this.extendedMetricDisablers = jsonConfig.extendedMetricDisablers;
+            this.noDiagnosticChannel = jsonConfig.noDiagnosticChannel;
+            this.noPatchModules = jsonConfig.noPatchModules;
+            this.noHttpAgentKeepAlive = jsonConfig.noHttpAgentKeepAlive;
         } catch (err) {
             Logger.getInstance().info("Missing or invalid JSON config file: ", err);
         }
