@@ -1,9 +1,9 @@
-import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrumentationConfig } from "../types";
-import * as http from "http";
-import * as https from "https";
-import * as azureCoreAuth from "@azure/core-auth";
-import { Logger } from "../../shared/logging/logger";
-import { ShimJsonConfig } from "../../shared/configuration/shim-jsonConfig";
+import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrumentationConfig } from "./types";
+import http = require("http");
+import https = require("https");
+import azureCoreAuth = require("@azure/core-auth");
+import { ShimJsonConfig } from "../shared/configuration/shim-jsonConfig";
+import { Logger } from "../shared/logging";
 
 class config implements IConfig {
 

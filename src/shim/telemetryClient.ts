@@ -10,18 +10,18 @@ import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 import * as Contracts from "../declarations/contracts";
 import { AvailabilityData, TelemetryItem as Envelope, KnownSeverityLevel, MessageData, MonitorDomain, PageViewData, TelemetryEventData, TelemetryExceptionData, TelemetryExceptionDetails } from "../declarations/generated";
 import { Context } from "./context";
-import { Logger } from "./logging";
-import { Util } from "./util";
-import { AutoCollectConsole } from "./autoCollection/console";
-import { AutoCollectExceptions, parseStack } from "./autoCollection/exceptions";
+import { Logger } from "../shared/logging";
+import { Util } from "../shared/util";
+import { AutoCollectConsole } from "../logs/console";
+import { AutoCollectExceptions, parseStack } from "../logs/exceptions";
 import { ApplicationInsightsOptions, ExtendedMetricType } from "../types";
-import { InternalConfig } from "./configuration/internal";
+import { InternalConfig } from "../shared/configuration/internal";
 import { IConfig } from "../shim/types";
-import Config = require("./configuration/config");
+import Config = require("./config");
 import { dispose, Configuration, _setupCalled } from "./shim-applicationinsights";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
-import ConfigHelper = require("./util/configHelper");
-import { ShimJsonConfig } from "./configuration/shim-jsonConfig";
+import { ShimJsonConfig } from "../shared/configuration/shim-jsonConfig";
+import ConfigHelper = require("../shared/util/configHelper");
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and

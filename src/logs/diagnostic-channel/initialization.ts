@@ -3,7 +3,7 @@
 
 // Don't reference modules from these directly. Use only for types.
 import * as DiagChannelPublishers from "diagnostic-channel-publishers";
-import { Logger } from "../../logging";
+import { Logger } from "../../shared/logging";
 
 const TAG = "DiagnosticChannel";
 let isInitialized = false;

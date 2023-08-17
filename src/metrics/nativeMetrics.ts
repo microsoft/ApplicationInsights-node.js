@@ -10,7 +10,7 @@ import {
     PeriodicExportingMetricReaderOptions,
 } from "@opentelemetry/sdk-metrics";
 import { Histogram, Meter, ObservableGauge, ObservableResult } from "@opentelemetry/api";
-import { Logger } from "../logging";
+import { Logger } from "../shared/logging";
 
 /**
  * Azure Monitor Native Metrics

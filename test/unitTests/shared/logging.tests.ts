@@ -2,7 +2,7 @@ import { diag, DiagLogLevel } from "@opentelemetry/api";
 import * as assert from "assert";
 import * as sinon from "sinon";
 
-import { Logger } from "../../../src/shim/logging";
+import { Logger } from "../../../src/shared/logging";
 
 describe("Library/Logger", () => {
     let sandbox: sinon.SinonSandbox;

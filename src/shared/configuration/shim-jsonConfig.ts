@@ -1,11 +1,11 @@
 import * as fs from "fs";
 import * as path from "path";
-import { Logger } from "../../shared/logging/logger";
+import { Logger } from "../logging";
 import { ApplicationInsightsOptions, LogInstrumentationsConfig } from "../../types";
-import { DistributedTracingModes, IDisabledExtendedMetrics, IJsonConfig } from "../types";
+import { DistributedTracingModes, IDisabledExtendedMetrics, IJsonConfig } from "../../shim/types";
 import * as http from "http";
 import * as https from "https";
-import * as azureCoreAuth from "@azure/core-auth";
+import azureCoreAuth = require("@azure/core-auth");
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 const ENV_CONTENT = "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT";

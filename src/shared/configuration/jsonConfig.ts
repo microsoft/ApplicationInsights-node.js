@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { Logger } from "../../shared/logging/logger";
+import { Logger } from "../logging";
 import { ApplicationInsightsOptions, LogInstrumentationsConfig } from "../../types";
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
