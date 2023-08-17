@@ -9,7 +9,7 @@ import azureCoreAuth = require("@azure/core-auth");
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 const ENV_CONTENT = "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT";
-// Shim environment variables
+
 const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
 const ENV_azurePrefix = "APPSETTING_"; // Azure adds this prefix to all environment variables
 const ENV_instrumentationKey = "APPINSIGHTS_INSTRUMENTATIONKEY";
@@ -132,10 +132,6 @@ export class ShimJsonConfig implements IJsonConfig {
         try {
             const jsonConfig: ApplicationInsightsOptions & IJsonConfig = JSON.parse(jsonString);
             this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
-            this.logInstrumentations = jsonConfig?.logInstrumentations ? jsonConfig?.logInstrumentations : {};
-            this.extendedMetrics = jsonConfig.extendedMetrics;
-
-            // Shim values supported
             this.instrumentationKey = jsonConfig.instrumentationKey;
             this.endpointUrl = jsonConfig.endpointUrl;
             this.samplingPercentage = jsonConfig.samplingPercentage;
@@ -144,8 +140,6 @@ export class ShimJsonConfig implements IJsonConfig {
             this.enableLoggerErrorToTrace = jsonConfig.enableLoggerErrorToTrace;
             this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
             this.enableAutoCollectPerformance = jsonConfig.enableAutoCollectPerformance;
-
-            // Shim values not supported
             this.maxBatchSize = jsonConfig.maxBatchSize;
             this.maxBatchIntervalMs = jsonConfig.maxBatchIntervalMs;
             this.disableAppInsights = jsonConfig.disableAppInsights;

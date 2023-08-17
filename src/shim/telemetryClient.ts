@@ -102,11 +102,7 @@ export class TelemetryClient {
         }
 
         if (typeof(this.config.enableAutoCollectConsole) === "boolean") {
-            const setting: boolean = this.config.enableAutoCollectConsole;
-            this._options.logInstrumentations = {
-                ...this._options.logInstrumentations,
-                console: { enabled: setting },
-            }
+            ConfigHelper.enableAutoCollectConsole(this._options, this.config.enableAutoCollectConsole);
         }
 
         if (typeof(this.config.enableAutoCollectExceptions) === "boolean") {
@@ -126,18 +122,17 @@ export class TelemetryClient {
         }
 
         if (typeof(this.config.enableAutoCollectExternalLoggers) === "boolean") {
-            this._options.logInstrumentations = {
-                ...this._options.logInstrumentations,
-                winston: { enabled: this.config.enableAutoCollectExternalLoggers },
-                bunyan: { enabled: this.config.enableAutoCollectExternalLoggers },
-            }
+            ConfigHelper.enableAutoCollectExternalLoggers(this._options, this.config.enableAutoCollectExternalLoggers);
         }
 
         if (typeof(this.config.enableAutoCollectPreAggregatedMetrics) === "boolean") {
             this._options.enableAutoCollectStandardMetrics = this.config.enableAutoCollectPreAggregatedMetrics;
         }
 
-        if (typeof(this.config.enableAutoCollectHeartbeat) === "boolean") {
+        if (
+            typeof(this.config.enableAutoCollectHeartbeat) === "boolean" ||
+            typeof(jsonConfig.enableAutoCollectHeartbeat) === "boolean"
+        ) {
             Configuration.setAutoCollectHeartbeat(this.config.enableAutoCollectHeartbeat);
         }
 
@@ -166,12 +161,7 @@ export class TelemetryClient {
         }
 
         if (typeof(this.config.enableAutoCollectExtendedMetrics) === "boolean") {
-            const setting = this.config.enableAutoCollectExtendedMetrics;
-            this._options.extendedMetrics = {
-                [ExtendedMetricType.gc]: setting,
-                [ExtendedMetricType.heap]: setting,
-                [ExtendedMetricType.loop]: setting,
-            }
+            ConfigHelper.enableAutoCollectExtendedMetrics(this._options, this.config.enableAutoCollectExtendedMetrics);
         }
 
         if (this.config.enableResendInterval) {
@@ -183,15 +173,11 @@ export class TelemetryClient {
         }
 
         if (typeof(this.config.enableInternalDebugLogging) === "boolean") {
-            if (this.config.enableInternalDebugLogging) {
-                Logger.getInstance().updateLogLevel(DiagLogLevel.DEBUG);
-            }
+            Logger.getInstance().updateLogLevel(DiagLogLevel.DEBUG);
         }
 
         if (typeof(this.config.enableInternalWarningLogging) === "boolean") {
-            if (this.config.enableInternalWarningLogging) {
-                Logger.getInstance().updateLogLevel(DiagLogLevel.WARN);
-            }
+            Logger.getInstance().updateLogLevel(DiagLogLevel.WARN);
         }
 
         if (
@@ -213,8 +199,7 @@ export class TelemetryClient {
         }
 
         if (this.config.extendedMetricDisablers) {
-            const disabler = this.config.extendedMetricDisablers;
-            this._options.extendedMetrics[disabler] = false;
+            this._options.extendedMetrics[this.config.extendedMetricDisablers] = false;
         }
 
         if (this.config.ignoreLegacyHeaders === false || jsonConfig.ignoreLegacyHeaders === false) {
@@ -285,27 +270,12 @@ export class TelemetryClient {
             Configuration.setDistributedTracingMode(jsonConfig.distributedTracingMode);
         }
 
-        // TODO: Split this out into a function we can call for both JSON and config.
         if (jsonConfig.enableAutoCollectExternalLoggers) {
-            this._options.logInstrumentations = {
-                ...this._options.logInstrumentations,
-                winston: { enabled: jsonConfig.enableAutoCollectExternalLoggers },
-                bunyan: { enabled: jsonConfig.enableAutoCollectExternalLoggers },
-            }
+            ConfigHelper.enableAutoCollectExternalLoggers(this._options, jsonConfig.enableAutoCollectExternalLoggers);
         }
 
-        // TODO: Move this out as well.
         if (jsonConfig.enableAutoCollectConsole) {
-            const setting: boolean = jsonConfig.enableAutoCollectConsole;
-            this._options.logInstrumentations = {
-                ...this._options.logInstrumentations,
-                console: { enabled: setting },
-            }
-        }
-
-        // TODO: This has almost an exact copy in the config 
-        if (jsonConfig.enableAutoCollectHeartbeat) {
-            Configuration.setAutoCollectHeartbeat(jsonConfig.enableAutoCollectHeartbeat);
+            ConfigHelper.enableAutoCollectConsole(this._options, jsonConfig.enableAutoCollectConsole);
         }
 
         if (jsonConfig.enableAutoCollectExceptions) {
@@ -316,14 +286,8 @@ export class TelemetryClient {
             ConfigHelper.setAutoCollectPerformance(this._options, jsonConfig.enableAutoCollectPerformance);
         }
 
-        // TODO: Can move this out as well
         if (typeof(jsonConfig.enableAutoCollectExtendedMetrics) === "boolean") {
-            const setting = jsonConfig.enableAutoCollectExtendedMetrics;
-            this._options.extendedMetrics = {
-                [ExtendedMetricType.gc]: setting,
-                [ExtendedMetricType.heap]: setting,
-                [ExtendedMetricType.loop]: setting,
-            }
+            ConfigHelper.enableAutoCollectExtendedMetrics(this._options, jsonConfig.enableAutoCollectExtendedMetrics);
         }
 
         if (jsonConfig.enableAutoCollectRequests) {
@@ -350,28 +314,20 @@ export class TelemetryClient {
             Configuration.setUseDiskRetryCaching(true, resendInterval, jsonConfig.enableMaxBytesOnDisk);
         }
 
-        // TODO: Can pull this logic out into a common area
         if (jsonConfig.enableInternalDebugLogging) {
-            if (jsonConfig.enableInternalDebugLogging) {
-                Logger.getInstance().updateLogLevel(DiagLogLevel.DEBUG);
-            }
+            Logger.getInstance().updateLogLevel(DiagLogLevel.DEBUG);
         }
 
-        // TODO: Same here
         if (jsonConfig.enableInternalWarningLogging) {
-            if (jsonConfig.enableInternalWarningLogging) {
-                Logger.getInstance().updateLogLevel(DiagLogLevel.WARN);
-            }
+            Logger.getInstance().updateLogLevel(DiagLogLevel.WARN);
         }
 
         if (jsonConfig.enableSendLiveMetrics) {
             Configuration.setSendLiveMetrics(jsonConfig.enableSendLiveMetrics);
         }
 
-        // TODO: Could move this one out
         if (jsonConfig.extendedMetricDisablers) {
-            const disabler = jsonConfig.extendedMetricDisablers;
-            this._options.extendedMetrics[disabler] = false;
+            this._options.extendedMetrics[jsonConfig.extendedMetricDisablers] = false;
         }
 
         if (jsonConfig.noDiagnosticChannel) {
@@ -477,7 +433,7 @@ export class TelemetryClient {
         // Only parse config if we're running the shim
         if (_setupCalled) {
             const jsonConfig = ShimJsonConfig.getInstance();
-            // Need to create the internalConfig based on the JSON, then modifiy it with the _parseConfig()
+            // Create the internalConfig based on the JSONConfig, and override with the client.config if defined
             this._parseJson(jsonConfig);
             this._parseConfig(jsonConfig, input);
         }

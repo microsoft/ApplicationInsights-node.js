@@ -1,6 +1,8 @@
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { ApplicationInsightsOptions, ExtendedMetricType } from "../../types";
 import * as http from "http";
+import { DiagLogLevel } from "@opentelemetry/api";
+import { Logger } from "../logging";
 
 export function setAutoCollectPerformance(options: ApplicationInsightsOptions, value: boolean, collectExtendedMetrics?: any) {
     if (options) {
@@ -66,12 +68,35 @@ export function setAutoCollectDependencies(options: ApplicationInsightsOptions, 
     }
 }
 
-export function setAutoCollectConsole(options: ApplicationInsightsOptions, value: boolean, enableConsole: boolean, collectConsoleLog = false) {
+export function setAutoCollectConsole(options: ApplicationInsightsOptions, value: boolean, collectConsoleLog = false) {
     if (options) {
         options.logInstrumentations = {
             bunyan: { enabled: value },
             winston: { enabled: value },
             console: { enabled: collectConsoleLog },
         }
+    }
+}
+
+export function enableAutoCollectExternalLoggers(options: ApplicationInsightsOptions, value: boolean) {
+    options.logInstrumentations = {
+        ...options.logInstrumentations,
+        winston: { enabled: value },
+        bunyan: { enabled: value },
+    }
+}
+
+export function enableAutoCollectConsole(options: ApplicationInsightsOptions, value: boolean) {
+    options.logInstrumentations = {
+        ...options.logInstrumentations,
+        console: { enabled: value },
+    }
+}
+
+export function enableAutoCollectExtendedMetrics(options: ApplicationInsightsOptions, value: boolean) {
+    options.extendedMetrics = {
+        [ExtendedMetricType.gc]: value,
+        [ExtendedMetricType.heap]: value,
+        [ExtendedMetricType.loop]: value,
     }
 }
