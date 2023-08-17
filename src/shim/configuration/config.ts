@@ -3,7 +3,7 @@ import http = require("http");
 import https = require("https");
 import azureCoreAuth = require("@azure/core-auth");
 import { Logger } from "../logging";
-import { JsonConfig } from "./jsonConfig";
+import { ShimJsonConfig } from "./shim-jsonConfig";
 
 class config implements IConfig {
 
@@ -75,7 +75,7 @@ class config implements IConfig {
         // this.enableAutoWebSnippetInjection = this.enableWebInstrumentation;
         this.correlationHeaderExcludedDomains =
             this.correlationHeaderExcludedDomains ||
-            JsonConfig.getInstance().correlationHeaderExcludedDomains ||
+            ShimJsonConfig.getInstance().correlationHeaderExcludedDomains ||
             [
                 "*.core.windows.net",
                 "*.core.chinacloudapi.cn",

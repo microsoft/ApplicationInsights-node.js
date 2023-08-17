@@ -21,7 +21,7 @@ import Config = require("./configuration/config");
 import { dispose, Configuration, _setupCalled } from "./shim-applicationinsights";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import ConfigHelper = require("./util/configHelper");
-import { JsonConfig } from "./configuration/jsonConfig";
+import { ShimJsonConfig } from "./configuration/shim-jsonConfig";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -71,7 +71,7 @@ export class TelemetryClient {
      * Parse the config property to set the appropriate values on the ApplicationInsightsOptions
      * @param input 
      */
-    private _parseConfig(jsonConfig: JsonConfig, input?: ApplicationInsightsOptions) {
+    private _parseConfig(jsonConfig: ShimJsonConfig, input?: ApplicationInsightsOptions) {
         // If we have a defined input (in the case that we are initializing from the start method) then we should use that
         if (input) {
             this._options = input;
@@ -83,7 +83,7 @@ export class TelemetryClient {
         }
 
         if (this.config.instrumentationKey || this.config.endpointUrl) {
-            Logger.getInstance().warn("Please pass a connection string to the setup method to initialize the SDK client.")
+            Logger.getInstance().warn("If attempting to connect to an ApplicationInsights resource using instrumentationKey and endpointUrl, please pass a connection string to the setup method to initialize the SDK client instead.")
         }
 
         if (this.config.samplingPercentage) {
@@ -259,7 +259,7 @@ export class TelemetryClient {
     /**
      * Parse the JSON config file to set the appropriate values on the ApplicationInsightsOptions
      */
-    private _parseJson(jsonConfig: JsonConfig) {
+    private _parseJson(jsonConfig: ShimJsonConfig) {
         const resendInterval: number | undefined = jsonConfig.enableResendInterval;
 
         if (jsonConfig.instrumentationKey || jsonConfig.endpointUrl) {
@@ -476,7 +476,7 @@ export class TelemetryClient {
     public start(input?: ApplicationInsightsOptions) {
         // Only parse config if we're running the shim
         if (_setupCalled) {
-            const jsonConfig = JsonConfig.getInstance();
+            const jsonConfig = ShimJsonConfig.getInstance();
             // Need to create the internalConfig based on the JSON, then modifiy it with the _parseConfig()
             this._parseJson(jsonConfig);
             this._parseConfig(jsonConfig, input);
