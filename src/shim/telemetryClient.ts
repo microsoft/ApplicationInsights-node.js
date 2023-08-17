@@ -20,7 +20,7 @@ import { IConfig } from "../shim/types";
 import Config = require("./config");
 import { dispose, Configuration, _setupCalled } from "./shim-applicationinsights";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
-import { ShimJsonConfig } from "../shared/configuration/shim-jsonConfig";
+import { ShimJsonConfig } from "../shim/configuration/shim-jsonConfig";
 import ConfigHelper = require("../shared/util/configHelper");
 
 /**

@@ -3,7 +3,7 @@ import * as http from "http";
 import * as https from "https";
 import * as azureCoreAuth from "@azure/core-auth";
 import { Logger } from "../../shared/logging/logger";
-import { ShimJsonConfig } from "../../shared/configuration/shim-jsonConfig";
+import { ShimJsonConfig } from "../../shim/configuration/shim-jsonConfig";
 
 class config implements IConfig {
 
