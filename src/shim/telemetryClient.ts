@@ -248,7 +248,11 @@ export class TelemetryClient {
         const resendInterval: number | undefined = jsonConfig.enableResendInterval;
 
         if (jsonConfig.instrumentationKey || jsonConfig.endpointUrl) {
-            Logger.getInstance().warn("Please pass a connection string to the setup method to initialize the SDK client.")
+            Logger.getInstance().warn("Please pass a connection string to the setup method to initialize the SDK client.");
+        }
+
+        if (jsonConfig.connectionString) {
+            this._options.azureMonitorExporterConfig.connectionString = jsonConfig.connectionString;
         }
 
         if (jsonConfig.disableAppInsights) {

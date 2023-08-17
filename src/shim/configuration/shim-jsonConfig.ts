@@ -1,7 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
 import { Logger } from "../../shared/logging/logger";
-import { ApplicationInsightsOptions, LogInstrumentationsConfig } from "../../types";
 import { DistributedTracingModes, IDisabledExtendedMetrics, IJsonConfig } from "../types";
 import * as http from "http";
 import * as https from "https";
@@ -26,7 +25,6 @@ const ENV_noPatchModules = "APPLICATION_INSIGHTS_NO_PATCH_MODULES";
 export class ShimJsonConfig implements IJsonConfig {
     private static _instance: ShimJsonConfig;
 
-    // Shim values
     public endpointUrl: string;
     public connectionString: string;
     public instrumentationKey: string;
@@ -70,10 +68,6 @@ export class ShimJsonConfig implements IJsonConfig {
     public quickPulseHost: string;
     public enableWebInstrumentation: boolean;
     public enableAutoCollectExceptions: boolean;
-
-    // Distro values
-    public logInstrumentations: LogInstrumentationsConfig;
-    public extendedMetrics: { [type: string]: boolean };
 
     public static getInstance() {
         if (!ShimJsonConfig._instance) {
@@ -119,18 +113,21 @@ export class ShimJsonConfig implements IJsonConfig {
             if (configFile) {
                 if (path.isAbsolute(configFile)) {
                     tempDir = configFile;
+                    console.log("INSIDE SHIM JSON: ", tempDir);
                 } else {
                     tempDir = path.join(rootPath, configFile); // Relative path to applicationinsights folder
                 }
             }
             try {
                 jsonString = fs.readFileSync(tempDir, "utf8");
+                console.log("this worked!")
             } catch (err) {
                 Logger.getInstance().info("Failed to read JSON config file: ", err);
             }
         }
         try {
-            const jsonConfig: ApplicationInsightsOptions & IJsonConfig = JSON.parse(jsonString);
+            const jsonConfig: IJsonConfig = JSON.parse(jsonString);
+            this.connectionString = jsonConfig.connectionString;
             this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
             this.instrumentationKey = jsonConfig.instrumentationKey;
             this.endpointUrl = jsonConfig.endpointUrl;
