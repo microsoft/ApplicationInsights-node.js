@@ -89,12 +89,12 @@ export class ShimJsonConfig implements IJsonConfig {
         }
         this.disableAllExtendedMetrics = !!process.env[ENV_nativeMetricsDisableAll];
         this.extendedMetricDisablers = process.env[ENV_nativeMetricsDisablers];
-        this.proxyHttpUrl = process.env[ENV_http_proxy];
-        this.proxyHttpsUrl = process.env[ENV_https_proxy];
+        this.proxyHttpUrl = process.env[ENV_http_proxy] ? process.env[ENV_http_proxy] : this.proxyHttpUrl;
+        this.proxyHttpsUrl = process.env[ENV_https_proxy] ? process.env[ENV_https_proxy] : this.proxyHttpsUrl;
         this.noDiagnosticChannel = !!process.env[ENV_noDiagnosticChannel];
         this.disableStatsbeat = !!process.env[ENV_noStatsbeat];
         this.noHttpAgentKeepAlive = !!process.env[ENV_noHttpAgentKeepAlive];
-        this.noPatchModules = process.env[ENV_noPatchModules] || "";
+        this.noPatchModules = process.env[ENV_noPatchModules] ? process.env[ENV_noPatchModules] : this.noPatchModules || "";
     }
 
     private _loadJsonFile() {
@@ -113,14 +113,12 @@ export class ShimJsonConfig implements IJsonConfig {
             if (configFile) {
                 if (path.isAbsolute(configFile)) {
                     tempDir = configFile;
-                    console.log("INSIDE SHIM JSON: ", tempDir);
                 } else {
                     tempDir = path.join(rootPath, configFile); // Relative path to applicationinsights folder
                 }
             }
             try {
                 jsonString = fs.readFileSync(tempDir, "utf8");
-                console.log("this worked!")
             } catch (err) {
                 Logger.getInstance().info("Failed to read JSON config file: ", err);
             }
@@ -137,6 +135,8 @@ export class ShimJsonConfig implements IJsonConfig {
             this.enableLoggerErrorToTrace = jsonConfig.enableLoggerErrorToTrace;
             this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
             this.enableAutoCollectPerformance = jsonConfig.enableAutoCollectPerformance;
+            this.enableAutoCollectPreAggregatedMetrics = jsonConfig.enableAutoCollectPreAggregatedMetrics;
+            this.enableAutoDependencyCorrelation = jsonConfig.enableAutoDependencyCorrelation;
             this.maxBatchSize = jsonConfig.maxBatchSize;
             this.maxBatchIntervalMs = jsonConfig.maxBatchIntervalMs;
             this.disableAppInsights = jsonConfig.disableAppInsights;
@@ -160,6 +160,8 @@ export class ShimJsonConfig implements IJsonConfig {
             this.noDiagnosticChannel = jsonConfig.noDiagnosticChannel;
             this.noPatchModules = jsonConfig.noPatchModules;
             this.noHttpAgentKeepAlive = jsonConfig.noHttpAgentKeepAlive;
+            this.proxyHttpUrl = jsonConfig.proxyHttpUrl;
+            this.proxyHttpsUrl = jsonConfig.proxyHttpsUrl;
         } catch (err) {
             Logger.getInstance().info("Missing or invalid JSON config file: ", err);
         }

@@ -69,7 +69,7 @@ class config implements IConfig {
     public noDiagnosticChannel: boolean;
 
     constructor(setupString?: string) {
-        this.instrumentationKey = setupString.split("=")[1].split(";")[0];
+        this.instrumentationKey = setupString;
         // this.enableWebInstrumentation = this.enableWebInstrumentation || this.enableAutoWebSnippetInjection || false;
         this.webInstrumentationConfig = this.webInstrumentationConfig || null;
         // this.enableAutoWebSnippetInjection = this.enableWebInstrumentation;

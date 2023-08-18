@@ -1,8 +1,6 @@
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { ApplicationInsightsOptions, ExtendedMetricType } from "../../types";
 import * as http from "http";
-import { DiagLogLevel } from "@opentelemetry/api";
-import { Logger } from "../logging";
 
 export function setAutoCollectPerformance(options: ApplicationInsightsOptions, value: boolean, collectExtendedMetrics?: any) {
     if (options) {
@@ -98,5 +96,19 @@ export function enableAutoCollectExtendedMetrics(options: ApplicationInsightsOpt
         [ExtendedMetricType.gc]: value,
         [ExtendedMetricType.heap]: value,
         [ExtendedMetricType.loop]: value,
+    }
+}
+
+export function setMaxBatchIntervalMs(options: ApplicationInsightsOptions, value: number) {
+    options.otlpTraceExporterConfig = { ...options.otlpTraceExporterConfig, timeoutMillis: value };
+    options.otlpMetricExporterConfig = { ...options.otlpMetricExporterConfig, timeoutMillis: value };
+    options.otlpLogExporterConfig = { ...options.otlpLogExporterConfig, timeoutMillis: value };
+}
+
+export function setProxyUrl(options: ApplicationInsightsOptions, proxyUrlString: string) {
+    const proxyUrl = new URL(proxyUrlString);
+    options.azureMonitorExporterConfig.proxyOptions = {
+        host: proxyUrl.hostname,
+        port: Number(proxyUrl.port),
     }
 }

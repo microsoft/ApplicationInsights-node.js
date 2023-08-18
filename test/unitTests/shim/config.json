@@ -1,3 +1,29 @@
 {
-
+    "connectionString": "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/",
+    "endpointUrl": "testEndpointUrl",
+    "disableAllExtendedMetrics": false,
+    "disableAppInsights": false,
+    "samplingPercentage": 30,
+    "correlationHeaderExcludedDomains": [
+        "bing.com"
+    ],
+    "proxyHttpsUrl": "https://test:3000",
+    "enableAutoCollectExternalLoggers": true,
+    "enableAutoCollectConsole": true,
+    "enableAutoCollectExceptions": true,
+    "enableAutoCollectPerformance": true,
+    "enableAutoCollectExtendedMetrics": true,
+    "enableAutoCollectPreAggregatedMetrics": true,
+    "enableAutoCollectRequests": true,
+    "enableAutoCollectDependencies": true,
+    "enableAutoDependencyCorrelation": true,
+    "enableAutoCollectIncomingRequestAzureFunctions": false,
+    "noHttpAgentKeepAlive": false,
+    "distributedTracingMode": 0,
+    "enableInternalDebugLogging": false,
+    "enableInternalWarningLogging": false,
+    "extendedMetricDisablers": "gc,heap",
+    "noDiagnosticChannel": false,
+    "noPatchModules": "redis,azuresdk",
+    "maxBatchIntervalMs": 1000
 }

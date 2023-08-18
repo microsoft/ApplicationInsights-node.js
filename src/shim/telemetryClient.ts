@@ -91,6 +91,7 @@ export class TelemetryClient {
         }
 
         this._options.instrumentationOptions = {
+            ...this._options.instrumentationOptions,
             http: {
                 ...input?.instrumentationOptions?.http,
                 ignoreOutgoingUrls: this.config.correlationHeaderExcludedDomains,
@@ -188,6 +189,7 @@ export class TelemetryClient {
                 this._options.extendedMetrics[type] = false;
             }
             this._options.extendedMetrics = {
+                ...this._options.extendedMetrics,
                 [ExtendedMetricType.gc]: false,
                 [ExtendedMetricType.heap]: false,
                 [ExtendedMetricType.loop]: false,
@@ -207,11 +209,7 @@ export class TelemetryClient {
         }
 
         if (this.config.proxyHttpUrl || this.config.proxyHttpsUrl) {
-            const proxyUrl = new URL(this.config.proxyHttpsUrl || this.config.proxyHttpUrl);
-            this._options.azureMonitorExporterConfig.proxyOptions = {
-                host: proxyUrl.hostname,
-                port: Number(proxyUrl.port),
-            }
+            ConfigHelper.setProxyUrl(this._options, this.config.proxyHttpsUrl || this.config.proxyHttpUrl);
         }
 
         if (this.config.maxBatchSize) {
@@ -219,9 +217,7 @@ export class TelemetryClient {
         }
 
         if (this.config.maxBatchIntervalMs) {
-            this._options.otlpTraceExporterConfig = { ...this._options.otlpTraceExporterConfig, timeoutMillis: this.config.maxBatchIntervalMs };
-            this._options.otlpMetricExporterConfig = { ...this._options.otlpMetricExporterConfig, timeoutMillis: this.config.maxBatchIntervalMs };
-            this._options.otlpLogExporterConfig = { ...this._options.otlpLogExporterConfig, timeoutMillis: this.config.maxBatchIntervalMs };
+            ConfigHelper.setMaxBatchIntervalMs(this._options, this.config.maxBatchIntervalMs);
         }
 
         if (this.config.correlationIdRetryIntervalMs) {
@@ -300,6 +296,18 @@ export class TelemetryClient {
 
         if (jsonConfig.enableAutoCollectDependencies) {
             ConfigHelper.setAutoCollectDependencies(this._options, jsonConfig.enableAutoCollectDependencies);
+        }
+
+        if (typeof(jsonConfig.enableAutoDependencyCorrelation) === "boolean") {
+            Configuration.setAutoDependencyCorrelation(jsonConfig.enableAutoDependencyCorrelation);
+        }
+
+        if (jsonConfig.maxBatchIntervalMs) {
+            ConfigHelper.setMaxBatchIntervalMs(this._options, jsonConfig.maxBatchIntervalMs);
+        }
+
+        if (jsonConfig.proxyHttpUrl || jsonConfig.proxyHttpsUrl) {
+            ConfigHelper.setProxyUrl(this._options, jsonConfig.proxyHttpsUrl || jsonConfig.proxyHttpUrl);
         }
 
         if (jsonConfig.enableAutoCollectIncomingRequestAzureFunctions) {
