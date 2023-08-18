@@ -82,10 +82,6 @@ export class TelemetryClient {
             dispose();
         }
 
-        if (this.config.instrumentationKey || this.config.endpointUrl) {
-            Logger.getInstance().warn("If attempting to connect to an ApplicationInsights resource using instrumentationKey and endpointUrl, please pass a connection string to the setup method to initialize the SDK client instead.")
-        }
-
         if (this.config.samplingPercentage) {
             this._options.samplingRatio = this.config.samplingPercentage / 100;
         }
@@ -339,7 +335,27 @@ export class TelemetryClient {
         }
 
         if (jsonConfig.extendedMetricDisablers) {
-            this._options.extendedMetrics[jsonConfig.extendedMetricDisablers] = false;
+            const extendedMetricDisablers: string[] = jsonConfig.extendedMetricDisablers.split(",");
+            for (const extendedMetricDisabler of extendedMetricDisablers) {
+                if (extendedMetricDisabler === "gc") {
+                    this._options.extendedMetrics = {
+                        ...this._options.extendedMetrics,
+                        [ExtendedMetricType.gc]: false
+                    };
+                }
+                if (extendedMetricDisabler === "heap") {
+                    this._options.extendedMetrics = {
+                        ...this._options.extendedMetrics,
+                        [ExtendedMetricType.heap]: false
+                    };
+                }
+                if (extendedMetricDisabler === "loop") {
+                    this._options.extendedMetrics = {
+                        ...this._options.extendedMetrics,
+                        [ExtendedMetricType.loop]: false
+                    };
+                }
+            }
         }
 
         if (jsonConfig.noDiagnosticChannel) {
@@ -431,9 +447,18 @@ export class TelemetryClient {
         }
 
         if (jsonConfig.noHttpAgentKeepAlive === true) {
-            this._options.otlpTraceExporterConfig = { enabled: false };
-            this._options.otlpMetricExporterConfig = { enabled: false };
-            this._options.otlpLogExporterConfig = { enabled: false };
+            this._options.otlpTraceExporterConfig = {
+                ...this._options.otlpTraceExporterConfig,
+                enabled: false
+            };
+            this._options.otlpMetricExporterConfig = {
+                ...this._options.otlpMetricExporterConfig,
+                enabled: false
+            };
+            this._options.otlpLogExporterConfig = {
+                ...this._options.otlpLogExporterConfig,
+                enabled: false
+            };
         }
     }
     

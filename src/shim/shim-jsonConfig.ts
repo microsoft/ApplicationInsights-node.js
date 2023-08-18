@@ -91,9 +91,9 @@ export class ShimJsonConfig implements IJsonConfig {
         this.extendedMetricDisablers = process.env[ENV_nativeMetricsDisablers];
         this.proxyHttpUrl = process.env[ENV_http_proxy] ? process.env[ENV_http_proxy] : this.proxyHttpUrl;
         this.proxyHttpsUrl = process.env[ENV_https_proxy] ? process.env[ENV_https_proxy] : this.proxyHttpsUrl;
-        this.noDiagnosticChannel = !!process.env[ENV_noDiagnosticChannel];
+        this.noDiagnosticChannel = process.env[ENV_noDiagnosticChannel] ? !!process.env[ENV_noDiagnosticChannel] : this.noDiagnosticChannel;
         this.disableStatsbeat = !!process.env[ENV_noStatsbeat];
-        this.noHttpAgentKeepAlive = !!process.env[ENV_noHttpAgentKeepAlive];
+        this.noHttpAgentKeepAlive = process.env[ENV_noHttpAgentKeepAlive] ? !!process.env[ENV_noHttpAgentKeepAlive] : this.noHttpAgentKeepAlive;
         this.noPatchModules = process.env[ENV_noPatchModules] ? process.env[ENV_noPatchModules] : this.noPatchModules || "";
     }
 
