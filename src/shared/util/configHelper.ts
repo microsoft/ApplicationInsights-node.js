@@ -112,3 +112,27 @@ export function setProxyUrl(options: ApplicationInsightsOptions, proxyUrlString:
         port: Number(proxyUrl.port),
     }
 }
+
+export function setExtendedMetricDisablers(options: ApplicationInsightsOptions, disablers: string) {
+    const extendedMetricDisablers: string[] = disablers.split(",");
+    for (const extendedMetricDisabler of extendedMetricDisablers) {
+        if (extendedMetricDisabler === "gc") {
+            options.extendedMetrics = {
+                ...options.extendedMetrics,
+                [ExtendedMetricType.gc]: false
+            };
+        }
+        if (extendedMetricDisabler === "heap") {
+            options.extendedMetrics = {
+                ...options.extendedMetrics,
+                [ExtendedMetricType.heap]: false
+            };
+        }
+        if (extendedMetricDisabler === "loop") {
+            options.extendedMetrics = {
+                ...options.extendedMetrics,
+                [ExtendedMetricType.loop]: false
+            };
+        }
+    }
+}

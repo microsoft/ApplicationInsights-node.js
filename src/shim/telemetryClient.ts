@@ -192,12 +192,12 @@ export class TelemetryClient {
             };
         }
 
-        if (typeof(this.config.disableStatsbeat) === "boolean") {
+        if (typeof(this.config.disableStatsbeat || jsonConfig.disableStatsbeat) === "boolean") {
             Logger.getInstance().warn("The disableStatsbeat configuration option is deprecated.");
         }
 
         if (this.config.extendedMetricDisablers) {
-            this._options.extendedMetrics[this.config.extendedMetricDisablers] = false;
+            ConfigHelper.setExtendedMetricDisablers(this._options, this.config.extendedMetricDisablers);
         }
 
         if (this.config.ignoreLegacyHeaders === false || jsonConfig.ignoreLegacyHeaders === false) {
@@ -208,7 +208,7 @@ export class TelemetryClient {
             ConfigHelper.setProxyUrl(this._options, this.config.proxyHttpsUrl || this.config.proxyHttpUrl);
         }
 
-        if (this.config.maxBatchSize) {
+        if (this.config.maxBatchSize || jsonConfig.maxBatchSize) {
             Logger.getInstance().warn("The maxBatchSize configuration option is not supported by the shim.");
         }
 
@@ -216,7 +216,7 @@ export class TelemetryClient {
             ConfigHelper.setMaxBatchIntervalMs(this._options, this.config.maxBatchIntervalMs);
         }
 
-        if (this.config.correlationIdRetryIntervalMs) {
+        if (this.config.correlationIdRetryIntervalMs || jsonConfig.correlationIdRetryIntervalMs) {
             Logger.getInstance().warn("The correlationIdRetryIntervalMs configuration option is not supported by the shim.");
         }
 
@@ -224,11 +224,14 @@ export class TelemetryClient {
             Logger.getInstance().warn("The enableLoggerErrorToTrace configuration option is not supported by the shim.");
         }
 
-        if (this.config.httpAgent || this.config.httpsAgent) {
+        if (this.config.httpAgent || this.config.httpsAgent || jsonConfig.httpAgent || jsonConfig.httpsAgent) {
             Logger.getInstance().warn("The httpAgent and httpsAgent configuration options are not supported by the shim.");
         }
 
-        if (this.config.enableWebInstrumentation || this.config.webInstrumentationConfig || this.config.webInstrumentationSrc || this.config.webInstrumentationConnectionString) {
+        if (
+            this.config.enableWebInstrumentation || this.config.webInstrumentationConfig || this.config.webInstrumentationSrc || this.config.webInstrumentationConnectionString ||
+            jsonConfig.enableWebInstrumentation || jsonConfig.webInstrumentationConfig || jsonConfig.webInstrumentationSrc || jsonConfig.webInstrumentationConnectionString
+        ) {
             Logger.getInstance().warn("The webInstrumentation configuration options are not supported by the shim.");
         }
     }
@@ -335,27 +338,7 @@ export class TelemetryClient {
         }
 
         if (jsonConfig.extendedMetricDisablers) {
-            const extendedMetricDisablers: string[] = jsonConfig.extendedMetricDisablers.split(",");
-            for (const extendedMetricDisabler of extendedMetricDisablers) {
-                if (extendedMetricDisabler === "gc") {
-                    this._options.extendedMetrics = {
-                        ...this._options.extendedMetrics,
-                        [ExtendedMetricType.gc]: false
-                    };
-                }
-                if (extendedMetricDisabler === "heap") {
-                    this._options.extendedMetrics = {
-                        ...this._options.extendedMetrics,
-                        [ExtendedMetricType.heap]: false
-                    };
-                }
-                if (extendedMetricDisabler === "loop") {
-                    this._options.extendedMetrics = {
-                        ...this._options.extendedMetrics,
-                        [ExtendedMetricType.loop]: false
-                    };
-                }
-            }
+            ConfigHelper.setExtendedMetricDisablers(this._options, jsonConfig.extendedMetricDisablers);
         }
 
         if (jsonConfig.noDiagnosticChannel) {

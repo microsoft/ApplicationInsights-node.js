@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { Logger } from "../shared/logging/logger";
-import { DistributedTracingModes, IDisabledExtendedMetrics, IJsonConfig } from "./types";
+import { DistributedTracingModes, IDisabledExtendedMetrics, IJsonConfig, IWebInstrumentationConfig } from "./types";
 import * as http from "http";
 import * as https from "https";
 import * as azureCoreAuth from "@azure/core-auth";
@@ -68,6 +68,11 @@ export class ShimJsonConfig implements IJsonConfig {
     public quickPulseHost: string;
     public enableWebInstrumentation: boolean;
     public enableAutoCollectExceptions: boolean;
+    public webInstrumentationConnectionString?: string;
+    public webInstrumentationConfig: IWebInstrumentationConfig[];
+    public webInstrumentationSrc: string;
+    public enableAutoWebSnippetInjection?: boolean;
+    public webSnippetConnectionString?: string;
 
     public static getInstance() {
         if (!ShimJsonConfig._instance) {
@@ -162,6 +167,11 @@ export class ShimJsonConfig implements IJsonConfig {
             this.noHttpAgentKeepAlive = jsonConfig.noHttpAgentKeepAlive;
             this.proxyHttpUrl = jsonConfig.proxyHttpUrl;
             this.proxyHttpsUrl = jsonConfig.proxyHttpsUrl;
+            this.webInstrumentationConnectionString = jsonConfig.webInstrumentationConnectionString;
+            this.webInstrumentationConfig = jsonConfig.webInstrumentationConfig;
+            this.webInstrumentationSrc = jsonConfig.webInstrumentationSrc;
+            this.enableAutoWebSnippetInjection = jsonConfig.enableAutoWebSnippetInjection;
+            this.webSnippetConnectionString = jsonConfig.webSnippetConnectionString;
         } catch (err) {
             Logger.getInstance().info("Missing or invalid JSON config file: ", err);
         }
