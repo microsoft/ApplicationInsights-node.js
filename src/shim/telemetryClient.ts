@@ -20,6 +20,7 @@ import { IConfig } from "../shim/types";
 import Config = require("./config");
 import { dispose, Configuration, _setupCalled } from "./shim-applicationinsights";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
+import { ShimJsonConfig } from "./shim-jsonConfig";
 import ConfigHelper = require("../shared/util/configHelper");
 
 /**
@@ -70,7 +71,7 @@ export class TelemetryClient {
      * Parse the config property to set the appropriate values on the ApplicationInsightsOptions
      * @param input 
      */
-    private _parseConfig(input?: ApplicationInsightsOptions) {
+    private _parseConfig(jsonConfig: ShimJsonConfig, input?: ApplicationInsightsOptions) {
         // If we have a defined input (in the case that we are initializing from the start method) then we should use that
         if (input) {
             this._options = input;
@@ -81,13 +82,12 @@ export class TelemetryClient {
             dispose();
         }
 
-        if (this.config.instrumentationKey && this.config.endpointUrl) {
-            this._options.azureMonitorExporterConfig.connectionString = `InstrumentationKey=${this.config.instrumentationKey};IngestionEndpoint=${this.config.endpointUrl}`;
+        if (this.config.samplingPercentage) {
+            this._options.samplingRatio = this.config.samplingPercentage / 100;
         }
 
-        this._options.samplingRatio = this.config.samplingPercentage ? (this.config.samplingPercentage / 100) : 1;
-
         this._options.instrumentationOptions = {
+            ...this._options.instrumentationOptions,
             http: {
                 ...input?.instrumentationOptions?.http,
                 ignoreOutgoingUrls: this.config.correlationHeaderExcludedDomains,
@@ -99,11 +99,7 @@ export class TelemetryClient {
         }
 
         if (typeof(this.config.enableAutoCollectConsole) === "boolean") {
-            const setting: boolean = this.config.enableAutoCollectConsole;
-            this._options.logInstrumentations = {
-                ...this._options.logInstrumentations,
-                console: { enabled: setting },
-            }
+            ConfigHelper.enableAutoCollectConsole(this._options, this.config.enableAutoCollectConsole);
         }
 
         if (typeof(this.config.enableAutoCollectExceptions) === "boolean") {
@@ -123,18 +119,17 @@ export class TelemetryClient {
         }
 
         if (typeof(this.config.enableAutoCollectExternalLoggers) === "boolean") {
-            this._options.logInstrumentations = {
-                ...this._options.logInstrumentations,
-                winston: { enabled: this.config.enableAutoCollectExternalLoggers },
-                bunyan: { enabled: this.config.enableAutoCollectExternalLoggers },
-            }
+            ConfigHelper.enableAutoCollectExternalLoggers(this._options, this.config.enableAutoCollectExternalLoggers);
         }
 
         if (typeof(this.config.enableAutoCollectPreAggregatedMetrics) === "boolean") {
             this._options.enableAutoCollectStandardMetrics = this.config.enableAutoCollectPreAggregatedMetrics;
         }
 
-        if (typeof(this.config.enableAutoCollectHeartbeat) === "boolean") {
+        if (
+            typeof(this.config.enableAutoCollectHeartbeat) === "boolean" ||
+            typeof(jsonConfig.enableAutoCollectHeartbeat) === "boolean"
+        ) {
             Configuration.setAutoCollectHeartbeat(this.config.enableAutoCollectHeartbeat);
         }
 
@@ -154,7 +149,7 @@ export class TelemetryClient {
             Configuration.setUseDiskRetryCaching(this.config.enableUseDiskRetryCaching);
         }
 
-        if (this.config.enableUseAsyncHooks === false) {
+        if (this.config.enableUseAsyncHooks === false || jsonConfig.enableUseAsyncHooks === false) {
             Logger.getInstance().warn("The use of non async hooks is no longer supported.");
         }
 
@@ -163,12 +158,7 @@ export class TelemetryClient {
         }
 
         if (typeof(this.config.enableAutoCollectExtendedMetrics) === "boolean") {
-            const setting = this.config.enableAutoCollectExtendedMetrics;
-            this._options.extendedMetrics = {
-                [ExtendedMetricType.gc]: setting,
-                [ExtendedMetricType.heap]: setting,
-                [ExtendedMetricType.loop]: setting,
-            }
+            ConfigHelper.enableAutoCollectExtendedMetrics(this._options, this.config.enableAutoCollectExtendedMetrics);
         }
 
         if (this.config.enableResendInterval) {
@@ -180,74 +170,278 @@ export class TelemetryClient {
         }
 
         if (typeof(this.config.enableInternalDebugLogging) === "boolean") {
-            if (this.config.enableInternalDebugLogging) {
-                Logger.getInstance().updateLogLevel(DiagLogLevel.DEBUG);
-            }
+            Logger.getInstance().updateLogLevel(DiagLogLevel.DEBUG);
         }
 
         if (typeof(this.config.enableInternalWarningLogging) === "boolean") {
-            if (this.config.enableInternalWarningLogging) {
-                Logger.getInstance().updateLogLevel(DiagLogLevel.WARN);
-            }
+            Logger.getInstance().updateLogLevel(DiagLogLevel.WARN);
         }
 
-        // Disable or enable all extended metrics
-        if (this.config.disableAllExtendedMetrics === true) {
+        if (
+            this.config.disableAllExtendedMetrics === true ||
+            jsonConfig.disableAllExtendedMetrics === true
+        ) {
             for (const type in this._options.extendedMetrics) {
                 this._options.extendedMetrics[type] = false;
             }
             this._options.extendedMetrics = {
+                ...this._options.extendedMetrics,
                 [ExtendedMetricType.gc]: false,
                 [ExtendedMetricType.heap]: false,
                 [ExtendedMetricType.loop]: false,
             };
         }
 
-        if (typeof(this.config.disableStatsbeat) === "boolean") {
+        if (typeof(this.config.disableStatsbeat || jsonConfig.disableStatsbeat) === "boolean") {
             Logger.getInstance().warn("The disableStatsbeat configuration option is deprecated.");
         }
 
         if (this.config.extendedMetricDisablers) {
-            const disabler = this.config.extendedMetricDisablers;
-            this._options.extendedMetrics[disabler] = false;
+            ConfigHelper.setExtendedMetricDisablers(this._options, this.config.extendedMetricDisablers);
         }
 
-        if (this.config.ignoreLegacyHeaders === false) {
+        if (this.config.ignoreLegacyHeaders === false || jsonConfig.ignoreLegacyHeaders === false) {
             Logger.getInstance().warn("LegacyHeaders are not supported by the shim.");
         }
 
         if (this.config.proxyHttpUrl || this.config.proxyHttpsUrl) {
-            const proxyUrl = new URL(this.config.proxyHttpsUrl || this.config.proxyHttpUrl);
-            this._options.azureMonitorExporterConfig.proxyOptions = {
-                host: proxyUrl.hostname,
-                port: Number(proxyUrl.port),
-            }
+            ConfigHelper.setProxyUrl(this._options, this.config.proxyHttpsUrl || this.config.proxyHttpUrl);
         }
 
-        if (this.config.maxBatchSize) {
+        if (this.config.maxBatchSize || jsonConfig.maxBatchSize) {
             Logger.getInstance().warn("The maxBatchSize configuration option is not supported by the shim.");
         }
 
         if (this.config.maxBatchIntervalMs) {
-            this._options.otlpTraceExporterConfig = { ...this._options.otlpTraceExporterConfig, timeoutMillis: this.config.maxBatchIntervalMs };
-            this._options.otlpMetricExporterConfig = { ...this._options.otlpMetricExporterConfig, timeoutMillis: this.config.maxBatchIntervalMs };
-            this._options.otlpLogExporterConfig = { ...this._options.otlpLogExporterConfig, timeoutMillis: this.config.maxBatchIntervalMs };
+            ConfigHelper.setMaxBatchIntervalMs(this._options, this.config.maxBatchIntervalMs);
         }
 
-        if (this.config.correlationIdRetryIntervalMs) {
+        if (this.config.correlationIdRetryIntervalMs || jsonConfig.correlationIdRetryIntervalMs) {
             Logger.getInstance().warn("The correlationIdRetryIntervalMs configuration option is not supported by the shim.");
         }
 
-        if (this.config.enableLoggerErrorToTrace) {
+        if (this.config.enableLoggerErrorToTrace || jsonConfig.enableLoggerErrorToTrace) {
             Logger.getInstance().warn("The enableLoggerErrorToTrace configuration option is not supported by the shim.");
         }
 
-        if (this.config.httpAgent || this.config.httpsAgent) {
+        if (this.config.httpAgent || this.config.httpsAgent || jsonConfig.httpAgent || jsonConfig.httpsAgent) {
             Logger.getInstance().warn("The httpAgent and httpsAgent configuration options are not supported by the shim.");
         }
 
-        if (this.config.enableWebInstrumentation || this.config.webInstrumentationConfig || this.config.webInstrumentationSrc || this.config.webInstrumentationConnectionString) {
+        if (
+            this.config.enableWebInstrumentation || this.config.webInstrumentationConfig || this.config.webInstrumentationSrc || this.config.webInstrumentationConnectionString ||
+            jsonConfig.enableWebInstrumentation || jsonConfig.webInstrumentationConfig || jsonConfig.webInstrumentationSrc || jsonConfig.webInstrumentationConnectionString
+        ) {
             Logger.getInstance().warn("The webInstrumentation configuration options are not supported by the shim.");
+        }
+    }
+
+    /**
+     * Parse the JSON config file to set the appropriate values on the ApplicationInsightsOptions
+     */
+    private _parseJson(jsonConfig: ShimJsonConfig) {
+        const resendInterval: number | undefined = jsonConfig.enableResendInterval;
+
+        if (jsonConfig.instrumentationKey || jsonConfig.endpointUrl) {
+            Logger.getInstance().warn("Please pass a connection string to the setup method to initialize the SDK client.");
+        }
+
+        if (jsonConfig.connectionString) {
+            this._options.azureMonitorExporterConfig.connectionString = jsonConfig.connectionString;
+        }
+
+        if (jsonConfig.disableAppInsights) {
+            dispose();
+        }
+
+        if (jsonConfig.samplingPercentage) {
+            this._options.samplingRatio = jsonConfig.samplingPercentage / 100;
+        }
+
+        this._options.instrumentationOptions = {
+            http: {
+                ...this._options?.instrumentationOptions?.http,
+                ignoreOutgoingUrls: jsonConfig.correlationHeaderExcludedDomains,
+            } as HttpInstrumentationConfig,
+        }
+
+        if (jsonConfig.distributedTracingMode) {
+            Configuration.setDistributedTracingMode(jsonConfig.distributedTracingMode);
+        }
+
+        if (jsonConfig.enableAutoCollectExternalLoggers) {
+            ConfigHelper.enableAutoCollectExternalLoggers(this._options, jsonConfig.enableAutoCollectExternalLoggers);
+        }
+
+        if (jsonConfig.enableAutoCollectConsole) {
+            ConfigHelper.enableAutoCollectConsole(this._options, jsonConfig.enableAutoCollectConsole);
+        }
+
+        if (jsonConfig.enableAutoCollectExceptions) {
+            this._options.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
+        }
+
+        if (jsonConfig.enableAutoCollectPerformance) {
+            ConfigHelper.setAutoCollectPerformance(this._options, jsonConfig.enableAutoCollectPerformance);
+        }
+
+        if (typeof(jsonConfig.enableAutoCollectExtendedMetrics) === "boolean") {
+            ConfigHelper.enableAutoCollectExtendedMetrics(this._options, jsonConfig.enableAutoCollectExtendedMetrics);
+        }
+
+        if (jsonConfig.enableAutoCollectRequests) {
+            ConfigHelper.setAutoCollectRequests(this._options, jsonConfig.enableAutoCollectRequests);
+        }
+
+        if (jsonConfig.enableAutoCollectDependencies) {
+            ConfigHelper.setAutoCollectDependencies(this._options, jsonConfig.enableAutoCollectDependencies);
+        }
+
+        if (typeof(jsonConfig.enableAutoDependencyCorrelation) === "boolean") {
+            Configuration.setAutoDependencyCorrelation(jsonConfig.enableAutoDependencyCorrelation);
+        }
+
+        if (jsonConfig.maxBatchIntervalMs) {
+            ConfigHelper.setMaxBatchIntervalMs(this._options, jsonConfig.maxBatchIntervalMs);
+        }
+
+        if (jsonConfig.proxyHttpUrl || jsonConfig.proxyHttpsUrl) {
+            ConfigHelper.setProxyUrl(this._options, jsonConfig.proxyHttpsUrl || jsonConfig.proxyHttpUrl);
+        }
+
+        if (jsonConfig.enableAutoCollectIncomingRequestAzureFunctions) {
+            Configuration.setAutoCollectIncomingRequestAzureFunctions(jsonConfig.enableAutoCollectIncomingRequestAzureFunctions);
+        }
+
+        if (jsonConfig.enableUseDiskRetryCaching) {
+            Configuration.setUseDiskRetryCaching(jsonConfig.enableUseDiskRetryCaching);
+        }
+
+        if (jsonConfig.enableResendInterval) {
+            Configuration.setUseDiskRetryCaching(true, jsonConfig.enableResendInterval);
+        }
+
+        if (jsonConfig.enableMaxBytesOnDisk) {
+            Configuration.setUseDiskRetryCaching(true, resendInterval, jsonConfig.enableMaxBytesOnDisk);
+        }
+
+        if (jsonConfig.enableInternalDebugLogging) {
+            Logger.getInstance().updateLogLevel(DiagLogLevel.DEBUG);
+        }
+
+        if (jsonConfig.enableInternalWarningLogging) {
+            Logger.getInstance().updateLogLevel(DiagLogLevel.WARN);
+        }
+
+        if (jsonConfig.enableSendLiveMetrics) {
+            Configuration.setSendLiveMetrics(jsonConfig.enableSendLiveMetrics);
+        }
+
+        if (jsonConfig.extendedMetricDisablers) {
+            ConfigHelper.setExtendedMetricDisablers(this._options, jsonConfig.extendedMetricDisablers);
+        }
+
+        if (jsonConfig.noDiagnosticChannel) {
+            this._options.instrumentationOptions = {
+                azureSdk: { enabled: false },
+                http: { enabled: false },
+                mongoDb: { enabled: false },
+                mySql: { enabled: false },
+                postgreSql: { enabled: false },
+                redis: { enabled: false },
+                redis4: { enabled: false },
+            }
+            this._options.logInstrumentations = {
+                console: { enabled: false },
+                winston: { enabled: false },
+                bunyan: { enabled: false },
+            }
+        }
+
+        if (jsonConfig.noPatchModules) {
+            const modules: string[] = jsonConfig.noPatchModules.split(",");
+            for (const module of modules) {
+                switch (module) {
+                    case "console":
+                        this._options.logInstrumentations = {
+                            ...this._options.logInstrumentations,
+                            console: { enabled: false },
+                        }
+                        break;
+                    case "winston":
+                        this._options.logInstrumentations = {
+                            ...this._options.logInstrumentations,
+                            winston: { enabled: false },
+                        }
+                        break;
+                    case "bunyan":
+                        this._options.logInstrumentations = {
+                            ...this._options.logInstrumentations,
+                            bunyan: { enabled: false },
+                        }
+                        break;
+                    case "azuresdk":
+                        this._options.instrumentationOptions = {
+                            ...this._options.instrumentationOptions,
+                            azureSdk: { enabled: false },
+                        }
+                        break;
+                    case "http":
+                        this._options.instrumentationOptions = {
+                            ...this._options.instrumentationOptions,
+                            http: { enabled: false },
+                        }
+                        break;
+                    case "mongodb":
+                        this._options.instrumentationOptions = {
+                            ...this._options.instrumentationOptions,
+                            mongoDb: { enabled: false },
+                        }
+                        break;
+                    case "mysql":
+                        this._options.instrumentationOptions = {
+                            ...this._options.instrumentationOptions,
+                            mySql: { enabled: false },
+                        }
+                        break;
+                    case "postgresql":
+                        this._options.instrumentationOptions = {
+                            ...this._options.instrumentationOptions,
+                            postgreSql: { enabled: false },
+                        }
+                        break;
+                    case "redis":
+                        this._options.instrumentationOptions = {
+                            ...this._options.instrumentationOptions,
+                            redis: { enabled: false },
+                        }
+                        break;
+                    case "redis4":
+                        this._options.instrumentationOptions = {
+                            ...this._options.instrumentationOptions,
+                            redis4: { enabled: false },
+                        }
+                        break;
+                    default:
+                        Logger.getInstance().warn(`Unknown module ${module} passed to noPatchModules.`);
+                        break;
+                }
+            }
+        }
+
+        if (jsonConfig.noHttpAgentKeepAlive === true) {
+            this._options.otlpTraceExporterConfig = {
+                ...this._options.otlpTraceExporterConfig,
+                enabled: false
+            };
+            this._options.otlpMetricExporterConfig = {
+                ...this._options.otlpMetricExporterConfig,
+                enabled: false
+            };
+            this._options.otlpLogExporterConfig = {
+                ...this._options.otlpLogExporterConfig,
+                enabled: false
+            };
         }
     }
     
@@ -258,7 +452,10 @@ export class TelemetryClient {
     public start(input?: ApplicationInsightsOptions) {
         // Only parse config if we're running the shim
         if (_setupCalled) {
-            this._parseConfig(input);
+            const jsonConfig = ShimJsonConfig.getInstance();
+            // Create the internalConfig based on the JSONConfig, and override with the client.config if defined
+            this._parseJson(jsonConfig);
+            this._parseConfig(jsonConfig, input);
         }
         this._internalConfig = new InternalConfig(this._options);
         this._client = new AzureMonitorOpenTelemetryClient(this._options);
