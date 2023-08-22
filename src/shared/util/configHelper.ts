@@ -26,7 +26,7 @@ export function setAutoCollectRequests(options: ApplicationInsightsOptions, valu
                     ...options.instrumentationOptions?.http,
                     enabled: true,
                     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                    ignoreIncomingRequestHook: (request: http.RequestOptions) => true,
+                    ignoreIncomingRequestHook: (request: http.IncomingMessage) => true,
                 } as HttpInstrumentationConfig
             };
         } else {
@@ -35,7 +35,7 @@ export function setAutoCollectRequests(options: ApplicationInsightsOptions, valu
                     ...options.instrumentationOptions?.http,
                     enabled: true,
                     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                    ignoreIncomingRequestHook: (request: http.RequestOptions) => false,
+                    ignoreIncomingRequestHook: (request: http.IncomingMessage) => false,
                 } as HttpInstrumentationConfig
             };
         }
