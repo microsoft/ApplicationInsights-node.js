@@ -22,6 +22,9 @@ import { dispose, Configuration, _setupCalled } from "./shim-applicationinsights
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { ShimJsonConfig } from "./shim-jsonConfig";
 import ConfigHelper = require("../shared/util/configHelper");
+import { AzureMonitorTraceExporter } from "@azure/monitor-opentelemetry-exporter";
+import { AttributeSpanProcessor } from "../shared/util/attributeSpanProcessor";
+import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -34,6 +37,7 @@ export class TelemetryClient {
     private _console: AutoCollectConsole;
     private _exceptions: AutoCollectExceptions;
     private _idGenerator: IdGenerator;
+    private _attributeProcessor: AttributeSpanProcessor;
     public context: Context;
     public commonProperties: { [key: string]: string }; // TODO: Add setter so Resources are updated
     public config: IConfig;
@@ -465,6 +469,10 @@ export class TelemetryClient {
         }
         this._idGenerator = new RandomIdGenerator();
         this._console.enable(this._internalConfig.logInstrumentations);
+
+        this._attributeProcessor = new AttributeSpanProcessor(new AzureMonitorTraceExporter(this._options.azureMonitorExporterConfig), this.context.tags);
+        const tracerProvider = this._client.getTracerProvider() as NodeTracerProvider;
+        tracerProvider.addSpanProcessor(this._attributeProcessor);
     }
 
     public getAzureMonitorOpenTelemetryClient(): AzureMonitorOpenTelemetryClient {

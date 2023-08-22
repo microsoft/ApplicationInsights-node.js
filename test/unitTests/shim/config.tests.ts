@@ -103,6 +103,13 @@ describe("shim/configuration/config", () => {
             assert.equal(JSON.stringify(telemetryClient["_options"].extendedMetrics), JSON.stringify({ gc: false, heap: false, loop: false }));
         });
 
+        it("should set context tags", () => {
+            const telemetryClient = new TelemetryClient(connectionString);
+            telemetryClient.context.tags = { "ai.cloud.role": "testRole", "ai.cloud.roleInstance": "testRoleInstance" };
+            telemetryClient.start();
+            telemetryClient["_attributeProcessor"]["_attributes"] = { "ai.cloud.role": "testRole", "ai.cloud.roleInstance": "testRoleInstance" };
+        });
+
         it("should disableAppInsights", () => {
             applicationInsights.setup(connectionString);
             applicationInsights.defaultClient.config.disableAppInsights = true;
