@@ -63,7 +63,10 @@ export function setup(setupString?: string) {
 export function start() {
     // Creates a new TelemetryClient that uses the _config we configure via the other functions in this file
     const httpOptions: HttpInstrumentationConfig | undefined = _options?.instrumentationOptions?.http;
-    if (httpOptions?.ignoreIncomingRequestHook && httpOptions?.ignoreOutgoingRequestHook) {
+    const ignoreIncomingRequestHooks: boolean = httpOptions?.ignoreIncomingRequestHook(undefined);
+    const ignoreOutgoingRequestHooks: boolean = httpOptions?.ignoreOutgoingRequestHook(undefined);
+
+    if (ignoreIncomingRequestHooks && ignoreOutgoingRequestHooks) {
         _options.instrumentationOptions.http.enabled = false;
         Logger.getInstance().info("Both ignoreIncomingRequestHook and ignoreOutgoingRequestHook are set to true. Disabling http instrumentation.");
     }
