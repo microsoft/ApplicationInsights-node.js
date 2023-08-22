@@ -470,9 +470,12 @@ export class TelemetryClient {
         this._idGenerator = new RandomIdGenerator();
         this._console.enable(this._internalConfig.logInstrumentations);
 
-        this._attributeProcessor = new AttributeSpanProcessor(new AzureMonitorTraceExporter(this._options.azureMonitorExporterConfig), this.context.tags);
-        const tracerProvider = this._client.getTracerProvider() as NodeTracerProvider;
-        tracerProvider.addSpanProcessor(this._attributeProcessor);
+        // Only support attribute processing in the shim
+        if (_setupCalled) {
+            this._attributeProcessor = new AttributeSpanProcessor(new AzureMonitorTraceExporter(this._options.azureMonitorExporterConfig), this.context.tags);
+            const tracerProvider = this._client.getTracerProvider() as NodeTracerProvider;
+            tracerProvider.addSpanProcessor(this._attributeProcessor);
+        }
     }
 
     public getAzureMonitorOpenTelemetryClient(): AzureMonitorOpenTelemetryClient {
