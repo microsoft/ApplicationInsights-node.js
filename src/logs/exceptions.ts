@@ -1,5 +1,7 @@
-import { ApplicationInsightsClient } from "../applicationInsightsClient";
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for details.
 import { Util } from "../shared/util";
+import { LogApi } from "./api";
 
 type ExceptionHandle = "uncaughtExceptionMonitor" | "uncaughtException" | "unhandledRejection";
 const UNCAUGHT_EXCEPTION_MONITOR_HANDLER_NAME: ExceptionHandle = "uncaughtExceptionMonitor";
@@ -12,9 +14,9 @@ export class AutoCollectExceptions {
     private _canUseUncaughtExceptionMonitor = false;
     private _exceptionListenerHandle?: (error: Error | undefined) => void;
     private _rejectionListenerHandle?: (error: Error | undefined) => void;
-    private _client: ApplicationInsightsClient;
+    private _client: LogApi;
 
-    constructor(client: ApplicationInsightsClient) {
+    constructor(client: LogApi) {
         this._client = client;
         // Only use for 13.7.0+
         const nodeVer = process.versions.node.split(".");
@@ -91,7 +93,6 @@ export class AutoCollectExceptions {
     ) {
         if (this._client) {
             this._client.trackException({ exception: error });
-            this._client.flush();
             // only rethrow when we are the only listener
             if (reThrow && name && process.listeners(name as any).length === 1) {
                 // eslint-disable-next-line no-console

@@ -3,9 +3,9 @@
 import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
 import { console as consolePub } from "diagnostic-channel-publishers";
 import { KnownSeverityLevel } from "../../declarations/generated";
-import { ApplicationInsightsClient } from "../../applicationInsightsClient";
+import { LogApi } from "../api";
 
-let clients: ApplicationInsightsClient[] = [];
+let clients: LogApi[] = [];
 
 const subscriber = (event: IStandardEvent<consolePub.IConsoleData>) => {
     let message = event.data.message as Error | string;
@@ -27,7 +27,7 @@ const subscriber = (event: IStandardEvent<consolePub.IConsoleData>) => {
     });
 };
 
-export function enable(enabled: boolean, client: ApplicationInsightsClient) {
+export function enable(enabled: boolean, client: LogApi) {
     if (enabled) {
         const handlerFound = clients.find((c) => c === client);
         if (handlerFound) {

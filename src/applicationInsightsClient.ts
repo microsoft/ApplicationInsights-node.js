@@ -5,11 +5,9 @@
 import { AzureMonitorOpenTelemetryClient } from "@azure/monitor-opentelemetry";
 import { Logger } from "./shared/logging";
 import { AutoCollectConsole } from "./logs/console";
-import { AutoCollectExceptions, parseStack } from "./logs/exceptions";
-import { ApplicationInsightsOptions, ExtendedMetricType } from "./types";
+import { AutoCollectExceptions } from "./logs/exceptions";
+import { ApplicationInsightsOptions } from "./types";
 import { ApplicationInsightsConfig } from "./shared/configuration/config";
-import { IConfig } from "./shim/types";
-import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 
 
 
