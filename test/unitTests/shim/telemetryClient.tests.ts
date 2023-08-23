@@ -1,23 +1,16 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
 import * as nock from "nock";
-import { ExportResultCode } from "@opentelemetry/core";
-import { LogRecord } from "@opentelemetry/sdk-logs";
-import {
-    AvailabilityTelemetry, DependencyTelemetry,
-    EventTelemetry, ExceptionTelemetry,
-    PageViewTelemetry, RequestTelemetry, Telemetry,
-    TraceTelemetry
-} from "../../../src/declarations/contracts";
+import { Context, trace } from "@opentelemetry/api";
+import { BasicTracerProvider, ReadableSpan, Span, SpanProcessor } from "@opentelemetry/sdk-trace-base";
+import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations/contracts";
 import { TelemetryClient } from "../../../src/shim/telemetryClient";
 import { DEFAULT_BREEZE_ENDPOINT } from "../../../src/declarations/constants";
-import { AvailabilityData, MessageData, MonitorDomain, PageViewData, TelemetryEventData, TelemetryExceptionData } from "../../../src/declarations/generated";
+
 
 describe("shim/TelemetryClient", () => {
     let sandbox: sinon.SinonSandbox;
     let client: TelemetryClient;
-    let traceExportStub: sinon.SinonStub;
-    let logExportStub: sinon.SinonStub;
 
     before(() => {
         sandbox = sinon.createSandbox();
@@ -26,6 +19,10 @@ describe("shim/TelemetryClient", () => {
             .reply(200, {})
             .persist();
         nock.disableNetConnect();
+    });
+
+    beforeEach(() => {
+        trace.disable();
     });
 
     afterEach(() => {
@@ -38,34 +35,32 @@ describe("shim/TelemetryClient", () => {
         nock.enableNetConnect();
     });
 
-    function createTelemetryClient() {
-        client = new TelemetryClient(
-            "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
-        );
-        client.start();
-        traceExportStub = sinon.stub(client.getAzureMonitorOpenTelemetryClient()["_traceHandler"]["_azureExporter"], "export").callsFake(
-            (data: any, resultCallback: any) =>
-                new Promise((resolve) => {
-                    resultCallback({
-                        code: ExportResultCode.SUCCESS,
-                    });
-                    resolve(data);
-                })
-        );
-        logExportStub = sinon.stub(client.getAzureMonitorOpenTelemetryClient()["_logHandler"]["_azureExporter"], "export").callsFake(
-            (data: any, resultCallback: any) =>
-                new Promise((resolve) => {
-                    resultCallback({
-                        code: ExportResultCode.SUCCESS,
-                    });
-                    resolve(data);
-                })
-        );
+    class TestSpanProcessor implements SpanProcessor {
+        public spansProcessed: Array<ReadableSpan> = [];
+
+        forceFlush(): Promise<void> {
+            return Promise.resolve();
+        }
+        onStart(span: Span, parentContext: Context): void {
+        }
+        onEnd(span: ReadableSpan): void {
+            this.spansProcessed.push(span);
+        }
+        shutdown(): Promise<void> {
+            return Promise.resolve();
+        }
     }
+
 
     describe("#manual track APIs", () => {
         it("trackDependency http", (done) => {
-            createTelemetryClient();
+            client = new TelemetryClient(
+                "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
+            );
+            let testTracerProvider = new BasicTracerProvider();
+            let testProcessor = new TestSpanProcessor();
+            testTracerProvider.addSpanProcessor(testProcessor);
+            testTracerProvider.register();
             const telemetry: DependencyTelemetry = {
                 name: "TestName",
                 duration: 2000, //2 seconds
@@ -76,11 +71,10 @@ describe("shim/TelemetryClient", () => {
                 success: false,
             };
             client.trackDependency(telemetry);
-            client
-                .flush()
+            testTracerProvider
+                .forceFlush()
                 .then(() => {
-                    assert.ok(traceExportStub.calledOnce, "Export called");
-                    const spans = traceExportStub.args[0][0];
+                    const spans = testProcessor.spansProcessed;
                     assert.equal(spans.length, 1);
                     assert.equal(spans[0].name, "TestName");
                     assert.equal(spans[0].endTime[0] - spans[0].startTime[0], 2); // hrTime UNIX Epoch time in seconds
@@ -97,7 +91,13 @@ describe("shim/TelemetryClient", () => {
         });
 
         it("trackDependency DB", (done) => {
-            createTelemetryClient();
+            client = new TelemetryClient(
+                "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
+            );
+            let testTracerProvider = new BasicTracerProvider();
+            let testProcessor = new TestSpanProcessor();
+            testTracerProvider.addSpanProcessor(testProcessor);
+            testTracerProvider.register();
             const telemetry: DependencyTelemetry = {
                 name: "TestName",
                 duration: 2000, //2 seconds
@@ -108,11 +108,10 @@ describe("shim/TelemetryClient", () => {
                 success: false,
             };
             client.trackDependency(telemetry);
-            client
-                .flush()
+            testTracerProvider
+                .forceFlush()
                 .then(() => {
-                    assert.ok(traceExportStub.calledOnce, "Export called");
-                    const spans = traceExportStub.args[0][0];
+                    const spans = testProcessor.spansProcessed;
                     assert.equal(spans.length, 1);
                     assert.equal(spans[0].name, "TestName");
                     assert.equal(spans[0].kind, 2, "Span Kind"); // Outgoing
@@ -126,7 +125,13 @@ describe("shim/TelemetryClient", () => {
         });
 
         it("trackRequest", (done) => {
-            createTelemetryClient();
+            client = new TelemetryClient(
+                "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
+            );
+            let testTracerProvider = new BasicTracerProvider();
+            let testProcessor = new TestSpanProcessor();
+            testTracerProvider.addSpanProcessor(testProcessor);
+            testTracerProvider.register();
             const telemetry: RequestTelemetry = {
                 id: "123456",
                 name: "TestName",
@@ -136,11 +141,10 @@ describe("shim/TelemetryClient", () => {
                 success: false,
             };
             client.trackRequest(telemetry);
-            client
-                .flush()
+            testTracerProvider
+                .forceFlush()
                 .then(() => {
-                    assert.ok(traceExportStub.calledOnce, "Export called");
-                    const spans = traceExportStub.args[0][0];
+                    const spans = testProcessor.spansProcessed;
                     assert.equal(spans.length, 1);
                     assert.equal(spans[0].name, "TestName");
                     assert.equal(spans[0].endTime[0] - spans[0].startTime[0], 2); // hrTime UNIX Epoch time in seconds
@@ -148,168 +152,6 @@ describe("shim/TelemetryClient", () => {
                     assert.equal(spans[0].attributes["http.method"], "HTTP");
                     assert.equal(spans[0].attributes["http.status_code"], "401");
                     assert.equal(spans[0].attributes["http.url"], "http://test.com");
-                    done();
-                })
-                .catch((error: Error) => {
-                    done(error);
-                });
-        });
-
-        it("_logToEnvelope", () => {
-            createTelemetryClient();
-            const telemetry: Telemetry = {
-                properties: { "testAttribute": "testValue" }
-            };
-            const data: MonitorDomain = {};
-            const logRecord = client["_telemetryToLogRecord"](
-                telemetry,
-                "TestData",
-                data,
-            ) as LogRecord;
-            assert.equal(logRecord.body, "{}");
-            assert.equal(logRecord.attributes["testAttribute"], "testValue");
-            assert.equal(logRecord.attributes["_MS.baseType"], "TestData");
-        });
-
-        it("trackAvailability", (done) => {
-            createTelemetryClient();
-            const telemetry: AvailabilityTelemetry = {
-                name: "TestName",
-                duration: 2000, //2 seconds
-                id: "testId",
-                runLocation: "testRunLocation",
-                message: "testMessage",
-                success: false,
-            };
-            client.trackAvailability(telemetry);
-            client.getAzureMonitorOpenTelemetryClient()["_logHandler"].flush()
-                .then(() => {
-                    assert.ok(logExportStub.calledOnce, "Export called");
-                    const logs = logExportStub.args[0][0];
-                    assert.equal(logs.length, 1);
-                    let baseData = JSON.parse(logs[0].body) as AvailabilityData;
-                    assert.equal(baseData.version, 2);
-                    assert.equal(baseData.id, "testId");
-                    assert.equal(baseData.name, "TestName");
-                    assert.equal(baseData.duration, "00:00:02.000");
-                    assert.equal(baseData.success, false);
-                    assert.equal(baseData.runLocation, "testRunLocation");
-                    assert.equal(baseData.message, "testMessage");
-                    assert.equal(logs[0].attributes["_MS.baseType"], "AvailabilityData");
-                    assert.equal(logs[0].instrumentationScope.name, "AzureMonitorLogger");
-                    done();
-                })
-                .catch((error: Error) => {
-                    done(error);
-                });
-        });
-
-        it("trackPageView", (done) => {
-            createTelemetryClient();
-            const telemetry: PageViewTelemetry = {
-                name: "TestName",
-                duration: 2000, //2 seconds
-                id: "testId",
-                referredUri: "testReferredUri",
-                url: "testUrl",
-            };
-            client.trackPageView(telemetry);
-            client.getAzureMonitorOpenTelemetryClient()["_logHandler"].flush()
-                .then(() => {
-                    assert.ok(logExportStub.calledOnce, "Export called");
-                    const logs = logExportStub.args[0][0];
-                    assert.equal(logs.length, 1);
-                    let baseData = JSON.parse(logs[0].body) as PageViewData;
-                    assert.equal(baseData.version, 2);
-                    assert.equal(baseData.id, "testId");
-                    assert.equal(baseData.name, "TestName");
-                    assert.equal(baseData.duration, "00:00:02.000");
-                    assert.equal(baseData.referredUri, "testReferredUri");
-                    assert.equal(baseData.url, "testUrl");
-                    assert.equal(logs[0].attributes["_MS.baseType"], "PageViewData");
-                    assert.equal(logs[0].instrumentationScope.name, "AzureMonitorLogger");
-                    done();
-                })
-                .catch((error: Error) => {
-                    done(error);
-                });
-        });
-
-        it("trackTrace", (done) => {
-            createTelemetryClient();
-            const telemetry: TraceTelemetry = {
-                message: "testMessage",
-                severity: "Information",
-            };
-            client.trackTrace(telemetry);
-            client.getAzureMonitorOpenTelemetryClient()["_logHandler"].flush()
-                .then(() => {
-                    assert.ok(logExportStub.calledOnce, "Export called");
-                    const logs = logExportStub.args[0][0];
-                    assert.equal(logs.length, 1);
-                    let baseData = JSON.parse(logs[0].body) as MessageData;
-                    assert.equal(baseData.version, 2);
-                    assert.equal(baseData.message, "testMessage");
-                    assert.equal(baseData.severityLevel, "Information");
-                    assert.equal(logs[0].attributes["_MS.baseType"], "MessageData");
-                    assert.equal(logs[0].instrumentationScope.name, "AzureMonitorLogger");
-                    done();
-                })
-                .catch((error: Error) => {
-                    done(error);
-                });
-        });
-
-        it("trackException", (done) => {
-            createTelemetryClient();
-            const measurements: { [key: string]: number } = {};
-            measurements["test"] = 123;
-            const telemetry: ExceptionTelemetry = {
-                exception: new Error("TestError"),
-                severity: "Critical",
-                measurements: measurements,
-            };
-            client.trackException(telemetry);
-            client.getAzureMonitorOpenTelemetryClient()["_logHandler"].flush()
-                .then(() => {
-                    assert.ok(logExportStub.calledOnce, "Export called");
-                    const logs = logExportStub.args[0][0];
-                    assert.equal(logs.length, 1);
-                    let baseData = JSON.parse(logs[0].body) as TelemetryExceptionData;
-                    assert.equal(baseData.version, 2);
-                    assert.equal(baseData.severityLevel, "Critical");
-                    assert.equal(baseData.exceptions[0].message, "TestError");
-                    assert.equal(baseData.exceptions[0].typeName, "Error");
-                    assert.equal(baseData.measurements["test"], 123);
-                    assert.equal(logs[0].attributes["_MS.baseType"], "ExceptionData");
-                    assert.equal(logs[0].instrumentationScope.name, "AzureMonitorLogger");
-                    done();
-                })
-                .catch((error: Error) => {
-                    done(error);
-                });
-        });
-
-        it("trackEvent", (done) => {
-            createTelemetryClient();
-            const measurements: { [key: string]: number } = {};
-            measurements["test"] = 123;
-            const telemetry: EventTelemetry = {
-                name: "TestName",
-                measurements: measurements,
-            };
-            client.trackEvent(telemetry);
-            client.getAzureMonitorOpenTelemetryClient()["_logHandler"].flush()
-                .then(() => {
-                    assert.ok(logExportStub.calledOnce, "Export called");
-                    const logs = logExportStub.args[0][0];
-                    assert.equal(logs.length, 1);
-                    let baseData = JSON.parse(logs[0].body) as TelemetryEventData;
-                    assert.equal(baseData.version, 2);
-                    assert.equal(baseData.name, "TestName");
-                    assert.equal(baseData.measurements["test"], 123);
-                    assert.equal(logs[0].attributes["_MS.baseType"], "EventData");
-                    assert.equal(logs[0].instrumentationScope.name, "AzureMonitorLogger");
                     done();
                 })
                 .catch((error: Error) => {

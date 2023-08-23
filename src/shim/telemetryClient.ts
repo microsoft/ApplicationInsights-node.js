@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Attributes, context, DiagLogLevel, SpanKind, SpanOptions, SpanStatusCode } from "@opentelemetry/api";
+import { Attributes, context, DiagLogLevel, SpanKind, SpanOptions, SpanStatusCode, trace } from "@opentelemetry/api";
+import { logs } from "@opentelemetry/api-logs";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 import * as Contracts from "../declarations/contracts";
@@ -12,7 +13,7 @@ import { Util } from "../shared/util";
 import { ApplicationInsightsOptions, ExtendedMetricType } from "../types";
 import { IConfig } from "../shim/types";
 import Config = require("./config");
-import { dispose, Configuration, _setupCalled } from "./shim-applicationinsights";
+import { dispose, Configuration } from "./shim-applicationinsights";
 import ConfigHelper = require("../shared/util/configHelper");
 import { ApplicationInsightsClient } from "../applicationInsightsClient";
 import { LogApi } from "../logs/api";
@@ -24,6 +25,7 @@ import { LogApi } from "../logs/api";
 export class TelemetryClient {
     private _options: ApplicationInsightsOptions;
     private _client: ApplicationInsightsClient;
+    private _logApi: LogApi;
     public context: Context;
     public commonProperties: { [key: string]: string }; // TODO: Add setter so Resources are updated
     public config: IConfig;
@@ -36,6 +38,7 @@ export class TelemetryClient {
         // If the user does not pass a new connectionString, use the one defined in the _options
         const config = new Config(typeof (input) === "string" ? input : input?.azureMonitorExporterConfig?.connectionString);
         this.config = config;
+        this._logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
 
         this.commonProperties = {};
         this.context = new Context();
@@ -50,10 +53,6 @@ export class TelemetryClient {
                     },
                 };
             }
-        }
-        // If not running the shim, we should start the AzureMonitorClient as a part of the constructor
-        if (!_setupCalled) {
-            this.start();
         }
     }
 
@@ -86,7 +85,7 @@ export class TelemetryClient {
         }
 
         if (this.config.aadTokenCredential) {
-            this._options.azureMonitorExporterConfig.aadTokenCredential = this.config.aadTokenCredential;
+            this._options.azureMonitorExporterConfig.credential = this.config.aadTokenCredential;
         }
 
         if (typeof (this.config.enableAutoCollectConsole) === "boolean") {
@@ -247,11 +246,8 @@ export class TelemetryClient {
      * @param input Set of options to configure the Azure Monitor Client
      */
     public start(input?: ApplicationInsightsOptions) {
-        // Only parse config if we're running the shim
-        if (_setupCalled) {
-            this._parseConfig(input);
-        }
-
+        this._parseConfig(input);
+        this._client = new ApplicationInsightsClient(this._options);
     }
 
     /**
@@ -259,7 +255,7 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackAvailability(telemetry: Contracts.AvailabilityTelemetry): void {
-        LogApi.getInstance().trackAvailability(telemetry);
+        this._logApi.trackAvailability(telemetry);
     }
 
     /**
@@ -267,7 +263,7 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackPageView(telemetry: Contracts.PageViewTelemetry): void {
-        LogApi.getInstance().trackPageView(telemetry);
+        this._logApi.trackPageView(telemetry);
     }
 
     /**
@@ -275,7 +271,7 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackTrace(telemetry: Contracts.TraceTelemetry): void {
-        LogApi.getInstance().trackTrace(telemetry);
+        this._logApi.trackTrace(telemetry);
     }
 
     /**
@@ -283,7 +279,7 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackException(telemetry: Contracts.ExceptionTelemetry): void {
-        LogApi.getInstance().trackException(telemetry);
+        this._logApi.trackException(telemetry);
     }
 
     /**
@@ -291,7 +287,7 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackEvent(telemetry: Contracts.EventTelemetry): void {
-        LogApi.getInstance().trackEvent(telemetry);
+        this._logApi.trackEvent(telemetry);
     }
 
     /**
@@ -331,8 +327,7 @@ export class TelemetryClient {
             attributes: attributes,
             startTime: startTime,
         };
-        const span: any = this._client
-            .getTracer()
+        const span: any = trace.getTracer("ApplicationInsightsTracer")
             .startSpan(telemetry.name, options, ctx);
         span.setStatus({
             code: telemetry.success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
@@ -384,8 +379,7 @@ export class TelemetryClient {
             attributes: attributes,
             startTime: startTime,
         };
-        const span: any = this._client
-            .getTracer()
+        const span: any = trace.getTracer("ApplicationInsightsTracer")
             .startSpan(telemetry.name, options, ctx);
         span.setStatus({
             code: telemetry.success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
@@ -457,5 +451,19 @@ export class TelemetryClient {
 
     public trackNodeHttpDependency(telemetry: Contracts.NodeHttpRequestTelemetry) {
         Logger.getInstance().warn("trackNodeHttpDependency is not implemented and is a no-op. Please use trackDependency instead.");
+    }
+
+    /**
+    * Immediately send all queued telemetry.
+    */
+    public async flush(): Promise<void> {
+        this._client.flush();
+    }
+
+    /**
+     * Shutdown client
+     */
+    public async shutdown(): Promise<void> {
+        this._client.shutdown();
     }
 }

@@ -2,11 +2,12 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 import { channel } from "diagnostic-channel";
 import { bunyan } from "diagnostic-channel-publishers";
-
+import { logs } from "@opentelemetry/api-logs";
 import { enable, dispose } from "../../../src/logs/diagnostic-channel/bunyan.sub";
 import { Util } from "../../../src/shared/util";
-import { ApplicationInsightsClient } from "../../../src";
-import { ApplicationInsightsOptions } from "../../../src/types";
+import { AutoCollectConsole } from "../../../src/logs/console";
+import { LogApi } from "../../../src/logs/api";
+
 
 describe("diagnostic-channel/bunyan", () => {
     let sandbox: sinon.SinonSandbox;
@@ -21,16 +22,12 @@ describe("diagnostic-channel/bunyan", () => {
     });
 
     it("should call trackException for errors", () => {
-        const config: ApplicationInsightsOptions = {
-            azureMonitorExporterConfig: {
-                connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;"
-            },
-            logInstrumentationOptions: {
-                bunyan: { enabled: true }
-            }
-        };
-        const client = new ApplicationInsightsClient(config);
-        const stub = sandbox.stub(client, "trackException");
+        let logApi = new LogApi(logs.getLogger("testLogger"));
+        let autoCollect = new AutoCollectConsole(logApi);
+        autoCollect.enable({
+            bunyan: { enabled: true }
+        });
+        const stub = sandbox.stub(logApi, "trackException");
         const dummyError = { stack: "Test error" };
         const bunyanJson = Util.getInstance().stringify({ err: dummyError });
         const errorEvent: bunyan.IBunyanData = {
@@ -43,16 +40,12 @@ describe("diagnostic-channel/bunyan", () => {
     });
 
     it("should call trackTrace for logs", () => {
-        const config: ApplicationInsightsOptions = {
-            azureMonitorExporterConfig: {
-                connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;"
-            },
-            logInstrumentationOptions: {
-                bunyan: { enabled: true }
-            }
-        };
-        const client = new ApplicationInsightsClient(config);
-        const stub = sandbox.stub(client, "trackTrace");
+        let logApi = new LogApi(logs.getLogger("testLogger"));
+        let autoCollect = new AutoCollectConsole(logApi);
+        autoCollect.enable({
+            bunyan: { enabled: true }
+        });
+        const stub = sandbox.stub(logApi, "trackTrace");
         const logEvent: bunyan.IBunyanData = {
             result: "test log",
             level: 50, // Error should still log as MessageData
@@ -63,20 +56,13 @@ describe("diagnostic-channel/bunyan", () => {
     });
 
     it("should notify multiple handlers", () => {
-        const config: ApplicationInsightsOptions = {
-            azureMonitorExporterConfig: {
-                connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;"
-            },
-            logInstrumentationOptions: {
-                bunyan: { enabled: true }
-            }
-        };
-        const client = new ApplicationInsightsClient(config);
-        const secondClient = new ApplicationInsightsClient(config);
-        const stub = sandbox.stub(client, "trackTrace");
-        const secondStub = sandbox.stub(secondClient, "trackTrace");
-        enable(true, client);
-        enable(true, secondClient);
+        let logApi = new LogApi(logs.getLogger("testLogger"));
+        let secondLogApi = new LogApi(logs.getLogger("testLogger"));
+
+        const stub = sandbox.stub(logApi, "trackTrace");
+        const secondStub = sandbox.stub(secondLogApi, "trackTrace");
+        enable(true, logApi);
+        enable(true, secondLogApi);
         const logEvent: bunyan.IBunyanData = {
             result: "test log",
             level: 50, // Error should still log as MessageData

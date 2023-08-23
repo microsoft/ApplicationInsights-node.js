@@ -2,10 +2,11 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 import { channel } from "diagnostic-channel";
 import { console } from "diagnostic-channel-publishers";
-
+import { logs } from "@opentelemetry/api-logs";
 import { enable, dispose } from "../../../src/logs/diagnostic-channel/console.sub";
-import { ApplicationInsightsClient } from "../../../src";
-import { ApplicationInsightsOptions } from "../../../src/types";
+import { LogApi } from "../../../src/logs/api";
+import { AutoCollectConsole } from "../../../src/logs/console";
+
 
 describe("AutoCollection/Console", () => {
     let sandbox: sinon.SinonSandbox;
@@ -21,16 +22,12 @@ describe("AutoCollection/Console", () => {
 
     describe("#log and #error()", () => {
         it("should call trackException for errors", () => {
-            const config: ApplicationInsightsOptions = {
-                azureMonitorExporterConfig: {
-                    connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;"
-                },
-                logInstrumentationOptions: {
-                    console: { enabled: true }
-                }
-            };
-            const client = new ApplicationInsightsClient(config);
-            const stub = sandbox.stub(client, "trackException");
+            let logApi = new LogApi(logs.getLogger("testLogger"));
+            let autoCollect = new AutoCollectConsole(logApi);
+            autoCollect.enable({
+                console: { enabled: true }
+            });
+            const stub = sandbox.stub(logApi, "trackException");
             const dummyError = new Error("test error");
             const errorEvent: console.IConsoleData = {
                 message: dummyError as any,
@@ -43,16 +40,12 @@ describe("AutoCollection/Console", () => {
         });
 
         it("should call trackTrace for logs", () => {
-            const config: ApplicationInsightsOptions = {
-                azureMonitorExporterConfig: {
-                    connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;"
-                },
-                logInstrumentationOptions: {
-                    console: { enabled: true }
-                }
-            };
-            const client = new ApplicationInsightsClient(config);
-            const stub = sandbox.stub(client, "trackTrace");
+            let logApi = new LogApi(logs.getLogger("testLogger"));
+            let autoCollect = new AutoCollectConsole(logApi);
+            autoCollect.enable({
+                console: { enabled: true }
+            });
+            const stub = sandbox.stub(logApi, "trackTrace");
             const logEvent: console.IConsoleData = {
                 message: "test log",
                 stderr: true, // should log as MessageData regardless of this setting
@@ -63,20 +56,12 @@ describe("AutoCollection/Console", () => {
         });
 
         it("should notify multiple handlers", () => {
-            const config: ApplicationInsightsOptions = {
-                azureMonitorExporterConfig: {
-                    connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;"
-                },
-                logInstrumentationOptions: {
-                    console: { enabled: true }
-                }
-            };
-            const client = new ApplicationInsightsClient(config);
-            const secondClient = new ApplicationInsightsClient(config);
-            const stub = sandbox.stub(client, "trackTrace");
-            const secondStub = sandbox.stub(secondClient, "trackTrace");
-            enable(true, client);
-            enable(true, secondClient);
+            let logApi = new LogApi(logs.getLogger("testLogger"));
+            let secondLogApi = new LogApi(logs.getLogger("testLogger"));
+            const stub = sandbox.stub(logApi, "trackTrace");
+            const secondStub = sandbox.stub(secondLogApi, "trackTrace");
+            enable(true, logApi);
+            enable(true, secondLogApi);
             const logEvent: console.IConsoleData = {
                 message: "test log",
                 stderr: true, // should log as MessageData regardless of this setting

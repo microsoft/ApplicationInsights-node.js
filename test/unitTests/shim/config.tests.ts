@@ -2,7 +2,7 @@ import assert = require('assert');
 import sinon = require('sinon');
 import { TelemetryClient } from '../../..';
 import { HttpInstrumentationConfig } from '@opentelemetry/instrumentation-http';
-const applicationInsights = require('../../../applicationinsights');
+const applicationInsights = require('../../../index');
 import azureCoreAuth = require("@azure/core-auth");
 import { Logger } from "../../../src/shared/logging"
 import { DiagLogLevel } from '@opentelemetry/api';
@@ -76,7 +76,7 @@ describe("shim/configuration/config", () => {
             assert.equal(JSON.stringify(telemetryClient["_options"].extendedMetrics), JSON.stringify({ gc: true, heap: true, loop: true }));
             assert.equal(telemetryClient["_options"].instrumentationOptions.http.hasOwnProperty("ignoreIncomingRequestHook"), true);
             assert.equal(telemetryClient["_options"].instrumentationOptions.http.hasOwnProperty("ignoreOutgoingRequestHook"), true);
-            assert.equal(telemetryClient["_options"].azureMonitorExporterConfig.aadTokenCredential, telemetryClient.config.aadTokenCredential);
+            assert.equal(telemetryClient["_options"].azureMonitorExporterConfig.credential, telemetryClient.config.aadTokenCredential);
             assert.equal(
                 JSON.stringify(telemetryClient["_options"].otlpTraceExporterConfig),
                 JSON.stringify({timeoutMillis: 1000})
