@@ -6,7 +6,7 @@ export class AttributeLogProcessor extends BatchLogRecordProcessor {
         super(exporter);
         this._attributes = attributes;
     }
-    // Override onStart to apply span attributes before exporting
+    // Override onEmit to apply log record attributes before exporting
     onEmit(record: LogRecord) {
         record.setAttributes(this._attributes);
         super.onEmit(record);
