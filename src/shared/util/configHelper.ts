@@ -75,3 +75,64 @@ export function setAutoCollectConsole(options: ApplicationInsightsOptions, value
         }
     }
 }
+
+export function enableAutoCollectExternalLoggers(options: ApplicationInsightsOptions, value: boolean) {
+    options.logInstrumentations = {
+        ...options.logInstrumentations,
+        winston: { enabled: value },
+        bunyan: { enabled: value },
+    }
+}
+
+export function enableAutoCollectConsole(options: ApplicationInsightsOptions, value: boolean) {
+    options.logInstrumentations = {
+        ...options.logInstrumentations,
+        console: { enabled: value },
+    }
+}
+
+export function enableAutoCollectExtendedMetrics(options: ApplicationInsightsOptions, value: boolean) {
+    options.extendedMetrics = {
+        [ExtendedMetricType.gc]: value,
+        [ExtendedMetricType.heap]: value,
+        [ExtendedMetricType.loop]: value,
+    }
+}
+
+export function setMaxBatchIntervalMs(options: ApplicationInsightsOptions, value: number) {
+    options.otlpTraceExporterConfig = { ...options.otlpTraceExporterConfig, timeoutMillis: value };
+    options.otlpMetricExporterConfig = { ...options.otlpMetricExporterConfig, timeoutMillis: value };
+    options.otlpLogExporterConfig = { ...options.otlpLogExporterConfig, timeoutMillis: value };
+}
+
+export function setProxyUrl(options: ApplicationInsightsOptions, proxyUrlString: string) {
+    const proxyUrl = new URL(proxyUrlString);
+    options.azureMonitorExporterConfig.proxyOptions = {
+        host: proxyUrl.hostname,
+        port: Number(proxyUrl.port),
+    }
+}
+
+export function setExtendedMetricDisablers(options: ApplicationInsightsOptions, disablers: string) {
+    const extendedMetricDisablers: string[] = disablers.split(",");
+    for (const extendedMetricDisabler of extendedMetricDisablers) {
+        if (extendedMetricDisabler === "gc") {
+            options.extendedMetrics = {
+                ...options.extendedMetrics,
+                [ExtendedMetricType.gc]: false
+            };
+        }
+        if (extendedMetricDisabler === "heap") {
+            options.extendedMetrics = {
+                ...options.extendedMetrics,
+                [ExtendedMetricType.heap]: false
+            };
+        }
+        if (extendedMetricDisabler === "loop") {
+            options.extendedMetrics = {
+                ...options.extendedMetrics,
+                [ExtendedMetricType.loop]: false
+            };
+        }
+    }
+}

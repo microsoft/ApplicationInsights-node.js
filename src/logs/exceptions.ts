@@ -93,6 +93,7 @@ export class AutoCollectExceptions {
     ) {
         if (this._client) {
             this._client.trackException({ exception: error });
+            this._client.flush();
             // only rethrow when we are the only listener
             if (reThrow && name && process.listeners(name as any).length === 1) {
                 // eslint-disable-next-line no-console

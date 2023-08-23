@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-
 import { shutdownAzureMonitor, useAzureMonitor } from "@azure/monitor-opentelemetry";
 import { metrics, trace } from "@opentelemetry/api";
 import { MeterProvider } from "@opentelemetry/sdk-metrics";

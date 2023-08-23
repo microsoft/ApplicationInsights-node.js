@@ -5,6 +5,7 @@ import azureCoreAuth = require("@azure/core-auth");
 import { Logger } from "../shared/logging";
 import constants = require("../declarations/constants");
 
+
 class config implements IConfig {
 
     public static ENV_azurePrefix = "APPSETTING_"; // Azure adds this prefix to all environment variables
@@ -83,6 +84,7 @@ class config implements IConfig {
         // this.enableAutoWebSnippetInjection = this.enableWebInstrumentation;
         this.correlationHeaderExcludedDomains =
             this.correlationHeaderExcludedDomains ||
+            ShimJsonConfig.getInstance().correlationHeaderExcludedDomains ||
             [
                 "*.core.windows.net",
                 "*.core.chinacloudapi.cn",
@@ -139,6 +141,11 @@ class config implements IConfig {
     * Fifth section has 12 characters
     */
     private static _validateInstrumentationKey(iKey: string): boolean {
+        if (iKey.startsWith("InstrumentationKey=")) {
+            const startIndex = iKey.indexOf("InstrumentationKey=") + "InstrumentationKey=".length;
+            const endIndex = iKey.indexOf(";", startIndex);
+            iKey = iKey.substring(startIndex, endIndex);
+        }
         const UUID_Regex = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$";
         const regexp = new RegExp(UUID_Regex);
         return regexp.test(iKey);

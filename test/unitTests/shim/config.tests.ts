@@ -32,13 +32,10 @@ describe("shim/configuration/config", () => {
 
     beforeEach(() => {
         originalEnv = process.env;
-        process.env["APPLICATION_INSIGHTS_SHIM_CONFIGURATION"] = "true";
         sandbox = sinon.createSandbox();
     });
 
     afterEach(() => {
-        process.env = originalEnv;
-        delete process.env.APPLICATION_INSIGHTS_SHIM_CONFIGURATION;
         sandbox.restore();
     })
 

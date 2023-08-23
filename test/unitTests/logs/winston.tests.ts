@@ -7,6 +7,7 @@ import { enable, dispose } from "../../../src/logs/diagnostic-channel/winston.su
 import { LogApi } from "../../../src/logs/api";
 import { AutoCollectConsole } from "../../../src/logs/console";
 
+
 describe("diagnostic-channel/winston", () => {
     let sandbox: sinon.SinonSandbox;
 
