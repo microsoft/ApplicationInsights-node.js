@@ -66,7 +66,7 @@ export function start() {
     const ignoreIncomingRequestHooks = httpOptions?.ignoreIncomingRequestHook?.toString();
     const ignoreOutgoingRequestHooks = httpOptions?.ignoreOutgoingRequestHook?.toString();
 
-    const ignoreFunction = (request: any) => true;
+    const ignoreFunction = (request: http.IncomingMessage | http.RequestOptions) => true;
     if (
         ignoreIncomingRequestHooks === ignoreFunction.toString() &&
         ignoreOutgoingRequestHooks === ignoreFunction.toString()

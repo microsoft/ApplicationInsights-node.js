@@ -22,9 +22,10 @@ import { dispose, Configuration, _setupCalled } from "./shim-applicationinsights
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { ShimJsonConfig } from "./shim-jsonConfig";
 import ConfigHelper = require("../shared/util/configHelper");
-import { AzureMonitorTraceExporter } from "@azure/monitor-opentelemetry-exporter";
+import { AzureMonitorTraceExporter, AzureMonitorLogExporter } from "@azure/monitor-opentelemetry-exporter";
 import { AttributeSpanProcessor } from "../shared/util/attributeSpanProcessor";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
+import { AttributeLogProcessor } from "../shared/util/attributeLogRecordProcessor";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -37,7 +38,8 @@ export class TelemetryClient {
     private _console: AutoCollectConsole;
     private _exceptions: AutoCollectExceptions;
     private _idGenerator: IdGenerator;
-    private _attributeProcessor: AttributeSpanProcessor;
+    private _attributeSpanProcessor: AttributeSpanProcessor;
+    private _attributeLogProcessor: AttributeLogProcessor;
     public context: Context;
     public commonProperties: { [key: string]: string }; // TODO: Add setter so Resources are updated
     public config: IConfig;
@@ -472,9 +474,12 @@ export class TelemetryClient {
 
         // Only support attribute processing in the shim
         if (_setupCalled) {
-            this._attributeProcessor = new AttributeSpanProcessor(new AzureMonitorTraceExporter(this._options.azureMonitorExporterConfig), this.context.tags);
+            this._attributeSpanProcessor = new AttributeSpanProcessor(new AzureMonitorTraceExporter(this._options.azureMonitorExporterConfig), this.context.tags);
             const tracerProvider = this._client.getTracerProvider() as NodeTracerProvider;
-            tracerProvider.addSpanProcessor(this._attributeProcessor);
+            tracerProvider.addSpanProcessor(this._attributeSpanProcessor);
+            this._attributeLogProcessor = new AttributeLogProcessor(new AzureMonitorLogExporter(this._options.azureMonitorExporterConfig), this.context.tags);
+            const loggerProvider = this._client.getLoggerProvider();
+            loggerProvider.addLogRecordProcessor(this._attributeLogProcessor);
         }
     }
 
