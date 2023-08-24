@@ -122,9 +122,7 @@ class AutoCollectHttpRequests {
                 if (request && shouldCollect && AutoCollectHttpRequests.INSTANCE) {
                     AutoCollectHttpRequests.INSTANCE._registerRequest(request, response, onRequest)
                 } else {
-                    if (typeof onRequest === "function") {
-                        onRequest(request, response);
-                    }
+                    onRequest(request, response);
                 }
             }
         };
