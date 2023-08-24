@@ -1,7 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
+import { logs } from "@opentelemetry/api-logs";
 import { Util } from "../shared/util";
 import { LogApi } from "./api";
+import { LoggerProvider } from "@opentelemetry/sdk-logs";
 
 type ExceptionHandle = "uncaughtExceptionMonitor" | "uncaughtException" | "unhandledRejection";
 const UNCAUGHT_EXCEPTION_MONITOR_HANDLER_NAME: ExceptionHandle = "uncaughtExceptionMonitor";
@@ -93,7 +95,7 @@ export class AutoCollectExceptions {
     ) {
         if (this._client) {
             this._client.trackException({ exception: error });
-            this._client.flush();
+            (logs.getLoggerProvider() as LoggerProvider).forceFlush();
             // only rethrow when we are the only listener
             if (reThrow && name && process.listeners(name as any).length === 1) {
                 // eslint-disable-next-line no-console

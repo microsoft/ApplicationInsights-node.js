@@ -77,39 +77,17 @@ export function setAutoCollectConsole(options: ApplicationInsightsOptions, value
 }
 
 export function enableAutoCollectExternalLoggers(options: ApplicationInsightsOptions, value: boolean) {
-    options.logInstrumentations = {
-        ...options.logInstrumentations,
+    options.logInstrumentationOptions = {
+        ...options.logInstrumentationOptions,
         winston: { enabled: value },
         bunyan: { enabled: value },
     }
 }
 
 export function enableAutoCollectConsole(options: ApplicationInsightsOptions, value: boolean) {
-    options.logInstrumentations = {
-        ...options.logInstrumentations,
+    options.logInstrumentationOptions = {
+        ...options.logInstrumentationOptions,
         console: { enabled: value },
-    }
-}
-
-export function enableAutoCollectExtendedMetrics(options: ApplicationInsightsOptions, value: boolean) {
-    options.extendedMetrics = {
-        [ExtendedMetricType.gc]: value,
-        [ExtendedMetricType.heap]: value,
-        [ExtendedMetricType.loop]: value,
-    }
-}
-
-export function setMaxBatchIntervalMs(options: ApplicationInsightsOptions, value: number) {
-    options.otlpTraceExporterConfig = { ...options.otlpTraceExporterConfig, timeoutMillis: value };
-    options.otlpMetricExporterConfig = { ...options.otlpMetricExporterConfig, timeoutMillis: value };
-    options.otlpLogExporterConfig = { ...options.otlpLogExporterConfig, timeoutMillis: value };
-}
-
-export function setProxyUrl(options: ApplicationInsightsOptions, proxyUrlString: string) {
-    const proxyUrl = new URL(proxyUrlString);
-    options.azureMonitorExporterConfig.proxyOptions = {
-        host: proxyUrl.hostname,
-        port: Number(proxyUrl.port),
     }
 }
 

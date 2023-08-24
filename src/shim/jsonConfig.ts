@@ -8,39 +8,34 @@ import * as azureCoreAuth from "@azure/core-auth";
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 const ENV_CONTENT = "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT";
-
 const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
-const ENV_azurePrefix = "APPSETTING_"; // Azure adds this prefix to all environment variables
-const ENV_instrumentationKey = "APPINSIGHTS_INSTRUMENTATIONKEY";
-const ENV_legacyInstrumentationKey = "APPINSIGHTS_INSTRUMENTATION_KEY"
 const ENV_nativeMetricsDisablers = "APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC";
 const ENV_nativeMetricsDisableAll = "APPLICATION_INSIGHTS_DISABLE_ALL_EXTENDED_METRICS";
 const ENV_http_proxy = "http_proxy";
 const ENV_https_proxy = "https_proxy";
 const ENV_noDiagnosticChannel = "APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL";
-const ENV_noStatsbeat = "APPLICATION_INSIGHTS_NO_STATSBEAT";
-const ENV_noHttpAgentKeepAlive = "APPLICATION_INSIGHTS_NO_HTTP_AGENT_KEEP_ALIVE";
-const ENV_noPatchModules = "APPLICATION_INSIGHTS_NO_PATCH_MODULES";
+const ENV_noHttpAgentKeepAlive = "APPLICATION_INSIGHTS_NO_HTTP_AGENT_KEEP_ALIVE"; // TODO: Add support for this setting, http agent configurable in Azure SDK?
+const ENV_noPatchModules = "APPLICATION_INSIGHTS_NO_PATCH_MODULES"; // TODO: Add support for this setting, all instrumenations should be disabled
+const ENV_webInstrumentationEnable = "APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_ENABLED";
+const ENV_webInstrumentation_connectionString = "APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_CONNECTION_STRING";
+const ENV_webInstrumentation_source = "APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_SOURCE";
 
 export class ShimJsonConfig implements IJsonConfig {
     private static _instance: ShimJsonConfig;
 
     public endpointUrl: string;
     public connectionString: string;
-    public instrumentationKey: string;
     public disableAllExtendedMetrics: boolean;
     public extendedMetricDisablers: string;
     public proxyHttpUrl: string;
     public proxyHttpsUrl: string;
     public noDiagnosticChannel: boolean;
-    public disableStatsbeat: boolean;
     public noHttpAgentKeepAlive: boolean;
     public noPatchModules: string;
     public maxBatchSize: number;
     public maxBatchIntervalMs: number;
     public disableAppInsights: boolean;
     public samplingPercentage: number;
-    public correlationIdRetryIntervalMs: number;
     public correlationHeaderExcludedDomains: string[];
     public httpAgent: http.Agent;
     public httpsAgent: https.Agent;
@@ -71,8 +66,6 @@ export class ShimJsonConfig implements IJsonConfig {
     public webInstrumentationConnectionString?: string;
     public webInstrumentationConfig: IWebInstrumentationConfig[];
     public webInstrumentationSrc: string;
-    public enableAutoWebSnippetInjection?: boolean;
-    public webSnippetConnectionString?: string;
 
     public static getInstance() {
         if (!ShimJsonConfig._instance) {
@@ -84,22 +77,18 @@ export class ShimJsonConfig implements IJsonConfig {
     constructor() {
         // Load environment variables first
         this.connectionString = process.env[ENV_connectionString];
-        this.instrumentationKey = process.env[ENV_instrumentationKey]
-            || process.env[ENV_azurePrefix + ENV_instrumentationKey]
-            || process.env[ENV_legacyInstrumentationKey]
-            || process.env[ENV_azurePrefix + ENV_legacyInstrumentationKey];
-        this._loadJsonFile();
-        if (!this.connectionString && this.instrumentationKey) {
-            Logger.getInstance().warn("APPINSIGHTS_INSTRUMENTATIONKEY is in path of deprecation, please use APPLICATIONINSIGHTS_CONNECTION_STRING env variable to setup the SDK.");
-        }
         this.disableAllExtendedMetrics = !!process.env[ENV_nativeMetricsDisableAll];
         this.extendedMetricDisablers = process.env[ENV_nativeMetricsDisablers];
-        this.proxyHttpUrl = process.env[ENV_http_proxy] ? process.env[ENV_http_proxy] : this.proxyHttpUrl;
-        this.proxyHttpsUrl = process.env[ENV_https_proxy] ? process.env[ENV_https_proxy] : this.proxyHttpsUrl;
-        this.noDiagnosticChannel = process.env[ENV_noDiagnosticChannel] ? !!process.env[ENV_noDiagnosticChannel] : this.noDiagnosticChannel;
-        this.disableStatsbeat = !!process.env[ENV_noStatsbeat];
-        this.noHttpAgentKeepAlive = process.env[ENV_noHttpAgentKeepAlive] ? !!process.env[ENV_noHttpAgentKeepAlive] : this.noHttpAgentKeepAlive;
-        this.noPatchModules = process.env[ENV_noPatchModules] ? process.env[ENV_noPatchModules] : this.noPatchModules || "";
+        this.proxyHttpUrl = process.env[ENV_http_proxy];
+        this.proxyHttpsUrl = process.env[ENV_https_proxy];
+        this.noDiagnosticChannel = !!process.env[ENV_noDiagnosticChannel];
+        this.noHttpAgentKeepAlive = !!process.env[ENV_noHttpAgentKeepAlive];
+        this.noPatchModules = process.env[ENV_noPatchModules] || "";
+        this.enableWebInstrumentation = !!process.env[ENV_webInstrumentationEnable];
+        this.webInstrumentationSrc = process.env[ENV_webInstrumentation_source] || "";
+        this.webInstrumentationConnectionString = process.env[ENV_webInstrumentation_connectionString] || "";
+
+        this._loadJsonFile();
     }
 
     private _loadJsonFile() {
@@ -132,7 +121,6 @@ export class ShimJsonConfig implements IJsonConfig {
             const jsonConfig: IJsonConfig = JSON.parse(jsonString);
             this.connectionString = jsonConfig.connectionString;
             this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
-            this.instrumentationKey = jsonConfig.instrumentationKey;
             this.endpointUrl = jsonConfig.endpointUrl;
             this.samplingPercentage = jsonConfig.samplingPercentage;
             this.enableAutoCollectExternalLoggers = jsonConfig.enableAutoCollectExternalLoggers;
@@ -170,8 +158,8 @@ export class ShimJsonConfig implements IJsonConfig {
             this.webInstrumentationConnectionString = jsonConfig.webInstrumentationConnectionString;
             this.webInstrumentationConfig = jsonConfig.webInstrumentationConfig;
             this.webInstrumentationSrc = jsonConfig.webInstrumentationSrc;
-            this.enableAutoWebSnippetInjection = jsonConfig.enableAutoWebSnippetInjection;
-            this.webSnippetConnectionString = jsonConfig.webSnippetConnectionString;
+            this.quickPulseHost = jsonConfig.quickPulseHost;
+            this.enableWebInstrumentation = jsonConfig.enableWebInstrumentation;
         } catch (err) {
             Logger.getInstance().info("Missing or invalid JSON config file: ", err);
         }
