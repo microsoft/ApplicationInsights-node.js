@@ -2,7 +2,7 @@ var testconfig = require("./config");
 var appInsights = null;
 if (testconfig.AppInsightsEnabled) {
 
-    const { TelemetryClient } = require("applicationinsights");
+    const { ApplicationInsightsClient } = require("applicationinsights");
 
     let options = {
         azureMonitorExporterConfig: {
@@ -52,7 +52,7 @@ if (testconfig.AppInsightsEnabled) {
         }
     };
 
-    appInsights = new TelemetryClient(options);
+    appInsights = new ApplicationInsightsClient(options);
     }
 
     var Tasks = require("./tasks");
