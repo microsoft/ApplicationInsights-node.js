@@ -36,9 +36,9 @@ let exceptions: AutoCollectExceptions;
  */
 export function useApplicationInsights(options?: ApplicationInsightsOptions) {
     useAzureMonitor(options);
-    const internalConfig = new ApplicationInsightsConfig(options);
-    console = new AutoCollectConsole(this._logApi);
     const logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
+    const internalConfig = new ApplicationInsightsConfig(options);
+    console = new AutoCollectConsole(logApi);
     if (internalConfig.enableAutoCollectExceptions) {
         exceptions = new AutoCollectExceptions(this._logApi);
     }

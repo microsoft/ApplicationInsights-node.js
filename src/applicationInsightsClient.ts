@@ -27,9 +27,10 @@ export class ApplicationInsightsClient {
      */
     constructor(options?: ApplicationInsightsOptions) {
         useAzureMonitor(options);
+        this._logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
         this._internalConfig = new ApplicationInsightsConfig(options);
         this._console = new AutoCollectConsole(this._logApi);
-        this._logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
+        
         if (this._internalConfig.enableAutoCollectExceptions) {
             this._exceptions = new AutoCollectExceptions(this._logApi);
         }

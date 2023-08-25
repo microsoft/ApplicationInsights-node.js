@@ -14,7 +14,7 @@
         ]
     },
     "include": [
-        "index.ts",
+        "applicationinsights.ts",
         "src/**/*.ts",
         "test/**/*.ts"
     ],
