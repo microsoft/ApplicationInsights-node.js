@@ -39,7 +39,7 @@ export class TelemetryClient {
 
     public initialize() {
         // Parse shim config to Azure Monitor options
-        let options = this.config.parseConfig();
+        const options = this.config.parseConfig();
         this._client = new ApplicationInsightsClient(options);
         // LoggerProvider would be initialized when client is instantiated
         // Get Logger from global provider

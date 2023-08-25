@@ -92,7 +92,7 @@ class Config implements IConfig {
     }
 
     private _mergeConfig() {
-        let jsonConfig = ShimJsonConfig.getInstance();
+        const jsonConfig = ShimJsonConfig.getInstance();
         this.connectionString = jsonConfig.connectionString;
         this.correlationHeaderExcludedDomains = jsonConfig.correlationHeaderExcludedDomains;
         this.disableAllExtendedMetrics = jsonConfig.disableAllExtendedMetrics;
@@ -136,7 +136,7 @@ class Config implements IConfig {
     * Parse the config property to set the appropriate values on the ApplicationInsightsOptions
     */
     public parseConfig(): ApplicationInsightsOptions {
-        let options: ApplicationInsightsOptions = {
+        const options: ApplicationInsightsOptions = {
             azureMonitorExporterConfig: {
                 connectionString: this.connectionString
             },
@@ -154,7 +154,7 @@ class Config implements IConfig {
             ...options.instrumentationOptions,
             http: {
                 ...options.instrumentationOptions?.http,
-                ignoreOutgoingUrls: this.correlationHeaderExcludedDomains,  /// TODO: Deprecated configuration
+                ignoreOutgoingUrls: this.correlationHeaderExcludedDomains, /// TODO: Deprecated configuration
             } as HttpInstrumentationConfig,
         }
         if (this.aadTokenCredential) {
@@ -221,7 +221,9 @@ class Config implements IConfig {
                     port: Number(proxyUrl.port),
                 };
             }
-            catch (err) { }
+            catch (err) { 
+                Logger.getInstance().warn("failed to parse proxy URL.");
+            }
         }
         if (this.maxBatchIntervalMs) {
             options.otlpTraceExporterConfig = { ...options.otlpTraceExporterConfig, timeoutMillis: this.maxBatchIntervalMs };
@@ -299,7 +301,7 @@ class Config implements IConfig {
             Logger.getInstance().warn("The use of non async hooks is no longer supported.");
         }
         if (typeof (this.distributedTracingMode) === "boolean") {
-            if (this.distributedTracingMode == DistributedTracingModes.AI) {
+            if (this.distributedTracingMode === DistributedTracingModes.AI) {
                 Logger.getInstance().warn("AI only distributed tracing mode is no longer supported.");
             }
         }
