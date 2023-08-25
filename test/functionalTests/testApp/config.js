@@ -1,5 +1,3 @@
-var appInsights = require("applicationinsights");
-
 var Config = {
     ServerPort: "9099",
     EndpointBaseAddress: "https://localhost:9091",
