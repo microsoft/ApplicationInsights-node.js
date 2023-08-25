@@ -24,7 +24,7 @@ export {
 export { ApplicationInsightsClient } from "./applicationInsightsClient";
 
 // To support the shim
-export * from "..";
+export * from "./shim/applicationinsights";
 
 
 let console: AutoCollectConsole;
