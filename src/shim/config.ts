@@ -140,8 +140,19 @@ class Config implements IConfig {
             azureMonitorExporterConfig: {
                 connectionString: this.connectionString
             },
-            instrumentationOptions: {},
-            logInstrumentationOptions: {},
+            instrumentationOptions: {
+                http: { enabled: true },
+                azureSdk: { enabled: true },
+                mongoDb: { enabled: true },
+                mySql: { enabled: true },
+                redis: { enabled: true },
+                redis4: { enabled: true },
+            },
+            logInstrumentationOptions: {
+                console: { enabled: false },
+                winston: { enabled: true },
+                bunyan: { enabled: true }
+            },
             otlpTraceExporterConfig: {},
             otlpMetricExporterConfig: {},
             otlpLogExporterConfig: {},
@@ -175,29 +186,25 @@ class Config implements IConfig {
             options.instrumentationOptions.http.enabled = false;
         }
         else {
-            if (typeof (this.enableAutoCollectDependencies) === "boolean") {
-                if (this.enableAutoCollectDependencies === false) {
-                    options.instrumentationOptions = {
-                        http: {
-                            ...options.instrumentationOptions?.http,
-                            enabled: true,
-                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                            ignoreOutgoingRequestHook: (request: http.RequestOptions) => true,
-                        } as HttpInstrumentationConfig
-                    };
-                }
+            if (this.enableAutoCollectDependencies === false) {
+                options.instrumentationOptions = {
+                    http: {
+                        ...options.instrumentationOptions?.http,
+                        enabled: true,
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                        ignoreOutgoingRequestHook: (request: http.RequestOptions) => true,
+                    } as HttpInstrumentationConfig
+                };
             }
-            if (typeof (this.enableAutoCollectRequests) === "boolean") {
-                if (this.enableAutoCollectRequests === false) {
-                    options.instrumentationOptions = {
-                        http: {
-                            ...options.instrumentationOptions?.http,
-                            enabled: true,
-                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                            ignoreIncomingRequestHook: (request: http.RequestOptions) => true,
-                        } as HttpInstrumentationConfig
-                    };
-                }
+            if (this.enableAutoCollectRequests === false) {
+                options.instrumentationOptions = {
+                    http: {
+                        ...options.instrumentationOptions?.http,
+                        enabled: true,
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                        ignoreIncomingRequestHook: (request: http.RequestOptions) => true,
+                    } as HttpInstrumentationConfig
+                };
             }
         }
         if (typeof (this.enableAutoCollectPerformance) === "boolean") {
@@ -221,7 +228,7 @@ class Config implements IConfig {
                     port: Number(proxyUrl.port),
                 };
             }
-            catch (err) { 
+            catch (err) {
                 Logger.getInstance().warn("failed to parse proxy URL.");
             }
         }
