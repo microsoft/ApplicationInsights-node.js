@@ -7,7 +7,6 @@ import { MeterProvider } from "@opentelemetry/sdk-metrics";
 import { logs } from "@opentelemetry/api-logs";
 import { LoggerProvider } from "@opentelemetry/sdk-logs";
 import { BasicTracerProvider } from "@opentelemetry/sdk-trace-node";
-
 import { Logger } from "./shared/logging";
 import { AutoCollectConsole } from "./logs/console";
 import { AutoCollectExceptions } from "./logs/exceptions";
@@ -16,13 +15,11 @@ import { ApplicationInsightsConfig } from "./shared/configuration/config";
 import { LogApi } from "./logs/api";
 
 
-
 export class ApplicationInsightsClient {
     private _internalConfig: ApplicationInsightsConfig;
     private _console: AutoCollectConsole;
     private _exceptions: AutoCollectExceptions;
     private _logApi: LogApi;
-
 
     /**
      * Constructs a new client
