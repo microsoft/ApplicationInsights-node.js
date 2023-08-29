@@ -37,7 +37,6 @@ export class ApplicationInsightsConfig {
         return this._resource;
     }
 
-
     /**
      * Sets the state of performance tracking (enabled by default)
      * if true performance counters will be collected every second and sent to Azure Monitor
