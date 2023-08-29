@@ -13,7 +13,7 @@ import { Util } from "../shared/util";
 import Config = require("./config");
 import { AzureMonitorTraceExporter, AzureMonitorLogExporter } from "@azure/monitor-opentelemetry-exporter";
 import { AttributeSpanProcessor } from "../shared/util/attributeSpanProcessor";
-import { BasicTracerProvider, NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
+import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { AttributeLogProcessor } from "../shared/util/attributeLogRecordProcessor";
 import { ApplicationInsightsClient } from "../applicationInsightsClient";
 import { LogApi } from "../logs/api";
