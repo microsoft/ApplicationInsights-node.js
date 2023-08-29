@@ -1,16 +1,25 @@
-import { BatchSpanProcessor, Span } from "@opentelemetry/sdk-trace-base";
-import { SpanExporter } from "@opentelemetry/sdk-trace-node";
-import { context } from "@opentelemetry/api";
+import { SpanProcessor, Span } from "@opentelemetry/sdk-trace-base";
 
-export class AttributeSpanProcessor extends BatchSpanProcessor {
+export class AttributeSpanProcessor implements SpanProcessor {
     private _attributes: { [key: string]: string };
-    constructor(exporter: SpanExporter, attributes: { [key: string]: string }) {
-        super(exporter);
+    constructor(attributes: { [key: string]: string }) {
         this._attributes = attributes;
     }
-    // Override onStart to apply span attributes before exporting
-    onStart(span: Span) {
+    
+    // Implement onStart to apply span attributes before exporting
+    onStart(span: Span): void {
         span.setAttributes(this._attributes);
-        super.onStart(span, context.active());
+    }
+
+    onEnd(): void {
+        return;
+    }
+
+    shutdown(): Promise<void> {
+        return Promise.resolve();
+    }
+
+    forceFlush(): Promise<void> {
+        return Promise.resolve();
     }
 }

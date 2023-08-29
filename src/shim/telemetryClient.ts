@@ -11,7 +11,6 @@ import { Context } from "./context";
 import { Logger } from "../shared/logging";
 import { Util } from "../shared/util";
 import Config = require("./config");
-import { AzureMonitorTraceExporter, AzureMonitorLogExporter } from "@azure/monitor-opentelemetry-exporter";
 import { AttributeSpanProcessor } from "../shared/util/attributeSpanProcessor";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { AttributeLogProcessor } from "../shared/util/attributeLogRecordProcessor";
@@ -49,10 +48,10 @@ export class TelemetryClient {
         // LoggerProvider would be initialized when client is instantiated
         // Get Logger from global provider
         this._logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
-        this._attributeSpanProcessor = new AttributeSpanProcessor(new AzureMonitorTraceExporter(this.config.parseConfig().azureMonitorExporterConfig), this.context.tags);
+        this._attributeSpanProcessor = new AttributeSpanProcessor(this.context.tags);
         ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider).addSpanProcessor(this._attributeSpanProcessor);
 
-        this._attributeLogProcessor = new AttributeLogProcessor(new AzureMonitorLogExporter(options.azureMonitorExporterConfig), this.context.tags);
+        this._attributeLogProcessor = new AttributeLogProcessor(this.context.tags);
         (logs.getLoggerProvider() as LoggerProvider).addLogRecordProcessor(this._attributeLogProcessor);
     }
 

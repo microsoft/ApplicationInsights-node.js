@@ -1,14 +1,21 @@
-import { BatchLogRecordProcessor, LogRecord, LogRecordExporter } from "@opentelemetry/sdk-logs";
+import { LogRecord, LogRecordProcessor } from "@opentelemetry/sdk-logs";
 
-export class AttributeLogProcessor extends BatchLogRecordProcessor {
+export class AttributeLogProcessor implements LogRecordProcessor {
     private _attributes: { [key: string]: string };
-    constructor(exporter: LogRecordExporter, attributes: { [key: string]: string }) {
-        super(exporter);
+    constructor(attributes: { [key: string]: string }) {
         this._attributes = attributes;
     }
+    
     // Override onEmit to apply log record attributes before exporting
     onEmit(record: LogRecord) {
         record.setAttributes(this._attributes);
-        super.onEmit(record);
+    }
+
+    shutdown(): Promise<void> {
+        return Promise.resolve();
+    }
+
+    forceFlush(): Promise<void> {
+        return Promise.resolve();
     }
 }
