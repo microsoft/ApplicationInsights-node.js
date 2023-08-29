@@ -100,7 +100,7 @@ const config : ApplicationInsightsOptions = {
         redis4: { enabled: true },
     },
     resource: resource,
-    logInstrumentations: {
+    logInstrumentationOptions: {
         console: { enabled: true},
         bunyan: { enabled: true},
         winston: { enabled: true},
@@ -122,7 +122,7 @@ const appInsights = new TelemetryClient(config);
 | ------------------------------- |------------------------------------------------------------------------------------------------------------|-------|
 | ...                     | Azure Monitor OpenTelemetry Configuration   [More info here](https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/monitor/monitor-opentelemetry#configuration)                                                | |
 | enableAutoCollectExceptions     | Sets the state of exception tracking. If true uncaught exceptions will be sent to Application Insights | true|
-| logInstrumentations| Allow configuration of Log Instrumentations. |  {"console": { enabled: false },"bunyan": { enabled: false },"winston": { enabled: false }}|
+| logInstrumentationOptions| Allow configuration of Log Instrumentations. |  {"console": { enabled: false },"bunyan": { enabled: false },"winston": { enabled: false }}|
 | extendedMetrics       | Enable/Disable specific extended Metrics(gc, heap and loop).  |{"gc":false,"heap":false,"loop":false}|
 
 Configuration could be set using configuration file  `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. These configuration values will be applied to all ApplicationInsightsClients created in the SDK. 
@@ -138,7 +138,7 @@ Configuration could be set using configuration file  `applicationinsights.json` 
             "enabled": false
         }
     },
-    "logInstrumentations":{
+    "logInstrumentationOptions":{
         "console": {
             "enabled": true
         }

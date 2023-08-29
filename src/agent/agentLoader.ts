@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import { ManagedIdentityCredential } from "@azure/identity";
-import { AzureMonitorOpenTelemetryClient } from "@azure/monitor-opentelemetry";
+import { useAzureMonitor } from "@azure/monitor-opentelemetry";
 import { Util } from "../shared/util";
 import { ConsoleWriter } from "./diagnostics/writers/consoleWriter";
 import { DiagnosticLogger } from "./diagnostics/diagnosticLogger";
@@ -43,7 +43,6 @@ export class AgentLoader {
                 },
                 enableAutoCollectExceptions: true,
                 enableAutoCollectPerformance: true,
-                enableAutoCollectStandardMetrics: true,
                 samplingRatio: 1, // Sample all telemetry by default
                 instrumentationOptions: {
                     azureSdk: {
@@ -110,7 +109,7 @@ export class AgentLoader {
         this._diagnosticLogger = logger;
     }
 
-    public initialize(): AzureMonitorOpenTelemetryClient {
+    public initialize() {
         if (!this._canLoad) {
             const msg = `Cannot load Azure Monitor Application Insights Distro because of unsupported Node.js runtime, currently running in version ${NODE_JS_RUNTIME_MAJOR_VERSION}`;
             console.log(msg);
@@ -119,8 +118,8 @@ export class AgentLoader {
         if (this._validate()) {
             try {
                 // Initialize Distro
-                this._options.azureMonitorExporterConfig.aadTokenCredential = this._aadCredential;
-                const appInsightsClient = new AzureMonitorOpenTelemetryClient(this._options);
+                this._options.azureMonitorExporterConfig.credential = this._aadCredential;
+                useAzureMonitor(this._options);
                 // Agent successfully initialized
                 const diagnosticLog: IDiagnosticLog = {
                     message: "Azure Monitor Application Insights Distro was started succesfully.",
@@ -130,8 +129,6 @@ export class AgentLoader {
                 this._statusLogger.logStatus({
                     AgentInitializedSuccessfully: true
                 });
-                return appInsightsClient;
-
             }
             catch (error) {
                 const msg = `Error initializaing Azure Monitor Application Insights Distro.${Util.getInstance().dumpObj(error)}`;

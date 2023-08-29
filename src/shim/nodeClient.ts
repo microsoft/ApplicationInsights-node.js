@@ -1,5 +1,5 @@
 import { Logger } from "../shared/logging";
-import { Contracts, TelemetryClient } from "./shim-applicationinsights";
+import { Contracts, TelemetryClient } from "./applicationinsights";
 
 class NodeClient extends TelemetryClient {
     /**

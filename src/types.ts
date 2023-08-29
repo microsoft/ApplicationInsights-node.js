@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import { AzureMonitorOpenTelemetryOptions } from "@azure/monitor-opentelemetry";
+import { OTLPExporterNodeConfigBase } from "@opentelemetry/otlp-exporter-base";
 
 /**
  * Azure Monitor OpenTelemetry Options
@@ -15,14 +16,33 @@ export interface ApplicationInsightsOptions extends AzureMonitorOpenTelemetryOpt
     /**
      * Log Instrumentations configuration included as part of Application Insights (console, bunyan, winston)
      */
-    logInstrumentations?: LogInstrumentationsConfig;
+    logInstrumentationOptions?: LogInstrumentationOptions;
+    /** OTLP Trace Exporter Configuration */
+    otlpTraceExporterConfig?: OTLPExporterConfig;
+    /** OTLP Metric Exporter Configuration */
+    otlpMetricExporterConfig?: OTLPExporterConfig;
+    /** OTLP Log Exporter Configuration */
+    otlpLogExporterConfig?: OTLPExporterConfig;
+    /**
+  * Sets the state of performance tracking (enabled by default)
+  * if true performance counters will be collected every second and sent to Azure Monitor
+  */
+    enableAutoCollectPerformance?: boolean;
     /**
      * Specific extended metrics, applicationinsights-native-metrics package need to be available
      */
     extendedMetrics?: { [type: string]: boolean };
 }
 
-export interface LogInstrumentationsConfig {
+/**
+ * OTLP Exporter Options
+ */
+export interface OTLPExporterConfig extends OTLPExporterNodeConfigBase {
+    /** Enable/Disable OTLP Exporter */
+    enabled?: boolean;
+  }
+
+export interface LogInstrumentationOptions {
     console?: { enabled: boolean };
     bunyan?: { enabled: boolean };
     winston?: { enabled: boolean };

@@ -1,11 +1,11 @@
 import assert = require('assert');
 import sinon = require('sinon');
-import { TelemetryClient } from '../../../applicationinsights';
-import { HttpInstrumentationConfig } from '@opentelemetry/instrumentation-http';
-const applicationInsights = require('../../../applicationinsights');
 import azureCoreAuth = require("@azure/core-auth");
-import { Logger } from "../../../src/shared/logging"
 import { DiagLogLevel } from '@opentelemetry/api';
+import { HttpInstrumentationConfig } from '@opentelemetry/instrumentation-http';
+import { Logger } from "../../../src/shared/logging"
+import Config = require('../../../src/shim/config');
+
 
 class TestTokenCredential implements azureCoreAuth.TokenCredential {
     private _expiresOn: Date;
@@ -39,75 +39,67 @@ describe("shim/configuration/config", () => {
         sandbox.restore();
     })
 
-    describe("#constructor()", () => {
+    describe("#Shim config()", () => {
         it("should initialize config values", () => {
-            const telemetryClient = new TelemetryClient(connectionString);
-            applicationInsights.setup(connectionString);
-            telemetryClient.config.instrumentationKey = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
-            telemetryClient.config.endpointUrl = "https://centralus-0.in.applicationinsights.azure.com/";
-            telemetryClient.config.proxyHttpUrl = "http://localhost:8888",
-            telemetryClient.config.proxyHttpsUrl = "https://localhost:3000",
-            telemetryClient.config.correlationHeaderExcludedDomains = ["https://www.bing.com"],
-            telemetryClient.config.samplingPercentage = 50;
-            telemetryClient.config.enableAutoCollectExternalLoggers = true;
-            telemetryClient.config.enableAutoCollectExceptions = true;
-            telemetryClient.config.enableAutoCollectConsole = true;
-            telemetryClient.config.enableAutoCollectExceptions = true;
-            telemetryClient.config.enableAutoCollectPerformance = true;
-            telemetryClient.config.enableAutoCollectExtendedMetrics = true;
-            telemetryClient.config.enableAutoCollectRequests = true;
-            telemetryClient.config.enableAutoCollectDependencies = true;
-            telemetryClient.config.aadTokenCredential = new TestTokenCredential();
-            telemetryClient.config.maxBatchIntervalMs = 1000;
-            telemetryClient.start();
+            const config = new Config(connectionString);
+            config.endpointUrl = "https://centralus-0.in.applicationinsights.azure.com/";
+            config.proxyHttpUrl = "http://localhost:8888";
+            config.proxyHttpsUrl = "https://localhost:3000";
+            config.correlationHeaderExcludedDomains = ["https://www.bing.com"];
+            config.samplingPercentage = 50;
+            config.enableAutoCollectExternalLoggers = true;
+            config.enableAutoCollectExceptions = true;
+            config.enableAutoCollectConsole = true;
+            config.enableAutoCollectExceptions = true;
+            config.enableAutoCollectPerformance = true;
+            config.enableAutoCollectExtendedMetrics = true;
+            config.enableAutoCollectRequests = true;
+            config.enableAutoCollectDependencies = true;
+            config.aadTokenCredential = new TestTokenCredential();
+            config.maxBatchIntervalMs = 1000;
 
-            assert.equal(telemetryClient["_options"].samplingRatio, 0.5);
-            assert.equal(telemetryClient["_options"].azureMonitorExporterConfig.connectionString, connectionString);
-            assert.equal(telemetryClient["_options"].azureMonitorExporterConfig.proxyOptions.host, "localhost");
-            assert.equal(telemetryClient["_options"].azureMonitorExporterConfig.proxyOptions.port, 3000);
-            const ignoreOutgoingUrls = telemetryClient["_options"].instrumentationOptions.http as HttpInstrumentationConfig;
-            assert.equal(ignoreOutgoingUrls.ignoreOutgoingUrls, "https://www.bing.com");
-            assert.equal(JSON.stringify(telemetryClient["_options"].logInstrumentations), JSON.stringify({ console: { enabled: true }, winston: { enabled: true }, bunyan: { enabled: true } }));
-            assert.equal(telemetryClient["_options"].enableAutoCollectExceptions, true);
-            assert.equal(telemetryClient["_options"].enableAutoCollectPerformance, true);
-            assert.equal(JSON.stringify(telemetryClient["_options"].extendedMetrics), JSON.stringify({ gc: true, heap: true, loop: true }));
-            assert.equal(telemetryClient["_options"].instrumentationOptions.http.hasOwnProperty("ignoreIncomingRequestHook"), true);
-            assert.equal(telemetryClient["_options"].instrumentationOptions.http.hasOwnProperty("ignoreOutgoingRequestHook"), true);
-            assert.equal(telemetryClient["_options"].azureMonitorExporterConfig.aadTokenCredential, telemetryClient.config.aadTokenCredential);
+            let options = config.parseConfig();
+
+            assert.equal(options.samplingRatio, 0.5, "wrong samplingRatio");
+            assert.equal(options.azureMonitorExporterConfig.connectionString, connectionString), "wrong connectionString";
+            assert.equal(options.azureMonitorExporterConfig.proxyOptions.host, "localhost", "wrong host");
+            assert.equal(options.azureMonitorExporterConfig.proxyOptions.port, 3000, "wrong port");
+            assert.equal((options.instrumentationOptions.http as HttpInstrumentationConfig).ignoreOutgoingUrls[0], "https://www.bing.com", "wrong ignoreOutgoingUrls");
+            assert.equal(JSON.stringify(options.logInstrumentationOptions), JSON.stringify({ console: { enabled: true }, winston: { enabled: true }, bunyan: { enabled: true } }), "wrong logInstrumentationOptions");
+            assert.equal(options.enableAutoCollectExceptions, true, "wrong enableAutoCollectExceptions");
+            assert.equal(options.enableAutoCollectPerformance, true, "wrong enableAutoCollectPerformance");
+            assert.equal(JSON.stringify(options.extendedMetrics), JSON.stringify({ gc: true, heap: true, loop: true }), "wrong extendedMetrics");
+            assert.equal(options.azureMonitorExporterConfig.credential, config.aadTokenCredential, "wrong credential");
             assert.equal(
-                JSON.stringify(telemetryClient["_options"].otlpTraceExporterConfig),
-                JSON.stringify({timeoutMillis: 1000})
+                JSON.stringify(options.otlpTraceExporterConfig),
+                JSON.stringify({ timeoutMillis: 1000 }), "wrong otlpTraceExporterConfig"
             );
             assert.equal(
-                JSON.stringify(telemetryClient["_options"].otlpMetricExporterConfig),
-                JSON.stringify({timeoutMillis: 1000})
+                JSON.stringify(options.otlpMetricExporterConfig),
+                JSON.stringify({ timeoutMillis: 1000 }), "wrong otlpMetricExporterConfig"
             );
             assert.equal(
-                JSON.stringify(telemetryClient["_options"].otlpLogExporterConfig),
-                JSON.stringify({timeoutMillis: 1000})
+                JSON.stringify(options.otlpLogExporterConfig),
+                JSON.stringify({ timeoutMillis: 1000 }), "wrong otlpLogExporterConfig"
             );
+            // TODO: Validate all Config properties
         });
 
         it("should activate internal loggers", () => {
-            const telemetryClient = new TelemetryClient(connectionString);
+            const config = new Config(connectionString);
             assert.equal(Logger.getInstance()["_diagLevel"], DiagLogLevel.WARN);
-            telemetryClient.config.enableInternalDebugLogging = true;
-            telemetryClient.start();
+            config.enableInternalDebugLogging = true;
+            config.parseConfig();
             assert.equal(Logger.getInstance()["_diagLevel"], DiagLogLevel.DEBUG);
         });
 
-        it("should disableALlExtenededMetrics", () => {
-            const telemetryClient = new TelemetryClient(connectionString);
-            telemetryClient.config.disableAllExtendedMetrics = true;
-            telemetryClient.start();
-            assert.equal(JSON.stringify(telemetryClient["_options"].extendedMetrics), JSON.stringify({ gc: false, heap: false, loop: false }));
+        it("should disableAllExtendedMetrics", () => {
+            const config = new Config(connectionString);
+            config.disableAllExtendedMetrics = true;
+            let options = config.parseConfig();
+            assert.equal(JSON.stringify(options.extendedMetrics), JSON.stringify({ gc: false, heap: false, loop: false }));
         });
 
-        it("should disableAppInsights", () => {
-            applicationInsights.setup(connectionString);
-            applicationInsights.defaultClient.config.disableAppInsights = true;
-            applicationInsights.start();
-            assert.equal(applicationInsights.defaultClient, undefined);
-        });
+        // TODO: Add test for warning messages
     });
 });

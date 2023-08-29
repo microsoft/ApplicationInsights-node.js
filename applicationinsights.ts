@@ -11,4 +11,4 @@ export {
     HttpRequest,
     TelemetryClient,
     dispose,
-} from "./src/shim/shim-applicationinsights";
+} from "./src/shim/applicationinsights";

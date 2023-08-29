@@ -1,22 +1,22 @@
-import { LogInstrumentationsConfig } from "../types";
+import { LogInstrumentationOptions } from "../types";
+import { LogApi } from "./api";
 import { enablePublishers } from "./diagnostic-channel/initialization";
-import { TelemetryClient } from "../shim/telemetryClient";
 enablePublishers();
 
 export class AutoCollectConsole {
-    private _client: TelemetryClient;
+    private _client: LogApi;
 
-    constructor(client: TelemetryClient) {
+    constructor(client: LogApi) {
         this._client = client;
     }
 
-    public enable(config: LogInstrumentationsConfig) {
+    public enable(options: LogInstrumentationOptions) {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
-        require("./diagnostic-channel/console.sub").enable(config.console.enabled, this._client);
+        require("./diagnostic-channel/console.sub").enable(options.console?.enabled, this._client);
         // eslint-disable-next-line @typescript-eslint/no-var-requires
-        require("./diagnostic-channel/bunyan.sub").enable(config.bunyan.enabled, this._client);
+        require("./diagnostic-channel/bunyan.sub").enable(options.bunyan?.enabled, this._client);
         // eslint-disable-next-line @typescript-eslint/no-var-requires
-        require("./diagnostic-channel/winston.sub").enable(config.winston.enabled, this._client);
+        require("./diagnostic-channel/winston.sub").enable(options.winston?.enabled, this._client);
     }
 
     public shutdown() {

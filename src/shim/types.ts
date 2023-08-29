@@ -127,8 +127,6 @@ export interface ConnectionString {
 export type ConnectionStringKey = "instrumentationkey" | "ingestionendpoint" | "liveendpoint" | "location"| "endpointsuffix";
 
 export interface IBaseConfig {
-    /** Application Insights resource instrumentation key */
-    instrumentationKey: string;
     /** The ingestion endpoint to send telemetry payloads to */
     endpointUrl: string;
     /** The maximum number of telemetry items to include in a payload to the ingestion endpoint (Default 250) */
@@ -139,8 +137,6 @@ export interface IBaseConfig {
     disableAppInsights: boolean;
     /** The percentage of telemetry items tracked that should be transmitted (Default 100) */
     samplingPercentage: number;
-    /** The time to wait before retrying to retrieve the id for cross-component correlation (Default 30000) */
-    correlationIdRetryIntervalMs: number;
     /** A list of domains to exclude from cross-component header injection */
     correlationHeaderExcludedDomains: string[];
     /** A proxy server for SDK HTTP traffic (Optional, Default pulled from `http_proxy` environment variable) */
@@ -252,24 +248,9 @@ export interface IBaseConfig {
     */
     extendedMetricDisablers: string;
     /**
-    * Disable Statsbeat
-    */
-    disableStatsbeat: boolean;
-    /**
     * Live Metrics custom host
     */
     quickPulseHost: string;
-    /**
-     * @deprecated, please use enableWebInstrumentation instead
-     * Enable web snippet auto html injection, default to false, this config is NOT exposed in documentation after version 2.3.5
-     */
-    enableAutoWebSnippetInjection?: boolean;
-    /**
-     * @deprecated, Please use webInstrumentationConnectionString instead
-     * Application Insights resource connection string for web snippet, this config is NOT exposed in documentation after version 2.3.5
-     * Note: if no valid connection string is provided here, web snippet will use the connection string during initializing Nodejs SDK
-     */
-    webSnippetConnectionString?: string;
     /**
      * Enable web instrumentation and automatic monitoring, default to false
      */

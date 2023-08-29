@@ -1,15 +1,12 @@
 import * as http from "http";
-import { DiagLogLevel, SpanContext } from "@opentelemetry/api";
-import { CorrelationContextManager } from "./correlationContextManager";
 import * as azureFunctionsTypes from "@azure/functions";
+import { SpanContext } from "@opentelemetry/api";
 import { Span } from "@opentelemetry/sdk-trace-base";
-import { Logger } from "../shared/logging";
+import { CorrelationContextManager } from "./correlationContextManager";
 import { ICorrelationContext, HttpRequest, DistributedTracingModes } from "./types";
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
-import { ApplicationInsightsOptions } from "../types";
-import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
-import ConfigHelper = require("../shared/util/configHelper");
+
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
@@ -21,15 +18,7 @@ export { Contracts, DistributedTracingModes, HttpRequest, TelemetryClient };
  */
 export let defaultClient: TelemetryClient;
 
-/**
- * Flag to let the TelemetryClient know that setup has been called from the shim
- */
-export let _setupCalled = false;
 // export let liveMetricsClient: QuickPulseStateManager;
-
-
-let _setupString: string | undefined;
-let _options: ApplicationInsightsOptions;
 
 /**
  * Initializes the default client. Should be called after setting
@@ -42,15 +31,7 @@ let _options: ApplicationInsightsOptions;
  * and start the SDK.
  */
 export function setup(setupString?: string) {
-    _setupCalled = true;
-    // Save the setup string and create a config to modify with other functions in this file
-    _setupString = setupString;
-    if (!_options) {
-        _options = { azureMonitorExporterConfig: { connectionString: _setupString } };
-    } else {
-        Logger.getInstance().info("Cannot run applicationinsights.setup() more than once.");
-    }
-    defaultClient = new TelemetryClient(_options);
+    defaultClient = new TelemetryClient(setupString);
     return Configuration;
 }
 
@@ -61,13 +42,7 @@ export function setup(setupString?: string) {
  * @returns {ApplicationInsights} this class
  */
 export function start() {
-    // Creates a new TelemetryClient that uses the _config we configure via the other functions in this file
-    const httpOptions: HttpInstrumentationConfig | undefined = _options?.instrumentationOptions?.http;
-    if (httpOptions?.ignoreIncomingRequestHook && httpOptions?.ignoreOutgoingRequestHook) {
-        _options.instrumentationOptions.http.enabled = false;
-        Logger.getInstance().info("Both ignoreIncomingRequestHook and ignoreOutgoingRequestHook are set to true. Disabling http instrumentation.");
-    }
-    defaultClient.start(_options);
+    defaultClient.initialize();
     return Configuration;
 }
 
@@ -121,7 +96,10 @@ export class Configuration {
      */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public static setDistributedTracingMode(value: number) {
-        Logger.getInstance().info("Setting distributedTracingMode will not affect correlation headers as only W3C is currently supported.");
+        if (defaultClient) {
+            defaultClient.config.distributedTracingMode = value;
+        }
+        return Configuration;
     }
 
     /**
@@ -131,12 +109,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectConsole(value: boolean, collectConsoleLog = false) {
-        if (_options) {
-            _options.logInstrumentations = {
-                bunyan: { enabled: value },
-                winston: { enabled: value },
-                console: { enabled: collectConsoleLog },
-            }
+        if (defaultClient) {
+            defaultClient.config.enableAutoCollectExternalLoggers = value;
+            defaultClient.config.enableAutoCollectConsole = collectConsoleLog;
         }
         return Configuration;
     }
@@ -147,8 +122,8 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectExceptions(value: boolean) {
-        if (_options) {
-            _options.enableAutoCollectExceptions = value;
+        if (defaultClient) {
+            defaultClient.config.enableAutoCollectExceptions = value;
         }
         return Configuration;
     }
@@ -160,7 +135,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: any) {
-        ConfigHelper.setAutoCollectPerformance(_options, value, collectExtendedMetrics);
+        if (defaultClient) {
+            defaultClient.config.enableAutoCollectPerformance = value;
+        }
         return Configuration;
     }
 
@@ -170,8 +147,8 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectPreAggregatedMetrics(value: boolean) {
-        if (_options) {
-            _options.enableAutoCollectStandardMetrics = value;
+        if (defaultClient) {
+            defaultClient.config.enableAutoCollectPreAggregatedMetrics = value;
         }
         return Configuration;
     }
@@ -182,7 +159,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectHeartbeat(value: boolean) {
-        Logger.getInstance().info("Heartbeat is not implemented and this method is a no-op.");
+        if (defaultClient) {
+            defaultClient.config.enableAutoCollectHeartbeat = value;
+        }
         return Configuration;
     }
 
@@ -193,7 +172,10 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static enableWebInstrumentation(value: boolean, WebSnippetConnectionString?: string) {
-        Logger.getInstance().info("Web snippet injection is not implemented and this method is a no-op.");
+        if (defaultClient) {
+            defaultClient.config.enableWebInstrumentation = value;
+            defaultClient.config.webInstrumentationConnectionString = WebSnippetConnectionString;
+        }
         return Configuration;
     }
 
@@ -203,7 +185,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectRequests(value: boolean) {
-        ConfigHelper.setAutoCollectRequests(_options, value);
+        if (defaultClient) {
+            defaultClient.config.enableAutoCollectRequests = value;
+        }
         return Configuration;
     }
 
@@ -213,7 +197,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectDependencies(value: boolean) {
-        ConfigHelper.setAutoCollectDependencies(_options, value);
+        if (defaultClient) {
+            defaultClient.config.enableAutoCollectDependencies = value;
+        }
         return Configuration;
     }
 
@@ -224,11 +210,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoDependencyCorrelation(value: boolean, useAsyncHooks?: boolean) {
-        if (!value) {
-            CorrelationContextManager.disable();
-        }
-        if (useAsyncHooks === false) {
-            Logger.getInstance().warn("The use of non async hooks is no longer supported.");
+        if (defaultClient) {
+            defaultClient.config.enableAutoDependencyCorrelation = value;
+            defaultClient.config.enableUseAsyncHooks = useAsyncHooks;
         }
         return Configuration;
     }
@@ -245,7 +229,9 @@ export class Configuration {
      */
     public static setUseDiskRetryCaching(value: boolean, resendInterval?: number, maxBytesOnDisk?: number) {
         if (defaultClient) {
-            defaultClient.setUseDiskRetryCaching(value, resendInterval, maxBytesOnDisk);
+            defaultClient.config.enableUseDiskRetryCaching = value;
+            defaultClient.config.enableResendInterval = resendInterval;
+            defaultClient.config.enableMaxBytesOnDisk = maxBytesOnDisk;
         }
         return Configuration;
     }
@@ -257,16 +243,10 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setInternalLogging(enableDebugLogger = false, enableWarningLogger = true) {
-        if (enableDebugLogger) {
-            Logger.getInstance().updateLogLevel(DiagLogLevel.DEBUG);
-            return Configuration;
+        if (defaultClient) {
+            defaultClient.config.enableInternalDebugLogging = enableDebugLogger;
+            defaultClient.config.enableInternalWarningLogging = enableWarningLogger;
         }
-        if (enableWarningLogger) {
-            Logger.getInstance().updateLogLevel(DiagLogLevel.WARN);
-            return Configuration;
-        }
-        // Default
-        Logger.getInstance().updateLogLevel(DiagLogLevel.INFO);
         return Configuration;
     }
 
@@ -276,7 +256,9 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectIncomingRequestAzureFunctions(value: boolean) {
-        Logger.getInstance().info("Auto collect incoming request is not implemented and this method is a no-op.");
+        if (defaultClient) {
+            defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions = value;
+        }
         return Configuration;
     }
 
@@ -285,7 +267,9 @@ export class Configuration {
      * @param enable if true, enables communication with the live metrics service
      */
     public static setSendLiveMetrics(enable = false) {
-        Logger.getInstance().info("Live Metrics is not implemented and this method is a no-op.");
+        if (defaultClient) {
+            defaultClient.config.enableSendLiveMetrics = enable;
+        }
         return Configuration;
     }
 }
