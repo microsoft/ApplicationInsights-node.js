@@ -2,11 +2,15 @@
 // Licensed under the MIT license.
 
 import { shutdownAzureMonitor, useAzureMonitor } from "@azure/monitor-opentelemetry";
-import { metrics, trace } from "@opentelemetry/api";
-import { MeterProvider } from "@opentelemetry/sdk-metrics";
+import { metrics, trace, ProxyTracerProvider } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
-import { LoggerProvider } from "@opentelemetry/sdk-logs";
-import { BasicTracerProvider } from "@opentelemetry/sdk-trace-node";
+import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
+import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
+import { MeterProvider, PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
+import { BatchLogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
+import { BasicTracerProvider, BatchSpanProcessor, NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
+
 import { Logger } from "./shared/logging";
 import { AutoCollectConsole } from "./logs/console";
 import { AutoCollectExceptions } from "./logs/exceptions";
@@ -30,11 +34,11 @@ export class ApplicationInsightsClient {
         this._logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
         this._internalConfig = new ApplicationInsightsConfig(options);
         this._console = new AutoCollectConsole(this._logApi);
-        
         if (this._internalConfig.enableAutoCollectExceptions) {
             this._exceptions = new AutoCollectExceptions(this._logApi);
         }
         this._console.enable(this._internalConfig.logInstrumentationOptions);
+        this._addOtlpExporters();
     }
 
     /**
@@ -59,5 +63,40 @@ export class ApplicationInsightsClient {
         this._console = null;
         this._exceptions?.shutdown();
         this._exceptions = null;
+    }
+
+    private _addOtlpExporters() {
+        if (this._internalConfig.otlpMetricExporterConfig?.enabled) {
+            const otlpMetricsExporter = new OTLPMetricExporter(this._internalConfig.otlpMetricExporterConfig);
+            const otlpMetricReader = new PeriodicExportingMetricReader({
+                exporter: otlpMetricsExporter,
+            });
+            try {
+                (metrics.getMeterProvider() as MeterProvider).addMetricReader(otlpMetricReader);
+            }
+            catch (err) {
+                Logger.getInstance().error("Failed to set OTLP Metric Exporter", err);
+            }
+        }
+        if (this._internalConfig.otlpLogExporterConfig?.enabled) {
+            const otlpLogExporter = new OTLPLogExporter(this._internalConfig.otlpLogExporterConfig);
+            const otlpLogProcessor = new BatchLogRecordProcessor(otlpLogExporter);
+            try {
+                (logs.getLoggerProvider() as LoggerProvider).addLogRecordProcessor(otlpLogProcessor);
+            }
+            catch (err) {
+                Logger.getInstance().error("Failed to set OTLP Log Exporter", err);
+            }
+        }
+        if (this._internalConfig.otlpTraceExporterConfig?.enabled) {
+            const otlpTraceExporter = new OTLPTraceExporter(this._internalConfig.otlpTraceExporterConfig);
+            let otlpSpanProcessor = new BatchSpanProcessor(otlpTraceExporter);
+            try {
+                ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider).addSpanProcessor(otlpSpanProcessor);
+            }
+            catch (err) {
+                Logger.getInstance().error("Failed to set OTLP Trace Exporter", err);
+            }
+        }
     }
 }

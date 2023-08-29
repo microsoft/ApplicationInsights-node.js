@@ -1,3 +1,10 @@
+import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
+import {
+    Resource,
+    ResourceDetectionConfig,
+    detectResourcesSync,
+    envDetectorSync,
+} from "@opentelemetry/resources";
 import { JsonConfig } from "./jsonConfig";
 import { Logger } from "../logging";
 import { ApplicationInsightsOptions, ExtendedMetricType, LogInstrumentationOptions, OTLPExporterConfig } from "../../types";
@@ -13,6 +20,23 @@ export class ApplicationInsightsConfig {
     public otlpMetricExporterConfig: OTLPExporterConfig;
     /** OTLP Log Exporter Configuration */
     public otlpLogExporterConfig: OTLPExporterConfig;
+
+    /** Azure Monitor Exporter Configuration */
+    public azureMonitorExporterConfig: AzureMonitorExporterOptions;
+
+    private _resource: Resource;
+
+    public set resource(resource: Resource) {
+        this._resource = this._resource.merge(resource);
+    }
+
+    /**
+     *Get OpenTelemetry Resource
+     */
+    public get resource(): Resource {
+        return this._resource;
+    }
+
     /**
      * Sets the state of performance tracking (enabled by default)
      * if true performance counters will be collected every second and sent to Azure Monitor
@@ -35,6 +59,8 @@ export class ApplicationInsightsConfig {
         this.extendedMetrics[ExtendedMetricType.loop] = false;
         this.enableAutoCollectExceptions = true;
         this.enableAutoCollectPerformance = true;
+        this.azureMonitorExporterConfig = {};
+        this._resource = this._getDefaultResource();
 
         // Merge JSON configuration file if available
         this._mergeConfig();
@@ -103,5 +129,16 @@ export class ApplicationInsightsConfig {
         } catch (error) {
             Logger.getInstance().error("Failed to load JSON config file values.", error);
         }
+    }
+
+    private _getDefaultResource(): Resource {
+        let resource = Resource.default();
+        // Load resource attributes from env
+        const detectResourceConfig: ResourceDetectionConfig = {
+            detectors: [envDetectorSync],
+        };
+        const envResource = detectResourcesSync(detectResourceConfig);
+        resource = resource.merge(envResource);
+        return resource;
     }
 }
