@@ -2,10 +2,11 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 import { channel } from "diagnostic-channel";
 import { winston } from "diagnostic-channel-publishers";
-
+import { logs } from "@opentelemetry/api-logs";
 import { enable, dispose } from "../../../src/logs/diagnostic-channel/winston.sub";
-import { TelemetryClient } from "../../../src";
-import { ApplicationInsightsOptions } from "../../../src/types";
+import { LogApi } from "../../../src/logs/api";
+import { AutoCollectConsole } from "../../../src/logs/console";
+
 
 describe("diagnostic-channel/winston", () => {
     let sandbox: sinon.SinonSandbox;
@@ -20,17 +21,12 @@ describe("diagnostic-channel/winston", () => {
     });
 
     it("should call trackException for errors", () => {
-        const config: ApplicationInsightsOptions = {
-            azureMonitorExporterConfig: {
-                connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;"
-            },
-            logInstrumentations: {
-                winston: { enabled: true }
-            }
-        };
-        const client = new TelemetryClient(config);
-        client.start();
-        const stub = sandbox.stub(client, "trackException");
+        let logApi = new LogApi(logs.getLogger("testLogger"));
+        let autoCollect = new AutoCollectConsole(logApi);
+        autoCollect.enable({
+            winston: { enabled: true }
+        });
+        const stub = sandbox.stub(logApi, "trackException");
         const dummyError = new Error("test error");
         const errorEvent: winston.IWinstonData = {
             message: dummyError as any,
@@ -44,17 +40,12 @@ describe("diagnostic-channel/winston", () => {
     });
 
     it("should call trackTrace for logs", () => {
-        const config: ApplicationInsightsOptions = {
-            azureMonitorExporterConfig: {
-                connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;"
-            },
-            logInstrumentations: {
-                winston: { enabled: true }
-            }
-        };
-        const client = new TelemetryClient(config);
-        client.start();
-        const stub = sandbox.stub(client, "trackTrace");
+        let logApi = new LogApi(logs.getLogger("testLogger"));
+        let autoCollect = new AutoCollectConsole(logApi);
+        autoCollect.enable({
+            winston: { enabled: true }
+        });
+        const stub = sandbox.stub(logApi, "trackTrace");
         const logEvent: winston.IWinstonData = {
             message: "test log",
             meta: {},
@@ -67,22 +58,12 @@ describe("diagnostic-channel/winston", () => {
     });
 
     it("should notify multiple handlers", () => {
-        const config: ApplicationInsightsOptions = {
-            azureMonitorExporterConfig: {
-                connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;"
-            },
-            logInstrumentations: {
-                winston: { enabled: true }
-            }
-        };
-        const client = new TelemetryClient(config);
-        client.start();
-        const secondClient = new TelemetryClient(config);
-        secondClient.start();
-        const stub = sandbox.stub(client, "trackTrace");
-        const secondStub = sandbox.stub(secondClient, "trackTrace");
-        enable(true, client);
-        enable(true, secondClient);
+        let logApi = new LogApi(logs.getLogger("testLogger"));
+        let secondLogApi = new LogApi(logs.getLogger("testLogger"));
+        const stub = sandbox.stub(logApi, "trackTrace");
+        const secondStub = sandbox.stub(secondLogApi, "trackTrace");
+        enable(true, logApi);
+        enable(true, secondLogApi);
         const logEvent: winston.IWinstonData = {
             message: "test log",
             meta: {},

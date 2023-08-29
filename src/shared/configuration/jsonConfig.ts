@@ -1,16 +1,27 @@
 import * as fs from "fs";
 import * as path from "path";
 import { Logger } from "../logging";
-import { ApplicationInsightsOptions, LogInstrumentationsConfig } from "../../types";
+import { ApplicationInsightsOptions, LogInstrumentationOptions, OTLPExporterConfig } from "../../types";
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 const ENV_CONTENT = "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT";
 
-export class JsonConfig implements ApplicationInsightsOptions {
+export class JsonConfig {
     private static _instance: JsonConfig;
     public enableAutoCollectExceptions: boolean;
-    public logInstrumentations: LogInstrumentationsConfig;
+    public logInstrumentationOptions: LogInstrumentationOptions;
     public extendedMetrics: { [type: string]: boolean };
+    /** OTLP Trace Exporter Configuration */
+    public otlpTraceExporterConfig?: OTLPExporterConfig;
+    /** OTLP Metric Exporter Configuration */
+    public otlpMetricExporterConfig?: OTLPExporterConfig;
+    /** OTLP Log Exporter Configuration */
+    public otlpLogExporterConfig?: OTLPExporterConfig;
+    /**
+     * Sets the state of performance tracking (enabled by default)
+     * if true performance counters will be collected every second and sent to Azure Monitor
+     */
+    public enableAutoCollectPerformance?: boolean;
 
     public static getInstance() {
         if (!JsonConfig._instance) {
@@ -52,8 +63,12 @@ export class JsonConfig implements ApplicationInsightsOptions {
         try {
             const jsonConfig: ApplicationInsightsOptions = JSON.parse(jsonString);
             this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
-            this.logInstrumentations = jsonConfig.logInstrumentations;
+            this.logInstrumentationOptions = jsonConfig.logInstrumentationOptions;
             this.extendedMetrics = jsonConfig.extendedMetrics;
+            this.otlpLogExporterConfig = jsonConfig.otlpLogExporterConfig;
+            this.otlpMetricExporterConfig = jsonConfig.otlpMetricExporterConfig;
+            this.otlpTraceExporterConfig = jsonConfig.otlpTraceExporterConfig;
+            this.enableAutoCollectPerformance = jsonConfig.enableAutoCollectPerformance;
         } catch (err) {
             Logger.getInstance().info("Missing or invalid JSON config file: ", err);
         }

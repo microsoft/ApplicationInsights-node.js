@@ -17,7 +17,7 @@ export class AzureFunctionsLoader extends AgentLoader {
         if (this._canLoad) {
             // Azure Fn specific configuration
             this._options.enableAutoCollectPerformance = false;
-            this._options.enableAutoCollectStandardMetrics = false;
+            process.env["APPLICATION_INSIGHTS_NO_STANDARD_METRICS"] = "disable";
             const resourceAttributes: Attributes = {};
             if (process.env.WEBSITE_SITE_NAME) {
                 resourceAttributes[SemanticResourceAttributes.SERVICE_NAME] =

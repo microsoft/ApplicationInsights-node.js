@@ -3,9 +3,9 @@
 import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
 import { winston } from "diagnostic-channel-publishers";
 import { KnownSeverityLevel } from "../../declarations/generated";
-import { TelemetryClient } from "../../shim/telemetryClient";
+import { LogApi } from "../api";
 
-let clients: TelemetryClient[] = [];
+let clients: LogApi[] = [];
 
 const winstonToAILevelMap: { [key: string]: (og: string) => string } = {
     syslog(og: string) {
@@ -58,7 +58,7 @@ const subscriber = (event: IStandardEvent<winston.IWinstonData>) => {
     });
 };
 
-export function enable(enabled: boolean, client: TelemetryClient) {
+export function enable(enabled: boolean, client: LogApi) {
     if (enabled) {
         const handlerFound = clients.find((c) => c === client);
         if (handlerFound) {

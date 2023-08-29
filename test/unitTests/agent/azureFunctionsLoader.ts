@@ -55,7 +55,6 @@ describe("agent/AzureFunctionsLoader", () => {
         // Agent Loader called
         assert.ok(stub.calledOnce);
         // Custom config
-        assert.equal(agent["_options"].enableAutoCollectStandardMetrics, false);
         assert.equal(agent["_options"].enableAutoCollectPerformance, false);
     });
 
