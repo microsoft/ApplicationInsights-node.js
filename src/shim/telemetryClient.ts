@@ -1,25 +1,29 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Attributes, context, DiagLogLevel, SpanKind, SpanOptions, SpanStatusCode, trace } from "@opentelemetry/api";
+import { Attributes, context, ProxyTracerProvider, SpanKind, SpanOptions, SpanStatusCode, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
+import { LoggerProvider } from "@opentelemetry/sdk-logs";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
-
 import * as Contracts from "../declarations/contracts";
 import { TelemetryItem as Envelope } from "../declarations/generated";
 import { Context } from "./context";
 import { Logger } from "../shared/logging";
 import { Util } from "../shared/util";
 import Config = require("./config");
+import { AttributeSpanProcessor } from "../shared/util/attributeSpanProcessor";
+import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
+import { AttributeLogProcessor } from "../shared/util/attributeLogRecordProcessor";
 import { ApplicationInsightsClient } from "../applicationInsightsClient";
 import { LogApi } from "../logs/api";
-
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
  * and manually trigger immediate sending (flushing)
  */
 export class TelemetryClient {
+    private _attributeSpanProcessor: AttributeSpanProcessor;
+    private _attributeLogProcessor: AttributeLogProcessor;
     private _client: ApplicationInsightsClient;
     private _logApi: LogApi;
     public context: Context;
@@ -44,6 +48,11 @@ export class TelemetryClient {
         // LoggerProvider would be initialized when client is instantiated
         // Get Logger from global provider
         this._logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
+        this._attributeSpanProcessor = new AttributeSpanProcessor(this.context.tags);
+        ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider).addSpanProcessor(this._attributeSpanProcessor);
+
+        this._attributeLogProcessor = new AttributeLogProcessor(this.context.tags);
+        (logs.getLoggerProvider() as LoggerProvider).addLogRecordProcessor(this._attributeLogProcessor);
     }
 
     /**
