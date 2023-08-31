@@ -202,7 +202,7 @@ describe("AutoCollection/HttpRequestParser", () => {
             headers: {
                 host: "bing.com",
                 "x-forwarded-for": "123.123.123.123",
-                "cookie": "ai_user=cookieUser|time;ai_session=cookieSession|time;ai_authUser=cookieAuthUser|time",
+                "cookie": `ai_user=cookieUser|time;ai_session=cookieSession|time;ai_authUser=${encodeURI("cookieAuthUser|time")}`,
                 "x-ms-request-id": "parentRequestId",
                 "x-ms-request-root-id": "operationId",
             }

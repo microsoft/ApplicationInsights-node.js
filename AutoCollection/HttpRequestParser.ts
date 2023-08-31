@@ -247,6 +247,10 @@ class HttpRequestParser extends RequestParser {
     private _getId(name: string) {
         var cookie = (this.rawHeaders && this.rawHeaders["cookie"] &&
             typeof this.rawHeaders["cookie"] === "string" && this.rawHeaders["cookie"]) || "";
+
+        if (name === "ai_authUser") {
+            cookie = decodeURI(cookie);
+        }
         var value = HttpRequestParser.parseId(Util.getCookie(name, cookie));
         return value;
     }
