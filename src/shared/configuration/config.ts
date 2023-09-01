@@ -7,7 +7,7 @@ import {
 } from "@opentelemetry/resources";
 import { JsonConfig } from "./jsonConfig";
 import { Logger } from "../logging";
-import { ApplicationInsightsOptions, ExtendedMetricType, LogInstrumentationOptions, OTLPExporterConfig } from "../../types";
+import { ApplicationInsightsOptions, ExtendedMetricType, LogInstrumentationOptions, OTLPExporterConfig, InstrumentationOptions } from "../../types";
 
 
 export class ApplicationInsightsConfig {
@@ -21,8 +21,14 @@ export class ApplicationInsightsConfig {
     /** OTLP Log Exporter Configuration */
     public otlpLogExporterConfig: OTLPExporterConfig;
 
+    /** The rate of telemetry items tracked that should be transmitted (Default 1.0) */
+    public samplingRatio: number;
     /** Azure Monitor Exporter Configuration */
     public azureMonitorExporterConfig: AzureMonitorExporterOptions;
+    /**
+     * OpenTelemetry Instrumentations configuration included as part of Azure Monitor (azureSdk, http, mongoDb, mySql, postgreSql, redis, redis4)
+     */
+    public instrumentationOptions: InstrumentationOptions;
 
     private _resource: Resource;
 
@@ -44,6 +50,7 @@ export class ApplicationInsightsConfig {
     public enableAutoCollectPerformance: boolean;
 
     constructor(options?: ApplicationInsightsOptions) {
+        // Default values
         this.otlpLogExporterConfig = {};
         this.otlpMetricExporterConfig = {};
         this.otlpTraceExporterConfig = {};
@@ -59,7 +66,18 @@ export class ApplicationInsightsConfig {
         this.extendedMetrics[ExtendedMetricType.loop] = false;
         this.enableAutoCollectExceptions = true;
         this.enableAutoCollectPerformance = true;
+
         this.azureMonitorExporterConfig = {};
+        this.samplingRatio = 1;
+        this.instrumentationOptions = {
+            http: { enabled: true },
+            azureSdk: { enabled: false },
+            mongoDb: { enabled: false },
+            mySql: { enabled: false },
+            postgreSql: { enabled: false },
+            redis: { enabled: false },
+            redis4: { enabled: false },
+        };
         this._resource = this._getDefaultResource();
 
         // Merge JSON configuration file if available
@@ -87,6 +105,18 @@ export class ApplicationInsightsConfig {
                 this.otlpLogExporterConfig,
                 options.otlpLogExporterConfig
             );
+
+            // Merge default with provided options
+            this.azureMonitorExporterConfig = Object.assign(
+                this.azureMonitorExporterConfig,
+                options.azureMonitorExporterConfig
+            );
+            this.instrumentationOptions = Object.assign(
+                this.instrumentationOptions,
+                options.instrumentationOptions
+            );
+            this.resource = Object.assign(this.resource, options.resource);
+            this.samplingRatio = options.samplingRatio || this.samplingRatio;
         }
     }
 
@@ -124,6 +154,18 @@ export class ApplicationInsightsConfig {
             this.extendedMetrics = Object.assign(
                 this.extendedMetrics,
                 jsonConfig.extendedMetrics
+            );
+
+            this.samplingRatio =
+                jsonConfig.samplingRatio !== undefined ? jsonConfig.samplingRatio : this.samplingRatio;
+
+            this.azureMonitorExporterConfig = Object.assign(
+                this.azureMonitorExporterConfig,
+                jsonConfig.azureMonitorExporterConfig
+            );
+            this.instrumentationOptions = Object.assign(
+                this.instrumentationOptions,
+                jsonConfig.instrumentationOptions
             );
 
         } catch (error) {

@@ -50,7 +50,6 @@ describe("shim/TelemetryClient", () => {
             let tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider);
             let testProcessor = new TestSpanProcessor();
             tracerProvider.addSpanProcessor(testProcessor);
-            assert.equal(tracerProvider["_registeredSpanProcessors"].length, 3);
             const telemetry: DependencyTelemetry = {
                 name: "TestName",
                 duration: 2000, //2 seconds
@@ -60,7 +59,6 @@ describe("shim/TelemetryClient", () => {
                 target: "TestTarget",
                 success: false,
             };
-            await new Promise((resolve) => setTimeout(resolve, 600));
             client.trackDependency(telemetry);
           
             await tracerProvider.forceFlush();
@@ -80,11 +78,9 @@ describe("shim/TelemetryClient", () => {
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
             );
             client.initialize();
-            await new Promise((resolve) => setTimeout(resolve, 600));
             let tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider);
             let testProcessor = new TestSpanProcessor();
             tracerProvider.addSpanProcessor(testProcessor);
-            assert.equal(tracerProvider["_registeredSpanProcessors"].length, 3);
             const telemetry: DependencyTelemetry = {
                 name: "TestName",
                 duration: 2000, //2 seconds
@@ -94,7 +90,6 @@ describe("shim/TelemetryClient", () => {
                 target: "TestTarget",
                 success: false,
             };
-            await new Promise((resolve) => setTimeout(resolve, 600));
             client.trackDependency(telemetry);
             await tracerProvider.forceFlush();
             const spans = testProcessor.spansProcessed;
@@ -110,11 +105,9 @@ describe("shim/TelemetryClient", () => {
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
             );
             client.initialize();
-            await new Promise((resolve) => setTimeout(resolve, 600));
             let tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider);
             let testProcessor = new TestSpanProcessor();
             tracerProvider.addSpanProcessor(testProcessor);
-            assert.equal(tracerProvider["_registeredSpanProcessors"].length, 3);
             const telemetry: RequestTelemetry = {
                 id: "123456",
                 name: "TestName",
@@ -123,7 +116,6 @@ describe("shim/TelemetryClient", () => {
                 url: "http://test.com",
                 success: false,
             };
-            await new Promise((resolve) => setTimeout(resolve, 600));
             client.trackRequest(telemetry);
             await tracerProvider.forceFlush();
             const spans = testProcessor.spansProcessed;

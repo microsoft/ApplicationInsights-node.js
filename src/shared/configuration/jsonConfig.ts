@@ -1,7 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
+import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 import { Logger } from "../logging";
-import { ApplicationInsightsOptions, LogInstrumentationOptions, OTLPExporterConfig } from "../../types";
+import { ApplicationInsightsOptions, InstrumentationOptions, LogInstrumentationOptions, OTLPExporterConfig } from "../../types";
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 const ENV_CONTENT = "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT";
@@ -22,6 +23,14 @@ export class JsonConfig {
      * if true performance counters will be collected every second and sent to Azure Monitor
      */
     public enableAutoCollectPerformance?: boolean;
+    /** The rate of telemetry items tracked that should be transmitted (Default 1.0) */
+    public samplingRatio?: number;
+    /** Azure Monitor Exporter Configuration */
+    public azureMonitorExporterConfig?: AzureMonitorExporterOptions;
+    /**
+     * OpenTelemetry Instrumentations configuration included as part of Azure Monitor (azureSdk, http, mongoDb, mySql, postgreSql, redis, redis4)
+     */
+    public instrumentationOptions?: InstrumentationOptions;
 
     public static getInstance() {
         if (!JsonConfig._instance) {
@@ -69,6 +78,10 @@ export class JsonConfig {
             this.otlpMetricExporterConfig = jsonConfig.otlpMetricExporterConfig;
             this.otlpTraceExporterConfig = jsonConfig.otlpTraceExporterConfig;
             this.enableAutoCollectPerformance = jsonConfig.enableAutoCollectPerformance;
+
+            this.azureMonitorExporterConfig = jsonConfig.azureMonitorExporterConfig;
+            this.samplingRatio = jsonConfig.samplingRatio;
+            this.instrumentationOptions = jsonConfig.instrumentationOptions;
         } catch (err) {
             Logger.getInstance().info("Missing or invalid JSON config file: ", err);
         }
