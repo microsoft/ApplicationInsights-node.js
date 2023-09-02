@@ -290,7 +290,7 @@ class Config implements IConfig {
 
         // NOT SUPPORTED CONFIGURATION OPTIONS
         if (this.disableAppInsights) {
-            Logger.getInstance().warn("disableAppInsights cohnfiguration no longer supported.");
+            Logger.getInstance().warn("disableAppInsights configuration no longer supported.");
         }
         if (this.enableAutoCollectHeartbeat) {
             Logger.getInstance().warn("Heartbeat metris are no longer supported.");
