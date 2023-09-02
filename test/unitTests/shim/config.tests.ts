@@ -5,6 +5,8 @@ import { DiagLogLevel } from '@opentelemetry/api';
 import { HttpInstrumentationConfig } from '@opentelemetry/instrumentation-http';
 import { Logger } from "../../../src/shared/logging"
 import Config = require('../../../src/shim/config');
+import { TelemetryClient } from "../../../src/shim/telemetryClient";
+import applicationInsights = require("../../../src/index");
 
 
 class TestTokenCredential implements azureCoreAuth.TokenCredential {
@@ -100,6 +102,13 @@ describe("shim/configuration/config", () => {
             assert.equal(JSON.stringify(options.extendedMetrics), JSON.stringify({ gc: false, heap: false, loop: false }));
         });
 
+        it("should set context tags on logs and spans", () => {
+            const telemetryClient = new TelemetryClient(connectionString);
+            telemetryClient.context.tags = { "ai.cloud.role": "testRole", "ai.cloud.roleInstance": "testRoleInstance" };
+            telemetryClient.initialize();
+            telemetryClient["_attributeSpanProcessor"]["_attributes"] = { "ai.cloud.role": "testRole", "ai.cloud.roleInstance": "testRoleInstance" };
+            telemetryClient["_attributeLogProcessor"]["_attributes"] = { "ai.cloud.role": "testRole", "ai.cloud.roleInstance": "testRoleInstance" };
+        });
         // TODO: Add test for warning messages
     });
 });
