@@ -185,6 +185,12 @@ export enum StatsbeatNetworkCategory {
     Quickpulse,
 }
 
+export enum HttpRequestCookieNames {
+    SESSION = "ai_session",
+    USER = "ai_user",
+    AUTH_USER = "ai_authUser",
+}
+
 //Azure SDK Span Attributes
 export const AzNamespace = "az.namespace";
 export const MicrosoftEventHub = "Microsoft.EventHub";

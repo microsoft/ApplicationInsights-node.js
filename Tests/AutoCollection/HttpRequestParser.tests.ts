@@ -202,7 +202,22 @@ describe("AutoCollection/HttpRequestParser", () => {
             headers: {
                 host: "bing.com",
                 "x-forwarded-for": "123.123.123.123",
-                "cookie": `ai_user=cookieUser|time;ai_session=cookieSession|time;ai_authUser=${encodeURI("cookieAuthUser|time")}`,
+                "cookie": `ai_user=cookieUser|time;ai_session=cookieSession|time;ai_authUser=${encodeURI("cookieAuthUser{}/test|time")}`,
+                "x-ms-request-id": "parentRequestId",
+                "x-ms-request-root-id": "operationId",
+            }
+        }
+
+        const request2 = {
+            method: "GET",
+            url: "/search?q=test",
+            connection: {
+                encrypted: false
+            },
+            headers: {
+                host: "bing.com",
+                "x-forwarded-for": "123.123.123.123",
+                "cookie": "ai_user=cookieUser|time;ai_session=cookieSession|time;ai_authUser=userAuthName|time",
                 "x-ms-request-id": "parentRequestId",
                 "x-ms-request-root-id": "operationId",
             }
@@ -239,11 +254,19 @@ describe("AutoCollection/HttpRequestParser", () => {
             var newTags = helper.getRequestTags(originalTags);
             assert.equal(newTags[(<any>HttpRequestParser).keys.locationIp], '123.123.123.123');
             assert.equal(newTags[(<any>HttpRequestParser).keys.userId], 'cookieUser');
-            assert.equal(newTags[(<any>HttpRequestParser).keys.userAuthUserId], 'cookieAuthUser');
+            assert.equal(newTags[(<any>HttpRequestParser).keys.userAuthUserId], 'cookieAuthUser{}/test');
             assert.equal(newTags[(<any>HttpRequestParser).keys.userAgent], undefined);
             assert.equal(newTags[(<any>HttpRequestParser).keys.operationName], 'GET /search');
             assert.equal(newTags[(<any>HttpRequestParser).keys.operationId], 'operationId');
             assert.equal(newTags[(<any>HttpRequestParser).keys.operationParentId], 'parentRequestId');
+        });
+
+        it("should read non-encoded auth user values from headers", () => {
+            const helper = new HttpRequestParser(<any>request2);
+            const originalTags: {[key: string]:string} = {};
+
+            var newTags = helper.getRequestTags(originalTags);
+            assert.equal(newTags[(<any>HttpRequestParser).keys.userAuthUserId], 'userAuthName');
         });
     });
 });

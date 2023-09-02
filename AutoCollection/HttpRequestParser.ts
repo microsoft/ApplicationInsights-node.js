@@ -10,7 +10,8 @@ import CorrelationIdManager = require("../Library/CorrelationIdManager");
 import Tracestate = require("../Library/Tracestate");
 import Traceparent = require("../Library/Traceparent");
 import { HttpRequest } from "../Library/Functions";
-
+import Logging = require("../Library/Logging");
+import { HttpRequestCookieNames } from "../Declarations/Constants";
 
 /**
  * Helper class to read data from the request/response objects and convert them into the telemetry contract
@@ -127,9 +128,9 @@ class HttpRequestParser extends RequestParser {
 
         // don't override tags if they are already set
         newTags[HttpRequestParser.keys.locationIp] = tags[HttpRequestParser.keys.locationIp] || this._getIp();
-        newTags[HttpRequestParser.keys.sessionId] = tags[HttpRequestParser.keys.sessionId] || this._getId("ai_session");
-        newTags[HttpRequestParser.keys.userId] = tags[HttpRequestParser.keys.userId] || this._getId("ai_user");
-        newTags[HttpRequestParser.keys.userAuthUserId] = tags[HttpRequestParser.keys.userAuthUserId] || this._getId("ai_authUser");
+        newTags[HttpRequestParser.keys.sessionId] = tags[HttpRequestParser.keys.sessionId] || this._getId(HttpRequestCookieNames.SESSION);
+        newTags[HttpRequestParser.keys.userId] = tags[HttpRequestParser.keys.userId] || this._getId(HttpRequestCookieNames.USER);
+        newTags[HttpRequestParser.keys.userAuthUserId] = tags[HttpRequestParser.keys.userAuthUserId] || this._getId(HttpRequestCookieNames.AUTH_USER);
         newTags[HttpRequestParser.keys.operationName] = this.getOperationName(tags);
         newTags[HttpRequestParser.keys.operationParentId] = this.getOperationParentId(tags);
         newTags[HttpRequestParser.keys.operationId] = this.getOperationId(tags);
@@ -248,8 +249,14 @@ class HttpRequestParser extends RequestParser {
         var cookie = (this.rawHeaders && this.rawHeaders["cookie"] &&
             typeof this.rawHeaders["cookie"] === "string" && this.rawHeaders["cookie"]) || "";
 
-        if (name === "ai_authUser") {
-            cookie = decodeURI(cookie);
+        if (name === HttpRequestCookieNames.AUTH_USER) {
+            try {
+                cookie = decodeURI(cookie);
+            } catch (error) {
+                // Failed to decode, ignore cookie
+                cookie = "";
+                Logging.warn("Could not decode the auth cookie with error: ", Util.dumpObj(error));
+            }
         }
         var value = HttpRequestParser.parseId(Util.getCookie(name, cookie));
         return value;
