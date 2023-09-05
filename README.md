@@ -52,18 +52,18 @@ npm install applicationinsights@beta
 
 ### Enable Application Insights
 
-> *Important:* `TelemetryClient` must be setup *and* started *before* you import anything else. There may be resulting telemetry loss if other libraries are imported first.
+> *Important:* `useAzureMonitor` must be called *before* you import anything else. There may be resulting telemetry loss if other libraries are imported first.
 
 
 ```typescript
-const { TelemetryClient, ApplicationInsightsOptions } = require("applicationinsights");
+const { useAzureMonitor, ApplicationInsightsOptions } = require("applicationinsights");
 
 const config : ApplicationInsightsOptions = {
     azureMonitorExporterConfig: {
         connectionString: process.env["APPLICATIONINSIGHTS_CONNECTION_STRING"] || "<your connection string>"
     }
 };
-const appInsights = new TelemetryClient(config);
+useAzureMonitor(config);
 ```
 
 * If the Connection String is set in the environment variable
@@ -112,7 +112,7 @@ const config : ApplicationInsightsOptions = {
     }
 
 };
-const appInsights = new TelemetryClient(config);
+useAzureMonitor(config);
 
 ```
 
@@ -158,17 +158,6 @@ process.env.APPLICATIONINSIGHTS_CONFIGURATION_FILE = "C:/applicationinsights/con
 ## Troubleshooting
 
 ### Self-diagnostics
-
-Azure Monitor Application Insights Distro uses the OpenTelemetry API Logger for internal logs. To enable it, use the following code:
-
-```typescript
-import { ApplicationInsightsClient, ApplicationInsightsConfig } from "applicationinsights";
-import { DiagLogLevel } from "@opentelemetry/api";
-
-const appInsights = new ApplicationInsightsClient(new ApplicationInsightsConfig());
-const logger = appInsights.getLogger();
-logger.updateLogLevel(DiagLogLevel.DEBUG);
-```
 
 
 `APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL` environment varialbe could be used to set desired log level, supporting the following values: `NONE`, `ERROR`, `WARN`, `INFO`, `DEBUG`, `VERBOSE` and  `ALL`.
