@@ -1,19 +1,16 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
 import * as nock from "nock";
-import { Context, trace } from "@opentelemetry/api";
-import { BasicTracerProvider, ReadableSpan, Span, SpanProcessor } from "@opentelemetry/sdk-trace-base";
+import { Context, ProxyTracerProvider, trace } from "@opentelemetry/api";
+import { ReadableSpan, Span, SpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations/contracts";
 import { TelemetryClient } from "../../../src/shim/telemetryClient";
 import { DEFAULT_BREEZE_ENDPOINT } from "../../../src/declarations/constants";
+import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 
 
 describe("shim/TelemetryClient", () => {
-    let sandbox: sinon.SinonSandbox;
-    let client: TelemetryClient;
-
     before(() => {
-        sandbox = sinon.createSandbox();
         nock(DEFAULT_BREEZE_ENDPOINT)
             .post("/v2.1/track", (body: string) => true)
             .reply(200, {})
@@ -21,14 +18,6 @@ describe("shim/TelemetryClient", () => {
         nock.disableNetConnect();
     });
 
-    beforeEach(() => {
-        trace.disable();
-    });
-
-    afterEach(() => {
-        sandbox.restore();
-        client.shutdown();
-    });
 
     after(() => {
         nock.cleanAll();
@@ -53,14 +42,14 @@ describe("shim/TelemetryClient", () => {
 
 
     describe("#manual track APIs", () => {
-        it("trackDependency http", (done) => {
-            client = new TelemetryClient(
+        it("trackDependency http", async () => {
+            let client = new TelemetryClient(
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
             );
-            let testTracerProvider = new BasicTracerProvider();
+            client.initialize();
+            let tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider);
             let testProcessor = new TestSpanProcessor();
-            testTracerProvider.addSpanProcessor(testProcessor);
-            testTracerProvider.register();
+            tracerProvider.addSpanProcessor(testProcessor);
             const telemetry: DependencyTelemetry = {
                 name: "TestName",
                 duration: 2000, //2 seconds
@@ -71,33 +60,27 @@ describe("shim/TelemetryClient", () => {
                 success: false,
             };
             client.trackDependency(telemetry);
-            testTracerProvider
-                .forceFlush()
-                .then(() => {
-                    const spans = testProcessor.spansProcessed;
-                    assert.equal(spans.length, 1);
-                    assert.equal(spans[0].name, "TestName");
-                    assert.equal(spans[0].endTime[0] - spans[0].startTime[0], 2); // hrTime UNIX Epoch time in seconds
-                    assert.equal(spans[0].kind, 2, "Span Kind"); // Outgoing
-                    assert.equal(spans[0].attributes["http.method"], "HTTP");
-                    assert.equal(spans[0].attributes["http.status_code"], "401");
-                    assert.equal(spans[0].attributes["http.url"], "http://test.com");
-                    assert.equal(spans[0].attributes["peer.service"], "TestTarget");
-                    done();
-                })
-                .catch((error: Error) => {
-                    done(error);
-                });
+          
+            await tracerProvider.forceFlush();
+            const spans = testProcessor.spansProcessed;
+            assert.equal(spans.length, 1);
+            assert.equal(spans[0].name, "TestName");
+            assert.equal(spans[0].endTime[0] - spans[0].startTime[0], 2); // hrTime UNIX Epoch time in seconds
+            assert.equal(spans[0].kind, 2, "Span Kind"); // Outgoing
+            assert.equal(spans[0].attributes["http.method"], "HTTP");
+            assert.equal(spans[0].attributes["http.status_code"], "401");
+            assert.equal(spans[0].attributes["http.url"], "http://test.com");
+            assert.equal(spans[0].attributes["peer.service"], "TestTarget");
         });
 
-        it("trackDependency DB", (done) => {
-            client = new TelemetryClient(
+        it("trackDependency DB", async () => {
+            let client = new TelemetryClient(
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
             );
-            let testTracerProvider = new BasicTracerProvider();
+            client.initialize();
+            let tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider);
             let testProcessor = new TestSpanProcessor();
-            testTracerProvider.addSpanProcessor(testProcessor);
-            testTracerProvider.register();
+            tracerProvider.addSpanProcessor(testProcessor);
             const telemetry: DependencyTelemetry = {
                 name: "TestName",
                 duration: 2000, //2 seconds
@@ -108,30 +91,23 @@ describe("shim/TelemetryClient", () => {
                 success: false,
             };
             client.trackDependency(telemetry);
-            testTracerProvider
-                .forceFlush()
-                .then(() => {
-                    const spans = testProcessor.spansProcessed;
-                    assert.equal(spans.length, 1);
-                    assert.equal(spans[0].name, "TestName");
-                    assert.equal(spans[0].kind, 2, "Span Kind"); // Outgoing
-                    assert.equal(spans[0].attributes["db.system"], "MYSQL");
-                    assert.equal(spans[0].attributes["db.statement"], "SELECT * FROM test");
-                    done();
-                })
-                .catch((error: Error) => {
-                    done(error);
-                });
+            await tracerProvider.forceFlush();
+            const spans = testProcessor.spansProcessed;
+            assert.equal(spans.length, 1);
+            assert.equal(spans[0].name, "TestName");
+            assert.equal(spans[0].kind, 2, "Span Kind"); // Outgoing
+            assert.equal(spans[0].attributes["db.system"], "MYSQL");
+            assert.equal(spans[0].attributes["db.statement"], "SELECT * FROM test");
         });
 
-        it("trackRequest", (done) => {
-            client = new TelemetryClient(
+        it("trackRequest", async () => {
+            let client = new TelemetryClient(
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
             );
-            let testTracerProvider = new BasicTracerProvider();
+            client.initialize();
+            let tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider);
             let testProcessor = new TestSpanProcessor();
-            testTracerProvider.addSpanProcessor(testProcessor);
-            testTracerProvider.register();
+            tracerProvider.addSpanProcessor(testProcessor);
             const telemetry: RequestTelemetry = {
                 id: "123456",
                 name: "TestName",
@@ -141,22 +117,15 @@ describe("shim/TelemetryClient", () => {
                 success: false,
             };
             client.trackRequest(telemetry);
-            testTracerProvider
-                .forceFlush()
-                .then(() => {
-                    const spans = testProcessor.spansProcessed;
-                    assert.equal(spans.length, 1);
-                    assert.equal(spans[0].name, "TestName");
-                    assert.equal(spans[0].endTime[0] - spans[0].startTime[0], 2); // hrTime UNIX Epoch time in seconds
-                    assert.equal(spans[0].kind, 1, "Span Kind"); // Incoming
-                    assert.equal(spans[0].attributes["http.method"], "HTTP");
-                    assert.equal(spans[0].attributes["http.status_code"], "401");
-                    assert.equal(spans[0].attributes["http.url"], "http://test.com");
-                    done();
-                })
-                .catch((error: Error) => {
-                    done(error);
-                });
+            await tracerProvider.forceFlush();
+            const spans = testProcessor.spansProcessed;
+            assert.equal(spans.length, 1);
+            assert.equal(spans[0].name, "TestName");
+            assert.equal(spans[0].endTime[0] - spans[0].startTime[0], 2); // hrTime UNIX Epoch time in seconds
+            assert.equal(spans[0].kind, 1, "Span Kind"); // Incoming
+            assert.equal(spans[0].attributes["http.method"], "HTTP");
+            assert.equal(spans[0].attributes["http.status_code"], "401");
+            assert.equal(spans[0].attributes["http.url"], "http://test.com");
         });
     });
 });

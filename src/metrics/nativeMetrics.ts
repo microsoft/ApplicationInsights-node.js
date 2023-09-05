@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { AzureMonitorOpenTelemetryOptions } from "@azure/monitor-opentelemetry";
 import { AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
 import {
     MeterProvider,
@@ -11,6 +10,7 @@ import {
 } from "@opentelemetry/sdk-metrics";
 import { Histogram, Meter, ObservableGauge, ObservableResult } from "@opentelemetry/api";
 import { Logger } from "../shared/logging";
+import { AzureMonitorOpenTelemetryOptions } from "../types";
 
 /**
  * Azure Monitor Native Metrics
