@@ -159,17 +159,6 @@ process.env.APPLICATIONINSIGHTS_CONFIGURATION_FILE = "C:/applicationinsights/con
 
 ### Self-diagnostics
 
-Azure Monitor Application Insights Distro uses the OpenTelemetry API Logger for internal logs. To enable it, use the following code:
-
-```typescript
-import { useAzureMonitor } from "applicationinsights";
-import { DiagLogLevel } from "@opentelemetry/api";
-
-useAzureMonitor();
-const logger = appInsights.getLogger();
-logger.updateLogLevel(DiagLogLevel.DEBUG);
-```
-
 
 `APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL` environment varialbe could be used to set desired log level, supporting the following values: `NONE`, `ERROR`, `WARN`, `INFO`, `DEBUG`, `VERBOSE` and  `ALL`.
 
