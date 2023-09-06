@@ -2,7 +2,7 @@ var testconfig = require("./config");
 var appInsights = null;
 if (testconfig.AppInsightsEnabled) {
 
-    const { ApplicationInsightsClient } = require("../../../out/src/index");
+    const { ApplicationInsightsClient } = require("../../../out/src/applicationInsightsClient");
 
     let options = {
         azureMonitorExporterConfig: {

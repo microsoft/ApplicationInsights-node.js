@@ -4,7 +4,7 @@ import { logs } from "@opentelemetry/api-logs";
 import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-import { ApplicationInsightsClient } from "../../src";
+import { ApplicationInsightsClient } from "../../src/applicationInsightsClient";
 import { LoggerProvider } from "@opentelemetry/sdk-logs";
 
 
