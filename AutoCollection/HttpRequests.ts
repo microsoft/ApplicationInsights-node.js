@@ -119,12 +119,10 @@ class AutoCollectHttpRequests {
                 CorrelationContextManager.wrapEmitter(response);
                 const shouldCollect: boolean = request && !(<any>request)[AutoCollectHttpRequests.alreadyAutoCollectedFlag];
 
-                if (request && shouldCollect) {
-                    AutoCollectHttpRequests.INSTANCE?._registerRequest(request, response, onRequest)
+                if (request && shouldCollect && AutoCollectHttpRequests.INSTANCE) {
+                    AutoCollectHttpRequests.INSTANCE._registerRequest(request, response, onRequest)
                 } else {
-                    if (typeof onRequest === "function") {
-                        onRequest(request, response);
-                    }
+                    onRequest(request, response);
                 }
             }
         };
