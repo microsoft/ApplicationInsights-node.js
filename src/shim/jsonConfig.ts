@@ -101,7 +101,7 @@ export class ShimJsonConfig implements IJsonConfig {
         // JSON file
         else {
             const configFileName = "applicationinsights.json";
-            const rootPath = path.join(__dirname, "../../../"); // Root of folder (__dirname = ../dist-esm/src)
+            const rootPath = path.join(__dirname, "../../../../"); // Root of folder (__dirname = ../dist-esm/src)
             let tempDir = path.join(rootPath, configFileName); // default
             const configFile = process.env[ENV_CONFIGURATION_FILE];
             if (configFile) {
