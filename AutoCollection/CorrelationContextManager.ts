@@ -1,7 +1,7 @@
 import events = require("events");
 import Logging = require("../Library/Logging");
 import * as DiagChannel from "./diagnostic-channel/initialization";
-import * as azureFunctionsTypes from "../Library/Functions";
+import * as sharedFuncTypes from "../Library/Functions";
 
 // Don't reference modules from these directly. Use only for types.
 import * as cls from "cls-hooked";
@@ -198,13 +198,13 @@ export class CorrelationContextManager {
      * Create new correlation context.
      */
     public static startOperation(
-        input: azureFunctionsTypes.Context | (http.IncomingMessage | azureFunctionsTypes.HttpRequest) | SpanContext | Span,
-        request?: azureFunctionsTypes.HttpRequest | string)
+        input: sharedFuncTypes.Context | (http.IncomingMessage | sharedFuncTypes.HttpRequest) | SpanContext | Span,
+        request?: sharedFuncTypes.HttpRequest | string)
         : CorrelationContext | null {
-        const traceContext = input && (input as azureFunctionsTypes.Context).traceContext || null;
+        const traceContext = input && (input as sharedFuncTypes.Context).traceContext || null;
         const span = input && (input as Span).spanContext ? input as Span : null;
         const spanContext = input && (input as SpanContext).traceId ? input as SpanContext : null;
-        const headers = input && (input as http.IncomingMessage | azureFunctionsTypes.HttpRequest).headers;
+        const headers = input && (input as http.IncomingMessage | sharedFuncTypes.HttpRequest).headers;
 
         // OpenTelemetry Span
         if (span) {
@@ -224,7 +224,7 @@ export class CorrelationContextManager {
             let tracestate = null;
             operationName = traceContext.attributes["OperationName"] || operationName;
             if (request) {
-                let azureFnRequest = request as azureFunctionsTypes.HttpRequest;
+                let azureFnRequest = request as sharedFuncTypes.HttpRequest;
                 if (azureFnRequest.headers) {
                     if (azureFnRequest.headers.traceparent) {
                         traceparent = new Traceparent(azureFnRequest.headers.traceparent);
@@ -237,10 +237,10 @@ export class CorrelationContextManager {
                 }
             }
             if (!traceparent) {
-                traceparent = new Traceparent(traceContext.traceparent);
+                traceparent = new Traceparent(traceContext.traceParent || traceContext.traceparent);
             }
             if (!tracestate) {
-                tracestate = new Tracestate(traceContext.tracestate);
+                tracestate = new Tracestate(traceContext.traceState || traceContext.tracestate);
             }
 
             let correlationContextHeader = undefined;
@@ -265,7 +265,7 @@ export class CorrelationContextManager {
         if (headers) {
             const traceparent = new Traceparent(headers.traceparent ? headers.traceparent.toString() : null);
             const tracestate = new Tracestate(headers.tracestate ? headers.tracestate.toString() : null);
-            const parser = new HttpRequestParser(input as http.IncomingMessage | azureFunctionsTypes.HttpRequest);
+            const parser = new HttpRequestParser(input as http.IncomingMessage | sharedFuncTypes.HttpRequest);
             const correlationContext = CorrelationContextManager.generateContextObject(
                 traceparent.traceId,
                 traceparent.parentId,
