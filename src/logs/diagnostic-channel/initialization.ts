@@ -4,14 +4,17 @@
 // Don't reference modules from these directly. Use only for types.
 import * as DiagChannelPublishers from "diagnostic-channel-publishers";
 import { Logger } from "../../shared/logging";
+import { ShimJsonConfig } from "../../shim/jsonConfig";
 
 const TAG = "DiagnosticChannel";
 let isInitialized = false;
 
 export function enablePublishers() {
     // Only register monkey patchs once
-    if (!isInitialized) {
+    if (!isInitialized && (ShimJsonConfig.getInstance().noDiagnosticChannel !== true)) {
         isInitialized = true;
+        const individualOptOuts: string = ShimJsonConfig.getInstance().noPatchModules;
+        const unpatchedModules: string[] = individualOptOuts ? individualOptOuts.split(",") : [];
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const publishers: typeof DiagChannelPublishers = require("diagnostic-channel-publishers");
         const modules: { [key: string]: any } = {
@@ -21,8 +24,15 @@ export function enablePublishers() {
         };
 
         for (const mod in modules) {
-            modules[mod].enable();
-            Logger.getInstance().info(TAG, `Subscribed to ${mod} events`);
+            if (unpatchedModules.indexOf(mod) === -1) {
+                modules[mod].enable();
+                Logger.getInstance().info(TAG, `Subscribed to ${mod} events`);
+            }
         }
+        if (unpatchedModules.length > 0) {
+            Logger.getInstance().info(TAG, `Some modules were not patched: ${unpatchedModules}`);
+        }
+    } else {
+        Logger.getInstance().info(TAG, "Not subscribing to diagnostic channels because APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL was set");
     }
 }

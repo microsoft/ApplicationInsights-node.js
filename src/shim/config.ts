@@ -288,6 +288,12 @@ class Config implements IConfig {
             };
         }
 
+        if (ShimJsonConfig.getInstance().noHttpAgentKeepAlive === true) {
+            options.otlpTraceExporterConfig = { ...options.otlpTraceExporterConfig, keepAlive: false };
+            options.otlpLogExporterConfig = { ...options.otlpLogExporterConfig, keepAlive: false };
+            options.otlpMetricExporterConfig = { ...options.otlpMetricExporterConfig, keepAlive: false };
+        } 
+
         // NOT SUPPORTED CONFIGURATION OPTIONS
         if (this.disableAppInsights) {
             Logger.getInstance().warn("disableAppInsights configuration no longer supported.");
@@ -337,31 +343,6 @@ class Config implements IConfig {
             Logger.getInstance().warn("The webInstrumentation configuration options are not supported by the shim.");
         }
         return options;
-    }
-
-    /**
-    * Validate UUID Format
-    * Specs taken from breeze repo
-    * The definition of a VALID instrumentation key is as follows:
-    * Not none
-    * Not empty
-    * Every character is a hex character [0-9a-f]
-    * 32 characters are separated into 5 sections via 4 dashes
-    * First section has 8 characters
-    * Second section has 4 characters
-    * Third section has 4 characters
-    * Fourth section has 4 characters
-    * Fifth section has 12 characters
-    */
-    private static _validateInstrumentationKey(iKey: string): boolean {
-        if (iKey.startsWith("InstrumentationKey=")) {
-            const startIndex = iKey.indexOf("InstrumentationKey=") + "InstrumentationKey=".length;
-            const endIndex = iKey.indexOf(";", startIndex);
-            iKey = iKey.substring(startIndex, endIndex);
-        }
-        const UUID_Regex = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$";
-        const regexp = new RegExp(UUID_Regex);
-        return regexp.test(iKey);
     }
 }
 
