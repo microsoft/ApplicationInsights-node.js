@@ -16,7 +16,6 @@ import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { AttributeLogProcessor } from "../shared/util/attributeLogRecordProcessor";
 import { ApplicationInsightsClient } from "../applicationInsightsClient";
 import { LogApi } from "../logs/api";
-import { NativeMetrics } from "../metrics/nativeMetrics";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -46,8 +45,6 @@ export class TelemetryClient {
         // Parse shim config to Azure Monitor options
         const options = this.config.parseConfig();
         this._client = new ApplicationInsightsClient(options);
-        // Initialize native metrics
-        new NativeMetrics(options);
         // LoggerProvider would be initialized when client is instantiated
         // Get Logger from global provider
         this._logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
