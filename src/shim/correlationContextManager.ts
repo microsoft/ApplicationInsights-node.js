@@ -11,6 +11,8 @@ import { Util } from "../shared/util";
 const CONTEXT_NAME = "ApplicationInsights-Context";
 
 export class CorrelationContextManager {
+    // Context is taken from the trace API and not context API so we need a flag to disable this functionality
+    private static _isDisabled = false;
 
     /**
      * Converts an OpenTelemetry SpanContext object to an ICorrelationContext object for backwards compatibility with ApplicationInsights
@@ -41,16 +43,19 @@ export class CorrelationContextManager {
      * @returns ICorrelationContext object
      */
     public static getCurrentContext(): ICorrelationContext | null {
-        // Gets the active span and extracts the context to populate and return the ICorrelationContext object
-        let activeSpan: Span = trace.getSpan(context.active()) as Span;
+        if (!this._isDisabled) {
+            // Gets the active span and extracts the context to populate and return the ICorrelationContext object
+            let activeSpan: Span = trace.getSpan(context.active()) as Span;
 
-        // If no active span exists, create a new one. This is needed if runWithContext() is executed without an active span
-        if (!activeSpan) { 
-            activeSpan = trace.getTracer(CONTEXT_NAME).startSpan(CONTEXT_NAME) as Span;
-        }
-        const traceStateObj: TraceState = new TraceState(activeSpan?.spanContext()?.traceState?.serialize());
+            // If no active span exists, create a new one. This is needed if runWithContext() is executed without an active span
+            if (!activeSpan) { 
+                activeSpan = trace.getTracer(CONTEXT_NAME).startSpan(CONTEXT_NAME) as Span;
+            }
+            const traceStateObj: TraceState = new TraceState(activeSpan?.spanContext()?.traceState?.serialize());
 
-        return this.spanToContextObject(activeSpan?.spanContext(), activeSpan?.parentSpanId, activeSpan?.name, traceStateObj);
+            return this.spanToContextObject(activeSpan?.spanContext(), activeSpan?.parentSpanId, activeSpan?.name, traceStateObj);
+        } 
+        return null;
     }
 
     /**
@@ -245,6 +250,7 @@ export class CorrelationContextManager {
      */
     public static disable() {
         Logger.getInstance().warn("It will not be possible to re-enable the current context manager after disabling it!");
+        this._isDisabled = true;
         context.disable();
     }
 
