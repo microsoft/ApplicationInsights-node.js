@@ -10,7 +10,7 @@ import { TelemetryItem as Envelope } from "../declarations/generated";
 import { Context } from "./context";
 import { Logger } from "../shared/logging";
 import { Util } from "../shared/util";
-import Config = require("./config");
+import Config = require("./shim-config");
 import { AttributeSpanProcessor } from "../shared/util/attributeSpanProcessor";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { AttributeLogProcessor } from "../shared/util/attributeLogRecordProcessor";

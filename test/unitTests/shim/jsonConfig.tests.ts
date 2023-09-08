@@ -1,6 +1,6 @@
 import assert = require("assert");
 import path = require("path");
-import { ShimJsonConfig } from "../../../src/shim/jsonConfig";
+import { ShimJsonConfig } from "../../../src/shim/shim-jsonConfig";
 
 
 describe("Json Config", () => {

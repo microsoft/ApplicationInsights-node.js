@@ -7,7 +7,7 @@ import { DiagLogLevel } from "@opentelemetry/api";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrumentationConfig } from "./types";
 import { Logger } from "../shared/logging";
-import { ShimJsonConfig } from "./jsonConfig";
+import { ShimJsonConfig } from "./shim-jsonConfig";
 import { ApplicationInsightsOptions, ExtendedMetricType } from "../types";
 
 
@@ -287,12 +287,6 @@ class Config implements IConfig {
                 [ExtendedMetricType.loop]: false,
             };
         }
-
-        if (ShimJsonConfig.getInstance().noHttpAgentKeepAlive === true) {
-            options.otlpTraceExporterConfig = { ...options.otlpTraceExporterConfig, keepAlive: false };
-            options.otlpLogExporterConfig = { ...options.otlpLogExporterConfig, keepAlive: false };
-            options.otlpMetricExporterConfig = { ...options.otlpMetricExporterConfig, keepAlive: false };
-        } 
 
         // NOT SUPPORTED CONFIGURATION OPTIONS
         if (this.disableAppInsights) {

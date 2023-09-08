@@ -4,7 +4,7 @@ import azureCoreAuth = require("@azure/core-auth");
 import { DiagLogLevel } from '@opentelemetry/api';
 import { HttpInstrumentationConfig } from '@opentelemetry/instrumentation-http';
 import { Logger } from "../../../src/shared/logging"
-import Config = require('../../../src/shim/config');
+import Config = require('../../../src/shim/shim-config');
 import { TelemetryClient } from "../../../src/shim/telemetryClient";
 import applicationInsights = require("../../../src/index");
 
