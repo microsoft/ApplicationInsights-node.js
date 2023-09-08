@@ -6,8 +6,13 @@ import { Span } from "@opentelemetry/sdk-trace-base";
 import { ICorrelationContext, ITraceparent, ITracestate, HttpRequest, ICustomProperties } from "./types";
 import { Logger } from "../shared/logging";
 import * as azureFunctionsTypes from "@azure/functions";
+import { Util } from "../shared/util";
+
+const CONTEXT_NAME = "ApplicationInsights-Context";
 
 export class CorrelationContextManager {
+    // Context is taken from the trace API and not context API so we need a flag to disable this functionality
+    private static _isDisabled = false;
 
     /**
      * Converts an OpenTelemetry SpanContext object to an ICorrelationContext object for backwards compatibility with ApplicationInsights
@@ -38,13 +43,19 @@ export class CorrelationContextManager {
      * @returns ICorrelationContext object
      */
     public static getCurrentContext(): ICorrelationContext | null {
-        // Gets the active span and extracts the context to populate and return the ICorrelationContext object
-        const activeSpan: Span = trace.getSpan(context.active()) as Span;
-        if (!activeSpan) { return null; }
-        activeSpan?.parentSpanId;
-        const traceStateObj: TraceState = new TraceState(activeSpan?.spanContext()?.traceState?.serialize());
+        if (!this._isDisabled) {
+            // Gets the active span and extracts the context to populate and return the ICorrelationContext object
+            let activeSpan: Span = trace.getSpan(context.active()) as Span;
 
-        return this.spanToContextObject(activeSpan?.spanContext(), activeSpan?.parentSpanId, activeSpan?.name, traceStateObj);
+            // If no active span exists, create a new one. This is needed if runWithContext() is executed without an active span
+            if (!activeSpan) { 
+                activeSpan = trace.getTracer(CONTEXT_NAME).startSpan(CONTEXT_NAME) as Span;
+            }
+            const traceStateObj: TraceState = new TraceState(activeSpan?.spanContext()?.traceState?.serialize());
+
+            return this.spanToContextObject(activeSpan?.spanContext(), activeSpan?.parentSpanId, activeSpan?.name, traceStateObj);
+        } 
+        return null;
     }
 
     /**
@@ -94,8 +105,13 @@ export class CorrelationContextManager {
      */
     public static runWithContext(ctx: ICorrelationContext, fn: () => any): any {
         // Creates a new Context object containing the values from the ICorrelationContext object, then sets the active context to the new Context
-        const newContext: Context = trace.setSpanContext(context.active(), this._contextObjectToSpanContext(ctx));
-        return context.with(newContext, fn);
+        try {
+            const newContext: Context = trace.setSpanContext(context.active(), this._contextObjectToSpanContext(ctx));
+            return context.with(newContext, fn);
+        } catch (error) {
+            Logger.getInstance().warn("Error binding to session context", Util.getInstance().dumpObj(error));
+        }
+        return fn();
     }
 
     /**
@@ -103,7 +119,11 @@ export class CorrelationContextManager {
      * @param emitter emitter to bind to the current context
      */
     public static wrapEmitter(emitter: events.EventEmitter): void {
-        context.bind(context.active(), emitter);
+        try {
+            context.bind(context.active(), emitter);
+        } catch (error) {
+            Logger.getInstance().warn("Error binding to session context", Util.getInstance().dumpObj(error));
+        }
     }
     
     /**
@@ -125,9 +145,8 @@ export class CorrelationContextManager {
             }
             // If no context is passed, bind to the current context
             return context.bind(context.active(), fn);
-            
         } catch (error) {
-            Logger.getInstance().error("Error binding to session context", error);
+            Logger.getInstance().error("Error binding to session context", Util.getInstance().dumpObj(error));
             return fn;
         }
     }
@@ -231,6 +250,7 @@ export class CorrelationContextManager {
      */
     public static disable() {
         Logger.getInstance().warn("It will not be possible to re-enable the current context manager after disabling it!");
+        this._isDisabled = true;
         context.disable();
     }
 
