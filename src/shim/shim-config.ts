@@ -8,9 +8,7 @@ import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrumentationConfig } from "./types";
 import { Logger } from "../shared/logging";
 import { ShimJsonConfig } from "./shim-jsonConfig";
-import { ApplicationInsightsOptions, ExtendedMetricType, InstrumentationOptions, InstrumentationOptionsType } from "../types";
-import { Instrumentation } from "@opentelemetry/instrumentation";
-
+import { ApplicationInsightsOptions, ExtendedMetricType, InstrumentationOptionsType } from "../types";
 
 class Config implements IConfig {
 
