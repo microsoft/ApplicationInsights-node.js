@@ -1,21 +1,22 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { metrics, trace } from "@opentelemetry/api";
+import { shutdownAzureMonitor, useAzureMonitor } from "@azure/monitor-opentelemetry";
+import { ProxyTracerProvider, metrics, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
-import { MeterProvider } from "@opentelemetry/sdk-metrics";
-import { LoggerProvider } from "@opentelemetry/sdk-logs";
-import { BasicTracerProvider } from "@opentelemetry/sdk-trace-node";
+import { MeterProvider, PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
+import { BatchLogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
+import { BasicTracerProvider, BatchSpanProcessor, NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
+import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
+import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 
 import { Logger } from "./shared/logging";
 import { AutoCollectConsole } from "./logs/console";
 import { AutoCollectExceptions } from "./logs/exceptions";
-import { AZURE_MONITOR_STATSBEAT_FEATURES, ApplicationInsightsOptions, StatsbeatFeature, StatsbeatInstrumentation } from "./types";
+import { ApplicationInsightsOptions } from "./types";
 import { ApplicationInsightsConfig } from "./shared/configuration/config";
 import { LogApi } from "./logs/api";
-import { MetricHandler } from "./metrics/handler";
-import { TraceHandler } from "./traces/handler";
-import { LogHandler } from "./logs/handler";
 import { PerformanceCounterMetrics } from "./metrics/performanceCounters";
 
 
@@ -25,25 +26,15 @@ export class ApplicationInsightsClient {
     private _exceptions: AutoCollectExceptions;
     private _perfCounters: PerformanceCounterMetrics;
     private _logApi: LogApi;
-    private _metricHandler: MetricHandler;
-    private _traceHandler: TraceHandler;
-    private _logHandler: LogHandler;
 
     /**
      * Constructs a new client
      * @param options ApplicationInsightsOptions
      */
     constructor(options?: ApplicationInsightsOptions) {
-        // Create internal handlers
+        useAzureMonitor(options);
         this._internalConfig = new ApplicationInsightsConfig(options);
-        this._setStatsbeatFeatures(this._internalConfig);
-        this._metricHandler = new MetricHandler(this._internalConfig);
-        this._traceHandler = new TraceHandler(this._internalConfig, this._metricHandler);
-        this._logHandler = new LogHandler(this._internalConfig, this._metricHandler);
-
-
         this._logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
-
         this._console = new AutoCollectConsole(this._logApi);
         if (this._internalConfig.enableAutoCollectExceptions) {
             this._exceptions = new AutoCollectExceptions(this._logApi);
@@ -52,6 +43,7 @@ export class ApplicationInsightsClient {
             this._perfCounters = new PerformanceCounterMetrics(this._internalConfig);
         }
         this._console.enable(this._internalConfig.logInstrumentationOptions);
+        this._addOtlpExporters();
     }
 
     /**
@@ -71,44 +63,44 @@ export class ApplicationInsightsClient {
      * Shutdown client
      */
     public async shutdown(): Promise<void> {
-        this._metricHandler.shutdown();
-        this._traceHandler.shutdown();
-        this._logHandler.shutdown();
-
+        await shutdownAzureMonitor();
         this._console.shutdown();
         this._exceptions?.shutdown();
         this._perfCounters?.shutdown();
     }
 
-    private _setStatsbeatFeatures(config: ApplicationInsightsConfig) {
-        let instrumentationBitMap = 0;
-        if (config.instrumentationOptions?.azureSdk?.enabled) {
-            instrumentationBitMap |= StatsbeatInstrumentation.AZURE_CORE_TRACING;
-        }
-        if (config.instrumentationOptions?.mongoDb?.enabled) {
-            instrumentationBitMap |= StatsbeatInstrumentation.MONGODB;
-        }
-        if (config.instrumentationOptions?.mySql?.enabled) {
-            instrumentationBitMap |= StatsbeatInstrumentation.MYSQL;
-        }
-        if (config.instrumentationOptions?.postgreSql?.enabled) {
-            instrumentationBitMap |= StatsbeatInstrumentation.POSTGRES;
-        }
-        if (config.instrumentationOptions?.redis?.enabled) {
-            instrumentationBitMap |= StatsbeatInstrumentation.REDIS;
-        }
-
-        let featureBitMap = 0;
-        featureBitMap |= StatsbeatFeature.DISTRO;
-
-        try {
-            process.env[AZURE_MONITOR_STATSBEAT_FEATURES] = JSON.stringify({
-                instrumentation: instrumentationBitMap,
-                feature: featureBitMap,
+    private _addOtlpExporters() {
+        if (this._internalConfig.otlpMetricExporterConfig?.enabled) {
+            const otlpMetricsExporter = new OTLPMetricExporter(this._internalConfig.otlpMetricExporterConfig);
+            const otlpMetricReader = new PeriodicExportingMetricReader({
+                exporter: otlpMetricsExporter,
             });
-        } catch (error) {
-            Logger.getInstance().error("Failed call to JSON.stringify.", error);
+            try {
+                (metrics.getMeterProvider() as MeterProvider).addMetricReader(otlpMetricReader);
+            }
+            catch (err) {
+                Logger.getInstance().error("Failed to set OTLP Metric Exporter", err);
+            }
+        }
+        if (this._internalConfig.otlpLogExporterConfig?.enabled) {
+            const otlpLogExporter = new OTLPLogExporter(this._internalConfig.otlpLogExporterConfig);
+            const otlpLogProcessor = new BatchLogRecordProcessor(otlpLogExporter);
+            try {
+                (logs.getLoggerProvider() as LoggerProvider).addLogRecordProcessor(otlpLogProcessor);
+            }
+            catch (err) {
+                Logger.getInstance().error("Failed to set OTLP Log Exporter", err);
+            }
+        }
+        if (this._internalConfig.otlpTraceExporterConfig?.enabled) {
+            const otlpTraceExporter = new OTLPTraceExporter(this._internalConfig.otlpTraceExporterConfig);
+            let otlpSpanProcessor = new BatchSpanProcessor(otlpTraceExporter);
+            try {
+                ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider).addSpanProcessor(otlpSpanProcessor);
+            }
+            catch (err) {
+                Logger.getInstance().error("Failed to set OTLP Trace Exporter", err);
+            }
         }
     }
-
 }

@@ -1,3 +1,7 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import { InstrumentationOptions } from "@azure/monitor-opentelemetry";
 import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 import {
     Resource,
@@ -7,7 +11,8 @@ import {
 } from "@opentelemetry/resources";
 import { JsonConfig } from "./jsonConfig";
 import { Logger } from "../logging";
-import { ApplicationInsightsOptions, ExtendedMetricType, LogInstrumentationOptions, OTLPExporterConfig, InstrumentationOptions } from "../../types";
+import { ApplicationInsightsOptions, ExtendedMetricType, LogInstrumentationOptions, OTLPExporterConfig } from "../../types";
+
 
 
 export class ApplicationInsightsConfig {

@@ -10,7 +10,7 @@ import {
 } from "@opentelemetry/sdk-metrics";
 import { Histogram, Meter, ObservableGauge, ObservableResult } from "@opentelemetry/api";
 import { Logger } from "../shared/logging";
-import { AzureMonitorOpenTelemetryOptions } from "../types";
+import { ApplicationInsightsConfig } from "../shared/configuration/config";
 
 /**
  * Azure Monitor Native Metrics
@@ -31,23 +31,23 @@ export class NativeMetrics {
     private _heapMemoryTotalGauge: ObservableGauge;
     private _heapMemoryUsageGauge: ObservableGauge;
     private _memoryUsageNonHeapGauge: ObservableGauge;
-    private _options: AzureMonitorOpenTelemetryOptions;
+    private _config: ApplicationInsightsConfig;
 
     /**
      * Initializes a new instance of the NativeMetrics class.
      * @param options - Distro configuration.
      * @param config - Native Metrics extra configuration.
      */
-    constructor(options: AzureMonitorOpenTelemetryOptions, config?: { collectionInterval: number }) {
-        this._options = options;
+    constructor(config: ApplicationInsightsConfig, options?: { collectionInterval: number }) {
+        this._config = config;
         const meterProviderConfig: MeterProviderOptions = {
-            resource: this._options.resource,
+            resource: this._config.resource,
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);
-        this._azureExporter = new AzureMonitorMetricExporter(this._options.azureMonitorExporterConfig);
+        this._azureExporter = new AzureMonitorMetricExporter(this._config.azureMonitorExporterConfig);
         const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
             exporter: this._azureExporter as any,
-            exportIntervalMillis: config?.collectionInterval || this._collectionInterval,
+            exportIntervalMillis: options?.collectionInterval || this._collectionInterval,
         };
         this._metricReader = new PeriodicExportingMetricReader(metricReaderOptions);
         this._meterProvider.addMetricReader(this._metricReader);

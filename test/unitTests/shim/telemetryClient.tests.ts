@@ -10,6 +10,8 @@ import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 
 
 describe("shim/TelemetryClient", () => {
+    let client: TelemetryClient;
+
     before(() => {
         nock(DEFAULT_BREEZE_ENDPOINT)
             .post("/v2.1/track", (body: string) => true)
@@ -22,6 +24,10 @@ describe("shim/TelemetryClient", () => {
     after(() => {
         nock.cleanAll();
         nock.enableNetConnect();
+    });
+
+    afterEach(() => {
+        client.shutdown();
     });
 
     class TestSpanProcessor implements SpanProcessor {
@@ -43,7 +49,7 @@ describe("shim/TelemetryClient", () => {
 
     describe("#manual track APIs", () => {
         it("trackDependency http", async () => {
-            let client = new TelemetryClient(
+            client = new TelemetryClient(
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
             );
             client.initialize();
@@ -74,7 +80,7 @@ describe("shim/TelemetryClient", () => {
         });
 
         it("trackDependency DB", async () => {
-            let client = new TelemetryClient(
+            client = new TelemetryClient(
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
             );
             client.initialize();
@@ -101,7 +107,7 @@ describe("shim/TelemetryClient", () => {
         });
 
         it("trackRequest", async () => {
-            let client = new TelemetryClient(
+            client = new TelemetryClient(
                 "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
             );
             client.initialize();

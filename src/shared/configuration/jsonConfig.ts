@@ -1,8 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import * as fs from "fs";
 import * as path from "path";
+import { InstrumentationOptions } from "@azure/monitor-opentelemetry";
 import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 import { Logger } from "../logging";
-import { ApplicationInsightsOptions, InstrumentationOptions, LogInstrumentationOptions, OTLPExporterConfig } from "../../types";
+import { ApplicationInsightsOptions, LogInstrumentationOptions, OTLPExporterConfig } from "../../types";
+
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 const ENV_CONTENT = "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT";
