@@ -14,8 +14,8 @@ import Config = require("./shim-config");
 import { AttributeSpanProcessor } from "../shared/util/attributeSpanProcessor";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { AttributeLogProcessor } from "../shared/util/attributeLogRecordProcessor";
-import { ApplicationInsightsClient } from "../applicationInsightsClient";
 import { LogApi } from "../logs/api";
+import { flushAzureMonitor, shutdownAzureMonitor, useAzureMonitor } from "../main";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -24,7 +24,6 @@ import { LogApi } from "../logs/api";
 export class TelemetryClient {
     private _attributeSpanProcessor: AttributeSpanProcessor;
     private _attributeLogProcessor: AttributeLogProcessor;
-    private _client: ApplicationInsightsClient;
     private _logApi: LogApi;
     public context: Context;
     public commonProperties: { [key: string]: string }; // TODO: Add setter so Resources are updated
@@ -44,7 +43,7 @@ export class TelemetryClient {
     public initialize() {
         // Parse shim config to Azure Monitor options
         const options = this.config.parseConfig();
-        this._client = new ApplicationInsightsClient(options);
+        useAzureMonitor(options);
         // LoggerProvider would be initialized when client is instantiated
         // Get Logger from global provider
         this._logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
@@ -60,9 +59,6 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackAvailability(telemetry: Contracts.AvailabilityTelemetry): void {
-        if (!this._client) {
-            this.initialize();
-        }
         this._logApi.trackAvailability(telemetry);
     }
 
@@ -71,9 +67,6 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackPageView(telemetry: Contracts.PageViewTelemetry): void {
-        if (!this._client) {
-            this.initialize();
-        }
         this._logApi.trackPageView(telemetry);
     }
 
@@ -82,9 +75,6 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackTrace(telemetry: Contracts.TraceTelemetry): void {
-        if (!this._client) {
-            this.initialize();
-        }
         this._logApi.trackTrace(telemetry);
     }
 
@@ -93,9 +83,6 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackException(telemetry: Contracts.ExceptionTelemetry): void {
-        if (!this._client) {
-            this.initialize();
-        }
         this._logApi.trackException(telemetry);
     }
 
@@ -104,9 +91,6 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackEvent(telemetry: Contracts.EventTelemetry): void {
-        if (!this._client) {
-            this.initialize();
-        }
         this._logApi.trackEvent(telemetry);
     }
 
@@ -117,9 +101,6 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackMetric(telemetry: Contracts.MetricTelemetry): void {
-        if (!this._client) {
-            this.initialize();
-        }
         // TODO : Create custom metric
         // let meter = this.client.getMetricHandler().getCustomMetricsHandler().getMeter();
         // let metricName = "";
@@ -134,9 +115,6 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackRequest(telemetry: Contracts.RequestTelemetry): void {
-        if (!this._client) {
-            this.initialize();
-        }
         const startTime = telemetry.time || new Date();
         const endTime = startTime.getTime() + telemetry.duration;
 
@@ -168,9 +146,6 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking option
      * */
     public trackDependency(telemetry: Contracts.DependencyTelemetry) {
-        if (!this._client) {
-            this.initialize();
-        }
         const startTime = telemetry.time || new Date();
         const endTime = startTime.getTime() + telemetry.duration;
         if (telemetry && !telemetry.target && telemetry.data) {
@@ -286,13 +261,13 @@ export class TelemetryClient {
     * Immediately send all queued telemetry.
     */
     public async flush(): Promise<void> {
-        this._client.flush();
+        return flushAzureMonitor();
     }
 
     /**
      * Shutdown client
      */
     public async shutdown(): Promise<void> {
-        this._client.shutdown();
+        return shutdownAzureMonitor();
     }
 }
