@@ -28,6 +28,7 @@ class TestTokenCredential implements azureCoreAuth.TokenCredential {
 
 describe("shim/configuration/config", () => {
     const connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/";
+    const ignoredOutgoingUrls = ["*.core.windows.net","*.core.chinacloudapi.cn","*.core.cloudapi.de","*.core.usgovcloudapi.net","*.core.microsoft.scloud","*.core.eaglex.ic.gov"];
 
     let originalEnv: NodeJS.ProcessEnv;
     let sandbox: sinon.SinonSandbox;
@@ -108,6 +109,36 @@ describe("shim/configuration/config", () => {
             telemetryClient.initialize();
             telemetryClient["_attributeSpanProcessor"]["_attributes"] = { "ai.cloud.role": "testRole", "ai.cloud.roleInstance": "testRoleInstance" };
             telemetryClient["_attributeLogProcessor"]["_attributes"] = { "ai.cloud.role": "testRole", "ai.cloud.roleInstance": "testRoleInstance" };
+        });
+
+        it("should disable instrumentations when noDiagnosticChannel is set", () => {
+            const config = new Config(connectionString);
+            config.noDiagnosticChannel = true;
+            let options = config.parseConfig();
+            assert.equal(JSON.stringify(options.instrumentationOptions), JSON.stringify({ 
+                http: { enabled: true, ignoreOutgoingUrls: ignoredOutgoingUrls },
+                azureSdk: { enabled: false },
+                mongoDb: { enabled: false },
+                mySql: { enabled: false },
+                redis: { enabled: false },
+                redis4: { enabled: false },
+                postgreSql: { enabled: false }
+            }));
+        });
+
+        it("should disable specific instrumentations when noPatchModules is set", () => {
+            const config = new Config(connectionString);
+            config.noPatchModules = "azuresdk,mongodb-core,redis,pg-pool";
+            let options = config.parseConfig();
+            assert.equal(JSON.stringify(options.instrumentationOptions), JSON.stringify({ 
+                http: { enabled: true, ignoreOutgoingUrls: ignoredOutgoingUrls },
+                azureSdk: { enabled: false },
+                mongoDb: { enabled: false },
+                mySql: { enabled: true },
+                redis: { enabled: false },
+                redis4: { enabled: false },
+                postgreSql: { enabled: false }
+            }));
         });
         // TODO: Add test for warning messages
     });
