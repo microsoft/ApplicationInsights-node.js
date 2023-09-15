@@ -296,10 +296,9 @@ class Config implements IConfig {
         if (this.noDiagnosticChannel === true) {
             // Disable all instrumentations except http to conform with AppInsights 2.x behavior
             for (const mod in options.instrumentationOptions) {
-                if (mod === "http") {
-                    continue;
+                if (mod !== "http") {
+                    (options.instrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
                 }
-                (options.instrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
             }
             for (const mod in options.logInstrumentationOptions) {
                 (options.logInstrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
@@ -310,8 +309,8 @@ class Config implements IConfig {
             const unpatchedModules: string[] = this.noPatchModules.split(",");
             // Convert module names not supported by new InstrumentationOptions
             for (let i = 0; i < unpatchedModules.length; i++) {
-                if (unpatchedModules[i] === "pg-pool") {
-                    unpatchedModules[i] = "pg";
+                if (unpatchedModules[i] === "pg-pool" || unpatchedModules[i] === "pg") {
+                    unpatchedModules[i] = "postgresql";
                 } else if (unpatchedModules[i] === "mongodb-core") {
                     unpatchedModules[i] = "mongodb";
                 } else if (unpatchedModules[i] === "redis") {
@@ -320,12 +319,12 @@ class Config implements IConfig {
             }
 
             // Disable instrumentation for unpatched modules
-            for (const mod in options.instrumentationOptions as InstrumentationOptionsType) {
+            for (const mod in options.instrumentationOptions) {
                 if (unpatchedModules.indexOf(mod.toLowerCase()) !== -1) {
                     (options.instrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
                 }
             }
-            for (const mod in options.logInstrumentationOptions as InstrumentationOptionsType) {
+            for (const mod in options.logInstrumentationOptions) {
                 if (unpatchedModules.indexOf(mod.toLowerCase()) !== -1) {
                     (options.logInstrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
                 }
