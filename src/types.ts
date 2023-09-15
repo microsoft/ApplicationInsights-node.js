@@ -110,6 +110,10 @@ export interface LogInstrumentationOptions {
     winston?: { enabled: boolean };
 }
 
+export interface InstrumentationOptionsType {
+  [key: string]: { enabled: boolean }
+}
+
 export const enum ExtendedMetricType {
     gc = "gc",
     heap = "heap",
