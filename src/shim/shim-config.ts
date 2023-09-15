@@ -8,7 +8,8 @@ import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrumentationConfig } from "./types";
 import { Logger } from "../shared/logging";
 import { ShimJsonConfig } from "./shim-jsonConfig";
-import { ApplicationInsightsOptions, ExtendedMetricType } from "../types";
+import { ApplicationInsightsOptions, ExtendedMetricType, InstrumentationOptions, InstrumentationOptionsType } from "../types";
+import { Instrumentation } from "@opentelemetry/instrumentation";
 
 
 class Config implements IConfig {
@@ -61,6 +62,7 @@ class Config implements IConfig {
     public webInstrumentationSrc: string;
     public webInstrumentationConnectionString?: string;
     public noPatchModules: string;
+    public noDiagnosticChannel: boolean;
 
 
     /**
@@ -130,6 +132,8 @@ class Config implements IConfig {
         this.webInstrumentationConnectionString = jsonConfig.webInstrumentationConnectionString;
         this.webInstrumentationConfig = jsonConfig.webInstrumentationConfig;
         this.webInstrumentationSrc = jsonConfig.webInstrumentationSrc;
+        this.noPatchModules = jsonConfig.noPatchModules;
+        this.noDiagnosticChannel = jsonConfig.noDiagnosticChannel
     }
 
     /**
@@ -147,6 +151,7 @@ class Config implements IConfig {
                 mySql: { enabled: true },
                 redis: { enabled: true },
                 redis4: { enabled: true },
+                postgreSql: { enabled: true },
             },
             logInstrumentationOptions: {
                 console: { enabled: false },
@@ -286,6 +291,45 @@ class Config implements IConfig {
                 [ExtendedMetricType.heap]: false,
                 [ExtendedMetricType.loop]: false,
             };
+        }
+
+        if (this.noDiagnosticChannel === true) {
+            // Disable all instrumentations except http to conform with AppInsights 2.x behavior
+            for (const mod in options.instrumentationOptions) {
+                if (mod === "http") {
+                    continue;
+                }
+                (options.instrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
+            }
+            for (const mod in options.logInstrumentationOptions) {
+                (options.logInstrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
+            }
+        }
+
+        if (this.noPatchModules && this.noDiagnosticChannel !== true) {
+            const unpatchedModules: string[] = this.noPatchModules.split(",");
+            // Convert module names not supported by new InstrumentationOptions
+            for (let i = 0; i < unpatchedModules.length; i++) {
+                if (unpatchedModules[i] === "pg-pool") {
+                    unpatchedModules[i] = "pg";
+                } else if (unpatchedModules[i] === "mongodb-core") {
+                    unpatchedModules[i] = "mongodb";
+                } else if (unpatchedModules[i] === "redis") {
+                    unpatchedModules.push("redis4")
+                }
+            }
+
+            // Disable instrumentation for unpatched modules
+            for (const mod in options.instrumentationOptions as InstrumentationOptionsType) {
+                if (unpatchedModules.indexOf(mod.toLowerCase()) !== -1) {
+                    (options.instrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
+                }
+            }
+            for (const mod in options.logInstrumentationOptions as InstrumentationOptionsType) {
+                if (unpatchedModules.indexOf(mod.toLowerCase()) !== -1) {
+                    (options.logInstrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
+                }
+            }
         }
 
         // NOT SUPPORTED CONFIGURATION OPTIONS
