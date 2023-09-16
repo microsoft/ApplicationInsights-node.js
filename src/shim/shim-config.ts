@@ -7,9 +7,8 @@ import { DiagLogLevel } from "@opentelemetry/api";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrumentationConfig } from "./types";
 import { Logger } from "../shared/logging";
-import { ShimJsonConfig } from "./jsonConfig";
-import { ApplicationInsightsOptions, ExtendedMetricType } from "../types";
-
+import { ShimJsonConfig } from "./shim-jsonConfig";
+import { ApplicationInsightsOptions, ExtendedMetricType, InstrumentationOptionsType } from "../types";
 
 class Config implements IConfig {
 
@@ -61,6 +60,7 @@ class Config implements IConfig {
     public webInstrumentationSrc: string;
     public webInstrumentationConnectionString?: string;
     public noPatchModules: string;
+    public noDiagnosticChannel: boolean;
 
 
     /**
@@ -130,6 +130,8 @@ class Config implements IConfig {
         this.webInstrumentationConnectionString = jsonConfig.webInstrumentationConnectionString;
         this.webInstrumentationConfig = jsonConfig.webInstrumentationConfig;
         this.webInstrumentationSrc = jsonConfig.webInstrumentationSrc;
+        this.noPatchModules = jsonConfig.noPatchModules;
+        this.noDiagnosticChannel = jsonConfig.noDiagnosticChannel
     }
 
     /**
@@ -147,6 +149,7 @@ class Config implements IConfig {
                 mySql: { enabled: true },
                 redis: { enabled: true },
                 redis4: { enabled: true },
+                postgreSql: { enabled: true },
             },
             logInstrumentationOptions: {
                 console: { enabled: false },
@@ -288,6 +291,44 @@ class Config implements IConfig {
             };
         }
 
+        if (this.noDiagnosticChannel === true) {
+            // Disable all instrumentations except http to conform with AppInsights 2.x behavior
+            for (const mod in options.instrumentationOptions) {
+                if (mod !== "http") {
+                    (options.instrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
+                }
+            }
+            for (const mod in options.logInstrumentationOptions) {
+                (options.logInstrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
+            }
+        }
+
+        if (this.noPatchModules && this.noDiagnosticChannel !== true) {
+            const unpatchedModules: string[] = this.noPatchModules.split(",");
+            // Convert module names not supported by new InstrumentationOptions
+            for (let i = 0; i < unpatchedModules.length; i++) {
+                if (unpatchedModules[i] === "pg-pool" || unpatchedModules[i] === "pg") {
+                    unpatchedModules[i] = "postgresql";
+                } else if (unpatchedModules[i] === "mongodb-core") {
+                    unpatchedModules[i] = "mongodb";
+                } else if (unpatchedModules[i] === "redis") {
+                    unpatchedModules.push("redis4")
+                }
+            }
+
+            // Disable instrumentation for unpatched modules
+            for (const mod in options.instrumentationOptions) {
+                if (unpatchedModules.indexOf(mod.toLowerCase()) !== -1) {
+                    (options.instrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
+                }
+            }
+            for (const mod in options.logInstrumentationOptions) {
+                if (unpatchedModules.indexOf(mod.toLowerCase()) !== -1) {
+                    (options.logInstrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
+                }
+            }
+        }
+
         // NOT SUPPORTED CONFIGURATION OPTIONS
         if (this.disableAppInsights) {
             Logger.getInstance().warn("disableAppInsights configuration no longer supported.");
@@ -337,31 +378,6 @@ class Config implements IConfig {
             Logger.getInstance().warn("The webInstrumentation configuration options are not supported by the shim.");
         }
         return options;
-    }
-
-    /**
-    * Validate UUID Format
-    * Specs taken from breeze repo
-    * The definition of a VALID instrumentation key is as follows:
-    * Not none
-    * Not empty
-    * Every character is a hex character [0-9a-f]
-    * 32 characters are separated into 5 sections via 4 dashes
-    * First section has 8 characters
-    * Second section has 4 characters
-    * Third section has 4 characters
-    * Fourth section has 4 characters
-    * Fifth section has 12 characters
-    */
-    private static _validateInstrumentationKey(iKey: string): boolean {
-        if (iKey.startsWith("InstrumentationKey=")) {
-            const startIndex = iKey.indexOf("InstrumentationKey=") + "InstrumentationKey=".length;
-            const endIndex = iKey.indexOf(";", startIndex);
-            iKey = iKey.substring(startIndex, endIndex);
-        }
-        const UUID_Regex = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$";
-        const regexp = new RegExp(UUID_Regex);
-        return regexp.test(iKey);
     }
 }
 
