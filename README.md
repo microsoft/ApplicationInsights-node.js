@@ -1,7 +1,5 @@
 # Application Insights for Node.js (Beta)
 
-> *Important:* Breaking changes were introduced in version 3.0.0-beta.7, please take a look at release [details](https://github.com/microsoft/ApplicationInsights-node.js/releases/tag/3.0.0-beta.7).
-
 Application Insights SDK monitors your backend services and components after
 you deploy them to help you discover and rapidly diagnose performance and other
 issues. Add this SDK to your Node.js services to include deep info about Node.js
@@ -74,7 +72,7 @@ useAzureMonitor(config);
 
 ## Configuration
 
-The ApplicationInsightsConfig object provides a number of options to setup SDK behavior.
+The ApplicationInsightsConfig interface provides a number of options to setup SDK behavior.
 
 ```typescript
 const config : ApplicationInsightsOptions = {
@@ -121,11 +119,15 @@ useAzureMonitor(config);
 |Property|Description|Default|
 | ------------------------------- |------------------------------------------------------------------------------------------------------------|-------|
 | ...                     | Azure Monitor OpenTelemetry Configuration   [More info here](https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/monitor/monitor-opentelemetry#configuration)                                                | |
+| otlpTraceExporterConfig                     |  OTLP Trace Exporter Configurationon   [More info here](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/exporter-trace-otlp-http)                                                | |
+| otlpMetricExporterConfig                     |  OTLP Metric Exporter Configuration  [More info here](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-exporter-metrics-otlp-http)                                                | |
+| otlpLogExporterConfig                     | OTLP Log Exporter Configuration   [More info here](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/exporter-logs-otlp-http)                                                | |
 | enableAutoCollectExceptions     | Sets the state of exception tracking. If true uncaught exceptions will be sent to Application Insights | true|
+| enableAutoCollectPerformance     | Sets the state of Performance Counters. If true Performance Counters will be sent to Application Insights | true|
 | logInstrumentationOptions| Allow configuration of Log Instrumentations. |  {"console": { enabled: false },"bunyan": { enabled: false },"winston": { enabled: false }}|
 | extendedMetrics       | Enable/Disable specific extended Metrics(gc, heap and loop).  |{"gc":false,"heap":false,"loop":false}|
 
-Configuration could be set using configuration file  `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. These configuration values will be applied to all ApplicationInsightsClients created in the SDK. 
+Configuration could be set using configuration file  `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. 
 
 
 ```json

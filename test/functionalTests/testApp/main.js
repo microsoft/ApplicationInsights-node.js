@@ -2,7 +2,7 @@ var testconfig = require("./config");
 var appInsights = null;
 if (testconfig.AppInsightsEnabled) {
 
-    const { ApplicationInsightsClient } = require("../../../out/src/applicationInsightsClient");
+    const { useAzureMonitor, shutdownAzureMonitor } = require("../../../out/src/");
 
     let options = {
         azureMonitorExporterConfig: {
@@ -52,7 +52,7 @@ if (testconfig.AppInsightsEnabled) {
         }
     };
 
-    appInsights = new ApplicationInsightsClient(options);
+    useAzureMonitor(options);
     }
 
     var Tasks = require("./tasks");
@@ -106,8 +106,7 @@ if (testconfig.AppInsightsEnabled) {
         res.end("OK");
         server.close();
         if (testconfig.AppInsightsEnabled) {
-            appInsights.flush();
-            appInsights.shutdown();
+            shutdownAzureMonitor();
             process.exit(0);
         }
     });
