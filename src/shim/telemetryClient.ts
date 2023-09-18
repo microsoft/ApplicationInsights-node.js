@@ -25,6 +25,7 @@ export class TelemetryClient {
     private _attributeSpanProcessor: AttributeSpanProcessor;
     private _attributeLogProcessor: AttributeLogProcessor;
     private _logApi: LogApi;
+    private _isInitialized: boolean;
     public context: Context;
     public commonProperties: { [key: string]: string }; // TODO: Add setter so Resources are updated
     public config: Config;
@@ -38,9 +39,11 @@ export class TelemetryClient {
         this.config = config;
         this.commonProperties = {};
         this.context = new Context();
+        this._isInitialized = false;
     }
 
     public initialize() {
+        this._isInitialized = true;
         // Parse shim config to Azure Monitor options
         const options = this.config.parseConfig();
         useAzureMonitor(options);
@@ -59,6 +62,9 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackAvailability(telemetry: Contracts.AvailabilityTelemetry): void {
+        if (!this._isInitialized) {
+            this.initialize();
+        }
         this._logApi.trackAvailability(telemetry);
     }
 
@@ -67,6 +73,9 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackPageView(telemetry: Contracts.PageViewTelemetry): void {
+        if (!this._isInitialized) {
+            this.initialize();
+        }
         this._logApi.trackPageView(telemetry);
     }
 
@@ -75,6 +84,9 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackTrace(telemetry: Contracts.TraceTelemetry): void {
+        if (!this._isInitialized) {
+            this.initialize();
+        }
         this._logApi.trackTrace(telemetry);
     }
 
@@ -83,6 +95,9 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackException(telemetry: Contracts.ExceptionTelemetry): void {
+        if (!this._isInitialized) {
+            this.initialize();
+        }
         this._logApi.trackException(telemetry);
     }
 
@@ -91,6 +106,9 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackEvent(telemetry: Contracts.EventTelemetry): void {
+        if (!this._isInitialized) {
+            this.initialize();
+        }
         this._logApi.trackEvent(telemetry);
     }
 
@@ -115,6 +133,9 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking options
      */
     public trackRequest(telemetry: Contracts.RequestTelemetry): void {
+        if (!this._isInitialized) {
+            this.initialize();
+        }
         const startTime = telemetry.time || new Date();
         const endTime = startTime.getTime() + telemetry.duration;
 
@@ -146,6 +167,9 @@ export class TelemetryClient {
      * @param telemetry      Object encapsulating tracking option
      * */
     public trackDependency(telemetry: Contracts.DependencyTelemetry) {
+        if (!this._isInitialized) {
+            this.initialize();
+        }
         const startTime = telemetry.time || new Date();
         const endTime = startTime.getTime() + telemetry.duration;
         if (telemetry && !telemetry.target && telemetry.data) {
