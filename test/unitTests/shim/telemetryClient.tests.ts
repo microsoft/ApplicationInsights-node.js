@@ -3,7 +3,7 @@ import * as sinon from "sinon";
 import * as nock from "nock";
 import { Context, ProxyTracerProvider, trace } from "@opentelemetry/api";
 import { ReadableSpan, Span, SpanProcessor } from "@opentelemetry/sdk-trace-base";
-import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations/contracts";
+import { DependencyTelemetry, MetricPointTelemetry, MetricTelemetry, RequestTelemetry } from "../../../src/declarations/contracts";
 import { TelemetryClient } from "../../../src/shim/telemetryClient";
 import { DEFAULT_BREEZE_ENDPOINT } from "../../../src/declarations/constants";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
@@ -126,6 +126,19 @@ describe("shim/TelemetryClient", () => {
             assert.equal(spans[0].attributes["http.method"], "HTTP");
             assert.equal(spans[0].attributes["http.status_code"], "401");
             assert.equal(spans[0].attributes["http.url"], "http://test.com");
+        });
+
+        it("trackMetric", async () => {
+            let client = new TelemetryClient(
+                "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
+            );
+            client.initialize();
+            const telemetry: MetricPointTelemetry = {
+                name: "TestMetric",
+                value: 150,
+            };
+            client.trackMetric(telemetry);
+            // TODO: complete track metric test
         });
     });
 });

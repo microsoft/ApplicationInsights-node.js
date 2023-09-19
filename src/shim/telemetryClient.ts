@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Attributes, context, ProxyTracerProvider, SpanKind, SpanOptions, SpanStatusCode, trace } from "@opentelemetry/api";
+import { Attributes, context, metrics, ProxyTracerProvider, SpanKind, SpanOptions, SpanStatusCode, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
 import { LoggerProvider } from "@opentelemetry/sdk-logs";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
@@ -116,15 +116,14 @@ export class TelemetryClient {
      * telemetry bandwidth by aggregating multiple measurements and sending the resulting average at intervals.
      * @param telemetry      Object encapsulating tracking options
      */
-    public trackMetric(telemetry: Contracts.MetricTelemetry): void {
+    public trackMetric(telemetry: Contracts.MetricPointTelemetry): void {
         if (!this._client) {
             this.initialize();
         }
-        // TODO : Create custom metric
-        // let meter = this.client.getMetricHandler().getCustomMetricsHandler().getMeter();
-        // let metricName = "";
-        // let options: MetricOptions = {};
-        // meter.createHistogram(metricName, options)
+        // Create custom metric
+        const meter = metrics.getMeterProvider().getMeter("ApplicationInsightsMetrics");
+        const histogram = meter.createHistogram(telemetry.name, {});
+        histogram.record(telemetry.value);
     }
 
     /**
