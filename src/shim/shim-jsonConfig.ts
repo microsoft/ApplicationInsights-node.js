@@ -101,7 +101,7 @@ export class ShimJsonConfig implements IJsonConfig {
         // JSON file
         else {
             const configFileName = "applicationinsights.json";
-            const rootPath = path.join(__dirname, "../../../../"); // Root of folder (__dirname = ../dist-esm/src)
+            const rootPath = path.join(__dirname, "../../../"); // Root of folder (__dirname = ../dist-esm/src)
             let tempDir = path.join(rootPath, configFileName); // default
             const configFile = process.env[ENV_CONFIGURATION_FILE];
             if (configFile) {
@@ -119,8 +119,39 @@ export class ShimJsonConfig implements IJsonConfig {
         }
         try {
             const jsonConfig: IJsonConfig = JSON.parse(jsonString);
-            this.connectionString = jsonConfig.connectionString;
-            this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
+            if (jsonConfig.connectionString !== undefined) {
+                this.connectionString = jsonConfig.connectionString;
+            }
+            if (jsonConfig.disableAllExtendedMetrics !== undefined) {
+                this.disableAllExtendedMetrics = jsonConfig.disableAllExtendedMetrics;
+            }
+            if (jsonConfig.extendedMetricDisablers !== undefined) {
+                this.extendedMetricDisablers = jsonConfig.extendedMetricDisablers;
+            }
+            if (jsonConfig.proxyHttpUrl !== undefined) {
+                this.proxyHttpUrl = jsonConfig.proxyHttpUrl;
+            }
+            if (jsonConfig.proxyHttpsUrl !== undefined) {
+                this.proxyHttpsUrl = jsonConfig.proxyHttpsUrl;
+            }
+            if (jsonConfig.noDiagnosticChannel !== undefined) {
+                this.noDiagnosticChannel = jsonConfig.noDiagnosticChannel;
+            }
+            if (jsonConfig.noHttpAgentKeepAlive !== undefined) {
+                this.noHttpAgentKeepAlive = jsonConfig.noHttpAgentKeepAlive;
+            }
+            if (jsonConfig.noPatchModules !== undefined) {
+                this.noPatchModules = jsonConfig.noPatchModules;
+            }
+            if (jsonConfig.enableWebInstrumentation !== undefined) {
+                this.enableWebInstrumentation = jsonConfig.enableWebInstrumentation;
+            }
+            if (jsonConfig.webInstrumentationSrc !== undefined) {
+                this.webInstrumentationSrc = jsonConfig.webInstrumentationSrc;
+            }
+            if (jsonConfig.webInstrumentationConnectionString !== undefined) {
+                this.webInstrumentationConnectionString = jsonConfig.webInstrumentationConnectionString;
+            }
             this.endpointUrl = jsonConfig.endpointUrl;
             this.samplingPercentage = jsonConfig.samplingPercentage;
             this.enableAutoCollectExternalLoggers = jsonConfig.enableAutoCollectExternalLoggers;
@@ -148,18 +179,8 @@ export class ShimJsonConfig implements IJsonConfig {
             this.enableInternalDebugLogging = jsonConfig.enableInternalDebugLogging;
             this.enableInternalWarningLogging = jsonConfig.enableInternalWarningLogging;
             this.enableSendLiveMetrics = jsonConfig.enableSendLiveMetrics;
-            this.disableAllExtendedMetrics = jsonConfig.disableAllExtendedMetrics;
-            this.extendedMetricDisablers = jsonConfig.extendedMetricDisablers;
-            this.noDiagnosticChannel = jsonConfig.noDiagnosticChannel;
-            this.noPatchModules = jsonConfig.noPatchModules;
-            this.noHttpAgentKeepAlive = jsonConfig.noHttpAgentKeepAlive;
-            this.proxyHttpUrl = jsonConfig.proxyHttpUrl;
-            this.proxyHttpsUrl = jsonConfig.proxyHttpsUrl;
-            this.webInstrumentationConnectionString = jsonConfig.webInstrumentationConnectionString;
             this.webInstrumentationConfig = jsonConfig.webInstrumentationConfig;
-            this.webInstrumentationSrc = jsonConfig.webInstrumentationSrc;
             this.quickPulseHost = jsonConfig.quickPulseHost;
-            this.enableWebInstrumentation = jsonConfig.enableWebInstrumentation;
         } catch (err) {
             Logger.getInstance().info("Missing or invalid JSON config file: ", err);
         }
