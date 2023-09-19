@@ -1,7 +1,6 @@
 import * as assert from "assert";
-import * as sinon from "sinon";
 import * as nock from "nock";
-import { Context, ProxyTracerProvider, trace } from "@opentelemetry/api";
+import { Context, ProxyTracerProvider, trace, metrics } from "@opentelemetry/api";
 import { ReadableSpan, Span, SpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations/contracts";
 import { TelemetryClient } from "../../../src/shim/telemetryClient";
@@ -10,18 +9,38 @@ import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 
 
 describe("shim/TelemetryClient", () => {
+    let client: TelemetryClient;
+    let testProcessor: TestSpanProcessor;
+    let tracerProvider: NodeTracerProvider;
+
     before(() => {
+        trace.disable();
+        metrics.disable();
         nock(DEFAULT_BREEZE_ENDPOINT)
             .post("/v2.1/track", (body: string) => true)
             .reply(200, {})
             .persist();
         nock.disableNetConnect();
+
+        client = new TelemetryClient(
+            "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
+        );
+        client.config.samplingPercentage = 100;
+        client.initialize();
+        tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider);
+        testProcessor = new TestSpanProcessor();
+        tracerProvider.addSpanProcessor(testProcessor);
+    });
+
+    afterEach(() => {
+        testProcessor.spansProcessed = [];
     });
 
 
     after(() => {
         nock.cleanAll();
         nock.enableNetConnect();
+        client.shutdown();
     });
 
     class TestSpanProcessor implements SpanProcessor {
@@ -40,16 +59,8 @@ describe("shim/TelemetryClient", () => {
         }
     }
 
-
     describe("#manual track APIs", () => {
         it("trackDependency http", async () => {
-            let client = new TelemetryClient(
-                "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
-            );
-            client.initialize();
-            let tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider);
-            let testProcessor = new TestSpanProcessor();
-            tracerProvider.addSpanProcessor(testProcessor);
             const telemetry: DependencyTelemetry = {
                 name: "TestName",
                 duration: 2000, //2 seconds
@@ -60,7 +71,7 @@ describe("shim/TelemetryClient", () => {
                 success: false,
             };
             client.trackDependency(telemetry);
-          
+
             await tracerProvider.forceFlush();
             const spans = testProcessor.spansProcessed;
             assert.equal(spans.length, 1);
@@ -74,13 +85,6 @@ describe("shim/TelemetryClient", () => {
         });
 
         it("trackDependency DB", async () => {
-            let client = new TelemetryClient(
-                "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
-            );
-            client.initialize();
-            let tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider);
-            let testProcessor = new TestSpanProcessor();
-            tracerProvider.addSpanProcessor(testProcessor);
             const telemetry: DependencyTelemetry = {
                 name: "TestName",
                 duration: 2000, //2 seconds
@@ -101,13 +105,6 @@ describe("shim/TelemetryClient", () => {
         });
 
         it("trackRequest", async () => {
-            let client = new TelemetryClient(
-                "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
-            );
-            client.initialize();
-            let tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider);
-            let testProcessor = new TestSpanProcessor();
-            tracerProvider.addSpanProcessor(testProcessor);
             const telemetry: RequestTelemetry = {
                 id: "123456",
                 name: "TestName",

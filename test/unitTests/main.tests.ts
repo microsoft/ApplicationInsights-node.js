@@ -4,19 +4,17 @@ import { logs } from "@opentelemetry/api-logs";
 import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-import { ApplicationInsightsClient } from "../../src/applicationInsightsClient";
 import { LoggerProvider } from "@opentelemetry/sdk-logs";
+import { shutdownAzureMonitor, useAzureMonitor } from "../../src";
 
 
 describe("ApplicationInsightsClient", () => {
-    let client: ApplicationInsightsClient;
-
     afterEach(() => {
-        client.shutdown();
+        shutdownAzureMonitor();
     });
 
     it("OTLP Exporters added", () => {
-        client = new ApplicationInsightsClient({
+        useAzureMonitor({
             azureMonitorExporterConfig:
                 { connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333" },
             otlpMetricExporterConfig: { enabled: true },
