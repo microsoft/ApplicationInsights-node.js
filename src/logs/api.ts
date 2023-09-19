@@ -116,9 +116,15 @@ export class LogApi {
         baseData: MonitorDomain
     ): LogRecord {
         try {
-            const attributes: Attributes = {
-                ...telemetry.properties,
-            };
+            const attributes: Attributes = {};
+            if (telemetry.properties) {
+                for (const [key, value] of Object.entries(telemetry.properties)) {
+                    attributes[key] = typeof value === 'object'
+                        ? Util.getInstance().stringify(value)
+                        : value;
+                }
+            }
+
             const record: LogRecord = { attributes: attributes, body: Util.getInstance().stringify(baseData) };
             record.attributes["_MS.baseType"] = baseType;
             return record;
