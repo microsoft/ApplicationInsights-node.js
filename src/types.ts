@@ -4,6 +4,7 @@
 import { AzureMonitorOpenTelemetryOptions as DistroOptions } from "@azure/monitor-opentelemetry";
 import { OTLPExporterNodeConfigBase } from "@opentelemetry/otlp-exporter-base";
 
+
 export const AZURE_MONITOR_OPENTELEMETRY_VERSION = "1.0.0-beta.3";
 export const DEFAULT_ROLE_NAME = "Web";
 process.env["AZURE_MONITOR_DISTRO_VERSION"] = AZURE_MONITOR_OPENTELEMETRY_VERSION;

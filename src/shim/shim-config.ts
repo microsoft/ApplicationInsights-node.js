@@ -139,7 +139,7 @@ class Config implements IConfig {
     */
     public parseConfig(): AzureMonitorOpenTelemetryOptions {
         const options: AzureMonitorOpenTelemetryOptions = {
-            azureMonitorExporterConfig: {
+            azureMonitorExporterOptions: {
                 connectionString: this.connectionString
             },
             instrumentationOptions: {
@@ -172,7 +172,7 @@ class Config implements IConfig {
             } as HttpInstrumentationConfig,
         }
         if (this.aadTokenCredential) {
-            options.azureMonitorExporterConfig.credential = this.aadTokenCredential;
+            options.azureMonitorExporterOptions.credential = this.aadTokenCredential;
         }
         if (typeof (this.enableAutoCollectConsole) === "boolean") {
             const setting: boolean = this.enableAutoCollectConsole;
@@ -221,12 +221,12 @@ class Config implements IConfig {
             }
         }
         if (this.enableUseDiskRetryCaching === false) {
-            options.azureMonitorExporterConfig.disableOfflineStorage = true;
+            options.azureMonitorExporterOptions.disableOfflineStorage = true;
         }
         if (this.proxyHttpUrl || this.proxyHttpsUrl) {
             try {
                 const proxyUrl = new URL(this.proxyHttpsUrl || this.proxyHttpUrl);
-                options.azureMonitorExporterConfig.proxyOptions = {
+                options.azureMonitorExporterOptions.proxyOptions = {
                     host: proxyUrl.hostname,
                     port: Number(proxyUrl.port),
                 };

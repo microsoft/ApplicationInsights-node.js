@@ -64,15 +64,15 @@ describe("shim/configuration/config", () => {
             let options = config.parseConfig();
 
             assert.equal(options.samplingRatio, 0.5, "wrong samplingRatio");
-            assert.equal(options.azureMonitorExporterConfig.connectionString, connectionString), "wrong connectionString";
-            assert.equal(options.azureMonitorExporterConfig.proxyOptions.host, "localhost", "wrong host");
-            assert.equal(options.azureMonitorExporterConfig.proxyOptions.port, 3000, "wrong port");
+            assert.equal(options.azureMonitorExporterOptions.connectionString, connectionString), "wrong connectionString";
+            assert.equal(options.azureMonitorExporterOptions.proxyOptions.host, "localhost", "wrong host");
+            assert.equal(options.azureMonitorExporterOptions.proxyOptions.port, 3000, "wrong port");
             assert.equal((options.instrumentationOptions.http as HttpInstrumentationConfig).ignoreOutgoingUrls[0], "https://www.bing.com", "wrong ignoreOutgoingUrls");
             assert.equal(JSON.stringify(options.logInstrumentationOptions), JSON.stringify({ console: { enabled: true }, winston: { enabled: true }, bunyan: { enabled: true } }), "wrong logInstrumentationOptions");
             assert.equal(options.enableAutoCollectExceptions, true, "wrong enableAutoCollectExceptions");
             assert.equal(options.enableAutoCollectPerformance, true, "wrong enableAutoCollectPerformance");
             assert.equal(JSON.stringify(options.extendedMetrics), JSON.stringify({ gc: true, heap: true, loop: true }), "wrong extendedMetrics");
-            assert.equal(options.azureMonitorExporterConfig.credential, config.aadTokenCredential, "wrong credential");
+            assert.equal(options.azureMonitorExporterOptions.credential, config.aadTokenCredential, "wrong credential");
             assert.equal(
                 JSON.stringify(options.otlpTraceExporterConfig),
                 JSON.stringify({ timeoutMillis: 1000 }), "wrong otlpTraceExporterConfig"

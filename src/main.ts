@@ -90,7 +90,7 @@ function _addOtlpExporters(internalConfig: ApplicationInsightsConfig) {
     }
     if (internalConfig.otlpTraceExporterConfig?.enabled) {
         const otlpTraceExporter = new OTLPTraceExporter(internalConfig.otlpTraceExporterConfig);
-        let otlpSpanProcessor = new BatchSpanProcessor(otlpTraceExporter);
+        const otlpSpanProcessor = new BatchSpanProcessor(otlpTraceExporter);
         try {
             ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider).addSpanProcessor(otlpSpanProcessor);
         }

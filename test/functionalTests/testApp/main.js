@@ -5,7 +5,7 @@ if (testconfig.AppInsightsEnabled) {
     const { useAzureMonitor, shutdownAzureMonitor } = require("../../../out/src/");
 
     let options = {
-        azureMonitorExporterConfig: {
+        azureMonitorExporterOptions: {
             connectionString:`InstrumentationKey=${testconfig.InstrumentationKey};IngestionEndpoint=${testconfig.EndpointBaseAddress}`
         },
         samplingRatio: parseFloat(testconfig.SampleRate),

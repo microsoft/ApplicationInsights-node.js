@@ -38,7 +38,7 @@ export class AgentLoader {
             this._aadCredential = this._getAuthenticationCredential();
             // Default options
             this._options = {
-                azureMonitorExporterConfig: {
+                azureMonitorExporterOptions: {
                     disableOfflineStorage: false,
                 },
                 enableAutoCollectExceptions: true,
@@ -118,7 +118,7 @@ export class AgentLoader {
         if (this._validate()) {
             try {
                 // Initialize Distro
-                this._options.azureMonitorExporterConfig.credential = this._aadCredential;
+                this._options.azureMonitorExporterOptions.credential = this._aadCredential;
                 useAzureMonitor(this._options);
                 // Agent successfully initialized
                 const diagnosticLog: IDiagnosticLog = {
