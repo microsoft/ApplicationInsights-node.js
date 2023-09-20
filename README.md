@@ -176,7 +176,7 @@ And invoked via `appInsights.<METHOD_NAME>`
 | enableWebInstrumenatation   | WebInstrumentation is not supported in either the distro or the shim. |
 | setAutoDependencyCorrelation| Turning off autoDependencyCorrelation is not supported by either the distro or the shim. |
 | setUseDiskRetryCaching      | While enabling/disabling offline storage is supported, setting the resend interval or the maxBytesOnDisk values are not supported in the shim or the distro. |
-| setAutoCollectIncomingRequestAzureFunctions | Auto collection of Azure Functions is not supported by the shim. Please migrate to the distro for support. |
+| setAutoCollectIncomingRequestAzureFunctions | Auto collection of Azure Functions is not supported by the shim or the distro. |
 
 The following configurations are set using either environment variables, setting them in the `applicationinsights.json` file or by calling `appInsights.defaultClient.config.<CONFIG_SETTING_VALUE>;`.
 
@@ -185,11 +185,11 @@ The following configurations are set using either environment variables, setting
 | instrumentationKey & endpointUrl | Not supported by the shim or the distro. Please migrate to using the connectionString. |
 | maxBatchSize | Not supported by the shim but can be configured by using OpenTelemetry SpanProcessors in the distro. |
 | disableAppInsights | Not supported by the shim. Disabling telemetry export is possible via the distro using OpenTelemetry.|
-| correlationIdRetryIntervalMs | Not supported by either the shim or the distro as the value is not configurable in OpenTelemetry.|
+| correlationIdRetryIntervalMs | Not supported by either the shim or the distro as correlation ID is deprecated.|
 | ignoreLegacyHeaders | Legacy headers in outgoing requests are not supported in the shim or the distro. Therefore they will always be disabled. |
 | distributedTracingMode | Distributed tracing mode is always set to AI_AND_W3C. AI only tracing mode is not supported in the shim or the distro.|
 | enableLoggerErrorToTrace | Not supported in the shim or the distro as all errors will be logged as exceptions in both. |
-| enableAutoCollectHeartbeat | Not supported in the shim or the distro. |
+| enableAutoCollectHeartbeat | Heartbeat is not supported in the shim or the distro as it is deprecated. |
 | enableAutoDependencyCorrelation | Cannot disable dependency correlation in either the shim or the distro. Dependency correlation will always be enabled and therefore this setting is always true. |
 | enableAutoCollectIncomingRequestAzureFunctions | Not supported by the shim. Migrate to the distro to use auto collection of Azure Functions. |
 | enableUseAsyncHooks | Using async hooks is not supported by the shim or the distro as it is not supported by OpenTelemetry. |
@@ -200,6 +200,20 @@ The following configurations are set using either environment variables, setting
 | enableWebInstrumentation | Not currently supported in the shim or the distro. |
 | webInstrumentationConnectionString | Not supported in the shim or the distro. |
 | webInstrumentationConfig | Not currently supported by the shim or the distro. |
+
+The following methods are part of the `TelemetryClient` class. They can be called using `applicationinsights.defaultClient.<METHOD_NAME>()`.
+
+|Property       |                     Support Status              |
+|---------------|-------------------------------------------------|
+| trackPageView | PageViewTelemetry requires an id and a name field now instead of only an optional name field. |
+| track | Tracking generic telemetry is not longer supported. Please use one of the other manual track methods to track a specific telemetry type. | 
+| getAuthorizationHandler | Not supported in the shim. |
+| addTelemetryProcessor | TelemetryProcessors are not supported in the shim. Please migrate to the distro and use OpenTelemetry Span Processors. |
+| clearTelemetryProcessors | TelemetryProcessors are not supported in the shim. Please migrate to the distro and use OpenTelemetry Span Processors. | 
+| runTelemetryProcessors | TelemetryProcessors are not supported in the shim. Please migrate to the distro and use OpenTelemetry Span Processors. |
+| trackNodeHttpRequestSync | Not supported. Please use the trackRequest method instead. |
+| trackNodeHttpRequest | Not supported. Please use the trackRequest method instead. |
+| trackNodeHttpDependency | Not supported. Please use the trackDependency method instead. |
 
 
 ## Troubleshooting
