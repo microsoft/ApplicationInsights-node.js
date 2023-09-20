@@ -11,7 +11,7 @@ import {
 } from "@opentelemetry/resources";
 import { JsonConfig } from "./jsonConfig";
 import { Logger } from "../logging";
-import { ApplicationInsightsOptions, ExtendedMetricType, LogInstrumentationOptions, OTLPExporterConfig } from "../../types";
+import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType, LogInstrumentationOptions, OTLPExporterConfig } from "../../types";
 
 
 
@@ -54,7 +54,7 @@ export class ApplicationInsightsConfig {
      */
     public enableAutoCollectPerformance: boolean;
 
-    constructor(options?: ApplicationInsightsOptions) {
+    constructor(options?: AzureMonitorOpenTelemetryOptions) {
         // Default values
         this.otlpLogExporterConfig = {};
         this.otlpMetricExporterConfig = {};

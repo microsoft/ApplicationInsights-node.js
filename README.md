@@ -54,9 +54,9 @@ npm install applicationinsights@beta
 
 
 ```typescript
-const { useAzureMonitor, ApplicationInsightsOptions } = require("applicationinsights");
+const { useAzureMonitor, AzureMonitorOpenTelemetryOptions } = require("applicationinsights");
 
-const config : ApplicationInsightsOptions = {
+const config : AzureMonitorOpenTelemetryOptions = {
     azureMonitorExporterConfig: {
         connectionString: process.env["APPLICATIONINSIGHTS_CONNECTION_STRING"] || "<your connection string>"
     }
@@ -75,7 +75,7 @@ useAzureMonitor(config);
 The ApplicationInsightsConfig interface provides a number of options to setup SDK behavior.
 
 ```typescript
-const config : ApplicationInsightsOptions = {
+const config : AzureMonitorOpenTelemetryOptions = {
      azureMonitorExporterConfig: {
         // Offline storage
         storageDirectory: "c://azureMonitor",

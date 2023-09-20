@@ -7,7 +7,7 @@ import { ConsoleWriter } from "./diagnostics/writers/consoleWriter";
 import { DiagnosticLogger } from "./diagnostics/diagnosticLogger";
 import { StatusLogger } from "./diagnostics/statusLogger";
 import { AgentResourceProviderType, DiagnosticMessageId, IDiagnosticLog, IDiagnosticLogger, NODE_JS_RUNTIME_MAJOR_VERSION } from "./types";
-import { ApplicationInsightsOptions } from "../types";
+import { AzureMonitorOpenTelemetryOptions } from "../types";
 import { useAzureMonitor } from "../main";
 
 
@@ -21,7 +21,7 @@ const LEGACY_ENV_IKEY = "APPINSIGHTS_INSTRUMENTATION_KEY";
 
 export class AgentLoader {
     protected _canLoad: boolean;
-    protected _options: ApplicationInsightsOptions;
+    protected _options: AzureMonitorOpenTelemetryOptions;
     protected _instrumentationKey: string;
     protected _diagnosticLogger: IDiagnosticLogger;
     protected _statusLogger: StatusLogger;

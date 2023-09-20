@@ -8,7 +8,7 @@ import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrumentationConfig } from "./types";
 import { Logger } from "../shared/logging";
 import { ShimJsonConfig } from "./shim-jsonConfig";
-import { ApplicationInsightsOptions, ExtendedMetricType, InstrumentationOptionsType } from "../types";
+import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType, InstrumentationOptionsType } from "../types";
 
 class Config implements IConfig {
 
@@ -135,10 +135,10 @@ class Config implements IConfig {
     }
 
     /**
-    * Parse the config property to set the appropriate values on the ApplicationInsightsOptions
+    * Parse the config property to set the appropriate values on the AzureMonitorOpenTelemetryOptions
     */
-    public parseConfig(): ApplicationInsightsOptions {
-        const options: ApplicationInsightsOptions = {
+    public parseConfig(): AzureMonitorOpenTelemetryOptions {
+        const options: AzureMonitorOpenTelemetryOptions = {
             azureMonitorExporterConfig: {
                 connectionString: this.connectionString
             },

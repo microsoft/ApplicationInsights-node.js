@@ -6,7 +6,7 @@ import * as path from "path";
 import { InstrumentationOptions } from "@azure/monitor-opentelemetry";
 import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 import { Logger } from "../logging";
-import { ApplicationInsightsOptions, LogInstrumentationOptions, OTLPExporterConfig } from "../../types";
+import { AzureMonitorOpenTelemetryOptions, LogInstrumentationOptions, OTLPExporterConfig } from "../../types";
 
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
@@ -75,7 +75,7 @@ export class JsonConfig {
             }
         }
         try {
-            const jsonConfig: ApplicationInsightsOptions = JSON.parse(jsonString);
+            const jsonConfig: AzureMonitorOpenTelemetryOptions = JSON.parse(jsonString);
             this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
             this.logInstrumentationOptions = jsonConfig.logInstrumentationOptions;
             this.extendedMetrics = jsonConfig.extendedMetrics;
