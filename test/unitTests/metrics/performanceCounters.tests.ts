@@ -15,7 +15,7 @@ describe("PerformanceCounterMetricsHandler", () => {
 
   before(() => {
     config = new ApplicationInsightsConfig();
-    config.azureMonitorExporterConfig.connectionString =
+    config.azureMonitorExporterOptions.connectionString =
       "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
   });
 

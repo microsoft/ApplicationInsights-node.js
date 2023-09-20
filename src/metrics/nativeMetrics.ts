@@ -44,7 +44,7 @@ export class NativeMetrics {
             resource: this._config.resource,
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);
-        this._azureExporter = new AzureMonitorMetricExporter(this._config.azureMonitorExporterConfig);
+        this._azureExporter = new AzureMonitorMetricExporter(this._config.azureMonitorExporterOptions);
         const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
             exporter: this._azureExporter as any,
             exportIntervalMillis: options?.collectionInterval || this._collectionInterval,

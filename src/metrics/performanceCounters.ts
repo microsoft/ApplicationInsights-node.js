@@ -82,7 +82,7 @@ export class PerformanceCounterMetrics {
             resource: this._internalConfig.resource,
         };
         this._meterProvider = new MeterProvider(meterProviderConfig);
-        this._azureExporter = new AzureMonitorMetricExporter(this._internalConfig.azureMonitorExporterConfig);
+        this._azureExporter = new AzureMonitorMetricExporter(this._internalConfig.azureMonitorExporterOptions);
         const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
             exporter: this._azureExporter as any,
             exportIntervalMillis: options?.collectionInterval || this._collectionInterval,

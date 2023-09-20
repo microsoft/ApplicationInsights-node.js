@@ -6,7 +6,7 @@ import * as path from "path";
 import { InstrumentationOptions } from "@azure/monitor-opentelemetry";
 import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 import { Logger } from "../logging";
-import { ApplicationInsightsOptions, LogInstrumentationOptions, OTLPExporterConfig } from "../../types";
+import { AzureMonitorOpenTelemetryOptions, LogInstrumentationOptions, OTLPExporterConfig } from "../../types";
 
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
@@ -31,7 +31,7 @@ export class JsonConfig {
     /** The rate of telemetry items tracked that should be transmitted (Default 1.0) */
     public samplingRatio?: number;
     /** Azure Monitor Exporter Configuration */
-    public azureMonitorExporterConfig?: AzureMonitorExporterOptions;
+    public azureMonitorExporterOptions?: AzureMonitorExporterOptions;
     /**
      * OpenTelemetry Instrumentations configuration included as part of Azure Monitor (azureSdk, http, mongoDb, mySql, postgreSql, redis, redis4)
      */
@@ -75,7 +75,7 @@ export class JsonConfig {
             }
         }
         try {
-            const jsonConfig: ApplicationInsightsOptions = JSON.parse(jsonString);
+            const jsonConfig: AzureMonitorOpenTelemetryOptions = JSON.parse(jsonString);
             this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
             this.logInstrumentationOptions = jsonConfig.logInstrumentationOptions;
             this.extendedMetrics = jsonConfig.extendedMetrics;
@@ -84,7 +84,7 @@ export class JsonConfig {
             this.otlpTraceExporterConfig = jsonConfig.otlpTraceExporterConfig;
             this.enableAutoCollectPerformance = jsonConfig.enableAutoCollectPerformance;
 
-            this.azureMonitorExporterConfig = jsonConfig.azureMonitorExporterConfig;
+            this.azureMonitorExporterOptions = jsonConfig.azureMonitorExporterOptions;
             this.samplingRatio = jsonConfig.samplingRatio;
             this.instrumentationOptions = jsonConfig.instrumentationOptions;
         } catch (err) {

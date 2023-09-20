@@ -1,8 +1,8 @@
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
-import { ApplicationInsightsOptions, ExtendedMetricType } from "../../types";
+import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType } from "../../types";
 import * as http from "http";
 
-export function setAutoCollectPerformance(options: ApplicationInsightsOptions, value: boolean, collectExtendedMetrics?: any) {
+export function setAutoCollectPerformance(options: AzureMonitorOpenTelemetryOptions, value: boolean, collectExtendedMetrics?: any) {
     if (options) {
         options.enableAutoCollectPerformance = value;
         if (typeof collectExtendedMetrics === "object") {
@@ -18,7 +18,7 @@ export function setAutoCollectPerformance(options: ApplicationInsightsOptions, v
     }
 }
 
-export function setAutoCollectRequests(options: ApplicationInsightsOptions, value: boolean) {
+export function setAutoCollectRequests(options: AzureMonitorOpenTelemetryOptions, value: boolean) {
     if (options) {
         if (value === false) {
             options.instrumentationOptions = {
@@ -42,7 +42,7 @@ export function setAutoCollectRequests(options: ApplicationInsightsOptions, valu
     }
 }
 
-export function setAutoCollectDependencies(options: ApplicationInsightsOptions, value: boolean) {
+export function setAutoCollectDependencies(options: AzureMonitorOpenTelemetryOptions, value: boolean) {
     if (options) {
         if (value === false) {
             options.instrumentationOptions = {
@@ -66,7 +66,7 @@ export function setAutoCollectDependencies(options: ApplicationInsightsOptions, 
     }
 }
 
-export function setAutoCollectConsole(options: ApplicationInsightsOptions, value: boolean, enableConsole: boolean, collectConsoleLog = false) {
+export function setAutoCollectConsole(options: AzureMonitorOpenTelemetryOptions, value: boolean, enableConsole: boolean, collectConsoleLog = false) {
     if (options) {
         options.logInstrumentationOptions = {
             bunyan: { enabled: value },
@@ -76,7 +76,7 @@ export function setAutoCollectConsole(options: ApplicationInsightsOptions, value
     }
 }
 
-export function enableAutoCollectExternalLoggers(options: ApplicationInsightsOptions, value: boolean) {
+export function enableAutoCollectExternalLoggers(options: AzureMonitorOpenTelemetryOptions, value: boolean) {
     options.logInstrumentationOptions = {
         ...options.logInstrumentationOptions,
         winston: { enabled: value },
@@ -84,14 +84,14 @@ export function enableAutoCollectExternalLoggers(options: ApplicationInsightsOpt
     }
 }
 
-export function enableAutoCollectConsole(options: ApplicationInsightsOptions, value: boolean) {
+export function enableAutoCollectConsole(options: AzureMonitorOpenTelemetryOptions, value: boolean) {
     options.logInstrumentationOptions = {
         ...options.logInstrumentationOptions,
         console: { enabled: value },
     }
 }
 
-export function setExtendedMetricDisablers(options: ApplicationInsightsOptions, disablers: string) {
+export function setExtendedMetricDisablers(options: AzureMonitorOpenTelemetryOptions, disablers: string) {
     const extendedMetricDisablers: string[] = disablers.split(",");
     for (const extendedMetricDisabler of extendedMetricDisablers) {
         if (extendedMetricDisabler === "gc") {
