@@ -16,6 +16,7 @@ import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { AttributeLogProcessor } from "../shared/util/attributeLogRecordProcessor";
 import { LogApi } from "../logs/api";
 import { flushAzureMonitor, shutdownAzureMonitor, useAzureMonitor } from "../main";
+import { ApplicationInsightsOptions } from "../types";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -29,6 +30,7 @@ export class TelemetryClient {
     public context: Context;
     public commonProperties: { [key: string]: string }; // TODO: Add setter so Resources are updated
     public config: Config;
+    private _options: ApplicationInsightsOptions;
 
     /**
      * Constructs a new instance of TelemetryClient
@@ -45,8 +47,8 @@ export class TelemetryClient {
     public initialize() {
         this._isInitialized = true;
         // Parse shim config to Azure Monitor options
-        const options = this.config.parseConfig();
-        useAzureMonitor(options);
+        this._options = this.config.parseConfig();
+        useAzureMonitor(this._options);
         // LoggerProvider would be initialized when client is instantiated
         // Get Logger from global provider
         this._logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
@@ -226,12 +228,13 @@ export class TelemetryClient {
     }
 
     /**
+     * @deprecated
      * Automatically populate telemetry properties like RoleName when running in Azure
      *
      * @param value if true properties will be populated
      */
     public setAutoPopulateAzureProperties() {
-        // TODO: Config is only used during initialization of ResourceManager so it cannot be set after.
+        // NO-OP
     }
 
     /*

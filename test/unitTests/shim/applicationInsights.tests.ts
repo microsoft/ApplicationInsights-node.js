@@ -1,124 +1,83 @@
-// import * as assert from "assert";
-// import * as sinon from "sinon";
+import * as assert from "assert";
+import * as sinon from "sinon";
 
-// import * as AppInsights from "../../src/applicationinsights";
-// import * as Contracts from "../../src/declarations/contracts";
+import * as appInsights from "../../../src/index";
 
-// describe("ApplicationInsights", () => {
-//     var sandbox: sinon.SinonSandbox;
-//     before(() => {
-//         sandbox = sinon.createSandbox();
-//     });
+describe("ApplicationInsights", () => {
+    let sandbox: sinon.SinonSandbox;
+    const connString: string = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/"
+    before(() => {
+        sandbox = sinon.createSandbox();
+    });
 
-//     afterEach(() => {
-//         sandbox.restore();
-//         AppInsights.dispose();
-//     });
+    afterEach(() => {
+        sandbox.restore();
+        appInsights.dispose();
+    });
 
-//     describe("#setup()", () => {
-//         it("should not warn if setup is called once", () => {
-//             var warnStub = sandbox.stub(console, "warn");
-//             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-//             assert.ok(warnStub.notCalled, "warning was not raised");
-//         });
+    describe("#setup()", () => {
+        it("should not warn if setup is called once", (done) => {
+            const warnStub = sandbox.stub(console, "warn");
+            appInsights.setup(connString);
+            assert.ok(warnStub.notCalled, "warning was not raised");
+            done();
+        });
+        it("should warn if setup is called twice", (done) => {
+            const warnStub = sandbox.stub(console, "warn");
+            appInsights.setup(connString);
+            appInsights.setup(connString);
+            assert.ok(warnStub.calledOn, "warning was raised");
+            done();
+        });
+        it("should not overwrite default client if called more than once", (done) => {
+            appInsights.setup(connString);
+            var client = appInsights.defaultClient;
+            appInsights.setup(connString);
+            appInsights.setup(connString);
+            appInsights.setup(connString);
+            assert.ok(JSON.stringify(client) === JSON.stringify(appInsights.defaultClient), "client is not overwritten");
+            done();
+        });
+    });
 
-//         it("should warn if setup is called twice", () => {
-//             var warnStub = sandbox.stub(console, "warn");
-//             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-//             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-//             assert.ok(warnStub.calledOn, "warning was raised");
-//         });
+    describe("#start()", () => {
+        it("should warn if start is called before setup", (done) => {
+            const warnStub = sandbox.stub(console, "warn");
+            appInsights.start();
+            assert.ok(warnStub.calledOn, "warning was raised");
+            done();
+        });
 
-//         it("should not overwrite default client if called more than once", () => {
-//             var warnStub = sandbox.stub(console, "warn");
-//             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-//             var client = AppInsights.defaultClient;
-//             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-//             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-//             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-//             assert.ok(client === AppInsights.defaultClient, "client is not overwritten");
-//         });
-//     });
+        it("should not warn if start is called after setup", () => {
+            var warnStub = sandbox.stub(console, "warn");
+            appInsights.setup(connString).start();
+            assert.ok(warnStub.notCalled, "warning was not raised");
+        });
+    });
 
-//     describe("#start()", () => {
-//         it("should warn if start is called before setup", () => {
-//             var warnStub = sandbox.stub(console, "warn");
-//             AppInsights.start();
-//             assert.ok(warnStub.calledOn, "warning was raised");
-//         });
+    describe("#setAutoCollect", () => {
+        it("auto-collection is initialized by default", () => {
+            appInsights.setup(connString);
+            appInsights.start();
+            assert.equal(appInsights.defaultClient["_options"].enableAutoCollectExceptions, true);
+            assert.equal(appInsights.defaultClient["_options"].enableAutoCollectPerformance, true);
+            assert.equal(JSON.stringify(appInsights.defaultClient["_options"].logInstrumentationOptions.bunyan), JSON.stringify({ enabled: true }));
+        });
 
-//         it("should not warn if start is called after setup", () => {
-//             var warnStub = sandbox.stub(console, "warn");
-//             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").start();
-//             assert.ok(warnStub.notCalled, "warning was not raised");
-//         });
-
-//         it("should not start live metrics", () => {
-//             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333").start();
-//             assert.equal(
-//                 AppInsights.liveMetricsClient,
-//                 undefined,
-//                 "live metrics client is not defined"
-//             );
-//         });
-
-//         it("should not start live metrics", () => {
-//             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
-//                 .setSendLiveMetrics(false)
-//                 .start();
-//             assert.equal(
-//                 AppInsights.liveMetricsClient,
-//                 undefined,
-//                 "live metrics client is not defined"
-//             );
-//         });
-//     });
-
-//     describe("#setAutoCollect", () => {
-//         it("auto-collection is initialized by default", () => {
-//             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-//             let consoleSpy = sandbox.spy(
-//                 AppInsights.defaultClient.logHandler["_console"],
-//                 "enable"
-//             );
-//             let exceptionsSpy = sandbox.spy(
-//                 AppInsights.defaultClient.logHandler["_exceptions"],
-//                 "enable"
-//             );
-//             let performanceSpy = sandbox.spy(
-//                 AppInsights.defaultClient.metricHandler["_performance"],
-//                 "enable"
-//             );
-//             AppInsights.start();
-//             assert.ok(consoleSpy.called);
-//             assert.ok(exceptionsSpy.called);
-//             assert.ok(performanceSpy.called);
-//         });
-
-//         it("auto-collection is not initialized if disabled before 'start'", () => {
-//             AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
-//                 .setAutoCollectConsole(false)
-//                 .setAutoCollectExceptions(false)
-//                 .setAutoCollectPerformance(false)
-//                 .setAutoCollectRequests(false)
-//                 .setAutoCollectDependencies(false)
-//                 .setAutoDependencyCorrelation(false);
-//             let consoleSpy = sandbox.spy(
-//                 AppInsights.defaultClient.logHandler["_console"],
-//                 "enable"
-//             );
-//             let exceptionsSpy = sandbox.spy(
-//                 AppInsights.defaultClient.logHandler["_exceptions"],
-//                 "enable"
-//             );
-//             let performanceSpy = sandbox.spy(
-//                 AppInsights.defaultClient.metricHandler["_performance"],
-//                 "enable"
-//             );
-//             AppInsights.start();
-//             assert.equal(consoleSpy.firstCall.args[0], false);
-//             assert.equal(exceptionsSpy.firstCall.args[0], false);
-//             assert.equal(performanceSpy.firstCall.args[0], false);
-//         });
-//     });
-// });
+        it("auto-collection is not initialized if disabled before 'start'", () => {
+            appInsights.setup(connString)
+                .setAutoCollectConsole(false)
+                .setAutoCollectExceptions(false)
+                .setAutoCollectPerformance(false, false)
+                .setAutoCollectRequests(false)
+                .setAutoCollectDependencies(false)
+                .setAutoDependencyCorrelation(false);
+            appInsights.start();
+            assert.equal(appInsights.defaultClient["_options"].enableAutoCollectExceptions, false);
+            assert.equal(appInsights.defaultClient["_options"].enableAutoCollectPerformance, false);
+            assert.equal(JSON.stringify(appInsights.defaultClient["_options"].logInstrumentationOptions.bunyan), JSON.stringify({ enabled: false }));
+            assert.equal(JSON.stringify(appInsights.defaultClient["_options"].logInstrumentationOptions.console), JSON.stringify({ enabled: false }));
+            assert.equal(JSON.stringify(appInsights.defaultClient["_options"].logInstrumentationOptions.winston), JSON.stringify({ enabled: false }));
+        });
+    });
+});

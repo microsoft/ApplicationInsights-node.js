@@ -142,6 +142,8 @@ class Config implements IConfig {
             azureMonitorExporterConfig: {
                 connectionString: this.connectionString
             },
+            enableAutoCollectPerformance: true,
+            enableAutoCollectExceptions: true,
             instrumentationOptions: {
                 http: { enabled: true },
                 azureSdk: { enabled: true },
