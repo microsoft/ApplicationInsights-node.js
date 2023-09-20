@@ -158,7 +158,7 @@ process.env.APPLICATIONINSIGHTS_CONFIGURATION_FILE = "C:/applicationinsights/con
 // Application Insights SDK setup....
 ```
 
-## ApplicationInsights Shim
+## ApplicationInsights Shim Unsupported Properties
 The ApplicationInsights shim will provide support path for customers who only require basic instrumentation as opposed to migrating to the OpenTelemetry Distro. If unsupported methods are called, they are not breaking and your application will still run. Calling these unsupported methods will throw a warning that the method is not supported by the ApplicationInsights shim.
 
 The following methods are called after using the below method.
@@ -171,14 +171,14 @@ appinsights.setup("<YOUR_CONNECTION_STRING>").start();
 And invoked via `appInsights.<METHOD_NAME>`
 |Property                     |Support Status                                                                                              |
 | ----------------------------|------------------------------------------------------------------------------------------------------------|
-| setDistributedTracingMode   | AI only tracing mode is no longer supported. Must migrate to using W3C_AND_AI tracing mode. |
+| setDistributedTracingMode   | AI only tracing mode is no longer supported. Migrate to using W3C_AND_AI tracing mode. |
 | setAutoCollectHeartbeat     | Heartbeat is not supported in either the distro or the shim.|
 | enableWebInstrumenatation   | WebInstrumentation is not supported in either the distro or the shim. |
 | setAutoDependencyCorrelation| Turning off autoDependencyCorrelation is not supported by either the distro or the shim. |
 | setUseDiskRetryCaching      | While enabling/disabling offline storage is supported, setting the resend interval or the maxBytesOnDisk values are not supported in the shim or the distro. |
 | setAutoCollectIncomingRequestAzureFunctions | Auto collection of Azure Functions is not supported by the shim. Please migrate to the distro for support. |
 
-The following configurations are set using either environment variables, settign them in the `applicationinsights.json` file or by calling `appInsights.defaultClient.config.<CONFIG_SETTING_VALUE>;`.
+The following configurations are set using either environment variables, setting them in the `applicationinsights.json` file or by calling `appInsights.defaultClient.config.<CONFIG_SETTING_VALUE>;`.
 
 |Property               |Support Status                                                         |
 |-----------------------|-----------------------------------------------------------------------|
@@ -186,7 +186,7 @@ The following configurations are set using either environment variables, settign
 | maxBatchSize | Not supported by the shim but can be configured by using OpenTelemetry SpanProcessors in the distro. |
 | disableAppInsights | Not supported by the shim. Disabling telemetry export is possible via the distro using OpenTelemetry.|
 | correlationIdRetryIntervalMs | Not supported by either the shim or the distro as the value is not configurable in OpenTelemetry.|
-| ignoreLegacyHeaders | Legacy Headers in outgoing requests are not supported in the shim or the distro. Therefore they will always be disabled. |
+| ignoreLegacyHeaders | Legacy headers in outgoing requests are not supported in the shim or the distro. Therefore they will always be disabled. |
 | distributedTracingMode | Distributed tracing mode is always set to AI_AND_W3C. AI only tracing mode is not supported in the shim or the distro.|
 | enableLoggerErrorToTrace | Not supported in the shim or the distro as all errors will be logged as exceptions in both. |
 | enableAutoCollectHeartbeat | Not supported in the shim or the distro. |
