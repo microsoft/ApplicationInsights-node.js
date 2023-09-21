@@ -28,7 +28,7 @@ export class TelemetryClient {
     private _logApi: LogApi;
     private _isInitialized: boolean;
     public context: Context;
-    public commonProperties: { [key: string]: string }; // TODO: Add setter so Resources are updated
+    public commonProperties: { [key: string]: string };
     public config: Config;
     private _options: AzureMonitorOpenTelemetryOptions;
 
@@ -52,7 +52,7 @@ export class TelemetryClient {
         // LoggerProvider would be initialized when client is instantiated
         // Get Logger from global provider
         this._logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
-        this._attributeSpanProcessor = new AttributeSpanProcessor(this.context.tags);
+        this._attributeSpanProcessor = new AttributeSpanProcessor({ ...this.context.tags, ...this.commonProperties });
         ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider).addSpanProcessor(this._attributeSpanProcessor);
 
         this._attributeLogProcessor = new AttributeLogProcessor(this.context.tags);
@@ -120,14 +120,14 @@ export class TelemetryClient {
      * telemetry bandwidth by aggregating multiple measurements and sending the resulting average at intervals.
      * @param telemetry      Object encapsulating tracking options
      */
-    public trackMetric(telemetry: Contracts.MetricPointTelemetry): void {
+    public trackMetric(telemetry: Contracts.MetricPointTelemetry & Contracts.MetricTelemetry): void {
         if (!this._isInitialized) {
             this.initialize();
         }
         // Create custom metric
         const meter = metrics.getMeterProvider().getMeter("ApplicationInsightsMetrics");
-        const histogram = meter.createHistogram(telemetry.name, {});
-        histogram.record(telemetry.value);
+        const histogram = meter.createHistogram(telemetry.name);
+        histogram.record(telemetry.value, {...telemetry.properties, ...this.commonProperties, ...this.context.tags });
     }
 
     /**
@@ -143,7 +143,6 @@ export class TelemetryClient {
         const startTime = telemetry.time || new Date();
         const endTime = startTime.getTime() + telemetry.duration;
 
-        // TODO: Change resourceManager if ID is provided?
         const ctx = context.active();
         const attributes: Attributes = {
             ...telemetry.properties,
@@ -195,7 +194,6 @@ export class TelemetryClient {
         };
         if (telemetry.dependencyTypeName) {
             if (telemetry.dependencyTypeName.toLowerCase().indexOf("http") > -1) {
-                attributes[SemanticAttributes.HTTP_METHOD] = "HTTP"; // TODO: Dependency doesn't expose method in any property
                 attributes[SemanticAttributes.HTTP_URL] = telemetry.data;
                 attributes[SemanticAttributes.HTTP_STATUS_CODE] = telemetry.resultCode;
             } else if (Util.getInstance().isDbDependency(telemetry.dependencyTypeName)) {

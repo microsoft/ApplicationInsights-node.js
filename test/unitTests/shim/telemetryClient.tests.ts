@@ -78,7 +78,6 @@ describe("shim/TelemetryClient", () => {
             assert.equal(spans[0].name, "TestName");
             assert.equal(spans[0].endTime[0] - spans[0].startTime[0], 2); // hrTime UNIX Epoch time in seconds
             assert.equal(spans[0].kind, 2, "Span Kind"); // Outgoing
-            assert.equal(spans[0].attributes["http.method"], "HTTP");
             assert.equal(spans[0].attributes["http.status_code"], "401");
             assert.equal(spans[0].attributes["http.url"], "http://test.com");
             assert.equal(spans[0].attributes["peer.service"], "TestTarget");
