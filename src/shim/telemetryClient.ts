@@ -16,7 +16,7 @@ import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { AttributeLogProcessor } from "../shared/util/attributeLogRecordProcessor";
 import { LogApi } from "../logs/api";
 import { flushAzureMonitor, shutdownAzureMonitor, useAzureMonitor } from "../main";
-import { ApplicationInsightsOptions } from "../types";
+import { AzureMonitorOpenTelemetryOptions } from "../types";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -30,7 +30,7 @@ export class TelemetryClient {
     public context: Context;
     public commonProperties: { [key: string]: string }; // TODO: Add setter so Resources are updated
     public config: Config;
-    private _options: ApplicationInsightsOptions;
+    private _options: AzureMonitorOpenTelemetryOptions;
 
     /**
      * Constructs a new instance of TelemetryClient
@@ -236,6 +236,13 @@ export class TelemetryClient {
     public setAutoPopulateAzureProperties() {
         // NO-OP
     }
+
+    /**
+     * Get Authorization handler
+     */
+    public getAuthorizationHandler(config: Config): void {
+        Logger.getInstance().warn("getAuthorizationHandler is not supported in ApplicationInsights any longer.");
+    } 
 
     /*
      * Get Statsbeat instance

@@ -140,7 +140,8 @@ class Config implements IConfig {
     public parseConfig(): AzureMonitorOpenTelemetryOptions {
         const options: AzureMonitorOpenTelemetryOptions = {
             azureMonitorExporterOptions: {
-                connectionString: this.connectionString
+                connectionString: this.connectionString,
+                disableOfflineStorage: false,
             },
             enableAutoCollectPerformance: true,
             enableAutoCollectExceptions: true,
@@ -350,16 +351,14 @@ class Config implements IConfig {
         if (this.enableUseAsyncHooks === false) {
             Logger.getInstance().warn("The use of non async hooks is no longer supported.");
         }
-        if (typeof (this.distributedTracingMode) === "boolean") {
-            if (this.distributedTracingMode === DistributedTracingModes.AI) {
-                Logger.getInstance().warn("AI only distributed tracing mode is no longer supported.");
-            }
+        if (this.distributedTracingMode === DistributedTracingModes.AI) {
+            Logger.getInstance().warn("AI only distributed tracing mode is no longer supported.");
         }
         if (this.enableResendInterval) {
             Logger.getInstance().warn("The resendInterval configuration option is not supported by the shim.");
         }
         if (this.enableMaxBytesOnDisk) {
-            Logger.getInstance().warn("The maxBatchOnDisk configuration option is not supported by the shim.");
+            Logger.getInstance().warn("The maxByteshOnDisk configuration option is not supported by the shim.");
         }
         if (this.ignoreLegacyHeaders === false) {
             Logger.getInstance().warn("LegacyHeaders are not supported by the shim.");
