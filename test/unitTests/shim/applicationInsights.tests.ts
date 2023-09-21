@@ -19,14 +19,14 @@ describe("ApplicationInsights", () => {
         it("should not warn if setup is called once", (done) => {
             const warnStub = sandbox.stub(console, "warn");
             appInsights.setup(connString);
-            assert.ok(warnStub.notCalled, "warning was not raised");
+            assert.ok(warnStub.notCalled, "warning was raised");
             done();
         });
         it("should warn if setup is called twice", (done) => {
             const warnStub = sandbox.stub(console, "warn");
             appInsights.setup(connString);
             appInsights.setup(connString);
-            assert.ok(warnStub.calledOn, "warning was raised");
+            assert.ok(warnStub.calledOn, "warning was not raised");
             done();
         });
         it("should not overwrite default client if called more than once", (done) => {
@@ -44,14 +44,14 @@ describe("ApplicationInsights", () => {
         it("should warn if start is called before setup", (done) => {
             const warnStub = sandbox.stub(console, "warn");
             appInsights.start();
-            assert.ok(warnStub.calledOn, "warning was raised");
+            assert.ok(warnStub.calledOn, "warning was not raised");
             done();
         });
 
         it("should not warn if start is called after setup", () => {
             var warnStub = sandbox.stub(console, "warn");
             appInsights.setup(connString).start();
-            assert.ok(warnStub.notCalled, "warning was not raised");
+            assert.ok(warnStub.notCalled, "warning was raised");
         });
     });
 
