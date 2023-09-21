@@ -228,7 +228,6 @@ export class TelemetryClient {
     }
 
     /**
-     * @deprecated
      * Automatically populate telemetry properties like RoleName when running in Azure
      *
      * @param value if true properties will be populated

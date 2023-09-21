@@ -171,7 +171,7 @@ class Config implements IConfig {
             ...options.instrumentationOptions,
             http: {
                 ...options.instrumentationOptions?.http,
-                ignoreOutgoingUrls: this.correlationHeaderExcludedDomains, /// TODO: Deprecated configuration
+                ignoreOutgoingUrls: this.correlationHeaderExcludedDomains,
             } as HttpInstrumentationConfig,
         }
         if (this.aadTokenCredential) {
@@ -358,7 +358,7 @@ class Config implements IConfig {
             Logger.getInstance().warn("The resendInterval configuration option is not supported by the shim.");
         }
         if (this.enableMaxBytesOnDisk) {
-            Logger.getInstance().warn("The maxByteshOnDisk configuration option is not supported by the shim.");
+            Logger.getInstance().warn("The maxBytesOnDisk configuration option is not supported by the shim.");
         }
         if (this.ignoreLegacyHeaders === false) {
             Logger.getInstance().warn("LegacyHeaders are not supported by the shim.");
