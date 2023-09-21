@@ -16,7 +16,6 @@ import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType, LogInstrumentatio
 
 
 export class ApplicationInsightsConfig {
-    private applicationInsightsShim: boolean;
     public logInstrumentationOptions: LogInstrumentationOptions;
     public enableAutoCollectExceptions: boolean;
     public extendedMetrics: { [type: string]: boolean };
@@ -57,7 +56,6 @@ export class ApplicationInsightsConfig {
 
     constructor(options?: AzureMonitorOpenTelemetryOptions) {
         // Default values
-        this.applicationInsightsShim = true;
         this.otlpLogExporterConfig = {};
         this.otlpMetricExporterConfig = {};
         this.otlpTraceExporterConfig = {};
