@@ -1,8 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { AzureMonitorOpenTelemetryOptions } from "@azure/monitor-opentelemetry";
+import { AzureMonitorOpenTelemetryOptions as DistroOptions } from "@azure/monitor-opentelemetry";
 import { OTLPExporterNodeConfigBase } from "@opentelemetry/otlp-exporter-base";
+
 
 export const AZURE_MONITOR_OPENTELEMETRY_VERSION = "1.0.0-beta.3";
 export const DEFAULT_ROLE_NAME = "Web";
@@ -11,45 +12,45 @@ process.env["AZURE_MONITOR_DISTRO_VERSION"] = AZURE_MONITOR_OPENTELEMETRY_VERSIO
 /**
  * Azure Monitor OpenTelemetry Options
  */
-export interface ApplicationInsightsOptions extends AzureMonitorOpenTelemetryOptions {
-    /**
-     * Sets the state of exception tracking (enabled by default)
-     * if true uncaught exceptions will be sent to Application Insights
-     */
-    enableAutoCollectExceptions?: boolean;
-    /**
-     * Log Instrumentations configuration included as part of Application Insights (console, bunyan, winston)
-     */
-    logInstrumentationOptions?: LogInstrumentationOptions;
-    /** OTLP Trace Exporter Configuration */
-    otlpTraceExporterConfig?: OTLPExporterConfig;
-    /** OTLP Metric Exporter Configuration */
-    otlpMetricExporterConfig?: OTLPExporterConfig;
-    /** OTLP Log Exporter Configuration */
-    otlpLogExporterConfig?: OTLPExporterConfig;
-    /**
-  * Sets the state of performance tracking (enabled by default)
-  * if true performance counters will be collected every second and sent to Azure Monitor
-  */
-    enableAutoCollectPerformance?: boolean;
-    /**
-     * Specific extended metrics, applicationinsights-native-metrics package need to be available
-     */
-    extendedMetrics?: { [type: string]: boolean };
+export interface AzureMonitorOpenTelemetryOptions extends DistroOptions {
+  /**
+   * Sets the state of exception tracking (enabled by default)
+   * if true uncaught exceptions will be sent to Application Insights
+   */
+  enableAutoCollectExceptions?: boolean;
+  /**
+   * Log Instrumentations configuration included as part of Application Insights (console, bunyan, winston)
+   */
+  logInstrumentationOptions?: LogInstrumentationOptions;
+  /** OTLP Trace Exporter Configuration */
+  otlpTraceExporterConfig?: OTLPExporterConfig;
+  /** OTLP Metric Exporter Configuration */
+  otlpMetricExporterConfig?: OTLPExporterConfig;
+  /** OTLP Log Exporter Configuration */
+  otlpLogExporterConfig?: OTLPExporterConfig;
+  /**
+* Sets the state of performance tracking (enabled by default)
+* if true performance counters will be collected every second and sent to Azure Monitor
+*/
+  enableAutoCollectPerformance?: boolean;
+  /**
+   * Specific extended metrics, applicationinsights-native-metrics package need to be available
+   */
+  extendedMetrics?: { [type: string]: boolean };
 }
 
 /**
  * OTLP Exporter Options
  */
 export interface OTLPExporterConfig extends OTLPExporterNodeConfigBase {
-    /** Enable/Disable OTLP Exporter */
-    enabled?: boolean;
-  }
+  /** Enable/Disable OTLP Exporter */
+  enabled?: boolean;
+}
 
 export interface LogInstrumentationOptions {
-    console?: { enabled: boolean };
-    bunyan?: { enabled: boolean };
-    winston?: { enabled: boolean };
+  console?: { enabled: boolean };
+  bunyan?: { enabled: boolean };
+  winston?: { enabled: boolean };
 }
 
 export interface InstrumentationOptionsType {
@@ -57,7 +58,7 @@ export interface InstrumentationOptionsType {
 }
 
 export const enum ExtendedMetricType {
-    gc = "gc",
-    heap = "heap",
-    loop = "loop",
+  gc = "gc",
+  heap = "heap",
+  loop = "loop",
 }

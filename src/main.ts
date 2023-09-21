@@ -14,7 +14,7 @@ import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { Logger } from "./shared/logging";
 import { AutoCollectConsole } from "./logs/console";
 import { AutoCollectExceptions } from "./logs/exceptions";
-import { ApplicationInsightsOptions } from "./types";
+import { AzureMonitorOpenTelemetryOptions } from "./types";
 import { ApplicationInsightsConfig } from "./shared/configuration/config";
 import { LogApi } from "./logs/api";
 import { PerformanceCounterMetrics } from "./metrics/performanceCounters";
@@ -27,7 +27,7 @@ let perfCounters: PerformanceCounterMetrics;
  * Initialize Azure Monitor
  * @param options Configuration
  */
-export function useAzureMonitor(options?: ApplicationInsightsOptions) {
+export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
     distroUseAzureMonitor(options);
     const internalConfig = new ApplicationInsightsConfig(options);
     const logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
@@ -90,7 +90,7 @@ function _addOtlpExporters(internalConfig: ApplicationInsightsConfig) {
     }
     if (internalConfig.otlpTraceExporterConfig?.enabled) {
         const otlpTraceExporter = new OTLPTraceExporter(internalConfig.otlpTraceExporterConfig);
-        let otlpSpanProcessor = new BatchSpanProcessor(otlpTraceExporter);
+        const otlpSpanProcessor = new BatchSpanProcessor(otlpTraceExporter);
         try {
             ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider).addSpanProcessor(otlpSpanProcessor);
         }

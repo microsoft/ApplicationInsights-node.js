@@ -8,7 +8,7 @@ import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrumentationConfig } from "./types";
 import { Logger } from "../shared/logging";
 import { ShimJsonConfig } from "./shim-jsonConfig";
-import { ApplicationInsightsOptions, ExtendedMetricType, InstrumentationOptionsType } from "../types";
+import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType, InstrumentationOptionsType } from "../types";
 
 class Config implements IConfig {
 
@@ -135,11 +135,11 @@ class Config implements IConfig {
     }
 
     /**
-    * Parse the config property to set the appropriate values on the ApplicationInsightsOptions
+    * Parse the config property to set the appropriate values on the AzureMonitorOpenTelemetryOptions
     */
-    public parseConfig(): ApplicationInsightsOptions {
-        const options: ApplicationInsightsOptions = {
-            azureMonitorExporterConfig: {
+    public parseConfig(): AzureMonitorOpenTelemetryOptions {
+        const options: AzureMonitorOpenTelemetryOptions = {
+            azureMonitorExporterOptions: {
                 connectionString: this.connectionString
             },
             enableAutoCollectPerformance: true,
@@ -174,7 +174,7 @@ class Config implements IConfig {
             } as HttpInstrumentationConfig,
         }
         if (this.aadTokenCredential) {
-            options.azureMonitorExporterConfig.credential = this.aadTokenCredential;
+            options.azureMonitorExporterOptions.credential = this.aadTokenCredential;
         }
         if (typeof (this.enableAutoCollectConsole) === "boolean") {
             const setting: boolean = this.enableAutoCollectConsole;
@@ -223,12 +223,12 @@ class Config implements IConfig {
             }
         }
         if (this.enableUseDiskRetryCaching === false) {
-            options.azureMonitorExporterConfig.disableOfflineStorage = true;
+            options.azureMonitorExporterOptions.disableOfflineStorage = true;
         }
         if (this.proxyHttpUrl || this.proxyHttpsUrl) {
             try {
                 const proxyUrl = new URL(this.proxyHttpsUrl || this.proxyHttpUrl);
-                options.azureMonitorExporterConfig.proxyOptions = {
+                options.azureMonitorExporterOptions.proxyOptions = {
                     host: proxyUrl.hostname,
                     port: Number(proxyUrl.port),
                 };

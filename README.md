@@ -54,10 +54,10 @@ npm install applicationinsights@beta
 
 
 ```typescript
-const { useAzureMonitor, ApplicationInsightsOptions } = require("applicationinsights");
+const { useAzureMonitor, AzureMonitorOpenTelemetryOptions } = require("applicationinsights");
 
-const config : ApplicationInsightsOptions = {
-    azureMonitorExporterConfig: {
+const config : AzureMonitorOpenTelemetryOptions = {
+    azureMonitorExporterOptions: {
         connectionString: process.env["APPLICATIONINSIGHTS_CONNECTION_STRING"] || "<your connection string>"
     }
 };
@@ -75,8 +75,8 @@ useAzureMonitor(config);
 The ApplicationInsightsConfig interface provides a number of options to setup SDK behavior.
 
 ```typescript
-const config : ApplicationInsightsOptions = {
-     azureMonitorExporterConfig: {
+const config : AzureMonitorOpenTelemetryOptions = {
+     azureMonitorExporterOptions: {
         // Offline storage
         storageDirectory: "c://azureMonitor",
         // Automatic retries
@@ -132,7 +132,7 @@ Configuration could be set using configuration file  `applicationinsights.json` 
 
 ```json
 {
-    "azureMonitorExporterConfig": {"connectionString":"<YOUR_CONNECTION_STRING>"},
+    "azureMonitorExporterOptions": {"connectionString":"<YOUR_CONNECTION_STRING>"},
     "samplingRatio": 0.8,
     "enableAutoCollectExceptions": true,
     "instrumentationOptions":{
@@ -157,6 +157,65 @@ process.env.APPLICATIONINSIGHTS_CONFIGURATION_FILE = "C:/applicationinsights/con
 
 // Application Insights SDK setup....
 ```
+
+## ApplicationInsights Shim Unsupported Properties
+The ApplicationInsights shim will provide support path for customers who only require basic instrumentation as opposed to migrating to the OpenTelemetry Distro. If unsupported methods are called, they are not breaking and your application will still run. Calling these unsupported methods will throw a warning that the method is not supported by the ApplicationInsights shim.
+
+The following methods are called after using the below method.
+
+```javascript
+let applicationinsights = require("applicationinsights");
+appinsights.setup("<YOUR_CONNECTION_STRING>").start();
+```
+
+And invoked via `appInsights.<METHOD_NAME>`
+|Property                     |Support Status                                                                                              |
+| ----------------------------|------------------------------------------------------------------------------------------------------------|
+| setDistributedTracingMode   | AI only tracing mode is no longer supported. Migrate to using W3C_AND_AI tracing mode. |
+| setAutoCollectHeartbeat     | Heartbeat is not supported in either the distro or the shim.|
+| enableWebInstrumenatation   | WebInstrumentation is not supported in either the distro or the shim. |
+| setAutoDependencyCorrelation| Turning off autoDependencyCorrelation is not supported by either the distro or the shim. |
+| setUseDiskRetryCaching      | While enabling/disabling offline storage is supported, setting the resend interval or the maxBytesOnDisk values are not supported in the shim or the distro. |
+| setAutoCollectIncomingRequestAzureFunctions | Auto collection of Azure Functions is not supported by the shim or the distro. |
+
+The following configurations are set using either environment variables, setting them in the `applicationinsights.json` file or by calling `appInsights.defaultClient.config.<CONFIG_SETTING_VALUE>;`.
+
+|Property               |Support Status                                                         |
+|-----------------------|-----------------------------------------------------------------------|
+| instrumentationKey & endpointUrl | Not supported by the shim or the distro. Please migrate to using the connectionString. |
+| maxBatchSize | Not supported by the shim but can be configured by using OpenTelemetry SpanProcessors in the distro. |
+| disableAppInsights | Not supported by the shim. Disabling telemetry export is possible via the distro using OpenTelemetry.|
+| correlationIdRetryIntervalMs | Not supported by either the shim or the distro as correlation ID is deprecated.|
+| ignoreLegacyHeaders | Legacy headers in outgoing requests are not supported in the shim or the distro. Therefore they will always be disabled. |
+| distributedTracingMode | Distributed tracing mode is always set to AI_AND_W3C. AI only tracing mode is not supported in the shim or the distro.|
+| enableLoggerErrorToTrace | Not supported in the shim or the distro as all errors will be logged as exceptions in both. |
+| enableAutoCollectHeartbeat | Heartbeat is not supported in the shim or the distro as it is deprecated. |
+| enableAutoDependencyCorrelation | Cannot disable dependency correlation in either the shim or the distro. Dependency correlation will always be enabled and therefore this setting is always true. |
+| enableAutoCollectIncomingRequestAzureFunctions | Not supported by the shim. Migrate to the distro to use auto collection of Azure Functions. |
+| enableUseAsyncHooks | Using async hooks is not supported by the shim or the distro as it is not supported by OpenTelemetry. |
+| enableResendInterval | Not supported by the shim. It is possible to configure the interval between exports via OpenTelemetry span processors, but not specifically cached events. The @azure/monitor-opentelemetry-exporter uses a resend interval of one minute. |
+| enableMaxBytesOnDisk | Not supported by the shim. And not supported to be changed in the distro. The @azure/monitor-opentelemetry-exporter sets this value at 50MB. |
+| noHttpAgentKeepAlive | Not supported in the shim or the distro. |
+| httpAgent/httpsAgent | Not supported in the shim or the distro. |
+| enableWebInstrumentation | Not currently supported in the shim or the distro. |
+| webInstrumentationConnectionString | Not supported in the shim or the distro. |
+| webInstrumentationConfig | Not currently supported by the shim or the distro. |
+
+The following methods are part of the `TelemetryClient` class. They can be called using `applicationinsights.defaultClient.<METHOD_NAME>()`.
+
+|Property       |                     Support Status              |
+|---------------|-------------------------------------------------|
+| trackPageView | PageViewTelemetry requires an id and a name field now instead of only an optional name field. |
+| track | Tracking generic telemetry is not longer supported. Please use one of the other manual track methods to track a specific telemetry type. | 
+| getAuthorizationHandler | Not supported in the shim. |
+| addTelemetryProcessor | TelemetryProcessors are not supported in the shim. Please migrate to the distro and use OpenTelemetry Span Processors. |
+| clearTelemetryProcessors | TelemetryProcessors are not supported in the shim. Please migrate to the distro and use OpenTelemetry Span Processors. | 
+| runTelemetryProcessors | TelemetryProcessors are not supported in the shim. Please migrate to the distro and use OpenTelemetry Span Processors. |
+| trackNodeHttpRequestSync | Not supported. Please use the trackRequest method instead. |
+| trackNodeHttpRequest | Not supported. Please use the trackRequest method instead. |
+| trackNodeHttpDependency | Not supported. Please use the trackDependency method instead. |
+
+
 ## Troubleshooting
 
 ### Self-diagnostics
