@@ -6,12 +6,14 @@ import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations
 import { TelemetryClient } from "../../../src/shim/telemetryClient";
 import { DEFAULT_BREEZE_ENDPOINT } from "../../../src/declarations/constants";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
-
+import { AzureMonitorExporterOptions, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
+import { MeterProvider, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions, ResourceMetrics } from "@opentelemetry/sdk-metrics";
 
 describe("shim/TelemetryClient", () => {
     let client: TelemetryClient;
     let testProcessor: TestSpanProcessor;
     let tracerProvider: NodeTracerProvider;
+    let testMetrics: ResourceMetrics;
 
     before(() => {
         trace.disable();
@@ -56,6 +58,17 @@ describe("shim/TelemetryClient", () => {
         }
         shutdown(): Promise<void> {
             return Promise.resolve();
+        }
+    }
+
+    class TestExporter extends AzureMonitorMetricExporter {
+        constructor(options: AzureMonitorExporterOptions = {}) {
+            super(options);
+        }
+        async export(
+            metrics: ResourceMetrics,
+        ): Promise<void> {
+            testMetrics = metrics;
         }
     }
 
@@ -122,6 +135,27 @@ describe("shim/TelemetryClient", () => {
             assert.equal(spans[0].attributes["http.method"], "HTTP");
             assert.equal(spans[0].attributes["http.status_code"], "401");
             assert.equal(spans[0].attributes["http.url"], "http://test.com");
+        });
+
+        it("trackMetric", async () => {
+            const telemetry = {
+                name: "TestName",
+                value: 100,
+            };
+            const provider = metrics.getMeterProvider() as MeterProvider;
+            const exporter = new TestExporter({ connectionString: "InstrumentationKey=00000000-0000-0000-0000-000000000000" });
+            const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
+                exporter: exporter,
+            };
+            const metricReader = new PeriodicExportingMetricReader(metricReaderOptions);
+            provider.addMetricReader(metricReader);
+            client.trackMetric(telemetry);
+            provider.forceFlush();
+            await new Promise((resolve) => setTimeout(resolve, 800));
+            assert.equal(testMetrics.scopeMetrics[4].metrics[0].descriptor.name, "TestName");
+            assert.equal(testMetrics.scopeMetrics[4].metrics[0].descriptor.type, "HISTOGRAM");
+            // @ts-ignore: TypeScript is not aware of the sum existing on the value object since it's a generic type
+            assert.equal(testMetrics.scopeMetrics[4].metrics[0].dataPoints[0].value.sum, 100);
         });
     });
 });
