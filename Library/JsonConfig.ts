@@ -142,7 +142,7 @@ export class JsonConfig implements IJsonConfig {
                 jsonString = fs.readFileSync(tempDir, "utf8");
             }
             catch (err) {
-                Logging.info("Failed to read JSON config file: ", err);
+                Logging.warn("Failed to read JSON config file: ", err);
             }
         }
 
@@ -238,7 +238,7 @@ export class JsonConfig implements IJsonConfig {
             this.quickPulseHost = jsonConfig.quickPulseHost;
         }
         catch (err) {
-            Logging.info("Invalid JSON config file: ", err);
+            Logging.warn("Invalid JSON config file: ", err);
         }
     }
 }

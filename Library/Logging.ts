@@ -1,8 +1,12 @@
 import InternalAzureLogger = require("./InternalAzureLogger");
 
+
+const ENV_enableDebugLogging = "APPLICATION_INSIGHTS_ENABLE_DEBUG_LOGS";
+const ENV_disableWarningLogging = "APPLICATION_INSIGHTS_DISABLE_WARNING_LOGS";
+
 class Logging {
-    public static enableDebug = false;
-    public static disableWarnings = false;
+    public static enableDebug = (process.env[ENV_enableDebugLogging]) ? true : false;
+    public static disableWarnings = (process.env[ENV_disableWarningLogging]) ? true : false;
 
     private static TAG = "ApplicationInsights:";
 
