@@ -549,7 +549,7 @@ appInsights.setup("<YOUR_CONNECTION_STRING>")
     .start();
 ```
 
-Logs could be put into local file using `APPLICATIONINSIGHTS_LOG_DESTINATION` environment variable, supported values are `file` and `file+console`, a file named `applicationinsights.log` will be generated on tmp folder by default, including all logs,  `/tmp` for *nix and `USERDIR/AppData/Local/Temp` for Windows. Log directory could be configured using `APPLICATIONINSIGHTS_LOGDIR` environment variable.
+Debug Logs could be enabled as well using APPLICATION_INSIGHTS_ENABLE_DEBUG_LOGS environment variable, and APPLICATION_INSIGHTS_DISABLE_WARNING_LOGS environment variable to disable warnings. Logs could be put into local file using `APPLICATIONINSIGHTS_LOG_DESTINATION` environment variable, supported values are `file` and `file+console`, a file named `applicationinsights.log` will be generated on tmp folder by default, including all logs,  `/tmp` for *nix and `USERDIR/AppData/Local/Temp` for Windows. Log directory could be configured using `APPLICATIONINSIGHTS_LOGDIR` environment variable.
 
 ```javascript
 process.env.APPLICATIONINSIGHTS_LOG_DESTINATION = "file";
