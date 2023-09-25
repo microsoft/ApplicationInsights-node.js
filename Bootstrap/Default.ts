@@ -115,30 +115,65 @@ export function setupAndStart(aadTokenCredential?: azureCoreAuth.TokenCredential
         }
 
         // Instrument the SDK
+        _appInsights.setup();
+
         // Azure Functions
         if (isAzureFunction) {
             // Agent will always run in parallel with Azure Functions .NET Agent, disable requests and exceptions to avoid duplication of telemetry
-            _appInsights.setup().setSendLiveMetrics(false)
-                .setAutoCollectPerformance(false)
-                .setAutoCollectPreAggregatedMetrics(false)
-                .setAutoCollectIncomingRequestAzureFunctions(false)
-                .setAutoCollectRequests(false)
-                .setAutoCollectExceptions(false)
-                .setAutoCollectDependencies(true)
-                .setAutoCollectHeartbeat(true)
-                .setUseDiskRetryCaching(true);
+
+            // Check if config is not already setup by JSON or env variables
+            if (_appInsights.defaultClient.config.enableSendLiveMetrics === undefined) {
+                _appInsights.defaultClient.config.enableSendLiveMetrics = false;
+            }
+            if (_appInsights.defaultClient.config.enableAutoCollectPerformance === undefined) {
+                _appInsights.defaultClient.config.enableAutoCollectPerformance = false;
+            }
+            if (_appInsights.defaultClient.config.enableAutoCollectPreAggregatedMetrics === undefined) {
+                _appInsights.defaultClient.config.enableAutoCollectPreAggregatedMetrics = false;
+            }
+            if (_appInsights.defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions === undefined) {
+                _appInsights.defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions = false;
+            }
+            if (_appInsights.defaultClient.config.enableAutoCollectRequests === undefined) {
+                _appInsights.defaultClient.config.enableAutoCollectRequests = false;
+            }
+            if (_appInsights.defaultClient.config.enableAutoCollectDependencies === undefined) {
+                _appInsights.defaultClient.config.enableAutoCollectDependencies = true;
+            }
+            if (_appInsights.defaultClient.config.enableAutoCollectHeartbeat === undefined) {
+                _appInsights.defaultClient.config.enableAutoCollectHeartbeat = true;
+            }
+            if (_appInsights.defaultClient.config.enableUseDiskRetryCaching === undefined) {
+                _appInsights.defaultClient.config.enableUseDiskRetryCaching = true;
+            }
         }
         // App Services
         else {
-            _appInsights.setup().setSendLiveMetrics(true)
-                .setAutoCollectPerformance(true)
-                .setAutoCollectPreAggregatedMetrics(true)
-                .setAutoCollectIncomingRequestAzureFunctions(false)
-                .setAutoCollectRequests(true)
-                .setAutoCollectDependencies(true)
-                .setAutoCollectExceptions(true)
-                .setAutoCollectHeartbeat(true)
-                .setUseDiskRetryCaching(true);
+             // Check if config is not already setup by JSON or env variables
+             if (_appInsights.defaultClient.config.enableSendLiveMetrics === undefined) {
+                _appInsights.defaultClient.config.enableSendLiveMetrics = true;
+            }
+            if (_appInsights.defaultClient.config.enableAutoCollectPerformance === undefined) {
+                _appInsights.defaultClient.config.enableAutoCollectPerformance = true;
+            }
+            if (_appInsights.defaultClient.config.enableAutoCollectPreAggregatedMetrics === undefined) {
+                _appInsights.defaultClient.config.enableAutoCollectPreAggregatedMetrics = true;
+            }
+            if (_appInsights.defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions === undefined) {
+                _appInsights.defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions = false;
+            }
+            if (_appInsights.defaultClient.config.enableAutoCollectRequests === undefined) {
+                _appInsights.defaultClient.config.enableAutoCollectRequests = true;
+            }
+            if (_appInsights.defaultClient.config.enableAutoCollectDependencies === undefined) {
+                _appInsights.defaultClient.config.enableAutoCollectDependencies = true;
+            }
+            if (_appInsights.defaultClient.config.enableAutoCollectHeartbeat === undefined) {
+                _appInsights.defaultClient.config.enableAutoCollectHeartbeat = true;
+            }
+            if (_appInsights.defaultClient.config.enableUseDiskRetryCaching === undefined) {
+                _appInsights.defaultClient.config.enableUseDiskRetryCaching = true;
+            }
         }
         _appInsights.defaultClient.addTelemetryProcessor(prefixInternalSdkVersion);
         _appInsights.defaultClient.addTelemetryProcessor(copyOverPrefixInternalSdkVersionToHeartBeatMetric);

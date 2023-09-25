@@ -34,50 +34,6 @@ export enum DistributedTracingModes {
     AI_AND_W3C
 }
 
-// Default autocollection configuration
-let defaultConfig = _getDefaultAutoCollectConfig();
-let _isConsole = defaultConfig.isConsole();
-let _isConsoleLog = defaultConfig.isConsoleLog();
-let _isLoggerErrorToTrace = defaultConfig.isLoggerErrorToTrace(); // default to false
-let _isExceptions = defaultConfig.isExceptions();
-let _isPerformance = defaultConfig.isPerformance();
-let _isPreAggregatedMetrics = defaultConfig.isPreAggregatedMetrics();
-let _isHeartBeat = defaultConfig.isHeartBeat(); // off by default for now
-let _isRequests = defaultConfig.isRequests();
-let _isDependencies = defaultConfig.isDependencies();
-let _isDiskRetry = defaultConfig.isDiskRetry();
-let _isCorrelating = defaultConfig.isCorrelating();
-let _forceClsHooked: boolean;
-let _isSendingLiveMetrics = defaultConfig.isSendingLiveMetrics(); // Off by default
-let _isNativePerformance = defaultConfig.isNativePerformance();
-let _disabledExtendedMetrics: IDisabledExtendedMetrics;
-let _isSnippetInjection = defaultConfig.isSnippetInjection(); // default to false
-let _isAzureFunctions = defaultConfig.isAzureFunctions(); // default to false
-
-function _getDefaultAutoCollectConfig() {
-    return {
-        isConsole: () => true,
-        isConsoleLog: () => false,
-        isExceptions: () => true,
-        isPerformance: () => true,
-        isPreAggregatedMetrics: () => true,
-        isHeartBeat: () => false, // off by default for now
-        isRequests: () => true,
-        isDependencies: () => true,
-        isDiskRetry: () => true,
-        isCorrelating: () => true,
-        isSendingLiveMetrics: () => false, // Off by default
-        isNativePerformance: () => true,
-        isSnippetInjection: () => false,
-        isAzureFunctions: () => false,
-        isLoggerErrorToTrace: () => false,
-    }
-}
-
-let _diskRetryInterval: number = undefined;
-let _diskRetryMaxBytes: number = undefined;
-let _webSnippetConnectionString: string = undefined;
-
 let _console: AutoCollectConsole;
 let _exceptions: AutoCollectExceptions;
 let _performance: AutoCollectPerformance;
@@ -112,7 +68,6 @@ let _performanceLiveMetrics: AutoCollectPerformance;
 export function setup(setupString?: string) {
     if (!defaultClient) {
         defaultClient = new TelemetryClient(setupString);
-        _initializeConfig();
         _console = new AutoCollectConsole(defaultClient);
         _exceptions = new AutoCollectExceptions(defaultClient);
         _performance = new AutoCollectPerformance(defaultClient);
@@ -128,12 +83,55 @@ export function setup(setupString?: string) {
     } else {
         Logging.info("The default client is already setup");
     }
-
-    if (defaultClient && defaultClient.channel) {
-        defaultClient.channel.setUseDiskRetryCaching(_isDiskRetry, _diskRetryInterval, _diskRetryMaxBytes);
-    }
-
     return Configuration;
+}
+
+function _setDefaultConfig() {
+    if (defaultClient) {
+        // Add default config values if no config values are not provided before start
+        if (defaultClient.config.enableAutoCollectExternalLoggers == undefined) {
+            defaultClient.config.enableAutoCollectExternalLoggers = true;
+        }
+        if (defaultClient.config.enableAutoCollectConsole == undefined) {
+            defaultClient.config.enableAutoCollectConsole = false;
+        }
+        if (defaultClient.config.enableAutoCollectExceptions == undefined) {
+            defaultClient.config.enableAutoCollectExceptions = true;
+        }
+        if (defaultClient.config.enableAutoCollectPerformance == undefined) {
+            defaultClient.config.enableAutoCollectPerformance = true;
+        }
+        if (defaultClient.config.enableAutoCollectPreAggregatedMetrics == undefined) {
+            defaultClient.config.enableAutoCollectPreAggregatedMetrics = true;
+        }
+        if (defaultClient.config.enableAutoCollectHeartbeat == undefined) {
+            defaultClient.config.enableAutoCollectHeartbeat = true;
+        }
+        if (defaultClient.config.enableAutoCollectRequests == undefined) {
+            defaultClient.config.enableAutoCollectRequests = true;
+        }
+        if (defaultClient.config.enableAutoCollectDependencies == undefined) {
+            defaultClient.config.enableAutoCollectDependencies = true;
+        }
+        if (defaultClient.config.enableUseDiskRetryCaching == undefined) {
+            defaultClient.config.enableUseDiskRetryCaching = true;
+        }
+        if (defaultClient.config.enableAutoDependencyCorrelation == undefined) {
+            defaultClient.config.enableAutoDependencyCorrelation = true;
+        }
+        if (defaultClient.config.enableSendLiveMetrics == undefined) {
+            defaultClient.config.enableSendLiveMetrics = true;
+        }
+        if (defaultClient.config.enableAutoCollectExtendedMetrics == undefined) {
+            defaultClient.config.enableAutoCollectExtendedMetrics = true;
+        }
+        if (defaultClient.config.enableWebInstrumentation == undefined) {
+            defaultClient.config.enableWebInstrumentation = false;
+        }
+        if (defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions == undefined) {
+            defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions = false;
+        }
+    }
 }
 
 /**
@@ -145,20 +143,36 @@ export function setup(setupString?: string) {
 export function start() {
     if (!!defaultClient) {
         _isStarted = true;
-        _console.enable(_isConsole, _isConsoleLog);
-        _exceptions.enable(_isExceptions);
-        _performance.enable(_isPerformance);
-        _preAggregatedMetrics.enable(_isPreAggregatedMetrics);
-        _heartbeat.enable(_isHeartBeat);
-        _nativePerformance.enable(_isNativePerformance, _disabledExtendedMetrics);
-        _serverRequests.useAutoCorrelation(_isCorrelating, _forceClsHooked);
-        _serverRequests.enable(_isRequests);
-        _clientRequests.enable(_isDependencies);
-        _webSnippet.enable(_isSnippetInjection, _webSnippetConnectionString);
-        if (liveMetricsClient && _isSendingLiveMetrics) {
-            liveMetricsClient.enable(_isSendingLiveMetrics);
+        _setDefaultConfig();
+        _console.enable(defaultClient.config.enableAutoCollectExternalLoggers, defaultClient.config.enableAutoCollectConsole);
+        _exceptions.enable(defaultClient.config.enableAutoCollectExceptions);
+        _performance.enable(defaultClient.config.enableAutoCollectPerformance);
+        _preAggregatedMetrics.enable(defaultClient.config.enableAutoCollectPreAggregatedMetrics);
+        _heartbeat.enable(defaultClient.config.enableAutoCollectHeartbeat);
+
+        _serverRequests.useAutoCorrelation(defaultClient.config.enableAutoDependencyCorrelation, defaultClient.config.enableUseAsyncHooks);
+        _serverRequests.enable(defaultClient.config.enableAutoCollectRequests);
+        _clientRequests.enable(defaultClient.config.enableAutoCollectDependencies);
+        _webSnippet.enable(defaultClient.config.enableWebInstrumentation, defaultClient.config.webInstrumentationConnectionString);
+        if (liveMetricsClient && defaultClient.config.enableSendLiveMetrics) {
+            liveMetricsClient.enable(defaultClient.config.enableSendLiveMetrics);
         }
-        _azureFunctions.enable(_isAzureFunctions);
+        _azureFunctions.enable(defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions);
+
+        const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(
+            defaultClient.config.enableAutoCollectExtendedMetrics,
+            defaultClient.config);
+        _nativePerformance.enable(
+            defaultClient.config.enableAutoCollectExtendedMetrics as boolean,
+            extendedMetricsConfig.disabledMetrics);
+
+        if (defaultClient && defaultClient.channel) {
+            defaultClient.channel.setUseDiskRetryCaching(
+                defaultClient.config.enableUseDiskRetryCaching,
+                defaultClient.config.enableResendInterval,
+                defaultClient.config.enableMaxBytesOnDisk);
+        }
+
     } else {
         Logging.warn("Start cannot be called before setup");
     }
@@ -166,26 +180,6 @@ export function start() {
     return Configuration;
 }
 
-function _initializeConfig() {
-    _isConsole = defaultClient.config.enableAutoCollectExternalLoggers !== undefined ? defaultClient.config.enableAutoCollectExternalLoggers : _isConsole;
-    _isConsoleLog = defaultClient.config.enableAutoCollectConsole !== undefined ? defaultClient.config.enableAutoCollectConsole : _isConsoleLog;
-    _isLoggerErrorToTrace = defaultClient.config.enableLoggerErrorToTrace !== undefined ? defaultClient.config.enableLoggerErrorToTrace : _isLoggerErrorToTrace;
-    _isExceptions = defaultClient.config.enableAutoCollectExceptions !== undefined ? defaultClient.config.enableAutoCollectExceptions : _isExceptions;
-    _isPerformance = defaultClient.config.enableAutoCollectPerformance !== undefined ? defaultClient.config.enableAutoCollectPerformance : _isPerformance;
-    _isPreAggregatedMetrics = defaultClient.config.enableAutoCollectPreAggregatedMetrics !== undefined ? defaultClient.config.enableAutoCollectPreAggregatedMetrics : _isPreAggregatedMetrics;
-    _isHeartBeat = defaultClient.config.enableAutoCollectHeartbeat !== undefined ? defaultClient.config.enableAutoCollectHeartbeat : _isHeartBeat;
-    _isRequests = defaultClient.config.enableAutoCollectRequests !== undefined ? defaultClient.config.enableAutoCollectRequests : _isRequests;
-    _isDependencies = defaultClient.config.enableAutoDependencyCorrelation !== undefined ? defaultClient.config.enableAutoDependencyCorrelation : _isDependencies;
-    _isDiskRetry = defaultClient.config.enableUseDiskRetryCaching !== undefined ? defaultClient.config.enableUseDiskRetryCaching : _isDiskRetry;
-    _isCorrelating = defaultClient.config.enableAutoDependencyCorrelation !== undefined ? defaultClient.config.enableAutoDependencyCorrelation : _isCorrelating;
-    _forceClsHooked = defaultClient.config.enableUseAsyncHooks !== undefined ? defaultClient.config.enableUseAsyncHooks : _forceClsHooked;
-    _isSendingLiveMetrics = defaultClient.config.enableSendLiveMetrics !== undefined ? defaultClient.config.enableSendLiveMetrics : _isSendingLiveMetrics;
-    _isSnippetInjection = defaultClient.config.enableAutoWebSnippetInjection === true ? true : _isSnippetInjection;
-    _isAzureFunctions = defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions !== undefined ? defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions : _isAzureFunctions;
-    const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(defaultClient.config.enableAutoCollectExtendedMetrics, defaultClient.config);
-    _isNativePerformance = extendedMetricsConfig.isEnabled;
-    _disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
-}
 
 /**
  * Returns an object that is shared across all code handling a given request.
@@ -201,7 +195,7 @@ function _initializeConfig() {
  * @returns A plain object for request storage or null if automatic dependency correlation is disabled.
  */
 export function getCorrelationContext(): CorrelationContextManager.CorrelationContext {
-    if (_isCorrelating) {
+    if (defaultClient.config.enableAutoDependencyCorrelation) {
         return CorrelationContextManager.CorrelationContextManager.getCurrentContext();
     }
 
@@ -256,8 +250,8 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectConsole(value: boolean, collectConsoleLog: boolean = false) {
-        _isConsole = value;
-        _isConsoleLog = collectConsoleLog;
+        defaultClient.config.enableAutoCollectExternalLoggers = value;
+        defaultClient.config.enableAutoCollectConsole = collectConsoleLog;
         if (_isStarted) {
             _console.enable(value, collectConsoleLog);
         }
@@ -271,7 +265,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectExceptions(value: boolean) {
-        _isExceptions = value;
+        defaultClient.config.enableAutoCollectExceptions = value;
         if (_isStarted) {
             _exceptions.enable(value);
         }
@@ -286,13 +280,12 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: boolean | IDisabledExtendedMetrics = true) {
-        _isPerformance = value;
+        defaultClient.config.enableAutoCollectPerformance = value;
         const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(collectExtendedMetrics, defaultClient.config);
-        _isNativePerformance = extendedMetricsConfig.isEnabled;
-        _disabledExtendedMetrics = extendedMetricsConfig.disabledMetrics;
+        defaultClient.config.enableAutoCollectExtendedMetrics = extendedMetricsConfig.isEnabled;
         if (_isStarted) {
             _performance.enable(value);
-            _nativePerformance.enable(extendedMetricsConfig.isEnabled, extendedMetricsConfig.disabledMetrics);
+            _nativePerformance.enable(defaultClient.config.enableAutoCollectExtendedMetrics, extendedMetricsConfig.disabledMetrics);
         }
 
         return Configuration;
@@ -304,7 +297,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectPreAggregatedMetrics(value: boolean) {
-        _isPreAggregatedMetrics = value;
+        defaultClient.config.enableAutoCollectPreAggregatedMetrics = value;
         if (_isStarted) {
             _preAggregatedMetrics.enable(value);
         }
@@ -318,7 +311,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectHeartbeat(value: boolean) {
-        _isHeartBeat = value;
+        defaultClient.config.enableAutoCollectHeartbeat = value;
         if (_isStarted) {
             _heartbeat.enable(value);
         }
@@ -330,14 +323,14 @@ export class Configuration {
      * Sets the state of Web snippet injection, this config is NOT exposed in documentation after version 2.3.5
      * @deprecated, please use enableWebInstrumentation instead.
      * @param value if true Web snippet will be tried to be injected in server response
-     * @param WebSnippetConnectionString if provided, web snippet injection will use this ConnectionString. Default to use the connectionString in Node.js app initialization
+     * @param webSnippetConnectionString if provided, web snippet injection will use this ConnectionString. Default to use the connectionString in Node.js app initialization
      * @returns {Configuration} this class
      */
-    public static enableAutoWebSnippetInjection(value: boolean, WebSnippetConnectionString?: string) {
-        _isSnippetInjection = value;
-        _webSnippetConnectionString = WebSnippetConnectionString;
+    public static enableAutoWebSnippetInjection(value: boolean, webSnippetConnectionString?: string) {
+        defaultClient.config.enableWebInstrumentation = value;
+        defaultClient.config.webInstrumentationConnectionString = webSnippetConnectionString;
         if (_isStarted) {
-            _webSnippet.enable(value, _webSnippetConnectionString);
+            _webSnippet.enable(defaultClient.config.enableAutoWebSnippetInjection, defaultClient.config.webSnippetConnectionString);
         }
         return Configuration;
     }
@@ -345,14 +338,14 @@ export class Configuration {
     /**
      * Sets the state of Web snippet injection
      * @param value if true Web snippet will be tried to be injected in server response
-     * @param WebSnippetConnectionString if provided, web snippet injection will use this ConnectionString. Default to use the connectionString in Node.js app initialization
+     * @param webSnippetConnectionString if provided, web snippet injection will use this ConnectionString. Default to use the connectionString in Node.js app initialization
      * @returns {Configuration} this class
      */
-    public static enableWebInstrumentation(value: boolean, WebSnippetConnectionString?: string) {
-        _isSnippetInjection = value;
-        _webSnippetConnectionString = WebSnippetConnectionString;
+    public static enableWebInstrumentation(value: boolean, webSnippetConnectionString?: string) {
+        defaultClient.config.enableWebInstrumentation = value;
+        defaultClient.config.webInstrumentationConnectionString = webSnippetConnectionString;
         if (_isStarted) {
-            _webSnippet.enable(value, _webSnippetConnectionString);
+            _webSnippet.enable(defaultClient.config.enableWebInstrumentation, defaultClient.config.webInstrumentationConnectionString);
         }
 
         return Configuration;
@@ -364,7 +357,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectRequests(value: boolean) {
-        _isRequests = value;
+        defaultClient.config.enableAutoCollectRequests = value;
         if (_isStarted) {
             _serverRequests.enable(value);
         }
@@ -378,7 +371,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectDependencies(value: boolean) {
-        _isDependencies = value;
+        defaultClient.config.enableAutoCollectDependencies = value;
         if (_isStarted) {
             _clientRequests.enable(value);
         }
@@ -393,8 +386,8 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoDependencyCorrelation(value: boolean, useAsyncHooks?: boolean) {
-        _isCorrelating = value;
-        _forceClsHooked = useAsyncHooks;
+        defaultClient.config.enableAutoDependencyCorrelation = value;
+        defaultClient.config.enableUseAsyncHooks = useAsyncHooks;
         if (_isStarted) {
             _serverRequests.useAutoCorrelation(value, useAsyncHooks);
         }
@@ -413,11 +406,14 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setUseDiskRetryCaching(value: boolean, resendInterval?: number, maxBytesOnDisk?: number) {
-        _isDiskRetry = value;
-        _diskRetryInterval = resendInterval;
-        _diskRetryMaxBytes = maxBytesOnDisk;
+        defaultClient.config.enableUseDiskRetryCaching = value;
+        defaultClient.config.enableResendInterval = resendInterval;
+        defaultClient.config.enableMaxBytesOnDisk = maxBytesOnDisk;
         if (defaultClient && defaultClient.channel) {
-            defaultClient.channel.setUseDiskRetryCaching(_isDiskRetry, _diskRetryInterval, _diskRetryMaxBytes);
+            defaultClient.channel.setUseDiskRetryCaching(
+                defaultClient.config.enableUseDiskRetryCaching,
+                defaultClient.config.enableResendInterval,
+                defaultClient.config.enableMaxBytesOnDisk);
         }
         return Configuration;
     }
@@ -440,7 +436,7 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectIncomingRequestAzureFunctions(value: boolean) {
-        _isAzureFunctions = value;
+        defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions = value;
         if (_isStarted) {
             _azureFunctions.enable(value);
         }
@@ -468,7 +464,7 @@ export class Configuration {
             // qps client already exists; enable/disable it
             liveMetricsClient.enable(enable);
         }
-        _isSendingLiveMetrics = enable;
+        defaultClient.config.enableSendLiveMetrics = enable;
         return Configuration;
     }
 }
@@ -509,7 +505,7 @@ export function dispose() {
     }
     if (liveMetricsClient) {
         liveMetricsClient.enable(false);
-        _isSendingLiveMetrics = false;
+        defaultClient.config.enableSendLiveMetrics = false;
         liveMetricsClient = undefined;
     }
     if (_azureFunctions) {
