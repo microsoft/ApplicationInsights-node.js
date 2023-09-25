@@ -5,6 +5,7 @@ import * as DataModel from "../../Bootstrap/DataModel";
 import * as Helpers from "../../Bootstrap/Helpers";
 import * as DefaultTypes from "../../Bootstrap/Default";
 import { JsonConfig } from "../../Library/JsonConfig";
+import * as applicationinsights from "../../applicationinsights";
 
 
 const appInsights = require("../../applicationinsights");
@@ -40,6 +41,7 @@ describe("#setupAndStart()", () => {
         process.env = originalEnv;
         sandbox.restore();
         delete require.cache[require.resolve("../../Bootstrap/Default")];
+        applicationinsights.dispose();
     });
 
     it("should return the client if started multiple times", () => {
@@ -106,5 +108,99 @@ describe("#setupAndStart()", () => {
         assert.equal(result, null);
         assert.equal(logger.logCount, 0);
         assert.equal(logger.errorCount, 1);
+    });
+
+    it("Azure Functions, default config", () => {
+        const env = <{ [id: string]: string }>{};
+        env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/";
+        process.env = env;
+
+        // Test
+        const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
+        let result = Default.setupAndStart(null, true);
+        assert.equal(result.defaultClient.config.enableSendLiveMetrics, false, "wrong enableSendLiveMetrics");
+        assert.equal(result.defaultClient.config.enableAutoCollectPerformance, false, "wrong enableAutoCollectPerformance");
+        assert.equal(result.defaultClient.config.enableAutoCollectPreAggregatedMetrics, false), "wrong enableAutoCollectPreAggregatedMetrics";
+        assert.equal(result.defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions, false), "wrong enableAutoCollectIncomingRequestAzureFunctions";
+        assert.equal(result.defaultClient.config.enableAutoCollectRequests, false, "wrong enableAutoCollectRequests");
+        assert.equal(result.defaultClient.config.enableAutoCollectDependencies, true, "wrong enableAutoCollectDependencies");
+        assert.equal(result.defaultClient.config.enableAutoCollectHeartbeat, true, "wrong enableAutoCollectHeartbeat");
+        assert.equal(result.defaultClient.config.enableUseDiskRetryCaching, true, "wrong enableUseDiskRetryCaching");
+    });
+
+    it("Azure Functions, should not override configuration provided in JSON config", () => {
+        const env = <{ [id: string]: string }>{};
+        const config = {
+            enableSendLiveMetrics: true,
+            enableAutoCollectPerformance: true,
+            enableAutoCollectPreAggregatedMetrics: true,
+            enableAutoCollectIncomingRequestAzureFunctions: true,
+            enableAutoCollectRequests: true,
+            enableAutoCollectDependencies: false,
+            enableAutoCollectHeartbeat: false,
+            enableUseDiskRetryCaching: false,
+        }
+        env["APPLICATIONINSIGHTS_CONFIGURATION_CONTENT"] = JSON.stringify(config);
+        env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/";
+        process.env = env;
+
+        // Test
+        const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
+        let result = Default.setupAndStart(null, true);
+        assert.equal(result.defaultClient.config.enableSendLiveMetrics, true, "wrong enableSendLiveMetrics");
+        assert.equal(result.defaultClient.config.enableAutoCollectPerformance, true, "wrong enableAutoCollectPerformance");
+        assert.equal(result.defaultClient.config.enableAutoCollectPreAggregatedMetrics, true), "wrong enableAutoCollectPreAggregatedMetrics";
+        assert.equal(result.defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions, true), "wrong enableAutoCollectIncomingRequestAzureFunctions";
+        assert.equal(result.defaultClient.config.enableAutoCollectRequests, true, "wrong enableAutoCollectRequests");
+        assert.equal(result.defaultClient.config.enableAutoCollectDependencies, false, "wrong enableAutoCollectDependencies");
+        assert.equal(result.defaultClient.config.enableAutoCollectHeartbeat, false, "wrong enableAutoCollectHeartbeat");
+        assert.equal(result.defaultClient.config.enableUseDiskRetryCaching, false, "wrong enableUseDiskRetryCaching");
+    });
+
+    it("App Services, default config", () => {
+        const env = <{ [id: string]: string }>{};
+        env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/";
+        process.env = env;
+
+        // Test
+        const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
+        let result = Default.setupAndStart(null, false);
+        assert.equal(result.defaultClient.config.enableSendLiveMetrics, true, "wrong enableSendLiveMetrics");
+        assert.equal(result.defaultClient.config.enableAutoCollectPerformance, true, "wrong enableAutoCollectPerformance");
+        assert.equal(result.defaultClient.config.enableAutoCollectPreAggregatedMetrics, true), "wrong enableAutoCollectPreAggregatedMetrics";
+        assert.equal(result.defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions, false), "wrong enableAutoCollectIncomingRequestAzureFunctions";
+        assert.equal(result.defaultClient.config.enableAutoCollectRequests, true, "wrong enableAutoCollectRequests");
+        assert.equal(result.defaultClient.config.enableAutoCollectDependencies, true, "wrong enableAutoCollectDependencies");
+        assert.equal(result.defaultClient.config.enableAutoCollectHeartbeat, true, "wrong enableAutoCollectHeartbeat");
+        assert.equal(result.defaultClient.config.enableUseDiskRetryCaching, true, "wrong enableUseDiskRetryCaching");
+    });
+
+    it("App Services, should not override configuration provided in JSON config", () => {
+        const env = <{ [id: string]: string }>{};
+        const config = {
+            enableSendLiveMetrics: false,
+            enableAutoCollectPerformance: false,
+            enableAutoCollectPreAggregatedMetrics: false,
+            enableAutoCollectIncomingRequestAzureFunctions: true,
+            enableAutoCollectRequests: false,
+            enableAutoCollectDependencies: false,
+            enableAutoCollectHeartbeat: false,
+            enableUseDiskRetryCaching: false,
+        }
+        env["APPLICATIONINSIGHTS_CONFIGURATION_CONTENT"] = JSON.stringify(config);
+        env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/";
+        process.env = env;
+
+        // Test
+        const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
+        let result = Default.setupAndStart(null, false);
+        assert.equal(result.defaultClient.config.enableSendLiveMetrics, false, "wrong enableSendLiveMetrics");
+        assert.equal(result.defaultClient.config.enableAutoCollectPerformance, false, "wrong enableAutoCollectPerformance");
+        assert.equal(result.defaultClient.config.enableAutoCollectPreAggregatedMetrics, false), "wrong enableAutoCollectPreAggregatedMetrics";
+        assert.equal(result.defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions, true), "wrong enableAutoCollectIncomingRequestAzureFunctions";
+        assert.equal(result.defaultClient.config.enableAutoCollectRequests, false, "wrong enableAutoCollectRequests");
+        assert.equal(result.defaultClient.config.enableAutoCollectDependencies, false, "wrong enableAutoCollectDependencies");
+        assert.equal(result.defaultClient.config.enableAutoCollectHeartbeat, false, "wrong enableAutoCollectHeartbeat");
+        assert.equal(result.defaultClient.config.enableUseDiskRetryCaching, false, "wrong enableUseDiskRetryCaching");
     });
 });
