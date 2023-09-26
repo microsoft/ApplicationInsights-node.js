@@ -77,10 +77,7 @@ describe("ApplicationInsights", () => {
             WebSnippet.INSTANCE= undefined;
         });
 
-        afterEach(() => {
-            AppInsights.defaultClient = undefined;
-            AppInsights.liveMetricsClient = undefined;
-        });
+        afterEach(() => AppInsights.defaultClient = undefined);
 
         it("should warn if start is called before setup", () => {
             var warnStub = sandbox.stub(console, "warn");

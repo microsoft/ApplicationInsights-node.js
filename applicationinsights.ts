@@ -120,7 +120,7 @@ function _setDefaultConfig() {
             defaultClient.config.enableAutoDependencyCorrelation = true;
         }
         if (defaultClient.config.enableSendLiveMetrics == undefined) {
-            defaultClient.config.enableSendLiveMetrics = false;
+            defaultClient.config.enableSendLiveMetrics = true;
         }
         if (defaultClient.config.enableAutoCollectExtendedMetrics == undefined) {
             defaultClient.config.enableAutoCollectExtendedMetrics = true;
@@ -154,14 +154,7 @@ export function start() {
         _serverRequests.enable(defaultClient.config.enableAutoCollectRequests);
         _clientRequests.enable(defaultClient.config.enableAutoCollectDependencies);
         _webSnippet.enable(defaultClient.config.enableWebInstrumentation, defaultClient.config.webInstrumentationConnectionString);
-        if (defaultClient.config.enableSendLiveMetrics) {
-            if (!liveMetricsClient) {
-                // No qps client exists. Create one and prepare it to be enabled at .start()
-                liveMetricsClient = new QuickPulseClient(defaultClient.config, defaultClient.context, defaultClient.getAuthorizationHandler);
-                _performanceLiveMetrics = new AutoCollectPerformance(liveMetricsClient as any, 1000, true);
-                liveMetricsClient.addCollector(_performanceLiveMetrics);
-                defaultClient.quickPulseClient = liveMetricsClient; // Need this so we can forward all manual tracks to live metrics via PerformanceMetricsTelemetryProcessor
-            }
+        if (liveMetricsClient && defaultClient.config.enableSendLiveMetrics) {
             liveMetricsClient.enable(defaultClient.config.enableSendLiveMetrics);
         }
         _azureFunctions.enable(defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions);
@@ -512,6 +505,7 @@ export function dispose() {
     }
     if (liveMetricsClient) {
         liveMetricsClient.enable(false);
+        defaultClient.config.enableSendLiveMetrics = false;
         liveMetricsClient = undefined;
     }
     if (_azureFunctions) {
