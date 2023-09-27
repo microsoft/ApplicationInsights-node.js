@@ -423,7 +423,7 @@ the `contextObjects` parameter when calling a track method for manually tracked 
 For automatically collected telemetry, this object is filled with available request information
 and the persistent request context as provided by `appInsights.getCorrelationContext()` (if
 automatic dependency correlation is enabled).
-
+ 
 The TypeScript type for a telemetry processor is:
 
 ```typescript
