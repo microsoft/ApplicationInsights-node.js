@@ -201,11 +201,7 @@ export function start() {
  * @returns A plain object for request storage or null if automatic dependency correlation is disabled.
  */
 export function getCorrelationContext(): CorrelationContextManager.CorrelationContext {
-    if (defaultClient.config.enableAutoDependencyCorrelation) {
-        return CorrelationContextManager.CorrelationContextManager.getCurrentContext();
-    }
-
-    return null;
+    return CorrelationContextManager.CorrelationContextManager.getCurrentContext();
 }
 
 /**
@@ -256,12 +252,13 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectConsole(value: boolean, collectConsoleLog: boolean = false) {
-        defaultClient.config.enableAutoCollectExternalLoggers = value;
-        defaultClient.config.enableAutoCollectConsole = collectConsoleLog;
-        if (_isStarted) {
-            _console.enable(value, collectConsoleLog);
+        if (defaultClient) {
+            defaultClient.config.enableAutoCollectExternalLoggers = value;
+            defaultClient.config.enableAutoCollectConsole = collectConsoleLog;
+            if (_isStarted) {
+                _console.enable(value, collectConsoleLog);
+            }
         }
-
         return Configuration;
     }
 
@@ -271,9 +268,11 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectExceptions(value: boolean) {
-        defaultClient.config.enableAutoCollectExceptions = value;
-        if (_isStarted) {
-            _exceptions.enable(value);
+        if (defaultClient) {
+            defaultClient.config.enableAutoCollectExceptions = value;
+            if (_isStarted) {
+                _exceptions.enable(value);
+            }
         }
 
         return Configuration;
@@ -286,12 +285,14 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: boolean | IDisabledExtendedMetrics = true) {
-        defaultClient.config.enableAutoCollectPerformance = value;
-        const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(collectExtendedMetrics, defaultClient.config);
-        defaultClient.config.enableAutoCollectExtendedMetrics = extendedMetricsConfig.isEnabled;
-        if (_isStarted) {
-            _performance.enable(value);
-            _nativePerformance.enable(defaultClient.config.enableAutoCollectExtendedMetrics, extendedMetricsConfig.disabledMetrics);
+        if (defaultClient) {
+            defaultClient.config.enableAutoCollectPerformance = value;
+            const extendedMetricsConfig = AutoCollectNativePerformance.parseEnabled(collectExtendedMetrics, defaultClient.config);
+            defaultClient.config.enableAutoCollectExtendedMetrics = extendedMetricsConfig.isEnabled;
+            if (_isStarted) {
+                _performance.enable(value);
+                _nativePerformance.enable(defaultClient.config.enableAutoCollectExtendedMetrics, extendedMetricsConfig.disabledMetrics);
+            }
         }
 
         return Configuration;
@@ -303,9 +304,11 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectPreAggregatedMetrics(value: boolean) {
-        defaultClient.config.enableAutoCollectPreAggregatedMetrics = value;
-        if (_isStarted) {
-            _preAggregatedMetrics.enable(value);
+        if (defaultClient) {
+            defaultClient.config.enableAutoCollectPreAggregatedMetrics = value;
+            if (_isStarted) {
+                _preAggregatedMetrics.enable(value);
+            }
         }
 
         return Configuration;
@@ -317,9 +320,11 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectHeartbeat(value: boolean) {
-        defaultClient.config.enableAutoCollectHeartbeat = value;
-        if (_isStarted) {
-            _heartbeat.enable(value);
+        if (defaultClient) {
+            defaultClient.config.enableAutoCollectHeartbeat = value;
+            if (_isStarted) {
+                _heartbeat.enable(value);
+            }
         }
 
         return Configuration;
@@ -333,10 +338,12 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static enableAutoWebSnippetInjection(value: boolean, webSnippetConnectionString?: string) {
-        defaultClient.config.enableWebInstrumentation = value;
-        defaultClient.config.webInstrumentationConnectionString = webSnippetConnectionString;
-        if (_isStarted) {
-            _webSnippet.enable(defaultClient.config.enableAutoWebSnippetInjection, defaultClient.config.webSnippetConnectionString);
+        if (defaultClient) {
+            defaultClient.config.enableWebInstrumentation = value;
+            defaultClient.config.webInstrumentationConnectionString = webSnippetConnectionString;
+            if (_isStarted) {
+                _webSnippet.enable(defaultClient.config.enableAutoWebSnippetInjection, defaultClient.config.webSnippetConnectionString);
+            }
         }
         return Configuration;
     }
@@ -348,10 +355,12 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static enableWebInstrumentation(value: boolean, webSnippetConnectionString?: string) {
-        defaultClient.config.enableWebInstrumentation = value;
-        defaultClient.config.webInstrumentationConnectionString = webSnippetConnectionString;
-        if (_isStarted) {
-            _webSnippet.enable(defaultClient.config.enableWebInstrumentation, defaultClient.config.webInstrumentationConnectionString);
+        if (defaultClient) {
+            defaultClient.config.enableWebInstrumentation = value;
+            defaultClient.config.webInstrumentationConnectionString = webSnippetConnectionString;
+            if (_isStarted) {
+                _webSnippet.enable(defaultClient.config.enableWebInstrumentation, defaultClient.config.webInstrumentationConnectionString);
+            }
         }
 
         return Configuration;
@@ -363,9 +372,11 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectRequests(value: boolean) {
-        defaultClient.config.enableAutoCollectRequests = value;
-        if (_isStarted) {
-            _serverRequests.enable(value);
+        if (defaultClient) {
+            defaultClient.config.enableAutoCollectRequests = value;
+            if (_isStarted) {
+                _serverRequests.enable(value);
+            }
         }
 
         return Configuration;
@@ -377,9 +388,11 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectDependencies(value: boolean) {
-        defaultClient.config.enableAutoCollectDependencies = value;
-        if (_isStarted) {
-            _clientRequests.enable(value);
+        if (defaultClient) {
+            defaultClient.config.enableAutoCollectDependencies = value;
+            if (_isStarted) {
+                _clientRequests.enable(value);
+            }
         }
 
         return Configuration;
@@ -392,10 +405,12 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoDependencyCorrelation(value: boolean, useAsyncHooks?: boolean) {
-        defaultClient.config.enableAutoDependencyCorrelation = value;
-        defaultClient.config.enableUseAsyncHooks = useAsyncHooks;
-        if (_isStarted) {
-            _serverRequests.useAutoCorrelation(value, useAsyncHooks);
+        if (defaultClient) {
+            defaultClient.config.enableAutoDependencyCorrelation = value;
+            defaultClient.config.enableUseAsyncHooks = useAsyncHooks;
+            if (_isStarted) {
+                _serverRequests.useAutoCorrelation(value, useAsyncHooks);
+            }
         }
 
         return Configuration;
@@ -412,14 +427,16 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setUseDiskRetryCaching(value: boolean, resendInterval?: number, maxBytesOnDisk?: number) {
-        defaultClient.config.enableUseDiskRetryCaching = value;
-        defaultClient.config.enableResendInterval = resendInterval;
-        defaultClient.config.enableMaxBytesOnDisk = maxBytesOnDisk;
-        if (defaultClient && defaultClient.channel) {
-            defaultClient.channel.setUseDiskRetryCaching(
-                defaultClient.config.enableUseDiskRetryCaching,
-                defaultClient.config.enableResendInterval,
-                defaultClient.config.enableMaxBytesOnDisk);
+        if (defaultClient) {
+            defaultClient.config.enableUseDiskRetryCaching = value;
+            defaultClient.config.enableResendInterval = resendInterval;
+            defaultClient.config.enableMaxBytesOnDisk = maxBytesOnDisk;
+            if (defaultClient.channel) {
+                defaultClient.channel.setUseDiskRetryCaching(
+                    defaultClient.config.enableUseDiskRetryCaching,
+                    defaultClient.config.enableResendInterval,
+                    defaultClient.config.enableMaxBytesOnDisk);
+            }
         }
         return Configuration;
     }
@@ -442,9 +459,11 @@ export class Configuration {
      * @returns {Configuration} this class
      */
     public static setAutoCollectIncomingRequestAzureFunctions(value: boolean) {
-        defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions = value;
-        if (_isStarted) {
-            _azureFunctions.enable(value);
+        if (defaultClient) {
+            defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions = value;
+            if (_isStarted) {
+                _azureFunctions.enable(value);
+            }
         }
         return Configuration;
     }
