@@ -30,7 +30,6 @@ class TestTokenCredential implements azureCoreAuth.TokenCredential {
 
 describe("shim/configuration/config", () => {
     const connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/";
-    const ignoredOutgoingUrls = ["*.core.windows.net","*.core.chinacloudapi.cn","*.core.cloudapi.de","*.core.usgovcloudapi.net","*.core.microsoft.scloud","*.core.eaglex.ic.gov"];
 
     let originalEnv: NodeJS.ProcessEnv;
     let sandbox: sinon.SinonSandbox;
@@ -71,7 +70,6 @@ describe("shim/configuration/config", () => {
             assert.equal(options.azureMonitorExporterOptions.connectionString, connectionString), "wrong connectionString";
             assert.equal(options.azureMonitorExporterOptions.proxyOptions.host, "localhost", "wrong host");
             assert.equal(options.azureMonitorExporterOptions.proxyOptions.port, 3000, "wrong port");
-            assert.equal((options.instrumentationOptions.http as HttpInstrumentationConfig).ignoreOutgoingUrls[0], "https://www.bing.com", "wrong ignoreOutgoingUrls");
             assert.equal(JSON.stringify(options.logInstrumentationOptions), JSON.stringify({ console: { enabled: true }, winston: { enabled: true }, bunyan: { enabled: true } }), "wrong logInstrumentationOptions");
             assert.equal(options.enableAutoCollectExceptions, true, "wrong enableAutoCollectExceptions");
             assert.equal(options.enableAutoCollectPerformance, true, "wrong enableAutoCollectPerformance");
@@ -124,7 +122,7 @@ describe("shim/configuration/config", () => {
             config.noDiagnosticChannel = true;
             let options = config.parseConfig();
             assert.equal(JSON.stringify(options.instrumentationOptions), JSON.stringify({ 
-                http: { enabled: true, ignoreOutgoingUrls: ignoredOutgoingUrls },
+                http: { enabled: true },
                 azureSdk: { enabled: false },
                 mongoDb: { enabled: false },
                 mySql: { enabled: false },
@@ -139,7 +137,7 @@ describe("shim/configuration/config", () => {
             config.noPatchModules = "azuresdk,mongodb-core,redis,pg-pool";
             let options = config.parseConfig();
             assert.equal(JSON.stringify(options.instrumentationOptions), JSON.stringify({ 
-                http: { enabled: true, ignoreOutgoingUrls: ignoredOutgoingUrls },
+                http: { enabled: true },
                 azureSdk: { enabled: false },
                 mongoDb: { enabled: false },
                 mySql: { enabled: true },
@@ -299,7 +297,15 @@ describe("shim/configuration/config", () => {
                 config.webInstrumentationConnectionString = "test";
                 config.parseConfig();
                 assert.ok(warnStub.calledOn, "warning was not raised");
-            })
+            });
+
+            it("should warn if correlationHeaderExcludedDomains is set", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.correlationHeaderExcludedDomains = ["test.com"];
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
         });
     });
 });

@@ -70,23 +70,8 @@ class Config implements IConfig {
     constructor(setupString?: string) {
         // Load config values from env variables and JSON if available
         this._mergeConfig();
-
         this.connectionString = setupString;
-        // this.enableWebInstrumentation = this.enableWebInstrumentation || this.enableAutoWebSnippetInjection || false;
         this.webInstrumentationConfig = this.webInstrumentationConfig || null;
-        // this.enableAutoWebSnippetInjection = this.enableWebInstrumentation;
-        this.correlationHeaderExcludedDomains =
-            this.correlationHeaderExcludedDomains ||
-            ShimJsonConfig.getInstance().correlationHeaderExcludedDomains ||
-            [
-                "*.core.windows.net",
-                "*.core.chinacloudapi.cn",
-                "*.core.cloudapi.de",
-                "*.core.usgovcloudapi.net",
-                "*.core.microsoft.scloud",
-                "*.core.eaglex.ic.gov"
-            ];
-
         this.ignoreLegacyHeaders = true;
         this.webInstrumentationConnectionString = this.webInstrumentationConnectionString || "";
     }
@@ -171,7 +156,6 @@ class Config implements IConfig {
             ...options.instrumentationOptions,
             http: {
                 ...options.instrumentationOptions?.http,
-                ignoreOutgoingUrls: this.correlationHeaderExcludedDomains,
             } as HttpInstrumentationConfig,
         }
         if (this.aadTokenCredential) {
@@ -377,6 +361,9 @@ class Config implements IConfig {
             this.enableWebInstrumentation || this.webInstrumentationConfig || this.webInstrumentationSrc || this.webInstrumentationConnectionString
         ) {
             Logger.getInstance().warn("The webInstrumentation configuration options are not supported by the shim.");
+        }
+        if (this.correlationHeaderExcludedDomains) {
+            Logger.getInstance().warn("The correlationHeaderExcludedDomains configuration option is deprecated.");
         }
         return options;
     }
