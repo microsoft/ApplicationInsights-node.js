@@ -194,6 +194,7 @@ export class TelemetryClient {
         };
         if (telemetry.dependencyTypeName) {
             if (telemetry.dependencyTypeName.toLowerCase().indexOf("http") > -1) {
+                attributes[SemanticAttributes.HTTP_METHOD] = "HTTP";
                 attributes[SemanticAttributes.HTTP_URL] = telemetry.data;
                 attributes[SemanticAttributes.HTTP_STATUS_CODE] = telemetry.resultCode;
             } else if (Util.getInstance().isDbDependency(telemetry.dependencyTypeName)) {
