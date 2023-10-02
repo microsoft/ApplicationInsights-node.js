@@ -6,9 +6,13 @@ import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { LoggerProvider } from "@opentelemetry/sdk-logs";
 import { shutdownAzureMonitor, useAzureMonitor } from "../../src";
-
+import { flushAzureMonitor } from "../../src/main";
+import * as sinon from "sinon";
+import { MeterProvider } from "@opentelemetry/sdk-metrics";
+import { BasicTracerProvider } from "@opentelemetry/sdk-trace-base";
 
 describe("ApplicationInsightsClient", () => {
+    let sandbox = sinon.createSandbox();
     afterEach(() => {
         shutdownAzureMonitor();
     });
@@ -38,5 +42,22 @@ describe("ApplicationInsightsClient", () => {
         assert.ok(logRecordProcessors.length == 3, "wrong number of logRecordProcessors");
         otlpExporter = logRecordProcessors[2]["_exporter"];
         assert.ok(otlpExporter instanceof OTLPLogExporter, "wrong exporter");
+    });
+    
+    it("Flush Azure Monitor", async () => {
+        useAzureMonitor({
+            azureMonitorExporterOptions:
+                { connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333" },
+            otlpMetricExporterConfig: { enabled: true },
+            otlpTraceExporterConfig: { enabled: true },
+            otlpLogExporterConfig: { enabled: true }
+        });
+        const flushMetricsStub = sandbox.stub((metrics.getMeterProvider() as MeterProvider), "forceFlush");
+        const flushTraceStub = sandbox.stub((trace.getTracerProvider() as BasicTracerProvider), "forceFlush");
+        const flushLogsStub = sandbox.stub((logs.getLoggerProvider() as LoggerProvider), "forceFlush");
+        await flushAzureMonitor();
+        assert.ok(flushMetricsStub.calledOnce, "Metrics forceFlush not called");
+        assert.ok(flushTraceStub.calledOnce, "Trace forceFlush not called");
+        assert.ok(flushLogsStub.calledOnce, "Logs forceFlush not called");
     });
 });
