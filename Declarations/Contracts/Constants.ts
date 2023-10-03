@@ -49,9 +49,11 @@ export interface ConnectionString {
     liveendpoint?: string;
     location?: string;
     endpointsuffix?: string;
+    aadaudience?: string;
+    authorization?: string;
 
     // Note: this is a node types backcompat equivalent to
     // type ConnectionString = { [key in ConnectionStringKey]?: string }
 }
 
-export type ConnectionStringKey = "instrumentationkey" | "ingestionendpoint" | "liveendpoint" | "location"| "endpointsuffix";
+export type ConnectionStringKey = "instrumentationkey" | "ingestionendpoint" | "liveendpoint" | "location"| "endpointsuffix" | "aadaudience" | "authorization";

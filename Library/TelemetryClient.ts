@@ -197,7 +197,7 @@ class TelemetryClient {
         if (config && config.aadTokenCredential) {
             if (!this.authorizationHandler) {
                 Logging.info(TelemetryClient.TAG, "Adding authorization handler");
-                this.authorizationHandler = new AuthorizationHandler(config.aadTokenCredential)
+                this.authorizationHandler = new AuthorizationHandler(config.aadTokenCredential, config.aadAudience);
             }
             return this.authorizationHandler;
         }

@@ -14,8 +14,8 @@ class AuthorizationHandler {
 
   private _azureTokenPolicy: azureCore.PipelinePolicy;
 
-  constructor(credential: azureCoreAuth.TokenCredential) {
-    let scopes: string[] = [applicationInsightsResource];
+  constructor(credential: azureCoreAuth.TokenCredential, aadAudience?: string) {
+    let scopes: string[] = aadAudience ? [aadAudience] : [applicationInsightsResource];
     this._azureTokenPolicy = azureCore.bearerTokenAuthenticationPolicy({ credential, scopes });
   }
 

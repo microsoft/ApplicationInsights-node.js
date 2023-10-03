@@ -34,6 +34,7 @@ class Config implements IConfig {
     public httpsAgent: https.Agent;
     public ignoreLegacyHeaders: boolean;
     public aadTokenCredential?: azureCoreAuth.TokenCredential;
+    public aadAudience?: string;
     public enableAutoCollectConsole: boolean;
     public enableLoggerErrorToTrace: boolean;
     public enableAutoCollectExceptions: boolean;
@@ -70,7 +71,7 @@ class Config implements IConfig {
     private _profileQueryEndpoint: string;
     private _instrumentationKey: string;
     public _webInstrumentationConnectionString: string;
- 
+
     constructor(setupString?: string) {
         // Load config values from env variables and JSON if available
         this._mergeConfig();
@@ -117,6 +118,7 @@ class Config implements IConfig {
         if (this.quickPulseHost.match(/^https?:\/\//)) {
             this.quickPulseHost = new url.URL(this.quickPulseHost).host;
         }
+        this.aadAudience = csCode.aadaudience || csEnv.aadaudience;
     }
 
     public set profileQueryEndpoint(endpoint: string) {
