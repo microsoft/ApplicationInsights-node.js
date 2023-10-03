@@ -87,4 +87,34 @@ describe("agent/agentLoader", () => {
         const initAgent = agent.initialize();
         assert.ok(diagnosticLoggerStub.calledOnce);
     });
+
+    it("should send a message to the console if initialize is called when canLoad is false", () => {
+        const env = {
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
+        };
+        process.env = env;
+        const agent = new AgentLoader();
+        const consoleLoggerStub = sandbox.stub(console, "log");
+        agent["_canLoad"] = false;
+        
+        agent.initialize();
+        assert.ok(consoleLoggerStub.calledOnce);
+    });
+
+    it("should do", () => {
+        const env = {
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "",
+        };
+        process.env = env;
+        const agent = new AgentLoader();
+        const diagnosticLoggerStub = sandbox.stub(agent["_diagnosticLogger"], "logMessage");
+        const statusLoggerStub = sandbox.stub(agent["_statusLogger"], "logStatus");
+        
+        agent["_instrumentationKey"] = "unknown";
+        const validationResult: boolean = agent["_validate"]();
+
+        assert.ok(diagnosticLoggerStub.calledOnce);
+        assert.ok(statusLoggerStub.calledOnce);
+        assert.ok(!validationResult);
+    });
 });
