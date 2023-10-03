@@ -1,8 +1,10 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import * as assert from "assert";
 import * as sinon from "sinon";
 
 import { AgentLoader } from "../../../src/agent/agentLoader";
-import { IDiagnosticLogger } from "../../../src/agent/types";
 
 describe("agent/agentLoader", () => {
     let originalEnv: NodeJS.ProcessEnv;
@@ -101,7 +103,7 @@ describe("agent/agentLoader", () => {
         assert.ok(consoleLoggerStub.calledOnce);
     });
 
-    it("should do", () => {
+    it("should call both the diagnostic and status loggers if the connection string is not defined", () => {
         const env = {
             ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "",
         };
