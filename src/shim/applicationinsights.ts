@@ -6,6 +6,7 @@ import { CorrelationContextManager } from "./correlationContextManager";
 import { ICorrelationContext, HttpRequest, DistributedTracingModes } from "./types";
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
+import { Logger } from "../shared/logging";
 
 
 // We export these imports so that SDK users may use these classes directly.
@@ -42,8 +43,12 @@ export function setup(setupString?: string) {
  * @returns {ApplicationInsights} this class
  */
 export function start() {
-    defaultClient.initialize();
-    return Configuration;
+    try {
+        defaultClient.initialize();
+        return Configuration;
+    } catch (error) {
+        Logger.getInstance().warn("The default client has not been initialized. Please make sure to call setup() before start().");
+    }
 }
 
 /**

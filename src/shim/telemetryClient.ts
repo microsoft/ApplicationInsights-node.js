@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Attributes, context, ProxyTracerProvider, SpanKind, SpanOptions, SpanStatusCode, trace } from "@opentelemetry/api";
+import { Attributes, context, metrics, ProxyTracerProvider, SpanKind, SpanOptions, SpanStatusCode, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
 import { LoggerProvider } from "@opentelemetry/sdk-logs";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
@@ -16,6 +16,7 @@ import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { AttributeLogProcessor } from "../shared/util/attributeLogRecordProcessor";
 import { LogApi } from "../logs/api";
 import { flushAzureMonitor, shutdownAzureMonitor, useAzureMonitor } from "../main";
+import { AzureMonitorOpenTelemetryOptions } from "../types";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -27,8 +28,9 @@ export class TelemetryClient {
     private _logApi: LogApi;
     private _isInitialized: boolean;
     public context: Context;
-    public commonProperties: { [key: string]: string }; // TODO: Add setter so Resources are updated
+    public commonProperties: { [key: string]: string };
     public config: Config;
+    private _options: AzureMonitorOpenTelemetryOptions;
 
     /**
      * Constructs a new instance of TelemetryClient
@@ -45,15 +47,15 @@ export class TelemetryClient {
     public initialize() {
         this._isInitialized = true;
         // Parse shim config to Azure Monitor options
-        const options = this.config.parseConfig();
-        useAzureMonitor(options);
+        this._options = this.config.parseConfig();
+        useAzureMonitor(this._options);
         // LoggerProvider would be initialized when client is instantiated
         // Get Logger from global provider
         this._logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
-        this._attributeSpanProcessor = new AttributeSpanProcessor(this.context.tags);
+        this._attributeSpanProcessor = new AttributeSpanProcessor({ ...this.context.tags, ...this.commonProperties });
         ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider).addSpanProcessor(this._attributeSpanProcessor);
 
-        this._attributeLogProcessor = new AttributeLogProcessor(this.context.tags);
+        this._attributeLogProcessor = new AttributeLogProcessor({ ...this.context.tags, ...this.commonProperties });
         (logs.getLoggerProvider() as LoggerProvider).addLogRecordProcessor(this._attributeLogProcessor);
     }
 
@@ -118,12 +120,14 @@ export class TelemetryClient {
      * telemetry bandwidth by aggregating multiple measurements and sending the resulting average at intervals.
      * @param telemetry      Object encapsulating tracking options
      */
-    public trackMetric(telemetry: Contracts.MetricTelemetry): void {
-        // TODO : Create custom metric
-        // let meter = this.client.getMetricHandler().getCustomMetricsHandler().getMeter();
-        // let metricName = "";
-        // let options: MetricOptions = {};
-        // meter.createHistogram(metricName, options)
+    public trackMetric(telemetry: Contracts.MetricPointTelemetry & Contracts.MetricTelemetry): void {
+        if (!this._isInitialized) {
+            this.initialize();
+        }
+        // Create custom metric
+        const meter = metrics.getMeterProvider().getMeter("ApplicationInsightsMetrics");
+        const histogram = meter.createHistogram(telemetry.name);
+        histogram.record(telemetry.value, {...telemetry.properties, ...this.commonProperties, ...this.context.tags });
     }
 
     /**
@@ -139,7 +143,6 @@ export class TelemetryClient {
         const startTime = telemetry.time || new Date();
         const endTime = startTime.getTime() + telemetry.duration;
 
-        // TODO: Change resourceManager if ID is provided?
         const ctx = context.active();
         const attributes: Attributes = {
             ...telemetry.properties,
@@ -191,7 +194,7 @@ export class TelemetryClient {
         };
         if (telemetry.dependencyTypeName) {
             if (telemetry.dependencyTypeName.toLowerCase().indexOf("http") > -1) {
-                attributes[SemanticAttributes.HTTP_METHOD] = "HTTP"; // TODO: Dependency doesn't expose method in any property
+                attributes[SemanticAttributes.HTTP_METHOD] = "HTTP";
                 attributes[SemanticAttributes.HTTP_URL] = telemetry.data;
                 attributes[SemanticAttributes.HTTP_STATUS_CODE] = telemetry.resultCode;
             } else if (Util.getInstance().isDbDependency(telemetry.dependencyTypeName)) {
@@ -229,8 +232,15 @@ export class TelemetryClient {
      * @param value if true properties will be populated
      */
     public setAutoPopulateAzureProperties() {
-        // TODO: Config is only used during initialization of ResourceManager so it cannot be set after.
+        // NO-OP
     }
+
+    /**
+     * Get Authorization handler
+     */
+    public getAuthorizationHandler(config: Config): void {
+        Logger.getInstance().warn("getAuthorizationHandler is not supported in ApplicationInsights any longer.");
+    } 
 
     /*
      * Get Statsbeat instance

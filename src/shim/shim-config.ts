@@ -70,23 +70,8 @@ class Config implements IConfig {
     constructor(setupString?: string) {
         // Load config values from env variables and JSON if available
         this._mergeConfig();
-
         this.connectionString = setupString;
-        // this.enableWebInstrumentation = this.enableWebInstrumentation || this.enableAutoWebSnippetInjection || false;
         this.webInstrumentationConfig = this.webInstrumentationConfig || null;
-        // this.enableAutoWebSnippetInjection = this.enableWebInstrumentation;
-        this.correlationHeaderExcludedDomains =
-            this.correlationHeaderExcludedDomains ||
-            ShimJsonConfig.getInstance().correlationHeaderExcludedDomains ||
-            [
-                "*.core.windows.net",
-                "*.core.chinacloudapi.cn",
-                "*.core.cloudapi.de",
-                "*.core.usgovcloudapi.net",
-                "*.core.microsoft.scloud",
-                "*.core.eaglex.ic.gov"
-            ];
-
         this.ignoreLegacyHeaders = true;
         this.webInstrumentationConnectionString = this.webInstrumentationConnectionString || "";
     }
@@ -140,8 +125,11 @@ class Config implements IConfig {
     public parseConfig(): AzureMonitorOpenTelemetryOptions {
         const options: AzureMonitorOpenTelemetryOptions = {
             azureMonitorExporterOptions: {
-                connectionString: this.connectionString
+                connectionString: this.connectionString,
+                disableOfflineStorage: false,
             },
+            enableAutoCollectPerformance: true,
+            enableAutoCollectExceptions: true,
             instrumentationOptions: {
                 http: { enabled: true },
                 azureSdk: { enabled: true },
@@ -168,7 +156,6 @@ class Config implements IConfig {
             ...options.instrumentationOptions,
             http: {
                 ...options.instrumentationOptions?.http,
-                ignoreOutgoingUrls: this.correlationHeaderExcludedDomains, /// TODO: Deprecated configuration
             } as HttpInstrumentationConfig,
         }
         if (this.aadTokenCredential) {
@@ -348,16 +335,14 @@ class Config implements IConfig {
         if (this.enableUseAsyncHooks === false) {
             Logger.getInstance().warn("The use of non async hooks is no longer supported.");
         }
-        if (typeof (this.distributedTracingMode) === "boolean") {
-            if (this.distributedTracingMode === DistributedTracingModes.AI) {
-                Logger.getInstance().warn("AI only distributed tracing mode is no longer supported.");
-            }
+        if (this.distributedTracingMode === DistributedTracingModes.AI) {
+            Logger.getInstance().warn("AI only distributed tracing mode is no longer supported.");
         }
         if (this.enableResendInterval) {
             Logger.getInstance().warn("The resendInterval configuration option is not supported by the shim.");
         }
         if (this.enableMaxBytesOnDisk) {
-            Logger.getInstance().warn("The maxBatchOnDisk configuration option is not supported by the shim.");
+            Logger.getInstance().warn("The maxBytesOnDisk configuration option is not supported by the shim.");
         }
         if (this.ignoreLegacyHeaders === false) {
             Logger.getInstance().warn("LegacyHeaders are not supported by the shim.");
@@ -376,6 +361,9 @@ class Config implements IConfig {
             this.enableWebInstrumentation || this.webInstrumentationConfig || this.webInstrumentationSrc || this.webInstrumentationConnectionString
         ) {
             Logger.getInstance().warn("The webInstrumentation configuration options are not supported by the shim.");
+        }
+        if (this.correlationHeaderExcludedDomains) {
+            Logger.getInstance().warn("The correlationHeaderExcludedDomains configuration option is deprecated.");
         }
         return options;
     }

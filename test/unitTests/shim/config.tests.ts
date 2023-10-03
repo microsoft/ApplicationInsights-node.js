@@ -6,7 +6,9 @@ import { HttpInstrumentationConfig } from '@opentelemetry/instrumentation-http';
 import { Logger } from "../../../src/shared/logging"
 import Config = require('../../../src/shim/shim-config');
 import { TelemetryClient } from "../../../src/shim/telemetryClient";
-import applicationInsights = require("../../../src/index");
+import http = require("http");
+import https = require("https");
+import { DistributedTracingModes } from '../../../applicationinsights';
 
 
 class TestTokenCredential implements azureCoreAuth.TokenCredential {
@@ -28,7 +30,6 @@ class TestTokenCredential implements azureCoreAuth.TokenCredential {
 
 describe("shim/configuration/config", () => {
     const connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/";
-    const ignoredOutgoingUrls = ["*.core.windows.net","*.core.chinacloudapi.cn","*.core.cloudapi.de","*.core.usgovcloudapi.net","*.core.microsoft.scloud","*.core.eaglex.ic.gov"];
 
     let originalEnv: NodeJS.ProcessEnv;
     let sandbox: sinon.SinonSandbox;
@@ -40,6 +41,7 @@ describe("shim/configuration/config", () => {
 
     afterEach(() => {
         sandbox.restore();
+        process.env = originalEnv;
     })
 
     describe("#Shim config()", () => {
@@ -60,6 +62,7 @@ describe("shim/configuration/config", () => {
             config.enableAutoCollectDependencies = true;
             config.aadTokenCredential = new TestTokenCredential();
             config.maxBatchIntervalMs = 1000;
+            config.enableUseDiskRetryCaching = true;
 
             let options = config.parseConfig();
 
@@ -67,12 +70,12 @@ describe("shim/configuration/config", () => {
             assert.equal(options.azureMonitorExporterOptions.connectionString, connectionString), "wrong connectionString";
             assert.equal(options.azureMonitorExporterOptions.proxyOptions.host, "localhost", "wrong host");
             assert.equal(options.azureMonitorExporterOptions.proxyOptions.port, 3000, "wrong port");
-            assert.equal((options.instrumentationOptions.http as HttpInstrumentationConfig).ignoreOutgoingUrls[0], "https://www.bing.com", "wrong ignoreOutgoingUrls");
             assert.equal(JSON.stringify(options.logInstrumentationOptions), JSON.stringify({ console: { enabled: true }, winston: { enabled: true }, bunyan: { enabled: true } }), "wrong logInstrumentationOptions");
             assert.equal(options.enableAutoCollectExceptions, true, "wrong enableAutoCollectExceptions");
             assert.equal(options.enableAutoCollectPerformance, true, "wrong enableAutoCollectPerformance");
             assert.equal(JSON.stringify(options.extendedMetrics), JSON.stringify({ gc: true, heap: true, loop: true }), "wrong extendedMetrics");
             assert.equal(options.azureMonitorExporterOptions.credential, config.aadTokenCredential, "wrong credential");
+            assert.equal(options.instrumentationOptions.http.enabled, true);
             assert.equal(
                 JSON.stringify(options.otlpTraceExporterConfig),
                 JSON.stringify({ timeoutMillis: 1000 }), "wrong otlpTraceExporterConfig"
@@ -85,7 +88,10 @@ describe("shim/configuration/config", () => {
                 JSON.stringify(options.otlpLogExporterConfig),
                 JSON.stringify({ timeoutMillis: 1000 }), "wrong otlpLogExporterConfig"
             );
-            // TODO: Validate all Config properties
+            assert.equal(options.azureMonitorExporterOptions.disableOfflineStorage, false, "wrong disableOfflineStorage");
+            assert.equal(options.extendedMetrics.heap, true, "wrong heap");
+            assert.equal(options.extendedMetrics.loop, true, "wrong loop");
+            assert.equal(options.extendedMetrics.gc, true, "wrong gc");
         });
 
         it("should activate internal loggers", () => {
@@ -116,7 +122,7 @@ describe("shim/configuration/config", () => {
             config.noDiagnosticChannel = true;
             let options = config.parseConfig();
             assert.equal(JSON.stringify(options.instrumentationOptions), JSON.stringify({ 
-                http: { enabled: true, ignoreOutgoingUrls: ignoredOutgoingUrls },
+                http: { enabled: true },
                 azureSdk: { enabled: false },
                 mongoDb: { enabled: false },
                 mySql: { enabled: false },
@@ -131,7 +137,7 @@ describe("shim/configuration/config", () => {
             config.noPatchModules = "azuresdk,mongodb-core,redis,pg-pool";
             let options = config.parseConfig();
             assert.equal(JSON.stringify(options.instrumentationOptions), JSON.stringify({ 
-                http: { enabled: true, ignoreOutgoingUrls: ignoredOutgoingUrls },
+                http: { enabled: true },
                 azureSdk: { enabled: false },
                 mongoDb: { enabled: false },
                 mySql: { enabled: true },
@@ -140,6 +146,166 @@ describe("shim/configuration/config", () => {
                 postgreSql: { enabled: false }
             }));
         });
-        // TODO: Add test for warning messages
+
+        it("should disable http if dependencies and requests are disabled", () => {
+            const config = new Config(connectionString);
+            config.enableAutoCollectDependencies = false;
+            config.enableAutoCollectRequests = false;
+            let options = config.parseConfig();
+            const http: HttpInstrumentationConfig = options.instrumentationOptions.http as HttpInstrumentationConfig;
+            const ignoreFunction = (request: http.RequestOptions) => true;
+            assert.equal(options.instrumentationOptions.http.enabled, false);
+            assert.equal(JSON.stringify(http.ignoreIncomingRequestHook), JSON.stringify(ignoreFunction));
+            assert.equal(JSON.stringify(http.ignoreOutgoingRequestHook), JSON.stringify(ignoreFunction));
+        });
+
+        it("should disable external loggers", () => {
+            const config = new Config(connectionString);
+            config.enableAutoCollectExternalLoggers = false;
+            let options = config.parseConfig();
+            assert.equal(JSON.stringify(options.logInstrumentationOptions), JSON.stringify({ console: { enabled: false }, winston: { enabled: false }, bunyan: { enabled: false } }));
+        });
+
+        it("should disable standard metrics", () => {
+            const config = new Config(connectionString);
+            config.enableAutoCollectPreAggregatedMetrics = false;
+            config.parseConfig();
+            assert.equal(process.env["APPLICATION_INSIGHTS_NO_STANDARD_METRICS"], "disable");
+        });
+
+        it("should disable specific native metrics", () => {
+            const config = new Config(connectionString);
+            config.extendedMetricDisablers = "heap,gc";
+            config.parseConfig();
+            let options = config.parseConfig();
+            assert.equal(options.extendedMetrics.heap, false);
+            assert.equal(options.extendedMetrics.gc, false);
+        });
+
+        describe("#Shim unsupported messages", () => {
+            it("should warn if disableAppInsights is set", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.disableAppInsights = true;
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if collect heartbeat is set", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.enableAutoCollectHeartbeat = true;
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if auto dependency correlation is set to false", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.enableAutoDependencyCorrelation = false;
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if auto request generation is azure functions is set", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.enableAutoCollectIncomingRequestAzureFunctions = true;
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if live metrics is set", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.enableSendLiveMetrics = true;
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if using async hooks is set to false", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.enableUseAsyncHooks = false;
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if distributed tracing mode is set to AI", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.distributedTracingMode = DistributedTracingModes.AI;
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if resend interval is set", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.enableResendInterval = 1;
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if max bytes on disk is set", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.enableMaxBytesOnDisk = 1;
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if ignore legacy headers is false", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.ignoreLegacyHeaders = false;
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if max batch size is set", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.maxBatchSize = 1;
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if logger errors are set to traces", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.enableLoggerErrorToTrace = true;
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if httpAgent or httpsAgent are set", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.httpAgent = new http.Agent();
+                config.httpsAgent = new https.Agent();
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if web instrumentations are set", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.enableWebInstrumentation = true;
+                config.webInstrumentationConfig = [{name: "test", value: true}];
+                config.webInstrumentationSrc = "test";
+                config.webInstrumentationConnectionString = "test";
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if correlationHeaderExcludedDomains is set", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.correlationHeaderExcludedDomains = ["test.com"];
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+        });
     });
 });
