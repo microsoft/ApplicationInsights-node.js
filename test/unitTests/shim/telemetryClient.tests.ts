@@ -1,5 +1,6 @@
 import * as assert from "assert";
 import * as nock from "nock";
+import * as sinon from "sinon";
 import { Context, ProxyTracerProvider, trace, metrics } from "@opentelemetry/api";
 import { ReadableSpan, Span, SpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations/contracts";
@@ -8,14 +9,21 @@ import { DEFAULT_BREEZE_ENDPOINT } from "../../../src/declarations/constants";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { AzureMonitorExporterOptions, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
 import { MeterProvider, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions, ResourceMetrics } from "@opentelemetry/sdk-metrics";
+import { LogRecord, LogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
+import { logs } from "@opentelemetry/api-logs";
+import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 
 describe("shim/TelemetryClient", () => {
     let client: TelemetryClient;
     let testProcessor: TestSpanProcessor;
     let tracerProvider: NodeTracerProvider;
+    let loggerProvider: LoggerProvider;
     let testMetrics: ResourceMetrics;
+    let logProcessor: TestLogProcessor;
+    let sandbox: sinon.SinonSandbox;
 
     before(() => {
+        sandbox = sinon.createSandbox();
         trace.disable();
         metrics.disable();
         nock(DEFAULT_BREEZE_ENDPOINT)
@@ -32,9 +40,14 @@ describe("shim/TelemetryClient", () => {
         tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider);
         testProcessor = new TestSpanProcessor();
         tracerProvider.addSpanProcessor(testProcessor);
+
+        loggerProvider = logs.getLoggerProvider() as LoggerProvider;
+        logProcessor = new TestLogProcessor({});
+        loggerProvider.addLogRecordProcessor(logProcessor);
     });
 
     afterEach(() => {
+        sandbox.restore();
         testProcessor.spansProcessed = [];
     });
 
@@ -57,6 +70,26 @@ describe("shim/TelemetryClient", () => {
             this.spansProcessed.push(span);
         }
         shutdown(): Promise<void> {
+            return Promise.resolve();
+        }
+    }
+
+    class TestLogProcessor implements LogRecordProcessor {
+        private _attributes: { [key: string]: string };
+        constructor(attributes: { [key: string]: string }) {
+            this._attributes = attributes;
+        }
+        
+        // Override onEmit to apply log record attributes before exporting
+        onEmit(record: LogRecord) {
+            record.setAttributes(this._attributes);
+        }
+    
+        shutdown(): Promise<void> {
+            return Promise.resolve();
+        }
+    
+        forceFlush(): Promise<void> {
             return Promise.resolve();
         }
     }
@@ -116,6 +149,24 @@ describe("shim/TelemetryClient", () => {
             assert.equal(spans[0].attributes["db.statement"], "SELECT * FROM test");
         });
 
+        it("trackDependency RPC", async () => {
+            const telemetry: DependencyTelemetry = {
+                name: "TestName",
+                duration: 2000, //2 seconds
+                resultCode: "200",
+                data: "SELECT * FROM test",
+                dependencyTypeName: "RPC",
+                target: "TestTarget",
+                success: false,
+            };
+            client.trackDependency(telemetry);
+            await tracerProvider.forceFlush();
+            const spans = testProcessor.spansProcessed;
+            assert.equal(spans.length, 1);
+            assert.equal(spans[0].name, "TestName");
+            assert.equal(spans[0].attributes[SemanticAttributes.RPC_SYSTEM], "RPC");
+        });
+
         it("trackRequest", async () => {
             const telemetry: RequestTelemetry = {
                 id: "123456",
@@ -156,6 +207,68 @@ describe("shim/TelemetryClient", () => {
             assert.equal(testMetrics.scopeMetrics[4].metrics[0].descriptor.type, "HISTOGRAM");
             // @ts-ignore: TypeScript is not aware of the sum existing on the value object since it's a generic type
             assert.equal(testMetrics.scopeMetrics[4].metrics[0].dataPoints[0].value.sum, 100);
+        });
+
+        it("trackAvailability", async () => {
+            const stub = sandbox.stub(logProcessor, "onEmit");
+            const telemetry = {
+                id: "123456",
+                name: "TestName",
+                duration: 2000, // 2 seconds
+                success: true,
+                runLocation: "TestLocation",
+                message: "TestMessage"
+            };
+            client.trackAvailability(telemetry);
+            await loggerProvider.forceFlush();
+            await new Promise((resolve) => setTimeout(resolve, 800));
+            assert.ok(stub.calledOnce);
+        });
+
+        it("trackPageView", async () => {
+            const stub = sandbox.stub(logProcessor, "onEmit");
+            const telemetry = {
+                id: "123456",
+                name: "TestName",
+                url: "http://test.com",
+            };
+            client.trackPageView(telemetry);
+            await loggerProvider.forceFlush();
+            await new Promise((resolve) => setTimeout(resolve, 800));
+            assert.ok(stub.calledOnce);
+        });
+        
+        it("trackEvent", async () => {
+            const stub = sandbox.stub(logProcessor, "onEmit");
+            const telemetry = {
+                name: "TestName",
+            };
+            client.trackEvent(telemetry);
+            await loggerProvider.forceFlush();
+            await new Promise((resolve) => setTimeout(resolve, 800));
+            assert.ok(stub.calledOnce);
+        });
+
+        it("trackTrace", async () => {
+            const stub = sandbox.stub(logProcessor, "onEmit");
+            const telemetry = {
+                message: "test message",
+            };
+            client.trackTrace(telemetry);
+            await loggerProvider.forceFlush();
+            await new Promise((resolve) => setTimeout(resolve, 800));
+            assert.ok(stub.calledOnce);
+        });
+
+        it("trackException", async () => {
+            const stub = sandbox.stub(logProcessor, "onEmit");
+            const telemetry = {
+                exception: new Error("test error"),
+            };
+            client.trackException(telemetry);
+            await loggerProvider.forceFlush();
+            await new Promise((resolve) => setTimeout(resolve, 800));
+            assert.ok(stub.calledOnce);
         });
     });
 });
