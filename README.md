@@ -186,7 +186,6 @@ The following configurations are set using either environment variables, setting
 | maxBatchSize | Not supported by the shim but can be configured by using OpenTelemetry SpanProcessors in the distro. |
 | disableAppInsights | Not supported by the shim. Disabling telemetry export is possible via the distro using OpenTelemetry.|
 | correlationIdRetryIntervalMs | Not supported by either the shim or the distro as correlation ID is deprecated.|
-| correlationHeaderExcludedDomains | Not supported by either the shim or the distro as correlation header injection is deprecated.|
 | ignoreLegacyHeaders | Legacy headers in outgoing requests are not supported in the shim or the distro. Therefore they will always be disabled. |
 | distributedTracingMode | Distributed tracing mode is always set to AI_AND_W3C. AI only tracing mode is not supported in the shim or the distro.|
 | enableLoggerErrorToTrace | Not supported in the shim or the distro as all errors will be logged as exceptions in both. |

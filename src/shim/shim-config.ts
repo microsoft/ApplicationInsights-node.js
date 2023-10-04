@@ -362,9 +362,6 @@ class Config implements IConfig {
         ) {
             Logger.getInstance().warn("The webInstrumentation configuration options are not supported by the shim.");
         }
-        if (this.correlationHeaderExcludedDomains) {
-            Logger.getInstance().warn("The correlationHeaderExcludedDomains configuration option is deprecated.");
-        }
         return options;
     }
 }
