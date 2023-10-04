@@ -28,4 +28,11 @@ describe("agent//diagnostics/writers/fileWriter", () => {
         writer["_appendFile"]("test");
         assert.ok(appendStub.calledOnce);
     });
+
+    it("should write file", () => {
+        const writeStub = sandbox.stub(fs, "writeFile");
+        const writer = new FileWriter("test", "test", { append: false });
+        writer["_writeFile"]("test");
+        assert.ok(writeStub.calledOnce);
+    });
 });
