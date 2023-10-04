@@ -94,12 +94,18 @@ describe("shim/configuration/config", () => {
             assert.equal(options.extendedMetrics.gc, true, "wrong gc");
         });
 
-        it("should activate internal loggers", () => {
+        it("should activate DEBUG internal logger", () => {
             const config = new Config(connectionString);
-            assert.equal(Logger.getInstance()["_diagLevel"], DiagLogLevel.WARN);
             config.enableInternalDebugLogging = true;
             config.parseConfig();
             assert.equal(Logger.getInstance()["_diagLevel"], DiagLogLevel.DEBUG);
+        });
+
+        it("should activate WARN internal logger", () => {
+            const config = new Config(connectionString);
+            config.enableInternalWarningLogging = true;
+            config.parseConfig();
+            assert.equal(Logger.getInstance()["_diagLevel"], DiagLogLevel.WARN);
         });
 
         it("should disableAllExtendedMetrics", () => {

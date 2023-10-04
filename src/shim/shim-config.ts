@@ -227,11 +227,11 @@ class Config implements IConfig {
             options.otlpMetricExporterConfig = { ...options.otlpMetricExporterConfig, timeoutMillis: this.maxBatchIntervalMs };
             options.otlpLogExporterConfig = { ...options.otlpLogExporterConfig, timeoutMillis: this.maxBatchIntervalMs };
         }
-        if (typeof (this.enableInternalDebugLogging) === "boolean") {
-            Logger.getInstance().updateLogLevel(DiagLogLevel.DEBUG);
-        }
-        if (typeof (this.enableInternalWarningLogging) === "boolean") {
+        if (this.enableInternalWarningLogging === true) {
             Logger.getInstance().updateLogLevel(DiagLogLevel.WARN);
+        }
+        if (this.enableInternalDebugLogging === true) {
+            Logger.getInstance().updateLogLevel(DiagLogLevel.DEBUG);
         }
         if (this.enableAutoCollectPreAggregatedMetrics === false) {
             process.env["APPLICATION_INSIGHTS_NO_STANDARD_METRICS"] = "disable";
