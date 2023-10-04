@@ -200,6 +200,10 @@ export class TelemetryClient {
             } else if (Util.getInstance().isDbDependency(telemetry.dependencyTypeName)) {
                 attributes[SemanticAttributes.DB_SYSTEM] = telemetry.dependencyTypeName;
                 attributes[SemanticAttributes.DB_STATEMENT] = telemetry.data;
+            } else if (telemetry.dependencyTypeName.toLowerCase().indexOf("rpc") > -1) {
+                attributes[SemanticAttributes.RPC_SYSTEM] = telemetry.dependencyTypeName;
+                attributes[SemanticAttributes.RPC_METHOD] = telemetry.name;
+                attributes[SemanticAttributes.RPC_GRPC_STATUS_CODE] = telemetry.resultCode;
             }
         }
         if (telemetry.target) {
