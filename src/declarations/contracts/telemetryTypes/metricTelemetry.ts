@@ -7,7 +7,7 @@ import { Telemetry } from "./telemetry";
  */
 export interface MetricTelemetry extends Telemetry {
     /** List of metrics. Only one metric in the list is currently supported by Application Insights storage. If multiple data points were sent only the first one will be used. */
-    metrics: MetricPointTelemetry[];
+    metrics?: MetricPointTelemetry[];
 }
 
 export interface MetricPointTelemetry {
