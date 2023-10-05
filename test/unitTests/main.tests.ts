@@ -8,10 +8,8 @@ import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { LoggerProvider } from "@opentelemetry/sdk-logs";
 import { shutdownAzureMonitor, useAzureMonitor } from "../../src";
-import * as sinon from "sinon";
 
 describe("ApplicationInsightsClient", () => {
-    let sandbox = sinon.createSandbox();
     afterEach(() => {
         shutdownAzureMonitor();
     });
