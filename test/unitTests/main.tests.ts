@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for details.
 import * as assert from "assert";
 import { ProxyTracerProvider, metrics, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
@@ -40,25 +42,4 @@ describe("ApplicationInsightsClient", () => {
         otlpExporter = logRecordProcessors[2]["_exporter"];
         assert.ok(otlpExporter instanceof OTLPLogExporter, "wrong exporter");
     });
-    
-    /*
-    Tracer Provider has issues with calling forceFlush() on it.
-    it("Flush Azure Monitor", async () => {
-        useAzureMonitor({
-            azureMonitorExporterOptions:
-                { connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333" },
-            otlpMetricExporterConfig: { enabled: true },
-            otlpTraceExporterConfig: { enabled: true },
-            otlpLogExporterConfig: { enabled: true }
-        });
-        const flushMetricsStub = sandbox.stub((metrics.getMeterProvider() as MeterProvider), "forceFlush");
-        // const flushTraceStub = sandbox.stub((trace.getTracerProvider() as BasicTracerProvider), "forceFlush");
-        const flushLogsStub = sandbox.stub((logs.getLoggerProvider() as TestLoggerProvider), "forceFlush");
-        await flushAzureMonitor().then(() => {
-            assert.ok(flushMetricsStub.calledOnce, "Metrics forceFlush not called");
-            // assert.ok(flushTraceStub.calledOnce, "Trace forceFlush not called");
-            assert.ok(flushLogsStub.calledOnce, "Logs forceFlush not called");
-        });
-    });
-    */
 });
