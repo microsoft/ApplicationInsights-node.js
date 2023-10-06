@@ -1,5 +1,8 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
+import { ProxyTracerProvider, metrics, trace } from "@opentelemetry/api";
+import { logs } from "@opentelemetry/api-logs";
+import { MeterProvider } from "@opentelemetry/sdk-metrics";
 
 import { AKSLoader } from "../../../src/agent/aksLoader";
 import { DiagnosticLogger } from "../../../src/agent/diagnostics/diagnosticLogger";
@@ -44,10 +47,35 @@ describe("agent/AKSLoader", () => {
     });
 
     it("initialize", () => {
+        const env = {
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
+        };
+        process.env = env;
         const agent = new AKSLoader();
-        let stub = sandbox.stub(agent, "initialize");
         agent.initialize();
-        // Agent Loader called
-        assert.ok(stub.calledOnce);
+        let meterProvider = metrics.getMeterProvider() as any;
+        assert.equal(meterProvider.constructor.name, "MeterProvider");
+        assert.equal(meterProvider["_sharedState"]["metricCollectors"].length, 1);
+        assert.equal(meterProvider["_sharedState"]["metricCollectors"][0]["_metricReader"]["_exporter"].constructor.name, "AzureMonitorMetricExporter");
+        let tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate()) as any;
+        assert.equal(tracerProvider.constructor.name, "NodeTracerProvider");
+        assert.equal(tracerProvider["_registeredSpanProcessors"][0]["_exporter"].constructor.name, "AzureMonitorTraceExporter");
+        let loggerProvider = logs.getLoggerProvider() as any;
+        assert.equal(loggerProvider.constructor.name, "LoggerProvider");
+        assert.equal(loggerProvider["_registeredLogRecordProcessors"][0]["_exporter"].constructor.name, "AzureMonitorLogExporter");
+    });
+
+    it("should add OTLP exporter if env variable is present", () => {
+        const env = {
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
+            ["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"]: "something",
+        };
+        process.env = env;
+        const agent = new AKSLoader();
+        agent.initialize();
+        let meterProvider = metrics.getMeterProvider() as any;
+        assert.equal(meterProvider.constructor.name, "MeterProvider");
+        assert.equal(meterProvider["_sharedState"]["metricCollectors"].length, 2);
+        assert.equal(meterProvider["_sharedState"]["metricCollectors"][1]["_metricReader"]["_exporter"].constructor.name, "OTLPMetricExporter");
     });
 });
