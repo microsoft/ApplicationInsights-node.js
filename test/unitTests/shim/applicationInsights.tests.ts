@@ -1,7 +1,11 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for details.
 import * as assert from "assert";
 import * as sinon from "sinon";
 
 import * as appInsights from "../../../src/index";
+import { Logger } from "../../../src/shared/logging";
+import { DiagLogLevel } from "@opentelemetry/api";
 
 describe("ApplicationInsights", () => {
     let sandbox: sinon.SinonSandbox;
@@ -78,6 +82,79 @@ describe("ApplicationInsights", () => {
             assert.equal(JSON.stringify(appInsights.defaultClient["_options"].logInstrumentationOptions.bunyan), JSON.stringify({ enabled: false }));
             assert.equal(JSON.stringify(appInsights.defaultClient["_options"].logInstrumentationOptions.console), JSON.stringify({ enabled: false }));
             assert.equal(JSON.stringify(appInsights.defaultClient["_options"].logInstrumentationOptions.winston), JSON.stringify({ enabled: false }));
+        });
+
+        describe("#CorrelationContext", () => {
+            it("should return context once AppInsights is intialized", () => {
+                appInsights.setup(connString).start();
+                const context = appInsights.getCorrelationContext();
+                assert.ok(context.operation.id);
+            });
+        });
+
+        describe("#Configuration", () => {
+            it("should throw warning if attempting to set AI distributed tracing mode", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                appInsights.setup(connString);
+                appInsights.Configuration.setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C);
+                appInsights.start();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if attempting to set auto collection of pre-aggregated metrics", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                appInsights.setup(connString);
+                appInsights.Configuration.setAutoCollectPreAggregatedMetrics(true);
+                appInsights.start();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if attempting to set auto collection of heartbeat", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                appInsights.setup(connString);
+                appInsights.Configuration.setAutoCollectHeartbeat(true);
+                appInsights.start();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if attempting to enable web instrumentation", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                appInsights.setup(connString);
+                appInsights.Configuration.enableWebInstrumentation(true);
+                appInsights.start();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if attempting to set maxBytesOnDisk", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                appInsights.setup(connString);
+                appInsights.Configuration.setUseDiskRetryCaching(true, 1000, 10);
+                appInsights.start();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should set internal loggers", () => {
+                appInsights.setup(connString);
+                appInsights.Configuration.setInternalLogging(true, false);
+                appInsights.start();
+                assert.equal(Logger.getInstance()["_diagLevel"], DiagLogLevel.DEBUG);
+            });
+
+            it("should warn if attempting to auto collect incoming azure functions requests", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                appInsights.setup(connString);
+                appInsights.Configuration.setAutoCollectIncomingRequestAzureFunctions(true);
+                appInsights.start();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if attempting to send live metrics", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                appInsights.setup(connString);
+                appInsights.Configuration.setSendLiveMetrics(true);
+                appInsights.start();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
         });
     });
 });
