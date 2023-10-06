@@ -17,7 +17,8 @@ export class AKSLoader extends AgentLoader {
         if (this._canLoad) {
             // AKS specific configuration
             this._options.otlpMetricExporterConfig = {
-                enabled: true
+                // Add OTLP if env variable is present
+                enabled: process.env["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"] ? true : false
             };
 
             let statusLogDir = '/var/log/applicationinsights/';

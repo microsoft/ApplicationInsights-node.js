@@ -36,3 +36,5 @@ undefined/temp/appInsights-node/applicationinsights.log
 
 .nyc_output/*
 test/certs/server-key.pem
+# Ignore folder created during test runs
+undefined/*
