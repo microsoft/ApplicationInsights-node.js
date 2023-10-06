@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for details.
 import assert = require('assert');
 import sinon = require('sinon');
 import azureCoreAuth = require("@azure/core-auth");
@@ -94,12 +96,18 @@ describe("shim/configuration/config", () => {
             assert.equal(options.extendedMetrics.gc, true, "wrong gc");
         });
 
-        it("should activate internal loggers", () => {
+        it("should activate DEBUG internal logger", () => {
             const config = new Config(connectionString);
-            assert.equal(Logger.getInstance()["_diagLevel"], DiagLogLevel.WARN);
             config.enableInternalDebugLogging = true;
             config.parseConfig();
             assert.equal(Logger.getInstance()["_diagLevel"], DiagLogLevel.DEBUG);
+        });
+
+        it("should activate WARN internal logger", () => {
+            const config = new Config(connectionString);
+            config.enableInternalWarningLogging = true;
+            config.parseConfig();
+            assert.equal(Logger.getInstance()["_diagLevel"], DiagLogLevel.WARN);
         });
 
         it("should disableAllExtendedMetrics", () => {
