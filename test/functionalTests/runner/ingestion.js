@@ -6,7 +6,7 @@ var zlib = require("zlib");
 var Config = require("./config");
 var TestValidation = require("./testValidation").TestValidation;
 
-var _IKEY = "TESTIKEY";
+var _IKEY = "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
 
 class Ingestion {
     constructor() {
