@@ -12,7 +12,6 @@ import {
     Telemetry,
     TraceTelemetry
 } from "../../../src/declarations/contracts";
-import { DEFAULT_BREEZE_ENDPOINT } from "../../../src/declarations/constants";
 import { AvailabilityData, MessageData, MonitorDomain, PageViewData, TelemetryEventData, TelemetryExceptionData } from "../../../src/declarations/generated";
 import { LogApi } from "../../../src/logs/api";
 
@@ -21,7 +20,7 @@ describe("logs/API", () => {
 
     before(() => {
         sandbox = sinon.createSandbox();
-        nock(DEFAULT_BREEZE_ENDPOINT)
+        nock("https://dc.services.visualstudio.com")
             .post("/v2.1/track", (body: string) => true)
             .reply(200, {})
             .persist();

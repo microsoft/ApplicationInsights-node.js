@@ -4,7 +4,7 @@
 import * as os from "os";
 import { FileWriter } from "./writers/fileWriter";
 import { IAgentLogger, IStatusContract, LOGGER_LANGUAGE } from "../types";
-import { AZURE_MONITOR_DISTRO_VERSION } from "../../declarations/constants";
+import { AZURE_MONITOR_OPENTELEMETRY_VERSION } from "../../types";
 
 
 export class StatusLogger {
@@ -19,7 +19,7 @@ export class StatusLogger {
         this._agentLogger = agentLogger;
         this._instrumentationKey = instrumentationKey;
         this._language = LOGGER_LANGUAGE;
-        this._sdkVersion = AZURE_MONITOR_DISTRO_VERSION;
+        this._sdkVersion = AZURE_MONITOR_OPENTELEMETRY_VERSION;
         this._machineName = os.hostname();
         this._processId = String(process.pid);
     }
