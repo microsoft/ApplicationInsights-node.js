@@ -39,7 +39,7 @@ export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
     if (internalConfig.enableAutoCollectPerformance) {
         perfCounters = new PerformanceCounterMetrics(internalConfig);
         // Add SpanProcessor to calculate Request Metrics
-        if (typeof (trace.getTracerProvider() as BasicTracerProvider).addSpanProcessor == "function") {
+        if (typeof (trace.getTracerProvider() as BasicTracerProvider).addSpanProcessor === "function") {
             (trace.getTracerProvider() as BasicTracerProvider).addSpanProcessor(new AzureMonitorSpanProcessor(perfCounters));
         }
     }
