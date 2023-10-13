@@ -144,8 +144,8 @@ export class PerformanceCounterMetrics {
     /**
     * Shutdown Meter Provider it will return no-op Meters after being called.
     */
-    public shutdown() {
-        this._meterProvider.shutdown();
+    public async shutdown() {
+        return this._meterProvider.shutdown();
     }
 
     /**

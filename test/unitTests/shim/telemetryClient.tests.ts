@@ -21,6 +21,7 @@ describe("shim/TelemetryClient", () => {
     let tracerProvider: NodeTracerProvider;
     let loggerProvider: LoggerProvider;
     let testMetrics: ResourceMetrics;
+    let metricProvider: MeterProvider;
     let logProcessor: TestLogProcessor;
     let sandbox: sinon.SinonSandbox;
 
@@ -46,6 +47,8 @@ describe("shim/TelemetryClient", () => {
         loggerProvider = logs.getLoggerProvider() as LoggerProvider;
         logProcessor = new TestLogProcessor({});
         loggerProvider.addLogRecordProcessor(logProcessor);
+
+        metricProvider = metrics.getMeterProvider() as MeterProvider;
     });
 
     afterEach(() => {
@@ -195,22 +198,21 @@ describe("shim/TelemetryClient", () => {
                 name: "TestName",
                 value: 100,
             };
-            const provider = metrics.getMeterProvider() as MeterProvider;
-            const exporter = new TestExporter({ connectionString: "InstrumentationKey=00000000-0000-0000-0000-000000000000" });
+            const exporter = new TestExporter({ connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/" });
             const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
                 exporter: exporter,
             };
             const metricReader = new PeriodicExportingMetricReader(metricReaderOptions);
-            provider.addMetricReader(metricReader);
+            metricProvider.addMetricReader(metricReader);
             client.trackMetric(telemetry);
-            provider.forceFlush();
+            metricProvider.forceFlush();
             await new Promise((resolve) => setTimeout(resolve, 800));
-            assert.equal(testMetrics.scopeMetrics[4].metrics[0].descriptor.name, "TestName");
-            assert.equal(testMetrics.scopeMetrics[4].metrics[0].descriptor.type, "HISTOGRAM");
+            assert.equal(testMetrics.scopeMetrics[0].metrics[0].descriptor.name, "TestName");
+            assert.equal(testMetrics.scopeMetrics[0].metrics[0].descriptor.type, "HISTOGRAM");
             // @ts-ignore: TypeScript is not aware of the sum existing on the value object since it's a generic type
-            assert.equal(testMetrics.scopeMetrics[4].metrics[0].dataPoints[0].value.sum, 100);
+            assert.equal(testMetrics.scopeMetrics[0].metrics[0].dataPoints[0].value.sum, 100);
         });
-
+        
         it("trackAvailability", async () => {
             const stub = sandbox.stub(logProcessor, "onEmit");
             const telemetry = {
