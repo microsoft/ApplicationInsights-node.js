@@ -10,25 +10,25 @@ import { PerformanceCounterMetrics } from "../metrics/performanceCounters";
  * @internal
  */
 export class AzureMonitorSpanProcessor implements SpanProcessor {
-  private readonly _metricHandler: PerformanceCounterMetrics;
+    private readonly _metricHandler: PerformanceCounterMetrics;
 
-  constructor(metricHandler: PerformanceCounterMetrics) {
-    this._metricHandler = metricHandler;
-  }
+    constructor(metricHandler: PerformanceCounterMetrics) {
+        this._metricHandler = metricHandler;
+    }
 
-  forceFlush(): Promise<void> {
-    return Promise.resolve();
-  }
+    forceFlush(): Promise<void> {
+        return Promise.resolve();
+    }
 
-  onStart(span: Span, _context: Context): void {
-    
-  }
+    onStart(span: Span, _context: Context): void {
+        return;
+    }
 
-  onEnd(span: ReadableSpan): void {
-    this._metricHandler.recordSpan(span);
-  }
+    onEnd(span: ReadableSpan): void {
+        this._metricHandler.recordSpan(span);
+    }
 
-  shutdown(): Promise<void> {
-    return Promise.resolve();
-  }
+    shutdown(): Promise<void> {
+        return Promise.resolve();
+    }
 }
