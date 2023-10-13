@@ -7,7 +7,6 @@ import { Context, ProxyTracerProvider, trace, metrics } from "@opentelemetry/api
 import { ReadableSpan, Span, SpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations/contracts";
 import { TelemetryClient } from "../../../src/shim/telemetryClient";
-import { DEFAULT_BREEZE_ENDPOINT } from "../../../src/declarations/constants";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { AzureMonitorExporterOptions, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
 import { MeterProvider, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions, ResourceMetrics } from "@opentelemetry/sdk-metrics";
@@ -29,7 +28,7 @@ describe("shim/TelemetryClient", () => {
         sandbox = sinon.createSandbox();
         trace.disable();
         metrics.disable();
-        nock(DEFAULT_BREEZE_ENDPOINT)
+        nock("https://dc.services.visualstudio.com")
             .post("/v2.1/track", (body: string) => true)
             .reply(200, {})
             .persist();
