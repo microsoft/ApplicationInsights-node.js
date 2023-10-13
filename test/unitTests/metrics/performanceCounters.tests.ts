@@ -47,6 +47,22 @@ describe("PerformanceCounterMetricsHandler", () => {
 
   describe("#Metrics", () => {
     it("should observe instruments during collection", async () => {
+      let resource = new Resource({});
+      resource.attributes[SemanticResourceAttributes.SERVICE_NAME] = "testcloudRoleName";
+      resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = "testcloudRoleInstance";
+      let serverSpan: any = {
+        kind: SpanKind.SERVER,
+        duration: [654321],
+        attributes: {
+          "http.status_code": 200,
+        },
+        resource: resource,
+      };
+
+      for (let i = 0; i < 10; i++) {
+        autoCollect.recordSpan(serverSpan);
+      }
+      
       await new Promise((resolve) => setTimeout(resolve, 120));
       assert.ok(exportStub.called);
       const resourceMetrics = exportStub.args[0][0];
