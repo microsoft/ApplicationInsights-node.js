@@ -17,20 +17,8 @@ describe("PerformanceCounterMetricsHandler", () => {
     config = new ApplicationInsightsConfig();
     config.azureMonitorExporterOptions.connectionString =
       "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
-  });
-
-  afterEach(() => {
-    exportStub.resetHistory();
-    autoCollect.shutdown();
-  });
-
-  after(() => {
-    exportStub.restore();
-  });
-
-  function createAutoCollect(customConfig?: ApplicationInsightsConfig) {
-    autoCollect = new PerformanceCounterMetrics(customConfig || config, {
-      collectionInterval: 550,
+    autoCollect = new PerformanceCounterMetrics(config || config, {
+      collectionInterval: 100,
     });
     exportStub = sinon.stub(autoCollect["_azureExporter"], "export").callsFake(
       (spans: any, resultCallback: any) =>
@@ -41,12 +29,21 @@ describe("PerformanceCounterMetricsHandler", () => {
           resolve(spans);
         })
     );
-  }
+  });
+
+  afterEach(() => {
+    exportStub.resetHistory();
+  });
+
+  after(async() => {
+    exportStub.restore();
+    await autoCollect.shutdown();
+  });
+
 
   describe("#Metrics", () => {
     it("should observe instruments during collection", async () => {
-      createAutoCollect();
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      await new Promise((resolve) => setTimeout(resolve, 120));
       assert.ok(exportStub.called);
       const resourceMetrics = exportStub.args[0][0];
       const scopeMetrics = resourceMetrics.scopeMetrics;
@@ -86,9 +83,8 @@ describe("PerformanceCounterMetricsHandler", () => {
     });
 
     it("should not collect when disabled", async () => {
-      createAutoCollect();
       autoCollect.shutdown();
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      await new Promise((resolve) => setTimeout(resolve, 120));
       assert.ok(exportStub.notCalled);
     });
   });
