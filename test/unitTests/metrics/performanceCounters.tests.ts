@@ -62,7 +62,7 @@ describe("PerformanceCounterMetricsHandler", () => {
       for (let i = 0; i < 10; i++) {
         autoCollect.recordSpan(serverSpan);
       }
-
+      
       await new Promise((resolve) => setTimeout(resolve, 120));
       assert.ok(exportStub.called);
       const resourceMetrics = exportStub.args[0][0];
