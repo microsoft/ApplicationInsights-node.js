@@ -3,9 +3,13 @@
 
 import * as assert from "assert";
 import * as sinon from "sinon";
+import { Attributes, SpanKind } from "@opentelemetry/api";
 import { ExportResultCode } from "@opentelemetry/core";
 import { PerformanceCounterMetrics } from "../../../src/metrics/performanceCounters";
 import { ApplicationInsightsConfig } from "../../../src/shared/configuration/config";
+import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
+import { Resource } from "@opentelemetry/resources";
+import { Histogram } from "@opentelemetry/sdk-metrics";
 
 
 describe("PerformanceCounterMetricsHandler", () => {
@@ -17,20 +21,8 @@ describe("PerformanceCounterMetricsHandler", () => {
     config = new ApplicationInsightsConfig();
     config.azureMonitorExporterOptions.connectionString =
       "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;";
-  });
-
-  afterEach(() => {
-    exportStub.resetHistory();
-    autoCollect.shutdown();
-  });
-
-  after(() => {
-    exportStub.restore();
-  });
-
-  function createAutoCollect(customConfig?: ApplicationInsightsConfig) {
-    autoCollect = new PerformanceCounterMetrics(customConfig || config, {
-      collectionInterval: 550,
+    autoCollect = new PerformanceCounterMetrics(config || config, {
+      collectionInterval: 100,
     });
     exportStub = sinon.stub(autoCollect["_azureExporter"], "export").callsFake(
       (spans: any, resultCallback: any) =>
@@ -41,28 +33,60 @@ describe("PerformanceCounterMetricsHandler", () => {
           resolve(spans);
         })
     );
-  }
+  });
+
+  afterEach(() => {
+    exportStub.resetHistory();
+  });
+
+  after(async () => {
+    exportStub.restore();
+    await autoCollect.shutdown();
+  });
+
 
   describe("#Metrics", () => {
     it("should observe instruments during collection", async () => {
-      createAutoCollect();
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      let resource = new Resource({});
+      resource.attributes[SemanticResourceAttributes.SERVICE_NAME] = "testcloudRoleName";
+      resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = "testcloudRoleInstance";
+      let serverSpan: any = {
+        kind: SpanKind.SERVER,
+        duration: [654321],
+        attributes: {
+          "http.status_code": 200,
+        },
+        resource: resource,
+      };
+
+      for (let i = 0; i < 10; i++) {
+        autoCollect.recordSpan(serverSpan);
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 120));
       assert.ok(exportStub.called);
       const resourceMetrics = exportStub.args[0][0];
       const scopeMetrics = resourceMetrics.scopeMetrics;
       assert.strictEqual(scopeMetrics.length, 1, "scopeMetrics count");
       let metrics = scopeMetrics[0].metrics;
       assert.strictEqual(metrics.length, 6, "metrics count");
+
       assert.deepStrictEqual(
         metrics[0].descriptor.name,
         "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Request Execution Time"
       );
-      assert.deepStrictEqual(metrics[0].dataPoints.length, 0);
+      assert.strictEqual(metrics[0].dataPoints.length, 1, "dataPoints count");
+      assert.strictEqual((metrics[0].dataPoints[0].value as Histogram).count, 10, "dataPoint count");
+      assert.strictEqual((metrics[0].dataPoints[0].value as Histogram).min, 654321, "dataPoint min");
+      assert.strictEqual((metrics[0].dataPoints[0].value as Histogram).max, 654321, "dataPoint max");
+      assert.strictEqual((metrics[0].dataPoints[0].value as Histogram).sum, 6543210, "dataPoint sum");
+      
       assert.deepStrictEqual(
         metrics[1].descriptor.name,
         "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Requests/Sec"
       );
-      assert.deepStrictEqual(metrics[1].dataPoints[0].value, 0);
+      assert.ok(metrics[1].dataPoints[0].value> 0, "Wrong request rate value");
+
       assert.deepStrictEqual(
         metrics[2].descriptor.name,
         "\\Process(??APP_WIN32_PROC??)\\Private Bytes"
@@ -86,9 +110,8 @@ describe("PerformanceCounterMetricsHandler", () => {
     });
 
     it("should not collect when disabled", async () => {
-      createAutoCollect();
       autoCollect.shutdown();
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      await new Promise((resolve) => setTimeout(resolve, 120));
       assert.ok(exportStub.notCalled);
     });
   });
