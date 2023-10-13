@@ -19,7 +19,6 @@ import {
     PeriodicExportingMetricReaderOptions,
 } from "@opentelemetry/sdk-metrics";
 import { ReadableSpan } from "@opentelemetry/sdk-trace-base";
-import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 import { PerformanceCounterMetricNames } from "./types";
 import { ApplicationInsightsConfig } from "../shared/configuration/config";
 
@@ -152,7 +151,7 @@ export class PerformanceCounterMetrics {
      * Force flush Meter Provider.
      */
     public async flush(): Promise<void> {
-        await this._meterProvider.forceFlush();
+        return this._meterProvider.forceFlush();
     }
 
     /**
@@ -169,18 +168,10 @@ export class PerformanceCounterMetrics {
         if (span.kind !== SpanKind.SERVER) {
             return;
         }
+        this._totalCount++;
         const durationMs = span.duration[0];
-        this._requestDurationHistogram.record(durationMs);
-
-        let success = false;
-        const statusCode = parseInt(String(span.attributes[SemanticAttributes.HTTP_STATUS_CODE]));
-        if (!isNaN(statusCode)) {
-            success = 0 < statusCode && statusCode < 500;
-        }
-        if (success) {
-            this._totalCount++;
-        }
         this._intervalExecutionTime += durationMs;
+        this._requestDurationHistogram.record(durationMs);
     }
 
     private _getRequestRate(observableResult: ObservableResult) {
