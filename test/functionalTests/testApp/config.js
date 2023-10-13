@@ -6,7 +6,7 @@ var Config = {
     MySqlConnectionString: "mysql://root:dummypw@localhost:33060/testdb",
     RedisConnectionString: "redis://localhost:63790",
     PostgresConnectionString: "pg://postgres:dummypw@localhost:54320/postgres",
-    InstrumentationKey: "TESTIKEY",
+    InstrumentationKey: "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
     AppInsightsEnabled: true,
     UseAutoCorrelation: true,
     UseAutoRequests: true,
