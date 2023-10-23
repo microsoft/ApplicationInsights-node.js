@@ -231,11 +231,12 @@ export class TelemetryClient {
     }
 
     /**
+     *  @deprecated The method should not be called, Azure Properties will be added always when available
      * Automatically populate telemetry properties like RoleName when running in Azure
      *
      * @param value if true properties will be populated
      */
-    public setAutoPopulateAzureProperties() {
+    public setAutoPopulateAzureProperties(value: boolean) {
         // NO-OP
     }
 

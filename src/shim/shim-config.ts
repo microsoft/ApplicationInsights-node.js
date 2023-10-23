@@ -3,12 +3,14 @@
 import http = require("http");
 import https = require("https");
 import azureCoreAuth = require("@azure/core-auth");
-import { DiagLogLevel } from "@opentelemetry/api";
+import { Attributes, DiagLogLevel } from "@opentelemetry/api";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrumentationConfig } from "./types";
 import { Logger } from "../shared/logging";
 import { ShimJsonConfig } from "./shim-jsonConfig";
 import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType, InstrumentationOptionsType } from "../types";
+import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
+import { Resource } from "@opentelemetry/resources";
 
 class Config implements IConfig {
 
@@ -149,6 +151,20 @@ class Config implements IConfig {
             otlpLogExporterConfig: {},
             extendedMetrics: {},
         };
+
+        // Set service attributes if running in Azure
+        const resourceAttributes: Attributes = {};
+        // Sets RoleName
+        if (process.env.WEBSITE_SITE_NAME) {
+            resourceAttributes[SemanticResourceAttributes.SERVICE_NAME] = process.env.WEBSITE_SITE_NAME;
+        }
+        // Sets RoleInstance
+        if (process.env.WEBSITE_INSTANCE_ID) {
+            resourceAttributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = process.env.WEBSITE_INSTANCE_ID;
+        }
+        const resource = new Resource(resourceAttributes);
+        options.resource = resource;
+
         if (this.samplingPercentage) {
             options.samplingRatio = this.samplingPercentage / 100;
         }
