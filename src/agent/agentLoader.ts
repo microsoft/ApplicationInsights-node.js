@@ -26,6 +26,7 @@ export class AgentLoader {
     protected _diagnosticLogger: IDiagnosticLogger;
     protected _statusLogger: StatusLogger;
     protected _isWindows: boolean;
+    protected _isLinux: boolean;
     private _aadCredential: any; // Types not available as library should not be loaded in older versions of Node.js runtime
 
     constructor() {
@@ -84,10 +85,11 @@ export class AgentLoader {
             }
 
 
-            //Default diagnostic using console
+            // Default diagnostic using console
             this._diagnosticLogger = new DiagnosticLogger(this._instrumentationKey, new ConsoleWriter());
             this._statusLogger = new StatusLogger(this._instrumentationKey, new ConsoleWriter());
             this._isWindows = process.platform === 'win32';
+            this._isLinux = process.platform === 'linux';
         }
     }
 
@@ -236,8 +238,14 @@ export class AgentLoader {
             // appInstance should either resolve to user SDK or crash. If it resolves to attach SDK, user probably modified their NODE_PATH
             let appInstance: string;
             try {
-                // Node 8.9+
-                appInstance = (require.resolve as any)("applicationinsights", { paths: [process.cwd()] });
+                // Node 8.9+ Windows
+                if (this._isWindows) {
+                    appInstance = (require.resolve as any)("applicationinsights", { paths: [process.cwd()] });
+                }
+                // Node 8.9+ Linux
+                else if (this._isLinux) {
+                    appInstance = `${process.cwd()}${(require.resolve as any)("applicationinsights", { paths: [process.cwd()] })}`;
+                }
             } catch (e) {
                 // Node <8.9
                 appInstance = require.resolve(`${process.cwd()}/node_modules/applicationinsights`);
