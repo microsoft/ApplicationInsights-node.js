@@ -135,6 +135,7 @@ export const StatsbeatTelemetryName = "Statsbeat";
 
 export const StatsbeatResourceProvider = {
     appsvc: "appsvc",
+    aks: "aks",
     functions: "functions",
     vm: "vm",
     unknown: "unknown"
