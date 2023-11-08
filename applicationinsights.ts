@@ -155,6 +155,7 @@ export function start() {
         _clientRequests.enable(defaultClient.config.enableAutoCollectDependencies);
         _webSnippet.enable(defaultClient.config.enableWebInstrumentation, defaultClient.config.webInstrumentationConnectionString);
         if (defaultClient.config.enableSendLiveMetrics) {
+            // Initialize Live metrics in case config was provided in telemetryClient config, double initialization check is part of liveMetrics client
             if (!liveMetricsClient) {
                 // No qps client exists. Create one and prepare it to be enabled at .start()
                 liveMetricsClient = new QuickPulseClient(defaultClient.config, defaultClient.context, defaultClient.getAuthorizationHandler);
@@ -162,6 +163,7 @@ export function start() {
                 liveMetricsClient.addCollector(_performanceLiveMetrics);
                 defaultClient.quickPulseClient = liveMetricsClient; // Need this so we can forward all manual tracks to live metrics via PerformanceMetricsTelemetryProcessor
             }
+            liveMetricsClient.enable(defaultClient.config.enableSendLiveMetrics)
         }
         _azureFunctions.enable(defaultClient.config.enableAutoCollectIncomingRequestAzureFunctions);
 
