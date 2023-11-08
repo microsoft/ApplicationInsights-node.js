@@ -302,9 +302,9 @@ class Statsbeat {
             );
             if (currentCounter.totalSuccesfulRequestCount > 0) {
                 this._statbeatMetrics.push({
-                        name: Constants.StatsbeatCounter.REQUEST_SUCCESS,
-                        value: currentCounter.totalSuccesfulRequestCount,
-                        properties: properties
+                    name: Constants.StatsbeatCounter.REQUEST_SUCCESS,
+                    value: currentCounter.totalSuccesfulRequestCount,
+                    properties: properties
                 });
                 currentCounter.totalSuccesfulRequestCount = 0; //Reset
             }
@@ -385,7 +385,11 @@ class Statsbeat {
             let waiting: boolean = false;
             this._resourceProvider = Constants.StatsbeatResourceProvider.unknown;
             this._resourceIdentifier = Constants.StatsbeatResourceProvider.unknown;
-            if (process.env.WEBSITE_SITE_NAME) { // Web apps
+            if (process.env.AKS_ARM_NAMESPACE_ID) {//AKS
+                this._resourceProvider = Constants.StatsbeatResourceProvider.aks;
+                this._resourceIdentifier = process.env.AKS_ARM_NAMESPACE_ID;
+            }
+            else if (process.env.WEBSITE_SITE_NAME) { // Web apps
                 this._resourceProvider = Constants.StatsbeatResourceProvider.appsvc;
                 this._resourceIdentifier = process.env.WEBSITE_SITE_NAME;
                 if (process.env.WEBSITE_HOME_STAMPNAME) {

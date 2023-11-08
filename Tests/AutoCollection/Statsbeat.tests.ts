@@ -120,6 +120,19 @@ describe("AutoCollection/Statsbeat", () => {
                 done();
             }).catch((error) => { done(error); });
         });
+
+        it("aks", (done) => {
+            var newEnv = <{ [id: string]: string }>{};
+            newEnv["AKS_ARM_NAMESPACE_ID"] = "Test AKS cluster and namespace";
+            var originalEnv = process.env;
+            process.env = newEnv;
+            statsBeat["_getResourceProvider"]().then(() => {
+                process.env = originalEnv;
+                assert.equal(statsBeat["_resourceProvider"], "aks");
+                assert.equal(statsBeat["_resourceIdentifier"], "Test AKS cluster and namespace");
+                done();
+            }).catch((error) => { done(error); });
+        });
     });
 
     describe("#trackStatbeats", () => {
