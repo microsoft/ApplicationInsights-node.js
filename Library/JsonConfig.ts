@@ -6,6 +6,8 @@ import { IJsonConfig } from "../Declarations/Interfaces";
 import { DistributedTracingModes } from "../applicationinsights";
 import { IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";
 
+import defaultConfig from '../applicationinsights.json';
+
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 // Azure Connection String
 const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
@@ -137,12 +139,14 @@ export class JsonConfig implements IJsonConfig {
                 else {
                     tempDir = path.join(rootPath, configFile);// Relative path to applicationinsights folder
                 }
-            }
-            try {
-                jsonString = fs.readFileSync(tempDir, "utf8");
-            }
-            catch (err) {
-                Logging.warn("Failed to read JSON config file: ", err);
+                try {
+                    jsonString = fs.readFileSync(tempDir, "utf8");
+                }
+                catch (err) {
+                    Logging.warn("Failed to read JSON config file: ", err);
+                }
+            } else {
+                jsonString = JSON.stringify(defaultConfig);
             }
         }
 
