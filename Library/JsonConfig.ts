@@ -6,6 +6,8 @@ import { IJsonConfig } from "../Declarations/Interfaces";
 import { DistributedTracingModes } from "../applicationinsights";
 import { IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";
 
+import defaultConfig from '../applicationinsights.json';
+
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 // Azure Connection String
 const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
@@ -114,40 +116,49 @@ export class JsonConfig implements IJsonConfig {
         this.webInstrumentationConnectionString = process.env[ENV_webInstrumentation_connectionString] || process.env[ENV_webSnippet_connectionString] || "";
         this.enableAutoWebSnippetInjection = this.enableWebInstrumentation;
         this.webSnippetConnectionString = this.webInstrumentationConnectionString;
-        this._loadJsonFile();
+        this._loadConfiguration();
     }
 
-    private _loadJsonFile() {
-        let jsonString = "";
-        const contentJsonConfig = process.env["APPLICATIONINSIGHTS_CONFIGURATION_CONTENT"];
+    private _loadConfigFile(configFile: string) {
+        let tempDir: string;
+        let rootPath = path.join(__dirname, '../../'); // Root of applicationinsights folder (__dirname = ../out/Library)
+        if (path.isAbsolute(configFile)) {
+            tempDir = configFile;
+        } else {
+            tempDir = path.join(rootPath, configFile); // Relative path to applicationinsights folder
+        }
+
+        try {
+            return fs.readFileSync(tempDir, 'utf8');
+        } catch (err) {
+            Logging.warn('Failed to read JSON config file: ', err);
+        }
+    }
+
+    private _getConfigurationObject(): Partial<IJsonConfig> {
+        let jsonString = '';
+        const contentJsonConfig =
+            process.env['APPLICATIONINSIGHTS_CONFIGURATION_CONTENT'];
         // JSON string added directly in env variable
         if (contentJsonConfig) {
             jsonString = contentJsonConfig;
         }
         // JSON file
         else {
-            let configFileName = "applicationinsights.json";
-            let rootPath = path.join(__dirname, "../../"); // Root of applicationinsights folder (__dirname = ../out/Library)
-            let tempDir = path.join(rootPath, configFileName); // default
-            let configFile = process.env[ENV_CONFIGURATION_FILE];
+            const configFile = process.env[ENV_CONFIGURATION_FILE];
             if (configFile) {
-                if (path.isAbsolute(configFile)) {
-                    tempDir = configFile;
-                }
-                else {
-                    tempDir = path.join(rootPath, configFile);// Relative path to applicationinsights folder
-                }
-            }
-            try {
-                jsonString = fs.readFileSync(tempDir, "utf8");
-            }
-            catch (err) {
-                Logging.warn("Failed to read JSON config file: ", err);
+                jsonString = this._loadConfigFile(configFile);
+            } else {
+                return defaultConfig;
             }
         }
 
+        return JSON.parse(jsonString);
+    }
+
+    private _loadConfiguration() {
         try {
-            const jsonConfig: IJsonConfig = JSON.parse(jsonString);
+            const jsonConfig = this._getConfigurationObject();
             if (jsonConfig.disableStatsbeat != undefined) {
                 this.disableStatsbeat = jsonConfig.disableStatsbeat;
             }
