@@ -19,6 +19,7 @@ import { FileAccessControl } from "./FileAccessControl";
 const legacyThrottleStatusCode = 439; //  - Too many requests and refresh cache
 const throttleStatusCode = 402; // Monthly Quota Exceeded (new SDK)
 const RESPONSE_CODES_INDICATING_REACHED_BREEZE = [200, 206, 402, 408, 429, 439, 500];
+const INVALID_IKEY = "Invalid instrumentation key";
 
 class Sender {
     private static TAG = "Sender";
@@ -197,6 +198,10 @@ class Sender {
                         let endTime = +new Date();
                         let duration = endTime - startTime;
                         this._numConsecutiveFailures = 0;
+                        if (responseString.includes(INVALID_IKEY) && res.statusCode === 400) {
+                            Logging.warn("Instrumentation key was invalid, please check the iKey");
+                            this._shutdownStatsbeat();
+                        }
                         // Handling of Statsbeat instance sending data, should turn it off if is not able to reach ingestion endpoint
                         if (this._isStatsbeatSender && !this._statsbeatHasReachedIngestionAtLeastOnce) {
                             if (RESPONSE_CODES_INDICATING_REACHED_BREEZE.includes(res.statusCode)) {
