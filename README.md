@@ -226,10 +226,10 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | httpAgent                       | An http.Agent to use for SDK HTTP traffic (Optional, Default undefined)                                    |
 | httpsAgent                      | An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined)
 | aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Credential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes)
-| enableWebInstrumentation(Preview)| Sets the state of automatic web Instrumentation (Optional, disabled by default). If true, web instrumentation will be enabled on valid node server http response with the connection string used for SDK initialization
-| webInstrumentationConnectionString(Preview)| Sets connection string used for web Instrumentation (Optional, Default undefined)|
-| webInstrumentationSrc(Preview)| Sets web Instrumentation CDN url (Optional). see more details at [ApplicationInsights JavaScript SDK](https://github.com/microsoft/ApplicationInsights-JS)|
-| webInstrumentationConfig(Preview)| Sets web Instrumentation config (Optional). see more details at [ApplicationInsights JavaScript SDK](https://github.com/microsoft/ApplicationInsights-JS)|                          |
+| enableWebInstrumentation | Sets the state of automatic web Instrumentation (Optional, disabled by default). If true, web instrumentation will be enabled on valid node server http response with the connection string used for SDK initialization
+| webInstrumentationConnectionString | Sets connection string used for web Instrumentation (Optional, Default undefined)|
+| webInstrumentationSrc | Sets web Instrumentation CDN url (Optional). see more details at [ApplicationInsights JavaScript SDK](https://github.com/microsoft/ApplicationInsights-JS)|
+| webInstrumentationConfig | Sets web Instrumentation config (Optional). see more details at [ApplicationInsights JavaScript SDK](https://github.com/microsoft/ApplicationInsights-JS)|                          |
 
 [Config.ts]: https://github.com/microsoft/ApplicationInsights-node.js/blob/develop/Library/Config.ts 
 
@@ -286,9 +286,9 @@ appInsights.defaultClient.context.tags[appInsights.defaultClient.context.keys.cl
 appInsights.start();
 ```
 
-### Automatic web Instrumentation[Preview]
+### Automatic web Instrumentation
 
- Automatic web Instrumentation is currently in **Preview**. For node server with configuration `enableWebInstrumentation` set to `true` or environment variable `APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_ENABLED = true`, web Instrumentation will be enabled on node server response when all of the following requirements are met:
+  For node server with configuration `enableWebInstrumentation` set to `true` or environment variable `APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_ENABLED = true`, web Instrumentation will be enabled on node server response when all of the following requirements are met:
 
 - Response has status code `200`.
 - Response method is `GET`.
