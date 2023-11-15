@@ -447,9 +447,23 @@ describe("Library/Sender", () => {
             errors: []
         };
 
+        const invalidIKeyResponse: Contracts.BreezeResponse = {
+            itemsAccepted: 0,
+            itemsReceived: 1,
+            errors: [{
+                index: 0,
+                statusCode: 400,
+                message: "Invalid instrumentation key"
+            }]
+        }
+
         let config = new Config("2bb22222-bbbb-1ccc-8ddd-eeeeffff3333");
         let statsbeat = new Statsbeat(config);
-        let statsbeatSender = new Sender(config, null, null, null, statsbeat);
+        let shutdownCalled = false;
+        let shutdown = () => {
+            shutdownCalled = true;
+        };
+        let statsbeatSender = new Sender(config, null, null, null, statsbeat, false, shutdown);
         let statsbeatError: Error = {name: "Statsbeat", message: "Statsbeat error" };
 
         it("Succesful requests", (done) => {
@@ -476,6 +490,14 @@ describe("Library/Sender", () => {
                 assert.ok(!isNaN(statsbeatSpy.args[0][2])); // Duration
                 assert.equal(statsbeatSpy.args[0][3], false); // Failed
                 assert.equal(statsbeatSpy.args[0][4], 400);
+                done();
+            });
+        });
+
+        it("Statsbeat should shutdown upon invalid iKey", (done) => {
+            nockScope = interceptor.reply(400, invalidIKeyResponse);
+            statsbeatSender.send([testEnvelope], () => {
+                assert.strictEqual(shutdownCalled, true);
                 done();
             });
         });
