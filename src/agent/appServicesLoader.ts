@@ -3,14 +3,13 @@
 
 import * as os from 'os';
 import * as path from 'path';
-import { Attributes } from '@opentelemetry/api';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
-import { Resource } from '@opentelemetry/resources';
 import { DiagnosticLogger } from './diagnostics/diagnosticLogger';
 import { FileWriter } from "./diagnostics/writers/fileWriter";
 import { StatusLogger } from "./diagnostics/statusLogger";
 import { AgentLoader } from "./agentLoader";
 import { AgentResourceProviderType, AZURE_MONITOR_AGENT_PREFIX } from './types';
+import { detectResourcesSync } from '@opentelemetry/resources';
+import { azureAppServiceDetector } from '@opentelemetry/resource-detector-azure';
 
 
 export class AppServicesLoader extends AgentLoader {
@@ -19,16 +18,7 @@ export class AppServicesLoader extends AgentLoader {
         super();
         if (this._canLoad) {
             // Azure App Services specific configuration
-            const resourceAttributes: Attributes = {};
-            if (process.env.WEBSITE_SITE_NAME) {
-                resourceAttributes[SemanticResourceAttributes.SERVICE_NAME] =
-                    process.env.WEBSITE_SITE_NAME;
-            }
-            if (process.env.WEBSITE_INSTANCE_ID) {
-                resourceAttributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] =
-                    process.env.WEBSITE_INSTANCE_ID;
-            }
-            const resource = new Resource(resourceAttributes);
+            const resource = detectResourcesSync({ detectors: [azureAppServiceDetector] });
             this._options.resource = resource;
 
             let statusLogDir = '/var/log/applicationinsights/';

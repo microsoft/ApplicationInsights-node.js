@@ -71,11 +71,11 @@ describe("agent/AzureFunctionsLoader", () => {
         // Agent Loader called
         assert.ok(stub.calledOnce);
         assert.equal(
-            agent["_options"].resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID],
+            agent["_options"].resource.attributes[SemanticResourceAttributes.FAAS_INSTANCE],
             "testRoleInstanceId"
         );
         assert.equal(
-            agent["_options"].resource.attributes[SemanticResourceAttributes.SERVICE_NAME],
+            agent["_options"].resource.attributes[SemanticResourceAttributes.FAAS_NAME],
             "testRole"
         );
     });
