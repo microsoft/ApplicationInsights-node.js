@@ -63,6 +63,26 @@ describe("logs/API", () => {
             assert.equal(logRecord.attributes["_MS.baseType"], "TestData");
         });
 
+        it("should serialize errors", () => {
+            let testLogger = new TestLogger();
+            let logApi = new LogApi(testLogger);
+            let error = new Error("test error");
+            const telemetry: Telemetry = {
+                properties: { "testAttribute": "testValue", "error": error }
+            };
+            const data: MonitorDomain = {};
+            const logRecord = logApi["_telemetryToLogRecord"](
+                telemetry,
+                "TestData",
+                data,
+            ) as LogRecord;
+            assert.equal(logRecord.body, "{}");
+            assert.equal(logRecord.attributes["testAttribute"], "testValue");
+            const errorStr: string = logRecord.attributes["error"] as string;
+            assert.ok(errorStr.includes("test error"));
+            assert.equal(logRecord.attributes["_MS.baseType"], "TestData");
+        });
+
         it("trackAvailability", () => {
             let testLogger = new TestLogger();
             let logApi = new LogApi(testLogger);
