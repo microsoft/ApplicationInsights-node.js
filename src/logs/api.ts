@@ -119,9 +119,21 @@ export class LogApi {
             const attributes: Attributes = {};
             if (telemetry.properties) {
                 for (const [key, value] of Object.entries(telemetry.properties)) {
-                    attributes[key] = typeof value === 'object'
+                    // Serialize Error objects as strings to avoid serialization errors
+                    if (value?.constructor.name === "Error") {
+                        attributes[key] = Util.getInstance().stringify(
+                            {
+                                name: value.name,
+                                message: value.message,
+                                stack: value.stack,
+                                cause: value.cause,
+                            }
+                        );
+                    } else {
+                        attributes[key] = typeof value === 'object'
                         ? Util.getInstance().stringify(value)
                         : value;
+                    }
                 }
             }
 
