@@ -3,6 +3,7 @@ import Constants = require("../Declarations/Constants");
 import Context = require("../Library/Context");
 import Logging = require("../Library/Logging");
 import { IBaseConfig } from "../Declarations/Interfaces";
+import Statsbeat = require("./Statsbeat");
 
 /**
  * Interface which defines which specific extended metrics should be disabled
@@ -26,6 +27,7 @@ export class AutoCollectNativePerformance {
     private _handle: NodeJS.Timer;
     private _client: TelemetryClient;
     private _disabledMetrics: IDisabledExtendedMetrics = {};
+    private _statsbeat: Statsbeat;
 
     constructor(client: TelemetryClient) {
         // Note: Only 1 instance of this can exist. So when we reconstruct this object,
@@ -35,6 +37,7 @@ export class AutoCollectNativePerformance {
         }
         AutoCollectNativePerformance.INSTANCE = this;
         this._client = client;
+        this._statsbeat = this._client.getStatsbeat();
     }
 
     /**
@@ -51,6 +54,10 @@ export class AutoCollectNativePerformance {
                 const NativeMetricsEmitters = require("applicationinsights-native-metrics");
                 AutoCollectNativePerformance._emitter = new NativeMetricsEmitters();
                 AutoCollectNativePerformance._metricsAvailable = true;
+                // Should only set statsbeat feature if it's the first time calling enabled
+                if (!this._isEnabled) {
+                    this._statsbeat.addFeature(Constants.StatsbeatFeature.NATIVE_METRICS);
+                }
                 Logging.info("Native metrics module successfully loaded!");
             } catch (err) {
                 // Package not available. Never try again
@@ -90,6 +97,7 @@ export class AutoCollectNativePerformance {
      */
     public dispose(): void {
         this.enable(false);
+        this._statsbeat.removeFeature(Constants.StatsbeatFeature.NATIVE_METRICS);
     }
 
     /**

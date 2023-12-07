@@ -9,6 +9,7 @@ import { IncomingMessage } from "http";
 import Config = require("../../Library/Config");
 import QuickPulseSender = require("../../Library/QuickPulseSender");
 import Util = require("../../Library/Util");
+import { TelemetryClient } from "../../applicationinsights";
 
 describe("Library/QuickPulseStateManager", () => {
     Util.tlsRestrictedAgent = new https.Agent();
@@ -20,7 +21,7 @@ describe("Library/QuickPulseStateManager", () => {
         });
 
         it("should create a config with ikey", () => {
-            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+            qps = new QuickPulseClient(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
 
             assert.ok(qps.config);
             assert.equal(qps.config.instrumentationKey, "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
@@ -34,7 +35,7 @@ describe("Library/QuickPulseStateManager", () => {
         });
 
         it("should reuse authorization handler if provided", () => {
-            var config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;");
+            var client = new TelemetryClient("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;");
             var handler = new AuthorizationHandler({
                 async getToken(scopes: string | string[], options?: any): Promise<any> {
                     return { token: "testToken", };
@@ -43,8 +44,8 @@ describe("Library/QuickPulseStateManager", () => {
             var getAuthorizationHandler = () => {
                 return handler;
             };
-            qps = new QuickPulseClient(config, null, getAuthorizationHandler);
-            assert.equal(qps["_sender"]["_getAuthorizationHandler"](config), handler);
+            qps = new QuickPulseClient(client, null, getAuthorizationHandler);
+            assert.equal(qps["_sender"]["_getAuthorizationHandler"](client.config), handler);
         });
     });
 
@@ -52,18 +53,38 @@ describe("Library/QuickPulseStateManager", () => {
         let qps: QuickPulseClient;
 
         beforeEach(() => {
-            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+            qps = new QuickPulseClient(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
         })
         afterEach(() => {
             qps = null;
         });
         it("should call _goQuickPulse() when isEnabled == true", () => {
+            const sinonSpy = sinon.spy(qps["_statsbeat"], "addFeature");
             const qpsStub = sinon.stub(qps, "_goQuickPulse");
 
             assert.ok(qpsStub.notCalled);
             qps.enable(true);
+
+            assert.ok(sinonSpy.calledOnce);
             assert.ok(qpsStub.calledOnce);
             assert.equal(qps["_isEnabled"], true);
+            assert.equal(qps["_statsbeat"]["_feature"], 16);
+
+            qpsStub.restore();
+        });
+
+        it("should handle calling enable twice", () => {
+            const sinonSpy = sinon.spy(qps["_statsbeat"], "addFeature");
+            const qpsStub = sinon.stub(qps, "_goQuickPulse");
+
+            assert.ok(qpsStub.notCalled);
+            qps.enable(true);
+            qps.enable(true);
+
+            assert.ok(sinonSpy.calledOnce);
+            assert.ok(qpsStub.calledOnce);
+            assert.equal(qps["_isEnabled"], true);
+            assert.equal(qps["_statsbeat"]["_feature"], 16);
 
             qpsStub.restore();
         });
@@ -83,7 +104,7 @@ describe("Library/QuickPulseStateManager", () => {
 
     describe("#reset", () => {
         it("should reset metric and document buffers", () => {
-            let qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+            let qps = new QuickPulseClient(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
             (<any>qps["_metrics"]) = { foo: "bar" };
             (<any>qps["_documents"]) = [{ foo: "bar" }];
 
@@ -103,7 +124,7 @@ describe("Library/QuickPulseStateManager", () => {
         let pingStub: sinon.SinonStub;
 
         beforeEach(() => {
-            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+            qps = new QuickPulseClient(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
             postStub = sinon.stub(qps, "_post");
             pingStub = sinon.stub(qps, "_ping");
         })
@@ -144,7 +165,7 @@ describe("Library/QuickPulseStateManager", () => {
 
         beforeEach(() => {
             clock = sinon.useFakeTimers();
-            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+            qps = new QuickPulseClient(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
             postStub = sinon.stub(qps, "_post");
             pingStub = sinon.stub(qps, "_ping");
         })
@@ -183,7 +204,7 @@ describe("Library/QuickPulseStateManager", () => {
 
         beforeEach(() => {
             clock = sinon.useFakeTimers();
-            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+            qps = new QuickPulseClient(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
             submitDataStub = sinon.stub(qps['_sender'], "_submitData");
         })
         afterEach(() => {
@@ -234,7 +255,7 @@ describe("Library/QuickPulseStateManager", () => {
         let qps: QuickPulseClient;
 
         beforeEach(() => {
-            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+            qps = new QuickPulseClient(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
 
         })
         afterEach(() => {
@@ -272,7 +293,7 @@ describe("Library/QuickPulseStateManager", () => {
 
         beforeEach(() => {
             sandbox = sinon.sandbox.create();
-            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+            qps = new QuickPulseClient(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
         });
 
         afterEach(() => {
