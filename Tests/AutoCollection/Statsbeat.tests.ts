@@ -326,7 +326,7 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.addFeature(Constants.StatsbeatFeature.LIVE_METRICS);
             assert.equal(statsBeat["_feature"], 18);
             statsBeat.addFeature(Constants.StatsbeatFeature.NATIVE_METRICS);
-            assert.equal(statsBeat["_feature"], 26);
+            assert.equal(statsBeat["_feature"], 8210);
         });
 
         it("Multiple network categories and endpoints", (done) => {
