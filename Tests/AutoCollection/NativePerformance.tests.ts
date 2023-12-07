@@ -40,7 +40,7 @@ describe("AutoCollection/NativePerformance", () => {
                 assert.equal(setIntervalSpy.callCount, 3, "setInteval should be called three times as part of NativePerformance initialization as well as Statsbeat");
                 AppInsights.dispose();
                 assert.ok(statsRemoveSpy.calledOnce);
-                assert.strictEqual(AutoCollectNativePerformance.INSTANCE["_statsbeat"]["_feature"], Constants.StatsbeatFeature.NONE);
+                assert.strictEqual(AutoCollectNativePerformance.INSTANCE["_statsbeat"]["_feature"], Constants.StatsbeatFeature.DISK_RETRY);
                 assert.equal(clearIntervalSpy.callCount, 1, "clearInterval should be called once as part of NativePerformance shutdown");
             } else {
                 assert.equal(setIntervalSpy.callCount, 2, "setInterval should not be called if NativePerformance package is not available, Statsbeat will be called");
