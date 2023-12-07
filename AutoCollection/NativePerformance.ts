@@ -54,10 +54,6 @@ export class AutoCollectNativePerformance {
                 const NativeMetricsEmitters = require("applicationinsights-native-metrics");
                 AutoCollectNativePerformance._emitter = new NativeMetricsEmitters();
                 AutoCollectNativePerformance._metricsAvailable = true;
-                // Should only set statsbeat feature if it's the first time calling enabled
-                if (!this._isEnabled) {
-                    this._statsbeat.addFeature(Constants.StatsbeatFeature.NATIVE_METRICS);
-                }
                 Logging.info("Native metrics module successfully loaded!");
             } catch (err) {
                 // Package not available. Never try again
@@ -74,6 +70,7 @@ export class AutoCollectNativePerformance {
 
         // Enable the emitter if we were able to construct one
         if (this._isEnabled && AutoCollectNativePerformance._emitter) {
+            this._statsbeat.addFeature(Constants.StatsbeatFeature.NATIVE_METRICS);
             // enable self
             AutoCollectNativePerformance._emitter.enable(true, collectionInterval);
             if (!this._handle) {
@@ -81,6 +78,7 @@ export class AutoCollectNativePerformance {
                 this._handle.unref();
             }
         } else if (AutoCollectNativePerformance._emitter) {
+            this._statsbeat.removeFeature(Constants.StatsbeatFeature.NATIVE_METRICS);
             // disable self
             AutoCollectNativePerformance._emitter.enable(false);
             if (this._handle) {
@@ -97,7 +95,6 @@ export class AutoCollectNativePerformance {
      */
     public dispose(): void {
         this.enable(false);
-        this._statsbeat.removeFeature(Constants.StatsbeatFeature.NATIVE_METRICS);
     }
 
     /**
