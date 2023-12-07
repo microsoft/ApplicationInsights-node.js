@@ -158,7 +158,7 @@ export function start() {
             // Initialize Live metrics in case config was provided in telemetryClient config, double initialization check is part of liveMetrics client
             if (!liveMetricsClient) {
                 // No qps client exists. Create one and prepare it to be enabled at .start()
-                liveMetricsClient = new QuickPulseClient(defaultClient, defaultClient.context, defaultClient.getAuthorizationHandler);
+                liveMetricsClient = new QuickPulseClient(defaultClient.config, defaultClient.context, defaultClient.getAuthorizationHandler, defaultClient);
                 _performanceLiveMetrics = new AutoCollectPerformance(liveMetricsClient as any, 1000, true);
                 liveMetricsClient.addCollector(_performanceLiveMetrics);
                 defaultClient.quickPulseClient = liveMetricsClient; // Need this so we can forward all manual tracks to live metrics via PerformanceMetricsTelemetryProcessor
@@ -483,7 +483,7 @@ export class Configuration {
 
         if (!liveMetricsClient && enable) {
             // No qps client exists. Create one and prepare it to be enabled at .start()
-            liveMetricsClient = new QuickPulseClient(defaultClient, defaultClient.context, defaultClient.getAuthorizationHandler);
+            liveMetricsClient = new QuickPulseClient(defaultClient.config, defaultClient.context, defaultClient.getAuthorizationHandler, defaultClient);
             _performanceLiveMetrics = new AutoCollectPerformance(liveMetricsClient as any, 1000, true);
             liveMetricsClient.addCollector(_performanceLiveMetrics);
             defaultClient.quickPulseClient = liveMetricsClient; // Need this so we can forward all manual tracks to live metrics via PerformanceMetricsTelemetryProcessor

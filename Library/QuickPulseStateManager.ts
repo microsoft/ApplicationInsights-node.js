@@ -35,14 +35,14 @@ class QuickPulseStateManager {
     private _collectors: { enable: (enable: boolean) => void }[] = [];
     private _redirectedHost: string = null;
     private _pollingIntervalHint: number = -1;
-    private _statsbeat: Statsbeat;
+    private _statsbeat: Statsbeat | undefined;
 
-    constructor(client: TelemetryClient, context?: Context, getAuthorizationHandler?: (config: Config) => AuthorizationHandler) {
-        this.config = client.config;
+    constructor(config: Config, context?: Context, getAuthorizationHandler?: (config: Config) => AuthorizationHandler, client?: TelemetryClient) {
+        this.config = config;
         this.context = context || new Context();
         this._sender = new QuickPulseSender(this.config, getAuthorizationHandler);
         this._isEnabled = false;
-        this._statsbeat = client.getStatsbeat();
+        this._statsbeat = client?.getStatsbeat();
     }
 
     /**
@@ -82,7 +82,9 @@ class QuickPulseStateManager {
         if (isEnabled && !this._isEnabled) {
             this._isEnabled = true;
             this._goQuickPulse();
-            this._statsbeat.addFeature(Constants.StatsbeatFeature.LIVE_METRICS);
+            if (this._statsbeat) {
+                this._statsbeat.addFeature(Constants.StatsbeatFeature.LIVE_METRICS);
+            }
         } else if (!isEnabled && this._isEnabled) {
             this._isEnabled = false;
             clearTimeout(this._handle);

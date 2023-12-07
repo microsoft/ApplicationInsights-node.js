@@ -21,7 +21,7 @@ describe("Library/QuickPulseStateManager", () => {
         });
 
         it("should create a config with ikey", () => {
-            qps = new QuickPulseClient(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"), undefined, undefined, new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
 
             assert.ok(qps.config);
             assert.equal(qps.config.instrumentationKey, "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
@@ -34,7 +34,15 @@ describe("Library/QuickPulseStateManager", () => {
             assert.ok(qps["_collectors"].length === 0);
         });
 
+        it("should not error if statsbeat is undefined", () => {
+            const client: TelemetryClient = new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            client["_statsbeat"] = undefined;
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"), undefined, undefined, client);
+            assert.ok(qps);
+        });
+
         it("should reuse authorization handler if provided", () => {
+            const config = new Config("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;");
             var client = new TelemetryClient("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;");
             var handler = new AuthorizationHandler({
                 async getToken(scopes: string | string[], options?: any): Promise<any> {
@@ -44,7 +52,7 @@ describe("Library/QuickPulseStateManager", () => {
             var getAuthorizationHandler = () => {
                 return handler;
             };
-            qps = new QuickPulseClient(client, null, getAuthorizationHandler);
+            qps = new QuickPulseClient(config, null, getAuthorizationHandler);
             assert.equal(qps["_sender"]["_getAuthorizationHandler"](client.config), handler);
         });
     });
@@ -53,7 +61,7 @@ describe("Library/QuickPulseStateManager", () => {
         let qps: QuickPulseClient;
 
         beforeEach(() => {
-            qps = new QuickPulseClient(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"), undefined, undefined, new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
         })
         afterEach(() => {
             qps = null;
@@ -104,7 +112,7 @@ describe("Library/QuickPulseStateManager", () => {
 
     describe("#reset", () => {
         it("should reset metric and document buffers", () => {
-            let qps = new QuickPulseClient(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+            let qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"), undefined, undefined, new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
             (<any>qps["_metrics"]) = { foo: "bar" };
             (<any>qps["_documents"]) = [{ foo: "bar" }];
 
@@ -124,7 +132,7 @@ describe("Library/QuickPulseStateManager", () => {
         let pingStub: sinon.SinonStub;
 
         beforeEach(() => {
-            qps = new QuickPulseClient(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"), undefined, undefined, new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
             postStub = sinon.stub(qps, "_post");
             pingStub = sinon.stub(qps, "_ping");
         })
@@ -165,7 +173,7 @@ describe("Library/QuickPulseStateManager", () => {
 
         beforeEach(() => {
             clock = sinon.useFakeTimers();
-            qps = new QuickPulseClient(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"), undefined, undefined, new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
             postStub = sinon.stub(qps, "_post");
             pingStub = sinon.stub(qps, "_ping");
         })
@@ -204,7 +212,7 @@ describe("Library/QuickPulseStateManager", () => {
 
         beforeEach(() => {
             clock = sinon.useFakeTimers();
-            qps = new QuickPulseClient(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"), undefined, undefined, new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
             submitDataStub = sinon.stub(qps['_sender'], "_submitData");
         })
         afterEach(() => {
@@ -255,7 +263,7 @@ describe("Library/QuickPulseStateManager", () => {
         let qps: QuickPulseClient;
 
         beforeEach(() => {
-            qps = new QuickPulseClient(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"), undefined, undefined, new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
 
         })
         afterEach(() => {
@@ -293,7 +301,7 @@ describe("Library/QuickPulseStateManager", () => {
 
         beforeEach(() => {
             sandbox = sinon.sandbox.create();
-            qps = new QuickPulseClient(new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
+            qps = new QuickPulseClient(new Config("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"), undefined, undefined, new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"));
         });
 
         afterEach(() => {
