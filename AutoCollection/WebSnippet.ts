@@ -53,12 +53,12 @@ class WebSnippet {
 
         if (this._isEnabled && !this._isInitialized && this._isIkeyValid) {
             if (this._statsbeat) {
-                this._statsbeat.addFeature(Constants.StatsbeatFeature.WEB_SNIPPET);
+                this._statsbeat.addFeature(Constants.StatsbeatFeature.BROWSER_SDK_LOADER);
             }
             this._initialize();
         } else if (!this._isEnabled) {
             if (this._statsbeat) {
-                this._statsbeat.removeFeature(Constants.StatsbeatFeature.WEB_SNIPPET);
+                this._statsbeat.removeFeature(Constants.StatsbeatFeature.BROWSER_SDK_LOADER);
             }
         }
     }
