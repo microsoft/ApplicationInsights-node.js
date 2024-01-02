@@ -35,6 +35,7 @@ const ENV_webSnippet_connectionString = "APPLICATIONINSIGHTS_WEB_SNIPPET_CONNECT
 
 export class JsonConfig implements IJsonConfig {
     private static _instance: JsonConfig;
+    private _tempDir: string;
 
     public connectionString: string;
     public instrumentationKey: string;
@@ -130,17 +131,17 @@ export class JsonConfig implements IJsonConfig {
         else {
             let configFileName = "applicationinsights.json";
             let rootPath = path.join(__dirname, "../../"); // Root of applicationinsights folder (__dirname = ../out/Library)
-            let tempDir = path.join(rootPath, configFileName); // default
+            this._tempDir = path.join(rootPath, configFileName); // default
             let configFile = process.env[ENV_CONFIGURATION_FILE];
             if (configFile) {
                 if (path.isAbsolute(configFile)) {
-                    tempDir = configFile;
+                    this._tempDir = configFile;
                 }
                 else {
-                    tempDir = path.join(rootPath, configFile);// Relative path to applicationinsights folder
+                    this._tempDir = path.join(rootPath, configFile);// Relative path to applicationinsights folder
                 }
                 try {
-                    jsonString = fs.readFileSync(tempDir, "utf8");
+                    jsonString = fs.readFileSync(this._tempDir, "utf8");
                 }
                 catch (err) {
                     Logging.warn("Failed to read JSON config file: ", err);

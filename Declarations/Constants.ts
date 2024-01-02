@@ -162,6 +162,8 @@ export enum StatsbeatFeature {
     DISK_RETRY = 1,
     AAD_HANDLING = 2,
     WEB_SNIPPET = 4,
+    LIVE_METRICS = 16,
+    NATIVE_METRICS = 8192
 }
 
 export enum StatsbeatInstrumentation {

@@ -3,6 +3,7 @@ import Constants = require("../Declarations/Constants");
 import Context = require("../Library/Context");
 import Logging = require("../Library/Logging");
 import { IBaseConfig } from "../Declarations/Interfaces";
+import Statsbeat = require("./Statsbeat");
 
 /**
  * Interface which defines which specific extended metrics should be disabled
@@ -26,6 +27,7 @@ export class AutoCollectNativePerformance {
     private _handle: NodeJS.Timer;
     private _client: TelemetryClient;
     private _disabledMetrics: IDisabledExtendedMetrics = {};
+    private _statsbeat: Statsbeat | undefined;
 
     constructor(client: TelemetryClient) {
         // Note: Only 1 instance of this can exist. So when we reconstruct this object,
@@ -35,6 +37,7 @@ export class AutoCollectNativePerformance {
         }
         AutoCollectNativePerformance.INSTANCE = this;
         this._client = client;
+        this._statsbeat = this._client?.getStatsbeat();
     }
 
     /**
@@ -67,6 +70,9 @@ export class AutoCollectNativePerformance {
 
         // Enable the emitter if we were able to construct one
         if (this._isEnabled && AutoCollectNativePerformance._emitter) {
+            if (this._statsbeat) {
+                this._statsbeat.addFeature(Constants.StatsbeatFeature.NATIVE_METRICS);
+            }
             // enable self
             AutoCollectNativePerformance._emitter.enable(true, collectionInterval);
             if (!this._handle) {
@@ -74,6 +80,9 @@ export class AutoCollectNativePerformance {
                 this._handle.unref();
             }
         } else if (AutoCollectNativePerformance._emitter) {
+            if (this._statsbeat) {
+                this._statsbeat.removeFeature(Constants.StatsbeatFeature.NATIVE_METRICS);
+            }
             // disable self
             AutoCollectNativePerformance._emitter.enable(false);
             if (this._handle) {
