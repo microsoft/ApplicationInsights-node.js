@@ -142,8 +142,8 @@ export const StatsbeatResourceProvider = {
 }
 
 export const StatsbeatAttach = {
-    codeless: "codeless",
-    sdk: "sdk"
+    codeless: "IntegratedAuto",
+    sdk: "Manual"
 }
 
 export const StatsbeatCounter = {
