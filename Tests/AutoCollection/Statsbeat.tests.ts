@@ -323,6 +323,10 @@ describe("AutoCollection/Statsbeat", () => {
             assert.equal(statsBeat["_feature"], 3);
             statsBeat.removeFeature(Constants.StatsbeatFeature.DISK_RETRY);
             assert.equal(statsBeat["_feature"], 2);
+            statsBeat.addFeature(Constants.StatsbeatFeature.LIVE_METRICS);
+            assert.equal(statsBeat["_feature"], 18);
+            statsBeat.addFeature(Constants.StatsbeatFeature.NATIVE_METRICS);
+            assert.equal(statsBeat["_feature"], 8210);
         });
 
         it("Multiple network categories and endpoints", (done) => {

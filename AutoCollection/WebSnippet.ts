@@ -23,7 +23,7 @@ class WebSnippet {
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _isIkeyValid: boolean = true;
-    private _statsbeat: Statsbeat;
+    private _statsbeat: Statsbeat | undefined;
     private _webInstrumentationIkey: string;
     private _clientWebInstrumentationConfig: IWebInstrumentationConfig[];
     private _clientWebInstrumentationSrc: string;
@@ -43,7 +43,7 @@ class WebSnippet {
         this._clientWebInstrumentationConfig = client.config.webInstrumentationConfig;
         this._clientWebInstrumentationSrc = client.config.webInstrumentationSrc;
 
-        this._statsbeat = client.getStatsbeat();
+        this._statsbeat = client?.getStatsbeat();
     }
 
     public enable(isEnabled: boolean, webInstrumentationConnectionString?: string ) {

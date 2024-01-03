@@ -24,7 +24,7 @@ import { Tags } from "../Declarations/Contracts";
 class TelemetryClient {
     private static TAG = "TelemetryClient";
     private _telemetryProcessors: { (envelope: Contracts.EnvelopeTelemetry, contextObjects: { [name: string]: any; }): boolean; }[] = [];
-    private _statsbeat: Statsbeat;
+    private _statsbeat: Statsbeat | undefined;
 
     public config: Config;
     public context: Context;
