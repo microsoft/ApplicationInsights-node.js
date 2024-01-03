@@ -152,7 +152,7 @@ describe("AutoCollection/Statsbeat", () => {
                 let metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Request Duration")[0];
                 assert.ok(metric, "Statsbeat Request not found");
                 assert.equal(metric.value, 123);
-                assert.equal((<any>(metric.properties))["attach"], "codeless");
+                assert.equal((<any>(metric.properties))["attach"], "IntegratedAuto");
                 assert.equal((<any>(metric.properties))["cikey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert.equal((<any>(metric.properties))["language"], "node");
                 assert.equal((<any>(metric.properties))["rp"], "unknown");
@@ -249,7 +249,7 @@ describe("AutoCollection/Statsbeat", () => {
                 assert.equal((<any>(metric.properties))["language"], "node");
                 assert.equal((<any>(metric.properties))["rp"], "unknown");
                 assert.equal((<any>(metric.properties))["rpId"], "unknown");
-                assert.equal((<any>(metric.properties))["attach"], "sdk");
+                assert.equal((<any>(metric.properties))["attach"], "Manual");
                 assert.ok((<any>(metric.properties))["os"]);
                 assert.ok((<any>(metric.properties))["runtimeVersion"]);
                 assert.ok((<any>(metric.properties))["version"]);
@@ -271,7 +271,7 @@ describe("AutoCollection/Statsbeat", () => {
                 assert.equal((<any>(metric.properties))["cikey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert.equal((<any>(metric.properties))["language"], "node");
                 assert.equal((<any>(metric.properties))["rp"], "unknown");
-                assert.equal((<any>(metric.properties))["attach"], "sdk");
+                assert.equal((<any>(metric.properties))["attach"], "Manual");
                 assert.equal((<any>(metric.properties))["feature"], 1);
                 assert.ok((<any>(metric.properties))["os"]);
                 assert.ok((<any>(metric.properties))["runtimeVersion"]);
@@ -294,7 +294,7 @@ describe("AutoCollection/Statsbeat", () => {
                 assert.equal((<any>(metric.properties))["cikey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
                 assert.equal((<any>(metric.properties))["language"], "node");
                 assert.equal((<any>(metric.properties))["rp"], "unknown");
-                assert.equal((<any>(metric.properties))["attach"], "sdk");
+                assert.equal((<any>(metric.properties))["attach"], "Manual");
                 assert.equal((<any>(metric.properties))["feature"], 1);
                 assert.ok((<any>(metric.properties))["os"]);
                 assert.ok((<any>(metric.properties))["runtimeVersion"]);
