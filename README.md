@@ -173,10 +173,10 @@ And invoked via `appInsights.<METHOD_NAME>`
 | ----------------------------|------------------------------------------------------------------------------------------------------------|
 | setDistributedTracingMode   | AI only tracing mode is no longer supported. Migrate to using W3C_AND_AI tracing mode. |
 | setAutoCollectHeartbeat     | Heartbeat is not supported in either the distro or the shim.|
-| enableWebInstrumenatation   | WebInstrumentation is not supported in either the distro or the shim. |
+| enableWebInstrumenatation   | WebInstrumentation is not supported in the shim, but is available in the distro as `enableBrowserSdkLoader` |
 | setAutoDependencyCorrelation| Turning off autoDependencyCorrelation is not supported by either the distro or the shim. |
 | setUseDiskRetryCaching      | While enabling/disabling offline storage is supported, setting the resend interval or the maxBytesOnDisk values are not supported in the shim or the distro. |
-| setAutoCollectIncomingRequestAzureFunctions | Auto collection of Azure Functions is not supported by the shim or the distro. |
+| setAutoCollectIncomingRequestAzureFunctions | Not supported by the shim. Migrate to the distro to use auto collection of Azure Functions. |
 
 The following configurations are set using either environment variables, setting them in the `applicationinsights.json` file or by calling `appInsights.defaultClient.config.<CONFIG_SETTING_VALUE>;`.
 
@@ -197,9 +197,9 @@ The following configurations are set using either environment variables, setting
 | enableMaxBytesOnDisk | Not supported by the shim. And not supported to be changed in the distro. The @azure/monitor-opentelemetry-exporter sets this value at 50MB. |
 | noHttpAgentKeepAlive | Not supported in the shim or the distro. |
 | httpAgent/httpsAgent | Not supported in the shim or the distro. |
-| enableWebInstrumentation | Not currently supported in the shim or the distro. |
-| webInstrumentationConnectionString | Not supported in the shim or the distro. |
-| webInstrumentationConfig | Not currently supported by the shim or the distro. |
+| enableWebInstrumentation | Not currently supported in the shim, but is in the distro as `enableBrowserSdkLoader`. |
+| webInstrumentationConnectionString | Not supported in the shim, but is in the distro as `browserSdkLoaderConnectionString`. |
+| webInstrumentationConfig | Not currently supported by the shim, but is in the distro as `browserSdkLoaderConfig`. |
 
 The following methods are part of the `TelemetryClient` class. They can be called using `applicationinsights.defaultClient.<METHOD_NAME>()`.
 
