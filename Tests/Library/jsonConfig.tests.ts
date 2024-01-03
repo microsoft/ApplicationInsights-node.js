@@ -1,12 +1,9 @@
 import assert = require("assert");
 import sinon = require("sinon");
-import fs = require("fs");
 import path = require("path");
 import AppInsights = require("../../applicationinsights");
 import Logging = require("../../Library/Logging");
 import { JsonConfig } from "../../Library/JsonConfig";
-import { IConfig } from "../../Declarations/Interfaces";
-
 
 describe("Json Config", () => {
     var sandbox: sinon.SinonSandbox;
@@ -31,13 +28,11 @@ describe("Json Config", () => {
 
     describe("config path", () => {
         it("Default file path", () => {
-            let fileSpy = sandbox.spy(fs, "readFileSync");
             let loggerSpy = sandbox.spy(Logging, "info");
             const config = JsonConfig.getInstance();
             assert.equal(loggerSpy.callCount, 0);
-            assert.equal(fileSpy.called, 1);
-            let defaultPath = path.resolve(process.cwd(), "applicationinsights.json");
-            assert.equal(fileSpy.args[0][0], defaultPath);
+            const defaultPath = path.resolve(process.cwd(), "applicationinsights.json");
+            assert.deepStrictEqual(config["_tempDir"], defaultPath);
             assert.equal(config.proxyHttpUrl, undefined);
         });
 
