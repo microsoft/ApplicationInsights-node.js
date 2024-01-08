@@ -3,6 +3,7 @@
 
 import { InstrumentationOptions } from "@azure/monitor-opentelemetry";
 import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
+import { diag } from "@opentelemetry/api";
 import {
     Resource,
     ResourceDetectionConfig,
@@ -10,9 +11,7 @@ import {
     envDetectorSync,
 } from "@opentelemetry/resources";
 import { JsonConfig } from "./jsonConfig";
-import { Logger } from "../logging";
 import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType, LogInstrumentationOptions, OTLPExporterConfig } from "../../types";
-
 
 
 export class ApplicationInsightsConfig {
@@ -174,7 +173,7 @@ export class ApplicationInsightsConfig {
             );
 
         } catch (error) {
-            Logger.getInstance().error("Failed to load JSON config file values.", error);
+            diag.error("Failed to load JSON config file values.", error);
         }
     }
 

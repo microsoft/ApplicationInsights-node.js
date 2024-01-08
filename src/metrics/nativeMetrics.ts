@@ -8,8 +8,7 @@ import {
     PeriodicExportingMetricReader,
     PeriodicExportingMetricReaderOptions,
 } from "@opentelemetry/sdk-metrics";
-import { Histogram, Meter, ObservableGauge, ObservableResult } from "@opentelemetry/api";
-import { Logger } from "../shared/logging";
+import { Histogram, Meter, ObservableGauge, ObservableResult, diag } from "@opentelemetry/api";
 import { ApplicationInsightsConfig } from "../shared/configuration/config";
 
 /**
@@ -88,7 +87,7 @@ export class NativeMetrics {
              // eslint-disable-next-line @typescript-eslint/no-var-requires
             const NativeMetricsEmitter = require("applicationinsights-native-metrics");
             this._emitter = new NativeMetricsEmitter();
-            Logger.getInstance().info("Native metrics module successfully loaded!");
+            diag.info("Native metrics module successfully loaded!");
         } catch (err) {
             // Package not available
             return;
@@ -100,7 +99,7 @@ export class NativeMetrics {
                 // enable self
                 this._emitter.enable(true, this._collectionInterval);
             } catch (err) {
-                Logger.getInstance().error("Native metrics enable failed", err);
+                diag.error("Native metrics enable failed", err);
             }
             // Add histogram data collection
             this._handle = setInterval(() => this._collectHistogramData(), this._collectionInterval);
@@ -144,7 +143,7 @@ export class NativeMetrics {
             }
             this._eventLoopHistogram.record(metrics.total);
         } catch (err) {
-            Logger.getInstance().error("Native metrics failed to get event loop CPU", err);
+            diag.error("Native metrics failed to get event loop CPU", err);
         }
     }
 
@@ -166,7 +165,7 @@ export class NativeMetrics {
                 }
             }
         } catch (err) {
-            Logger.getInstance().error(
+            diag.error(
                 "Native metrics failed to get event Garbage Collection metrics",
                 err
             );

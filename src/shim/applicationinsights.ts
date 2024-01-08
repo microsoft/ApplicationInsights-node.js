@@ -1,12 +1,14 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import * as http from "http";
 import * as azureFunctionsTypes from "@azure/functions";
-import { SpanContext } from "@opentelemetry/api";
+import { SpanContext, diag } from "@opentelemetry/api";
 import { Span } from "@opentelemetry/sdk-trace-base";
 import { CorrelationContextManager } from "./correlationContextManager";
 import { ICorrelationContext, HttpRequest, DistributedTracingModes } from "./types";
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
-import { Logger } from "../shared/logging";
 
 
 // We export these imports so that SDK users may use these classes directly.
@@ -47,7 +49,7 @@ export function start() {
         defaultClient.initialize();
         return Configuration;
     } catch (error) {
-        Logger.getInstance().warn("The default client has not been initialized. Please make sure to call setup() before start().");
+        diag.warn("The default client has not been initialized. Please make sure to call setup() before start().");
     }
 }
 

@@ -1,4 +1,7 @@
-import { Logger } from "../shared/logging";
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import { diag } from "@opentelemetry/api";
 import { Contracts, TelemetryClient } from "./applicationinsights";
 
 class NodeClient extends TelemetryClient {
@@ -9,7 +12,7 @@ class NodeClient extends TelemetryClient {
      * @param telemetry Object encapsulating incoming request, response and duration information
      */
     public trackNodeHttpRequestSync(telemetry: Contracts.NodeHttpRequestTelemetry) {
-        Logger.getInstance().warn("trackNodeHttpRequestSync is not implemented and is a no-op.");
+        diag.warn("trackNodeHttpRequestSync is not implemented and is a no-op.");
     }
     
     /**
@@ -18,7 +21,7 @@ class NodeClient extends TelemetryClient {
      * @param telemetry Object encapsulating incoming request and response information
      */
     public trackNodeHttpRequest(telemetry: Contracts.NodeHttpRequestTelemetry) {
-        Logger.getInstance().warn("trackNodeHttpRequest is not implemented and is a no-op.");
+        diag.warn("trackNodeHttpRequest is not implemented and is a no-op.");
     }
     
     /**
@@ -27,7 +30,7 @@ class NodeClient extends TelemetryClient {
      * @param telemetry Object encapsulating outgoing request information
      */
     public trackNodeHttpDependency(telemetry: Contracts.NodeHttpRequestTelemetry) {
-        Logger.getInstance().warn("trackNodeHttpDependency is not implemented and is a no-op.");
+        diag.warn("trackNodeHttpDependency is not implemented and is a no-op.");
     }
 }
 

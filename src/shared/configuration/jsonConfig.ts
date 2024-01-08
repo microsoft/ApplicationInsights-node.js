@@ -5,7 +5,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { InstrumentationOptions } from "@azure/monitor-opentelemetry";
 import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
-import { Logger } from "../logging";
+import { diag } from "@opentelemetry/api";
 import { AzureMonitorOpenTelemetryOptions, LogInstrumentationOptions, OTLPExporterConfig } from "../../types";
 
 
@@ -71,7 +71,7 @@ export class JsonConfig {
             try {
                 jsonString = fs.readFileSync(tempDir, "utf8");
             } catch (err) {
-                Logger.getInstance().info("Failed to read JSON config file: ", err);
+                diag.info("Failed to read JSON config file: ", err);
             }
         }
         try {
@@ -88,7 +88,7 @@ export class JsonConfig {
             this.samplingRatio = jsonConfig.samplingRatio;
             this.instrumentationOptions = jsonConfig.instrumentationOptions;
         } catch (err) {
-            Logger.getInstance().info("Missing or invalid JSON config file: ", err);
+            diag.info("Missing or invalid JSON config file: ", err);
         }
     }
 }

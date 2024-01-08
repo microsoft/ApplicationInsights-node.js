@@ -5,7 +5,6 @@ import sinon = require('sinon');
 import azureCoreAuth = require("@azure/core-auth");
 import { DiagLogLevel } from '@opentelemetry/api';
 import { HttpInstrumentationConfig } from '@opentelemetry/instrumentation-http';
-import { Logger } from "../../../src/shared/logging"
 import Config = require('../../../src/shim/shim-config');
 import { TelemetryClient } from "../../../src/shim/telemetryClient";
 import http = require("http");
@@ -97,17 +96,21 @@ describe("shim/configuration/config", () => {
         });
 
         it("should activate DEBUG internal logger", () => {
+            const env = <{ [id: string]: string }>{};
+            process.env = env;
             const config = new Config(connectionString);
             config.enableInternalDebugLogging = true;
             config.parseConfig();
-            assert.equal(Logger.getInstance()["_diagLevel"], DiagLogLevel.DEBUG);
+            assert.equal(process.env["APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL"], "DEBUG");
         });
 
         it("should activate WARN internal logger", () => {
+            const env = <{ [id: string]: string }>{};
+            process.env = env;
             const config = new Config(connectionString);
             config.enableInternalWarningLogging = true;
             config.parseConfig();
-            assert.equal(Logger.getInstance()["_diagLevel"], DiagLogLevel.WARN);
+            assert.equal(process.env["APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL"], "WARN");
         });
 
         it("should disableAllExtendedMetrics", () => {
