@@ -3,7 +3,7 @@
   "author": "Microsoft Application Insights Team",
   "license": "MIT",
   "bugs": "https://github.com/microsoft/ApplicationInsights-node.js/issues",
-  "version": "2.9.1",
+  "version": "2.9.2",
   "description": "Microsoft Application Insights module for Node.js",
   "repository": {
     "type": "git",
@@ -65,14 +65,14 @@
     "@azure/core-rest-pipeline": "1.10.1",
     "@azure/opentelemetry-instrumentation-azure-sdk": "^1.0.0-beta.5",
     "@microsoft/applicationinsights-web-snippet": "^1.0.1",
-    "@opentelemetry/api": "^1.4.1",
-    "@opentelemetry/core": "^1.15.2",
-    "@opentelemetry/sdk-trace-base": "^1.15.2",
-    "@opentelemetry/semantic-conventions": "^1.15.2",
+    "@opentelemetry/api": "^1.7.0",
+    "@opentelemetry/core": "^1.19.0",
+    "@opentelemetry/sdk-trace-base": "^1.19.0",
+    "@opentelemetry/semantic-conventions": "^1.19.0",
     "cls-hooked": "^4.2.2",
     "continuation-local-storage": "^3.2.1",
     "diagnostic-channel": "1.1.1",
-    "diagnostic-channel-publishers": "1.0.7"
+    "diagnostic-channel-publishers": "1.0.8"
   },
   "peerDependencies": {
     "applicationinsights-native-metrics": "*"
