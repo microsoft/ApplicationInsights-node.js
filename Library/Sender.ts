@@ -34,7 +34,7 @@ class Sender {
 
     private _config: Config;
     private _isStatsbeatSender: boolean;
-    private _shutdownStatsbeat: () => void;
+    private _shutdownStatsbeat?: () => void;
     private _failedToIngestCounter: number;
     private _statsbeatHasReachedIngestionAtLeastOnce: boolean;
     private _statsbeat: Statsbeat;
@@ -200,7 +200,7 @@ class Sender {
                         this._numConsecutiveFailures = 0;
                         if (responseString.includes(INVALID_IKEY) && res.statusCode === 400) {
                             Logging.warn("Instrumentation key was invalid, please check the iKey");
-                            this._shutdownStatsbeat();
+                            this._shutdownStatsbeat?.();
                         }
                         // Handling of Statsbeat instance sending data, should turn it off if is not able to reach ingestion endpoint
                         if (this._isStatsbeatSender && !this._statsbeatHasReachedIngestionAtLeastOnce) {
