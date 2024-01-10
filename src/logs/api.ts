@@ -3,7 +3,7 @@
 
 import { Logger as OtelLogger, LogRecord, logs } from "@opentelemetry/api-logs";
 import { LogRecord as SDKLogRecord } from "@opentelemetry/sdk-logs";
-import { Attributes } from "@opentelemetry/api";
+import { Attributes, diag } from "@opentelemetry/api";
 import { IdGenerator, RandomIdGenerator } from "@opentelemetry/sdk-trace-base";
 
 import * as Contracts from "../declarations/contracts";
@@ -17,7 +17,6 @@ import {
     TelemetryExceptionData,
     TelemetryExceptionDetails
 } from "../declarations/generated";
-import { Logger } from "../shared/logging";
 import { Util } from "../shared/util";
 import { parseStack } from "./exceptions";
 
@@ -47,7 +46,7 @@ export class LogApi {
             );
             this._logger.emit(logRecord);
         } catch (err) {
-            Logger.getInstance().error("Failed to send telemetry.", err);
+            diag.error("Failed to send telemetry.", err);
         }
     }
 
@@ -62,7 +61,7 @@ export class LogApi {
             );
             this._logger.emit(logRecord);
         } catch (err) {
-            Logger.getInstance().error("Failed to send telemetry.", err);
+            diag.error("Failed to send telemetry.", err);
         }
     }
 
@@ -75,7 +74,7 @@ export class LogApi {
             const logRecord = this._traceToLogRecord(telemetry) as SDKLogRecord;
             this._logger.emit(logRecord);
         } catch (err) {
-            Logger.getInstance().error("Failed to send telemetry.", err);
+            diag.error("Failed to send telemetry.", err);
         }
     }
 
@@ -93,7 +92,7 @@ export class LogApi {
             ) as SDKLogRecord;
             this._logger.emit(logRecord);
         } catch (err) {
-            Logger.getInstance().error("Failed to send telemetry.", err);
+            diag.error("Failed to send telemetry.", err);
         }
     }
 
@@ -106,7 +105,7 @@ export class LogApi {
             const logRecord = this._eventToLogRecord(telemetry);
             this._logger.emit(logRecord);
         } catch (err) {
-            Logger.getInstance().error("Failed to send telemetry.", err);
+            diag.error("Failed to send telemetry.", err);
         }
     }
 
@@ -142,7 +141,7 @@ export class LogApi {
             return record;
         }
         catch (err) {
-            Logger.getInstance().warn("Failed to convert telemetry event to Log Record.", err);
+            diag.warn("Failed to convert telemetry event to Log Record.", err);
         }
     }
 

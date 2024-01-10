@@ -1,14 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Attributes, context, metrics, ProxyTracerProvider, SpanKind, SpanOptions, SpanStatusCode, trace } from "@opentelemetry/api";
+import { Attributes, context, metrics, ProxyTracerProvider, SpanKind, SpanOptions, SpanStatusCode, diag, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
 import { LoggerProvider } from "@opentelemetry/sdk-logs";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 import * as Contracts from "../declarations/contracts";
 import { TelemetryItem as Envelope } from "../declarations/generated";
 import { Context } from "./context";
-import { Logger } from "../shared/logging";
 import { Util } from "../shared/util";
 import Config = require("./shim-config");
 import { AttributeSpanProcessor } from "../shared/util/attributeSpanProcessor";
@@ -127,7 +126,7 @@ export class TelemetryClient {
         // Create custom metric
         const meter = metrics.getMeterProvider().getMeter("ApplicationInsightsMetrics");
         const histogram = meter.createHistogram(telemetry.name);
-        histogram.record(telemetry.value, {...telemetry.properties, ...this.commonProperties, ...this.context.tags });
+        histogram.record(telemetry.value, { ...telemetry.properties, ...this.commonProperties, ...this.context.tags });
     }
 
     /**
@@ -185,7 +184,7 @@ export class TelemetryClient {
             } catch (error) {
                 // set target as null to be compliant with previous behavior
                 telemetry.target = null;
-                Logger.getInstance().warn(this.constructor.name, "Failed to create URL.", error);
+                diag.warn(this.constructor.name, "Failed to create URL.", error);
             }
         }
         const ctx = context.active();
@@ -243,8 +242,8 @@ export class TelemetryClient {
      * Get Authorization handler
      */
     public getAuthorizationHandler(config: Config): void {
-        Logger.getInstance().warn("getAuthorizationHandler is not supported in ApplicationInsights any longer.");
-    } 
+        diag.warn("getAuthorizationHandler is not supported in ApplicationInsights any longer.");
+    }
 
     /*
      * Get Statsbeat instance
@@ -273,7 +272,7 @@ export class TelemetryClient {
             contextObjects?: { [name: string]: any }
         ) => boolean
     ) {
-        Logger.getInstance().warn("addTelemetryProcessor is not supported in ApplicationInsights any longer.");
+        diag.warn("addTelemetryProcessor is not supported in ApplicationInsights any longer.");
     }
 
     /*
@@ -284,15 +283,15 @@ export class TelemetryClient {
     }
 
     public trackNodeHttpRequestSync(telemetry: Contracts.NodeHttpRequestTelemetry) {
-        Logger.getInstance().warn("trackNodeHttpRequestSync is not implemented and is a no-op. Please use trackRequest instead.");
+        diag.warn("trackNodeHttpRequestSync is not implemented and is a no-op. Please use trackRequest instead.");
     }
 
     public trackNodeHttpRequest(telemetry: Contracts.NodeHttpRequestTelemetry) {
-        Logger.getInstance().warn("trackNodeHttpRequest is not implemented and is a no-op. Please use trackRequest instead.");
+        diag.warn("trackNodeHttpRequest is not implemented and is a no-op. Please use trackRequest instead.");
     }
 
     public trackNodeHttpDependency(telemetry: Contracts.NodeHttpRequestTelemetry) {
-        Logger.getInstance().warn("trackNodeHttpDependency is not implemented and is a no-op. Please use trackDependency instead.");
+        diag.warn("trackNodeHttpDependency is not implemented and is a no-op. Please use trackDependency instead.");
     }
 
     /**

@@ -1,10 +1,10 @@
 import * as fs from "fs";
 import * as path from "path";
-import { Logger } from "../shared/logging/logger";
-import { DistributedTracingModes, IDisabledExtendedMetrics, IJsonConfig, IWebInstrumentationConfig } from "./types";
 import * as http from "http";
 import * as https from "https";
 import * as azureCoreAuth from "@azure/core-auth";
+import { DistributedTracingModes, IDisabledExtendedMetrics, IJsonConfig, IWebInstrumentationConfig } from "./types";
+import { diag } from "@opentelemetry/api";
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 const ENV_CONTENT = "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT";
@@ -114,7 +114,7 @@ export class ShimJsonConfig implements IJsonConfig {
             try {
                 jsonString = fs.readFileSync(tempDir, "utf8");
             } catch (err) {
-                Logger.getInstance().info("Failed to read JSON config file: ", err);
+                diag.info("Failed to read JSON config file: ", err);
             }
         }
         try {
@@ -182,7 +182,7 @@ export class ShimJsonConfig implements IJsonConfig {
             this.webInstrumentationConfig = jsonConfig.webInstrumentationConfig;
             this.quickPulseHost = jsonConfig.quickPulseHost;
         } catch (err) {
-            Logger.getInstance().info("Missing or invalid JSON config file: ", err);
+            diag.info("Missing or invalid JSON config file: ", err);
         }
     }
 }

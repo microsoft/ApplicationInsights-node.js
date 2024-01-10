@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import { shutdownAzureMonitor as distroShutdownAzureMonitor, useAzureMonitor as distroUseAzureMonitor } from "@azure/monitor-opentelemetry";
-import { ProxyTracerProvider, metrics, trace } from "@opentelemetry/api";
+import { ProxyTracerProvider, diag, metrics, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
 import { MeterProvider, PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 import { BatchLogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
@@ -11,7 +11,6 @@ import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 
-import { Logger } from "./shared/logging";
 import { AutoCollectConsole } from "./logs/console";
 import { AutoCollectExceptions } from "./logs/exceptions";
 import { AzureMonitorOpenTelemetryOptions } from "./types";
@@ -66,7 +65,7 @@ export async function flushAzureMonitor() {
         await (trace.getTracerProvider() as BasicTracerProvider).forceFlush();
         await (logs.getLoggerProvider() as LoggerProvider).forceFlush();
     } catch (err) {
-        Logger.getInstance().error("Failed to flush telemetry", err);
+        diag.error("Failed to flush telemetry", err);
     }
 }
 
@@ -80,7 +79,7 @@ function _addOtlpExporters(internalConfig: ApplicationInsightsConfig) {
             (metrics.getMeterProvider() as MeterProvider).addMetricReader(otlpMetricReader);
         }
         catch (err) {
-            Logger.getInstance().error("Failed to set OTLP Metric Exporter", err);
+            diag.error("Failed to set OTLP Metric Exporter", err);
         }
     }
     if (internalConfig.otlpLogExporterConfig?.enabled) {
@@ -90,7 +89,7 @@ function _addOtlpExporters(internalConfig: ApplicationInsightsConfig) {
             (logs.getLoggerProvider() as LoggerProvider).addLogRecordProcessor(otlpLogProcessor);
         }
         catch (err) {
-            Logger.getInstance().error("Failed to set OTLP Log Exporter", err);
+            diag.error("Failed to set OTLP Log Exporter", err);
         }
     }
     if (internalConfig.otlpTraceExporterConfig?.enabled) {
@@ -100,7 +99,7 @@ function _addOtlpExporters(internalConfig: ApplicationInsightsConfig) {
             ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider).addSpanProcessor(otlpSpanProcessor);
         }
         catch (err) {
-            Logger.getInstance().error("Failed to set OTLP Trace Exporter", err);
+            diag.error("Failed to set OTLP Trace Exporter", err);
         }
     }
 }
