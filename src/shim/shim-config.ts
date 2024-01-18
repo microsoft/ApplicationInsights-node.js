@@ -287,28 +287,28 @@ class Config implements IConfig {
             diag.warn("The webInstrumentation configuration options are not supported by the shim.");
         }
         if (this.enableAutoCollectPerformance) {
-            Logger.getInstance().warn("The enableAutoCollectPerformance configuration option is not supported by the shim.");
+            diag.warn("The enableAutoCollectPerformance configuration option is not supported by the shim.");
         }
         if (this.enableAutoCollectConsole) {
-            Logger.getInstance().warn("The enableAutoCollectConsole configuration option is not supported by the shim.");
+            diag.warn("The enableAutoCollectConsole configuration option is not supported by the shim.");
         }
         if (this.enableAutoCollectExternalLoggers) {
-            Logger.getInstance().warn("The enableAutoCollectExternalLoggers configuration option is not supported by the shim.");
+            diag.warn("The enableAutoCollectExternalLoggers configuration option is not supported by the shim.");
         }
         if (this.enableAutoCollectExceptions) {
-            Logger.getInstance().warn("The enableAutoCollectExceptions configuration option is not supported by the shim.");
+            diag.warn("The enableAutoCollectExceptions configuration option is not supported by the shim.");
         }
         if (this.maxBatchIntervalMs) {
-            Logger.getInstance().warn("The maxBatchIntervalMs configuration option is not supported by the shim.");
+            diag.warn("The maxBatchIntervalMs configuration option is not supported by the shim.");
         }
         if (this.enableAutoCollectExtendedMetrics) {
-            Logger.getInstance().warn("The enableAutoCollectExtendedMetrics configuration option is not supported by the shim as extended metrics are not supported.");
+            diag.warn("The enableAutoCollectExtendedMetrics configuration option is not supported by the shim as extended metrics are not supported.");
         }
         if (this.extendedMetricDisablers) {
-            Logger.getInstance().warn("The extendedMetricDisablers configuration option is not supported by the shim as extended metrics are not supported.");
+            diag.warn("The extendedMetricDisablers configuration option is not supported by the shim as extended metrics are not supported.");
         }
         if (this.disableAllExtendedMetrics) {
-            Logger.getInstance().warn("The disableAllExtendedMetrics configuration option is not supported by the shim as extended metrics are not supported.");
+            diag.warn("The disableAllExtendedMetrics configuration option is not supported by the shim as extended metrics are not supported.");
         }
         return options;
     }
