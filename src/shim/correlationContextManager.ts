@@ -1,12 +1,15 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import * as events from "events";
 import * as http from "http";
-import { context, SpanContext, trace, Context } from "@opentelemetry/api";
+import * as azureFunctionsTypes from "@azure/functions";
+import { context, SpanContext, trace, Context, diag } from "@opentelemetry/api";
 import { TraceState } from "@opentelemetry/core";
 import { Span } from "@opentelemetry/sdk-trace-base";
 import { ICorrelationContext, ITraceparent, ITracestate, HttpRequest, ICustomProperties } from "./types";
-import { Logger } from "../shared/logging";
-import * as azureFunctionsTypes from "@azure/functions";
 import { Util } from "../shared/util";
+
 
 const CONTEXT_NAME = "ApplicationInsights-Context";
 
@@ -109,7 +112,7 @@ export class CorrelationContextManager {
             const newContext: Context = trace.setSpanContext(context.active(), this._contextObjectToSpanContext(ctx));
             return context.with(newContext, fn);
         } catch (error) {
-            Logger.getInstance().warn("Error binding to session context", Util.getInstance().dumpObj(error));
+            diag.warn("Error binding to session context", Util.getInstance().dumpObj(error));
         }
         return fn();
     }
@@ -122,7 +125,7 @@ export class CorrelationContextManager {
         try {
             context.bind(context.active(), emitter);
         } catch (error) {
-            Logger.getInstance().warn("Error binding to session context", Util.getInstance().dumpObj(error));
+            diag.warn("Error binding to session context", Util.getInstance().dumpObj(error));
         }
     }
     
@@ -146,7 +149,7 @@ export class CorrelationContextManager {
             // If no context is passed, bind to the current context
             return context.bind(context.active(), fn);
         } catch (error) {
-            Logger.getInstance().error("Error binding to session context", Util.getInstance().dumpObj(error));
+            diag.error("Error binding to session context", Util.getInstance().dumpObj(error));
             return fn;
         }
     }
@@ -157,7 +160,7 @@ export class CorrelationContextManager {
      */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public static enable(forceClsHooked?: boolean) {
-        Logger.getInstance().info("Enabling the context manager is no longer necessary and this method is a no-op.");
+        diag.info("Enabling the context manager is no longer necessary and this method is a no-op.");
     }
 
     /**
@@ -241,7 +244,7 @@ export class CorrelationContextManager {
                 tracestateObj
             );
         }
-        Logger.getInstance().warn("startOperation was called with invalid arguments");
+        diag.warn("startOperation was called with invalid arguments");
         return null;
     }
 
@@ -249,7 +252,7 @@ export class CorrelationContextManager {
      * Disables the CorrelationContextManager
      */
     public static disable() {
-        Logger.getInstance().warn("It will not be possible to re-enable the current context manager after disabling it!");
+        diag.warn("It will not be possible to re-enable the current context manager after disabling it!");
         this._isDisabled = true;
         context.disable();
     }
@@ -258,7 +261,7 @@ export class CorrelationContextManager {
      * Resets the namespace
      */
     public static reset() {
-        Logger.getInstance().info("This is a no-op and exists only for compatibility reasons.");
+        diag.info("This is a no-op and exists only for compatibility reasons.");
     }
 
     /**

@@ -1,4 +1,8 @@
-﻿import { Logger } from "../logging";
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import { diag } from "@opentelemetry/api";
+
 
 export class Util {
     private static _instance: Util;
@@ -102,7 +106,7 @@ export class Util {
     }
 
     /**
-     * Returns string representation of an object suitable for diagnostics Logger.getInstance().
+     * Returns string representation of an object suitable for diagnostics diag.
      */
     public dumpObj(object: any): string {
         const objectTypeDump: string = Object["prototype"].toString.call(object);
@@ -120,7 +124,7 @@ export class Util {
         try {
             return JSON.stringify(payload);
         } catch (error) {
-            Logger.getInstance().warn("Failed to serialize payload", error, payload);
+            diag.warn("Failed to serialize payload", error, payload);
         }
     }
 

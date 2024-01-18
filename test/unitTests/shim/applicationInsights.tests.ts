@@ -4,8 +4,7 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 
 import * as appInsights from "../../../src/index";
-import { Logger } from "../../../src/shared/logging";
-import { DiagLogLevel } from "@opentelemetry/api";
+import { diag, DiagLogLevel } from "@opentelemetry/api";
 
 describe("ApplicationInsights", () => {
     let sandbox: sinon.SinonSandbox;
@@ -113,7 +112,7 @@ describe("ApplicationInsights", () => {
                 appInsights.setup(connString);
                 appInsights.Configuration.setInternalLogging(true, false);
                 appInsights.start();
-                assert.equal(Logger.getInstance()["_diagLevel"], DiagLogLevel.DEBUG);
+                assert.equal(process.env["APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL"], "DEBUG");
             });
 
             it("should warn if attempting to auto collect incoming azure functions requests", () => {

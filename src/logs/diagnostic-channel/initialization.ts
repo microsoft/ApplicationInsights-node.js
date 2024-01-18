@@ -3,7 +3,8 @@
 
 // Don't reference modules from these directly. Use only for types.
 import * as DiagChannelPublishers from "diagnostic-channel-publishers";
-import { Logger } from "../../shared/logging";
+import { diag } from "@opentelemetry/api";
+
 
 const TAG = "DiagnosticChannel";
 let isInitialized = false;
@@ -22,7 +23,7 @@ export function enablePublishers() {
 
         for (const mod in modules) {
             modules[mod].enable();
-            Logger.getInstance().info(TAG, `Subscribed to ${mod} events`);
+            diag.info(TAG, `Subscribed to ${mod} events`);
         }
     }
 }

@@ -3,10 +3,9 @@
 import http = require("http");
 import https = require("https");
 import azureCoreAuth = require("@azure/core-auth");
-import { DiagLogLevel } from "@opentelemetry/api";
+import { DiagLogLevel, diag } from "@opentelemetry/api";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrumentationConfig } from "./types";
-import { Logger } from "../shared/logging";
 import { ShimJsonConfig } from "./shim-jsonConfig";
 import { AzureMonitorOpenTelemetryOptions, InstrumentationOptionsType } from "../types";
 
@@ -189,17 +188,27 @@ class Config implements IConfig {
                 };
             }
             catch (err) {
-                Logger.getInstance().warn("failed to parse proxy URL.");
+                diag.warn("failed to parse proxy URL.");
             }
         }
         if (this.enableInternalWarningLogging === true) {
-            Logger.getInstance().updateLogLevel(DiagLogLevel.WARN);
+            // Do not override env variable if present
+            if (!process.env["APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL"]) {
+                process.env["APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL"] = "WARN";
+            }
+
         }
         if (this.enableInternalDebugLogging === true) {
-            Logger.getInstance().updateLogLevel(DiagLogLevel.DEBUG);
+            // Do not override env variable if present
+            if (!process.env["APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL"]) {
+                process.env["APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL"] = "DEBUG";
+            }
         }
         if (this.enableAutoCollectPreAggregatedMetrics === false) {
-            process.env["APPLICATION_INSIGHTS_NO_STANDARD_METRICS"] = "disable";
+            // Do not override env variable if present
+            if (!process.env["APPLICATION_INSIGHTS_NO_STANDARD_METRICS"]) {
+                process.env["APPLICATION_INSIGHTS_NO_STANDARD_METRICS"] = "disable";
+            }
         }
 
         if (this.noDiagnosticChannel === true) {
@@ -234,48 +243,48 @@ class Config implements IConfig {
 
         // NOT SUPPORTED CONFIGURATION OPTIONS
         if (this.disableAppInsights) {
-            Logger.getInstance().warn("disableAppInsights configuration no longer supported.");
+            diag.warn("disableAppInsights configuration no longer supported.");
         }
         if (this.enableAutoCollectHeartbeat) {
-            Logger.getInstance().warn("Heartbeat metris are no longer supported.");
+            diag.warn("Heartbeat metris are no longer supported.");
         }
         if (this.enableAutoDependencyCorrelation === false) {
-            Logger.getInstance().warn("Auto dependency correlation cannot be turned off anymore.");
+            diag.warn("Auto dependency correlation cannot be turned off anymore.");
         }
         if (typeof (this.enableAutoCollectIncomingRequestAzureFunctions) === "boolean") {
-            Logger.getInstance().warn("Auto request generation in Azure Functions is no longer supported.");
+            diag.warn("Auto request generation in Azure Functions is no longer supported.");
         }
         if (typeof (this.enableSendLiveMetrics) === "boolean") {
-            Logger.getInstance().warn("Live Metrics is currently not supported.");
+            diag.warn("Live Metrics is currently not supported.");
         }
         if (this.enableUseAsyncHooks === false) {
-            Logger.getInstance().warn("The use of non async hooks is no longer supported.");
+            diag.warn("The use of non async hooks is no longer supported.");
         }
         if (this.distributedTracingMode === DistributedTracingModes.AI) {
-            Logger.getInstance().warn("AI only distributed tracing mode is no longer supported.");
+            diag.warn("AI only distributed tracing mode is no longer supported.");
         }
         if (this.enableResendInterval) {
-            Logger.getInstance().warn("The resendInterval configuration option is not supported by the shim.");
+            diag.warn("The resendInterval configuration option is not supported by the shim.");
         }
         if (this.enableMaxBytesOnDisk) {
-            Logger.getInstance().warn("The maxBytesOnDisk configuration option is not supported by the shim.");
+            diag.warn("The maxBytesOnDisk configuration option is not supported by the shim.");
         }
         if (this.ignoreLegacyHeaders === false) {
-            Logger.getInstance().warn("LegacyHeaders are not supported by the shim.");
+            diag.warn("LegacyHeaders are not supported by the shim.");
         }
         if (this.maxBatchSize) {
-            Logger.getInstance().warn("The maxBatchSize configuration option is not supported by the shim.");
+            diag.warn("The maxBatchSize configuration option is not supported by the shim.");
         }
         if (this.enableLoggerErrorToTrace) {
-            Logger.getInstance().warn("The enableLoggerErrorToTrace configuration option is not supported by the shim.");
+            diag.warn("The enableLoggerErrorToTrace configuration option is not supported by the shim.");
         }
         if (this.httpAgent || this.httpsAgent) {
-            Logger.getInstance().warn("The httpAgent and httpsAgent configuration options are not supported by the shim.");
+            diag.warn("The httpAgent and httpsAgent configuration options are not supported by the shim.");
         }
         if (
             this.enableWebInstrumentation || this.webInstrumentationConfig || this.webInstrumentationSrc || this.webInstrumentationConnectionString
         ) {
-            Logger.getInstance().warn("The webInstrumentation configuration options are not supported by the shim.");
+            diag.warn("The webInstrumentation configuration options are not supported by the shim.");
         }
         if (this.enableAutoCollectPerformance) {
             Logger.getInstance().warn("The enableAutoCollectPerformance configuration option is not supported by the shim.");
