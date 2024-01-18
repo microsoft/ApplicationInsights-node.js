@@ -54,16 +54,9 @@ describe("shim/configuration/config", () => {
             config.proxyHttpsUrl = "https://localhost:3000";
             config.correlationHeaderExcludedDomains = ["https://www.bing.com"];
             config.samplingPercentage = 50;
-            config.enableAutoCollectExternalLoggers = true;
-            config.enableAutoCollectExceptions = true;
-            config.enableAutoCollectConsole = true;
-            config.enableAutoCollectExceptions = true;
-            config.enableAutoCollectPerformance = true;
-            config.enableAutoCollectExtendedMetrics = true;
             config.enableAutoCollectRequests = true;
             config.enableAutoCollectDependencies = true;
             config.aadTokenCredential = new TestTokenCredential();
-            config.maxBatchIntervalMs = 1000;
             config.enableUseDiskRetryCaching = true;
 
             let options = config.parseConfig();
@@ -72,28 +65,9 @@ describe("shim/configuration/config", () => {
             assert.equal(options.azureMonitorExporterOptions.connectionString, connectionString), "wrong connectionString";
             assert.equal(options.azureMonitorExporterOptions.proxyOptions.host, "localhost", "wrong host");
             assert.equal(options.azureMonitorExporterOptions.proxyOptions.port, 3000, "wrong port");
-            assert.equal(JSON.stringify(options.logInstrumentationOptions), JSON.stringify({ console: { enabled: true }, winston: { enabled: true }, bunyan: { enabled: true } }), "wrong logInstrumentationOptions");
-            assert.equal(options.enableAutoCollectExceptions, true, "wrong enableAutoCollectExceptions");
-            assert.equal(options.enableAutoCollectPerformance, true, "wrong enableAutoCollectPerformance");
-            assert.equal(JSON.stringify(options.extendedMetrics), JSON.stringify({ gc: true, heap: true, loop: true }), "wrong extendedMetrics");
             assert.equal(options.azureMonitorExporterOptions.credential, config.aadTokenCredential, "wrong credential");
             assert.equal(options.instrumentationOptions.http.enabled, true);
-            assert.equal(
-                JSON.stringify(options.otlpTraceExporterConfig),
-                JSON.stringify({ timeoutMillis: 1000 }), "wrong otlpTraceExporterConfig"
-            );
-            assert.equal(
-                JSON.stringify(options.otlpMetricExporterConfig),
-                JSON.stringify({ timeoutMillis: 1000 }), "wrong otlpMetricExporterConfig"
-            );
-            assert.equal(
-                JSON.stringify(options.otlpLogExporterConfig),
-                JSON.stringify({ timeoutMillis: 1000 }), "wrong otlpLogExporterConfig"
-            );
             assert.equal(options.azureMonitorExporterOptions.disableOfflineStorage, false, "wrong disableOfflineStorage");
-            assert.equal(options.extendedMetrics.heap, true, "wrong heap");
-            assert.equal(options.extendedMetrics.loop, true, "wrong loop");
-            assert.equal(options.extendedMetrics.gc, true, "wrong gc");
         });
 
         it("should activate DEBUG internal logger", () => {
@@ -108,13 +82,6 @@ describe("shim/configuration/config", () => {
             config.enableInternalWarningLogging = true;
             config.parseConfig();
             assert.equal(Logger.getInstance()["_diagLevel"], DiagLogLevel.WARN);
-        });
-
-        it("should disableAllExtendedMetrics", () => {
-            const config = new Config(connectionString);
-            config.disableAllExtendedMetrics = true;
-            let options = config.parseConfig();
-            assert.equal(JSON.stringify(options.extendedMetrics), JSON.stringify({ gc: false, heap: false, loop: false }));
         });
 
         it("should set context tags on logs and spans", () => {
@@ -167,27 +134,11 @@ describe("shim/configuration/config", () => {
             assert.equal(JSON.stringify(http.ignoreOutgoingRequestHook), JSON.stringify(ignoreFunction));
         });
 
-        it("should disable external loggers", () => {
-            const config = new Config(connectionString);
-            config.enableAutoCollectExternalLoggers = false;
-            let options = config.parseConfig();
-            assert.equal(JSON.stringify(options.logInstrumentationOptions), JSON.stringify({ console: { enabled: false }, winston: { enabled: false }, bunyan: { enabled: false } }));
-        });
-
         it("should disable standard metrics", () => {
             const config = new Config(connectionString);
             config.enableAutoCollectPreAggregatedMetrics = false;
             config.parseConfig();
             assert.equal(process.env["APPLICATION_INSIGHTS_NO_STANDARD_METRICS"], "disable");
-        });
-
-        it("should disable specific native metrics", () => {
-            const config = new Config(connectionString);
-            config.extendedMetricDisablers = "heap,gc";
-            config.parseConfig();
-            let options = config.parseConfig();
-            assert.equal(options.extendedMetrics.heap, false);
-            assert.equal(options.extendedMetrics.gc, false);
         });
 
         describe("#Shim unsupported messages", () => {
@@ -311,6 +262,70 @@ describe("shim/configuration/config", () => {
                 const warnStub = sandbox.stub(console, "warn");
                 const config = new Config(connectionString);
                 config.correlationHeaderExcludedDomains = ["test.com"];
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if enableAutoCollectPerformance is set", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.enableAutoCollectPerformance = true;
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if enableAutoCollectConsole is set", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.enableAutoCollectConsole = true;
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if enableAutoCollectExternalLoggers is set", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.enableAutoCollectExternalLoggers = true;
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it ("should warn if enableAutoCollectException is set", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.enableAutoCollectExceptions = true;
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it ("should warn if maxBatchIntervalMs is set", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.maxBatchIntervalMs = 1;
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it ("should warn if enableAutoCollectExtendedMetrics is set", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.enableAutoCollectExtendedMetrics = true;
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if extendedMetricDisablers is set", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.extendedMetricDisablers = "test";
+                config.parseConfig();
+                assert.ok(warnStub.calledOn, "warning was not raised");
+            });
+
+            it("should warn if disableAllExtendedMetrics is set", () => {
+                const warnStub = sandbox.stub(console, "warn");
+                const config = new Config(connectionString);
+                config.disableAllExtendedMetrics = true;
                 config.parseConfig();
                 assert.ok(warnStub.calledOn, "warning was not raised");
             });

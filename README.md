@@ -200,6 +200,14 @@ The following configurations are set using either environment variables, setting
 | enableWebInstrumentation | Not currently supported in the shim or the distro. |
 | webInstrumentationConnectionString | Not supported in the shim or the distro. |
 | webInstrumentationConfig | Not currently supported by the shim or the distro. |
+| enableAutoCollectPerformance | Not supported in the shim. |
+| enableAutoCollectConsole | Not supported in the shim. |
+| enableAutoCollectExternalLoggers | Not supported in the shim. |
+| enableAutoCollectExceptions | Not supported in the shim. |
+| maxBatchIntervalMs | Not supported in the shim. |
+| enableAutoCollectExtendedMetrics | Not supported in the shim. |
+| extendedMetricDisablers | Not supported in the shim. |
+| disableAllExtendedMetrics | Not supported in the shim. |
 
 The following methods are part of the `TelemetryClient` class. They can be called using `applicationinsights.defaultClient.<METHOD_NAME>()`.
 

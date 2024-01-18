@@ -8,7 +8,7 @@ import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrumentationConfig } from "./types";
 import { Logger } from "../shared/logging";
 import { ShimJsonConfig } from "./shim-jsonConfig";
-import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType, InstrumentationOptionsType } from "../types";
+import { AzureMonitorOpenTelemetryOptions, InstrumentationOptionsType } from "../types";
 
 class Config implements IConfig {
 
@@ -128,8 +128,6 @@ class Config implements IConfig {
                 connectionString: this.connectionString,
                 disableOfflineStorage: false,
             },
-            enableAutoCollectPerformance: true,
-            enableAutoCollectExceptions: true,
             instrumentationOptions: {
                 http: { enabled: true },
                 azureSdk: { enabled: true },
@@ -139,15 +137,6 @@ class Config implements IConfig {
                 redis4: { enabled: true },
                 postgreSql: { enabled: true },
             },
-            logInstrumentationOptions: {
-                console: { enabled: false },
-                winston: { enabled: true },
-                bunyan: { enabled: true }
-            },
-            otlpTraceExporterConfig: {},
-            otlpMetricExporterConfig: {},
-            otlpLogExporterConfig: {},
-            extendedMetrics: {},
         };
         if (this.samplingPercentage) {
             options.samplingRatio = this.samplingPercentage / 100;
@@ -161,23 +150,13 @@ class Config implements IConfig {
         if (this.aadTokenCredential) {
             options.azureMonitorExporterOptions.credential = this.aadTokenCredential;
         }
-        if (typeof (this.enableAutoCollectConsole) === "boolean") {
-            const setting: boolean = this.enableAutoCollectConsole;
-            options.logInstrumentationOptions = {
-                ...options.logInstrumentationOptions,
-                console: { enabled: setting },
-            };
-        }
-        if (typeof (this.enableAutoCollectExceptions) === "boolean") {
-            options.enableAutoCollectExceptions = this.enableAutoCollectExceptions;
-        }
-
         if (this.enableAutoCollectDependencies === false && this.enableAutoCollectRequests === false) {
             options.instrumentationOptions.http.enabled = false;
         }
         else {
             if (this.enableAutoCollectDependencies === false) {
                 options.instrumentationOptions = {
+                    ...options.instrumentationOptions,
                     http: {
                         ...options.instrumentationOptions?.http,
                         enabled: true,
@@ -188,6 +167,7 @@ class Config implements IConfig {
             }
             if (this.enableAutoCollectRequests === false) {
                 options.instrumentationOptions = {
+                    ...options.instrumentationOptions,
                     http: {
                         ...options.instrumentationOptions?.http,
                         enabled: true,
@@ -195,16 +175,6 @@ class Config implements IConfig {
                         ignoreIncomingRequestHook: (request: http.RequestOptions) => true,
                     } as HttpInstrumentationConfig
                 };
-            }
-        }
-        if (typeof (this.enableAutoCollectPerformance) === "boolean") {
-            options.enableAutoCollectPerformance = this.enableAutoCollectPerformance;
-        }
-        if (typeof (this.enableAutoCollectExternalLoggers) === "boolean") {
-            options.logInstrumentationOptions = {
-                ...options.logInstrumentationOptions,
-                winston: { enabled: this.enableAutoCollectExternalLoggers },
-                bunyan: { enabled: this.enableAutoCollectExternalLoggers },
             }
         }
         if (this.enableUseDiskRetryCaching === false) {
@@ -222,11 +192,6 @@ class Config implements IConfig {
                 Logger.getInstance().warn("failed to parse proxy URL.");
             }
         }
-        if (this.maxBatchIntervalMs) {
-            options.otlpTraceExporterConfig = { ...options.otlpTraceExporterConfig, timeoutMillis: this.maxBatchIntervalMs };
-            options.otlpMetricExporterConfig = { ...options.otlpMetricExporterConfig, timeoutMillis: this.maxBatchIntervalMs };
-            options.otlpLogExporterConfig = { ...options.otlpLogExporterConfig, timeoutMillis: this.maxBatchIntervalMs };
-        }
         if (this.enableInternalWarningLogging === true) {
             Logger.getInstance().updateLogLevel(DiagLogLevel.WARN);
         }
@@ -236,47 +201,6 @@ class Config implements IConfig {
         if (this.enableAutoCollectPreAggregatedMetrics === false) {
             process.env["APPLICATION_INSIGHTS_NO_STANDARD_METRICS"] = "disable";
         }
-        // NATIVE METRICS
-        if (typeof (this.enableAutoCollectExtendedMetrics) === "boolean") {
-            options.extendedMetrics = {
-                [ExtendedMetricType.gc]: this.enableAutoCollectExtendedMetrics,
-                [ExtendedMetricType.heap]: this.enableAutoCollectExtendedMetrics,
-                [ExtendedMetricType.loop]: this.enableAutoCollectExtendedMetrics,
-            };
-        }
-        // Disable specific native metrics if provided
-        if (this.extendedMetricDisablers) {
-            const extendedMetricDisablers: string[] = this.extendedMetricDisablers.split(",");
-            for (const extendedMetricDisabler of extendedMetricDisablers) {
-                if (extendedMetricDisabler === "gc") {
-                    options.extendedMetrics = {
-                        ...options.extendedMetrics,
-                        [ExtendedMetricType.gc]: false
-                    };
-                }
-                if (extendedMetricDisabler === "heap") {
-                    options.extendedMetrics = {
-                        ...options.extendedMetrics,
-                        [ExtendedMetricType.heap]: false
-                    };
-                }
-                if (extendedMetricDisabler === "loop") {
-                    options.extendedMetrics = {
-                        ...options.extendedMetrics,
-                        [ExtendedMetricType.loop]: false
-                    };
-                }
-            }
-        }
-        // Disable all native metrics
-        if (this.disableAllExtendedMetrics === true) {
-            options.extendedMetrics = {
-                ...options.extendedMetrics,
-                [ExtendedMetricType.gc]: false,
-                [ExtendedMetricType.heap]: false,
-                [ExtendedMetricType.loop]: false,
-            };
-        }
 
         if (this.noDiagnosticChannel === true) {
             // Disable all instrumentations except http to conform with AppInsights 2.x behavior
@@ -284,9 +208,6 @@ class Config implements IConfig {
                 if (mod !== "http") {
                     (options.instrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
                 }
-            }
-            for (const mod in options.logInstrumentationOptions) {
-                (options.logInstrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
             }
         }
 
@@ -307,11 +228,6 @@ class Config implements IConfig {
             for (const mod in options.instrumentationOptions) {
                 if (unpatchedModules.indexOf(mod.toLowerCase()) !== -1) {
                     (options.instrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
-                }
-            }
-            for (const mod in options.logInstrumentationOptions) {
-                if (unpatchedModules.indexOf(mod.toLowerCase()) !== -1) {
-                    (options.logInstrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
                 }
             }
         }
@@ -347,7 +263,6 @@ class Config implements IConfig {
         if (this.ignoreLegacyHeaders === false) {
             Logger.getInstance().warn("LegacyHeaders are not supported by the shim.");
         }
-
         if (this.maxBatchSize) {
             Logger.getInstance().warn("The maxBatchSize configuration option is not supported by the shim.");
         }
@@ -361,6 +276,30 @@ class Config implements IConfig {
             this.enableWebInstrumentation || this.webInstrumentationConfig || this.webInstrumentationSrc || this.webInstrumentationConnectionString
         ) {
             Logger.getInstance().warn("The webInstrumentation configuration options are not supported by the shim.");
+        }
+        if (this.enableAutoCollectPerformance) {
+            Logger.getInstance().warn("The enableAutoCollectPerformance configuration option is not supported by the shim.");
+        }
+        if (this.enableAutoCollectConsole) {
+            Logger.getInstance().warn("The enableAutoCollectConsole configuration option is not supported by the shim.");
+        }
+        if (this.enableAutoCollectExternalLoggers) {
+            Logger.getInstance().warn("The enableAutoCollectExternalLoggers configuration option is not supported by the shim.");
+        }
+        if (this.enableAutoCollectExceptions) {
+            Logger.getInstance().warn("The enableAutoCollectExceptions configuration option is not supported by the shim.");
+        }
+        if (this.maxBatchIntervalMs) {
+            Logger.getInstance().warn("The maxBatchIntervalMs configuration option is not supported by the shim.");
+        }
+        if (this.enableAutoCollectExtendedMetrics) {
+            Logger.getInstance().warn("The enableAutoCollectExtendedMetrics configuration option is not supported by the shim as extended metrics are not supported.");
+        }
+        if (this.extendedMetricDisablers) {
+            Logger.getInstance().warn("The extendedMetricDisablers configuration option is not supported by the shim as extended metrics are not supported.");
+        }
+        if (this.disableAllExtendedMetrics) {
+            Logger.getInstance().warn("The disableAllExtendedMetrics configuration option is not supported by the shim as extended metrics are not supported.");
         }
         return options;
     }
