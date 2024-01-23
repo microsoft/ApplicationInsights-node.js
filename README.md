@@ -199,7 +199,7 @@ The following configurations are set using either environment variables, setting
 | httpAgent/httpsAgent | Not supported in the shim or Azure Monitor OpenTelemetry. |
 | enableWebInstrumentation | Not currently supported in the shim, but is in Azure Monitor OpenTelemetry as `enableBrowserSdkLoader`. |
 | webInstrumentationConnectionString | Not supported in the shim, but is in Azure Monitor OpenTelemetry as `browserSdkLoaderConnectionString`. |
-| webInstrumentationConfig | Not currently supported by the shim, but is in Azure Monitor OpenTelemetry as `browserSdkLoaderConfig`. |
+| webInstrumentationConfig | Not currently supported by the shim, or Azure Monitor OpenTelemetry. |
 | enableAutoCollectPerformance | Not supported in the shim. |
 | enableAutoCollectConsole | Not supported in the shim. |
 | enableAutoCollectExternalLoggers | Not supported in the shim. |
