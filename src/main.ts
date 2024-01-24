@@ -18,6 +18,8 @@ import { ApplicationInsightsConfig } from "./shared/configuration/config";
 import { LogApi } from "./logs/api";
 import { PerformanceCounterMetrics } from "./metrics/performanceCounters";
 import { AzureMonitorSpanProcessor } from "./traces/spanProcessor";
+import { registerInstrumentations } from "@opentelemetry/instrumentation";
+import { BunyanInstrumentation } from '@opentelemetry/instrumentation-bunyan';
 
 let console: AutoCollectConsole;
 let exceptions: AutoCollectExceptions;
@@ -43,6 +45,14 @@ export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
         }
     }
     console.enable(internalConfig.logInstrumentationOptions);
+    if (internalConfig.instrumentationOptions.bunyan?.enabled) {
+        const instrumentations = [
+            new BunyanInstrumentation(),
+        ];
+        registerInstrumentations({
+            instrumentations
+        });
+    }
     _addOtlpExporters(internalConfig);
 }
 

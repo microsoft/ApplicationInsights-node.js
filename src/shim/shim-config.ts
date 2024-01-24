@@ -3,7 +3,7 @@
 import http = require("http");
 import https = require("https");
 import azureCoreAuth = require("@azure/core-auth");
-import { DiagLogLevel, diag } from "@opentelemetry/api";
+import { diag } from "@opentelemetry/api";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrumentationConfig } from "./types";
 import { ShimJsonConfig } from "./shim-jsonConfig";
@@ -137,16 +137,17 @@ class Config implements IConfig {
                 redis: { enabled: true },
                 redis4: { enabled: true },
                 postgreSql: { enabled: true },
+                bunyan: { enabled: true },
             },
             logInstrumentationOptions: {
                 console: { enabled: false },
                 winston: { enabled: true },
-                bunyan: { enabled: true }
             },
             otlpTraceExporterConfig: {},
             otlpMetricExporterConfig: {},
             otlpLogExporterConfig: {},
             extendedMetrics: {},
+            enableLiveMetrics: true,
         };
         if (this.samplingPercentage) {
             options.samplingRatio = this.samplingPercentage / 100;
@@ -203,6 +204,9 @@ class Config implements IConfig {
             options.logInstrumentationOptions = {
                 ...options.logInstrumentationOptions,
                 winston: { enabled: this.enableAutoCollectExternalLoggers },
+            }
+            options.instrumentationOptions = {
+                ...options.instrumentationOptions,
                 bunyan: { enabled: this.enableAutoCollectExternalLoggers },
             }
         }
@@ -325,6 +329,18 @@ class Config implements IConfig {
             }
         }
 
+        if (this.enableSendLiveMetrics === false) {
+            options.enableLiveMetrics = false;
+        }
+
+        // BROWSER SDK LOADER
+        if (this.enableWebInstrumentation === true) {
+            options.browserSdkLoaderOptions = {
+                enabled: this.enableWebInstrumentation,
+                connectionString: this.webInstrumentationConnectionString,
+            }
+        }
+
         // NOT SUPPORTED CONFIGURATION OPTIONS
         if (this.disableAppInsights) {
             diag.warn("disableAppInsights configuration no longer supported.");
@@ -337,9 +353,6 @@ class Config implements IConfig {
         }
         if (typeof (this.enableAutoCollectIncomingRequestAzureFunctions) === "boolean") {
             diag.warn("Auto request generation in Azure Functions is no longer supported.");
-        }
-        if (typeof (this.enableSendLiveMetrics) === "boolean") {
-            diag.warn("Live Metrics is currently not supported.");
         }
         if (this.enableUseAsyncHooks === false) {
             diag.warn("The use of non async hooks is no longer supported.");
@@ -367,9 +380,9 @@ class Config implements IConfig {
             diag.warn("The httpAgent and httpsAgent configuration options are not supported by the shim.");
         }
         if (
-            this.enableWebInstrumentation || this.webInstrumentationConfig || this.webInstrumentationSrc || this.webInstrumentationConnectionString
+            this.webInstrumentationConfig || this.webInstrumentationSrc
         ) {
-            diag.warn("The webInstrumentation configuration options are not supported by the shim.");
+            diag.warn("The webInstrumentation config and src options are not supported by the shim.");
         }
         return options;
     }

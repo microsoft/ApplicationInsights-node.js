@@ -61,7 +61,6 @@ export class ApplicationInsightsConfig {
         this.enableAutoCollectPerformance = true;
         this.logInstrumentationOptions = {
             console: { enabled: false },
-            bunyan: { enabled: false },
             winston: { enabled: false },
         };
         this.extendedMetrics = {};
@@ -81,6 +80,7 @@ export class ApplicationInsightsConfig {
             postgreSql: { enabled: false },
             redis: { enabled: false },
             redis4: { enabled: false },
+            bunyan: { enabled: false },
         };
         this._resource = this._getDefaultResource();
 
