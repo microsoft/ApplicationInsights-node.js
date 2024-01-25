@@ -36,8 +36,8 @@ describe("ApplicationInsightsClient", () => {
 
         let loggerProvider = ((logs.getLoggerProvider() as LoggerProvider) as any);
         let logRecordProcessors = loggerProvider["_sharedState"]["registeredLogRecordProcessors"];
-        assert.ok(logRecordProcessors.length == 6, "wrong number of logRecordProcessors");
-        otlpExporter = logRecordProcessors[5]["_exporter"];
+        assert.ok(logRecordProcessors.length == 3, "wrong number of logRecordProcessors");
+        otlpExporter = logRecordProcessors[2]["_exporter"];
         assert.ok(otlpExporter instanceof OTLPLogExporter, "wrong exporter");
     });
 });
