@@ -138,10 +138,8 @@ class Config implements IConfig {
                 redis4: { enabled: true },
                 postgreSql: { enabled: true },
                 bunyan: { enabled: true },
-            },
-            logInstrumentationOptions: {
-                console: { enabled: false },
-                winston: { enabled: true },
+                console: { enabled: true },
+                winston: { enabled: true }
             },
             otlpTraceExporterConfig: {},
             otlpMetricExporterConfig: {},
@@ -163,8 +161,8 @@ class Config implements IConfig {
         }
         if (typeof (this.enableAutoCollectConsole) === "boolean") {
             const setting: boolean = this.enableAutoCollectConsole;
-            options.logInstrumentationOptions = {
-                ...options.logInstrumentationOptions,
+            options.instrumentationOptions = {
+                ...options.instrumentationOptions,
                 console: { enabled: setting },
             };
         }
@@ -178,6 +176,7 @@ class Config implements IConfig {
         else {
             if (this.enableAutoCollectDependencies === false) {
                 options.instrumentationOptions = {
+                    ...options.instrumentationOptions,
                     http: {
                         ...options.instrumentationOptions?.http,
                         enabled: true,
@@ -188,6 +187,7 @@ class Config implements IConfig {
             }
             if (this.enableAutoCollectRequests === false) {
                 options.instrumentationOptions = {
+                    ...options.instrumentationOptions,
                     http: {
                         ...options.instrumentationOptions?.http,
                         enabled: true,
@@ -201,12 +201,9 @@ class Config implements IConfig {
             options.enableAutoCollectPerformance = this.enableAutoCollectPerformance;
         }
         if (typeof (this.enableAutoCollectExternalLoggers) === "boolean") {
-            options.logInstrumentationOptions = {
-                ...options.logInstrumentationOptions,
-                winston: { enabled: this.enableAutoCollectExternalLoggers },
-            };
             options.instrumentationOptions = {
                 ...options.instrumentationOptions,
+                winston: { enabled: this.enableAutoCollectExternalLoggers },
                 bunyan: { enabled: this.enableAutoCollectExternalLoggers },
             };
         }
@@ -298,9 +295,6 @@ class Config implements IConfig {
                     (options.instrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
                 }
             }
-            for (const mod in options.logInstrumentationOptions) {
-                (options.logInstrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
-            }
         }
 
         if (this.noPatchModules && this.noDiagnosticChannel !== true) {
@@ -322,15 +316,10 @@ class Config implements IConfig {
                     (options.instrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
                 }
             }
-            for (const mod in options.logInstrumentationOptions) {
-                if (unpatchedModules.indexOf(mod.toLowerCase()) !== -1) {
-                    (options.logInstrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
-                }
-            }
         }
 
-        if (this.enableSendLiveMetrics === false) {
-            options.enableLiveMetrics = false;
+        if (typeof (this.enableSendLiveMetrics) === "boolean") {
+            options.enableLiveMetrics = this.enableSendLiveMetrics;
         }
 
         // BROWSER SDK LOADER

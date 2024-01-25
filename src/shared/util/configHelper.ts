@@ -68,7 +68,7 @@ export function setAutoCollectDependencies(options: AzureMonitorOpenTelemetryOpt
 
 export function setAutoCollectConsole(options: AzureMonitorOpenTelemetryOptions, value: boolean, enableConsole: boolean, collectConsoleLog = false) {
     if (options) {
-        options.logInstrumentationOptions = {
+        options.instrumentationOptions = {
             bunyan: { enabled: value },
             winston: { enabled: value },
             console: { enabled: collectConsoleLog },
@@ -77,16 +77,16 @@ export function setAutoCollectConsole(options: AzureMonitorOpenTelemetryOptions,
 }
 
 export function enableAutoCollectExternalLoggers(options: AzureMonitorOpenTelemetryOptions, value: boolean) {
-    options.logInstrumentationOptions = {
-        ...options.logInstrumentationOptions,
+    options.instrumentationOptions = {
+        ...options.instrumentationOptions,
         winston: { enabled: value },
         bunyan: { enabled: value },
     }
 }
 
 export function enableAutoCollectConsole(options: AzureMonitorOpenTelemetryOptions, value: boolean) {
-    options.logInstrumentationOptions = {
-        ...options.logInstrumentationOptions,
+    options.instrumentationOptions = {
+        ...options.instrumentationOptions,
         console: { enabled: value },
     }
 }

@@ -42,7 +42,7 @@ export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
             (trace.getTracerProvider() as BasicTracerProvider).addSpanProcessor(new AzureMonitorSpanProcessor(perfCounters));
         }
     }
-    console.enable(internalConfig.logInstrumentationOptions);
+    console.enable(internalConfig.instrumentationOptions);
     _addOtlpExporters(internalConfig);
 }
 

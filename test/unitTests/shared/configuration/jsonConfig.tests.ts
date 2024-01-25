@@ -30,7 +30,6 @@ describe("Json Config", () => {
 
             let inputJson = {
                 "enableAutoCollectExceptions": true,
-                "logInstrumentationOptions": { console: { enabled: true }, bunyan: { enabled: true }, winston: { enabled: true } },
                 "extendedMetrics": { "gc": true, "heap": true, "loop": true },
                 "otlpTraceExporterConfig": { enabled: true },
                 "otlpMetricExporterConfig": { enabled: true },
@@ -45,7 +44,10 @@ describe("Json Config", () => {
                     "mySql": { "enabled": false },
                     "postgreSql": { "enabled": false },
                     "redis": { "enabled": false },
-                    "redis4": { "enabled": false }
+                    "redis4": { "enabled": false },
+                    "console": { "enabled": true },
+                    "bunyan": { "enabled": true },
+                    "winston": { "enabled": true }
                 }
             };
             env["APPLICATIONINSIGHTS_CONFIGURATION_CONTENT"] = JSON.stringify(inputJson);
@@ -53,9 +55,9 @@ describe("Json Config", () => {
             const config = JsonConfig.getInstance();
 
             assert.strictEqual(config.enableAutoCollectExceptions, true);
-            assert.strictEqual(config.logInstrumentationOptions.console.enabled, true);
-            assert.strictEqual(config.logInstrumentationOptions.bunyan.enabled, true);
-            assert.strictEqual(config.logInstrumentationOptions.winston.enabled, true);
+            assert.strictEqual(config.instrumentationOptions.console.enabled, true);
+            assert.strictEqual(config.instrumentationOptions.bunyan.enabled, true);
+            assert.strictEqual(config.instrumentationOptions.winston.enabled, true);
             assert.strictEqual(config.extendedMetrics.gc, true);
             assert.strictEqual(config.extendedMetrics.heap, true);
             assert.strictEqual(config.extendedMetrics.loop, true);

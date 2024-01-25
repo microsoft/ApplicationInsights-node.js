@@ -79,8 +79,8 @@ describe("ApplicationInsights", () => {
             assert.equal(appInsights.defaultClient["_options"].enableAutoCollectExceptions, false);
             assert.equal(appInsights.defaultClient["_options"].enableAutoCollectPerformance, false);
             assert.equal(JSON.stringify(appInsights.defaultClient["_options"].instrumentationOptions.bunyan), JSON.stringify({ enabled: false }));
-            assert.equal(JSON.stringify(appInsights.defaultClient["_options"].logInstrumentationOptions.console), JSON.stringify({ enabled: false }));
-            assert.equal(JSON.stringify(appInsights.defaultClient["_options"].logInstrumentationOptions.winston), JSON.stringify({ enabled: false }));
+            assert.equal(JSON.stringify(appInsights.defaultClient["_options"].instrumentationOptions.console), JSON.stringify({ enabled: false }));
+            assert.equal(JSON.stringify(appInsights.defaultClient["_options"].instrumentationOptions.winston), JSON.stringify({ enabled: false }));
         });
 
         describe("#CorrelationContext", () => {

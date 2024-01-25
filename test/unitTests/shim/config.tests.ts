@@ -3,7 +3,6 @@
 import assert = require('assert');
 import sinon = require('sinon');
 import azureCoreAuth = require("@azure/core-auth");
-import { DiagLogLevel } from '@opentelemetry/api';
 import { HttpInstrumentationConfig } from '@opentelemetry/instrumentation-http';
 import Config = require('../../../src/shim/shim-config');
 import { TelemetryClient } from "../../../src/shim/telemetryClient";
@@ -71,7 +70,19 @@ describe("shim/configuration/config", () => {
             assert.equal(options.azureMonitorExporterOptions.connectionString, connectionString), "wrong connectionString";
             assert.equal(options.azureMonitorExporterOptions.proxyOptions.host, "localhost", "wrong host");
             assert.equal(options.azureMonitorExporterOptions.proxyOptions.port, 3000, "wrong port");
-            assert.equal(JSON.stringify(options.logInstrumentationOptions), JSON.stringify({ console: { enabled: true }, winston: { enabled: true } }), "wrong logInstrumentationOptions");
+            assert.equal(JSON.stringify(options.instrumentationOptions), JSON.stringify({
+                "http": { "enabled": true },
+                "azureSdk": { "enabled": true },
+                "mongoDb": { "enabled": true },
+                "mySql": { "enabled": true },
+                "redis": { "enabled": true },
+                "redis4": { "enabled": true },
+                "postgreSql": { "enabled": true },
+                "bunyan": { "enabled": true },
+                "console": { "enabled": true },
+                "winston": { "enabled": true }
+            }),
+            "wrong instrumentationOptions");
             assert.equal(JSON.stringify(options.instrumentationOptions.bunyan), JSON.stringify({ enabled: true }), "wrong bunyan setting");
             assert.equal(options.enableAutoCollectExceptions, true, "wrong enableAutoCollectExceptions");
             assert.equal(options.enableAutoCollectPerformance, true, "wrong enableAutoCollectPerformance");
@@ -133,20 +144,17 @@ describe("shim/configuration/config", () => {
             const config = new Config(connectionString);
             config.noDiagnosticChannel = true;
             let options = config.parseConfig();
-            assert.equal(JSON.stringify(options.instrumentationOptions), JSON.stringify({ 
-                http: { enabled: true },
-                azureSdk: { enabled: false },
-                mongoDb: { enabled: false },
-                mySql: { enabled: false },
-                redis: { enabled: false },
-                redis4: { enabled: false },
-                postgreSql: { enabled: false },
-                bunyan: { enabled: false },
-            }));
-
-            assert.equal(JSON.stringify(options.logInstrumentationOptions), JSON.stringify({
-                console: { enabled: false },
-                winston: { enabled: false },
+            assert.equal(JSON.stringify(options.instrumentationOptions), JSON.stringify({
+                "http": { "enabled": true },
+                "azureSdk": { "enabled": false },
+                "mongoDb": { "enabled": false },
+                "mySql": { "enabled": false },
+                "redis": { "enabled": false },
+                "redis4": { "enabled": false },
+                "postgreSql": { "enabled": false },
+                "bunyan": { "enabled": false },
+                "console":{ "enabled": false },
+                "winston": { "enabled": false }
             }));
         });
 
@@ -154,7 +162,6 @@ describe("shim/configuration/config", () => {
             const config = new Config(connectionString);
             config.noPatchModules = "azuresdk,mongodb-core,redis,pg-pool";
             let options = config.parseConfig();
-            // Bunyan is enable here because the noPatchModules is only for "instrumentations" and not "logInstrumentations"
             assert.equal(JSON.stringify(options.instrumentationOptions), JSON.stringify({ 
                 http: { enabled: true },
                 azureSdk: { enabled: false },
@@ -164,6 +171,8 @@ describe("shim/configuration/config", () => {
                 redis4: { enabled: false },
                 postgreSql: { enabled: false },
                 bunyan: { enabled: true },
+                console: { enabled: true },
+                winston: { enabled: true },
             }));
         });
 
@@ -183,8 +192,18 @@ describe("shim/configuration/config", () => {
             const config = new Config(connectionString);
             config.enableAutoCollectExternalLoggers = false;
             let options = config.parseConfig();
-            assert.equal(JSON.stringify(options.logInstrumentationOptions), JSON.stringify({ console: { enabled: false }, winston: { enabled: false } }));
-            assert.equal(JSON.stringify(options.instrumentationOptions.bunyan), JSON.stringify( { enabled: false } ));
+            assert.equal(JSON.stringify(options.instrumentationOptions), JSON.stringify({
+                "http": { "enabled": true },
+                "azureSdk": { "enabled": true },
+                "mongoDb": { "enabled": true },
+                "mySql": { "enabled": true },
+                "redis": { "enabled": true },
+                "redis4": { "enabled": true },
+                "postgreSql": { "enabled": true },
+                "bunyan": { "enabled": false },
+                "console": { "enabled": true },
+                "winston": { "enabled": false }
+            }));
         });
 
         it("should disable standard metrics", () => {
