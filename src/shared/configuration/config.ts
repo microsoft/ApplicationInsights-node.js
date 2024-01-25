@@ -61,8 +61,8 @@ export class ApplicationInsightsConfig {
         this.enableAutoCollectPerformance = true;
         this.logInstrumentationOptions = {
             console: { enabled: false },
-            winston: { enabled: false },
             bunyan: { enabled: false },
+            winston: { enabled: false },
         };
         this.extendedMetrics = {};
         this.extendedMetrics[ExtendedMetricType.gc] = false;
