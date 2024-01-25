@@ -21,8 +21,6 @@ export { Contracts, DistributedTracingModes, HttpRequest, TelemetryClient };
  */
 export let defaultClient: TelemetryClient;
 
-// export let liveMetricsClient: QuickPulseStateManager;
-
 /**
  * Initializes the default client. Should be called after setting
  * configuration options.

@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { InstrumentationOptions } from "@azure/monitor-opentelemetry";
 import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 import { diag } from "@opentelemetry/api";
 import {
@@ -11,11 +10,10 @@ import {
     envDetectorSync,
 } from "@opentelemetry/resources";
 import { JsonConfig } from "./jsonConfig";
-import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType, LogInstrumentationOptions, OTLPExporterConfig } from "../../types";
+import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType, OTLPExporterConfig, InstrumentationOptions } from "../../types";
 
 
 export class ApplicationInsightsConfig {
-    public logInstrumentationOptions: LogInstrumentationOptions;
     public enableAutoCollectExceptions: boolean;
     public extendedMetrics: { [type: string]: boolean };
     /** OTLP Trace Exporter Configuration */
@@ -59,11 +57,6 @@ export class ApplicationInsightsConfig {
         this.otlpMetricExporterConfig = {};
         this.otlpTraceExporterConfig = {};
         this.enableAutoCollectPerformance = true;
-        this.logInstrumentationOptions = {
-            console: { enabled: false },
-            bunyan: { enabled: false },
-            winston: { enabled: false },
-        };
         this.extendedMetrics = {};
         this.extendedMetrics[ExtendedMetricType.gc] = false;
         this.extendedMetrics[ExtendedMetricType.heap] = false;
@@ -81,6 +74,9 @@ export class ApplicationInsightsConfig {
             postgreSql: { enabled: false },
             redis: { enabled: false },
             redis4: { enabled: false },
+            console: { enabled: false },
+            bunyan: { enabled: false },
+            winston: { enabled: false },
         };
         this._resource = this._getDefaultResource();
 
@@ -93,10 +89,6 @@ export class ApplicationInsightsConfig {
                 options.enableAutoCollectExceptions || this.enableAutoCollectExceptions;
             this.enableAutoCollectPerformance =
                 options.enableAutoCollectPerformance || this.enableAutoCollectPerformance;
-            this.logInstrumentationOptions = Object.assign(
-                this.logInstrumentationOptions,
-                options.logInstrumentationOptions
-            );
             this.otlpTraceExporterConfig = Object.assign(
                 this.otlpTraceExporterConfig,
                 options.otlpTraceExporterConfig
@@ -148,11 +140,6 @@ export class ApplicationInsightsConfig {
             this.otlpLogExporterConfig = Object.assign(
                 this.otlpLogExporterConfig,
                 jsonConfig.otlpLogExporterConfig
-            );
-
-            this.logInstrumentationOptions = Object.assign(
-                this.logInstrumentationOptions,
-                jsonConfig.logInstrumentationOptions
             );
 
             this.extendedMetrics = Object.assign(

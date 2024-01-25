@@ -4,7 +4,6 @@
     {"path": "/mongo", "steps": ["MongoInsert", "MongoInsertMany", "MongoUpdateOne", "MongoCreateIndex", "MongoFind"]},
     {"path": "/mySql", "steps": ["MySQLQuery", "Timeout"]},
     {"path": "/redis", "steps": ["RedisGet", "RedisSet", "RedisHset", "RedisHkeys", "RedisHincrby"]},
-    {"path": "/diagChannelBunyan", "steps": ["BunyanFatal", "BunyanError", "BunyanWarn", "BunyanInfo", "BunyanDebug", "BunyanTrace"]},
     {"path": "/diagChannelConsole", "steps": ["ConsoleLog", "ConsoleWarn", "ConsoleError", "ConsoleInfo"]},
     {"path": "/diagChannelWinston", "steps": ["WinstonError", "WinstonWarn", "WinstonInfo", "WinstonVerbose", "WinstonDebug", "WinstonSilly", "WinstonError2", "WinstonWarn2", "WinstonInfo2"]}
     ]

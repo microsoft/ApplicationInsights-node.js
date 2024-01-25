@@ -37,9 +37,7 @@ if (testconfig.AppInsightsEnabled) {
             },
             redis4: {
                 enabled: true
-            }
-        },
-        logInstrumentationOptions: {
+            },
             console: {
                 enabled: true,
             },

@@ -3,11 +3,11 @@
 import http = require("http");
 import https = require("https");
 import azureCoreAuth = require("@azure/core-auth");
-import { DiagLogLevel, diag } from "@opentelemetry/api";
+import { diag } from "@opentelemetry/api";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrumentationConfig } from "./types";
 import { ShimJsonConfig } from "./shim-jsonConfig";
-import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType, InstrumentationOptionsType } from "../types";
+import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType, InstrumentationOptions, InstrumentationOptionsType } from "../types";
 
 class Config implements IConfig {
 
@@ -137,16 +137,18 @@ class Config implements IConfig {
                 redis: { enabled: true },
                 redis4: { enabled: true },
                 postgreSql: { enabled: true },
-            },
-            logInstrumentationOptions: {
-                console: { enabled: false },
-                winston: { enabled: true },
-                bunyan: { enabled: true }
+                bunyan: { enabled: true },
             },
             otlpTraceExporterConfig: {},
             otlpMetricExporterConfig: {},
             otlpLogExporterConfig: {},
             extendedMetrics: {},
+            enableLiveMetrics: true,
+        };
+        (options.instrumentationOptions as InstrumentationOptions) = {
+            ...options.instrumentationOptions,
+            console: { enabled: true },
+            winston: { enabled: true },
         };
         if (this.samplingPercentage) {
             options.samplingRatio = this.samplingPercentage / 100;
@@ -162,8 +164,8 @@ class Config implements IConfig {
         }
         if (typeof (this.enableAutoCollectConsole) === "boolean") {
             const setting: boolean = this.enableAutoCollectConsole;
-            options.logInstrumentationOptions = {
-                ...options.logInstrumentationOptions,
+            (options.instrumentationOptions as InstrumentationOptions) = {
+                ...options.instrumentationOptions,
                 console: { enabled: setting },
             };
         }
@@ -177,6 +179,7 @@ class Config implements IConfig {
         else {
             if (this.enableAutoCollectDependencies === false) {
                 options.instrumentationOptions = {
+                    ...options.instrumentationOptions,
                     http: {
                         ...options.instrumentationOptions?.http,
                         enabled: true,
@@ -187,6 +190,7 @@ class Config implements IConfig {
             }
             if (this.enableAutoCollectRequests === false) {
                 options.instrumentationOptions = {
+                    ...options.instrumentationOptions,
                     http: {
                         ...options.instrumentationOptions?.http,
                         enabled: true,
@@ -200,11 +204,11 @@ class Config implements IConfig {
             options.enableAutoCollectPerformance = this.enableAutoCollectPerformance;
         }
         if (typeof (this.enableAutoCollectExternalLoggers) === "boolean") {
-            options.logInstrumentationOptions = {
-                ...options.logInstrumentationOptions,
+            (options.instrumentationOptions as InstrumentationOptions) = {
+                ...options.instrumentationOptions,
                 winston: { enabled: this.enableAutoCollectExternalLoggers },
                 bunyan: { enabled: this.enableAutoCollectExternalLoggers },
-            }
+            };
         }
         if (this.enableUseDiskRetryCaching === false) {
             options.azureMonitorExporterOptions.disableOfflineStorage = true;
@@ -294,9 +298,6 @@ class Config implements IConfig {
                     (options.instrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
                 }
             }
-            for (const mod in options.logInstrumentationOptions) {
-                (options.logInstrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
-            }
         }
 
         if (this.noPatchModules && this.noDiagnosticChannel !== true) {
@@ -318,10 +319,17 @@ class Config implements IConfig {
                     (options.instrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
                 }
             }
-            for (const mod in options.logInstrumentationOptions) {
-                if (unpatchedModules.indexOf(mod.toLowerCase()) !== -1) {
-                    (options.logInstrumentationOptions as InstrumentationOptionsType)[mod] = { enabled: false };
-                }
+        }
+
+        if (typeof (this.enableSendLiveMetrics) === "boolean") {
+            options.enableLiveMetrics = this.enableSendLiveMetrics;
+        }
+
+        // BROWSER SDK LOADER
+        if (this.enableWebInstrumentation === true) {
+            options.browserSdkLoaderOptions = {
+                enabled: this.enableWebInstrumentation,
+                connectionString: this.webInstrumentationConnectionString,
             }
         }
 
@@ -337,9 +345,6 @@ class Config implements IConfig {
         }
         if (typeof (this.enableAutoCollectIncomingRequestAzureFunctions) === "boolean") {
             diag.warn("Auto request generation in Azure Functions is no longer supported.");
-        }
-        if (typeof (this.enableSendLiveMetrics) === "boolean") {
-            diag.warn("Live Metrics is currently not supported.");
         }
         if (this.enableUseAsyncHooks === false) {
             diag.warn("The use of non async hooks is no longer supported.");
@@ -367,9 +372,12 @@ class Config implements IConfig {
             diag.warn("The httpAgent and httpsAgent configuration options are not supported by the shim.");
         }
         if (
-            this.enableWebInstrumentation || this.webInstrumentationConfig || this.webInstrumentationSrc || this.webInstrumentationConnectionString
+            this.webInstrumentationConfig || this.webInstrumentationSrc
         ) {
-            diag.warn("The webInstrumentation configuration options are not supported by the shim.");
+            diag.warn("The webInstrumentation config and src options are not supported by the shim.");
+        }
+        if (this.quickPulseHost) {
+            diag.warn("The quickPulseHost configuration option is not suppored by the shim.");
         }
         return options;
     }
