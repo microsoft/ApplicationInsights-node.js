@@ -1,5 +1,5 @@
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
-import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType } from "../../types";
+import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType, InstrumentationOptions } from "../../types";
 import * as http from "http";
 
 export function setAutoCollectPerformance(options: AzureMonitorOpenTelemetryOptions, value: boolean, collectExtendedMetrics?: any) {
@@ -68,7 +68,7 @@ export function setAutoCollectDependencies(options: AzureMonitorOpenTelemetryOpt
 
 export function setAutoCollectConsole(options: AzureMonitorOpenTelemetryOptions, value: boolean, enableConsole: boolean, collectConsoleLog = false) {
     if (options) {
-        options.instrumentationOptions = {
+        (options.instrumentationOptions as InstrumentationOptions) = {
             bunyan: { enabled: value },
             winston: { enabled: value },
             console: { enabled: collectConsoleLog },
@@ -77,7 +77,7 @@ export function setAutoCollectConsole(options: AzureMonitorOpenTelemetryOptions,
 }
 
 export function enableAutoCollectExternalLoggers(options: AzureMonitorOpenTelemetryOptions, value: boolean) {
-    options.instrumentationOptions = {
+    (options.instrumentationOptions as InstrumentationOptions) = {
         ...options.instrumentationOptions,
         winston: { enabled: value },
         bunyan: { enabled: value },
@@ -85,7 +85,7 @@ export function enableAutoCollectExternalLoggers(options: AzureMonitorOpenTeleme
 }
 
 export function enableAutoCollectConsole(options: AzureMonitorOpenTelemetryOptions, value: boolean) {
-    options.instrumentationOptions = {
+    (options.instrumentationOptions as InstrumentationOptions) = {
         ...options.instrumentationOptions,
         console: { enabled: value },
     }

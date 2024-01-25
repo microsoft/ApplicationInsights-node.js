@@ -1,4 +1,4 @@
-import { InstrumentationOptions } from "@azure/monitor-opentelemetry";
+import { InstrumentationOptions } from "../types";
 import { LogApi } from "./api";
 import { enablePublishers } from "./diagnostic-channel/initialization";
 enablePublishers();

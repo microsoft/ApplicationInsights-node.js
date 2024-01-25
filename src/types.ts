@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { AzureMonitorOpenTelemetryOptions as DistroOptions } from "@azure/monitor-opentelemetry";
+import { AzureMonitorOpenTelemetryOptions as DistroOptions, InstrumentationOptions as DistroInstrumentationOptions } from "@azure/monitor-opentelemetry";
+import { InstrumentationConfig } from "@opentelemetry/instrumentation";
 import { OTLPExporterNodeConfigBase } from "@opentelemetry/otlp-exporter-base";
 
 
@@ -33,6 +34,13 @@ export interface AzureMonitorOpenTelemetryOptions extends DistroOptions {
    * Specific extended metrics, applicationinsights-native-metrics package need to be available
    */
   extendedMetrics?: { [type: string]: boolean };
+}
+
+export interface InstrumentationOptions extends DistroInstrumentationOptions {
+    /** Console Instrumentation Config */
+    console?: InstrumentationConfig;
+    /** Winston Instrumentation Config */
+    winston?: InstrumentationConfig;
 }
 
 /**

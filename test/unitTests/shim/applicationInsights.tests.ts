@@ -5,6 +5,7 @@ import * as sinon from "sinon";
 
 import * as appInsights from "../../../src/index";
 import { diag, DiagLogLevel } from "@opentelemetry/api";
+import { InstrumentationOptions } from "../../../src/types";
 
 describe("ApplicationInsights", () => {
     let sandbox: sinon.SinonSandbox;
@@ -79,8 +80,8 @@ describe("ApplicationInsights", () => {
             assert.equal(appInsights.defaultClient["_options"].enableAutoCollectExceptions, false);
             assert.equal(appInsights.defaultClient["_options"].enableAutoCollectPerformance, false);
             assert.equal(JSON.stringify(appInsights.defaultClient["_options"].instrumentationOptions.bunyan), JSON.stringify({ enabled: false }));
-            assert.equal(JSON.stringify(appInsights.defaultClient["_options"].instrumentationOptions.console), JSON.stringify({ enabled: false }));
-            assert.equal(JSON.stringify(appInsights.defaultClient["_options"].instrumentationOptions.winston), JSON.stringify({ enabled: false }));
+            assert.equal(JSON.stringify((appInsights.defaultClient["_options"].instrumentationOptions as InstrumentationOptions).console), JSON.stringify({ enabled: false }));
+            assert.equal(JSON.stringify((appInsights.defaultClient["_options"].instrumentationOptions as InstrumentationOptions).winston), JSON.stringify({ enabled: false }));
         });
 
         describe("#CorrelationContext", () => {

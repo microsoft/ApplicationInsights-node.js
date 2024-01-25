@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { InstrumentationOptions } from "@azure/monitor-opentelemetry";
 import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 import { diag } from "@opentelemetry/api";
 import {
@@ -11,7 +10,7 @@ import {
     envDetectorSync,
 } from "@opentelemetry/resources";
 import { JsonConfig } from "./jsonConfig";
-import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType, OTLPExporterConfig } from "../../types";
+import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType, OTLPExporterConfig, InstrumentationOptions } from "../../types";
 
 
 export class ApplicationInsightsConfig {

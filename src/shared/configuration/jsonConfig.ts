@@ -3,10 +3,9 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import { InstrumentationOptions } from "@azure/monitor-opentelemetry";
 import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 import { diag } from "@opentelemetry/api";
-import { AzureMonitorOpenTelemetryOptions, OTLPExporterConfig } from "../../types";
+import { AzureMonitorOpenTelemetryOptions, OTLPExporterConfig, InstrumentationOptions } from "../../types";
 
 
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";

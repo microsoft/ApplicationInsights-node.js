@@ -7,7 +7,7 @@ import { diag } from "@opentelemetry/api";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrumentationConfig } from "./types";
 import { ShimJsonConfig } from "./shim-jsonConfig";
-import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType, InstrumentationOptionsType } from "../types";
+import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType, InstrumentationOptions, InstrumentationOptionsType } from "../types";
 
 class Config implements IConfig {
 
@@ -138,14 +138,17 @@ class Config implements IConfig {
                 redis4: { enabled: true },
                 postgreSql: { enabled: true },
                 bunyan: { enabled: true },
-                console: { enabled: true },
-                winston: { enabled: true }
             },
             otlpTraceExporterConfig: {},
             otlpMetricExporterConfig: {},
             otlpLogExporterConfig: {},
             extendedMetrics: {},
             enableLiveMetrics: true,
+        };
+        (options.instrumentationOptions as InstrumentationOptions) = {
+            ...options.instrumentationOptions,
+            console: { enabled: true },
+            winston: { enabled: true },
         };
         if (this.samplingPercentage) {
             options.samplingRatio = this.samplingPercentage / 100;
@@ -161,7 +164,7 @@ class Config implements IConfig {
         }
         if (typeof (this.enableAutoCollectConsole) === "boolean") {
             const setting: boolean = this.enableAutoCollectConsole;
-            options.instrumentationOptions = {
+            (options.instrumentationOptions as InstrumentationOptions) = {
                 ...options.instrumentationOptions,
                 console: { enabled: setting },
             };
@@ -201,7 +204,7 @@ class Config implements IConfig {
             options.enableAutoCollectPerformance = this.enableAutoCollectPerformance;
         }
         if (typeof (this.enableAutoCollectExternalLoggers) === "boolean") {
-            options.instrumentationOptions = {
+            (options.instrumentationOptions as InstrumentationOptions) = {
                 ...options.instrumentationOptions,
                 winston: { enabled: this.enableAutoCollectExternalLoggers },
                 bunyan: { enabled: this.enableAutoCollectExternalLoggers },
