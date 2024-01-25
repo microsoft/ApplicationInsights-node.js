@@ -137,11 +137,11 @@ class Config implements IConfig {
                 redis: { enabled: true },
                 redis4: { enabled: true },
                 postgreSql: { enabled: true },
-                bunyan: { enabled: true },
             },
             logInstrumentationOptions: {
                 console: { enabled: false },
                 winston: { enabled: true },
+                bunyan: { enabled: true },
             },
             otlpTraceExporterConfig: {},
             otlpMetricExporterConfig: {},
@@ -204,11 +204,8 @@ class Config implements IConfig {
             options.logInstrumentationOptions = {
                 ...options.logInstrumentationOptions,
                 winston: { enabled: this.enableAutoCollectExternalLoggers },
-            }
-            options.instrumentationOptions = {
-                ...options.instrumentationOptions,
                 bunyan: { enabled: this.enableAutoCollectExternalLoggers },
-            }
+            };
         }
         if (this.enableUseDiskRetryCaching === false) {
             options.azureMonitorExporterOptions.disableOfflineStorage = true;

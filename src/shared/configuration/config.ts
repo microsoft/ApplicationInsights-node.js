@@ -62,6 +62,7 @@ export class ApplicationInsightsConfig {
         this.logInstrumentationOptions = {
             console: { enabled: false },
             winston: { enabled: false },
+            bunyan: { enabled: false },
         };
         this.extendedMetrics = {};
         this.extendedMetrics[ExtendedMetricType.gc] = false;
@@ -80,7 +81,6 @@ export class ApplicationInsightsConfig {
             postgreSql: { enabled: false },
             redis: { enabled: false },
             redis4: { enabled: false },
-            bunyan: { enabled: false },
         };
         this._resource = this._getDefaultResource();
 

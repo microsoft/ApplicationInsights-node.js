@@ -50,6 +50,7 @@ export class TelemetryClient {
         useAzureMonitor(this._options);
         // LoggerProvider would be initialized when client is instantiated
         // Get Logger from global provider
+        this._logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
         this._attributeSpanProcessor = new AttributeSpanProcessor({ ...this.context.tags, ...this.commonProperties });
         ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider).addSpanProcessor(this._attributeSpanProcessor);
 

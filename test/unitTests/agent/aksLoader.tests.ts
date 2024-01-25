@@ -2,7 +2,6 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 import { ProxyTracerProvider, metrics, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
-import { MeterProvider } from "@opentelemetry/sdk-metrics";
 
 import { AKSLoader } from "../../../src/agent/aksLoader";
 import { DiagnosticLogger } from "../../../src/agent/diagnostics/diagnosticLogger";
@@ -62,7 +61,7 @@ describe("agent/AKSLoader", () => {
         assert.equal(tracerProvider["_registeredSpanProcessors"][0]["_exporter"].constructor.name, "AzureMonitorTraceExporter");
         let loggerProvider = logs.getLoggerProvider() as any;
         assert.equal(loggerProvider.constructor.name, "LoggerProvider");
-        assert.equal(loggerProvider["_registeredLogRecordProcessors"][0]["_exporter"].constructor.name, "AzureMonitorLogExporter");
+        assert.equal(loggerProvider["_sharedState"]["registeredLogRecordProcessors"][0]["_exporter"].constructor.name, "AzureMonitorLogExporter");
     });
 
     it("should add OTLP exporter if env variable is present", () => {
