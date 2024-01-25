@@ -137,11 +137,11 @@ class Config implements IConfig {
                 redis: { enabled: true },
                 redis4: { enabled: true },
                 postgreSql: { enabled: true },
+                bunyan: { enabled: true },
             },
             logInstrumentationOptions: {
                 console: { enabled: false },
                 winston: { enabled: true },
-                bunyan: { enabled: true },
             },
             otlpTraceExporterConfig: {},
             otlpMetricExporterConfig: {},
@@ -204,6 +204,9 @@ class Config implements IConfig {
             options.logInstrumentationOptions = {
                 ...options.logInstrumentationOptions,
                 winston: { enabled: this.enableAutoCollectExternalLoggers },
+            };
+            options.instrumentationOptions = {
+                ...options.instrumentationOptions,
                 bunyan: { enabled: this.enableAutoCollectExternalLoggers },
             };
         }
@@ -380,6 +383,9 @@ class Config implements IConfig {
             this.webInstrumentationConfig || this.webInstrumentationSrc
         ) {
             diag.warn("The webInstrumentation config and src options are not supported by the shim.");
+        }
+        if (this.quickPulseHost) {
+            diag.warn("The quickPulseHost configuration option is not suppored by the shim.");
         }
         return options;
     }

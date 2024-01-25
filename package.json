@@ -86,8 +86,7 @@
     "@opentelemetry/sdk-trace-node": "^1.20.0",
     "@opentelemetry/semantic-conventions": "^1.20.0",
     "diagnostic-channel": "1.1.1",
-    "diagnostic-channel-publishers": "1.0.7",
-    "node-abort-controller": "^3.1.1"
+    "diagnostic-channel-publishers": "1.0.7"
   },
   "peerDependencies": {
     "applicationinsights-native-metrics": "*"

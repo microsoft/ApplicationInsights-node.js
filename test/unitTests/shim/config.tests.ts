@@ -71,7 +71,8 @@ describe("shim/configuration/config", () => {
             assert.equal(options.azureMonitorExporterOptions.connectionString, connectionString), "wrong connectionString";
             assert.equal(options.azureMonitorExporterOptions.proxyOptions.host, "localhost", "wrong host");
             assert.equal(options.azureMonitorExporterOptions.proxyOptions.port, 3000, "wrong port");
-            assert.equal(JSON.stringify(options.logInstrumentationOptions), JSON.stringify({ console: { enabled: true }, winston: { enabled: true }, bunyan: { enabled: true } }), "wrong logInstrumentationOptions");
+            assert.equal(JSON.stringify(options.logInstrumentationOptions), JSON.stringify({ console: { enabled: true }, winston: { enabled: true } }), "wrong logInstrumentationOptions");
+            assert.equal(JSON.stringify(options.instrumentationOptions.bunyan), JSON.stringify({ enabled: true }), "wrong bunyan setting");
             assert.equal(options.enableAutoCollectExceptions, true, "wrong enableAutoCollectExceptions");
             assert.equal(options.enableAutoCollectPerformance, true, "wrong enableAutoCollectPerformance");
             assert.equal(JSON.stringify(options.extendedMetrics), JSON.stringify({ gc: true, heap: true, loop: true }), "wrong extendedMetrics");
@@ -139,7 +140,13 @@ describe("shim/configuration/config", () => {
                 mySql: { enabled: false },
                 redis: { enabled: false },
                 redis4: { enabled: false },
-                postgreSql: { enabled: false }
+                postgreSql: { enabled: false },
+                bunyan: { enabled: false },
+            }));
+
+            assert.equal(JSON.stringify(options.logInstrumentationOptions), JSON.stringify({
+                console: { enabled: false },
+                winston: { enabled: false },
             }));
         });
 
@@ -147,6 +154,7 @@ describe("shim/configuration/config", () => {
             const config = new Config(connectionString);
             config.noPatchModules = "azuresdk,mongodb-core,redis,pg-pool";
             let options = config.parseConfig();
+            // Bunyan is enable here because the noPatchModules is only for "instrumentations" and not "logInstrumentations"
             assert.equal(JSON.stringify(options.instrumentationOptions), JSON.stringify({ 
                 http: { enabled: true },
                 azureSdk: { enabled: false },
@@ -154,7 +162,8 @@ describe("shim/configuration/config", () => {
                 mySql: { enabled: true },
                 redis: { enabled: false },
                 redis4: { enabled: false },
-                postgreSql: { enabled: false }
+                postgreSql: { enabled: false },
+                bunyan: { enabled: true },
             }));
         });
 
@@ -174,7 +183,8 @@ describe("shim/configuration/config", () => {
             const config = new Config(connectionString);
             config.enableAutoCollectExternalLoggers = false;
             let options = config.parseConfig();
-            assert.equal(JSON.stringify(options.logInstrumentationOptions), JSON.stringify({ console: { enabled: false }, winston: { enabled: false }, bunyan: { enabled: false } }));
+            assert.equal(JSON.stringify(options.logInstrumentationOptions), JSON.stringify({ console: { enabled: false }, winston: { enabled: false } }));
+            assert.equal(JSON.stringify(options.instrumentationOptions.bunyan), JSON.stringify( { enabled: false } ));
         });
 
         it("should disable standard metrics", () => {

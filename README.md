@@ -200,6 +200,7 @@ The following configurations are set using either environment variables, setting
 | enableWebInstrumentation | Not currently supported in the shim, but is in Azure Monitor OpenTelemetry as `enableBrowserSdkLoader`. |
 | webInstrumentationConnectionString | Not supported in the shim, but is in Azure Monitor OpenTelemetry as `browserSdkLoaderConnectionString`. |
 | webInstrumentationConfig | Not currently supported by the shim, but is in Azure Monitor OpenTelemetry as `browserSdkLoaderConfig`. |
+| quickPulseHost | Not supported in the shim or Azure Monitor OpenTelemetry. |
 
 The following methods are part of the `TelemetryClient` class. They can be called using `applicationinsights.defaultClient.<METHOD_NAME>()`.
 

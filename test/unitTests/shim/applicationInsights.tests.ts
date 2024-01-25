@@ -64,7 +64,7 @@ describe("ApplicationInsights", () => {
             appInsights.start();
             assert.equal(appInsights.defaultClient["_options"].enableAutoCollectExceptions, true);
             assert.equal(appInsights.defaultClient["_options"].enableAutoCollectPerformance, true);
-            assert.equal(JSON.stringify(appInsights.defaultClient["_options"].logInstrumentationOptions.bunyan), JSON.stringify({ enabled: true }));
+            assert.equal(JSON.stringify(appInsights.defaultClient["_options"].instrumentationOptions.bunyan), JSON.stringify({ enabled: true }));
         });
 
         it("auto-collection is not initialized if disabled before 'start'", () => {
@@ -78,7 +78,7 @@ describe("ApplicationInsights", () => {
             appInsights.start();
             assert.equal(appInsights.defaultClient["_options"].enableAutoCollectExceptions, false);
             assert.equal(appInsights.defaultClient["_options"].enableAutoCollectPerformance, false);
-            assert.equal(JSON.stringify(appInsights.defaultClient["_options"].logInstrumentationOptions.bunyan), JSON.stringify({ enabled: false }));
+            assert.equal(JSON.stringify(appInsights.defaultClient["_options"].instrumentationOptions.bunyan), JSON.stringify({ enabled: false }));
             assert.equal(JSON.stringify(appInsights.defaultClient["_options"].logInstrumentationOptions.console), JSON.stringify({ enabled: false }));
             assert.equal(JSON.stringify(appInsights.defaultClient["_options"].logInstrumentationOptions.winston), JSON.stringify({ enabled: false }));
         });

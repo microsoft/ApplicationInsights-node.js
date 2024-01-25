@@ -18,10 +18,7 @@ import { ApplicationInsightsConfig } from "./shared/configuration/config";
 import { LogApi } from "./logs/api";
 import { PerformanceCounterMetrics } from "./metrics/performanceCounters";
 import { AzureMonitorSpanProcessor } from "./traces/spanProcessor";
-import { AbortController } from "node-abort-controller";
 
-// Imports AbortController and sets it globally to satisfy compatibility with Node 14
-(global as any).AbortController = AbortController;
 let console: AutoCollectConsole;
 let exceptions: AutoCollectExceptions;
 let perfCounters: PerformanceCounterMetrics;
