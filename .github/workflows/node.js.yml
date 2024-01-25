@@ -14,7 +14,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node-version: [14.x, 16.x, 18.x]
+        # TODO: Enable Node 14.x when we update the pipeline to support AbortController
+        node-version: [16.x, 18.x]
 
     steps:
     - uses: actions/checkout@v2
