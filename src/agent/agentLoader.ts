@@ -236,28 +236,36 @@ export class AgentLoader {
     private _sdkAlreadyExists(): boolean {
         try {
             // appInstance should either resolve to user SDK or crash. If it resolves to attach SDK, user probably modified their NODE_PATH
-            let sdkAppInstance: string;
-            let distroAppInstance: string;
+            let shimInstance: string;
+            let distroInstance: string;
             try {
                 // Node 8.9+ Windows
                 if (this._isWindows) {
-                    sdkAppInstance = (require.resolve as any)("applicationinsights", { paths: [process.cwd()] });
-                    distroAppInstance = (require.resolve as any)("@azure/monitor-opentelemetry", { paths: [process.cwd()] });
+                    shimInstance = (require.resolve as any)("applicationinsights", { paths: [process.cwd()] });
+                    distroInstance = (require.resolve as any)("@azure/monitor-opentelemetry", { paths: [process.cwd()] });
                 }
                 // Node 8.9+ Linux
                 else if (this._isLinux) {
-                    sdkAppInstance = `${process.cwd()}${(require.resolve as any)("applicationinsights", { paths: [process.cwd()] })}`;
-                    distroAppInstance = `${process.cwd()}${(require.resolve as any)("@azure/monitor-opentelemetry", { paths: [process.cwd()] })}`;
+                    shimInstance = `${process.cwd()}${(require.resolve as any)("applicationinsights", { paths: [process.cwd()] })}`;
+                    distroInstance = `${process.cwd()}${(require.resolve as any)("@azure/monitor-opentelemetry", { paths: [process.cwd()] })}`;
                 }
             } catch (e) {
                 // Node <8.9
-                sdkAppInstance = require.resolve(`${process.cwd()}/node_modules/applicationinsights`);
-                distroAppInstance = require.resolve(`${process.cwd()}/node_modules/@azure/monitor-opentelemetry`);
+                shimInstance = require.resolve(`${process.cwd()}/node_modules/applicationinsights`);
+                distroInstance = require.resolve(`${process.cwd()}/node_modules/@azure/monitor-opentelemetry`);
             }
             // If loaded instance is in Azure machine home path do not attach the SDK, this means customer already instrumented their app
-            if (sdkAppInstance.indexOf("home") > -1 || distroAppInstance.indexOf("home") > -1) {
+            if (shimInstance.indexOf("home") > -1) {
                 const diagnosticLog: IDiagnosticLog = {
-                    message: `Azure Monitor Application Insights Distro already exists. Module is already installed in this application; not re-attaching. Location: ${sdkAppInstance || distroAppInstance}`,
+                    message: `Azure Monitor Application Insights Distro already exists as a part of the shim. Module is already installed in this application; not re-attaching. Location: ${shimInstance}`,
+                    messageId: DiagnosticMessageId.sdkExists
+                };
+                this._diagnosticLogger.logMessage(diagnosticLog);
+                return true;
+            }
+            if (distroInstance.indexOf("home") > -1) {
+                const diagnosticLog: IDiagnosticLog = {
+                    message: `Azure Monitor Application Insights Distro already exists. Module is already installed in this application; not re-attaching. Location: ${shimInstance}`,
                     messageId: DiagnosticMessageId.sdkExists
                 };
                 this._diagnosticLogger.logMessage(diagnosticLog);
