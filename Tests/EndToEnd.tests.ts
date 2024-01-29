@@ -23,7 +23,7 @@ import { JsonConfig } from "../Library/JsonConfig";
 import { FileAccessControl } from "../Library/FileAccessControl";
 import FileSystemHelper = require("../Library/FileSystemHelper");
 import AutoCollectHttpRequests = require("../AutoCollection/HttpRequests");
-
+console.log("E2E PID: ", process.pid);
 /**
  * A fake response class that passes by default
  */
@@ -827,11 +827,11 @@ describe("EndToEnd", () => {
                             callback: (response: any) => {
                                 // wait until sdk looks for offline files
                                 setTimeout(() => {
-                                    assert.equal(readdir.callCount, 2);
+                                    assert.equal(readdir.callCount, 2, readdir.callCount.toString());
                                     assert.equal(readFile.callCount, 1);
                                     assert.equal(
                                         path.dirname(readFile.firstCall.args[0]),
-                                        path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
+                                        path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"), "oopsie");
                                     done();
                                 }, 100);
                             }
