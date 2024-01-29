@@ -257,7 +257,7 @@ export class AgentLoader {
             // If loaded instance is in Azure machine home path do not attach the SDK, this means customer already instrumented their app
             if (sdkAppInstance.indexOf("home") > -1 || distroAppInstance.indexOf("home") > -1) {
                 const diagnosticLog: IDiagnosticLog = {
-                    message: `Azure Monitor Application Insights Distro already exists. Module is already installed in this application; not re-attaching. Location: ${sdkAppInstance}`,
+                    message: `Azure Monitor Application Insights Distro already exists. Module is already installed in this application; not re-attaching. Location: ${sdkAppInstance || distroAppInstance}`,
                     messageId: DiagnosticMessageId.sdkExists
                 };
                 this._diagnosticLogger.logMessage(diagnosticLog);
