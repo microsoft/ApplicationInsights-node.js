@@ -830,7 +830,7 @@ describe("EndToEnd", () => {
                                     assert.equal(readFile.callCount, 1);
                                     assert.equal(
                                         path.dirname(readFile.firstCall.args[0]),
-                                        path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"), "oopsie");
+                                        path.join(os.tmpdir(), Sender.TEMPDIR_PREFIX + "key"));
                                     done();
                                 }, 100);
                             }
