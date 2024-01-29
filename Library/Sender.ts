@@ -48,6 +48,7 @@ class Sender {
     private _fileCleanupTimer: NodeJS.Timer;
     private _redirectedHost: string = null;
     private _tempDir: string;
+    private _processId: number = process.pid;
     private _requestTimedOut: boolean;
     protected _resendInterval: number;
     protected _maxBytesOnDisk: number;
@@ -428,7 +429,7 @@ class Sender {
         try {
              //create file - file name for now is the timestamp, a better approach would be a UUID but that
             //would require an external dependency
-            var fileName = new Date().getTime() + ".ai.json";
+            var fileName = `${new Date().getTime()}.${this._processId}.ai.json`;
             var fileFullPath = path.join(this._tempDir, fileName);
 
             // Mode 600 is w/r for creator and no read access for others (only applies on *nix)
@@ -465,7 +466,7 @@ class Sender {
 
             //create file - file name for now is the timestamp, a better approach would be a UUID but that
             //would require an external dependency
-            var fileName = new Date().getTime() + ".ai.json";
+            var fileName = `${new Date().getTime()}.${this._processId}.ai.json`;
             var fileFullPath = path.join(this._tempDir, fileName);
 
             // Mode 600 is w/r for creator and no access for anyone else (only applies on *nix)
@@ -514,7 +515,7 @@ class Sender {
             if (files.length > 0) {
                 for (let i = 0; i < files.length; i++) {
                     // Check expiration
-                    let fileCreationDate: Date = new Date(parseInt(files[i].split(".ai.json")[0]));
+                    let fileCreationDate: Date = new Date(parseInt(files[i].split(`${this._processId}.ai.json`)[0]));
                     let expired = new Date(+(new Date()) - Sender.FILE_RETEMPTION_PERIOD) > fileCreationDate;
                     if (expired) {
                         var filePath = path.join(this._tempDir, files[i]);
