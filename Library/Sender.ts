@@ -431,7 +431,6 @@ class Sender {
             //would require an external dependency
             var fileName = `${new Date().getTime()}.${this._processId}.ai.json`;
             var fileFullPath = path.join(this._tempDir, fileName);
-            console.log("PRINTING THE FILE PATH CREATED: ", fileFullPath);
 
             // Mode 600 is w/r for creator and no read access for others (only applies on *nix)
             // For Windows, ACL rules are applied to the entire directory (see logic in _confirmDirExists and _applyACLRules)
@@ -487,13 +486,10 @@ class Sender {
     private async _sendFirstFileOnDisk(): Promise<void> {
         try {
             let files = await FileSystemHelper.readdirAsync(this._tempDir);
-            console.log("FILES IN THE TEMP DIR: ", files);
-            files = files.filter(f => path.basename(f).indexOf(`.${process.pid}.ai.json`) > -1);
-            console.log("STANDARD TEST PID: ", this._processId)
+            files = files.filter(f => path.basename(f).indexOf(`${process.pid}.ai.json`) > -1);
             if (files.length > 0) {
                 var firstFile = files[0];
                 var filePath = path.join(this._tempDir, firstFile);
-                // console.log("READING THE FIRST FILE ON DISK: ", filePath);
                 let buffer = await FileSystemHelper.readFileAsync(filePath);
                 // delete the file first to prevent double sending
                 await FileSystemHelper.unlinkAsync(filePath);
@@ -515,7 +511,7 @@ class Sender {
     private async _fileCleanupTask(): Promise<void> {
         try {
             let files = await FileSystemHelper.readdirAsync(this._tempDir);
-            files = files.filter(f => path.basename(f).indexOf(".ai.json") > -1);
+            files = files.filter(f => path.basename(f).indexOf(`${this._processId}.ai.json`) > -1);
             if (files.length > 0) {
                 for (let i = 0; i < files.length; i++) {
                     // Check expiration

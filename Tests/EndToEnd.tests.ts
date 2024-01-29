@@ -23,7 +23,6 @@ import { JsonConfig } from "../Library/JsonConfig";
 import { FileAccessControl } from "../Library/FileAccessControl";
 import FileSystemHelper = require("../Library/FileSystemHelper");
 import AutoCollectHttpRequests = require("../AutoCollection/HttpRequests");
-console.log("E2E PID: ", process.pid);
 /**
  * A fake response class that passes by default
  */
@@ -484,8 +483,8 @@ describe("EndToEnd", () => {
             writeFile = sandbox.stub(FileSystemHelper, 'writeFileAsync');
             writeFileSync = sandbox.stub(fs, 'writeFileSync');
             existsSync = sandbox.stub(fs, 'existsSync').returns(true);
-            readdir = sandbox.stub(FileSystemHelper, 'readdirAsync').returns(['1.ai.json']);
-            readdirSync = sandbox.stub(fs, 'readdirSync').returns(['1.ai.json']);
+            readdir = sandbox.stub(FileSystemHelper, 'readdirAsync').returns([`${process.pid}.ai.json`]);
+            readdirSync = sandbox.stub(fs, 'readdirSync').returns([`${process.pid}.ai.json`]);
             stat = sandbox.stub(FileSystemHelper, 'statAsync').returns({ isFile: () => true, size: 8000 });
             statSync = sandbox.stub(fs, 'statSync').returns({ isFile: () => true, size: 8000 });
             lstat = sandbox.stub(FileSystemHelper, 'lstatAsync').returns({ isDirectory: () => true });
@@ -827,7 +826,7 @@ describe("EndToEnd", () => {
                             callback: (response: any) => {
                                 // wait until sdk looks for offline files
                                 setTimeout(() => {
-                                    assert.equal(readdir.callCount, 2, readdir.callCount.toString());
+                                    assert.equal(readdir.callCount, 2);
                                     assert.equal(readFile.callCount, 1);
                                     assert.equal(
                                         path.dirname(readFile.firstCall.args[0]),
