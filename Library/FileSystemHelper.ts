@@ -1,6 +1,8 @@
 import * as fs from "fs";
 import path = require("path");
 import { promisify } from "util";
+import Logging = require("./Logging");
+import Util = require("./Util");
 
 export const statAsync = promisify(fs.stat);
 export const lstatAsync = promisify(fs.lstat);
@@ -39,38 +41,52 @@ export const confirmDirExists = async (directory: string): Promise<void> => {
  * Computes the size (in bytes) of all files in a directory at the root level. Asynchronously.
  */
 export const getShallowDirectorySize = async (directory: string): Promise<number> => {
-    // Get the directory listing
-    const files = await readdirAsync(directory);
     let totalSize = 0;
-    // Query all file sizes
-    for (const file of files) {
-        const fileStats = await statAsync(path.join(directory, file));
-        if (fileStats.isFile()) {
-            totalSize += fileStats.size;
+    try {
+        // Get the directory listing
+        const files = await readdirAsync(directory);
+        // Query all file sizes
+        for (const file of files) {
+            const fileStats = await statAsync(path.join(directory, file));
+            if (fileStats.isFile()) {
+                totalSize += fileStats.size;
+            }
         }
+        return totalSize;
+    } catch (err) {
+        Logging.warn(`Failed to get directory size for ${directory}: ${Util.dumpObj(err)}`);
+        return totalSize;
     }
-    return totalSize;
 };
 
 /**
 * Computes the size (in bytes) of all files in a directory at the root level. Synchronously.
 */
 export const getShallowDirectorySizeSync = (directory: string): number => {
-    let files = fs.readdirSync(directory);
     let totalSize = 0;
-    for (let i = 0; i < files.length; i++) {
-        totalSize += fs.statSync(path.join(directory, files[i])).size;
+    try {
+        let files = fs.readdirSync(directory);
+        for (let i = 0; i < files.length; i++) {
+            totalSize += fs.statSync(path.join(directory, files[i])).size;
+        }
+        return totalSize;
+    } catch (err) {
+        Logging.warn(`Failed to get directory size synchronously for ${directory}: ${Util.dumpObj(err)}`)
+        return totalSize;
     }
-    return totalSize;
 }
 
 /**
 * Computes the size (in bytes) of a file asynchronously.
 */
 export const getShallowFileSize = async (filePath: string): Promise<number> => {
-    const fileStats = await statAsync(filePath);
-    if (fileStats.isFile()) {
-        return fileStats.size;
+    try {
+        const fileStats = await statAsync(filePath);
+        if (fileStats.isFile()) {
+            return fileStats.size;
+        }
+    } catch (err) {
+        Logging.warn(`Failed to get file size for ${filePath}: ${Util.dumpObj(err)}`);
     }
 }
 
