@@ -2,7 +2,6 @@ import * as fs from "fs";
 import path = require("path");
 import { promisify } from "util";
 import Logging = require("./Logging");
-import Util = require("./Util");
 
 export const statAsync = promisify(fs.stat);
 export const lstatAsync = promisify(fs.lstat);
@@ -53,8 +52,8 @@ export const getShallowDirectorySize = async (directory: string): Promise<number
             }
         }
         return totalSize;
-    } catch (err) {
-        Logging.warn(`Failed to get directory size for ${directory}: ${Util.dumpObj(err)}`);
+    } catch {
+        Logging.warn(`Failed to get directory size for ${directory}`);
         return totalSize;
     }
 };
@@ -70,8 +69,8 @@ export const getShallowDirectorySizeSync = (directory: string): number => {
             totalSize += fs.statSync(path.join(directory, files[i])).size;
         }
         return totalSize;
-    } catch (err) {
-        Logging.warn(`Failed to get directory size synchronously for ${directory}: ${Util.dumpObj(err)}`)
+    } catch {
+        Logging.warn(`Failed to get directory size synchronously for ${directory}`)
         return totalSize;
     }
 }
@@ -85,8 +84,8 @@ export const getShallowFileSize = async (filePath: string): Promise<number> => {
         if (fileStats.isFile()) {
             return fileStats.size;
         }
-    } catch (err) {
-        Logging.warn(`Failed to get file size for ${filePath}: ${Util.dumpObj(err)}`);
+    } catch {
+        Logging.warn(`Failed to get file size for ${filePath}`);
     }
 }
 
