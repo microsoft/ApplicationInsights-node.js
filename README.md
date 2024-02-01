@@ -53,7 +53,7 @@ npm install applicationinsights@beta
 
 
 ```typescript
-const { useAzureMonitor, AzureMonitorOpenTelemetryOptions } = require("applicationinsights");
+const { useAzureMonitor, AzureMonitorOpenTelemetryOptions, InstrumentationOptions } = require("applicationinsights");
 
 const config : AzureMonitorOpenTelemetryOptions = {
     azureMonitorExporterOptions: {
@@ -101,7 +101,7 @@ const config : AzureMonitorOpenTelemetryOptions = {
         console: { enabled: true},
         bunyan: { enabled: true},
         winston: { enabled: true},
-    },
+    } as InstrumentationOptions,
     resource: resource,
     extendedMetrics:{
         gc: true,
