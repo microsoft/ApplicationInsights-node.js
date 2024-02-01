@@ -31,7 +31,8 @@ export class AgentLoader {
 
     constructor() {
         // Open Telemetry and AAD packages unsusable in older versions of Node.js runtime
-        if (NODE_JS_RUNTIME_MAJOR_VERSION <= 8) {
+        // https://github.com/open-telemetry/opentelemetry-js?tab=readme-ov-file#supported-runtimes
+        if (NODE_JS_RUNTIME_MAJOR_VERSION < 14) {
             this._canLoad = false;
         }
         else {
