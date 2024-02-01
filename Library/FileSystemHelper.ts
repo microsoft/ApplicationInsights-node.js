@@ -51,11 +51,10 @@ export const getShallowDirectorySize = async (directory: string): Promise<number
                 totalSize += fileStats.size;
             }
         }
-        return totalSize;
     } catch {
         Logging.warn(`Failed to get directory size for ${directory}`);
-        return totalSize;
     }
+    return totalSize;
 };
 
 /**
@@ -68,15 +67,14 @@ export const getShallowDirectorySizeSync = (directory: string): number => {
         for (let i = 0; i < files.length; i++) {
             totalSize += fs.statSync(path.join(directory, files[i])).size;
         }
-        return totalSize;
     } catch {
         Logging.warn(`Failed to get directory size synchronously for ${directory}`)
-        return totalSize;
     }
+    return totalSize
 }
 
 /**
-* Computes the size (in bytes) of a file asynchronously.
+* Computes the size (in bytes) of a file asynchronously. Returns -1 if the file does not exist.
 */
 export const getShallowFileSize = async (filePath: string): Promise<number> => {
     try {
@@ -86,6 +84,7 @@ export const getShallowFileSize = async (filePath: string): Promise<number> => {
         }
     } catch {
         Logging.warn(`Failed to get file size for ${filePath}`);
+        return -1;
     }
 }
 
