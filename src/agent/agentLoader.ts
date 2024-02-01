@@ -269,9 +269,10 @@ export class AgentLoader {
         }
     }
 
-    protected _getVersionPrefix(rpType: AgentResourceProviderType): string {
+    protected _getVersionPrefix(rpType: AgentResourceProviderType, autoAttach?: boolean): string {
         let rp = "u"; // Default unknown
         let os = "u"; // Default unknown
+        let attachType = "" // Defaults to empty string since we only call this function in attach scenarios
         if (rpType === AgentResourceProviderType.aks) {
             rp = "k";
         }
@@ -287,7 +288,10 @@ export class AgentLoader {
         else if (process.platform === 'linux') {
             os = "l";
         }
-        return `${rp}${os}_`;
+        if (autoAttach) {
+            attachType = "i";
+        }
+        return `${rp}${os}${attachType}_`;
     }
 
 }

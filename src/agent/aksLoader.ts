@@ -50,7 +50,7 @@ export class AKSLoader extends AgentLoader {
                     }
                 )
             );
-            process.env[AZURE_MONITOR_AGENT_PREFIX] = this._getVersionPrefix(AgentResourceProviderType.aks);
+            process.env[AZURE_MONITOR_AGENT_PREFIX] = this._getVersionPrefix(AgentResourceProviderType.aks, true);
         }
     }
 }

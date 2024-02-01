@@ -60,7 +60,7 @@ export class AppServicesLoader extends AgentLoader {
                     }
                 )
             );
-            process.env[AZURE_MONITOR_AGENT_PREFIX] = this._getVersionPrefix(AgentResourceProviderType.appServices);
+            process.env[AZURE_MONITOR_AGENT_PREFIX] = this._getVersionPrefix(AgentResourceProviderType.appServices, true);
         }
     }
 }

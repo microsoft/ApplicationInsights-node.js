@@ -34,7 +34,8 @@ export class AzureFunctionsLoader extends AgentLoader {
             this._diagnosticLogger = new DiagnosticLogger(this._instrumentationKey, writer);
             this._statusLogger = new StatusLogger(this._instrumentationKey, writer);
             process.env[AZURE_MONITOR_AGENT_PREFIX] = this._getVersionPrefix(
-                AgentResourceProviderType.azureFunctions
+                AgentResourceProviderType.azureFunctions,
+                true
             );
         }
     }
