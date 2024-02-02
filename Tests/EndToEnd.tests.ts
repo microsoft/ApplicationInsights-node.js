@@ -23,7 +23,6 @@ import { JsonConfig } from "../Library/JsonConfig";
 import { FileAccessControl } from "../Library/FileAccessControl";
 import FileSystemHelper = require("../Library/FileSystemHelper");
 import AutoCollectHttpRequests = require("../AutoCollection/HttpRequests");
-
 /**
  * A fake response class that passes by default
  */

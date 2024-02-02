@@ -428,7 +428,7 @@ class Sender {
         try {
              //create file - file name for now is the timestamp, a better approach would be a UUID but that
             //would require an external dependency
-            var fileName = new Date().getTime() + ".ai.json";
+            var fileName = `${new Date().getTime()}.ai.json`;
             var fileFullPath = path.join(this._tempDir, fileName);
 
             // Mode 600 is w/r for creator and no read access for others (only applies on *nix)
@@ -465,7 +465,7 @@ class Sender {
 
             //create file - file name for now is the timestamp, a better approach would be a UUID but that
             //would require an external dependency
-            var fileName = new Date().getTime() + ".ai.json";
+            var fileName = `${new Date().getTime()}.ai.json`;
             var fileFullPath = path.join(this._tempDir, fileName);
 
             // Mode 600 is w/r for creator and no access for anyone else (only applies on *nix)
