@@ -484,7 +484,7 @@ describe("EndToEnd", () => {
             writeFileSync = sandbox.stub(fs, 'writeFileSync');
             existsSync = sandbox.stub(fs, 'existsSync').returns(true);
             readdir = sandbox.stub(FileSystemHelper, 'readdirAsync').returns(['1.ai.json']);
-            readdirSync = sandbox.stub(fs, 'readdirSync').returns(['.ai.json']);
+            readdirSync = sandbox.stub(fs, 'readdirSync').returns(['1.ai.json']);
             stat = sandbox.stub(FileSystemHelper, 'statAsync').returns({ isFile: () => true, size: 8000 });
             statSync = sandbox.stub(fs, 'statSync').returns({ isFile: () => true, size: 8000 });
             lstat = sandbox.stub(FileSystemHelper, 'lstatAsync').returns({ isDirectory: () => true });
