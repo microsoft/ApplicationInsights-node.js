@@ -11,15 +11,15 @@ import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 
-import { AutoCollectConsole } from "./logs/console";
+import { AutoCollectLogs } from "./logs/autoCollectLogs";
 import { AutoCollectExceptions } from "./logs/exceptions";
 import { AzureMonitorOpenTelemetryOptions } from "./types";
 import { ApplicationInsightsConfig } from "./shared/configuration/config";
-import { LogApi } from "./logs/api";
+import { LogApi } from "./shim/logsApi";
 import { PerformanceCounterMetrics } from "./metrics/performanceCounters";
 import { AzureMonitorSpanProcessor } from "./traces/spanProcessor";
 
-let console: AutoCollectConsole;
+let autoCollectLogs: AutoCollectLogs;
 let exceptions: AutoCollectExceptions;
 let perfCounters: PerformanceCounterMetrics;
 
@@ -31,7 +31,7 @@ export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
     distroUseAzureMonitor(options);
     const internalConfig = new ApplicationInsightsConfig(options);
     const logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
-    console = new AutoCollectConsole(logApi);
+    autoCollectLogs = new AutoCollectLogs();
     if (internalConfig.enableAutoCollectExceptions) {
         exceptions = new AutoCollectExceptions(logApi);
     }
@@ -42,7 +42,7 @@ export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
             (trace.getTracerProvider() as BasicTracerProvider).addSpanProcessor(new AzureMonitorSpanProcessor(perfCounters));
         }
     }
-    console.enable(internalConfig.instrumentationOptions);
+    autoCollectLogs.enable(internalConfig.instrumentationOptions);
     _addOtlpExporters(internalConfig);
 }
 
@@ -51,7 +51,7 @@ export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
 */
 export async function shutdownAzureMonitor() {
     await distroShutdownAzureMonitor();
-    console.shutdown();
+    autoCollectLogs.shutdown();
     exceptions?.shutdown();
     perfCounters?.shutdown();
 }
