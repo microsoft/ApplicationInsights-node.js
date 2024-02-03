@@ -1,12 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 
-import { Logger, LogRecord, logs } from "@opentelemetry/api-logs";
-
+import { Logger, LogRecord, SeverityNumber, logs } from "@opentelemetry/api-logs";
+import { InstrumentationConfig } from "@opentelemetry/instrumentation";
 import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
 import { console as consolePub } from "diagnostic-channel-publishers";
-import { SeverityNumber } from "@opentelemetry/api-logs";
-import { InstrumentationConfig } from "@opentelemetry/instrumentation";
 
 
 let logger: Logger;
