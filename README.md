@@ -18,7 +18,6 @@ Azure VMs and Web Apps, and even other public clouds. This solution is based on 
 
 Consider whether this preview is right for you. It *enables distributed tracing, metrics, logs* and _excludes_:
 
- - Live Metrics
  - Autopopulation of Cloud Role Name and Cloud Role Instance in Azure environments
  - Autopopulation of User ID and Authenticated User ID when you use the Application Insights JavaScript SDK
  - Autopopulation of User IP (to determine location attributes)
@@ -54,7 +53,7 @@ npm install applicationinsights@beta
 
 
 ```typescript
-const { useAzureMonitor, AzureMonitorOpenTelemetryOptions } = require("applicationinsights");
+const { useAzureMonitor, AzureMonitorOpenTelemetryOptions, InstrumentationOptions } = require("applicationinsights");
 
 const config : AzureMonitorOpenTelemetryOptions = {
     azureMonitorExporterOptions: {
@@ -88,6 +87,9 @@ const config : AzureMonitorOpenTelemetryOptions = {
     enableAutoCollectExceptions: true,
     enableAutoCollectStandardMetrics: true,
     enableAutoCollectPerformance: true,
+    enableLiveMetrics: false,
+    enableWebInstrumentation: false,
+    webInstrumentationConnectionString: "",
     instrumentationOptions: {
         azureSdk: { enabled: true },
         http: { enabled: true },
@@ -96,13 +98,11 @@ const config : AzureMonitorOpenTelemetryOptions = {
         postgreSql: { enabled: true },
         redis: { enabled: true },
         redis4: { enabled: true },
-    },
-    resource: resource,
-    logInstrumentationOptions: {
         console: { enabled: true},
         bunyan: { enabled: true},
         winston: { enabled: true},
-    },
+    } as InstrumentationOptions,
+    resource: resource,
     extendedMetrics:{
         gc: true,
         heap: true,
@@ -138,9 +138,7 @@ Configuration could be set using configuration file  `applicationinsights.json` 
     "instrumentationOptions":{
         "azureSdk": {
             "enabled": false
-        }
-    },
-    "logInstrumentationOptions":{
+        },
         "console": {
             "enabled": true
         }

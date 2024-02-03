@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 export { TelemetryClient } from "./shim/telemetryClient";
-export { AzureMonitorOpenTelemetryOptions } from "./types";
+export { AzureMonitorOpenTelemetryOptions, InstrumentationOptions } from "./types";
 export { KnownSeverityLevel } from "./declarations/generated";
 export {
     AvailabilityTelemetry,
