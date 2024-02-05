@@ -24,6 +24,7 @@ Consider whether this preview is right for you. It *enables distributed tracing,
  - Ability to override Operation Name
  - Ability to manually set User ID or Authenticated User ID
  - Propagating Operation Name to Dependency Telemetry
+ - Support for versions of Node that are not [supported by OpenTelemetry](https://github.com/open-telemetry/opentelemetry-js#supported-runtimes)
 
 
 > *Warning:* This SDK only works for Node.js environments. Use the [Application Insights JavaScript SDK](https://github.com/microsoft/ApplicationInsights-JS) for web and browser scenarios.
