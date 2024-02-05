@@ -9,6 +9,14 @@ import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { LoggerProvider } from "@opentelemetry/sdk-logs";
 import { shutdownAzureMonitor, useAzureMonitor } from "../../src";
 
+const nodeMajorVersion = parseInt(process.versions.node.split(".")[0]);
+
+if (nodeMajorVersion <= 14) {
+    AbortController = require("node-abort-controller");
+    // @ts-ignore
+    global.AbortController = AbortController;
+}
+
 describe("ApplicationInsightsClient", () => {
     afterEach(() => {
         shutdownAzureMonitor();
