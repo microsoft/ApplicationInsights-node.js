@@ -3,6 +3,15 @@ const https = require('https');
 const sinon = require('sinon');
 const nock = require('nock');
 
+const nodeMajorVersion = parseInt(process.versions.node.split(".")[0]);
+console.log("MAJOR VERSION: " + nodeMajorVersion);
+
+if (nodeMajorVersion <= 14) {
+    AbortController = require("node-abort-controller");
+    // @ts-ignore
+    global.AbortController = AbortController;
+}
+
 let nockScope = nock("https://centralus-0.in.applicationinsights.azure.com").post(
     "/v2.1/track",
     (body) => {

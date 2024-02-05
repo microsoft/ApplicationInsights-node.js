@@ -4,6 +4,15 @@ const path = require('path');
 const childProcess = require('child_process');
 let perfMode = false;
 
+const nodeMajorVersion = parseInt(process.versions.node.split(".")[0]);
+console.log("MAJOR VERSION: " + nodeMajorVersion);
+
+if (nodeMajorVersion <= 14) {
+    AbortController = require("node-abort-controller");
+    // @ts-ignore
+    global.AbortController = AbortController;
+}
+
 function help() {
     console.log(
         "Usage: node RunFunctionalTests.js [PathToAISDK]\n\n"+

@@ -10,6 +10,7 @@ import { LoggerProvider } from "@opentelemetry/sdk-logs";
 import { shutdownAzureMonitor, useAzureMonitor } from "../../src";
 
 const nodeMajorVersion = parseInt(process.versions.node.split(".")[0]);
+console.log("MAJOR VERSION: " + nodeMajorVersion);
 
 if (nodeMajorVersion <= 14) {
     AbortController = require("node-abort-controller");
