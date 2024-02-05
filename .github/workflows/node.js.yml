@@ -27,6 +27,7 @@ jobs:
     - run: npm run clean
     - run: npm i
     - run: npm install abort-controller
+    - run: global.AbortController = require('abort-controller')
     - run: npm run build --if-present
     - run: npm run lint
     - run: npm test
