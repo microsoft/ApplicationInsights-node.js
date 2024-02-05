@@ -20,7 +20,7 @@ const subscriber = (event: IStandardEvent<consolePub.IConsoleData>) => {
         if (message.lastIndexOf("\n") === message.length - 1) {
             message = message.substring(0, message.length - 1);
         }
-        let logRecord: LogRecord = {
+        const logRecord: LogRecord = {
             body: message,
             severityNumber: severity
         };
