@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Logger as OtelLogger, LogRecord, logs } from "@opentelemetry/api-logs";
+import { Logger as OtelLogger, LogRecord } from "@opentelemetry/api-logs";
 import { LogRecord as SDKLogRecord } from "@opentelemetry/sdk-logs";
 import { Attributes, diag } from "@opentelemetry/api";
 import { IdGenerator, RandomIdGenerator } from "@opentelemetry/sdk-trace-base";
@@ -18,7 +18,7 @@ import {
     TelemetryExceptionDetails
 } from "../declarations/generated";
 import { Util } from "../shared/util";
-import { parseStack } from "./exceptions";
+import { parseStack } from "../logs/exceptions";
 
 /**
  * Log manual API to generate Application Insights telemetry
