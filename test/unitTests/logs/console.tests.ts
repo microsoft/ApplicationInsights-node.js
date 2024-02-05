@@ -1,76 +1,84 @@
 import * as assert from "assert";
-import * as sinon from "sinon";
 import { channel } from "diagnostic-channel";
 import { console } from "diagnostic-channel-publishers";
-import { logs } from "@opentelemetry/api-logs";
-import { enable, dispose } from "../../../src/logs/diagnostic-channel/console.sub";
-import { LogApi } from "../../../src/logs/api";
-import { AutoCollectConsole } from "../../../src/logs/console";
+import { SeverityNumber, logs } from '@opentelemetry/api-logs';
+import {
+    LoggerProvider,
+    SimpleLogRecordProcessor,
+    InMemoryLogRecordExporter,
+} from '@opentelemetry/sdk-logs';
+
+import { dispose } from "../../../src/logs/diagnostic-channel/console.sub";
+import { AutoCollectLogs } from "../../../src/logs/autoCollectLogs";
 
 
 describe("AutoCollection/Console", () => {
-    let sandbox: sinon.SinonSandbox;
+    let memoryLogExporter: InMemoryLogRecordExporter;
 
     before(() => {
-        sandbox = sinon.createSandbox();
+        logs.disable();
+        const loggerProvider = new LoggerProvider();
+        memoryLogExporter = new InMemoryLogRecordExporter();
+        loggerProvider.addLogRecordProcessor(
+            new SimpleLogRecordProcessor(memoryLogExporter)
+        );
+        logs.setGlobalLoggerProvider(loggerProvider);
+    });
+
+    beforeEach(() => {
+        memoryLogExporter.getFinishedLogRecords().length = 0; // clear
     });
 
     afterEach(() => {
-        sandbox.restore();
         dispose();
     });
 
     describe("#log and #error()", () => {
-        it("should call trackException for errors", () => {
-            let logApi = new LogApi(logs.getLogger("testLogger"));
-            let autoCollect = new AutoCollectConsole(logApi);
+        it("should log event for errors", () => {
+            let autoCollect = new AutoCollectLogs();
             autoCollect.enable({
                 console: { enabled: true }
             });
-            const stub = sandbox.stub(logApi, "trackException");
             const dummyError = new Error("test error");
             const errorEvent: console.IConsoleData = {
                 message: dummyError as any,
-                stderr: false, // log() should still log as ExceptionData
+                stderr: false,
             };
-
             channel.publish("console", errorEvent);
-            assert.ok(stub.calledOnce);
-            assert.deepEqual(stub.args[0][0].exception, dummyError);
+            const logRecords = memoryLogExporter.getFinishedLogRecords();
+            assert.strictEqual(logRecords.length, 1);
+            assert.strictEqual(logRecords[0].body, "Error: test error");
+            assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.ERROR);
         });
 
-        it("should call trackTrace for logs", () => {
-            let logApi = new LogApi(logs.getLogger("testLogger"));
-            let autoCollect = new AutoCollectConsole(logApi);
+        it("should log event for logs", () => {
+            let autoCollect = new AutoCollectLogs();
             autoCollect.enable({
                 console: { enabled: true }
             });
-            const stub = sandbox.stub(logApi, "trackTrace");
             const logEvent: console.IConsoleData = {
                 message: "test log",
-                stderr: true, // should log as MessageData regardless of this setting
+                stderr: true,
             };
             channel.publish("console", logEvent);
-            assert.ok(stub.calledOnce);
-            assert.deepEqual(stub.args[0][0].message, "test log");
+            const logRecords = memoryLogExporter.getFinishedLogRecords();
+            assert.strictEqual(logRecords.length, 1);
+            assert.strictEqual(logRecords[0].body, "test log");
+            assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.WARN);
         });
 
-        it("should notify multiple handlers", () => {
-            let logApi = new LogApi(logs.getLogger("testLogger"));
-            let secondLogApi = new LogApi(logs.getLogger("testLogger"));
-            const stub = sandbox.stub(logApi, "trackTrace");
-            const secondStub = sandbox.stub(secondLogApi, "trackTrace");
-            enable(true, logApi);
-            enable(true, secondLogApi);
+        it("severityLevel", () => {
+            let autoCollect = new AutoCollectLogs();
+            autoCollect.enable({
+                console: { enabled: true, logSendingLevel: SeverityNumber.ERROR }
+            });
             const logEvent: console.IConsoleData = {
                 message: "test log",
-                stderr: true, // should log as MessageData regardless of this setting
+                stderr: true,
             };
             channel.publish("console", logEvent);
-            assert.ok(stub.calledOnce);
-            assert.deepEqual(stub.args[0][0].message, "test log");
-            assert.ok(secondStub.calledOnce);
-            assert.deepEqual(secondStub.args[0][0].message, "test log");
+            const logRecords = memoryLogExporter.getFinishedLogRecords();
+            assert.strictEqual(logRecords.length, 0);
         });
     });
 });
