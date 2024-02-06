@@ -2,7 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 import { logs } from "@opentelemetry/api-logs";
 import { Util } from "../shared/util";
-import { LogApi } from "./api";
+import { LogApi } from "../shim/logsApi";
 import { LoggerProvider } from "@opentelemetry/sdk-logs";
 
 type ExceptionHandle = "uncaughtExceptionMonitor" | "uncaughtException" | "unhandledRejection";

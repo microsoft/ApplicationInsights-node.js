@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import { AzureMonitorOpenTelemetryOptions as DistroOptions, InstrumentationOptions as DistroInstrumentationOptions } from "@azure/monitor-opentelemetry";
+import { SeverityNumber } from "@opentelemetry/api-logs";
 import { InstrumentationConfig } from "@opentelemetry/instrumentation";
 import { OTLPExporterNodeConfigBase } from "@opentelemetry/otlp-exporter-base";
 
@@ -37,10 +38,10 @@ export interface AzureMonitorOpenTelemetryOptions extends DistroOptions {
 }
 
 export interface InstrumentationOptions extends DistroInstrumentationOptions {
-    /** Console Instrumentation Config */
-    console?: InstrumentationConfig;
-    /** Winston Instrumentation Config */
-    winston?: InstrumentationConfig;
+  /** Console Instrumentation Config */
+  console?: InstrumentationConfig & { logSendingLevel?: SeverityNumber };
+  /** Winston Instrumentation Config */
+  winston?: InstrumentationConfig & { logSendingLevel?: SeverityNumber };
 }
 
 /**
