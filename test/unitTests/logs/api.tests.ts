@@ -13,7 +13,7 @@ import {
     TraceTelemetry
 } from "../../../src/declarations/contracts";
 import { AvailabilityData, MessageData, MonitorDomain, PageViewData, TelemetryEventData, TelemetryExceptionData } from "../../../src/declarations/generated";
-import { LogApi } from "../../../src/logs/api";
+import { LogApi } from "../../../src/shim/logsApi";
 
 describe("logs/API", () => {
     let sandbox: sinon.SinonSandbox;
