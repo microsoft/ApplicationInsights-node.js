@@ -84,6 +84,9 @@ const config : AzureMonitorOpenTelemetryOptions = {
         // Application Insights Connection String
         connectionString:   process.env["APPLICATIONINSIGHTS_CONNECTION_STRING"] || "<your connection string>",
     },
+    otlpTraceExporterConfig: {},
+    otlpMetricExporterConfig: {},
+    otlpLogExporterConfig: {},
     samplingRatio: 1,
     enableAutoCollectExceptions: true,
     enableAutoCollectStandardMetrics: true,
@@ -117,16 +120,23 @@ useAzureMonitor(config);
 
 
 
-|Property|Description|Default|
-| ------------------------------- |------------------------------------------------------------------------------------------------------------|-------|
-| ...                     | Azure Monitor OpenTelemetry Configuration   [More info here](https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/monitor/monitor-opentelemetry#configuration)                                                | |
-| otlpTraceExporterConfig                     |  OTLP Trace Exporter Configurationon   [More info here](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/exporter-trace-otlp-http)                                                | |
-| otlpMetricExporterConfig                     |  OTLP Metric Exporter Configuration  [More info here](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-exporter-metrics-otlp-http)                                                | |
-| otlpLogExporterConfig                     | OTLP Log Exporter Configuration   [More info here](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/exporter-logs-otlp-http)                                                | |
-| enableAutoCollectExceptions     | Sets the state of exception tracking. If true uncaught exceptions will be sent to Application Insights | true|
-| enableAutoCollectPerformance     | Sets the state of Performance Counters. If true Performance Counters will be sent to Application Insights | true|
-| logInstrumentationOptions| Allow configuration of Log Instrumentations. |  {"console": { enabled: false },"bunyan": { enabled: false },"winston": { enabled: false }}|
-| extendedMetrics       | Enable/Disable specific extended Metrics(gc, heap and loop).  |{"gc":false,"heap":false,"loop":false}|
+| Property | Description | Default |
+| --------------------------------|------------------------------------------------------------------------------------------------------------|-------|
+| ... | Azure Monitor OpenTelemetry Configuration [More info here](https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/monitor/monitor-opentelemetry#configuration) | |
+| azureMonitorExporterOptions | Azure Monitor OpenTelemetry Exporter Configuration [More info here](https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/monitor/monitor-opentelemetry-exporter) | |
+| otlpTraceExporterConfig |  OTLP Trace Exporter Configurationon [More info here](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/exporter-trace-otlp-http) | |
+| otlpMetricExporterConfig |  OTLP Metric Exporter Configuration [More info here](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-exporter-metrics-otlp-http) | |
+| otlpLogExporterConfig | OTLP Log Exporter Configuration [More info here](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/exporter-logs-otlp-http) | |
+| samplingRatio | Sampling ratio must take a value in the range [0,1], 1 meaning all data will sampled and 0 all Tracing data will be sampled out. | 1 |
+| enableAutoCollectExceptions | Sets the state of exception tracking. If true uncaught exceptions will be sent to Application Insights | true |
+| enableAutoCollectStandardMetrics | Sets the state of standard metrics tracking. If true standard metrics will be collected and sent to Application Insights | true |
+| enableAutoCollectPerformance | Sets the state of Performance Counters. If true Performance Counters will be sent to Application Insights | true |
+| enableLiveMetrics | Enables communication with Application Insights Live Metrics. If true, enables communication with the live metrics service | false |
+| enableWebInstrumentation | Sets the state of automatic web Instrumentation (Optional, disabled by default). If true, web instrumentation will be enabled on valid node server http response with the connection string used for SDK initialization | false |
+| webInstrumentationConnectionString | Sets connection string used for web Instrumentation (Browser SDK Loader) (Optional, Default undefined) | |
+| instrumentationOptions | instrumentation options | { azureSdk: { enabled: true }, http: { enabled: true }, mongoDb: { enabled: true }, mySql: { enabled: true }, postgreSql: { enabled: true }, redis: { enabled: true }, redis4: { enabled: true }, console: { enabled: true}, bunyan: { enabled: true}, winston: { enabled: true} } |
+| resource | Opentelemetry Resource. [More info here](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-resources) | |
+| extendedMetrics | Enable/Disable specific extended Metrics(gc, heap and loop).  | {"gc": false, "heap": false, "loop": false} |
 
 Configuration could be set using configuration file  `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. 
 
@@ -196,9 +206,7 @@ The following configurations are set using either environment variables, setting
 | enableMaxBytesOnDisk | Not supported by the shim. And not supported to be changed in Azure Monitor OpenTelemetry. The @azure/monitor-opentelemetry-exporter sets this value at 50MB. |
 | noHttpAgentKeepAlive | Not supported in the shim or Azure Monitor OpenTelemetry. |
 | httpAgent/httpsAgent | Not supported in the shim or Azure Monitor OpenTelemetry. |
-| enableWebInstrumentation | Not currently supported in the shim, but is in Azure Monitor OpenTelemetry as `enableBrowserSdkLoader`. |
-| webInstrumentationConnectionString | Not supported in the shim, but is in Azure Monitor OpenTelemetry as `browserSdkLoaderConnectionString`. |
-| webInstrumentationConfig | Not currently supported by the shim, but is in Azure Monitor OpenTelemetry as `browserSdkLoaderConfig`. |
+| webInstrumentationConfig | Not currently supported by the shim or Azure Monitor OpenTelemetry. |
 | quickPulseHost | Not supported in the shim or Azure Monitor OpenTelemetry. |
 
 The following methods are part of the `TelemetryClient` class. They can be called using `applicationinsights.defaultClient.<METHOD_NAME>()`.
