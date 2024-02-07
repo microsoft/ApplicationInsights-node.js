@@ -13,9 +13,9 @@ Azure VMs and Web Apps, and even other public clouds. This solution is based on 
 [Azure Application Insights]: https://azure.microsoft.com/documentation/articles/app-insights-overview/
 [discover and rapidly diagnose performance and other issues]: https://docs.microsoft.com/azure/application-insights/app-insights-detect-triage-diagnose
 
-## Supported Node.JS versions
+## Supported Node.js versions
 
-We support the versions of Node.JS that are [supported by OpenTelemetry](https://github.com/open-telemetry/opentelemetry-js#supported-runtimes).
+We support the versions of Node.js that are [supported by OpenTelemetry](https://github.com/open-telemetry/opentelemetry-js#supported-runtimes).
 
 ## Limitations of current preview release
 
@@ -133,7 +133,7 @@ useAzureMonitor(config);
 | enableAutoCollectStandardMetrics | Sets the state of standard metrics tracking. If true standard metrics will be collected and sent to Application Insights | true |
 | enableAutoCollectPerformance | Sets the state of Performance Counters. If true Performance Counters will be sent to Application Insights | true |
 | enableLiveMetrics | Enables communication with Application Insights Live Metrics. If true, enables communication with the live metrics service | false |
-| enableWebInstrumentation | Sets the state of automatic web Instrumentation (Optional, disabled by default). If true, web instrumentation will be enabled on valid node server http response with the connection string used for SDK initialization | false |
+| enableWebInstrumentation | Sets the state of automatic web Instrumentation (Optional, disabled by default). If true, web instrumentation will be enabled on valid node.js server http response with the connection string used for SDK initialization | false |
 | webInstrumentationConnectionString | Sets connection string used for web Instrumentation (Browser SDK Loader) (Optional, Default undefined) | |
 | instrumentationOptions | instrumentation options | { azureSdk: { enabled: true }, http: { enabled: true }, mongoDb: { enabled: true }, mySql: { enabled: true }, postgreSql: { enabled: true }, redis: { enabled: true }, redis4: { enabled: true }, console: { enabled: true}, bunyan: { enabled: true}, winston: { enabled: true} } |
 | resource | Opentelemetry Resource. [More info here](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-resources) | |
