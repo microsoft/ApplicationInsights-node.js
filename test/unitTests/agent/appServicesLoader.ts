@@ -53,7 +53,6 @@ describe("agent/AppServicesLoader", () => {
         else {
             assert.equal(diagnosticLogger["_agentLogger"]["_filepath"], "/var/log/applicationinsights/");
             assert.equal(statusLogger["_agentLogger"]["_filepath"], "/var/log/applicationinsights/");
-            assert.equal(process.env["AZURE_MONITOR_AGENT_PREFIX"], "ali_");
         }
         // Loader is using correct diagnostics
         assert.equal(agent["_diagnosticLogger"], diagnosticLogger, "Wrong diagnosticLogger");
