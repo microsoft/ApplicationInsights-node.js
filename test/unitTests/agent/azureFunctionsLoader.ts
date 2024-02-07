@@ -44,9 +44,7 @@ describe("agent/AzureFunctionsLoader", () => {
         assert.equal(agent["_diagnosticLogger"], diagnosticLogger);
         assert.equal(agent["_statusLogger"], statusLogger);
         // Prefix Env variable should be set
-        assert.equal(process.env["AZURE_MONITOR_AGENT_PREFIX"].length, 4, "Incorrect prefix length");
-        assert.ok(process.env["AZURE_MONITOR_AGENT_PREFIX"].startsWith, "f");
-        assert.ok(process.env["AZURE_MONITOR_AGENT_PREFIX"].endsWith, "i");
+        assert.equal(process.env["AZURE_MONITOR_AUTO_ATTACH"], "true");
     });
 
     it("initialize", () => {

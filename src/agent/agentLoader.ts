@@ -6,7 +6,7 @@ import { Util } from "../shared/util";
 import { ConsoleWriter } from "./diagnostics/writers/consoleWriter";
 import { DiagnosticLogger } from "./diagnostics/diagnosticLogger";
 import { StatusLogger } from "./diagnostics/statusLogger";
-import { AgentResourceProviderType, DiagnosticMessageId, IDiagnosticLog, IDiagnosticLogger, NODE_JS_RUNTIME_MAJOR_VERSION } from "./types";
+import { DiagnosticMessageId, IDiagnosticLog, IDiagnosticLogger, NODE_JS_RUNTIME_MAJOR_VERSION } from "./types";
 import { AzureMonitorOpenTelemetryOptions } from "../types";
 import { useAzureMonitor } from "../main";
 
@@ -281,30 +281,4 @@ export class AgentLoader {
             return false;
         }
     }
-
-    protected _getVersionPrefix(rpType: AgentResourceProviderType, autoAttach?: boolean): string {
-        let rp = "u"; // Default unknown
-        let os = "u"; // Default unknown
-        let attachType = "" // Defaults to empty string since we only call this function in attach scenarios
-        if (rpType === AgentResourceProviderType.aks) {
-            rp = "k";
-        }
-        else if (rpType === AgentResourceProviderType.appServices) {
-            rp = "a";
-        }
-        else if (rpType === AgentResourceProviderType.azureFunctions) {
-            rp = "f";
-        }
-        if (process.platform === 'win32') {
-            os = "w";
-        }
-        else if (process.platform === 'linux') {
-            os = "l";
-        }
-        if (autoAttach) {
-            attachType = "i";
-        }
-        return `${rp}${os}${attachType}_`;
-    }
-
 }

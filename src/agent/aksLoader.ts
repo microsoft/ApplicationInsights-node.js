@@ -7,7 +7,7 @@ import { DiagnosticLogger } from './diagnostics/diagnosticLogger';
 import { FileWriter } from "./diagnostics/writers/fileWriter";
 import { StatusLogger } from "./diagnostics/statusLogger";
 import { AgentLoader } from "./agentLoader";
-import { AgentResourceProviderType, AZURE_MONITOR_AGENT_PREFIX } from './types';
+import { AZURE_MONITOR_AUTO_ATTACH } from './types';
 
 
 export class AKSLoader extends AgentLoader {
@@ -50,7 +50,7 @@ export class AKSLoader extends AgentLoader {
                     }
                 )
             );
-            process.env[AZURE_MONITOR_AGENT_PREFIX] = this._getVersionPrefix(AgentResourceProviderType.aks, true);
+            process.env[AZURE_MONITOR_AUTO_ATTACH] = "true";
         }
     }
 }

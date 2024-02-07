@@ -44,12 +44,11 @@ describe("agent/AppServicesLoader", () => {
         assert.equal(statusLogger["_agentLogger"]["_filename"], "status_nodejs.json");
 
         // Prefix Env variable should be set
-        assert.equal(process.env["AZURE_MONITOR_AGENT_PREFIX"].length, 4, "Incorrect prefix length");
+        assert.equal(process.env["AZURE_MONITOR_AUTO_ATTACH"], "true");
 
         if (isWindows) {
             assert.equal(diagnosticLogger["_agentLogger"]["_filepath"], "c:\\LogFiles\\ApplicationInsights\\status");
             assert.equal(statusLogger["_agentLogger"]["_filepath"], "c:\\LogFiles\\ApplicationInsights\\status");
-            assert.equal(process.env["AZURE_MONITOR_AGENT_PREFIX"], "awi_");
         }
         else {
             assert.equal(diagnosticLogger["_agentLogger"]["_filepath"], "/var/log/applicationinsights/");
