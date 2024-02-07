@@ -13,6 +13,9 @@ Azure VMs and Web Apps, and even other public clouds. This solution is based on 
 [Azure Application Insights]: https://azure.microsoft.com/documentation/articles/app-insights-overview/
 [discover and rapidly diagnose performance and other issues]: https://docs.microsoft.com/azure/application-insights/app-insights-detect-triage-diagnose
 
+## Supported Node.JS versions
+
+We support the versions of Node.JS that are [supported by OpenTelemetry](https://github.com/open-telemetry/opentelemetry-js#supported-runtimes).
 
 ## Limitations of current preview release
 
@@ -24,8 +27,6 @@ Consider whether this preview is right for you. It *enables distributed tracing,
  - Ability to override Operation Name
  - Ability to manually set User ID or Authenticated User ID
  - Propagating Operation Name to Dependency Telemetry
- - Support for versions of Node that are not [supported by OpenTelemetry](https://github.com/open-telemetry/opentelemetry-js#supported-runtimes)
-
 
 > *Warning:* This SDK only works for Node.js environments. Use the [Application Insights JavaScript SDK](https://github.com/microsoft/ApplicationInsights-JS) for web and browser scenarios.
 
