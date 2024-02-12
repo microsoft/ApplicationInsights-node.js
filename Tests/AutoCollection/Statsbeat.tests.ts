@@ -149,7 +149,7 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.setCodelessAttach();
             statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
-                let metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Request Duration")[0];
+                let metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Request_Duration")[0];
                 assert.ok(metric, "Statsbeat Request not found");
                 assert.equal(metric.value, 123);
                 assert.equal((<any>(metric.properties))["attach"], "IntegratedAuto");
@@ -174,7 +174,7 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.trackShortIntervalStatsbeats().then((error) => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
                 assert.equal(statsBeat["_statbeatMetrics"].length, 3);
-                let metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Request Duration")[0];
+                let metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Request_Duration")[0];
                 assert.ok(metric, "Request Duration metric not found");
                 assert.equal(metric.value, 750);
                 done();
@@ -202,36 +202,36 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
                 assert.equal(statsBeat["_statbeatMetrics"].length, 11);
-                let metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Request Success Count")[0];
+                let metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Request_Success_Count")[0];
                 assert.ok(metric, "Request Success Count metric not found");
                 assert.equal(metric.value, 4);
 
-                metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Request Failure Count")[0];
+                metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Request_Failure_Count")[0];
                 assert.ok(metric, "Request Failure Count metric not found");
                 assert.equal((<any>(metric.properties))["statusCode"], 500);
                 assert.equal(metric.value, 2);
-                let metricCount = statsBeat["_statbeatMetrics"].filter(f => f.name === "Request Failure Count");
+                let metricCount = statsBeat["_statbeatMetrics"].filter(f => f.name === "Request_Failure_Count");
                 assert.equal(metricCount.length, 3);
 
-                metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Retry Count")[0];
+                metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Retry_Count")[0];
                 assert.ok(metric, "Retry Count metric not found");
                 assert.equal((<any>(metric.properties))["statusCode"], 206);
                 assert.equal(metric.value, 2);
-                metricCount = statsBeat["_statbeatMetrics"].filter(f => f.name === "Retry Count");
+                metricCount = statsBeat["_statbeatMetrics"].filter(f => f.name === "Retry_Count");
                 assert.equal(metricCount.length, 2);
 
-                metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Throttle Count")[0];
+                metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Throttle_Count")[0];
                 assert.ok(metric, "Throttle Count metric not found");
                 assert.equal((<any>(metric.properties))["statusCode"], 402);
                 assert.equal(metric.value, 1);
-                metricCount = statsBeat["_statbeatMetrics"].filter(f => f.name === "Throttle Count");
+                metricCount = statsBeat["_statbeatMetrics"].filter(f => f.name === "Throttle_Count");
                 assert.equal(metricCount.length, 2);
 
-                metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Exception Count")[0];
+                metric = statsBeat["_statbeatMetrics"].filter(f => f.name === "Exception_Count")[0];
                 assert.ok(metric, "Exception Count metric not found");
                 assert.equal(metric.value, 1);
                 assert.equal((<any>(metric.properties))["exceptionType"], "Statsbeat");
-                metricCount = statsBeat["_statbeatMetrics"].filter(f => f.name === "Exception Count");
+                metricCount = statsBeat["_statbeatMetrics"].filter(f => f.name === "Exception_Count");
                 assert.equal(metricCount.length, 2);
                 done();
             }).catch((error) => { done(error); });
@@ -337,17 +337,17 @@ describe("AutoCollection/Statsbeat", () => {
             statsBeat.countRequest(0, "breezeSecondEndpoint", 400, true, 200);
             statsBeat.trackShortIntervalStatsbeats().then(() => {
                 assert.ok(sendStub.called, "should call _sendStatsbeats");
-                let metric: any = statsBeat["_statbeatMetrics"].find(f => f.name === "Request Duration"
+                let metric: any = statsBeat["_statbeatMetrics"].find(f => f.name === "Request_Duration"
                     && f.value === 100);
                 assert.ok(metric, "breezeFirstEndpoint metric not found");
                 assert.equal((<any>(metric.properties))["endpoint"], 0);
                 assert.equal((<any>(metric.properties))["host"], "breezeFirstEndpoint");
-                metric = statsBeat["_statbeatMetrics"].find(f => f.name === "Request Duration"
+                metric = statsBeat["_statbeatMetrics"].find(f => f.name === "Request_Duration"
                     && f.value === 200);
                 assert.ok(metric, "quickpulseEndpoint metric not found");
                 assert.equal((<any>(metric.properties))["endpoint"], 1);
                 assert.equal((<any>(metric.properties))["host"], "quickpulseEndpoint");
-                metric = statsBeat["_statbeatMetrics"].find(f => f.name === "Request Duration"
+                metric = statsBeat["_statbeatMetrics"].find(f => f.name === "Request_Duration"
                     && f.value === 400);
                 assert.ok(metric, "breezeSecondEndpoint metric not found");
                 assert.equal((<any>(metric.properties))["endpoint"], 0);
