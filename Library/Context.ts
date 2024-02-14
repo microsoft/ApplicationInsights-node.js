@@ -5,6 +5,8 @@ import path = require("path");
 import Contracts = require("../Declarations/Contracts");
 import { APPLICATION_INSIGHTS_SDK_VERSION } from "../Declarations/Constants";
 import Logging = require("./Logging");
+import * as PrefixHelpers from "./PrefixHelper";
+import * as Constants from "../Declarations/Constants";
 
 class Context {
 
@@ -65,7 +67,7 @@ class Context {
 
     private _loadInternalContext() {
         Context.sdkVersion = APPLICATION_INSIGHTS_SDK_VERSION;
-        this.tags[this.keys.internalSdkVersion] = "node:" + Context.sdkVersion;
+        this.tags[this.keys.internalSdkVersion] = `${PrefixHelpers.getResourceProvider()}${PrefixHelpers.getOsPrefix()}${Constants.AttachTypePrefix.MANUAL}_node:${Context.sdkVersion}`
     }
 }
 

@@ -5,6 +5,8 @@ import os = require("os");
 import path = require("path");
 
 import Context = require("../../Library/Context");
+import Constants = require("../../Declarations/Constants");
+import * as PrefixHelpers from "../../Library/PrefixHelper";
 
 describe("Library/Context", () => {
     describe("#constructor()", () => {
@@ -55,11 +57,11 @@ describe("Library/Context", () => {
             }
         });
 
-        it("should set internalSdkVersion to 'node:<version>'", () => {
+        it("should set internalSdkVersion to 'prefix_node:<version>'", () => {
             var context = new Context();
             const packageJsonPath = path.resolve(__dirname, "../../../", "./package.json");
             let packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-            assert.strictEqual(context.tags[context.keys.internalSdkVersion], "node:" + packageJson.version);
+            assert.strictEqual(context.tags[context.keys.internalSdkVersion], `${PrefixHelpers.getResourceProvider()}${PrefixHelpers.getOsPrefix()}${Constants.AttachTypePrefix.MANUAL}_node:${packageJson.version}`)
             assert.strictEqual(Context.sdkVersion, packageJson.version);
         });
 

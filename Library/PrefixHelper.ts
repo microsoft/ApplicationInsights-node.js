@@ -7,11 +7,11 @@ export const isLinux = (): boolean => {
 }
 
 export const isWebApp = (): boolean => {
-    return process.env.WEBSITE_SITE_NAME? true : false;
+    return (process.env.WEBSITE_SITE_NAME && !process.env.FUNCTIONS_WORKER_RUNTIME) ? true : false;
 }
 
 export const isFunctionApp = (): boolean => {
-    return process.env.FUNCTIONS_WORKER_RUNTIME? true : false;
+    return process.env.FUNCTIONS_WORKER_RUNTIME ? true : false;
 }
 
 /**
@@ -21,7 +21,7 @@ export const isFunctionApp = (): boolean => {
  * non-Windows and non-Linux system: "u" (unknown)
  */
 export const getOsPrefix = (): string => {
-    return isWindows()? "w" : isLinux()? "l" : "u";
+    return isWindows() ? "w" : isLinux() ? "l" : "u";
 }
 
 /**
@@ -32,5 +32,5 @@ export const getOsPrefix = (): string => {
  * non-Web and non-Function APP: "u" (unknown)
  */
 export const getResourceProvider = (): string => {
-    return isWebApp()? "a" : isFunctionApp()? "f" : "u";
+    return isWebApp() ? "a" : isFunctionApp() ? "f" : "u";
 }
