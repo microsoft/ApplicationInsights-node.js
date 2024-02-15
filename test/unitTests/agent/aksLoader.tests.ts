@@ -40,9 +40,6 @@ describe("agent/AKSLoader", () => {
         // Loader is using correct diagnostics
         assert.equal(agent["_diagnosticLogger"], diagnosticLogger, "Wrong diagnosticLogger");
         assert.equal(agent["_statusLogger"], statusLogger, "Wrong statusLogger");
-        // Prefix Env variable should be set
-        assert.equal(process.env["AZURE_MONITOR_AGENT_PREFIX"].length, 3, "Missing prefix");
-        assert.ok(process.env["AZURE_MONITOR_AGENT_PREFIX"].startsWith, "k");
     });
 
     it("initialize", () => {

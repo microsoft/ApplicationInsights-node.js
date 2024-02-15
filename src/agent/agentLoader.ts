@@ -6,7 +6,7 @@ import { Util } from "../shared/util";
 import { ConsoleWriter } from "./diagnostics/writers/consoleWriter";
 import { DiagnosticLogger } from "./diagnostics/diagnosticLogger";
 import { StatusLogger } from "./diagnostics/statusLogger";
-import { AgentResourceProviderType, DiagnosticMessageId, IDiagnosticLog, IDiagnosticLogger, NODE_JS_RUNTIME_MAJOR_VERSION } from "./types";
+import { AZURE_MONITOR_AUTO_ATTACH, DiagnosticMessageId, IDiagnosticLog, IDiagnosticLogger, NODE_JS_RUNTIME_MAJOR_VERSION } from "./types";
 import { AzureMonitorOpenTelemetryOptions } from "../types";
 import { useAzureMonitor } from "../main";
 
@@ -120,6 +120,8 @@ export class AgentLoader {
         }
         if (this._validate()) {
             try {
+                // Set environment variable to auto attach so the distro is aware of the attach state
+                process.env[AZURE_MONITOR_AUTO_ATTACH] = "true";
                 // Initialize Distro
                 this._options.azureMonitorExporterOptions.credential = this._aadCredential;
                 useAzureMonitor(this._options);
@@ -281,26 +283,4 @@ export class AgentLoader {
             return false;
         }
     }
-
-    protected _getVersionPrefix(rpType: AgentResourceProviderType): string {
-        let rp = "u"; // Default unknown
-        let os = "u"; // Default unknown
-        if (rpType === AgentResourceProviderType.aks) {
-            rp = "k";
-        }
-        else if (rpType === AgentResourceProviderType.appServices) {
-            rp = "a";
-        }
-        else if (rpType === AgentResourceProviderType.azureFunctions) {
-            rp = "f";
-        }
-        if (process.platform === 'win32') {
-            os = "w";
-        }
-        else if (process.platform === 'linux') {
-            os = "l";
-        }
-        return `${rp}${os}_`;
-    }
-
 }
