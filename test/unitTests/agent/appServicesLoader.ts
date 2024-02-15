@@ -43,9 +43,6 @@ describe("agent/AppServicesLoader", () => {
         assert.ok(statusLogger["_agentLogger"] instanceof FileWriter, "Wrong statusLogger agentLogger");
         assert.equal(statusLogger["_agentLogger"]["_filename"], "status_nodejs.json");
 
-        // Prefix Env variable should be set
-        assert.equal(process.env["AZURE_MONITOR_AUTO_ATTACH"], "true");
-
         if (isWindows) {
             assert.equal(diagnosticLogger["_agentLogger"]["_filepath"], "c:\\LogFiles\\ApplicationInsights\\status");
             assert.equal(statusLogger["_agentLogger"]["_filepath"], "c:\\LogFiles\\ApplicationInsights\\status");

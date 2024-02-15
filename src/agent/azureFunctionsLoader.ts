@@ -6,7 +6,6 @@ import { AgentLoader } from "./agentLoader";
 import { DiagnosticLogger } from "./diagnostics/diagnosticLogger";
 import { StatusLogger } from "./diagnostics/statusLogger";
 import { AzureFunctionsWriter } from "./diagnostics/writers/azureFunctionsWriter";
-import { AZURE_MONITOR_AUTO_ATTACH } from "./types";
 import { Attributes } from "@opentelemetry/api";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 
@@ -33,7 +32,6 @@ export class AzureFunctionsLoader extends AgentLoader {
             const writer = new AzureFunctionsWriter(this._instrumentationKey);
             this._diagnosticLogger = new DiagnosticLogger(this._instrumentationKey, writer);
             this._statusLogger = new StatusLogger(this._instrumentationKey, writer);
-            process.env[AZURE_MONITOR_AUTO_ATTACH] = "true";
         }
     }
 }

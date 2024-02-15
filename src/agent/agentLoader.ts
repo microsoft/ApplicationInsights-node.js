@@ -6,7 +6,7 @@ import { Util } from "../shared/util";
 import { ConsoleWriter } from "./diagnostics/writers/consoleWriter";
 import { DiagnosticLogger } from "./diagnostics/diagnosticLogger";
 import { StatusLogger } from "./diagnostics/statusLogger";
-import { DiagnosticMessageId, IDiagnosticLog, IDiagnosticLogger, NODE_JS_RUNTIME_MAJOR_VERSION } from "./types";
+import { AZURE_MONITOR_AUTO_ATTACH, DiagnosticMessageId, IDiagnosticLog, IDiagnosticLogger, NODE_JS_RUNTIME_MAJOR_VERSION } from "./types";
 import { AzureMonitorOpenTelemetryOptions } from "../types";
 import { useAzureMonitor } from "../main";
 
@@ -120,6 +120,8 @@ export class AgentLoader {
         }
         if (this._validate()) {
             try {
+                // Set environment variable to auto attach so the distro is aware of the attach state
+                process.env[AZURE_MONITOR_AUTO_ATTACH] = "true";
                 // Initialize Distro
                 this._options.azureMonitorExporterOptions.credential = this._aadCredential;
                 useAzureMonitor(this._options);

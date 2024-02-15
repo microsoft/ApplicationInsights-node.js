@@ -40,8 +40,6 @@ describe("agent/AKSLoader", () => {
         // Loader is using correct diagnostics
         assert.equal(agent["_diagnosticLogger"], diagnosticLogger, "Wrong diagnosticLogger");
         assert.equal(agent["_statusLogger"], statusLogger, "Wrong statusLogger");
-        // Prefix Env variable should be set
-        assert.equal(process.env["AZURE_MONITOR_AUTO_ATTACH"], "true");
     });
 
     it("initialize", () => {

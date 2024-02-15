@@ -89,6 +89,7 @@ describe("agent/agentLoader", () => {
         const diagnosticLoggerStub = sandbox.stub(agent["_diagnosticLogger"], "logMessage");
         
         const initAgent = agent.initialize();
+        assert.equal(process.env["AZURE_MONITOR_AUTO_ATTACH"], "true");
         assert.ok(diagnosticLoggerStub.calledOnce);
     });
 
