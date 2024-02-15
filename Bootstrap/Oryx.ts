@@ -3,8 +3,9 @@ import { StatusLogger } from "./StatusLogger";
 import { DiagnosticLogger } from "./DiagnosticLogger";
 import { NoopLogger } from "./NoopLogger";
 import appInsightsLoader = require("./Default");
+import { AttachTypePrefix } from "../Declarations/Constants";
 
-appInsightsLoader.setUsagePrefix("alr_"); // App Services Linux Attach
+appInsightsLoader.setUsagePrefix(`al${AttachTypePrefix.INTEGRATED_AUTO}_`); // App Services Linux Auto Attach
 
 // Set Status.json logger
 appInsightsLoader.setStatusLogger(new StatusLogger(new NoopLogger()));

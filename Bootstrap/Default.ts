@@ -7,6 +7,7 @@ import { StatusLogger } from "./StatusLogger";
 import { DiagnosticLogger } from "./DiagnosticLogger";
 import Config = require("../Library/Config");
 import { DiagnosticLog, DiagnosticMessageId } from "./DataModel";
+import * as PrefixHelpers from "../Library/PrefixHelper";
 
 // Private configuration vars
 let _appInsights: typeof types | null;
@@ -86,7 +87,12 @@ export function setupAndStart(aadTokenCredential?: azureCoreAuth.TokenCredential
             return _appInsights;
         }
 
+        /** Sets the SDK version prefix in auto-attach scenarios */
         const prefixInternalSdkVersion = function (envelope: types.Contracts.Envelope, _contextObjects: Object) {
+            if (_prefix === "ud_") {
+                // If SDK version prefix is not set - set it using {RP}{OS}{Attach Type}_ pattern
+                _prefix = `${PrefixHelpers.getResourceProvider()}${PrefixHelpers.getOsPrefix()}${Constants.AttachTypePrefix.INTEGRATED_AUTO}_`
+            }
             try {
                 var appInsightsSDKVersion = _appInsights.defaultClient.context.keys.internalSdkVersion;
                 envelope.tags[appInsightsSDKVersion] = _prefix + envelope.tags[appInsightsSDKVersion];

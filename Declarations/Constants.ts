@@ -194,6 +194,11 @@ export enum HttpRequestCookieNames {
     AUTH_USER = "ai_authUser",
 }
 
+export enum AttachTypePrefix {
+    INTEGRATED_AUTO = "i",
+    MANUAL = "m"
+}
+
 //Azure SDK Span Attributes
 export const AzNamespace = "az.namespace";
 export const MicrosoftEventHub = "Microsoft.EventHub";
