@@ -147,12 +147,12 @@ export const StatsbeatAttach = {
 }
 
 export const StatsbeatCounter = {
-    REQUEST_SUCCESS: "Request Success Count",
-    REQUEST_FAILURE: "Request Failure Count",
-    REQUEST_DURATION: "Request Duration",
-    RETRY_COUNT: "Retry Count",
-    THROTTLE_COUNT: "Throttle Count",
-    EXCEPTION_COUNT: "Exception Count",
+    REQUEST_SUCCESS: "Request_Success_Count",
+    REQUEST_FAILURE: "Request_Failure_Count",
+    REQUEST_DURATION: "Request_Duration",
+    RETRY_COUNT: "Retry_Count",
+    THROTTLE_COUNT: "Throttle_Count",
+    EXCEPTION_COUNT: "Exception_Count",
     ATTACH: "Attach",
     FEATURE: "Feature"
 }
@@ -192,6 +192,11 @@ export enum HttpRequestCookieNames {
     SESSION = "ai_session",
     USER = "ai_user",
     AUTH_USER = "ai_authUser",
+}
+
+export enum AttachTypePrefix {
+    INTEGRATED_AUTO = "i",
+    MANUAL = "m"
 }
 
 //Azure SDK Span Attributes
