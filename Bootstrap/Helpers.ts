@@ -1,20 +1,13 @@
 import { DiagnosticLog, DiagnosticMessageId } from "./DataModel";
 import { DiagnosticLogger } from "./DiagnosticLogger";
-import { isWindows, isLinux } from "../Library/PrefixHelper";
 
 export function sdkAlreadyExists(_logger: DiagnosticLogger): boolean {
     try {
         // appInstance should either resolve to user SDK or crash. If it resolves to attach SDK, user probably modified their NODE_PATH
         let appInstance: string;
         try {
-            // Node 8.9+ Windows
-            if (isWindows()) {
-                appInstance = (require.resolve as any)("applicationinsights", { paths: [process.cwd()] });
-            }
-            // Node 8.9+ Linux
-            else if (isLinux()) {
-                appInstance = `${process.cwd()}${(require.resolve as any)("applicationinsights", { paths: [process.cwd()] })}`;
-            }
+            // Node 8.9+
+            appInstance = (require.resolve as any)("applicationinsights", { paths: [process.cwd()] });
         } catch (e) {
             // Node <8.9
             appInstance = require.resolve(process.cwd() + "/node_modules/applicationinsights");
