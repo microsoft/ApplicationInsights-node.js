@@ -57,7 +57,7 @@ describe("Library/Context", () => {
             }
         });
 
-        it("should set internalSdkVersion to 'prefix_node:<version>'", () => {
+        it("should set internalSdkVersion to 'prefix_node:<version>' in manual SDK scenarios", () => {
             var context = new Context();
             const packageJsonPath = path.resolve(__dirname, "../../../", "./package.json");
             let packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
