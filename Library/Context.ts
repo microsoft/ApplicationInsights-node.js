@@ -7,6 +7,7 @@ import { APPLICATION_INSIGHTS_SDK_VERSION } from "../Declarations/Constants";
 import Logging = require("./Logging");
 import * as PrefixHelpers from "./PrefixHelper";
 import * as Constants from "../Declarations/Constants";
+import appInsights = require("../Bootstrap/Oryx");
 
 class Context {
 
@@ -67,7 +68,10 @@ class Context {
 
     private _loadInternalContext() {
         Context.sdkVersion = APPLICATION_INSIGHTS_SDK_VERSION;
-        this.tags[this.keys.internalSdkVersion] = `${PrefixHelpers.getResourceProvider()}${PrefixHelpers.getOsPrefix()}${Constants.AttachTypePrefix.MANUAL}_node:${Context.sdkVersion}`
+        // If Context is already set in the bootstrap, don't set it here
+        if (PrefixHelpers.getResourceProvider() === "u") {
+            this.tags[this.keys.internalSdkVersion] = `${PrefixHelpers.getResourceProvider()}${PrefixHelpers.getOsPrefix()}${Constants.AttachTypePrefix.MANUAL}_node:${Context.sdkVersion}`
+        }
     }
 }
 

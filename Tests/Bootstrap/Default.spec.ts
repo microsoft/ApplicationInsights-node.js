@@ -6,6 +6,7 @@ import * as Helpers from "../../Bootstrap/Helpers";
 import * as DefaultTypes from "../../Bootstrap/Default";
 import { JsonConfig } from "../../Library/JsonConfig";
 import * as applicationinsights from "../../applicationinsights";
+import Context = require("../../Library/Context");
 
 
 const appInsights = require("../../applicationinsights");
@@ -202,5 +203,45 @@ describe("#setupAndStart()", () => {
         assert.equal(result.defaultClient.config.enableAutoCollectDependencies, false, "wrong enableAutoCollectDependencies");
         assert.equal(result.defaultClient.config.enableAutoCollectHeartbeat, false, "wrong enableAutoCollectHeartbeat");
         assert.equal(result.defaultClient.config.enableUseDiskRetryCaching, false, "wrong enableUseDiskRetryCaching");
+    });
+
+    it("should get App Services prefix correctly", () => {
+        const env = <{ [id: string]: string }>{};
+        env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/";
+        env["WEBSITE_SITE_NAME"] = "test-site";
+        process.env = env;
+        const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
+        Default.setupAndStart(null, false);
+        const appInsightsSDKVersion = appInsights.defaultClient.context.keys.internalSdkVersion;
+
+        // Test
+        if (process.platform === "win32") {
+            assert.equal(appInsights.defaultClient.context.tags[appInsightsSDKVersion], `awi_node:${Context.sdkVersion}`, "SDK version tag is incorrect");
+        } else if (process.platform === "linux") {
+            assert.equal(appInsights.defaultClient.context.tags[appInsightsSDKVersion], `ali_node:${Context.sdkVersion}`, "SDK version tag is incorrect");
+        } else {
+            // Case that the test is being run on an OS not supported by App Service
+            assert.ok(true);
+        }
+    });
+
+    it("should get Azure Functions prefix correctly", () => {
+        const env = <{ [id: string]: string }>{};
+        env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/";
+        env["FUNCTIONS_WORKER_RUNTIME"] = "test-function";
+        process.env = env;
+        const Default = require("../../Bootstrap/Default") as typeof DefaultTypes;
+        Default.setupAndStart(null, false);
+        const appInsightsSDKVersion = appInsights.defaultClient.context.keys.internalSdkVersion;
+
+        // Test
+        if (process.platform === "win32") {
+            assert.equal(appInsights.defaultClient.context.tags[appInsightsSDKVersion], `fwi_node:${Context.sdkVersion}`, "SDK version tag is incorrect");
+        } else if (process.platform === "linux") {
+            assert.equal(appInsights.defaultClient.context.tags[appInsightsSDKVersion], `fli_node:${Context.sdkVersion}`, "SDK version tag is incorrect");
+        } else {
+            // Case that the test is being run on an OS not supported by App Service
+            assert.ok(true);
+        }
     });
 });

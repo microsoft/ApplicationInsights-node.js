@@ -8,10 +8,12 @@ import { DiagnosticLogger } from "./DiagnosticLogger";
 import Config = require("../Library/Config");
 import { DiagnosticLog, DiagnosticMessageId } from "./DataModel";
 import * as PrefixHelpers from "../Library/PrefixHelper";
+import Context = require("../Library/Context");
 
 // Private configuration vars
 let _appInsights: typeof types | null;
-let _prefix = "ud_"; // Unknown, Default
+let _prefix = `${PrefixHelpers.getResourceProvider()}${PrefixHelpers.getOsPrefix()}${Constants.AttachTypePrefix.INTEGRATED_AUTO}_`;
+let _fullSdkVersion = `${_prefix}node:${Context.sdkVersion}`;
 
 export const defaultConfig = new Config(); // Will read env variables, expose for Agent initialization
 const _instrumentationKey = defaultConfig.instrumentationKey;
@@ -28,14 +30,6 @@ const forceStart = process.env.APPLICATIONINSIGHTS_FORCE_START === "true";
  */
 export function setLogger(logger: DiagnosticLogger) {
     return _logger = logger;
-}
-
-/**
- * Sets the string which is prefixed to the existing sdkVersion, e.g. `ad_`, `alr_`
- * @param prefix string prefix, including underscore. Defaults to `ud_`
- */
-export function setUsagePrefix(prefix: string) {
-    _prefix = prefix;
 }
 
 export function setStatusLogger(statusLogger: StatusLogger) {
@@ -89,13 +83,9 @@ export function setupAndStart(aadTokenCredential?: azureCoreAuth.TokenCredential
 
         /** Sets the SDK version prefix in auto-attach scenarios */
         const prefixInternalSdkVersion = function (envelope: types.Contracts.Envelope, _contextObjects: Object) {
-            if (_prefix === "ud_") {
-                // If SDK version prefix is not set - set it using {RP}{OS}{Attach Type}_ pattern
-                _prefix = `${PrefixHelpers.getResourceProvider()}${PrefixHelpers.getOsPrefix()}${Constants.AttachTypePrefix.INTEGRATED_AUTO}_`
-            }
+            // If SDK version prefix is not set - set it using {RP}{OS}{Attach Type}_ pattern
             try {
-                var appInsightsSDKVersion = _appInsights.defaultClient.context.keys.internalSdkVersion;
-                envelope.tags[appInsightsSDKVersion] = _prefix + envelope.tags[appInsightsSDKVersion];
+                envelope.tags[appInsightsSDKVersion] = _fullSdkVersion;
             } catch (e) {
                 const diagnosticLog: DiagnosticLog = {
                     message: "Error prefixing SDK version.",
@@ -122,6 +112,7 @@ export function setupAndStart(aadTokenCredential?: azureCoreAuth.TokenCredential
 
         // Instrument the SDK
         _appInsights.setup();
+        const appInsightsSDKVersion = _appInsights.defaultClient.context.keys.internalSdkVersion;
 
         // Azure Functions
         if (isAzureFunction) {
@@ -195,6 +186,8 @@ export function setupAndStart(aadTokenCredential?: azureCoreAuth.TokenCredential
         }
 
         _appInsights.start();
+        // Set the SDK verison in the context
+        _appInsights.defaultClient.context.tags[appInsightsSDKVersion] = _fullSdkVersion;
         // Add attach flag in Statsbeat
         let statsbeat = _appInsights.defaultClient.getStatsbeat();
         if (statsbeat) {
