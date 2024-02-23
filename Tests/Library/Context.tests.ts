@@ -18,6 +18,8 @@ describe("Library/Context", () => {
             var jsonContent = JSON.stringify({ "version": "testVersion" });
             var testFilePath = path.resolve(__dirname, "testpackage.json");
             fs.writeFile(testFilePath, jsonContent, () => { });
+            // Clear the sdkPrefix in case it's been set by other tests initializing the agent.
+            Context.sdkPrefix = null;
         });
 
         after(() => {
