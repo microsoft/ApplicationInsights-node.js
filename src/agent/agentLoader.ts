@@ -17,6 +17,7 @@ const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
 const ENV_AZURE_PREFIX = "APPSETTING_"; // Azure adds this prefix to all environment variables
 const ENV_IKEY = "APPINSIGHTS_INSTRUMENTATIONKEY"; // This key is provided in the readme
 const LEGACY_ENV_IKEY = "APPINSIGHTS_INSTRUMENTATION_KEY";
+const USER_APP_PATH = "/home/site/wwwroot"; // Azure App Service home path for user applications
 
 
 export class AgentLoader {
@@ -242,45 +243,30 @@ export class AgentLoader {
             let shimInstance: string;
             let distroInstance: string;
             try {
-                // Node 8.9+ Windows
-                if (this._isWindows) {
-                    shimInstance = (require.resolve as any)("applicationinsights", { paths: [process.cwd()] });
-                    distroInstance = (require.resolve as any)("@azure/monitor-opentelemetry", { paths: [process.cwd()] });
+                shimInstance = (require.resolve as any)("applicationinsights", { paths: [USER_APP_PATH] });
+                distroInstance = (require.resolve as any)("@azure/monitor-opentelemetry", { paths: [USER_APP_PATH] });
+                if (shimInstance) {
+                    this._diagnosticLogSdkExists(shimInstance, "Application Insights SDK Shim");
                 }
-                // Node 8.9+ Linux
-                else if (this._isLinux) {
-                    shimInstance = `${process.cwd()}${(require.resolve as any)("applicationinsights", { paths: [process.cwd()] })}`;
-                    distroInstance = `${process.cwd()}${(require.resolve as any)("@azure/monitor-opentelemetry", { paths: [process.cwd()] })}`;
+                if (distroInstance) {
+                    this._diagnosticLogSdkExists(distroInstance, "Azure Monitor Application Insights Distro");
                 }
             } catch (e) {
-                // Node <8.9
-                shimInstance = require.resolve(`${process.cwd()}/node_modules/applicationinsights`);
-                distroInstance = require.resolve(`${process.cwd()}/node_modules/@azure/monitor-opentelemetry`);
+                return false;
             }
-            // If loaded instance is in Azure machine home path do not attach the SDK, this means customer already instrumented their app
-            if (shimInstance.indexOf("home") > -1) {
-                const diagnosticLog: IDiagnosticLog = {
-                    message: `Azure Monitor Application Insights Distro already exists as a part of the shim. Module is already installed in this application; not re-attaching. Location: ${shimInstance}`,
-                    messageId: DiagnosticMessageId.sdkExists
-                };
-                this._diagnosticLogger.logMessage(diagnosticLog);
-                return true;
-            }
-            if (distroInstance.indexOf("home") > -1) {
-                const diagnosticLog: IDiagnosticLog = {
-                    message: `Azure Monitor Application Insights Distro already exists. Module is already installed in this application; not re-attaching. Location: ${shimInstance}`,
-                    messageId: DiagnosticMessageId.sdkExists
-                };
-                this._diagnosticLogger.logMessage(diagnosticLog);
-                return true;
-            }
-
             // ApplicationInsights could be loaded outside of customer application, attach in this case
             return false;
-
         } catch (e) {
             // crashed while trying to resolve "applicationinsights", so SDK does not exist. Attach appinsights
             return false;
         }
+    }
+
+    private _diagnosticLogSdkExists(appInstance: string, sdkType: string): void {
+        const diagnosticLog: IDiagnosticLog = {
+            message: `${sdkType} already exists. Module is already installed in this application; not re-attaching. Installed SDK location: ${appInstance}`,
+            messageId: DiagnosticMessageId.sdkExists
+        };
+        this._diagnosticLogger.logMessage(diagnosticLog);
     }
 }
