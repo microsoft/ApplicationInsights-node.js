@@ -178,8 +178,13 @@ export class CorrelationContextManager {
                     this.cls = require("continuation-local-storage");
                 }
             }
-
-            CorrelationContextManager.session = this.cls.createNamespace("AI-CLS-Session");
+            try {
+                CorrelationContextManager.session = this.cls.createNamespace("AI-CLS-Session");
+            } catch (error) {
+                Logging.warn("Failed to create AI-CLS-Session namespace. Correlation of requests may be lost", Util.dumpObj(error));
+                this.enabled = false;
+                return;
+            }
 
             DiagChannel.registerContextPreservation((cb) => {
                 try {
@@ -295,7 +300,13 @@ export class CorrelationContextManager {
     public static reset() {
         if (CorrelationContextManager.hasEverEnabled) {
             CorrelationContextManager.session = null;
-            CorrelationContextManager.session = this.cls.createNamespace("AI-CLS-Session");
+            try {
+                CorrelationContextManager.session = this.cls.createNamespace("AI-CLS-Session");
+            } catch (error) {
+                Logging.warn("Failed to create AI-CLS-Session namespace. Correlation of requests may be lost", Util.dumpObj(error));
+                this.enabled = false;
+                return;
+            }
         }
     }
 
