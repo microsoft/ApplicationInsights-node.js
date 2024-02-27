@@ -12,10 +12,10 @@ import Context = require("../Library/Context");
 
 // Private configuration vars
 let _appInsights: typeof types | null;
-let _prefix = `${PrefixHelpers.getResourceProvider()}${PrefixHelpers.getOsPrefix()}${Constants.AttachTypePrefix.INTEGRATED_AUTO}_`;
-let _fullSdkVersion = `${_prefix}node:${Context.sdkVersion}`;
 
 export const defaultConfig = new Config(); // Will read env variables, expose for Agent initialization
+let _prefix = `${PrefixHelpers.getResourceProvider()}${PrefixHelpers.getOsPrefix()}${Constants.AttachTypePrefix.INTEGRATED_AUTO}_`;
+let _fullSdkVersion = `${_prefix}node:${Context.sdkVersion}`;
 const _instrumentationKey = defaultConfig.instrumentationKey;
 let _logger: DiagnosticLogger = new DiagnosticLogger(console, _instrumentationKey);
 let _statusLogger: StatusLogger = new StatusLogger(console, _instrumentationKey);
@@ -111,6 +111,7 @@ export function setupAndStart(aadTokenCredential?: azureCoreAuth.TokenCredential
         }
 
         // Instrument the SDK
+        Context.sdkPrefix = _prefix;
         _appInsights.setup();
         const appInsightsSDKVersion = _appInsights.defaultClient.context.keys.internalSdkVersion;
 
