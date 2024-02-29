@@ -32,7 +32,11 @@ export let defaultClient: TelemetryClient;
  * and start the SDK.
  */
 export function setup(setupString?: string) {
-    defaultClient = new TelemetryClient(setupString);
+    if (!defaultClient) {
+        defaultClient = new TelemetryClient(setupString);
+    } else {
+        diag.warn("Setup has already been called once. To set up a new client, please use TelemetryClient instead.");
+    }
     return Configuration;
 }
 

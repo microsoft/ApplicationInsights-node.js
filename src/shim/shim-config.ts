@@ -337,8 +337,8 @@ class Config implements IConfig {
         if (this.disableAppInsights) {
             diag.warn("disableAppInsights configuration no longer supported.");
         }
-        if (this.enableAutoCollectHeartbeat) {
-            diag.warn("Heartbeat metris are no longer supported.");
+        if (this.enableAutoCollectHeartbeat === true) {
+            diag.warn("Heartbeat metrics are no longer supported.");
         }
         if (this.enableAutoDependencyCorrelation === false) {
             diag.warn("Auto dependency correlation cannot be turned off anymore.");
@@ -378,6 +378,9 @@ class Config implements IConfig {
         }
         if (this.quickPulseHost) {
             diag.warn("The quickPulseHost configuration option is not suppored by the shim.");
+        }
+        if (this.correlationHeaderExcludedDomains) {
+            diag.warn("The correlationHeaderExcludedDomains configuration option is not supported by the shim.");
         }
         return options;
     }

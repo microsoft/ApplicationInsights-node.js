@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Attributes, context, metrics, ProxyTracerProvider, SpanKind, SpanOptions, SpanStatusCode, diag, trace } from "@opentelemetry/api";
+import { Attributes, context, metrics, ProxyTracerProvider, SpanKind, SpanOptions, SpanStatusCode, diag, trace, DiagConsoleLogger } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
 import { LoggerProvider } from "@opentelemetry/sdk-logs";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
