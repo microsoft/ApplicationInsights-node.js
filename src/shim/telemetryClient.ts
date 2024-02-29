@@ -36,6 +36,7 @@ export class TelemetryClient {
      * @param setupString the Connection String or Instrumentation Key to use (read from environment variable if not specified)
      */
     constructor(input?: string) {
+        diag.setLogger(new DiagConsoleLogger());
         const config = new Config(input);
         this.config = config;
         this.commonProperties = {};
