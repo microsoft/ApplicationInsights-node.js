@@ -7,7 +7,6 @@ import { APPLICATION_INSIGHTS_SDK_VERSION } from "../Declarations/Constants";
 import Logging = require("./Logging");
 import * as PrefixHelpers from "./PrefixHelper";
 import * as Constants from "../Declarations/Constants";
-import appInsights = require("../Bootstrap/Oryx");
 
 class Context {
 
@@ -15,7 +14,8 @@ class Context {
     public tags: { [key: string]: string };
     public static DefaultRoleName: string = "Web";
     public static appVersion: { [path: string]: string } = {};
-    public static sdkVersion: string = null;
+    public static sdkVersion: string = APPLICATION_INSIGHTS_SDK_VERSION;
+    public static sdkPrefix: string = null;
 
     constructor(packageJsonPath?: string) {
         this.keys = new Contracts.ContextTagKeys();
@@ -67,9 +67,8 @@ class Context {
     }
 
     private _loadInternalContext() {
-        Context.sdkVersion = APPLICATION_INSIGHTS_SDK_VERSION;
         // If Context is already set in the bootstrap, don't set it here
-        if (PrefixHelpers.getResourceProvider() === "u") {
+        if (!Context.sdkPrefix) {
             this.tags[this.keys.internalSdkVersion] = `${PrefixHelpers.getResourceProvider()}${PrefixHelpers.getOsPrefix()}${Constants.AttachTypePrefix.MANUAL}_node:${Context.sdkVersion}`
         }
     }

@@ -1,7 +1,8 @@
+import { isLinux } from "../Library/PrefixHelper";
 import { DiagnosticLog, DiagnosticMessageId } from "./DataModel";
 import { DiagnosticLogger } from "./DiagnosticLogger";
 
-const USER_APP_PATH = "/home/site/wwwroot";
+const LINUX_USER_APPLICATION_INSIGHTS_PATH = "/node_modules/applicationinsights/out/applicationinsights.js";
 
 export function sdkAlreadyExists(_logger: DiagnosticLogger): boolean {
     try {
@@ -9,38 +10,35 @@ export function sdkAlreadyExists(_logger: DiagnosticLogger): boolean {
         let appInstance: string;
         try {
             // Node 8.9+
-            // If we find the applicationinsights module under in the user application path, do not attach the SDK
-            // In order for this to work in Windows, we need to pass the full "/home/site/wwwroot" path to require.resolve
-            appInstance = (require.resolve as any)("applicationinsights", { paths: [USER_APP_PATH] });
-            if (appInstance) {
-                diagnosticLogSdkExists(_logger, appInstance);
-                return true;
-            }
+            appInstance = (require.resolve as any)("applicationinsights", { paths: [process.cwd()] });
         } catch (e) {
             // Node <8.9
             appInstance = require.resolve(process.cwd() + "/node_modules/applicationinsights");
-            // If loaded instance is in Azure machine home path do not attach the SDK, this means customer already instrumented their app
-            if (appInstance.indexOf("home") > -1) {
-                diagnosticLogSdkExists(_logger, appInstance);
-                return true;
-            }
-            else {
-                // ApplicationInsights could be loaded outside of customer application, attach in this case
-                return false;
-            }
+        }
+        /** 
+         * If loaded instance is in Azure machine home path do not attach the SDK, this means customer already instrumented their app.
+         * Linux App Service doesn't append the full cwd to the require.resolve, so we need to check for the relative path we expect
+         * if application insights is being imported in the user app code.
+        */
+        if (
+            appInstance.indexOf("home") > -1 ||
+            (appInstance === LINUX_USER_APPLICATION_INSIGHTS_PATH && isLinux())
+        ) {
+            const diagnosticLog: DiagnosticLog = {
+                message: "Application Insights SDK already exists. Module is already installed in this application; not re-attaching. Installed SDK location: " + appInstance,
+                properties: {
+                    "msgId": DiagnosticMessageId.sdkExists
+                }
+            };
+            _logger.logError(diagnosticLog);
+            return true;
+        }
+        else {
+            // ApplicationInsights could be loaded outside of customer application, attach in this case
+            return false;
         }
     } catch (e) {
         // crashed while trying to resolve "applicationinsights", so SDK does not exist. Attach appinsights
         return false;
     }
-}
-
-function diagnosticLogSdkExists(logger: DiagnosticLogger, appInstance: string): void {
-    const diagnosticLog: DiagnosticLog = {
-        message: "Application Insights SDK already exists. Module is already installed in this application; not re-attaching. Installed SDK location: " + appInstance,
-        properties: {
-            "msgId": DiagnosticMessageId.sdkExists
-        }
-    };
-    logger.logError(diagnosticLog);
 }
