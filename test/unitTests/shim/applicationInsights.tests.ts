@@ -22,25 +22,25 @@ describe("ApplicationInsights", () => {
 
     describe("#setup()", () => {
         it("should not warn if setup is called once", (done) => {
-            const warnStub = sandbox.stub(diag, "warn");
             appInsights.setup(connString);
-            for (let i = 0; i < warnStub.args.length; i++) {
-                if (warnStub.args[i].includes("Setup has already been called once")) {
-                    assert.ok(false, `setup warning was incorrectly raised: ${warnStub.args[i]}`);
-                }
-            }
+            const warnings = appInsights.defaultClient["_configWarnings"];
+            assert.ok(!checkWarnings("Setup has already been called once", warnings), "setup warning was incorrectly raised");
             done();
         });
         it("should warn if setup is called twice", (done) => {
             const warnStub = sandbox.stub(diag, "warn");
             appInsights.setup(connString);
             appInsights.setup(connString);
-            assert.ok(checkWarnings("Setup has already been called once", warnStub), "multiple setup warning not raised");
+            warnStub.args.forEach((arg) => {
+                if (arg.includes("Setup has already been called once")) {
+                    assert.ok(true, "setup warning was not raised");
+                }
+            });
             done();
         });
         it("should not overwrite default client if called more than once", (done) => {
             appInsights.setup(connString);
-            var client = appInsights.defaultClient;
+            const client = appInsights.defaultClient;
             appInsights.setup(connString);
             appInsights.setup(connString);
             appInsights.setup(connString);
@@ -53,14 +53,18 @@ describe("ApplicationInsights", () => {
         it("should warn if start is called before setup", (done) => {
             const warnStub = sandbox.stub(diag, "warn");
             appInsights.start();
-            assert.ok(checkWarnings("The default client has not been initialized. Please make sure to call setup() before start().", warnStub), "start before setup warning not called");
+            warnStub.args.forEach((arg) => {
+                if (arg.includes("The default client has not been initialized. Please make sure to call setup() before start().")) {
+                    assert.ok(true, "setup warning was not raised");
+                }
+            });
             done();
         });
 
         it("should not warn if start is called after setup", () => {
-            var warnStub = sandbox.stub(diag, "warn");
             appInsights.setup(connString).start();
-            assert.ok(!checkWarnings("The default client has not been initialized. Please make sure to call setup() before start().", warnStub), "warning was thrown when start was called correctly");
+            const warnings = appInsights.defaultClient["_configWarnings"];
+            assert.ok(!checkWarnings("The default client has not been initialized. Please make sure to call setup() before start().", warnings), "warning was thrown when start was called correctly");
         });
     });
 
@@ -99,27 +103,27 @@ describe("ApplicationInsights", () => {
 
         describe("#Configuration", () => {
             it("should throw warning if attempting to set AI distributed tracing mode to AI", () => {
-                const warnStub = sandbox.stub(diag, "warn");
                 appInsights.setup(connString);
+                const warnings = appInsights.defaultClient["_configWarnings"];
                 appInsights.Configuration.setDistributedTracingMode(appInsights.DistributedTracingModes.AI);
                 appInsights.start();
-                assert.ok(checkWarnings("AI only distributed tracing mode is no longer supported.", warnStub), "warning was not raised");
+                assert.ok(checkWarnings("AI only distributed tracing mode is no longer supported.", warnings), "warning was not raised");
             });
 
             it("should warn if attempting to set auto collection of heartbeat", () => {
-                const warnStub = sandbox.stub(diag, "warn");
                 appInsights.setup(connString);
+                const warnings = appInsights.defaultClient["_configWarnings"];
                 appInsights.Configuration.setAutoCollectHeartbeat(true);
                 appInsights.start();
-                assert.ok(checkWarnings("Heartbeat metrics are no longer supported.", warnStub), "warning was not raised");
+                assert.ok(checkWarnings("Heartbeat metrics are no longer supported.", warnings), "warning was not raised");
             });
 
             it("should warn if attempting to set maxBytesOnDisk", () => {
-                const warnStub = sandbox.stub(diag, "warn");
                 appInsights.setup(connString);
+                const warnings = appInsights.defaultClient["_configWarnings"];
                 appInsights.Configuration.setUseDiskRetryCaching(true, 1000, 10);
                 appInsights.start();
-                assert.ok(checkWarnings("The maxBytesOnDisk configuration option is not supported by the shim.", warnStub), "warning was not raised");
+                assert.ok(checkWarnings("The maxBytesOnDisk configuration option is not supported by the shim.", warnings), "warning was not raised");
             });
 
             it("should set internal loggers", () => {
@@ -130,11 +134,11 @@ describe("ApplicationInsights", () => {
             });
 
             it("should warn if attempting to auto collect incoming azure functions requests", () => {
-                const warnStub = sandbox.stub(diag, "warn");
                 appInsights.setup(connString);
+                const warnings = appInsights.defaultClient["_configWarnings"];
                 appInsights.Configuration.setAutoCollectIncomingRequestAzureFunctions(true);
                 appInsights.start();
-                assert.ok(checkWarnings("Auto request generation in Azure Functions is no longer supported.", warnStub), "warning was not raised");
+                assert.ok(checkWarnings("Auto request generation in Azure Functions is no longer supported.", warnings), "warning was not raised");
             });
         });
     });

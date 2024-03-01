@@ -30,14 +30,14 @@ export class TelemetryClient {
     public commonProperties: { [key: string]: string };
     public config: Config;
     private _options: AzureMonitorOpenTelemetryOptions;
+    private _configWarnings: string[] = [];
 
     /**
      * Constructs a new instance of TelemetryClient
      * @param setupString the Connection String or Instrumentation Key to use (read from environment variable if not specified)
      */
     constructor(input?: string) {
-        diag.setLogger(new DiagConsoleLogger());
-        const config = new Config(input);
+        const config = new Config(input, this._configWarnings);
         this.config = config;
         this.commonProperties = {};
         this.context = new Context();
@@ -57,6 +57,11 @@ export class TelemetryClient {
 
         this._attributeLogProcessor = new AttributeLogProcessor({ ...this.context.tags, ...this.commonProperties });
         (logs.getLoggerProvider() as LoggerProvider).addLogRecordProcessor(this._attributeLogProcessor);
+
+        // Warn if any config warnings were generated during parsing
+        for (let i = 0; i < this._configWarnings.length; i++) {
+            diag.warn(this._configWarnings[i]);
+        }
     }
 
     /**

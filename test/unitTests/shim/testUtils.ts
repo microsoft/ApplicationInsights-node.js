@@ -1,8 +1,8 @@
-export function checkWarnings(warning: string, warnStub: sinon.SinonStub) {
+export function checkWarnings(warning: string, warnings: string[]) {
     let expectedWarning: any;
-    for (let i = 0; i < warnStub.args.length; i++) {
-        if (warnStub.args[i].toString().includes(warning)) {
-            expectedWarning = warnStub.args[i];
+    for (let i = 0; i < warnings.length; i++) {
+        if (warnings[i].toString().includes(warning)) {
+            expectedWarning = warnings[i];
         }
     }
     return expectedWarning;

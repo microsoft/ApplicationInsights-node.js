@@ -3,7 +3,7 @@
 
 import * as http from "http";
 import * as azureFunctionsTypes from "@azure/functions";
-import { SpanContext, diag } from "@opentelemetry/api";
+import { DiagConsoleLogger, SpanContext, diag } from "@opentelemetry/api";
 import { Span } from "@opentelemetry/sdk-trace-base";
 import { CorrelationContextManager } from "./correlationContextManager";
 import { ICorrelationContext, HttpRequest, DistributedTracingModes } from "./types";
@@ -35,6 +35,7 @@ export function setup(setupString?: string) {
     if (!defaultClient) {
         defaultClient = new TelemetryClient(setupString);
     } else {
+        diag.setLogger(new DiagConsoleLogger());
         diag.warn("Setup has already been called once. To set up a new client, please use TelemetryClient instead.");
     }
     return Configuration;
@@ -51,6 +52,7 @@ export function start() {
         defaultClient.initialize();
         return Configuration;
     } catch (error) {
+        diag.setLogger(new DiagConsoleLogger());
         diag.warn("The default client has not been initialized. Please make sure to call setup() before start().");
     }
 }

@@ -10,8 +10,6 @@ import http = require("http");
 import https = require("https");
 import { DistributedTracingModes } from '../../../applicationinsights';
 import { checkWarnings } from './testUtils';
-import { diag } from '@opentelemetry/api';
-
 
 class TestTokenCredential implements azureCoreAuth.TokenCredential {
     private _expiresOn: Date;
@@ -226,117 +224,117 @@ describe("shim/configuration/config", () => {
 
         describe("#Shim unsupported messages", () => {
             it("should warn if disableAppInsights is set", () => {
-                const warnStub = sandbox.stub(diag, "warn");
                 const config = new Config(connectionString);
+                const warnings = config["_configWarnings"];
                 config.disableAppInsights = true;
                 config.parseConfig();
-                assert.ok(checkWarnings("disableAppInsights configuration no longer supported.", warnStub), "warning was not raised");
+                assert.ok(checkWarnings("disableAppInsights configuration no longer supported.", warnings), "warning was not raised");
             });
 
             it("should warn if collect heartbeat is set", () => {
-                const warnStub = sandbox.stub(diag, "warn");
                 const config = new Config(connectionString);
+                const warnings = config["_configWarnings"];
                 config.enableAutoCollectHeartbeat = true;
                 config.parseConfig();
-                assert.ok(checkWarnings("Heartbeat metrics are no longer supported.", warnStub), "warning was not raised");
+                assert.ok(checkWarnings("Heartbeat metrics are no longer supported.", warnings), "warning was not raised");
             });
 
             it("should warn if auto dependency correlation is set to false", () => {
-                const warnStub = sandbox.stub(diag, "warn");
                 const config = new Config(connectionString);
+                const warnings = config["_configWarnings"];
                 config.enableAutoDependencyCorrelation = false;
                 config.parseConfig();
-                assert.ok(checkWarnings("Auto dependency correlation cannot be turned off anymore.", warnStub), "warning was not raised");
+                assert.ok(checkWarnings("Auto dependency correlation cannot be turned off anymore.", warnings), "warning was not raised");
             });
 
             it("should warn if auto request generation is azure functions is set", () => {
-                const warnStub = sandbox.stub(diag, "warn");
                 const config = new Config(connectionString);
+                const warnings = config["_configWarnings"];
                 config.enableAutoCollectIncomingRequestAzureFunctions = true;
                 config.parseConfig();
-                assert.ok(checkWarnings("Auto request generation in Azure Functions is no longer supported.", warnStub), "warning was not raised");
+                assert.ok(checkWarnings("Auto request generation in Azure Functions is no longer supported.", warnings), "warning was not raised");
             });
 
             it("should warn if using async hooks is set to false", () => {
-                const warnStub = sandbox.stub(diag, "warn");
                 const config = new Config(connectionString);
+                const warnings = config["_configWarnings"];
                 config.enableUseAsyncHooks = false;
                 config.parseConfig();
-                assert.ok(checkWarnings("The use of non async hooks is no longer supported.", warnStub), "warning was not raised");
+                assert.ok(checkWarnings("The use of non async hooks is no longer supported.", warnings), "warning was not raised");
             });
 
             it("should warn if distributed tracing mode is set to AI", () => {
-                const warnStub = sandbox.stub(diag, "warn");
                 const config = new Config(connectionString);
+                const warnings = config["_configWarnings"];
                 config.distributedTracingMode = DistributedTracingModes.AI;
                 config.parseConfig();
-                assert.ok(checkWarnings("AI only distributed tracing mode is no longer supported.", warnStub), "warning was not raised");
+                assert.ok(checkWarnings("AI only distributed tracing mode is no longer supported.", warnings), "warning was not raised");
             });
 
             it("should warn if resend interval is set", () => {
-                const warnStub = sandbox.stub(diag, "warn");
                 const config = new Config(connectionString);
+                const warnings = config["_configWarnings"];
                 config.enableResendInterval = 1;
                 config.parseConfig();
-                assert.ok(checkWarnings("The resendInterval configuration option is not supported by the shim.", warnStub), "warning was not raised");
+                assert.ok(checkWarnings("The resendInterval configuration option is not supported by the shim.", warnings), "warning was not raised");
             });
 
             it("should warn if max bytes on disk is set", () => {
-                const warnStub = sandbox.stub(diag, "warn");
                 const config = new Config(connectionString);
+                const warnings = config["_configWarnings"];
                 config.enableMaxBytesOnDisk = 1;
                 config.parseConfig();
-                assert.ok(checkWarnings("The maxBytesOnDisk configuration option is not supported by the shim.", warnStub), "warning was not raised");
+                assert.ok(checkWarnings("The maxBytesOnDisk configuration option is not supported by the shim.", warnings), "warning was not raised");
             });
 
             it("should warn if ignore legacy headers is false", () => {
-                const warnStub = sandbox.stub(diag, "warn");
                 const config = new Config(connectionString);
+                const warnings = config["_configWarnings"];
                 config.ignoreLegacyHeaders = false;
                 config.parseConfig();
-                assert.ok(checkWarnings("LegacyHeaders are not supported by the shim.", warnStub), "warning was not raised");
+                assert.ok(checkWarnings("LegacyHeaders are not supported by the shim.", warnings), "warning was not raised");
             });
 
             it("should warn if max batch size is set", () => {
-                const warnStub = sandbox.stub(diag, "warn");
                 const config = new Config(connectionString);
+                const warnings = config["_configWarnings"];
                 config.maxBatchSize = 1;
                 config.parseConfig();
-                assert.ok(checkWarnings("The maxBatchSize configuration option is not supported by the shim.", warnStub), "warning was not raised");
+                assert.ok(checkWarnings("The maxBatchSize configuration option is not supported by the shim.", warnings), "warning was not raised");
             });
 
             it("should warn if logger errors are set to traces", () => {
-                const warnStub = sandbox.stub(diag, "warn");
                 const config = new Config(connectionString);
+                const warnings = config["_configWarnings"];
                 config.enableLoggerErrorToTrace = true;
                 config.parseConfig();
-                assert.ok(checkWarnings("The enableLoggerErrorToTrace configuration option is not supported by the shim.", warnStub), "warning was not raised");
+                assert.ok(checkWarnings("The enableLoggerErrorToTrace configuration option is not supported by the shim.", warnings), "warning was not raised");
             });
 
             it("should warn if httpAgent or httpsAgent are set", () => {
-                const warnStub = sandbox.stub(diag, "warn");
                 const config = new Config(connectionString);
+                const warnings = config["_configWarnings"];
                 config.httpAgent = new http.Agent();
                 config.httpsAgent = new https.Agent();
                 config.parseConfig();
-                assert.ok(checkWarnings("The httpAgent and httpsAgent configuration options are not supported by the shim.", warnStub), "warning was not raised");
+                assert.ok(checkWarnings("The httpAgent and httpsAgent configuration options are not supported by the shim.", warnings), "warning was not raised");
             });
 
             it("should warn if web instrumentations are set", () => {
-                const warnStub = sandbox.stub(diag, "warn");
                 const config = new Config(connectionString);
+                const warnings = config["_configWarnings"];
                 config.webInstrumentationConfig = [{name: "test", value: true}];
                 config.webInstrumentationSrc = "test";
                 config.parseConfig();
-                assert.ok(checkWarnings("The webInstrumentation config and src options are not supported by the shim.", warnStub), "warning was not raised");
+                assert.ok(checkWarnings("The webInstrumentation config and src options are not supported by the shim.", warnings), "warning was not raised");
             });
 
             it("should warn if correlationHeaderExcludedDomains is set", () => {
-                const warnStub = sandbox.stub(diag, "warn");
                 const config = new Config(connectionString);
+                const warnings = config["_configWarnings"];
                 config.correlationHeaderExcludedDomains = ["test.com"];
                 config.parseConfig();
-                assert.ok(checkWarnings("The correlationHeaderExcludedDomains configuration option is not supported by the shim.", warnStub), "warning was not raised");
+                assert.ok(checkWarnings("The correlationHeaderExcludedDomains configuration option is not supported by the shim.", warnings), "warning was not raised");
             });
         });
     });
