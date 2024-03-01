@@ -66,15 +66,19 @@ export class AutoCollectExceptions {
     ) {
         if (this._client) {
             this._client.trackException({ exception: error });
-            (logs.getLoggerProvider() as LoggerProvider).forceFlush().then(() => {
-                // only rethrow when we are the only listener
-                if (reThrow && name && process.listeners(name as any).length === 1) {
-                    // eslint-disable-next-line no-console
-                    console.error(error);
-                    // eslint-disable-next-line no-process-exit
-                    process.exit(1);
-                }
-            });
+            try {
+                (logs.getLoggerProvider() as LoggerProvider).forceFlush().then(() => {
+                    // only rethrow when we are the only listener
+                    if (reThrow && name && process.listeners(name as any).length === 1) {
+                        // eslint-disable-next-line no-console
+                        console.error(error);
+                        // eslint-disable-next-line no-process-exit
+                        process.exit(1);
+                    }
+                });
+            } catch (error) {
+                console.error(`Could not get the loggerProvider upon handling a tracked exception: ${error}`);
+            }
         } else {
             // eslint-disable-next-line no-console
             console.error(error);
