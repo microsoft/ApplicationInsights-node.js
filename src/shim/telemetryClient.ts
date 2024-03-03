@@ -48,14 +48,18 @@ export class TelemetryClient {
         // Parse shim config to Azure Monitor options
         this._options = this.config.parseConfig();
         useAzureMonitor(this._options);
-        // LoggerProvider would be initialized when client is instantiated
-        // Get Logger from global provider
-        this._logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
-        this._attributeSpanProcessor = new AttributeSpanProcessor({ ...this.context.tags, ...this.commonProperties });
-        ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider).addSpanProcessor(this._attributeSpanProcessor);
+        try {
+            // LoggerProvider would be initialized when client is instantiated
+            // Get Logger from global provider
+            this._logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
+            this._attributeSpanProcessor = new AttributeSpanProcessor({ ...this.context.tags, ...this.commonProperties });
+            ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider).addSpanProcessor(this._attributeSpanProcessor);
 
-        this._attributeLogProcessor = new AttributeLogProcessor({ ...this.context.tags, ...this.commonProperties });
-        (logs.getLoggerProvider() as LoggerProvider).addLogRecordProcessor(this._attributeLogProcessor);
+            this._attributeLogProcessor = new AttributeLogProcessor({ ...this.context.tags, ...this.commonProperties });
+            (logs.getLoggerProvider() as LoggerProvider).addLogRecordProcessor(this._attributeLogProcessor);
+        } catch (error) {
+            diag.error(`Failed to initialize TelemetryClient ${error}`);
+        }
     }
 
     /**
@@ -124,9 +128,13 @@ export class TelemetryClient {
             this.initialize();
         }
         // Create custom metric
-        const meter = metrics.getMeterProvider().getMeter("ApplicationInsightsMetrics");
-        const histogram = meter.createHistogram(telemetry.name);
-        histogram.record(telemetry.value, { ...telemetry.properties, ...this.commonProperties, ...this.context.tags });
+        try {
+            const meter = metrics.getMeterProvider().getMeter("ApplicationInsightsMetrics");
+            const histogram = meter.createHistogram(telemetry.name);
+            histogram.record(telemetry.value, { ...telemetry.properties, ...this.commonProperties, ...this.context.tags });
+        } catch (error) {
+            diag.error(`Failed to record metric: ${error}`);
+        }
     }
 
     /**
