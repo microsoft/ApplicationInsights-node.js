@@ -9,6 +9,8 @@ import { CorrelationContextManager } from "./correlationContextManager";
 import { ICorrelationContext, HttpRequest, DistributedTracingModes } from "./types";
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
+import { Util } from "../shared/util";
+import { useAzureMonitor } from "@azure/monitor-opentelemetry";
 
 
 // We export these imports so that SDK users may use these classes directly.
@@ -35,8 +37,7 @@ export function setup(setupString?: string) {
     if (!defaultClient) {
         defaultClient = new TelemetryClient(setupString);
     } else {
-        diag.setLogger(new DiagConsoleLogger());
-        diag.warn("Setup has already been called once. To set up a new client, please use TelemetryClient instead.");
+        defaultClient.configWarnings.push("Setup has already been called once. To set up a new client, please use TelemetryClient instead.")
     }
     return Configuration;
 }
@@ -49,11 +50,15 @@ export function setup(setupString?: string) {
  */
 export function start() {
     try {
-        defaultClient.initialize();
+        if (!defaultClient) {
+            diag.setLogger(new DiagConsoleLogger());
+            diag.warn("Start cannot be called before setup. Please call setup() first.");
+        } else {
+            defaultClient.initialize();
+        }
         return Configuration;
     } catch (error) {
-        diag.setLogger(new DiagConsoleLogger());
-        diag.warn("The default client has not been initialized. Please make sure to call setup() before start().");
+        diag.warn(`Failed to start default client: ${Util.getInstance().dumpObj(error)}`);
     }
 }
 
