@@ -36,10 +36,14 @@ export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
         exceptions = new AutoCollectExceptions(logApi);
     }
     if (internalConfig.enableAutoCollectPerformance) {
-        perfCounters = new PerformanceCounterMetrics(internalConfig);
-        // Add SpanProcessor to calculate Request Metrics
-        if (typeof (trace.getTracerProvider() as BasicTracerProvider).addSpanProcessor === "function") {
-            (trace.getTracerProvider() as BasicTracerProvider).addSpanProcessor(new AzureMonitorSpanProcessor(perfCounters));
+        try {
+            perfCounters = new PerformanceCounterMetrics(internalConfig);
+            // Add SpanProcessor to calculate Request Metrics
+            if (typeof (trace.getTracerProvider() as BasicTracerProvider).addSpanProcessor === "function") {
+                (trace.getTracerProvider() as BasicTracerProvider).addSpanProcessor(new AzureMonitorSpanProcessor(perfCounters));
+            }
+        } catch (err) {
+            diag.error("Failed to initialize PerformanceCounterMetrics: ", err);
         }
     }
     autoCollectLogs.enable(internalConfig.instrumentationOptions);
