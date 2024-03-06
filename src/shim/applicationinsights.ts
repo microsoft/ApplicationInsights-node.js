@@ -10,8 +10,6 @@ import { ICorrelationContext, HttpRequest, DistributedTracingModes } from "./typ
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
 import { Util } from "../shared/util";
-import { useAzureMonitor } from "@azure/monitor-opentelemetry";
-
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
@@ -150,6 +148,7 @@ export class Configuration {
      * @param collectExtendedMetrics if true, extended metrics counters will be collected every minute and sent to Application Insights
      * @returns {Configuration} this class
      */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars 
     public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: any) {
         if (defaultClient) {
             defaultClient.config.enableAutoCollectPerformance = value;
