@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Attributes, context, metrics, ProxyTracerProvider, SpanKind, SpanOptions, SpanStatusCode, diag, trace, DiagConsoleLogger } from "@opentelemetry/api";
+import { Attributes, context, metrics, ProxyTracerProvider, SpanKind, SpanOptions, SpanStatusCode, diag, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
 import { LoggerProvider } from "@opentelemetry/sdk-logs";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
@@ -22,22 +22,22 @@ import { AzureMonitorOpenTelemetryOptions } from "../types";
  * and manually trigger immediate sending (flushing)
  */
 export class TelemetryClient {
+    public context: Context;
+    public commonProperties: { [key: string]: string };
+    public config: Config;
     private _attributeSpanProcessor: AttributeSpanProcessor;
     private _attributeLogProcessor: AttributeLogProcessor;
     private _logApi: LogApi;
     private _isInitialized: boolean;
-    public context: Context;
-    public commonProperties: { [key: string]: string };
-    public config: Config;
     private _options: AzureMonitorOpenTelemetryOptions;
-    public configWarnings: string[] = [];
+    private _configWarnings: string[] = [];
 
     /**
      * Constructs a new instance of TelemetryClient
      * @param setupString the Connection String or Instrumentation Key to use (read from environment variable if not specified)
      */
     constructor(input?: string) {
-        const config = new Config(input, this.configWarnings);
+        const config = new Config(input, this._configWarnings);
         this.config = config;
         this.commonProperties = {};
         this.context = new Context();
@@ -60,8 +60,8 @@ export class TelemetryClient {
             (logs.getLoggerProvider() as LoggerProvider).addLogRecordProcessor(this._attributeLogProcessor);
 
             // Warn if any config warnings were generated during parsing
-            for (let i = 0; i < this.configWarnings.length; i++) {
-                diag.warn(this.configWarnings[i]);
+            for (let i = 0; i < this._configWarnings.length; i++) {
+                diag.warn(this._configWarnings[i]);
                 this._attributeLogProcessor = new AttributeLogProcessor({ ...this.context.tags, ...this.commonProperties });
                 (logs.getLoggerProvider() as LoggerProvider).addLogRecordProcessor(this._attributeLogProcessor);
             }
@@ -323,5 +323,9 @@ export class TelemetryClient {
      */
     public async shutdown(): Promise<void> {
         return shutdownAzureMonitor();
+    }
+
+    public pushWarningToLog(warning: string) {
+        this._configWarnings.push(warning);
     }
 }

@@ -23,7 +23,7 @@ describe("ApplicationInsights", () => {
     describe("#setup()", () => {
         it("should not warn if setup is called once", (done) => {
             appInsights.setup(connString);
-            const warnings = appInsights.defaultClient.configWarnings;
+            const warnings = appInsights.defaultClient["_configWarnings"];
             assert.ok(!checkWarnings("Setup has already been called once", warnings), "setup warning was incorrectly raised");
             done();
         });
@@ -63,7 +63,7 @@ describe("ApplicationInsights", () => {
 
         it("should not warn if start is called after setup", () => {
             appInsights.setup(connString).start();
-            const warnings = appInsights.defaultClient.configWarnings;
+            const warnings = appInsights.defaultClient["_configWarnings"];
             assert.ok(!checkWarnings("Start cannot be called before setup. Please call setup() first.", warnings), "warning was thrown when start was called correctly");
         });
     });
@@ -104,7 +104,7 @@ describe("ApplicationInsights", () => {
         describe("#Configuration", () => {
             it("should throw warning if attempting to set AI distributed tracing mode to AI", () => {
                 appInsights.setup(connString);
-                const warnings = appInsights.defaultClient.configWarnings;
+                const warnings = appInsights.defaultClient["_configWarnings"];
                 appInsights.Configuration.setDistributedTracingMode(appInsights.DistributedTracingModes.AI);
                 appInsights.start();
                 assert.ok(checkWarnings("AI only distributed tracing mode is no longer supported.", warnings), "warning was not raised");
@@ -112,7 +112,7 @@ describe("ApplicationInsights", () => {
 
             it("should warn if attempting to set auto collection of heartbeat", () => {
                 appInsights.setup(connString);
-                const warnings = appInsights.defaultClient.configWarnings;
+                const warnings = appInsights.defaultClient["_configWarnings"];
                 appInsights.Configuration.setAutoCollectHeartbeat(true);
                 appInsights.start();
                 assert.ok(checkWarnings("Heartbeat metrics are no longer supported.", warnings), "warning was not raised");
@@ -120,7 +120,7 @@ describe("ApplicationInsights", () => {
 
             it("should warn if attempting to set maxBytesOnDisk", () => {
                 appInsights.setup(connString);
-                const warnings = appInsights.defaultClient.configWarnings;
+                const warnings = appInsights.defaultClient["_configWarnings"];
                 appInsights.Configuration.setUseDiskRetryCaching(true, 1000, 10);
                 appInsights.start();
                 assert.ok(checkWarnings("The maxBytesOnDisk configuration option is not supported by the shim.", warnings), "warning was not raised");
@@ -135,7 +135,7 @@ describe("ApplicationInsights", () => {
 
             it("should warn if attempting to auto collect incoming azure functions requests", () => {
                 appInsights.setup(connString);
-                const warnings = appInsights.defaultClient.configWarnings;
+                const warnings = appInsights.defaultClient["_configWarnings"];
                 appInsights.Configuration.setAutoCollectIncomingRequestAzureFunctions(true);
                 appInsights.start();
                 assert.ok(checkWarnings("Auto request generation in Azure Functions is no longer supported.", warnings), "warning was not raised");
