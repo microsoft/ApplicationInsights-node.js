@@ -148,10 +148,10 @@ export class Configuration {
      * @param collectExtendedMetrics if true, extended metrics counters will be collected every minute and sent to Application Insights
      * @returns {Configuration} this class
      */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars 
     public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: any) {
         if (defaultClient) {
             defaultClient.config.enableAutoCollectPerformance = value;
-            defaultClient.config.enableAutoCollectExtendedMetrics = collectExtendedMetrics
         }
         return Configuration;
     }
