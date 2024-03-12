@@ -7,7 +7,7 @@ import { diag } from "@opentelemetry/api";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrumentationConfig } from "./types";
 import { ShimJsonConfig } from "./shim-jsonConfig";
-import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType, InstrumentationOptions, InstrumentationOptionsType } from "../types";
+import { AzureMonitorOpenTelemetryOptions, InstrumentationOptions, InstrumentationOptionsType } from "../types";
 
 class Config implements IConfig {
 
@@ -251,47 +251,6 @@ class Config implements IConfig {
                 process.env["APPLICATION_INSIGHTS_NO_STANDARD_METRICS"] = "disable";
             }
         }
-        // NATIVE METRICS
-        if (typeof (this.enableAutoCollectExtendedMetrics) === "boolean") {
-            options.extendedMetrics = {
-                [ExtendedMetricType.gc]: this.enableAutoCollectExtendedMetrics,
-                [ExtendedMetricType.heap]: this.enableAutoCollectExtendedMetrics,
-                [ExtendedMetricType.loop]: this.enableAutoCollectExtendedMetrics,
-            };
-        }
-        // Disable specific native metrics if provided
-        if (this.extendedMetricDisablers) {
-            const extendedMetricDisablers: string[] = this.extendedMetricDisablers.split(",");
-            for (const extendedMetricDisabler of extendedMetricDisablers) {
-                if (extendedMetricDisabler === "gc") {
-                    options.extendedMetrics = {
-                        ...options.extendedMetrics,
-                        [ExtendedMetricType.gc]: false
-                    };
-                }
-                if (extendedMetricDisabler === "heap") {
-                    options.extendedMetrics = {
-                        ...options.extendedMetrics,
-                        [ExtendedMetricType.heap]: false
-                    };
-                }
-                if (extendedMetricDisabler === "loop") {
-                    options.extendedMetrics = {
-                        ...options.extendedMetrics,
-                        [ExtendedMetricType.loop]: false
-                    };
-                }
-            }
-        }
-        // Disable all native metrics
-        if (this.disableAllExtendedMetrics === true) {
-            options.extendedMetrics = {
-                ...options.extendedMetrics,
-                [ExtendedMetricType.gc]: false,
-                [ExtendedMetricType.heap]: false,
-                [ExtendedMetricType.loop]: false,
-            };
-        }
 
         if (this.noDiagnosticChannel === true) {
             // Disable all instrumentations except http to conform with AppInsights 2.x behavior
@@ -336,6 +295,15 @@ class Config implements IConfig {
         }
 
         // NOT SUPPORTED CONFIGURATION OPTIONS
+        if (this.enableAutoCollectExtendedMetrics === true || typeof(this.enableAutoCollectExtendedMetrics) === "object") {
+            this._configWarnings.push("Extended metrics are no longer supported.");
+        }
+        if (typeof this.disableAllExtendedMetrics === "boolean") {
+            this._configWarnings.push("Extended metrics are no longer supported.");
+        }
+        if (this.extendedMetricDisablers) {
+            this._configWarnings.push("Extended metrics are no longer supported.");
+        }
         if (this.disableAppInsights) {
             this._configWarnings.push("disableAppInsights configuration no longer supported.");
         }
