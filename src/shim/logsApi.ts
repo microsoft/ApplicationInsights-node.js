@@ -19,6 +19,7 @@ import {
 } from "../declarations/generated";
 import { Util } from "../shared/util";
 import { parseStack } from "../logs/exceptions";
+import { attributeSerialization } from "../shared/util/logUtil";
 
 /**
  * Log manual API to generate Application Insights telemetry
@@ -115,27 +116,10 @@ export class LogApi {
         baseData: MonitorDomain
     ): LogRecord {
         try {
-            const attributes: Attributes = {};
+            let attributes: Attributes = {};
             if (telemetry.properties) {
-                for (const [key, value] of Object.entries(telemetry.properties)) {
-                    // Serialize Error objects as strings to avoid serialization errors
-                    if (value?.constructor.name === "Error") {
-                        attributes[key] = Util.getInstance().stringify(
-                            {
-                                name: value.name,
-                                message: value.message,
-                                stack: value.stack,
-                                cause: value.cause,
-                            }
-                        );
-                    } else {
-                        attributes[key] = typeof value === 'object'
-                        ? Util.getInstance().stringify(value)
-                        : value;
-                    }
-                }
+                attributes = attributeSerialization(telemetry.properties);
             }
-
             const record: LogRecord = { attributes: attributes, body: Util.getInstance().stringify(baseData) };
             record.attributes["_MS.baseType"] = baseType;
             return record;

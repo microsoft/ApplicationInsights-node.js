@@ -40,7 +40,7 @@ describe("diagnostic-channel/winston", () => {
         const dummyError = new Error("test error");
         const errorEvent: winston.IWinstonData = {
             message: dummyError as any,
-            meta: {},
+            meta: {test: "testValue", test1: "testValue1"},
             level: "error",
             levelKind: "npm",
         };
@@ -49,6 +49,28 @@ describe("diagnostic-channel/winston", () => {
         assert.strictEqual(logRecords.length, 1);
         assert.strictEqual(logRecords[0].body, "Error: test error");
         assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.ERROR);
+        assert.strictEqual(logRecords[0].attributes["test"], "testValue");
+        assert.strictEqual(logRecords[0].attributes["test1"], "testValue1");
+    });
+
+    it("should serialize errors in log meta data", () => {
+        let autoCollect = new AutoCollectLogs();
+        autoCollect.enable({
+            winston: { enabled: true }
+        });
+        const testError = new Error("test error");
+        const errorEvent: winston.IWinstonData = {
+            message: "test error",
+            meta: { error: testError },
+            level: "error",
+            levelKind: "npm",
+        };
+        channel.publish("winston", errorEvent);
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].body, "test error");
+        assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.ERROR);
+        assert.ok((logRecords[0].attributes["error"] as string).includes("Error: test error"));
     });
 
     it("should emit log for winston log", () => {

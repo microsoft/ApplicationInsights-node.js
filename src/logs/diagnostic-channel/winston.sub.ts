@@ -5,7 +5,8 @@ import { Logger, LogRecord, logs, SeverityNumber } from "@opentelemetry/api-logs
 import { channel, IStandardEvent, trueFilter } from "diagnostic-channel";
 import { winston } from "diagnostic-channel-publishers";
 import { InstrumentationConfig } from "@opentelemetry/instrumentation";
-
+import { Attributes } from "@opentelemetry/api";
+import { attributeSerialization } from "../../shared/util/logUtil";
 
 let logger: Logger;
 let logSendingLevel: SeverityNumber;
@@ -46,11 +47,12 @@ const winstonToAILevelMap: { [key: string]: (og: string) => number } = {
 const subscriber = (event: IStandardEvent<winston.IWinstonData>) => {  
     const severity = winstonToAILevelMap[event.data.levelKind](event.data.level);
     if (logSendingLevel <= severity) {
+        const attributes: Attributes = attributeSerialization(event.data.meta);
         const message = event.data.message.toString();
-        let logRecord: LogRecord = {
+        const logRecord: LogRecord = {
             body: message,
             severityNumber: severity,
-            attributes: event.data.meta
+            attributes: attributes
         };
         logger.emit(logRecord);
     }
