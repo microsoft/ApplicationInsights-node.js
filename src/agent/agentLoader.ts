@@ -17,6 +17,7 @@ const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
 const ENV_AZURE_PREFIX = "APPSETTING_"; // Azure adds this prefix to all environment variables
 const ENV_IKEY = "APPINSIGHTS_INSTRUMENTATIONKEY"; // This key is provided in the readme
 const LEGACY_ENV_IKEY = "APPINSIGHTS_INSTRUMENTATION_KEY";
+const LINUX_USER_APPLICATION_INSIGHTS_PATH = "/node_modules/applicationinsights/out/applicationinsights.js";
 
 
 export class AgentLoader {
@@ -257,26 +258,26 @@ export class AgentLoader {
                 shimInstance = require.resolve(`${process.cwd()}/node_modules/applicationinsights`);
                 distroInstance = require.resolve(`${process.cwd()}/node_modules/@azure/monitor-opentelemetry`);
             }
-            // If loaded instance is in Azure machine home path do not attach the SDK, this means customer already instrumented their app
-            if (shimInstance.indexOf("home") > -1) {
+            /** 
+         * If loaded instance is in Azure machine home path do not attach the SDK, this means customer already instrumented their app.
+         * Linux App Service doesn't append the full cwd to the require.resolve, so we need to check for the relative path we expect
+         * if application insights is being imported in the user app code.
+        */
+            if (
+                shimInstance.indexOf("home") > -1 || distroInstance.indexOf("home") > -1 ||
+                (shimInstance === LINUX_USER_APPLICATION_INSIGHTS_PATH && this._isLinux)
+            ) {
                 const diagnosticLog: IDiagnosticLog = {
-                    message: `Azure Monitor Application Insights Distro already exists as a part of the shim. Module is already installed in this application; not re-attaching. Location: ${shimInstance}`,
+                    message: `Azure Monitor Distro or Application Insights already exists. Module is already installed in this application; not re-attaching. Location: ${shimInstance}`,
                     messageId: DiagnosticMessageId.sdkExists
                 };
                 this._diagnosticLogger.logMessage(diagnosticLog);
                 return true;
             }
-            if (distroInstance.indexOf("home") > -1) {
-                const diagnosticLog: IDiagnosticLog = {
-                    message: `Azure Monitor Application Insights Distro already exists. Module is already installed in this application; not re-attaching. Location: ${shimInstance}`,
-                    messageId: DiagnosticMessageId.sdkExists
-                };
-                this._diagnosticLogger.logMessage(diagnosticLog);
-                return true;
+            else {
+                // ApplicationInsights or Azure Monitor Distro could be loaded outside of customer application, attach in this case
+                return false;
             }
-
-            // ApplicationInsights could be loaded outside of customer application, attach in this case
-            return false;
 
         } catch (e) {
             // crashed while trying to resolve "applicationinsights", so SDK does not exist. Attach appinsights
