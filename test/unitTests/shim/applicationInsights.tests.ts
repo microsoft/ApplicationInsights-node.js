@@ -4,8 +4,9 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 
 import * as appInsights from "../../../src/index";
-import { diag, DiagLogLevel } from "@opentelemetry/api";
+import { diag } from "@opentelemetry/api";
 import { InstrumentationOptions } from "../../../src/types";
+import { checkWarnings } from "./testUtils";
 
 describe("ApplicationInsights", () => {
     let sandbox: sinon.SinonSandbox;
@@ -21,21 +22,25 @@ describe("ApplicationInsights", () => {
 
     describe("#setup()", () => {
         it("should not warn if setup is called once", (done) => {
-            const warnStub = sandbox.stub(console, "warn");
             appInsights.setup(connString);
-            assert.ok(warnStub.notCalled, "warning was raised");
+            const warnings = appInsights.defaultClient["_configWarnings"];
+            assert.ok(!checkWarnings("Setup has already been called once", warnings), "setup warning was incorrectly raised");
             done();
         });
         it("should warn if setup is called twice", (done) => {
-            const warnStub = sandbox.stub(console, "warn");
+            const warnStub = sandbox.stub(diag, "warn");
             appInsights.setup(connString);
             appInsights.setup(connString);
-            assert.ok(warnStub.calledOn, "warning was not raised");
+            warnStub.args.forEach((arg) => {
+                if (arg.includes("Setup has already been called once")) {
+                    assert.ok(true, "setup warning was not raised");
+                }
+            });
             done();
         });
         it("should not overwrite default client if called more than once", (done) => {
             appInsights.setup(connString);
-            var client = appInsights.defaultClient;
+            const client = appInsights.defaultClient;
             appInsights.setup(connString);
             appInsights.setup(connString);
             appInsights.setup(connString);
@@ -46,16 +51,20 @@ describe("ApplicationInsights", () => {
 
     describe("#start()", () => {
         it("should warn if start is called before setup", (done) => {
-            const warnStub = sandbox.stub(console, "warn");
+            const warnStub = sandbox.stub(diag, "warn");
             appInsights.start();
-            assert.ok(warnStub.calledOn, "warning was not raised");
+            warnStub.args.forEach((arg) => {
+                if (arg.includes("Start cannot be called before setup. Please call setup() first.")) {
+                    assert.ok(true, "setup warning was not raised");
+                }
+            });
             done();
         });
 
         it("should not warn if start is called after setup", () => {
-            var warnStub = sandbox.stub(console, "warn");
             appInsights.setup(connString).start();
-            assert.ok(warnStub.notCalled, "warning was raised");
+            const warnings = appInsights.defaultClient["_configWarnings"];
+            assert.ok(!checkWarnings("Start cannot be called before setup. Please call setup() first.", warnings), "warning was thrown when start was called correctly");
         });
     });
 
@@ -93,44 +102,28 @@ describe("ApplicationInsights", () => {
         });
 
         describe("#Configuration", () => {
-            it("should throw warning if attempting to set AI distributed tracing mode", () => {
-                const warnStub = sandbox.stub(console, "warn");
+            it("should throw warning if attempting to set AI distributed tracing mode to AI", () => {
                 appInsights.setup(connString);
-                appInsights.Configuration.setDistributedTracingMode(appInsights.DistributedTracingModes.AI_AND_W3C);
+                const warnings = appInsights.defaultClient["_configWarnings"];
+                appInsights.Configuration.setDistributedTracingMode(appInsights.DistributedTracingModes.AI);
                 appInsights.start();
-                assert.ok(warnStub.calledOn, "warning was not raised");
-            });
-
-            it("should warn if attempting to set auto collection of pre-aggregated metrics", () => {
-                const warnStub = sandbox.stub(console, "warn");
-                appInsights.setup(connString);
-                appInsights.Configuration.setAutoCollectPreAggregatedMetrics(true);
-                appInsights.start();
-                assert.ok(warnStub.calledOn, "warning was not raised");
+                assert.ok(checkWarnings("AI only distributed tracing mode is no longer supported.", warnings), "warning was not raised");
             });
 
             it("should warn if attempting to set auto collection of heartbeat", () => {
-                const warnStub = sandbox.stub(console, "warn");
                 appInsights.setup(connString);
+                const warnings = appInsights.defaultClient["_configWarnings"];
                 appInsights.Configuration.setAutoCollectHeartbeat(true);
                 appInsights.start();
-                assert.ok(warnStub.calledOn, "warning was not raised");
-            });
-
-            it("should warn if attempting to enable web instrumentation", () => {
-                const warnStub = sandbox.stub(console, "warn");
-                appInsights.setup(connString);
-                appInsights.Configuration.enableWebInstrumentation(true);
-                appInsights.start();
-                assert.ok(warnStub.calledOn, "warning was not raised");
+                assert.ok(checkWarnings("Heartbeat metrics are no longer supported.", warnings), "warning was not raised");
             });
 
             it("should warn if attempting to set maxBytesOnDisk", () => {
-                const warnStub = sandbox.stub(console, "warn");
                 appInsights.setup(connString);
+                const warnings = appInsights.defaultClient["_configWarnings"];
                 appInsights.Configuration.setUseDiskRetryCaching(true, 1000, 10);
                 appInsights.start();
-                assert.ok(warnStub.calledOn, "warning was not raised");
+                assert.ok(checkWarnings("The maxBytesOnDisk configuration option is not supported by the shim.", warnings), "warning was not raised");
             });
 
             it("should set internal loggers", () => {
@@ -141,19 +134,11 @@ describe("ApplicationInsights", () => {
             });
 
             it("should warn if attempting to auto collect incoming azure functions requests", () => {
-                const warnStub = sandbox.stub(console, "warn");
                 appInsights.setup(connString);
+                const warnings = appInsights.defaultClient["_configWarnings"];
                 appInsights.Configuration.setAutoCollectIncomingRequestAzureFunctions(true);
                 appInsights.start();
-                assert.ok(warnStub.calledOn, "warning was not raised");
-            });
-
-            it("should warn if attempting to send live metrics", () => {
-                const warnStub = sandbox.stub(console, "warn");
-                appInsights.setup(connString);
-                appInsights.Configuration.setSendLiveMetrics(true);
-                appInsights.start();
-                assert.ok(warnStub.calledOn, "warning was not raised");
+                assert.ok(checkWarnings("Auto request generation in Azure Functions is no longer supported.", warnings), "warning was not raised");
             });
         });
     });

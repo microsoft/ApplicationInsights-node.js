@@ -61,18 +61,20 @@ class Config implements IConfig {
     public noPatchModules: string;
     public noDiagnosticChannel: boolean;
 
+    private _configWarnings: string[];
 
     /**
    * Creates a new Config instance
    * @param setupString Connection String, instrumentationKey is no longer supported here
    */
-    constructor(setupString?: string) {
+    constructor(setupString?: string, configWarnings?: string[]){
         // Load config values from env variables and JSON if available
         this._mergeConfig();
         this.connectionString = setupString;
         this.webInstrumentationConfig = this.webInstrumentationConfig || null;
         this.ignoreLegacyHeaders = true;
         this.webInstrumentationConnectionString = this.webInstrumentationConnectionString || "";
+        this._configWarnings = configWarnings || [];
     }
 
     private _mergeConfig() {
@@ -335,49 +337,51 @@ class Config implements IConfig {
 
         // NOT SUPPORTED CONFIGURATION OPTIONS
         if (this.disableAppInsights) {
-            diag.warn("disableAppInsights configuration no longer supported.");
+            this._configWarnings.push("disableAppInsights configuration no longer supported.");
         }
-        if (this.enableAutoCollectHeartbeat) {
-            diag.warn("Heartbeat metris are no longer supported.");
+        if (this.enableAutoCollectHeartbeat === true) {
+            this._configWarnings.push("Heartbeat metrics are no longer supported.");
         }
         if (this.enableAutoDependencyCorrelation === false) {
-            diag.warn("Auto dependency correlation cannot be turned off anymore.");
+            this._configWarnings.push("Auto dependency correlation cannot be turned off anymore.");
         }
         if (typeof (this.enableAutoCollectIncomingRequestAzureFunctions) === "boolean") {
-            diag.warn("Auto request generation in Azure Functions is no longer supported.");
+            this._configWarnings.push("Auto request generation in Azure Functions is no longer supported.");
         }
         if (this.enableUseAsyncHooks === false) {
-            diag.warn("The use of non async hooks is no longer supported.");
+            this._configWarnings.push("The use of non async hooks is no longer supported.");
         }
         if (this.distributedTracingMode === DistributedTracingModes.AI) {
-            diag.warn("AI only distributed tracing mode is no longer supported.");
+            this._configWarnings.push("AI only distributed tracing mode is no longer supported.");
         }
         if (this.enableResendInterval) {
-            diag.warn("The resendInterval configuration option is not supported by the shim.");
+            this._configWarnings.push("The resendInterval configuration option is not supported by the shim.");
         }
         if (this.enableMaxBytesOnDisk) {
-            diag.warn("The maxBytesOnDisk configuration option is not supported by the shim.");
+            this._configWarnings.push("The maxBytesOnDisk configuration option is not supported by the shim.");
         }
         if (this.ignoreLegacyHeaders === false) {
-            diag.warn("LegacyHeaders are not supported by the shim.");
+            this._configWarnings.push("LegacyHeaders are not supported by the shim.");
         }
-
         if (this.maxBatchSize) {
-            diag.warn("The maxBatchSize configuration option is not supported by the shim.");
+            this._configWarnings.push("The maxBatchSize configuration option is not supported by the shim.");
         }
         if (this.enableLoggerErrorToTrace) {
-            diag.warn("The enableLoggerErrorToTrace configuration option is not supported by the shim.");
+            this._configWarnings.push("The enableLoggerErrorToTrace configuration option is not supported by the shim.");
         }
         if (this.httpAgent || this.httpsAgent) {
-            diag.warn("The httpAgent and httpsAgent configuration options are not supported by the shim.");
+            this._configWarnings.push("The httpAgent and httpsAgent configuration options are not supported by the shim.");
         }
         if (
             this.webInstrumentationConfig || this.webInstrumentationSrc
         ) {
-            diag.warn("The webInstrumentation config and src options are not supported by the shim.");
+            this._configWarnings.push("The webInstrumentation config and src options are not supported by the shim.");
         }
         if (this.quickPulseHost) {
-            diag.warn("The quickPulseHost configuration option is not suppored by the shim.");
+            this._configWarnings.push("The quickPulseHost configuration option is not supported by the shim.");
+        }
+        if (this.correlationHeaderExcludedDomains) {
+            this._configWarnings.push("The correlationHeaderExcludedDomains configuration option is not supported by the shim.");
         }
         return options;
     }

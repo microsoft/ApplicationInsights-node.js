@@ -3,13 +3,13 @@
 
 import * as http from "http";
 import * as azureFunctionsTypes from "@azure/functions";
-import { SpanContext, diag } from "@opentelemetry/api";
+import { DiagConsoleLogger, SpanContext, diag } from "@opentelemetry/api";
 import { Span } from "@opentelemetry/sdk-trace-base";
 import { CorrelationContextManager } from "./correlationContextManager";
 import { ICorrelationContext, HttpRequest, DistributedTracingModes } from "./types";
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
-
+import { Util } from "../shared/util";
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
@@ -32,7 +32,11 @@ export let defaultClient: TelemetryClient;
  * and start the SDK.
  */
 export function setup(setupString?: string) {
-    defaultClient = new TelemetryClient(setupString);
+    if (!defaultClient) {
+        defaultClient = new TelemetryClient(setupString);
+    } else {
+        defaultClient.pushWarningToLog("Setup has already been called once. To set up a new client, please use TelemetryClient instead.")
+    }
     return Configuration;
 }
 
@@ -44,10 +48,15 @@ export function setup(setupString?: string) {
  */
 export function start() {
     try {
-        defaultClient.initialize();
+        if (!defaultClient) {
+            diag.setLogger(new DiagConsoleLogger());
+            diag.warn("Start cannot be called before setup. Please call setup() first.");
+        } else {
+            defaultClient.initialize();
+        }
         return Configuration;
     } catch (error) {
-        diag.warn("The default client has not been initialized. Please make sure to call setup() before start().");
+        diag.warn(`Failed to start default client: ${Util.getInstance().dumpObj(error)}`);
     }
 }
 
@@ -139,6 +148,7 @@ export class Configuration {
      * @param collectExtendedMetrics if true, extended metrics counters will be collected every minute and sent to Application Insights
      * @returns {Configuration} this class
      */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars 
     public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: any) {
         if (defaultClient) {
             defaultClient.config.enableAutoCollectPerformance = value;
