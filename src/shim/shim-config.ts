@@ -9,14 +9,12 @@ import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrum
 import { ShimJsonConfig } from "./shim-jsonConfig";
 import { AzureMonitorOpenTelemetryOptions, InstrumentationOptions, InstrumentationOptionsType } from "../types";
 
+const ENV_azurePrefix = "APPSETTING_"; // Azure adds this prefix to all environment variables
+const ENV_iKey = "APPINSIGHTS_INSTRUMENTATIONKEY"; // This key is provided in the readme
+const legacy_ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
+const ENV_profileQueryEndpoint = "APPINSIGHTS_PROFILE_QUERY_ENDPOINT";
+const ENV_quickPulseHost = "APPINSIGHTS_QUICKPULSE_HOST";
 class Config implements IConfig {
-
-    public static ENV_azurePrefix = "APPSETTING_"; // Azure adds this prefix to all environment variables
-    public static ENV_iKey = "APPINSIGHTS_INSTRUMENTATIONKEY"; // This key is provided in the readme
-    public static legacy_ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
-    public static ENV_profileQueryEndpoint = "APPINSIGHTS_PROFILE_QUERY_ENDPOINT";
-    public static ENV_quickPulseHost = "APPINSIGHTS_QUICKPULSE_HOST";
-
     public connectionString: string;
     public endpointUrl: string;
     public maxBatchSize: number;
@@ -350,6 +348,20 @@ class Config implements IConfig {
         }
         if (this.correlationHeaderExcludedDomains) {
             this._configWarnings.push("The correlationHeaderExcludedDomains configuration option is not supported by the shim.");
+        }
+        if (
+            process.env[ENV_iKey] ||
+            process.env[legacy_ENV_iKey] ||
+            process.env[ENV_azurePrefix + ENV_iKey] ||
+            process.env[ENV_azurePrefix + legacy_ENV_iKey]
+        ) {
+            this._configWarnings.push("The iKey configuration option is not supported by the shim. Please configure the the connection string instead.");
+        }
+        if (process.env[ENV_profileQueryEndpoint]) {
+            this._configWarnings.push("The profileQueryEndpoint configuration option is not supported by the shim.");
+        }
+        if (process.env[ENV_quickPulseHost]) {
+            this._configWarnings.push("Please configure the quickPulseHost in the connection string instead.");
         }
         return options;
     }
