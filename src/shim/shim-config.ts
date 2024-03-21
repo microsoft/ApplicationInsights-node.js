@@ -293,7 +293,10 @@ class Config implements IConfig {
         }
 
         // NOT SUPPORTED CONFIGURATION OPTIONS
-        if (this.enableAutoCollectExtendedMetrics === true || typeof(this.enableAutoCollectExtendedMetrics) === "object") {
+        if (
+            this.enableAutoCollectExtendedMetrics === true ||
+            typeof(this.enableAutoCollectExtendedMetrics) === "object" && Object.keys(this.enableAutoCollectExtendedMetrics).length > 0
+        ) {
             this._configWarnings.push("Extended metrics are no longer supported.");
         }
         if (typeof this.disableAllExtendedMetrics === "boolean") {

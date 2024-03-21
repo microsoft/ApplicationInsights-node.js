@@ -10,7 +10,7 @@ import {
     envDetectorSync,
 } from "@opentelemetry/resources";
 import { JsonConfig } from "./jsonConfig";
-import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType, OTLPExporterConfig, InstrumentationOptions } from "../../types";
+import { AzureMonitorOpenTelemetryOptions, OTLPExporterConfig, InstrumentationOptions } from "../../types";
 
 
 export class ApplicationInsightsConfig {
@@ -58,9 +58,6 @@ export class ApplicationInsightsConfig {
         this.otlpTraceExporterConfig = {};
         this.enableAutoCollectPerformance = true;
         this.extendedMetrics = {};
-        this.extendedMetrics[ExtendedMetricType.gc] = false;
-        this.extendedMetrics[ExtendedMetricType.heap] = false;
-        this.extendedMetrics[ExtendedMetricType.loop] = false;
         this.enableAutoCollectExceptions = true;
         this.enableAutoCollectPerformance = true;
 
