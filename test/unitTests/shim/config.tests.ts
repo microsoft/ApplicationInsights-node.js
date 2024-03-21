@@ -86,7 +86,6 @@ describe("shim/configuration/config", () => {
             assert.equal(JSON.stringify(options.instrumentationOptions.bunyan), JSON.stringify({ enabled: true }), "wrong bunyan setting");
             assert.equal(options.enableAutoCollectExceptions, true, "wrong enableAutoCollectExceptions");
             assert.equal(options.enableAutoCollectPerformance, true, "wrong enableAutoCollectPerformance");
-            assert.equal(JSON.stringify(options.extendedMetrics), JSON.stringify({ gc: true, heap: true, loop: true }), "wrong extendedMetrics");
             assert.equal(options.azureMonitorExporterOptions.credential, config.aadTokenCredential, "wrong credential");
             assert.equal(options.instrumentationOptions.http.enabled, true);
             assert.equal(
@@ -102,9 +101,6 @@ describe("shim/configuration/config", () => {
                 JSON.stringify({ timeoutMillis: 1000 }), "wrong otlpLogExporterConfig"
             );
             assert.equal(options.azureMonitorExporterOptions.disableOfflineStorage, false, "wrong disableOfflineStorage");
-            assert.equal(options.extendedMetrics.heap, true, "wrong heap");
-            assert.equal(options.extendedMetrics.loop, true, "wrong loop");
-            assert.equal(options.extendedMetrics.gc, true, "wrong gc");
         });
 
         it("should activate DEBUG internal logger", () => {
@@ -123,13 +119,6 @@ describe("shim/configuration/config", () => {
             config.enableInternalWarningLogging = true;
             config.parseConfig();
             assert.equal(process.env["APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL"], "WARN");
-        });
-
-        it("should disableAllExtendedMetrics", () => {
-            const config = new Config(connectionString);
-            config.disableAllExtendedMetrics = true;
-            let options = config.parseConfig();
-            assert.equal(JSON.stringify(options.extendedMetrics), JSON.stringify({ gc: false, heap: false, loop: false }));
         });
 
         it("should set context tags on logs and spans", () => {
@@ -211,15 +200,6 @@ describe("shim/configuration/config", () => {
             config.enableAutoCollectPreAggregatedMetrics = false;
             config.parseConfig();
             assert.equal(process.env["APPLICATION_INSIGHTS_NO_STANDARD_METRICS"], "disable");
-        });
-
-        it("should disable specific native metrics", () => {
-            const config = new Config(connectionString);
-            config.extendedMetricDisablers = "heap,gc";
-            config.parseConfig();
-            let options = config.parseConfig();
-            assert.equal(options.extendedMetrics.heap, false);
-            assert.equal(options.extendedMetrics.gc, false);
         });
 
         describe("#Shim unsupported messages", () => {

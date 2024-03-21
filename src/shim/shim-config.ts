@@ -7,16 +7,14 @@ import { diag } from "@opentelemetry/api";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
 import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrumentationConfig } from "./types";
 import { ShimJsonConfig } from "./shim-jsonConfig";
-import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType, InstrumentationOptions, InstrumentationOptionsType } from "../types";
+import { AzureMonitorOpenTelemetryOptions, InstrumentationOptions, InstrumentationOptionsType } from "../types";
 
+const ENV_azurePrefix = "APPSETTING_"; // Azure adds this prefix to all environment variables
+const ENV_iKey = "APPINSIGHTS_INSTRUMENTATIONKEY"; // This key is provided in the readme
+const legacy_ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
+const ENV_profileQueryEndpoint = "APPINSIGHTS_PROFILE_QUERY_ENDPOINT";
+const ENV_quickPulseHost = "APPINSIGHTS_QUICKPULSE_HOST";
 class Config implements IConfig {
-
-    public static ENV_azurePrefix = "APPSETTING_"; // Azure adds this prefix to all environment variables
-    public static ENV_iKey = "APPINSIGHTS_INSTRUMENTATIONKEY"; // This key is provided in the readme
-    public static legacy_ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
-    public static ENV_profileQueryEndpoint = "APPINSIGHTS_PROFILE_QUERY_ENDPOINT";
-    public static ENV_quickPulseHost = "APPINSIGHTS_QUICKPULSE_HOST";
-
     public connectionString: string;
     public endpointUrl: string;
     public maxBatchSize: number;
@@ -251,47 +249,6 @@ class Config implements IConfig {
                 process.env["APPLICATION_INSIGHTS_NO_STANDARD_METRICS"] = "disable";
             }
         }
-        // NATIVE METRICS
-        if (typeof (this.enableAutoCollectExtendedMetrics) === "boolean") {
-            options.extendedMetrics = {
-                [ExtendedMetricType.gc]: this.enableAutoCollectExtendedMetrics,
-                [ExtendedMetricType.heap]: this.enableAutoCollectExtendedMetrics,
-                [ExtendedMetricType.loop]: this.enableAutoCollectExtendedMetrics,
-            };
-        }
-        // Disable specific native metrics if provided
-        if (this.extendedMetricDisablers) {
-            const extendedMetricDisablers: string[] = this.extendedMetricDisablers.split(",");
-            for (const extendedMetricDisabler of extendedMetricDisablers) {
-                if (extendedMetricDisabler === "gc") {
-                    options.extendedMetrics = {
-                        ...options.extendedMetrics,
-                        [ExtendedMetricType.gc]: false
-                    };
-                }
-                if (extendedMetricDisabler === "heap") {
-                    options.extendedMetrics = {
-                        ...options.extendedMetrics,
-                        [ExtendedMetricType.heap]: false
-                    };
-                }
-                if (extendedMetricDisabler === "loop") {
-                    options.extendedMetrics = {
-                        ...options.extendedMetrics,
-                        [ExtendedMetricType.loop]: false
-                    };
-                }
-            }
-        }
-        // Disable all native metrics
-        if (this.disableAllExtendedMetrics === true) {
-            options.extendedMetrics = {
-                ...options.extendedMetrics,
-                [ExtendedMetricType.gc]: false,
-                [ExtendedMetricType.heap]: false,
-                [ExtendedMetricType.loop]: false,
-            };
-        }
 
         if (this.noDiagnosticChannel === true) {
             // Disable all instrumentations except http to conform with AppInsights 2.x behavior
@@ -336,6 +293,15 @@ class Config implements IConfig {
         }
 
         // NOT SUPPORTED CONFIGURATION OPTIONS
+        if (this.enableAutoCollectExtendedMetrics === true || typeof(this.enableAutoCollectExtendedMetrics) === "object") {
+            this._configWarnings.push("Extended metrics are no longer supported.");
+        }
+        if (typeof this.disableAllExtendedMetrics === "boolean") {
+            this._configWarnings.push("Extended metrics are no longer supported.");
+        }
+        if (this.extendedMetricDisablers) {
+            this._configWarnings.push("Extended metrics are no longer supported.");
+        }
         if (this.disableAppInsights) {
             this._configWarnings.push("disableAppInsights configuration no longer supported.");
         }
@@ -382,6 +348,20 @@ class Config implements IConfig {
         }
         if (this.correlationHeaderExcludedDomains) {
             this._configWarnings.push("The correlationHeaderExcludedDomains configuration option is not supported by the shim.");
+        }
+        if (
+            process.env[ENV_iKey] ||
+            process.env[legacy_ENV_iKey] ||
+            process.env[ENV_azurePrefix + ENV_iKey] ||
+            process.env[ENV_azurePrefix + legacy_ENV_iKey]
+        ) {
+            this._configWarnings.push("The iKey configuration option is not supported by the shim. Please configure the the connection string instead.");
+        }
+        if (process.env[ENV_profileQueryEndpoint]) {
+            this._configWarnings.push("The profileQueryEndpoint configuration option is not supported by the shim.");
+        }
+        if (process.env[ENV_quickPulseHost]) {
+            this._configWarnings.push("Please configure the quickPulseHost in the connection string instead.");
         }
         return options;
     }
