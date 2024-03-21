@@ -107,13 +107,7 @@ const config : AzureMonitorOpenTelemetryOptions = {
         bunyan: { enabled: true},
         winston: { enabled: true},
     } as InstrumentationOptions,
-    resource: resource,
-    extendedMetrics:{
-        gc: true,
-        heap: true,
-        loop: true
-    }
-
+    resource: resource
 };
 useAzureMonitor(config);
 
@@ -137,7 +131,6 @@ useAzureMonitor(config);
 | webInstrumentationConnectionString | Sets connection string used for web Instrumentation (Browser SDK Loader) (Optional, Default undefined) | |
 | instrumentationOptions | instrumentation options | { azureSdk: { enabled: true }, http: { enabled: true }, mongoDb: { enabled: true }, mySql: { enabled: true }, postgreSql: { enabled: true }, redis: { enabled: true }, redis4: { enabled: true }, console: { enabled: true}, bunyan: { enabled: true}, winston: { enabled: true} } |
 | resource | Opentelemetry Resource. [More info here](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-resources) | |
-| extendedMetrics | Enable/Disable specific extended Metrics(gc, heap and loop).  | {"gc": false, "heap": false, "loop": false} |
 
 Configuration could be set using configuration file  `applicationinsights.json` located under root folder of applicationinsights package installation folder, Ex: `node_modules/applicationinsights`. 
 
@@ -183,7 +176,6 @@ And invoked via `appInsights.<METHOD_NAME>`
 | ----------------------------|------------------------------------------------------------------------------------------------------------|
 | setDistributedTracingMode   | AI only tracing mode is no longer supported. Migrate to using W3C_AND_AI tracing mode. |
 | setAutoCollectHeartbeat     | Heartbeat is not supported in either Azure Monitor OpenTelemetry or the shim.|
-| enableWebInstrumenatation   | WebInstrumentation is not supported in the shim, but is available in Azure Monitor OpenTelemetry as `enableBrowserSdkLoader` |
 | setAutoDependencyCorrelation| Turning off autoDependencyCorrelation is not supported by either Azure Monitor OpenTelemetry or the shim. |
 | setUseDiskRetryCaching      | While enabling/disabling offline storage is supported, setting the resend interval or the maxBytesOnDisk values are not supported in the shim or Azure Monitor OpenTelemetry. |
 | setAutoCollectIncomingRequestAzureFunctions | Auto collection of Azure Functions is not supported by the shim or Azure Monitor OpenTelemetry. |
@@ -209,6 +201,9 @@ The following configurations are set using either environment variables, setting
 | httpAgent/httpsAgent | Not supported in the shim or Azure Monitor OpenTelemetry. |
 | webInstrumentationConfig | Not currently supported by the shim or Azure Monitor OpenTelemetry. |
 | quickPulseHost | Not supported in the shim or Azure Monitor OpenTelemetry. |
+| enableAutoCollectExtendedMetrics | Extended/native metrics are not supported in the shim or Azure Monitor OpenTelemetry. |
+| disableAllExtendedMetrics | Will not have any effect as extended/native metrics are not supported in the shim or Azure Monitor OpenTelemetry. |
+| extendedMetricDisablers | Will not have any effect as extended/native metrics are not supported in the shim or Azure Monitor OpenTelemetry. |
 
 The following methods are part of the `TelemetryClient` class. They can be called using `applicationinsights.defaultClient.<METHOD_NAME>()`.
 

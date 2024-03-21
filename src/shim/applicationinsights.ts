@@ -152,6 +152,7 @@ export class Configuration {
     public static setAutoCollectPerformance(value: boolean, collectExtendedMetrics: any) {
         if (defaultClient) {
             defaultClient.config.enableAutoCollectPerformance = value;
+            defaultClient.config.enableAutoCollectExtendedMetrics = collectExtendedMetrics;
         }
         return Configuration;
     }
