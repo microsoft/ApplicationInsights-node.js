@@ -30,7 +30,6 @@ describe("Json Config", () => {
 
             let inputJson = {
                 "enableAutoCollectExceptions": true,
-                "extendedMetrics": { "gc": true, "heap": true, "loop": true },
                 "otlpTraceExporterConfig": { enabled: true },
                 "otlpMetricExporterConfig": { enabled: true },
                 "otlpLogExporterConfig": { enabled: true },
@@ -58,9 +57,6 @@ describe("Json Config", () => {
             assert.strictEqual(config.instrumentationOptions.console.enabled, true);
             assert.strictEqual(config.instrumentationOptions.bunyan.enabled, true);
             assert.strictEqual(config.instrumentationOptions.winston.enabled, true);
-            assert.strictEqual(config.extendedMetrics.gc, true);
-            assert.strictEqual(config.extendedMetrics.heap, true);
-            assert.strictEqual(config.extendedMetrics.loop, true);
             assert.strictEqual(config.otlpTraceExporterConfig.enabled, true);
             assert.strictEqual(config.otlpMetricExporterConfig.enabled, true);
             assert.strictEqual(config.enableAutoCollectPerformance, true);

@@ -15,7 +15,6 @@ import { AzureMonitorOpenTelemetryOptions, OTLPExporterConfig, InstrumentationOp
 
 export class ApplicationInsightsConfig {
     public enableAutoCollectExceptions: boolean;
-    public extendedMetrics: { [type: string]: boolean };
     /** OTLP Trace Exporter Configuration */
     public otlpTraceExporterConfig: OTLPExporterConfig;
     /** OTLP Metric Exporter Configuration */
@@ -57,7 +56,6 @@ export class ApplicationInsightsConfig {
         this.otlpMetricExporterConfig = {};
         this.otlpTraceExporterConfig = {};
         this.enableAutoCollectPerformance = true;
-        this.extendedMetrics = {};
         this.enableAutoCollectExceptions = true;
         this.enableAutoCollectPerformance = true;
 
@@ -137,11 +135,6 @@ export class ApplicationInsightsConfig {
             this.otlpLogExporterConfig = Object.assign(
                 this.otlpLogExporterConfig,
                 jsonConfig.otlpLogExporterConfig
-            );
-
-            this.extendedMetrics = Object.assign(
-                this.extendedMetrics,
-                jsonConfig.extendedMetrics
             );
 
             this.samplingRatio =

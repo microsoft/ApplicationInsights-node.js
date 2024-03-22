@@ -14,6 +14,8 @@ const ENV_iKey = "APPINSIGHTS_INSTRUMENTATIONKEY"; // This key is provided in th
 const legacy_ENV_iKey = "APPINSIGHTS_INSTRUMENTATION_KEY";
 const ENV_profileQueryEndpoint = "APPINSIGHTS_PROFILE_QUERY_ENDPOINT";
 const ENV_quickPulseHost = "APPINSIGHTS_QUICKPULSE_HOST";
+const ENV_nativeMetricsDisableAll = "APPLICATION_INSIGHTS_DISABLE_ALL_EXTENDED_METRICS";
+const ENV_nativeMetricsDisablers = "APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC";
 class Config implements IConfig {
     public connectionString: string;
     public endpointUrl: string;
@@ -142,7 +144,6 @@ class Config implements IConfig {
             otlpTraceExporterConfig: {},
             otlpMetricExporterConfig: {},
             otlpLogExporterConfig: {},
-            extendedMetrics: {},
             enableLiveMetrics: true,
         };
         (options.instrumentationOptions as InstrumentationOptions) = {
@@ -295,14 +296,12 @@ class Config implements IConfig {
         // NOT SUPPORTED CONFIGURATION OPTIONS
         if (
             this.enableAutoCollectExtendedMetrics === true ||
-            typeof(this.enableAutoCollectExtendedMetrics) === "object" && Object.keys(this.enableAutoCollectExtendedMetrics).length > 0
+            typeof(this.enableAutoCollectExtendedMetrics) === "object" && Object.keys(this.enableAutoCollectExtendedMetrics).length > 0 ||
+            typeof(this.disableAllExtendedMetrics) === "boolean" ||
+            process.env[ENV_nativeMetricsDisableAll] ||
+            process.env[ENV_nativeMetricsDisablers] ||
+            this.extendedMetricDisablers
         ) {
-            this._configWarnings.push("Extended metrics are no longer supported.");
-        }
-        if (typeof this.disableAllExtendedMetrics === "boolean") {
-            this._configWarnings.push("Extended metrics are no longer supported.");
-        }
-        if (this.extendedMetricDisablers) {
             this._configWarnings.push("Extended metrics are no longer supported.");
         }
         if (this.disableAppInsights) {
