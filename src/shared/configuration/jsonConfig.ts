@@ -14,7 +14,6 @@ const ENV_CONTENT = "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT";
 export class JsonConfig {
     private static _instance: JsonConfig;
     public enableAutoCollectExceptions: boolean;
-    public extendedMetrics: { [type: string]: boolean };
     /** OTLP Trace Exporter Configuration */
     public otlpTraceExporterConfig?: OTLPExporterConfig;
     /** OTLP Metric Exporter Configuration */
@@ -75,7 +74,6 @@ export class JsonConfig {
         try {
             const jsonConfig: AzureMonitorOpenTelemetryOptions = JSON.parse(jsonString);
             this.enableAutoCollectExceptions = jsonConfig.enableAutoCollectExceptions;
-            this.extendedMetrics = jsonConfig.extendedMetrics;
             this.otlpLogExporterConfig = jsonConfig.otlpLogExporterConfig;
             this.otlpMetricExporterConfig = jsonConfig.otlpMetricExporterConfig;
             this.otlpTraceExporterConfig = jsonConfig.otlpTraceExporterConfig;

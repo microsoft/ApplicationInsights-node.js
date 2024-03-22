@@ -10,12 +10,11 @@ import {
     envDetectorSync,
 } from "@opentelemetry/resources";
 import { JsonConfig } from "./jsonConfig";
-import { AzureMonitorOpenTelemetryOptions, ExtendedMetricType, OTLPExporterConfig, InstrumentationOptions } from "../../types";
+import { AzureMonitorOpenTelemetryOptions, OTLPExporterConfig, InstrumentationOptions } from "../../types";
 
 
 export class ApplicationInsightsConfig {
     public enableAutoCollectExceptions: boolean;
-    public extendedMetrics: { [type: string]: boolean };
     /** OTLP Trace Exporter Configuration */
     public otlpTraceExporterConfig: OTLPExporterConfig;
     /** OTLP Metric Exporter Configuration */
@@ -57,10 +56,6 @@ export class ApplicationInsightsConfig {
         this.otlpMetricExporterConfig = {};
         this.otlpTraceExporterConfig = {};
         this.enableAutoCollectPerformance = true;
-        this.extendedMetrics = {};
-        this.extendedMetrics[ExtendedMetricType.gc] = false;
-        this.extendedMetrics[ExtendedMetricType.heap] = false;
-        this.extendedMetrics[ExtendedMetricType.loop] = false;
         this.enableAutoCollectExceptions = true;
         this.enableAutoCollectPerformance = true;
 
@@ -140,11 +135,6 @@ export class ApplicationInsightsConfig {
             this.otlpLogExporterConfig = Object.assign(
                 this.otlpLogExporterConfig,
                 jsonConfig.otlpLogExporterConfig
-            );
-
-            this.extendedMetrics = Object.assign(
-                this.extendedMetrics,
-                jsonConfig.extendedMetrics
             );
 
             this.samplingRatio =
