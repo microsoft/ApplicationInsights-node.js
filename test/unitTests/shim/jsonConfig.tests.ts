@@ -66,9 +66,7 @@ describe("Json Config", () => {
         it("Should take configurations from environment variables", () => {
             const env = <{ [id: string]: string }>{};
             env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "TestConnectionString";
-            env["APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC"] = "gc";
             env["APPLICATION_INSIGHTS_NO_PATCH_MODULES"] = "azuresdk";
-            env["APPLICATION_INSIGHTS_DISABLE_ALL_EXTENDED_METRICS"] = "true";
             env["http_proxy"] = "testProxyHttpUrl2";
             env["https_proxy"] = "testProxyHttpsUrl2";
             env["APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL"] = "disabled";
@@ -81,8 +79,6 @@ describe("Json Config", () => {
             assert.equal(config.connectionString, "TestConnectionString");
             assert.equal(config.proxyHttpUrl, "testProxyHttpUrl2");
             assert.equal(config.proxyHttpsUrl, "testProxyHttpsUrl2");
-            assert.equal(config.extendedMetricDisablers, "gc");
-            assert.equal(config.disableAllExtendedMetrics, true, "wrong disableAllExtendedMetrics");
             assert.equal(config.noDiagnosticChannel, true, "wrong noDiagnosticChannel");
             assert.equal(config.noHttpAgentKeepAlive, true, "wrong noHttpAgentKeepAlive");
             assert.equal(config.noPatchModules, "azuresdk");
@@ -96,9 +92,7 @@ describe("Json Config", () => {
             const cutstomConfigJsonPath = path.resolve(__dirname, "../../../../test/unitTests/shim/config.json");
             env["APPLICATIONINSIGHTS_CONFIGURATION_FILE"] = cutstomConfigJsonPath;
             env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "TestConnectionString";
-            env["APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC"] = "gc";
             env["APPLICATION_INSIGHTS_NO_PATCH_MODULES"] = "azuresdk";
-            env["APPLICATION_INSIGHTS_DISABLE_ALL_EXTENDED_METRICS"] = "true";
             env["http_proxy"] = "testProxyHttpUrl2";
             env["https_proxy"] = "testProxyHttpsUrl2";
             env["APPINSIGHTS_WEB_SNIPPET_ENABLED"] = "false";
@@ -110,8 +104,6 @@ describe("Json Config", () => {
             assert.equal(config.connectionString, "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
             assert.equal(config.proxyHttpUrl, "testProxyHttpUrl");
             assert.equal(config.proxyHttpsUrl, "testProxyHttpsUrl");
-            assert.equal(config.extendedMetricDisablers, "gc,heap");
-            assert.equal(config.disableAllExtendedMetrics, false);
             assert.equal(config.noDiagnosticChannel, false);
             assert.equal(config.noHttpAgentKeepAlive, false);
             assert.equal(config.noPatchModules, "console,redis");

@@ -31,10 +31,6 @@ export interface AzureMonitorOpenTelemetryOptions extends DistroOptions {
    * if true performance counters will be collected every second and sent to Azure Monitor
    */
   enableAutoCollectPerformance?: boolean;
-  /**
-   * Specific extended metrics, applicationinsights-native-metrics package need to be available
-   */
-  extendedMetrics?: { [type: string]: boolean };
 }
 
 export interface InstrumentationOptions extends DistroInstrumentationOptions {
@@ -54,10 +50,4 @@ export interface OTLPExporterConfig extends OTLPExporterNodeConfigBase {
 
 export interface InstrumentationOptionsType {
   [key: string]: { enabled: boolean }
-}
-
-export const enum ExtendedMetricType {
-  gc = "gc",
-  heap = "heap",
-  loop = "loop",
 }

@@ -60,9 +60,9 @@ export class PerformanceCounterMetrics {
     }[];
 
     /**
-     * Initializes a new instance of the NativeMetrics class.
+     * Creates performance counter instruments.
      * @param options - Distro configuration.
-     * @param config - Native Metrics extra configuration.
+     * @param config - Application Insights configuration.
      */
     constructor(config: ApplicationInsightsConfig, options?: { collectionInterval: number }) {
         this._internalConfig = config;

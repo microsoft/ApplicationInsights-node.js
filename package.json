@@ -54,7 +54,6 @@
     "@types/sinon": "^10.0.12",
     "@typescript-eslint/eslint-plugin": "^5.37.0",
     "@typescript-eslint/parser": "^5.37.0",
-    "applicationinsights-native-metrics": "0.0.8",
     "eslint": "^8.0.0",
     "eslint-plugin-node": "^11.1.0",
     "mocha": "^10.0.0",
@@ -87,13 +86,5 @@
     "@opentelemetry/semantic-conventions": "^1.22.0",
     "diagnostic-channel": "1.1.1",
     "diagnostic-channel-publishers": "1.0.8"
-  },
-  "peerDependencies": {
-    "applicationinsights-native-metrics": "*"
-  },
-  "peerDependenciesMeta": {
-    "applicationinsights-native-metrics": {
-      "optional": true
-    }
   }
 }

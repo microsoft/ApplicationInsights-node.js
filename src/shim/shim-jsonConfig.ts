@@ -9,8 +9,6 @@ import { diag } from "@opentelemetry/api";
 const ENV_CONFIGURATION_FILE = "APPLICATIONINSIGHTS_CONFIGURATION_FILE";
 const ENV_CONTENT = "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT";
 const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
-const ENV_nativeMetricsDisablers = "APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC";
-const ENV_nativeMetricsDisableAll = "APPLICATION_INSIGHTS_DISABLE_ALL_EXTENDED_METRICS";
 const ENV_http_proxy = "http_proxy";
 const ENV_https_proxy = "https_proxy";
 const ENV_noDiagnosticChannel = "APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL";
@@ -77,8 +75,6 @@ export class ShimJsonConfig implements IJsonConfig {
     constructor() {
         // Load environment variables first
         this.connectionString = process.env[ENV_connectionString];
-        this.disableAllExtendedMetrics = !!process.env[ENV_nativeMetricsDisableAll];
-        this.extendedMetricDisablers = process.env[ENV_nativeMetricsDisablers];
         this.proxyHttpUrl = process.env[ENV_http_proxy];
         this.proxyHttpsUrl = process.env[ENV_https_proxy];
         this.noDiagnosticChannel = !!process.env[ENV_noDiagnosticChannel];

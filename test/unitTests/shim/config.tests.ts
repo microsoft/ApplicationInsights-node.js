@@ -57,7 +57,6 @@ describe("shim/configuration/config", () => {
             config.enableAutoCollectConsole = true;
             config.enableAutoCollectExceptions = true;
             config.enableAutoCollectPerformance = true;
-            config.enableAutoCollectExtendedMetrics = true;
             config.enableAutoCollectRequests = true;
             config.enableAutoCollectDependencies = true;
             config.aadTokenCredential = new TestTokenCredential();
@@ -315,6 +314,54 @@ describe("shim/configuration/config", () => {
                 config.correlationHeaderExcludedDomains = ["test.com"];
                 config.parseConfig();
                 assert.ok(checkWarnings("The correlationHeaderExcludedDomains configuration option is not supported by the shim.", warnings), "warning was not raised");
+            });
+
+            it("should warn if extended metric disablers are set", () => {
+                const config = new Config(connectionString);
+                const warnings = config["_configWarnings"];
+                config.extendedMetricDisablers = "gc";
+                config.parseConfig();
+                assert.ok(checkWarnings("Extended metrics are no longer supported.", warnings), "warning was not raised");
+            });
+
+            it("should warn if extended metrics are set", () => {
+                const config = new Config(connectionString);
+                const warnings = config["_configWarnings"];
+                config.enableAutoCollectExtendedMetrics = { gc: true, heap: false };
+                config.parseConfig();
+                assert.ok(checkWarnings("Extended metrics are no longer supported.", warnings), "warning was not raised");
+            });
+
+            it("should warn if extended metrics are set", () => {
+                const config = new Config(connectionString);
+                const warnings = config["_configWarnings"];
+                config.enableAutoCollectExtendedMetrics = { gc: true, heap: false };
+                config.parseConfig();
+                assert.ok(checkWarnings("Extended metrics are no longer supported.", warnings), "warning was not raised");
+            });
+
+            it("should warn if disableAllExtendedMetrics is set", () => {
+                const config = new Config(connectionString);
+                const warnings = config["_configWarnings"];
+                config.disableAllExtendedMetrics = true;
+                config.parseConfig();
+                assert.ok(checkWarnings("Extended metrics are no longer supported.", warnings), "warning was not raised");
+            });
+
+            it("should warn if disable all extended meetrics env var is set", () => {
+                const config = new Config(connectionString);
+                const warnings = config["_configWarnings"];
+                process.env["APPLICATION_INSIGHTS_DISABLE_ALL_EXTENDED_METRICS"] = "false";
+                config.parseConfig();
+                assert.ok(checkWarnings("Extended metrics are no longer supported.", warnings), "warning was not raised");
+            });
+
+            it("should warn if disable specific extended metric env var is set", () => {
+                const config = new Config(connectionString);
+                const warnings = config["_configWarnings"];
+                process.env["APPLICATION_INSIGHTS_DISABLE_EXTENDED_METRIC"] = "gc,heap";
+                config.parseConfig();
+                assert.ok(checkWarnings("Extended metrics are no longer supported.", warnings), "warning was not raised");
             });
         });
     });
