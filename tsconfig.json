@@ -21,6 +21,7 @@
     "exclude": [
         "node_modules",
         "test/functionalTests",
-        "test/backCompatibility"
+        "test/backCompatibility",
+        "test/performanceTests",
     ]
 }
