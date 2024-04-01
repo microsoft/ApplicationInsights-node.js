@@ -38,3 +38,5 @@ undefined/temp/appInsights-node/applicationinsights.log
 test/certs/server-key.pem
 # Ignore folder created during test runs
 undefined/*
+node_modules
+dist-esm
