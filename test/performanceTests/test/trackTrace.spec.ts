@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 import { PerfOptionDictionary } from "@azure-tools/test-perf";
 import { ShimTest } from "./appInsightsShim.spec.js";
 import appInsights from "applicationinsights";
