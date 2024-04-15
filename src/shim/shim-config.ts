@@ -5,7 +5,7 @@ import https = require("https");
 import azureCoreAuth = require("@azure/core-auth");
 import { diag } from "@opentelemetry/api";
 import { HttpInstrumentationConfig } from "@opentelemetry/instrumentation-http";
-import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrumentationConfig } from "./types";
+import { DistributedTracingModes, IConfig, IDisabledExtendedMetrics, IWebInstrumentationConfig, UNSUPPORTED_MSG } from "./types";
 import { ShimJsonConfig } from "./shim-jsonConfig";
 import { AzureMonitorOpenTelemetryOptions, InstrumentationOptions, InstrumentationOptionsType } from "../types";
 
@@ -302,54 +302,54 @@ class Config implements IConfig {
             process.env[ENV_nativeMetricsDisablers] ||
             this.extendedMetricDisablers
         ) {
-            this._configWarnings.push("Extended metrics are no longer supported.");
+            this._configWarnings.push(`Extended metrics are no longer supported. ${UNSUPPORTED_MSG}`);
         }
         if (this.disableAppInsights) {
-            this._configWarnings.push("disableAppInsights configuration no longer supported.");
+            this._configWarnings.push(`disableAppInsights configuration no longer supported. ${UNSUPPORTED_MSG}`);
         }
         if (this.enableAutoCollectHeartbeat === true) {
-            this._configWarnings.push("Heartbeat metrics are no longer supported.");
+            this._configWarnings.push(`Heartbeat metrics are no longer supported. ${UNSUPPORTED_MSG}`);
         }
         if (this.enableAutoDependencyCorrelation === false) {
-            this._configWarnings.push("Auto dependency correlation cannot be turned off anymore.");
+            this._configWarnings.push(`Auto dependency correlation cannot be turned off anymore. ${UNSUPPORTED_MSG}`);
         }
         if (typeof (this.enableAutoCollectIncomingRequestAzureFunctions) === "boolean") {
-            this._configWarnings.push("Auto request generation in Azure Functions is no longer supported.");
+            this._configWarnings.push(`Auto request generation in Azure Functions is no longer supported. ${UNSUPPORTED_MSG}`);
         }
         if (this.enableUseAsyncHooks === false) {
-            this._configWarnings.push("The use of non async hooks is no longer supported.");
+            this._configWarnings.push(`The use of non async hooks is no longer supported. ${UNSUPPORTED_MSG}`);
         }
         if (this.distributedTracingMode === DistributedTracingModes.AI) {
-            this._configWarnings.push("AI only distributed tracing mode is no longer supported.");
+            this._configWarnings.push(`AI only distributed tracing mode is no longer supported. ${UNSUPPORTED_MSG}`);
         }
         if (this.enableResendInterval) {
-            this._configWarnings.push("The resendInterval configuration option is not supported by the shim.");
+            this._configWarnings.push(`The resendInterval configuration option is not supported by the shim. ${UNSUPPORTED_MSG}`);
         }
         if (this.enableMaxBytesOnDisk) {
-            this._configWarnings.push("The maxBytesOnDisk configuration option is not supported by the shim.");
+            this._configWarnings.push(`The maxBytesOnDisk configuration option is not supported by the shim. ${UNSUPPORTED_MSG}`);
         }
         if (this.ignoreLegacyHeaders === false) {
-            this._configWarnings.push("LegacyHeaders are not supported by the shim.");
+            this._configWarnings.push(`LegacyHeaders are not supported by the shim. ${UNSUPPORTED_MSG}`);
         }
         if (this.maxBatchSize) {
-            this._configWarnings.push("The maxBatchSize configuration option is not supported by the shim.");
+            this._configWarnings.push(`The maxBatchSize configuration option is not supported by the shim. ${UNSUPPORTED_MSG}`);
         }
         if (this.enableLoggerErrorToTrace) {
-            this._configWarnings.push("The enableLoggerErrorToTrace configuration option is not supported by the shim.");
+            this._configWarnings.push(`The enableLoggerErrorToTrace configuration option is not supported by the shim. ${UNSUPPORTED_MSG}`);
         }
         if (this.httpAgent || this.httpsAgent) {
-            this._configWarnings.push("The httpAgent and httpsAgent configuration options are not supported by the shim.");
+            this._configWarnings.push(`The httpAgent and httpsAgent configuration options are not supported by the shim. ${UNSUPPORTED_MSG}`);
         }
         if (
             this.webInstrumentationConfig || this.webInstrumentationSrc
         ) {
-            this._configWarnings.push("The webInstrumentation config and src options are not supported by the shim.");
+            this._configWarnings.push(`The webInstrumentation config and src options are not supported by the shim. ${UNSUPPORTED_MSG}`);
         }
         if (this.quickPulseHost) {
-            this._configWarnings.push("The quickPulseHost configuration option is not supported by the shim.");
+            this._configWarnings.push(`The quickPulseHost configuration option is not supported by the shim. ${UNSUPPORTED_MSG}`);
         }
         if (this.correlationHeaderExcludedDomains) {
-            this._configWarnings.push("The correlationHeaderExcludedDomains configuration option is not supported by the shim.");
+            this._configWarnings.push(`The correlationHeaderExcludedDomains configuration option is not supported by the shim. ${UNSUPPORTED_MSG}`);
         }
         if (
             process.env[ENV_iKey] ||
@@ -357,13 +357,13 @@ class Config implements IConfig {
             process.env[ENV_azurePrefix + ENV_iKey] ||
             process.env[ENV_azurePrefix + legacy_ENV_iKey]
         ) {
-            this._configWarnings.push("The iKey configuration option is not supported by the shim. Please configure the the connection string instead.");
+            this._configWarnings.push(`The iKey configuration option is not supported by the shim. Please configure the the connection string instead. ${UNSUPPORTED_MSG}`);
         }
         if (process.env[ENV_profileQueryEndpoint]) {
-            this._configWarnings.push("The profileQueryEndpoint configuration option is not supported by the shim.");
+            this._configWarnings.push(`The profileQueryEndpoint configuration option is not supported by the shim. ${UNSUPPORTED_MSG}`);
         }
         if (process.env[ENV_quickPulseHost]) {
-            this._configWarnings.push("Please configure the quickPulseHost in the connection string instead.");
+            this._configWarnings.push(`Please configure the quickPulseHost in the connection string instead. ${UNSUPPORTED_MSG}`);
         }
         return options;
     }

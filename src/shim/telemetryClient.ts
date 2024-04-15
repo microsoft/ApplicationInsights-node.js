@@ -26,6 +26,7 @@ import { AttributeLogProcessor } from "../shared/util/attributeLogRecordProcesso
 import { LogApi } from "./logsApi";
 import { flushAzureMonitor, shutdownAzureMonitor, useAzureMonitor } from "../main";
 import { AzureMonitorOpenTelemetryOptions } from "../types";
+import { UNSUPPORTED_MSG } from "./types";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -253,7 +254,7 @@ export class TelemetryClient {
      * @param telemetryType specify the type of telemetry you are tracking from the list of Contracts.DataTypes
      */
     public track(telemetry: Contracts.Telemetry, telemetryType: Contracts.TelemetryType) {
-        throw new Error("Not implemented");
+        throw new Error(`Not implemented. Please use the specific track method for the type of telemetry you are tracking. ${UNSUPPORTED_MSG}`);
     }
 
     /**
@@ -269,7 +270,7 @@ export class TelemetryClient {
      * Get Authorization handler
      */
     public getAuthorizationHandler(config: Config): void {
-        diag.warn("getAuthorizationHandler is not supported in ApplicationInsights any longer.");
+        diag.warn(`getAuthorizationHandler is not supported in ApplicationInsights any longer. ${UNSUPPORTED_MSG}`);
     }
 
     /*
@@ -299,7 +300,7 @@ export class TelemetryClient {
             contextObjects?: { [name: string]: any }
         ) => boolean
     ) {
-        diag.warn("addTelemetryProcessor is not supported in ApplicationInsights any longer.");
+        diag.warn(`addTelemetryProcessor is not supported in ApplicationInsights any longer. ${UNSUPPORTED_MSG}`);
     }
 
     /*
