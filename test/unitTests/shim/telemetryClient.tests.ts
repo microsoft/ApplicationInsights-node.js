@@ -12,7 +12,7 @@ import { AzureMonitorExporterOptions, AzureMonitorMetricExporter } from "@azure/
 import { MeterProvider, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions, ResourceMetrics } from "@opentelemetry/sdk-metrics";
 import { LogRecord, LogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
 import { logs } from "@opentelemetry/api-logs";
-import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
+import { SEMATTRS_RPC_SYSTEM } from "@opentelemetry/semantic-conventions";
 
 describe("shim/TelemetryClient", () => {
     let client: TelemetryClient;
@@ -169,7 +169,7 @@ describe("shim/TelemetryClient", () => {
             const spans = testProcessor.spansProcessed;
             assert.equal(spans.length, 1);
             assert.equal(spans[0].name, "TestName");
-            assert.equal(spans[0].attributes[SemanticAttributes.RPC_SYSTEM], "RPC");
+            assert.equal(spans[0].attributes[SEMATTRS_RPC_SYSTEM], "RPC");
         });
 
         it("trackRequest", async () => {

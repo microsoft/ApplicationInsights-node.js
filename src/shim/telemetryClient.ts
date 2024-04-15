@@ -4,7 +4,17 @@
 import { Attributes, context, metrics, ProxyTracerProvider, SpanKind, SpanOptions, SpanStatusCode, diag, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
 import { LoggerProvider } from "@opentelemetry/sdk-logs";
-import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
+import { 
+    SEMATTRS_DB_STATEMENT,
+    SEMATTRS_DB_SYSTEM,
+    SEMATTRS_HTTP_METHOD,
+    SEMATTRS_HTTP_STATUS_CODE,
+    SEMATTRS_HTTP_URL,
+    SEMATTRS_PEER_SERVICE,
+    SEMATTRS_RPC_GRPC_STATUS_CODE,
+    SEMATTRS_RPC_METHOD,
+    SEMATTRS_RPC_SYSTEM
+} from "@opentelemetry/semantic-conventions";
 import * as Contracts from "../declarations/contracts";
 import { TelemetryItem as Envelope } from "../declarations/generated";
 import { Context } from "./context";
@@ -16,6 +26,7 @@ import { AttributeLogProcessor } from "../shared/util/attributeLogRecordProcesso
 import { LogApi } from "./logsApi";
 import { flushAzureMonitor, shutdownAzureMonitor, useAzureMonitor } from "../main";
 import { AzureMonitorOpenTelemetryOptions } from "../types";
+import { UNSUPPORTED_MSG } from "./types";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -163,9 +174,9 @@ export class TelemetryClient {
         const attributes: Attributes = {
             ...telemetry.properties,
         };
-        attributes[SemanticAttributes.HTTP_METHOD] = "HTTP";
-        attributes[SemanticAttributes.HTTP_URL] = telemetry.url;
-        attributes[SemanticAttributes.HTTP_STATUS_CODE] = telemetry.resultCode;
+        attributes[SEMATTRS_HTTP_METHOD] = "HTTP";
+        attributes[SEMATTRS_HTTP_URL] = telemetry.url;
+        attributes[SEMATTRS_HTTP_STATUS_CODE] = telemetry.resultCode;
         const options: SpanOptions = {
             kind: SpanKind.SERVER,
             attributes: attributes,
@@ -210,20 +221,20 @@ export class TelemetryClient {
         };
         if (telemetry.dependencyTypeName) {
             if (telemetry.dependencyTypeName.toLowerCase().indexOf("http") > -1) {
-                attributes[SemanticAttributes.HTTP_METHOD] = "HTTP";
-                attributes[SemanticAttributes.HTTP_URL] = telemetry.data;
-                attributes[SemanticAttributes.HTTP_STATUS_CODE] = telemetry.resultCode;
+                attributes[SEMATTRS_HTTP_METHOD] = "HTTP";
+                attributes[SEMATTRS_HTTP_URL] = telemetry.data;
+                attributes[SEMATTRS_HTTP_STATUS_CODE] = telemetry.resultCode;
             } else if (Util.getInstance().isDbDependency(telemetry.dependencyTypeName)) {
-                attributes[SemanticAttributes.DB_SYSTEM] = telemetry.dependencyTypeName;
-                attributes[SemanticAttributes.DB_STATEMENT] = telemetry.data;
+                attributes[SEMATTRS_DB_SYSTEM] = telemetry.dependencyTypeName;
+                attributes[SEMATTRS_DB_STATEMENT] = telemetry.data;
             } else if (telemetry.dependencyTypeName.toLowerCase().indexOf("rpc") > -1) {
-                attributes[SemanticAttributes.RPC_SYSTEM] = telemetry.dependencyTypeName;
-                attributes[SemanticAttributes.RPC_METHOD] = telemetry.name;
-                attributes[SemanticAttributes.RPC_GRPC_STATUS_CODE] = telemetry.resultCode;
+                attributes[SEMATTRS_RPC_SYSTEM] = telemetry.dependencyTypeName;
+                attributes[SEMATTRS_RPC_METHOD] = telemetry.data;
+                attributes[SEMATTRS_RPC_GRPC_STATUS_CODE] = telemetry.resultCode;
             }
         }
         if (telemetry.target) {
-            attributes[SemanticAttributes.PEER_SERVICE] = telemetry.target;
+            attributes[SEMATTRS_PEER_SERVICE] = telemetry.target;
         }
         const options: SpanOptions = {
             kind: SpanKind.CLIENT,
@@ -243,7 +254,7 @@ export class TelemetryClient {
      * @param telemetryType specify the type of telemetry you are tracking from the list of Contracts.DataTypes
      */
     public track(telemetry: Contracts.Telemetry, telemetryType: Contracts.TelemetryType) {
-        throw new Error("Not implemented");
+        throw new Error(`Not implemented. Please use the specific track method for the type of telemetry you are tracking. ${UNSUPPORTED_MSG}`);
     }
 
     /**
@@ -259,7 +270,7 @@ export class TelemetryClient {
      * Get Authorization handler
      */
     public getAuthorizationHandler(config: Config): void {
-        diag.warn("getAuthorizationHandler is not supported in ApplicationInsights any longer.");
+        diag.warn(`getAuthorizationHandler is not supported in ApplicationInsights any longer. ${UNSUPPORTED_MSG}`);
     }
 
     /*
@@ -289,7 +300,7 @@ export class TelemetryClient {
             contextObjects?: { [name: string]: any }
         ) => boolean
     ) {
-        diag.warn("addTelemetryProcessor is not supported in ApplicationInsights any longer.");
+        diag.warn(`addTelemetryProcessor is not supported in ApplicationInsights any longer. ${UNSUPPORTED_MSG}`);
     }
 
     /*

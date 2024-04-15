@@ -5,6 +5,7 @@ import { TokenCredential } from "@azure/core-auth";
 import * as http from "http";
 import https = require("https");
 
+export const UNSUPPORTED_MSG = "Please reference the Azure Monitor OpenTelemetry Migration Doc for more information. If this functionality is required, please revert to Application Insights 2.X SDK.";
 export enum DistributedTracingModes {
     /**
      * Send Application Insights correlation headers
