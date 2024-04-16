@@ -71,24 +71,6 @@ To determine if this version of Application Insights is right for you, review th
 
 [these instructions]: https://docs.microsoft.com/azure/application-insights/app-insights-nodejs
 
-### Install the library
-
-```sh
-npm install applicationinsights
-```
-
-### Enable Application Insights
-
-> *Important:* `applicationinsights` must be setup *and* started *before* you import anything else. There may be resulting telemetry loss if other libraries are imported first.
-
-For out-of-the-box collection of HTTP requests, popular third-party library events,
-unhandled exceptions, and system metrics:
-
-```javascript
-let appInsights = require("applicationinsights");
-appInsights.setup("YOUR_CONNECTION_STRING").start();
-```
-
 * If the connection string is set in the environment variable
   APPLICATIONINSIGHTS\_CONNECTION\_STRING, `.setup()` can be called with no
   arguments. This makes it easy to use different connection strings for different
@@ -99,11 +81,6 @@ early as possible in your scripts, before loading other packages. This is needed
 so that the Application Insights library can prepare later packages for tracking.
 If you encounter conflicts with other libraries doing similar preparation, try
 loading the Application Insights library after those.
-
-* If the Connection String is set in the environment variable
-  APPLICATIONINSIGHTS\_CONNECTION\_STRING, `TelemetryClient` constructor can be called with no
-  arguments. This makes it easy to use different connection strings for different
-  environments.
 
 
 ## Configuration
