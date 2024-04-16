@@ -32,7 +32,7 @@ Consider whether this version is right for you. It *enables distributed tracing,
 
 > *Warning:* This SDK only works for Node.js environments. Use the [Application Insights JavaScript SDK](https://github.com/microsoft/ApplicationInsights-JS) for web and browser scenarios.
 
-To determine if this version of Application Insights is right for you, review the [Application Insights 2.X SDK migration guide](https://learn.microsoft.com/en-us/azure/azure-monitor/app/opentelemetry-nodejs-migrate?tabs=cleaninstall).
+To determine if this version of Application Insights is right for you, review the [Application Insights 2.X SDK migration guide](https://learn.microsoft.com/azure/azure-monitor/app/opentelemetry-nodejs-migrate?tabs=cleaninstall).
 
 ### Prerequisites
 
@@ -44,7 +44,7 @@ To determine if this version of Application Insights is right for you, review th
   - [Azure Monitor OpenTelemetry Exporter supported runtimes](https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/monitor/monitor-opentelemetry-exporter#currently-supported-environments)
 
 ## Get started
-> *Important:* On March 31st, 2025, support for instrumentation key ingestion will end. Instrumentation key ingestion will continue to work, but we’ll no longer provide updates or support for the feature. [Transition to connection strings](https://docs.microsoft.com/en-us/azure/azure-monitor/app/migrate-from-instrumentation-keys-to-connection-strings) to take advantage of [new capabilities](https://docs.microsoft.com/en-us/azure/azure-monitor/app/migrate-from-instrumentation-keys-to-connection-strings#new-capabilities).
+> *Important:* On March 31st, 2025, support for instrumentation key ingestion will end. Instrumentation key ingestion will continue to work, but we’ll no longer provide updates or support for the feature. [Transition to connection strings](https://docs.microsoft.com/azure/azure-monitor/app/migrate-from-instrumentation-keys-to-connection-strings) to take advantage of [new capabilities](https://docs.microsoft.com/en-us/azure/azure-monitor/app/migrate-from-instrumentation-keys-to-connection-strings#new-capabilities).
 
 1. Create an Application Insights resource in Azure by following [these instructions][].
 2. Grab the _Connection String_ from the resource you created in
@@ -169,7 +169,7 @@ process.env.APPLICATIONINSIGHTS_CONFIGURATION_FILE = "C:/applicationinsights/con
 // Application Insights SDK setup....
 ```
 
-Alternatively, instead of using a configuration file, you can specify the entire content of the JSON configuration via the environment variable APPLICATIONINSIGHTS_CONFIGURATION_CONTENT.
+Alternatively, instead of using a configuration file, you can specify the entire content of the JSON configuration via the environment variable `APPLICATIONINSIGHTS_CONFIGURATION_CONTENT`.
 
 ### Sampling
 
@@ -203,6 +203,9 @@ web Instrumentation connection string can be changed by setting environment vari
 **Note:** web Instrumentation may slow down server response time, especially when response size is large or response is compressed. For the case in which some middle layers are applied, it may result in web Instrumentation not working and original response will be returned.
 
 ### Automatic third-party instrumentation
+
+> If you require further third-party instrumenatations please use the [Azure Monitor OpenTelemetry Distro](https://learn.microsoft.com/azure/azure-monitor/app/opentelemetry-enable?tabs=nodejs) to take advantage of OpenTelemetry. If you are an Application Insights 2.X SDK user,
+a [migration guide](https://learn.microsoft.com/azure/azure-monitor/app/opentelemetry-nodejs-migrate?tabs=upgrade) is available.
 
 In order to track context across asynchronous calls, some changes are required in third party libraries such as mongodb and redis.
 By default ApplicationInsights will use the appropriate OpenTelemetry instrumentation for each library.
@@ -408,7 +411,7 @@ The software may collect information about you and your use of the software and 
 
 ## Trademarks
 
-This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft trademarks or logos is subject to and must follow [Microsoft’s Trademark & Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general). Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship. Any use of third-party trademarks or logos are subject to those third-party’s policies.
+This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft trademarks or logos is subject to and must follow [Microsoft’s Trademark & Brand Guidelines](https://www.microsoft.com/legal/intellectualproperty/trademarks/usage/general). Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship. Any use of third-party trademarks or logos are subject to those third-party’s policies.
 
 ## License
 
