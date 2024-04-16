@@ -126,7 +126,6 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | proxyHttpsUrl                   | A proxy server for SDK HTTPS traffic (Optional, Default pulled from `https_proxy` environment variable)    |
 | maxBatchIntervalMs              | The maximum amount of time to wait to for a payload to reach maxBatchSize (Default `15000`)                |
 | samplingPercentage              | The percentage of telemetry items tracked that should be transmitted (Default `100`)                       |
-| correlationHeaderExcludedDomains| A list of domains to exclude from cross-component correlation header injection (Default See [Config.ts][]) |
 | enableAutoCollectExternalLoggers| Sets the state of console. If true logger activity will be sent to Application Insights |
 | enableAutoCollectConsole        | Sets the state of logger tracking (enabled by default for third-party loggers only). If true, logger auto collection will include console.log calls (default false) |
 | enableAutoCollectExceptions     | Sets the state of exception tracking (enabled by default). If true uncaught exceptions will be sent to Application Insights |
