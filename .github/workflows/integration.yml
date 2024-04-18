@@ -2,9 +2,9 @@ name: Integration Tests CI
 
 on:
   push:
-    branches: [ develop, beta ]
+    branches: [ main ]
   pull_request:
-    branches: [ develop, beta ]
+    branches: [ main ]
 
 jobs:
   integration:

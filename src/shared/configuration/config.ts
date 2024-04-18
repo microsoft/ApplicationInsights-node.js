@@ -57,7 +57,6 @@ export class ApplicationInsightsConfig {
         this.otlpTraceExporterConfig = {};
         this.enableAutoCollectPerformance = true;
         this.enableAutoCollectExceptions = true;
-        this.enableAutoCollectPerformance = true;
 
         this.azureMonitorExporterOptions = {};
         this.samplingRatio = 1;
@@ -80,10 +79,12 @@ export class ApplicationInsightsConfig {
         // Check for explicitly passed options when instantiating client
         // This will take precedence over other settings
         if (options) {
-            this.enableAutoCollectExceptions =
-                options.enableAutoCollectExceptions || this.enableAutoCollectExceptions;
-            this.enableAutoCollectPerformance =
-                options.enableAutoCollectPerformance || this.enableAutoCollectPerformance;
+            if (typeof(options.enableAutoCollectExceptions) === "boolean") {
+                this.enableAutoCollectExceptions = options.enableAutoCollectExceptions;
+            }
+            if (typeof(options.enableAutoCollectPerformance) === "boolean") {
+                this.enableAutoCollectPerformance = options.enableAutoCollectPerformance;
+            }
             this.otlpTraceExporterConfig = Object.assign(
                 this.otlpTraceExporterConfig,
                 options.otlpTraceExporterConfig
