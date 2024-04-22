@@ -58,7 +58,7 @@ describe("logs/API", () => {
                 "TestData",
                 data,
             ) as LogRecord;
-            assert.equal(logRecord.body, "{}");
+            assert.equal(JSON.stringify(logRecord.body), JSON.stringify({}));
             assert.equal(logRecord.attributes["testAttribute"], "testValue");
             assert.equal(logRecord.attributes["_MS.baseType"], "TestData");
         });
@@ -76,7 +76,7 @@ describe("logs/API", () => {
                 "TestData",
                 data,
             ) as LogRecord;
-            assert.equal(logRecord.body, "{}");
+            assert.equal(JSON.stringify(logRecord.body), JSON.stringify({}));
             assert.equal(logRecord.attributes["testAttribute"], "testValue");
             const errorStr: string = logRecord.attributes["error"] as string;
             assert.ok(errorStr.includes("test error"));
@@ -97,7 +97,7 @@ describe("logs/API", () => {
             logApi.trackAvailability(telemetry);
             const logs = testLogger.logsEmited;
             assert.equal(logs.length, 1);
-            let baseData = JSON.parse(logs[0].body) as AvailabilityData;
+            let baseData = logs[0].body as AvailabilityData;
             assert.equal(baseData.version, 2);
             assert.equal(baseData.id, "testId");
             assert.equal(baseData.name, "TestName");
@@ -121,7 +121,7 @@ describe("logs/API", () => {
             logApi.trackPageView(telemetry);
             const logs = testLogger.logsEmited;
             assert.equal(logs.length, 1);
-            let baseData = JSON.parse(logs[0].body) as PageViewData;
+            let baseData = logs[0].body as PageViewData;
             assert.equal(baseData.version, 2);
             assert.equal(baseData.id, "testId");
             assert.equal(baseData.name, "TestName");
@@ -141,7 +141,7 @@ describe("logs/API", () => {
             logApi.trackTrace(telemetry);
             const logs = testLogger.logsEmited;
             assert.equal(logs.length, 1);
-            let baseData = JSON.parse(logs[0].body) as MessageData;
+            let baseData = logs[0].body as MessageData;
             assert.equal(baseData.version, 2);
             assert.equal(baseData.message, "testMessage");
             assert.equal(baseData.severityLevel, "Information");
@@ -161,7 +161,7 @@ describe("logs/API", () => {
             logApi.trackException(telemetry);
             const logs = testLogger.logsEmited;
             assert.equal(logs.length, 1);
-            let baseData = JSON.parse(logs[0].body) as TelemetryExceptionData;
+            let baseData = logs[0].body as TelemetryExceptionData;
             assert.equal(baseData.version, 2);
             assert.equal(baseData.severityLevel, "Critical");
             assert.equal(baseData.exceptions[0].message, "TestError");
@@ -182,7 +182,7 @@ describe("logs/API", () => {
             logApi.trackEvent(telemetry);
             const logs = testLogger.logsEmited;
             assert.equal(logs.length, 1);
-            let baseData = JSON.parse(logs[0].body) as TelemetryEventData;
+            let baseData = logs[0].body as TelemetryEventData;
             assert.equal(baseData.version, 2);
             assert.equal(baseData.name, "TestName");
             assert.equal(baseData.measurements["test"], 123);
