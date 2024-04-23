@@ -136,7 +136,7 @@ export class LogApi {
                 }
             }
 
-            const record: LogRecord = { attributes: attributes, body: Util.getInstance().stringify(baseData) };
+            const record: LogRecord = { attributes: attributes, body: baseData };
             record.attributes["_MS.baseType"] = baseType;
             return record;
         }
