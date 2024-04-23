@@ -66,7 +66,7 @@ export async function shutdownAzureMonitor() {
 export async function flushAzureMonitor() {
     try {
         await (metrics.getMeterProvider() as MeterProvider).forceFlush();
-        await (trace.getTracerProvider() as BasicTracerProvider).forceFlush();
+        await (((trace.getTracerProvider() as ProxyTracerProvider).getDelegate()) as BasicTracerProvider).forceFlush();
         await (logs.getLoggerProvider() as LoggerProvider).forceFlush();
     } catch (err) {
         diag.error("Failed to flush telemetry", err);
