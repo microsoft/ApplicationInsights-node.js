@@ -7,9 +7,8 @@ import { InstrumentationConfig } from "@opentelemetry/instrumentation";
 import { OTLPExporterNodeConfigBase } from "@opentelemetry/otlp-exporter-base";
 
 
-export const AZURE_MONITOR_OPENTELEMETRY_VERSION = "1.4.0";
+export const APPLICATION_INSIGHTS_OPENTELEMETRY_VERSION = "3.0.1";
 export const DEFAULT_ROLE_NAME = "Web";
-process.env["AZURE_MONITOR_DISTRO_VERSION"] = AZURE_MONITOR_OPENTELEMETRY_VERSION;
 
 /**
  * Azure Monitor OpenTelemetry Options

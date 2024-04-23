@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { AZURE_MONITOR_OPENTELEMETRY_VERSION } from "../../../types";
+import { APPLICATION_INSIGHTS_OPENTELEMETRY_VERSION } from "../../../types";
 import { AZURE_APP_NAME, IAgentLogger } from "../../types";
 
 const AZURE_FUNCTIONS_DIAGNOSTIC_PREFIX = "LanguageWorkerConsoleLogMS_APPLICATION_INSIGHTS_LOGS";
@@ -14,7 +14,7 @@ export class AzureFunctionsWriter implements IAgentLogger {
     constructor(instrumentationKey: string) {
         this._instrumentationKey = instrumentationKey;
         this._appName = AZURE_APP_NAME;
-        this._agentVersion = AZURE_MONITOR_OPENTELEMETRY_VERSION;
+        this._agentVersion = APPLICATION_INSIGHTS_OPENTELEMETRY_VERSION;
     }
 
     public log(log: any) {
