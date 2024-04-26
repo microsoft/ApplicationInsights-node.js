@@ -19,6 +19,7 @@ import {
 } from "../declarations/generated";
 import { Util } from "../shared/util";
 import { parseStack } from "../logs/exceptions";
+import { defaultClient } from "./applicationinsights";
 
 /**
  * Log manual API to generate Application Insights telemetry
@@ -104,6 +105,14 @@ export class LogApi {
         try {
             const logRecord = this._eventToLogRecord(telemetry);
             this._logger.emit(logRecord);
+            if (Object.keys(telemetry.measurements).length > 0) {
+                for (const [key, value] of Object.entries(telemetry.measurements)) {
+                    defaultClient.trackMetric({
+                        name: key,
+                        value: value,
+                    });
+                }
+            }
         } catch (err) {
             diag.error("Failed to send telemetry.", err);
         }

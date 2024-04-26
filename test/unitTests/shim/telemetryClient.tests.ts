@@ -57,10 +57,10 @@ describe("shim/TelemetryClient", () => {
     });
 
 
-    after(() => {
+    after(async () => {
         nock.cleanAll();
         nock.enableNetConnect();
-        client.shutdown();
+        await client.shutdown();
     });
 
     class TestSpanProcessor implements SpanProcessor {

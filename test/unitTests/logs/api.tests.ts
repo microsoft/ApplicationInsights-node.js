@@ -3,7 +3,6 @@ import * as sinon from "sinon";
 import * as nock from "nock";
 import { Logger } from "@opentelemetry/api-logs";
 import { LogRecord } from "@opentelemetry/sdk-logs";
-
 import {
     AvailabilityTelemetry,
     EventTelemetry,
@@ -14,6 +13,7 @@ import {
 } from "../../../src/declarations/contracts";
 import { AvailabilityData, MessageData, MonitorDomain, PageViewData, TelemetryEventData, TelemetryExceptionData } from "../../../src/declarations/generated";
 import { LogApi } from "../../../src/shim/logsApi";
+import { defaultClient, setup, dispose } from "../../../applicationinsights";
 
 describe("logs/API", () => {
     let sandbox: sinon.SinonSandbox;
@@ -31,7 +31,7 @@ describe("logs/API", () => {
         sandbox.restore();
     });
 
-    after(() => {
+    after(async () => {
         nock.cleanAll();
         nock.enableNetConnect();
     });
@@ -170,7 +170,10 @@ describe("logs/API", () => {
             assert.equal(logs[0].attributes["_MS.baseType"], "ExceptionData");
         });
 
-        it("trackEvent", () => {
+        it("trackEvent with measurements", async () => {
+            setup("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/");
+            const stub = sandbox.stub(defaultClient, "trackMetric");
+            
             let testLogger = new TestLogger();
             let logApi = new LogApi(testLogger);
             const measurements: { [key: string]: number } = {};
@@ -187,6 +190,9 @@ describe("logs/API", () => {
             assert.equal(baseData.name, "TestName");
             assert.equal(baseData.measurements["test"], 123);
             assert.equal(logs[0].attributes["_MS.baseType"], "EventData");
+
+            assert.ok(stub.calledOnce);
+            await dispose();
         });
     });
 });
