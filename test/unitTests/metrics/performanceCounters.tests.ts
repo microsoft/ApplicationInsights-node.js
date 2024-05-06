@@ -73,7 +73,7 @@ describe("PerformanceCounterMetricsHandler", () => {
 
       assert.deepStrictEqual(
         metrics[0].descriptor.name,
-        "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Request Execution Time"
+        "Request_Execution_Time"
       );
       assert.strictEqual(metrics[0].dataPoints.length, 1, "dataPoints count");
       assert.strictEqual((metrics[0].dataPoints[0].value as Histogram).count, 10, "dataPoint count");
@@ -83,25 +83,25 @@ describe("PerformanceCounterMetricsHandler", () => {
       
       assert.deepStrictEqual(
         metrics[1].descriptor.name,
-        "\\ASP.NET Applications(??APP_W3SVC_PROC??)\\Requests/Sec"
+        "Request_Rate"
       );
       assert.ok(metrics[1].dataPoints[0].value> 0, "Wrong request rate value");
 
       assert.deepStrictEqual(
         metrics[2].descriptor.name,
-        "\\Process(??APP_WIN32_PROC??)\\Private Bytes"
+        "Private_Bytes"
       );
       assert.ok(metrics[2].dataPoints[0].value > 0, "Wrong private bytes value");
-      assert.deepStrictEqual(metrics[3].descriptor.name, "\\Memory\\Available Bytes");
+      assert.deepStrictEqual(metrics[3].descriptor.name, "Available_Bytes");
       assert.ok(metrics[3].dataPoints[0].value > 0, "Wrong available bytes value");
-      assert.deepStrictEqual(metrics[4].descriptor.name, "\\Processor(_Total)\\% Processor Time");
+      assert.deepStrictEqual(metrics[4].descriptor.name, "Processor_Time");
       assert.ok(
         metrics[4].dataPoints[0].value >= 0 && metrics[4].dataPoints[0].value <= 100,
         `Wrong Processor Time value: ${metrics[4].dataPoints[0].value}`
       );
       assert.deepStrictEqual(
         metrics[5].descriptor.name,
-        "\\Process(??APP_WIN32_PROC??)\\% Processor Time"
+        "Process_Time"
       );
       assert.ok(
         metrics[5].dataPoints[0].value >= 0 && metrics[5].dataPoints[0].value <= 100,
