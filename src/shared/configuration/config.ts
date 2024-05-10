@@ -11,6 +11,10 @@ import {
 } from "@opentelemetry/resources";
 import { JsonConfig } from "./jsonConfig";
 import { AzureMonitorOpenTelemetryOptions, OTLPExporterConfig, InstrumentationOptions } from "../../types";
+import { SeverityNumber } from "@opentelemetry/api-logs";
+import { logLevelParser } from "../util/logLevelParser";
+
+const loggingLevel = "APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL";
 
 
 export class ApplicationInsightsConfig {
@@ -69,15 +73,13 @@ export class ApplicationInsightsConfig {
             redis: { enabled: false },
             redis4: { enabled: false },
             console: { enabled: false },
-            bunyan: { enabled: false },
-            winston: { enabled: false },
+            bunyan: { enabled: true },
+            winston: { enabled: true },
         };
         this._resource = this._getDefaultResource();
 
         // Merge JSON configuration file if available
-        this._mergeConfig();
         // Check for explicitly passed options when instantiating client
-        // This will take precedence over other settings
         if (options) {
             if (typeof(options.enableAutoCollectExceptions) === "boolean") {
                 this.enableAutoCollectExceptions = options.enableAutoCollectExceptions;
@@ -109,6 +111,19 @@ export class ApplicationInsightsConfig {
             );
             this.resource = Object.assign(this.resource, options.resource);
             this.samplingRatio = options.samplingRatio || this.samplingRatio;
+
+            // Set console logging level from env var
+            if (process.env[loggingLevel]) { 
+                this.instrumentationOptions = {
+                    ...this.instrumentationOptions,
+                    console: {
+                        ...this.instrumentationOptions.console,
+                        logSendingLevel: logLevelParser(process.env[loggingLevel]),
+                    },
+                }
+            }
+
+            this._mergeConfig();
         }
     }
 

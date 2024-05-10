@@ -7,6 +7,7 @@ import { DiagnosticLogger } from './diagnostics/diagnosticLogger';
 import { FileWriter } from "./diagnostics/writers/fileWriter";
 import { StatusLogger } from "./diagnostics/statusLogger";
 import { AgentLoader } from "./agentLoader";
+import { InstrumentationOptions } from '../types';
 
 export class AKSLoader extends AgentLoader {
 
@@ -18,6 +19,9 @@ export class AKSLoader extends AgentLoader {
                 // Add OTLP if env variable is present
                 enabled: process.env["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"] ? true : false
             };
+            (this._options.instrumentationOptions as InstrumentationOptions).console = {
+                enabled: true
+            }
 
             let statusLogDir = '/var/log/applicationinsights/';
             if (this._isWindows) {

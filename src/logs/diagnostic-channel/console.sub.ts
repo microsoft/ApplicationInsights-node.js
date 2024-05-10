@@ -11,7 +11,7 @@ let logger: Logger;
 let logSendingLevel: SeverityNumber;
 
 const subscriber = (event: IStandardEvent<consolePub.IConsoleData>) => {
-    const severity = (event.data.message as string | Error) instanceof Error ? SeverityNumber.ERROR : (event.data.stderr
+    const severity = event.data.message.indexOf("Error:") > -1 ? SeverityNumber.ERROR : (event.data.stderr
         ? SeverityNumber.WARN
         : SeverityNumber.INFO);
     if (logSendingLevel <= severity) {

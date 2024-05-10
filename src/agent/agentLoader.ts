@@ -69,6 +69,9 @@ export class AgentLoader {
                     redis: {
                         enabled: true
                     },
+                    bunyan: {
+                        enabled: true
+                    },
                 }
             };
 
@@ -259,10 +262,10 @@ export class AgentLoader {
                 distroInstance = require.resolve(`${process.cwd()}/node_modules/@azure/monitor-opentelemetry`);
             }
             /** 
-         * If loaded instance is in Azure machine home path do not attach the SDK, this means customer already instrumented their app.
-         * Linux App Service doesn't append the full cwd to the require.resolve, so we need to check for the relative path we expect
-         * if application insights is being imported in the user app code.
-        */
+             * If loaded instance is in Azure machine home path do not attach the SDK, this means customer already instrumented their app.
+             * Linux App Service doesn't append the full cwd to the require.resolve, so we need to check for the relative path we expect
+             * if application insights is being imported in the user app code.
+            */
             if (
                 shimInstance.indexOf("home") > -1 || distroInstance.indexOf("home") > -1 ||
                 (shimInstance === LINUX_USER_APPLICATION_INSIGHTS_PATH && this._isLinux)
@@ -274,10 +277,9 @@ export class AgentLoader {
                 this._diagnosticLogger.logMessage(diagnosticLog);
                 return true;
             }
-            else {
-                // ApplicationInsights or Azure Monitor Distro could be loaded outside of customer application, attach in this case
-                return false;
-            }
+            // ApplicationInsights or Azure Monitor Distro could be loaded outside of customer application, attach in this case
+            return false;
+            
 
         } catch (e) {
             // crashed while trying to resolve "applicationinsights", so SDK does not exist. Attach appinsights

@@ -7,6 +7,7 @@ import * as sinon from "sinon";
 import { AgentLoader } from "../../../src/agent/agentLoader";
 import * as azureMonitor from "@azure/monitor-opentelemetry";
 import { DiagnosticMessageId } from "../../../src/agent/types";
+import { dispose } from "../../../src/logs/diagnostic-channel/winston.sub";
 
 describe("agent/agentLoader", () => {
     let originalEnv: NodeJS.ProcessEnv;
@@ -41,6 +42,9 @@ describe("agent/agentLoader", () => {
             redis: {
                 enabled: true
             },
+            bunyan: {
+                enabled: true
+            },
         }
     };
 
@@ -53,6 +57,7 @@ describe("agent/agentLoader", () => {
     });
 
     afterEach(() => {
+        dispose();
         process.env = originalEnv;
         sandbox.restore();
     });
