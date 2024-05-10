@@ -41,7 +41,7 @@ describe("AutoCollection/Console", () => {
             });
             const dummyError = new Error("test error");
             const errorEvent: console.IConsoleData = {
-                message: dummyError as any,
+                message: dummyError.toString(),
                 stderr: false,
             };
             channel.publish("console", errorEvent);

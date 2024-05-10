@@ -159,7 +159,7 @@ describe("shim/configuration/config", () => {
                 redis4: { enabled: false },
                 postgreSql: { enabled: false },
                 bunyan: { enabled: true },
-                console: { enabled: true },
+                console: { enabled: false },
                 winston: { enabled: true },
             }));
         });
@@ -189,7 +189,7 @@ describe("shim/configuration/config", () => {
                 "redis4": { "enabled": true },
                 "postgreSql": { "enabled": true },
                 "bunyan": { "enabled": false },
-                "console": { "enabled": true },
+                "console": { "enabled": false },
                 "winston": { "enabled": false }
             }));
         });
