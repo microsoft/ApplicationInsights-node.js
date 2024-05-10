@@ -69,9 +69,6 @@ export class AgentLoader {
                     redis: {
                         enabled: true
                     },
-                    bunyan: {
-                        enabled: true
-                    },
                 }
             };
 

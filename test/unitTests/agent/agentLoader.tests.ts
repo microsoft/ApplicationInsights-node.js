@@ -42,9 +42,6 @@ describe("agent/agentLoader", () => {
             redis: {
                 enabled: true
             },
-            bunyan: {
-                enabled: true
-            },
         }
     };
 

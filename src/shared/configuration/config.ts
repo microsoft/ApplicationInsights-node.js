@@ -72,8 +72,8 @@ export class ApplicationInsightsConfig {
             redis: { enabled: false },
             redis4: { enabled: false },
             console: { enabled: false },
-            bunyan: { enabled: true },
-            winston: { enabled: true },
+            bunyan: { enabled: false },
+            winston: { enabled: false },
         };
         this._resource = this._getDefaultResource();
 

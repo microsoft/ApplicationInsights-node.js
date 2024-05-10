@@ -19,8 +19,11 @@ export class AKSLoader extends AgentLoader {
                 // Add OTLP if env variable is present
                 enabled: process.env["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"] ? true : false
             };
-            (this._options.instrumentationOptions as InstrumentationOptions).console = {
-                enabled: true
+            (this._options.instrumentationOptions as InstrumentationOptions) = {
+                ...this._options.instrumentationOptions,
+                console: { enabled: true },
+                bunyan: { enabled: true },
+                winston: { enabled: true },
             }
 
             let statusLogDir = '/var/log/applicationinsights/';
