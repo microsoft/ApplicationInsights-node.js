@@ -11,7 +11,6 @@ import {
 } from "@opentelemetry/resources";
 import { JsonConfig } from "./jsonConfig";
 import { AzureMonitorOpenTelemetryOptions, OTLPExporterConfig, InstrumentationOptions } from "../../types";
-import { SeverityNumber } from "@opentelemetry/api-logs";
 import { logLevelParser } from "../util/logLevelParser";
 
 const loggingLevel = "APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL";

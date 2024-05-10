@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import { SeverityNumber } from "@opentelemetry/api-logs";
 
 export function logLevelParser(level: string): number {
