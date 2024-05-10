@@ -148,7 +148,7 @@ class Config implements IConfig {
         };
         (options.instrumentationOptions as InstrumentationOptions) = {
             ...options.instrumentationOptions,
-            console: { enabled: true },
+            console: { enabled: false },
             winston: { enabled: true },
         };
         if (this.samplingPercentage) {
