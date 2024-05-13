@@ -7,7 +7,6 @@ import { AKSLoader } from "../../../src/agent/aksLoader";
 import { DiagnosticLogger } from "../../../src/agent/diagnostics/diagnosticLogger";
 import { FileWriter } from "../../../src/agent/diagnostics/writers/fileWriter";
 import { dispose as disposeConsole } from "../../../src/logs/diagnostic-channel/console.sub";
-import { dispose as disposeWinston } from "../../../src/logs/diagnostic-channel/winston.sub";
 
 describe("agent/AKSLoader", () => {
     let originalEnv: NodeJS.ProcessEnv;
@@ -23,7 +22,6 @@ describe("agent/AKSLoader", () => {
 
     afterEach(() => {
         disposeConsole();
-        disposeWinston();
         process.env = originalEnv;
         sandbox.restore();
     });
