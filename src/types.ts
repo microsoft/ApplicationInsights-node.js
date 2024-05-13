@@ -7,7 +7,7 @@ import { InstrumentationConfig } from "@opentelemetry/instrumentation";
 import { OTLPExporterNodeConfigBase } from "@opentelemetry/otlp-exporter-base";
 
 
-export const APPLICATION_INSIGHTS_OPENTELEMETRY_VERSION = "3.0.1";
+export const APPLICATION_INSIGHTS_OPENTELEMETRY_VERSION = "3.1.0";
 export const DEFAULT_ROLE_NAME = "Web";
 
 /**
