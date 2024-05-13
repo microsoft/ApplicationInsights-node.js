@@ -16,9 +16,7 @@ export function enablePublishers() {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const publishers: typeof DiagChannelPublishers = require("diagnostic-channel-publishers");
         const modules: { [key: string]: any } = {
-            bunyan: publishers.bunyan,
             console: publishers.console,
-            winston: publishers.winston,
         };
 
         for (const mod in modules) {

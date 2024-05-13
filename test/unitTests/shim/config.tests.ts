@@ -78,8 +78,8 @@ describe("shim/configuration/config", () => {
                 "redis4": { "enabled": true },
                 "postgreSql": { "enabled": true },
                 "bunyan": { "enabled": true },
+                "winston": { "enabled": true },
                 "console": { "enabled": true },
-                "winston": { "enabled": true }
             }),
             "wrong instrumentationOptions");
             assert.equal(JSON.stringify(options.instrumentationOptions.bunyan), JSON.stringify({ enabled: true }), "wrong bunyan setting");
@@ -141,8 +141,8 @@ describe("shim/configuration/config", () => {
                 "redis4": { "enabled": false },
                 "postgreSql": { "enabled": false },
                 "bunyan": { "enabled": false },
+                "winston": { "enabled": false },
                 "console":{ "enabled": false },
-                "winston": { "enabled": false }
             }));
         });
 
@@ -159,8 +159,8 @@ describe("shim/configuration/config", () => {
                 redis4: { enabled: false },
                 postgreSql: { enabled: false },
                 bunyan: { enabled: true },
-                console: { enabled: false },
                 winston: { enabled: true },
+                console: { enabled: false },
             }));
         });
 
@@ -189,8 +189,8 @@ describe("shim/configuration/config", () => {
                 "redis4": { "enabled": true },
                 "postgreSql": { "enabled": true },
                 "bunyan": { "enabled": false },
+                "winston": { "enabled": false },
                 "console": { "enabled": false },
-                "winston": { "enabled": false }
             }));
         });
 

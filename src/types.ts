@@ -35,8 +35,6 @@ export interface AzureMonitorOpenTelemetryOptions extends DistroOptions {
 export interface InstrumentationOptions extends DistroInstrumentationOptions {
   /** Console Instrumentation Config */
   console?: InstrumentationConfig & { logSendingLevel?: SeverityNumber };
-  /** Winston Instrumentation Config */
-  winston?: InstrumentationConfig & { logSendingLevel?: SeverityNumber };
 }
 
 /**

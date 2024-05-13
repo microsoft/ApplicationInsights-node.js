@@ -140,6 +140,7 @@ class Config implements IConfig {
                 redis4: { enabled: true },
                 postgreSql: { enabled: true },
                 bunyan: { enabled: true },
+                winston: { enabled: true },
             },
             otlpTraceExporterConfig: {},
             otlpMetricExporterConfig: {},
@@ -149,7 +150,6 @@ class Config implements IConfig {
         (options.instrumentationOptions as InstrumentationOptions) = {
             ...options.instrumentationOptions,
             console: { enabled: false },
-            winston: { enabled: true },
         };
         if (this.samplingPercentage) {
             options.samplingRatio = this.samplingPercentage / 100;
