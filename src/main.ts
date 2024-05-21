@@ -13,11 +13,12 @@ import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 
 import { AutoCollectLogs } from "./logs/autoCollectLogs";
 import { AutoCollectExceptions } from "./logs/exceptions";
-import { AzureMonitorOpenTelemetryOptions } from "./types";
+import { AZURE_MONITOR_STATSBEAT_FEATURES, AzureMonitorOpenTelemetryOptions } from "./types";
 import { ApplicationInsightsConfig } from "./shared/configuration/config";
 import { LogApi } from "./shim/logsApi";
 import { PerformanceCounterMetrics } from "./metrics/performanceCounters";
 import { AzureMonitorSpanProcessor } from "./traces/spanProcessor";
+import { StatsbeatFeature, StatsbeatInstrumentation } from "./shim/types";
 
 let autoCollectLogs: AutoCollectLogs;
 let exceptions: AutoCollectExceptions;
@@ -28,6 +29,10 @@ let perfCounters: PerformanceCounterMetrics;
  * @param options Configuration
  */
 export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
+    process.env[AZURE_MONITOR_STATSBEAT_FEATURES] = JSON.stringify({
+        instrumentation: StatsbeatInstrumentation.NONE,
+        feature: StatsbeatFeature.SHIM
+    });
     distroUseAzureMonitor(options);
     const internalConfig = new ApplicationInsightsConfig(options);
     const logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
