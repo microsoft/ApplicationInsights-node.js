@@ -75,8 +75,6 @@ export class ShimJsonConfig implements IJsonConfig {
     constructor() {
         // Load environment variables first
         this.connectionString = process.env[ENV_connectionString];
-        this.proxyHttpUrl = process.env[ENV_http_proxy];
-        this.proxyHttpsUrl = process.env[ENV_https_proxy];
         this.noDiagnosticChannel = !!process.env[ENV_noDiagnosticChannel];
         this.noHttpAgentKeepAlive = !!process.env[ENV_noHttpAgentKeepAlive];
         this.noPatchModules = process.env[ENV_noPatchModules] || "";
