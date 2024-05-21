@@ -340,9 +340,9 @@ export enum StatsbeatFeature {
     DISTRO = 8,
     LIVE_METRICS = 16,
     SHIM = 32,
-  }
+}
   
-  export enum StatsbeatInstrumentation {
+export enum StatsbeatInstrumentation {
     NONE = 0,
     AZURE_CORE_TRACING = 1,
     MONGODB = 2,
@@ -351,4 +351,4 @@ export enum StatsbeatFeature {
     POSTGRES = 16,
     BUNYAN = 32,
     WINSTON = 64,
-  }
+}
