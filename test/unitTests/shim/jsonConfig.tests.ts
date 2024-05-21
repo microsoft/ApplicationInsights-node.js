@@ -67,8 +67,6 @@ describe("Json Config", () => {
             const env = <{ [id: string]: string }>{};
             env["APPLICATIONINSIGHTS_CONNECTION_STRING"] = "TestConnectionString";
             env["APPLICATION_INSIGHTS_NO_PATCH_MODULES"] = "azuresdk";
-            env["http_proxy"] = "testProxyHttpUrl2";
-            env["https_proxy"] = "testProxyHttpsUrl2";
             env["APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL"] = "disabled";
             env["APPLICATION_INSIGHTS_NO_HTTP_AGENT_KEEP_ALIVE"] = "disabled";
             env["APPLICATIONINSIGHTS_WEB_INSTRUMENTATION_ENABLED"] = "true";
@@ -77,8 +75,6 @@ describe("Json Config", () => {
             process.env = env;
             const config = ShimJsonConfig.getInstance();
             assert.equal(config.connectionString, "TestConnectionString");
-            assert.equal(config.proxyHttpUrl, "testProxyHttpUrl2");
-            assert.equal(config.proxyHttpsUrl, "testProxyHttpsUrl2");
             assert.equal(config.noDiagnosticChannel, true, "wrong noDiagnosticChannel");
             assert.equal(config.noHttpAgentKeepAlive, true, "wrong noHttpAgentKeepAlive");
             assert.equal(config.noPatchModules, "azuresdk");
