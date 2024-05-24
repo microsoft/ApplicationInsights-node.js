@@ -241,22 +241,22 @@ export class AgentLoader {
         try {
             // appInstance should either resolve to user SDK or crash. If it resolves to attach SDK, user probably modified their NODE_PATH
             let shimInstance: string;
-            let distroInstance: string;
+            let exporterInstance: string;
             try {
                 // Node 8.9+ Windows
                 if (this._isWindows) {
                     shimInstance = (require.resolve as any)("applicationinsights", { paths: [process.cwd()] });
-                    distroInstance = (require.resolve as any)("@azure/monitor-opentelemetry", { paths: [process.cwd()] });
+                    exporterInstance = (require.resolve as any)("@azure/monitor-opentelemetry-exporter", { paths: [process.cwd()] });
                 }
                 // Node 8.9+ Linux
                 else if (this._isLinux) {
                     shimInstance = `${process.cwd()}${(require.resolve as any)("applicationinsights", { paths: [process.cwd()] })}`;
-                    distroInstance = `${process.cwd()}${(require.resolve as any)("@azure/monitor-opentelemetry", { paths: [process.cwd()] })}`;
+                    exporterInstance = `${process.cwd()}${(require.resolve as any)("@azure/monitor-opentelemetry-exporter", { paths: [process.cwd()] })}`;
                 }
             } catch (e) {
                 // Node <8.9
                 shimInstance = require.resolve(`${process.cwd()}/node_modules/applicationinsights`);
-                distroInstance = require.resolve(`${process.cwd()}/node_modules/@azure/monitor-opentelemetry`);
+                exporterInstance = require.resolve(`${process.cwd()}/node_modules/@azure/monitor-opentelemetry-exporter`);
             }
             /** 
              * If loaded instance is in Azure machine home path do not attach the SDK, this means customer already instrumented their app.
@@ -264,11 +264,11 @@ export class AgentLoader {
              * if application insights is being imported in the user app code.
             */
             if (
-                shimInstance.indexOf("home") > -1 || distroInstance.indexOf("home") > -1 ||
+                shimInstance.indexOf("home") > -1 || exporterInstance.indexOf("home") > -1 ||
                 (shimInstance === LINUX_USER_APPLICATION_INSIGHTS_PATH && this._isLinux)
             ) {
                 const diagnosticLog: IDiagnosticLog = {
-                    message: `Azure Monitor Distro or Application Insights already exists. Module is already installed in this application; not re-attaching. Location: ${shimInstance}`,
+                    message: `Azure Monitor Distro, Exporter, or Application Insights already exists. Module is already installed in this application; not re-attaching. Location: ${shimInstance}`,
                     messageId: DiagnosticMessageId.sdkExists
                 };
                 this._diagnosticLogger.logMessage(diagnosticLog);
