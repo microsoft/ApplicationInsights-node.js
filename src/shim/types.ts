@@ -332,6 +332,9 @@ export interface IWebInstrumentationConfig {
     value: string | boolean | number;
 }
 
+/**
+ * Statsbeat feature bit flags
+ */
 export enum StatsbeatFeature {
     NONE = 0,
     DISK_RETRY = 1,
@@ -341,7 +344,10 @@ export enum StatsbeatFeature {
     LIVE_METRICS = 16,
     SHIM = 32,
 }
-  
+
+/**
+ * Statsbeat instrumentation bit flags
+ */
 export enum StatsbeatInstrumentation {
     NONE = 0,
     AZURE_CORE_TRACING = 1,
