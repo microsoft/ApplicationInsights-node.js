@@ -29,6 +29,7 @@ let perfCounters: PerformanceCounterMetrics;
  * @param options Configuration
  */
 export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
+    // Must set statsbeat features before they are read by the distro
     process.env[AZURE_MONITOR_STATSBEAT_FEATURES] = JSON.stringify({
         instrumentation: StatsbeatInstrumentation.NONE,
         feature: StatsbeatFeature.SHIM
