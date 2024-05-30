@@ -331,3 +331,30 @@ export interface IWebInstrumentationConfig {
     */
     value: string | boolean | number;
 }
+
+/**
+ * Statsbeat feature bit flags
+ */
+export enum StatsbeatFeature {
+    NONE = 0,
+    DISK_RETRY = 1,
+    AAD_HANDLING = 2,
+    BROWSER_SDK_LOADER = 4,
+    DISTRO = 8,
+    LIVE_METRICS = 16,
+    SHIM = 32,
+}
+
+/**
+ * Statsbeat instrumentation bit flags
+ */
+export enum StatsbeatInstrumentation {
+    NONE = 0,
+    AZURE_CORE_TRACING = 1,
+    MONGODB = 2,
+    MYSQL = 4,
+    REDIS = 8,
+    POSTGRES = 16,
+    BUNYAN = 32,
+    WINSTON = 64,
+}
