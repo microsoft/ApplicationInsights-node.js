@@ -151,7 +151,7 @@ class Config implements IConfig {
             ...options.instrumentationOptions,
             console: { enabled: false },
         };
-        if (typeof(this.samplingPercentage) === "number") {
+        if (this.samplingPercentage !== undefined) {
             options.samplingRatio = this.samplingPercentage / 100;
         }
         options.instrumentationOptions = {
