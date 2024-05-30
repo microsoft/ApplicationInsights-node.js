@@ -102,6 +102,15 @@ describe("shim/configuration/config", () => {
             assert.equal(options.azureMonitorExporterOptions.disableOfflineStorage, false, "wrong disableOfflineStorage");
         });
 
+        it("should initialize zero sampling percentage", () => {
+            const config = new Config(connectionString);
+            config.samplingPercentage = 0;
+
+            let options = config.parseConfig();
+
+            assert.equal(options.samplingRatio, 0, "wrong samplingRatio");
+        });
+
         it("should activate DEBUG internal logger", () => {
             const env = <{ [id: string]: string }>{};
             process.env = env;
