@@ -109,7 +109,9 @@ export class ApplicationInsightsConfig {
                 options.instrumentationOptions
             );
             this.resource = Object.assign(this.resource, options.resource);
-            this.samplingRatio = options.samplingRatio || this.samplingRatio;
+            if (typeof(options.samplingRatio) === "number") {
+                this.samplingRatio = options.samplingRatio;
+            }
 
             // Set console logging level from env var
             if (process.env[loggingLevel]) { 
