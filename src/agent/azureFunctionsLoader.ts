@@ -7,7 +7,10 @@ import { DiagnosticLogger } from "./diagnostics/diagnosticLogger";
 import { StatusLogger } from "./diagnostics/statusLogger";
 import { AzureFunctionsWriter } from "./diagnostics/writers/azureFunctionsWriter";
 import { Attributes } from "@opentelemetry/api";
-import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
+import {
+    SEMRESATTRS_SERVICE_NAME,
+    SEMRESATTRS_SERVICE_INSTANCE_ID,
+} from "@opentelemetry/semantic-conventions"
 
 export class AzureFunctionsLoader extends AgentLoader {
     
@@ -19,11 +22,11 @@ export class AzureFunctionsLoader extends AgentLoader {
             process.env["APPLICATION_INSIGHTS_NO_STANDARD_METRICS"] = "disable";
             const resourceAttributes: Attributes = {};
             if (process.env.WEBSITE_SITE_NAME) {
-                resourceAttributes[SemanticResourceAttributes.SERVICE_NAME] =
+                resourceAttributes[SEMRESATTRS_SERVICE_NAME] =
                     process.env.WEBSITE_SITE_NAME;
             }
             if (process.env.WEBSITE_INSTANCE_ID) {
-                resourceAttributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] =
+                resourceAttributes[SEMRESATTRS_SERVICE_INSTANCE_ID] =
                     process.env.WEBSITE_INSTANCE_ID;
             }
             const resource = new Resource(resourceAttributes);
