@@ -18,6 +18,7 @@ describe("agent/agentLoader", () => {
         },
         enableAutoCollectExceptions: true,
         enableAutoCollectPerformance: true,
+        enableLiveMetrics: true,
         samplingRatio: 1, // Sample all telemetry by default
         instrumentationOptions: {
             azureSdk: {

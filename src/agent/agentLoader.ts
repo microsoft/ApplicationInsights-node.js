@@ -47,6 +47,7 @@ export class AgentLoader {
                 enableAutoCollectExceptions: true,
                 enableAutoCollectPerformance: true,
                 samplingRatio: 1, // Sample all telemetry by default
+                enableLiveMetrics: true,
                 instrumentationOptions: {
                     azureSdk: {
                         enabled: true

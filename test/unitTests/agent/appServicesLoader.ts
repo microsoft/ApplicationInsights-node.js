@@ -4,7 +4,10 @@ import * as sinon from "sinon";
 import { AppServicesLoader } from "../../../src/agent/appServicesLoader";
 import { DiagnosticLogger } from "../../../src/agent/diagnostics/diagnosticLogger";
 import { FileWriter } from "../../../src/agent/diagnostics/writers/fileWriter";
-import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
+import {
+    SEMRESATTRS_SERVICE_INSTANCE_ID,
+    SEMRESATTRS_SERVICE_NAME,
+} from "@opentelemetry/semantic-conventions";
 
 describe("agent/AppServicesLoader", () => {
     let originalEnv: NodeJS.ProcessEnv;
@@ -78,11 +81,11 @@ describe("agent/AppServicesLoader", () => {
         // Agent Loader called
         assert.ok(stub.calledOnce);
         assert.equal(
-            agent["_options"].resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID],
+            agent["_options"].resource.attributes[SEMRESATTRS_SERVICE_INSTANCE_ID],
             "testRoleInstanceId"
         );
         assert.equal(
-            agent["_options"].resource.attributes[SemanticResourceAttributes.SERVICE_NAME],
+            agent["_options"].resource.attributes[SEMRESATTRS_SERVICE_NAME],
             "testRole"
         );
     });
