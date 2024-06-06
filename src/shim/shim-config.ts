@@ -156,7 +156,7 @@ class Config implements IConfig {
             options.samplingRatio = samplingRatio;
         } else {
             options.samplingRatio = 1;
-            this._configWarnings.push(`Sampling percentage should be between 0 and 100. Defaulting to 100.`);
+            this._configWarnings.push("Sampling percentage should be between 0 and 100. Defaulting to 100.");
         }
         options.instrumentationOptions = {
             ...options.instrumentationOptions,

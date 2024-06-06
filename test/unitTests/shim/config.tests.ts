@@ -210,6 +210,14 @@ describe("shim/configuration/config", () => {
             assert.equal(process.env["APPLICATION_INSIGHTS_NO_STANDARD_METRICS"], "disable");
         });
 
+        it("should warn if an invalid sampling percentage is passed in", () => {
+            const config = new Config(connectionString);
+            const warnings = config["_configWarnings"];
+            config.samplingPercentage = 101;
+            config.parseConfig();
+            assert.ok(checkWarnings("Sampling percentage should be between 0 and 100. Defaulting to 100.", warnings), "warning was not raised");
+        });
+
         describe("#Shim unsupported messages", () => {
             it("should warn if disableAppInsights is set", () => {
                 const config = new Config(connectionString);
