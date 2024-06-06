@@ -3,11 +3,14 @@
 
 import * as assert from "assert";
 import * as sinon from "sinon";
-import { Attributes, SpanKind } from "@opentelemetry/api";
+import { SpanKind } from "@opentelemetry/api";
 import { ExportResultCode } from "@opentelemetry/core";
 import { PerformanceCounterMetrics } from "../../../src/metrics/performanceCounters";
 import { ApplicationInsightsConfig } from "../../../src/shared/configuration/config";
-import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
+import { 
+  SEMRESATTRS_SERVICE_NAME,
+  SEMRESATTRS_SERVICE_INSTANCE_ID,
+ } from "@opentelemetry/semantic-conventions";
 import { Resource } from "@opentelemetry/resources";
 import { Histogram } from "@opentelemetry/sdk-metrics";
 
@@ -48,8 +51,8 @@ describe("PerformanceCounterMetricsHandler", () => {
   describe("#Metrics", () => {
     it("should observe instruments during collection", async () => {
       let resource = new Resource({});
-      resource.attributes[SemanticResourceAttributes.SERVICE_NAME] = "testcloudRoleName";
-      resource.attributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] = "testcloudRoleInstance";
+      resource.attributes[SEMRESATTRS_SERVICE_NAME] = "testcloudRoleName";
+      resource.attributes[SEMRESATTRS_SERVICE_INSTANCE_ID] = "testcloudRoleInstance";
       let serverSpan: any = {
         kind: SpanKind.SERVER,
         duration: [654321],

@@ -4,7 +4,10 @@
 import * as os from 'os';
 import * as path from 'path';
 import { Attributes } from '@opentelemetry/api';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import {
+    SEMRESATTRS_SERVICE_NAME,
+    SEMRESATTRS_SERVICE_INSTANCE_ID,
+} from '@opentelemetry/semantic-conventions';
 import { Resource } from '@opentelemetry/resources';
 import { DiagnosticLogger } from './diagnostics/diagnosticLogger';
 import { FileWriter } from "./diagnostics/writers/fileWriter";
@@ -19,11 +22,11 @@ export class AppServicesLoader extends AgentLoader {
             // Azure App Services specific configuration
             const resourceAttributes: Attributes = {};
             if (process.env.WEBSITE_SITE_NAME) {
-                resourceAttributes[SemanticResourceAttributes.SERVICE_NAME] =
+                resourceAttributes[SEMRESATTRS_SERVICE_NAME] =
                     process.env.WEBSITE_SITE_NAME;
             }
             if (process.env.WEBSITE_INSTANCE_ID) {
-                resourceAttributes[SemanticResourceAttributes.SERVICE_INSTANCE_ID] =
+                resourceAttributes[SEMRESATTRS_SERVICE_INSTANCE_ID] =
                     process.env.WEBSITE_INSTANCE_ID;
             }
             const resource = new Resource(resourceAttributes);
