@@ -102,6 +102,15 @@ describe("shim/configuration/config", () => {
             assert.equal(options.azureMonitorExporterOptions.disableOfflineStorage, false, "wrong disableOfflineStorage");
         });
 
+        it("should initialize zero sampling percentage", () => {
+            const config = new Config(connectionString);
+            config.samplingPercentage = 0;
+
+            let options = config.parseConfig();
+
+            assert.equal(options.samplingRatio, 0, "wrong samplingRatio");
+        });
+
         it("should activate DEBUG internal logger", () => {
             const env = <{ [id: string]: string }>{};
             process.env = env;
@@ -199,6 +208,14 @@ describe("shim/configuration/config", () => {
             config.enableAutoCollectPreAggregatedMetrics = false;
             config.parseConfig();
             assert.equal(process.env["APPLICATION_INSIGHTS_NO_STANDARD_METRICS"], "disable");
+        });
+
+        it("should warn if an invalid sampling percentage is passed in", () => {
+            const config = new Config(connectionString);
+            const warnings = config["_configWarnings"];
+            config.samplingPercentage = 101;
+            config.parseConfig();
+            assert.ok(checkWarnings("Sampling percentage should be between 0 and 100. Defaulting to 100.", warnings), "warning was not raised");
         });
 
         describe("#Shim unsupported messages", () => {
