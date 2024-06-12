@@ -1,6 +1,6 @@
-const fs } from 'fs');
-const path } from 'path');
-const childProcess } from 'child_process');
+const fs = require('fs');
+const path = require('path');
+const childProcess = require('child_process');
 
 function help() {
     console.log(
@@ -35,7 +35,7 @@ function run(cmd, workingDir) {
     });
     return {
         code: proc.status,
-        output: proc.output.map(v => String.fromCharCode.apply(null, v)).join("")
+        output: proc.output ? proc.output.map(v => String.fromCharCode.apply(null, v)).join("") : ""
     }
 }
 
@@ -71,16 +71,16 @@ function main() {
 
     // OldTSC
     console.info("Testing compilation in app with TSC 4.0.0 and node 8 types...");
-    run("npm uninstall applicationinsights", "./OldTSC");
-    if (run("npm install", "./OldTSC").code !== 0) {
+    run("npm uninstall applicationinsights", "./oldTSC");
+    if (run("npm install", "./oldTSC").code !== 0) {
         console.error("Could not install OldTSC dependencies!")
         return 1;
     }
-    if (run("npm install --no-save " + path, "./OldTSC").code !== 0) {
+    if (run("npm install --no-save " + path, "./oldTSC").code !== 0) {
         console.error("Could not install SDK in OldTSC!");
         return 1;
     }
-    if(runLive("npm run build", "./OldTSC").code !== 0) {
+    if(runLive("npm run build", "./oldTSC").code !== 0) {
         console.error("Test FAILED!")
         return 1;
     }
