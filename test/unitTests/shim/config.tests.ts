@@ -218,6 +218,13 @@ describe("shim/configuration/config", () => {
             assert.ok(checkWarnings("Sampling percentage should be between 0 and 100. Defaulting to 100.", warnings), "warning was not raised");
         });
 
+        it("should not warn if a sampling percentage is not passed in", () => {
+            const config = new Config(connectionString);
+            const warnings = config["_configWarnings"];
+            config.parseConfig();
+            assert.ok(!checkWarnings("Sampling percentage should be between 0 and 100. Defaulting to 100.", warnings), "warning was not raised");
+        });
+
         describe("#Shim unsupported messages", () => {
             it("should warn if disableAppInsights is set", () => {
                 const config = new Config(connectionString);
