@@ -11,7 +11,7 @@ export class EtwWritter implements IAgentLogger {
     private _etwModule: typeof etwTypes | undefined;
 
     constructor() {
-        let nodeMajVer = parseInt(process.versions.node.split('.')[0], 10);
+        const nodeMajVer = parseInt(process.versions.node.split('.')[0], 10);
 
         try {
             this._etwModule = this._loadEtwModule(nodeMajVer);
@@ -28,6 +28,7 @@ export class EtwWritter implements IAgentLogger {
 
     public log(message?: any, ...optional: any[]) {
         if(this._etwModule){
+             // eslint-disable-next-line @typescript-eslint/ban-types
             (this._etwModule.logInfoEvent as Function)(message, ...optional);
         }
         else{
@@ -37,6 +38,7 @@ export class EtwWritter implements IAgentLogger {
 
     public error(message?: any, ...optional: any[]) {
         if(this._etwModule){
+            // eslint-disable-next-line @typescript-eslint/ban-types
             (this._etwModule.logErrEvent as Function)(message, ...optional);
         }
         else{
@@ -50,6 +52,7 @@ export class EtwWritter implements IAgentLogger {
         try {
           // throws an error if directory is not readable / does not exist
           fs.accessSync(dirname, fs.constants.R_OK);
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
           return require(dirname) as typeof etwTypes;
         } catch (e) {
           // Could not load ETW, return nothing

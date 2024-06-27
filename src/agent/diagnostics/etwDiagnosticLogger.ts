@@ -14,9 +14,9 @@ export class EtwDiagnosticLogger extends BaseDiagnosticLogger {
     }
 
     public logMessage(diagnosticLog: IDiagnosticLog) {
-        let metaData = this._getMetadata();
+        const metaData = this._getMetadata();
         metaData.push(diagnosticLog.messageId || "");
-        let message: string = diagnosticLog.message;
+        const message: string = diagnosticLog.message;
         this._agentLogger.log(message, metaData);
     }
 
