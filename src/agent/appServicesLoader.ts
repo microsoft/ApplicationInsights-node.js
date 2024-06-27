@@ -10,6 +10,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { Resource } from '@opentelemetry/resources';
 import { DiagnosticLogger } from './diagnostics/diagnosticLogger';
+import { EtwDiagnosticLogger } from './diagnostics/etwDiagnosticLogger';
 import { FileWriter } from "./diagnostics/writers/fileWriter";
 import { StatusLogger } from "./diagnostics/statusLogger";
 import { AgentLoader } from "./agentLoader";
@@ -48,19 +49,26 @@ export class AppServicesLoader extends AgentLoader {
                 sizeLimit: 1024 * 1024,
             }));
 
-            this._diagnosticLogger = new DiagnosticLogger(
-                this._instrumentationKey,
-                new FileWriter(
-                    statusLogDir,
-                    'applicationinsights-extension.log',
-                    {
-                        append: true,
-                        deleteOnExit: false,
-                        renamePolicy: 'overwrite',
-                        sizeLimit: 1024 * 1024, // 1 MB
-                    }
-                )
-            );
+            if (this._isWindows) {
+                this._diagnosticLogger = new EtwDiagnosticLogger(
+                    this._instrumentationKey
+                );
+            }
+            else{
+                this._diagnosticLogger = new DiagnosticLogger(
+                    this._instrumentationKey,
+                    new FileWriter(
+                        statusLogDir,
+                        'applicationinsights-extension.log',
+                        {
+                            append: true,
+                            deleteOnExit: false,
+                            renamePolicy: 'overwrite',
+                            sizeLimit: 1024 * 1024, // 1 MB
+                        }
+                    )
+                );
+            }            
         }
     }
 }
