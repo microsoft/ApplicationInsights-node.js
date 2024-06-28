@@ -3,12 +3,11 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import type * as etwTypes from '@microsoft/typescript-etw';
 import { Util } from "../../../shared/util";
 import { IAgentLogger } from "../../types";
 
 export class EtwWritter implements IAgentLogger {
-    private _etwModule: typeof etwTypes | undefined;
+    private _etwModule: any;
 
     constructor() {
         const nodeMajVer = parseInt(process.versions.node.split('.')[0], 10);
@@ -46,14 +45,14 @@ export class EtwWritter implements IAgentLogger {
         }
     }
 
-    private _loadEtwModule(nodeMajVer: number): typeof etwTypes | undefined {
+    private _loadEtwModule(nodeMajVer: number){
         // Try to load precompiled ETW module if it exists and is "importable"
         const dirname = path.join(__dirname, '../../../../../../../etw', `etw_${nodeMajVer}`);
         try {
           // throws an error if directory is not readable / does not exist
           fs.accessSync(dirname, fs.constants.R_OK);
           // eslint-disable-next-line @typescript-eslint/no-var-requires
-          return require(dirname) as typeof etwTypes;
+          return require(dirname);
         } catch (e) {
           // Could not load ETW, return nothing
           return undefined;
