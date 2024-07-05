@@ -25,7 +25,7 @@ export class EtwWritter implements IAgentLogger {
           }
     }
 
-    public log(message?: any, ...optional: any[]) {
+    public log(message: string, optional?: string[]) {
         if(this._etwModule){
              // eslint-disable-next-line @typescript-eslint/ban-types
             (this._etwModule.logInfoEvent as Function)(message, ...optional);
@@ -35,7 +35,7 @@ export class EtwWritter implements IAgentLogger {
         }
     }
 
-    public error(message?: any, ...optional: any[]) {
+    public error(message: string, optional?: string[]) {
         if(this._etwModule){
             // eslint-disable-next-line @typescript-eslint/ban-types
             (this._etwModule.logErrEvent as Function)(message, ...optional);
