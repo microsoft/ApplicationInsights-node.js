@@ -1,5 +1,3 @@
-import azureCoreAuth = require("@azure/core-auth");
-
 import CorrelationIdManager = require("./CorrelationIdManager");
 import ConnectionStringParser = require("./ConnectionStringParser");
 import Logging = require("./Logging");
@@ -11,6 +9,7 @@ import { JsonConfig } from "./JsonConfig";
 import { IConfig, IWebInstrumentationConfig } from "../Declarations/Interfaces";
 import { DistributedTracingModes } from "../applicationinsights";
 import { IDisabledExtendedMetrics } from "../AutoCollection/NativePerformance";
+import type { TokenCredential } from "@azure/core-auth";
 
 class Config implements IConfig {
 
@@ -33,7 +32,7 @@ class Config implements IConfig {
     public httpAgent: http.Agent;
     public httpsAgent: https.Agent;
     public ignoreLegacyHeaders: boolean;
-    public aadTokenCredential?: azureCoreAuth.TokenCredential;
+    public aadTokenCredential?: TokenCredential;
     public aadAudience?: string;
     public enableAutoCollectConsole: boolean;
     public enableLoggerErrorToTrace: boolean;

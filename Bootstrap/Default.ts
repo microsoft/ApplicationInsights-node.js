@@ -1,5 +1,4 @@
-import * as azureCoreAuth from "@azure/core-auth";
-
+import type { TokenCredential } from "@azure/core-auth";
 import * as types from "../applicationinsights";
 import * as Helpers from "./Helpers";
 import Constants = require("../Declarations/Constants");
@@ -9,6 +8,14 @@ import Config = require("../Library/Config");
 import { DiagnosticLog, DiagnosticMessageId } from "./DataModel";
 import * as PrefixHelpers from "../Library/PrefixHelper";
 import Context = require("../Library/Context");
+import Logging = require("../Library/Logging");
+
+let azureCoreAuth;
+try { 
+    azureCoreAuth = require("@azure/core-auth") 
+} catch (e) {
+    Logging.warn("Cannot load @azure/core-auth package. This package is required for AAD token authentication. It's likely that your node.js version is not supported by the JS Azure SDK.");
+};
 
 // Private configuration vars
 let _appInsights: typeof types | null;
@@ -40,7 +47,7 @@ export function setStatusLogger(statusLogger: StatusLogger) {
  * Try to setup and start this app insights instance if attach is enabled.
  * @param aadTokenCredential Optional AAD credential
  */
-export function setupAndStart(aadTokenCredential?: azureCoreAuth.TokenCredential, isAzureFunction?: boolean): typeof types | null {
+export function setupAndStart(aadTokenCredential?: TokenCredential, isAzureFunction?: boolean): typeof types | null {
     // If app already contains SDK, skip agent attach
     if (!forceStart && Helpers.sdkAlreadyExists(_logger)) {
         _statusLogger.logStatus({
