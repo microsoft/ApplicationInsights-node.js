@@ -32,7 +32,8 @@ You can manually track more aspects of your app and system using the API describ
 
 
 
-## Supported Node.JS versions 
+## Supported Node.JS versions
+> *Note:* Versions of Node.JS that are not supported by the [JS Azure SDK](https://github.com/Azure/azure-sdk-for-js/blob/main/SUPPORT.md) will not support AAD authentication.
 
 | Platform Version | Supported                                       |
 |------------------|-------------------------------------------------|
