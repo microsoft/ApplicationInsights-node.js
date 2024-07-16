@@ -1,5 +1,4 @@
-import * as azureCoreAuth from "@azure/core-auth";
-
+import type { TokenCredential } from "@azure/core-auth";
 import * as types from "../applicationinsights";
 import * as Helpers from "./Helpers";
 import Constants = require("../Declarations/Constants");
@@ -40,7 +39,7 @@ export function setStatusLogger(statusLogger: StatusLogger) {
  * Try to setup and start this app insights instance if attach is enabled.
  * @param aadTokenCredential Optional AAD credential
  */
-export function setupAndStart(aadTokenCredential?: azureCoreAuth.TokenCredential, isAzureFunction?: boolean): typeof types | null {
+export function setupAndStart(aadTokenCredential?: TokenCredential, isAzureFunction?: boolean): typeof types | null {
     // If app already contains SDK, skip agent attach
     if (!forceStart && Helpers.sdkAlreadyExists(_logger)) {
         _statusLogger.logStatus({
