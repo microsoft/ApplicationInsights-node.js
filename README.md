@@ -225,7 +225,7 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | noHttpAgentKeepAlive          | HTTPS without a passed in agent |
 | httpAgent                       | An http.Agent to use for SDK HTTP traffic (Optional, Default undefined)                                    |
 | httpsAgent                      | An https.Agent to use for SDK HTTPS traffic (Optional, Default undefined)
-| aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Credential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes). Only versions of Node.JS supported by the [JS Azure SDK](https://github.com/Azure/azure-sdk-for-js/blob/main/SUPPORT.md) will support AAD authentication.
+| aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Credential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes). Only versions of Node.JS supported by the [JS Azure SDK](https://github.com/Azure/azure-sdk-for-js/blob/main/SUPPORT.md) support AAD authentication.
 | enableWebInstrumentation | Sets the state of automatic web Instrumentation (Optional, disabled by default). If true, web instrumentation will be enabled on valid node server http response with the connection string used for SDK initialization
 | webInstrumentationConnectionString | Sets connection string used for web Instrumentation (Optional, Default undefined)|
 | webInstrumentationSrc | Sets web Instrumentation CDN url (Optional). see more details at [ApplicationInsights JavaScript SDK](https://github.com/microsoft/ApplicationInsights-JS)|
