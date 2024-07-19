@@ -1,3 +1,4 @@
+import url = require("url");
 import TelemetryClient = require("../Library/TelemetryClient");
 import Constants = require("../Declarations/Constants");
 
@@ -105,6 +106,7 @@ class AutoCollectPreAggregatedMetrics {
         if (!AutoCollectPreAggregatedMetrics.isEnabled()) {
             return;
         }
+        dimensions.dependencyTarget = AutoCollectPreAggregatedMetrics._getNetricDependencyTarget(dimensions.dependencyTarget);
         let counter: AggregatedMetricCounter = AutoCollectPreAggregatedMetrics._getAggregatedCounter(dimensions, this._dependencyCountersCollection);
         let durationMs: number;
         if (typeof duration === "string") {
@@ -117,6 +119,20 @@ class AutoCollectPreAggregatedMetrics {
         }
         counter.intervalExecutionTime += durationMs;
         counter.totalCount++;
+    }
+
+    // Format dependency target to avoid high cardinality values
+    private static _getNetricDependencyTarget(target: string): string {
+        let metricTarget = target;
+
+        try {
+            let urlObject = new url.URL(target);
+            metricTarget = urlObject.host; // domain:port
+        }
+        catch (ex) { // Invalid URL
+            // Ignore error
+        }
+        return metricTarget;
     }
 
     public isInitialized() {
