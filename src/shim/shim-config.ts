@@ -151,7 +151,8 @@ class Config implements IConfig {
             ...options.instrumentationOptions,
             console: { enabled: false },
         };
-        const samplingRatio = this.samplingPercentage / 100;
+        // If samplingPercentage is not defined, default to 100%
+        const samplingRatio = this.samplingPercentage !== undefined ? this.samplingPercentage / 100 : 1;
         if (samplingRatio >= 0 && samplingRatio <= 1) {
             options.samplingRatio = samplingRatio;
         } else {

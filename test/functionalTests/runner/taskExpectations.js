@@ -104,7 +104,7 @@ module.exports = {
         "RemoteDependencyData",
         (telemetry) => {
             return telemetry.data.baseData.name === "mongodb.createIndexes" &&
-                telemetry.data.baseData.data === "{\"createIndexes\":\"?\",\"indexes\":\"?\"}" &&
+                telemetry.data.baseData.data === "{\"createIndexes\":\"?\",\"indexes\":[{\"name\":\"?\",\"key\":{\"testrecord\":\"?\"}}]}" &&
                 telemetry.data.baseData.target === "localhost|testapp" &&
                 telemetry.data.baseData.type === "mongodb";
         }
