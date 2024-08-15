@@ -5,7 +5,7 @@
   "bugs": "https://github.com/microsoft/ApplicationInsights-node.js/issues",
   "version": "2.9.6",
   "publishConfig": {
-    "tag": "2.X"
+    "tag": "v2.x"
   },
   "description": "Microsoft Application Insights module for Node.js",
   "repository": {
