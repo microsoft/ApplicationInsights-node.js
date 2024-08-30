@@ -3,12 +3,14 @@
 
 import * as events from "events";
 import * as http from "http";
-import * as azureFunctionsTypes from "@azure/functions";
 import { context, SpanContext, trace, Context, diag } from "@opentelemetry/api";
 import { TraceState } from "@opentelemetry/core";
 import { Span } from "@opentelemetry/sdk-trace-base";
-import { ICorrelationContext, ITraceparent, ITracestate, HttpRequest, ICustomProperties } from "./types";
+import { ICorrelationContext, ITraceparent, ITracestate, ICustomProperties, AzureFnContext, AzureFnRequest, AzureFnTraceContext, HttpRequest } from "./types";
 import { Util } from "../shared/util";
+import { HttpRequestHeaders } from "@azure/functions-old";
+import { HttpRequest as AzureFnHttpRequest } from "@azure/functions";
+import { Headers } from "undici";
 
 
 const CONTEXT_NAME = "ApplicationInsights-Context";
@@ -170,13 +172,13 @@ export class CorrelationContextManager {
      * @returns IcorrelationContext object
      */
     public static startOperation(
-        input: azureFunctionsTypes.Context | (http.IncomingMessage | azureFunctionsTypes.HttpRequest) | SpanContext | Span,
-        request?: HttpRequest | string
+        input: AzureFnContext | (http.IncomingMessage | AzureFnRequest) | SpanContext | Span,
+        request?: HttpRequest | string | AzureFnHttpRequest
     ): ICorrelationContext {
-        const traceContext = input && (input as azureFunctionsTypes.Context).traceContext || null;
+        const traceContext = (input && (input as AzureFnContext).traceContext || null) as AzureFnTraceContext;
         const span = input && (input as Span).spanContext ? input as Span : null;
         const spanContext = input && (input as SpanContext).traceId ? input as SpanContext : null;
-        const headers = input && (input as http.IncomingMessage | azureFunctionsTypes.HttpRequest).headers;
+        const headers = input && (input as http.IncomingMessage | AzureFnRequest).headers;
 
         if (span) {
             trace.setSpanContext(context.active(), span.spanContext());
@@ -198,51 +200,67 @@ export class CorrelationContextManager {
             let tracestate = null;
             if (traceContext) {
                 // Use the headers on the request from Azure Functions to set the active context
-                const azureFnRequest = request as azureFunctionsTypes.HttpRequest;
+                const azureFnRequest = request as AzureFnRequest;
 
                 // If the traceparent isn't defined on the azure function headers set it to the request-id
-                if (azureFnRequest?.headers) {
+                // If the headers are not an instance of Headers, we're using the old programming model, else use the v4 model
+                if (azureFnRequest?.headers && !(azureFnRequest.headers instanceof Headers)) {
                     // request-id is a GUID-based unique identifier for the request
-                    traceparent = azureFnRequest.headers.traceparent ? azureFnRequest.headers.traceparent : azureFnRequest.headers["request-id"];
-                    tracestate = azureFnRequest.headers.tracestate;
+                    traceparent = (azureFnRequest.headers as HttpRequestHeaders).traceparent ? (azureFnRequest.headers as HttpRequestHeaders).traceparent : (azureFnRequest.headers as HttpRequestHeaders)["request-id"];
+                    tracestate = (azureFnRequest.headers as HttpRequestHeaders).tracestate;
+                } else if (azureFnRequest?.headers && azureFnRequest?.headers instanceof Headers) {
+                    traceparent = azureFnRequest.headers.get("traceparent") || azureFnRequest.headers.get("request-id");
+                    tracestate = azureFnRequest.headers.get("tracestate");
                 }
 
-                if (!traceparent) {
+                if (!traceparent && traceContext.traceparent) {
                     traceparent = traceContext.traceparent;
+                } else if (!traceparent && traceContext.traceParent) {
+                    traceparent = traceContext.traceParent;
                 }
-                if (!tracestate) {
+
+                if (!tracestate && traceContext.tracestate) {
                     tracestate = traceContext.tracestate;
+                } else if (!tracestate && traceContext.traceState) {
+                    tracestate = traceContext.traceState;
                 }
             }
 
             // If headers is defined instead of traceContext, use the headers to set the traceparent and tracestate
-            if (headers) {
-                traceparent = headers.traceparent ? headers.traceparent.toString() : null;
-                tracestate = headers.tracestate ? headers.tracestate.toString() : tracestate;
+            // If headers is not an instance of Headers, we use the old programming model, otherwise use the old v3 values
+            if (headers && (headers as HttpRequestHeaders).traceparent) {
+                traceparent = (headers as HttpRequestHeaders).traceparent ? (headers as HttpRequestHeaders).traceparent.toString() : null;
+                tracestate = (headers as HttpRequestHeaders).tracestate ? (headers as HttpRequestHeaders).tracestate.toString() : tracestate;
+            } else if (headers && headers instanceof Headers) {
+                traceparent = headers.get("traceparent") || headers.get("request-id");
+                tracestate = headers.get("tracestate");
             }
 
             const traceArray: string[] = traceparent?.split("-");
 
             const tracestateObj: TraceState = new TraceState();
-            tracestate?.split(",").forEach((pair) => {
+            tracestate?.split(",").forEach((pair: string) => {
                 const kv = pair.split("=");
                 tracestateObj.set(kv[0], kv[1]);
             });
-
-            return this.generateContextObject(
-                traceArray[1],
-                traceArray[2],
-                null,
-                {
-                    legacyRootId: "",
-                    parentId: "",
-                    spanId: traceArray[2],
-                    traceFlag: "",
-                    traceId: traceArray[1],
-                    version: "00",
-                },
-                tracestateObj
-            );
+            try {
+                return this.generateContextObject(
+                    traceArray[1],
+                    traceArray[2],
+                    null,
+                    {
+                        legacyRootId: "",
+                        parentId: "",
+                        spanId: traceArray[2],
+                        traceFlag: "",
+                        traceId: traceArray[1],
+                        version: "00",
+                    },
+                    tracestateObj
+                );
+            } catch (error) {
+                diag.warn("Error creating context object", Util.getInstance().dumpObj(error));
+            }
         }
         diag.warn("startOperation was called with invalid arguments");
         return null;

@@ -4,6 +4,8 @@
 import { TokenCredential } from "@azure/core-auth";
 import * as http from "http";
 import https = require("https");
+import { Context as AzureFnV3Context, HttpRequest as AzureFnV3Request, TraceContext as AzureFnV3TraceContext } from "@azure/functions-old";
+import { InvocationContext as AzureFnV4Context, HttpRequest as AzureFnV4Request } from "@azure/functions";
 
 export const UNSUPPORTED_MSG = "Please reference the Azure Monitor OpenTelemetry Migration Doc for more information. If this functionality is required, please revert to Application Insights 2.X SDK.";
 export enum DistributedTracingModes {
@@ -126,6 +128,12 @@ export interface ConnectionString {
 }
 
 export type ConnectionStringKey = "instrumentationkey" | "ingestionendpoint" | "liveendpoint" | "location"| "endpointsuffix";
+
+export type AzureFnContext = AzureFnV3Context | AzureFnV4Context;
+
+export type AzureFnRequest = AzureFnV3Request | AzureFnV4Request;
+
+export type AzureFnTraceContext = AzureFnV3TraceContext & AzureFnV4Context["traceContext"];
 
 export interface IBaseConfig {
     /** The ingestion endpoint to send telemetry payloads to */
