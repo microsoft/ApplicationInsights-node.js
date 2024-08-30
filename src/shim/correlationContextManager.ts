@@ -10,6 +10,7 @@ import { ICorrelationContext, ITraceparent, ITracestate, ICustomProperties, Azur
 import { Util } from "../shared/util";
 import { HttpRequestHeaders } from "@azure/functions-old";
 import { HttpRequest as AzureFnHttpRequest } from "@azure/functions";
+import { Headers } from "undici";
 
 
 const CONTEXT_NAME = "ApplicationInsights-Context";

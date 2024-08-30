@@ -7,9 +7,6 @@ import * as azureFunctionTypes from "@azure/functions-old";
 import { CorrelationContextManager } from '../../../src/shim/correlationContextManager';
 import { ICorrelationContext } from "../../../src/shim/types";
 import { HttpRequest, InvocationContext, TraceContext } from "@azure/functions";
-import { FormData, Headers, SpecIterableIterator, SpecIterator } from "undici";
-import { Blob } from "buffer";
-import { spec } from "node:test/reporters";
 
 
 const customProperties = {
