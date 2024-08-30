@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 import * as http from "http";
-import * as azureFunctionsTypes from "@azure/functions";
 import { DiagConsoleLogger, SpanContext, diag } from "@opentelemetry/api";
 import { Span } from "@opentelemetry/sdk-trace-base";
 import { CorrelationContextManager } from "./correlationContextManager";

@@ -165,7 +165,7 @@ describe("#startOperation()", () => {
     const testFunctionContext: azureFunctionTypes.Context = {
         invocationId: "test",
         executionContext: {
-            invocationId: '',
+        invocationId: '',
             functionName: '',
             functionDirectory: '',
             retryContext: undefined
