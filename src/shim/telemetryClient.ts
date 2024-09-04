@@ -73,8 +73,6 @@ export class TelemetryClient {
             // Warn if any config warnings were generated during parsing
             for (let i = 0; i < this._configWarnings.length; i++) {
                 diag.warn(this._configWarnings[i]);
-                this._attributeLogProcessor = new AttributeLogProcessor({ ...this.context.tags, ...this.commonProperties });
-                (logs.getLoggerProvider() as LoggerProvider).addLogRecordProcessor(this._attributeLogProcessor);
             }
         } 
         catch (error) {
