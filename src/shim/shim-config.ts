@@ -61,6 +61,9 @@ class Config implements IConfig {
     public noPatchModules: string;
     public noDiagnosticChannel: boolean;
 
+    // Expose Distro config for further customization, other conflicting configs will take precedence over this.
+    public azureMonitorOpenTelemetryOptions : AzureMonitorOpenTelemetryOptions;
+
     private _configWarnings: string[];
 
     /**
@@ -124,29 +127,33 @@ class Config implements IConfig {
     * Parse the config property to set the appropriate values on the AzureMonitorOpenTelemetryOptions
     */
     public parseConfig(): AzureMonitorOpenTelemetryOptions {
-        const options: AzureMonitorOpenTelemetryOptions = {
-            azureMonitorExporterOptions: {
-                connectionString: this.connectionString,
-                disableOfflineStorage: false,
+        const options: AzureMonitorOpenTelemetryOptions = Object.assign(
+            {
+                azureMonitorExporterOptions: {
+                    connectionString: this.connectionString,
+                    disableOfflineStorage: false,
+                },
+                enableAutoCollectPerformance: true,
+                enableAutoCollectExceptions: true,
+                instrumentationOptions: {
+                    http: { enabled: true },
+                    azureSdk: { enabled: true },
+                    mongoDb: { enabled: true },
+                    mySql: { enabled: true },
+                    redis: { enabled: true },
+                    redis4: { enabled: true },
+                    postgreSql: { enabled: true },
+                    bunyan: { enabled: true },
+                    winston: { enabled: true },
+                },
+                otlpTraceExporterConfig: {},
+                otlpMetricExporterConfig: {},
+                otlpLogExporterConfig: {},
+                enableLiveMetrics: true,
             },
-            enableAutoCollectPerformance: true,
-            enableAutoCollectExceptions: true,
-            instrumentationOptions: {
-                http: { enabled: true },
-                azureSdk: { enabled: true },
-                mongoDb: { enabled: true },
-                mySql: { enabled: true },
-                redis: { enabled: true },
-                redis4: { enabled: true },
-                postgreSql: { enabled: true },
-                bunyan: { enabled: true },
-                winston: { enabled: true },
-            },
-            otlpTraceExporterConfig: {},
-            otlpMetricExporterConfig: {},
-            otlpLogExporterConfig: {},
-            enableLiveMetrics: true,
-        };
+            this.azureMonitorOpenTelemetryOptions
+        );
+
         (options.instrumentationOptions as InstrumentationOptions) = {
             ...options.instrumentationOptions,
             console: { enabled: false },
