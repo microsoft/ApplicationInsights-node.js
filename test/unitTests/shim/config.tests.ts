@@ -10,6 +10,9 @@ import http = require("http");
 import https = require("https");
 import { DistributedTracingModes } from '../../../applicationinsights';
 import { checkWarnings } from './testUtils';
+import { BatchLogRecordProcessor, ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
+import { BatchSpanProcessor, ConsoleSpanExporter } from '@opentelemetry/sdk-trace-base';
+import { Resource } from '@opentelemetry/resources';
 
 class TestTokenCredential implements azureCoreAuth.TokenCredential {
     private _expiresOn: Date;
@@ -81,7 +84,7 @@ describe("shim/configuration/config", () => {
                 "winston": { "enabled": true },
                 "console": { "enabled": true },
             }),
-            "wrong instrumentationOptions");
+                "wrong instrumentationOptions");
             assert.equal(JSON.stringify(options.instrumentationOptions.bunyan), JSON.stringify({ enabled: true }), "wrong bunyan setting");
             assert.equal(options.enableAutoCollectExceptions, true, "wrong enableAutoCollectExceptions");
             assert.equal(options.enableAutoCollectPerformance, true, "wrong enableAutoCollectPerformance");
@@ -110,6 +113,33 @@ describe("shim/configuration/config", () => {
 
             assert.equal(options.samplingRatio, 0, "wrong samplingRatio");
         });
+
+
+        it("should allow customization of Azure Monitor Distro configuration", () => {
+            let spanProcessors = [new BatchSpanProcessor(new ConsoleSpanExporter())];
+            let logRecordProcessors = [new BatchLogRecordProcessor(new ConsoleLogRecordExporter)];
+            let resource = new Resource({});
+            const config = new Config(connectionString);
+            config.azureMonitorOpenTelemetryOptions = {
+                resource: resource,
+                samplingRatio: 0.2,
+                enableTraceBasedSamplingForLogs: false,
+                enableLiveMetrics: false,
+                enableStandardMetrics: false,
+                logRecordProcessors: logRecordProcessors,
+                spanProcessors: spanProcessors
+            };
+
+            let options = config.parseConfig();
+            assert.equal(options.resource, resource, "wrong resource");
+            assert.equal(options.samplingRatio, 0.2, "wrong samplingRatio");
+            assert.equal(options.enableTraceBasedSamplingForLogs, false, "wrong enableTraceBasedSamplingForLogs");
+            assert.equal(options.enableLiveMetrics, false, "wrong enableTraceBasedSamplingForLogs");
+            assert.equal(options.enableStandardMetrics, false, "wrong enableTraceBasedSamplingForLogs");
+            assert.equal(options.logRecordProcessors, logRecordProcessors, "wrong logRecordProcessors");
+            assert.equal(options.spanProcessors, spanProcessors, "wrong spanProcessors");
+        });
+
 
         it("should activate DEBUG internal logger", () => {
             const env = <{ [id: string]: string }>{};
@@ -151,7 +181,7 @@ describe("shim/configuration/config", () => {
                 "postgreSql": { "enabled": false },
                 "bunyan": { "enabled": false },
                 "winston": { "enabled": false },
-                "console":{ "enabled": false },
+                "console": { "enabled": false },
             }));
         });
 
@@ -159,7 +189,7 @@ describe("shim/configuration/config", () => {
             const config = new Config(connectionString);
             config.noPatchModules = "azuresdk,mongodb-core,redis,pg-pool";
             let options = config.parseConfig();
-            assert.equal(JSON.stringify(options.instrumentationOptions), JSON.stringify({ 
+            assert.equal(JSON.stringify(options.instrumentationOptions), JSON.stringify({
                 http: { enabled: true },
                 azureSdk: { enabled: false },
                 mongoDb: { enabled: false },
@@ -326,7 +356,7 @@ describe("shim/configuration/config", () => {
             it("should warn if web instrumentations are set", () => {
                 const config = new Config(connectionString);
                 const warnings = config["_configWarnings"];
-                config.webInstrumentationConfig = [{name: "test", value: true}];
+                config.webInstrumentationConfig = [{ name: "test", value: true }];
                 config.webInstrumentationSrc = "test";
                 config.parseConfig();
                 assert.ok(checkWarnings("The webInstrumentation config and src options are not supported by the shim.", warnings), "warning was not raised");
