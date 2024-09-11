@@ -122,7 +122,6 @@ describe("shim/configuration/config", () => {
             const config = new Config(connectionString);
             config.azureMonitorOpenTelemetryOptions = {
                 resource: resource,
-                samplingRatio: 0.2,
                 enableTraceBasedSamplingForLogs: false,
                 enableLiveMetrics: false,
                 enableStandardMetrics: false,
@@ -132,7 +131,6 @@ describe("shim/configuration/config", () => {
 
             let options = config.parseConfig();
             assert.equal(options.resource, resource, "wrong resource");
-            assert.equal(options.samplingRatio, 0.2, "wrong samplingRatio");
             assert.equal(options.enableTraceBasedSamplingForLogs, false, "wrong enableTraceBasedSamplingForLogs");
             assert.equal(options.enableLiveMetrics, false, "wrong enableTraceBasedSamplingForLogs");
             assert.equal(options.enableStandardMetrics, false, "wrong enableTraceBasedSamplingForLogs");
