@@ -16,7 +16,7 @@
     "@opentelemetry/sdk-trace-base": "^1.0.1",
     "body-parser": "1.20.3",
     "bunyan": "1.8.12",
-    "express": "4.19.2",
+    "express": "4.20.0",
     "mongodb": "^3.1.13",
     "mysql": "^2.16.0",
     "pg": "^8.6.0",
