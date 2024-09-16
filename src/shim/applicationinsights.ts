@@ -2,11 +2,10 @@
 // Licensed under the MIT license.
 
 import * as http from "http";
-import * as azureFunctionsTypes from "@azure/functions";
 import { DiagConsoleLogger, SpanContext, diag } from "@opentelemetry/api";
 import { Span } from "@opentelemetry/sdk-trace-base";
 import { CorrelationContextManager } from "./correlationContextManager";
-import { ICorrelationContext, HttpRequest, DistributedTracingModes } from "./types";
+import { ICorrelationContext, HttpRequest, DistributedTracingModes, AzureFnContext } from "./types";
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
 import { Util } from "../shared/util";
@@ -82,7 +81,7 @@ export function getCorrelationContext(): ICorrelationContext {
  * Starts a fresh context or propagates the current internal one.
  */
 export function startOperation(
-    arg1: azureFunctionsTypes.Context | (http.IncomingMessage | azureFunctionsTypes.HttpRequest) | SpanContext | Span,
+    arg1: AzureFnContext | (http.IncomingMessage | AzureFnContext) | SpanContext | Span,
     arg2?: HttpRequest | string
 ): ICorrelationContext | null {
     return CorrelationContextManager.startOperation(arg1, arg2);
