@@ -230,9 +230,9 @@ export class CorrelationContextManager {
             if (headers && (headers as HttpRequestHeaders).traceparent) {
                 traceparent = (headers as HttpRequestHeaders).traceparent ? (headers as HttpRequestHeaders).traceparent.toString() : null;
                 tracestate = (headers as HttpRequestHeaders).tracestate ? (headers as HttpRequestHeaders).tracestate.toString() : tracestate;
-            } else if (headers && headers instanceof Headers) {
-                traceparent = headers.get("traceparent") || headers.get("request-id");
-                tracestate = headers.get("tracestate");
+            } else if (headers) {
+                traceparent = (headers as Headers).get("traceparent") || (headers as Headers).get("request-id");
+                tracestate = (headers as Headers).get("tracestate");
             }
 
             const traceArray: string[] = traceparent?.split("-");
