@@ -21,6 +21,8 @@ We support the versions of Node.js that are [supported by OpenTelemetry](https:/
 
 ## Limitations of Application Insights 3.X SDK
 
+In order to support importing version 3.X of the SDK as an ESM module, please follow the [OpenTelemetry project's documentation](https://github.com/open-telemetry/opentelemetry-js/blob/main/doc/esm-support.md#instrumentation-hook-required-for-esm) on using the instrumentation hook. 
+
 Consider whether this version is right for you. It *enables distributed tracing, metrics, logs* and _excludes_:
 
  - Autopopulation of Cloud Role Name and Cloud Role Instance in Azure environments
