@@ -3,6 +3,7 @@
 
 import * as events from "events";
 import * as http from "http";
+import { Headers } from "undici-types";
 import { context, SpanContext, trace, Context, diag } from "@opentelemetry/api";
 import { TraceState } from "@opentelemetry/core";
 import { Span } from "@opentelemetry/sdk-trace-base";
