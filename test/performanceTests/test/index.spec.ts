@@ -32,8 +32,8 @@ perfProgram.run().then(() => {
     
     if (perfTestData.includes("TrackDependencyTest")) {
         sku = "TrackDependencyTest";
-    } else if (perfTestData.includes("TrackEventTest")) {
-        sku = "TrackEventTest";
+    } else if (perfTestData.includes("TrackTraceTest")) {
+        sku = "TrackTraceTest";
     }
     
     let regex = /(\d{1,3}(,\d{3})*) ops\/s/;
