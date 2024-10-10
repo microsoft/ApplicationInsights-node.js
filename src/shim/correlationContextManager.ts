@@ -3,6 +3,7 @@
 
 import * as events from "events";
 import * as http from "http";
+import { Headers } from "undici-types";
 import { context, SpanContext, trace, Context, diag } from "@opentelemetry/api";
 import { TraceState } from "@opentelemetry/core";
 import { Span } from "@opentelemetry/sdk-trace-base";
@@ -10,7 +11,6 @@ import { ICorrelationContext, ITraceparent, ITracestate, ICustomProperties, Azur
 import { Util } from "../shared/util";
 import { HttpRequestHeaders } from "@azure/functions-old";
 import { HttpRequest as AzureFnHttpRequest } from "@azure/functions";
-import { Headers } from "undici";
 
 
 const CONTEXT_NAME = "ApplicationInsights-Context";
@@ -231,9 +231,9 @@ export class CorrelationContextManager {
             if (headers && (headers as HttpRequestHeaders).traceparent) {
                 traceparent = (headers as HttpRequestHeaders).traceparent ? (headers as HttpRequestHeaders).traceparent.toString() : null;
                 tracestate = (headers as HttpRequestHeaders).tracestate ? (headers as HttpRequestHeaders).tracestate.toString() : tracestate;
-            } else if (headers && headers instanceof Headers) {
-                traceparent = headers.get("traceparent") || headers.get("request-id");
-                tracestate = headers.get("tracestate");
+            } else if (headers) {
+                traceparent = (headers as Headers).get("traceparent") || (headers as Headers).get("request-id");
+                tracestate = (headers as Headers).get("tracestate");
             }
 
             const traceArray: string[] = traceparent?.split("-");
