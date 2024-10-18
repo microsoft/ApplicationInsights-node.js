@@ -204,10 +204,12 @@ export class CorrelationContextManager {
                 if (azureFnRequest?.headers && azureFnRequest?.headers.get) {
                     traceparent = (azureFnRequest.headers as any).get("traceparent") || (azureFnRequest.headers as any).get("request-id");
                     tracestate = (azureFnRequest.headers as any).get("tracestate");
-                } else if (azureFnRequest?.headers){ // Old programming model
-                     // request-id is a GUID-based unique identifier for the request
-                     traceparent = (azureFnRequest.headers as HttpRequestHeaders).traceparent ? (azureFnRequest.headers as HttpRequestHeaders).traceparent : (azureFnRequest.headers as HttpRequestHeaders)["request-id"];
-                     tracestate = (azureFnRequest.headers as HttpRequestHeaders).tracestate;
+                }
+                // Old programming model 
+                else if (azureFnRequest?.headers) {
+                    // request-id is a GUID-based unique identifier for the request
+                    traceparent = (azureFnRequest.headers as HttpRequestHeaders).traceparent ? (azureFnRequest.headers as HttpRequestHeaders).traceparent : (azureFnRequest.headers as HttpRequestHeaders)["request-id"];
+                    tracestate = (azureFnRequest.headers as HttpRequestHeaders).tracestate;
                 }
 
                 if (!traceparent && traceContext.traceparent) {
