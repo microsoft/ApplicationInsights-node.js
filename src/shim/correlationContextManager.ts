@@ -177,7 +177,7 @@ export class CorrelationContextManager {
         const traceContext = (input && (input as AzureFnContext).traceContext || null) as AzureFnTraceContext;
         const span = input && (input as Span).spanContext ? input as Span : null;
         const spanContext = input && (input as SpanContext).traceId ? input as SpanContext : null;
-        const headers = input && (input as http.IncomingMessage | AzureFnRequest).headers;
+        const headers = input && (input as any).headers;
 
         if (span) {
             trace.setSpanContext(context.active(), span.spanContext());
@@ -230,7 +230,7 @@ export class CorrelationContextManager {
             if (headers && (headers as HttpRequestHeaders).traceparent) {
                 traceparent = (headers as HttpRequestHeaders).traceparent ? (headers as HttpRequestHeaders).traceparent.toString() : null;
                 tracestate = (headers as HttpRequestHeaders).tracestate ? (headers as HttpRequestHeaders).tracestate.toString() : tracestate;
-            } else if (headers) {
+            } else if (headers && headers.get) {
                 traceparent = (headers as any).get("traceparent") || (headers as any).get("request-id");
                 tracestate = (headers as any).get("tracestate");
             }
