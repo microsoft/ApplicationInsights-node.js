@@ -10,7 +10,6 @@ import { ICorrelationContext, ITraceparent, ITracestate, ICustomProperties, Azur
 import { Util } from "../shared/util";
 import { HttpRequestHeaders } from "@azure/functions-old";
 import { HttpRequest as AzureFnHttpRequest } from "@azure/functions";
-import { Headers } from "undici";
 
 
 const CONTEXT_NAME = "ApplicationInsights-Context";
@@ -53,13 +52,13 @@ export class CorrelationContextManager {
             let activeSpan: Span = trace.getSpan(context.active()) as Span;
 
             // If no active span exists, create a new one. This is needed if runWithContext() is executed without an active span
-            if (!activeSpan) { 
+            if (!activeSpan) {
                 activeSpan = trace.getTracer(CONTEXT_NAME).startSpan(CONTEXT_NAME) as Span;
             }
             const traceStateObj: TraceState = new TraceState(activeSpan?.spanContext()?.traceState?.serialize());
 
             return this.spanToContextObject(activeSpan?.spanContext(), activeSpan?.parentSpanId, activeSpan?.name, traceStateObj);
-        } 
+        }
         return null;
     }
 
@@ -83,7 +82,7 @@ export class CorrelationContextManager {
         const ITraceState: ITracestate = {
             fieldmap: tracestate?.serialize()?.split(",")
         };
-        
+
         return {
             operation: {
                 name: operationName,
@@ -130,7 +129,7 @@ export class CorrelationContextManager {
             diag.warn("Error binding to session context", Util.getInstance().dumpObj(error));
         }
     }
-    
+
     /**
      * Patches a callback to restore the correct Context when getCurrentContext
      * is run within it. This is necessary if automatic correlation fails to work
@@ -178,7 +177,7 @@ export class CorrelationContextManager {
         const traceContext = (input && (input as AzureFnContext).traceContext || null) as AzureFnTraceContext;
         const span = input && (input as Span).spanContext ? input as Span : null;
         const spanContext = input && (input as SpanContext).traceId ? input as SpanContext : null;
-        const headers = input && (input as http.IncomingMessage | AzureFnRequest).headers;
+        const headers = input && (input as any).headers;
 
         if (span) {
             trace.setSpanContext(context.active(), span.spanContext());
@@ -201,16 +200,16 @@ export class CorrelationContextManager {
             if (traceContext) {
                 // Use the headers on the request from Azure Functions to set the active context
                 const azureFnRequest = request as AzureFnRequest;
-
-                // If the traceparent isn't defined on the azure function headers set it to the request-id
-                // If the headers are not an instance of Headers, we're using the old programming model, else use the v4 model
-                if (azureFnRequest?.headers && !(azureFnRequest.headers instanceof Headers)) {
+                // New programming model
+                if (azureFnRequest?.headers && azureFnRequest?.headers.get) {
+                    traceparent = (azureFnRequest.headers as any).get("traceparent") || (azureFnRequest.headers as any).get("request-id");
+                    tracestate = (azureFnRequest.headers as any).get("tracestate");
+                }
+                // Old programming model 
+                else if (azureFnRequest?.headers) {
                     // request-id is a GUID-based unique identifier for the request
                     traceparent = (azureFnRequest.headers as HttpRequestHeaders).traceparent ? (azureFnRequest.headers as HttpRequestHeaders).traceparent : (azureFnRequest.headers as HttpRequestHeaders)["request-id"];
                     tracestate = (azureFnRequest.headers as HttpRequestHeaders).tracestate;
-                } else if (azureFnRequest?.headers && azureFnRequest?.headers instanceof Headers) {
-                    traceparent = azureFnRequest.headers.get("traceparent") || azureFnRequest.headers.get("request-id");
-                    tracestate = azureFnRequest.headers.get("tracestate");
                 }
 
                 if (!traceparent && traceContext.traceparent) {
@@ -231,9 +230,9 @@ export class CorrelationContextManager {
             if (headers && (headers as HttpRequestHeaders).traceparent) {
                 traceparent = (headers as HttpRequestHeaders).traceparent ? (headers as HttpRequestHeaders).traceparent.toString() : null;
                 tracestate = (headers as HttpRequestHeaders).tracestate ? (headers as HttpRequestHeaders).tracestate.toString() : tracestate;
-            } else if (headers && headers instanceof Headers) {
-                traceparent = headers.get("traceparent") || headers.get("request-id");
-                tracestate = headers.get("tracestate");
+            } else if (headers && headers.get) {
+                traceparent = (headers as any).get("traceparent") || (headers as any).get("request-id");
+                tracestate = (headers as any).get("tracestate");
             }
 
             const traceArray: string[] = traceparent?.split("-");
