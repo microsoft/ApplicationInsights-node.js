@@ -3,7 +3,6 @@
 
 import * as events from "events";
 import * as http from "http";
-import { Headers } from "undici-types";
 import { context, SpanContext, trace, Context, diag } from "@opentelemetry/api";
 import { TraceState } from "@opentelemetry/core";
 import { Span } from "@opentelemetry/sdk-trace-base";
@@ -232,8 +231,8 @@ export class CorrelationContextManager {
                 traceparent = (headers as HttpRequestHeaders).traceparent ? (headers as HttpRequestHeaders).traceparent.toString() : null;
                 tracestate = (headers as HttpRequestHeaders).tracestate ? (headers as HttpRequestHeaders).tracestate.toString() : tracestate;
             } else if (headers) {
-                traceparent = (headers as Headers).get("traceparent") || (headers as Headers).get("request-id");
-                tracestate = (headers as Headers).get("tracestate");
+                traceparent = (headers as any).get("traceparent") || (headers as any).get("request-id");
+                tracestate = (headers as any).get("tracestate");
             }
 
             const traceArray: string[] = traceparent?.split("-");
