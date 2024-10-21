@@ -7,7 +7,7 @@ you deploy them to help you discover and rapidly diagnose performance and other
 issues. Add this SDK to your Node.js services to include deep info about Node.js
 processes and their external dependencies such as database and cache services.
 You can use this SDK for your Node.js services hosted anywhere: your datacenter,
-Azure VMs and Web Apps, and even other public clouds. This solution is based on OpenTelemetry, to learn more about OpenTelemetry concepts, see the [OpenTelemetry overview](opentelemetry-overview.md) or [OpenTelemetry FAQ](/azure/azure-monitor/faq#opentelemetry).
+Azure VMs and Web Apps, and even other public clouds. This solution is based on OpenTelemetry, to learn more about OpenTelemetry concepts, see the [OpenTelemetry overview](https://opentelemetry.io/docs/specs/otel/overview/) or [OpenTelemetry FAQ](https://learn.microsoft.com/azure/azure-monitor/app/opentelemetry-help-support-feedback?tabs=nodejs).
 
 [Azure Application Insights]: https://azure.microsoft.com/documentation/articles/app-insights-overview/
 [discover and rapidly diagnose performance and other issues]: https://docs.microsoft.com/azure/application-insights/app-insights-detect-triage-diagnose
@@ -46,7 +46,7 @@ To determine if this version of Application Insights is right for you, review th
   - [Azure Monitor OpenTelemetry Exporter supported runtimes](https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/monitor/monitor-opentelemetry-exporter#currently-supported-environments)
 
 ## Get started
-> *Important:* On March 31st, 2025, support for instrumentation key ingestion will end. Instrumentation key ingestion will continue to work, but we’ll no longer provide updates or support for the feature. [Transition to connection strings](https://docs.microsoft.com/azure/azure-monitor/app/migrate-from-instrumentation-keys-to-connection-strings) to take advantage of [new capabilities](https://docs.microsoft.com/en-us/azure/azure-monitor/app/migrate-from-instrumentation-keys-to-connection-strings#new-capabilities).
+> *Important:* On March 31st, 2025, support for instrumentation key ingestion will end. Instrumentation key ingestion will continue to work, but we’ll no longer provide updates or support for the feature. [Transition to connection strings](https://docs.microsoft.com/azure/azure-monitor/app/migrate-from-instrumentation-keys-to-connection-strings) to take advantage of [new capabilities](https://docs.microsoft.com/azure/azure-monitor/app/migrate-from-instrumentation-keys-to-connection-strings#new-capabilities).
 
 1. Create an Application Insights resource in Azure by following [these instructions][].
 2. Grab the _Connection String_ from the resource you created in
