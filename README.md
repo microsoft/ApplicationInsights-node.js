@@ -25,7 +25,6 @@ In order to support importing version 3.X SDK as an ESM module, please follow th
 
 Consider whether this version is right for you. It *enables distributed tracing, metrics, logs* and _excludes_:
 
- - Autopopulation of Cloud Role Name and Cloud Role Instance in Azure environments
  - Autopopulation of User ID and Authenticated User ID when you use the Application Insights JavaScript SDK
  - Autopopulation of User IP (to determine location attributes)
  - Ability to override Operation Name
