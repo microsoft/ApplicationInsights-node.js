@@ -13,6 +13,7 @@ import {
  } from "@opentelemetry/semantic-conventions";
 import { Resource } from "@opentelemetry/resources";
 import { Histogram } from "@opentelemetry/sdk-metrics";
+import { NoopMeter } from "@opentelemetry/api/build/src/metrics/NoopMeter";
 
 
 describe("PerformanceCounterMetricsHandler", () => {
@@ -47,21 +48,20 @@ describe("PerformanceCounterMetricsHandler", () => {
     await autoCollect.shutdown();
   });
 
+  let resource = new Resource({});
+  resource.attributes[SEMRESATTRS_SERVICE_NAME] = "testcloudRoleName";
+  resource.attributes[SEMRESATTRS_SERVICE_INSTANCE_ID] = "testcloudRoleInstance";
+  let serverSpan: any = {
+    kind: SpanKind.SERVER,
+    duration: [654321],
+    attributes: {
+      "http.status_code": 200,
+    },
+    resource: resource,
+  };
 
   describe("#Metrics", () => {
     it("should observe instruments during collection", async () => {
-      let resource = new Resource({});
-      resource.attributes[SEMRESATTRS_SERVICE_NAME] = "testcloudRoleName";
-      resource.attributes[SEMRESATTRS_SERVICE_INSTANCE_ID] = "testcloudRoleInstance";
-      let serverSpan: any = {
-        kind: SpanKind.SERVER,
-        duration: [654321],
-        attributes: {
-          "http.status_code": 200,
-        },
-        resource: resource,
-      };
-
       for (let i = 0; i < 10; i++) {
         autoCollect.recordSpan(serverSpan);
       }
@@ -113,9 +113,11 @@ describe("PerformanceCounterMetricsHandler", () => {
     });
 
     it("should not collect when disabled", async () => {
-      autoCollect.shutdown();
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      assert.ok(exportStub.notCalled);
+      autoCollect.shutdown().then(async () => {
+        autoCollect.recordSpan(serverSpan);
+        await new Promise((resolve) => setTimeout(resolve, 120));
+        assert.ok(exportStub.notCalled);
+      });
     });
   });
 });
