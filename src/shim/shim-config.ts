@@ -213,8 +213,9 @@ class Config implements IConfig {
                 };
             }
         }
+        // Performance counters
         if (typeof (this.enableAutoCollectPerformance) === "boolean") {
-            options.enableAutoCollectPerformance = this.enableAutoCollectPerformance;
+            options.enablePerformanceCounters = this.enableAutoCollectPerformance;
         }
         if (typeof (this.enableAutoCollectExternalLoggers) === "boolean") {
             (options.instrumentationOptions as InstrumentationOptions) = {
