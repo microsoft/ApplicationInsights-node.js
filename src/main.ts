@@ -16,13 +16,10 @@ import { AutoCollectExceptions } from "./logs/exceptions";
 import { AZURE_MONITOR_STATSBEAT_FEATURES, AzureMonitorOpenTelemetryOptions } from "./types";
 import { ApplicationInsightsConfig } from "./shared/configuration/config";
 import { LogApi } from "./shim/logsApi";
-import { PerformanceCounterMetrics } from "./metrics/performanceCounters";
-import { AzureMonitorSpanProcessor } from "./traces/spanProcessor";
 import { StatsbeatFeature, StatsbeatInstrumentation } from "./shim/types";
 
 let autoCollectLogs: AutoCollectLogs;
 let exceptions: AutoCollectExceptions;
-let perfCounters: PerformanceCounterMetrics;
 
 /**
  * Initialize Azure Monitor
@@ -41,17 +38,6 @@ export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
     if (internalConfig.enableAutoCollectExceptions) {
         exceptions = new AutoCollectExceptions(logApi);
     }
-    if (internalConfig.enableAutoCollectPerformance) {
-        try {
-            perfCounters = new PerformanceCounterMetrics(internalConfig);
-            // Add SpanProcessor to calculate Request Metrics
-            if (typeof (trace.getTracerProvider() as BasicTracerProvider).addSpanProcessor === "function") {
-                (trace.getTracerProvider() as BasicTracerProvider).addSpanProcessor(new AzureMonitorSpanProcessor(perfCounters));
-            }
-        } catch (err) {
-            diag.error("Failed to initialize PerformanceCounterMetrics: ", err);
-        }
-    }
     autoCollectLogs.enable(internalConfig.instrumentationOptions);
     _addOtlpExporters(internalConfig);
 }
@@ -63,7 +49,6 @@ export async function shutdownAzureMonitor() {
     await distroShutdownAzureMonitor();
     autoCollectLogs.shutdown();
     exceptions?.shutdown();
-    perfCounters?.shutdown();
 }
 
 /**
