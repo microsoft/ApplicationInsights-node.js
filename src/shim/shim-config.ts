@@ -186,6 +186,14 @@ class Config implements IConfig {
             options.enableAutoCollectExceptions = this.enableAutoCollectExceptions;
         }
 
+        if (typeof (this.enableAutoCollectRequests) === "boolean") {
+            options.enableAutoCollectRequests = this.enableAutoCollectRequests;
+        }
+
+        if (typeof (this.enableAutoCollectDependencies) === "boolean") {
+            options.enableAutoCollectDependencies = this.enableAutoCollectDependencies;
+        }
+
         if (this.enableAutoCollectDependencies === false && this.enableAutoCollectRequests === false) {
             options.instrumentationOptions.http.enabled = false;
         }

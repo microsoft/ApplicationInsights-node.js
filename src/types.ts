@@ -31,6 +31,8 @@ export interface AzureMonitorOpenTelemetryOptions extends DistroOptions {
    * if true performance counters will be collected every second and sent to Azure Monitor
    */
   enableAutoCollectPerformance?: boolean;
+  enableAutoCollectDependencies?: boolean;
+  enableAutoCollectRequests?: boolean;
 }
 
 export interface InstrumentationOptions extends DistroInstrumentationOptions {

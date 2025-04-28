@@ -93,6 +93,15 @@ describe("ApplicationInsights", () => {
             assert.equal(JSON.stringify((appInsights.defaultClient["_options"].instrumentationOptions as InstrumentationOptions).winston), JSON.stringify({ enabled: false }));
         });
 
+        it("should set dependency and request collection", () => {
+            appInsights.setup(connString)
+                .setAutoCollectRequests(true)
+                .setAutoCollectDependencies(false)
+            appInsights.start();
+            assert.equal(appInsights.defaultClient["_options"].enableAutoCollectDependencies, false);
+            assert.equal(appInsights.defaultClient["_options"].enableAutoCollectRequests, true);
+        });
+
         describe("#CorrelationContext", () => {
             it("should return context once AppInsights is intialized", () => {
                 appInsights.setup(connString).start();

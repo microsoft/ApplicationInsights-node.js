@@ -30,8 +30,8 @@ describe("ApplicationInsightsClient", () => {
 
         let tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as any);
         let spanProcessors = tracerProvider["_registeredSpanProcessors"];
-        assert.ok(spanProcessors.length == 3, "wrong number of spanProcessors");
-        otlpExporter = spanProcessors[2]["_exporter"];
+        assert.ok(spanProcessors.length == 4, "wrong number of spanProcessors");
+        otlpExporter = spanProcessors[3]["_exporter"];
         assert.ok(otlpExporter instanceof OTLPTraceExporter, "wrong exporter");
 
         let loggerProvider = ((logs.getLoggerProvider() as LoggerProvider) as any);
