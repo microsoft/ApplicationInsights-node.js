@@ -356,19 +356,21 @@ class Statsbeat {
     }
 
     private async _sendStatsbeats() {
-        let envelopes: Array<Contracts.Envelope> = [];
-        for (let i = 0; i < this._statbeatMetrics.length; i++) {
-            let statsbeat: Contracts.MetricTelemetry = {
-                name: this._statbeatMetrics[i].name,
-                value: this._statbeatMetrics[i].value,
-                properties: this._statbeatMetrics[i].properties
-            };
-            let envelope = EnvelopeFactory.createEnvelope(statsbeat, Contracts.TelemetryType.Metric, null, this._context, this._statsbeatConfig);
-            envelope.name = Constants.StatsbeatTelemetryName;
-            envelopes.push(envelope);
+        if (this._statbeatMetrics.length > 0) {
+            let envelopes: Array<Contracts.Envelope> = [];
+            for (let i = 0; i < this._statbeatMetrics.length; i++) {
+                let statsbeat: Contracts.MetricTelemetry = {
+                    name: this._statbeatMetrics[i].name,
+                    value: this._statbeatMetrics[i].value,
+                    properties: this._statbeatMetrics[i].properties
+                };
+                let envelope = EnvelopeFactory.createEnvelope(statsbeat, Contracts.TelemetryType.Metric, null, this._context, this._statsbeatConfig);
+                envelope.name = Constants.StatsbeatTelemetryName;
+                envelopes.push(envelope);
+            }
+            this._statbeatMetrics = [];
+            await this._sender.send(envelopes);
         }
-        this._statbeatMetrics = [];
-        await this._sender.send(envelopes);
     }
 
     private _getCustomProperties() {
