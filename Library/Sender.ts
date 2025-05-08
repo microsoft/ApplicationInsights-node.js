@@ -113,7 +113,7 @@ class Sender {
     }
 
     public async send(envelopes: Contracts.EnvelopeTelemetry[], callback?: (v: string) => void) {
-        if (envelopes) {
+        if (envelopes &&  envelopes.length > 0) {
             var endpointUrl = this._redirectedHost || this._config.endpointUrl;
 
             var endpointHost = new URL(endpointUrl).hostname;
@@ -163,6 +163,14 @@ class Sender {
             // Remove last \n
             if (batch.length > 0) {
                 batch = batch.substring(0, batch.length - 1);
+            }
+
+            // Check for empty batch
+            if (batch.length === 0) {
+                if (typeof callback === "function") {
+                    callback("Empty batch of telemetry items. Nothing to send.");
+                }
+                return;
             }
 
             let payload: Buffer = Buffer.from ? Buffer.from(batch) : new Buffer(batch);
