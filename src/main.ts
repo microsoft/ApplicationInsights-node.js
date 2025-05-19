@@ -17,6 +17,7 @@ import { AZURE_MONITOR_STATSBEAT_FEATURES, AzureMonitorOpenTelemetryOptions } fr
 import { ApplicationInsightsConfig } from "./shared/configuration/config";
 import { LogApi } from "./shim/logsApi";
 import { StatsbeatFeature, StatsbeatInstrumentation } from "./shim/types";
+import { RequestSpanProcessor } from "./traces/requestProcessor";
 
 let autoCollectLogs: AutoCollectLogs;
 let exceptions: AutoCollectExceptions;
@@ -31,6 +32,8 @@ export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
         instrumentation: StatsbeatInstrumentation.NONE,
         feature: StatsbeatFeature.SHIM
     });
+    // Allows for full filtering of dependency/request spans
+    options.spanProcessors = [new RequestSpanProcessor(options.enableAutoCollectDependencies, options.enableAutoCollectRequests)];
     distroUseAzureMonitor(options);
     const internalConfig = new ApplicationInsightsConfig(options);
     const logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));

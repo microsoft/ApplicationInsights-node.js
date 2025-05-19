@@ -57,7 +57,7 @@ describe("agent/AKSLoader", () => {
         assert.equal(meterProvider["_sharedState"]["metricCollectors"][0]["_metricReader"]["_exporter"].constructor.name, "AzureMonitorMetricExporter");
         let tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate()) as any;
         assert.equal(tracerProvider.constructor.name, "NodeTracerProvider");
-        assert.equal(tracerProvider["_registeredSpanProcessors"][1]["_exporter"].constructor.name, "AzureMonitorTraceExporter");
+        assert.equal(tracerProvider["_registeredSpanProcessors"][2]["_exporter"].constructor.name, "AzureMonitorTraceExporter");
         let loggerProvider = logs.getLoggerProvider() as any;
         assert.equal(loggerProvider.constructor.name, "LoggerProvider");
         assert.equal(loggerProvider["_sharedState"]["registeredLogRecordProcessors"][1]["_exporter"].constructor.name, "AzureMonitorLogExporter");
