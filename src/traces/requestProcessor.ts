@@ -22,10 +22,6 @@ export class RequestSpanProcessor implements SpanProcessor {
     }
 
     onStart(span: Span, _context: Context): void {
-        return;
-    }
-
-    onEnd(span: ReadableSpan): void {
         if (this._enableDependencyTelemetry === false) {
             if (span.kind === SpanKind.CLIENT || span.kind === SpanKind.PRODUCER) {
                 span.spanContext().traceFlags = TraceFlags.SAMPLED;
@@ -36,6 +32,10 @@ export class RequestSpanProcessor implements SpanProcessor {
                 span.spanContext().traceFlags = TraceFlags.SAMPLED;
             }
         }
+    }
+
+    onEnd(span: ReadableSpan): void {
+        return;
     }
 
     shutdown(): Promise<void> {
