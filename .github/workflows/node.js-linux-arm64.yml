@@ -1,4 +1,4 @@
-name: Node.js CI
+name: Node.js CI (Linux ARM64)
 
 on:
   push:
@@ -9,18 +9,17 @@ on:
 jobs:
   build:
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-20.04-arm64
 
     strategy:
       matrix:
-        os: [ubuntu-latest]
-        # TODO: Enable Node 14.x when we update the pipeline to support AbortController
+        # Using the same Node versions as the main workflow
         node-version: [16.x, 18.x, 20.x, 22.x]
 
     steps:
     - uses: actions/checkout@v2
     - run: openssl req -x509 -nodes -newkey rsa -keyout ./test/certs/server-key.pem -out ./test/certs/server-cert.pem -days 1 -subj "/C=CL/ST=RM/L=OpenTelemetryTest/O=Root/OU=Test/CN=ca"
-    - name: (${{ matrix.os }}) on Node.js ${{ matrix.node-version }}
+    - name: (Linux ARM64) on Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
