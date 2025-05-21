@@ -60,4 +60,7 @@ jobs:
         }
     - run: npm run build --if-present
     - run: npm run lint
-    - run: npm test
+    - name: Run tests with mocks
+      run: |
+        # Run tests with mock setup to prevent any real network connections
+        npm run test:mocked
