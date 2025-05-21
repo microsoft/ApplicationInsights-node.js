@@ -63,4 +63,4 @@ jobs:
     - name: Run tests with mocks
       run: |
         # Run tests with mock setup to prevent any real network connections
-        npm run test:mocked
+        npm run test
