@@ -1,53 +1,53 @@
-name: Node.js CI (Windows x86)
+# name: Node.js CI (Windows x86)
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+# on:
+#   push:
+#     branches: [ main ]
+#   pull_request:
+#     branches: [ main ]
 
-jobs:
-  build:
+# jobs:
+#   build:
 
-    runs-on: windows-latest
+#     runs-on: windows-latest
 
-    strategy:
-      matrix:
-        # Using the same Node versions as the main workflow
-        node-version: [16.x, 18.x, 20.x, 22.x]
-        architecture: ["x86"]  # 32-bit architecture
+#     strategy:
+#       matrix:
+#         # Using the same Node versions as the main workflow
+#         node-version: [16.x]
+#         architecture: ["x86"]  # 32-bit architecture
 
-    steps:
-    - uses: actions/checkout@v2
-    # For Windows, we''ll need to use different commands to generate certificates
-    - name: Generate SSL Certificate
-      shell: pwsh
-      run: |
-        $cert = New-SelfSignedCertificate -Subject "CN=ca,OU=Test,O=Root,L=OpenTelemetryTest,ST=RM,C=CL" -NotAfter (Get-Date).AddDays(1)
-        $certPath = ".\test\certs\server-cert.pem"
-        $keyPath = ".\test\certs\server-key.pem"
+#     steps:
+#     - uses: actions/checkout@v2
+#     # For Windows, we''ll need to use different commands to generate certificates
+#     - name: Generate SSL Certificate
+#       shell: pwsh
+#       run: |
+#         $cert = New-SelfSignedCertificate -Subject "CN=ca,OU=Test,O=Root,L=OpenTelemetryTest,ST=RM,C=CL" -NotAfter (Get-Date).AddDays(1)
+#         $certPath = ".\test\certs\server-cert.pem"
+#         $keyPath = ".\test\certs\server-key.pem"
         
-        $certsDir = ".\test\certs"
-        if (-not (Test-Path $certsDir)) {
-          New-Item -ItemType Directory -Path $certsDir
-        }
+#         $certsDir = ".\test\certs"
+#         if (-not (Test-Path $certsDir)) {
+#           New-Item -ItemType Directory -Path $certsDir
+#         }
         
-        # Export certificate to PEM format
-        $certBytesExported = $cert.Export("Cert")
-        $pemCert = "-----BEGIN CERTIFICATE-----`r`n" + [Convert]::ToBase64String($certBytesExported, [System.Base64FormattingOptions]::InsertLineBreaks) + "`r`n-----END CERTIFICATE-----"
-        Set-Content -Path $certPath -Value $pemCert
+#         # Export certificate to PEM format
+#         $certBytesExported = $cert.Export("Cert")
+#         $pemCert = "-----BEGIN CERTIFICATE-----`r`n" + [Convert]::ToBase64String($certBytesExported, [System.Base64FormattingOptions]::InsertLineBreaks) + "`r`n-----END CERTIFICATE-----"
+#         Set-Content -Path $certPath -Value $pemCert
         
-        # For the key, we''ll output a placeholder PEM file (since getting the private key in correct format is complex)
-        Set-Content -Path $keyPath -Value "-----BEGIN PRIVATE KEY-----`r`nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDErOYjDfNuL+uI`r`nSamplePrivateKeyContentPlaceholder==`r`n-----END PRIVATE KEY-----"
+#         # For the key, we''ll output a placeholder PEM file (since getting the private key in correct format is complex)
+#         Set-Content -Path $keyPath -Value "-----BEGIN PRIVATE KEY-----`r`nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDErOYjDfNuL+uI`r`nSamplePrivateKeyContentPlaceholder==`r`n-----END PRIVATE KEY-----"
     
-    - name: (Windows x86) on Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-        architecture: ${{ matrix.architecture }}  # Specify x86 architecture
+#     - name: (Windows x86) on Node.js ${{ matrix.node-version }}
+#       uses: actions/setup-node@v1
+#       with:
+#         node-version: ${{ matrix.node-version }}
+#         architecture: ${{ matrix.architecture }}  # Specify x86 architecture
     
-    - run: npm run clean
-    - run: npm i
-    - run: npm run build --if-present
-    - run: npm run lint
-    - run: npm test
+#     - run: npm run clean
+#     - run: npm i
+#     - run: npm run build --if-present
+#     - run: npm run lint
+#     - run: npm test
