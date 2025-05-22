@@ -161,6 +161,43 @@ describe("Library/Util", () => {
                 await fileSystemHelper.confirmDirExists(newDir);
                 assert.ok(fs.existsSync(newDir), "Directory should be created");
             });
+
+            it("should handle race condition where directory is created between check and creation", async () => {
+                const racyDir = path.join(tempDir, "racy-dir");
+                
+                // Mock lstat to throw ENOENT but mkdir to throw EEXIST to simulate race condition
+                const lstatStub = sandbox.stub(fileSystemHelper, "lstatAsync");
+                lstatStub.rejects({ code: "ENOENT" });
+                
+                const mkdirStub = sandbox.stub(fileSystemHelper, "mkdirAsync");
+                mkdirStub.rejects({ code: "EEXIST" });
+                
+                // Should not throw exception
+                await fileSystemHelper.confirmDirExists(racyDir);
+                assert.ok(lstatStub.calledOnce, "lstatAsync should be called");
+                assert.ok(mkdirStub.calledOnce, "mkdirAsync should be called");
+            });
+
+            it("should propagate non-EEXIST errors from mkdir", async () => {
+                const errorDir = path.join(tempDir, "error-dir");
+                
+                // Mock lstat to throw ENOENT and mkdir to throw EPERM 
+                const lstatStub = sandbox.stub(fileSystemHelper, "lstatAsync");
+                lstatStub.rejects({ code: "ENOENT" });
+                
+                const mkdirStub = sandbox.stub(fileSystemHelper, "mkdirAsync");
+                mkdirStub.rejects({ code: "EPERM", message: "Permission denied" });
+                
+                try {
+                    await fileSystemHelper.confirmDirExists(errorDir);
+                    assert.fail("Should have thrown an error");
+                } catch (err) {
+                    assert.strictEqual(err.code, "EPERM");
+                }
+                
+                assert.ok(lstatStub.calledOnce, "lstatAsync should be called");
+                assert.ok(mkdirStub.calledOnce, "mkdirAsync should be called");
+            });
         });
 
         describe("#getShallowDirectorySize()", () => {
@@ -202,6 +239,44 @@ describe("Library/Util", () => {
                 const size = await fileSystemHelper.getShallowDirectorySize(emptyDir);
                 assert.strictEqual(size, 0);
             });
+
+            it("should handle directories containing both files and subdirectories", async () => {
+                // Create mixed content directory
+                const mixedDir = path.join(tempDir, "mixed-dir");
+                if (!fs.existsSync(mixedDir)) {
+                    fs.mkdirSync(mixedDir, { recursive: true });
+                }
+                
+                // Create files in the root
+                const file1 = path.join(mixedDir, "file1.txt");
+                const file2 = path.join(mixedDir, "file2.txt");
+                fs.writeFileSync(file1, "file1-content");
+                fs.writeFileSync(file2, "file2-content");
+                
+                // Create subdirectory with files
+                const subDir = path.join(mixedDir, "subdir");
+                if (!fs.existsSync(subDir)) {
+                    fs.mkdirSync(subDir, { recursive: true });
+                }
+                const subFile = path.join(subDir, "subfile.txt");
+                fs.writeFileSync(subFile, "subfile-content");
+                
+                const size = await fileSystemHelper.getShallowDirectorySize(mixedDir);
+                assert.strictEqual(size, "file1-content".length + "file2-content".length, 
+                    "Should only include size of root level files");
+            });
+
+            it("should handle errors in readdir", async () => {
+                const readdirStub = sandbox.stub(fileSystemHelper, "readdirAsync");
+                readdirStub.rejects(new Error("Readdir error"));
+                
+                try {
+                    await fileSystemHelper.getShallowDirectorySize("non-existent-dir");
+                    assert.fail("Should have thrown an error");
+                } catch (err) {
+                    assert.strictEqual(err.message, "Readdir error");
+                }
+            });
         });
 
         describe("#getShallowDirectorySizeSync()", () => {
@@ -227,6 +302,61 @@ describe("Library/Util", () => {
                 const size = fileSystemHelper.getShallowDirectorySizeSync(emptyDir);
                 assert.strictEqual(size, 0);
             });
+
+            it("should only count files at root level and ignore subdirectories", () => {
+                // Create mixed content directory
+                const mixedSyncDir = path.join(tempDir, "mixed-sync-dir");
+                if (!fs.existsSync(mixedSyncDir)) {
+                    fs.mkdirSync(mixedSyncDir, { recursive: true });
+                }
+                
+                // Create files in the root
+                const file1 = path.join(mixedSyncDir, "file1.txt");
+                const file2 = path.join(mixedSyncDir, "file2.txt");
+                fs.writeFileSync(file1, "file1-sync-content");
+                fs.writeFileSync(file2, "file2-sync-content");
+                
+                // Create subdirectory with files
+                const subDir = path.join(mixedSyncDir, "subdir");
+                if (!fs.existsSync(subDir)) {
+                    fs.mkdirSync(subDir, { recursive: true });
+                }
+                const subFile = path.join(subDir, "subfile.txt");
+                fs.writeFileSync(subFile, "subfile-sync-content");
+                
+                const size = fileSystemHelper.getShallowDirectorySizeSync(mixedSyncDir);
+                assert.strictEqual(size, "file1-sync-content".length + "file2-sync-content".length, 
+                    "Should only include size of root level files");
+            });
+
+            it("should handle errors in readdirSync", () => {
+                const readdirSyncStub = sandbox.stub(fs, "readdirSync");
+                readdirSyncStub.throws(new Error("ReaddirSync error"));
+                
+                try {
+                    fileSystemHelper.getShallowDirectorySizeSync("non-existent-dir");
+                    assert.fail("Should have thrown an error");
+                } catch (err) {
+                    assert.strictEqual(err.message, "ReaddirSync error");
+                }
+            });
+
+            // it("should handle errors in statSync", () => {
+            //     const readdirSyncStub = sandbox.stub(fs, "readdirSync");
+            //     // Create mock file entries
+            //     const mockFiles = ["file1.txt", "file2.txt"];
+            //     readdirSyncStub.returns(mockFiles);
+                
+            //     const statSyncStub = sandbox.stub(fs, "statSync");
+            //     statSyncStub.throws(new Error("StatSync error"));
+                
+            //     try {
+            //         fileSystemHelper.getShallowDirectorySizeSync("test-dir");
+            //         assert.fail("Should have thrown an error");
+            //     } catch (err) {
+            //         assert.strictEqual(err.message, "StatSync error");
+            //     }
+            // });
         });
 
         describe("#getShallowFileSize()", () => {
@@ -241,6 +371,35 @@ describe("Library/Util", () => {
             it("should not return a size for a directory", async () => {
                 const result = await fileSystemHelper.getShallowFileSize(tempDir);
                 assert.strictEqual(result, undefined);
+            });
+
+            it("should handle empty files", async () => {
+                // Create empty file
+                const emptyFilePath = path.join(tempDir, "empty-file.txt");
+                fs.writeFileSync(emptyFilePath, "");
+                
+                const size = await fileSystemHelper.getShallowFileSize(emptyFilePath);
+                assert.strictEqual(size, 0);
+            });
+
+            it("should handle binary files", async () => {
+                // Create binary file
+                const binaryFilePath = path.join(tempDir, "binary-file.bin");
+                const binaryContent = Buffer.from([0x01, 0x02, 0x03, 0x04, 0x05]);
+                fs.writeFileSync(binaryFilePath, binaryContent);
+                
+                const size = await fileSystemHelper.getShallowFileSize(binaryFilePath);
+                assert.strictEqual(size, binaryContent.length);
+            });
+
+            it("should handle large files", async () => {
+                // Create a moderately large file (1MB)
+                const largeFilePath = path.join(tempDir, "large-file.txt");
+                const largeContent = Buffer.alloc(1024 * 1024, 'a');
+                fs.writeFileSync(largeFilePath, largeContent);
+                
+                const size = await fileSystemHelper.getShallowFileSize(largeFilePath);
+                assert.strictEqual(size, largeContent.length);
             });
         });
 
@@ -324,6 +483,44 @@ describe("Library/Util", () => {
                 
                 await fileSystemHelper.unlinkAsync(fileToDelete);
                 assert.ok(!fs.existsSync(fileToDelete), "File should be deleted");
+            });
+
+            it("should handle errors in promisified functions", async () => {
+                // Test error handling for stat
+                try {
+                    await fileSystemHelper.statAsync("non-existent-file.txt");
+                    assert.fail("Should have thrown an error");
+                } catch (err) {
+                    assert.ok(err, "Error should be thrown");
+                    assert.strictEqual(err.code, "ENOENT");
+                }
+
+                // Test error handling for access
+                try {
+                    await fileSystemHelper.accessAsync("non-existent-file.txt");
+                    assert.fail("Should have thrown an error");
+                } catch (err) {
+                    assert.ok(err, "Error should be thrown");
+                    assert.strictEqual(err.code, "ENOENT");
+                }
+
+                // Test error handling for readFile
+                try {
+                    await fileSystemHelper.readFileAsync("non-existent-file.txt");
+                    assert.fail("Should have thrown an error");
+                } catch (err) {
+                    assert.ok(err, "Error should be thrown");
+                    assert.strictEqual(err.code, "ENOENT");
+                }
+
+                // Test error handling for unlink
+                try {
+                    await fileSystemHelper.unlinkAsync("non-existent-file.txt");
+                    assert.fail("Should have thrown an error");
+                } catch (err) {
+                    assert.ok(err, "Error should be thrown");
+                    assert.strictEqual(err.code, "ENOENT");
+                }
             });
         });
     });
