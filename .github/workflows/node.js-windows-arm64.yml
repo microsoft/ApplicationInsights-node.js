@@ -8,8 +8,8 @@ on:
 
 jobs:
   build:
-    # Use a standard Windows runner instead of requesting ARM64 hardware directly
-    runs-on: windows-latest
+    # Use the Linux runner instead as it has better Docker support
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
@@ -20,54 +20,27 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
     
-    - name: Set up Docker
-      uses: docker/setup-buildx-action@v2
-    
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v2
       with:
         platforms: arm64
-    
-    # Generate certificates using PowerShell before running Docker
+      # Generate certificates using Linux openssl command
     - name: Generate SSL Certificate
-      shell: pwsh
       run: |
-        $certsDir = ".\test\certs"
-        if (-not (Test-Path $certsDir)) {
-          New-Item -ItemType Directory -Path $certsDir -Force
-        }
+        # Create certificates directory
+        mkdir -p ./test/certs
         
-        $cert = New-SelfSignedCertificate -Subject "CN=ca,OU=Test,O=Root,L=OpenTelemetryTest,ST=RM,C=CL" -NotAfter (Get-Date).AddDays(1)
-        $certPath = ".\test\certs\server-cert.pem"
-        $keyPath = ".\test\certs\server-key.pem"
+        # Generate SSL certificates
+        openssl req -x509 -nodes -newkey rsa:2048 -keyout ./test/certs/server-key.pem -out ./test/certs/server-cert.pem -days 1 -subj "/C=CL/ST=RM/L=OpenTelemetryTest/O=Root/OU=Test/CN=ca"
         
-        # Export certificate to PEM format
-        $certBytesExported = $cert.Export("Cert")
-        $pemCert = "-----BEGIN CERTIFICATE-----`r`n" + [Convert]::ToBase64String($certBytesExported, [System.Base64FormattingOptions]::InsertLineBreaks) + "`r`n-----END CERTIFICATE-----"
-        Set-Content -Path $certPath -Value $pemCert
-        
-        # For the key, we'll output a placeholder PEM file
-        # Using secure random bytes for the key content rather than hardcoded text
-        $randomBytes = New-Object byte[] 32
-        [Security.Cryptography.RNGCryptoServiceProvider]::Create().GetBytes($randomBytes)
-        $randomKeyContent = [Convert]::ToBase64String($randomBytes)
-        Set-Content -Path $keyPath -Value "-----BEGIN PRIVATE KEY-----`r`n$randomKeyContent`r`n-----END PRIVATE KEY-----"
+        # Set permissions
+        chmod -R 777 .
     
-    - name: Run tests in ARM64 Docker container (Linux container with Windows mount)
-      shell: pwsh
+    - name: Run Node.js ${{ matrix.node-version }} tests in ARM64 Docker container
       run: |
-        # Enable Linux containers on Windows
-        $ErrorActionPreference = 'Continue'
-        
-        # Convert path format for Docker bind mount
-        $repoPath = "${{ github.workspace }}".Replace('\', '/').Replace('C:', '/c')
-        
-        # Ensure everyone has permissions to the directory
-        icacls . /grant Everyone:F /T
-        
-        # Run the tests in an ARM64 Linux Alpine container (not Windows container)
-        docker run --rm -v "${repoPath}:/app" -w /app --platform linux/arm64 node:${{ matrix.node-version }}-alpine sh -c '
-          echo "Running tests for Node.js ${{ matrix.node-version }} on ARM64 emulation"
+        # Run the tests in an ARM64 container
+        docker run --rm -v ${{ github.workspace }}:/app -w /app --platform linux/arm64 node:${{ matrix.node-version }}-alpine sh -c '
+          echo "Running tests for Node.js ${{ matrix.node-version }} on ARM64 emulation (Windows-targeted tests)"
           
           # Install build dependencies for native modules
           apk add --no-cache python3 make g++
