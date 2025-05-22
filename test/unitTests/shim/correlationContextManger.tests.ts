@@ -297,6 +297,37 @@ describe("#startOperation()", () => {
                 testFunctionTraceContext.traceparent
             );
         });
+
+        it("should include sessionId in customProperties when provided", () => {
+            // Create a test request with sessionId
+            const requestWithSessionId = { 
+                ...testRequest,
+                headers: { 
+                    ...testRequest.headers, 
+                    sessionId: "test-session-id" 
+                }
+            };
+            
+            const context = CorrelationContextManager.startOperation(requestWithSessionId, "GET /test");
+
+            assert.ok(context.operation);
+            assert.deepEqual(context.customProperties.getProperty("sessionId"), "test-session-id");
+        });
+
+        it("should include ai-session-id in customProperties when provided", () => {
+            // Use an object with direct header properties
+            const requestWithSessionIdHeader = {
+                headers: {
+                    traceparent: testFunctionContext.traceContext.traceparent,
+                    "ai-session-id": "test-ai-session-id"
+                }
+            };
+            
+            const context = CorrelationContextManager.startOperation(requestWithSessionIdHeader as any, "GET /test");
+            
+            assert.ok(context.operation);
+            assert.strictEqual(context.customProperties.getProperty("sessionId"), "test-ai-session-id");
+        });
     });
 
     /**

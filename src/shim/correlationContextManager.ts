@@ -69,6 +69,7 @@ export class CorrelationContextManager {
      * @param operationName Human readable name of the span
      * @param traceparent Context conveying string in the format version-traceId-spanId-traceFlag
      * @param tracestate String of key value pairs for additional trace context
+     * @param sessionId Optional sessionId for correlation between Frontend and Backend
      * @returns ICorrelationContext object
      */
     public static generateContextObject(
@@ -76,12 +77,19 @@ export class CorrelationContextManager {
         parentId?: string,
         operationName?: string,
         traceparent?: ITraceparent,
-        tracestate?: TraceState
+        tracestate?: TraceState,
+        sessionId?: string
     ): ICorrelationContext {
         // Cast OpenTelemetry TraceState object to ITracestate object
         const ITraceState: ITracestate = {
             fieldmap: tracestate?.serialize()?.split(",")
         };
+
+        // Create a properties object that stores sessionId if provided
+        const properties: { [key: string]: string } = {};
+        if (sessionId) {
+            properties["sessionId"] = sessionId;
+        }
 
         return {
             operation: {
@@ -93,8 +101,8 @@ export class CorrelationContextManager {
             },
             // Headers are not being used so custom properties will always be stubbed out
             customProperties: {
-                getProperty(prop: string) { return "" },
-                setProperty(prop: string) { return "" },
+                getProperty(prop: string) { return properties[prop] || ""; },
+                setProperty(prop: string, value: string) { properties[prop] = value; return ""; }
             } as ICustomProperties,
         }
     }
@@ -169,6 +177,12 @@ export class CorrelationContextManager {
      * @param input Any kind of object we can extract context information from
      * @param request HTTP request we can pull context information from in the form of the request's headers
      * @returns IcorrelationContext object
+     * 
+     * For correlation between Frontend and Backend, the following headers are supported:
+     * - traceparent: W3C trace context header (required for distributed tracing)
+     * - tracestate: W3C trace state header (optional)
+     * - request-id: Legacy Application Insights header (optional, fallback if traceparent is not provided)
+     * - sessionId or ai-session-id: Session ID for correlation (optional)
      */
     public static startOperation(
         input: AzureFnContext | (http.IncomingMessage | AzureFnRequest) | SpanContext | Span,
@@ -227,12 +241,20 @@ export class CorrelationContextManager {
 
             // If headers is defined instead of traceContext, use the headers to set the traceparent and tracestate
             // If headers is not an instance of Headers, we use the old programming model, otherwise use the old v3 values
+            let sessionId: string = null;
             if (headers && (headers as HttpRequestHeaders).traceparent) {
                 traceparent = (headers as HttpRequestHeaders).traceparent ? (headers as HttpRequestHeaders).traceparent.toString() : null;
                 tracestate = (headers as HttpRequestHeaders).tracestate ? (headers as HttpRequestHeaders).tracestate.toString() : tracestate;
-            } else if (headers && headers.get) {
+                // Check for sessionId in headers for correlation between Frontend and Backend
+                sessionId = (headers as HttpRequestHeaders).sessionId ? (headers as HttpRequestHeaders).sessionId.toString() : 
+                           (headers as HttpRequestHeaders)["ai-session-id"] ? (headers as HttpRequestHeaders)["ai-session-id"].toString() : null;
+                diag.debug("Found session ID in headers:", sessionId);
+            } else if (headers && (headers as any).get && typeof (headers as any).get === 'function') {
                 traceparent = (headers as any).get("traceparent") || (headers as any).get("request-id");
                 tracestate = (headers as any).get("tracestate");
+                // Check for sessionId in headers for correlation between Frontend and Backend
+                sessionId = (headers as any).get("sessionId") || (headers as any).get("ai-session-id");
+                diag.debug("Found session ID in headers with get():", sessionId);
             }
 
             const traceArray: string[] = traceparent?.split("-");
@@ -255,7 +277,8 @@ export class CorrelationContextManager {
                         traceId: traceArray[1],
                         version: "00",
                     },
-                    tracestateObj
+                    tracestateObj,
+                    sessionId
                 );
             } catch (error) {
                 diag.warn("Error creating context object", Util.getInstance().dumpObj(error));

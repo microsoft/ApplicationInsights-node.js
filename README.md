@@ -354,6 +354,25 @@ The following configurations are set using either environment variables, setting
 | extendedMetricDisablers | Will not have any effect as extended/native metrics are not supported in the Application Insights 3.X SDK or Azure Monitor OpenTelemetry. |
 | correlationHeaderExcludedDomains | Not supported in the Application Insights 3.X SDK or Azure Monitor OpenTelemetry. |
 
+## Distributed Tracing and Correlation
+
+The SDK automatically correlates telemetry associated with a request by using a W3C trace context. When a request is processed, the SDK creates a context for that operation, including a unique identifier that helps correlate all telemetry related to that operation.
+
+### Frontend to Backend Correlation
+
+When correlating between Frontend (e.g., using `@microsoft/applicationinsights-web`) and Backend (using this SDK), the following headers are supported:
+
+| Header | Description | Required |
+|--------|-------------|----------|
+| `traceparent` | W3C trace context header with format `00-traceId-spanId-flags` | Yes |
+| `tracestate` | W3C trace state header with vendor-specific data | No |
+| `request-id` | Legacy Application Insights header | No, fallback if traceparent is not provided |
+| `sessionId` or `ai-session-id` | Session ID for correlation | No |
+
+The Backend will automatically read these headers from incoming requests and establish the correlation context. No additional code is needed to support this correlation.
+
+For more information about W3C Trace Context, see the [W3C Trace Context specification](https://www.w3.org/TR/trace-context/).
+
 The following methods are part of the `TelemetryClient` class. They can be called using `applicationinsights.defaultClient.<METHOD_NAME>()`.
 
 |Property       |                     Support Status              |
