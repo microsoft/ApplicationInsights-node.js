@@ -8,23 +8,41 @@ on:
 
 jobs:
   build:
-
-    runs-on: ubuntu-20.04-arm64
+    # Use a standard Ubuntu runner instead of requesting ARM64 hardware directly
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
         # Using the same Node versions as the main workflow
-        node-version: [16.x, 18.x, 20.x, 22.x]
+        node-version: [16, 18, 20, 22]
 
     steps:
-    - uses: actions/checkout@v2
-    - run: openssl req -x509 -nodes -newkey rsa -keyout ./test/certs/server-key.pem -out ./test/certs/server-cert.pem -days 1 -subj "/C=CL/ST=RM/L=OpenTelemetryTest/O=Root/OU=Test/CN=ca"
-    - name: (Linux ARM64) on Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: npm run clean
-    - run: npm i
-    - run: npm run build --if-present
-    - run: npm run lint
-    - run: npm test
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: arm64
+      
+      - name: Run tests in ARM64 Docker container
+        run: |
+          # Generate SSL certificates first (outside container)
+          mkdir -p ./test/certs
+          openssl req -x509 -nodes -newkey rsa:2048 -keyout ./test/certs/server-key.pem -out ./test/certs/server-cert.pem -days 1 -subj "/C=CL/ST=RM/L=OpenTelemetryTest/O=Root/OU=Test/CN=ca"
+          
+          # Set proper permissions for the mounted volume
+          chmod -R 777 .
+          
+          # Run the Node.js tests in ARM64 container
+          docker run --rm -v ${{ github.workspace }}:/app -w /app --platform linux/arm64 node:${{ matrix.node-version }}-alpine sh -c '
+            # Install build tools needed for native modules
+            apk add --no-cache python3 make g++ 
+            
+            # Install and run tests
+            npm run clean
+            npm i
+            npm run build --if-present
+            npm run lint
+            npm test
+          '
