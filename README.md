@@ -369,7 +369,30 @@ When correlating between Frontend (e.g., using `@microsoft/applicationinsights-w
 | `request-id` | Legacy Application Insights header | No, fallback if traceparent is not provided |
 | `sessionId` or `ai-session-id` | Session ID for correlation | No |
 
-The Backend will automatically read these headers from incoming requests and establish the correlation context. No additional code is needed to support this correlation.
+#### How Frontend-Backend Correlation Works
+
+1. **Frontend Setup**: The frontend application (using `@microsoft/applicationinsights-web`) automatically includes these headers in outgoing HTTP requests when properly configured with `enableCorsCorrelation: true`.
+
+   ```javascript
+   // Example of frontend setup with Application Insights
+   const appInsights = new ApplicationInsights({
+     config: {
+       connectionString: "your-connection-string",
+       enableCorsCorrelation: true  // Important for cross-domain correlation
+     }
+   });
+   appInsights.loadAppInsights();
+   ```
+
+2. **Automatic Header Processing**: When the backend receives a request, this SDK automatically:
+   - Extracts the correlation headers (`traceparent`, `tracestate`, etc.) from the incoming request
+   - Creates a correlation context based on these headers
+   - Associates this context with the current execution
+   - All telemetry sent during request processing is automatically linked to this context
+
+3. **Session Correlation**: If `sessionId` or `ai-session-id` headers are present, they are automatically stored in the correlation context's custom properties and will be included in telemetry.
+
+**No manual code is required** in your backend application to maintain this correlation. The SDK handles all the correlation context management internally.
 
 For more information about W3C Trace Context, see the [W3C Trace Context specification](https://www.w3.org/TR/trace-context/).
 
