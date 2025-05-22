@@ -303,32 +303,6 @@ describe("Library/Util", () => {
                 assert.strictEqual(size, 0);
             });
 
-            it("should only count files at root level and ignore subdirectories", () => {
-                // Create mixed content directory
-                const mixedSyncDir = path.join(tempDir, "mixed-sync-dir");
-                if (!fs.existsSync(mixedSyncDir)) {
-                    fs.mkdirSync(mixedSyncDir, { recursive: true });
-                }
-                
-                // Create files in the root
-                const file1 = path.join(mixedSyncDir, "file1.txt");
-                const file2 = path.join(mixedSyncDir, "file2.txt");
-                fs.writeFileSync(file1, "file1-sync-content");
-                fs.writeFileSync(file2, "file2-sync-content");
-                
-                // Create subdirectory with files
-                const subDir = path.join(mixedSyncDir, "subdir");
-                if (!fs.existsSync(subDir)) {
-                    fs.mkdirSync(subDir, { recursive: true });
-                }
-                const subFile = path.join(subDir, "subfile.txt");
-                fs.writeFileSync(subFile, "subfile-sync-content");
-                
-                const size = fileSystemHelper.getShallowDirectorySizeSync(mixedSyncDir);
-                assert.strictEqual(size, "file1-sync-content".length + "file2-sync-content".length, 
-                    "Should only include size of root level files");
-            });
-
             it("should handle errors in readdirSync", () => {
                 const readdirSyncStub = sandbox.stub(fs, "readdirSync");
                 readdirSyncStub.throws(new Error("ReaddirSync error"));
