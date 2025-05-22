@@ -5,7 +5,7 @@ import * as nock from "nock";
 import * as sinon from "sinon";
 import { Context, ProxyTracerProvider, trace, metrics, diag } from "@opentelemetry/api";
 import { ReadableSpan, Span, SpanProcessor } from "@opentelemetry/sdk-trace-base";
-import { DependencyTelemetry, RequestTelemetry, TelemetryType } from "../../../src/declarations/contracts";
+import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations/contracts";
 import { TelemetryClient } from "../../../src/shim/telemetryClient";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { AzureMonitorExporterOptions, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
