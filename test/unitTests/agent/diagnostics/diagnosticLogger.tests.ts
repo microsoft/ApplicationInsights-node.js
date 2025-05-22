@@ -3,9 +3,12 @@
 
 import * as assert from "assert";
 import * as sinon from "sinon";
+import * as fs from "fs";
+import * as path from "path";
 import { DiagnosticLogger } from "../../../../src/agent/diagnostics/diagnosticLogger";
 import { EtwDiagnosticLogger } from "../../../../src/agent/diagnostics/etwDiagnosticLogger";
 import { EtwWriter } from "../../../../src/agent/diagnostics/writers/etwWriter";
+import { Util } from "../../../../src/shared/util";
 
 describe("agent/diagnostics/diagnosticLogger", () => {
     let sandbox: sinon.SinonSandbox;
@@ -160,6 +163,232 @@ describe("agent/diagnostics/etwDiagnosticLogger", () => {
             
             // Restore environment variables
             process.env = originalEnv;
+        });
+    });
+});
+
+describe("agent/diagnostics/writers/etwWriter", () => {
+    let sandbox: sinon.SinonSandbox;
+    
+    before(() => {
+        sandbox = sinon.createSandbox();
+    });
+
+    afterEach(() => {
+        sandbox.restore();
+    });
+
+    describe("constructor", () => {
+        it("should initialize without ETW module when fs.accessSync throws", () => {
+            // Mock fs.accessSync to throw
+            sandbox.stub(fs, "accessSync").throws(new Error("Directory not accessible"));
+            
+            // Mock console.log
+            const consoleLogStub = sandbox.stub(console, "log");
+            
+            const writer = new EtwWriter();
+            
+            // Verify ETW module is not loaded
+            assert.strictEqual((writer as any)._etwModule, undefined);
+            assert.ok(consoleLogStub.calledWith('AppInsightsAgent: ETW could not be loaded'));
+        });
+
+        it("should handle errors when loading ETW module", () => {
+            // Mock process.versions.node
+            const originalNodeVersion = process.versions.node;
+            Object.defineProperty(process.versions, 'node', {
+                value: '16.0.0',
+                configurable: true
+            });
+            
+            // Mock console.log
+            const consoleLogStub = sandbox.stub(console, "log");
+            
+            // Force constructor to throw an error
+            sandbox.stub(EtwWriter.prototype as any, "_loadEtwModule").throws(new Error("Test error"));
+            
+            const writer = new EtwWriter();
+            
+            // Verify ETW module is not loaded
+            assert.strictEqual((writer as any)._etwModule, undefined);
+            assert.ok(consoleLogStub.calledWith(sinon.match(/Could not load ETW. Defaulting to console logging/)));
+            
+            // Restore Node.js version
+            Object.defineProperty(process.versions, 'node', {
+                value: originalNodeVersion,
+                configurable: true
+            });
+        });
+    });
+
+    describe("log", () => {
+        it("should call logInfoEvent when ETW module exists", () => {
+            // Create a writer with mock ETW module
+            const mockEtwModule = {
+                logInfoEvent: sandbox.stub()
+            };
+            
+            const writer = new EtwWriter();
+            (writer as any)._etwModule = mockEtwModule;
+            
+            const message = "Test message";
+            const optional = ["metadata1", "metadata2"];
+            
+            writer.log(message, optional);
+            
+            // Verify logInfoEvent was called with correct parameters
+            assert.ok(mockEtwModule.logInfoEvent.calledOnce);
+            assert.ok(mockEtwModule.logInfoEvent.calledWith(message, ...optional));
+        });
+
+        it("should log to console when ETW module does not exist", () => {
+            // Create a writer without ETW module
+            const writer = new EtwWriter();
+            (writer as any)._etwModule = undefined;
+            
+            // Mock console.log
+            const consoleLogStub = sandbox.stub(console, "log");
+            
+            // Mock Util.getInstance().stringify
+            const stringifyStub = sandbox.stub();
+            stringifyStub.returns("stringified message");
+            sandbox.stub(Util, "getInstance").returns({ stringify: stringifyStub } as any);
+            
+            const message = "Test message";
+            
+            writer.log(message);
+            
+            // Verify console.log was called with stringified message
+            assert.ok(consoleLogStub.calledOnce);
+            assert.ok(stringifyStub.calledWith(message));
+            assert.ok(consoleLogStub.calledWith("stringified message"));
+        });
+
+        it("should handle optional parameters when ETW module does not exist", () => {
+            // Create a writer without ETW module
+            const writer = new EtwWriter();
+            (writer as any)._etwModule = undefined;
+            
+            // Mock console.log
+            const consoleLogStub = sandbox.stub(console, "log");
+            
+            // Mock Util.getInstance().stringify
+            const stringifyStub = sandbox.stub();
+            stringifyStub.returns("stringified message");
+            sandbox.stub(Util, "getInstance").returns({ stringify: stringifyStub } as any);
+            
+            const message = "Test message";
+            const optional = ["metadata1", "metadata2"];
+            
+            writer.log(message, optional);
+            
+            // Verify console.log was called with stringified message
+            assert.ok(consoleLogStub.calledOnce);
+            assert.ok(stringifyStub.calledWith(message));
+            assert.ok(consoleLogStub.calledWith("stringified message"));
+        });
+    });
+
+    describe("error", () => {
+        it("should call logErrEvent when ETW module exists", () => {
+            // Create a writer with mock ETW module
+            const mockEtwModule = {
+                logErrEvent: sandbox.stub()
+            };
+            
+            const writer = new EtwWriter();
+            (writer as any)._etwModule = mockEtwModule;
+            
+            const message = "Error message";
+            const optional = ["metadata1", "metadata2"];
+            
+            writer.error(message, optional);
+            
+            // Verify logErrEvent was called with correct parameters
+            assert.ok(mockEtwModule.logErrEvent.calledOnce);
+            assert.ok(mockEtwModule.logErrEvent.calledWith(message, ...optional));
+        });
+
+        it("should log to console.error when ETW module does not exist", () => {
+            // Create a writer without ETW module
+            const writer = new EtwWriter();
+            (writer as any)._etwModule = undefined;
+            
+            // Mock console.error
+            const consoleErrorStub = sandbox.stub(console, "error");
+            
+            // Mock Util.getInstance().stringify
+            const stringifyStub = sandbox.stub();
+            stringifyStub.returns("stringified error message");
+            sandbox.stub(Util, "getInstance").returns({ stringify: stringifyStub } as any);
+            
+            const message = "Error message";
+            
+            writer.error(message);
+            
+            // Verify console.error was called with stringified message
+            assert.ok(consoleErrorStub.calledOnce);
+            assert.ok(stringifyStub.calledWith(message));
+            assert.ok(consoleErrorStub.calledWith("stringified error message"));
+        });
+
+        it("should handle optional parameters when ETW module does not exist", () => {
+            // Create a writer without ETW module
+            const writer = new EtwWriter();
+            (writer as any)._etwModule = undefined;
+            
+            // Mock console.error
+            const consoleErrorStub = sandbox.stub(console, "error");
+            
+            // Mock Util.getInstance().stringify
+            const stringifyStub = sandbox.stub();
+            stringifyStub.returns("stringified error message");
+            sandbox.stub(Util, "getInstance").returns({ stringify: stringifyStub } as any);
+            
+            const message = "Error message";
+            const optional = ["metadata1", "metadata2"];
+            
+            writer.error(message, optional);
+            
+            // Verify console.error was called with stringified message
+            assert.ok(consoleErrorStub.calledOnce);
+            assert.ok(stringifyStub.calledWith(message));
+            assert.ok(consoleErrorStub.calledWith("stringified error message"));
+        });
+    });
+
+    describe("_loadEtwModule", () => {
+        it("should return undefined when directory is not accessible", () => {
+            // Mock fs.accessSync to throw
+            sandbox.stub(fs, "accessSync").throws(new Error("Directory not accessible"));
+            
+            const writer = new EtwWriter();
+            const result = (writer as any)._loadEtwModule(16); // Using Node.js v16
+            
+            assert.strictEqual(result, undefined);
+        });
+
+        it("should handle require throwing an error", () => {
+            // Mock path.join
+            const mockPath = "/mock/path/to/etw/etw_16";
+            sandbox.stub(path, "join").returns(mockPath);
+            
+            // Mock fs.accessSync to not throw
+            sandbox.stub(fs, "accessSync").returns(undefined);
+            
+            // Mock require to throw
+            const requireStub = sandbox.stub().throws(new Error("Module loading error"));
+            const originalRequire = require;
+            (global as any).require = requireStub;
+            
+            const writer = new EtwWriter();
+            const result = (writer as any)._loadEtwModule(16); // Using Node.js v16
+            
+            // Verify result is undefined
+            assert.strictEqual(result, undefined);
+            
+            // Restore require
+            (global as any).require = originalRequire;
         });
     });
 });
