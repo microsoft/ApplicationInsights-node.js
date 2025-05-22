@@ -6,7 +6,7 @@ import * as path from 'path';
 import { Util } from "../../../shared/util";
 import { IAgentLogger } from "../../types";
 
-export class EtwWritter implements IAgentLogger {
+export class EtwWriter implements IAgentLogger {
     private _etwModule: any;
 
     constructor() {
