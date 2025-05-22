@@ -8,6 +8,7 @@ import * as path from "path";
 import { DiagnosticLogger } from "../../../../src/agent/diagnostics/diagnosticLogger";
 import { EtwDiagnosticLogger } from "../../../../src/agent/diagnostics/etwDiagnosticLogger";
 import { EtwWriter } from "../../../../src/agent/diagnostics/writers/etwWriter";
+import { ConsoleWriter } from "../../../../src/agent/diagnostics/writers/consoleWriter";
 import { Util } from "../../../../src/shared/util";
 
 describe("agent/diagnostics/diagnosticLogger", () => {
@@ -389,6 +390,170 @@ describe("agent/diagnostics/writers/etwWriter", () => {
             
             // Restore require
             (global as any).require = originalRequire;
+        });
+    });
+});
+
+describe("agent/diagnostics/writers/consoleWriter", () => {
+    let sandbox: sinon.SinonSandbox;
+    
+    before(() => {
+        sandbox = sinon.createSandbox();
+    });
+
+    afterEach(() => {
+        sandbox.restore();
+    });
+
+    describe("log", () => {
+        it("should call console.log with stringified message", () => {
+            // Mock console.log
+            const consoleLogStub = sandbox.stub(console, "log");
+            
+            // Mock Util.getInstance().stringify
+            const stringifyStub = sandbox.stub();
+            stringifyStub.returns("stringified message");
+            sandbox.stub(Util, "getInstance").returns({ stringify: stringifyStub } as any);
+            
+            // Create a ConsoleWriter instance
+            const writer = new ConsoleWriter();
+            
+            // Call log with various types of messages
+            writer.log("string message");
+            writer.log({ key: "object message" });
+            writer.log(123);
+            writer.log(null);
+            writer.log(undefined);
+            
+            // Verify console.log was called with stringified message for each call
+            assert.strictEqual(consoleLogStub.callCount, 5);
+            assert.strictEqual(stringifyStub.callCount, 5);
+            assert.ok(stringifyStub.calledWith("string message"));
+            assert.ok(stringifyStub.calledWith({ key: "object message" }));
+            assert.ok(stringifyStub.calledWith(123));
+            assert.ok(stringifyStub.calledWith(null));
+            assert.ok(stringifyStub.calledWith(undefined));
+            assert.ok(consoleLogStub.alwaysCalledWith("stringified message"));
+        });
+
+        it("should handle optional parameters", () => {
+            // Mock console.log
+            const consoleLogStub = sandbox.stub(console, "log");
+            
+            // Mock Util.getInstance().stringify
+            const stringifyStub = sandbox.stub();
+            stringifyStub.returns("stringified message");
+            sandbox.stub(Util, "getInstance").returns({ stringify: stringifyStub } as any);
+            
+            // Create a ConsoleWriter instance
+            const writer = new ConsoleWriter();
+            
+            // Call log with optional parameters
+            writer.log("message", "param1", "param2", { param: 3 });
+            
+            // Verify console.log was called with stringified message
+            assert.strictEqual(consoleLogStub.callCount, 1);
+            assert.strictEqual(stringifyStub.callCount, 1);
+            assert.ok(stringifyStub.calledWith("message"));
+            assert.ok(consoleLogStub.calledWith("stringified message"));
+        });
+
+        it("should handle message being undefined", () => {
+            // Mock console.log
+            const consoleLogStub = sandbox.stub(console, "log");
+            
+            // Mock Util.getInstance().stringify
+            const stringifyStub = sandbox.stub();
+            stringifyStub.returns("stringified undefined");
+            sandbox.stub(Util, "getInstance").returns({ stringify: stringifyStub } as any);
+            
+            // Create a ConsoleWriter instance
+            const writer = new ConsoleWriter();
+            
+            // Call log without a message
+            writer.log();
+            
+            // Verify console.log was called with stringified undefined
+            assert.strictEqual(consoleLogStub.callCount, 1);
+            assert.strictEqual(stringifyStub.callCount, 1);
+            assert.ok(stringifyStub.calledWith(undefined));
+            assert.ok(consoleLogStub.calledWith("stringified undefined"));
+        });
+    });
+
+    describe("error", () => {
+        it("should call console.error with stringified message", () => {
+            // Mock console.error
+            const consoleErrorStub = sandbox.stub(console, "error");
+            
+            // Mock Util.getInstance().stringify
+            const stringifyStub = sandbox.stub();
+            stringifyStub.returns("stringified error message");
+            sandbox.stub(Util, "getInstance").returns({ stringify: stringifyStub } as any);
+            
+            // Create a ConsoleWriter instance
+            const writer = new ConsoleWriter();
+            
+            // Call error with various types of messages
+            writer.error("string error");
+            writer.error({ key: "object error" });
+            writer.error(456);
+            writer.error(null);
+            writer.error(undefined);
+            
+            // Verify console.error was called with stringified message for each call
+            assert.strictEqual(consoleErrorStub.callCount, 5);
+            assert.strictEqual(stringifyStub.callCount, 5);
+            assert.ok(stringifyStub.calledWith("string error"));
+            assert.ok(stringifyStub.calledWith({ key: "object error" }));
+            assert.ok(stringifyStub.calledWith(456));
+            assert.ok(stringifyStub.calledWith(null));
+            assert.ok(stringifyStub.calledWith(undefined));
+            assert.ok(consoleErrorStub.alwaysCalledWith("stringified error message"));
+        });
+
+        it("should handle optional parameters", () => {
+            // Mock console.error
+            const consoleErrorStub = sandbox.stub(console, "error");
+            
+            // Mock Util.getInstance().stringify
+            const stringifyStub = sandbox.stub();
+            stringifyStub.returns("stringified error message");
+            sandbox.stub(Util, "getInstance").returns({ stringify: stringifyStub } as any);
+            
+            // Create a ConsoleWriter instance
+            const writer = new ConsoleWriter();
+            
+            // Call error with optional parameters
+            writer.error("error message", "param1", "param2", { param: 3 });
+            
+            // Verify console.error was called with stringified message
+            assert.strictEqual(consoleErrorStub.callCount, 1);
+            assert.strictEqual(stringifyStub.callCount, 1);
+            assert.ok(stringifyStub.calledWith("error message"));
+            assert.ok(consoleErrorStub.calledWith("stringified error message"));
+        });
+
+        it("should handle message being undefined", () => {
+            // Mock console.error
+            const consoleErrorStub = sandbox.stub(console, "error");
+            
+            // Mock Util.getInstance().stringify
+            const stringifyStub = sandbox.stub();
+            stringifyStub.returns("stringified undefined");
+            sandbox.stub(Util, "getInstance").returns({ stringify: stringifyStub } as any);
+            
+            // Create a ConsoleWriter instance
+            const writer = new ConsoleWriter();
+            
+            // Call error without a message
+            writer.error();
+            
+            // Verify console.error was called with stringified undefined
+            assert.strictEqual(consoleErrorStub.callCount, 1);
+            assert.strictEqual(stringifyStub.callCount, 1);
+            assert.ok(stringifyStub.calledWith(undefined));
+            assert.ok(consoleErrorStub.calledWith("stringified undefined"));
         });
     });
 });
