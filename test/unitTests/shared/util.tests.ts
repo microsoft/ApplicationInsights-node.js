@@ -340,23 +340,6 @@ describe("Library/Util", () => {
                     assert.strictEqual(err.message, "ReaddirSync error");
                 }
             });
-
-            // it("should handle errors in statSync", () => {
-            //     const readdirSyncStub = sandbox.stub(fs, "readdirSync");
-            //     // Create mock file entries
-            //     const mockFiles = ["file1.txt", "file2.txt"];
-            //     readdirSyncStub.returns(mockFiles);
-                
-            //     const statSyncStub = sandbox.stub(fs, "statSync");
-            //     statSyncStub.throws(new Error("StatSync error"));
-                
-            //     try {
-            //         fileSystemHelper.getShallowDirectorySizeSync("test-dir");
-            //         assert.fail("Should have thrown an error");
-            //     } catch (err) {
-            //         assert.strictEqual(err.message, "StatSync error");
-            //     }
-            // });
         });
 
         describe("#getShallowFileSize()", () => {
