@@ -3,9 +3,9 @@
 import * as assert from "assert";
 import * as nock from "nock";
 import * as sinon from "sinon";
-import { Context, ProxyTracerProvider, trace, metrics } from "@opentelemetry/api";
+import { Context, ProxyTracerProvider, trace, metrics, diag } from "@opentelemetry/api";
 import { ReadableSpan, Span, SpanProcessor } from "@opentelemetry/sdk-trace-base";
-import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations/contracts";
+import { DependencyTelemetry, RequestTelemetry, TelemetryType } from "../../../src/declarations/contracts";
 import { TelemetryClient } from "../../../src/shim/telemetryClient";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { AzureMonitorExporterOptions, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
@@ -13,6 +13,7 @@ import { MeterProvider, PeriodicExportingMetricReader, PeriodicExportingMetricRe
 import { LogRecord, LogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
 import { logs } from "@opentelemetry/api-logs";
 import { SEMATTRS_RPC_SYSTEM } from "@opentelemetry/semantic-conventions";
+import Config = require("../../../src/shim/shim-config");
 
 describe("shim/TelemetryClient", () => {
     let client: TelemetryClient;
@@ -23,6 +24,8 @@ describe("shim/TelemetryClient", () => {
     let metricProvider: MeterProvider;
     let logProcessor: TestLogProcessor;
     let sandbox: sinon.SinonSandbox;
+    let diagErrorStub: sinon.SinonStub;
+    let diagWarnStub: sinon.SinonStub;
 
     before(() => {
         sandbox = sinon.createSandbox();
@@ -49,6 +52,11 @@ describe("shim/TelemetryClient", () => {
         loggerProvider.addLogRecordProcessor(logProcessor);
 
         metricProvider = metrics.getMeterProvider() as MeterProvider;
+    });
+
+    beforeEach(() => {
+        diagErrorStub = sandbox.stub(diag, 'error');
+        diagWarnStub = sandbox.stub(diag, 'warn');
     });
 
     afterEach(() => {
@@ -109,6 +117,66 @@ describe("shim/TelemetryClient", () => {
             testMetrics = metrics;
         }
     }
+
+    describe("#unsupported and deprecated methods", () => {
+        it("track throws error", () => {
+            assert.throws(() => {
+                client.track({ name: "test" } as any, "Event" as any);
+            }, /Not implemented/);
+        });
+        
+        it("addTelemetryProcessor should warn", () => {
+            client.addTelemetryProcessor(() => true);
+            assert.ok(diagWarnStub.calledOnce);
+        });
+
+        it("getAuthorizationHandler should warn", () => {
+            client.getAuthorizationHandler(new Config());
+            assert.ok(diagWarnStub.calledOnce);
+        });
+
+        it("setAutoPopulateAzureProperties should do nothing", () => {
+            // This is a no-op, so just verify it doesn't throw
+            assert.doesNotThrow(() => {
+                client.setAutoPopulateAzureProperties();
+            });
+        });
+
+        it("getStatsbeat should return null", () => {
+            const result = client.getStatsbeat();
+            assert.strictEqual(result, null);
+        });
+        
+        it("setUseDiskRetryCaching throws error", () => {
+            assert.throws(() => {
+                client.setUseDiskRetryCaching(true);
+            }, /Not implemented/);
+        });
+
+        it("clearTelemetryProcessors throws error", () => {
+            assert.throws(() => {
+                client.clearTelemetryProcessors();
+            }, /Not implemented/);
+        });
+
+        it("trackNodeHttpRequestSync should warn", () => {
+            client.trackNodeHttpRequestSync({} as any);
+            assert.ok(diagWarnStub.calledOnce);
+            assert.ok(diagWarnStub.calledWith("trackNodeHttpRequestSync is not implemented and is a no-op. Please use trackRequest instead."));
+        });
+
+        it("trackNodeHttpRequest should warn", () => {
+            client.trackNodeHttpRequest({} as any);
+            assert.ok(diagWarnStub.calledOnce);
+            assert.ok(diagWarnStub.calledWith("trackNodeHttpRequest is not implemented and is a no-op. Please use trackRequest instead."));
+        });
+
+        it("trackNodeHttpDependency should warn", () => {
+            client.trackNodeHttpDependency({} as any);
+            assert.ok(diagWarnStub.calledOnce);
+            assert.ok(diagWarnStub.calledWith("trackNodeHttpDependency is not implemented and is a no-op. Please use trackDependency instead."));
+        });
+    });
 
     describe("#manual track APIs", () => {
         it("trackDependency http", async () => {
@@ -211,6 +279,27 @@ describe("shim/TelemetryClient", () => {
             assert.equal(testMetrics.scopeMetrics[0].metrics[0].descriptor.type, "HISTOGRAM");
             // @ts-ignore: TypeScript is not aware of the sum existing on the value object since it's a generic type
             assert.equal(testMetrics.scopeMetrics[0].metrics[0].dataPoints[0].value.sum, 100);
+        });
+        
+        it("trackMetric should handle errors gracefully", async () => {
+            const telemetry = {
+                name: "ErrorMetric",
+                value: 50,
+            };
+            
+            // Force an error by stubbing metrics.getMeterProvider().getMeter()
+            const error = new Error("Failed to get meter");
+            const getMeterStub = sandbox.stub(metrics.getMeterProvider(), 'getMeter').throws(error);
+            
+            // This should now throw an error internally, but the method should catch it
+            client.trackMetric(telemetry);
+            
+            // Verify the error was logged
+            assert.ok(diagErrorStub.calledOnce);
+            assert.ok(diagErrorStub.calledWith(`Failed to record metric: ${error}`));
+            
+            // Restore the stub
+            getMeterStub.restore();
         });
         
         it("trackAvailability", async () => {
