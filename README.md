@@ -366,8 +366,6 @@ When correlating between Frontend (e.g., using `@microsoft/applicationinsights-w
 |--------|-------------|----------|
 | `traceparent` | W3C trace context header with format `00-traceId-spanId-flags` | Yes |
 | `tracestate` | W3C trace state header with vendor-specific data | No |
-| `request-id` | Legacy Application Insights header | No, fallback if traceparent is not provided |
-| `ai-session-id` | Session ID for correlation | No |
 
 #### How Frontend-Backend Correlation Works
 
@@ -385,12 +383,10 @@ When correlating between Frontend (e.g., using `@microsoft/applicationinsights-w
    ```
 
 2. **Automatic Header Processing**: When the backend receives a request, this SDK automatically:
-   - Extracts the correlation headers (`traceparent`, `tracestate`, etc.) from the incoming request
+   - Extracts the correlation headers (`traceparent`, `tracestate`) from the incoming request
    - Creates a correlation context based on these headers
    - Associates this context with the current execution
    - All telemetry sent during request processing is automatically linked to this context
-
-3. **Session Correlation**: If `ai-session-id` headers are present, they are automatically stored in the correlation context's custom properties and will be included in telemetry.
 
 **No manual code is required** in your backend application to maintain this correlation. The SDK handles all the correlation context management internally.
 
