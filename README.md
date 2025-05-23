@@ -354,6 +354,44 @@ The following configurations are set using either environment variables, setting
 | extendedMetricDisablers | Will not have any effect as extended/native metrics are not supported in the Application Insights 3.X SDK or Azure Monitor OpenTelemetry. |
 | correlationHeaderExcludedDomains | Not supported in the Application Insights 3.X SDK or Azure Monitor OpenTelemetry. |
 
+## Distributed Tracing and Correlation
+
+The SDK automatically correlates telemetry associated with a request by using a W3C trace context. When a request is processed, the SDK creates a context for that operation, including a unique identifier that helps correlate all telemetry related to that operation.
+
+### Frontend to Backend Correlation
+
+When correlating between Frontend (e.g., using `@microsoft/applicationinsights-web`) and Backend (using this SDK), the following headers are supported:
+
+| Header | Description | Required |
+|--------|-------------|----------|
+| `traceparent` | W3C trace context header with format `00-traceId-spanId-flags` | Yes |
+| `tracestate` | W3C trace state header with vendor-specific data | No |
+
+#### How Frontend-Backend Correlation Works
+
+1. **Frontend Setup**: The frontend application (using `@microsoft/applicationinsights-web`) automatically includes these headers in outgoing HTTP requests when properly configured with `enableCorsCorrelation: true`.
+
+   ```javascript
+   // Example of frontend setup with Application Insights
+   const appInsights = new ApplicationInsights({
+     config: {
+       connectionString: "your-connection-string",
+       enableCorsCorrelation: true  // Important for cross-domain correlation
+     }
+   });
+   appInsights.loadAppInsights();
+   ```
+
+2. **Automatic Header Processing**: When the backend receives a request, this SDK automatically:
+   - Extracts the correlation headers (`traceparent`, `tracestate`) from the incoming request
+   - Creates a correlation context based on these headers
+   - Associates this context with the current execution
+   - All telemetry sent during request processing is automatically linked to this context
+
+**No manual code is required** in your backend application to maintain this correlation. The SDK handles all the correlation context management internally.
+
+For more information about W3C Trace Context, see the [W3C Trace Context specification](https://www.w3.org/TR/trace-context/).
+
 The following methods are part of the `TelemetryClient` class. They can be called using `applicationinsights.defaultClient.<METHOD_NAME>()`.
 
 |Property       |                     Support Status              |
