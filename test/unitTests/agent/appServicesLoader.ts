@@ -24,9 +24,7 @@ describe("agent/AppServicesLoader", () => {
     afterEach(() => {
         process.env = originalEnv;
         sandbox.restore();
-    });
-
-    it("constructor", () => {
+    });    it("constructor", () => {
         const env = {
             ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
             ["HOME"]: "c:",
@@ -37,9 +35,22 @@ describe("agent/AppServicesLoader", () => {
         assert.equal(diagnosticLogger["_instrumentationKey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
 
         const isWindows = process.platform === 'win32';
-        assert.ok(diagnosticLogger instanceof DiagnosticLogger, "Wrong diagnosticLogger type");
-        assert.ok(diagnosticLogger["_agentLogger"] instanceof FileWriter, "Wrong diagnosticLogger agentLogger");
-        assert.equal(diagnosticLogger["_agentLogger"]["_filename"], "applicationinsights-extension.log");
+        
+        // In Windows, the diagnostic logger should be EtwDiagnosticLogger
+        // In non-Windows, it should be DiagnosticLogger with FileWriter
+        if (isWindows) {
+            // Import EtwDiagnosticLogger for Windows testing
+            const { EtwDiagnosticLogger } = require("../../../src/agent/diagnostics/etwDiagnosticLogger");
+            const { EtwWriter } = require("../../../src/agent/diagnostics/writers/etwWriter");
+            
+            assert.ok(diagnosticLogger instanceof EtwDiagnosticLogger, "Wrong diagnosticLogger type for Windows");
+            assert.ok(diagnosticLogger["_agentLogger"] instanceof EtwWriter, "Wrong diagnosticLogger agentLogger for Windows");
+        } else {
+            assert.ok(diagnosticLogger instanceof DiagnosticLogger, "Wrong diagnosticLogger type");
+            assert.ok(diagnosticLogger["_agentLogger"] instanceof FileWriter, "Wrong diagnosticLogger agentLogger");
+            assert.equal(diagnosticLogger["_agentLogger"]["_filename"], "applicationinsights-extension.log");
+            assert.equal(diagnosticLogger["_agentLogger"]["_filepath"], "/var/log/applicationinsights/");
+        }
 
         let statusLogger: any = agent["_statusLogger"];
         assert.equal(statusLogger["_instrumentationKey"], "1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
@@ -47,13 +58,11 @@ describe("agent/AppServicesLoader", () => {
         assert.equal(statusLogger["_agentLogger"]["_filename"], "status_nodejs.json");
 
         if (isWindows) {
-            assert.equal(diagnosticLogger["_agentLogger"]["_filepath"], "c:\\LogFiles\\ApplicationInsights\\status");
             assert.equal(statusLogger["_agentLogger"]["_filepath"], "c:\\LogFiles\\ApplicationInsights\\status");
-        }
-        else {
-            assert.equal(diagnosticLogger["_agentLogger"]["_filepath"], "/var/log/applicationinsights/");
+        } else {
             assert.equal(statusLogger["_agentLogger"]["_filepath"], "/var/log/applicationinsights/");
         }
+        
         // Loader is using correct diagnostics
         assert.equal(agent["_diagnosticLogger"], diagnosticLogger, "Wrong diagnosticLogger");
         assert.equal(agent["_statusLogger"], statusLogger, "Wrong statusLogger");

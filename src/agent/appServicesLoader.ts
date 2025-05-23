@@ -50,9 +50,27 @@ export class AppServicesLoader extends AgentLoader {
             }));
 
             if (this._isWindows) {
-                this._diagnosticLogger = new EtwDiagnosticLogger(
-                    this._instrumentationKey
-                );
+                try {
+                    this._diagnosticLogger = new EtwDiagnosticLogger(
+                        this._instrumentationKey
+                    );
+                } catch (error) {
+                    // Fallback to DiagnosticLogger with FileWriter if ETW initialization fails
+                    // This is useful for test environments or systems without ETW capability
+                    this._diagnosticLogger = new DiagnosticLogger(
+                        this._instrumentationKey,
+                        new FileWriter(
+                            statusLogDir,
+                            'applicationinsights-extension.log',
+                            {
+                                append: true,
+                                deleteOnExit: false,
+                                renamePolicy: 'overwrite',
+                                sizeLimit: 1024 * 1024, // 1 MB
+                            }
+                        )
+                    );
+                }
             }
             else{
                 this._diagnosticLogger = new DiagnosticLogger(

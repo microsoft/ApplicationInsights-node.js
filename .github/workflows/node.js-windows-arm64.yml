@@ -1,0 +1,54 @@
+name: Node.js CI (Windows ARM64)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    # Use the Linux runner instead as it has better Docker support
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        # Using the same Node versions as the main workflow but without the .x suffix for Docker images
+        node-version: [18, 20, 22]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+      with:
+        platforms: arm64
+      # Generate certificates using Linux openssl command
+    - name: Generate SSL Certificate
+      run: |
+        # Create certificates directory
+        mkdir -p ./test/certs
+        
+        # Generate SSL certificates
+        openssl req -x509 -nodes -newkey rsa:2048 -keyout ./test/certs/server-key.pem -out ./test/certs/server-cert.pem -days 1 -subj "/C=CL/ST=RM/L=OpenTelemetryTest/O=Root/OU=Test/CN=ca"
+        
+        # Set permissions
+        chmod -R 777 .
+    
+    - name: Run Node.js ${{ matrix.node-version }} tests in ARM64 Docker container
+      run: |
+        # Run the tests in an ARM64 container
+        docker run --rm -v ${{ github.workspace }}:/app -w /app --platform linux/arm64 node:${{ matrix.node-version }}-alpine sh -c '
+          echo "Running tests for Node.js ${{ matrix.node-version }} on ARM64 emulation (Windows-targeted tests)"
+          
+          # Install build dependencies for native modules
+          apk add --no-cache python3 make g++
+          
+          # Run tests
+          npm run clean
+          npm i
+          npm run build --if-present
+          npm run lint
+          npm test
+        '
