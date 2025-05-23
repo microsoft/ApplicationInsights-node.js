@@ -41,10 +41,10 @@ describe("agent/AppServicesLoader", () => {
         if (isWindows) {
             // Import EtwDiagnosticLogger for Windows testing
             const { EtwDiagnosticLogger } = require("../../../src/agent/diagnostics/etwDiagnosticLogger");
-            const { EtwWritter } = require("../../../src/agent/diagnostics/writers/etwWritter");
+            const { EtwWriter } = require("../../../src/agent/diagnostics/writers/etwWriter");
             
             assert.ok(diagnosticLogger instanceof EtwDiagnosticLogger, "Wrong diagnosticLogger type for Windows");
-            assert.ok(diagnosticLogger["_agentLogger"] instanceof EtwWritter, "Wrong diagnosticLogger agentLogger for Windows");
+            assert.ok(diagnosticLogger["_agentLogger"] instanceof EtwWriter, "Wrong diagnosticLogger agentLogger for Windows");
         } else {
             assert.ok(diagnosticLogger instanceof DiagnosticLogger, "Wrong diagnosticLogger type");
             assert.ok(diagnosticLogger["_agentLogger"] instanceof FileWriter, "Wrong diagnosticLogger agentLogger");
