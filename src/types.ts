@@ -7,7 +7,7 @@ import { InstrumentationConfig } from "@opentelemetry/instrumentation";
 import { OTLPExporterNodeConfigBase } from "@opentelemetry/otlp-exporter-base";
 
 
-export const APPLICATION_INSIGHTS_OPENTELEMETRY_VERSION = "3.5.0";
+export const APPLICATION_INSIGHTS_OPENTELEMETRY_VERSION = "3.6.0";
 export const DEFAULT_ROLE_NAME = "Web";
 export const AZURE_MONITOR_STATSBEAT_FEATURES = "AZURE_MONITOR_STATSBEAT_FEATURES";
 
@@ -31,6 +31,8 @@ export interface AzureMonitorOpenTelemetryOptions extends DistroOptions {
    * if true performance counters will be collected every second and sent to Azure Monitor
    */
   enableAutoCollectPerformance?: boolean;
+  enableAutoCollectDependencies?: boolean;
+  enableAutoCollectRequests?: boolean;
 }
 
 export interface InstrumentationOptions extends DistroInstrumentationOptions {

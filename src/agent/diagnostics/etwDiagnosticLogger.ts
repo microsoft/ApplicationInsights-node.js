@@ -3,14 +3,14 @@
 
 import { IDiagnosticLog } from "../types";
 import { BaseDiagnosticLogger } from "./baseDiagnosticLogger";
-import { EtwWritter } from "./writers/etwWritter";
+import { EtwWriter } from "./writers/etwWriter";
 
 
 export class EtwDiagnosticLogger extends BaseDiagnosticLogger {
 
     constructor(instrumentationKey: string) {
         super(instrumentationKey);
-        this._agentLogger = new EtwWritter();
+        this._agentLogger = new EtwWriter();
     }
 
     public logMessage(diagnosticLog: IDiagnosticLog) {

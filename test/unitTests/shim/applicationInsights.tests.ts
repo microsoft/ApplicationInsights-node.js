@@ -87,10 +87,19 @@ describe("ApplicationInsights", () => {
                 .setAutoDependencyCorrelation(false);
             appInsights.start();
             assert.equal(appInsights.defaultClient["_options"].enableAutoCollectExceptions, false);
-            assert.equal(appInsights.defaultClient["_options"].enableAutoCollectPerformance, false);
+            assert.equal(appInsights.defaultClient["_options"].enablePerformanceCounters, false);
             assert.equal(JSON.stringify(appInsights.defaultClient["_options"].instrumentationOptions.bunyan), JSON.stringify({ enabled: false }));
             assert.equal(JSON.stringify((appInsights.defaultClient["_options"].instrumentationOptions as InstrumentationOptions).console), JSON.stringify({ enabled: false }));
             assert.equal(JSON.stringify((appInsights.defaultClient["_options"].instrumentationOptions as InstrumentationOptions).winston), JSON.stringify({ enabled: false }));
+        });
+
+        it("should set dependency and request collection", () => {
+            appInsights.setup(connString)
+                .setAutoCollectRequests(true)
+                .setAutoCollectDependencies(false)
+            appInsights.start();
+            assert.equal(appInsights.defaultClient["_options"].enableAutoCollectDependencies, false);
+            assert.equal(appInsights.defaultClient["_options"].enableAutoCollectRequests, true);
         });
 
         describe("#CorrelationContext", () => {

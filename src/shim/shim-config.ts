@@ -186,6 +186,14 @@ class Config implements IConfig {
             options.enableAutoCollectExceptions = this.enableAutoCollectExceptions;
         }
 
+        if (typeof (this.enableAutoCollectRequests) === "boolean") {
+            options.enableAutoCollectRequests = this.enableAutoCollectRequests;
+        }
+
+        if (typeof (this.enableAutoCollectDependencies) === "boolean") {
+            options.enableAutoCollectDependencies = this.enableAutoCollectDependencies;
+        }
+
         if (this.enableAutoCollectDependencies === false && this.enableAutoCollectRequests === false) {
             options.instrumentationOptions.http.enabled = false;
         }
@@ -213,8 +221,9 @@ class Config implements IConfig {
                 };
             }
         }
+        // Performance counters
         if (typeof (this.enableAutoCollectPerformance) === "boolean") {
-            options.enableAutoCollectPerformance = this.enableAutoCollectPerformance;
+            options.enablePerformanceCounters = this.enableAutoCollectPerformance;
         }
         if (typeof (this.enableAutoCollectExternalLoggers) === "boolean") {
             (options.instrumentationOptions as InstrumentationOptions) = {
