@@ -35,6 +35,7 @@
     "lint": "eslint ./ --fix",
     "pretest": "npm run build",
     "test": "nyc mocha ./out/test --recursive",
+    "test:mocked": "node ./test/test-setup.js && nyc mocha ./out/test --recursive",
     "test:debug": "nyc mocha ./out/test --inspect-brk --recursive",
     "test:unit": "nyc mocha ./out/test/unitTests --recursive",
     "test:e2e": "nyc mocha ./out/test/endToEnd --recursive",
