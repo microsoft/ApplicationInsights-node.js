@@ -9,6 +9,7 @@ import { ICorrelationContext, HttpRequest, DistributedTracingModes, AzureFnConte
 import { TelemetryClient } from "./telemetryClient";
 import * as Contracts from "../declarations/contracts";
 import { Util } from "../shared/util";
+import { AzureMonitorOpenTelemetryOptions } from "../types";
 
 // We export these imports so that SDK users may use these classes directly.
 // They're exposed using "export import" so that types are passed along as expected
@@ -286,6 +287,18 @@ export class Configuration {
             defaultClient.config.enableSendLiveMetrics = enable;
         }
         return Configuration;
+    }
+
+    /**
+     * Set the options for @azure/monitor-opentelemetry
+     * @param value the options to set
+     * @returns {Configuration} this class
+     */
+    public static setAzureMonitorOptions(value: AzureMonitorOpenTelemetryOptions) {
+        if (defaultClient) {
+            defaultClient.config.azureMonitorOpenTelemetryOptions = value
+        }
+        return Configuration
     }
 }
 
