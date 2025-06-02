@@ -212,7 +212,7 @@ export class TelemetryClient {
         
         // Check if name starts with an HTTP method followed by a space
         for (const method of httpMethods) {
-            if (name.startsWith(method + " ")) {
+            if (name.startsWith(`${method } `)) {
                 return method;
             }
         }
