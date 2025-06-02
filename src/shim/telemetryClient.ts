@@ -172,9 +172,18 @@ export class TelemetryClient {
         const attributes: Attributes = {
             ...telemetry.properties,
         };
-        attributes[SEMATTRS_HTTP_METHOD] = "HTTP";
+        
+        // Extract HTTP method from request name if it follows "METHOD path" pattern
+        const httpMethod = this._extractHttpMethod(telemetry.name);
+        attributes[SEMATTRS_HTTP_METHOD] = httpMethod;
         attributes[SEMATTRS_HTTP_URL] = telemetry.url;
         attributes[SEMATTRS_HTTP_STATUS_CODE] = telemetry.resultCode;
+        
+        // Preserve user-provided request ID
+        if (telemetry.id) {
+            attributes["request.id"] = telemetry.id;
+        }
+        
         const options: SpanOptions = {
             kind: SpanKind.SERVER,
             attributes: attributes,
@@ -186,6 +195,30 @@ export class TelemetryClient {
             code: telemetry.success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
         });
         span.end(endTime);
+    }
+
+    /**
+     * Extract HTTP method from request name if it follows "METHOD path" pattern
+     * @param name The request name (e.g., "GET /", "POST /api/users")
+     * @returns The HTTP method (e.g., "GET", "POST") or "HTTP" as fallback
+     */
+    private _extractHttpMethod(name?: string): string {
+        if (!name) {
+            return "HTTP";
+        }
+        
+        // Common HTTP methods
+        const httpMethods = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "TRACE", "CONNECT"];
+        
+        // Check if name starts with an HTTP method followed by a space
+        for (const method of httpMethods) {
+            if (name.startsWith(method + " ")) {
+                return method;
+            }
+        }
+        
+        // Fallback to "HTTP" if no method pattern found
+        return "HTTP";
     }
 
     /**
