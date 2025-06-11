@@ -179,11 +179,6 @@ export class TelemetryClient {
         attributes[SEMATTRS_HTTP_URL] = telemetry.url;
         attributes[SEMATTRS_HTTP_STATUS_CODE] = telemetry.resultCode;
         
-        // Preserve user-provided request ID
-        if (telemetry.id) {
-            attributes["request.id"] = telemetry.id;
-        }
-        
         const options: SpanOptions = {
             kind: SpanKind.SERVER,
             attributes: attributes,

@@ -263,7 +263,6 @@ describe("shim/TelemetryClient", () => {
 
         it("trackRequest with HTTP method in name", async () => {
             const telemetry: RequestTelemetry = {
-                id: "7d2b68c6-5b3d-479d-92f9-ab680847acfd",
                 name: "GET /",
                 duration: 6,
                 resultCode: "304",
@@ -280,8 +279,6 @@ describe("shim/TelemetryClient", () => {
             assert.equal(spans[0].attributes["http.method"], "GET");
             assert.equal(spans[0].attributes["http.status_code"], "304");
             assert.equal(spans[0].attributes["http.url"], "http://localhost:4001/");
-            // User-provided ID should be preserved
-            assert.equal(spans[0].attributes["request.id"], "7d2b68c6-5b3d-479d-92f9-ab680847acfd");
         });
 
         it("trackRequest with different HTTP methods", async () => {
@@ -297,7 +294,6 @@ describe("shim/TelemetryClient", () => {
             for (let i = 0; i < testCases.length; i++) {
                 const testCase = testCases[i];
                 const telemetry: RequestTelemetry = {
-                    id: `test-id-${i}`,
                     name: testCase.name,
                     duration: 100,
                     resultCode: "200",
@@ -313,13 +309,11 @@ describe("shim/TelemetryClient", () => {
             
             for (let i = 0; i < testCases.length; i++) {
                 assert.equal(spans[i].attributes["http.method"], testCases[i].expectedMethod);
-                assert.equal(spans[i].attributes["request.id"], `test-id-${i}`);
             }
         });
 
         it("trackRequest with non-HTTP method name fallback", async () => {
             const telemetry: RequestTelemetry = {
-                id: "fallback-test",
                 name: "Custom Operation Name",
                 duration: 50,
                 resultCode: "200",
@@ -333,24 +327,6 @@ describe("shim/TelemetryClient", () => {
             assert.equal(spans[0].name, "Custom Operation Name");
             // Should fallback to "HTTP" when no method pattern found
             assert.equal(spans[0].attributes["http.method"], "HTTP");
-            assert.equal(spans[0].attributes["request.id"], "fallback-test");
-        });
-
-        it("trackRequest without ID should not add request.id attribute", async () => {
-            const telemetry: RequestTelemetry = {
-                name: "GET /test",
-                duration: 50,
-                resultCode: "200",
-                url: "http://test.com",
-                success: true,
-            };
-            client.trackRequest(telemetry);
-            await tracerProvider.forceFlush();
-            const spans = testProcessor.spansProcessed;
-            assert.equal(spans.length, 1);
-            assert.equal(spans[0].attributes["http.method"], "GET");
-            // Should not have request.id attribute when not provided
-            assert.equal(spans[0].attributes["request.id"], undefined);
         });
 
         it("trackMetric", async () => {
