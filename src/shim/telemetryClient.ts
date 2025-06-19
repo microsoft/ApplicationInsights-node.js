@@ -189,6 +189,17 @@ export class TelemetryClient {
         };
         const span: any = trace.getTracer("ApplicationInsightsTracer")
             .startSpan(telemetry.name, options, ctx);
+            
+        if (telemetry.id) {
+            try {
+                if (span._spanContext) {
+                    span._spanContext.traceId = telemetry.id;                
+                }
+            } catch (error) {
+                diag.warn('Unable to set custom traceId on span:', error);
+            }
+        }
+        
         span.setStatus({
             code: telemetry.success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
         });
@@ -252,6 +263,17 @@ export class TelemetryClient {
         };
         const span: any = trace.getTracer("ApplicationInsightsTracer")
             .startSpan(telemetry.name, options, ctx);
+            
+        if (telemetry.id) {
+            try {
+                if (span._spanContext) {
+                    span._spanContext.traceId = telemetry.id;
+                }
+            } catch (error) {
+                diag.warn('Unable to set custom traceId on span:', error);
+            }
+        }
+        
         span.setStatus({
             code: telemetry.success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
         });
