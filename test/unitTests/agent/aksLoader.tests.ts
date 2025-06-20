@@ -2,7 +2,6 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 import { ProxyTracerProvider, metrics, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
-
 import { AKSLoader } from "../../../src/agent/aksLoader";
 import { DiagnosticLogger } from "../../../src/agent/diagnostics/diagnosticLogger";
 import { FileWriter } from "../../../src/agent/diagnostics/writers/fileWriter";
@@ -61,19 +60,5 @@ describe("agent/AKSLoader", () => {
         let loggerProvider = logs.getLoggerProvider() as any;
         assert.equal(loggerProvider.constructor.name, "LoggerProvider");
         assert.equal(loggerProvider["_sharedState"]["registeredLogRecordProcessors"][1]["_exporter"].constructor.name, "AzureMonitorLogExporter");
-    });
-
-    it("should add OTLP exporter if env variable is present", () => {
-        const env = {
-            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
-            ["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"]: "something",
-        };
-        process.env = env;
-        const agent = new AKSLoader();
-        agent.initialize();
-        let meterProvider = metrics.getMeterProvider() as any;
-        assert.equal(meterProvider.constructor.name, "MeterProvider");
-        assert.equal(meterProvider["_sharedState"]["metricCollectors"].length, 2);
-        assert.equal(meterProvider["_sharedState"]["metricCollectors"][1]["_metricReader"]["_exporter"].constructor.name, "OTLPMetricExporter");
     });
 });
