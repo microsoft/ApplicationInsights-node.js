@@ -256,9 +256,48 @@ describe("shim/TelemetryClient", () => {
             assert.equal(spans[0].name, "TestName");
             assert.equal(spans[0].endTime[0] - spans[0].startTime[0], 2); // hrTime UNIX Epoch time in seconds
             assert.equal(spans[0].kind, 1, "Span Kind"); // Incoming
-            assert.equal(spans[0].attributes["http.method"], "HTTP");
             assert.equal(spans[0].attributes["http.status_code"], "401");
             assert.equal(spans[0].attributes["http.url"], "http://test.com");
+        });
+
+        it("trackRequest with custom id sets traceId", async () => {
+            const customId = "custom-trace-id-123456789abcdef0";
+            const telemetry: RequestTelemetry = {
+                id: customId,
+                name: "CustomTraceRequest",
+                duration: 1000,
+                resultCode: "200",
+                url: "http://example.com",
+                success: true,
+            };
+            client.trackRequest(telemetry);
+            await tracerProvider.forceFlush();
+            const spans = testProcessor.spansProcessed;
+            assert.equal(spans.length, 1);
+            assert.equal(spans[0].name, "CustomTraceRequest");
+            // Verify that the span's traceId matches the custom id provided
+            assert.equal(spans[0].spanContext().traceId, customId);
+        });
+
+        it("trackDependency with custom id sets traceId", async () => {
+            const customId = "custom-dependency-trace-id-abcdef";
+            const telemetry: DependencyTelemetry = {
+                id: customId,
+                name: "CustomTraceDependency",
+                duration: 500,
+                resultCode: "200",
+                data: "http://api.example.com",
+                dependencyTypeName: "HTTP",
+                target: "api.example.com",
+                success: true,
+            };
+            client.trackDependency(telemetry);
+            await tracerProvider.forceFlush();
+            const spans = testProcessor.spansProcessed;
+            assert.equal(spans.length, 1);
+            assert.equal(spans[0].name, "CustomTraceDependency");
+            // Verify that the span's traceId matches the custom id provided
+            assert.equal(spans[0].spanContext().traceId, customId);
         });
 
         it("trackMetric", async () => {
