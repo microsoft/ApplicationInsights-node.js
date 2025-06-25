@@ -28,11 +28,13 @@ import { flushAzureMonitor, shutdownAzureMonitor, useAzureMonitor } from "../mai
 import { AzureMonitorOpenTelemetryOptions } from "../types";
 import { UNSUPPORTED_MSG } from "./types";
 
+const ENV_MULTI_IKEY = "MULTI_IKEY_USED";
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
  * and manually trigger immediate sending (flushing)
  */
 export class TelemetryClient {
+    private static _instanceCount = 0;
     public context: Context;
     public commonProperties: { [key: string]: string };
     public config: Config;
@@ -48,6 +50,13 @@ export class TelemetryClient {
      * @param setupString the Connection String or Instrumentation Key to use (read from environment variable if not specified)
      */
     constructor(input?: string) {
+        TelemetryClient._instanceCount++;
+        
+        // Set environment variable if this is the second or subsequent TelemetryClient instance
+        if (TelemetryClient._instanceCount >= 2) {
+            process.env[ENV_MULTI_IKEY] = "true";
+        }
+        
         const config = new Config(input, this._configWarnings);
         this.config = config;
         this.commonProperties = {};
