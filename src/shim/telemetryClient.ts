@@ -26,13 +26,15 @@ import { AttributeLogProcessor } from "../shared/util/attributeLogRecordProcesso
 import { LogApi } from "./logsApi";
 import { flushAzureMonitor, shutdownAzureMonitor, useAzureMonitor } from "../main";
 import { AzureMonitorOpenTelemetryOptions } from "../types";
-import { UNSUPPORTED_MSG } from "./types";
+import { UNSUPPORTED_MSG, StatsbeatFeature } from "./types";
+import { StatsbeatFeaturesManager } from "../shared/util/statsbeatFeaturesManager";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
  * and manually trigger immediate sending (flushing)
  */
 export class TelemetryClient {
+    private static _instanceCount = 0;
     public context: Context;
     public commonProperties: { [key: string]: string };
     public config: Config;
@@ -48,6 +50,13 @@ export class TelemetryClient {
      * @param setupString the Connection String or Instrumentation Key to use (read from environment variable if not specified)
      */
     constructor(input?: string) {
+        TelemetryClient._instanceCount++;
+        
+        // Set statsbeat feature if this is the second or subsequent TelemetryClient instance
+        if (TelemetryClient._instanceCount >= 2) {
+            StatsbeatFeaturesManager.getInstance().enableFeature(StatsbeatFeature.MULTI_IKEY);
+        }
+        
         const config = new Config(input, this._configWarnings);
         this.config = config;
         this.commonProperties = {};

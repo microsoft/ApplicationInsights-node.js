@@ -13,11 +13,12 @@ import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 
 import { AutoCollectLogs } from "./logs/autoCollectLogs";
 import { AutoCollectExceptions } from "./logs/exceptions";
-import { AZURE_MONITOR_STATSBEAT_FEATURES, AzureMonitorOpenTelemetryOptions } from "./types";
+import { AzureMonitorOpenTelemetryOptions } from "./types";
 import { ApplicationInsightsConfig } from "./shared/configuration/config";
 import { LogApi } from "./shim/logsApi";
-import { StatsbeatFeature, StatsbeatInstrumentation } from "./shim/types";
+import { StatsbeatFeature } from "./shim/types";
 import { RequestSpanProcessor } from "./traces/requestProcessor";
+import { StatsbeatFeaturesManager } from "./shared/util/statsbeatFeaturesManager";
 
 let autoCollectLogs: AutoCollectLogs;
 let exceptions: AutoCollectExceptions;
@@ -27,11 +28,10 @@ let exceptions: AutoCollectExceptions;
  * @param options Configuration
  */
 export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
-    // Must set statsbeat features before they are read by the distro
-    process.env[AZURE_MONITOR_STATSBEAT_FEATURES] = JSON.stringify({
-        instrumentation: StatsbeatInstrumentation.NONE,
-        feature: StatsbeatFeature.SHIM
-    });
+    // Initialize statsbeat features with default values and enable SHIM feature
+    StatsbeatFeaturesManager.getInstance().initialize();
+    StatsbeatFeaturesManager.getInstance().enableFeature(StatsbeatFeature.SHIM);
+    
     // Allows for full filtering of dependency/request spans
     options.spanProcessors = [new RequestSpanProcessor(options.enableAutoCollectDependencies, options.enableAutoCollectRequests)];
     distroUseAzureMonitor(options);
