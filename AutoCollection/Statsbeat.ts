@@ -26,6 +26,7 @@ class Statsbeat {
     private _context: Context;
     private _handle: NodeJS.Timer | null;
     private _longHandle: NodeJS.Timer | null;
+    private _longHandleTimeout: NodeJS.Timer | null;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _config: Config;
@@ -51,6 +52,7 @@ class Statsbeat {
         this._networkStatsbeatCollection = [];
         this._config = config;
         this._context = context || new Context();
+        this._longHandleTimeout = null;
         let statsbeatConnectionString = this._getConnectionString(config);
         this._statsbeatConfig = new Config(statsbeatConnectionString);
         this._statsbeatConfig.samplingPercentage = 100; // Do not sample
@@ -71,8 +73,12 @@ class Statsbeat {
                 this._handle.unref(); // Allow the app to terminate even while this loop is going on
             }
             if (!this._longHandle) {
-                // On first enablement
-                this.trackLongIntervalStatsbeats();
+                // Add 15 second delay before first long interval statsbeat
+                this._longHandleTimeout = setTimeout(() => {
+                    if (this.isEnabled()) {
+                        this.trackLongIntervalStatsbeats();
+                    }
+                }, 15000);
                 this._longHandle = setInterval(() => {
                     this.trackLongIntervalStatsbeats();
                 }, Statsbeat.STATS_COLLECTION_LONG_INTERVAL);
@@ -86,6 +92,10 @@ class Statsbeat {
             if (this._longHandle) {
                 clearInterval(this._longHandle);
                 this._longHandle = null;
+            }
+            if (this._longHandleTimeout) {
+                clearTimeout(this._longHandleTimeout);
+                this._longHandleTimeout = null;
             }
         }
     }
