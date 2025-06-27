@@ -181,9 +181,16 @@ export class TelemetryClient {
         const attributes: Attributes = {
             ...telemetry.properties,
         };
-        attributes[SEMATTRS_HTTP_METHOD] = "HTTP";
-        attributes[SEMATTRS_HTTP_URL] = telemetry.url;
-        attributes[SEMATTRS_HTTP_STATUS_CODE] = telemetry.resultCode;
+        // Only set HTTP attributes if we have the relevant data
+        if (!telemetry.name) {
+            attributes[SEMATTRS_HTTP_METHOD] = "HTTP";
+        }
+        if (telemetry.url) {
+            attributes[SEMATTRS_HTTP_URL] = telemetry.url;
+        }
+        if (telemetry.resultCode) {
+            attributes[SEMATTRS_HTTP_STATUS_CODE] = telemetry.resultCode;
+        }
         const options: SpanOptions = {
             kind: SpanKind.SERVER,
             attributes: attributes,
@@ -191,6 +198,17 @@ export class TelemetryClient {
         };
         const span: any = trace.getTracer("ApplicationInsightsTracer")
             .startSpan(telemetry.name, options, ctx);
+            
+        if (telemetry.id) {
+            try {
+                if (span._spanContext) {
+                    span._spanContext.traceId = telemetry.id;                
+                }
+            } catch (error) {
+                diag.warn('Unable to set custom traceId on span:', error);
+            }
+        }
+        
         span.setStatus({
             code: telemetry.success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
         });
@@ -228,9 +246,13 @@ export class TelemetryClient {
         };
         if (telemetry.dependencyTypeName) {
             if (telemetry.dependencyTypeName.toLowerCase().indexOf("http") > -1) {
-                attributes[SEMATTRS_HTTP_METHOD] = "HTTP";
-                attributes[SEMATTRS_HTTP_URL] = telemetry.data;
-                attributes[SEMATTRS_HTTP_STATUS_CODE] = telemetry.resultCode;
+                // Only set HTTP URL and status code for HTTP dependencies
+                if (telemetry.data) {
+                    attributes[SEMATTRS_HTTP_URL] = telemetry.data;
+                }
+                if (telemetry.resultCode) {
+                    attributes[SEMATTRS_HTTP_STATUS_CODE] = telemetry.resultCode;
+                }
             } else if (Util.getInstance().isDbDependency(telemetry.dependencyTypeName)) {
                 attributes[SEMATTRS_DB_SYSTEM] = telemetry.dependencyTypeName;
                 attributes[SEMATTRS_DB_STATEMENT] = telemetry.data;
@@ -250,6 +272,17 @@ export class TelemetryClient {
         };
         const span: any = trace.getTracer("ApplicationInsightsTracer")
             .startSpan(telemetry.name, options, ctx);
+            
+        if (telemetry.id) {
+            try {
+                if (span._spanContext) {
+                    span._spanContext.traceId = telemetry.id;
+                }
+            } catch (error) {
+                diag.warn('Unable to set custom traceId on span:', error);
+            }
+        }
+        
         span.setStatus({
             code: telemetry.success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
         });
