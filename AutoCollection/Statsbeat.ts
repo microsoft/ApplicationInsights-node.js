@@ -80,7 +80,7 @@ class Statsbeat {
                         this.trackLongIntervalStatsbeats();
                     }
                 }, Statsbeat.STATS_COLLECTION_INITIAL_DELAY);
-                this._longHandleTimeout.unref(); // Allow the app to terminate even while this loop
+                this._longHandleTimeout.unref(); // Allow the app to terminate even while this loop is going on
                 this._longHandle = setInterval(() => {
                     this.trackLongIntervalStatsbeats();
                 }, Statsbeat.STATS_COLLECTION_LONG_INTERVAL);

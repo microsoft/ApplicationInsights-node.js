@@ -42,7 +42,7 @@ class QuickPulseStateManager {
         this.context = context || new Context();
         this._sender = new QuickPulseSender(this.config, getAuthorizationHandler);
         this._isEnabled = false;
-        this._statsbeat = client?.getStatsbeat();
+        this._statsbeat = client && client.getStatsbeat ? client.getStatsbeat() : undefined;
     }
 
     /**

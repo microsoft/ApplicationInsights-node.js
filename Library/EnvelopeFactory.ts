@@ -166,7 +166,7 @@ class EnvelopeFactory {
 
     private static createTraceData(telemetry: Contracts.TraceTelemetry): Contracts.Data<Contracts.MessageData> {
         var trace = new Contracts.MessageData();
-        trace.message = telemetry.message?.substring(0, 32768);
+        trace.message = telemetry.message ? telemetry.message.substring(0, 32768) : undefined;
         trace.properties = this.truncateProperties(telemetry);
         if (!isNaN(telemetry.severity)) {
             trace.severityLevel = telemetry.severity;
@@ -182,9 +182,9 @@ class EnvelopeFactory {
 
     private static createDependencyData(telemetry: Contracts.DependencyTelemetry & Contracts.Identified): Contracts.Data<Contracts.RemoteDependencyData> {
         var remoteDependency = new Contracts.RemoteDependencyData();
-        remoteDependency.name = telemetry.name?.substring(0, 1024);
-        remoteDependency.data = telemetry.data?.substring(0, 8192);
-        remoteDependency.target = telemetry.target?.substring(0, 1024);
+        remoteDependency.name = telemetry.name ? telemetry.name.substring(0, 1024) : undefined;
+        remoteDependency.data = telemetry.data ? telemetry.data.substring(0, 8192) : undefined;
+        remoteDependency.target = telemetry.target ? telemetry.target.substring(0, 1024) : undefined;
         remoteDependency.duration = Util.msToTimeSpan(telemetry.duration);
         remoteDependency.success = telemetry.success;
         remoteDependency.type = telemetry.dependencyTypeName;
@@ -206,7 +206,7 @@ class EnvelopeFactory {
 
     private static createEventData(telemetry: Contracts.EventTelemetry): Contracts.Data<Contracts.EventData> {
         var event = new Contracts.EventData();
-        event.name = telemetry.name?.substring(0, 512);
+        event.name = telemetry.name ? telemetry.name.substring(0, 512) : undefined;
         event.properties = this.truncateProperties(telemetry);
         event.measurements = telemetry.measurements;
 
@@ -229,8 +229,8 @@ class EnvelopeFactory {
 
         var stack = telemetry.exception["stack"];
         var exceptionDetails = new Contracts.ExceptionDetails();
-        exceptionDetails.message = telemetry.exception.message?.substring(0, 32768);
-        exceptionDetails.typeName = telemetry.exception.name?.substring(0, 1024);
+        exceptionDetails.message = telemetry.exception.message ? telemetry.exception.message.substring(0, 32768) : undefined;
+        exceptionDetails.typeName = telemetry.exception.name ? telemetry.exception.name.substring(0, 1024) : undefined;
         exceptionDetails.parsedStack = this.parseStack(stack);
         exceptionDetails.hasFullStack = Util.isArray(exceptionDetails.parsedStack) && exceptionDetails.parsedStack.length > 0;
         exception.exceptions.push(exceptionDetails);
@@ -249,11 +249,11 @@ class EnvelopeFactory {
         else {
             requestData.id = Util.w3cTraceId();
         }
-        requestData.name = telemetry.name?.substring(0, 1024);
-        requestData.url = telemetry.url?.substring(0, 2048);
-        requestData.source = telemetry.source?.substring(0, 1024);
+        requestData.name = telemetry.name ? telemetry.name.substring(0, 1024) : undefined;
+        requestData.url = telemetry.url ? telemetry.url.substring(0, 2048) : undefined;
+        requestData.source = telemetry.source ? telemetry.source.substring(0, 1024) : undefined;
         requestData.duration = Util.msToTimeSpan(telemetry.duration);
-        requestData.responseCode = (telemetry.resultCode ? telemetry.resultCode.toString() : "0")?.substring(0, 1024);
+        requestData.responseCode = telemetry.resultCode ? telemetry.resultCode.toString().substring(0, 1024) : "0";
         requestData.success = telemetry.success;
         requestData.properties = this.truncateProperties(telemetry);
         requestData.measurements = telemetry.measurements;
@@ -273,7 +273,7 @@ class EnvelopeFactory {
         metric.kind = Contracts.DataPointType.Aggregation;
         metric.max = !isNaN(telemetry.max) ? telemetry.max : telemetry.value;
         metric.min = !isNaN(telemetry.min) ? telemetry.min : telemetry.value;
-        metric.name = telemetry.name?.substring(0, 1024);
+        metric.name = telemetry.name ? telemetry.name.substring(0, 1024) : undefined;
         metric.stdDev = !isNaN(telemetry.stdDev) ? telemetry.stdDev : 0;
         metric.value = telemetry.value;
         metric.ns = telemetry.namespace;
@@ -298,11 +298,11 @@ class EnvelopeFactory {
         } else {
             availabilityData.id = Util.w3cTraceId();
         }
-        availabilityData.name = telemetry.name?.substring(0, 1024);
+        availabilityData.name = telemetry.name ? telemetry.name.substring(0, 1024) : undefined;
         availabilityData.duration = Util.msToTimeSpan(telemetry.duration);
         availabilityData.success = telemetry.success;
         availabilityData.runLocation = telemetry.runLocation;
-        availabilityData.message = telemetry.message?.substring(0, 8192);
+        availabilityData.message = telemetry.message ? telemetry.message.substring(0, 8192) : undefined;
         availabilityData.measurements = telemetry.measurements;
         availabilityData.properties = this.truncateProperties(telemetry);
 
@@ -318,9 +318,9 @@ class EnvelopeFactory {
     ): Contracts.Data<Contracts.PageViewData> {
         let pageViewData = new Contracts.PageViewData();
 
-        pageViewData.name = telemetry.name?.substring(0, 1024);
+        pageViewData.name = telemetry.name ? telemetry.name.substring(0, 1024) : undefined;
         pageViewData.duration = Util.msToTimeSpan(telemetry.duration);
-        pageViewData.url = telemetry.url?.substring(0, 2048);
+        pageViewData.url = telemetry.url ? telemetry.url.substring(0, 2048) : undefined;
         pageViewData.measurements = telemetry.measurements;
         pageViewData.properties = this.truncateProperties(telemetry);
 
