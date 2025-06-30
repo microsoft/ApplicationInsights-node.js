@@ -2,7 +2,7 @@ name: Node.js runtime CI
 
 on:
   pull_request:
-    branches: [ develop, master ]
+    branches: [ 2.x ]
 jobs:
   build:
 
