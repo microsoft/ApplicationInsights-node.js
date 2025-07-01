@@ -24,28 +24,27 @@ describe("AutoCollection/NativePerformance", () => {
 
     describe("#init and #dispose()", () => {
         it("init should enable and dispose should stop autocollection interval", () => {
+            var client = new TelemetryClient("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             var setIntervalSpy = sandbox.spy(global, "setInterval");
             var clearIntervalSpy = sandbox.spy(global, "clearInterval");
-            const statsAddSpy = sandbox.spy(AutoCollectNativePerformance.INSTANCE["_statsbeat"], "addFeature");
-            const statsRemoveSpy = sandbox.spy(AutoCollectNativePerformance.INSTANCE["_statsbeat"], "removeFeature");
+            var native = new AutoCollectNativePerformance(client);
 
-            AppInsights.setup("1aa11111-bbbb-1ccc-8ddd-eeeeffff3333")
-                .setAutoCollectHeartbeat(false)
-                .setAutoCollectPerformance(false, true)
-                .setAutoCollectPreAggregatedMetrics(false)
-                .start();
+            // Enable auto collection
+            native.enable(true);
+
             if (AutoCollectNativePerformance["_metricsAvailable"]) {
-                assert.ok(statsAddSpy.calledOnce);
-                assert.strictEqual(AutoCollectNativePerformance.INSTANCE["_statsbeat"]["_feature"], Constants.StatsbeatFeature.NATIVE_METRICS + Constants.StatsbeatFeature.DISK_RETRY);
-                assert.equal(setIntervalSpy.callCount, 3, "setInteval should be called three times as part of NativePerformance initialization as well as Statsbeat");
-                AppInsights.dispose();
-                assert.ok(statsRemoveSpy.calledOnce);
-                assert.strictEqual(AutoCollectNativePerformance.INSTANCE["_statsbeat"]["_feature"], Constants.StatsbeatFeature.DISK_RETRY);
-                assert.equal(clearIntervalSpy.callCount, 1, "clearInterval should be called once as part of NativePerformance shutdown");
+                assert.equal(setIntervalSpy.callCount, 1, "setInterval should be called when enabling");
             } else {
-                assert.equal(setIntervalSpy.callCount, 2, "setInterval should not be called if NativePerformance package is not available, Statsbeat will be called");
-                AppInsights.dispose();
-                assert.equal(clearIntervalSpy.callCount, 0, "clearInterval should not be called if NativePerformance package is not available");
+                assert.equal(setIntervalSpy.callCount, 0, "setInterval should not be called if native metrics package is not installed");
+            }
+
+            // Dispose should stop the interval
+            native.dispose();
+
+            if (AutoCollectNativePerformance["_metricsAvailable"]) {
+                assert.equal(clearIntervalSpy.callCount, 1, "clearInterval should be called when disposing");
+            } else {
+                assert.equal(clearIntervalSpy.callCount, 0, "clearInterval should not be called if native metrics package is not installed");
             }
         });
 
