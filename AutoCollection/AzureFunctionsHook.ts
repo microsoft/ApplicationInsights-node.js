@@ -185,7 +185,7 @@ class FuncModelV3Helper {
 
         let response: v3.HttpResponse | undefined;
         const httpOutputBinding = ctx.bindingDefinitions.find(b => b.direction === "out" && b.type.toLowerCase() === "http");
-        if (httpOutputBinding && httpOutputBinding.name === "$return") {
+        if (httpOutputBinding?.name === "$return") {
             response = hookContext.result;
         } else if (httpOutputBinding && ctx.bindings && ctx.bindings[httpOutputBinding.name] !== undefined) {
             response = ctx.bindings[httpOutputBinding.name];
@@ -198,7 +198,7 @@ class FuncModelV3Helper {
 
     public isHttpTrigger(hookContext: PreInvocationContext | PostInvocationContext): boolean {
         const ctx = this._getInvocationContext(hookContext);
-        return !!ctx.bindingDefinitions.find(b => b.type && b.type.toLowerCase() === "httptrigger");
+        return !!ctx.bindingDefinitions.find(b => b.type?.toLowerCase() === "httptrigger");
     }
 }
 

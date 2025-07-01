@@ -1,4 +1,4 @@
-﻿import fs = require("fs");
+﻿﻿import fs = require("fs");
 import http = require("http");
 import os = require("os");
 import path = require("path");
@@ -208,9 +208,7 @@ class Sender {
                         this._numConsecutiveFailures = 0;
                         if (responseString.includes(INVALID_IKEY) && res.statusCode === 400) {
                             Logging.warn("Instrumentation key was invalid, please check the iKey");
-                            if (this._shutdownStatsbeat) {
-                                this._shutdownStatsbeat();
-                            }
+                            this._shutdownStatsbeat?.();
                         }
                         // Handling of Statsbeat instance sending data, should turn it off if is not able to reach ingestion endpoint
                         if (this._isStatsbeatSender && !this._statsbeatHasReachedIngestionAtLeastOnce) {

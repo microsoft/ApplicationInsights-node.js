@@ -38,7 +38,7 @@ class WebSnippet {
         WebSnippet._aiUrl = Constants.WEB_INSTRUMENTATION_DEFAULT_SOURCE;
         WebSnippet._aiDeprecatedUrl = Constants.WEB_INSTRUMENTATION_DEPRECATED_SOURCE;
 
-        let clientWebIkey = this._getWebSnippetIkey(client.config && client.config.webInstrumentationConnectionString ? client.config.webInstrumentationConnectionString : undefined);
+        let clientWebIkey = this._getWebSnippetIkey(client.config?.webInstrumentationConnectionString);
         this._webInstrumentationIkey = clientWebIkey || client.config.instrumentationKey;
         this._clientWebInstrumentationConfig = client.config.webInstrumentationConfig;
         this._clientWebInstrumentationSrc = client.config.webInstrumentationSrc;
