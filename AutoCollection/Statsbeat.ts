@@ -18,6 +18,7 @@ class Statsbeat {
     public static EU_CONNECTION_STRING = "InstrumentationKey=7dc56bab-3c0c-4e9f-9ebb-d1acadee8d0f;IngestionEndpoint=https://westeurope-5.in.applicationinsights.azure.com";
     public static STATS_COLLECTION_SHORT_INTERVAL: number = 900000; // 15 minutes
     public static STATS_COLLECTION_LONG_INTERVAL: number = 86400000; // 1 day
+    public static STATS_COLLECTION_INITIAL_DELAY: number = 15000; // 15 seconds
 
     private static TAG = "Statsbeat";
 
@@ -26,6 +27,7 @@ class Statsbeat {
     private _context: Context;
     private _handle: NodeJS.Timer | null;
     private _longHandle: NodeJS.Timer | null;
+    private _longHandleTimeout: NodeJS.Timer | null;
     private _isEnabled: boolean;
     private _isInitialized: boolean;
     private _config: Config;
@@ -51,6 +53,7 @@ class Statsbeat {
         this._networkStatsbeatCollection = [];
         this._config = config;
         this._context = context || new Context();
+        this._longHandleTimeout = null;
         let statsbeatConnectionString = this._getConnectionString(config);
         this._statsbeatConfig = new Config(statsbeatConnectionString);
         this._statsbeatConfig.samplingPercentage = 100; // Do not sample
@@ -71,8 +74,13 @@ class Statsbeat {
                 this._handle.unref(); // Allow the app to terminate even while this loop is going on
             }
             if (!this._longHandle) {
-                // On first enablement
-                this.trackLongIntervalStatsbeats();
+                // Add 15 second delay before first long interval statsbeat
+                this._longHandleTimeout = setTimeout(() => {
+                    if (this.isEnabled()) {
+                        this.trackLongIntervalStatsbeats();
+                    }
+                }, Statsbeat.STATS_COLLECTION_INITIAL_DELAY);
+                this._longHandleTimeout.unref(); // Allow the app to terminate even while this loop is going on
                 this._longHandle = setInterval(() => {
                     this.trackLongIntervalStatsbeats();
                 }, Statsbeat.STATS_COLLECTION_LONG_INTERVAL);
@@ -86,6 +94,10 @@ class Statsbeat {
             if (this._longHandle) {
                 clearInterval(this._longHandle);
                 this._longHandle = null;
+            }
+            if (this._longHandleTimeout) {
+                clearTimeout(this._longHandleTimeout);
+                this._longHandleTimeout = null;
             }
         }
     }

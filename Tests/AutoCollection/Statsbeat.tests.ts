@@ -356,4 +356,102 @@ describe("AutoCollection/Statsbeat", () => {
             }).catch((error) => { done(error); });
         });
     });
+
+    describe("#enable() with long interval delay", () => {
+        let clock: sinon.SinonFakeTimers;
+
+        beforeEach(() => {
+            clock = sinon.useFakeTimers();
+        });
+
+        afterEach(() => {
+            clock.restore();
+        });
+
+        it("should delay first long interval statsbeat by 15 seconds", (done) => {
+            const trackLongIntervalSpy = sandbox.spy(statsBeat, "trackLongIntervalStatsbeats");
+            
+            // Enable statsbeat
+            statsBeat.enable(true);
+            
+            // Immediately after enabling, trackLongIntervalStatsbeats should not have been called
+            assert.equal(trackLongIntervalSpy.callCount, 0, "trackLongIntervalStatsbeats should not be called immediately");
+            
+            // Fast-forward 10 seconds - still should not be called
+            clock.tick(10000);
+            assert.equal(trackLongIntervalSpy.callCount, 0, "trackLongIntervalStatsbeats should not be called after 10 seconds");
+            
+            // Fast-forward to 15 seconds - now it should be called
+            clock.tick(5000);
+            assert.equal(trackLongIntervalSpy.callCount, 1, "trackLongIntervalStatsbeats should be called after 15 seconds");
+            
+            done();
+        });
+
+        it("should call trackLongIntervalStatsbeats on regular interval after initial delay", (done) => {
+            const trackLongIntervalSpy = sandbox.spy(statsBeat, "trackLongIntervalStatsbeats");
+            
+            // Enable statsbeat
+            statsBeat.enable(true);
+            
+            // Fast-forward to the first call (15 seconds)
+            clock.tick(15000);
+            assert.equal(trackLongIntervalSpy.callCount, 1, "First call should happen after 15 seconds");
+            
+            // Fast-forward by the long interval (24 hours)
+            clock.tick(Statsbeat.STATS_COLLECTION_LONG_INTERVAL);
+            assert.equal(trackLongIntervalSpy.callCount, 2, "Second call should happen after the interval");
+            
+            // Fast-forward by another long interval
+            clock.tick(Statsbeat.STATS_COLLECTION_LONG_INTERVAL);
+            assert.equal(trackLongIntervalSpy.callCount, 3, "Third call should happen after another interval");
+            
+            done();
+        });
+
+        it("should not delay if enable is called multiple times", (done) => {
+            const trackLongIntervalSpy = sandbox.spy(statsBeat, "trackLongIntervalStatsbeats");
+            
+            // Enable statsbeat first time
+            statsBeat.enable(true);
+            
+            // Fast-forward 5 seconds
+            clock.tick(5000);
+            assert.equal(trackLongIntervalSpy.callCount, 0, "Should not be called yet");
+            
+            // Disable and re-enable (simulating multiple enable calls)
+            statsBeat.enable(false);
+            statsBeat.enable(true);
+            
+            // The second enable should start a new 15-second timer
+            clock.tick(10000); // Total 15 seconds from first enable, but only 10 from second
+            assert.equal(trackLongIntervalSpy.callCount, 0, "Should not be called yet after re-enable");
+            
+            // Fast-forward another 5 seconds (15 seconds from second enable)
+            clock.tick(5000);
+            assert.equal(trackLongIntervalSpy.callCount, 1, "Should be called 15 seconds after re-enable");
+            
+            done();
+        });
+
+        it("should handle disable before initial delay completes", (done) => {
+            const trackLongIntervalSpy = sandbox.spy(statsBeat, "trackLongIntervalStatsbeats");
+            
+            // Enable statsbeat
+            statsBeat.enable(true);
+            
+            // Fast-forward 10 seconds (before the 15-second delay completes)
+            clock.tick(10000);
+            assert.equal(trackLongIntervalSpy.callCount, 0, "Should not be called yet");
+            
+            // Disable before the delay completes
+            statsBeat.enable(false);
+            
+            // Fast-forward past where the call would have happened
+            clock.tick(10000); // Total 20 seconds
+            assert.equal(trackLongIntervalSpy.callCount, 0, "Should not be called after disable");
+            
+            done();
+        });
+    });
 });
