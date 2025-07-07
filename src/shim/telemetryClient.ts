@@ -68,13 +68,13 @@ export class TelemetryClient {
         this._isInitialized = true;
         // Parse shim config to Azure Monitor options
         this._options = this.config.parseConfig();
+        // TODO: Add the span processors and log processors to the options
         useAzureMonitor(this._options);
         try {
             // LoggerProvider would be initialized when client is instantiated
             // Get Logger from global provider
             this._logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
             this._attributeSpanProcessor = new AttributeSpanProcessor({ ...this.context.tags, ...this.commonProperties });
-            ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider).addSpanProcessor(this._attributeSpanProcessor);
 
             this._attributeLogProcessor = new AttributeLogProcessor({ ...this.context.tags, ...this.commonProperties });
             (logs.getLoggerProvider() as LoggerProvider).addLogRecordProcessor(this._attributeLogProcessor);

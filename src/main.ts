@@ -5,7 +5,7 @@ import { shutdownAzureMonitor as distroShutdownAzureMonitor, useAzureMonitor as 
 import { ProxyTracerProvider, diag, metrics, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
 import { MeterProvider } from "@opentelemetry/sdk-metrics";
-import { BatchLogRecordProcessor, LoggerProvider, LogRecordProcessor } from "@opentelemetry/sdk-logs";
+import { BatchLogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
 import { BasicTracerProvider, BatchSpanProcessor, SpanProcessor } from "@opentelemetry/sdk-trace-node";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";

@@ -10,9 +10,9 @@ import http = require("http");
 import https = require("https");
 import { DistributedTracingModes } from '../../../applicationinsights';
 import { checkWarnings } from './testUtils';
-import { BatchLogRecordProcessor, ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
+import { BatchLogRecordProcessor, ConsoleLogRecordExporter, LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import { BatchSpanProcessor, ConsoleSpanExporter } from '@opentelemetry/sdk-trace-base';
-import { Resource } from '@opentelemetry/resources';
+import { defaultResource, resourceFromAttributes } from '@opentelemetry/resources';
 
 class TestTokenCredential implements azureCoreAuth.TokenCredential {
     private _expiresOn: Date;
@@ -118,14 +118,15 @@ describe("shim/configuration/config", () => {
         it("should allow customization of Azure Monitor Distro configuration", () => {
             let spanProcessors = [new BatchSpanProcessor(new ConsoleSpanExporter())];
             let logRecordProcessors = [new BatchLogRecordProcessor(new ConsoleLogRecordExporter)];
-            let resource = new Resource({});
+            let resource = defaultResource();
             const config = new Config(connectionString);
             config.azureMonitorOpenTelemetryOptions = {
                 resource: resource,
                 enableTraceBasedSamplingForLogs: false,
                 enableLiveMetrics: false,
                 enableStandardMetrics: false,
-                logRecordProcessors: logRecordProcessors,
+                // TODO: Determine if this has any negative effects
+                logRecordProcessors: logRecordProcessors as any,
                 spanProcessors: spanProcessors
             };
 

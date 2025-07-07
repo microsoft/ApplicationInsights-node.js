@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import * as assert from "assert";
+import assert = require("assert");
 import * as sinon from "sinon";
 
 import { AgentLoader } from "../../../src/agent/agentLoader";

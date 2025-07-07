@@ -447,9 +447,13 @@ describe("CorrelationContextManager", () => {
                 // Setup
                 const mockSpan = {
                     spanContext: () => testSpanContext,
-                    parentSpanId: "parentid123",
-                    name: "testSpan"
-                } as Span;
+                    parentSpanContext: () => ({
+                        traceId: "parentTraceId",
+                        spanId: "parentSpanId",
+                        traceFlags: 1,
+                    }),
+                    name: "testSpan",
+                } as unknown as Span;
                 
                 // Execute
                 const context = CorrelationContextManager.startOperation(mockSpan);
@@ -457,7 +461,7 @@ describe("CorrelationContextManager", () => {
                 // Verify
                 assert.ok(context);
                 assert.strictEqual(context.operation.id, testSpanContext.traceId);
-                assert.strictEqual(context.operation.parentId, mockSpan.parentSpanId);
+                assert.strictEqual(context.operation.parentId, mockSpan.parentSpanContext.spanId);
             });
         });
         
