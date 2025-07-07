@@ -14,11 +14,6 @@ export class AKSLoader extends AgentLoader {
     constructor() {
         super();
         if (this._canLoad) {
-            // AKS specific configuration
-            this._options.otlpMetricExporterConfig = {
-                // Add OTLP if env variable is present
-                enabled: process.env["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"] ? true : false
-            };
             (this._options.instrumentationOptions as InstrumentationOptions) = {
                 ...this._options.instrumentationOptions,
                 console: { enabled: true },

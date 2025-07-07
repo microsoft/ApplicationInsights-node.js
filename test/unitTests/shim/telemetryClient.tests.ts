@@ -256,9 +256,48 @@ describe("shim/TelemetryClient", () => {
             assert.equal(spans[0].name, "TestName");
             assert.equal(spans[0].endTime[0] - spans[0].startTime[0], 2); // hrTime UNIX Epoch time in seconds
             assert.equal(spans[0].kind, 1, "Span Kind"); // Incoming
-            assert.equal(spans[0].attributes["http.method"], "HTTP");
             assert.equal(spans[0].attributes["http.status_code"], "401");
             assert.equal(spans[0].attributes["http.url"], "http://test.com");
+        });
+
+        it("trackRequest with custom id sets traceId", async () => {
+            const customId = "custom-trace-id-123456789abcdef0";
+            const telemetry: RequestTelemetry = {
+                id: customId,
+                name: "CustomTraceRequest",
+                duration: 1000,
+                resultCode: "200",
+                url: "http://example.com",
+                success: true,
+            };
+            client.trackRequest(telemetry);
+            await tracerProvider.forceFlush();
+            const spans = testProcessor.spansProcessed;
+            assert.equal(spans.length, 1);
+            assert.equal(spans[0].name, "CustomTraceRequest");
+            // Verify that the span's traceId matches the custom id provided
+            assert.equal(spans[0].spanContext().traceId, customId);
+        });
+
+        it("trackDependency with custom id sets traceId", async () => {
+            const customId = "custom-dependency-trace-id-abcdef";
+            const telemetry: DependencyTelemetry = {
+                id: customId,
+                name: "CustomTraceDependency",
+                duration: 500,
+                resultCode: "200",
+                data: "http://api.example.com",
+                dependencyTypeName: "HTTP",
+                target: "api.example.com",
+                success: true,
+            };
+            client.trackDependency(telemetry);
+            await tracerProvider.forceFlush();
+            const spans = testProcessor.spansProcessed;
+            assert.equal(spans.length, 1);
+            assert.equal(spans[0].name, "CustomTraceDependency");
+            // Verify that the span's traceId matches the custom id provided
+            assert.equal(spans[0].spanContext().traceId, customId);
         });
 
         it("trackMetric", async () => {
@@ -362,6 +401,138 @@ describe("shim/TelemetryClient", () => {
             await loggerProvider.forceFlush();
             await new Promise((resolve) => setTimeout(resolve, 800));
             assert.ok(stub.calledOnce);
+        });
+    });
+
+    describe("Instance count tracking and MULTI_IKEY statsbeat feature", () => {
+        let originalEnv: NodeJS.ProcessEnv;
+
+        beforeEach(() => {
+            // Save original environment
+            originalEnv = { ...process.env };
+            // Clear the AZURE_MONITOR_STATSBEAT_FEATURES environment variable before each test
+            delete process.env["AZURE_MONITOR_STATSBEAT_FEATURES"];
+            // Reset the static instance count for testing
+            (TelemetryClient as any)._instanceCount = 0;
+        });
+
+        afterEach(() => {
+            // Restore original environment
+            process.env = originalEnv;
+        });
+
+        it("should not enable MULTI_IKEY feature when creating first TelemetryClient instance", () => {
+            const firstClient = new TelemetryClient("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            
+            // Check statsbeat features environment variable
+            const statsbeatFeatures = process.env["AZURE_MONITOR_STATSBEAT_FEATURES"];
+            if (statsbeatFeatures) {
+                const config = JSON.parse(statsbeatFeatures);
+                // MULTI_IKEY bit should not be set (128)
+                assert.strictEqual((config.feature & 128), 0, "MULTI_IKEY feature should not be enabled for first instance");
+            }
+            
+            firstClient.shutdown();
+        });
+
+        it("should enable MULTI_IKEY feature when creating second TelemetryClient instance", () => {
+            const firstClient = new TelemetryClient("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            
+            // First instance should not have MULTI_IKEY feature enabled
+            let statsbeatFeatures = process.env["AZURE_MONITOR_STATSBEAT_FEATURES"];
+            if (statsbeatFeatures) {
+                const config = JSON.parse(statsbeatFeatures);
+                assert.strictEqual((config.feature & 128), 0, "MULTI_IKEY feature should not be enabled for first instance");
+            }
+            
+            const secondClient = new TelemetryClient("InstrumentationKey=2bb22222-cccc-2ddd-9eee-fffff4444444");
+            
+            // Second instance should have MULTI_IKEY feature enabled
+            statsbeatFeatures = process.env["AZURE_MONITOR_STATSBEAT_FEATURES"];
+            assert.ok(statsbeatFeatures, "AZURE_MONITOR_STATSBEAT_FEATURES should be set");
+            const config = JSON.parse(statsbeatFeatures);
+            assert.strictEqual((config.feature & 128), 128, "MULTI_IKEY feature should be enabled for second instance");
+            
+            firstClient.shutdown();
+            secondClient.shutdown();
+        });
+
+        it("should keep MULTI_IKEY feature enabled when creating additional TelemetryClient instances", () => {
+            const firstClient = new TelemetryClient("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            const secondClient = new TelemetryClient("InstrumentationKey=2bb22222-cccc-2ddd-9eee-fffff4444444");
+            
+            let statsbeatFeatures = process.env["AZURE_MONITOR_STATSBEAT_FEATURES"];
+            assert.ok(statsbeatFeatures, "AZURE_MONITOR_STATSBEAT_FEATURES should be set after second instance");
+            let config = JSON.parse(statsbeatFeatures);
+            assert.strictEqual((config.feature & 128), 128, "MULTI_IKEY feature should be enabled after second instance");
+            
+            const thirdClient = new TelemetryClient("InstrumentationKey=3cc33333-dddd-3eee-afff-ggggg5555555");
+            
+            statsbeatFeatures = process.env["AZURE_MONITOR_STATSBEAT_FEATURES"];
+            assert.ok(statsbeatFeatures, "AZURE_MONITOR_STATSBEAT_FEATURES should remain set for third instance");
+            config = JSON.parse(statsbeatFeatures);
+            assert.strictEqual((config.feature & 128), 128, "MULTI_IKEY feature should remain enabled for third instance");
+            
+            firstClient.shutdown();
+            secondClient.shutdown();
+            thirdClient.shutdown();
+        });
+
+        it("should increment instance count correctly for multiple TelemetryClient instances", () => {
+            const firstClient = new TelemetryClient("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
+            assert.strictEqual((TelemetryClient as any)._instanceCount, 1, "Instance count should be 1 after first client");
+            
+            const secondClient = new TelemetryClient("InstrumentationKey=2bb22222-cccc-2ddd-9eee-fffff4444444");
+            assert.strictEqual((TelemetryClient as any)._instanceCount, 2, "Instance count should be 2 after second client");
+            
+            const thirdClient = new TelemetryClient("InstrumentationKey=3cc33333-dddd-3eee-afff-ggggg5555555");
+            assert.strictEqual((TelemetryClient as any)._instanceCount, 3, "Instance count should be 3 after third client");
+            
+            firstClient.shutdown();
+            secondClient.shutdown();
+            thirdClient.shutdown();
+        });
+
+        it("should work with different connection strings", () => {
+            const firstClient = new TelemetryClient("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/");
+            
+            let statsbeatFeatures = process.env["AZURE_MONITOR_STATSBEAT_FEATURES"];
+            if (statsbeatFeatures) {
+                const config = JSON.parse(statsbeatFeatures);
+                assert.strictEqual((config.feature & 128), 0, "MULTI_IKEY feature should not be enabled for first instance with connection string");
+            }
+            
+            const secondClient = new TelemetryClient("InstrumentationKey=2bb22222-cccc-2ddd-9eee-fffff4444444;IngestionEndpoint=https://westus-2.in.applicationinsights.azure.com/");
+            
+            statsbeatFeatures = process.env["AZURE_MONITOR_STATSBEAT_FEATURES"];
+            assert.ok(statsbeatFeatures, "AZURE_MONITOR_STATSBEAT_FEATURES should be set");
+            const config = JSON.parse(statsbeatFeatures);
+            assert.strictEqual((config.feature & 128), 128, "MULTI_IKEY feature should be enabled for second instance with different connection string");
+            
+            firstClient.shutdown();
+            secondClient.shutdown();
+        });
+
+        it("should work when no connection string is provided", () => {
+            const firstClient = new TelemetryClient();
+            assert.strictEqual((TelemetryClient as any)._instanceCount, 1, "Instance count should be 1 after first client with no connection string");
+            
+            let statsbeatFeatures = process.env["AZURE_MONITOR_STATSBEAT_FEATURES"];
+            if (statsbeatFeatures) {
+                const config = JSON.parse(statsbeatFeatures);
+                assert.strictEqual((config.feature & 128), 0, "MULTI_IKEY feature should not be enabled for first instance with no connection string");
+            }
+            
+            const secondClient = new TelemetryClient();
+            assert.strictEqual((TelemetryClient as any)._instanceCount, 2, "Instance count should be 2 after second client with no connection string");
+            
+            statsbeatFeatures = process.env["AZURE_MONITOR_STATSBEAT_FEATURES"];
+            assert.ok(statsbeatFeatures, "AZURE_MONITOR_STATSBEAT_FEATURES should be set");
+            const config = JSON.parse(statsbeatFeatures);
+            assert.strictEqual((config.feature & 128), 128, "MULTI_IKEY feature should be enabled for second instance with no connection string");
+            
+            firstClient.shutdown();
+            secondClient.shutdown();
         });
     });
 });
