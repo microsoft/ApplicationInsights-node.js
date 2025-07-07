@@ -174,8 +174,10 @@ export class TelemetryClient {
         if (!this._isInitialized) {
             this.initialize();
         }
-        const startTime = telemetry.time || new Date();
-        const endTime = startTime.getTime() + telemetry.duration;
+        // For trackRequest, when time is not specified, treat current time as END time
+        // since this method is called after the request operation has completed
+        const endTime = telemetry.time ? telemetry.time.getTime() + telemetry.duration : Date.now();
+        const startTime = telemetry.time || new Date(endTime - telemetry.duration);
 
         const ctx = context.active();
         const attributes: Attributes = {
