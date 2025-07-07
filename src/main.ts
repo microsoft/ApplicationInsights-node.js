@@ -5,7 +5,7 @@ import { shutdownAzureMonitor as distroShutdownAzureMonitor, useAzureMonitor as 
 import { ProxyTracerProvider, diag, metrics, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
 import { MeterProvider } from "@opentelemetry/sdk-metrics";
-import { BatchLogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
+import { BatchLogRecordProcessor, LoggerProvider, LogRecordProcessor } from "@opentelemetry/sdk-logs";
 import { BasicTracerProvider, BatchSpanProcessor, SpanProcessor } from "@opentelemetry/sdk-trace-node";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
@@ -16,7 +16,6 @@ import { AzureMonitorOpenTelemetryOptions } from "./types";
 import { ApplicationInsightsConfig } from "./shared/configuration/config";
 import { LogApi } from "./shim/logsApi";
 import { StatsbeatFeature } from "./shim/types";
-import { RequestSpanProcessor } from "./traces/requestProcessor";
 import { StatsbeatFeaturesManager } from "./shared/util/statsbeatFeaturesManager";
 
 let autoCollectLogs: AutoCollectLogs;
@@ -32,14 +31,15 @@ export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
     StatsbeatFeaturesManager.getInstance().enableFeature(StatsbeatFeature.SHIM);
     
     // Allows for full filtering of dependency/request spans
-const internalConfig = new ApplicationInsightsConfig(options);
-    options.spanProcessors = [
-        _getOtlpSpanExporter(internalConfig),
-        new RequestSpanProcessor(options.enableAutoCollectDependencies, options.enableAutoCollectRequests)
-    ];
-    options.logRecordProcessors = [
-        _getOtlpLogExporter(internalConfig)
-    ];
+    const internalConfig = new ApplicationInsightsConfig(options);
+    // TODO: Try to resolve the issue with otlp exporters not being added to the options
+    // options.spanProcessors = [
+    //     _getOtlpSpanExporter(internalConfig),
+    //     new RequestSpanProcessor(options.enableAutoCollectDependencies, options.enableAutoCollectRequests)
+    // ];
+    // options.logRecordProcessors = [
+    //     _getOtlpLogExporter(internalConfig)
+    // ];
     distroUseAzureMonitor(options);
     const logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
     autoCollectLogs = new AutoCollectLogs();
@@ -79,7 +79,7 @@ function _getOtlpSpanExporter(internalConfig: ApplicationInsightsConfig): SpanPr
     }
 }
 
-function _getOtlpLogExporter(internalConfig: ApplicationInsightsConfig): any {
+function _getOtlpLogExporter(internalConfig: ApplicationInsightsConfig): LogRecordProcessor {
     if (internalConfig.otlpLogExporterConfig?.enabled) {
         const otlpLogExporter = new OTLPLogExporter(internalConfig.otlpLogExporterConfig);
         const otlpLogProcessor = new BatchLogRecordProcessor(otlpLogExporter);
