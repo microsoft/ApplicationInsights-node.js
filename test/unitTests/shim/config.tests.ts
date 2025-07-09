@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
-import assert = require('assert');
-import sinon = require('sinon');
+import assert from "assert";
+import sinon from "sinon";
 import azureCoreAuth = require("@azure/core-auth");
 import { HttpInstrumentationConfig } from '@opentelemetry/instrumentation-http';
 import Config = require('../../../src/shim/shim-config');
@@ -10,9 +10,9 @@ import http = require("http");
 import https = require("https");
 import { DistributedTracingModes } from '../../../applicationinsights';
 import { checkWarnings } from './testUtils';
-import { BatchLogRecordProcessor, ConsoleLogRecordExporter, LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import { BatchSpanProcessor, ConsoleSpanExporter } from '@opentelemetry/sdk-trace-base';
 import { defaultResource, resourceFromAttributes } from '@opentelemetry/resources';
+import type { AzureMonitorOpenTelemetryOptions } from '@azure/monitor-opentelemetry';
 
 class TestTokenCredential implements azureCoreAuth.TokenCredential {
     private _expiresOn: Date;
@@ -117,10 +117,22 @@ describe("shim/configuration/config", () => {
 
         it("should allow customization of Azure Monitor Distro configuration", () => {
             let spanProcessors = [new BatchSpanProcessor(new ConsoleSpanExporter())];
-            let logRecordProcessors = [new BatchLogRecordProcessor(new ConsoleLogRecordExporter)];
+            // Create a proper log record processor that matches Azure Monitor's expected interface
+            class TestLogRecordProcessor {
+                onEmit(_logRecord: any, _context?: any): void {
+                    // Test implementation - does nothing
+                }
+                async forceFlush(): Promise<void> {
+                    // Test implementation
+                }
+                async shutdown(): Promise<void> {
+                    // Test implementation
+                }
+            }
+            
+            let logRecordProcessors = [new TestLogRecordProcessor()];
             let resource = defaultResource();
             const config = new Config(connectionString);
-            // TODO: Determine what's going on when we try to pass these two. They break the tests currently.
             config.azureMonitorOpenTelemetryOptions = {
                 resource: resource,
                 enableTraceBasedSamplingForLogs: false,
@@ -133,8 +145,8 @@ describe("shim/configuration/config", () => {
             let options = config.parseConfig();
             assert.equal(options.resource, resource, "wrong resource");
             assert.equal(options.enableTraceBasedSamplingForLogs, false, "wrong enableTraceBasedSamplingForLogs");
-            assert.equal(options.enableLiveMetrics, false, "wrong enableTraceBasedSamplingForLogs");
-            assert.equal(options.enableStandardMetrics, false, "wrong enableTraceBasedSamplingForLogs");
+            assert.equal(options.enableLiveMetrics, false, "wrong enableLiveMetrics");
+            assert.equal(options.enableStandardMetrics, false, "wrong enableStandardMetrics");
             assert.equal(options.logRecordProcessors, logRecordProcessors, "wrong logRecordProcessors");
             assert.equal(options.spanProcessors, spanProcessors, "wrong spanProcessors");
         });
