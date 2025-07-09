@@ -17,3 +17,4 @@ export {
     unlinkAsync,
 } from "./fileSystemHelper";
 export { Util } from "./util";
+export { safeDecodeURI, safeDecodeURIComponent } from "./uriUtils";
