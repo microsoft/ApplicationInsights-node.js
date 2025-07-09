@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 import { JsonConfig } from "../../../../src/shared/configuration/jsonConfig";
-import * as assert from "assert";
-import * as path from "path";
+import assert from "assert";
+import path from "path";
 import sinon = require("sinon");
 
 describe("Json Config", () => {

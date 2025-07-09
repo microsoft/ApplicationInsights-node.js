@@ -4,7 +4,7 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
 import { FileWriter } from "../../../../../src/agent/diagnostics/writers/fileWriter";
-import * as fs from "fs";
+import fs from "fs";
 
 describe("agent//diagnostics/writers/fileWriter", () => {
     let sandbox: sinon.SinonSandbox;
