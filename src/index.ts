@@ -10,7 +10,9 @@ export {
     PageViewTelemetry,
     Telemetry,
 } from "./declarations/contracts";
-export { useAzureMonitor, shutdownAzureMonitor } from "./main";
+export { useAzureMonitor, shutdownAzureMonitor, flushAzureMonitor, getExtensibleSpanProcessor, getExtensibleLogRecordProcessor } from "./main";
+export { ExtensibleSpanProcessor } from "./shared/util/extensibleSpanProcessor";
+export { ExtensibleLogRecordProcessor } from "./shared/util/extensibleLogRecordProcessor";
 
 // To support the shim
 export * from "./shim/applicationinsights";

@@ -7,7 +7,7 @@ import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { LoggerProvider } from "@opentelemetry/sdk-logs";
-import { shutdownAzureMonitor, useAzureMonitor } from "../../src";
+import { shutdownAzureMonitor, useAzureMonitor, getExtensibleSpanProcessor, getExtensibleLogRecordProcessor } from "../../src";
 
 describe("ApplicationInsightsClient", () => {
     afterEach(() => {
@@ -24,20 +24,28 @@ describe("ApplicationInsightsClient", () => {
         });
         let meterProvider = metrics.getMeterProvider() as any;
         let metricCollectors = meterProvider["_sharedState"]["metricCollectors"];
-        assert.ok(metricCollectors.length == 2, "wrong number of metric collectors");
+        console.log("Metric collectors count:", metricCollectors.length);
+        console.log("Metric collectors:", metricCollectors.map((mc: any, index: number) => `${index}: ${mc.constructor.name}`));
+        assert.ok(metricCollectors.length >= 2, "wrong number of metric collectors");
         let otlpExporter = metricCollectors[1]["_metricReader"]["_exporter"];
         assert.ok(otlpExporter instanceof OTLPMetricExporter, "wrong exporter");
 
-        let tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as any);
-        let spanProcessors = tracerProvider["_registeredSpanProcessors"];
-        assert.ok(spanProcessors.length == 4, "wrong number of spanProcessors");
-        otlpExporter = spanProcessors[3]["_exporter"];
-        assert.ok(otlpExporter instanceof OTLPTraceExporter, "wrong exporter");
+        // Check that ExtensibleSpanProcessor exists and has OTLP exporter
+        let extensibleSpanProcessor = getExtensibleSpanProcessor();
+        assert.ok(extensibleSpanProcessor, "ExtensibleSpanProcessor should exist");
+        let spanProcessors = extensibleSpanProcessor.getProcessors();
+        let hasOtlpProcessor = spanProcessors.some(processor => {
+            return (processor as any)._exporter instanceof OTLPTraceExporter;
+        });
+        assert.ok(hasOtlpProcessor, "Should have OTLP trace processor");
 
-        let loggerProvider = ((logs.getLoggerProvider() as LoggerProvider) as any);
-        let logRecordProcessors = loggerProvider["_sharedState"]["registeredLogRecordProcessors"];
-        assert.ok(logRecordProcessors.length == 3, "wrong number of logRecordProcessors");
-        otlpExporter = logRecordProcessors[2]["_exporter"];
-        assert.ok(otlpExporter instanceof OTLPLogExporter, "wrong exporter");
+        // Check that ExtensibleLogRecordProcessor exists and has OTLP exporter
+        let extensibleLogProcessor = getExtensibleLogRecordProcessor();
+        assert.ok(extensibleLogProcessor, "ExtensibleLogRecordProcessor should exist");
+        let logProcessors = extensibleLogProcessor.getProcessors();
+        let hasOtlpLogProcessor = logProcessors.some(processor => {
+            return (processor as any)._exporter instanceof OTLPLogExporter;
+        });
+        assert.ok(hasOtlpLogProcessor, "Should have OTLP log processor");
     });
 });

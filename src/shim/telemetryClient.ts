@@ -1,9 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Attributes, context, metrics, ProxyTracerProvider, SpanKind, SpanOptions, SpanStatusCode, diag, trace } from "@opentelemetry/api";
+import { Attributes, context, metrics, SpanKind, SpanOptions, SpanStatusCode, diag, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
-import { LoggerProvider } from "@opentelemetry/sdk-logs";
 import { 
     SEMATTRS_DB_STATEMENT,
     SEMATTRS_DB_SYSTEM,
@@ -21,10 +20,9 @@ import { Context } from "./context";
 import { Util } from "../shared/util";
 import Config = require("./shim-config");
 import { AttributeSpanProcessor } from "../shared/util/attributeSpanProcessor";
-import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { AttributeLogProcessor } from "../shared/util/attributeLogRecordProcessor";
 import { LogApi } from "./logsApi";
-import { flushAzureMonitor, shutdownAzureMonitor, useAzureMonitor } from "../main";
+import { flushAzureMonitor, shutdownAzureMonitor, useAzureMonitor, getExtensibleSpanProcessor, getExtensibleLogRecordProcessor } from "../main";
 import { AzureMonitorOpenTelemetryOptions } from "../types";
 import { UNSUPPORTED_MSG, StatsbeatFeature } from "./types";
 import { StatsbeatFeaturesManager } from "../shared/util/statsbeatFeaturesManager";
@@ -68,7 +66,7 @@ export class TelemetryClient {
         this._isInitialized = true;
         // Parse shim config to Azure Monitor options
         this._options = this.config.parseConfig();
-        // TODO: Add the span processors and log processors to the options
+        // Add the span processors and log processors to the options using extensible processors
         useAzureMonitor(this._options);
         try {
             // LoggerProvider would be initialized when client is instantiated
@@ -77,7 +75,17 @@ export class TelemetryClient {
             this._attributeSpanProcessor = new AttributeSpanProcessor({ ...this.context.tags, ...this.commonProperties });
 
             this._attributeLogProcessor = new AttributeLogProcessor({ ...this.context.tags, ...this.commonProperties });
-            (logs.getLoggerProvider() as LoggerProvider).addLogRecordProcessor(this._attributeLogProcessor);
+
+            // Add processors to extensible processors instead of directly to providers
+            const extensibleSpanProcessor = getExtensibleSpanProcessor();
+            if (extensibleSpanProcessor) {
+                extensibleSpanProcessor.addSpanProcessor(this._attributeSpanProcessor);
+            }
+
+            const extensibleLogProcessor = getExtensibleLogRecordProcessor();
+            if (extensibleLogProcessor) {
+                extensibleLogProcessor.addLogRecordProcessor(this._attributeLogProcessor);
+            }
 
             // Warn if any config warnings were generated during parsing
             for (let i = 0; i < this._configWarnings.length; i++) {

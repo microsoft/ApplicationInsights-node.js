@@ -12,6 +12,8 @@ import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 
 import { AutoCollectLogs } from "./logs/autoCollectLogs";
 import { AutoCollectExceptions } from "./logs/exceptions";
+import { ExtensibleLogRecordProcessor } from "./shared/util/extensibleLogRecordProcessor";
+import { ExtensibleSpanProcessor } from "./shared/util/extensibleSpanProcessor";
 import { AzureMonitorOpenTelemetryOptions } from "./types";
 import { ApplicationInsightsConfig } from "./shared/configuration/config";
 import { LogApi } from "./shim/logsApi";
@@ -20,6 +22,8 @@ import { StatsbeatFeaturesManager } from "./shared/util/statsbeatFeaturesManager
 
 let autoCollectLogs: AutoCollectLogs;
 let exceptions: AutoCollectExceptions;
+let extensibleLogProcessor: ExtensibleLogRecordProcessor;
+let extensibleSpanProcessor: ExtensibleSpanProcessor;
 
 /**
  * Initialize Azure Monitor
@@ -32,14 +36,37 @@ export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
     
     // Allows for full filtering of dependency/request spans
     const internalConfig = new ApplicationInsightsConfig(options);
-    // TODO: Try to resolve the issue with otlp exporters not being added to the options
-    // options.spanProcessors = [
-    //     _getOtlpSpanExporter(internalConfig),
-    //     new RequestSpanProcessor(options.enableAutoCollectDependencies, options.enableAutoCollectRequests)
-    // ];
-    // options.logRecordProcessors = [
-    //     _getOtlpLogExporter(internalConfig)
-    // ];
+    
+    // Create extensible processors to allow dynamic addition of processors
+    extensibleSpanProcessor = new ExtensibleSpanProcessor();
+    extensibleLogProcessor = new ExtensibleLogRecordProcessor();
+    
+    // Add OTLP exporters if configured
+    const otlpSpanProcessor = _getOtlpSpanExporter(internalConfig);
+    if (otlpSpanProcessor) {
+        extensibleSpanProcessor.addSpanProcessor(otlpSpanProcessor);
+    }
+    
+    const otlpLogProcessor = _getOtlpLogExporter(internalConfig);
+    if (otlpLogProcessor) {
+        extensibleLogProcessor.addLogRecordProcessor(otlpLogProcessor);
+    }
+    
+    // Ensure options object exists and add our extensible processors
+    if (!options) {
+        options = {};
+    }
+    
+    if (!options.spanProcessors) {
+        options.spanProcessors = [];
+    }
+    options.spanProcessors.push(extensibleSpanProcessor);
+    
+    if (!options.logRecordProcessors) {
+        options.logRecordProcessors = [];
+    }
+    options.logRecordProcessors.push(extensibleLogProcessor);
+    
     distroUseAzureMonitor(options);
     const logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
     autoCollectLogs = new AutoCollectLogs();
@@ -59,7 +86,7 @@ export async function shutdownAzureMonitor() {
 }
 
 /**
- *Try to send all queued telemetry if present.
+ * Try to send all queued telemetry if present.
  */
 export async function flushAzureMonitor() {
     try {
@@ -69,6 +96,22 @@ export async function flushAzureMonitor() {
     } catch (err) {
         diag.error("Failed to flush telemetry", err);
     }
+}
+
+/**
+ * Get the extensible span processor to add custom span processors dynamically.
+ * This is a workaround for OpenTelemetry 2.x limitations.
+ */
+export function getExtensibleSpanProcessor(): ExtensibleSpanProcessor | undefined {
+    return extensibleSpanProcessor;
+}
+
+/**
+ * Get the extensible log record processor to add custom log processors dynamically.
+ * This is a workaround for OpenTelemetry 2.x limitations.
+ */
+export function getExtensibleLogRecordProcessor(): ExtensibleLogRecordProcessor | undefined {
+    return extensibleLogProcessor;
 }
 
 function _getOtlpSpanExporter(internalConfig: ApplicationInsightsConfig): SpanProcessor {
