@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import assert = require("assert");
+import assert from "assert";
 import sinon from "sinon";
 import * as fs from "fs";
 import * as path from "path";

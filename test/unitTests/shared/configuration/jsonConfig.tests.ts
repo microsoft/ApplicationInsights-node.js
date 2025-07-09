@@ -3,7 +3,7 @@
 import { JsonConfig } from "../../../../src/shared/configuration/jsonConfig";
 import assert from "assert";
 import path from "path";
-import sinon = require("sinon");
+import sinon from "sinon";
 
 describe("Json Config", () => {
     let originalEnv: NodeJS.ProcessEnv;

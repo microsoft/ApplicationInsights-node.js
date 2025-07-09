@@ -1,15 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 import assert from "assert";
-import nock = require("nock");
+import nock from "nock";
 import sinon from "sinon";
 import { Context, ProxyTracerProvider, trace, metrics, diag } from "@opentelemetry/api";
 import { ReadableSpan, Span, SpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations/contracts";
 import { TelemetryClient } from "../../../src/shim/telemetryClient";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
-import { AzureMonitorExporterOptions, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
-import { MeterProvider, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions, ResourceMetrics, PushMetricExporter } from "@opentelemetry/sdk-metrics";
+import { MeterProvider } from "@opentelemetry/sdk-metrics";
 import { LogRecord, LogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
 import { logs } from "@opentelemetry/api-logs";
 import { SEMATTRS_RPC_SYSTEM } from "@opentelemetry/semantic-conventions";
@@ -21,7 +20,6 @@ describe("shim/TelemetryClient", () => {
     let testProcessor: TestSpanProcessor;
     let tracerProvider: NodeTracerProvider;
     let loggerProvider: LoggerProvider;
-    let testMetrics: ResourceMetrics;
     let metricProvider: MeterProvider;
     let logProcessor: TestLogProcessor;
     let sandbox: sinon.SinonSandbox;
@@ -120,26 +118,6 @@ describe("shim/TelemetryClient", () => {
         }
     
         forceFlush(): Promise<void> {
-            return Promise.resolve();
-        }
-    }
-
-    class TestExporter implements PushMetricExporter {
-        constructor() {
-        }
-        async export(
-            metrics: ResourceMetrics,
-        ): Promise<void> {
-            console.log("TestExporter.export called with:", JSON.stringify(metrics, null, 2));
-            testMetrics = metrics;
-            return Promise.resolve();
-        }
-        
-        async forceFlush(): Promise<void> {
-            return Promise.resolve();
-        }
-        
-        async shutdown(): Promise<void> {
             return Promise.resolve();
         }
     }
