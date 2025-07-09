@@ -1,5 +1,5 @@
-import * as assert from "assert";
-import * as sinon from "sinon";
+import assert from "assert";
+import sinon from "sinon";
 import { ProxyTracerProvider, metrics, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
 import { AKSLoader } from "../../../src/agent/aksLoader";

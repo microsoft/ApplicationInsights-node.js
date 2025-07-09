@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import * as assert from "assert";
-import * as sinon from "sinon";
+import assert from "assert";
+import sinon from "sinon";
 import { FileWriter } from "../../../../../src/agent/diagnostics/writers/fileWriter";
 import fs from "fs";
 

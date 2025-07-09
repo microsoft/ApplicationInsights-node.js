@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
-import * as assert from "assert";
+import assert from "assert";
 import nock = require("nock");
-import * as sinon from "sinon";
+import sinon from "sinon";
 import { Context, ProxyTracerProvider, trace, metrics, diag } from "@opentelemetry/api";
 import { ReadableSpan, Span, SpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations/contracts";

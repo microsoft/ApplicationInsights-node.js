@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import assert = require("assert");
-import * as sinon from "sinon";
+import sinon from "sinon";
 
 import { AgentLoader } from "../../../src/agent/agentLoader";
 import * as azureMonitor from "@azure/monitor-opentelemetry";

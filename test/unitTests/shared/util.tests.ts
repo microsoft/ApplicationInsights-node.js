@@ -1,5 +1,5 @@
-﻿import * as assert from "assert";
-import * as sinon from "sinon";
+﻿import assert from "assert";
+import sinon from "sinon";
 import fs from "fs";
 import * as path from "path";
 import * as os from "os";

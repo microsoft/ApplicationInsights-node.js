@@ -1,5 +1,5 @@
-import * as assert from "assert";
-import * as sinon from "sinon";
+import assert from "assert";
+import sinon from "sinon";
 import nock = require("nock");
 import { Logger } from "@opentelemetry/api-logs";
 import { LogRecord } from "@opentelemetry/sdk-logs";

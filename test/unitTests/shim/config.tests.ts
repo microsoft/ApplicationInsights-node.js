@@ -126,8 +126,8 @@ describe("shim/configuration/config", () => {
                 enableTraceBasedSamplingForLogs: false,
                 enableLiveMetrics: false,
                 enableStandardMetrics: false,
-                // logRecordProcessors: logRecordProcessors,
-                // spanProcessors: spanProcessors
+                logRecordProcessors: logRecordProcessors,
+                spanProcessors: spanProcessors
             };
 
             let options = config.parseConfig();
