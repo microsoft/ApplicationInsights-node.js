@@ -182,8 +182,10 @@ export class TelemetryClient {
         if (!this._isInitialized) {
             this.initialize();
         }
-        const startTime = telemetry.time || new Date();
-        const endTime = startTime.getTime() + telemetry.duration;
+        // For trackRequest, when time is not specified, treat current time as END time
+        // since this method is called after the request operation has completed
+        const endTime = telemetry.time ? telemetry.time.getTime() + telemetry.duration : Date.now();
+        const startTime = telemetry.time || new Date(endTime - telemetry.duration);
 
         const ctx = context.active();
         const attributes: Attributes = {
@@ -233,8 +235,10 @@ export class TelemetryClient {
         if (!this._isInitialized) {
             this.initialize();
         }
-        const startTime = telemetry.time || new Date();
-        const endTime = startTime.getTime() + telemetry.duration;
+        // For trackDependency, when time is not specified, treat current time as END time
+        // since this method is called after the dependency operation has completed
+        const endTime = telemetry.time ? telemetry.time.getTime() + telemetry.duration : Date.now();
+        const startTime = telemetry.time || new Date(endTime - telemetry.duration);
         if (telemetry && !telemetry.target && telemetry.data) {
             // url.parse().host returns null for non-urls,
             // making this essentially a no-op in those cases

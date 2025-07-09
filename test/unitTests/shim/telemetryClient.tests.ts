@@ -266,6 +266,80 @@ describe("shim/TelemetryClient", () => {
             assert.equal(spans[0].attributes[SEMATTRS_RPC_SYSTEM], "RPC");
         });
 
+        it("trackDependency default timing - should treat current time as end time", async () => {
+            const beforeCall = Date.now();
+            const telemetry: DependencyTelemetry = {
+                name: "TestTimingDependency",
+                duration: 1000, // 1 second
+                resultCode: "200",
+                data: "http://api.example.com",
+                dependencyTypeName: "HTTP",
+                success: true,
+            };
+            // Call trackDependency without specifying 'time' - should default to current time as END time
+            client.trackDependency(telemetry);
+            const afterCall = Date.now();
+            
+            await tracerProvider.forceFlush();
+            const spans = testProcessor.spansProcessed;
+            assert.equal(spans.length, 1);
+            assert.equal(spans[0].name, "TestTimingDependency");
+            
+            // Convert span times from hrTime to milliseconds for comparison
+            const spanStartMs = spans[0].startTime[0] * 1000 + spans[0].startTime[1] / 1_000_000;
+            const spanEndMs = spans[0].endTime[0] * 1000 + spans[0].endTime[1] / 1_000_000;
+            
+            // Duration should match the specified duration
+            const actualDuration = spanEndMs - spanStartMs;
+            assert.ok(Math.abs(actualDuration - 1000) < 10, `Expected duration ~1000ms, got ${actualDuration}ms`);
+            
+            // End time should be close to when we called trackDependency (within reasonable tolerance)
+            assert.ok(spanEndMs >= beforeCall && spanEndMs <= afterCall + 50, 
+                `End time ${spanEndMs} should be between ${beforeCall} and ${afterCall + 50}`);
+            
+            // Start time should be approximately end time minus duration
+            const expectedStartMs = spanEndMs - 1000;
+            assert.ok(Math.abs(spanStartMs - expectedStartMs) < 10, 
+                `Start time ${spanStartMs} should be close to ${expectedStartMs}`);
+        });
+
+        it("trackDependency with custom time - should respect provided start time", async () => {
+            const customStartTime = new Date(Date.now() - 5000); // 5 seconds ago
+            const telemetry: DependencyTelemetry = {
+                name: "CustomTimeDependency",
+                duration: 2000, // 2 seconds
+                resultCode: "200",
+                data: "http://custom.example.com",
+                dependencyTypeName: "HTTP",
+                success: true,
+                time: customStartTime
+            };
+            
+            client.trackDependency(telemetry);
+            
+            await tracerProvider.forceFlush();
+            const spans = testProcessor.spansProcessed;
+            assert.equal(spans.length, 1);
+            assert.equal(spans[0].name, "CustomTimeDependency");
+            
+            // Convert span times from hrTime to milliseconds for comparison
+            const spanStartMs = spans[0].startTime[0] * 1000 + spans[0].startTime[1] / 1_000_000;
+            const spanEndMs = spans[0].endTime[0] * 1000 + spans[0].endTime[1] / 1_000_000;
+            
+            // Duration should match the specified duration
+            const actualDuration = spanEndMs - spanStartMs;
+            assert.ok(Math.abs(actualDuration - 2000) < 10, `Expected duration ~2000ms, got ${actualDuration}ms`);
+            
+            // Start time should match the custom time provided
+            assert.ok(Math.abs(spanStartMs - customStartTime.getTime()) < 10, 
+                `Start time ${spanStartMs} should be close to custom time ${customStartTime.getTime()}`);
+            
+            // End time should be start time plus duration
+            const expectedEndMs = customStartTime.getTime() + 2000;
+            assert.ok(Math.abs(spanEndMs - expectedEndMs) < 10, 
+                `End time ${spanEndMs} should be close to ${expectedEndMs}`);
+        });
+
         it("trackRequest", async () => {
             const telemetry: RequestTelemetry = {
                 id: "123456",
@@ -303,6 +377,75 @@ describe("shim/TelemetryClient", () => {
             assert.equal(spans[0].name, "CustomTraceRequest");
             // Verify that the span's traceId matches the custom id provided
             assert.equal(spans[0].spanContext().traceId, customId);
+        });
+
+        it("trackRequest default timing - should treat current time as end time", async () => {
+            const beforeCall = Date.now();
+            const telemetry: RequestTelemetry = {
+                name: "TestTimingRequest",
+                duration: 1500, // 1.5 seconds
+                resultCode: "200",
+                url: "http://api.example.com/users",
+                success: true,
+            };
+            // Call trackRequest without specifying 'time' - should default to current time as END time
+            client.trackRequest(telemetry);
+            const afterCall = Date.now();
+            
+            await tracerProvider.forceFlush();
+            const spans = testProcessor.spansProcessed;
+            assert.equal(spans.length, 1);
+            assert.equal(spans[0].name, "TestTimingRequest");
+            
+            // Convert span times from hrTime to milliseconds for comparison
+            const spanStartMs = spans[0].startTime[0] * 1000 + spans[0].startTime[1] / 1_000_000;
+            const spanEndMs = spans[0].endTime[0] * 1000 + spans[0].endTime[1] / 1_000_000;
+            
+            // Duration should match the specified duration
+            const actualDuration = spanEndMs - spanStartMs;
+            assert.ok(Math.abs(actualDuration - 1500) < 10, `Expected duration ~1500ms, got ${actualDuration}ms`);
+            
+            // End time should be close to when we called trackRequest (within reasonable tolerance)
+            assert.ok(spanEndMs >= beforeCall && spanEndMs <= afterCall + 50, 
+                `End time ${spanEndMs} should be between ${beforeCall} and ${afterCall + 50}`);
+            
+            // Start time should be calculated as end time - duration
+            const expectedStartMs = spanEndMs - 1500;
+            assert.ok(Math.abs(spanStartMs - expectedStartMs) < 10, 
+                `Start time ${spanStartMs} should be close to ${expectedStartMs}`);
+        });
+
+        it("trackRequest with custom time - should respect provided start time", async () => {
+            const customStartTime = new Date(Date.now() - 3000); // 3 seconds ago
+            const telemetry: RequestTelemetry = {
+                name: "CustomTimeRequest",
+                duration: 1200, // 1.2 seconds
+                resultCode: "201",
+                url: "http://custom.example.com/data",
+                success: true,
+                time: customStartTime
+            };
+            
+            client.trackRequest(telemetry);
+            
+            await tracerProvider.forceFlush();
+            const spans = testProcessor.spansProcessed;
+            assert.equal(spans.length, 1);
+            assert.equal(spans[0].name, "CustomTimeRequest");
+            
+            // Convert span times from hrTime to milliseconds for comparison
+            const spanStartMs = spans[0].startTime[0] * 1000 + spans[0].startTime[1] / 1_000_000;
+            const spanEndMs = spans[0].endTime[0] * 1000 + spans[0].endTime[1] / 1_000_000;
+            
+            // Start time should match the provided custom time
+            const expectedStartMs = customStartTime.getTime();
+            assert.ok(Math.abs(spanStartMs - expectedStartMs) < 10, 
+                `Start time ${spanStartMs} should be close to ${expectedStartMs}`);
+            
+            // End time should be start time + duration
+            const expectedEndMs = customStartTime.getTime() + 1200;
+            assert.ok(Math.abs(spanEndMs - expectedEndMs) < 10, 
+                `End time ${spanEndMs} should be close to ${expectedEndMs}`);
         });
 
         it("trackDependency with custom id sets traceId", async () => {
