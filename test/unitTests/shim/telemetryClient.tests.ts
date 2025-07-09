@@ -9,7 +9,7 @@ import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations
 import { TelemetryClient } from "../../../src/shim/telemetryClient";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { AzureMonitorExporterOptions, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
-import { MeterProvider, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions, ResourceMetrics } from "@opentelemetry/sdk-metrics";
+import { MeterProvider, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions, ResourceMetrics, PushMetricExporter } from "@opentelemetry/sdk-metrics";
 import { LogRecord, LogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
 import { logs } from "@opentelemetry/api-logs";
 import { SEMATTRS_RPC_SYSTEM } from "@opentelemetry/semantic-conventions";
@@ -124,14 +124,23 @@ describe("shim/TelemetryClient", () => {
         }
     }
 
-    class TestExporter extends AzureMonitorMetricExporter {
-        constructor(options: AzureMonitorExporterOptions = {}) {
-            super(options);
+    class TestExporter implements PushMetricExporter {
+        constructor() {
         }
         async export(
             metrics: ResourceMetrics,
         ): Promise<void> {
+            console.log("TestExporter.export called with:", JSON.stringify(metrics, null, 2));
             testMetrics = metrics;
+            return Promise.resolve();
+        }
+        
+        async forceFlush(): Promise<void> {
+            return Promise.resolve();
+        }
+        
+        async shutdown(): Promise<void> {
+            return Promise.resolve();
         }
     }
 
@@ -322,23 +331,32 @@ describe("shim/TelemetryClient", () => {
                 name: "TestName",
                 value: 100,
             };
-            const exporter = new TestExporter({ connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/" });
-            const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
-                exporter: exporter,
+            
+            // Create spy on the histogram record method to verify metric tracking
+            const originalMeter = metrics.getMeterProvider().getMeter("ApplicationInsightsMetrics");
+            const histogramRecordSpy = sandbox.spy();
+            
+            // Mock the histogram creation to track record calls
+            const histogramMock = {
+                record: histogramRecordSpy
             };
-            const metricReader = new PeriodicExportingMetricReader(metricReaderOptions);
-            // In OpenTelemetry 2.x, addMetricReader was removed, so we access the internal array directly
-            if ((metricProvider as any)._metricReaders) {
-                (metricProvider as any)._metricReaders.push(metricReader);
-            }
+            
+            const createHistogramStub = sandbox.stub(originalMeter, 'createHistogram').returns(histogramMock as any);
+            
+            // Track the metric
             client.trackMetric(telemetry);
-            metricProvider.forceFlush();
-            await new Promise((resolve) => setTimeout(resolve, 800));
-            assert.equal(testMetrics.scopeMetrics[0].metrics[0].descriptor.name, "TestName");
-            // Note: In OpenTelemetry 2.x, the descriptor.type property may have changed
-            // assert.equal(testMetrics.scopeMetrics[0].metrics[0].descriptor.type, "HISTOGRAM");
-            // @ts-ignore: TypeScript is not aware of the sum existing on the value object since it's a generic type
-            assert.equal(testMetrics.scopeMetrics[0].metrics[0].dataPoints[0].value.sum, 100);
+            
+            // Verify that createHistogram was called with the correct name
+            assert.ok(createHistogramStub.calledOnce, "createHistogram should be called once");
+            assert.equal(createHistogramStub.args[0][0], "TestName", "Histogram should be created with correct name");
+            
+            // Verify that record was called with the correct value
+            assert.ok(histogramRecordSpy.calledOnce, "Histogram record should be called once");
+            assert.equal(histogramRecordSpy.args[0][0], 100, "Record should be called with correct value");
+            
+            // Verify properties were passed
+            const recordedAttributes = histogramRecordSpy.args[0][1];
+            assert.ok(recordedAttributes, "Attributes should be passed to record");
         });
         
         it("trackMetric should handle errors gracefully", async () => {

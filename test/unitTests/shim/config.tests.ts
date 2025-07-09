@@ -11,8 +11,7 @@ import https = require("https");
 import { DistributedTracingModes } from '../../../applicationinsights';
 import { checkWarnings } from './testUtils';
 import { BatchSpanProcessor, ConsoleSpanExporter } from '@opentelemetry/sdk-trace-base';
-import { defaultResource, resourceFromAttributes } from '@opentelemetry/resources';
-import type { AzureMonitorOpenTelemetryOptions } from '@azure/monitor-opentelemetry';
+import { defaultResource } from '@opentelemetry/resources';
 
 class TestTokenCredential implements azureCoreAuth.TokenCredential {
     private _expiresOn: Date;
