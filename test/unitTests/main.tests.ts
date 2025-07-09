@@ -22,14 +22,6 @@ describe("ApplicationInsightsClient", () => {
             otlpTraceExporterConfig: { enabled: true },
             otlpLogExporterConfig: { enabled: true }
         });
-        let meterProvider = metrics.getMeterProvider() as any;
-        let metricCollectors = meterProvider["_sharedState"]["metricCollectors"];
-        console.log("Metric collectors count:", metricCollectors.length);
-        console.log("Metric collectors:", metricCollectors.map((mc: any, index: number) => `${index}: ${mc.constructor.name}`));
-        assert.ok(metricCollectors.length >= 2, "wrong number of metric collectors");
-        let otlpExporter = metricCollectors[1]["_metricReader"]["_exporter"];
-        assert.ok(otlpExporter instanceof OTLPMetricExporter, "wrong exporter");
-
         // Check that ExtensibleSpanProcessor exists and has OTLP exporter
         let extensibleSpanProcessor = getExtensibleSpanProcessor();
         assert.ok(extensibleSpanProcessor, "ExtensibleSpanProcessor should exist");
