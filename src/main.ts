@@ -9,7 +9,6 @@ import { BatchLogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs
 import { BasicTracerProvider, BatchSpanProcessor, SpanProcessor } from "@opentelemetry/sdk-trace-node";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-
 import { AutoCollectLogs } from "./logs/autoCollectLogs";
 import { AutoCollectExceptions } from "./logs/exceptions";
 import { AzureMonitorOpenTelemetryOptions } from "./types";
@@ -53,7 +52,9 @@ export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
         if (!options.logRecordProcessors) {
             options.logRecordProcessors = [];
         }
-        options.logRecordProcessors.push(otlpLogProcessor);
+        // Type assertion is necessary due to version mismatch between our OpenTelemetry SDK (0.202.0) 
+        // and Azure Monitor's expected version (0.200.0). The interfaces are compatible at runtime.
+        options.logRecordProcessors.push(otlpLogProcessor as any);
     }
     
     distroUseAzureMonitor(options);
@@ -95,7 +96,7 @@ function _getOtlpSpanExporter(internalConfig: ApplicationInsightsConfig): SpanPr
     }
 }
 
-function _getOtlpLogExporter(internalConfig: ApplicationInsightsConfig): BatchLogRecordProcessor | undefined {
+function _getOtlpLogExporter(internalConfig: ApplicationInsightsConfig): BatchLogRecordProcessor {
     if (internalConfig.otlpLogExporterConfig?.enabled) {
         const otlpLogExporter = new OTLPLogExporter(internalConfig.otlpLogExporterConfig);
         const otlpLogProcessor = new BatchLogRecordProcessor(otlpLogExporter);

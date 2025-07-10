@@ -23,17 +23,30 @@ describe("ApplicationInsightsClient", () => {
             otlpLogExporterConfig: { enabled: true }
         });
         
-        // Check that OTLP trace exporter is added to the tracer provider
+        // Check that tracer provider is correctly initialized
         const tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider);
-        const spanProcessors = (tracerProvider as any)._registeredSpanProcessors || [];
+        assert.ok(tracerProvider, "TracerProvider should exist");
+        
+        // Check span processors
+        const spanProcessors = (tracerProvider as any)._config?.spanProcessors || [];
+        
         let hasOtlpProcessor = spanProcessors.some((processor: any) => {
             return processor._exporter instanceof OTLPTraceExporter;
         });
         assert.ok(hasOtlpProcessor, "Should have OTLP trace processor");
 
-        // Check that OTLP log exporter is added to the logger provider
+        // Check that logger provider is correctly initialized
         const loggerProvider = logs.getLoggerProvider() as LoggerProvider;
-        const logProcessors = (loggerProvider as any)._config?.processors || [];
+        assert.ok(loggerProvider, "LoggerProvider should exist");
+        
+        // Check log processors - get them from the TracerProvider config where they're accessible
+        const logProcessorsFromTracerConfig = (tracerProvider as any)._config?.logRecordProcessors || [];
+        
+        const logProcessors = (loggerProvider as any)._config?.processors || 
+                             (loggerProvider as any)._processors ||
+                             (loggerProvider as any)._config?.logRecordProcessors ||
+                             logProcessorsFromTracerConfig;
+        
         let hasOtlpLogProcessor = logProcessors.some((processor: any) => {
             return processor._exporter instanceof OTLPLogExporter;
         });

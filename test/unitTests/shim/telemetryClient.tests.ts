@@ -35,24 +35,24 @@ describe("shim/TelemetryClient", () => {
             .persist();
         nock.disableNetConnect();
 
+        testProcessor = new TestSpanProcessor();
+        logProcessor = new TestLogProcessor({});
+        
         client = new TelemetryClient(
             "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
         );
         client.config.samplingPercentage = 100;
         client.config.noDiagnosticChannel = true;
+        
+        // Add test processors through the Azure Monitor options
+        client.config.azureMonitorOpenTelemetryOptions = {
+            spanProcessors: [testProcessor],
+            logRecordProcessors: [logProcessor as any] // Type assertion needed for version compatibility
+        };
+        
         client.initialize();
         tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider);
-        testProcessor = new TestSpanProcessor();
-        // Directly add the test processor to the tracer provider
-        if ((tracerProvider as any)._registeredSpanProcessors) {
-            (tracerProvider as any)._registeredSpanProcessors.unshift(testProcessor);
-        }
-
         loggerProvider = logs.getLoggerProvider() as LoggerProvider;
-        logProcessor = new TestLogProcessor({});
-        // Directly add the test processor to the logger provider
-        loggerProvider.addLogRecordProcessor(logProcessor);
-
         metricProvider = metrics.getMeterProvider() as MeterProvider;
     });
 

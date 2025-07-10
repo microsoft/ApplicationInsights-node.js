@@ -81,7 +81,9 @@ export class TelemetryClient {
             if (!this._options.logRecordProcessors) {
                 this._options.logRecordProcessors = [];
             }
-            // this._options.logRecordProcessors.push(this._attributeLogProcessor);
+            // Type assertion is necessary due to version mismatch between our OpenTelemetry SDK (0.202.0) 
+            // and Azure Monitor's expected version (0.200.0). The interfaces are compatible at runtime.
+            this._options.logRecordProcessors.push(this._attributeLogProcessor as any);
 
             // Initialize Azure Monitor with processors included
             useAzureMonitor(this._options);
