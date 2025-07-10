@@ -5,15 +5,13 @@ import { shutdownAzureMonitor as distroShutdownAzureMonitor, useAzureMonitor as 
 import { ProxyTracerProvider, diag, metrics, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
 import { MeterProvider } from "@opentelemetry/sdk-metrics";
-import { BatchLogRecordProcessor, LoggerProvider, LogRecordProcessor } from "@opentelemetry/sdk-logs";
+import { BatchLogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
 import { BasicTracerProvider, BatchSpanProcessor, SpanProcessor } from "@opentelemetry/sdk-trace-node";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 
 import { AutoCollectLogs } from "./logs/autoCollectLogs";
 import { AutoCollectExceptions } from "./logs/exceptions";
-import { ExtensibleLogRecordProcessor } from "./shared/util/extensibleLogRecordProcessor";
-import { ExtensibleSpanProcessor } from "./shared/util/extensibleSpanProcessor";
 import { AzureMonitorOpenTelemetryOptions } from "./types";
 import { ApplicationInsightsConfig } from "./shared/configuration/config";
 import { LogApi } from "./shim/logsApi";
@@ -22,8 +20,6 @@ import { StatsbeatFeaturesManager } from "./shared/util/statsbeatFeaturesManager
 
 let autoCollectLogs: AutoCollectLogs;
 let exceptions: AutoCollectExceptions;
-let extensibleLogProcessor: ExtensibleLogRecordProcessor;
-let extensibleSpanProcessor: ExtensibleSpanProcessor;
 
 /**
  * Initialize Azure Monitor
@@ -37,35 +33,28 @@ export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
     // Allows for full filtering of dependency/request spans
     const internalConfig = new ApplicationInsightsConfig(options);
     
-    // Create extensible processors to allow dynamic addition of processors
-    extensibleSpanProcessor = new ExtensibleSpanProcessor();
-    extensibleLogProcessor = new ExtensibleLogRecordProcessor();
-    
     // Add OTLP exporters if configured
     const otlpSpanProcessor = _getOtlpSpanExporter(internalConfig);
-    if (otlpSpanProcessor) {
-        extensibleSpanProcessor.addSpanProcessor(otlpSpanProcessor);
-    }
-    
     const otlpLogProcessor = _getOtlpLogExporter(internalConfig);
-    if (otlpLogProcessor) {
-        extensibleLogProcessor.addLogRecordProcessor(otlpLogProcessor);
-    }
     
-    // Ensure options object exists and add our extensible processors
+    // Ensure options object exists and add processors
     if (!options) {
         options = {};
     }
     
-    if (!options.spanProcessors) {
-        options.spanProcessors = [];
+    if (otlpSpanProcessor) {
+        if (!options.spanProcessors) {
+            options.spanProcessors = [];
+        }
+        options.spanProcessors.push(otlpSpanProcessor);
     }
-    options.spanProcessors.push(extensibleSpanProcessor);
     
-    if (!options.logRecordProcessors) {
-        options.logRecordProcessors = [];
+    if (otlpLogProcessor) {
+        if (!options.logRecordProcessors) {
+            options.logRecordProcessors = [];
+        }
+        options.logRecordProcessors.push(otlpLogProcessor);
     }
-    options.logRecordProcessors.push(extensibleLogProcessor);
     
     distroUseAzureMonitor(options);
     const logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
@@ -98,22 +87,6 @@ export async function flushAzureMonitor() {
     }
 }
 
-/**
- * Get the extensible span processor to add custom span processors dynamically.
- * This is a workaround for OpenTelemetry 2.x limitations.
- */
-export function getExtensibleSpanProcessor(): ExtensibleSpanProcessor | undefined {
-    return extensibleSpanProcessor;
-}
-
-/**
- * Get the extensible log record processor to add custom log processors dynamically.
- * This is a workaround for OpenTelemetry 2.x limitations.
- */
-export function getExtensibleLogRecordProcessor(): ExtensibleLogRecordProcessor | undefined {
-    return extensibleLogProcessor;
-}
-
 function _getOtlpSpanExporter(internalConfig: ApplicationInsightsConfig): SpanProcessor {
     if (internalConfig.otlpTraceExporterConfig?.enabled) {
         const otlpTraceExporter = new OTLPTraceExporter(internalConfig.otlpTraceExporterConfig);
@@ -122,7 +95,7 @@ function _getOtlpSpanExporter(internalConfig: ApplicationInsightsConfig): SpanPr
     }
 }
 
-function _getOtlpLogExporter(internalConfig: ApplicationInsightsConfig): LogRecordProcessor {
+function _getOtlpLogExporter(internalConfig: ApplicationInsightsConfig): BatchLogRecordProcessor | undefined {
     if (internalConfig.otlpLogExporterConfig?.enabled) {
         const otlpLogExporter = new OTLPLogExporter(internalConfig.otlpLogExporterConfig);
         const otlpLogProcessor = new BatchLogRecordProcessor(otlpLogExporter);

@@ -6,7 +6,6 @@ import { AKSLoader } from "../../../src/agent/aksLoader";
 import { DiagnosticLogger } from "../../../src/agent/diagnostics/diagnosticLogger";
 import { FileWriter } from "../../../src/agent/diagnostics/writers/fileWriter";
 import { dispose as disposeConsole } from "../../../src/logs/diagnostic-channel/console.sub";
-import { getExtensibleSpanProcessor, getExtensibleLogRecordProcessor } from "../../../src/main";
 
 describe("agent/AKSLoader", () => {
     let originalEnv: NodeJS.ProcessEnv;
@@ -55,14 +54,6 @@ describe("agent/AKSLoader", () => {
         assert.equal(meterProvider.constructor.name, "MeterProvider");
         assert.equal(meterProvider["_sharedState"]["metricCollectors"].length, 1);
         assert.equal(meterProvider["_sharedState"]["metricCollectors"][0]["_metricReader"]["_exporter"].constructor.name, "AzureMonitorMetricExporter");
-        
-        // Check that the extensible span processor exists (this proves our workaround is in place)
-        let extensibleSpanProcessor = getExtensibleSpanProcessor();
-        assert.ok(extensibleSpanProcessor, "ExtensibleSpanProcessor should exist");
-        
-        // Check that the extensible log record processor exists (this proves our workaround is in place)
-        let extensibleLogProcessor = getExtensibleLogRecordProcessor();
-        assert.ok(extensibleLogProcessor, "ExtensibleLogRecordProcessor should exist");
         
         // Verify that Azure Monitor providers are correctly initialized
         let tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate()) as any;

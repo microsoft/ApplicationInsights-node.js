@@ -22,7 +22,7 @@ import Config = require("./shim-config");
 import { AttributeSpanProcessor } from "../shared/util/attributeSpanProcessor";
 import { AttributeLogProcessor } from "../shared/util/attributeLogRecordProcessor";
 import { LogApi } from "./logsApi";
-import { flushAzureMonitor, shutdownAzureMonitor, useAzureMonitor, getExtensibleSpanProcessor, getExtensibleLogRecordProcessor } from "../main";
+import { flushAzureMonitor, shutdownAzureMonitor, useAzureMonitor } from "../main";
 import { AzureMonitorOpenTelemetryOptions } from "../types";
 import { UNSUPPORTED_MSG, StatsbeatFeature } from "./types";
 import { StatsbeatFeaturesManager } from "../shared/util/statsbeatFeaturesManager";
@@ -66,26 +66,29 @@ export class TelemetryClient {
         this._isInitialized = true;
         // Parse shim config to Azure Monitor options
         this._options = this.config.parseConfig();
-        // Add the span processors and log processors to the options using extensible processors
-        useAzureMonitor(this._options);
+        
         try {
+            // Create attribute processors with context tags and common properties
+            this._attributeSpanProcessor = new AttributeSpanProcessor({ ...this.context.tags, ...this.commonProperties });
+            this._attributeLogProcessor = new AttributeLogProcessor({ ...this.context.tags, ...this.commonProperties });
+
+            // Add processors to Azure Monitor options before initialization
+            if (!this._options.spanProcessors) {
+                this._options.spanProcessors = [];
+            }
+            this._options.spanProcessors.push(this._attributeSpanProcessor);
+
+            if (!this._options.logRecordProcessors) {
+                this._options.logRecordProcessors = [];
+            }
+            // this._options.logRecordProcessors.push(this._attributeLogProcessor);
+
+            // Initialize Azure Monitor with processors included
+            useAzureMonitor(this._options);
+            
             // LoggerProvider would be initialized when client is instantiated
             // Get Logger from global provider
             this._logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
-            this._attributeSpanProcessor = new AttributeSpanProcessor({ ...this.context.tags, ...this.commonProperties });
-
-            this._attributeLogProcessor = new AttributeLogProcessor({ ...this.context.tags, ...this.commonProperties });
-
-            // Add processors to extensible processors instead of directly to providers
-            const extensibleSpanProcessor = getExtensibleSpanProcessor();
-            if (extensibleSpanProcessor) {
-                extensibleSpanProcessor.addSpanProcessor(this._attributeSpanProcessor);
-            }
-
-            const extensibleLogProcessor = getExtensibleLogRecordProcessor();
-            if (extensibleLogProcessor) {
-                extensibleLogProcessor.addLogRecordProcessor(this._attributeLogProcessor);
-            }
 
             // Warn if any config warnings were generated during parsing
             for (let i = 0; i < this._configWarnings.length; i++) {

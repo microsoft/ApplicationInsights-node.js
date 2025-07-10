@@ -3,7 +3,11 @@
 import assert from "assert";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-import { shutdownAzureMonitor, useAzureMonitor, getExtensibleSpanProcessor, getExtensibleLogRecordProcessor } from "../../src";
+import { trace, ProxyTracerProvider } from "@opentelemetry/api";
+import { logs } from "@opentelemetry/api-logs";
+import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
+import { LoggerProvider } from "@opentelemetry/sdk-logs";
+import { shutdownAzureMonitor, useAzureMonitor } from "../../src";
 
 describe("ApplicationInsightsClient", () => {
     afterEach(() => {
@@ -18,21 +22,20 @@ describe("ApplicationInsightsClient", () => {
             otlpTraceExporterConfig: { enabled: true },
             otlpLogExporterConfig: { enabled: true }
         });
-        // Check that ExtensibleSpanProcessor exists and has OTLP exporter
-        let extensibleSpanProcessor = getExtensibleSpanProcessor();
-        assert.ok(extensibleSpanProcessor, "ExtensibleSpanProcessor should exist");
-        let spanProcessors = extensibleSpanProcessor.getProcessors();
-        let hasOtlpProcessor = spanProcessors.some(processor => {
-            return (processor as any)._exporter instanceof OTLPTraceExporter;
+        
+        // Check that OTLP trace exporter is added to the tracer provider
+        const tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider);
+        const spanProcessors = (tracerProvider as any)._registeredSpanProcessors || [];
+        let hasOtlpProcessor = spanProcessors.some((processor: any) => {
+            return processor._exporter instanceof OTLPTraceExporter;
         });
         assert.ok(hasOtlpProcessor, "Should have OTLP trace processor");
 
-        // Check that ExtensibleLogRecordProcessor exists and has OTLP exporter
-        let extensibleLogProcessor = getExtensibleLogRecordProcessor();
-        assert.ok(extensibleLogProcessor, "ExtensibleLogRecordProcessor should exist");
-        let logProcessors = extensibleLogProcessor.getProcessors();
-        let hasOtlpLogProcessor = logProcessors.some(processor => {
-            return (processor as any)._exporter instanceof OTLPLogExporter;
+        // Check that OTLP log exporter is added to the logger provider
+        const loggerProvider = logs.getLoggerProvider() as LoggerProvider;
+        const logProcessors = (loggerProvider as any)._config?.processors || [];
+        let hasOtlpLogProcessor = logProcessors.some((processor: any) => {
+            return processor._exporter instanceof OTLPLogExporter;
         });
         assert.ok(hasOtlpLogProcessor, "Should have OTLP log processor");
     });

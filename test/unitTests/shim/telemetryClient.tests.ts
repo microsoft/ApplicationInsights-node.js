@@ -13,7 +13,6 @@ import { LogRecord, LogRecordProcessor, LoggerProvider } from "@opentelemetry/sd
 import { logs } from "@opentelemetry/api-logs";
 import { SEMATTRS_RPC_SYSTEM } from "@opentelemetry/semantic-conventions";
 import Config = require("../../../src/shim/shim-config");
-import { getExtensibleSpanProcessor, getExtensibleLogRecordProcessor } from "../../../src/main";
 
 describe("shim/TelemetryClient", () => {
     let client: TelemetryClient;
@@ -44,27 +43,15 @@ describe("shim/TelemetryClient", () => {
         client.initialize();
         tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider);
         testProcessor = new TestSpanProcessor();
-        // Use our extensible processor to add the test processor
-        const extensibleProcessor = getExtensibleSpanProcessor();
-        if (extensibleProcessor) {
-            extensibleProcessor.addSpanProcessor(testProcessor);
-        } else {
-            // Fallback: In OpenTelemetry 2.x, addSpanProcessor was removed, so we access the internal array directly
-            if ((tracerProvider as any)._registeredSpanProcessors) {
-                (tracerProvider as any)._registeredSpanProcessors.unshift(testProcessor);
-            }
+        // Directly add the test processor to the tracer provider
+        if ((tracerProvider as any)._registeredSpanProcessors) {
+            (tracerProvider as any)._registeredSpanProcessors.unshift(testProcessor);
         }
 
         loggerProvider = logs.getLoggerProvider() as LoggerProvider;
         logProcessor = new TestLogProcessor({});
-        // Use our extensible processor to add the test processor
-        const extensibleLogProcessor = getExtensibleLogRecordProcessor();
-        if (extensibleLogProcessor) {
-            extensibleLogProcessor.addLogRecordProcessor(logProcessor);
-        } else {
-            // Fallback to direct addition
-            loggerProvider.addLogRecordProcessor(logProcessor);
-        }
+        // Directly add the test processor to the logger provider
+        loggerProvider.addLogRecordProcessor(logProcessor);
 
         metricProvider = metrics.getMeterProvider() as MeterProvider;
     });
