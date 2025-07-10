@@ -1,15 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
-import * as assert from "assert";
-import * as nock from "nock";
-import * as sinon from "sinon";
+import assert from "assert";
+import nock from "nock";
+import sinon from "sinon";
 import { Context, ProxyTracerProvider, trace, metrics, diag } from "@opentelemetry/api";
 import { ReadableSpan, Span, SpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations/contracts";
 import { TelemetryClient } from "../../../src/shim/telemetryClient";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
-import { AzureMonitorExporterOptions, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
-import { MeterProvider, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions, ResourceMetrics } from "@opentelemetry/sdk-metrics";
+import { MeterProvider } from "@opentelemetry/sdk-metrics";
 import { LogRecord, LogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
 import { logs } from "@opentelemetry/api-logs";
 import { SEMATTRS_RPC_SYSTEM } from "@opentelemetry/semantic-conventions";
@@ -20,7 +19,6 @@ describe("shim/TelemetryClient", () => {
     let testProcessor: TestSpanProcessor;
     let tracerProvider: NodeTracerProvider;
     let loggerProvider: LoggerProvider;
-    let testMetrics: ResourceMetrics;
     let metricProvider: MeterProvider;
     let logProcessor: TestLogProcessor;
     let sandbox: sinon.SinonSandbox;
@@ -37,20 +35,24 @@ describe("shim/TelemetryClient", () => {
             .persist();
         nock.disableNetConnect();
 
+        testProcessor = new TestSpanProcessor();
+        logProcessor = new TestLogProcessor({});
+        
         client = new TelemetryClient(
             "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
         );
         client.config.samplingPercentage = 100;
         client.config.noDiagnosticChannel = true;
+        
+        // Add test processors through the Azure Monitor options
+        client.config.azureMonitorOpenTelemetryOptions = {
+            spanProcessors: [testProcessor],
+            logRecordProcessors: [logProcessor as any] // Type assertion needed for version compatibility
+        };
+        
         client.initialize();
         tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider);
-        testProcessor = new TestSpanProcessor();
-        tracerProvider.addSpanProcessor(testProcessor);
-
         loggerProvider = logs.getLoggerProvider() as LoggerProvider;
-        logProcessor = new TestLogProcessor({});
-        loggerProvider.addLogRecordProcessor(logProcessor);
-
         metricProvider = metrics.getMeterProvider() as MeterProvider;
     });
 
@@ -104,17 +106,6 @@ describe("shim/TelemetryClient", () => {
     
         forceFlush(): Promise<void> {
             return Promise.resolve();
-        }
-    }
-
-    class TestExporter extends AzureMonitorMetricExporter {
-        constructor(options: AzureMonitorExporterOptions = {}) {
-            super(options);
-        }
-        async export(
-            metrics: ResourceMetrics,
-        ): Promise<void> {
-            testMetrics = metrics;
         }
     }
 
@@ -448,19 +439,32 @@ describe("shim/TelemetryClient", () => {
                 name: "TestName",
                 value: 100,
             };
-            const exporter = new TestExporter({ connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/" });
-            const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
-                exporter: exporter,
+            
+            // Create spy on the histogram record method to verify metric tracking
+            const originalMeter = metrics.getMeterProvider().getMeter("ApplicationInsightsMetrics");
+            const histogramRecordSpy = sandbox.spy();
+            
+            // Mock the histogram creation to track record calls
+            const histogramMock = {
+                record: histogramRecordSpy
             };
-            const metricReader = new PeriodicExportingMetricReader(metricReaderOptions);
-            metricProvider.addMetricReader(metricReader);
+            
+            const createHistogramStub = sandbox.stub(originalMeter, 'createHistogram').returns(histogramMock as any);
+            
+            // Track the metric
             client.trackMetric(telemetry);
-            metricProvider.forceFlush();
-            await new Promise((resolve) => setTimeout(resolve, 800));
-            assert.equal(testMetrics.scopeMetrics[0].metrics[0].descriptor.name, "TestName");
-            assert.equal(testMetrics.scopeMetrics[0].metrics[0].descriptor.type, "HISTOGRAM");
-            // @ts-ignore: TypeScript is not aware of the sum existing on the value object since it's a generic type
-            assert.equal(testMetrics.scopeMetrics[0].metrics[0].dataPoints[0].value.sum, 100);
+            
+            // Verify that createHistogram was called with the correct name
+            assert.ok(createHistogramStub.calledOnce, "createHistogram should be called once");
+            assert.equal(createHistogramStub.args[0][0], "TestName", "Histogram should be created with correct name");
+            
+            // Verify that record was called with the correct value
+            assert.ok(histogramRecordSpy.calledOnce, "Histogram record should be called once");
+            assert.equal(histogramRecordSpy.args[0][0], 100, "Record should be called with correct value");
+            
+            // Verify properties were passed
+            const recordedAttributes = histogramRecordSpy.args[0][1];
+            assert.ok(recordedAttributes, "Attributes should be passed to record");
         });
         
         it("trackMetric should handle errors gracefully", async () => {

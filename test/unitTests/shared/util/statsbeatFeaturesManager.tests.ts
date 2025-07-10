@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import * as assert from "assert";
+import assert from "assert";
 import { StatsbeatFeaturesManager } from "../../../../src/shared/util/statsbeatFeaturesManager";
 import { StatsbeatFeature, StatsbeatInstrumentation } from "../../../../src/shim/types";
 

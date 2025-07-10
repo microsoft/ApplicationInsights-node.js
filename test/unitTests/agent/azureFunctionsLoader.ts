@@ -1,5 +1,5 @@
-import * as assert from "assert";
-import * as sinon from "sinon";
+import assert from "assert";
+import sinon from "sinon";
 
 import { AzureFunctionsLoader } from "../../../src/agent/azureFunctionsLoader";
 import { DiagnosticLogger } from "../../../src/agent/diagnostics/diagnosticLogger";

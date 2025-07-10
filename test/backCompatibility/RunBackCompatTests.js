@@ -1,6 +1,6 @@
-const fs } from 'fs');
-const path } from 'path');
-const childProcess } from 'child_process');
+const fs = require('fs');
+const path = require('path');
+const childProcess = require('child_process');
 
 function help() {
     console.log(
@@ -70,33 +70,33 @@ function main() {
     console.log("Using SDK package at " + path);
 
     // OldTSC
-    console.info("Testing compilation in app with TSC 4.0.0 and node 8 types...");
-    run("npm uninstall applicationinsights", "./OldTSC");
-    if (run("npm install", "./OldTSC").code !== 0) {
+    console.info("Testing compilation in app with TSC 4.8.0 and node 8 types...");
+    run("npm uninstall applicationinsights", "./oldTSC");
+    if (run("npm install", "./oldTSC").code !== 0) {
         console.error("Could not install OldTSC dependencies!")
         return 1;
     }
-    if (run("npm install --no-save " + path, "./OldTSC").code !== 0) {
+    if (run("npm install --no-save " + path, "./oldTSC").code !== 0) {
         console.error("Could not install SDK in OldTSC!");
         return 1;
     }
-    if(runLive("npm run build", "./OldTSC").code !== 0) {
+    if(runLive("npm run build", "./oldTSC").code !== 0) {
         console.error("Test FAILED!")
         return 1;
     }
 
     // Latest node types
-    console.info("Testing compilation in app with TSC 4 and latest node types...");
-    run("npm uninstall applicationinsights", "./Node10Types");
-    if (run("npm install", "./Node10Types").code !== 0) {
-        console.error("Could not install OldTSC dependencies!")
+    console.info("Testing compilation in app with TSC 4.8 and latest node types...");
+    run("npm uninstall applicationinsights", "./node10Types");
+    if (run("npm install", "./node10Types").code !== 0) {
+        console.error("Could not install node10Types dependencies!")
         return 1;
     }
-    if (run("npm install --no-save " + path, "./Node10Types").code !== 0) {
-        console.error("Could not install SDK in Node10Types!");
+    if (run("npm install --no-save " + path, "./node10Types").code !== 0) {
+        console.error("Could not install SDK in node10Types!");
         return 1;
     }
-    if(runLive("npm run build", "./Node10Types").code !== 0) {
+    if(runLive("npm run build", "./node10Types").code !== 0) {
         console.error("Test FAILED!")
         return 1;
     }

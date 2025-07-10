@@ -57,7 +57,7 @@ export class CorrelationContextManager {
             }
             const traceStateObj: TraceState = new TraceState(activeSpan?.spanContext()?.traceState?.serialize());
 
-            return this.spanToContextObject(activeSpan?.spanContext(), activeSpan?.parentSpanId, activeSpan?.name, traceStateObj);
+            return this.spanToContextObject(activeSpan?.spanContext(), activeSpan?.parentSpanContext?.spanId, activeSpan?.name, traceStateObj);
         }
         return null;
     }
@@ -183,7 +183,7 @@ export class CorrelationContextManager {
             trace.setSpanContext(context.active(), span.spanContext());
             return this.spanToContextObject(
                 span.spanContext(),
-                span.parentSpanId,
+                span.parentSpanContext?.spanId,
             );
         }
 

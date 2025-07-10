@@ -5,9 +5,7 @@ import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-export
 import { diag } from "@opentelemetry/api";
 import {
     Resource,
-    ResourceDetectionConfig,
-    detectResourcesSync,
-    envDetectorSync,
+    defaultResource,
 } from "@opentelemetry/resources";
 import { JsonConfig } from "./jsonConfig";
 import { AzureMonitorOpenTelemetryOptions, OTLPExporterConfig, InstrumentationOptions } from "../../types";
@@ -170,13 +168,8 @@ export class ApplicationInsightsConfig {
     }
 
     private _getDefaultResource(): Resource {
-        let resource = Resource.default();
-        // Load resource attributes from env
-        const detectResourceConfig: ResourceDetectionConfig = {
-            detectors: [envDetectorSync],
-        };
-        const envResource = detectResourcesSync(detectResourceConfig);
-        resource = resource.merge(envResource);
+        // Create a basic resource with default attributes
+        const resource = defaultResource();
         return resource;
     }
 }

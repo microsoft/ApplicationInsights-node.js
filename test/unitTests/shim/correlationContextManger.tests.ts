@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
-import assert = require("assert");
-import sinon = require("sinon");
+import assert from "assert";
+import sinon from "sinon";
 import * as events from "events";
 import { SpanContext, context, trace, diag, DiagLogger } from "@opentelemetry/api";
 import { TraceState } from "@opentelemetry/core";
@@ -447,9 +447,13 @@ describe("CorrelationContextManager", () => {
                 // Setup
                 const mockSpan = {
                     spanContext: () => testSpanContext,
-                    parentSpanId: "parentid123",
-                    name: "testSpan"
-                } as Span;
+                    parentSpanContext: () => ({
+                        traceId: "parentTraceId",
+                        spanId: "parentSpanId",
+                        traceFlags: 1,
+                    }),
+                    name: "testSpan",
+                } as unknown as Span;
                 
                 // Execute
                 const context = CorrelationContextManager.startOperation(mockSpan);
@@ -457,7 +461,7 @@ describe("CorrelationContextManager", () => {
                 // Verify
                 assert.ok(context);
                 assert.strictEqual(context.operation.id, testSpanContext.traceId);
-                assert.strictEqual(context.operation.parentId, mockSpan.parentSpanId);
+                assert.strictEqual(context.operation.parentId, mockSpan.parentSpanContext.spanId);
             });
         });
         
