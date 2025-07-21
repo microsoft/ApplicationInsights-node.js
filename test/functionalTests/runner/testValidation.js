@@ -91,13 +91,17 @@ module.exports.TestValidation = class TestValidation {
 
                 // Did we find all of the items in the data set?
                 if (dataSet.length > 1) {
-                    // dataSet.forEach(element => {
-                    //     if (!element.data.baseData.message.includes("Accessing resource attributes before async attributes settled []")) {
-                    //         Utils.Logging.error("FAILED EXPECTATION - Unexpected child telemetry item(s)!");
-                    //         Utils.Logging.error(JSON.stringify(dataSet, null, 2));
-                    //         hadFailed = true;
-                    //     }
-                    // });
+                    dataSet[0].data.baseData?.message
+                    dataSet.forEach(element => {
+                        if (element?.data?.baseData?.message) {
+                            const message = element.data.baseData.message;
+                            if (!message.includes("Accessing resource attributes before async attributes settled []")) {
+                                Utils.Logging.error("FAILED EXPECTATION - Unexpected child telemetry item(s)!");
+                                Utils.Logging.error(JSON.stringify(dataSet, null, 2));
+                                hadFailed = true;
+                            }
+                        }
+                    });
                     Utils.Logging.error("FAILED EXPECTATION - Unexpected child telemetry item(s)!");
                     Utils.Logging.error(JSON.stringify(dataSet, null, 2));
                     hadFailed = true;
