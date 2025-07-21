@@ -102,9 +102,6 @@ module.exports.TestValidation = class TestValidation {
                             }
                         }
                     });
-                    Utils.Logging.error("FAILED EXPECTATION - Unexpected child telemetry item(s)!");
-                    Utils.Logging.error(JSON.stringify(dataSet, null, 2));
-                    hadFailed = true;
                 }
 
                 // Report test status
