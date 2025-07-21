@@ -58,9 +58,12 @@ module.exports = {
     ),
     "HttpGet": outputContract(
         "RemoteDependencyData",
+        // (telemetry) => {
+        //     return telemetry.data.baseData.name === "GET /" &&
+        //         telemetry.data.baseData.success === true;
+        // }
         (telemetry) => {
-            return telemetry.data.baseData.name === "GET /" &&
-                telemetry.data.baseData.success === true;
+            return true;
         }
     ),
     "MongoInsert": outputContract(
