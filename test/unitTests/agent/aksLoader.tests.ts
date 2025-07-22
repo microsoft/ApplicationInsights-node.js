@@ -55,7 +55,6 @@ describe("agent/AKSLoader", () => {
         assert.equal(meterProvider["_sharedState"]["metricCollectors"].length, 1);
         assert.equal(meterProvider["_sharedState"]["metricCollectors"][0]["_metricReader"]["_exporter"].constructor.name, "AzureMonitorMetricExporter");
         
-        // Verify that Azure Monitor providers are correctly initialized
         let tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate()) as any;
         assert.equal(tracerProvider.constructor.name, "NodeTracerProvider");
         let loggerProvider = logs.getLoggerProvider() as any;
