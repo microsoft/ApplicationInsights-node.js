@@ -4,20 +4,17 @@
 import { shutdownAzureMonitor as distroShutdownAzureMonitor, useAzureMonitor as distroUseAzureMonitor } from "@azure/monitor-opentelemetry";
 import { ProxyTracerProvider, diag, metrics, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
-import { MeterProvider, PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
+import { MeterProvider } from "@opentelemetry/sdk-metrics";
 import { BatchLogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
-import { BasicTracerProvider, BatchSpanProcessor, NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
-import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
+import { BasicTracerProvider, BatchSpanProcessor, SpanProcessor } from "@opentelemetry/sdk-trace-node";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-
 import { AutoCollectLogs } from "./logs/autoCollectLogs";
 import { AutoCollectExceptions } from "./logs/exceptions";
 import { AzureMonitorOpenTelemetryOptions } from "./types";
 import { ApplicationInsightsConfig } from "./shared/configuration/config";
 import { LogApi } from "./shim/logsApi";
 import { StatsbeatFeature } from "./shim/types";
-import { RequestSpanProcessor } from "./traces/requestProcessor";
 import { StatsbeatFeaturesManager } from "./shared/util/statsbeatFeaturesManager";
 
 let autoCollectLogs: AutoCollectLogs;
@@ -33,16 +30,38 @@ export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
     StatsbeatFeaturesManager.getInstance().enableFeature(StatsbeatFeature.SHIM);
     
     // Allows for full filtering of dependency/request spans
-    options.spanProcessors = [new RequestSpanProcessor(options.enableAutoCollectDependencies, options.enableAutoCollectRequests)];
-    distroUseAzureMonitor(options);
     const internalConfig = new ApplicationInsightsConfig(options);
+    
+    // Add OTLP exporters if configured
+    const otlpSpanProcessor = _getOtlpSpanExporter(internalConfig);
+    const otlpLogProcessor = _getOtlpLogExporter(internalConfig);
+    
+    // Ensure options object exists and add processors
+    if (!options) {
+        options = {};
+    }
+    
+    if (otlpSpanProcessor) {
+        if (!options.spanProcessors) {
+            options.spanProcessors = [];
+        }
+        options.spanProcessors.push(otlpSpanProcessor);
+    }
+    
+    if (otlpLogProcessor) {
+        if (!options.logRecordProcessors) {
+            options.logRecordProcessors = [];
+        }
+        options.logRecordProcessors.push(otlpLogProcessor);
+    }
+    
+    distroUseAzureMonitor(options);
     const logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
     autoCollectLogs = new AutoCollectLogs();
     if (internalConfig.enableAutoCollectExceptions) {
         exceptions = new AutoCollectExceptions(logApi);
     }
     autoCollectLogs.enable(internalConfig.instrumentationOptions);
-    _addOtlpExporters(internalConfig);
 }
 
 /**
@@ -55,7 +74,7 @@ export async function shutdownAzureMonitor() {
 }
 
 /**
- *Try to send all queued telemetry if present.
+ * Try to send all queued telemetry if present.
  */
 export async function flushAzureMonitor() {
     try {
@@ -67,37 +86,18 @@ export async function flushAzureMonitor() {
     }
 }
 
-function _addOtlpExporters(internalConfig: ApplicationInsightsConfig) {
-    if (internalConfig.otlpMetricExporterConfig?.enabled) {
-        const otlpMetricsExporter = new OTLPMetricExporter(internalConfig.otlpMetricExporterConfig);
-        const otlpMetricReader = new PeriodicExportingMetricReader({
-            exporter: otlpMetricsExporter,
-        });
-        try {
-            (metrics.getMeterProvider() as MeterProvider).addMetricReader(otlpMetricReader);
-        }
-        catch (err) {
-            diag.error("Failed to set OTLP Metric Exporter", err);
-        }
-    }
-    if (internalConfig.otlpLogExporterConfig?.enabled) {
-        const otlpLogExporter = new OTLPLogExporter(internalConfig.otlpLogExporterConfig);
-        const otlpLogProcessor = new BatchLogRecordProcessor(otlpLogExporter);
-        try {
-            (logs.getLoggerProvider() as LoggerProvider).addLogRecordProcessor(otlpLogProcessor);
-        }
-        catch (err) {
-            diag.error("Failed to set OTLP Log Exporter", err);
-        }
-    }
+function _getOtlpSpanExporter(internalConfig: ApplicationInsightsConfig): SpanProcessor {
     if (internalConfig.otlpTraceExporterConfig?.enabled) {
         const otlpTraceExporter = new OTLPTraceExporter(internalConfig.otlpTraceExporterConfig);
         const otlpSpanProcessor = new BatchSpanProcessor(otlpTraceExporter);
-        try {
-            ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider).addSpanProcessor(otlpSpanProcessor);
-        }
-        catch (err) {
-            diag.error("Failed to set OTLP Trace Exporter", err);
-        }
+        return otlpSpanProcessor;
+    }
+}
+
+function _getOtlpLogExporter(internalConfig: ApplicationInsightsConfig): BatchLogRecordProcessor {
+    if (internalConfig.otlpLogExporterConfig?.enabled) {
+        const otlpLogExporter = new OTLPLogExporter(internalConfig.otlpLogExporterConfig);
+        const otlpLogProcessor = new BatchLogRecordProcessor(otlpLogExporter);
+        return otlpLogProcessor;
     }
 }

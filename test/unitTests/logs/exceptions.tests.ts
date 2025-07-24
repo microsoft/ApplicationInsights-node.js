@@ -1,5 +1,7 @@
-import * as assert from "assert";
-import * as sinon from "sinon";
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+import assert from "assert";
+import sinon from "sinon";
 
 import { AutoCollectExceptions } from "../../../src/logs/exceptions";
 

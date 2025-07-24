@@ -1,6 +1,8 @@
-import * as assert from "assert";
-import * as sinon from "sinon";
-import * as nock from "nock";
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+import assert from "assert";
+import sinon from "sinon";
+import nock from "nock";
 import { Logger } from "@opentelemetry/api-logs";
 import { LogRecord } from "@opentelemetry/sdk-logs";
 

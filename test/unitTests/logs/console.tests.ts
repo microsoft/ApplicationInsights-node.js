@@ -1,4 +1,6 @@
-import * as assert from "assert";
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+import assert from "assert";
 import { channel } from "diagnostic-channel";
 import { console } from "diagnostic-channel-publishers";
 import { SeverityNumber, logs } from '@opentelemetry/api-logs';

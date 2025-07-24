@@ -1,9 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Attributes, context, metrics, ProxyTracerProvider, SpanKind, SpanOptions, SpanStatusCode, diag, trace } from "@opentelemetry/api";
+import { Attributes, context, metrics, SpanKind, SpanOptions, SpanStatusCode, diag, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
-import { LoggerProvider } from "@opentelemetry/sdk-logs";
 import { 
     SEMATTRS_DB_STATEMENT,
     SEMATTRS_DB_SYSTEM,
@@ -21,7 +20,6 @@ import { Context } from "./context";
 import { Util } from "../shared/util";
 import Config = require("./shim-config");
 import { AttributeSpanProcessor } from "../shared/util/attributeSpanProcessor";
-import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { AttributeLogProcessor } from "../shared/util/attributeLogRecordProcessor";
 import { LogApi } from "./logsApi";
 import { flushAzureMonitor, shutdownAzureMonitor, useAzureMonitor } from "../main";
@@ -68,16 +66,29 @@ export class TelemetryClient {
         this._isInitialized = true;
         // Parse shim config to Azure Monitor options
         this._options = this.config.parseConfig();
-        useAzureMonitor(this._options);
+        
         try {
+            // Create attribute processors with context tags and common properties
+            this._attributeSpanProcessor = new AttributeSpanProcessor({ ...this.context.tags, ...this.commonProperties });
+            this._attributeLogProcessor = new AttributeLogProcessor({ ...this.context.tags, ...this.commonProperties });
+
+            // Add processors to Azure Monitor options before initialization
+            if (!this._options.spanProcessors) {
+                this._options.spanProcessors = [];
+            }
+            this._options.spanProcessors.push(this._attributeSpanProcessor);
+
+            if (!this._options.logRecordProcessors) {
+                this._options.logRecordProcessors = [];
+            }
+            this._options.logRecordProcessors.push(this._attributeLogProcessor);
+
+            // Initialize Azure Monitor with processors included
+            useAzureMonitor(this._options);
+            
             // LoggerProvider would be initialized when client is instantiated
             // Get Logger from global provider
             this._logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
-            this._attributeSpanProcessor = new AttributeSpanProcessor({ ...this.context.tags, ...this.commonProperties });
-            ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider).addSpanProcessor(this._attributeSpanProcessor);
-
-            this._attributeLogProcessor = new AttributeLogProcessor({ ...this.context.tags, ...this.commonProperties });
-            (logs.getLoggerProvider() as LoggerProvider).addLogRecordProcessor(this._attributeLogProcessor);
 
             // Warn if any config warnings were generated during parsing
             for (let i = 0; i < this._configWarnings.length; i++) {
