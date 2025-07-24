@@ -52,9 +52,7 @@ export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
         if (!options.logRecordProcessors) {
             options.logRecordProcessors = [];
         }
-        // Type assertion is necessary due to version mismatch between our OpenTelemetry SDK (0.202.0) 
-        // and Azure Monitor's expected version (0.200.0). The interfaces are compatible at runtime.
-        options.logRecordProcessors.push(otlpLogProcessor as any);
+        options.logRecordProcessors.push(otlpLogProcessor);
     }
     
     distroUseAzureMonitor(options);
