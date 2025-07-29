@@ -216,7 +216,23 @@ async function main() {
     // Run tests
     console.log("Running functional tests...");
     console.log("=======================\n");
+    
+    // Start TestApp with output visible for debugging
+    console.log("Starting TestApp...");
     const testApp = runAsync("node --use_strict Main.js", "./TestApp");
+    
+    // Add event listeners to capture TestApp output
+    testApp.stdout.on('data', (data) => {
+        console.log('TestApp:', data.toString().trim());
+    });
+    
+    testApp.stderr.on('data', (data) => {
+        console.error('TestApp Error:', data.toString().trim());
+    });
+    
+    // Give TestApp time to start up
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    
     const runnerStatus = runLive("node --use_strict Main.js" + (perfMode ? " -perfmode": ""), "./Runner").code;
     console.log("\n=======================");
 

@@ -4,23 +4,36 @@ var pg = require('pg');
 var ready = false;
 var client = null;
 var connectionAttempts = 0;
-var maxConnectionAttempts = 20;
+var maxConnectionAttempts = 30; // Increased from 20
+var lastError = null;
+
+console.log('Initializing PostgreSQL connection to:', Config.PostgresConnectionString);
 
 function connect() {
     connectionAttempts++;
     console.log(`PostgreSQL connection attempt ${connectionAttempts}/${maxConnectionAttempts}`);
     
     if (connectionAttempts > maxConnectionAttempts) {
-        console.error('PostgreSQL connection failed after maximum attempts');
+        console.error(`PostgreSQL connection failed after ${maxConnectionAttempts} attempts. Last error:`, lastError);
         return;
     }
     
     try {
+        // Clean up existing client first
+        if (client) {
+            try {
+                client.end();
+            } catch (e) {
+                // Ignore cleanup errors
+            }
+        }
+        
         client = new pg.Pool({
             connectionString: Config.PostgresConnectionString,
-            connectionTimeoutMillis: 10000,
-            idleTimeoutMillis: 10000,
-            max: 1
+            connectionTimeoutMillis: 15000, // Increased from 10s
+            idleTimeoutMillis: 15000,
+            max: 1,
+            ssl: false // Explicitly disable SSL for local testing
         });
         
         // Test the connection and create table
@@ -31,45 +44,78 @@ function connect() {
         PRIMARY KEY  (id)
         );`, (err) => {
             if (err) {
-                console.error('PostgreSQL connection/table creation failed:', err.message);
-                setTimeout(connect, 2000);
+                lastError = err;
+                console.error(`PostgreSQL connection/table creation failed (attempt ${connectionAttempts}):`, err.message);
+                setTimeout(connect, 3000); // Increased delay
                 return;
             }
             ready = true;
-            console.log('PostgreSQL connection established and table created');
+            console.log('PostgreSQL connection established and table created successfully');
         });
         
         client.on('error', (err) => {
+            lastError = err;
             console.error('PostgreSQL client error:', err.message);
             ready = false;
-            setTimeout(connect, 2000);
+            setTimeout(connect, 3000);
         });
         
     } catch (err) {
-        console.error('PostgreSQL connection attempt failed:', err.message);
-        setTimeout(connect, 2000);
+        lastError = err;
+        console.error(`PostgreSQL connection attempt ${connectionAttempts} failed:`, err.message);
+        setTimeout(connect, 3000);
     }
 }
+
+// Start connection process
 connect();
 
 function query(callback) {
+    console.log(`PostgreSQL query called. Ready: ${ready}, Connection attempts: ${connectionAttempts}`);
+    
+    // Absolute timeout to prevent hanging
+    const absoluteTimeout = setTimeout(() => {
+        console.error('PostgreSQL query absolute timeout after 25 seconds - calling callback');
+        callback();
+    }, 25000);
+    
+    const wrappedCallback = () => {
+        clearTimeout(absoluteTimeout);
+        callback();
+    };
+    
     if (!ready) {
-        setTimeout(() => query(callback), 500);
+        if (connectionAttempts > maxConnectionAttempts) {
+            console.error('PostgreSQL query failed - connection never established');
+            wrappedCallback();
+            return;
+        }
+        
+        console.log('PostgreSQL not ready, retrying in 1000ms...');
+        setTimeout(() => query(callback), 1000);
         return;
     }
 
     const queryTimeout = setTimeout(() => {
-        console.error('PostgreSQL query timeout');
-        callback();
-    }, 5000);
+        console.error('PostgreSQL query timeout after 10 seconds');
+        wrappedCallback();
+    }, 10000); // Increased from 5s
 
-    client.query(`SELECT * FROM test_table`, (err, result) => {
+    try {
+        client.query(`SELECT COUNT(*) FROM test_table`, (err, result) => {
+            clearTimeout(queryTimeout);
+            if (err) {
+                console.error('PostgreSQL query error:', err.message);
+            } else {
+                console.log('PostgreSQL query successful:', result ? result.rowCount : 'no result');
+            }
+            wrappedCallback();
+        });
+    } catch (err) {
         clearTimeout(queryTimeout);
-        if (err) {
-            console.error('PostgreSQL query error:', err.message);
-        }
-        callback();
-    });
+        console.error('PostgreSQL query exception:', err.message);
+        wrappedCallback();
+    }
 }
 
 
