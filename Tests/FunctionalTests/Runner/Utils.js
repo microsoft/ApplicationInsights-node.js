@@ -32,7 +32,16 @@ module.exports.HTTP = class HTTP {
     static get(url) {
         return new Promise((resolve, reject) => {
             const urlObj = HTTP._parseUrl(url);
-            http.get(urlObj, HTTP._httpResponseHandler(resolve, reject)).on("error", (e) => reject(e));
+            const req = http.get(urlObj, HTTP._httpResponseHandler(resolve, reject));
+            
+            // Add timeout handling - shorter timeout for CI
+            const timeout = (process.env.CI || process.env.GITHUB_ACTIONS) ? 15000 : 30000;
+            req.setTimeout(timeout, () => {
+                req.abort();
+                reject(new Error(`Request timeout for ${url} after ${timeout}ms`));
+            });
+            
+            req.on("error", (e) => reject(e));
         });
     }
     /** @param {string} url
@@ -47,7 +56,16 @@ module.exports.HTTP = class HTTP {
             "Content-Length": Buffer.byteLength(serializedPayload)
         };
         return new Promise((resolve, reject) => {
-            const req = http.request(urlObj, HTTP._httpResponseHandler(resolve, reject)).on("error", (e) => reject(e));
+            const req = http.request(urlObj, HTTP._httpResponseHandler(resolve, reject));
+            
+            // Add timeout handling - shorter timeout for CI
+            const timeout = (process.env.CI || process.env.GITHUB_ACTIONS) ? 15000 : 30000;
+            req.setTimeout(timeout, () => {
+                req.abort();
+                reject(new Error(`Request timeout for ${url} after ${timeout}ms`));
+            });
+            
+            req.on("error", (e) => reject(e));
             req.write(serializedPayload);
             req.end();
         });

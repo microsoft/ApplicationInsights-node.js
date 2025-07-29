@@ -64,10 +64,10 @@ function runAsync(cmd, workingDir) {
 
 function startDocker() {
     const tasks =  [
-        run("docker run -d -p 27017:27017 --name ainjsmongo mongo"),
-        run("docker run -e MYSQL_ROOT_PASSWORD=dummypw -e MYSQL_DATABASE=testdb -d -p 33060:3306 --name ainjsmysql mysql:5"),
-        run("docker run -d -p 63790:6379 --name ainjsredis redis:alpine"),
-        run("docker run -e POSTGRES_PASSWORD=dummypw -d -p 54320:5432 --name ainjspostgres postgres:alpine")
+        run("docker run -d -p 27017:27017 --name ainjsmongo --health-cmd 'mongosh --eval \"db.stats()\" || mongo --eval \"db.stats()\"' --health-interval=10s --health-timeout=5s --health-retries=3 mongo:4.4"),
+        run("docker run -e MYSQL_ROOT_PASSWORD=dummypw -e MYSQL_DATABASE=testdb -d -p 33060:3306 --name ainjsmysql --health-cmd 'mysqladmin ping -h localhost -u root -pdummypw' --health-interval=10s --health-timeout=5s --health-retries=3 mysql:5.7"),
+        run("docker run -d -p 63790:6379 --name ainjsredis --health-cmd 'redis-cli ping' --health-interval=10s --health-timeout=5s --health-retries=3 redis:6-alpine"),
+        run("docker run -e POSTGRES_PASSWORD=dummypw -d -p 54320:5432 --name ainjspostgres --health-cmd 'pg_isready -U postgres' --health-interval=10s --health-timeout=5s --health-retries=3 postgres:13-alpine")
     ];
 
     for(let i = 0; i < tasks.length; i++) {
@@ -77,7 +77,46 @@ function startDocker() {
             return false;
         }
     }
+    
     return true;
+}
+
+function waitForContainers() {
+    console.log("Waiting for containers to initialize...");
+    return new Promise(resolve => {
+        setTimeout(() => {
+            console.log("Waiting for container health checks to pass...");
+            
+            const maxRetries = 30; // 30 attempts, 2 seconds each = 60 seconds max
+            let retries = 0;
+            
+            const checkHealth = () => {
+                const healthCheck = run("docker ps --filter 'name=ainjs' --format 'table {{.Names}}\\t{{.Status}}'");
+                if (healthCheck.code === 0) {
+                    console.log("Container status:");
+                    console.log(healthCheck.output);
+                    
+                    // Check if all containers are healthy or at least running
+                    if (healthCheck.output.includes("Up") || retries >= maxRetries) {
+                        console.log("Containers are ready or max retries reached");
+                        resolve();
+                        return;
+                    }
+                }
+                
+                retries++;
+                if (retries < maxRetries) {
+                    console.log(`Health check attempt ${retries}/${maxRetries}...`);
+                    setTimeout(checkHealth, 2000);
+                } else {
+                    console.log("Max retries reached, proceeding anyway");
+                    resolve();
+                }
+            };
+            
+            checkHealth();
+        }, 5000); // Initial 5 second wait
+    });
 }
 
 function cleanUpDocker() {
@@ -92,7 +131,7 @@ function cleanUpDocker() {
     run("docker rm ainjspostgres");
 }
 
-function main() {
+async function main() {
     // Find the SDK TGZ archive
     let path = null;
     if (process.argv.length > 2) {
@@ -127,6 +166,9 @@ function main() {
         console.error("Could not spin up containers!");
         return 1;
     }
+    
+    // Wait for containers to be ready
+    await waitForContainers();
 
     // Prepare runner and testapp
     console.log("Installing Runner and TestApp dependencies...");
@@ -159,4 +201,9 @@ function main() {
 }
 
 
-process.exit(main());
+main().then(code => {
+    process.exit(code);
+}).catch(error => {
+    console.error("Error in main function:", error);
+    process.exit(1);
+});

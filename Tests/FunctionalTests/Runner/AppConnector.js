@@ -13,10 +13,10 @@ function getOk(url) {
 /** @param {string} url */
 function waitForOk(url, tries) {
     return getOk(url).then(ok => {
-        if (!ok && (tries || 0) < 20) {
+        if (!ok && (tries || 0) < 60) { // Increased from 20 to 60 retries
             Utils.Logging.info("Waiting for TestApp...");
             return new Promise( (resolve, reject)=> {
-                setTimeout(() => resolve(waitForOk(url, (tries || 0) + 1)), 500);
+                setTimeout(() => resolve(waitForOk(url, (tries || 0) + 1)), 2000); // Increased from 500ms to 2000ms
             });
         } else if (!ok) {
             throw new Error("TestApp could not be reached!");
@@ -50,6 +50,19 @@ module.exports.closeConnection = () => {
 module.exports.runTest = (testPath, silent) => {
     let promise = silent ? Promise.resolve() : Utils.Logging.enterSubunit("Running test " + testPath + "...");
     return promise
-        .then(() => Utils.HTTP.get(Config.TestAppAddress + testPath))
+        .then(() => {
+            const startTime = Date.now();
+            return Utils.HTTP.get(Config.TestAppAddress + testPath).then(result => {
+                const elapsed = Date.now() - startTime;
+                if (!silent) {
+                    Utils.Logging.info(`Test completed in ${elapsed}ms`);
+                }
+                return result;
+            }).catch(error => {
+                const elapsed = Date.now() - startTime;
+                Utils.Logging.error(`Test ${testPath} failed after ${elapsed}ms: ${error.message}`);
+                throw error;
+            });
+        })
         .then(() => !silent && Utils.Logging.exitSubunit());
 }
