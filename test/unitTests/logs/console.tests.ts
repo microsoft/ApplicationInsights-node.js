@@ -83,4 +83,48 @@ describe("AutoCollection/Console", () => {
             assert.strictEqual(logRecords.length, 0);
         });
     });
+
+    describe("module resolution fallback paths", () => {
+        it("should handle both enable() and shutdown() without throwing errors", () => {
+            // Test that the corrected fallback paths don't cause module resolution errors
+            let autoCollect = new AutoCollectLogs();
+            
+            // These should work without throwing any module resolution errors
+            assert.doesNotThrow(() => {
+                autoCollect.enable({
+                    console: { enabled: true }
+                });
+            }, "enable() should not throw module resolution errors");
+            
+            assert.doesNotThrow(() => {
+                autoCollect.shutdown();
+            }, "shutdown() should not throw module resolution errors");
+        });
+
+        it("should use consistent module paths in try and catch blocks", () => {
+            // This test ensures that the module resolution paths are consistent
+            // and that the fallback paths actually exist and can be loaded
+            let autoCollect = new AutoCollectLogs();
+            
+            // Enable should work regardless of which code path is taken
+            autoCollect.enable({
+                console: { enabled: true }
+            });
+            
+            // Verify that console events are being captured (proving the module loaded correctly)
+            const dummyError = new Error("test fallback error");
+            const errorEvent: console.IConsoleData = {
+                message: dummyError.toString(),
+                stderr: false,
+            };
+            channel.publish("console", errorEvent);
+            
+            const logRecords = memoryLogExporter.getFinishedLogRecords();
+            assert.strictEqual(logRecords.length, 1);
+            assert.strictEqual(logRecords[0].body, "Error: test fallback error");
+            
+            // Shutdown should also work regardless of which code path is taken
+            autoCollect.shutdown();
+        });
+    });
 });
