@@ -5,22 +5,12 @@ enablePublishers();
 export class AutoCollectLogs {
 
     public enable(options: InstrumentationOptions) {
-        try {
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
-            require("./diagnostic-channel/console.sub").enable(options.console);
-        } catch (error) {
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
-            require("./diagnostic-channel/console.sub").enable(options.console);
-        }
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        require("./diagnostic-channel/console.sub").enable(options.console);
     }
 
     public shutdown() {
-        try {
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
-            require("./diagnostic-channel/console.sub").dispose();
-        } catch (error) {
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
-            require("./diagnostic-channel/console.sub").dispose();
-        }
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        require("./diagnostic-channel/console.sub").dispose();
     }
 }

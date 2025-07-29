@@ -84,9 +84,9 @@ describe("AutoCollection/Console", () => {
         });
     });
 
-    describe("module resolution fallback paths", () => {
+    describe("module resolution", () => {
         it("should handle both enable() and shutdown() without throwing errors", () => {
-            // Test that the corrected fallback paths don't cause module resolution errors
+            // Test that the module resolution works correctly
             let autoCollect = new AutoCollectLogs();
             
             // These should work without throwing any module resolution errors
@@ -101,18 +101,18 @@ describe("AutoCollection/Console", () => {
             }, "shutdown() should not throw module resolution errors");
         });
 
-        it("should use consistent module paths in try and catch blocks", () => {
-            // This test ensures that the module resolution paths are consistent
-            // and that the fallback paths actually exist and can be loaded
+        it("should load console module correctly and capture events", () => {
+            // This test ensures that the module resolution works correctly
+            // and that console events are being captured
             let autoCollect = new AutoCollectLogs();
             
-            // Enable should work regardless of which code path is taken
+            // Enable should work and load the module correctly
             autoCollect.enable({
                 console: { enabled: true }
             });
             
             // Verify that console events are being captured (proving the module loaded correctly)
-            const dummyError = new Error("test fallback error");
+            const dummyError = new Error("test module resolution");
             const errorEvent: console.IConsoleData = {
                 message: dummyError.toString(),
                 stderr: false,
@@ -121,9 +121,9 @@ describe("AutoCollection/Console", () => {
             
             const logRecords = memoryLogExporter.getFinishedLogRecords();
             assert.strictEqual(logRecords.length, 1);
-            assert.strictEqual(logRecords[0].body, "Error: test fallback error");
+            assert.strictEqual(logRecords[0].body, "Error: test module resolution");
             
-            // Shutdown should also work regardless of which code path is taken
+            // Shutdown should also work correctly
             autoCollect.shutdown();
         });
     });
