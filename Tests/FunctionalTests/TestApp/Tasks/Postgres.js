@@ -6,19 +6,21 @@ var client = null;
 
 function connect() {
     client = new pg.Pool({connectionString: Config.PostgresConnectionString});
-    client.connect((err) => {
+    
+    // Test the connection and create table
+    client.query(`
+    CREATE TABLE IF NOT EXISTS test_table (
+    id SERIAL,
+    data varchar(100) NOT NULL default '',
+    PRIMARY KEY  (id)
+    );`, (err) => {
         if (err) {
-            setTimeout(connect, 500);
+            console.error('PostgreSQL connection/table creation failed:', err);
+            setTimeout(connect, 1000);
             return;
         }
-        client.query(`
-        CREATE TABLE IF NOT EXISTS test_table (
-        id SERIAL,
-        data varchar(100) NOT NULL default '',
-        PRIMARY KEY  (id)
-        );`, () => {
-            ready = true;
-        });
+        ready = true;
+        console.log('PostgreSQL connection established and table created');
     });
 }
 connect();
@@ -29,8 +31,11 @@ function query(callback) {
         return;
     }
 
-    client.query(`SELECT * FROM test_table`, (v, x) => {
-        callback()
+    client.query(`SELECT * FROM test_table`, (err, result) => {
+        if (err) {
+            console.error('PostgreSQL query error:', err);
+        }
+        callback();
     });
 }
 

@@ -52,17 +52,34 @@ module.exports.runTest = (testPath, silent) => {
     return promise
         .then(() => {
             const startTime = Date.now();
-            return Utils.HTTP.get(Config.TestAppAddress + testPath).then(result => {
-                const elapsed = Date.now() - startTime;
-                if (!silent) {
-                    Utils.Logging.info(`Test completed in ${elapsed}ms`);
-                }
-                return result;
-            }).catch(error => {
-                const elapsed = Date.now() - startTime;
-                Utils.Logging.error(`Test ${testPath} failed after ${elapsed}ms: ${error.message}`);
-                throw error;
-            });
+            
+            // Increase timeout for database tests
+            const isDatabaseTest = testPath.includes("Postgres") || testPath.includes("MySql") || testPath.includes("Mongo");
+            const retryAttempts = isDatabaseTest ? 3 : 1;
+            
+            const attemptRequest = (attempt = 1) => {
+                return Utils.HTTP.get(Config.TestAppAddress + testPath).then(result => {
+                    const elapsed = Date.now() - startTime;
+                    if (!silent) {
+                        Utils.Logging.info(`Test completed in ${elapsed}ms`);
+                    }
+                    return result;
+                }).catch(error => {
+                    const elapsed = Date.now() - startTime;
+                    
+                    if (attempt < retryAttempts && error.message.includes("timeout")) {
+                        Utils.Logging.info(`Test ${testPath} timed out on attempt ${attempt}, retrying...`);
+                        return new Promise(resolve => {
+                            setTimeout(() => resolve(attemptRequest(attempt + 1)), 2000);
+                        });
+                    }
+                    
+                    Utils.Logging.error(`Test ${testPath} failed after ${elapsed}ms on attempt ${attempt}/${retryAttempts}: ${error.message}`);
+                    throw error;
+                });
+            };
+            
+            return attemptRequest();
         })
         .then(() => !silent && Utils.Logging.exitSubunit());
 }

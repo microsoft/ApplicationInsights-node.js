@@ -34,8 +34,16 @@ module.exports.HTTP = class HTTP {
             const urlObj = HTTP._parseUrl(url);
             const req = http.get(urlObj, HTTP._httpResponseHandler(resolve, reject));
             
-            // Add timeout handling - shorter timeout for CI
-            const timeout = (process.env.CI || process.env.GITHUB_ACTIONS) ? 15000 : 30000;
+            // Add timeout handling - longer timeout for database tests
+            const isDatabaseTest = url.includes("Postgres") || url.includes("MySql") || url.includes("Mongo");
+            let timeout;
+            
+            if (process.env.CI || process.env.GITHUB_ACTIONS) {
+                timeout = isDatabaseTest ? 30000 : 15000; // 30s for DB tests, 15s for others in CI
+            } else {
+                timeout = isDatabaseTest ? 60000 : 30000; // 60s for DB tests, 30s for others locally
+            }
+            
             req.setTimeout(timeout, () => {
                 req.abort();
                 reject(new Error(`Request timeout for ${url} after ${timeout}ms`));

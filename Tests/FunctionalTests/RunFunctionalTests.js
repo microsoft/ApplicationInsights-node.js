@@ -64,10 +64,10 @@ function runAsync(cmd, workingDir) {
 
 function startDocker() {
     const tasks =  [
-        run("docker run -d -p 27017:27017 --name ainjsmongo --health-cmd 'mongosh --eval \"db.stats()\" || mongo --eval \"db.stats()\"' --health-interval=10s --health-timeout=5s --health-retries=3 mongo:4.4"),
-        run("docker run -e MYSQL_ROOT_PASSWORD=dummypw -e MYSQL_DATABASE=testdb -d -p 33060:3306 --name ainjsmysql --health-cmd 'mysqladmin ping -h localhost -u root -pdummypw' --health-interval=10s --health-timeout=5s --health-retries=3 mysql:5.7"),
-        run("docker run -d -p 63790:6379 --name ainjsredis --health-cmd 'redis-cli ping' --health-interval=10s --health-timeout=5s --health-retries=3 redis:6-alpine"),
-        run("docker run -e POSTGRES_PASSWORD=dummypw -d -p 54320:5432 --name ainjspostgres --health-cmd 'pg_isready -U postgres' --health-interval=10s --health-timeout=5s --health-retries=3 postgres:13-alpine")
+        run("docker run -d -p 27017:27017 --name ainjsmongo --health-cmd 'mongosh --eval \"db.stats()\" || mongo --eval \"db.stats()\"' --health-interval=10s --health-timeout=5s --health-retries=5 mongo:4.4"),
+        run("docker run -e MYSQL_ROOT_PASSWORD=dummypw -e MYSQL_DATABASE=testdb -d -p 33060:3306 --name ainjsmysql --health-cmd 'mysqladmin ping -h localhost -u root -pdummypw' --health-interval=10s --health-timeout=5s --health-retries=5 mysql:5.7"),
+        run("docker run -d -p 63790:6379 --name ainjsredis --health-cmd 'redis-cli ping' --health-interval=10s --health-timeout=5s --health-retries=5 redis:6-alpine"),
+        run("docker run -e POSTGRES_PASSWORD=dummypw -d -p 54320:5432 --name ainjspostgres --health-cmd 'pg_isready -U postgres -d postgres' --health-interval=10s --health-timeout=10s --health-retries=10 postgres:13-alpine")
     ];
 
     for(let i = 0; i < tasks.length; i++) {
@@ -87,7 +87,7 @@ function waitForContainers() {
         setTimeout(() => {
             console.log("Waiting for container health checks to pass...");
             
-            const maxRetries = 30; // 30 attempts, 2 seconds each = 60 seconds max
+            const maxRetries = 60; // 60 attempts, 2 seconds each = 120 seconds max
             let retries = 0;
             
             const checkHealth = () => {
@@ -96,9 +96,39 @@ function waitForContainers() {
                     console.log("Container status:");
                     console.log(healthCheck.output);
                     
-                    // Check if all containers are healthy or at least running
-                    if (healthCheck.output.includes("Up") || retries >= maxRetries) {
-                        console.log("Containers are ready or max retries reached");
+                    // Check if all containers are healthy (not just running)
+                    const output = healthCheck.output;
+                    const hasUnhealthy = output.includes("(health: starting)") || 
+                                       output.includes("(unhealthy)") || 
+                                       !output.includes("(healthy)");
+                    
+                    if (!hasUnhealthy) {
+                        console.log("All containers are healthy");
+                        resolve();
+                        return;
+                    } else if (retries >= maxRetries) {
+                        console.log("Max retries reached, checking individual containers...");
+                        // Try direct health checks as fallback
+                        const directChecks = [
+                            run("docker exec ainjspostgres pg_isready -U postgres -d postgres"),
+                            run("docker exec ainjsmysql mysqladmin ping -h localhost -u root -pdummypw"),
+                            run("docker exec ainjsredis redis-cli ping"),
+                            run("docker exec ainjsmongo mongosh --eval 'db.runCommand(\"ping\")' || docker exec ainjsmongo mongo --eval 'db.runCommand(\"ping\")'")
+                        ];
+                        
+                        let allHealthy = true;
+                        directChecks.forEach((check, index) => {
+                            if (check.code !== 0) {
+                                console.log(`Direct health check failed for container ${index}`);
+                                allHealthy = false;
+                            }
+                        });
+                        
+                        if (allHealthy) {
+                            console.log("Direct health checks passed");
+                        } else {
+                            console.log("Some direct health checks failed, but proceeding anyway");
+                        }
                         resolve();
                         return;
                     }
