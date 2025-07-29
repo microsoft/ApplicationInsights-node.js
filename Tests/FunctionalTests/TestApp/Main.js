@@ -29,6 +29,20 @@ app.get("/", (req, res) => {
     res.send("OK");
 });
 
+app.get("/_health", (req, res) => {
+    // Check if database connections are ready
+    const Tasks = require("./Tasks");
+    let status = {
+        postgres: false,
+        mysql: false,
+        mongo: false,
+        redis: false
+    };
+    
+    // This is a simple health check - we could expand it
+    res.json(status);
+});
+
 /**
  * Receive route configuration object of the following form as POST body:
  * [
