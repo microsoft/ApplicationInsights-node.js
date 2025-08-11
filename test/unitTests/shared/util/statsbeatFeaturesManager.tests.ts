@@ -58,15 +58,15 @@ describe("shared/util/StatsbeatFeaturesManager", () => {
             assert.ok((config.feature & StatsbeatFeature.SHIM) !== 0, "SHIM feature should remain enabled");
         });
 
-        it("should enable CUSTOMER_STATSBEAT feature using bitmap", () => {
+        it("should enable CUSTOMER_SDKSTATS feature using bitmap", () => {
             StatsbeatFeaturesManager.getInstance().initialize();
-            StatsbeatFeaturesManager.getInstance().enableFeature(StatsbeatFeature.CUSTOMER_STATSBEAT);
+            StatsbeatFeaturesManager.getInstance().enableFeature(StatsbeatFeature.CUSTOMER_SDKSTATS);
             
             const envValue = process.env["AZURE_MONITOR_STATSBEAT_FEATURES"];
             assert.ok(envValue, "environment variable should be set");
             
             const config = JSON.parse(envValue);
-            assert.ok((config.feature & StatsbeatFeature.CUSTOMER_STATSBEAT) !== 0, "CUSTOMER_STATSBEAT feature should be enabled");
+            assert.ok((config.feature & StatsbeatFeature.CUSTOMER_SDKSTATS) !== 0, "CUSTOMER_SDKSTATS feature should be enabled");
             assert.ok((config.feature & StatsbeatFeature.SHIM) !== 0, "SHIM feature should remain enabled");
         });
 
