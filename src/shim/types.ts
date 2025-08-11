@@ -351,7 +351,7 @@ export enum StatsbeatFeature {
     DISTRO = 8,
     LIVE_METRICS = 16,
     SHIM = 32,
-    CUSTOMER_SDK_STATS = 64,
+    CUSTOMER_SDKSTATS = 64,
     MULTI_IKEY = 128,
 }
 
