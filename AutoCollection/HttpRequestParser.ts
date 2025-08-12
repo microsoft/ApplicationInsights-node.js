@@ -249,17 +249,19 @@ class HttpRequestParser extends RequestParser {
         var cookie = (this.rawHeaders && this.rawHeaders["cookie"] &&
             typeof this.rawHeaders["cookie"] === "string" && this.rawHeaders["cookie"]) || "";
 
-        if (name === HttpRequestCookieNames.AUTH_USER) {
+        var value = Util.getCookie(name, cookie);
+        
+        if (name === HttpRequestCookieNames.AUTH_USER && value) {
             try {
-                cookie = decodeURI(cookie);
+                value = decodeURIComponent(value);
             } catch (error) {
                 // Failed to decode, ignore cookie
-                cookie = "";
                 Logging.warn("Could not decode the auth cookie with error: ", Util.dumpObj(error));
+                return null;
             }
         }
-        var value = HttpRequestParser.parseId(Util.getCookie(name, cookie));
-        return value;
+        
+        return value ? HttpRequestParser.parseId(value) : null;
     }
 
     /**
