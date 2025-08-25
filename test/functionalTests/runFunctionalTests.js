@@ -22,7 +22,7 @@ function findDefaultPath() {
         const stat = fs.lstatSync(file);
         if (!stat.isDirectory()) {
             if (file.indexOf("applicationinsights") === rootDir.length + 1 &&
-                file.indexOf(".tgz") === file.length - 4) {
+                file.length >= 4 && file.indexOf(".tgz") === file.length - 4) {
                 return path.resolve(file);
             }
         }
