@@ -4,6 +4,7 @@
 import * as http from "http";
 import { DiagConsoleLogger, SpanContext, diag } from "@opentelemetry/api";
 import { Span } from "@opentelemetry/sdk-trace-base";
+import * as azureCoreAuth from "@azure/core-auth";
 import { CorrelationContextManager } from "./correlationContextManager";
 import { ICorrelationContext, HttpRequest, DistributedTracingModes, AzureFnContext } from "./types";
 import { TelemetryClient } from "./telemetryClient";
@@ -52,6 +53,9 @@ export function start() {
             diag.setLogger(new DiagConsoleLogger());
             diag.warn("Start cannot be called before setup. Please call setup() first.");
         } else {
+            // Initialize immediately for backward compatibility
+            // Users who need to set AAD credentials should do so before calling start()
+            // or use the documented pattern from Microsoft docs
             defaultClient.initialize();
         }
         return Configuration;
@@ -285,6 +289,22 @@ export class Configuration {
     public static setSendLiveMetrics(enable = false) {
         if (defaultClient) {
             defaultClient.config.enableSendLiveMetrics = enable;
+        }
+        return Configuration;
+    }
+
+    /**
+     * Set Azure Active Directory Token Credential to be used when sending telemetry to Azure.
+     * This method should be called BEFORE calling start().
+     * @param value the AAD Token Credential to use for authentication
+     * @returns {Configuration} this class
+     */
+    public static setAadCredential(credential: azureCoreAuth.TokenCredential) {
+        if (defaultClient) {
+            if (defaultClient.isInitialized) {
+                defaultClient.pushWarningToLog("setAadCredential called after client initialization. For AAD authentication to work properly, setAadCredential should be called before start().");
+            }
+            defaultClient.config.aadTokenCredential = credential;
         }
         return Configuration;
     }

@@ -3,6 +3,7 @@
 
 import { Attributes, context, metrics, SpanKind, SpanOptions, SpanStatusCode, diag, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
+import * as azureCoreAuth from "@azure/core-auth";
 import { 
     SEMATTRS_DB_STATEMENT,
     SEMATTRS_DB_SYSTEM,
@@ -393,5 +394,13 @@ export class TelemetryClient {
 
     public pushWarningToLog(warning: string) {
         this._configWarnings.push(warning);
+    }
+
+    /**
+     * Get initialization status for internal use
+     * @internal
+     */
+    public get isInitialized(): boolean {
+        return this._isInitialized;
     }
 }
