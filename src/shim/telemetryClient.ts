@@ -21,6 +21,7 @@ import { Util } from "../shared/util";
 import Config = require("./shim-config");
 import { AttributeSpanProcessor } from "../shared/util/attributeSpanProcessor";
 import { AttributeLogProcessor } from "../shared/util/attributeLogRecordProcessor";
+import { WinstonTransportPatcher } from "../shared/util/winstonTransportPatcher";
 import { LogApi } from "./logsApi";
 import { flushAzureMonitor, shutdownAzureMonitor, useAzureMonitor } from "../main";
 import { AzureMonitorOpenTelemetryOptions } from "../types";
@@ -67,6 +68,9 @@ export class TelemetryClient {
         // Parse shim config to Azure Monitor options
         this._options = this.config.parseConfig();
         
+        // Patch Winston transport to handle attribute serialization before initialization
+        WinstonTransportPatcher.patchWinstonTransport();
+        
         try {
             // Create attribute processors with context tags and common properties
             this._attributeSpanProcessor = new AttributeSpanProcessor({ ...this.context.tags, ...this.commonProperties });
@@ -81,6 +85,7 @@ export class TelemetryClient {
             if (!this._options.logRecordProcessors) {
                 this._options.logRecordProcessors = [];
             }
+            // Add the attribute processor to apply additional attributes
             this._options.logRecordProcessors.push(this._attributeLogProcessor);
 
             // Initialize Azure Monitor with processors included

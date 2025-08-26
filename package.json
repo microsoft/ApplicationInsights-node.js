@@ -85,6 +85,7 @@
     "@opentelemetry/sdk-trace-node": "^2.0.1",
     "@opentelemetry/semantic-conventions": "^1.34.0",
     "diagnostic-channel": "1.1.1",
-    "diagnostic-channel-publishers": "1.0.8"
+    "diagnostic-channel-publishers": "1.0.8",
+    "winston": "^3.17.0"
   }
 }
