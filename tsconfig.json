@@ -8,6 +8,7 @@
         "declaration": true,
         "noImplicitAny": true,
         "outDir": "./out",
+        "types": ["node", "mocha"],
         "typeRoots": [
             "./node_modules/@types",
             "./src/types"
