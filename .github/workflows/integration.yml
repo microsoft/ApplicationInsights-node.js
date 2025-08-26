@@ -10,10 +10,11 @@ jobs:
   integration:
 
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     strategy:
       matrix:
-        node-version: [16.x]
+        node-version: [18.x]
 
     steps:
     - uses: actions/checkout@v2
@@ -22,5 +23,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm install
-    - run: npm run functionaltest
+    - name: Run functional tests
+      run: npm run functionaltest
+      timeout-minutes: 25
       continue-on-error: true

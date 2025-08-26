@@ -32,7 +32,24 @@ module.exports.HTTP = class HTTP {
     static get(url) {
         return new Promise((resolve, reject) => {
             const urlObj = HTTP._parseUrl(url);
-            http.get(urlObj, HTTP._httpResponseHandler(resolve, reject)).on("error", (e) => reject(e));
+            const req = http.get(urlObj, HTTP._httpResponseHandler(resolve, reject));
+            
+            // Add timeout handling - longer timeout for database tests
+            const isDatabaseTest = url.includes("Postgres") || url.includes("MySql") || url.includes("Mongo");
+            let timeout;
+            
+            if (process.env.CI || process.env.GITHUB_ACTIONS) {
+                timeout = isDatabaseTest ? 30000 : 15000; // 30s for DB tests, 15s for others in CI
+            } else {
+                timeout = isDatabaseTest ? 60000 : 30000; // 60s for DB tests, 30s for others locally
+            }
+            
+            req.setTimeout(timeout, () => {
+                req.abort();
+                reject(new Error(`Request timeout for ${url} after ${timeout}ms`));
+            });
+            
+            req.on("error", (e) => reject(e));
         });
     }
     /** @param {string} url
@@ -47,7 +64,16 @@ module.exports.HTTP = class HTTP {
             "Content-Length": Buffer.byteLength(serializedPayload)
         };
         return new Promise((resolve, reject) => {
-            const req = http.request(urlObj, HTTP._httpResponseHandler(resolve, reject)).on("error", (e) => reject(e));
+            const req = http.request(urlObj, HTTP._httpResponseHandler(resolve, reject));
+            
+            // Add timeout handling - shorter timeout for CI
+            const timeout = (process.env.CI || process.env.GITHUB_ACTIONS) ? 15000 : 30000;
+            req.setTimeout(timeout, () => {
+                req.abort();
+                reject(new Error(`Request timeout for ${url} after ${timeout}ms`));
+            });
+            
+            req.on("error", (e) => reject(e));
             req.write(serializedPayload);
             req.end();
         });

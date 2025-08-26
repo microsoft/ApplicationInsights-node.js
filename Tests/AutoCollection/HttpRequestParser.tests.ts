@@ -5,6 +5,8 @@ import HttpRequestParser = require("../../AutoCollection/HttpRequestParser");
 import CorrelationIdManager = require("../../Library/CorrelationIdManager");
 import Util = require("../../Library/Util");
 import Traceparent = require("../../Library/Traceparent");
+import Logging = require("../../Library/Logging");
+import { HttpRequestCookieNames } from "../../Declarations/Constants";
 
 describe("AutoCollection/HttpRequestParser", () => {
     describe("#parseId()", () => {
@@ -267,6 +269,147 @@ describe("AutoCollection/HttpRequestParser", () => {
 
             var newTags = helper.getRequestTags(originalTags);
             assert.equal(newTags[(<any>HttpRequestParser).keys.userAuthUserId], 'userAuthName');
+        });
+    });
+
+    describe("Cookie Decoding", () => {
+        var origLogWarn: any;
+        var logWarnStub: sinon.SinonStub;
+
+        beforeEach(() => {
+            origLogWarn = Logging.warn;
+            logWarnStub = sinon.stub(Logging, "warn");
+        });
+
+        afterEach(() => {
+            Logging.warn = origLogWarn;
+        });
+
+        it("should decode valid AUTH_USER cookie", () => {
+            var request = {
+                method: "GET",
+                url: "/",
+                headers: {
+                    "cookie": "ai_authUser=user%40example.com; other=value"
+                }
+            };
+
+            var requestParser = new HttpRequestParser(<any>request);
+            var id = requestParser["_getId"](HttpRequestCookieNames.AUTH_USER);
+            
+            assert.equal(id, "user@example.com");
+            assert.ok(!logWarnStub.called);
+        });
+
+        it("should handle malformed AUTH_USER cookie gracefully", () => {
+            var request = {
+                method: "GET",
+                url: "/",
+                headers: {
+                    "cookie": "ai_authUser=user%invalid%encoding; other=value"
+                }
+            };
+
+            var requestParser = new HttpRequestParser(<any>request);
+            var id = requestParser["_getId"](HttpRequestCookieNames.AUTH_USER);
+            
+            assert.equal(id, null);
+            assert.ok(logWarnStub.called);
+            assert.ok(logWarnStub.calledWith("Could not decode the auth cookie with error: "));
+        });
+
+        it("should handle malformed cookies from other applications without affecting AUTH_USER", () => {
+            var request = {
+                method: "GET",
+                url: "/",
+                headers: {
+                    "cookie": "ai_authUser=user%40example.com; invalid%cookie%format=value%bad%encoding; other=normal"
+                }
+            };
+
+            var requestParser = new HttpRequestParser(<any>request);
+            var id = requestParser["_getId"](HttpRequestCookieNames.AUTH_USER);
+            
+            assert.equal(id, "user@example.com");
+            assert.ok(!logWarnStub.called);
+        });
+
+        it("should return null when AUTH_USER cookie is not present", () => {
+            var request = {
+                method: "GET",
+                url: "/",
+                headers: {
+                    "cookie": "other=value; session=abc123"
+                }
+            };
+
+            var requestParser = new HttpRequestParser(<any>request);
+            var id = requestParser["_getId"](HttpRequestCookieNames.AUTH_USER);
+            
+            assert.equal(id, null);
+            assert.ok(!logWarnStub.called);
+        });
+
+        it("should return null when no cookies are present", () => {
+            var request = {
+                method: "GET",
+                url: "/",
+                headers: {}
+            };
+
+            var requestParser = new HttpRequestParser(<any>request);
+            var id = requestParser["_getId"](HttpRequestCookieNames.AUTH_USER);
+            
+            assert.equal(id, null);
+            assert.ok(!logWarnStub.called);
+        });
+
+        it("should return null when cookie header is empty", () => {
+            var request = {
+                method: "GET",
+                url: "/",
+                headers: {
+                    "cookie": ""
+                }
+            };
+
+            var requestParser = new HttpRequestParser(<any>request);
+            var id = requestParser["_getId"](HttpRequestCookieNames.AUTH_USER);
+            
+            assert.equal(id, null);
+            assert.ok(!logWarnStub.called);
+        });
+
+        it("should decode AUTH_USER cookie with special characters", () => {
+            var request = {
+                method: "GET",
+                url: "/",
+                headers: {
+                    "cookie": "ai_authUser=user%40domain.com%2Btest; other=value"
+                }
+            };
+
+            var requestParser = new HttpRequestParser(<any>request);
+            var id = requestParser["_getId"](HttpRequestCookieNames.AUTH_USER);
+            
+            assert.equal(id, "user@domain.com+test");
+            assert.ok(!logWarnStub.called);
+        });
+
+        it("should handle AUTH_USER cookie with no value", () => {
+            var request = {
+                method: "GET",
+                url: "/",
+                headers: {
+                    "cookie": "ai_authUser=; other=value"
+                }
+            };
+
+            var requestParser = new HttpRequestParser(<any>request);
+            var id = requestParser["_getId"](HttpRequestCookieNames.AUTH_USER);
+            
+            assert.equal(id, null);
+            assert.ok(!logWarnStub.called);
         });
     });
 });
