@@ -52,4 +52,27 @@ export class AKSLoader extends AgentLoader {
             );
         }
     }
+
+    public initialize() {
+        // For AKS auto attach scenario, temporarily store and remove OTEL_TRACES_EXPORTER and OTEL_LOGS_EXPORTER
+        // to ensure they don't interfere with useAzureMonitor setup
+        const originalTracesExporter = process.env.OTEL_TRACES_EXPORTER;
+        const originalLogsExporter = process.env.OTEL_LOGS_EXPORTER;
+        
+        delete process.env.OTEL_TRACES_EXPORTER;
+        delete process.env.OTEL_LOGS_EXPORTER;
+
+        try {
+            // Call parent initialize method
+            super.initialize();
+        } finally {
+            // Restore the original environment variables after useAzureMonitor is complete
+            if (originalTracesExporter !== undefined) {
+                process.env.OTEL_TRACES_EXPORTER = originalTracesExporter;
+            }
+            if (originalLogsExporter !== undefined) {
+                process.env.OTEL_LOGS_EXPORTER = originalLogsExporter;
+            }
+        }
+    }
 }
