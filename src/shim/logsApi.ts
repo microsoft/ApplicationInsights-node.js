@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 import { Logger as OtelLogger, LogRecord } from "@opentelemetry/api-logs";
-import { LogRecord as SDKLogRecord } from "@opentelemetry/sdk-logs";
+import { SdkLogRecord as SDKLogRecord } from "@opentelemetry/sdk-logs";
 import { Attributes, diag } from "@opentelemetry/api";
 import { IdGenerator, RandomIdGenerator } from "@opentelemetry/sdk-trace-base";
 

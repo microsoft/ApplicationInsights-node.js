@@ -9,7 +9,7 @@ import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations
 import { TelemetryClient } from "../../../src/shim/telemetryClient";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { MeterProvider } from "@opentelemetry/sdk-metrics";
-import { LogRecord, LogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
+import { SdkLogRecord, LogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
 import { logs } from "@opentelemetry/api-logs";
 import { SEMATTRS_RPC_SYSTEM } from "@opentelemetry/semantic-conventions";
 import Config = require("../../../src/shim/shim-config");
@@ -47,7 +47,7 @@ describe("shim/TelemetryClient", () => {
         // Add test processors through the Azure Monitor options
         client.config.azureMonitorOpenTelemetryOptions = {
             spanProcessors: [testProcessor],
-            logRecordProcessors: [logProcessor as any] // Type assertion needed for version compatibility
+            logRecordProcessors: [logProcessor]
         };
         
         client.initialize();
@@ -96,7 +96,7 @@ describe("shim/TelemetryClient", () => {
         }
         
         // Override onEmit to apply log record attributes before exporting
-        onEmit(record: LogRecord) {
+        onEmit(record: SdkLogRecord) {
             record.setAttributes(this._attributes);
         }
     
