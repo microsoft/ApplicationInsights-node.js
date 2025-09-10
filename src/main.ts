@@ -52,7 +52,7 @@ export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
         if (!options.logRecordProcessors) {
             options.logRecordProcessors = [];
         }
-        options.logRecordProcessors.push(otlpLogProcessor);
+        options.logRecordProcessors.push(otlpLogProcessor as any);
     }
     
     distroUseAzureMonitor(options);

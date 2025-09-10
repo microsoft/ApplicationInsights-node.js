@@ -81,7 +81,7 @@ export class TelemetryClient {
             if (!this._options.logRecordProcessors) {
                 this._options.logRecordProcessors = [];
             }
-            this._options.logRecordProcessors.push(this._attributeLogProcessor);
+            this._options.logRecordProcessors.push(this._attributeLogProcessor as any);
 
             // Initialize Azure Monitor with processors included
             useAzureMonitor(this._options);

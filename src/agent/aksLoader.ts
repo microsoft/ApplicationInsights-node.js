@@ -8,6 +8,8 @@ import { FileWriter } from "./diagnostics/writers/fileWriter";
 import { StatusLogger } from "./diagnostics/statusLogger";
 import { AgentLoader } from "./agentLoader";
 import { InstrumentationOptions } from '../types';
+import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
+import { MetricReader, PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 
 export class AKSLoader extends AgentLoader {
 
@@ -50,6 +52,44 @@ export class AKSLoader extends AgentLoader {
                     }
                 )
             );
+
+            // Create metricReaders array and add OTLP reader if environment variables request it
+            try {
+                const metricReaders: MetricReader[] = [];
+                if (
+                    process.env.OTEL_METRICS_EXPORTER === "otlp" &&
+                    (process.env.OTEL_EXPORTER_OTLP_ENDPOINT || process.env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT)
+                ) {
+                    try {
+                        const otlpExporter = new OTLPMetricExporter({
+                            url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || process.env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT,
+                        });
+
+                        const otlpMetricReader = new PeriodicExportingMetricReader({
+                            exporter: otlpExporter,
+                            exportIntervalMillis: 60000, // Default interval
+                        });
+
+                        metricReaders.push(otlpMetricReader);
+                    } catch (error) {
+                        console.warn("AKSLoader: Failed to create OTLP metric reader:", error);
+                    }
+                }
+
+                // Attach metricReaders to the options so the distro can consume them
+                if ((metricReaders || []).length > 0) {
+                    (this._options as any).metricReaders = metricReaders;
+                }
+            } catch (err) {
+                console.warn("AKSLoader: Error while preparing metricReaders:", err);
+            }
+
+            this._statusLogger = new StatusLogger(this._instrumentationKey, new FileWriter(statusLogDir, 'status_nodejs.json', {
+                append: false,
+                deleteOnExit: false,
+                renamePolicy: 'overwrite',
+                sizeLimit: 1024 * 1024,
+            }));
         }
     }
 }
