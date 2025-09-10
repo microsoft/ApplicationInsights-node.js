@@ -10,6 +10,7 @@ import { AgentLoader } from "./agentLoader";
 import { InstrumentationOptions } from '../types';
 import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
 import { MetricReader, PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
+import { OTLP_METRIC_EXPORTER_EXPORT_INTERVAL } from './types';
 
 export class AKSLoader extends AgentLoader {
 
@@ -61,13 +62,11 @@ export class AKSLoader extends AgentLoader {
                     (process.env.OTEL_EXPORTER_OTLP_ENDPOINT || process.env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT)
                 ) {
                     try {
-                        const otlpExporter = new OTLPMetricExporter({
-                            url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || process.env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT,
-                        });
+                        const otlpExporter = new OTLPMetricExporter();
 
                         const otlpMetricReader = new PeriodicExportingMetricReader({
                             exporter: otlpExporter,
-                            exportIntervalMillis: 60000, // Default interval
+                            exportIntervalMillis: OTLP_METRIC_EXPORTER_EXPORT_INTERVAL,
                         });
 
                         metricReaders.push(otlpMetricReader);
@@ -78,18 +77,11 @@ export class AKSLoader extends AgentLoader {
 
                 // Attach metricReaders to the options so the distro can consume them
                 if ((metricReaders || []).length > 0) {
-                    (this._options as any).metricReaders = metricReaders;
+                    this._options.metricReaders = metricReaders;
                 }
             } catch (err) {
                 console.warn("AKSLoader: Error while preparing metricReaders:", err);
             }
-
-            this._statusLogger = new StatusLogger(this._instrumentationKey, new FileWriter(statusLogDir, 'status_nodejs.json', {
-                append: false,
-                deleteOnExit: false,
-                renamePolicy: 'overwrite',
-                sizeLimit: 1024 * 1024,
-            }));
         }
     }
 }
