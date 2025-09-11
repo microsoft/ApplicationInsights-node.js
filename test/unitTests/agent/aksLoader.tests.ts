@@ -92,7 +92,7 @@ describe("agent/AKSLoader", () => {
         
         const url = parameters.url || parameters.endpoint;
         assert.ok(url, "Parameters should have a URL configured");
-        assert.equal(url.replace(/\/$/, ""), "http://localhost:4317", "Should use the base OTLP endpoint URL");
+        assert.equal(url.replace(/\/$/, ""), "http://localhost:4317/v1/metrics", "Should use the base OTLP endpoint URL");
         
         // Verify the exporter type
         assert.ok(exporter, "Exporter should exist");
