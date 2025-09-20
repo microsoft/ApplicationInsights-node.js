@@ -8,7 +8,7 @@ import { FileWriter } from "./diagnostics/writers/fileWriter";
 import { StatusLogger } from "./diagnostics/statusLogger";
 import { AgentLoader } from "./agentLoader";
 import { InstrumentationOptions } from '../types';
-import { OTLPMetricExporter as OTLPProtoMetricExporter } from '@opentelemetry/exporter-metrics-otlp-proto';
+import { OTLPMetricExporter as OTLPProtoMetricExporter } from "@opentelemetry/exporter-metrics-otlp-proto";
 import { MetricReader, PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 import { OTLP_METRIC_EXPORTER_EXPORT_INTERVAL } from './types';
 
