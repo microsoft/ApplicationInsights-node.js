@@ -8,7 +8,8 @@ import { FileWriter } from "./diagnostics/writers/fileWriter";
 import { StatusLogger } from "./diagnostics/statusLogger";
 import { AgentLoader } from "./agentLoader";
 import { InstrumentationOptions } from '../types';
-import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
+import { OTLPMetricExporter as OTLPProtoMetricExporter } from "@opentelemetry/exporter-metrics-otlp-proto";
+import { OTLPMetricExporter as OTLPHttpMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
 import { MetricReader, PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 import { OTLP_METRIC_EXPORTER_EXPORT_INTERVAL } from './types';
 
@@ -62,7 +63,17 @@ export class AKSLoader extends AgentLoader {
                     (process.env.OTEL_EXPORTER_OTLP_ENDPOINT || process.env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT)
                 ) {
                     try {
-                        const otlpExporter = new OTLPMetricExporter();
+                        // Determine which exporter to use based on protocol setting
+                        const protocol = process.env.OTEL_EXPORTER_OTLP_METRICS_PROTOCOL || 
+                                       process.env.OTEL_EXPORTER_OTLP_PROTOCOL;
+                        
+                        let otlpExporter;
+                        if (protocol === 'http/json') {
+                            otlpExporter = new OTLPHttpMetricExporter();
+                        } else {
+                            // Use protobuf for 'http/protobuf', 'grpc', or any other value
+                            otlpExporter = new OTLPProtoMetricExporter();
+                        }
 
                         const otlpMetricReader = new PeriodicExportingMetricReader({
                             exporter: otlpExporter,
