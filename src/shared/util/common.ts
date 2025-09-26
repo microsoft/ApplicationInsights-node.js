@@ -5,13 +5,14 @@ import * as http from "http";
 
 export function ignoreOutgoingRequestHook(request: http.RequestOptions): boolean {
   if (request && request.headers) {
+    const headers = request.headers as { [key: string]: string | string[] | undefined };
     if (
-      (request.headers["User-Agent"] &&
-        request.headers["User-Agent"]
+      (headers["User-Agent"] &&
+        headers["User-Agent"]
           .toString()
           .indexOf("azsdk-js-monitor-opentelemetry-exporter") > -1) ||
-      (request.headers["user-agent"] &&
-        request.headers["user-agent"]
+      (headers["user-agent"] &&
+        headers["user-agent"]
           .toString()
           .indexOf("azsdk-js-monitor-opentelemetry-exporter") > -1)
     ) {

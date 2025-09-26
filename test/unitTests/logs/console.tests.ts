@@ -1,4 +1,6 @@
-import * as assert from "assert";
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+import assert from "assert";
 import { channel } from "diagnostic-channel";
 import { console } from "diagnostic-channel-publishers";
 import { SeverityNumber, logs } from '@opentelemetry/api-logs';
@@ -17,11 +19,10 @@ describe("AutoCollection/Console", () => {
 
     before(() => {
         logs.disable();
-        const loggerProvider = new LoggerProvider();
         memoryLogExporter = new InMemoryLogRecordExporter();
-        loggerProvider.addLogRecordProcessor(
-            new SimpleLogRecordProcessor(memoryLogExporter)
-        );
+        const loggerProvider = new LoggerProvider({
+            processors: [new SimpleLogRecordProcessor(memoryLogExporter)]
+        });
         logs.setGlobalLoggerProvider(loggerProvider);
     });
 

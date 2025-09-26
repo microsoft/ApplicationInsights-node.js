@@ -1,9 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Attributes, context, metrics, ProxyTracerProvider, SpanKind, SpanOptions, SpanStatusCode, diag, trace } from "@opentelemetry/api";
+import { Attributes, context, metrics, SpanKind, SpanOptions, SpanStatusCode, diag, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
-import { LoggerProvider } from "@opentelemetry/sdk-logs";
 import { 
     SEMATTRS_DB_STATEMENT,
     SEMATTRS_DB_SYSTEM,
@@ -21,18 +20,19 @@ import { Context } from "./context";
 import { Util } from "../shared/util";
 import Config = require("./shim-config");
 import { AttributeSpanProcessor } from "../shared/util/attributeSpanProcessor";
-import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { AttributeLogProcessor } from "../shared/util/attributeLogRecordProcessor";
 import { LogApi } from "./logsApi";
 import { flushAzureMonitor, shutdownAzureMonitor, useAzureMonitor } from "../main";
 import { AzureMonitorOpenTelemetryOptions } from "../types";
-import { UNSUPPORTED_MSG } from "./types";
+import { UNSUPPORTED_MSG, StatsbeatFeature } from "./types";
+import { StatsbeatFeaturesManager } from "../shared/util/statsbeatFeaturesManager";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
  * and manually trigger immediate sending (flushing)
  */
 export class TelemetryClient {
+    private static _instanceCount = 0;
     public context: Context;
     public commonProperties: { [key: string]: string };
     public config: Config;
@@ -48,6 +48,13 @@ export class TelemetryClient {
      * @param setupString the Connection String or Instrumentation Key to use (read from environment variable if not specified)
      */
     constructor(input?: string) {
+        TelemetryClient._instanceCount++;
+        
+        // Set statsbeat feature if this is the second or subsequent TelemetryClient instance
+        if (TelemetryClient._instanceCount >= 2) {
+            StatsbeatFeaturesManager.getInstance().enableFeature(StatsbeatFeature.MULTI_IKEY);
+        }
+        
         const config = new Config(input, this._configWarnings);
         this.config = config;
         this.commonProperties = {};
@@ -59,16 +66,29 @@ export class TelemetryClient {
         this._isInitialized = true;
         // Parse shim config to Azure Monitor options
         this._options = this.config.parseConfig();
-        useAzureMonitor(this._options);
+        
         try {
+            // Create attribute processors with context tags and common properties
+            this._attributeSpanProcessor = new AttributeSpanProcessor({ ...this.context.tags, ...this.commonProperties });
+            this._attributeLogProcessor = new AttributeLogProcessor({ ...this.context.tags, ...this.commonProperties });
+
+            // Add processors to Azure Monitor options before initialization
+            if (!this._options.spanProcessors) {
+                this._options.spanProcessors = [];
+            }
+            this._options.spanProcessors.push(this._attributeSpanProcessor);
+
+            if (!this._options.logRecordProcessors) {
+                this._options.logRecordProcessors = [];
+            }
+            this._options.logRecordProcessors.push(this._attributeLogProcessor);
+
+            // Initialize Azure Monitor with processors included
+            useAzureMonitor(this._options);
+            
             // LoggerProvider would be initialized when client is instantiated
             // Get Logger from global provider
             this._logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
-            this._attributeSpanProcessor = new AttributeSpanProcessor({ ...this.context.tags, ...this.commonProperties });
-            ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider).addSpanProcessor(this._attributeSpanProcessor);
-
-            this._attributeLogProcessor = new AttributeLogProcessor({ ...this.context.tags, ...this.commonProperties });
-            (logs.getLoggerProvider() as LoggerProvider).addLogRecordProcessor(this._attributeLogProcessor);
 
             // Warn if any config warnings were generated during parsing
             for (let i = 0; i < this._configWarnings.length; i++) {
@@ -165,16 +185,25 @@ export class TelemetryClient {
         if (!this._isInitialized) {
             this.initialize();
         }
-        const startTime = telemetry.time || new Date();
-        const endTime = startTime.getTime() + telemetry.duration;
+        // For trackRequest, when time is not specified, treat current time as END time
+        // since this method is called after the request operation has completed
+        const endTime = telemetry.time ? telemetry.time.getTime() + telemetry.duration : Date.now();
+        const startTime = telemetry.time || new Date(endTime - telemetry.duration);
 
         const ctx = context.active();
         const attributes: Attributes = {
             ...telemetry.properties,
         };
-        attributes[SEMATTRS_HTTP_METHOD] = "HTTP";
-        attributes[SEMATTRS_HTTP_URL] = telemetry.url;
-        attributes[SEMATTRS_HTTP_STATUS_CODE] = telemetry.resultCode;
+        // Only set HTTP attributes if we have the relevant data
+        if (!telemetry.name) {
+            attributes[SEMATTRS_HTTP_METHOD] = "HTTP";
+        }
+        if (telemetry.url) {
+            attributes[SEMATTRS_HTTP_URL] = telemetry.url;
+        }
+        if (telemetry.resultCode) {
+            attributes[SEMATTRS_HTTP_STATUS_CODE] = telemetry.resultCode;
+        }
         const options: SpanOptions = {
             kind: SpanKind.SERVER,
             attributes: attributes,
@@ -182,6 +211,17 @@ export class TelemetryClient {
         };
         const span: any = trace.getTracer("ApplicationInsightsTracer")
             .startSpan(telemetry.name, options, ctx);
+            
+        if (telemetry.id) {
+            try {
+                if (span._spanContext) {
+                    span._spanContext.traceId = telemetry.id;                
+                }
+            } catch (error) {
+                diag.warn('Unable to set custom traceId on span:', error);
+            }
+        }
+        
         span.setStatus({
             code: telemetry.success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
         });
@@ -198,8 +238,10 @@ export class TelemetryClient {
         if (!this._isInitialized) {
             this.initialize();
         }
-        const startTime = telemetry.time || new Date();
-        const endTime = startTime.getTime() + telemetry.duration;
+        // For trackDependency, when time is not specified, treat current time as END time
+        // since this method is called after the dependency operation has completed
+        const endTime = telemetry.time ? telemetry.time.getTime() + telemetry.duration : Date.now();
+        const startTime = telemetry.time || new Date(endTime - telemetry.duration);
         if (telemetry && !telemetry.target && telemetry.data) {
             // url.parse().host returns null for non-urls,
             // making this essentially a no-op in those cases
@@ -219,9 +261,13 @@ export class TelemetryClient {
         };
         if (telemetry.dependencyTypeName) {
             if (telemetry.dependencyTypeName.toLowerCase().indexOf("http") > -1) {
-                attributes[SEMATTRS_HTTP_METHOD] = "HTTP";
-                attributes[SEMATTRS_HTTP_URL] = telemetry.data;
-                attributes[SEMATTRS_HTTP_STATUS_CODE] = telemetry.resultCode;
+                // Only set HTTP URL and status code for HTTP dependencies
+                if (telemetry.data) {
+                    attributes[SEMATTRS_HTTP_URL] = telemetry.data;
+                }
+                if (telemetry.resultCode) {
+                    attributes[SEMATTRS_HTTP_STATUS_CODE] = telemetry.resultCode;
+                }
             } else if (Util.getInstance().isDbDependency(telemetry.dependencyTypeName)) {
                 attributes[SEMATTRS_DB_SYSTEM] = telemetry.dependencyTypeName;
                 attributes[SEMATTRS_DB_STATEMENT] = telemetry.data;
@@ -241,6 +287,17 @@ export class TelemetryClient {
         };
         const span: any = trace.getTracer("ApplicationInsightsTracer")
             .startSpan(telemetry.name, options, ctx);
+            
+        if (telemetry.id) {
+            try {
+                if (span._spanContext) {
+                    span._spanContext.traceId = telemetry.id;
+                }
+            } catch (error) {
+                diag.warn('Unable to set custom traceId on span:', error);
+            }
+        }
+        
         span.setStatus({
             code: telemetry.success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
         });

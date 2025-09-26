@@ -10,7 +10,7 @@ export {
     PageViewTelemetry,
     Telemetry,
 } from "./declarations/contracts";
-export { useAzureMonitor, shutdownAzureMonitor } from "./main";
+export { useAzureMonitor, shutdownAzureMonitor, flushAzureMonitor } from "./main";
 
 // To support the shim
 export * from "./shim/applicationinsights";

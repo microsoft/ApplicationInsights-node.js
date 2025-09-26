@@ -6,8 +6,6 @@
  * Changes may cause incorrect behavior and will be lost if the code is regenerated.
  */
 
-import * as coreClient from "@azure/core-client";
-
 /** System variables for a telemetry item. */
 export interface TelemetryItem {
     /** Envelope version. For internal use only. By assigning this the default, it will not be serialized within the payload unless changed to a value other than #1. */
@@ -375,16 +373,5 @@ export enum KnownContextTagKeys {
  */
 export type ContextTagKeys = string;
 
-/** Optional parameters. */
-export type TrackOptionalParams = coreClient.OperationOptions
-
 /** Contains response data for the track operation. */
 export type TrackOperationResponse = TrackResponse;
-
-/** Optional parameters. */
-export interface ApplicationInsightsClientOptionalParams extends coreClient.ServiceClientOptions {
-    /** Breeze endpoint: https://dc.services.visualstudio.com */
-    host?: string;
-    /** Overrides client endpoint. */
-    endpoint?: string;
-}

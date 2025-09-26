@@ -1,8 +1,8 @@
 {
     "compilerOptions": {
         "target": "ES2017",
-        "module": "commonjs",
-        "moduleResolution": "node",
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
         "inlineSources": true,
         "sourceMap": true,
         "declaration": true,

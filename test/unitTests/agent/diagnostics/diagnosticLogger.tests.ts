@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import * as assert from "assert";
-import * as sinon from "sinon";
+import assert from "assert";
+import sinon from "sinon";
 import * as fs from "fs";
 import * as path from "path";
 import { DiagnosticLogger } from "../../../../src/agent/diagnostics/diagnosticLogger";

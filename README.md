@@ -86,6 +86,8 @@ loading the Application Insights library after those.
 
 ## Configuration
 
+> **Important:** All SDK configuration must be completed **before** calling `start()`. Unlike Application Insights 2.X SDK, configuration changes made after `start()` has been called will not take effect. This includes both method-based configuration (e.g., `setAutoCollectRequests()`) and client configuration properties (e.g., `appInsights.defaultClient.config.samplingPercentage`).
+
 The appInsights object provides a number of methods to setup SDK behavior. They are
 listed in the following snippet with their default values.
 
@@ -183,7 +185,7 @@ Add code such as the following to enable sampling:
 const appInsights = require("applicationinsights");
 appInsights.setup("<YOUR_CONNECTION_STRING>");
 appInsights.defaultClient.config.samplingPercentage = 33; // 33% of all telemetry will be sent to Application Insights
-appInsights.start();
+appInsights.start(); // Configuration must be complete before calling start()
 ```
 
 ### Automatic web Instrumentation
