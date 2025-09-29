@@ -58,9 +58,7 @@ export class AKSLoader extends AgentLoader {
             // Create metricReaders array and add OTLP reader if environment variables request it
             try {
                 const metricReaders: MetricReader[] = [];
-                
-                // Check if OTEL_METRICS_EXPORTER contains "otlp" as a separate value (not as part of another word)
-                const metricsExporter = process.env.OTEL_METRICS_EXPORTER || '';
+                const metricsExporter = (process.env.OTEL_METRICS_EXPORTER || '').toLowerCase();
                 const exportersList = metricsExporter.split(',').map(exp => exp.trim());
                 const hasOtlpExporter = exportersList.includes('otlp');
                 
