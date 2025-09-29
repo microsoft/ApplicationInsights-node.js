@@ -40,11 +40,11 @@
 
 #### Bugs Fixed
 
-- Fix diagnostic-channel console import.
+- Fix diagnostic-channel console import. (https://github.com/microsoft/ApplicationInsights-node.js/pull/1452)
 
 ### 3.8.0 (2025-07-28)
 
-### Features Added
+#### Features Added
 
 - Upgrade to use OpenTelemetry JS 2.x dependencies. (https://github.com/microsoft/ApplicationInsights-node.js/pull/1449)
 
@@ -87,7 +87,7 @@
 
 #### Features Added
 
-Add `setAzureMonitorOptions()` to configuration. (https://github.com/microsoft/ApplicationInsights-node.js/pull/1416)
+- Add `setAzureMonitorOptions()` to configuration. (https://github.com/microsoft/ApplicationInsights-node.js/pull/1416)
 
 ### 3.5.0 (20205-01-31)
 
