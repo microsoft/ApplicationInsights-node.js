@@ -83,6 +83,17 @@ so that the Application Insights library can prepare later packages for tracking
 If you encounter conflicts with other libraries doing similar preparation, try
 loading the Application Insights library after those.
 
+## Understanding SDK Reliability with SDK Stats
+
+The SDK stats feature helps you monitor the reliability of telemetry transmission from the Application Insights SDK to Azure Monitor. SDK stats provide visibility into telemetry ingestion, including success rates, throttling, and errors. This information is essential for understanding whether your application's telemetry is being reliably delivered to Application Insights.
+
+By analyzing SDK stats, you can:
+- Monitor the health of telemetry transmission
+- Identify issues with data delivery (network problems, throttling, etc.)
+- Ensure telemetry is reaching Application Insights as expected
+- Troubleshoot gaps in your telemetry data
+
+To learn more about SDK stats, including how to access and interpret them, see [SDK stats documentation](https://learn.microsoft.com/azure/azure-monitor/app/sdk-stats).
 
 ## Configuration
 
