@@ -1,14 +1,10 @@
 # Release History
 
-### 3.13.0 (Unreleased)
-
-#### Features Added
-
-#### Bugs Fixed
-
-#### Breaking Changes
+### 3.12.1 (2025-11-10)
 
 #### Other Changes
+
+- Updated @azure/monitor-opentelemetry and @azure/monitor-opentelemetry-exporter.
 
 ### 3.12.0 (2025-09-29)
 
