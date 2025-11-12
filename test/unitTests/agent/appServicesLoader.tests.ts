@@ -98,4 +98,23 @@ describe("agent/AppServicesLoader", () => {
             "testRole"
         );
     });
+
+    it("should enable console, bunyan, and winston logging instrumentations", () => {
+        const env = {
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
+            ["HOME"]: "c:",
+        };
+        process.env = env;
+        const agent = new AppServicesLoader();
+        
+        // Verify that logging instrumentations are enabled
+        const instrumentationOptions = agent["_options"].instrumentationOptions;
+        assert.ok(instrumentationOptions, "instrumentationOptions should be present");
+        assert.ok(instrumentationOptions.console, "console instrumentation should be present");
+        assert.equal(instrumentationOptions.console.enabled, true, "console instrumentation should be enabled");
+        assert.ok(instrumentationOptions.bunyan, "bunyan instrumentation should be present");
+        assert.equal(instrumentationOptions.bunyan.enabled, true, "bunyan instrumentation should be enabled");
+        assert.ok(instrumentationOptions.winston, "winston instrumentation should be present");
+        assert.equal(instrumentationOptions.winston.enabled, true, "winston instrumentation should be enabled");
+    });
 });

@@ -14,12 +14,20 @@ import { EtwDiagnosticLogger } from './diagnostics/etwDiagnosticLogger';
 import { FileWriter } from "./diagnostics/writers/fileWriter";
 import { StatusLogger } from "./diagnostics/statusLogger";
 import { AgentLoader } from "./agentLoader";
+import { InstrumentationOptions } from '../types';
 
 export class AppServicesLoader extends AgentLoader {
 
     constructor() {
         super();
         if (this._canLoad) {
+            (this._options.instrumentationOptions as InstrumentationOptions) = {
+                ...this._options.instrumentationOptions,
+                console: { enabled: true },
+                bunyan: { enabled: true },
+                winston: { enabled: true },
+            }
+
             // Azure App Services specific configuration
             const resourceAttributes: Attributes = {};
             if (process.env.WEBSITE_SITE_NAME) {
