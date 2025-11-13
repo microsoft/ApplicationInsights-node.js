@@ -4,6 +4,7 @@ import sinon from "sinon";
 import { AppServicesLoader } from "../../../src/agent/appServicesLoader";
 import { DiagnosticLogger } from "../../../src/agent/diagnostics/diagnosticLogger";
 import { FileWriter } from "../../../src/agent/diagnostics/writers/fileWriter";
+import { InstrumentationOptions } from "../../../src/types";
 import {
     SEMRESATTRS_SERVICE_INSTANCE_ID,
     SEMRESATTRS_SERVICE_NAME,
@@ -108,7 +109,7 @@ describe("agent/AppServicesLoader", () => {
         const agent = new AppServicesLoader();
         
         // Verify that logging instrumentations are enabled
-        const instrumentationOptions = agent["_options"].instrumentationOptions;
+        const instrumentationOptions = agent["_options"].instrumentationOptions as InstrumentationOptions;
         assert.ok(instrumentationOptions, "instrumentationOptions should be present");
         assert.ok(instrumentationOptions.console, "console instrumentation should be present");
         assert.equal(instrumentationOptions.console.enabled, true, "console instrumentation should be enabled");
