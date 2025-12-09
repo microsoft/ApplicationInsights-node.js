@@ -157,12 +157,13 @@ describe("shim/configuration/config", () => {
             assert.equal(process.env["APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL"], "WARN");
         });
 
-        it("should set context tags on logs and spans", () => {
+        it("should set context tags on logs and spans", async () => {
             const telemetryClient = new TelemetryClient(connectionString);
             telemetryClient.context.tags = { "ai.cloud.role": "testRole", "ai.cloud.roleInstance": "testRoleInstance" };
             telemetryClient.initialize();
             telemetryClient["_attributeSpanProcessor"]["_attributes"] = { "ai.cloud.role": "testRole", "ai.cloud.roleInstance": "testRoleInstance" };
             telemetryClient["_attributeLogProcessor"]["_attributes"] = { "ai.cloud.role": "testRole", "ai.cloud.roleInstance": "testRoleInstance" };
+            await telemetryClient.shutdown();
         });
 
         it("should disable instrumentations when noDiagnosticChannel is set", () => {

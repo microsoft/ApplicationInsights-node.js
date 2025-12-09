@@ -1,9 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { Attributes, context, metrics, ProxyTracerProvider, SpanKind, SpanOptions, SpanStatusCode, diag, trace } from "@opentelemetry/api";
+import { Attributes, Meter, Tracer, context, metrics, SpanKind, SpanOptions, SpanStatusCode, diag, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
-import { LoggerProvider } from "@opentelemetry/sdk-logs";
 import { 
     SEMATTRS_DB_STATEMENT,
     SEMATTRS_DB_SYSTEM,
@@ -21,12 +20,12 @@ import { Context } from "./context";
 import { Util } from "../shared/util";
 import Config = require("./shim-config");
 import { AttributeSpanProcessor } from "../shared/util/attributeSpanProcessor";
-import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { AttributeLogProcessor } from "../shared/util/attributeLogRecordProcessor";
 import { LogApi } from "./logsApi";
 import { flushAzureMonitor, shutdownAzureMonitor, useAzureMonitor } from "../main";
 import { AzureMonitorOpenTelemetryOptions } from "../types";
-import { UNSUPPORTED_MSG } from "./types";
+import { TelemetryClientProvider } from "./telemetryClientProvider";
+import { TelemetryClientOptions, UNSUPPORTED_MSG } from "./types";
 
 /**
  * Application Insights telemetry client provides interface to track telemetry items, register telemetry initializers and
@@ -41,40 +40,54 @@ export class TelemetryClient {
     private _logApi: LogApi;
     private _isInitialized: boolean;
     private _options: AzureMonitorOpenTelemetryOptions;
+    private _telemetryClientProvider?: TelemetryClientProvider;
+    private _useGlobalProviders: boolean;
+    private _manualTracer?: Tracer;
+    private _manualMeter?: Meter;
     private _configWarnings: string[] = [];
 
     /**
      * Constructs a new instance of TelemetryClient
      * @param setupString the Connection String or Instrumentation Key to use (read from environment variable if not specified)
      */
-    constructor(input?: string) {
+    constructor(input?: string, options?: TelemetryClientOptions) {
         const config = new Config(input, this._configWarnings);
         this.config = config;
         this.commonProperties = {};
         this.context = new Context();
         this._isInitialized = false;
+        this._useGlobalProviders = options?.useGlobalProviders ?? false;
     }
 
     public initialize() {
+        if (this._isInitialized) {
+            return;
+        }
         this._isInitialized = true;
         // Parse shim config to Azure Monitor options
         this._options = this.config.parseConfig();
-        useAzureMonitor(this._options);
         try {
-            // LoggerProvider would be initialized when client is instantiated
-            // Get Logger from global provider
-            this._logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
             this._attributeSpanProcessor = new AttributeSpanProcessor({ ...this.context.tags, ...this.commonProperties });
-            ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider).addSpanProcessor(this._attributeSpanProcessor);
-
             this._attributeLogProcessor = new AttributeLogProcessor({ ...this.context.tags, ...this.commonProperties });
-            (logs.getLoggerProvider() as LoggerProvider).addLogRecordProcessor(this._attributeLogProcessor);
+            this._options.spanProcessors = [...(this._options.spanProcessors || []), this._attributeSpanProcessor];
+            this._options.logRecordProcessors = [...(this._options.logRecordProcessors || []), this._attributeLogProcessor];
+
+            if (this._useGlobalProviders) {
+                useAzureMonitor(this._options);
+            } else {
+                this._telemetryClientProvider = new TelemetryClientProvider(this._options);
+            }
+
+            const logger = this._useGlobalProviders
+                ? logs.getLogger("ApplicationInsightsLogger")
+                : this._telemetryClientProvider.getLogger("ApplicationInsightsLogger");
+            this._logApi = new LogApi(logger);
 
             // Warn if any config warnings were generated during parsing
             for (let i = 0; i < this._configWarnings.length; i++) {
                 diag.warn(this._configWarnings[i]);
             }
-        } 
+        }
         catch (error) {
             diag.error(`Failed to initialize TelemetryClient ${error}`);
         }
@@ -147,12 +160,32 @@ export class TelemetryClient {
         }
         // Create custom metric
         try {
-            const meter = metrics.getMeterProvider().getMeter("ApplicationInsightsMetrics");
+            const meter = this._getMeterInstance();
             const histogram = meter.createHistogram(telemetry.name);
             histogram.record(telemetry.value, { ...telemetry.properties, ...this.commonProperties, ...this.context.tags });
         } catch (error) {
             diag.error(`Failed to record metric: ${error}`);
         }
+    }
+
+    private _getTracerInstance(): Tracer {
+        if (this._telemetryClientProvider) {
+            if (!this._manualTracer) {
+                this._manualTracer = this._telemetryClientProvider.getTracer("ApplicationInsightsTracer");
+            }
+            return this._manualTracer;
+        }
+        return trace.getTracer("ApplicationInsightsTracer");
+    }
+
+    private _getMeterInstance(): Meter {
+        if (this._telemetryClientProvider) {
+            if (!this._manualMeter) {
+                this._manualMeter = this._telemetryClientProvider.getMeter("ApplicationInsightsMetrics");
+            }
+            return this._manualMeter;
+        }
+        return metrics.getMeterProvider().getMeter("ApplicationInsightsMetrics");
     }
 
     /**
@@ -180,7 +213,7 @@ export class TelemetryClient {
             attributes: attributes,
             startTime: startTime,
         };
-        const span: any = trace.getTracer("ApplicationInsightsTracer")
+        const span: any = this._getTracerInstance()
             .startSpan(telemetry.name, options, ctx);
         span.setStatus({
             code: telemetry.success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
@@ -239,7 +272,7 @@ export class TelemetryClient {
             attributes: attributes,
             startTime: startTime,
         };
-        const span: any = trace.getTracer("ApplicationInsightsTracer")
+        const span: any = this._getTracerInstance()
             .startSpan(telemetry.name, options, ctx);
         span.setStatus({
             code: telemetry.success ? SpanStatusCode.OK : SpanStatusCode.ERROR,
@@ -324,6 +357,9 @@ export class TelemetryClient {
     * Immediately send all queued telemetry.
     */
     public async flush(): Promise<void> {
+        if (this._telemetryClientProvider) {
+            return this._telemetryClientProvider.flush();
+        }
         return flushAzureMonitor();
     }
 
@@ -331,6 +367,9 @@ export class TelemetryClient {
      * Shutdown client
      */
     public async shutdown(): Promise<void> {
+        if (this._telemetryClientProvider) {
+            return this._telemetryClientProvider.shutdown();
+        }
         return shutdownAzureMonitor();
     }
 

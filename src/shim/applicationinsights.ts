@@ -33,7 +33,7 @@ export let defaultClient: TelemetryClient;
  */
 export function setup(setupString?: string) {
     if (!defaultClient) {
-        defaultClient = new TelemetryClient(setupString);
+        defaultClient = new TelemetryClient(setupString, { useGlobalProviders: true });
     } else {
         defaultClient.pushWarningToLog("Setup has already been called once. To set up a new client, please use TelemetryClient instead.")
     }

@@ -3,25 +3,18 @@
 import * as assert from "assert";
 import * as nock from "nock";
 import * as sinon from "sinon";
-import { Context, ProxyTracerProvider, trace, metrics, diag } from "@opentelemetry/api";
+import { Context, diag } from "@opentelemetry/api";
 import { ReadableSpan, Span, SpanProcessor } from "@opentelemetry/sdk-trace-base";
+import { LogRecord, LogRecordProcessor } from "@opentelemetry/sdk-logs";
+import { SEMATTRS_RPC_SYSTEM } from "@opentelemetry/semantic-conventions";
 import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations/contracts";
 import { TelemetryClient } from "../../../src/shim/telemetryClient";
-import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
-import { AzureMonitorExporterOptions, AzureMonitorMetricExporter } from "@azure/monitor-opentelemetry-exporter";
-import { MeterProvider, PeriodicExportingMetricReader, PeriodicExportingMetricReaderOptions, ResourceMetrics } from "@opentelemetry/sdk-metrics";
-import { LogRecord, LogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
-import { logs } from "@opentelemetry/api-logs";
-import { SEMATTRS_RPC_SYSTEM } from "@opentelemetry/semantic-conventions";
+import * as main from "../../../src/main";
 import Config = require("../../../src/shim/shim-config");
 
 describe("shim/TelemetryClient", () => {
     let client: TelemetryClient;
     let testProcessor: TestSpanProcessor;
-    let tracerProvider: NodeTracerProvider;
-    let loggerProvider: LoggerProvider;
-    let testMetrics: ResourceMetrics;
-    let metricProvider: MeterProvider;
     let logProcessor: TestLogProcessor;
     let sandbox: sinon.SinonSandbox;
     let diagErrorStub: sinon.SinonStub;
@@ -29,29 +22,24 @@ describe("shim/TelemetryClient", () => {
 
     before(() => {
         sandbox = sinon.createSandbox();
-        trace.disable();
-        metrics.disable();
         nock("https://dc.services.visualstudio.com")
             .post("/v2.1/track", (body: string) => true)
             .reply(200, {})
             .persist();
         nock.disableNetConnect();
+        testProcessor = new TestSpanProcessor();
+        logProcessor = new TestLogProcessor({});
 
         client = new TelemetryClient(
             "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
         );
         client.config.samplingPercentage = 100;
         client.config.noDiagnosticChannel = true;
+        client.config.azureMonitorOpenTelemetryOptions = {
+            spanProcessors: [testProcessor],
+            logRecordProcessors: [logProcessor]
+        };
         client.initialize();
-        tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate() as NodeTracerProvider);
-        testProcessor = new TestSpanProcessor();
-        tracerProvider.addSpanProcessor(testProcessor);
-
-        loggerProvider = logs.getLoggerProvider() as LoggerProvider;
-        logProcessor = new TestLogProcessor({});
-        loggerProvider.addLogRecordProcessor(logProcessor);
-
-        metricProvider = metrics.getMeterProvider() as MeterProvider;
     });
 
     beforeEach(() => {
@@ -65,10 +53,10 @@ describe("shim/TelemetryClient", () => {
     });
 
 
-    after(() => {
+    after(async () => {
         nock.cleanAll();
         nock.enableNetConnect();
-        client.shutdown();
+        await client.shutdown();
     });
 
     class TestSpanProcessor implements SpanProcessor {
@@ -104,17 +92,6 @@ describe("shim/TelemetryClient", () => {
     
         forceFlush(): Promise<void> {
             return Promise.resolve();
-        }
-    }
-
-    class TestExporter extends AzureMonitorMetricExporter {
-        constructor(options: AzureMonitorExporterOptions = {}) {
-            super(options);
-        }
-        async export(
-            metrics: ResourceMetrics,
-        ): Promise<void> {
-            testMetrics = metrics;
         }
     }
 
@@ -190,8 +167,6 @@ describe("shim/TelemetryClient", () => {
                 success: false,
             };
             client.trackDependency(telemetry);
-
-            await tracerProvider.forceFlush();
             const spans = testProcessor.spansProcessed;
             assert.equal(spans.length, 1);
             assert.equal(spans[0].name, "TestName");
@@ -213,7 +188,6 @@ describe("shim/TelemetryClient", () => {
                 success: false,
             };
             client.trackDependency(telemetry);
-            await tracerProvider.forceFlush();
             const spans = testProcessor.spansProcessed;
             assert.equal(spans.length, 1);
             assert.equal(spans[0].name, "TestName");
@@ -233,7 +207,6 @@ describe("shim/TelemetryClient", () => {
                 success: false,
             };
             client.trackDependency(telemetry);
-            await tracerProvider.forceFlush();
             const spans = testProcessor.spansProcessed;
             assert.equal(spans.length, 1);
             assert.equal(spans[0].name, "TestName");
@@ -250,7 +223,6 @@ describe("shim/TelemetryClient", () => {
                 success: false,
             };
             client.trackRequest(telemetry);
-            await tracerProvider.forceFlush();
             const spans = testProcessor.spansProcessed;
             assert.equal(spans.length, 1);
             assert.equal(spans[0].name, "TestName");
@@ -261,35 +233,48 @@ describe("shim/TelemetryClient", () => {
             assert.equal(spans[0].attributes["http.url"], "http://test.com");
         });
 
-        it("trackMetric", async () => {
+        it("trackMetric", () => {
             const telemetry = {
                 name: "TestName",
                 value: 100,
+                properties: { custom: "value" }
             };
-            const exporter = new TestExporter({ connectionString: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3330;IngestionEndpoint=https://centralus-0.in.applicationinsights.azure.com/" });
-            const metricReaderOptions: PeriodicExportingMetricReaderOptions = {
-                exporter: exporter,
+            client.commonProperties = { common: "prop" };
+            client.context.tags = { tag: "value" } as any;
+            const histogramRecord = sandbox.stub();
+            const meterMock = {
+                createHistogram: sandbox.stub().returns({
+                    record: histogramRecord,
+                })
             };
-            const metricReader = new PeriodicExportingMetricReader(metricReaderOptions);
-            metricProvider.addMetricReader(metricReader);
+            (client as any)._manualMeter = undefined;
+            const pipeline = (client as any)._pipeline;
+            const getMeterStub = sandbox.stub(pipeline, "getMeter").returns(meterMock);
+
             client.trackMetric(telemetry);
-            metricProvider.forceFlush();
-            await new Promise((resolve) => setTimeout(resolve, 800));
-            assert.equal(testMetrics.scopeMetrics[0].metrics[0].descriptor.name, "TestName");
-            assert.equal(testMetrics.scopeMetrics[0].metrics[0].descriptor.type, "HISTOGRAM");
-            // @ts-ignore: TypeScript is not aware of the sum existing on the value object since it's a generic type
-            assert.equal(testMetrics.scopeMetrics[0].metrics[0].dataPoints[0].value.sum, 100);
+
+            assert.ok(histogramRecord.calledOnce);
+            assert.strictEqual(histogramRecord.firstCall.args[0], telemetry.value);
+            assert.deepStrictEqual(histogramRecord.firstCall.args[1], {
+                ...telemetry.properties,
+                ...client.commonProperties,
+                ...client.context.tags
+            });
+
+            getMeterStub.restore();
         });
         
-        it("trackMetric should handle errors gracefully", async () => {
+        it("trackMetric should handle errors gracefully", () => {
             const telemetry = {
                 name: "ErrorMetric",
                 value: 50,
             };
             
-            // Force an error by stubbing metrics.getMeterProvider().getMeter()
+            // Force an error by stubbing the isolated meter provider
             const error = new Error("Failed to get meter");
-            const getMeterStub = sandbox.stub(metrics.getMeterProvider(), 'getMeter').throws(error);
+            (client as any)._manualMeter = undefined;
+            const pipeline = (client as any)._pipeline;
+            const getMeterStub = sandbox.stub(pipeline, "getMeter").throws(error);
             
             // This should now throw an error internally, but the method should catch it
             client.trackMetric(telemetry);
@@ -313,8 +298,6 @@ describe("shim/TelemetryClient", () => {
                 message: "TestMessage"
             };
             client.trackAvailability(telemetry);
-            await loggerProvider.forceFlush();
-            await new Promise((resolve) => setTimeout(resolve, 800));
             assert.ok(stub.calledOnce);
         });
 
@@ -326,8 +309,6 @@ describe("shim/TelemetryClient", () => {
                 url: "http://test.com",
             };
             client.trackPageView(telemetry);
-            await loggerProvider.forceFlush();
-            await new Promise((resolve) => setTimeout(resolve, 800));
             assert.ok(stub.calledOnce);
         });
         
@@ -337,8 +318,6 @@ describe("shim/TelemetryClient", () => {
                 name: "TestName",
             };
             client.trackEvent(telemetry);
-            await loggerProvider.forceFlush();
-            await new Promise((resolve) => setTimeout(resolve, 800));
             assert.ok(stub.calledOnce);
         });
 
@@ -348,8 +327,6 @@ describe("shim/TelemetryClient", () => {
                 message: "test message",
             };
             client.trackTrace(telemetry);
-            await loggerProvider.forceFlush();
-            await new Promise((resolve) => setTimeout(resolve, 800));
             assert.ok(stub.calledOnce);
         });
 
@@ -359,9 +336,32 @@ describe("shim/TelemetryClient", () => {
                 exception: new Error("test error"),
             };
             client.trackException(telemetry);
-            await loggerProvider.forceFlush();
-            await new Promise((resolve) => setTimeout(resolve, 800));
             assert.ok(stub.calledOnce);
+        });
+    });
+
+    describe("initialization modes", () => {
+        it("does not call useAzureMonitor for isolated clients", async () => {
+            const useAzureMonitorStub = sandbox.stub(main, "useAzureMonitor");
+            const isolatedClient = new TelemetryClient(
+                "InstrumentationKey=11111111-bbbb-1ccc-8ddd-eeeeffff3334"
+            );
+            isolatedClient.initialize();
+            assert.ok(useAzureMonitorStub.notCalled);
+            await isolatedClient.shutdown();
+        });
+
+        it("uses global telemetry pipeline when requested", async () => {
+            const useAzureMonitorStub = sandbox.stub(main, "useAzureMonitor");
+            const shutdownStub = sandbox.stub(main, "shutdownAzureMonitor").resolves();
+            const globalClient = new TelemetryClient(
+                "InstrumentationKey=11111111-bbbb-1ccc-8ddd-eeeeffff3335",
+                { useGlobalProviders: true }
+            );
+            globalClient.initialize();
+            assert.ok(useAzureMonitorStub.calledOnce);
+            await globalClient.shutdown();
+            assert.ok(shutdownStub.calledOnce);
         });
     });
 });

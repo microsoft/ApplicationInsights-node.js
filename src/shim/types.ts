@@ -20,6 +20,14 @@ export enum DistributedTracingModes {
     AI_AND_W3C
 }
 
+export interface TelemetryClientOptions {
+    /**
+     * When true, the TelemetryClient relies on the global Azure Monitor distro for telemetry pipeline.
+     * Defaults to false so each client owns an isolated OpenTelemetry provider.
+     */
+    useGlobalProviders?: boolean;
+}
+
 /**
  * Interface which defines which specific extended metrics should be disabled
  *
