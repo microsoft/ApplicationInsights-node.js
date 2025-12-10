@@ -20,8 +20,9 @@ describe("AutoCollection/Console", () => {
     before(() => {
         logs.disable();
         memoryLogExporter = new InMemoryLogRecordExporter();
-        const loggerProvider = new LoggerProvider();
-        loggerProvider.addLogRecordProcessor(new SimpleLogRecordProcessor(memoryLogExporter));
+        const loggerProvider = new LoggerProvider({
+            processors: [new SimpleLogRecordProcessor(memoryLogExporter)],
+        });
         logs.setGlobalLoggerProvider(loggerProvider);
     });
 

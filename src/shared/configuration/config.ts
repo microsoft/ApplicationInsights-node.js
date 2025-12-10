@@ -3,7 +3,7 @@
 
 import { AzureMonitorExporterOptions } from "@azure/monitor-opentelemetry-exporter";
 import { diag } from "@opentelemetry/api";
-import { Resource } from "@opentelemetry/resources";
+import { Resource, defaultResource } from "@opentelemetry/resources";
 import { JsonConfig } from "./jsonConfig";
 import { AzureMonitorOpenTelemetryOptions, OTLPExporterConfig, InstrumentationOptions } from "../../types";
 import { logLevelParser } from "../util/logLevelParser";
@@ -166,7 +166,6 @@ export class ApplicationInsightsConfig {
 
     private _getDefaultResource(): Resource {
         // Create a basic resource with default attributes
-        const resource = Resource.default();
-        return resource;
+        return defaultResource();
     }
 }

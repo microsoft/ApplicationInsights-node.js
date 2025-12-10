@@ -37,15 +37,11 @@ describe("shim/TelemetryClientProvider", () => {
     }
 
     it("registers Azure Monitor processors by default", () => {
-        const spanProcessorStub = sandbox.stub(NodeTracerProvider.prototype, "addSpanProcessor");
-        const logProcessorStub = sandbox.stub(LoggerProvider.prototype, "addLogRecordProcessor");
-        const metricReaderStub = sandbox.stub(MeterProvider.prototype, "addMetricReader");
+        const provider = new TelemetryClientProvider(createOptions());
 
-        new TelemetryClientProvider(createOptions());
-
-        const registeredSpanProcessors = spanProcessorStub.getCalls().map((call) => call.args[0]);
-        const registeredLogProcessors = logProcessorStub.getCalls().map((call) => call.args[0]);
-        const registeredMetricReaders = metricReaderStub.getCalls().map((call) => call.args[0]);
+        const registeredSpanProcessors = (provider as any)._spanProcessors as SpanProcessor[];
+        const registeredLogProcessors = (provider as any)._logProcessors as LogRecordProcessor[];
+        const registeredMetricReaders = (provider as any)._metricReaders as PeriodicExportingMetricReader[];
 
         assert.ok(
             registeredSpanProcessors.some((processor) =>
@@ -65,11 +61,7 @@ describe("shim/TelemetryClientProvider", () => {
     });
 
     it("registers OTLP exporters when enabled", () => {
-        const spanProcessorStub = sandbox.stub(NodeTracerProvider.prototype, "addSpanProcessor");
-        const logProcessorStub = sandbox.stub(LoggerProvider.prototype, "addLogRecordProcessor");
-        const metricReaderStub = sandbox.stub(MeterProvider.prototype, "addMetricReader");
-
-        new TelemetryClientProvider(
+        const provider = new TelemetryClientProvider(
             createOptions({
                 otlpTraceExporterConfig: { enabled: true, url: "http://localhost/v1/traces" },
                 otlpLogExporterConfig: { enabled: true, url: "http://localhost/v1/logs" },
@@ -77,9 +69,9 @@ describe("shim/TelemetryClientProvider", () => {
             })
         );
 
-        const registeredSpanExporters = spanProcessorStub.getCalls().map((call) => (call.args[0] as any)._exporter);
-        const registeredLogExporters = logProcessorStub.getCalls().map((call) => (call.args[0] as any)._exporter);
-        const registeredMetricExporters = metricReaderStub.getCalls().map((call) => (call.args[0] as any)._exporter);
+        const registeredSpanExporters = ((provider as any)._spanProcessors as SpanProcessor[]).map((processor) => (processor as any)._exporter);
+        const registeredLogExporters = ((provider as any)._logProcessors as LogRecordProcessor[]).map((processor) => (processor as any)._exporter);
+        const registeredMetricExporters = ((provider as any)._metricReaders as PeriodicExportingMetricReader[]).map((reader) => (reader as any)._exporter);
 
         assert.ok(registeredSpanExporters.some((exporter) => exporter instanceof AzureMonitorTraceExporter));
         assert.ok(registeredSpanExporters.some((exporter) => exporter instanceof OTLPTraceExporter));

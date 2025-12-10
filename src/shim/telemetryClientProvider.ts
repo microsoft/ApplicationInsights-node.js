@@ -10,7 +10,7 @@ import { LogRecordProcessor, BatchLogRecordProcessor, LoggerProvider } from "@op
 import { MetricReader, MeterProvider, PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 import { ParentBasedSampler, Sampler, SpanProcessor, TraceIdRatioBasedSampler, BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
-import { Resource } from "@opentelemetry/resources";
+import { Resource, defaultResource } from "@opentelemetry/resources";
 import { AzureMonitorOpenTelemetryOptions } from "../types";
 
 /**
@@ -25,18 +25,25 @@ export class TelemetryClientProvider {
     private _logProcessors: LogRecordProcessor[] = [];
 
     constructor(private _options: AzureMonitorOpenTelemetryOptions) {
-        const resource = this._options.resource ?? Resource.default();
+        const resource = this._options.resource ?? defaultResource();
+
+        this._spanProcessors = this._setupTracing();
+        this._logProcessors = this._setupLogging();
+        this._metricReaders = this._setupMetrics();
+
         this._tracerProvider = new NodeTracerProvider({
             resource,
             sampler: this._createSampler(),
+            spanProcessors: this._spanProcessors,
         });
         this._meterProvider = new MeterProvider({
             resource,
+            readers: this._metricReaders,
         });
-        this._loggerProvider = new LoggerProvider({ resource });
-        this._setupTracing();
-        this._setupLogging();
-        this._setupMetrics();
+        this._loggerProvider = new LoggerProvider({
+            resource,
+            processors: this._logProcessors,
+        });
     }
 
     public getTracer(name: string) {
@@ -79,10 +86,11 @@ export class TelemetryClientProvider {
         });
     }
 
-    private _setupTracing() {
+    private _setupTracing(): SpanProcessor[] {
+        const processors: SpanProcessor[] = [];
         try {
             const exporter = new AzureMonitorTraceExporter(this._options.azureMonitorExporterOptions);
-            this._addSpanProcessorInternal(new BatchSpanProcessor(exporter));
+            processors.push(new BatchSpanProcessor(exporter));
         } catch (error) {
             diag.error("Failed to configure Azure Monitor trace exporter", error);
         }
@@ -90,7 +98,7 @@ export class TelemetryClientProvider {
         if (this._options.otlpTraceExporterConfig?.enabled) {
             try {
                 const otlpExporter = new OTLPTraceExporter(this._options.otlpTraceExporterConfig);
-                this._addSpanProcessorInternal(new BatchSpanProcessor(otlpExporter));
+                processors.push(new BatchSpanProcessor(otlpExporter));
             } catch (error) {
                 diag.error("Failed to configure OTLP trace exporter", error);
             }
@@ -98,15 +106,18 @@ export class TelemetryClientProvider {
 
         if (this._options.spanProcessors) {
             for (const processor of this._options.spanProcessors) {
-                this._addSpanProcessorInternal(processor);
+                processors.push(processor);
             }
         }
+
+        return processors;
     }
 
-    private _setupLogging() {
+    private _setupLogging(): LogRecordProcessor[] {
+        const processors: LogRecordProcessor[] = [];
         try {
             const exporter = new AzureMonitorLogExporter(this._options.azureMonitorExporterOptions);
-            this._addLogProcessorInternal(new BatchLogRecordProcessor(exporter));
+            processors.push(new BatchLogRecordProcessor(exporter));
         } catch (error) {
             diag.error("Failed to configure Azure Monitor log exporter", error);
         }
@@ -114,7 +125,7 @@ export class TelemetryClientProvider {
         if (this._options.otlpLogExporterConfig?.enabled) {
             try {
                 const otlpExporter = new OTLPLogExporter(this._options.otlpLogExporterConfig);
-                this._addLogProcessorInternal(new BatchLogRecordProcessor(otlpExporter));
+                processors.push(new BatchLogRecordProcessor(otlpExporter));
             } catch (error) {
                 diag.error("Failed to configure OTLP log exporter", error);
             }
@@ -122,15 +133,18 @@ export class TelemetryClientProvider {
 
         if (this._options.logRecordProcessors) {
             for (const processor of this._options.logRecordProcessors) {
-                this._addLogProcessorInternal(processor);
+                processors.push(processor);
             }
         }
+
+        return processors;
     }
 
-    private _setupMetrics() {
+    private _setupMetrics(): MetricReader[] {
+        const readers: MetricReader[] = [];
         try {
             const exporter = new AzureMonitorMetricExporter(this._options.azureMonitorExporterOptions);
-            this._addMetricReaderInternal(new PeriodicExportingMetricReader({ exporter }));
+            readers.push(new PeriodicExportingMetricReader({ exporter }));
         } catch (error) {
             diag.error("Failed to configure Azure Monitor metric exporter", error);
         }
@@ -138,27 +152,13 @@ export class TelemetryClientProvider {
         if (this._options.otlpMetricExporterConfig?.enabled) {
             try {
                 const otlpExporter = new OTLPMetricExporter(this._options.otlpMetricExporterConfig);
-                this._addMetricReaderInternal(new PeriodicExportingMetricReader({ exporter: otlpExporter }));
+                readers.push(new PeriodicExportingMetricReader({ exporter: otlpExporter }));
             } catch (error) {
                 diag.error("Failed to configure OTLP metric exporter", error);
             }
         }
 
-    }
-
-    private _addSpanProcessorInternal(processor: SpanProcessor) {
-        this._tracerProvider.addSpanProcessor(processor);
-        this._spanProcessors.push(processor);
-    }
-
-    private _addLogProcessorInternal(processor: LogRecordProcessor) {
-        this._loggerProvider.addLogRecordProcessor(processor);
-        this._logProcessors.push(processor);
-    }
-
-    private _addMetricReaderInternal(reader: MetricReader) {
-        this._meterProvider.addMetricReader(reader);
-        this._metricReaders.push(reader);
+        return readers;
     }
 
     private async _runWithErrorHandling<T>(promise: Promise<T>, message: string) {
