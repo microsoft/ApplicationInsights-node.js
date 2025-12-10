@@ -443,8 +443,8 @@ describe("shim/TelemetryClient", () => {
                 })
             };
             (client as any)._manualMeter = undefined;
-            const provider = (client as any)._telemetryClientProvider;
-            const getMeterStub = sandbox.stub(provider, "getMeter").returns(meterMock as any);
+            const getMeterStub = sandbox.stub().returns(meterMock as any);
+            const meterProviderStub = sandbox.stub(metrics, "getMeterProvider").returns({ getMeter: getMeterStub } as any);
 
             client.trackMetric(telemetry);
 
@@ -456,7 +456,7 @@ describe("shim/TelemetryClient", () => {
                 ...client.context.tags
             });
 
-            getMeterStub.restore();
+            meterProviderStub.restore();
 
             // Create spy on the histogram record method to verify metric tracking
             const originalMeter = metrics.getMeterProvider().getMeter("ApplicationInsightsMetrics");
@@ -469,10 +469,10 @@ describe("shim/TelemetryClient", () => {
 
             // Reset cached meter and force the provider to return the meter we are spying on
             (client as any)._manualMeter = undefined;
-            const provider2 = (client as any)._telemetryClientProvider;
-            const getMeterStub2 = sandbox.stub(provider2, "getMeter").returns(originalMeter as any);
+            const getMeterStub2 = sandbox.stub().returns(originalMeter as any);
+            const meterProviderStub2 = sandbox.stub(metrics, "getMeterProvider").returns({ getMeter: getMeterStub2 } as any);
 
-            const createHistogramStub = sandbox.stub(originalMeter, 'createHistogram').returns(histogramMock as any);
+            const createHistogramStub = sandbox.stub(originalMeter, "createHistogram").returns(histogramMock as any);
 
             // Track the metric
             client.trackMetric(telemetry);
@@ -489,7 +489,7 @@ describe("shim/TelemetryClient", () => {
             const recordedAttributes = histogramRecordSpy.args[0][1];
             assert.ok(recordedAttributes, "Attributes should be passed to record");
 
-            getMeterStub2.restore();
+            meterProviderStub2.restore();
         });
 
         it("trackMetric should handle errors gracefully", () => {
@@ -501,8 +501,8 @@ describe("shim/TelemetryClient", () => {
             // Force an error by stubbing the isolated meter provider
             const error = new Error("Failed to get meter");
             (client as any)._manualMeter = undefined;
-            const provider = (client as any)._telemetryClientProvider;
-            const getMeterStub = sandbox.stub(provider, "getMeter").throws(error);
+            const getMeterStub = sandbox.stub().throws(error);
+            sandbox.stub(metrics, "getMeterProvider").returns({ getMeter: getMeterStub } as any);
 
             // This should now throw an error internally, but the method should catch it
             client.trackMetric(telemetry);
@@ -510,9 +510,6 @@ describe("shim/TelemetryClient", () => {
             // Verify the error was logged
             assert.ok(diagErrorStub.calledOnce);
             assert.ok(diagErrorStub.calledWith(`Failed to record metric: ${error}`));
-
-            // Restore the stub
-            getMeterStub.restore();
         });
 
         it("trackAvailability", async () => {
@@ -572,19 +569,19 @@ describe("shim/TelemetryClient", () => {
         it("does not call useAzureMonitor for isolated clients", async () => {
             const useAzureMonitorStub = sandbox.stub(main, "useAzureMonitor");
             const isolatedClient = new TelemetryClient(
-                "InstrumentationKey=11111111-bbbb-1ccc-8ddd-eeeeffff3334"
+                "InstrumentationKey=11111111-bbbb-1ccc-8ddd-eeeeffff3334",
+                { useGlobalProviders: false }
             );
             isolatedClient.initialize();
             assert.ok(useAzureMonitorStub.notCalled);
             await isolatedClient.shutdown();
         });
 
-        it("uses global telemetry pipeline when requested", async () => {
+        it("uses global telemetry pipeline when requested (default)", async () => {
             const useAzureMonitorStub = sandbox.stub(main, "useAzureMonitor");
             const shutdownStub = sandbox.stub(main, "shutdownAzureMonitor").resolves();
             const globalClient = new TelemetryClient(
-                "InstrumentationKey=11111111-bbbb-1ccc-8ddd-eeeeffff3335",
-                { useGlobalProviders: true }
+                "InstrumentationKey=11111111-bbbb-1ccc-8ddd-eeeeffff3335"
             );
             globalClient.initialize();
             assert.ok(useAzureMonitorStub.calledOnce);

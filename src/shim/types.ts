@@ -23,7 +23,7 @@ export enum DistributedTracingModes {
 export interface TelemetryClientOptions {
     /**
      * When true, the TelemetryClient relies on the global Azure Monitor distro for telemetry pipeline.
-     * Defaults to false so each client owns an isolated OpenTelemetry provider.
+     * Defaults to true so instrumentations work out of the box; set false to isolate the client and use only manual track calls.
      */
     useGlobalProviders?: boolean;
 }

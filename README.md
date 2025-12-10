@@ -127,12 +127,18 @@ to `console` methods by using `setAutoCollectConsole(true, true)`.
 
 Note that by default `enableWebInstrumentation` will use the connection string for SDK initialization. If you want to use a different one, you can set it as `enableWebInstrumentation(true, "your-connection-string")`.
 
-The TelemetryClient object contains a `config` property with many optional settings. These can be set as follows:
+The TelemetryClient constructor accepts optional settings (e.g., `{ useGlobalProviders?: boolean }`, defaults to `true`) and exposes a `config` property with many optional settings. Constructor options example:
+```javascript
+const client = new appInsights.TelemetryClient(<connectionString>, { useGlobalProviders: false });
+```
+Client `config` properties can be set as follows:
 ```
 client.config.PROPERTYNAME = VALUE;
 ```
 These properties are client specific, so you can configure `appInsights.defaultClient`
 separately from clients created with `new appInsights.TelemetryClient()`.
+
+> *Important:* OpenTelemetry instrumentations rely on the global provider registry. Both `appInsights.setup().start()` and `new TelemetryClient()` default to `useGlobalProviders: true` so auto-instrumentation works out of the box. Set `{ useGlobalProviders: false }` only when you need an isolated client (e.g., per-tenant/manual-only or tests); auto-instrumentation and all auto-collect “enable*” configs (requests, dependencies, console, etc.) will not target that client, you must emit manually or attach your own processors/exporters. Multiple clients in one process share global providers, so use the opt-out to avoid mixing their telemetry.
 
 | Property                        | Description                                                                                                |
 | ------------------------------- |------------------------------------------------------------------------------------------------------------|

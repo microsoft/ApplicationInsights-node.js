@@ -65,7 +65,7 @@ export class TelemetryClient {
         this.commonProperties = {};
         this.context = new Context();
         this._isInitialized = false;
-        this._useGlobalProviders = options?.useGlobalProviders ?? false;
+        this._useGlobalProviders = options?.useGlobalProviders ?? true;
     }
 
     public initialize() {
