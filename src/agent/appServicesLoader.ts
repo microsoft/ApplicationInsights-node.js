@@ -8,18 +8,26 @@ import {
     SEMRESATTRS_SERVICE_NAME,
     SEMRESATTRS_SERVICE_INSTANCE_ID,
 } from '@opentelemetry/semantic-conventions';
-import { Resource } from '@opentelemetry/resources';
+import { resourceFromAttributes } from '@opentelemetry/resources';
 import { DiagnosticLogger } from './diagnostics/diagnosticLogger';
 import { EtwDiagnosticLogger } from './diagnostics/etwDiagnosticLogger';
 import { FileWriter } from "./diagnostics/writers/fileWriter";
 import { StatusLogger } from "./diagnostics/statusLogger";
 import { AgentLoader } from "./agentLoader";
+import { InstrumentationOptions } from '../types';
 
 export class AppServicesLoader extends AgentLoader {
 
     constructor() {
         super();
         if (this._canLoad) {
+            (this._options.instrumentationOptions as InstrumentationOptions) = {
+                ...this._options.instrumentationOptions,
+                console: { enabled: true },
+                bunyan: { enabled: true },
+                winston: { enabled: true },
+            }
+
             // Azure App Services specific configuration
             const resourceAttributes: Attributes = {};
             if (process.env.WEBSITE_SITE_NAME) {
@@ -30,7 +38,7 @@ export class AppServicesLoader extends AgentLoader {
                 resourceAttributes[SEMRESATTRS_SERVICE_INSTANCE_ID] =
                     process.env.WEBSITE_INSTANCE_ID;
             }
-            const resource = new Resource(resourceAttributes);
+            const resource = resourceFromAttributes(resourceAttributes);
             this._options.resource = resource;
 
             let statusLogDir = '/var/log/applicationinsights/';

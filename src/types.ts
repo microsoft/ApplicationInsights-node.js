@@ -9,7 +9,7 @@ import { SpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { OTLPExporterNodeConfigBase } from "@opentelemetry/otlp-exporter-base";
 
 
-export const APPLICATION_INSIGHTS_OPENTELEMETRY_VERSION = "3.6.0";
+export const APPLICATION_INSIGHTS_OPENTELEMETRY_VERSION = "3.12.1";
 export const DEFAULT_ROLE_NAME = "Web";
 export const AZURE_MONITOR_STATSBEAT_FEATURES = "AZURE_MONITOR_STATSBEAT_FEATURES";
 
@@ -44,6 +44,10 @@ export interface AzureMonitorOpenTelemetryOptions extends DistroOptions {
 export interface InstrumentationOptions extends DistroInstrumentationOptions {
   /** Console Instrumentation Config */
   console?: InstrumentationConfig & { logSendingLevel?: SeverityNumber };
+  /** Bunyan Instrumentation Config */
+  bunyan?: InstrumentationConfig;
+  /** Winston Instrumentation Config */
+  winston?: InstrumentationConfig;
 }
 
 /**

@@ -83,8 +83,21 @@ so that the Application Insights library can prepare later packages for tracking
 If you encounter conflicts with other libraries doing similar preparation, try
 loading the Application Insights library after those.
 
+## Understanding SDK Reliability with SDK Stats
+
+The SDK stats feature helps you monitor the reliability of telemetry transmission from the Application Insights SDK to Azure Monitor. SDK stats provide visibility into telemetry ingestion, including success rates, throttling, and errors. This information is essential for understanding whether your application's telemetry is being reliably delivered to Application Insights.
+
+By analyzing SDK stats, you can:
+- Monitor the health of telemetry transmission
+- Identify issues with data delivery (network problems, throttling, etc.)
+- Ensure telemetry is reaching Application Insights as expected
+- Troubleshoot gaps in your telemetry data
+
+To learn more about SDK stats, including how to access and interpret them, see [SDK stats documentation](https://learn.microsoft.com/azure/azure-monitor/app/sdk-stats).
 
 ## Configuration
+
+> **Important:** All SDK configuration must be completed **before** calling `start()`. Unlike Application Insights 2.X SDK, configuration changes made after `start()` has been called will not take effect. This includes both method-based configuration (e.g., `setAutoCollectRequests()`) and client configuration properties (e.g., `appInsights.defaultClient.config.samplingPercentage`).
 
 The appInsights object provides a number of methods to setup SDK behavior. They are
 listed in the following snippet with their default values.
@@ -183,7 +196,7 @@ Add code such as the following to enable sampling:
 const appInsights = require("applicationinsights");
 appInsights.setup("<YOUR_CONNECTION_STRING>");
 appInsights.defaultClient.config.samplingPercentage = 33; // 33% of all telemetry will be sent to Application Insights
-appInsights.start();
+appInsights.start(); // Configuration must be complete before calling start()
 ```
 
 ### Automatic web Instrumentation

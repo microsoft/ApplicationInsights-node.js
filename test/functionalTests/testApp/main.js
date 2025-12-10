@@ -93,7 +93,7 @@ if (testconfig.AppInsightsEnabled) {
             });
         }
 
-        for (var i = 0; i < stepConfig.length; i++) {
+        for (var i = 0; i < stepConfig.length; i++) { // CodeQL [SM02387] This is a test app, so we don't need to worry about type confusion attacks here.
             generateStepRoute(stepConfig[i]);
         }
 

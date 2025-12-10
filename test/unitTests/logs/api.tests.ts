@@ -1,8 +1,10 @@
-import * as assert from "assert";
-import * as sinon from "sinon";
-import * as nock from "nock";
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+import assert from "assert";
+import sinon from "sinon";
+import nock from "nock";
 import { Logger } from "@opentelemetry/api-logs";
-import { LogRecord } from "@opentelemetry/sdk-logs";
+import { SdkLogRecord } from "@opentelemetry/sdk-logs";
 
 import {
     AvailabilityTelemetry,
@@ -38,9 +40,9 @@ describe("logs/API", () => {
 
     class TestLogger implements Logger {
 
-        public logsEmited: Array<LogRecord> = [];
+        public logsEmited: Array<SdkLogRecord> = [];
 
-        emit(logRecord: LogRecord): void {
+        emit(logRecord: SdkLogRecord): void {
             this.logsEmited.push(logRecord);
         }
     }
@@ -57,7 +59,7 @@ describe("logs/API", () => {
                 telemetry,
                 "TestData",
                 data,
-            ) as LogRecord;
+            ) as SdkLogRecord;
             assert.equal(JSON.stringify(logRecord.body), JSON.stringify({}));
             assert.equal(logRecord.attributes["testAttribute"], "testValue");
             assert.equal(logRecord.attributes["_MS.baseType"], "TestData");
@@ -75,7 +77,7 @@ describe("logs/API", () => {
                 telemetry,
                 "TestData",
                 data,
-            ) as LogRecord;
+            ) as SdkLogRecord;
             assert.equal(JSON.stringify(logRecord.body), JSON.stringify({}));
             assert.equal(logRecord.attributes["testAttribute"], "testValue");
             const errorStr: string = logRecord.attributes["error"] as string;

@@ -1,4 +1,4 @@
-import { LogRecord, LogRecordProcessor } from "@opentelemetry/sdk-logs";
+import { LogRecordProcessor, SdkLogRecord } from "@opentelemetry/sdk-logs";
 
 export class AttributeLogProcessor implements LogRecordProcessor {
     private _attributes: { [key: string]: string };
@@ -7,7 +7,7 @@ export class AttributeLogProcessor implements LogRecordProcessor {
     }
     
     // Override onEmit to apply log record attributes before exporting
-    onEmit(record: LogRecord) {
+    onEmit(record: SdkLogRecord) {
         record.setAttributes(this._attributes);
     }
 

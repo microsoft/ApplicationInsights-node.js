@@ -4,6 +4,8 @@ export const NODE_JS_RUNTIME_MAJOR_VERSION = parseInt(process.versions.node.spli
 export const AZURE_APP_NAME = process.env.WEBSITE_SITE_NAME || 'unknown';
 export const AZURE_MONITOR_AUTO_ATTACH = "AZURE_MONITOR_AUTO_ATTACH";
 
+export const OTLP_METRIC_EXPORTER_EXPORT_INTERVAL = 60000; // in ms
+
 export interface IAgentLogger {
     log(message: any, ...optional: any[]): void;
 }

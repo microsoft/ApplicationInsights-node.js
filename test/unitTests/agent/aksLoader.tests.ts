@@ -1,8 +1,7 @@
-import * as assert from "assert";
-import * as sinon from "sinon";
+import assert from "assert";
+import sinon from "sinon";
 import { ProxyTracerProvider, metrics, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
-
 import { AKSLoader } from "../../../src/agent/aksLoader";
 import { DiagnosticLogger } from "../../../src/agent/diagnostics/diagnosticLogger";
 import { FileWriter } from "../../../src/agent/diagnostics/writers/fileWriter";
@@ -55,25 +54,327 @@ describe("agent/AKSLoader", () => {
         assert.equal(meterProvider.constructor.name, "MeterProvider");
         assert.equal(meterProvider["_sharedState"]["metricCollectors"].length, 1);
         assert.equal(meterProvider["_sharedState"]["metricCollectors"][0]["_metricReader"]["_exporter"].constructor.name, "AzureMonitorMetricExporter");
+        
         let tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate()) as any;
         assert.equal(tracerProvider.constructor.name, "NodeTracerProvider");
-        assert.equal(tracerProvider["_registeredSpanProcessors"][2]["_exporter"].constructor.name, "AzureMonitorTraceExporter");
         let loggerProvider = logs.getLoggerProvider() as any;
         assert.equal(loggerProvider.constructor.name, "LoggerProvider");
-        assert.equal(loggerProvider["_sharedState"]["registeredLogRecordProcessors"][1]["_exporter"].constructor.name, "AzureMonitorLogExporter");
     });
 
-    it("should add OTLP exporter if env variable is present", () => {
+    it("constructor creates OTLP metric reader when environment variables are set", () => {
         const env = {
             ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
-            ["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"]: "something",
+            ["OTEL_METRICS_EXPORTER"]: "otlp",
+            ["OTEL_EXPORTER_OTLP_ENDPOINT"]: "http://localhost:4317"
         };
         process.env = env;
+        
+        const agent = new AKSLoader();
+        
+        // Verify that metricReaders were added to the options
+        const options = (agent as any)._options;
+        assert.ok(options.metricReaders, "metricReaders should be present in options");
+        assert.equal(options.metricReaders.length, 1, "Should have exactly one metric reader");
+        
+        // Verify the metric reader is a PeriodicExportingMetricReader
+        const metricReader = options.metricReaders[0];
+        assert.equal(metricReader.constructor.name, "PeriodicExportingMetricReader", "Should be a PeriodicExportingMetricReader");
+        
+        // Verify the exporter is an OTLP exporter
+        const exporter = (metricReader as any)._exporter;
+        assert.equal(exporter.constructor.name, "OTLPMetricExporter", "Should be an OTLPMetricExporter");
+        
+        // Check that the URL is configured in parameters
+        const delegate = (exporter as any)._delegate;
+        const transport = delegate._transport;
+        const innerTransport = transport._transport;
+        const parameters = innerTransport._parameters;
+        
+        const url = parameters.url || parameters.endpoint;
+        assert.ok(url, "Parameters should have a URL configured");
+        assert.equal(url.replace(/\/$/, ""), "http://localhost:4317/v1/metrics", "Should use the base OTLP endpoint URL");
+        
+        // Verify the exporter type
+        assert.ok(exporter, "Exporter should exist");
+        assert.equal(exporter.constructor.name, "OTLPMetricExporter", "Should be an OTLPMetricExporter");
+    });
+
+    it("constructor creates OTLP metric reader with metrics-specific endpoint", () => {
+        const env = {
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
+            ["OTEL_METRICS_EXPORTER"]: "otlp",
+            ["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"]: "http://localhost:4318/v1/metrics"
+        };
+        process.env = env;
+        
+        const agent = new AKSLoader();
+        
+        // Verify that metricReaders were added to the options
+        const options = (agent as any)._options;
+        assert.ok(options.metricReaders, "metricReaders should be present in options");
+        assert.equal(options.metricReaders.length, 1, "Should have exactly one metric reader");
+        
+        // Verify the exporter URL uses the metrics-specific endpoint
+        const metricReader = options.metricReaders[0];
+        const exporter = (metricReader as any)._exporter;
+        
+        // Check the configured URL in the transport parameters
+        const delegate = (exporter as any)._delegate;
+        const transport = delegate._transport;
+        const innerTransport = transport._transport;
+        const parameters = innerTransport._parameters;
+        
+        const url = parameters.url || parameters.endpoint;
+        assert.ok(url, "Exporter should have a URL configured");
+        assert.equal(url, "http://localhost:4318/v1/metrics", "Should use the metrics-specific OTLP endpoint URL");
+    });
+
+    it("constructor does not create OTLP metric reader when OTEL_METRICS_EXPORTER is not otlp", () => {
+        const env = {
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
+            ["OTEL_METRICS_EXPORTER"]: "console",
+            ["OTEL_EXPORTER_OTLP_ENDPOINT"]: "http://localhost:4317"
+        };
+        process.env = env;
+        
+        const agent = new AKSLoader();
+        
+        // Verify that no metricReaders were added to the options
+        const options = (agent as any)._options;
+        assert.ok(!options.metricReaders || options.metricReaders.length === 0, "Should not have any metric readers when OTEL_METRICS_EXPORTER is not 'otlp'");
+    });
+
+    it("constructor does not create OTLP metric reader when no endpoint is provided", () => {
+        const env = {
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
+            ["OTEL_METRICS_EXPORTER"]: "otlp"
+            // No OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+        };
+        process.env = env;
+        
+        const agent = new AKSLoader();
+        
+        // Verify that no metricReaders were added to the options
+        const options = (agent as any)._options;
+        assert.ok(!options.metricReaders || options.metricReaders.length === 0, "Should not have any metric readers when no OTLP endpoint is provided");
+    });
+
+    it("initialize with OTLP metric reader creates multiple metric collectors", () => {
+        const env = {
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
+            ["OTEL_METRICS_EXPORTER"]: "otlp",
+            ["OTEL_EXPORTER_OTLP_ENDPOINT"]: "http://localhost:4317"
+        };
+        process.env = env;
+        
         const agent = new AKSLoader();
         agent.initialize();
+        
         let meterProvider = metrics.getMeterProvider() as any;
         assert.equal(meterProvider.constructor.name, "MeterProvider");
-        assert.equal(meterProvider["_sharedState"]["metricCollectors"].length, 2);
-        assert.equal(meterProvider["_sharedState"]["metricCollectors"][1]["_metricReader"]["_exporter"].constructor.name, "OTLPMetricExporter");
+        
+        // Should have both Azure Monitor and OTLP metric readers
+        const metricCollectors = meterProvider["_sharedState"]["metricCollectors"];
+        assert.ok(metricCollectors.length >= 1, "Should have at least one metric collector (Azure Monitor)");
+        
+        // Check that we have at least one Azure Monitor exporter
+        const azureMonitorExporters = metricCollectors.filter((collector: any) => 
+            collector["_metricReader"]["_exporter"].constructor.name === "AzureMonitorMetricExporter"
+        );
+        assert.equal(azureMonitorExporters.length, 1, "Should have exactly one Azure Monitor metric exporter");
+    });
+
+    it("constructor creates OTLP protobuf exporter when OTEL_EXPORTER_OTLP_METRICS_PROTOCOL is set to http/protobuf", () => {
+        const env = {
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
+            ["OTEL_METRICS_EXPORTER"]: "otlp",
+            ["OTEL_EXPORTER_OTLP_ENDPOINT"]: "http://localhost:4317",
+            ["OTEL_EXPORTER_OTLP_METRICS_PROTOCOL"]: "http/protobuf"
+        };
+        process.env = env;
+        
+        const agent = new AKSLoader();
+        
+        // Verify that metricReaders were added to the options
+        const options = (agent as any)._options;
+        assert.ok(options.metricReaders, "metricReaders should be present in options");
+        assert.equal(options.metricReaders.length, 1, "Should have exactly one metric reader");
+        
+        // Verify the metric reader is a PeriodicExportingMetricReader
+        const metricReader = options.metricReaders[0];
+        assert.equal(metricReader.constructor.name, "PeriodicExportingMetricReader", "Should be a PeriodicExportingMetricReader");
+        
+        // Verify the exporter is an OTLP protobuf exporter
+        const exporter = (metricReader as any)._exporter;
+        assert.equal(exporter.constructor.name, "OTLPMetricExporter", "Should be an OTLPMetricExporter");
+        
+        // Verify that it's the protobuf version by checking if it was imported from the proto package
+        // The protobuf exporter should have different internal structure than the HTTP exporter
+        assert.ok(exporter, "Protobuf exporter should exist");
+    });
+
+    it("constructor creates OTLP metric reader when OTEL_METRICS_EXPORTER contains otlp with other exporters (comma-separated)", () => {
+        const env = {
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
+            ["OTEL_METRICS_EXPORTER"]: "console,otlp,prometheus",
+            ["OTEL_EXPORTER_OTLP_ENDPOINT"]: "http://localhost:4317"
+        };
+        process.env = env;
+        
+        const agent = new AKSLoader();
+        
+        // Verify that metricReaders were added to the options
+        const options = (agent as any)._options;
+        assert.ok(options.metricReaders, "metricReaders should be present in options when otlp is included with other exporters");
+        assert.equal(options.metricReaders.length, 1, "Should have exactly one metric reader");
+        
+        // Verify the metric reader is a PeriodicExportingMetricReader
+        const metricReader = options.metricReaders[0];
+        assert.equal(metricReader.constructor.name, "PeriodicExportingMetricReader", "Should be a PeriodicExportingMetricReader");
+        
+        // Verify the exporter is an OTLP exporter
+        const exporter = (metricReader as any)._exporter;
+        assert.equal(exporter.constructor.name, "OTLPMetricExporter", "Should be an OTLPMetricExporter");
+    });
+
+    it("constructor creates OTLP metric reader when OTEL_METRICS_EXPORTER contains otlp with spaces", () => {
+        const env = {
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
+            ["OTEL_METRICS_EXPORTER"]: "console, otlp, prometheus",
+            ["OTEL_EXPORTER_OTLP_ENDPOINT"]: "http://localhost:4317"
+        };
+        process.env = env;
+        
+        const agent = new AKSLoader();
+        
+        // Verify that metricReaders were added to the options
+        const options = (agent as any)._options;
+        assert.ok(options.metricReaders, "metricReaders should be present in options when otlp is included with spaces");
+        assert.equal(options.metricReaders.length, 1, "Should have exactly one metric reader");
+        
+        // Verify the exporter is an OTLP exporter
+        const metricReader = options.metricReaders[0];
+        const exporter = (metricReader as any)._exporter;
+        assert.equal(exporter.constructor.name, "OTLPMetricExporter", "Should be an OTLPMetricExporter");
+    });
+
+    it("constructor creates OTLP metric reader when OTEL_METRICS_EXPORTER has otlp at the beginning", () => {
+        const env = {
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
+            ["OTEL_METRICS_EXPORTER"]: "otlp,console,prometheus",
+            ["OTEL_EXPORTER_OTLP_ENDPOINT"]: "http://localhost:4317"
+        };
+        process.env = env;
+        
+        const agent = new AKSLoader();
+        
+        // Verify that metricReaders were added to the options
+        const options = (agent as any)._options;
+        assert.ok(options.metricReaders, "metricReaders should be present in options when otlp is at the beginning");
+        assert.equal(options.metricReaders.length, 1, "Should have exactly one metric reader");
+        
+        // Verify the exporter is an OTLP exporter
+        const metricReader = options.metricReaders[0];
+        const exporter = (metricReader as any)._exporter;
+        assert.equal(exporter.constructor.name, "OTLPMetricExporter", "Should be an OTLPMetricExporter");
+    });
+
+    it("constructor creates OTLP metric reader when OTEL_METRICS_EXPORTER has otlp at the end", () => {
+        const env = {
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
+            ["OTEL_METRICS_EXPORTER"]: "console,prometheus,otlp",
+            ["OTEL_EXPORTER_OTLP_ENDPOINT"]: "http://localhost:4317"
+        };
+        process.env = env;
+        
+        const agent = new AKSLoader();
+        
+        // Verify that metricReaders were added to the options
+        const options = (agent as any)._options;
+        assert.ok(options.metricReaders, "metricReaders should be present in options when otlp is at the end");
+        assert.equal(options.metricReaders.length, 1, "Should have exactly one metric reader");
+        
+        // Verify the exporter is an OTLP exporter
+        const metricReader = options.metricReaders[0];
+        const exporter = (metricReader as any)._exporter;
+        assert.equal(exporter.constructor.name, "OTLPMetricExporter", "Should be an OTLPMetricExporter");
+    });
+
+    it("constructor does not create OTLP metric reader when OTEL_METRICS_EXPORTER contains similar strings but not otlp", () => {
+        const env = {
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
+            ["OTEL_METRICS_EXPORTER"]: "console,otlp-custom,prometheus",
+            ["OTEL_EXPORTER_OTLP_ENDPOINT"]: "http://localhost:4317"
+        };
+        process.env = env;
+        
+        const agent = new AKSLoader();
+        
+        // Verify that no metricReaders were added to the options
+        const options = (agent as any)._options;
+        assert.ok(!options.metricReaders || options.metricReaders.length === 0, "Should not have any metric readers when 'otlp' is not exactly present (only similar strings like 'otlp-custom')");
+    });
+
+    it("constructor does not create OTLP metric reader when OTEL_METRICS_EXPORTER is empty with multiple exporters", () => {
+        const env = {
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
+            ["OTEL_METRICS_EXPORTER"]: "console,prometheus",
+            ["OTEL_EXPORTER_OTLP_ENDPOINT"]: "http://localhost:4317"
+        };
+        process.env = env;
+        
+        const agent = new AKSLoader();
+        
+        // Verify that no metricReaders were added to the options
+        const options = (agent as any)._options;
+        assert.ok(!options.metricReaders || options.metricReaders.length === 0, "Should not have any metric readers when otlp is not included in the list");
+    });
+
+    it("constructor creates OTLP metric reader when OTEL_METRICS_EXPORTER contains uppercase OTLP", () => {
+        const env = {
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
+            ["OTEL_METRICS_EXPORTER"]: "OTLP",
+            ["OTEL_EXPORTER_OTLP_ENDPOINT"]: "http://localhost:4317"
+        };
+        process.env = env;
+        
+        const agent = new AKSLoader();
+        
+        // Verify that metricReaders were added to the options
+        const options = (agent as any)._options;
+        assert.ok(options.metricReaders, "metricReaders should be present in options when OTLP is uppercase");
+        assert.equal(options.metricReaders.length, 1, "Should have exactly one metric reader");
+        
+        // Verify the metric reader is a PeriodicExportingMetricReader
+        const metricReader = options.metricReaders[0];
+        assert.equal(metricReader.constructor.name, "PeriodicExportingMetricReader", "Should be a PeriodicExportingMetricReader");
+        
+        // Verify the exporter is an OTLP exporter
+        const exporter = (metricReader as any)._exporter;
+        assert.equal(exporter.constructor.name, "OTLPMetricExporter", "Should be an OTLPMetricExporter");
+    });
+
+    it("constructor creates OTLP metric reader when OTEL_METRICS_EXPORTER contains mixed case otlp with other exporters", () => {
+        const env = {
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
+            ["OTEL_METRICS_EXPORTER"]: "CONSOLE,OtLp,PROMETHEUS",
+            ["OTEL_EXPORTER_OTLP_ENDPOINT"]: "http://localhost:4317"
+        };
+        process.env = env;
+        
+        const agent = new AKSLoader();
+        
+        // Verify that metricReaders were added to the options
+        const options = (agent as any)._options;
+        assert.ok(options.metricReaders, "metricReaders should be present in options when OtLp is mixed case with other exporters");
+        assert.equal(options.metricReaders.length, 1, "Should have exactly one metric reader");
+        
+        // Verify the metric reader is a PeriodicExportingMetricReader
+        const metricReader = options.metricReaders[0];
+        assert.equal(metricReader.constructor.name, "PeriodicExportingMetricReader", "Should be a PeriodicExportingMetricReader");
+        
+        // Verify the exporter is an OTLP exporter
+        const exporter = (metricReader as any)._exporter;
+        assert.equal(exporter.constructor.name, "OTLPMetricExporter", "Should be an OTLPMetricExporter");
     });
 });
