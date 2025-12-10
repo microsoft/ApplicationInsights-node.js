@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import { resourceFromAttributes } from "@opentelemetry/resources";
+import { Resource } from "@opentelemetry/resources";
 import { AgentLoader } from "./agentLoader";
 import { DiagnosticLogger } from "./diagnostics/diagnosticLogger";
 import { StatusLogger } from "./diagnostics/statusLogger";
@@ -29,7 +29,7 @@ export class AzureFunctionsLoader extends AgentLoader {
                 resourceAttributes[SEMRESATTRS_SERVICE_INSTANCE_ID] =
                     process.env.WEBSITE_INSTANCE_ID;
             }
-            const resource = resourceFromAttributes(resourceAttributes);
+            const resource = new Resource(resourceAttributes);
             this._options.resource = resource;
 
             const writer = new AzureFunctionsWriter(this._instrumentationKey);

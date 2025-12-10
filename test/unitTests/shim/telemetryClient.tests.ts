@@ -1,20 +1,18 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 import * as assert from "assert";
-import * as nock from "nock";
+import nock = require("nock");
 import * as sinon from "sinon";
 import { Context, ProxyTracerProvider, trace, metrics, diag } from "@opentelemetry/api";
 import { ReadableSpan, Span, SpanProcessor } from "@opentelemetry/sdk-trace-base";
-import { LogRecord, LogRecordProcessor } from "@opentelemetry/sdk-logs";
+import { LoggerProvider, LogRecordProcessor, ReadableLogRecord } from "@opentelemetry/sdk-logs";
+import { logs } from "@opentelemetry/api-logs";
 import { SEMATTRS_RPC_SYSTEM } from "@opentelemetry/semantic-conventions";
 import { DependencyTelemetry, RequestTelemetry } from "../../../src/declarations/contracts";
 import { TelemetryClient } from "../../../src/shim/telemetryClient";
 import * as main from "../../../src/main";
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { MeterProvider } from "@opentelemetry/sdk-metrics";
-import { SdkLogRecord, LogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
-import { logs } from "@opentelemetry/api-logs";
-import { SEMATTRS_RPC_SYSTEM } from "@opentelemetry/semantic-conventions";
 import Config = require("../../../src/shim/shim-config");
 
 describe("shim/TelemetryClient", () => {
@@ -40,7 +38,7 @@ describe("shim/TelemetryClient", () => {
 
         testProcessor = new TestSpanProcessor();
         logProcessor = new TestLogProcessor({});
-        
+
         client = new TelemetryClient(
             "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333"
         );
@@ -94,16 +92,17 @@ describe("shim/TelemetryClient", () => {
         constructor(attributes: { [key: string]: string }) {
             this._attributes = attributes;
         }
-        
+
         // Override onEmit to apply log record attributes before exporting
-        onEmit(record: SdkLogRecord) {
-            record.setAttributes(this._attributes);
+        onEmit(record: ReadableLogRecord) {
+            const attributes = (record as any).attributes || ((record as any).attributes = {});
+            Object.assign(attributes, this._attributes);
         }
-    
+
         shutdown(): Promise<void> {
             return Promise.resolve();
         }
-    
+
         forceFlush(): Promise<void> {
             return Promise.resolve();
         }
@@ -115,7 +114,7 @@ describe("shim/TelemetryClient", () => {
                 client.track({ name: "test" } as any, "Event" as any);
             }, /Not implemented/);
         });
-        
+
         it("addTelemetryProcessor should warn", () => {
             client.addTelemetryProcessor(() => true);
             assert.ok(diagWarnStub.calledOnce);
@@ -137,7 +136,7 @@ describe("shim/TelemetryClient", () => {
             const result = client.getStatsbeat();
             assert.strictEqual(result, null);
         });
-        
+
         it("setUseDiskRetryCaching throws error", () => {
             assert.throws(() => {
                 client.setUseDiskRetryCaching(true);
@@ -240,27 +239,27 @@ describe("shim/TelemetryClient", () => {
             // Call trackDependency without specifying 'time' - should default to current time as END time
             client.trackDependency(telemetry);
             const afterCall = Date.now();
-            
+
             await tracerProvider.forceFlush();
             const spans = testProcessor.spansProcessed;
             assert.equal(spans.length, 1);
             assert.equal(spans[0].name, "TestTimingDependency");
-            
+
             // Convert span times from hrTime to milliseconds for comparison
             const spanStartMs = spans[0].startTime[0] * 1000 + spans[0].startTime[1] / 1_000_000;
             const spanEndMs = spans[0].endTime[0] * 1000 + spans[0].endTime[1] / 1_000_000;
-            
+
             // Duration should match the specified duration
             const actualDuration = spanEndMs - spanStartMs;
             assert.ok(Math.abs(actualDuration - 1000) < 10, `Expected duration ~1000ms, got ${actualDuration}ms`);
-            
+
             // End time should be close to when we called trackDependency (within reasonable tolerance)
-            assert.ok(spanEndMs >= beforeCall && spanEndMs <= afterCall + 50, 
+            assert.ok(spanEndMs >= beforeCall && spanEndMs <= afterCall + 50,
                 `End time ${spanEndMs} should be between ${beforeCall} and ${afterCall + 50}`);
-            
+
             // Start time should be approximately end time minus duration
             const expectedStartMs = spanEndMs - 1000;
-            assert.ok(Math.abs(spanStartMs - expectedStartMs) < 10, 
+            assert.ok(Math.abs(spanStartMs - expectedStartMs) < 10,
                 `Start time ${spanStartMs} should be close to ${expectedStartMs}`);
         });
 
@@ -275,29 +274,29 @@ describe("shim/TelemetryClient", () => {
                 success: true,
                 time: customStartTime
             };
-            
+
             client.trackDependency(telemetry);
-            
+
             await tracerProvider.forceFlush();
             const spans = testProcessor.spansProcessed;
             assert.equal(spans.length, 1);
             assert.equal(spans[0].name, "CustomTimeDependency");
-            
+
             // Convert span times from hrTime to milliseconds for comparison
             const spanStartMs = spans[0].startTime[0] * 1000 + spans[0].startTime[1] / 1_000_000;
             const spanEndMs = spans[0].endTime[0] * 1000 + spans[0].endTime[1] / 1_000_000;
-            
+
             // Duration should match the specified duration
             const actualDuration = spanEndMs - spanStartMs;
             assert.ok(Math.abs(actualDuration - 2000) < 10, `Expected duration ~2000ms, got ${actualDuration}ms`);
-            
+
             // Start time should match the custom time provided
-            assert.ok(Math.abs(spanStartMs - customStartTime.getTime()) < 10, 
+            assert.ok(Math.abs(spanStartMs - customStartTime.getTime()) < 10,
                 `Start time ${spanStartMs} should be close to custom time ${customStartTime.getTime()}`);
-            
+
             // End time should be start time plus duration
             const expectedEndMs = customStartTime.getTime() + 2000;
-            assert.ok(Math.abs(spanEndMs - expectedEndMs) < 10, 
+            assert.ok(Math.abs(spanEndMs - expectedEndMs) < 10,
                 `End time ${spanEndMs} should be close to ${expectedEndMs}`);
         });
 
@@ -351,27 +350,27 @@ describe("shim/TelemetryClient", () => {
             // Call trackRequest without specifying 'time' - should default to current time as END time
             client.trackRequest(telemetry);
             const afterCall = Date.now();
-            
+
             await tracerProvider.forceFlush();
             const spans = testProcessor.spansProcessed;
             assert.equal(spans.length, 1);
             assert.equal(spans[0].name, "TestTimingRequest");
-            
+
             // Convert span times from hrTime to milliseconds for comparison
             const spanStartMs = spans[0].startTime[0] * 1000 + spans[0].startTime[1] / 1_000_000;
             const spanEndMs = spans[0].endTime[0] * 1000 + spans[0].endTime[1] / 1_000_000;
-            
+
             // Duration should match the specified duration
             const actualDuration = spanEndMs - spanStartMs;
             assert.ok(Math.abs(actualDuration - 1500) < 10, `Expected duration ~1500ms, got ${actualDuration}ms`);
-            
+
             // End time should be close to when we called trackRequest (within reasonable tolerance)
-            assert.ok(spanEndMs >= beforeCall && spanEndMs <= afterCall + 50, 
+            assert.ok(spanEndMs >= beforeCall && spanEndMs <= afterCall + 50,
                 `End time ${spanEndMs} should be between ${beforeCall} and ${afterCall + 50}`);
-            
+
             // Start time should be calculated as end time - duration
             const expectedStartMs = spanEndMs - 1500;
-            assert.ok(Math.abs(spanStartMs - expectedStartMs) < 10, 
+            assert.ok(Math.abs(spanStartMs - expectedStartMs) < 10,
                 `Start time ${spanStartMs} should be close to ${expectedStartMs}`);
         });
 
@@ -385,26 +384,26 @@ describe("shim/TelemetryClient", () => {
                 success: true,
                 time: customStartTime
             };
-            
+
             client.trackRequest(telemetry);
-            
+
             await tracerProvider.forceFlush();
             const spans = testProcessor.spansProcessed;
             assert.equal(spans.length, 1);
             assert.equal(spans[0].name, "CustomTimeRequest");
-            
+
             // Convert span times from hrTime to milliseconds for comparison
             const spanStartMs = spans[0].startTime[0] * 1000 + spans[0].startTime[1] / 1_000_000;
             const spanEndMs = spans[0].endTime[0] * 1000 + spans[0].endTime[1] / 1_000_000;
-            
+
             // Start time should match the provided custom time
             const expectedStartMs = customStartTime.getTime();
-            assert.ok(Math.abs(spanStartMs - expectedStartMs) < 10, 
+            assert.ok(Math.abs(spanStartMs - expectedStartMs) < 10,
                 `Start time ${spanStartMs} should be close to ${expectedStartMs}`);
-            
+
             // End time should be start time + duration
             const expectedEndMs = customStartTime.getTime() + 1200;
-            assert.ok(Math.abs(spanEndMs - expectedEndMs) < 10, 
+            assert.ok(Math.abs(spanEndMs - expectedEndMs) < 10,
                 `End time ${spanEndMs} should be close to ${expectedEndMs}`);
         });
 
@@ -444,8 +443,8 @@ describe("shim/TelemetryClient", () => {
                 })
             };
             (client as any)._manualMeter = undefined;
-            const pipeline = (client as any)._pipeline;
-            const getMeterStub = sandbox.stub(pipeline, "getMeter").returns(meterMock);
+            const provider = (client as any)._telemetryClientProvider;
+            const getMeterStub = sandbox.stub(provider, "getMeter").returns(meterMock as any);
 
             client.trackMetric(telemetry);
 
@@ -458,57 +457,64 @@ describe("shim/TelemetryClient", () => {
             });
 
             getMeterStub.restore();
-            
+
             // Create spy on the histogram record method to verify metric tracking
             const originalMeter = metrics.getMeterProvider().getMeter("ApplicationInsightsMetrics");
             const histogramRecordSpy = sandbox.spy();
-            
+
             // Mock the histogram creation to track record calls
             const histogramMock = {
                 record: histogramRecordSpy
             };
-            
+
+            // Reset cached meter and force the provider to return the meter we are spying on
+            (client as any)._manualMeter = undefined;
+            const provider2 = (client as any)._telemetryClientProvider;
+            const getMeterStub2 = sandbox.stub(provider2, "getMeter").returns(originalMeter as any);
+
             const createHistogramStub = sandbox.stub(originalMeter, 'createHistogram').returns(histogramMock as any);
-            
+
             // Track the metric
             client.trackMetric(telemetry);
-            
+
             // Verify that createHistogram was called with the correct name
             assert.ok(createHistogramStub.calledOnce, "createHistogram should be called once");
             assert.equal(createHistogramStub.args[0][0], "TestName", "Histogram should be created with correct name");
-            
+
             // Verify that record was called with the correct value
             assert.ok(histogramRecordSpy.calledOnce, "Histogram record should be called once");
             assert.equal(histogramRecordSpy.args[0][0], 100, "Record should be called with correct value");
-            
+
             // Verify properties were passed
             const recordedAttributes = histogramRecordSpy.args[0][1];
             assert.ok(recordedAttributes, "Attributes should be passed to record");
+
+            getMeterStub2.restore();
         });
-        
+
         it("trackMetric should handle errors gracefully", () => {
             const telemetry = {
                 name: "ErrorMetric",
                 value: 50,
             };
-            
+
             // Force an error by stubbing the isolated meter provider
             const error = new Error("Failed to get meter");
             (client as any)._manualMeter = undefined;
-            const pipeline = (client as any)._pipeline;
-            const getMeterStub = sandbox.stub(pipeline, "getMeter").throws(error);
-            
+            const provider = (client as any)._telemetryClientProvider;
+            const getMeterStub = sandbox.stub(provider, "getMeter").throws(error);
+
             // This should now throw an error internally, but the method should catch it
             client.trackMetric(telemetry);
-            
+
             // Verify the error was logged
             assert.ok(diagErrorStub.calledOnce);
             assert.ok(diagErrorStub.calledWith(`Failed to record metric: ${error}`));
-            
+
             // Restore the stub
             getMeterStub.restore();
         });
-        
+
         it("trackAvailability", async () => {
             const stub = sandbox.stub(logProcessor, "onEmit");
             const telemetry = {
@@ -533,7 +539,7 @@ describe("shim/TelemetryClient", () => {
             client.trackPageView(telemetry);
             assert.ok(stub.calledOnce);
         });
-        
+
         it("trackEvent", async () => {
             const stub = sandbox.stub(logProcessor, "onEmit");
             const telemetry = {
@@ -584,7 +590,8 @@ describe("shim/TelemetryClient", () => {
             assert.ok(useAzureMonitorStub.calledOnce);
             await globalClient.shutdown();
             assert.ok(shutdownStub.calledOnce);
-          });
+        });
+    });
 
     describe("Instance count tracking and MULTI_IKEY statsbeat feature", () => {
         let originalEnv: NodeJS.ProcessEnv;
@@ -605,7 +612,7 @@ describe("shim/TelemetryClient", () => {
 
         it("should not enable MULTI_IKEY feature when creating first TelemetryClient instance", () => {
             const firstClient = new TelemetryClient("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-            
+
             // Check statsbeat features environment variable
             const statsbeatFeatures = process.env["AZURE_MONITOR_STATSBEAT_FEATURES"];
             if (statsbeatFeatures) {
@@ -613,28 +620,28 @@ describe("shim/TelemetryClient", () => {
                 // MULTI_IKEY bit should not be set (128)
                 assert.strictEqual((config.feature & 128), 0, "MULTI_IKEY feature should not be enabled for first instance");
             }
-            
+
             firstClient.shutdown();
         });
 
         it("should enable MULTI_IKEY feature when creating second TelemetryClient instance", () => {
             const firstClient = new TelemetryClient("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
-            
+
             // First instance should not have MULTI_IKEY feature enabled
             let statsbeatFeatures = process.env["AZURE_MONITOR_STATSBEAT_FEATURES"];
             if (statsbeatFeatures) {
                 const config = JSON.parse(statsbeatFeatures);
                 assert.strictEqual((config.feature & 128), 0, "MULTI_IKEY feature should not be enabled for first instance");
             }
-            
+
             const secondClient = new TelemetryClient("InstrumentationKey=2bb22222-cccc-2ddd-9eee-fffff4444444");
-            
+
             // Second instance should have MULTI_IKEY feature enabled
             statsbeatFeatures = process.env["AZURE_MONITOR_STATSBEAT_FEATURES"];
             assert.ok(statsbeatFeatures, "AZURE_MONITOR_STATSBEAT_FEATURES should be set");
             const config = JSON.parse(statsbeatFeatures);
             assert.strictEqual((config.feature & 128), 128, "MULTI_IKEY feature should be enabled for second instance");
-            
+
             firstClient.shutdown();
             secondClient.shutdown();
         });
@@ -642,19 +649,19 @@ describe("shim/TelemetryClient", () => {
         it("should keep MULTI_IKEY feature enabled when creating additional TelemetryClient instances", () => {
             const firstClient = new TelemetryClient("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             const secondClient = new TelemetryClient("InstrumentationKey=2bb22222-cccc-2ddd-9eee-fffff4444444");
-            
+
             let statsbeatFeatures = process.env["AZURE_MONITOR_STATSBEAT_FEATURES"];
             assert.ok(statsbeatFeatures, "AZURE_MONITOR_STATSBEAT_FEATURES should be set after second instance");
             let config = JSON.parse(statsbeatFeatures);
             assert.strictEqual((config.feature & 128), 128, "MULTI_IKEY feature should be enabled after second instance");
-            
+
             const thirdClient = new TelemetryClient("InstrumentationKey=3cc33333-dddd-3eee-afff-ggggg5555555");
-            
+
             statsbeatFeatures = process.env["AZURE_MONITOR_STATSBEAT_FEATURES"];
             assert.ok(statsbeatFeatures, "AZURE_MONITOR_STATSBEAT_FEATURES should remain set for third instance");
             config = JSON.parse(statsbeatFeatures);
             assert.strictEqual((config.feature & 128), 128, "MULTI_IKEY feature should remain enabled for third instance");
-            
+
             firstClient.shutdown();
             secondClient.shutdown();
             thirdClient.shutdown();
@@ -663,13 +670,13 @@ describe("shim/TelemetryClient", () => {
         it("should increment instance count correctly for multiple TelemetryClient instances", () => {
             const firstClient = new TelemetryClient("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333");
             assert.strictEqual((TelemetryClient as any)._instanceCount, 1, "Instance count should be 1 after first client");
-            
+
             const secondClient = new TelemetryClient("InstrumentationKey=2bb22222-cccc-2ddd-9eee-fffff4444444");
             assert.strictEqual((TelemetryClient as any)._instanceCount, 2, "Instance count should be 2 after second client");
-            
+
             const thirdClient = new TelemetryClient("InstrumentationKey=3cc33333-dddd-3eee-afff-ggggg5555555");
             assert.strictEqual((TelemetryClient as any)._instanceCount, 3, "Instance count should be 3 after third client");
-            
+
             firstClient.shutdown();
             secondClient.shutdown();
             thirdClient.shutdown();
@@ -677,20 +684,20 @@ describe("shim/TelemetryClient", () => {
 
         it("should work with different connection strings", () => {
             const firstClient = new TelemetryClient("InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/");
-            
+
             let statsbeatFeatures = process.env["AZURE_MONITOR_STATSBEAT_FEATURES"];
             if (statsbeatFeatures) {
                 const config = JSON.parse(statsbeatFeatures);
                 assert.strictEqual((config.feature & 128), 0, "MULTI_IKEY feature should not be enabled for first instance with connection string");
             }
-            
+
             const secondClient = new TelemetryClient("InstrumentationKey=2bb22222-cccc-2ddd-9eee-fffff4444444;IngestionEndpoint=https://westus-2.in.applicationinsights.azure.com/");
-            
+
             statsbeatFeatures = process.env["AZURE_MONITOR_STATSBEAT_FEATURES"];
             assert.ok(statsbeatFeatures, "AZURE_MONITOR_STATSBEAT_FEATURES should be set");
             const config = JSON.parse(statsbeatFeatures);
             assert.strictEqual((config.feature & 128), 128, "MULTI_IKEY feature should be enabled for second instance with different connection string");
-            
+
             firstClient.shutdown();
             secondClient.shutdown();
         });
@@ -698,21 +705,21 @@ describe("shim/TelemetryClient", () => {
         it("should work when no connection string is provided", () => {
             const firstClient = new TelemetryClient();
             assert.strictEqual((TelemetryClient as any)._instanceCount, 1, "Instance count should be 1 after first client with no connection string");
-            
+
             let statsbeatFeatures = process.env["AZURE_MONITOR_STATSBEAT_FEATURES"];
             if (statsbeatFeatures) {
                 const config = JSON.parse(statsbeatFeatures);
                 assert.strictEqual((config.feature & 128), 0, "MULTI_IKEY feature should not be enabled for first instance with no connection string");
             }
-            
+
             const secondClient = new TelemetryClient();
             assert.strictEqual((TelemetryClient as any)._instanceCount, 2, "Instance count should be 2 after second client with no connection string");
-            
+
             statsbeatFeatures = process.env["AZURE_MONITOR_STATSBEAT_FEATURES"];
             assert.ok(statsbeatFeatures, "AZURE_MONITOR_STATSBEAT_FEATURES should be set");
             const config = JSON.parse(statsbeatFeatures);
             assert.strictEqual((config.feature & 128), 128, "MULTI_IKEY feature should be enabled for second instance with no connection string");
-            
+
             firstClient.shutdown();
             secondClient.shutdown();
         });

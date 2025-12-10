@@ -8,7 +8,7 @@ import {
     SEMRESATTRS_SERVICE_NAME,
     SEMRESATTRS_SERVICE_INSTANCE_ID,
 } from '@opentelemetry/semantic-conventions';
-import { resourceFromAttributes } from '@opentelemetry/resources';
+import { Resource } from '@opentelemetry/resources';
 import { DiagnosticLogger } from './diagnostics/diagnosticLogger';
 import { EtwDiagnosticLogger } from './diagnostics/etwDiagnosticLogger';
 import { FileWriter } from "./diagnostics/writers/fileWriter";
@@ -38,7 +38,7 @@ export class AppServicesLoader extends AgentLoader {
                 resourceAttributes[SEMRESATTRS_SERVICE_INSTANCE_ID] =
                     process.env.WEBSITE_INSTANCE_ID;
             }
-            const resource = resourceFromAttributes(resourceAttributes);
+            const resource = new Resource(resourceAttributes);
             this._options.resource = resource;
 
             let statusLogDir = '/var/log/applicationinsights/';

@@ -3,8 +3,7 @@
 import assert from "assert";
 import sinon from "sinon";
 import nock from "nock";
-import { Logger } from "@opentelemetry/api-logs";
-import { SdkLogRecord } from "@opentelemetry/sdk-logs";
+import { Logger, LogRecord } from "@opentelemetry/api-logs";
 
 import {
     AvailabilityTelemetry,
@@ -40,9 +39,9 @@ describe("logs/API", () => {
 
     class TestLogger implements Logger {
 
-        public logsEmited: Array<SdkLogRecord> = [];
+        public logsEmited: Array<LogRecord> = [];
 
-        emit(logRecord: SdkLogRecord): void {
+        emit(logRecord: LogRecord): void {
             this.logsEmited.push(logRecord);
         }
     }
@@ -59,7 +58,7 @@ describe("logs/API", () => {
                 telemetry,
                 "TestData",
                 data,
-            ) as SdkLogRecord;
+            ) as LogRecord;
             assert.equal(JSON.stringify(logRecord.body), JSON.stringify({}));
             assert.equal(logRecord.attributes["testAttribute"], "testValue");
             assert.equal(logRecord.attributes["_MS.baseType"], "TestData");
@@ -77,7 +76,7 @@ describe("logs/API", () => {
                 telemetry,
                 "TestData",
                 data,
-            ) as SdkLogRecord;
+            ) as LogRecord;
             assert.equal(JSON.stringify(logRecord.body), JSON.stringify({}));
             assert.equal(logRecord.attributes["testAttribute"], "testValue");
             const errorStr: string = logRecord.attributes["error"] as string;

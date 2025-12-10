@@ -11,7 +11,7 @@ import https = require("https");
 import { DistributedTracingModes } from '../../../applicationinsights';
 import { checkWarnings } from './testUtils';
 import { BatchSpanProcessor, ConsoleSpanExporter } from '@opentelemetry/sdk-trace-base';
-import { defaultResource } from '@opentelemetry/resources';
+import { Resource } from '@opentelemetry/resources';
 
 class TestTokenCredential implements azureCoreAuth.TokenCredential {
     private _expiresOn: Date;
@@ -130,7 +130,7 @@ describe("shim/configuration/config", () => {
             }
             
             let logRecordProcessors = [new TestLogRecordProcessor()];
-            let resource = defaultResource();
+            let resource = Resource.default();
             const config = new Config(connectionString);
             config.azureMonitorOpenTelemetryOptions = {
                 resource: resource,
