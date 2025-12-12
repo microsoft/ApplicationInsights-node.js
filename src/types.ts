@@ -4,6 +4,9 @@
 import { AzureMonitorOpenTelemetryOptions as DistroOptions, InstrumentationOptions as DistroInstrumentationOptions } from "@azure/monitor-opentelemetry";
 import { SeverityNumber } from "@opentelemetry/api-logs";
 import { InstrumentationConfig } from "@opentelemetry/instrumentation";
+import { LogRecordProcessor } from "@opentelemetry/sdk-logs";
+import { SpanProcessor } from "@opentelemetry/sdk-trace-base";
+import { MetricReader } from "@opentelemetry/sdk-metrics";
 import { OTLPExporterNodeConfigBase } from "@opentelemetry/otlp-exporter-base";
 
 
@@ -20,12 +23,18 @@ export interface AzureMonitorOpenTelemetryOptions extends DistroOptions {
    * if true uncaught exceptions will be sent to Application Insights
    */
   enableAutoCollectExceptions?: boolean;
+  /** Additional span processors to register */
+  spanProcessors?: SpanProcessor[];
+  /** Additional log record processors to register */
+  logRecordProcessors?: LogRecordProcessor[];
   /** OTLP Trace Exporter Configuration */
   otlpTraceExporterConfig?: OTLPExporterConfig;
   /** OTLP Metric Exporter Configuration */
   otlpMetricExporterConfig?: OTLPExporterConfig;
   /** OTLP Log Exporter Configuration */
   otlpLogExporterConfig?: OTLPExporterConfig;
+  /** Additional metric readers to register */
+  metricReaders?: MetricReader[];
   /**
    * Sets the state of performance tracking (enabled by default)
    * if true performance counters will be collected every second and sent to Azure Monitor

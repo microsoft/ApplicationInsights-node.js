@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 import { Logger as OtelLogger, LogRecord } from "@opentelemetry/api-logs";
-import { SdkLogRecord as SDKLogRecord } from "@opentelemetry/sdk-logs";
 import { Attributes, diag } from "@opentelemetry/api";
 import { IdGenerator, RandomIdGenerator } from "@opentelemetry/sdk-trace-base";
 
@@ -71,7 +70,7 @@ export class LogApi {
      */
     public trackTrace(telemetry: Contracts.TraceTelemetry): void {
         try {
-            const logRecord = this._traceToLogRecord(telemetry) as SDKLogRecord;
+            const logRecord = this._traceToLogRecord(telemetry);
             this._logger.emit(logRecord);
         } catch (err) {
             diag.error("Failed to send telemetry.", err);
@@ -89,7 +88,7 @@ export class LogApi {
         try {
             const logRecord = this._exceptionToLogRecord(
                 telemetry
-            ) as SDKLogRecord;
+            );
             this._logger.emit(logRecord);
         } catch (err) {
             diag.error("Failed to send telemetry.", err);

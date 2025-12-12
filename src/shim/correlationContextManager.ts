@@ -56,10 +56,22 @@ export class CorrelationContextManager {
                 activeSpan = trace.getTracer(CONTEXT_NAME).startSpan(CONTEXT_NAME) as Span;
             }
             const traceStateObj: TraceState = new TraceState(activeSpan?.spanContext()?.traceState?.serialize());
+            const parentSpanId = this._getParentSpanId(activeSpan);
 
-            return this.spanToContextObject(activeSpan?.spanContext(), activeSpan?.parentSpanContext?.spanId, activeSpan?.name, traceStateObj);
+            return this.spanToContextObject(activeSpan?.spanContext(), parentSpanId, activeSpan?.name, traceStateObj);
         }
         return null;
+    }
+
+    private static _getParentSpanId(span: Span | null): string | undefined {
+        if (!span) {
+            return undefined;
+        }
+        const spanAny = span as any;
+        if (typeof spanAny.parentSpanContext === "function") {
+            return spanAny.parentSpanContext()?.spanId;
+        }
+        return spanAny.parentSpanId || spanAny.parentSpanContext?.spanId;
     }
 
     /**
@@ -181,9 +193,10 @@ export class CorrelationContextManager {
 
         if (span) {
             trace.setSpanContext(context.active(), span.spanContext());
+            const parentSpanId = this._getParentSpanId(span);
             return this.spanToContextObject(
                 span.spanContext(),
-                span.parentSpanContext?.spanId,
+                parentSpanId,
             );
         }
 
