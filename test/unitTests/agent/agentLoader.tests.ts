@@ -11,6 +11,9 @@ import { DiagnosticMessageId } from "../../../src/agent/types";
 describe("agent/agentLoader", () => {
     let originalEnv: NodeJS.ProcessEnv;
     let sandbox: sinon.SinonSandbox;
+    let originalOtelGlobalV1: any;
+    let originalOtelGlobalV2: any;
+    let originalLogsGlobal: any;
 
     const defaultConfig = {
         azureMonitorExporterOptions: {
@@ -51,11 +54,23 @@ describe("agent/agentLoader", () => {
 
     beforeEach(() => {
         originalEnv = process.env;
+        const otelSymbolV1 = Symbol.for('opentelemetry.js.api.1');
+        const otelSymbolV2 = Symbol.for('opentelemetry.js.api.2');
+        const logsSymbol = Symbol.for('io.opentelemetry.js.api.logs');
+        originalOtelGlobalV1 = (global as any)[otelSymbolV1];
+        originalOtelGlobalV2 = (global as any)[otelSymbolV2];
+        originalLogsGlobal = (global as any)[logsSymbol];
     });
 
     afterEach(() => {
         process.env = originalEnv;
         sandbox.restore();
+        const otelSymbolV1 = Symbol.for('opentelemetry.js.api.1');
+        const otelSymbolV2 = Symbol.for('opentelemetry.js.api.2');
+        const logsSymbol = Symbol.for('io.opentelemetry.js.api.logs');
+        (global as any)[otelSymbolV1] = originalOtelGlobalV1;
+        (global as any)[otelSymbolV2] = originalOtelGlobalV2;
+        (global as any)[logsSymbol] = originalLogsGlobal;
     });
     
     it("should initialize constructor", () => {
@@ -178,5 +193,54 @@ describe("agent/agentLoader", () => {
         const statusLoggerStub = sandbox.stub(agent["_statusLogger"], "logStatus");
         agent["_validate"]();
         assert.deepEqual(statusLoggerStub.args[0][0].AgentInitializedSuccessfully, false);
+    });
+
+    it("should log detected OpenTelemetry tracer and meter providers", () => {
+        const env = {
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
+        };
+        process.env = env;
+        const otelSymbolV1 = Symbol.for('opentelemetry.js.api.1');
+        (global as any)[otelSymbolV1] = {
+            trace: {
+                constructor: { name: "ProxyTracerProvider" },
+                _delegate: { constructor: { name: "SdkTracerProvider" } }
+            },
+            metrics: {
+                constructor: { name: "MeterProvider" }
+            }
+        };
+
+        const agent = new AgentLoader();
+        const diagnosticLoggerStub = sandbox.stub(agent["_diagnosticLogger"], "logMessage");
+
+        (agent as any)._detectOpenTelemetryGlobals();
+
+        assert.ok(diagnosticLoggerStub.calledOnce);
+        const logged = diagnosticLoggerStub.args[0][0];
+        assert.strictEqual(logged.messageId, DiagnosticMessageId.openTelemetryConflict);
+        assert.ok((logged.message as string).includes("TracerProvider"));
+        assert.ok((logged.message as string).includes("MeterProvider"));
+    });
+
+    it("should log detected OpenTelemetry logger provider via logs symbol getter", () => {
+        const env = {
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
+        };
+        process.env = env;
+        const logsSymbol = Symbol.for('io.opentelemetry.js.api.logs');
+        (global as any)[logsSymbol] = (version: number) => {
+            return { constructor: { name: version === 1 ? "LoggerProvider" : "LoggerProviderV2" } };
+        };
+
+        const agent = new AgentLoader();
+        const diagnosticLoggerStub = sandbox.stub(agent["_diagnosticLogger"], "logMessage");
+
+        (agent as any)._detectOpenTelemetryGlobals();
+
+        assert.ok(diagnosticLoggerStub.calledOnce);
+        const logged = diagnosticLoggerStub.args[0][0];
+        assert.strictEqual(logged.messageId, DiagnosticMessageId.openTelemetryConflict);
+        assert.ok((logged.message as string).includes("LoggerProvider"));
     });
 });

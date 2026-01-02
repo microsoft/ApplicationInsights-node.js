@@ -46,4 +46,5 @@ export const DiagnosticMessageId = {
     "prefixFailed": "3004",
     "aadEnabled": "3005",
     "unknownError": "3006",
+    "openTelemetryConflict": "3007",
 }
