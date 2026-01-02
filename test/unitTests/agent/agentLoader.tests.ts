@@ -7,6 +7,11 @@ import sinon from "sinon";
 import { AgentLoader } from "../../../src/agent/agentLoader";
 import * as azureMonitor from "@azure/monitor-opentelemetry";
 import { DiagnosticMessageId } from "../../../src/agent/types";
+import { trace, metrics } from "@opentelemetry/api";
+import { BasicTracerProvider } from "@opentelemetry/sdk-trace-node";
+import { MeterProvider } from "@opentelemetry/sdk-metrics";
+import { logs as otelLogs } from "@opentelemetry/api-logs";
+import { LoggerProvider } from "@opentelemetry/sdk-logs";
 
 describe("agent/agentLoader", () => {
     let originalEnv: NodeJS.ProcessEnv;
@@ -71,6 +76,15 @@ describe("agent/agentLoader", () => {
         (global as any)[otelSymbolV1] = originalOtelGlobalV1;
         (global as any)[otelSymbolV2] = originalOtelGlobalV2;
         (global as any)[logsSymbol] = originalLogsGlobal;
+        if (typeof trace.disable === "function") {
+            trace.disable();
+        }
+        if (typeof metrics.disable === "function") {
+            metrics.disable();
+        }
+        if (typeof otelLogs.disable === "function") {
+            otelLogs.disable();
+        }
     });
     
     it("should initialize constructor", () => {
@@ -200,16 +214,10 @@ describe("agent/agentLoader", () => {
             ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
         };
         process.env = env;
-        const otelSymbolV1 = Symbol.for('opentelemetry.js.api.1');
-        (global as any)[otelSymbolV1] = {
-            trace: {
-                constructor: { name: "ProxyTracerProvider" },
-                _delegate: { constructor: { name: "SdkTracerProvider" } }
-            },
-            metrics: {
-                constructor: { name: "MeterProvider" }
-            }
-        };
+        const tracerProvider = new BasicTracerProvider();
+        trace.setGlobalTracerProvider(tracerProvider);
+        const meterProvider = new MeterProvider();
+        metrics.setGlobalMeterProvider(meterProvider as any);
 
         const agent = new AgentLoader();
         const diagnosticLoggerStub = sandbox.stub(agent["_diagnosticLogger"], "logMessage");
@@ -228,10 +236,8 @@ describe("agent/agentLoader", () => {
             ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
         };
         process.env = env;
-        const logsSymbol = Symbol.for('io.opentelemetry.js.api.logs');
-        (global as any)[logsSymbol] = (version: number) => {
-            return { constructor: { name: version === 1 ? "LoggerProvider" : "LoggerProviderV2" } };
-        };
+        const loggerProvider = new LoggerProvider();
+        (otelLogs as any).setGlobalLoggerProvider(loggerProvider);
 
         const agent = new AgentLoader();
         const diagnosticLoggerStub = sandbox.stub(agent["_diagnosticLogger"], "logMessage");
