@@ -120,6 +120,8 @@ export class AgentLoader {
             console.log(msg);
             return;
         }
+        // Detect and report OpenTelemetry globals before attempting to load the agent
+        this._detectOpenTelemetryGlobals();
         if (this._validate()) {
             try {
                 // Set environment variable to auto attach so the distro is aware of the attach state
@@ -192,6 +194,73 @@ export class AgentLoader {
                     Reason: msg
                 });
             }
+        }
+    }
+
+    private _detectOpenTelemetryGlobals(): void {
+        try {
+            const detectedProviders: string[] = [];
+
+            // Check for OpenTelemetry globals directly on the global object
+            // The OpenTelemetry API stores globals using Symbol.for('opentelemetry.js.api.<major>')
+            // This avoids calling the API methods which could have side effects
+            // Try v1 first, then fallback to v2 for future compatibility
+            const otelSymbolV1 = Symbol.for('opentelemetry.js.api.1');
+            const otelSymbolV2 = Symbol.for('opentelemetry.js.api.2');
+            const otelGlobal = (global as any)[otelSymbolV1] || (global as any)[otelSymbolV2];
+
+            if (otelGlobal) {
+                // Check for registered TracerProvider
+                if (otelGlobal["trace"]) {
+                    const traceProviderName = otelGlobal["trace"]?.constructor?.name;
+                    // ProxyTracerProvider wraps the real provider - check the delegate
+                    if (traceProviderName === 'ProxyTracerProvider') {
+                        const delegateName = otelGlobal["trace"]?._delegate?.constructor?.name;
+                        if (delegateName && delegateName !== 'NoopTracerProvider') {
+                            detectedProviders.push('TracerProvider');
+                        }
+                    } else if (traceProviderName && traceProviderName !== 'NoopTracerProvider') {
+                        detectedProviders.push('TracerProvider');
+                    }
+                }
+
+                // Check for registered MeterProvider
+                if (otelGlobal["metrics"] && otelGlobal["metrics"]?.constructor?.name !== 'ProxyMeterProvider' && otelGlobal["metrics"].constructor.name !== 'NoopMeterProvider') {
+                    detectedProviders.push('MeterProvider');
+                }
+            }
+
+            // Check for registered LoggerProvider - uses a different symbol and stores a getter function
+            const logsSymbol = Symbol.for('io.opentelemetry.js.api.logs');
+            const logsGlobal = (global as any)[logsSymbol];
+            if (typeof logsGlobal === 'function') {
+                // logsGlobal is a getter function that takes a version number and returns the provider
+                // Try both API compatibility versions (1 and 2) to support different @opentelemetry/api-logs versions
+                let logsProvider = logsGlobal(1); // Try v1 first
+                if (!logsProvider || logsProvider.constructor?.name === 'NoopLoggerProvider') {
+                    logsProvider = logsGlobal(2); // Try v2 if v1 returns NOOP
+                }
+                const loggerProviderName = logsProvider?.constructor?.name;
+                if (
+                    loggerProviderName &&
+                    loggerProviderName !== 'ProxyLoggerProvider' &&
+                    loggerProviderName !== 'NoopLoggerProvider'
+                ) {
+                    detectedProviders.push('LoggerProvider');
+                }
+            }
+
+            if (detectedProviders.length > 0 && this._diagnosticLogger) {
+                const msg = `OpenTelemetry global providers detected while using Application Insights auto-attach: ${detectedProviders.join(', ')}. `;
+                const diagnosticLog = {
+                    message: msg,
+                    messageId: DiagnosticMessageId.openTelemetryConflict
+                } as IDiagnosticLog;
+                this._diagnosticLogger.logMessage(diagnosticLog);
+            }
+        }
+        catch (err: any) {
+            console.log("Error detecting OpenTelemetry globals: " + err);
         }
     }
 
