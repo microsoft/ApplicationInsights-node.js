@@ -53,7 +53,8 @@ describe("agent/AKSLoader", () => {
         let meterProvider = metrics.getMeterProvider() as any;
         assert.equal(meterProvider.constructor.name, "MeterProvider");
         assert.equal(meterProvider["_sharedState"]["metricCollectors"].length, 1);
-        assert.equal(meterProvider["_sharedState"]["metricCollectors"][0]["_metricReader"]["_exporter"].constructor.name, "AzureMonitorMetricExporter");
+        const exporterName = meterProvider["_sharedState"]["metricCollectors"][0]["_metricReader"]["_exporter"].constructor.name;
+        assert.ok(exporterName.startsWith("AzureMonitorMetricExporter"), `Expected exporter name to start with 'AzureMonitorMetricExporter', but got '${exporterName}'`);
         
         let tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate()) as any;
         assert.equal(tracerProvider.constructor.name, "NodeTracerProvider");
@@ -177,9 +178,9 @@ describe("agent/AKSLoader", () => {
         const metricCollectors = meterProvider["_sharedState"]["metricCollectors"];
         assert.ok(metricCollectors.length >= 1, "Should have at least one metric collector (Azure Monitor)");
         
-        // Check that we have at least one Azure Monitor exporter
+        // Check that we have at least one Azure Monitor exporter (name may be AzureMonitorMetricExporter or AzureMonitorMetricExporterWithAggregation)
         const azureMonitorExporters = metricCollectors.filter((collector: any) => 
-            collector["_metricReader"]["_exporter"].constructor.name === "AzureMonitorMetricExporter"
+            collector["_metricReader"]["_exporter"].constructor.name.startsWith("AzureMonitorMetricExporter")
         );
         assert.equal(azureMonitorExporters.length, 1, "Should have exactly one Azure Monitor metric exporter");
     });
