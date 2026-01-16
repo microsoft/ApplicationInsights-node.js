@@ -39,8 +39,10 @@ jobs:
             # Install build tools needed for native modules
             apk add --no-cache python3 make g++ 
             
-            # Install and run tests
-            npm run clean
+            # Clean out directory only (preserve node_modules for fresh install)
+            rm -rf ./out
+            
+            # Install dependencies and run tests
             npm i
             npm run build --if-present
             npm run lint

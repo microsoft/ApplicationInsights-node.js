@@ -1,5 +1,13 @@
 # Release History
 
+### 3.13.0 (2026-01-16)
+
+#### Other Changes
+
+- Add OpenTelemetry global detection to the agent.
+- Add functionality for the TelemetryClient to not use global providers.
+- Resolve vulnerabilities in dependencies.
+
 ### 3.12.1 (2025-11-10)
 
 #### Other Changes
