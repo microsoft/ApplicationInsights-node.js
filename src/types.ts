@@ -10,7 +10,7 @@ import { MetricReader } from "@opentelemetry/sdk-metrics";
 import { OTLPExporterNodeConfigBase } from "@opentelemetry/otlp-exporter-base";
 
 
-export const APPLICATION_INSIGHTS_OPENTELEMETRY_VERSION = "3.12.1";
+export const APPLICATION_INSIGHTS_OPENTELEMETRY_VERSION = "3.13.0";
 export const DEFAULT_ROLE_NAME = "Web";
 export const AZURE_MONITOR_STATSBEAT_FEATURES = "AZURE_MONITOR_STATSBEAT_FEATURES";
 
