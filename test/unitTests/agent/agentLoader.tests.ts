@@ -16,9 +16,11 @@ import { LoggerProvider } from "@opentelemetry/sdk-logs";
 describe("agent/agentLoader", () => {
     let originalEnv: NodeJS.ProcessEnv;
     let sandbox: sinon.SinonSandbox;
+    let clock: sinon.SinonFakeTimers;
     let originalOtelGlobalV1: any;
     let originalOtelGlobalV2: any;
     let originalLogsGlobal: any;
+    const OTEL_DETECTION_DELAY_MS = 60000; // 1 minute - matches the constant in agentLoader.ts
 
     const defaultConfig = {
         azureMonitorExporterOptions: {
@@ -59,6 +61,7 @@ describe("agent/agentLoader", () => {
 
     beforeEach(() => {
         originalEnv = process.env;
+        clock = sandbox.useFakeTimers();
         const otelSymbolV1 = Symbol.for('opentelemetry.js.api.1');
         const otelSymbolV2 = Symbol.for('opentelemetry.js.api.2');
         const logsSymbol = Symbol.for('io.opentelemetry.js.api.logs');
@@ -69,6 +72,7 @@ describe("agent/agentLoader", () => {
 
     afterEach(() => {
         process.env = originalEnv;
+        clock.restore();
         sandbox.restore();
         const otelSymbolV1 = Symbol.for('opentelemetry.js.api.1');
         const otelSymbolV2 = Symbol.for('opentelemetry.js.api.2');
@@ -229,6 +233,39 @@ describe("agent/agentLoader", () => {
         assert.strictEqual(logged.messageId, DiagnosticMessageId.openTelemetryConflict);
         assert.ok((logged.message as string).includes("TracerProvider"));
         assert.ok((logged.message as string).includes("MeterProvider"));
+    });
+
+    it("should delay OpenTelemetry detection by 1 minute after initialize", () => {
+        const env = {
+            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
+        };
+        process.env = env;
+        const tracerProvider = new BasicTracerProvider();
+        trace.setGlobalTracerProvider(tracerProvider);
+
+        const agent = new AgentLoader();
+        const detectGlobalsSpy = sandbox.spy(agent as any, "_detectOpenTelemetryGlobals");
+        const diagnosticLoggerStub = sandbox.stub(agent["_diagnosticLogger"], "logMessage");
+        sandbox.stub(agent["_statusLogger"], "logStatus");
+
+        agent.initialize();
+
+        // Detection should not have been called yet
+        assert.strictEqual(detectGlobalsSpy.callCount, 0);
+        // Only the initialization success message should be logged
+        assert.ok(diagnosticLoggerStub.calledOnce);
+        assert.strictEqual(diagnosticLoggerStub.args[0][0].messageId, DiagnosticMessageId.attachSuccessful);
+
+        // Advance time by less than the delay
+        clock.tick(OTEL_DETECTION_DELAY_MS - 1);
+        assert.strictEqual(detectGlobalsSpy.callCount, 0);
+
+        // Advance time to trigger the detection
+        clock.tick(1);
+        assert.strictEqual(detectGlobalsSpy.callCount, 1);
+        // Now the conflict message should be logged
+        assert.strictEqual(diagnosticLoggerStub.callCount, 2);
+        assert.strictEqual(diagnosticLoggerStub.args[1][0].messageId, DiagnosticMessageId.openTelemetryConflict);
     });
 
     it("should log detected OpenTelemetry logger provider via logs symbol getter", () => {

@@ -1,5 +1,11 @@
 # Release History
 
+### 3.13.1 ()
+
+#### Other Changes
+
+- Update OTel global detection to wait for the customer app to initialize before detection.
+
 ### 3.13.0 (2026-01-16)
 
 #### Other Changes

@@ -12,6 +12,7 @@ import { useAzureMonitor } from "../main";
 
 
 const forceStart = process.env.APPLICATIONINSIGHTS_FORCE_START === "true";
+const OTEL_DETECTION_DELAY_MS = 60000; // 1 minute
 // Azure Connection String
 const ENV_connectionString = "APPLICATIONINSIGHTS_CONNECTION_STRING";
 const ENV_AZURE_PREFIX = "APPSETTING_"; // Azure adds this prefix to all environment variables
@@ -120,8 +121,12 @@ export class AgentLoader {
             console.log(msg);
             return;
         }
-        // Detect and report OpenTelemetry globals before attempting to load the agent
-        this._detectOpenTelemetryGlobals();
+        // Schedule detection of OpenTelemetry globals after a delay to allow customer application to initialize
+        const otelDetectionTimeout = setTimeout(() => {
+            this._detectOpenTelemetryGlobals();
+        }, OTEL_DETECTION_DELAY_MS);
+        // Ensure the timeout doesn't prevent the process from exiting
+        otelDetectionTimeout.unref();
         if (this._validate()) {
             try {
                 // Set environment variable to auto attach so the distro is aware of the attach state
