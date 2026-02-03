@@ -344,7 +344,7 @@ And invoked via `appInsights.<METHOD_NAME>`
 | setDistributedTracingMode   | AI only tracing mode is no longer supported. Migrate to using W3C_AND_AI tracing mode. |
 | setAutoCollectHeartbeat     | Heartbeat is not supported in either Azure Monitor OpenTelemetry or the Application Insights 3.X SDK.|
 | setAutoDependencyCorrelation| Turning off autoDependencyCorrelation is not supported by either Azure Monitor OpenTelemetry or the Application Insights 3.X SDK. |
-| setUseDiskRetryCaching      | While enabling/disabling offline storage is supported, setting the resend interval or the maxBytesOnDisk values are not supported in the Application Insights 3.X SDK or Azure Monitor OpenTelemetry. |
+| setUseDiskRetryCaching      | While enabling/disabling offline storage is supported, setting the resend interval or the maxBytesOnDisk values are not supported in the Application Insights 3.X SDK or Azure Monitor OpenTelemetry. The SDK uses hardcoded defaults: resend interval of **60 seconds (1 minute)** and maxBytesOnDisk of **50 MB**. Cached files are retained for up to **2 days** before being cleaned up. |
 | setAutoCollectIncomingRequestAzureFunctions | Auto collection of Azure Functions is not supported by the Application Insights 3.X SDK or Azure Monitor OpenTelemetry. |
 
 The following configurations are set using either environment variables, setting them in the `applicationinsights.json` file or by calling `appInsights.defaultClient.config.<CONFIG_SETTING_VALUE>;`.
@@ -362,8 +362,8 @@ The following configurations are set using either environment variables, setting
 | enableAutoDependencyCorrelation | Cannot disable dependency correlation in either the Application Insights 3.X SDK or Azure Monitor OpenTelemetry. Dependency correlation will always be enabled and therefore this setting is always true. |
 | enableAutoCollectIncomingRequestAzureFunctions | Auto collection of Azure Functions is not supported by the Application Insights 3.X SDK or Azure Monitor OpenTelemetry. |
 | enableUseAsyncHooks | Using async hooks is not supported by the Application Insights 3.X SDK or Azure Monitor OpenTelemetry as it is not supported by OpenTelemetry. |
-| enableResendInterval | Not supported by the Application Insights 3.X SDK. It is possible to configure the interval between exports via OpenTelemetry span processors, but not specifically cached events. The @azure/monitor-opentelemetry-exporter uses a resend interval of one minute. |
-| enableMaxBytesOnDisk | Not supported by the Application Insights 3.X SDK. And not supported to be changed in Azure Monitor OpenTelemetry. The @azure/monitor-opentelemetry-exporter sets this value at 50MB. |
+| enableResendInterval | Not supported by the Application Insights 3.X SDK. It is possible to configure the interval between exports via OpenTelemetry span processors, but not specifically cached events. The @azure/monitor-opentelemetry-exporter uses a hardcoded resend interval of **60 seconds (1 minute)**. |
+| enableMaxBytesOnDisk | Not supported by the Application Insights 3.X SDK. And not supported to be changed in Azure Monitor OpenTelemetry. The @azure/monitor-opentelemetry-exporter uses a hardcoded maximum of **50 MB** for offline storage. Once this limit is reached, new telemetry will not be cached to disk until space is freed. Cached files are automatically cleaned up after **2 days**. |
 | noHttpAgentKeepAlive | Not supported in the Application Insights 3.X SDK or Azure Monitor OpenTelemetry. |
 | httpAgent/httpsAgent | Not supported in the Application Insights 3.X SDK or Azure Monitor OpenTelemetry. |
 | webInstrumentationConfig | Not currently supported by the Application Insights 3.X SDK or Azure Monitor OpenTelemetry. |
