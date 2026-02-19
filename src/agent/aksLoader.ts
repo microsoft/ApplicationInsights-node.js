@@ -11,7 +11,7 @@ import { InstrumentationOptions } from '../types';
 import { OTLPMetricExporter as OTLPProtoMetricExporter } from "@opentelemetry/exporter-metrics-otlp-proto";
 import { OTLPMetricExporter as OTLPHttpMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
 import { MetricReader, PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
-import { ENV_OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE, OTLP_METRIC_EXPORTER_EXPORT_INTERVAL } from './types';
+import { OTLP_METRIC_EXPORTER_EXPORT_INTERVAL } from './types';
 
 export class AKSLoader extends AgentLoader {
 
@@ -54,9 +54,6 @@ export class AKSLoader extends AgentLoader {
                     }
                 )
             );
-
-            // Ensure Delta temporality is used for OTLP metrics
-            process.env[ENV_OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE] = "Delta";
 
             // Create metricReaders array and add OTLP reader if environment variables request it
             try {
