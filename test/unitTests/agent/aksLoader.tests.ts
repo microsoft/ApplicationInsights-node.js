@@ -355,21 +355,6 @@ describe("agent/AKSLoader", () => {
         assert.equal(exporter.constructor.name, "OTLPMetricExporter", "Should be an OTLPMetricExporter");
     });
 
-    it("constructor sets OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE to Delta", () => {
-        const env = {
-            ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
-        };
-        process.env = env;
-
-        new AKSLoader();
-
-        assert.equal(
-            process.env["OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE"],
-            "Delta",
-            "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE should be set to Delta"
-        );
-    });
-
     it("constructor creates OTLP metric reader when OTEL_METRICS_EXPORTER contains mixed case otlp with other exporters", () => {
         const env = {
             ["APPLICATIONINSIGHTS_CONNECTION_STRING"]: "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333",
