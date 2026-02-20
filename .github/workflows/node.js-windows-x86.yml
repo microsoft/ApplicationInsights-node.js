@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         # Using the same Node versions as the main workflow
-        node-version: [16.x, 18.x, 20.x, 22.x]
+        node-version: [18.x, 20.x, 22.x, 24.x]
         architecture: ["x86"]  # 32-bit architecture
 
     steps:
