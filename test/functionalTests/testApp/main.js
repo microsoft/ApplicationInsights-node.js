@@ -9,6 +9,7 @@ if (testconfig.AppInsightsEnabled) {
             connectionString:`InstrumentationKey=${testconfig.InstrumentationKey};IngestionEndpoint=${testconfig.EndpointBaseAddress}`
         },
         samplingRatio: parseFloat(testconfig.SampleRate),
+        tracesPerSecond: 0, // Disable rate-limited sampler, use samplingRatio for fixed percentage sampling
         instrumentationOptions: {
             azureSdk: {
                 enabled: true

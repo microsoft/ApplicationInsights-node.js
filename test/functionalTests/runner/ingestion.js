@@ -37,19 +37,15 @@ class Ingestion {
                     .on('error', () => null)
                     .on('end', (d) => {
                         data += (d || "");
-                        let items = data.split("\n").filter(item => item.trim() !== "");
+                        let items = data.split("\n");
                         items.forEach(function (item) {
-                            try {
-                                item = JSON.parse(item);
-                                if (!Array.isArray(item)) {
-                                    item = [item];
-                                }
-                                item.forEach((subItem) => {
-                                    self.processItem(subItem);
-                                });
-                            } catch (e) {
-                                console.warn("INGESTION: Failed to parse item:", e.message);
+                            item = JSON.parse(item);
+                            if (!Array.isArray(item)) {
+                                item = [item];
                             }
+                            item.forEach((subItem) => {
+                                self.processItem(subItem);
+                            });
                         }, self);
                         response.end(JSON.stringify({
                             itemsRecieved: items.length,
