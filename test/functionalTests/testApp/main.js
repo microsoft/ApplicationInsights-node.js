@@ -9,6 +9,7 @@ if (testconfig.AppInsightsEnabled) {
             connectionString:`InstrumentationKey=${testconfig.InstrumentationKey};IngestionEndpoint=${testconfig.EndpointBaseAddress}`
         },
         samplingRatio: parseFloat(testconfig.SampleRate),
+        tracesPerSecond: 0, // Disable rate limiting so all test traces are captured
         instrumentationOptions: {
             azureSdk: {
                 enabled: true

@@ -169,6 +169,12 @@ describe("shim/TelemetryClient", () => {
     });
 
     describe("#manual track APIs", () => {
+        // Allow rate limiter to recover between tests so each span-creating test
+        // gets a fresh budget from the default RateLimitedSampler (5 traces/sec)
+        beforeEach(async () => {
+            await new Promise(resolve => setTimeout(resolve, 250));
+        });
+
         it("trackDependency http", async () => {
             const telemetry: DependencyTelemetry = {
                 name: "TestName",
@@ -562,6 +568,35 @@ describe("shim/TelemetryClient", () => {
             };
             client.trackException(telemetry);
             assert.ok(stub.calledOnce);
+        });
+    });
+
+    describe("#rate limiting behavior", () => {
+        it("should rate limit spans when creating many rapidly", async () => {
+            // Wait for rate limiter to fully recover
+            await new Promise(resolve => setTimeout(resolve, 500));
+            testProcessor.spansProcessed = [];
+
+            const totalSpans = 20;
+            // Create many spans as fast as possible (far exceeding 5/sec default)
+            for (let i = 0; i < totalSpans; i++) {
+                client.trackDependency({
+                    name: `RateLimitTest-${i}`,
+                    duration: 100,
+                    resultCode: "200",
+                    data: "http://test.com",
+                    dependencyTypeName: "HTTP",
+                    success: true,
+                });
+            }
+            await tracerProvider.forceFlush();
+            const sampledCount = testProcessor.spansProcessed.length;
+
+            // Rate limiter should allow some but not all spans through
+            assert.ok(sampledCount >= 1,
+                `Expected at least 1 span to be sampled, got ${sampledCount}`);
+            assert.ok(sampledCount < totalSpans,
+                `Expected rate limiting to drop some spans when creating ${totalSpans} rapidly, but all ${sampledCount} were sampled`);
         });
     });
 

@@ -13,7 +13,6 @@ jobs:
 
     strategy:
       matrix:
-        # TODO: Enable Node 14.x when we update the pipeline to support AbortController
         node-version: [18.x]
 
     steps:
