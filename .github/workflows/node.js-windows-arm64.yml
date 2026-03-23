@@ -1,5 +1,14 @@
 name: Node.js CI (Windows ARM64)
 
+# NOTE: GitHub does not offer public Windows ARM64 runners.
+# The previous version of this workflow used QEMU to emulate ARM64 Linux in
+# Docker, which was neither testing Windows nor reliably passing due to
+# emulation flakiness.  Native ARM64 testing is now covered by the
+# node.js-linux-arm64.yml workflow using ubuntu-24.04-arm runners.
+#
+# This workflow will be enabled once GitHub provides public Windows ARM64
+# runners (or a self-hosted runner is configured).
+
 on:
   push:
     branches: [ main ]
@@ -7,50 +16,11 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
-    # Use the Linux runner instead as it has better Docker support
+  placeholder:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        # Using the same Node versions as the main workflow but without the .x suffix for Docker images
-        node-version: [18, 20, 22, 24]
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-    
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v2
-      with:
-        platforms: arm64
-      # Generate certificates using Linux openssl command
-    - name: Generate SSL Certificate
-      run: |
-        # Create certificates directory
-        mkdir -p ./test/certs
-        
-        # Generate SSL certificates
-        openssl req -x509 -nodes -newkey rsa:2048 -keyout ./test/certs/server-key.pem -out ./test/certs/server-cert.pem -days 1 -subj "/C=CL/ST=RM/L=OpenTelemetryTest/O=Root/OU=Test/CN=ca"
-        
-        # Set permissions
-        chmod -R 777 .
-    
-    - name: Run Node.js ${{ matrix.node-version }} tests in ARM64 Docker container
-      run: |
-        # Run the tests in an ARM64 container
-        docker run --rm -v ${{ github.workspace }}:/app -w /app --platform linux/arm64 node:${{ matrix.node-version }}-alpine sh -c '
-          echo "Running tests for Node.js ${{ matrix.node-version }} on ARM64 emulation (Windows-targeted tests)"
-          
-          # Install build dependencies for native modules
-          apk add --no-cache python3 make g++
-          
-          # Clean out directory only (preserve node_modules for fresh install)
-          rm -rf ./out
-          
-          # Install dependencies and run tests
-          npm i
-          npm run build --if-present
-          npm run lint
-          npm test
-        '
+      - name: Windows ARM64 testing not yet available
+        run: |
+          echo "Skipped: GitHub does not offer public Windows ARM64 runners."
+          echo "ARM64 testing is covered by the Linux ARM64 workflow (ubuntu-24.04-arm)."
+          echo "See: https://github.com/actions/runner-images#available-images"
