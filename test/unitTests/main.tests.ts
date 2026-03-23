@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 import assert from "assert";
+import sinon from "sinon";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { trace, ProxyTracerProvider } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
@@ -153,5 +154,55 @@ describe("ApplicationInsightsClient", () => {
             return processor._exporter instanceof OTLPTraceExporter;
         });
         assert.ok(hasOtlpProcessor, "Should have OTLP trace processor with custom config");
+    });
+
+    it("repeated useAzureMonitor calls should not accumulate process event listeners", () => {
+        const connString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
+        const options = { azureMonitorExporterOptions: { connectionString: connString } };
+
+        const uncaughtBefore = process.listenerCount("uncaughtException");
+        const rejectionBefore = process.listenerCount("unhandledRejection");
+
+        useAzureMonitor(options);
+        const afterFirst = {
+            uncaught: process.listenerCount("uncaughtException"),
+            rejection: process.listenerCount("unhandledRejection"),
+        };
+
+        shutdownAzureMonitor();
+        useAzureMonitor(options);
+        const afterSecond = {
+            uncaught: process.listenerCount("uncaughtException"),
+            rejection: process.listenerCount("unhandledRejection"),
+        };
+
+        assert.strictEqual(
+            afterSecond.uncaught,
+            afterFirst.uncaught,
+            "uncaughtException listeners should not accumulate across repeated useAzureMonitor calls"
+        );
+        assert.strictEqual(
+            afterSecond.rejection,
+            afterFirst.rejection,
+            "unhandledRejection listeners should not accumulate across repeated useAzureMonitor calls"
+        );
+
+        // Also test calling useAzureMonitor again WITHOUT shutdown in between
+        useAzureMonitor(options);
+        const afterThird = {
+            uncaught: process.listenerCount("uncaughtException"),
+            rejection: process.listenerCount("unhandledRejection"),
+        };
+
+        assert.strictEqual(
+            afterThird.uncaught,
+            afterFirst.uncaught,
+            "uncaughtException listeners should not accumulate even without explicit shutdown between calls"
+        );
+        assert.strictEqual(
+            afterThird.rejection,
+            afterFirst.rejection,
+            "unhandledRejection listeners should not accumulate even without explicit shutdown between calls"
+        );
     });
 });

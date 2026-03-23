@@ -55,6 +55,10 @@ export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
         options.logRecordProcessors.push(otlpLogProcessor);
     }
     
+    // Clean up previous instances to prevent listener accumulation on repeated calls
+    autoCollectLogs?.shutdown();
+    exceptions?.shutdown();
+
     distroUseAzureMonitor(options);
     const logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
     autoCollectLogs = new AutoCollectLogs();
