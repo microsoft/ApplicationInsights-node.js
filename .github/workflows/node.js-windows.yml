@@ -1,0 +1,56 @@
+name: Node.js CI (Windows)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x, 24.x]
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Generate SSL Certificate
+      shell: pwsh
+      run: |
+        $certsDir = ".\test\certs"
+        if (-not (Test-Path $certsDir)) {
+          New-Item -ItemType Directory -Path $certsDir
+        }
+
+        $cert = New-SelfSignedCertificate -Subject "CN=ca,OU=Test,O=Root,L=OpenTelemetryTest,ST=RM,C=CL" -NotAfter (Get-Date).AddDays(1)
+
+        # Export certificate to PEM format
+        $certBytes = $cert.Export("Cert")
+        $pemCert = "-----BEGIN CERTIFICATE-----`r`n" + [Convert]::ToBase64String($certBytes, [System.Base64FormattingOptions]::InsertLineBreaks) + "`r`n-----END CERTIFICATE-----"
+        Set-Content -Path "$certsDir\server-cert.pem" -Value $pemCert
+
+        # Export private key placeholder
+        $randomBytes = New-Object byte[] 32
+        [Security.Cryptography.RNGCryptoServiceProvider]::Create().GetBytes($randomBytes)
+        $randomKeyContent = [Convert]::ToBase64String($randomBytes)
+        Set-Content -Path "$certsDir\server-key.pem" -Value "-----BEGIN PRIVATE KEY-----`r`n$randomKeyContent`r`n-----END PRIVATE KEY-----"
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - run: npm run clean
+    - name: Install dependencies
+      run: |
+        npm i
+        if (!(Test-Path -Path node_modules/diagnostic-channel-publishers)) {
+          npm i diagnostic-channel-publishers --no-save
+        }
+    - run: npm run build --if-present
+    - run: npm run lint
+    - name: Run tests with mocks
+      run: npm run test:mocked

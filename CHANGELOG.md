@@ -1,5 +1,11 @@
 # Release History
 
+### 3.15.0 (Unreleased)
+
+#### Bug Fixes
+
+- Fix memory leak caused by process event listener accumulation when `useAzureMonitor()` is called multiple times. ([#1415](https://github.com/microsoft/ApplicationInsights-node.js/issues/1415))
+
 ### 3.14.0 (2026-02-24)
 
 #### Other Changes
