@@ -91,6 +91,8 @@ export class AutoCollectExceptions {
 // regex to match stack frames from ie/chrome/ff
 // methodName=$2, fileName=$4, lineNo=$5, column=$6
 const stackFramesRegex = /^(\s+at)?(.*?)(\@|\s\(|\s)([^\(\n]+):(\d+):(\d+)(\)?)$/;
+// regex to match native/built-in frames with no file location, e.g. "    at Array.forEach ()" or "    at Array.forEach (<anonymous>)"
+const nativeFrameRegex = /^\s+at\s+(.+?)\s+\((<anonymous>|native)?\)$/;
 
 export class _StackFrame {
     public sizeInBytes = 0;
@@ -111,6 +113,13 @@ export class _StackFrame {
             this.method = Util.getInstance().trim(matches[2]) || this.method;
             this.fileName = Util.getInstance().trim(matches[4]) || "<no_filename>";
             this.line = parseInt(matches[5]) || 0;
+        } else {
+            const nativeMatches = frame.match(nativeFrameRegex);
+            if (nativeMatches) {
+                this.method = Util.getInstance().trim(nativeMatches[1]) || this.method;
+                this.fileName = "<no_filename>";
+                this.line = 0;
+            }
         }
 
         this.sizeInBytes += this.method.length;
@@ -134,7 +143,7 @@ export function parseStack(stack: any): _StackFrame[] {
         let totalSizeInBytes = 0;
         for (let i = 0; i <= frames.length; i++) {
             const frame = frames[i];
-            if (stackFramesRegex.test(frame)) {
+            if (stackFramesRegex.test(frame) || nativeFrameRegex.test(frame)) {
                 const parsedFrame = new _StackFrame(frames[i], level++);
                 totalSizeInBytes += parsedFrame.sizeInBytes;
                 parsedStack.push(parsedFrame);
