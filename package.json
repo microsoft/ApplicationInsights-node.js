@@ -61,7 +61,7 @@
     "nyc": "^15.0.0",
     "prettier": "^2.5.1",
     "sinon": "^9.0.2",
-    "typescript": "~4.8.0"
+    "typescript": "~5.4.0"
   },
   "dependencies": {
     "@azure/core-auth": "^1.9.0",
