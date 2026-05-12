@@ -25,7 +25,7 @@ import { LogApi } from "./logsApi";
 import { flushAzureMonitor, shutdownAzureMonitor, useAzureMonitor } from "../main";
 import { AzureMonitorOpenTelemetryOptions } from "../types";
 import { TelemetryClientProvider } from "./telemetryClientProvider";
-import { TelemetryClientOptions,  UNSUPPORTED_MSG, StatsbeatFeature } from "./types";
+import { TelemetryClientOptions, UNSUPPORTED_MSG, StatsbeatFeature } from "./types";
 import { StatsbeatFeaturesManager } from "../shared/util/statsbeatFeaturesManager";
 
 /**

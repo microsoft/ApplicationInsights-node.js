@@ -265,7 +265,7 @@ export class AgentLoader {
             }
         }
         catch (err: any) {
-            console.log("Error detecting OpenTelemetry globals: " + err);
+            console.log(`Error detecting OpenTelemetry globals: ${ err}`);
         }
     }
 

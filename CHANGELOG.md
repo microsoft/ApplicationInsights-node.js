@@ -1,6 +1,15 @@
 # Release History
 
-### 3.15.0 (Unreleased)
+### 3.15.0 (2026-05-09)
+
+#### Breaking Changes
+
+- Minimum supported Node.js version is now 20.0.0. Node.js 18 is end-of-life (April 2025) and the underlying `@azure/monitor-opentelemetry` / `@azure/monitor-opentelemetry-exporter` dependencies require Node >= 20.
+
+#### Other Changes
+
+- Updated @azure/monitor-opentelemetry and @azure/monitor-opentelemetry-exporter.
+- Resolve vulnerabilities in dependencies.
 
 #### Bug Fixes
 
