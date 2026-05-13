@@ -89,7 +89,14 @@
     "diagnostic-channel-publishers": "1.0.8"
   },
   "overrides": {
-    "protobufjs": "^8.2.0",
-    "serialize-javascript": "^7.0.5"
+    "@opentelemetry/otlp-transformer": {
+      "protobufjs": "^8.2.0"
+    },
+    "@grpc/proto-loader": {
+      "protobufjs": "^8.2.0"
+    },
+    "mocha": {
+      "serialize-javascript": "^7.0.5"
+    }
   }
 }
