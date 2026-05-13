@@ -44,6 +44,10 @@ describe("logs/API", () => {
         emit(logRecord: LogRecord): void {
             this.logsEmited.push(logRecord);
         }
+
+        enabled(): boolean {
+            return true;
+        }
     }
 
     describe("#manual track APIs", () => {
