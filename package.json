@@ -87,5 +87,9 @@
     "@opentelemetry/semantic-conventions": "^1.38.0",
     "diagnostic-channel": "1.1.1",
     "diagnostic-channel-publishers": "1.0.8"
+  },
+  "overrides": {
+    "protobufjs": "^8.2.0",
+    "serialize-javascript": "^7.0.5"
   }
 }
