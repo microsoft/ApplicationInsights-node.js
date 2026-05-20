@@ -39,4 +39,4 @@ test/certs/server-key.pem
 # Ignore folder created during test runs
 undefined/*
 node_modules
-dist-esmcoverage/
+dist-esm
