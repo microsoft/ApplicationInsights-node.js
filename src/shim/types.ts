@@ -4,7 +4,7 @@
 import { TokenCredential } from "@azure/core-auth";
 import * as http from "http";
 import https = require("https");
-import { Context as AzureFnV3Context, HttpRequest as AzureFnV3Request, TraceContext as AzureFnV3TraceContext } from "@azure/functions-old";
+import type { Context as AzureFnV3Context, HttpRequest as AzureFnV3Request, TraceContext as AzureFnV3TraceContext } from "./azureFunctionsV3Types";
 import { InvocationContext as AzureFnV4Context, HttpRequest as AzureFnV4Request } from "@azure/functions";
 
 export const UNSUPPORTED_MSG = "Please reference the Azure Monitor OpenTelemetry Migration Doc for more information. If this functionality is required, please revert to Application Insights 2.X SDK.";
