@@ -34,11 +34,11 @@
     "prepublishOnly": "npm run build",
     "lint": "eslint ./ --fix",
     "pretest": "npm run build",
-    "test": "nyc mocha ./out/test --recursive",
-    "test:mocked": "node ./test/test-setup.js && nyc mocha ./out/test --recursive",
-    "test:debug": "nyc mocha ./out/test --inspect-brk --recursive",
-    "test:unit": "nyc mocha ./out/test/unitTests --recursive",
-    "test:e2e": "nyc mocha ./out/test/endToEnd --recursive",
+    "test": "c8 mocha ./out/test --recursive",
+    "test:mocked": "node ./test/test-setup.js && c8 mocha ./out/test --recursive",
+    "test:debug": "c8 mocha ./out/test --inspect-brk --recursive",
+    "test:unit": "c8 mocha ./out/test/unitTests --recursive",
+    "test:e2e": "c8 mocha ./out/test/endToEnd --recursive",
     "functionaltest": "npm run build && npm pack && node --use_strict ./test/functionalTests/runFunctionalTests.js",
     "backcompattest": "npm run build && npm pack && node --use_strict ./test/backCompatibility/runBackCompatTests.js"
   },
@@ -58,7 +58,7 @@
     "eslint-plugin-node": "^11.1.0",
     "mocha": "^10.0.0",
     "nock": "^12.0.3",
-    "nyc": "^15.0.0",
+    "c8": "^11.0.0",
     "prettier": "^2.5.1",
     "sinon": "^9.0.2",
     "typescript": "~5.4.0"
@@ -66,7 +66,7 @@
   "dependencies": {
     "@azure/core-auth": "^1.9.0",
     "@azure/functions": "^4.11.2",
-    "@azure/identity": "^4.6.0",
+    "@azure/identity": "^4.13.1",
     "@azure/monitor-opentelemetry": "^1.17.0",
     "@azure/monitor-opentelemetry-exporter": "^1.0.0-beta.40",
     "@azure/opentelemetry-instrumentation-azure-sdk": "^1.0.0-beta.7",
@@ -86,11 +86,5 @@
     "@opentelemetry/semantic-conventions": "^1.38.0",
     "diagnostic-channel": "1.1.1",
     "diagnostic-channel-publishers": "1.0.8"
-  },
-  "overrides": {
-    "uuid": "^11.1.1",
-    "@azure/identity": {
-      "@azure/msal-node": "^3.7.3"
-    }
   }
 }
