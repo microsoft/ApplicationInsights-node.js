@@ -66,8 +66,7 @@
   "dependencies": {
     "@azure/core-auth": "^1.9.0",
     "@azure/functions": "^4.11.2",
-    "@azure/functions-old": "npm:@azure/functions@3.5.1",
-    "@azure/identity": "^4.6.0",
+    "@azure/identity": "^4.13.1",
     "@azure/monitor-opentelemetry": "^1.18.0",
     "@azure/monitor-opentelemetry-exporter": "^1.0.0-beta.41",
     "@azure/opentelemetry-instrumentation-azure-sdk": "^1.0.0-beta.7",

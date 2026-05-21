@@ -6,7 +6,7 @@ import * as events from "events";
 import { SpanContext, context, trace, diag, DiagLogger } from "@opentelemetry/api";
 import { TraceState } from "@opentelemetry/core";
 import { Span } from "@opentelemetry/sdk-trace-base";
-import * as azureFunctionTypes from "@azure/functions-old";
+import type * as azureFunctionTypes from "../../../src/shim/azureFunctionsV3Types";
 import { CorrelationContextManager } from '../../../src/shim/correlationContextManager';
 import { ICorrelationContext, ITraceparent, ITracestate } from "../../../src/shim/types";
 import { HttpRequest, InvocationContext, TraceContext } from "@azure/functions";
