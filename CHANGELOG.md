@@ -6,7 +6,7 @@
 
 - `AutoCollectExceptions` no longer calls `forceFlush` per exception and now rate-limits exception telemetry to 50 records/min (emitting a single suppressed-count summary per window). `forceFlush` still runs on the terminal exit path.
 
-### 3.15.0 (2026-05-09)
+### 3.15.0 (2026-05-13)
 
 #### Breaking Changes
 
