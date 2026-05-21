@@ -11,10 +11,20 @@ const UNHANDLED_REJECTION_HANDLER_NAME: ExceptionHandle = "unhandledRejection";
 const FALLBACK_ERROR_MESSAGE =
     "A promise was rejected without providing an error. Application Insights generated this error stack for you.";
 
+// Token-bucket rate limit for exception telemetry to prevent a misbehaving
+// workload from becoming a request-rate amplifier against the ingestion
+// endpoint. When the bucket is exhausted, exceptions are dropped and a single
+// summary record is emitted describing how many were suppressed.
+const EXCEPTION_RATE_LIMIT_CAPACITY = 50; // max exceptions tracked per window
+const EXCEPTION_RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute refill window
+
 export class AutoCollectExceptions {
     private _exceptionListenerHandle?: (error: Error | undefined) => void;
     private _rejectionListenerHandle?: (error: Error | undefined) => void;
     private _client: LogApi;
+    private _tokens: number = EXCEPTION_RATE_LIMIT_CAPACITY;
+    private _lastRefillTime: number = Date.now();
+    private _suppressedCount: number = 0;
 
     constructor(client: LogApi) {
         this._client = client;
@@ -59,25 +69,77 @@ export class AutoCollectExceptions {
         delete this._rejectionListenerHandle;
     }
 
+    /**
+     * Refill the token bucket if at least one full window has elapsed since
+     * the last refill. If the bucket was previously exhausted, emit a single
+     * summary describing how many exceptions were suppressed.
+     */
+    private _refillTokens(): void {
+        const now = Date.now();
+        if (now - this._lastRefillTime >= EXCEPTION_RATE_LIMIT_WINDOW_MS) {
+            this._lastRefillTime = now;
+            this._tokens = EXCEPTION_RATE_LIMIT_CAPACITY;
+            if (this._suppressedCount > 0 && this._client) {
+                const suppressed = this._suppressedCount;
+                this._suppressedCount = 0;
+                try {
+                    this._client.trackException({
+                        exception: new Error(
+                            `Application Insights suppressed ${suppressed} exception telemetry record(s) in the last ${EXCEPTION_RATE_LIMIT_WINDOW_MS / 1000}s due to client-side rate limiting.`
+                        ),
+                    });
+                } catch {
+                    // best-effort; do not let summary emission throw from the handler
+                }
+            }
+        }
+    }
+
     private _handleException(
         reThrow: boolean,
         name: ExceptionHandle,
         error: Error | undefined = new Error(FALLBACK_ERROR_MESSAGE)
     ) {
         if (this._client) {
-            this._client.trackException({ exception: error });
-            try {
-                (logs.getLoggerProvider() as LoggerProvider).forceFlush().then(() => {
-                    // only rethrow when we are the only listener
-                    if (reThrow && name && process.listeners(name as any).length === 1) {
+            this._refillTokens();
+            const isTerminal =
+                reThrow && !!name && process.listeners(name as any).length === 1;
+
+            // Always record the terminal/fatal exception, bypassing the rate
+            // limit — by definition it can only occur once per process.
+            if (isTerminal || this._tokens > 0) {
+                if (!isTerminal) {
+                    this._tokens--;
+                }
+                this._client.trackException({ exception: error });
+            } else {
+                this._suppressedCount++;
+            }
+
+            // Only force a flush on the terminal path where the process is
+            // about to exit. Under normal operation, let the
+            // BatchLogRecordProcessor batch exception records to avoid
+            // amplifying request rate against the ingestion endpoint.
+            if (isTerminal) {
+                try {
+                    (logs.getLoggerProvider() as LoggerProvider).forceFlush().then(() => {
                         // eslint-disable-next-line no-console
                         console.error(error);
                         // eslint-disable-next-line no-process-exit
                         process.exit(1);
-                    }
-                });
-            } catch (error) {
-                console.error(`Could not get the loggerProvider upon handling a tracked exception: ${error}`);
+                    }, () => {
+                        // eslint-disable-next-line no-console
+                        console.error(error);
+                        // eslint-disable-next-line no-process-exit
+                        process.exit(1);
+                    });
+                } catch (flushError) {
+                    console.error(`Could not get the loggerProvider upon handling a tracked exception: ${flushError}`);
+                    // eslint-disable-next-line no-console
+                    console.error(error);
+                    // eslint-disable-next-line no-process-exit
+                    process.exit(1);
+                }
             }
         } else {
             // eslint-disable-next-line no-console
