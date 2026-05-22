@@ -1,0 +1,134 @@
+name: Performance
+
+on:
+  pull_request:
+    branches: [ main ]
+
+# Cancel in-flight perf runs on the same PR to free runner capacity.
+concurrency:
+  group: perf-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  perf-regression:
+    runs-on: ubuntu-latest
+    # 20 min is plenty for ~5 samples × ~6 scenarios × ~8s + builds.
+    timeout-minutes: 25
+    env:
+      NODE_VERSION: '22.x'
+      PERF_SAMPLES: '5'
+      PERF_DURATION: '8'
+      PERF_WARMUP: '2'
+      PERF_REGRESSION_THRESHOLD: '15'
+
+    steps:
+      - name: Checkout PR (candidate)
+        uses: actions/checkout@v4
+        with:
+          path: pr
+
+      - name: Checkout base branch (baseline)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          path: baseline
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # ---- Build & pack BOTH versions of the package up-front ----
+      - name: Generate dummy TLS certs (PR)
+        working-directory: pr
+        run: openssl req -x509 -nodes -newkey rsa -keyout ./test/certs/server-key.pem -out ./test/certs/server-cert.pem -days 1 -subj "/C=CL/ST=RM/L=OpenTelemetryTest/O=Root/OU=Test/CN=ca"
+
+      - name: Install + build + pack candidate
+        working-directory: pr
+        run: |
+          npm ci
+          npm run build
+          npm pack
+          mv applicationinsights-*.tgz "$GITHUB_WORKSPACE/candidate.tgz"
+
+      - name: Generate dummy TLS certs (baseline)
+        working-directory: baseline
+        run: openssl req -x509 -nodes -newkey rsa -keyout ./test/certs/server-key.pem -out ./test/certs/server-cert.pem -days 1 -subj "/C=CL/ST=RM/L=OpenTelemetryTest/O=Root/OU=Test/CN=ca"
+
+      - name: Install + build + pack baseline
+        working-directory: baseline
+        run: |
+          npm ci
+          npm run build
+          npm pack
+          mv applicationinsights-*.tgz "$GITHUB_WORKSPACE/baseline.tgz"
+
+      # ---- Use the PR's perf harness for BOTH runs (consistent code) ----
+      - name: Install perf harness deps (PR)
+        working-directory: pr/test/performanceTests
+        run: npm install
+
+      - name: Install CANDIDATE applicationinsights into perf harness
+        working-directory: pr/test/performanceTests
+        run: npm install --no-save "$GITHUB_WORKSPACE/candidate.tgz"
+
+      - name: Run candidate benchmarks
+        working-directory: pr/test/performanceTests
+        run: |
+          node runBenchmarks.mjs \
+            --out "$GITHUB_WORKSPACE/candidate.json" \
+            --samples "$PERF_SAMPLES" \
+            --duration "$PERF_DURATION" \
+            --warmup "$PERF_WARMUP"
+
+      - name: Install BASELINE applicationinsights into perf harness
+        working-directory: pr/test/performanceTests
+        run: npm install --no-save "$GITHUB_WORKSPACE/baseline.tgz"
+
+      - name: Run baseline benchmarks
+        working-directory: pr/test/performanceTests
+        run: |
+          node runBenchmarks.mjs \
+            --out "$GITHUB_WORKSPACE/baseline.json" \
+            --samples "$PERF_SAMPLES" \
+            --duration "$PERF_DURATION" \
+            --warmup "$PERF_WARMUP"
+
+      # ---- Compare and publish ----
+      - name: Compare results
+        id: compare
+        working-directory: pr/test/performanceTests
+        run: |
+          set +e
+          node comparePerf.mjs \
+            "$GITHUB_WORKSPACE/baseline.json" \
+            "$GITHUB_WORKSPACE/candidate.json" \
+            "$GITHUB_WORKSPACE/perf-comparison.md"
+          echo "exit=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Upload raw results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-results
+          path: |
+            baseline.json
+            candidate.json
+            perf-comparison.md
+
+      - name: Comment on PR (best-effort)
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository
+        uses: marocchino/sticky-pull-request-comment@v2
+        continue-on-error: true
+        with:
+          header: perf-regression
+          path: perf-comparison.md
+
+      - name: Fail job on gating regression
+        if: steps.compare.outputs.exit != '0'
+        run: |
+          echo "Performance regression beyond ${PERF_REGRESSION_THRESHOLD}% detected." >&2
+          exit 1
