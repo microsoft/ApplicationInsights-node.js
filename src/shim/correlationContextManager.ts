@@ -8,7 +8,7 @@ import { TraceState } from "@opentelemetry/core";
 import { Span } from "@opentelemetry/sdk-trace-base";
 import { ICorrelationContext, ITraceparent, ITracestate, ICustomProperties, AzureFnContext, AzureFnRequest, AzureFnTraceContext, HttpRequest } from "./types";
 import { Util } from "../shared/util";
-import { HttpRequestHeaders } from "@azure/functions-old";
+import type { HttpRequestHeaders } from "./azureFunctionsV3Types";
 import { HttpRequest as AzureFnHttpRequest } from "@azure/functions";
 
 
