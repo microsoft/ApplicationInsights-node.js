@@ -11,8 +11,9 @@
   "dependencies": {
     "@azure-tools/test-perf": "^1.0.0",
     "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/api-logs": "^0.52.1",
-    "@opentelemetry/sdk-logs": "^0.52.1",
+    "@opentelemetry/api-logs": "^0.217.0",
+    "@opentelemetry/sdk-logs": "^0.217.0",
+    "@opentelemetry/sdk-trace-base": "^2.7.1",
     "applicationinsights": "^3.2.2",
     "dotenv": "^16.4.5",
     "tslib": "^2.6.2"
@@ -26,6 +27,8 @@
   "private": true,
   "scripts": {
     "perf-test:node": "npm run build && node dist-esm/index.spec.js",
+    "perf:benchmark": "npm run build && node runBenchmarks.mjs",
+    "perf:compare": "node comparePerf.mjs",
     "audit": "node ../../../common/scripts/rush-audit.js && rimraf node_modules package-lock.json && npm i --package-lock-only 2>&1 && npm audit",
     "build": "npm run clean && tsc -p .",
     "build:samples": "echo skipped",
