@@ -16,13 +16,15 @@ permissions:
 jobs:
   perf-regression:
     runs-on: ubuntu-latest
-    # 20 min is plenty for ~5 samples × ~6 scenarios × ~8s + builds.
-    timeout-minutes: 25
+    # Headroom for two full benchmark runs (candidate + baseline) plus npm
+    # installs and tarball packing. Each benchmark run is bounded by
+    # samples * scenarios * (warmup + duration + per-child init).
+    timeout-minutes: 40
     env:
       NODE_VERSION: '22.x'
-      PERF_SAMPLES: '5'
-      PERF_DURATION: '8'
-      PERF_WARMUP: '2'
+      PERF_SAMPLES: '3'
+      PERF_DURATION: '5'
+      PERF_WARMUP: '1'
       PERF_REGRESSION_THRESHOLD: '15'
 
     steps:

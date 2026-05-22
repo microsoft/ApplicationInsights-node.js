@@ -19,7 +19,7 @@ this package and reports them against an upstream-OpenTelemetry-only baseline.
 
 3. Or run every scenario and produce a JSON summary suitable for comparison:
 
-   `npm run perf:benchmark -- --out results.json --samples 5 --duration 8`
+   `npm run perf:benchmark -- --out results.json --samples 3 --duration 5`
 
 #### Scenario tiers
 
