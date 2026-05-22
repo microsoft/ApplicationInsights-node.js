@@ -83,6 +83,14 @@ function runOne(scenario, args, outPath) {
             stdio: ["ignore", "inherit", "inherit"],
         },
     );
+    if (child.error) {
+        throw new Error(
+            `Scenario ${scenario} could not be spawned: ${child.error.message}`,
+        );
+    }
+    if (child.signal) {
+        throw new Error(`Scenario ${scenario} terminated by signal ${child.signal}`);
+    }
     if (child.status !== 0) {
         throw new Error(`Scenario ${scenario} failed with exit code ${child.status}`);
     }

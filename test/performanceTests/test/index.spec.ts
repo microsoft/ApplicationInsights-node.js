@@ -10,13 +10,16 @@ import { OtelSpanTest } from "./otelSpan.spec.js";
 import { OtelLogTest } from "./otelLog.spec.js";
 import https from "https";
 import fs from "fs";
+import { format } from "util";
 
 const json = JSON.parse(fs.readFileSync("package.json", "utf8"));
-let perfTestData: string = "";
+let perfTestData = "";
 const originalConsole = console.log;
 
-console.log = function (message: string) {
-    perfTestData += message + "\n";
+// Preserve Node's default console.log formatting (multi-arg, non-string
+// values) so downstream regex parsing matches what would have been printed.
+console.log = function (...args: unknown[]): void {
+    perfTestData += format(...args) + "\n";
 };
 
 const perfProgram = createPerfProgram(
@@ -28,17 +31,17 @@ const perfProgram = createPerfProgram(
     OtelLogTest,
 );
 
-const scenarioFromArgv = process.argv
-    .slice(2)
-    .find((a) => !a.startsWith("-")) || "unknown";
+const scenarioFromArgv =
+    process.argv.slice(2).find((a) => !a.startsWith("-")) || "unknown";
 
 perfProgram.run().then(() => {
     console.log = originalConsole;
 
-    // Only post telemetry when the Microsoft-internal CI secrets are present;
-    // local/CI-without-secrets runs simply re-emit captured output and exit.
+    // Re-emit captured stdout so it remains visible to the parent driver.
     process.stdout.write(perfTestData);
 
+    // Only post telemetry when the Microsoft-internal CI secrets are present;
+    // local/CI-without-secrets runs simply re-emit captured output and exit.
     const iKey = process.env.GENEVA_IKEY;
     const apiKey = process.env.API_KEY;
     if (!iKey || !apiKey) {

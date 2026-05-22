@@ -69,11 +69,15 @@ jobs:
       # ---- Use the PR's perf harness for BOTH runs (consistent code) ----
       - name: Install perf harness deps (PR)
         working-directory: pr/test/performanceTests
-        run: npm install
+        run: npm ci
 
       - name: Install CANDIDATE applicationinsights into perf harness
         working-directory: pr/test/performanceTests
-        run: npm install --no-save "$GITHUB_WORKSPACE/candidate.tgz"
+        run: npm install --no-save --no-package-lock "$GITHUB_WORKSPACE/candidate.tgz"
+
+      - name: Build perf harness (TS -> dist-esm)
+        working-directory: pr/test/performanceTests
+        run: npm run build
 
       - name: Run candidate benchmarks
         working-directory: pr/test/performanceTests
@@ -86,7 +90,7 @@ jobs:
 
       - name: Install BASELINE applicationinsights into perf harness
         working-directory: pr/test/performanceTests
-        run: npm install --no-save "$GITHUB_WORKSPACE/baseline.tgz"
+        run: npm install --no-save --no-package-lock "$GITHUB_WORKSPACE/baseline.tgz"
 
       - name: Run baseline benchmarks
         working-directory: pr/test/performanceTests

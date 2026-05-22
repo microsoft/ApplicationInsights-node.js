@@ -3,9 +3,13 @@
 
 // Reference scenario: log emission via plain upstream OpenTelemetry only.
 // Reported as informational baseline; not used for PR-gating regression checks.
+//
+// Uses the provider directly (no global LoggerProvider registration) so this
+// benchmark is unaffected by whether other scenarios in the same install share
+// or duplicate the @opentelemetry/api-logs module instance.
 
 import { PerfOptionDictionary, PerfTest } from "@azure-tools/test-perf";
-import { logs, Logger } from "@opentelemetry/api-logs";
+import type { Logger } from "@opentelemetry/api-logs";
 import {
   LoggerProvider,
   SimpleLogRecordProcessor,
@@ -14,17 +18,15 @@ import {
 
 type OtelLogOptions = Record<string, unknown>;
 
-let initialized = false;
 let logger: Logger | undefined;
 function ensureProvider(): Logger {
-  if (initialized && logger) {
+  if (logger) {
     return logger;
   }
   const provider = new LoggerProvider({
     processors: [new SimpleLogRecordProcessor(new InMemoryLogRecordExporter())],
   });
   logger = provider.getLogger("perf-otel-log");
-  initialized = true;
   return logger;
 }
 
@@ -37,7 +39,6 @@ export class OtelLogTest extends PerfTest<OtelLogOptions> {
   }
 
   async run(): Promise<void> {
-    const l = logger ?? logs.getLogger("perf-otel-log");
-    l.emit({ body: "trace message" });
+    logger!.emit({ body: "trace message" });
   }
 }
