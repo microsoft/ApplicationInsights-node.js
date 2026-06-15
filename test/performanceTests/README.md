@@ -42,5 +42,12 @@ repo, so they are never used for gate-fail decisions.
 the base branch as tarballs, installs each in turn under the PR's perf harness,
 runs the benchmark suite, and fails the job (blocking merge when set as a
 required check) if any gating scenario regresses beyond
-`PERF_REGRESSION_THRESHOLD` percent (default 15%). A sticky comment with the
-full comparison table is posted to the PR.
+`PERF_REGRESSION_THRESHOLD` percent (default 15%). All benchmark results are
+uploaded as the `perf-results` artifact.
+
+`.github/workflows/performance-comment.yml` then runs in the base repository's
+trusted context via `workflow_run`, downloads the artifact, regenerates the
+comparison markdown from the JSON inputs using the base branch's own
+`comparePerf.mjs` (so attacker-supplied markdown is never posted under the
+base repo's writable token), and posts a sticky PR comment. This split is
+what allows fork PRs to receive a perf-comparison comment.

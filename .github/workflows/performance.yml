@@ -8,17 +8,16 @@ on:
 concurrency:
   group: perf-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
+  
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   perf-regression:
     runs-on: ubuntu-latest
     # Headroom for two full benchmark runs (candidate + baseline) plus npm
     # installs and tarball packing. Each benchmark run is bounded by
-    # samples * scenarios * (warmup + duration + per-child init).
+    # scenarios * (warmup + samples * duration + per-child init).
     timeout-minutes: 40
     env:
       NODE_VERSION: '22.x'
@@ -103,7 +102,9 @@ jobs:
             --duration "$PERF_DURATION" \
             --warmup "$PERF_WARMUP"
 
-      # ---- Compare and publish ----
+      # ---- Compare for gating; the artifact is consumed by the companion
+      # `performance-comment.yml` workflow which posts the PR comment under
+      # the base repository's trusted token. ----
       - name: Compare results
         id: compare
         working-directory: pr/test/performanceTests
@@ -115,7 +116,11 @@ jobs:
             "$GITHUB_WORKSPACE/perf-comparison.md"
           echo "exit=$?" >> "$GITHUB_OUTPUT"
 
-      - name: Upload raw results
+      - name: Record PR number
+        if: always() && github.event_name == 'pull_request'
+        run: echo "${{ github.event.pull_request.number }}" > "$GITHUB_WORKSPACE/pr-number.txt"
+
+      - name: Upload perf results artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -124,14 +129,8 @@ jobs:
             baseline.json
             candidate.json
             perf-comparison.md
-
-      - name: Comment on PR (best-effort)
-        if: always() && github.event.pull_request.head.repo.full_name == github.repository
-        uses: marocchino/sticky-pull-request-comment@v2
-        continue-on-error: true
-        with:
-          header: perf-regression
-          path: perf-comparison.md
+            pr-number.txt
+          if-no-files-found: warn
 
       - name: Fail job on gating regression
         if: steps.compare.outputs.exit != '0'
