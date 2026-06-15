@@ -39,7 +39,7 @@ function parseArgs(argv) {
         console.error("Required: --scenario <Name> --out <file>");
         process.exit(2);
     }
-    if (!Number.isFinite(a.samples) || a.samples < 1) {
+    if (!Number.isInteger(a.samples) || a.samples < 1) {
         console.error("--samples must be a positive integer");
         process.exit(2);
     }
