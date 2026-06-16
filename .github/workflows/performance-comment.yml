@@ -1,0 +1,121 @@
+name: Performance Comment
+
+# Posts the perf comparison as a sticky PR comment.
+#
+# This runs in the *base* repository's context via `workflow_run`, which
+# means it has a writable `GITHUB_TOKEN` even for pull requests opened
+# from forks. The `Performance` workflow itself runs in the (potentially
+# untrusted) PR context and only produces an artifact — it has no PR
+# write permissions.
+#
+# Security model:
+#   * The artifact from the PR-context workflow is treated as untrusted
+#     input. We only consume the JSON benchmark outputs (`baseline.json` /
+#     `candidate.json`) and regenerate the comparison markdown here using
+#     the base repository's checked-out `comparePerf.mjs` so the markdown
+#     posted under the writable token is never attacker-supplied.
+#   * The PR number is resolved authoritatively from the `workflow_run`
+#     event payload (or a GitHub API lookup keyed off the workflow's
+#     untamperable `head_sha`), never from artifact contents. This
+#     prevents a malicious PR from writing a different PR number into the
+#     artifact and tricking us into commenting on an unrelated PR.
+
+on:
+  workflow_run:
+    workflows: ["Performance"]
+    types:
+      - completed
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+
+jobs:
+  comment:
+    name: Post sticky PR comment
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.event == 'pull_request'
+
+    steps:
+      - name: Check out base repository (trusted)
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Download perf-results artifact
+        id: download
+        # Don't fail this job if the upstream Performance run was cancelled
+        # or failed before producing the artifact — we just skip posting.
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: perf-results
+          path: perf-results
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve PR number
+        id: pr
+        if: steps.download.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const wr = context.payload.workflow_run;
+            // Prefer the PR list attached to the workflow_run event payload
+            // (populated for same-repo PRs). Fork PRs leave this empty, so
+            // fall back to an authoritative API lookup keyed off the
+            // workflow_run's head_sha, which the triggering PR cannot forge.
+            let prNumber = wr.pull_requests && wr.pull_requests[0] && wr.pull_requests[0].number;
+            if (!prNumber) {
+              const { data: prs } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                commit_sha: wr.head_sha,
+              });
+              const match = prs.find((p) => p.state === "open");
+              prNumber = match && match.number;
+            }
+            if (!Number.isInteger(prNumber) || prNumber <= 0) {
+              core.info("Could not determine PR number from workflow_run event; skipping comment.");
+              core.setOutput("number", "");
+              return;
+            }
+            core.setOutput("number", String(prNumber));
+
+      - name: Regenerate report from JSON (trusted code)
+        id: report
+        if: steps.pr.outputs.number != ''
+        run: |
+          set -euo pipefail
+          if [ ! -s perf-results/baseline.json ] || [ ! -s perf-results/candidate.json ]; then
+            echo "baseline.json or candidate.json missing from artifact; skipping comment." >&2
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Use the base repo's comparePerf.mjs (trusted) to render the
+          # markdown from the PR-supplied JSON data, so we never post
+          # attacker-supplied markdown under the base repo's writable token.
+          node test/performanceTests/comparePerf.mjs \
+            perf-results/baseline.json \
+            perf-results/candidate.json \
+            report.md \
+            || true
+
+          if [ -s report.md ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "report.md was not produced; skipping comment." >&2
+          fi
+
+      - name: Post sticky PR comment
+        if: steps.pr.outputs.number != '' && steps.report.outputs.found == 'true'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: perf-regression
+          number: ${{ steps.pr.outputs.number }}
+          path: report.md

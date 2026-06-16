@@ -4,8 +4,7 @@
 
 /*
  * Runs each scenario via bench.mjs in a fresh Node child process to avoid
- * OpenTelemetry global-state contamination across scenarios. Each scenario
- * is sampled N times; median ops/s is recorded.
+ * OpenTelemetry global-state contamination across scenarios. Median ops/s is recorded.
  *
  * Usage:
  *   node runBenchmarks.mjs --out results.json [--samples 5] [--duration 8]
@@ -75,6 +74,8 @@ function runOne(scenario, args, outPath) {
             String(args.duration),
             "--warmup",
             String(args.warmup),
+            "--samples",
+            String(args.samples),
             "--out",
             outPath,
         ],
@@ -95,10 +96,16 @@ function runOne(scenario, args, outPath) {
         throw new Error(`Scenario ${scenario} failed with exit code ${child.status}`);
     }
     const result = JSON.parse(readFileSync(outPath, "utf8"));
-    if (!isFinite(result.opsPerSec)) {
-        throw new Error(`Scenario ${scenario} produced no ops/s value`);
+    if (!Array.isArray(result.samples) || result.samples.length === 0) {
+        throw new Error(`Scenario ${scenario} produced no samples`);
     }
-    return result.opsPerSec;
+    const ops = result.samples.map((s) => s.opsPerSec);
+    for (const v of ops) {
+        if (!isFinite(v)) {
+            throw new Error(`Scenario ${scenario} produced a non-finite ops/s value`);
+        }
+    }
+    return ops;
 }
 
 function main() {
@@ -112,13 +119,11 @@ function main() {
 
     try {
         for (const scenario of selected) {
-            const samples = [];
-            for (let i = 0; i < args.samples; i++) {
-                const out = join(tmp, `${scenario.name}-${i}.json`);
-                console.log(`\n[run] ${scenario.name} sample ${i + 1}/${args.samples}`);
-                const ops = runOne(scenario.name, args, out);
-                samples.push(ops);
-            }
+            const out = join(tmp, `${scenario.name}.json`);
+            console.log(
+                `\n[run] ${scenario.name}: ${args.samples} sample(s) x ${args.duration}s (warmup ${args.warmup}s)`,
+            );
+            const samples = runOne(scenario.name, args, out);
             results.push({
                 name: scenario.name,
                 tier: scenario.tier,
