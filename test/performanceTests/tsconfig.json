@@ -4,7 +4,8 @@
     "moduleResolution": "NodeNext",
     "outDir": "./dist-esm",
     "declaration": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true
   },
   "include": [
     "test/**/*.ts"
