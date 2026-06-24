@@ -2,7 +2,15 @@
 
 ## Unreleased
 
-### Bug Fixes
+### 3.15.1 (2026-06-24)
+
+#### Other Changes
+
+- Updated `@azure/monitor-opentelemetry`, `@azure/identity`, and `@opentelemetry/*` dependencies.
+- Removed the legacy `@azure/functions-old` (v3) dependency.
+- Resolve vulnerabilities in dependencies.
+
+#### Bug Fixes
 
 - `AutoCollectExceptions` no longer calls `forceFlush` per exception and now rate-limits exception telemetry to 50 records/min (emitting a single suppressed-count summary per window). `forceFlush` still runs on the terminal exit path.
 
