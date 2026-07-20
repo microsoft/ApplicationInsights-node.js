@@ -7,6 +7,7 @@
 #### Other Changes
 
 - Updated `@azure/monitor-opentelemetry`, `@azure/identity`, and `@opentelemetry/*` dependencies.
+- Bumped `@opentelemetry/*` (0.220 / 2.9) and `@azure/monitor-opentelemetry` to resolve dependency audit alerts.
 - Removed the legacy `@azure/functions-old` (v3) dependency.
 - Resolve vulnerabilities in dependencies.
 

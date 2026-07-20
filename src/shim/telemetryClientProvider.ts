@@ -117,7 +117,7 @@ export class TelemetryClientProvider {
         const processors: LogRecordProcessor[] = [];
         try {
             const exporter = new AzureMonitorLogExporter(this._options.azureMonitorExporterOptions);
-            processors.push(new BatchLogRecordProcessor(exporter));
+            processors.push(new BatchLogRecordProcessor({ exporter }));
         } catch (error) {
             diag.error("Failed to configure Azure Monitor log exporter", error);
         }
@@ -125,7 +125,7 @@ export class TelemetryClientProvider {
         if (this._options.otlpLogExporterConfig?.enabled) {
             try {
                 const otlpExporter = new OTLPLogExporter(this._options.otlpLogExporterConfig);
-                processors.push(new BatchLogRecordProcessor(otlpExporter));
+                processors.push(new BatchLogRecordProcessor({ exporter: otlpExporter }));
             } catch (error) {
                 diag.error("Failed to configure OTLP log exporter", error);
             }
