@@ -1,26 +1,25 @@
+import { ConsoleInstrumentation } from "@opentelemetry/instrumentation-console";
 import { InstrumentationOptions } from "../types";
-import { enablePublishers } from "./diagnostic-channel/initialization";
-enablePublishers();
 
 export class AutoCollectLogs {
+    private _consoleInstrumentation: ConsoleInstrumentation | undefined;
 
     public enable(options: InstrumentationOptions) {
-        try {
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
-            require("./diagnostic-channel/console.sub").enable(options.console);
-        } catch (error) {
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
-            require("../../../out/src/logs/diagnostic-channel/console.sub").enable(options.console);
+        if (options.console?.enabled) {
+            // Construct disabled, then enable explicitly. Enabling via the
+            // constructor patches console before the instrumentation's field
+            // initializers run, which wipes its saved originals and prevents
+            // disable() from restoring console.
+            this._consoleInstrumentation = new ConsoleInstrumentation({
+                enabled: false,
+                logSeverity: options.console.logSendingLevel,
+            });
+            this._consoleInstrumentation.enable();
         }
     }
 
     public shutdown() {
-        try {
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
-            require("./diagnostic-channel/console.sub").dispose();
-        } catch (error) {
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
-            require("../../../out/src/logs/diagnostic-channel/console.sub").dispose();
-        }
+        this._consoleInstrumentation?.disable();
+        this._consoleInstrumentation = undefined;
     }
 }

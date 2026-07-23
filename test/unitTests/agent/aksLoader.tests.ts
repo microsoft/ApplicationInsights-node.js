@@ -5,7 +5,6 @@ import { logs } from "@opentelemetry/api-logs";
 import { AKSLoader } from "../../../src/agent/aksLoader";
 import { DiagnosticLogger } from "../../../src/agent/diagnostics/diagnosticLogger";
 import { FileWriter } from "../../../src/agent/diagnostics/writers/fileWriter";
-import { dispose as disposeConsole } from "../../../src/logs/diagnostic-channel/console.sub";
 
 describe("agent/AKSLoader", () => {
     let originalEnv: NodeJS.ProcessEnv;
@@ -20,7 +19,6 @@ describe("agent/AKSLoader", () => {
     });
 
     afterEach(() => {
-        disposeConsole();
         process.env = originalEnv;
         sandbox.restore();
     });
