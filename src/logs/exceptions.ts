@@ -24,7 +24,7 @@ export class AutoCollectExceptions {
     private _client: LogApi;
     private _tokens: number = EXCEPTION_RATE_LIMIT_CAPACITY;
     private _lastRefillTime: number = Date.now();
-    private _suppressedCount: number = 0;
+    private _suppressedCount = 0;
 
     constructor(client: LogApi) {
         this._client = client;

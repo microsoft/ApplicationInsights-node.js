@@ -101,7 +101,7 @@ function _getOtlpSpanExporter(internalConfig: ApplicationInsightsConfig): SpanPr
 function _getOtlpLogExporter(internalConfig: ApplicationInsightsConfig): BatchLogRecordProcessor {
     if (internalConfig.otlpLogExporterConfig?.enabled) {
         const otlpLogExporter = new OTLPLogExporter(internalConfig.otlpLogExporterConfig);
-        const otlpLogProcessor = new BatchLogRecordProcessor(otlpLogExporter);
+        const otlpLogProcessor = new BatchLogRecordProcessor({ exporter: otlpLogExporter });
         return otlpLogProcessor;
     }
 }
