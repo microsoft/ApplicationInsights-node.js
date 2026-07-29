@@ -157,8 +157,8 @@ separately from clients created with `new appInsights.TelemetryClient()`.
 | enableInternalDebugLogging    | Enables debug and warning logging for AppInsights itself. If true, enables debug logging |
 | enableInternalWarningLogging  | Enables debug and warning logging for AppInsights itself. If true, enables warning logging |
 | enableSendLiveMetrics         | Enables communication with Application Insights Live Metrics. If true, enables communication with the live metrics service |
-| noDiagnosticChannel           | In order to track context across asynchronous calls, some changes are required in third party libraries such as mongodb and redis. By default ApplicationInsights will use diagnostic-channel-publishers to monkey-patch some of these libraries. This property is to disable the feature. Note that by setting this flag, events may no longer be correctly associated with the right operation.  |
-| noPatchModules                | Disable individual monkey-patches. Set `noPatchModules` to a comma separated list of packages to disable. e.g. `"noPatchModules": "console,redis"` to avoid patching the console and redis packages. The following modules are available: `azuresdk, bunyan, console, mongodb, mongodb-core, mysql, redis, winston, pg`, and `pg-pool`. Visit the [diagnostic-channel-publishers' README](https://github.com/microsoft/node-diagnostic-channel/blob/master/src/diagnostic-channel-publishers/README.md) for information about exactly which versions of these packages are patched. |
+| noDiagnosticChannel           | In order to track context across asynchronous calls, some changes are required in third party libraries such as mongodb and redis. By default ApplicationInsights will use the appropriate OpenTelemetry instrumentation for each library. This property is to disable the feature. Note that by setting this flag, events may no longer be correctly associated with the right operation.  |
+| noPatchModules                | Disable individual instrumentations. Set `noPatchModules` to a comma separated list of packages to disable. e.g. `"noPatchModules": "console,redis"` to avoid instrumenting the console and redis packages. The following modules are available: `azuresdk, bunyan, console, mongodb, mongodb-core, mysql, redis, winston, pg`, and `pg-pool`. |
 | aadTokenCredential| Azure Credential instance to be used to authenticate the App. [AAD Identity Credential Classes](https://github.com/Azure/azure-sdk-for-js/tree/master/sdk/identity/identity#credential-classes)
 | enableWebInstrumentation | Sets the state of automatic web Instrumentation (Optional, disabled by default). If true, web instrumentation will be enabled on valid node server http response with the connection string used for SDK initialization
 | webInstrumentationConnectionString | Sets connection string used for web Instrumentation (Optional, Default undefined)|
@@ -239,7 +239,7 @@ The following modules are available: `azuresdk`, `bunyan`, `console`, `mongodb`,
 Automatic instrumentation for several Azure SDKs is also enabled.
 [Javascript Azure SDKs](https://azure.github.io/azure-sdk/releases/latest/index.html#javascript)
 
-The `bunyan`, `winston`, and `console` patches will generate Application Insights Trace events based on whether `setAutoCollectConsole` is enabled.
+The `bunyan`, `winston`, and `console` instrumentations will generate Application Insights Trace events based on whether `setAutoCollectConsole` is enabled.
 The rest will generate Application Insights Dependency events based on whether `setAutoCollectDependencies` is enabled. Make sure that `applicationinsights` is imported **before** any 3rd-party packages for them to be instrumented successfully.
 
 ### Live Metrics

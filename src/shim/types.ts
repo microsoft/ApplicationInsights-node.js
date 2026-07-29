@@ -316,15 +316,15 @@ export interface IEnvironmentConfig {
     /**
     * In order to track context across asynchronous calls,
     * some changes are required in third party libraries such as mongodb and redis.
-    * By default ApplicationInsights will use diagnostic-channel-publishers to monkey-patch some of these libraries.
+    * By default ApplicationInsights will use the appropriate OpenTelemetry instrumentation for each library.
     * This property is to disable the feature.
     * Note that by setting this flag, events may no longer be correctly associated with the right operation.
     */
     noDiagnosticChannel: boolean;
     /**
-    * Disable individual monkey-patches.
+    * Disable individual instrumentations.
     * Set `noPatchModules` to a comma separated list of packages to disable.
-    * e.g. `"noPatchModules": "console,redis"` to avoid patching the console and redis packages.
+    * e.g. `"noPatchModules": "console,redis"` to avoid instrumenting the console and redis packages.
     * The following modules are available: `azuresdk, bunyan, console, mongodb, mongodb-core, mysql, redis, winston, pg`, and `pg-pool`.
     */
     noPatchModules: string;
