@@ -5,10 +5,12 @@ import { logs } from "@opentelemetry/api-logs";
 import { AKSLoader } from "../../../src/agent/aksLoader";
 import { DiagnosticLogger } from "../../../src/agent/diagnostics/diagnosticLogger";
 import { FileWriter } from "../../../src/agent/diagnostics/writers/fileWriter";
+import { shutdownAzureMonitor } from "../../../src";
 
 describe("agent/AKSLoader", () => {
     let originalEnv: NodeJS.ProcessEnv;
     let sandbox: sinon.SinonSandbox;
+    let originalConsoleLog: typeof console.log;
 
     before(() => {
         sandbox = sinon.createSandbox();
@@ -16,9 +18,14 @@ describe("agent/AKSLoader", () => {
 
     beforeEach(() => {
         originalEnv = process.env;
+        originalConsoleLog = console.log;
     });
 
-    afterEach(() => {
+    afterEach(async () => {
+        // initialize() installs global providers and patches console; both leak into later suites without a shutdown.
+        if (console.log !== originalConsoleLog) {
+            await shutdownAzureMonitor();
+        }
         process.env = originalEnv;
         sandbox.restore();
     });
