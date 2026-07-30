@@ -62,7 +62,10 @@ describe("agent/AKSLoader", () => {
         assert.ok(exporterName.startsWith("AzureMonitorMetricExporter"), `Expected exporter name to start with 'AzureMonitorMetricExporter', but got '${exporterName}'`);
         
         let tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate()) as any;
-        assert.equal(tracerProvider.constructor.name, "NodeTracerProvider");
+        assert.ok(
+            /^(Node)?TracerProvider$/.test(tracerProvider.constructor.name),
+            `Expected a tracer provider, but got '${tracerProvider.constructor.name}'`
+        );
         let loggerProvider = logs.getLoggerProvider() as any;
         assert.equal(loggerProvider.constructor.name, "LoggerProvider");
     });

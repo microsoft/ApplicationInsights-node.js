@@ -4,12 +4,12 @@
 import { shutdownAzureMonitor as distroShutdownAzureMonitor, useAzureMonitor as distroUseAzureMonitor } from "@azure/monitor-opentelemetry";
 import { ProxyTracerProvider, diag, metrics, trace } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
+import { InstrumentationConfig } from "@opentelemetry/instrumentation";
 import { MeterProvider } from "@opentelemetry/sdk-metrics";
 import { BatchLogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
 import { BasicTracerProvider, BatchSpanProcessor, SpanProcessor } from "@opentelemetry/sdk-trace-node";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-import { AutoCollectLogs } from "./logs/autoCollectLogs";
 import { AutoCollectExceptions } from "./logs/exceptions";
 import { AzureMonitorOpenTelemetryOptions } from "./types";
 import { ApplicationInsightsConfig } from "./shared/configuration/config";
@@ -17,7 +17,6 @@ import { LogApi } from "./shim/logsApi";
 import { StatsbeatFeature } from "./shim/types";
 import { StatsbeatFeaturesManager } from "./shared/util/statsbeatFeaturesManager";
 
-let autoCollectLogs: AutoCollectLogs;
 let exceptions: AutoCollectExceptions;
 
 /**
@@ -55,17 +54,23 @@ export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
         options.logRecordProcessors.push(otlpLogProcessor);
     }
     
+    const consoleOptions = internalConfig.instrumentationOptions.console;
+    options.instrumentationOptions = {
+        ...options.instrumentationOptions,
+        console: {
+            enabled: consoleOptions?.enabled,
+            logSeverity: consoleOptions?.logSendingLevel,
+        } as InstrumentationConfig,
+    };
+
     // Clean up previous instances to prevent listener accumulation on repeated calls
-    autoCollectLogs?.shutdown();
     exceptions?.shutdown();
 
     distroUseAzureMonitor(options);
     const logApi = new LogApi(logs.getLogger("ApplicationInsightsLogger"));
-    autoCollectLogs = new AutoCollectLogs();
     if (internalConfig.enableAutoCollectExceptions) {
         exceptions = new AutoCollectExceptions(logApi);
     }
-    autoCollectLogs.enable(internalConfig.instrumentationOptions);
 }
 
 /**
@@ -73,7 +78,6 @@ export function useAzureMonitor(options?: AzureMonitorOpenTelemetryOptions) {
 */
 export async function shutdownAzureMonitor() {
     await distroShutdownAzureMonitor();
-    autoCollectLogs.shutdown();
     exceptions?.shutdown();
 }
 

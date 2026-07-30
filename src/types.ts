@@ -42,6 +42,8 @@ export interface AzureMonitorOpenTelemetryOptions extends DistroOptions {
   enableAutoCollectPerformance?: boolean;
   enableAutoCollectDependencies?: boolean;
   enableAutoCollectRequests?: boolean;
+  /** OpenTelemetry Instrumentations options included as part of Azure Monitor */
+  instrumentationOptions?: InstrumentationOptions;
 }
 
 export interface InstrumentationOptions extends DistroInstrumentationOptions {

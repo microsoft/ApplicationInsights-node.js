@@ -319,6 +319,7 @@ export interface IEnvironmentConfig {
     * By default ApplicationInsights will use the appropriate OpenTelemetry instrumentation for each library.
     * This property is to disable the feature.
     * Note that by setting this flag, events may no longer be correctly associated with the right operation.
+    * @deprecated Use `instrumentationOptions` on the Azure Monitor OpenTelemetry distro instead.
     */
     noDiagnosticChannel: boolean;
     /**
@@ -326,6 +327,7 @@ export interface IEnvironmentConfig {
     * Set `noPatchModules` to a comma separated list of packages to disable.
     * e.g. `"noPatchModules": "console,redis"` to avoid instrumenting the console and redis packages.
     * The following modules are available: `azuresdk, bunyan, console, mongodb, mongodb-core, mysql, redis, winston, pg`, and `pg-pool`.
+    * @deprecated Use `instrumentationOptions` on the Azure Monitor OpenTelemetry distro instead.
     */
     noPatchModules: string;
     /**
