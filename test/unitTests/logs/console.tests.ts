@@ -79,6 +79,21 @@ describe("AutoCollection/Console", () => {
                 SeverityNumber.WARN
             );
         });
+
+        it("should prefer an explicit logSendingLevel over the log level env var", () => {
+            process.env.APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL = "WARN";
+            const distroStub = sandbox.stub(distro, "useAzureMonitor");
+            useAzureMonitor({
+                azureMonitorExporterOptions: { connectionString },
+                instrumentationOptions: {
+                    console: { enabled: true, logSendingLevel: SeverityNumber.ERROR },
+                },
+            });
+            assert.strictEqual(
+                forwardedConsoleConfig(distroStub).logSeverity,
+                SeverityNumber.ERROR
+            );
+        });
     });
 
     describe("#console collection", () => {
