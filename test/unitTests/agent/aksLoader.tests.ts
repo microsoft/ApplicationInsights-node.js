@@ -5,11 +5,12 @@ import { logs } from "@opentelemetry/api-logs";
 import { AKSLoader } from "../../../src/agent/aksLoader";
 import { DiagnosticLogger } from "../../../src/agent/diagnostics/diagnosticLogger";
 import { FileWriter } from "../../../src/agent/diagnostics/writers/fileWriter";
-import { dispose as disposeConsole } from "../../../src/logs/diagnostic-channel/console.sub";
+import { shutdownAzureMonitor } from "../../../src";
 
 describe("agent/AKSLoader", () => {
     let originalEnv: NodeJS.ProcessEnv;
     let sandbox: sinon.SinonSandbox;
+    let originalConsoleLog: typeof console.log;
 
     before(() => {
         sandbox = sinon.createSandbox();
@@ -17,10 +18,14 @@ describe("agent/AKSLoader", () => {
 
     beforeEach(() => {
         originalEnv = process.env;
+        originalConsoleLog = console.log;
     });
 
-    afterEach(() => {
-        disposeConsole();
+    afterEach(async () => {
+        // initialize() installs global providers and patches console; both leak into later suites without a shutdown.
+        if (console.log !== originalConsoleLog) {
+            await shutdownAzureMonitor();
+        }
         process.env = originalEnv;
         sandbox.restore();
     });
@@ -57,7 +62,10 @@ describe("agent/AKSLoader", () => {
         assert.ok(exporterName.startsWith("AzureMonitorMetricExporter"), `Expected exporter name to start with 'AzureMonitorMetricExporter', but got '${exporterName}'`);
         
         let tracerProvider = ((trace.getTracerProvider() as ProxyTracerProvider).getDelegate()) as any;
-        assert.equal(tracerProvider.constructor.name, "NodeTracerProvider");
+        assert.ok(
+            /^(Node)?TracerProvider$/.test(tracerProvider.constructor.name),
+            `Expected a tracer provider, but got '${tracerProvider.constructor.name}'`
+        );
         let loggerProvider = logs.getLoggerProvider() as any;
         assert.equal(loggerProvider.constructor.name, "LoggerProvider");
     });

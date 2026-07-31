@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### Other Changes
+
+- Replaced the `diagnostic-channel`/`diagnostic-channel-publishers` console log collection with the `@opentelemetry/instrumentation-console` package.
+
 ### 3.15.1 (2026-06-24)
 
 #### Other Changes
