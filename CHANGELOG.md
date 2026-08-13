@@ -2,16 +2,21 @@
 
 ## Unreleased
 
+### 3.16.0 (2026-08-12)
+
 #### Other Changes
 
-- Replaced the `diagnostic-channel`/`diagnostic-channel-publishers` console log collection with the `@opentelemetry/instrumentation-console` package.
+- Bumped `@opentelemetry/*` (0.220 / 2.9) and `@azure/monitor-opentelemetry` to resolve dependency audit alerts.
+- Replaced the `diagnostic-channel`/`diagnostic-channel-publishers` console log collection with OpenTelemetry console instrumentation provided by `@azure/monitor-opentelemetry`.
+- Deprecated `noDiagnosticChannel` and `noPatchModules` in favor of OpenTelemetry `instrumentationOptions`.
+- Console severity is now derived from the console method (`console.error` maps to Error, `console.warn` maps to Warning, and `console.log`/`console.info` map to Information).
+- An explicitly configured console `logSendingLevel` now takes precedence over `APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL`.
 
 ### 3.15.1 (2026-06-24)
 
 #### Other Changes
 
 - Updated `@azure/monitor-opentelemetry`, `@azure/identity`, and `@opentelemetry/*` dependencies.
-- Bumped `@opentelemetry/*` (0.220 / 2.9) and `@azure/monitor-opentelemetry` to resolve dependency audit alerts.
 - Removed the legacy `@azure/functions-old` (v3) dependency.
 - Resolve vulnerabilities in dependencies.
 
