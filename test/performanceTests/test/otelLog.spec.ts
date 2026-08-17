@@ -24,7 +24,11 @@ function ensureProvider(): Logger {
     return logger;
   }
   const provider = new LoggerProvider({
-    processors: [new SimpleLogRecordProcessor(new InMemoryLogRecordExporter())],
+    processors: [
+      new SimpleLogRecordProcessor({
+        exporter: new InMemoryLogRecordExporter(),
+      }),
+    ],
   });
   logger = provider.getLogger("perf-otel-log");
   return logger;
