@@ -165,7 +165,7 @@ module.exports = {
         "MessageData",
         (telemetry) => {
             return telemetry.data.baseData.message === "Test console.error" &&
-            telemetry.data.baseData.severityLevel === "Warning";
+            telemetry.data.baseData.severityLevel === "Error";
         }
     ),
     "ConsoleWarn": outputContract(

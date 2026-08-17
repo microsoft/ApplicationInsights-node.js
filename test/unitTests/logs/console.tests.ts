@@ -1,85 +1,134 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import assert from "assert";
-import { channel } from "diagnostic-channel";
-import { console } from "diagnostic-channel-publishers";
-import { SeverityNumber, logs } from '@opentelemetry/api-logs';
-import {
-    LoggerProvider,
-    SimpleLogRecordProcessor,
-    InMemoryLogRecordExporter,
-} from '@opentelemetry/sdk-logs';
+import sinon from "sinon";
+import { SeverityNumber, logs } from "@opentelemetry/api-logs";
+import { InMemoryLogRecordExporter, LoggerProvider, SimpleLogRecordProcessor } from "@opentelemetry/sdk-logs";
+import * as distro from "@azure/monitor-opentelemetry";
 
-import { dispose } from "../../../src/logs/diagnostic-channel/console.sub";
-import { AutoCollectLogs } from "../../../src/logs/autoCollectLogs";
+import { shutdownAzureMonitor, useAzureMonitor } from "../../../src";
 
+const connectionString = "InstrumentationKey=1aa11111-bbbb-1ccc-8ddd-eeeeffff3333";
+
+/** Console config as the distro receives it. `logSeverity` is typed by the distro in 1.20.0+. */
+type ForwardedConsoleConfig = { enabled?: boolean; logSeverity?: SeverityNumber };
+
+function forwardedConsoleConfig(distroStub: sinon.SinonStub): ForwardedConsoleConfig {
+    return distroStub.args[0][0].instrumentationOptions.console as ForwardedConsoleConfig;
+}
 
 describe("AutoCollection/Console", () => {
-    let memoryLogExporter: InMemoryLogRecordExporter;
-
-    before(() => {
-        logs.disable();
-        memoryLogExporter = new InMemoryLogRecordExporter();
-        const loggerProvider = new LoggerProvider({
-            processors: [new SimpleLogRecordProcessor(memoryLogExporter)],
-        });
-        logs.setGlobalLoggerProvider(loggerProvider);
-    });
+    let sandbox: sinon.SinonSandbox;
 
     beforeEach(() => {
-        memoryLogExporter.getFinishedLogRecords().length = 0; // clear
+        sandbox = sinon.createSandbox();
     });
 
-    afterEach(() => {
-        dispose();
+    afterEach(async () => {
+        sandbox.restore();
+        await shutdownAzureMonitor();
+        delete process.env.APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL;
     });
 
-    describe("#log and #error()", () => {
-        it("should log event for errors", () => {
-            let autoCollect = new AutoCollectLogs();
-            autoCollect.enable({
-                console: { enabled: true }
+    describe("#distro configuration", () => {
+        it("should forward the console instrumentation setting to the distro", () => {
+            const distroStub = sandbox.stub(distro, "useAzureMonitor");
+            useAzureMonitor({
+                azureMonitorExporterOptions: { connectionString },
+                instrumentationOptions: { console: { enabled: true } },
             });
-            const dummyError = new Error("test error");
-            const errorEvent: console.IConsoleData = {
-                message: dummyError.toString(),
-                stderr: false,
-            };
-            channel.publish("console", errorEvent);
-            const logRecords = memoryLogExporter.getFinishedLogRecords();
-            assert.strictEqual(logRecords.length, 1);
-            assert.strictEqual(logRecords[0].body, "Error: test error");
-            assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.ERROR);
+            assert.ok(distroStub.calledOnce, "distro useAzureMonitor should be called");
+            assert.deepStrictEqual(
+                forwardedConsoleConfig(distroStub),
+                { enabled: true, logSeverity: undefined }
+            );
         });
 
-        it("should log event for logs", () => {
-            let autoCollect = new AutoCollectLogs();
-            autoCollect.enable({
-                console: { enabled: true }
-            });
-            const logEvent: console.IConsoleData = {
-                message: "test log",
-                stderr: true,
-            };
-            channel.publish("console", logEvent);
-            const logRecords = memoryLogExporter.getFinishedLogRecords();
-            assert.strictEqual(logRecords.length, 1);
-            assert.strictEqual(logRecords[0].body, "test log");
-            assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.WARN);
+        it("should disable console collection by default", () => {
+            const distroStub = sandbox.stub(distro, "useAzureMonitor");
+            useAzureMonitor({ azureMonitorExporterOptions: { connectionString } });
+            assert.strictEqual(
+                forwardedConsoleConfig(distroStub).enabled,
+                false
+            );
         });
 
-        it("severityLevel", () => {
-            let autoCollect = new AutoCollectLogs();
-            autoCollect.enable({
-                console: { enabled: true, logSendingLevel: SeverityNumber.ERROR }
+        it("should forward logSendingLevel to the distro as logSeverity", () => {
+            const distroStub = sandbox.stub(distro, "useAzureMonitor");
+            useAzureMonitor({
+                azureMonitorExporterOptions: { connectionString },
+                instrumentationOptions: {
+                    console: { enabled: true, logSendingLevel: SeverityNumber.ERROR },
+                },
             });
-            const logEvent: console.IConsoleData = {
-                message: "test log",
-                stderr: true,
-            };
-            channel.publish("console", logEvent);
+            assert.strictEqual(
+                forwardedConsoleConfig(distroStub).logSeverity,
+                SeverityNumber.ERROR
+            );
+        });
+
+        it("should forward the log level env var to the distro as logSeverity", () => {
+            process.env.APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL = "WARN";
+            const distroStub = sandbox.stub(distro, "useAzureMonitor");
+            useAzureMonitor({
+                azureMonitorExporterOptions: { connectionString },
+                instrumentationOptions: { console: { enabled: true } },
+            });
+            assert.strictEqual(
+                forwardedConsoleConfig(distroStub).logSeverity,
+                SeverityNumber.WARN
+            );
+        });
+
+        it("should prefer an explicit logSendingLevel over the log level env var", () => {
+            process.env.APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_LEVEL = "WARN";
+            const distroStub = sandbox.stub(distro, "useAzureMonitor");
+            useAzureMonitor({
+                azureMonitorExporterOptions: { connectionString },
+                instrumentationOptions: {
+                    console: { enabled: true, logSendingLevel: SeverityNumber.ERROR },
+                },
+            });
+            assert.strictEqual(
+                forwardedConsoleConfig(distroStub).logSeverity,
+                SeverityNumber.ERROR
+            );
+        });
+    });
+
+    describe("#console collection", () => {
+        it("should emit a log record for console output", async () => {
+            const memoryLogExporter = new InMemoryLogRecordExporter();
+            useAzureMonitor({
+                azureMonitorExporterOptions: { connectionString },
+                logRecordProcessors: [new SimpleLogRecordProcessor({ exporter: memoryLogExporter })],
+                instrumentationOptions: { console: { enabled: true } },
+            });
+            console.error("Error: test error");
+            await (logs.getLoggerProvider() as LoggerProvider).forceFlush();
             const logRecords = memoryLogExporter.getFinishedLogRecords();
-            assert.strictEqual(logRecords.length, 0);
+            const record = logRecords.find((logRecord) => logRecord.body === "Error: test error");
+            assert.ok(record, "Console log record should be emitted");
+            assert.strictEqual(record.severityNumber, SeverityNumber.ERROR);
+        });
+
+        it("should patch console when enabled and restore it on shutdown", async () => {
+            const originalLog = console.log;
+            const originalError = console.error;
+            useAzureMonitor({
+                azureMonitorExporterOptions: { connectionString },
+                instrumentationOptions: { console: { enabled: true } },
+            });
+            assert.notStrictEqual(console.log, originalLog, "console.log should be patched while enabled");
+            await shutdownAzureMonitor();
+            assert.strictEqual(console.log, originalLog, "console.log should be restored after shutdown");
+            assert.strictEqual(console.error, originalError, "console.error should be restored after shutdown");
+        });
+
+        it("should not patch console when disabled", () => {
+            const originalLog = console.log;
+            useAzureMonitor({ azureMonitorExporterOptions: { connectionString } });
+            assert.strictEqual(console.log, originalLog, "console.log should not be patched when disabled");
         });
     });
 });

@@ -10,7 +10,7 @@ import { MetricReader } from "@opentelemetry/sdk-metrics";
 import { OTLPExporterNodeConfigBase } from "@opentelemetry/otlp-exporter-base";
 
 
-export const APPLICATION_INSIGHTS_OPENTELEMETRY_VERSION = "3.15.1";
+export const APPLICATION_INSIGHTS_OPENTELEMETRY_VERSION = "3.16.0";
 export const DEFAULT_ROLE_NAME = "Web";
 export const AZURE_MONITOR_STATSBEAT_FEATURES = "AZURE_MONITOR_STATSBEAT_FEATURES";
 
@@ -42,6 +42,8 @@ export interface AzureMonitorOpenTelemetryOptions extends DistroOptions {
   enableAutoCollectPerformance?: boolean;
   enableAutoCollectDependencies?: boolean;
   enableAutoCollectRequests?: boolean;
+  /** OpenTelemetry Instrumentations options included as part of Azure Monitor */
+  instrumentationOptions?: InstrumentationOptions;
 }
 
 export interface InstrumentationOptions extends DistroInstrumentationOptions {

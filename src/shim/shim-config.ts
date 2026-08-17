@@ -58,7 +58,9 @@ class Config implements IConfig {
     public webInstrumentationConfig: IWebInstrumentationConfig[];
     public webInstrumentationSrc: string;
     public webInstrumentationConnectionString?: string;
+    /** @deprecated Use `instrumentationOptions` on the Azure Monitor OpenTelemetry distro instead. */
     public noPatchModules: string;
+    /** @deprecated Use `instrumentationOptions` on the Azure Monitor OpenTelemetry distro instead. */
     public noDiagnosticChannel: boolean;
 
     // Expose Distro config for further customization, other conflicting configs will take precedence over this.

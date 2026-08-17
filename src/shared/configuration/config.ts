@@ -106,8 +106,8 @@ export class ApplicationInsightsConfig {
             this.resource = Object.assign(this.resource, options.resource);
             this.samplingRatio = options.samplingRatio !== undefined ? options.samplingRatio : this.samplingRatio;
 
-            // Set console logging level from env var
-            if (process.env[loggingLevel]) { 
+            // Set console logging level from env var, unless it was set explicitly in code
+            if (process.env[loggingLevel] && this.instrumentationOptions.console?.logSendingLevel === undefined) {
                 this.instrumentationOptions = {
                     ...this.instrumentationOptions,
                     console: {

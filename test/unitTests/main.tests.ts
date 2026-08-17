@@ -10,6 +10,13 @@ import { LoggerProvider, BatchLogRecordProcessor } from "@opentelemetry/sdk-logs
 import { shutdownAzureMonitor, useAzureMonitor } from "../../src";
 import { ApplicationInsightsConfig } from "../../src/shared/configuration/config";
 
+/** Span processors moved from `_config` to `_activeSpanProcessor` in the OpenTelemetry 2.x SDK. */
+function getSpanProcessors(tracerProvider: any): any[] {
+    return tracerProvider?._config?.spanProcessors
+        ?? tracerProvider?._activeSpanProcessor?._spanProcessors
+        ?? [];
+}
+
 describe("ApplicationInsightsClient", () => {
     afterEach(() => {
         shutdownAzureMonitor();
@@ -29,7 +36,7 @@ describe("ApplicationInsightsClient", () => {
         assert.ok(tracerProvider, "TracerProvider should exist");
         
         // Check span processors - use the correct property path discovered in debug testing
-        const spanProcessors = (tracerProvider as any)._config?.spanProcessors || [];
+        const spanProcessors = getSpanProcessors(tracerProvider);
         
         let hasOtlpProcessor = spanProcessors.some((processor: any) => {
             const result = processor._exporter instanceof OTLPTraceExporter;
@@ -108,7 +115,7 @@ describe("ApplicationInsightsClient", () => {
         assert.ok(tracerProvider, "TracerProvider should exist when OTLP span exporter is enabled");
         
         // Check for OTLP span processor
-        const spanProcessors = (tracerProvider as any)._config?.spanProcessors || [];
+        const spanProcessors = getSpanProcessors(tracerProvider);
         let hasOtlpProcessor = spanProcessors.some((processor: any) => {
             return processor._exporter instanceof OTLPTraceExporter;
         });
@@ -149,7 +156,7 @@ describe("ApplicationInsightsClient", () => {
         assert.ok(tracerProvider, "TracerProvider should exist with custom OTLP config");
         
         // Check for OTLP span processor with custom config
-        const spanProcessors = (tracerProvider as any)._config?.spanProcessors || [];
+        const spanProcessors = getSpanProcessors(tracerProvider);
         let hasOtlpProcessor = spanProcessors.some((processor: any) => {
             return processor._exporter instanceof OTLPTraceExporter;
         });
