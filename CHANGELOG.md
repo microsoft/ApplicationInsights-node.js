@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### Other Changes
+
+- Updated OpenTelemetry dependencies to stable 2.10.0 and experimental 0.221.0.
+- Refreshed performance harness dependencies to resolve npm audit vulnerabilities.
+
 ### 3.16.0 (2026-08-12)
 
 #### Other Changes
