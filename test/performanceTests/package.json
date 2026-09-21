@@ -25,6 +25,9 @@
     "typescript": "~5.3.3"
   },
   "private": true,
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "perf-test:node": "npm run build && node dist-esm/index.spec.js",
     "perf:benchmark": "npm run build && node runBenchmarks.mjs",

@@ -1,11 +1,19 @@
 # Release History
 
-## Unreleased
+### 3.17.0 (2026-09-10)
+
+#### Breaking Changes
+
+- Minimum supported Node.js version is now 22.0.0, as required by `@azure/monitor-opentelemetry` 1.20.0 and `@azure/monitor-opentelemetry-exporter` 1.0.0-beta.45.
 
 #### Other Changes
 
+- Updated `@azure/monitor-opentelemetry` to 1.20.0 and the minimum `@azure/monitor-opentelemetry-exporter` version to 1.0.0-beta.45.
+- Aligned `@azure/opentelemetry-instrumentation-azure-sdk` with the distro's 1.1.0-beta.1 dependency.
 - Updated OpenTelemetry dependencies to stable 2.10.0 and experimental 0.221.0.
 - Refreshed performance harness dependencies to resolve npm audit vulnerabilities.
+- Updated transitive dependencies, including Browserslist, to address dependency alerts.
+- Omitted registry URLs from npm lockfiles to support installation from different registries.
 
 ### 3.16.0 (2026-08-12)
 
