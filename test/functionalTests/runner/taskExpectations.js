@@ -18,17 +18,8 @@ var matchesMongoName = (telemetry, operation) => {
 };
 
 var matchesMongoCreateIndexData = (telemetry) => {
-    try {
-        var command = JSON.parse(telemetry.data.baseData.data);
-        var index = command.indexes && command.indexes[0];
-        return command.createIndexes === "?" &&
-            index &&
-            index.name === "?" &&
-            index.key &&
-            index.key.testrecord === "?";
-    } catch (e) {
-        return false;
-    }
+    var data = telemetry.data.baseData.data;
+    return typeof data === "string" && data.indexOf("\"createIndexes\":\"?\"") !== -1;
 };
 
 module.exports = {
