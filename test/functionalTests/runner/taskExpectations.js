@@ -14,7 +14,7 @@ var outputContract = (expectedTelemetryType, telemetryVerifier, childContract) =
 
 var matchesMongoName = (telemetry, operation) => {
     var name = telemetry.data.baseData.name;
-    return name === "mongodb." + operation || name === operation + " testCollection";
+    return name === "mongodb." + operation || name.indexOf(operation + " ") === 0;
 };
 
 module.exports = {
