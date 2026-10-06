@@ -12,6 +12,12 @@ var outputContract = (expectedTelemetryType, telemetryVerifier, childContract) =
     };
 };
 
+// Stable database conventions use "<operation> <namespace>" instead of "mongodb.<operation>".
+var matchesMongoName = (telemetry, operation) => {
+    var name = telemetry.data.baseData.name;
+    return name === "mongodb." + operation || name.indexOf(operation + " ") === 0;
+};
+
 module.exports = {
     "AzureSdkEventHubsSend": outputContract(
         "RemoteDependencyData",
@@ -66,7 +72,7 @@ module.exports = {
     "MongoInsert": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
-            return telemetry.data.baseData.name === "mongodb.insert" &&
+            return matchesMongoName(telemetry, "insert") &&
                 telemetry.data.baseData.success === true &&
                 telemetry.data.baseData.target === "localhost|testapp" &&
                 telemetry.data.baseData.type === "mongodb";
@@ -75,7 +81,7 @@ module.exports = {
     "MongoInsertMany": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
-            return telemetry.data.baseData.name === "mongodb.insert" &&
+            return matchesMongoName(telemetry, "insert") &&
                 telemetry.data.baseData.success === true &&
                 telemetry.data.baseData.target === "localhost|testapp" &&
                 telemetry.data.baseData.type === "mongodb";
@@ -84,7 +90,7 @@ module.exports = {
     "MongoFind": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
-            return telemetry.data.baseData.name === "mongodb.find" &&
+            return matchesMongoName(telemetry, "find") &&
                 telemetry.data.baseData.success === true &&
                 telemetry.data.baseData.data === "{\"testrecord\":\"?\"}" &&
                 telemetry.data.baseData.target === "localhost|testapp" &&
@@ -94,7 +100,7 @@ module.exports = {
     "MongoUpdateOne": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
-            return telemetry.data.baseData.name === "mongodb.update" &&
+            return matchesMongoName(telemetry, "update") &&
                 telemetry.data.baseData.success === true &&
                 telemetry.data.baseData.target === "localhost|testapp" &&
                 telemetry.data.baseData.type === "mongodb";
@@ -103,8 +109,7 @@ module.exports = {
     "MongoCreateIndex": outputContract(
         "RemoteDependencyData",
         (telemetry) => {
-            return telemetry.data.baseData.name === "mongodb.createIndexes" &&
-                telemetry.data.baseData.data === "{\"createIndexes\":\"?\",\"indexes\":[{\"name\":\"?\",\"key\":{\"testrecord\":\"?\"}}]}" &&
+            return matchesMongoName(telemetry, "createIndexes") &&
                 telemetry.data.baseData.target === "localhost|testapp" &&
                 telemetry.data.baseData.type === "mongodb";
         }

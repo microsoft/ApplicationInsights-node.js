@@ -122,7 +122,7 @@ const runAndValidateLongTest = () => {
 
         // Get all request item operation ids
         const stressTelemetry = Ingestion.telemetry["RequestData"].filter((v) => {
-            return v.data.baseData.name == "GET " + testSequence.path;
+            return Utils.requestMatchesPath(v, testSequence.path);
         });
         const distinctOpIds = Array.from(new Set(stressTelemetry.map(item => item.tags["ai.operation.id"])));
 
