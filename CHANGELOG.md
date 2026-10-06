@@ -7,6 +7,13 @@
 #### Breaking Changes
 
 - Minimum supported Node.js version is now 22.0.0, matching the Azure Monitor OpenTelemetry dependencies.
+- Database telemetry now follows the stable OpenTelemetry database semantic conventions introduced by the updated instrumentations. Dependency names can change from legacy values such as `mongodb.insert` to low-cardinality names such as `insert <collection>` or `createIndexes <namespace>`. Update alerts, dashboards, and queries that match exact database dependency names.
+
+#### Telemetry Changes
+
+- Database spans now use `db.system.name`, `db.namespace`, `db.query.text`, and `db.operation.name` instead of the deprecated `db.system`, `db.name`, `db.statement`, and `db.operation` attributes.
+- `@azure/monitor-opentelemetry-exporter` 1.0.0-beta.46 maps the stable database attributes to Application Insights dependency type, target, and data fields. Attributes consumed by that mapping are no longer duplicated in custom properties.
+- HTTP instrumentation can provide the request method as the span name and carry the path in route or URL attributes. Azure Monitor derives the Application Insights request name from the method and route or URL when those attributes are available.
 
 #### Other Changes
 

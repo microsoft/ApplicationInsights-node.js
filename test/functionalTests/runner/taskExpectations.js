@@ -12,6 +12,7 @@ var outputContract = (expectedTelemetryType, telemetryVerifier, childContract) =
     };
 };
 
+// Stable database conventions use "<operation> <namespace>" instead of "mongodb.<operation>".
 var matchesMongoName = (telemetry, operation) => {
     var name = telemetry.data.baseData.name;
     return name === "mongodb." + operation || name.indexOf(operation + " ") === 0;

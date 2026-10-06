@@ -1,6 +1,7 @@
 const URL = require('url');
 const http = require('http');
 
+// OpenTelemetry HTTP spans can carry the path in the URL instead of the span name.
 module.exports.requestMatchesPath = (telemetry, path) => {
     const baseData = telemetry && telemetry.data && telemetry.data.baseData;
     if (!baseData) {
