@@ -2,8 +2,17 @@
 
 ## Unreleased
 
+### 3.17.0 (2026-10-06)
+
+#### Breaking Changes
+
+- Minimum supported Node.js version is now 22.0.0, matching the Azure Monitor OpenTelemetry dependencies.
+
 #### Other Changes
 
+- Updated `@azure/monitor-opentelemetry` to 1.20.0 and `@azure/monitor-opentelemetry-exporter` to 1.0.0-beta.45.
+- Added Azure Container Apps resource detection and programmatic console log severity configuration through the updated Azure Monitor distribution.
+- Included Azure Monitor fixes for performance-counter sampling, resource detector dependencies, and `OTEL_BSP_*` environment variable handling.
 - Updated OpenTelemetry dependencies to stable 2.10.0 and experimental 0.221.0.
 - Refreshed performance harness dependencies to resolve npm audit vulnerabilities.
 
