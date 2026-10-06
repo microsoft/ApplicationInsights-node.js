@@ -10,9 +10,9 @@
 
 #### Other Changes
 
-- Updated `@azure/monitor-opentelemetry` to 1.20.0 and `@azure/monitor-opentelemetry-exporter` to 1.0.0-beta.45.
+- Updated `@azure/monitor-opentelemetry` to 1.20.1 and `@azure/monitor-opentelemetry-exporter` to 1.0.0-beta.46.
 - Added Azure Container Apps resource detection and programmatic console log severity configuration through the updated Azure Monitor distribution.
-- Included Azure Monitor fixes for performance-counter sampling, resource detector dependencies, and `OTEL_BSP_*` environment variable handling.
+- Included Azure Monitor fixes for performance-counter sampling, resource detector dependencies, `OTEL_BSP_*` environment variable handling, instrumentation lifecycle, Live Metrics recovery, and stable OpenTelemetry database attributes.
 - Updated OpenTelemetry dependencies to stable 2.10.0 and experimental 0.221.0.
 - Refreshed performance harness dependencies to resolve npm audit vulnerabilities.
 
