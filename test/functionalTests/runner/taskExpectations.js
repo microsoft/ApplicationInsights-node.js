@@ -17,11 +17,6 @@ var matchesMongoName = (telemetry, operation) => {
     return name === "mongodb." + operation || name === operation + " testCollection";
 };
 
-var matchesMongoCreateIndexData = (telemetry) => {
-    var data = telemetry.data.baseData.data;
-    return typeof data === "string" && data.indexOf("\"createIndexes\":\"?\"") !== -1;
-};
-
 module.exports = {
     "AzureSdkEventHubsSend": outputContract(
         "RemoteDependencyData",
@@ -114,7 +109,6 @@ module.exports = {
         "RemoteDependencyData",
         (telemetry) => {
             return matchesMongoName(telemetry, "createIndexes") &&
-                matchesMongoCreateIndexData(telemetry) &&
                 telemetry.data.baseData.target === "localhost|testapp" &&
                 telemetry.data.baseData.type === "mongodb";
         }
