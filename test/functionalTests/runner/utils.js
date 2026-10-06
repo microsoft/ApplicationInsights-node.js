@@ -1,6 +1,17 @@
 const URL = require('url');
 const http = require('http');
 
+module.exports.requestMatchesPath = (telemetry, path) => {
+    const baseData = telemetry && telemetry.data && telemetry.data.baseData;
+    if (!baseData) {
+        return false;
+    }
+    if (baseData.name === "GET " + path) {
+        return true;
+    }
+    return baseData.name === "GET" && baseData.url && URL.parse(baseData.url).pathname === path;
+};
+
 module.exports.HTTP = class HTTP {
     /** @param {string} url */
     static _parseUrl(url) {

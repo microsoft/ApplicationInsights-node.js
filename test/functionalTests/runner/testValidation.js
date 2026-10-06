@@ -14,7 +14,7 @@ module.exports.TestValidation = class TestValidation {
         }
         for (let i = 0; i < requestData.length; i++) {
             let telemetry = requestData[i];
-            if (telemetry.data.baseData.name == "GET " + path) {
+            if (Utils.requestMatchesPath(telemetry, path)) {
                 return telemetry;
             }
         }
