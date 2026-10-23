@@ -17,7 +17,10 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 1. Fork this repo
 2. Clone your fork locally `git clone https://github.com/<youruser>/ApplicationInsights-node.js`.
 3. Open a terminal and move into your local copy `cd ApplicationInsights-node.js`.
-4. Install all dependencies with `npm install`.
+4. Use Node.js 24.22.1 (the repository `.nvmrc` default), or another patched release listed in
+   [Supported Node.js versions](README.md#supported-nodejs-versions). Verify `node --version`, then install dependencies
+   with `npm ci --engine-strict`. Use the same patched runtime for builds, tests, performance tooling, and compression
+   encoding as well as decoding. Do not rely on the SDK installation to upgrade your runtime.
 5. Build project 
     ```bash
     npm run build
@@ -32,7 +35,11 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
     ```
     _Note: Functional tests require Docker_
     
-8. Run back compatibility tests to ckeck older version of Node.js runtime and Typescript.
+8. The back compatibility workflow targets the separate `2.x` branch. Its older Node.js runtime matrix is not part of
+   the main branch security baseline and requires a separate legacy support/backport decision. Do not switch to an
+   end-of-life runtime to run main branch tests. Historical TypeScript/type-definition fixtures do not establish
+   support for unpatched Node.js versions.
+   The legacy test command is:
     ```bash
     npm run backcompattest
     ```

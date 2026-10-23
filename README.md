@@ -17,7 +17,30 @@ Azure VMs and Web Apps, and even other public clouds. This solution is based on 
 > *Important:* The Azure Monitor OpenTelemetry-based Offerings for Node.js applications do not support older versions of Node that were supported by
 Application Insights 2.X SDK. If you rely on this support, please continue to use version 2.X.
 
-We support the versions of Node.js that are [supported by OpenTelemetry](https://github.com/open-telemetry/opentelemetry-js#supported-runtimes).
+Use a maintained Node.js release supported by [OpenTelemetry](https://github.com/open-telemetry/opentelemetry-js#supported-runtimes)
+and the Azure Monitor dependencies, with at least the following security patch:
+
+| Node.js release line | Minimum version |
+| --- | --- |
+| 22.x | 22.23.4 |
+| 24.x | 24.22.1 |
+| 26.x | 26.12.1 |
+
+These minimums include the full [October 21, 2026 Node.js security release](https://nodejs.org/en/blog/vulnerability/october-2026-security-releases):
+the applicable DNS, TLS, HTTP keep-alive, Brotli decoder, crypto snapshot, permission model, and Node.js 26 ZIP fixes,
+plus the bundled c-ares, certificate trust, OpenSSL, SQLite, and Undici updates for each release line.
+Use newer security patches within these lines as they become available. End-of-life releases, including Node.js 23 and 25,
+are not a secure alternative. Future major versions require a support review.
+
+Upgrade the **Node.js runtime**, not just this npm package. The `engines` requirement is advisory unless your package manager
+enforces it; installing the SDK does not replace Node.js or prove that a deployed process is patched.
+Verify the actual `process.version` in every application, container, Azure Functions/App Service instance, and build task
+(including tasks with their own embedded Node.js). Repository CI pins do not update these external runtimes.
+
+The same runtime baseline applies to compression encoding and decoding, including the browser SDK loader and test tooling.
+Encoding-only usage is included as precautionary hardening, not because the Brotli encoder is identified as vulnerable.
+Compression algorithms and formats are unchanged. Using the 2.X SDK for compatibility does not patch an older Node.js runtime;
+legacy deployments still need a patched, supported runtime and separate compatibility validation.
 
 ## Limitations of Application Insights 3.X SDK
 
