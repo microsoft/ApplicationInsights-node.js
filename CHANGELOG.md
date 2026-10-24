@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Require Node.js 22.23.4+, 24.22.1+, or 26.12.1+ within those release lines and update CI for the full October 21, 2026 security release, including precautionary compression-encoding coverage. Upgrade deployed runtimes separately; installing the SDK does not update Node.js.
+
 ### 3.17.0 (2026-10-06)
 
 #### Breaking Changes

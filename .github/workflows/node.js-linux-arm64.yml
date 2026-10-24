@@ -8,11 +8,15 @@ on:
 
 jobs:
   build:
+    name: build (${{ matrix.node-version.label }})
     runs-on: ubuntu-24.04-arm
 
     strategy:
       matrix:
-        node-version: ['22.23.4', '24.22.1', '26.12.1']
+        node-version:
+          - { label: '22.x', version: '22.23.4' }
+          - { label: '24.x', version: '24.22.1' }
+          - { label: '26.x', version: '26.12.1' }
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -22,10 +26,10 @@ jobs:
           mkdir -p ./test/certs
           openssl req -x509 -nodes -newkey rsa:2048 -keyout ./test/certs/server-key.pem -out ./test/certs/server-cert.pem -days 1 -subj "/C=CL/ST=RM/L=OpenTelemetryTest/O=Root/OU=Test/CN=ca"
 
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js ${{ matrix.node-version.version }}
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: ${{ matrix.node-version.version }}
 
       - run: npm run clean
       - run: npm i

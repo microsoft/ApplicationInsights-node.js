@@ -3,10 +3,6 @@
 The performance test harness measures throughput (ops/s) for hot-path APIs in
 this package and reports them against an upstream-OpenTelemetry-only baseline.
 
-Use a patched runtime from [Supported Node.js versions](../../README.md#supported-nodejs-versions).
-CI runs both the candidate and baseline on Node.js 22.23.4; use that same version for comparable local results.
-Install this harness with `npm ci --engine-strict`. The repository development default is Node.js 24.22.1.
-
 #### Manual run
 
 1. Copy `sample.env` to `.env` and set `APPLICATIONINSIGHTS_CONNECTION_STRING`
