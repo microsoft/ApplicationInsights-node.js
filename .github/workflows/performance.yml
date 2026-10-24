@@ -20,7 +20,7 @@ jobs:
     # scenarios * (warmup + samples * duration + per-child init).
     timeout-minutes: 40
     env:
-      NODE_VERSION: '22.x'
+      NODE_VERSION: '22.23.4'
       PERF_SAMPLES: '3'
       PERF_DURATION: '5'
       PERF_WARMUP: '1'
