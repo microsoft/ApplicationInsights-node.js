@@ -13,8 +13,8 @@ import type { Tracer } from "@opentelemetry/api";
 import {
   BasicTracerProvider,
   SimpleSpanProcessor,
-  InMemorySpanExporter,
 } from "@opentelemetry/sdk-trace-base";
+import { DiscardingExporter } from "./discardingExporter.js";
 
 type OtelSpanOptions = Record<string, unknown>;
 
@@ -24,7 +24,7 @@ function ensureProvider(): Tracer {
     return tracer;
   }
   const provider = new BasicTracerProvider({
-    spanProcessors: [new SimpleSpanProcessor(new InMemorySpanExporter())],
+    spanProcessors: [new SimpleSpanProcessor(new DiscardingExporter())],
   });
   tracer = provider.getTracer("perf-otel-span");
   return tracer;

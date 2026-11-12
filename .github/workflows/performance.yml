@@ -76,9 +76,9 @@ jobs:
         working-directory: pr/test/performanceTests
         run: npm install --no-save --no-package-lock "$GITHUB_WORKSPACE/candidate.tgz"
 
-      - name: Build perf harness (TS -> dist-esm)
+      - name: Build perf harness and check memory usage
         working-directory: pr/test/performanceTests
-        run: npm run build
+        run: npm run test:memory
 
       - name: Run candidate benchmarks
         working-directory: pr/test/performanceTests
