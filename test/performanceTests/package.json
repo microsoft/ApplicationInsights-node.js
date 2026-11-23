@@ -51,5 +51,8 @@
     "test:browser": "echo skipped",
     "test:node": "echo skipped",
     "test": "echo skipped"
-  }
+  },
+  "overrides": {
+  "@opentelemetry/instrumentation-http": "0.222.0"
+}
 }
