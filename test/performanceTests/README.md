@@ -36,11 +36,20 @@ Only **gating** scenarios block CI on regression. Upstream-OTel scenarios are
 reported as a reference for like-for-like comparison and are not owned by this
 repo, so they are never used for gate-fail decisions.
 
+The upstream-OTel scenarios keep their simple processors but export to a
+synchronous discard sink. This measures SDK processing without retaining every
+span or log record, or accumulating timer-backed export callbacks, across warmup
+and samples. Scenario failures still fail the benchmark run regardless of tier.
+
+Run `npm run test:memory` from this directory to check that both upstream-OTel
+scenarios complete warmup and three samples with a 64 MiB old-space limit.
+
 #### Regression CI
 
-`.github/workflows/performance.yml` runs on every PR. It packs both the PR and
-the base branch as tarballs, installs each in turn under the PR's perf harness,
-runs the benchmark suite, and fails the job (blocking merge when set as a
+`.github/workflows/performance.yml` runs the memory checks and benchmarks on
+every PR. It packs both the PR and the base branch as tarballs, installs each
+in turn under the PR's perf harness, runs the benchmark suite, and fails the
+job (blocking merge when set as a
 required check) if any gating scenario regresses beyond
 `PERF_REGRESSION_THRESHOLD` percent (default 15%). All benchmark results are
 uploaded as the `perf-results` artifact.

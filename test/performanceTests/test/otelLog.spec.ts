@@ -13,8 +13,8 @@ import type { Logger } from "@opentelemetry/api-logs";
 import {
   LoggerProvider,
   SimpleLogRecordProcessor,
-  InMemoryLogRecordExporter,
 } from "@opentelemetry/sdk-logs";
+import { DiscardingExporter } from "./discardingExporter.js";
 
 type OtelLogOptions = Record<string, unknown>;
 
@@ -24,7 +24,7 @@ function ensureProvider(): Logger {
     return logger;
   }
   const provider = new LoggerProvider({
-    processors: [new SimpleLogRecordProcessor({ exporter: new InMemoryLogRecordExporter() })],
+    processors: [new SimpleLogRecordProcessor({ exporter: new DiscardingExporter() })],
   });
   logger = provider.getLogger("perf-otel-log");
   return logger;
