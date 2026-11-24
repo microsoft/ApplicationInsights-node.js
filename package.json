@@ -86,8 +86,9 @@
     "@opentelemetry/semantic-conventions": "^1.43.0"
   },
   "overrides": {
-    "mocha": {
-      "serialize-javascript": "^7.0.5"
-    }
-  }
+  "mocha": {
+    "serialize-javascript": "^7.0.5"
+  },
+  "@opentelemetry/instrumentation-http": "0.222.0"
+}
 }
